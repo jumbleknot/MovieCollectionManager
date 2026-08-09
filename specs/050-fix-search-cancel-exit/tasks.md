@@ -93,38 +93,56 @@ read, no tool call, no collection named, no continuation offered.
   - **Expected RED**: 2 failing — the classifier is recorded as called; the raising case returns intent `degraded`
   - **Measured RED**: 2 failed, exactly as predicted, including `assert 'degraded' != 'degraded'` for the provider-down case. A third test (a title *containing* the phrase must still be classified normally) passes already and stands as a guard.
 
-- [ ] T007 [P] [US1] Strengthen the web E2E cancel assertion in `frontend/mcm-app/tests/e2e/web/agent-search.spec.ts`
+- [X] T007 [P] [US1] Strengthen the web E2E cancel assertion in `frontend/mcm-app/tests/e2e/web/agent-search.spec.ts`
   - **Type**: Test refactor | **Risk**: Medium | **Covers**: US1-AC2, US1-AC4, FR-002, FR-003, FR-007
   - The existing test at line 133 passes on the broken code: the disabled Add button is client-local state set before the agent replies, and a *failed search* also produces no approval request. Add assertions on the assistant's actual reply after the click — no `couldn't find`, no occurrence of the on-screen collection name, and no new `selection-options` block — plus a positive acknowledgement. Assert on those **properties** rather than an exact string; the spec deliberately leaves the wording open.
   - **Verify RED**: `pnpm nx run mcm-app:e2e -- --grep "cancel from the web card"`
   - **Expected RED**: 1 failing — the assistant reply contains `couldn't find` and the collection name
   - **Note**: ~35 min. Run this RED **before** T008/T009 land, or it can never be seen to fail.
+  - **Measured**: two corrections were needed before this was a real RED.
+    1. `pnpm nx run mcm-app:e2e` cannot run in the dev container (chromium is uninstallable). Run
+       Playwright in its official image — recipe now in [quickstart.md § 5](./quickstart.md). That is
+       a fact about the nx target, not about E2E.
+    2. **The first assertion could never have gone green.** `assistant-dock-panel` holds the whole
+       transcript, which by this step legitimately contains "I couldn't find Inception…", an
+       "Exit search" control label, and the member's own echoed `exit search`. A panel-wide
+       `not.toContainText` fails before *and* after the fix — it looks like a RED and is a dead
+       test. Rewritten to count assistant replies and read only the one the cancel produced.
+  - **Measured RED** (pre-fix gateway image, corrected assertions): 1 failed, on
+    `expect(reply).not.toMatch(/only help with your movie collections/i)` — received
+    `"I can only help with your movie collections."` The classifier read the control as
+    `out_of_domain` on this model, so the member got a brush-off rather than the mis-search. A
+    *different symptom of the same defect*, and direct field evidence for FR-010.
 
 ### Implementation — after all four REDs are confirmed
 
-- [ ] T008 [US1] Honour the canonical cancel control regardless of search stage, in `agents/movie-assistant/src/nodes/search.py`
+- [X] T008 [US1] Honour the canonical cancel control regardless of search stage, in `agents/movie-assistant/src/nodes/search.py`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T004, T005 verified RED
   - Change the guard at the top of `search()` so `is_search_cancel(text)` exits whatever the stage, while the loose synonyms (`exit`, `cancel`, `never mind`, `nevermind`) stay gated on a live stage.
   - **Verify GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k cancel -q && pnpm nx run movie-assistant:test -- tests/unit/test_search.py -k cancel -q`
   - **Expected GREEN**: 0 failures in both, with non-zero collected counts
   - **Also run**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -q` → the existing `pick-exit→exit` row and all other transitions still pass
 
-- [ ] T009 [US1] Route the cancel control deterministically, before intent classification, in `agents/movie-assistant/src/graph.py`
+- [X] T009 [US1] Route the cancel control deterministically, before intent classification, in `agents/movie-assistant/src/graph.py`
   - **Type**: Implementation | **Risk**: Medium | **Prerequisite**: T006 verified RED
   - Place the check immediately after the human-turn guard and **before** `classifier(messages)`, returning the `search` intent. Guard it on there being no in-progress add (`add_stage`) — `_exit()` clears the add lifecycle and must not silently discard a half-finished add ([research.md § R5](./research.md)). Comment it with the reason, as `is_cancel_import` is at `graph.py:387`.
   - **Verify GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graph.py -k cancel -q`
   - **Expected GREEN**: 0 failures, 2 passed
   - **Also run**: `pnpm nx run movie-assistant:test -- tests/unit/test_graph.py tests/unit/test_routing.py -q` → all existing routing guards still pass
 
-- [ ] T010 [US1] Record the observability consequence of routing before the classifier
+- [X] T010 [US1] Record the observability consequence of routing before the classifier
   - **Type**: Documentation | **Risk**: None | **Covers**: plan.md Constitution Check (Logging & Monitoring)
   - `record_turn(intent)` runs after classification, so cancels no longer appear in the intent counter. That is the correct trade — a cancel is no longer a classified turn — but it must be deliberate. Note it in the `graph.py` comment beside the new route, and confirm no dashboard or alert keys on a `search` intent volume that would now shift.
   - **Done when**: the comment states it, and a grep of `infrastructure-as-code/` for an alert on classified-intent volume comes back empty (or the finding is filed as a backlog item).
 
-- [ ] T011 [US1] Re-run T007's web E2E to GREEN
+- [X] T011 [US1] Re-run T007's web E2E to GREEN
   - **Type**: Verification | **Risk**: Low | **Prerequisite**: T008, T009 complete
-  - **Verify GREEN**: `pnpm nx run mcm-app:e2e -- --grep "cancel from the web card"`
+  - **Verify GREEN**: the [quickstart.md § 5](./quickstart.md) container command
   - **Expected GREEN**: 1 passed
+  - **Measured GREEN**: 3 passed (the whole `agent-search` spec). The gateway image was rebuilt
+    between the two runs and verified to carry the fix (`grep -c 'if is_search_cancel(text):'` → 1)
+    before trusting the result — the image is BAKED, not mounted. Same test, same stack, old image
+    → 1 failed, new image → 3 passed: the only variable was the fix.
 
 **Checkpoint**: US1 is independently shippable here. [quickstart.md § 1](./quickstart.md) prints
 empty reads, empty tool calls and a cleared stage; the reported path passes manually.
@@ -147,13 +165,13 @@ its own terms.
   - **Measured RED**: **1 failing, not 3.** The import-survives and add-survives cases pass already — today's cancel does nothing, so those states survive by accident rather than by design. They are therefore *guard* tests protecting the fix, not REDs, and are recorded as such rather than counted as a demonstrated failure.
   - **Correction made while writing this**: the first draft of the clears-everything case asserted through `build_graph`'s DEFAULT search node, which is a fixed-text responder that never touches state — it proved nothing. It now injects the real `build_search_node`, making it the closest unit-level analogue of the member's report: message → real router → real node. It fails on `the cancel searched a collection: [('c1', 'exit search')]`.
 
-- [ ] T013 [US2] Confirm the `add_stage` guard and reset scope satisfy T012 in `agents/movie-assistant/src/graph.py`
+- [X] T013 [US2] Confirm the `add_stage` guard and reset scope satisfy T012 in `agents/movie-assistant/src/graph.py`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T012 verified RED
   - Cases (a) and (b) should already pass from T009 plus the existing `_SEARCH_RESET` / `_LIFECYCLE_RESET` scope; case (c) is the `add_stage` guard. If any of the three still fails, the reset scope is not what the research claims — fix the code, and correct [research.md § R5](./research.md) rather than weakening the test.
   - **Verify GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graph.py -k residue -q`
   - **Expected GREEN**: 0 failures, 3 passed
 
-- [ ] T014 [US2] Extend the web E2E's post-cancel step in `frontend/mcm-app/tests/e2e/web/agent-search.spec.ts`
+- [X] T014 [US2] Extend the web E2E's post-cancel step in `frontend/mcm-app/tests/e2e/web/agent-search.spec.ts`
   - **Type**: Test | **Risk**: Low | **Covers**: US2-AC1, US2-AC2 | **Prerequisite**: T007 (same file — not parallel with it)
   - The existing test already sends a follow-up message; assert its answer does not reference the cancelled search's title or scope, and that starting a *new* search re-asks for scope rather than reusing the cancelled search's collection.
   - **Verify GREEN**: `pnpm nx run mcm-app:e2e -- --grep "cancel from the web card"` → 1 passed
@@ -173,26 +191,39 @@ proves it rather than building it.
   - **Type**: Test | **Risk**: Low | **Covers**: US3-AC1, FR-008
   - The flow already covers the cancel action (047 T091); add the same reply assertions as T007 — no `couldn't find`, no collection name, no new selection block.
   - **Verify GREEN**: `pnpm nx run mcm-app:e2e-mobile -- --flow tests/e2e/mobile/agent-search.yaml`
-  - **Expected GREEN**: flow passes. See [openwiki/runbooks/android-emulator.md](../../openwiki/runbooks/android-emulator.md) for bringing the emulator up.
+  - **Measured**: the first draft of these assertions had the same dead-test flaw as T007's, worse
+    on mobile because Maestro sees the whole screen and cannot scope to one reply — a bare
+    `.*exit search.*` matches the member's own echoed message. Now matches only the QUOTED control
+    (`couldn.t find "exit search"`) plus the decline copy, both unambiguous.
+  - **NOT run locally, by policy.** [openwiki/runbooks/android-emulator.md](../../openwiki/runbooks/android-emulator.md)
+    requires **agent flows to run in CI** against a Metro-less standalone APK; the local path drives
+    them through the Metro dev server, which OOM-crashes after a handful of agent `/run` calls and
+    fails with a misleading black screen. The rule holds inside the dev container too. Verified by
+    CI (`android-e2e.yml`) — a documented routing decision, not an environment limitation.
 
 ---
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] T016 [P] Correct the three comments that assert the false premise behind this bug
+- [X] T016 [P] Correct the three comments that assert the false premise behind this bug
   - **Type**: Documentation | **Risk**: None
   - `agents/movie-assistant/src/nodes/search.py` `_web_card_props` (lines ~310–313), the header block in `agents/movie-assistant/tests/unit/test_search.py` (~lines 580–588), and `frontend/mcm-app/src/components/agent/render-movie-card.tsx` (~lines 68–75, 132–134). All three state that the search node "already treats it as a universal control, so no new agent-side parsing is introduced". That was true across live *stages* and false at the terminal card, which has none — and it is the reasoning that shipped the defect.
   - **Done when**: no comment in either language still claims the control is universal without saying it is universal *including with no stage*, and each points at the deterministic route.
 
-- [ ] T017 Record the learning in the knowledge bundle per [openwiki/INSTRUCTIONS.md](../../openwiki/INSTRUCTIONS.md)
+- [X] T017 Record the learning in the knowledge bundle per [openwiki/INSTRUCTIONS.md](../../openwiki/INSTRUCTIONS.md)
   - **Type**: Documentation | **Risk**: None
   - Two learnings, both general beyond this bug: (1) a control gated on a workflow stage is not universal, and the *terminal* step of a workflow is exactly where the stage is already gone; (2) an E2E that asserts only client-local state (a button disabling itself) cannot fail on a wrong agent reply — assert what the assistant said. Apply the routing rule in `INSTRUCTIONS.md`: a concept citing a `resource` is a derived summary, so write into the cited source; if no concept covers the subject, add one. Candidate home: a new gotcha alongside `openwiki/gotchas/`, cross-linked from `openwiki/architecture/agent-layer.md`.
   - **Done when**: `node scripts/check-openwiki-governance.mjs` passes and the learning is findable from the CLAUDE.md index.
 
-- [ ] T018 Full quality gate
+- [X] T018 Full quality gate
   - **Type**: Verification | **Risk**: Low
   - `pnpm nx run movie-assistant:test` → 0 failures; `pnpm nx run movie-assistant:lint` → ruff and mypy both clean; `pnpm nx run mcm-app:test -- render-movie-card` → 0 failures.
   - **Done when**: all three green, and the **skip count** in the pytest run is checked, not just the failure count — a skip reads as a pass.
+  - **Measured**: `movie-assistant:test` → **1124 passed, 2 skipped**; both skips are hypothesis
+    input filters in `test_resolvers_properties.py` ("Generated pick accidentally contains an option
+    title", "Identical years — not the ambiguous case"), pre-existing and unrelated. ruff → "All
+    checks passed!"; mypy → "no issues found in 43 source files". `mcm-app:test render-movie-card`
+    → 19 passed. `mcm-app:lint` → 0 errors (11 pre-existing warnings, none in the changed files).
 
 - [ ] T019 Final validation against [openwiki/invariants/feature-validation-checklist.md](../../openwiki/invariants/feature-validation-checklist.md)
   - **Type**: Verification | **Risk**: Low

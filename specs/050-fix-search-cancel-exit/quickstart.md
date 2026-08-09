@@ -104,22 +104,46 @@ pnpm nx run mcm-app:test -- render-movie-card
 
 ## 5. E2E tier — web
 
+**`pnpm nx run mcm-app:e2e` does not work in the dev container** — chromium cannot be installed
+here. That is a fact about the nx target, not about E2E; run Playwright in its official image
+([devcontainer runbook §3](../../docs/runbooks/devcontainer.md)). First bring the agent stack up —
+the specs are gated and would otherwise *skip*, which reads as green:
+
 ```bash
-pnpm nx run mcm-app:e2e -- --grep "cancel from the web card"
+# The gateway and the client bundle are BAKED, not mounted: rebuild or you test the old code.
+SPECIALIST_MODEL=qwen2.5:latest node scripts/agent-stack.mjs
+docker run --rm --entrypoint sh agent-gateway:latest -c "grep -c 'if is_search_cancel(text):' /app/src/nodes/search.py"   # expect 1
+
+cd frontend/mcm-app
+SVC_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' ../../infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
+docker run --rm --network host --env-file ./.env.e2e.local \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp -v /workspaces/mcm:/workspaces/mcm \
+  -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright -e E2E_BFF_TARGET=dev-container -e CI=true \
+  -e E2E_AGENT_PRODUCTION=1 -e E2E_REQUIRE_AGENT_STACK=1 -e TMDB_API_KEY="$TMDB_API_KEY" \
+  -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
+  -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET="$SVC_SECRET" \
+  -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
+  -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.60.0-noble \
+  node_modules/.bin/playwright test tests/e2e/web/agent-search.spec.ts --project=chromium --workers=1 --reporter=line
 ```
 
-The existing test passes on the broken code, so **it must be seen to fail first**. Run it before
-the fix with the strengthened assertion in place; if it is green at that point the assertion is
-still not testing the assistant's reply and must be corrected before proceeding.
+`E2E_REQUIRE_AGENT_STACK=1` turns a skipped agent spec into a failure — without it a missing stack
+reports green. `--user` is not optional: omit it and Playwright's artifacts land root-owned in the
+working tree and block the next run.
+
+**Seeing this one RED requires the pre-fix gateway image**, since the test runs against the
+container, not the source. Run it before rebuilding, or the RED is unrecoverable.
 
 ## 6. E2E tier — mobile
 
-```bash
-# See docs/runbooks/android-emulator.md for bringing the emulator up.
-pnpm nx run mcm-app:e2e-mobile -- --flow tests/e2e/mobile/agent-search.yaml
-```
+**Not run locally, by policy.** [openwiki/runbooks/android-emulator.md](../../openwiki/runbooks/android-emulator.md)
+splits mobile E2E by flow type: **agent flows must run in CI** (`android-e2e.yml`) against a
+Metro-less standalone APK, because the local path drives them through the Metro dev server, which
+OOM-crashes after a handful of agent `/run` calls and fails with a misleading black screen. The
+rule holds inside the dev container too, even though the emulator runs natively there.
 
-Covers FR-008 / US3: the same acknowledgement, from the same agent-side fix.
+So `tests/e2e/mobile/agent-search.yaml` is authored and reviewed here and **verified by CI** — a
+documented routing decision, not an environment limitation.
 
 ## 7. Manual check (the reported path, end to end)
 
@@ -140,12 +164,13 @@ any "couldn't find", or any further set of search buttons.
 Every box below, per [spec.md § Success Criteria](./spec.md) and
 [openwiki/invariants/feature-validation-checklist.md](../../openwiki/invariants/feature-validation-checklist.md):
 
-- [ ] Step 1 prints the post-fix output — empty reads, empty tool calls, cleared stage
-- [ ] All three unit selectors went RED before the fix and are GREEN after, with non-zero counts
-- [ ] Full `movie-assistant:test` suite green
-- [ ] `movie-assistant:lint` clean (ruff + mypy)
-- [ ] Client component test green
-- [ ] Web E2E seen RED with the strengthened assertion, then GREEN
-- [ ] Mobile flow green
+- [X] Step 1 prints the post-fix output — empty reads, empty tool calls, cleared stage
+- [X] All unit selectors went RED before the fix and are GREEN after, with non-zero counts
+- [X] Full `movie-assistant:test` suite green — 1124 passed, 2 skipped (both hypothesis input filters, pre-existing)
+- [X] `movie-assistant:lint` clean (ruff + mypy)
+- [X] Client component test green — 19 passed; `mcm-app:lint` clean for the changed files
+- [X] Web E2E seen RED with the strengthened assertion (pre-fix gateway image), then GREEN
+- [ ] Full web E2E suite green (regression — the router change touches every turn)
+- [ ] Mobile flow — authored here, **verified by CI** per the agent-flow routing rule (§6)
 - [ ] Manual check passes on the reported path
 - [ ] Backlog item #149's acceptance criterion verified before the item is closed
