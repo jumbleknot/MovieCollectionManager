@@ -208,6 +208,24 @@ Stated explicitly so the next session does not inherit a guess as a fact.
 - **Also still open on 051:** T056/T057 (rehearsals), T058 (the revert), T061 (backlog closure), and
   **T049** — the operator's Windows re-run, which is the only thing that closes item **#157**.
 
+### ⚠️ The fix CANNOT be verified on `main` — decide the branching first
+
+This is the first decision, and it is not obvious. **The contention only manifests when the agent
+specs actually run, and they only run with feature 051's `-e E2E_AGENT_PRODUCTION` forwarding.** On
+`main`, `app-e2e` still skips every agent spec, so it is green *whatever* this fix does — and §4's
+criteria could not be measured at all. A branch cut from `main` would produce two green runs that
+prove nothing, which is precisely the false-green shape both this document and feature 051 exist to
+eliminate.
+
+So the fix and 051's forwarding must be **on the same branch when verified**. Two workable shapes:
+
+| Option | Shape | Trade |
+| --- | --- | --- |
+| **A** | Cut the new feature branch **from `051-ci-diagnostics-closure`**, fix there, merge it back into 051, and merge 051 as one unit | Verifiable immediately; couples the two, and 051's PR grows |
+| **B** | Keep 051 as-is and treat the fix as an extension of its scope (a new story on the existing branch) | Simplest to verify; widens 051, which was deliberately scoped to diagnostics |
+
+**Not workable:** a branch from `main`, verified independently. Say so if someone proposes it.
+
 ### Process notes for whoever picks this up
 
 - **SDD applies.** §3 touches `frontend/mcm-app/playwright.config.ts`, which is implementation code —
@@ -219,3 +237,53 @@ Stated explicitly so the next session does not inherit a guess as a fact.
   push runs almost nothing. Dispatch them instead — the recipe, and three traps that each produce
   *silence that reads as a result*, are in
   [docs/runbooks/ci-diagnostics.md](../runbooks/ci-diagnostics.md).
+
+---
+
+## Prompt for the fresh session
+
+```text
+Fix the app-ci / app-e2e worker/session contention in /workspaces/mcm.
+
+Read docs/proposals/PRD-E2EWorkerSessionContention.md first, all of it. Section 1 is
+MEASURED across two full CI runs — do not re-derive it. Section 6 lists what is NOT
+established, so you can see exactly where the evidence stops.
+
+Background in one line: feature 051 forwarded E2E_AGENT_PRODUCTION into the Playwright
+container, so the agent specs finally execute (zero skips — that is the win, and it must
+not regress). Doing so exposed a pre-existing fragility it did not create: 8 parallel
+Playwright workers share one E2E_TEST_USER against a MAX_CONCURRENT_SESSIONS cap of 10.
+app-e2e is now red and feature 051 cannot merge until this is resolved.
+
+Decide the branching BEFORE anything else — §7's "cannot be verified on main" section.
+The contention only appears when the agent specs run, which only happens with 051's
+forwarding, so a branch cut from main would go green while proving nothing. That is the
+exact false-green this work exists to remove. Pick option A or B and say which.
+
+SDD applies: playwright.config.ts is implementation code, so write the numbered
+specs/NNN-*/ spec → plan → tasks set before editing it. The proposal itself is exempt.
+
+Rules that matter more than usual here:
+- ONE green run is not evidence. §4 requires two consecutive runs AND an empty
+  failure-set diff, because the measured variance between two identical runs was
+  33 vs 61 failures and 17.9min vs 1.1h.
+- Judge by COUNTS — executed, skipped, failed — never by exit status.
+- Do not "fix" this by re-skipping the agent specs or narrowing the selection. That
+  recreates the false green feature 051 removed.
+- The 7 genuine agent-* defects are OUT of scope; they belong to backlog item #150.
+  Keep them separate or neither problem can be judged.
+- 'gotoHome: ... is the global-setup session valid?' is the helper's GUESS on a 60s
+  timeout, not a measurement. It was believed once already. Do not treat it as evidence
+  of session death.
+- Session eviction has never been directly observed. session-manager.ts logs nothing
+  when it evicts; adding that one line is probably the cheapest useful diagnostic and
+  would settle §6 question 1.
+
+Verifying a branch needs a workflow_dispatch, not a push — guardrails and app-ci scope
+push: to main. The recipe and three traps that each produce silence-that-looks-like-a-
+result are in docs/runbooks/ci-diagnostics.md.
+
+Feature 051's branch carries two commits titled TEMPORARY(051) (fcb1975, b0dbb1d) that
+must be reverted before any merge. Do not merge 051 with them present. Leave 051's own
+open tasks (T034, T049, T056-T058, T061) alone unless you are asked.
+```
