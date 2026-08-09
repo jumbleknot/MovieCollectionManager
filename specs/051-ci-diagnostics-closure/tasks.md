@@ -529,6 +529,10 @@ self-serve tooling alone.
     installs present, everything after them absent, and no failing-step marker — that localised the
     fault to a wrapper that could not start. The instrumentation diagnosed a hole in the
     instrumentation.
+  - **RE-RUN AFTER BOTH FIXES (run #1601, sha `e4e79eb8`) — ALL FIVE `guardrails` JOBS GREEN**:
+    `naming` ✔ (28 wrapped), `okf` ✔, `secret-scan` ✔, `agent-gates` ✔, **`sast` ✔** (9 wrapped,
+    including the `working-directory` step that failed the first time). The wrapping is confirmed in
+    CI, in the jobs it was written for.
   - **How the run was obtained matters, and is now in the runbook.** A branch *push* runs almost
     nothing here — `guardrails` and `app-ci` scope `push:` to `main`, so only `infra-image-scan` and
     `devcontainer-image` fired (path filters matching the workflow diff). Both were dispatched via
