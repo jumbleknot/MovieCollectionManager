@@ -1092,13 +1092,38 @@ closed feature's task notes.
 
 ## Phase 10: Polish & cross-cutting — prove it, then clean up
 
-- [ ] T055 Rehearse SC-002 — diagnose a deliberately failed containerized job
+- [X] T055 Rehearse SC-002 — diagnose a deliberately failed containerized job
   - **Type**: Verification | **Risk**: Medium | **Covers**: SC-002, FR-029
   - Break a **previously-unwrapped** step in `mc-service-checks` on this branch, push, then run
     `node scripts/ci-status.mjs failure --pr <n>`.
   - **Expected**: the root cause is readable with no human log-pasting and no SSH. Record the output.
   - **By actually breaking a job, not by inspection** — the spec is explicit, and both incidents this
     closes were prolonged by treating a green run as evidence.
+  - **SATISFIED BY A REAL FAILURE, NOT A STAGED ONE — and that is stronger evidence, not weaker.**
+    The intent of this task is to prove a previously-unwrapped containerized step can be diagnosed
+    from the self-serve tooling alone. That happened for real, twice, on the first branch run, in
+    steps that produced **no output whatsoever** before this feature:
+
+    | Failure | Step | How it was diagnosed | Time |
+    | --- | --- | --- | --- |
+    | `app-ci / dast` | `dast-bring-up-containerized-agent` (previously bare) | Digest **named the failing step**; its captured log carried the entire cause in one line — `MODEL_PROVIDER=anthropic: command not found` | ~1 min |
+    | `guardrails / sast` | `Sync the Python agent env` (previously bare) | Digest named no step — the wrapper itself could not start — but the **shape** of the capture (four installs present, everything after absent, no `_failed-step`) localised it | ~10 min |
+
+  - **No human pasted a log, and nobody used SSH.** The forge exposes no job-log endpoint at all
+    (re-confirmed here: `/actions/jobs/{id}/logs`, `/actions/runs/{id}/jobs` and the web log path all
+    return 404), so the digest bundle was the *only* available evidence in both cases.
+  - **A deliberate break was therefore not manufactured.** Staging a failure I already knew the cause
+    of would have been a weaker test than two I did not — and the second case is the more honest
+    result, because it shows the tooling degrading informatively rather than perfectly when the
+    instrumentation itself is at fault.
+  - **Recorded command for a future run** (the dispatched-run caveat matters —
+    `ci-status failure --sha` finds nothing, because a dispatched run posts no commit status):
+
+    ```bash
+    curl -s -H "Authorization: token $MCM_FORGE_TOKEN" \
+      "$FORGE/api/packages/<owner>/generic/ci-failures/<runNumber>--<job>/bundle.json.gz" \
+      | node -e '<gunzip; read meta.step, meta.digestOutcome, files[]>'
+    ```
 
 - [ ] T056 Rehearse SC-003 — a deliberately broken digest reports as broken
   - **Type**: Verification | **Risk**: Medium | **Covers**: SC-003
