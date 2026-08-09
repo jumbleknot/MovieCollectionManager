@@ -156,7 +156,44 @@ test.describe("Assistant unified search workflow (013 US7 + US10)", () => {
     // US5-AC2: the cancel action sits beside Add and ends the search in one tap.
     const cancel = card.locator('[data-testid="render-movie-card-cancel"]');
     await expect(cancel).toBeVisible();
+    const selectionsBefore = await page
+      .locator('[data-testid="selection-options"]')
+      .count();
+    const assistantMsgs = page.locator('[data-testid="assistant-msg-assistant"]');
+    const repliesBefore = await assistantMsgs.count();
     await cancel.click();
+
+    // 050 / item #149 — ASSERT WHAT THE ASSISTANT ACTUALLY SAID.
+    //
+    // Everything this test used to check after the click passes on the broken behaviour: the Add
+    // button disables itself from client-local state set BEFORE the agent replies, and a failed
+    // *search* produces no approval request either. So the suite stayed green while a cancel was
+    // answered with a failed search for the words "exit search" and left the member back inside
+    // the workflow they were leaving.
+    //
+    // Scope matters as much as the assertion. The dock panel accumulates the WHOLE transcript,
+    // which by this point legitimately contains "I couldn't find Inception…" from the owned-search
+    // step and an "Exit search" control label — so a panel-wide `not.toContainText` can never
+    // pass, before or after the fix. Assert on the ONE reply the cancel produced.
+    await expect(assistantMsgs).toHaveCount(repliesBefore + 1, {
+      timeout: ACTION_TIMEOUT,
+    });
+    const reply = (await assistantMsgs.last().innerText()).trim();
+
+    // FR-002: an acknowledgement, not silence.
+    expect(reply.length).toBeGreaterThan(0);
+    // FR-003/FR-004: no search was performed and the control is not echoed back as a subject.
+    expect(reply).not.toMatch(/couldn't find/i);
+    expect(reply).not.toMatch(new RegExp(BROWSE, "i"));
+    expect(reply).not.toMatch(/exit search/i);
+    // Measured 2026-08-09: on the broken build the classifier read the control as out_of_domain
+    // and the member got this brush-off instead — the same defect, a different symptom, and
+    // exactly why the route must not depend on a classification (FR-010).
+    expect(reply).not.toMatch(/only help with your movie collections/i);
+    // FR-007: an exit, not a re-entry — no NEW set of search controls was offered.
+    await expect(page.locator('[data-testid="selection-options"]')).toHaveCount(
+      selectionsBefore,
+    );
 
     // US5-AC3: the card no longer invites an add, and nothing was written.
     await expect(

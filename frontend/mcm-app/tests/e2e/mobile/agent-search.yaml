@@ -93,6 +93,26 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "render-movie-card-cancel"
 
+# 050 US3 / FR-008 — ASSERT WHAT THE ASSISTANT SAID, on mobile too.
+#
+# The assertions below this used to be the whole check, and every one of them passes on the 149
+# bug: nothing is written by a FAILED SEARCH either, and the card stays visible regardless. The
+# fix is agent-side, so parity is expected by construction — this is what proves it rather than
+# assuming it.
+#
+# These match the two signatures ONLY the bug produces, because Maestro sees the whole screen and
+# cannot scope to "the last reply". A bare ".*couldn't find.*" would match the legitimate earlier
+# owned-search miss, and a bare ".*exit search.*" would match the member's own echoed message —
+# both would fail forever, before and after the fix. The QUOTED control is unambiguous.
+- extendedWaitUntil:
+    notVisible:
+      text: '.*couldn.t find "exit search".*'
+    timeout: 150000
+# Measured 2026-08-09 on the broken build: the classifier read the control as out_of_domain, so
+# the member got this brush-off instead of an exit — the same defect, a different symptom.
+- assertNotVisible:
+    text: ".*only help with your movie collections.*"
+
 # US5-AC3: nothing is written, and the card no longer invites an add.
 - assertNotVisible:
     id: "approval-request"

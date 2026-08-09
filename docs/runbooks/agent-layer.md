@@ -71,6 +71,36 @@ matching `_*_STATE_RESET` so a finished flow never leaks into a later turn. The 
 guards deliberately **escape** on a clear new command (enrich/organize/navigate/import/export/query/
 search) so the ownership question is never a trap; a bare yes/no stays in the add.
 
+> **A control gated on a stage is unreachable from the TERMINAL step of the flow it exits (050 /
+> item #149).** The mirror image of the guard above, and it shipped to a member. 047 gave the web
+> search card a Cancel button that posts the canonical `exit search`; the search node honoured that
+> control under `if stage and …`. But the card is the flow's *last* step, and `_web_card` returns
+> `_SEARCH_RESET` **before** rendering it — so by the time the button is on screen there is no
+> stage, the guard is false by construction, and the value fell through to the fresh-search branch
+> as a movie **title**. The member who pressed Cancel was answered with *"I couldn't find "exit
+> search" in your "Wish List" collection. Want to look elsewhere?"* — plus a real `list_movies`
+> read, a `render_selection` that re-offered the search, and `search_stage` left at
+> `awaiting_pick`. It did not fail neutrally: it put the member back INSIDE the flow they were
+> leaving, capturing their next message too.
+>
+> The trap is that "universal control" is ambiguous — 047's comments (in `search.py`, in the test,
+> and in `render-movie-card.tsx`) all asserted the node "already treats it as a universal control",
+> which was true across *stages* and false at *no stage*. **Ask specifically: is this control
+> offered anywhere the flow has already been cleared?** If yes, it cannot be stage-gated.
+>
+> Two rules fell out of the fix, both worth reusing:
+>
+> - **A cancel is routed BEFORE `classifier(messages)` in `graph.py`**, not after — mirroring
+>   `is_cancel_import`. Not only because a model might classify it away (047's ownership guard
+>   exists because prose-like replies classified differently on Ollama and on Anthropic), but
+>   because a classifier *exception* returns `degraded` before any routing runs at all: a provider
+>   outage would answer "get me out of here" with "Sorry — I couldn't complete that just now."
+>   An escape hatch that needs a healthy LLM is not an escape hatch.
+> - **A stage-free route matches EXACTLY** (whole message, trimmed, case-folded) — never a
+>   substring, which would hijack a real title like *"How to Exit Search a Building"*, and never
+>   the bare synonyms (`cancel`, `never mind`), which belong just as much to the import and
+>   organize flows. Those stay scoped to a live stage, where the stage itself establishes intent.
+
 > **The guard is only half of it — `curator.py` needs the stage too (047).** A stage-continuation
 > guard keeps the turn in the ADD flow, but an add still routes through the curator first. The
 > curator must PASS THROUGH for every ownership stage, because the reply is a bare value

@@ -175,6 +175,18 @@ _SEARCH_TRANSITIONS: list[S] = [
       {"search_stage": "awaiting_pick", "search_scope": _SCIFI, "search_query": "X",
        "search_results": []},
       CTRL_EXIT, "exit", "'exit search' clears the workflow"),
+    # ── 050 / item #149: the terminal card, where there is no stage left ─────────────────────
+    #
+    # `_web_card` returns _SEARCH_RESET, so by the time the member can SEE the Cancel button the
+    # stage is already "". A control gated on a live stage is therefore unreachable from the one
+    # card that offers it, and the value falls through to the fresh-search branch as a title —
+    # answering the member with `I couldn't find "exit search" in your "…" collection`.
+    S("card-cancel-no-stage→exit", {}, CTRL_EXIT, "exit",
+      "#149: the terminal card has ALREADY cleared the stage — cancel must still exit",
+      by_cid={_SCIFI: []}),
+    S("typed-exit-no-stage→exit", {}, "Exit Search", "exit",
+      "the same control typed, and cased as the button labels it",
+      by_cid={_SCIFI: []}),
     S("pick-unresolvable→reoffer",
       {"search_stage": "awaiting_pick", "search_scope": _SCIFI, "search_query": "Avatar",
        "search_results": [{"title": "Avatar", "year": 2009, "collectionId": _SCIFI,

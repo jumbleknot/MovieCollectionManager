@@ -28,6 +28,7 @@ from langgraph.graph import END, START, MessagesState, StateGraph
 from src.kill_switch import assistant_disabled
 from src.nodes.import_disambiguation import is_cancel_import
 from src.nodes.organizer import is_organize_cancel
+from src.nodes.search import is_search_cancel
 from src.nodes.supervisor import (
     resolve_option,
     route_after_approval,
@@ -268,19 +269,49 @@ def _supervisor_node(
         # disabled assistant performs zero side effects. Clears any in-progress add.
         if kill_switch():
             return {"intent": "disabled", **_ADD_STATE_RESET}
+        messages = state.get("messages") or []
+        last = messages[-1] if messages else None
+        # 050 / item #149 — the search-cancel control is routed ABOVE everything that can answer on
+        # the model's behalf. Do not move it below any of the three; each one silently breaks it:
+        #
+        #   1. the CLASSIFIER — an escape hatch that can be classified away is not an escape hatch.
+        #      Measured 2026-08-09: on qwen2.5 it read `exit search` as out_of_domain, so the member
+        #      got "I can only help with your movie collections." (047's ownership guard exists for
+        #      the same reason — prose-like replies classified differently on Ollama vs Anthropic);
+        #   2. its EXCEPTION handler, which returns `degraded` before any routing runs — so a
+        #      provider outage answers "get me out of here" with "I couldn't complete that";
+        #   3. the error-rate BREAKER, which does the same and opens after repeated failures —
+        #      exactly when a member is stuck and wanting out. A routed cancel makes no provider
+        #      call, so letting it past costs the cooldown nothing.
+        #
+        # None of those is an acknowledgement (FR-002) or an exit (FR-007). Deliberately BELOW the
+        # kill switch: a disabled assistant must still do nothing. Mirrors `is_cancel_import`.
+        #
+        # The `add_stage` guard is not decoration: the search node's exit clears the add lifecycle,
+        # and 047 US4 exists because a misroute here once discarded a member's half-finished movie.
+        #
+        # Deliberate observability trade: `record_turn(intent)` runs after classification, so a
+        # cancel no longer appears in the classified-intent metric — it is no longer a classified
+        # turn.
+        if (
+            last is not None
+            and getattr(last, "type", None) == "human"
+            and is_search_cancel(str(getattr(last, "content", "") or ""))
+            and not (state.get("add_stage") or "")
+        ):
+            return {"intent": "search"}
         # Error-rate circuit breaker (T030, Control Tower): when too many recent runs have failed
         # the breaker is open → short-circuit to the same graceful-degradation reply, giving the
         # provider/stack a cooldown. No new user surface; zero side effects.
         if circuit is not None and circuit.opened():
             return {"intent": "degraded", **_ADD_STATE_RESET}
-        messages = state.get("messages") or []
-        last = messages[-1] if messages else None
         # Only classify a genuine user turn. A non-human last message means this run was
         # triggered by a client continuation (e.g. a render_movie_card tool round-trip), not a
         # new request — end quietly ("noop") instead of re-classifying it, which would mislabel
         # it out_of_domain and emit a spurious decline after a successful preview.
         if last is None or getattr(last, "type", None) != "human":
             return {"intent": "noop"}
+        text = str(getattr(last, "content", "") or "")
         # Graceful degradation (T061/FR-018): a provider/reasoning failure becomes a
         # "couldn't complete" reply, never a crash or a misroute. Clears any in-progress add.
         # The outcome feeds the circuit breaker (T030) — a failure here is the error signal.
@@ -297,7 +328,6 @@ def _supervisor_node(
             circuit.record(True)
         record_turn(intent)  # OTel run counter, labelled by classified intent — T030b
         stage = state.get("add_stage") or ""
-        text = str(getattr(last, "content", "") or "")
 
         # Continue an in-progress add (multi-turn disambiguation, T069/R14).
         if stage == "awaiting_pick":

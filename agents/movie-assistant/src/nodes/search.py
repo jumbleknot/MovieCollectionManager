@@ -64,6 +64,29 @@ SCOPE_THE_WEB = "search the web"
 CTRL_ANOTHER = "search another collection"
 CTRL_EXIT = "exit search"
 
+
+def is_search_cancel(text: str) -> bool:
+    """True when `text` IS the canonical search-cancel control (050 FR-004; pure).
+
+    EXACT match on the whole message, trimmed and case-folded — deliberately not a substring test
+    and deliberately not extended to the bare synonyms, because this predicate is what the
+    supervisor routes on with no stage to disambiguate it:
+
+    - A substring test would hijack a real request. "find How to Exit Search a Building" contains
+      the phrase; the member is searching for a film, not leaving. (The in-stage guard below can
+      afford `CTRL_EXIT in low` precisely because a live search stage already establishes intent.)
+    - The bare synonyms ("exit", "cancel", "never mind") stay scoped to a live search stage. Routed
+      globally, "cancel" would steal the cancel reply from the import and organize workflows, which
+      have their own — `is_cancel_import` and `is_organize_cancel`.
+
+    Mirrors `is_cancel_import` in shape; see `contracts/search-cancel-control.md` in feature 050.
+    """
+    return (text or "").strip().casefold() == CTRL_EXIT
+
+
+# The looser cancels accepted ONLY while a search stage is live (see `is_search_cancel` above).
+_STAGE_CANCEL_REPLIES = frozenset({"exit", "cancel", "never mind", "nevermind"})
+
 # How many result/collection buttons the client shows before "view more" (US4 cap; client-side).
 _BUTTON_CAP = 5
 
@@ -307,10 +330,15 @@ def _web_card_props(result: dict[str, Any]) -> dict[str, Any]:
         "url": tmdb_movie_url(source_id),
         "addable": True,
         # 047 US5 (FR-032): this is the terminal card — the member's only choices from here are
-        # add or nothing, so it carries the cancel affordance. `_web_card` has ALREADY cleared the
-        # search workflow before rendering, so cancelling is an acknowledgement plus an
-        # affordance, not a state transition; the tap posts the canonical exit value the search
-        # node already treats as a universal control, so no new agent-side parsing is introduced.
+        # add or nothing, so it carries the cancel affordance.
+        #
+        # 050 (item #149) corrects what this comment used to say. It claimed the tap "posts the
+        # canonical exit value the search node already treats as a universal control, so no new
+        # agent-side parsing is introduced" — and that reasoning is what shipped the bug. The
+        # control was universal across STAGES, and `_web_card` clears the workflow before rendering
+        # this card, so the one place offering Cancel was the one place with no stage. The exit is
+        # now honoured with no stage at all (`is_search_cancel`, in the dispatcher) and routed
+        # before the classifier in `graph.py`, so the claim is finally true as written.
         "cancelable": True,
         "addCollectionId": str(result.get("addCollectionId") or "") or None,
         "addCollectionName": str(result.get("addCollectionName") or "") or None,
@@ -494,8 +522,18 @@ def build_search_node(
         query = str(state.get("search_query") or "")
         low = text.casefold().strip()
 
-        # Universal controls (valid in any continuation stage).
-        if stage and (CTRL_EXIT in low or low in {"exit", "cancel", "never mind", "nevermind"}):
+        # The canonical cancel control — honoured whatever the stage, INCLUDING no stage at all
+        # (050 FR-001 / item #149). The stage guard used to cover this line, and that is precisely
+        # what broke: `_web_card` clears the workflow BEFORE rendering the card, so by the time the
+        # member can press Cancel there is no stage and the control fell through to the fresh-search
+        # branch as a movie title — answering them with `I couldn't find "exit search" in your
+        # "<their collection>" collection. Want to look elsewhere?`, a real read, and a re-offer of
+        # the very workflow they were leaving.
+        if is_search_cancel(text):
+            return _exit()
+        # The looser synonyms stay gated on a live stage: they are too ambiguous to route without
+        # one ("cancel" belongs to the import and organize workflows just as much as to this one).
+        if stage and (CTRL_EXIT in low or low in _STAGE_CANCEL_REPLIES):
             return _exit()
 
         if stage == "awaiting_scope":
