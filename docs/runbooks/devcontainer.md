@@ -557,9 +557,10 @@ MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code
 
 ### 2. Integration tests — plain Nx works from the shell
 
-Container↔container is the FORWARD chain, so integration tests were never blocked. Two env deltas:
-the container BFF is on **:8082** (the harness defaults to Metro's :8081), and the service-account
-secret lives in `stacks/auth.env` (there is no `frontend/mcm-app/.env.local` on this path).
+Container↔container is the FORWARD chain, so integration tests were never blocked. The env deltas:
+the container BFF is on **:8082** (the harness defaults to Metro's :8081), the service-account secret
+lives in `stacks/auth.env`, and — see the URL warning below — the host-reachable URLs must be named
+explicitly.
 
 ```bash
 export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' \
@@ -568,21 +569,50 @@ export BFF_BASE_URL=http://localhost:8082
 # The agent-config suites decrypt IN-PROCESS what the BFF stored, so the harness needs the SAME key
 # the BFF container runs with. Without it: "AGENT_CONFIG_ENC_KEY is not set — cannot encrypt/decrypt".
 export AGENT_CONFIG_ENC_KEY=$(grep '^AGENT_CONFIG_ENC_KEY=' frontend/mcm-app/.env.docker | cut -d= -f2-)
-pnpm nx test:integration mcm-app          # → 110 passed / 3 skipped (2026-07-16)
+# Host-reachable URLs — see the .env.docker warning below. Without these the run collapses to
+# `getaddrinfo ENOTFOUND keycloak-service` and reads as "this container cannot run the tier".
+export KEYCLOAK_URL=http://localhost:8099
+export MONGO_URL=mongodb://localhost:27018
+export REDIS_TEST_URL=redis://localhost:6379/1
+pnpm nx test:integration mcm-app          # → 115 collected / 114 pass / 1 fail / 0 skipped (2026-08-09)
 ```
+
+> ### ⚠️ `getaddrinfo ENOTFOUND keycloak-service` is a missing *variable*, not a missing capability
+>
+> **Measured 2026-08-09: 84 failed / 31 passed without the three URL exports above; 114/115 with them.**
+>
+> `tests/integration/setup/env.ts` loads `.env.e2e.local`, then `.env.local`, then — added by feature
+> 041 T024 for CI — **`.env.docker`**, whose URLs are Docker-internal by construction
+> (`keycloak-service:8080`, `mcm-bff-store-mongo:27017`). `gen-dev-env.mjs` writes only three secret
+> lines into `.env.local`, so on this path nothing overrides them and the host shell tries to resolve
+> a Docker DNS name. The `app-e2e` job overrides exactly these four (`KEYCLOAK_URL`, `MC_SERVICE_URL`,
+> `MONGO_URL`, `BFF_BASE_URL`) for the same reason; the recipe above mirrors it.
+>
+> This is the fourth CLAUDE.md gate in its natural habitat: 84 red suites look like a tier that cannot
+> run here, and are three `export`s.
 
 **Known env-gated suites in here (NOT code failures — don't chase them):**
 
 | Suite | Why it can't pass in the dev container |
 |---|---|
-| `agent-config-probes.integration.test.ts` (2 tests) | Runs the provider probes **in-process from the host shell**: its Ollama case needs a local `localhost:11434` (none), and its TMDB case needs host→TMDB egress (allowlisted-out by design — and allowlisting it still wouldn't fix the Ollama case). |
+| `agent-config-probes.integration.test.ts` (**1** test — the TMDB case) | Runs the provider probes **in-process from the host shell**; the TMDB case needs host→TMDB egress, allowlisted-out by design. **Its Ollama case now PASSES** (2026-08-09): the nested `dev-ollama` container made `localhost:11434` real, so this suite has one env-gated case, not two. |
 | `mc-service` integration binaries (`cargo test -p mc-service` runs them too) | Need `backend/mc-service/.env.local` (`MC_DB_URL`, `KEYCLOAK_*`), which this container doesn't create. The **lib/unit** tests are unaffected: `cargo test --manifest-path backend/mc-service/Cargo.toml --lib` → 148/148. |
 
-> **Ollama nuance (measured 2026-07-16).** `host.docker.internal:11434` is reachable from the **BFF**
-> container (so its agent-config probe would pass) but **NOT from the agent gateway**
-> (`ConnectTimeout`) — the gateway sits on the isolated `backend-network` /
-> `movie-assistant-mcp-network`. That is why `MODEL_PROVIDER=ollama` cannot work in here even though
-> a BFF-side Ollama probe succeeds: the **model call** is made by the gateway.
+> **Ollama nuance — SUPERSEDED 2026-08-09, kept because the old note is worth not re-deriving.**
+> The 2026-07-16 measurement was that `host.docker.internal:11434` was reachable from the **BFF**
+> container but **not** from the agent gateway (`ConnectTimeout`, isolated `backend-network` /
+> `movie-assistant-mcp-network`) — so `MODEL_PROVIDER=ollama` "cannot work in here", because the model
+> call is made by the gateway.
+>
+> **Re-measured from inside the gateway container, it now works:**
+> ```bash
+> docker exec movie-assistant-gateway python -c "import urllib.request,json; \
+>   print([m['name'] for m in json.load(urllib.request.urlopen('http://host.docker.internal:11434/api/tags'))['models']])"
+> # → ['qwen2.5:latest', 'qwen2.5:0.5b']
+> ```
+> The nested `dev-ollama` container closed the gap, so a local agent E2E run against
+> `MODEL_PROVIDER=ollama` is feasible in here. **Verify by running the probe above rather than
+> trusting either version of this note** — it has now flipped once.
 
 **Agent (python) integration** additionally needs the MCP servers, which publish **no host port** —
 run it from *on* the network (a sidecar mounting the repo + `/home/coder/.local/share/uv` so

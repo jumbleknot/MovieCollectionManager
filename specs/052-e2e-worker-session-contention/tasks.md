@@ -330,6 +330,24 @@ security controls, useful well beyond this feature.
   - **How**: dispatch, do **not** push — `guardrails` and `app-ci` scope `push:` to `main`, so a branch
     push runs almost nothing. Follow [docs/runbooks/ci-diagnostics.md](../../docs/runbooks/ci-diagnostics.md),
     including its three traps, each of which produces silence that reads as a result.
+    ```bash
+    FORGE=http://<forge-host>:3000/api/v1
+    TOK=$(printf "protocol=http\nhost=<forge-host>:3000\n\n" \
+            | git credential fill | grep '^password=' | cut -d= -f2-)   # NOT MCM_FORGE_TOKEN — it 403s
+    curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+      -H "Authorization: token $TOK" -H 'Content-Type: application/json' \
+      "$FORGE/repos/jumbleknot/mcm/actions/workflows/app-ci.yml/dispatches" \
+      -d '{"ref":"052-e2e-worker-session-contention","inputs":{"provider":"anthropic"}}'   # -> 204
+    ```
+  - **Read the result from `/actions/tasks`, not from a commit status** — a dispatched run posts no
+    status, so `ci-status status` will say *waiting* forever, reading a channel the run never writes
+    to. The outcome is in `status` (`running`/`success`/`failure`/`skipped`), not a GitHub-style
+    `status: completed` + `conclusion`.
+  - **PRE-CHECKED (2026-08-09) — the measurement is valid in CI**: `app-e2e` runs
+    `pnpm nx docker-build mcm-app` ([app-ci.yml:429](../../.forgejo/workflows/app-ci.yml#L429)) before
+    bring-up, so the BFF image is built from **this branch's source** and carries the instrumentation.
+    Had it pulled a prebuilt image, the tally would have returned exactly the false zeros T019a
+    describes, and the run would have been wasted.
   - **FR-008 scope guard**: this run changes **no** worker count, retry count, spec selection, timeout
     or gate. It measures the failing condition; it does not treat it.
   - **Expected**: **RED**. That is a correct outcome for this task. The result is the tally line, not
