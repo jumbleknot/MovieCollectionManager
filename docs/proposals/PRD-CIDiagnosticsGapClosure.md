@@ -1,8 +1,32 @@
 # PRD — CI Diagnostics Gap Closure (make a containerized job's failure readable)
 
-**Status:** Proposed
+**Status:** **Delivered (with one section rejected and one reopened-then-closed)** — feature
+[`051-ci-diagnostics-closure`](../../specs/051-ci-diagnostics-closure/spec.md), 2026-08-09.
 
 **Created:** 2026-08-02
+
+## What was delivered, and where this document was wrong
+
+Read this before the body: **two of this document's own claims did not survive planning**, and both
+are annotated in place rather than quietly edited, because how they were wrong is more useful than
+the corrections.
+
+| § | Outcome |
+| --- | --- |
+| **§1.1 / §3.1** — "step logs die with the container" | **REJECTED — the premise is false.** The digest is not a host-side reader; it is a step in the same job and the same container, so it reads the logs before teardown. The measurement offered as support ("no container-job logs on the runner") is true and **irrelevant** — it is evidence about leftovers, not about diagnosability. Nothing was relocated. See §3.1. |
+| **§1.2** — "the digest publishes nothing for these jobs" | **Confirmed, but the cause was different.** Not persistence — **instrumentation coverage**. 85 of 136 `run:` steps were never wrapped, so there was no log to read. `guardrails / naming` had 16 `run:` steps with 2 wrapped and *neither was a gate*. All 85 are now wrapped and the coverage gate requires it per-step. |
+| **§1.3** — "the coverage gate fails on clean `main`" | **REOPENED, then CLOSED.** It was line endings, and the gate was failing **closed** on a CRLF checkout. This spec had itself recorded §1.3 as resolved on the strength of a Linux-only run — the same false green the feature exists to remove. See §1.3. |
+| **§1.4** — a test assumes a drive-letterless temp path | **Fixed**, together with six further Windows defects found by an operator sweep: 15 failures across five files, in three classes. |
+| **§3.2** — make digest failure loud | **Delivered.** Three-way outcome (`not-needed` / `published` / `failed`) with sub-reasons, carried in the bundle *and* as a greppable log line, because on the no-credential path no bundle can be uploaded either. |
+| **§3.3** — decouple the digest from secrets | **Gated on a CI probe and NOT yet delivered.** Whether the automatically-provisioned token is populated on a secretless run, and can write the statuses endpoint, is unproven. Prior measurement is discouraging: the commit-status path was *removed* in feature 042 because that endpoint returned 403 even for the purpose-scoped token. Not weakened silently — see [research § R7](../../specs/051-ci-diagnostics-closure/research.md). |
+| **§3.4** — small independent fixes | **Delivered** (items #155, #157, #158). |
+
+**A finding this document did not anticipate, and the one with a security edge:** instrumenting 85
+more steps widened what CI captures, and existing redaction did **not** generalise. Two output
+shapes published credentials unredacted — a URL userinfo section (`https://user:pass@host`) and a
+credential passed as a command-line flag (`docker login -p …`). Neither tripped the fail-closed
+backstop. Both are fixed. §5's instinct to name residual risk explicitly is what made that a task
+rather than a footnote.
 
 **Context:** Feature 042 set out to remove the human-as-transport-layer from CI diagnosis. It
 succeeded for jobs that run on the **host** executor. It does **not** work for jobs that run in the
