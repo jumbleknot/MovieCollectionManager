@@ -156,7 +156,31 @@ test.describe("Assistant unified search workflow (013 US7 + US10)", () => {
     // US5-AC2: the cancel action sits beside Add and ends the search in one tap.
     const cancel = card.locator('[data-testid="render-movie-card-cancel"]');
     await expect(cancel).toBeVisible();
+    const selectionsBefore = await page
+      .locator('[data-testid="selection-options"]')
+      .count();
     await cancel.click();
+
+    // 050 / item #149 — ASSERT WHAT THE ASSISTANT ACTUALLY SAID.
+    //
+    // Everything this test used to check after the click passes on the broken behaviour: the Add
+    // button disables itself from client-local state set BEFORE the agent replies, and a failed
+    // *search* produces no approval request either. So the suite stayed green while a cancel was
+    // answered with `I couldn't find "exit search" in your "Wish List" collection. Want to look
+    // elsewhere?` — and left the member back inside the search workflow.
+    //
+    // These assert the PROPERTIES the spec fixes (FR-002/003/004/007), not the exact copy, which
+    // the spec deliberately leaves open.
+    const panel = page.getByTestId("assistant-dock-panel");
+    await expect(panel).not.toContainText(/couldn't find/i, {
+      timeout: ACTION_TIMEOUT,
+    });
+    await expect(panel).not.toContainText(/exit search/i);
+    await expect(panel).not.toContainText(new RegExp(BROWSE, "i"));
+    // FR-007: an exit, not a re-entry — no NEW set of search controls was offered.
+    await expect(page.locator('[data-testid="selection-options"]')).toHaveCount(
+      selectionsBefore,
+    );
 
     // US5-AC3: the card no longer invites an add, and nothing was written.
     await expect(

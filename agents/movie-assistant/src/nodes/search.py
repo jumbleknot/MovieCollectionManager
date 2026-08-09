@@ -64,6 +64,29 @@ SCOPE_THE_WEB = "search the web"
 CTRL_ANOTHER = "search another collection"
 CTRL_EXIT = "exit search"
 
+
+def is_search_cancel(text: str) -> bool:
+    """True when `text` IS the canonical search-cancel control (050 FR-004; pure).
+
+    EXACT match on the whole message, trimmed and case-folded — deliberately not a substring test
+    and deliberately not extended to the bare synonyms, because this predicate is what the
+    supervisor routes on with no stage to disambiguate it:
+
+    - A substring test would hijack a real request. "find How to Exit Search a Building" contains
+      the phrase; the member is searching for a film, not leaving. (The in-stage guard below can
+      afford `CTRL_EXIT in low` precisely because a live search stage already establishes intent.)
+    - The bare synonyms ("exit", "cancel", "never mind") stay scoped to a live search stage. Routed
+      globally, "cancel" would steal the cancel reply from the import and organize workflows, which
+      have their own — `is_cancel_import` and `is_organize_cancel`.
+
+    Mirrors `is_cancel_import` in shape; see `contracts/search-cancel-control.md` in feature 050.
+    """
+    return (text or "").strip().casefold() == CTRL_EXIT
+
+
+# The looser cancels accepted ONLY while a search stage is live (see `is_search_cancel` above).
+_STAGE_CANCEL_REPLIES = frozenset({"exit", "cancel", "never mind", "nevermind"})
+
 # How many result/collection buttons the client shows before "view more" (US4 cap; client-side).
 _BUTTON_CAP = 5
 

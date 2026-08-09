@@ -93,6 +93,21 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "render-movie-card-cancel"
 
+# 050 US3 / FR-008 — ASSERT WHAT THE ASSISTANT SAID, on mobile too.
+#
+# The assertions below this used to be the whole check, and every one of them passes on the 149
+# bug: nothing is written by a FAILED SEARCH either, and the card stays visible regardless. The
+# fix is agent-side, so parity is expected by construction — this is what proves it rather than
+# assuming it.
+- extendedWaitUntil:
+    notVisible:
+      text: ".*couldn't find.*"
+    timeout: 150000
+- assertNotVisible:
+    text: ".*exit search.*"
+- assertNotVisible:
+    text: ".*E2E Browse.*"
+
 # US5-AC3: nothing is written, and the card no longer invites an add.
 - assertNotVisible:
     id: "approval-request"

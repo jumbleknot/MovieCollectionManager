@@ -620,43 +620,150 @@ def test_cancelable_is_absent_from_other_movie_cards() -> None:
     )
 
 
-def test_cancel_no_writes_produces_an_acknowledgement_and_zero_write_calls() -> None:
-    """FR-033/FR-034: cancelling ends the search, writes nothing, and leaves a fresh state."""
-    from src.nodes.search import CTRL_EXIT, _exit
+@pytest.mark.asyncio
+async def test_cancel_no_writes_produces_an_acknowledgement_and_zero_write_calls() -> None:
+    """047 FR-033/FR-034 + 050 FR-002/003/004/007: cancelling FROM THE CARD ends the search.
 
-    out = _exit()
+    050 (item #149) rewrote this test. It used to call `_exit()` directly — which asserted that the
+    exit function behaves, and never that pressing Cancel REACHES it. `_exit()` was always correct;
+    the route to it was not, and the test could not tell the difference. So the bug shipped green.
+
+    It now drives the node through its real dispatcher in the state the terminal card leaves
+    behind: NO search stage. That is the condition the member is actually in when the Cancel button
+    is on screen.
+    """
+    from src.nodes.search import CTRL_EXIT
+
+    reads: list[tuple[str, str]] = []
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return [{"collectionId": "wish", "name": "Wish List", "isDefault": True}]
+
+    async def list_movies(cid: str, term: str) -> list[dict[str, Any]]:
+        reads.append((cid, term))
+        return []
+
+    async def web_search(query: str, _year: int | None) -> dict[str, Any]:
+        reads.append(("web", query))
+        return {"results": []}
+
+    node = build_search_node(
+        list_collections=list_collections, list_movies=list_movies, web_search=web_search
+    )
+    out = await node(_state(CTRL_EXIT))  # no search_stage — the terminal-card condition
+
     # An acknowledgement, not silence.
     assert out["messages"], "cancelling must acknowledge, not end the turn silently"
     content = str(out["messages"][-1].content)
     assert content.strip(), "cancelling produced an empty reply"
 
-    # Zero write tool calls — the canonical exit path emits no tool calls at all.
-    for message in out["messages"]:
-        for call in getattr(message, "tool_calls", None) or []:
-            assert call["name"] not in (
-                "add_movie",
-                "update_movie",
-                "delete_movie",
-                "create_collection",
-            ), f"cancelling issued a write: {call['name']}"
+    # FR-003: a cancel is a READ-NOTHING turn. The bug issued list_movies("wish", "exit search").
+    assert reads == [], f"cancelling performed a search: {reads}"
 
-    # The workflow is cleared, so the NEXT message is a fresh request (FR-034).
+    # FR-007: ZERO tool calls of any kind — not merely zero writes. The bug emitted a
+    # render_selection, which is what re-offered the search the member was trying to leave.
+    for message in out["messages"]:
+        calls = getattr(message, "tool_calls", None) or []
+        assert not calls, f"cancelling emitted tool calls: {[c['name'] for c in calls]}"
+
+    # FR-004: the member's control value is never echoed back as something we looked for, and no
+    # collection is named — those two together ARE the reported message.
+    assert CTRL_EXIT not in content.casefold()
+    assert "wish list" not in content.casefold()
+    assert "couldn't find" not in content.casefold()
+
+    # The workflow is cleared, so the NEXT message is a fresh request (FR-006).
     assert out["search_stage"] == ""
     assert out["search_results"] == []
     assert out["pending_proposal"] is None
-    # The canonical value the card's Cancel button posts is one the search node already handles,
-    # so no new agent-side parsing is introduced.
+    # The canonical value the card's Cancel button posts — see contracts/search-cancel-control.md.
     assert CTRL_EXIT == "exit search"
 
 
+@pytest.mark.asyncio
+async def test_cancel_still_exits_mid_search() -> None:
+    """The in-stage control must keep working — 050 widens the guard, it must not narrow it."""
+    node = _node(
+        [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}],
+        by_cid={"c1": []},
+    )
+    for text in ("exit search", "cancel", "never mind"):
+        out = await node(
+            _state(text, search_stage="awaiting_pick", search_scope="c1", search_query="X")
+        )
+        assert out["search_stage"] == "", f"{text!r} did not exit a live search"
+        assert not out["messages"][-1].tool_calls
+
+
 def test_cancel_no_writes_web_card_already_cleared_the_workflow() -> None:
-    """The card is rendered with the workflow ALREADY cleared — cancelling must not regress that."""
+    """The card is rendered with the workflow ALREADY cleared — cancelling must not regress that.
+
+    050: this clearing is not a detail, it is the bug. Because the stage is gone by the time the
+    member can press Cancel, a control gated on a live stage is unreachable from the one card that
+    offers it.
+    """
     from src.nodes.search import _web_card
 
     out = _web_card(_web_result())
     assert out["search_stage"] == ""
     assert out["search_results"] == []
     assert out["pending_proposal"] is None
+
+
+# ── 050 (T002): the canonical cancel control is matched EXACTLY ───────────────────────────────
+#
+# `is_search_cancel` is the predicate both the search node and the supervisor route on, so its
+# matching rule decides two different failure modes:
+#
+#   too loose  → a real movie title containing the words is hijacked, and the bare synonyms steal
+#                the cancel reply from the import / organize workflows, which own their own.
+#   too strict → the member's tap does nothing (the 149 bug, in a different disguise).
+#
+# Exact-on-the-whole-message, trimmed and case-folded, is the same rule `is_cancel_import` uses.
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "exit search",
+        "  exit search  ",
+        "Exit Search",
+        "EXIT SEARCH",
+        "\texit search\n",
+    ],
+)
+def test_is_search_cancel_accepts_the_canonical_value(text: str) -> None:
+    """FR-004: the value the card posts, however the surface cased or padded it."""
+    from src.nodes.search import is_search_cancel
+
+    assert is_search_cancel(text) is True
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # A title that CONTAINS the phrase must stay searchable (spec edge case). This is why the
+        # predicate is not a substring test — the in-stage guard's `CTRL_EXIT in low` would match
+        # all three of these.
+        "find How to Exit Search a Building",
+        "exit search strategies",
+        "show me exit search",
+        # The bare synonyms stay scoped to a LIVE search stage: `cancel` is a plausible reply to an
+        # import question and to an organize disambiguation, both of which handle their own.
+        "exit",
+        "cancel",
+        "never mind",
+        "nevermind",
+        # Nothing at all.
+        "",
+        "   ",
+    ],
+)
+def test_is_search_cancel_rejects_everything_else(text: str) -> None:
+    """FR-004 + research R4: exact match only — never a substring, never a bare synonym."""
+    from src.nodes.search import is_search_cancel
+
+    assert is_search_cancel(text) is False
 
 
 # ── 047: "open <movie> in <collection>" without the word "collection" ─────────────────────────────
