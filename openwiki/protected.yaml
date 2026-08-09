@@ -98,7 +98,13 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "invariants/feature-validation-checklist.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:da4e49c4d19a420b1dfdbf1f52d9ce37098c05c96b2ee12b39ab2447c8a93079"
+    # Re-fingerprinted 2026-08-09 by feature 051 (T018) — a `passage-corrected` event, which this
+    # concept's policy.yaml entry permits. The passage told readers to set E2E_REQUIRE_AGENT_STACK=1
+    # "on any pre-PR or CI run" while `app-ci / app-e2e` never actually forwarded the flag into the
+    # Playwright container, so every agent spec had skipped on every CI run for the lifetime of that
+    # job. The stale "all ten agent-*.spec.ts" count was corrected at the same time (13 files, 11
+    # gated). The passage now describes what CI does rather than what it was assumed to do.
+    fingerprint: "sha256:f3b5419ff923719dd287ee9dfa430a9d7f43c9da30b233292b2d61ec4b5d4b34"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/logging-and-audit.md"

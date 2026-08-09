@@ -269,7 +269,7 @@ specs either. Both skip silently while the required gate reports green.
 **Independent test**: A CI run shows a non-zero executed count and a zero skip count for both spec
 families.
 
-- [ ] T013 [P] [US1] Write a failing guard test for the E2E environment contract in `scripts/__tests__/app-e2e-env.guard.test.mjs`
+- [X] T013 [P] [US1] Write a failing guard test for the E2E environment contract in `scripts/__tests__/app-e2e-env.guard.test.mjs`
   - **Type**: Test / New file | **Risk**: Low | **Covers**: US1-AC1, US1-AC3, FR-001, FR-002, FR-003,
     [contracts/e2e-env-forwarding.md](./contracts/e2e-env-forwarding.md)
   - Follow the established pattern in `scripts/__tests__/agent-stack.guard.test.mjs` — read
@@ -284,8 +284,16 @@ families.
   - **Verify RED**: `node --test scripts/__tests__/app-e2e-env.guard.test.mjs`
   - **Expected RED**: ≥3 failing — the three flags are absent from the invocation.
   - **RED is observable on Linux.**
+  - **MEASURED RED (Linux)**: **6 collected, 1 pass, 5 fail**. The one **pass** is the negative case
+    (contract invariant 1) — deliberately, and it is load-bearing: it proves the locator found a real
+    invocation, so the five failures are the flags actually being absent rather than the whole file
+    failing to parse. A guard that is uniformly red proves nothing about what it located.
+  - **Trap found while writing it.** Anchoring the locator on `docker run .*--network host` matches an
+    **earlier, unrelated** invocation in the same job — the guard then asserts confidently about the
+    wrong container. It now anchors on the `mcr.microsoft.com/playwright` image and walks *back* to
+    its `docker run`, and asserts it found `playwright test` before reading anything off it.
 
-- [ ] T014 [US1] Forward the missing flags in `.forgejo/workflows/app-ci.yml`
+- [X] T014 [US1] Forward the missing flags in `.forgejo/workflows/app-ci.yml`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T013 verified RED
   - In the `app-e2e` job: add `KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}`
     to the job `env:` block (it is absent there, so a pass-through `-e` alone would forward nothing).
@@ -295,20 +303,63 @@ families.
     contract, so the next reader does not re-derive the table or add them speculatively.
   - **Verify GREEN**: `node --test scripts/__tests__/app-e2e-env.guard.test.mjs`
   - **Expected GREEN**: 0 failures.
+  - **MEASURED GREEN (Linux)**: **6 collected, 6 pass, 0 fail**. `check-no-argv-secrets.mjs` also
+    still passes (`✅ no argv-secret arguments to the test runner`) — the new flags use the
+    pass-through form.
 
-- [ ] T015 [US1] Reproduce the skip and the un-skip locally, by result
+- [X] T015 [US1] Reproduce the skip and the un-skip locally, by result
   - **Type**: Verification | **Risk**: Low | **Covers**: US1-AC1, FR-029
   - Run one agent spec through the CI container invocation verbatim, with and without the flag, per
     [quickstart.md § Story 1](./quickstart.md).
   - **Expected**: without → `3 skipped`, `EXIT=0`; with → all 3 execute. **The exit code is 0 in both
     cases** — which is the whole point. Record the counts, not the status.
+  - **MEASURED (Linux dev container, 2026-08-09)**, running the CI `docker run` verbatim against
+    `agent-navigate-movie.spec.ts` (**1** test in that file, not 3 — the count in the task was an
+    estimate; the measurement is the skip/executed split, and it holds):
 
-- [ ] T016 [US1] Re-run the environment enumeration and reconcile it against the contract
+    | Flags | Result | Exit |
+    | --- | --- | ---: |
+    | as CI ran it — neither flag | **`1 skipped`**, 0 executed | **0** |
+    | `-e E2E_REQUIRE_AGENT_STACK=1` only | **`1 failed`**, naming the unmet condition and how to fix it | 1 |
+    | both flags, as CI runs it now | **0 skipped, 1 executed** | 1 (see below) |
+
+  - **This is the defect, demonstrated.** Global setup ran, the BFF was confirmed
+    (`X-BFF-Source=dev-container`), the spec was collected — and then it skipped and the run reported
+    success. Nothing in that output says the agent surface was not exercised. `--list` will **not**
+    show this: it prints the collected test either way. The skip count is the measurement.
+  - **The require-flag branch works as designed**: without `E2E_AGENT_PRODUCTION` it throws
+    `FAIL_REASON` from a `beforeAll`, which names the unmet condition and the command that fixes it —
+    a loud failure rather than a green tick.
+  - **With both flags the spec EXECUTES and then fails** on a real assertion
+    (`locator('[data-testid="selection-options"]')` not visible within 180s at
+    `agent-navigate-movie.spec.ts:105`). **That is T017's business, not a regression here** — and the
+    US1 claim is the executed count going 0 → 1, which it did. See T017 for why this local failure
+    cannot be attributed to the agent surface from this container.
+
+- [X] T016 [US1] Re-run the environment enumeration and reconcile it against the contract
   - **Type**: Verification | **Risk**: Low | **Covers**: FR-003, US1-AC3
   - Run the enumeration in [quickstart.md § Story 1](./quickstart.md) over
     `frontend/mcm-app/tests/e2e/` **and** `playwright.config.ts`.
   - **Done when**: every name appears in the contract as forwarded or deliberately-not, with no
     residue. This check is what found the admin-spec defect; it is a validation step, not a one-off.
+  - **RECONCILED (Linux, 2026-08-09)**: **17 names, 10 forwarded + 7 deliberately-not, zero residue.**
+  - **⚠️ But the enumeration command as written was itself under-reporting — and this is the more
+    valuable finding.** The published one-liner matches only `process.env.NAME` /
+    `process.env['NAME']` and returns **14** names. It silently misses three, because a literal is
+    not the only way the suite reads an environment variable:
+
+    | Missed | Read as | Where |
+    | --- | --- | --- |
+    | `E2E_TEST_USER`, `E2E_TEST_PASSWORD` | `requireEnv('…')` — through a helper | `setup/global-setup.ts`, `bff-prod-lifecycle.spec.ts` |
+    | `E2E_REQUIRE_AGENT_STACK` | `process.env[REQUIRE_AGENT_STACK_ENV]` — indexed by a **constant** | `setup/agent-stack-gate.ts` |
+
+    So the check the contract calls "the check" was answering a **narrower question than it claimed**
+    — the same shape as the coverage gate that asked "is a digest published?" instead of "does it
+    contain anything?", and as the shell probe in T046 that asks whether a shell *starts* rather than
+    whether it can *reach the files*. It reported clean while blind to the indirect reads, and one of
+    the names it could not see is the require-flag this very story adds. `quickstart.md` now carries
+    the widened three-part command and states the expected count (**17**), so a future run notices a
+    shortfall instead of reading a smaller clean list as a clean result.
 
 - [ ] T017 [US1] Triage whatever the newly-running specs reveal
   - **Type**: Verification | **Risk**: **High** | **Covers**: spec Edge Cases, item #150
@@ -317,12 +368,43 @@ families.
   - **Done when**: every failure is either fixed, or attributed to a baseline with evidence and filed.
   - **Prohibited**: reverting to a skip, or narrowing the spec selection to dodge a failure. That
     recreates the exact false green this story removes.
+  - **STATUS: OPEN — blocked on a CI run, deliberately not closed on the local one.**
+  - **Local observation (Linux dev container, 2026-08-09)**: with both flags forwarded,
+    `agent-navigate-movie.spec.ts` executes and **fails** — the offer locator
+    `[data-testid="selection-options"]` never becomes visible within the 180s action timeout
+    (`agent-navigate-movie.spec.ts:105`). The agent stack was up (`movie-assistant-gateway` and all
+    three MCP containers healthy).
+  - **This failure is NOT yet attributable, and saying otherwise would repeat §1.3's mistake.** This
+    container's gateway resolves its model provider from the **dev** environment scoping (see
+    `openwiki/invariants/model-provider-scoping.md`), and the local run forwarded no
+    `ANTHROPIC_API_KEY`; CI runs the same specs with `E2E_AGENT_PROVIDER=anthropic` **and** the key.
+    A model-surface failure and a genuine UI-contract failure look identical from here. Reporting the
+    local red as "the agent specs are broken" would be a platform-specific result generalised — which
+    is exactly what FR-031 exists to stop.
+  - **What closes this**: the first CI run on this branch with T014 landed. That run is also the
+    answer to item **#150** ("are `agent-navigate-movie` / `agent-disambiguation` green on the
+    Anthropic surface?"), which could not be answered before precisely because these specs had never
+    run there.
+  - Nothing has been reverted or narrowed.
 
-- [ ] T018 [US1] Update `openwiki/invariants/feature-validation-checklist.md` if its guidance is now stale
+- [X] T018 [US1] Update `openwiki/invariants/feature-validation-checklist.md` if its guidance is now stale
   - **Type**: Documentation | **Risk**: None
   - The checklist already warns about this failure mode and instructs setting `E2E_REQUIRE_AGENT_STACK=1`
     "on any pre-PR or **CI** run". CI now does. Confirm the wording matches reality; correct it if not.
   - **Done when**: the invariant describes what CI actually does.
+  - **It was stale in three ways**, all corrected:
+    1. It told readers to set the flag "on any pre-PR or **CI** run" as though CI already did. CI did
+       not — that is the whole defect — so the page was describing an intention as a fact.
+    2. "**All ten** `agent-*.spec.ts` files gate on `E2E_AGENT_PRODUCTION=1`" — measured: **13** files,
+       of which **11** call `requireAgentStack`. `agent-cors.spec.ts` and
+       `agent-session-refresh.spec.ts` deliberately do not (transport and session behaviour, no model
+       needed). A reader chasing a skipped spec would have been looking for a gate that is not there.
+    3. Nothing recorded the admin-spec half of the same omission.
+  - **The `## Gotchas` passage is fingerprinted**, so this was a deliberate `passage-corrected` event —
+    the policy entry for this concept permits it. The governance gate caught the edit and named the
+    remedy; `openwiki/protected.yaml` carries the new fingerprint **in the same change**, with a
+    comment saying why. Re-run: `✅ 898 documentation path(s) classified, 60 concept(s) … protected
+    passages intact.`
 
 ---
 

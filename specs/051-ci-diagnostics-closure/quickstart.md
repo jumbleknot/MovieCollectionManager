@@ -29,15 +29,34 @@ With `-e E2E_REQUIRE_AGENT_STACK=1` and the stack down, the run **fails loudly**
 stack rather than skipping.
 
 **Enumeration check** — this is the check that found the second defect, so it is part of validation,
-not a one-off:
+not a one-off.
+
+⚠️ **The obvious one-liner under-reports.** Matching only `process.env.NAME` / `process.env['NAME']`
+returns **14** names and silently misses three, because a literal is not the only way to read an
+environment variable here:
+
+- `requireEnv('E2E_TEST_USER')` — read through a helper (`global-setup.ts`, `bff-prod-lifecycle.spec.ts`)
+- `process.env[REQUIRE_AGENT_STACK_ENV]` — indexed by a **constant**, which is how
+  `E2E_REQUIRE_AGENT_STACK` and `E2E_AGENT_PRODUCTION` are actually read in `agent-stack-gate.ts`
+
+A check that answers a narrower question than it claims is the failure mode this whole feature is
+about, so use the widened form:
 
 ```bash
-grep -rhoE "process\.env\.[A-Z0-9_]+|process\.env\[['\"][A-Z0-9_]+" frontend/mcm-app/tests/e2e/ \
-  | sed -E "s/.*env[.\[]['\"]?//" | sort -u
+{ grep -rhoE "process\.env\.[A-Z0-9_]+|process\.env\[['\"][A-Z0-9_]+" \
+    frontend/mcm-app/tests/e2e/ frontend/mcm-app/playwright.config.ts \
+    | sed -E "s/.*env[.\[]['\"]?//"
+  grep -rhoE "requireEnv\(['\"][A-Z0-9_]+" \
+    frontend/mcm-app/tests/e2e/ frontend/mcm-app/playwright.config.ts \
+    | sed -E "s/.*\(['\"]//"
+  grep -rhoE "^(export )?const [A-Z0-9_]+_ENV = '[A-Z0-9_]+'" -r frontend/mcm-app/tests/e2e/ \
+    | grep -oE "'[A-Z0-9_]+'" | tr -d "'"
+} | sort -u
 ```
 
-Every name must appear in [contracts/e2e-env-forwarding.md](./contracts/e2e-env-forwarding.md) as
-either forwarded or deliberately not forwarded. A name in neither column is an unclosed gap.
+Expected: **17** names. Every one must appear in
+[contracts/e2e-env-forwarding.md](./contracts/e2e-env-forwarding.md) as either forwarded (10) or
+deliberately not forwarded (7). A name in neither column is an unclosed gap.
 
 **CI acceptance**: a run shows a non-zero executed count and a zero skip count for the agent specs
 and for `admin-card` / `admin-registration`.
