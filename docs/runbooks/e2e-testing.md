@@ -236,20 +236,42 @@ The unit tier had the same shape of hole: the paired test called `_exit()` direc
 destination and never the route. `_exit()` was always correct; nothing tested that pressing Cancel
 reached it.
 
-**The rule**: after driving an agent control, assert on the conversation panel's text. Prefer the
-*properties* the spec fixes over exact copy, so a wording change does not break the test:
+**The rule**: after driving an agent control, assert on what the assistant *said*. Prefer the
+*properties* the spec fixes over exact copy, so a wording change does not break the test.
+
+**Scope the assertion to the ONE new reply — `assistant-dock-panel` is the whole transcript.**
+Getting this wrong is easy and was measured on the first attempt at the fix above: a panel-wide
+`await expect(panel).not.toContainText(/couldn't find/i)` fails *forever*, because by that point
+the transcript legitimately contains "I couldn't find Inception…" from the earlier owned-search
+step, an "Exit search" control label, and the member's own echoed `exit search` message. It looks
+like a RED; it is a test that can never go green. Count the replies, wait for one more, and read it:
 
 ```ts
-const panel = page.getByTestId("assistant-dock-panel");
-await expect(panel).not.toContainText(/couldn't find/i);   // the failure signature
-await expect(panel).not.toContainText(new RegExp(COLLECTION_NAME, "i"));
-await expect(panel).not.toContainText(/exit search/i);     // never echo the control back
-await expect(page.locator('[data-testid="selection-options"]')).toHaveCount(before);
+const replies = page.locator('[data-testid="assistant-msg-assistant"]');
+const before = await replies.count();
+await control.click();
+await expect(replies).toHaveCount(before + 1, { timeout: ACTION_TIMEOUT });
+const reply = (await replies.last().innerText()).trim();
+
+expect(reply.length).toBeGreaterThan(0);                     // it answered at all
+expect(reply).not.toMatch(/couldn't find/i);                 // the failure signature
+expect(reply).not.toMatch(new RegExp(COLLECTION_NAME, "i"));
+expect(reply).not.toMatch(/only help with your movie collections/i);  // the decline
 ```
+
+**Maestro cannot scope like that** — it sees the whole screen — so a mobile flow must match only
+signatures the bug alone produces. `'.*couldn.t find "exit search".*'` (the *quoted* control) is
+safe; a bare `.*couldn't find.*` or `.*exit search.*` matches legitimate transcript text and fails
+in both worlds.
+
+**Include the decline copy in the negatives.** Measured 2026-08-09 on the broken build: the same
+defect surfaced as *"I can only help with your movie collections."* rather than the mis-search,
+because the classifier read the control as `out_of_domain` on that model. A test that only knows
+one symptom of a routing bug will miss the same bug on a different provider.
 
 Same test to apply anywhere: **would this assertion still pass if the assistant said the opposite
 of what I want?** If yes, it is not coverage — and it is worse than absent coverage, because it is
-counted in the tally.
+counted in the tally. Then ask the mirror question: **could this assertion ever pass at all?**
 
 ## Agent E2E must not assert on LIVE-TMDB-ranked titles (drift lesson, 2026-07-20)
 
