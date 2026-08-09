@@ -486,6 +486,19 @@ self-serve tooling alone.
     and the contract names this exact case as *not* a legitimate exemption.
   - Exempt only what the contract's legitimate list covers, each with a written reason.
   - **Done when**: `node scripts/check-ci-digest-coverage.mjs` passes for these jobs.
+  - **CI EVIDENCE (Forgejo, branch `051-ci-diagnostics-closure`, 2026-08-09)** — the wrapping was
+    verified where it actually has to work, not only locally. All five `guardrails` container-executor
+    jobs ran the wrapped steps and passed: **`naming` ✔** (28 wrapped steps, including every gate step
+    *and* the stricter per-step coverage gate scanning its own tree), **`okf` ✔**, **`secret-scan` ✔**,
+    **`agent-gates` ✔**. Host-executor jobs **`devcontainer-image / build-publish` ✔** and
+    **`infra-image-scan` ✔** likewise.
+  - **How the run was obtained matters, and is now in the runbook.** A branch *push* runs almost
+    nothing here — `guardrails` and `app-ci` scope `push:` to `main`, so only `infra-image-scan` and
+    `devcontainer-image` fired (path filters matching the workflow diff). Both were dispatched via
+    `workflow_dispatch` against the branch instead, which needs no PR. Two traps found doing it, both
+    producing silence that reads as patience: a dispatched run posts **no commit status** (so
+    `ci-status status --sha` says "waiting" forever), and Forgejo reports the outcome in `status`, not
+    in a GitHub-style `status: completed` + `conclusion`.
   - **Arithmetic check**: T022 (28) + T023 (5) + T024 (15) = **48**, matching the measured total in
     [research.md § R2](./research.md). If these three tasks do not sum to 48, a job has been missed and
     T020's stricter gate will land red — re-derive from the R2 table, do not re-count by hand.
