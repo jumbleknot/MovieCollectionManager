@@ -132,7 +132,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/050-fix-search-cancel-exit/plan.md`
+`specs/051-ci-diagnostics-closure/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->
