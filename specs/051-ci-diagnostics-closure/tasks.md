@@ -1064,18 +1064,27 @@ closed feature's task notes.
   - A probe merged to `main` is the same mistake as the 2026-08-01 probe merged to read a token's
     length. This is why it is its own task.
 
-- [ ] T059 Full script suite green on Linux
+- [X] T059 Full script suite green on Linux
   - **Type**: Verification | **Risk**: Low
   - **Command**: `node --test "scripts/__tests__/*.test.mjs"`
   - **Expected**: 0 failures, and the **collected count is at least T001's baseline** — a suite that
     got smaller is a selector that stopped matching, not a suite that got greener.
+  - **MEASURED (Linux, 2026-08-09)**: **515 collected, 515 pass, 0 fail, 0 skipped.**
+    Against the T001 baseline of 471/470/0/1: **+44 collected**, and the single pre-existing skip is
+    gone. The count ROSE, which is the direction that means the suite grew rather than a selector
+    quietly stopping matching.
 
-- [ ] T060 All gates green on a clean tree
+- [X] T060 All gates green on a clean tree
   - **Type**: Verification | **Risk**: Low | **Covers**: SC-008
   - **Commands**: `node scripts/check-ci-digest-coverage.mjs --selftest`,
     `node scripts/check-ci-digest-coverage.mjs`, `pnpm nx okf-lint`,
     `node scripts/check-openwiki-governance.mjs`, `node scripts/check-toolchain-consistency.mjs`
   - **Expected**: all exit 0 **on Linux**; T049 covers Windows. Per FR-031, record which platform.
+  - **MEASURED — all PASS on LINUX** (FR-031; Windows is T049's job, and this claim does not extend
+    there): `check-ci-digest-coverage --selftest`, `check-ci-digest-coverage`,
+    `check-toolchain-consistency`, `check-openwiki-governance`, `check-no-argv-secrets`,
+    `secret-scan`, `check-topology-scrub`, `check-resource-naming --section=all`, and
+    `pnpm nx okf-lint infrastructure-as-code`. Working tree clean.
 
 - [ ] T061 Close the backlog items with evidence
   - **Type**: Verification | **Risk**: Low
