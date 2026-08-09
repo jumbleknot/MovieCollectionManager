@@ -166,6 +166,51 @@ expired credential and cost this design a full revision cycle to diagnose.
 
 ---
 
+## Verifying a branch WITHOUT opening a pull request
+
+**A push to a feature branch runs almost nothing.** `guardrails` and `app-ci` both scope their
+`push:` trigger to `main` — a deliberate 2026-07-26 change, because a bare `push:` fired both `push`
+and `pull_request` on a branch with an open PR and ran guardrails twice per push on a capacity-1
+runner. Feature branches are gated through `pull_request` instead.
+
+So pushing `051-ci-diagnostics-closure` triggered only `infra-image-scan` and `devcontainer-image`,
+and only because their **path filters** matched the workflow files in the diff. Nothing else ran, and
+`ci-status status --sha` correctly reported one required context still waiting — which reads like a
+slow queue rather than "these workflows are not going to run at all".
+
+**Both expose `workflow_dispatch`, so a branch can be fully verified without a PR:**
+
+```bash
+FORGE=http://<forge>/api/v1
+TOK=$(printf "protocol=http\nhost=<forge-host>\n\n" | git credential fill | grep '^password=' | cut -d= -f2-)
+
+curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+  -H "Authorization: token $TOK" -H 'Content-Type: application/json' \
+  "$FORGE/repos/<owner>/<repo>/actions/workflows/guardrails.yml/dispatches" \
+  -d '{"ref":"<branch>"}'                                   # -> 204
+
+curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+  -H "Authorization: token $TOK" -H 'Content-Type: application/json' \
+  "$FORGE/repos/<owner>/<repo>/actions/workflows/app-ci.yml/dispatches" \
+  -d '{"ref":"<branch>","inputs":{"provider":"anthropic"}}'  # -> 204
+```
+
+Use the **`git credential fill`** credential, not `MCM_FORGE_TOKEN` — the read token 403s. Pass
+`provider: anthropic` to `app-ci` so the agent E2E specs run on the surface that matters.
+
+⚠️ **A dispatched run posts NO commit status** (the same property already documented for
+`cd-deploy`). `ci-status status --sha` will therefore keep saying *waiting* no matter how the run
+goes — it is reading a channel the run never writes to. Read `/actions/tasks` instead:
+
+```bash
+curl -s -H "Authorization: token $TOK" "$FORGE/repos/<owner>/<repo>/actions/tasks?limit=40"
+```
+
+⚠️ **And note the shape of that payload**: Forgejo puts the outcome in **`status`**
+(`running` / `success` / `failure` / `skipped`), *not* in a GitHub-style `status: completed` plus
+`conclusion`. A poller written to the GitHub shape matches nothing and reports silence — which looks
+exactly like "still running".
+
 ## Opening a pull request
 
 ### 🚨 The invariant: a PR's head MUST be a real branch
