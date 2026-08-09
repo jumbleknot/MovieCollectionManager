@@ -111,27 +111,80 @@ operator rather than weakening it silently.
 
 ---
 
-## Story 5 — Windows assertions (#157)
+## Story 7 — line-ending-independent gates
+
+The whole point is to prove this **without** relying on a checkout, so feed carriage-return input
+directly:
+
+```bash
+# the fails-closed one: exemption markers must be visible on CRLF input
+node -e 'import("./scripts/check-ci-digest-coverage.mjs").then(m=>{
+  const lf = "  myjob:\n    # ci-digest-exempt: because reasons\n";
+  console.log("LF  ->", m.parseExemptions(lf));
+  console.log("CRLF->", m.parseExemptions(lf.replace(/\n/g, "\r\n")));
+})'
+```
+
+Expected after the fix: both print the same map. Before the fix, the CRLF line prints an empty map —
+that is PRD §1.3.
+
+```bash
+# the fails-OPEN one: drift must still be reported on CRLF input
+node --test scripts/__tests__/check-openwiki-okf.test.mjs
+```
+
+The new case converts the stale-concept fixture to carriage-return endings and asserts the drift
+warning still names the stale file. Before the fix it prints `✅ conformant` and the check silently
+does not run.
+
+**Declaration layer**:
+
+```bash
+git check-attr text eol -- .forgejo/workflows/app-ci.yml openwiki/quickstart.md
+```
+
+Expected: `eol: lf` for both.
+
+**Operator step after this lands** — the declaration governs future checkouts, not files already in a
+working tree. On the Windows clone:
+
+```powershell
+git rm --cached -r .
+git reset --hard
+git status        # expect clean; if not, the normalization is the diff
+```
+
+---
+
+## Story 5 — Windows parity (#157 and the sweep)
 
 Linux, here:
 
 ```bash
-node --test scripts/__tests__/ci-status.test.mjs
+node --test "scripts/__tests__/*.test.mjs"
 ```
 
-**Mutation check** — the fix must not weaken the assertion. Temporarily make `safeBundleEntryPath`
-return `join(base, …)` without its containment check and confirm the traversal cases `(y2)`–`(y4)`
-**fail**. Revert.
+**Mutation check** — the fix must not weaken the containment assertion. Temporarily make
+`safeBundleEntryPath` return `join(base, …)` without its containment check and confirm the traversal
+cases `(y2)`–`(y4)` **fail**. Revert.
 
-Windows, operator:
+**Skip-guard check** — prove the capability probe skips for the right reason rather than passing by
+luck. Point the step-wrapper suite at a shell that cannot see the working tree and confirm it reports
+a skip naming that condition, not nine failures.
+
+**Tracking check** — create an untracked `frontend/mcm-app/.env.example`, run
+`gen-dev-env.guard.test.mjs`, confirm it stays green; then `git add -N` it and confirm the guard
+fires.
+
+Windows, operator — this is the run that closes item #157:
 
 ```powershell
-node --test scripts/__tests__/ci-status.test.mjs
-node --test scripts\__tests__
+node --test "scripts/__tests__/*.test.mjs"
 ```
 
-Item #157 closes only on a green Windows run. `ci-log-step.test.mjs` shells out to bash and may fail
-on Windows for an unrelated reason — note it, do not fold it in without deciding it belongs.
+Baseline before the change was **408 tests, 392 pass, 15 fail** across five files. Target is zero
+platform-attributable failures. Note `node --test scripts\__tests__` (directory form) does not
+discover tests on Node v24.14.1 — use the glob, which is what CI uses.
 
 ---
 

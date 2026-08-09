@@ -45,8 +45,29 @@ Three judgements worth stating plainly rather than ticking silently:
    leaves the workspace on the host. Encoding "measure it before designing around it" as a
    requirement is what prevents this feature from repeating the failure it exists to close.
 
-3. **Scope is bounded by an explicit exclusion of PRD §1.3**, re-measured as already resolved on
-   2026-08-09 and recorded with its evidence rather than silently omitted, so a later reader does not
-   conclude it was overlooked.
+3. **PRD §1.3 was excluded, then reopened.** The first version of this spec recorded §1.3 as resolved
+   on the strength of a Linux measurement. An operator-run Windows sweep on 2026-08-09 reproduced the
+   PRD's failure verbatim, naming the same three jobs, and identified the cause (a carriage return
+   defeating a marker pattern). The exclusion was wrong and is reversed; §1.3 is now in scope as
+   Story 7, and FR-031 was added so a platform-specific pass can never again be stated as a general
+   one.
 
-No items require spec updates before `/speckit-plan`.
+   This is recorded rather than edited away because it is the same mistake the feature exists to
+   prevent — accepting a green result from an environment that never exercised the failing path.
+
+## Revalidation — 2026-08-09, after the Windows sweep
+
+Re-checked every item above after adding Story 7, five findings to Story 5, FR-016..024 and FR-031,
+and renumbering Story 6 and the cross-cutting requirements.
+
+- **Requirement completeness**: still passes. The new requirements are testable (each names an
+  observable verdict or an executed-count), and SC-006 now carries a measured pre-change baseline
+  (408 tests / 392 pass / 15 fail on Windows) rather than an aspiration.
+- **Scope**: grew materially and deliberately, at the operator's direction, with the growth and its
+  cause recorded in Assumptions. Out of Scope gained an explicit boundary — a general repository-wide
+  parser audit is *not* included — so the growth stays bounded.
+- **No [NEEDS CLARIFICATION] markers** were introduced.
+- **Numbering**: story numbers follow discovery order, not priority; US7 is P1. Stated in
+  Traceability so it does not read as an error.
+
+No items require further spec updates before `/speckit-tasks`.

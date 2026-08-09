@@ -27,11 +27,19 @@ knowledge: a Windows-only assertion failure in the very test suite that guards C
 and two undocumented cargo behaviours that cost a session and are recorded nowhere a future session
 would look (#155).
 
-**Already resolved, recorded here so it is not re-planned.** PRD §1.3 claimed
-`check-ci-digest-coverage.mjs` fails on a clean tree. Re-measured on a clean checkout 2026-08-09:
-`✓ ci-digest coverage gate passed (every job in 7 workflow(s) publishes a guarded failure digest)`,
-exit 0. All three jobs the PRD named are covered. It is **out of scope** and its PRD success criterion
-SC-3 is satisfied as-is.
+**PRD §1.3 is live, and its cause is now known.** This spec initially recorded §1.3 as resolved on
+the strength of a clean Linux run (`✓ ci-digest coverage gate passed`, exit 0, 2026-08-09). That was
+wrong, and wrong in the way this feature exists to prevent: a green result was accepted as evidence
+on a platform that never exercised the failing path. An operator-run Windows sweep on the same day
+reproduced the PRD's failure verbatim, naming the **same three jobs** the PRD named — `app-ci /
+changes`, `app-ci / trigger-cd`, `infra-image-scan / changes`.
+
+The cause is line endings. The three jobs *do* carry exemption markers; the parser cannot see them on
+a CRLF checkout, because it splits on `\n` and its marker pattern cannot match a line ending in `\r`
+— while the adjacent job-header pattern absorbs the `\r` and survives. The asymmetry is the bug.
+§1.3 is therefore **in scope**, and the Windows sweep that found it surfaced a second, worse instance
+of the same class in a different gate — one that fails *open*, reporting conformance while silently
+skipping its check.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -138,24 +146,71 @@ the developer without it.
 
 ---
 
-### User Story 5 - The diagnostics test suite is green on Windows (Priority: P3)
+### User Story 5 - The diagnostics test suite is honest on Windows (Priority: P3)
 
-One case in the test suite that guards CI diagnostics compares a fully-resolved path against a joined
-path. On Windows those differ by the drive root, so a developer running the suite locally sees a red
-test that is not their fault. CI is Linux, so it stays green there — which is exactly the problem: a
-red test nobody caused trains people to ignore red.
+The suite that guards CI diagnostics is red on Windows in ways no developer caused. An operator sweep
+measured 408 tests: 392 pass, 15 fail, across five files. The failures are not one defect but three
+kinds, and only the first was known when this feature was scoped:
 
-**Why this priority**: Small and self-contained, and it affects local developer experience rather
-than a merge gate.
+- **Path handling** — an assertion comparing a fully-resolved path against a joined one (they differ
+  by the drive root); a gate that reports a finding's location with the platform's own separator
+  where the test expects a stable one; and a test module that dynamically imports an absolute path
+  without converting it to a file URL, which aborts the whole file before any case runs.
+- **A capability probe that answers the wrong question** — the step-wrapper suite asks "does a shell
+  exist" when what it needs is "can that shell see my files". A shell from a different filesystem
+  namespace answers yes, then fails every case with a not-found status, so the intended skip never
+  engages and nine cases fail for a reason unrelated to what they test.
+- **A tripwire keyed on the filesystem rather than on version control** — a guard asserts a certain
+  example file is absent, but tests the working directory rather than tracked files. The file is
+  ignored by version control, so any developer who creates one locally trips a test that is meant to
+  detect the file being *added to the repository*.
 
-**Independent Test**: Run the suite on Windows and on Linux.
+**Why this priority**: no merge gate is affected — CI is Linux and stays green. But a suite that is
+red for reasons the developer did not cause trains people to ignore red, and this is the suite that
+guards CI diagnosis.
+
+**Independent Test**: Run the full script suite on Windows and on Linux and compare.
 
 **Acceptance Scenarios**:
 
 1. **Given** the suite runs on Windows, **When** the affected cases execute, **Then** they pass.
 2. **Given** the suite runs on Linux, **When** the affected cases execute, **Then** they still pass.
-3. **Given** a path that genuinely escapes the bundle root, **When** the affected cases execute,
+3. **Given** a path that genuinely escapes the bundle root, **When** the containment cases execute,
    **Then** they still fail — the fix must not weaken what the test proves.
+4. **Given** a shell that cannot reach the files under test, **When** the step-wrapper suite runs,
+   **Then** it skips with a reason naming that condition, rather than failing every case.
+5. **Given** the example file exists locally but is not tracked, **When** the guard runs, **Then** it
+   does not fire; **and given** the file is added to version control, **Then** it does.
+
+---
+
+### User Story 7 - A gate enforces the same rule regardless of line endings (Priority: P1)
+
+Two gates parse repository text line-by-line and both mis-handle a carriage return, so a checkout
+made on a platform that normalizes line endings gets a different verdict from the same commit. One
+fails closed — it reports jobs as uncovered whose exemptions it simply could not see, which is PRD
+§1.3 and cost that PRD a wrong diagnosis. The other fails **open**: an unparsable timestamp is
+treated as "no timestamp to compare", so a staleness check silently does not run and the gate reports
+conformance.
+
+**Why this priority**: a gate that reports green while not checking is precisely the failure class
+this whole feature exists to close, and it was found inside the feature's own toolchain. It also
+means every guardrail verdict is contingent on a contributor's local version-control configuration —
+so two people can get different answers from the same commit.
+
+**Independent Test**: Convert the relevant fixtures and inputs to carriage-return line endings and
+run both gates; the verdict must be identical to the line-feed case.
+
+**Acceptance Scenarios**:
+
+1. **Given** repository text with carriage-return line endings, **When** the coverage gate runs,
+   **Then** it sees the exemption markers and reaches the same verdict as on line-feed text.
+2. **Given** a stale entry in text with carriage-return line endings, **When** the conformance gate
+   runs, **Then** the staleness check runs and reports the drift — it does not silently pass.
+3. **Given** a fresh checkout on a platform that normalizes line endings, **When** the affected file
+   types are inspected, **Then** they carry line-feed endings.
+4. **Given** a parser in this family, **When** it is given carriage-return input directly, **Then**
+   it behaves identically — the gate does not depend on the checkout being normalized.
 
 ---
 
@@ -246,31 +301,52 @@ corollary.
   MUST truncate safely within that channel's size limit.
 - **FR-015**: When the purpose-scoped credential is present, behaviour MUST be unchanged.
 
-**Story 5 — Windows-safe assertions**
+**Story 5 — Windows parity for the diagnostics suite**
 
-- **FR-016**: The affected assertions MUST compare paths in a form that is identical on Windows and
-  Linux, without loosening what they assert.
-- **FR-017**: The other cases in the same block MUST be checked for the same defect and fixed if
-  present.
+- **FR-016**: Path assertions MUST compare values normalized identically on both platforms, without
+  loosening what they assert.
+- **FR-017**: A gate that reports a finding's location MUST emit a stable, platform-independent
+  representation of that location.
+- **FR-018**: A test module MUST load on both platforms — an absolute path used as a dynamic import
+  specifier MUST be converted to a file URL first.
+- **FR-019**: A capability probe that decides whether a suite can run MUST test the capability the
+  suite actually needs, and MUST skip with a reason naming the unmet condition rather than failing
+  every case.
+- **FR-020**: A guard asserting a file's absence from the repository MUST test version-control
+  tracking, not working-directory presence.
+
+**Story 7 — line-ending-independent gates**
+
+- **FR-021**: Every gate parser in this family MUST produce an identical verdict for input with
+  carriage-return line endings and input with line-feed endings.
+- **FR-022**: A value parsed from repository text MUST be normalized before it is validated, so an
+  unparsable value can never be silently reinterpreted as "nothing to check".
+- **FR-023**: The repository MUST declare line-ending normalization for the file types these gates
+  parse, so a checkout does not introduce the condition in the first place.
+- **FR-024**: FR-021 MUST be enforced by a test that feeds carriage-return input directly, so the
+  guarantee does not depend on the checkout being normalized.
 
 **Story 6 — documentation**
 
-- **FR-018**: The dev-container runbook MUST document the offline dependency-resolution behaviour and
+- **FR-025**: The dev-container runbook MUST document the offline dependency-resolution behaviour and
   its lock-discipline corollary.
-- **FR-019**: A canonical knowledge-bundle concept MUST document the whole-crate formatting scope
+- **FR-026**: A canonical knowledge-bundle concept MUST document the whole-crate formatting scope
   trap, the single-file alternative, the recovery step, and the "format only what you touch"
   convention including the pre-existing drift and lint-gate context that makes it meaningful.
-- **FR-020**: The stale toolchain-scope claim that the Rust and Python toolchains are deferred MUST
+- **FR-027**: The stale toolchain-scope claim that the Rust and Python toolchains are deferred MUST
   be corrected.
-- **FR-021**: The knowledge index MUST be regenerated by its generator, not hand-edited, and the
+- **FR-028**: The knowledge index MUST be regenerated by its generator, not hand-edited, and the
   governance and lint gates MUST pass.
 
 **Cross-cutting**
 
-- **FR-022**: Every claim of success in this feature MUST be evidenced by an observed result — an
+- **FR-029**: Every claim of success in this feature MUST be evidenced by an observed result — an
   executed-test count, a retrieved log, a published signal — never by an exit status alone.
-- **FR-023**: Commits that deliberately break CI for demonstration purposes MUST be reverted before
+- **FR-030**: Commits that deliberately break CI for demonstration purposes MUST be reverted before
   merge, and their absence verified on the branch tip.
+- **FR-031**: A claim that something passes MUST name the platform it was observed on. A green result
+  on one platform is not evidence for another — this feature's own §1.3 reversal is the worked
+  example.
 
 ### Key Entities
 
@@ -296,15 +372,27 @@ corollary.
   failing step's identity to the developer.
 - **SC-005**: The 2026-08-01 empty-credential failure is reproduced, and its cause is readable from
   CI output alone within five minutes of the run finishing.
-- **SC-006**: The diagnostics test suite passes on Windows and on Linux, and still fails when given a
-  path that escapes the bundle root.
-- **SC-007**: Each of the two cargo facts is found by searching the documentation locations a session
+- **SC-006**: The full script test suite passes on Windows and on Linux. Measured baseline on Windows
+  before the change: 408 tests, 392 pass, **15 fail** across five files. Target: zero failures
+  attributable to platform, and the containment cases still fail when given a path that escapes the
+  bundle root.
+- **SC-007**: Both gates in the line-ending family reach an identical verdict on carriage-return and
+  line-feed input, proven by a test that supplies carriage-return input directly rather than by
+  relying on the checkout. In particular the staleness check runs and reports drift on
+  carriage-return input, where today it silently does not run.
+- **SC-008**: PRD §1.3 is demonstrably closed — the coverage gate exits 0 on a clean checkout **on
+  both platforms**, with the three previously-reported jobs recognised as exempt.
+- **SC-009**: Each of the two cargo facts is found by searching the documentation locations a session
   would actually consult, and the governance and lint gates pass on the result.
-- **SC-008**: The branch tip carries no deliberate-breakage commit.
+- **SC-010**: The branch tip carries no deliberate-breakage commit.
 
 SC-002 and SC-005 MUST be demonstrated by actually breaking a job, not by inspection. Both incidents
 this feature closes were prolonged by treating a green run as evidence when it never exercised the
 failing path.
+
+SC-006, SC-007 and SC-008 MUST each name the platform they were observed on. This spec's own initial
+claim that §1.3 was resolved was a Linux-only measurement presented as a general one, and it was
+wrong.
 
 ## Assumptions
 
@@ -312,13 +400,21 @@ failing path.
   operator's explicit direction, consistent with the repository's batching convention given a single
   CI runner and a long E2E job. Item #158's own analysis recommended keeping it separate as a p1;
   that recommendation was considered and overridden.
-- **Windows verification is the operator's.** The development container is Linux, so US5 is
-  implemented and proven on Linux here; the Windows run is performed by the operator, and backlog
-  item #157 stays open until they confirm it.
+- **Windows verification is the operator's.** The development container is Linux, so US5 and US7 are
+  implemented and proven on Linux here; the Windows runs are performed by the operator, and backlog
+  item #157 stays open until they confirm. The pre-change Windows baseline (408 tests / 15 failures)
+  was supplied by the operator on 2026-08-09 and is the measurement US5 is judged against.
+- **Scope grew after the Windows baseline arrived.** Item #157 described one assertion; the sweep it
+  prompted found seven defects across three classes, two of which are live gate bugs rather than test
+  bugs. The operator directed that all seven land in this feature.
 - **Deliberate breakage happens on this branch.** SC-002 and SC-005 are demonstrated with temporary
   commits on `051-ci-diagnostics-closure`, reverted before merge, rather than on a separate throwaway
   branch.
-- **PRD §1.3 is closed, not deferred.** Verified by measurement on 2026-08-09 and excluded from scope.
+- **Line-ending normalization is fixed at both layers.** The repository declares normalization for the
+  affected file types *and* the parsers tolerate carriage returns, at the operator's direction. A gate
+  must not depend on a contributor's local version-control configuration for its verdict — especially
+  the one that fails open. Existing checkouts on a normalizing platform need to be re-normalized after
+  the declaration lands; that is an operator step, not an automated one.
 - **Retention and redaction semantics carry over.** The existing per-run scoping, retention window and
   redaction behaviour are correct; this feature preserves them across a change of location rather than
   redesigning them.
@@ -334,14 +430,22 @@ failing path.
   inverted around that absence.
 - Moving jobs between executors for their own sake. Executor choice is driven by real constraints.
 - Shipping logs to an external service, or retention beyond the existing window.
-- PRD §1.3 (`check-ci-digest-coverage.mjs` clean-tree failure) — verified resolved, see Context.
+- Auditing every parser in the repository for line-ending sensitivity. This feature fixes the two
+  gates the sweep found and declares normalization for the file types they read; a general audit is
+  backlog work if it is wanted.
+- Making the mobile/emulator half of the E2E gate run on Windows. Nothing in this feature changes
+  where those flows run.
 
 ## Traceability
 
 | Backlog item | Story | PRD section |
 | --- | --- | --- |
 | #158 (p1, bug) | US1 | — |
-| #156 (p2, tech-debt) | US2, US3, US4 | §3.1, §3.2, §3.3 |
+| #156 (p2, tech-debt) | US2, US3, US4 | §3.1 (rejected — see research R1), §3.2, §3.3 |
 | #157 (p3, bug) | US5 | §1.4 / §3.4 |
 | #155 (p3, chore) | US6 | — |
-| — (verified resolved) | — | §1.3 — closed, out of scope |
+| #157's Windows sweep (new findings, 2026-08-09) | US5, US7 | §1.3 — **reopened**, cause identified |
+
+Story priority does not follow story numbering: US7 is P1 and was added last, after the operator's
+Windows sweep reopened PRD §1.3. Numbering follows the order the work was discovered, so that the
+provenance of each story stays legible.

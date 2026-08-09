@@ -181,6 +181,10 @@ the criterion can be closed with evidence rather than with a judgement call.
 
 ## R5 — Item #157 is a two-line fix with a real trap. **DECIDED: compare resolved-to-resolved**
 
+> **Superseded in scope by R8.** The decision below stands for the one assertion #157 named, but the
+> operator's Windows sweep found six further defects. R8 is the authority on Story 5's scope.
+
+
 [ci-status.mjs:786-787](../../scripts/ci-status.mjs#L786-L787) returns `resolve(base, …)`;
 [ci-status.test.mjs:348](../../scripts/__tests__/ci-status.test.mjs#L348) expects `join(root, …)`.
 On Windows `resolve` prepends the current drive and `join` does not, so they differ.
@@ -244,6 +248,110 @@ deliberate-breakage commits that are reverted before merge.
 
 ---
 
+## R8 — The Windows sweep. Seven defects in three classes, two of them live gate bugs
+
+**Source**: operator-run measurement on a Windows host, 2026-08-09, Node v24.14.1. Read-only probes;
+nothing was changed. This is the only measurement in this document not taken by the agent, and it is
+the one that overturned a claim the agent had asserted.
+
+**Baseline**: `node --test "scripts/__tests__/*.test.mjs"` → **408 tests, 392 pass, 15 fail, 1
+skipped**, exit 1, across five files. (The glob form matters: `node --test <dir>` does not discover
+tests on this Node build, and the glob is what CI uses anyway.)
+
+### R8a — PRD §1.3 is NOT resolved. **The agent's earlier claim was wrong.**
+
+This spec recorded §1.3 as closed on the basis of a Linux run: `✓ ci-digest coverage gate passed`,
+exit 0. The Windows run produces the PRD's failure verbatim, naming **the same three jobs**:
+`app-ci / changes`, `app-ci / trigger-cd`, `infra-image-scan / changes`. The PRD's author was
+evidently on Windows; the agent measured on Linux and generalised.
+
+**This is the feature's own thesis, committed by the feature.** A green result was accepted as
+evidence from an environment that never exercised the failing path — which is exactly what SC-002 and
+SC-005 forbid, and exactly what the two 2026-08-01 incidents did. It is recorded here rather than
+quietly corrected, because the correction is more instructive than the fix. FR-031 exists because of
+it: a pass claim must name the platform it was observed on.
+
+**Root cause, verified by reading the code**:
+[check-ci-digest-coverage.mjs:47](../../scripts/check-ci-digest-coverage.mjs#L47) does
+`text.split('\n')`, leaving a trailing `\r` on every line of a CRLF checkout. The marker pattern
+`#\s*<marker>:(.*)$` then cannot match: `.` does not consume `\r` (it is a line terminator in
+JavaScript regular expressions), and `$` without the multiline flag matches only end-of-input. The
+job-header pattern on the adjacent line, `^ {2}([A-Za-z0-9_-]+):\s*$`, survives because its `\s*`
+absorbs the `\r`. **That asymmetry is the entire bug** — the parser sees the jobs but not their
+exemptions, so it reports as uncovered three jobs that are correctly exempt.
+
+Direction of failure: **closed**. Noisy and safe, but wrong, and it sent a PRD author after the wrong
+diagnosis.
+
+### R8b — The same class in a second gate, failing **open**
+
+[check-openwiki-okf.mjs:254](../../scripts/check-openwiki-okf.mjs#L254) guards its drift check with
+`!Number.isNaN(Date.parse(fields.timestamp))` on the **untrimmed** value. On CRLF input the timestamp
+parses as `…Z\r` → `NaN` → the guard reads it as "no usable timestamp" and the staleness check never
+runs. The gate then reports `✅ conformant`. V5 at
+[line 237](../../scripts/check-openwiki-okf.mjs#L237) escapes this only because it calls `.trim()`
+first.
+
+Direction of failure: **open**. A gate reporting green while not checking — the exact failure class
+this feature exists to close, found inside the feature's own toolchain. This is why Story 7 is P1.
+
+### R8c — Root cause of the family, and the fix at both layers
+
+[.gitattributes](../../.gitattributes) declares `eol=lf` for `*.sh` only, with a comment explaining
+that a CRLF shebang breaks a container. The same reasoning was never extended to the file types the
+gates *parse*. With `core.autocrlf=true`, every `.yml` and `.md` in a Windows working tree is CRLF.
+
+**Decision (operator-directed): fix both layers.**
+
+1. Declare normalization for the parsed file types in `.gitattributes`, so the condition stops being
+   produced.
+2. Make both parsers carriage-return tolerant, so a gate's verdict never depends on a contributor's
+   local version-control configuration.
+
+Layer 1 alone leaves the gates config-dependent; layer 2 alone leaves the next parser to inherit the
+trap. **Operator note**: existing Windows clones need re-normalizing after this lands
+(`git rm --cached -r . && git reset --hard`) — the declaration governs future checkouts, not files
+already in a working tree.
+
+### R8d — Path handling, three defects
+
+| Location | Defect | Fix |
+| --- | --- | --- |
+| `ci-status.test.mjs:347` | `resolve()` result compared to a `join()` expectation; `resolve` prepends the drive | Compare resolved-to-resolved (R5) |
+| `check-toolchain-consistency.mjs` findings output | Emits the platform separator (`.forgejo\workflows\ci.yml`) where the test expects a stable one | Normalize the **emitted** location to forward slashes — it is a report for a human, and a stable representation is worth more than the platform's native one. Fix the source, not the assertion |
+| `wiki-maintain.test.mjs:24` | `await import(SCRIPT)` on an absolute path — `ERR_UNSUPPORTED_ESM_URL_SCHEME`, protocol `e:`. Aborts the whole file before any case runs | `pathToFileURL()`. Verified: that helper appears **nowhere** in the repository, so this pattern is worth checking for elsewhere |
+
+Note the second is a **source** fix, not a test fix. The test is asserting the more useful contract.
+
+### R8e — A capability probe that answers the wrong question
+
+`ci-log-step.test.mjs:21` probes `bash -c 'exit 0'` to decide whether to skip. On this host `bash`
+resolves to WSL's bash, which starts successfully — and then cannot see `E:\…`, so all nine cases
+fail with status 127 rather than skipping. Git Bash is installed but is not what is on `PATH`.
+
+This is the same shape as the gate in CLAUDE.md about proving "it can't run in this environment": the
+probe answers *does a shell exist* when the question is *can that shell reach my files*. **Decision**:
+probe the capability actually needed — have the candidate shell stat the script under test — and skip
+with a reason naming the unmet condition.
+
+### R8f — A tripwire keyed on the filesystem rather than on version control
+
+`gen-dev-env.guard.test.mjs:98` asserts `frontend/mcm-app/.env.example` is absent. Verified here: the
+path is **gitignored** (`.gitignore:13`, `*.env.*`) and does not exist in the repository. The operator
+has an untracked local copy, so the guard fires for them and not in CI.
+
+The guard's own message — "if an `.env.example` is ever added, this guard and the generator advice
+should be revisited together" — makes the intent clear: it is watching for the file being **added to
+the repository**. **Decision**: test tracking (`git ls-files`), not working-directory presence. Lowest
+severity of the seven, and a genuine defect.
+
+### Scope decision
+
+All seven land in this feature, at the operator's direction. R8a/R8b become Story 7 (P1, gate
+correctness); R8d/R8e/R8f become Story 5 (P3, developer experience).
+
+---
+
 ## Summary of decisions
 
 | # | Decision | Effect on the spec |
@@ -252,6 +360,10 @@ deliberate-breakage commits that are reverted before merge.
 | R2 | Story 2 becomes step-instrumentation coverage + a stricter coverage gate | New requirement surface; measured baseline recorded above |
 | R3 | Keep §3.3 — the credential is the actual root cause | FR-013/014/015 unchanged, gated on R7 |
 | R4 | Fix #158 **and** the newly found admin-spec skip; document intentional omissions | FR-001/002/003 unchanged; scope grows by one defect |
-| R5 | Compare resolved-to-resolved; prove the assertion still bites | FR-016/017 unchanged |
-| R6 | Placement per CLAUDE.md's "where a new learning goes" | FR-018..021 unchanged |
+| R5 | Compare resolved-to-resolved; prove the assertion still bites | Superseded in scope by R8 |
+| R6 | Placement per CLAUDE.md's "where a new learning goes" | FR-025..028 |
 | R7 | Auto-token capability is unproven — probe before implementing Story 4 | Story 4 sequenced behind a probe |
+| **R8a** | **PRD §1.3 is reopened — the agent's "resolved" claim was a Linux-only measurement** | New Story 7; SC-008; FR-031 |
+| R8b | A second gate in the same class fails **open** — silent skipped staleness check | Story 7, P1 |
+| R8c | Fix line endings at both layers — declaration *and* tolerant parsing | FR-021..024 |
+| R8d/e/f | Three path defects, one wrong-question probe, one filesystem-vs-tracking tripwire | FR-016..020 |

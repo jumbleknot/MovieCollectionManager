@@ -18,10 +18,17 @@ enforce instrumentation only requires *one* wrapped step per job. The reason the
 nothing on 2026-08-01 is separately that it could not authenticate. See
 [research.md](./research.md) R1-R3.
 
+A second correction arrived with the operator's Windows sweep, and it landed on this plan's own
+earlier claim. **PRD §1.3 is not resolved** — the agent recorded it closed on a Linux run, and the
+Windows run reproduces the PRD's failure naming the same three jobs. The cause is a carriage return
+defeating a marker pattern, and a second gate in the same family fails *open*: it reports conformance
+while silently skipping its staleness check. See [research.md](./research.md) R8.
+
 So the work is: forward the environment flags the E2E container is missing (two silent skips, not
 one), instrument the steps that can actually fail and tighten the gate that is supposed to require
-it, make a broken digest distinguishable from an unneeded one, and give the digest a credential path
-that survives a secretless run. Then the two riders.
+it, make a broken digest distinguishable from an unneeded one, give the digest a credential path that
+survives a secretless run, make two gates line-ending-independent at both the declaration and the
+parsing layer, and bring the script suite to parity on Windows. Then the documentation rider.
 
 ## Technical Context
 
@@ -108,15 +115,23 @@ specs/051-ci-diagnostics-closure/
 ├── renovate.yml           # Story 2
 └── cd-deploy.yml          # Story 2
 
+.gitattributes                     # Story 7 — declare eol=lf for the parsed file types
+
 scripts/
 ├── ci-failure-digest.mjs          # Stories 3 + 4 — outcome marker, credential fallback
 ├── ci-status.mjs                  # Story 3 — report "ran and failed" vs "not published"
-├── check-ci-digest-coverage.mjs   # Story 2 — require every run step wrapped or exempt
+├── check-ci-digest-coverage.mjs   # Story 2 — per-step coverage; Story 7 — CRLF-tolerant markers
+├── check-openwiki-okf.mjs         # Story 7 — trim before validating; the fails-open one
+├── check-toolchain-consistency.mjs# Story 5 — emit a stable location, not the platform separator
 ├── ci-log-step.sh                 # unchanged (research R1) — no relocation
 └── __tests__/
     ├── ci-failure-digest.test.mjs
-    ├── ci-status.test.mjs             # Story 5 — the Windows assertion
-    └── check-ci-digest-coverage.test.mjs
+    ├── ci-status.test.mjs             # Story 5 — the resolve/join assertion
+    ├── check-ci-digest-coverage.test.mjs  # Story 7 — feed CRLF input directly
+    ├── check-openwiki-okf.test.mjs        # Story 7 — prove drift is reported on CRLF
+    ├── ci-log-step.test.mjs               # Story 5 — probe the capability actually needed
+    ├── wiki-maintain.test.mjs             # Story 5 — pathToFileURL before dynamic import
+    └── gen-dev-env.guard.test.mjs         # Story 5 — assert on tracking, not on the filesystem
 
 frontend/mcm-app/tests/e2e/web/
 └── setup/agent-stack-gate.ts      # unchanged — the gate is correct; only its input was missing
@@ -141,18 +156,26 @@ structural decision and is justified in research.md R1.
 
 Ordered by dependency, not by story number. The one hard ordering constraint is R7.
 
-1. **Story 5 (#157)** and **Story 6 (#155)** — independent of everything, no CI required. Do first
-   so the branch carries value even if the CI-dependent work stalls.
-2. **Story 1 (#158)** — self-contained workflow edit; unblocks the question of whether the agent
+1. **Story 7** — the two line-ending gate bugs and the `.gitattributes` declaration. **First**, and
+   ahead of Story 2, for a hard reason: Story 2 modifies `check-ci-digest-coverage.mjs` and its
+   exemption markers, and doing that on top of a parser that cannot see markers on some checkouts
+   would build the new rule on a broken reader. Fixing the parser first also closes PRD §1.3, which
+   removes a known-false failure from every subsequent local run.
+2. **Story 5 (#157 + the sweep)** and **Story 6 (#155)** — independent, no CI required. Do next so
+   the branch carries value even if the CI-dependent work stalls, and so the operator's Windows
+   re-run can cover Stories 5 and 7 in a single pass.
+3. **Story 1 (#158)** — self-contained workflow edit; unblocks the question of whether the agent
    specs are actually green, which may widen scope and is therefore worth learning early.
-3. **Story 3** — the digest outcome signal. Pure script + unit test; also builds the vocabulary
+4. **Story 3** — the digest outcome signal. Pure script + unit test; also builds the vocabulary
    Story 4 reports through.
-4. **Story 2** — instrumentation sweep and the stricter coverage gate. Largest mechanical change;
+5. **Story 2** — instrumentation sweep and the stricter coverage gate. Largest mechanical change;
    the tightened gate must land with the wrapping, or it fails the build it is added in.
-5. **R7 probe** — temporary commit, answers the auto-token question.
-6. **Story 4** — implemented against whatever R7 returns.
-7. **Rehearsals for SC-002 and SC-005** — deliberate breakage, evidence captured.
-8. **Revert every temporary commit**, verify the branch tip is clean, then open the PR.
+6. **R7 probe** — temporary commit, answers the auto-token question.
+7. **Story 4** — implemented against whatever R7 returns.
+8. **Rehearsals for SC-002 and SC-005** — deliberate breakage, evidence captured.
+9. **Operator Windows re-run** — confirms SC-006, SC-007 and SC-008 on the platform that produced the
+   baseline. Item #157 closes on this, not before.
+10. **Revert every temporary commit**, verify the branch tip is clean, then open the PR.
 
 ## Risks and how each is handled
 
@@ -162,6 +185,9 @@ Ordered by dependency, not by story number. The one hard ordering constraint is 
 | Newly-running agent specs fail (item #150's open question) | Expected, not a surprise. Triage and either fix or attribute to a baseline with evidence. Reverting to a skip is prohibited. If the fix is a product defect beyond the harness, it is filed and split. |
 | Wrapping 48 more steps widens what gets captured and published | Re-check `redactForPublication` coverage against the newly wrapped steps explicitly; do not assume it carries over. |
 | The stricter coverage gate breaks CI the moment it lands | It ships in the same change as the wrapping it requires, and its own self-test proves both the pass and the fail path before the real scan — the pattern the other gates in `guardrails / naming` already use. |
+| The `.gitattributes` change rewrites line endings across many files, burying the real diff | Land the declaration as its own commit, separate from any behaviour change, so the noisy re-normalization is reviewable in isolation. Tell the operator explicitly that existing Windows clones need `git rm --cached -r . && git reset --hard` — the declaration governs checkouts, not files already in a working tree. |
+| Making the coverage parser CRLF-tolerant changes verdicts on a Windows tree — including, possibly, to *stricter* | That is the point, and it is why Story 7 runs before Story 2. Any newly-surfaced coverage failure is real and gets fixed in Story 2's sweep rather than papered over. |
+| A platform-only claim is generalised again | FR-031. Every pass claim in this feature names the platform it was observed on; SC-006/007/008 require it explicitly. This risk already materialised once — see research R8a. |
 | Deliberate-breakage commits reach `main` | FR-023: revert before merge and verify the branch tip. The final validation step greps the branch diff for the probe and breakage markers. |
 | A digest change makes a broken digest fatal | The unconditional exit 0 and `continue-on-error` both stay. The new signal is a side effect, never a status change. Covered by an explicit unit test. |
 

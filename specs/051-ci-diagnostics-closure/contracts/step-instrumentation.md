@@ -53,6 +53,15 @@ exactly what this feature exists to surface.
 | `guardrails / sast` | 11 | 1 | 9 |
 | `wiki-maintain / maintain` | 11 | 2 | 8 |
 
+## Prerequisite — the parser must be able to see the markers
+
+The exemption mechanism this contract depends on **does not currently work on a carriage-return
+checkout**: `parseExemptions` splits on `\n` and its marker pattern cannot match a line ending in
+`\r`, so every exemption is invisible and correctly-exempt jobs report as uncovered. That is PRD §1.3
+and research R8a. Story 7 fixes it, and Story 7 therefore runs **before** this contract is
+implemented — a stricter per-step rule built on a reader that cannot see exemptions would be
+unfixable by the very mechanism it offers as the escape hatch.
+
 ## Implementation constraints
 
 1. **No new dependencies.** The gate runs in `guardrails / naming` via
