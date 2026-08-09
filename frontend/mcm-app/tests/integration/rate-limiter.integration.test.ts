@@ -120,8 +120,10 @@ describe('rate-limiter — integration (real Redis db 1)', () => {
   });
 
   // FR-004 — the session id is the rate-limit key, so it is the obvious thing to log and the one
-  // thing that must not appear. The logger redacts by key NAME, so the event must use `sessionId`.
-  it('redacts the session id in both refresh events', async () => {
+  // thing that must not appear. It is omitted entirely rather than redacted: under `sessionId` the
+  // logger would render a useless constant while `mcm-no-token-logging` still blocked it by key
+  // name, and under any other key it would leak.
+  it('does not log the session id in either refresh event', async () => {
     const sessionId = `test-${randomUUID()}`;
 
     const entries = await captureLogEntries(async () => {
@@ -134,6 +136,7 @@ describe('rate-limiter — integration (real Redis db 1)', () => {
       ...auditEntriesFor(entries, 'refresh_rate_limited'),
     ];
     expect(refreshEvents.length).toBeGreaterThan(0);
+    for (const e of refreshEvents) expect(e).not.toHaveProperty('sessionId');
     expect(findCredentialLeaks(refreshEvents, [sessionId])).toEqual([]);
   });
 });

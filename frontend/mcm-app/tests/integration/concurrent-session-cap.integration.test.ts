@@ -58,10 +58,12 @@ describe('concurrent session cap — integration (real Redis db 1)', () => {
     expect(evictions[0]).toMatchObject({ audit: true, userId });
   });
 
-  // Feature 052 FR-004 — the event must not become a credential leak. The evicted session is logged
-  // under the key `sessionId` PRECISELY so the logger's existing SENSITIVE_KEYS redaction applies to
-  // it; a bespoke key like `evictedSessionId` would bypass that guard silently.
-  it('redacts the evicted session id rather than logging it in clear', async () => {
+  // Feature 052 FR-004 — the event must not become a credential leak. The evicted session id is not
+  // logged AT ALL. Logging it under `sessionId` would be redacted to a constant (useless) and would
+  // still trip the `mcm-no-token-logging` SAST rule, which matches on the key name; logging it under
+  // any other key would leak it. No form of including it is both useful and safe, and the counts do
+  // not need it. The SAST gate caught the first attempt (run 1605).
+  it('does not log the evicted session id in any form', async () => {
     const userId = randomUUID();
     const max = env.maxConcurrentSessions;
 
@@ -74,7 +76,8 @@ describe('concurrent session cap — integration (real Redis db 1)', () => {
 
     const evictions = auditEntriesFor(entries, 'session_evicted');
     expect(evictions).toHaveLength(1);
-    expect(evictions[0]!.sessionId).toBe('[REDACTED]');
+    expect(evictions[0]).not.toHaveProperty('sessionId');
+    // Belt and braces: no created session id appears anywhere in the serialised event, under any key.
     expect(findCredentialLeaks(evictions, created)).toEqual([]);
   });
 });

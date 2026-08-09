@@ -199,6 +199,24 @@ without a known-shape event. Build the contract first so both sides agree.
 - [X] T011 [US1] ~~Emit the per-attempt outcome in `refresh+api.ts`~~ — **folded into T010**
   - Superseded by the design correction above. `refresh+api.ts` is unchanged. ✔
 
+- [X] T011a [US1] Remove the session id from all three events — **the SAST gate was right**
+  - **Type**: Remediation | **Risk**: Low | **Requirements**: FR-004
+  - **Found by CI, not locally**: `guardrails / sast` on run **1605** failed with exactly three
+    blocking findings, all mine — `security.sast.rules.mcm-no-token-logging` at
+    `rate-limiter.ts:148`, `rate-limiter.ts:155`, `session-manager.ts:142`. The rule matches on the
+    **key name**, and its message says what to do: *"the logger redacts by field name, so pass an
+    object with safe keys (e.g. userId) instead."*
+  - **T009's original reasoning was defensible and still wrong.** Naming the key `sessionId` did make
+    the logger redact it — to the literal constant `[REDACTED]`, which carries **zero** information.
+    So the field bought nothing and cost a blocking security finding. Under any other key it would
+    have leaked. There is no form of including it that is both useful and safe, and the counts this
+    feature needs do not use it.
+  - **Fixed by removing the field, not by allowlisting it.** An allowlist entry would have recorded a
+    permanent security exception in exchange for a value that renders as a constant.
+  - Tests updated from "asserts it is redacted" to "asserts it is absent", keeping the
+    `findCredentialLeaks` check so no session id can reappear under a differently-named key.
+  - **Verify GREEN**: tier still **120 collected / 119 pass / 1 fail / 0 skipped** — unchanged. ✔
+
 - [X] T012 [US1] Confirm the instrumentation is not the perturbation
   - **Type**: Verification | **Risk**: Medium
   - **MEASURED, not estimated (2026-08-09)**: 20 requests to the running dev BFF produced exactly

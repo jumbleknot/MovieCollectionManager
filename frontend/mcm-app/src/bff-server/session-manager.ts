@@ -136,12 +136,13 @@ async function evictOldestSession(userId: string): Promise<void> {
   // `concurrent` or `session`. Evicting someone's session is a security-relevant action; it should
   // have said so regardless of what needed measuring.
   //
-  // `sessionId` is deliberately the key name: the logger redacts by key, and that name is already in
-  // its SENSITIVE_KEYS. A more descriptive key like `evictedSessionId` would read better and would
-  // silently bypass the redaction.
+  // The evicted session id is deliberately NOT logged. Passing it under the key `sessionId` would
+  // have been redacted to the constant "[REDACTED]" by the logger — conveying nothing — while still
+  // tripping `mcm-no-token-logging`, which matches on the key NAME. Passing it under any other key
+  // would have leaked it. There is no version of logging it that is both useful and safe, and the
+  // counts this event exists to produce do not need it. (Caught by the SAST gate on run 1605.)
   logger.audit('session_evicted', {
     userId,
-    sessionId: oldest.sessionId,
     activeSessions: validSessions.length,
     maxSessions: MAX_SESSIONS,
   });

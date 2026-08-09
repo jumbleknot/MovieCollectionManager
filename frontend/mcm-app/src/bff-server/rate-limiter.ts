@@ -145,14 +145,19 @@ export async function checkRefreshRateLimit(sessionId: string): Promise<void> {
   // `logger.audit` rather than audit-sink's `audit()`: this fires on every attempt, and posting each
   // one to the external sink would change the BFF's outbound load while measuring its behaviour.
   // The rejection below is the security-relevant half and travels the same channel for consistency.
-  logger.audit('refresh_attempted', { sessionId, attemptsInWindow: count, limit: rule.limit });
+  //
+  // The session id is NOT logged — see the note in session-manager.ts's evictOldestSession. It is
+  // the rate-limit KEY here, so it was the tempting field to include; the logger would have redacted
+  // it to a constant, and `mcm-no-token-logging` blocks it by key name regardless. The counts do not
+  // need it.
+  logger.audit('refresh_attempted', { attemptsInWindow: count, limit: rule.limit });
 
   if (count > rule.limit) {
     // 052 FR-002. This bucket is keyed on the SESSION and holds 2 per 30 s. Every worker in the web
     // E2E suite presents the same session id from one shared storageState, so eight of them share
     // one bucket built for two — and until now it rejected without a trace, surfacing only as a
     // client-side redirect to login that looks exactly like an expired session.
-    logger.audit('refresh_rate_limited', { sessionId, attemptsInWindow: count, limit: rule.limit });
+    logger.audit('refresh_rate_limited', { attemptsInWindow: count, limit: rule.limit });
     throw new RateLimitError(rule.retryAfterSeconds);
   }
 }
