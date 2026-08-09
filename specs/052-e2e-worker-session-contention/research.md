@@ -145,6 +145,49 @@ model answers. But it is **not authoritative**. Worker count follows the host's 
 latency drives how many expiry boundaries a run crosses — the two variables the hypothesis turns on. A
 local null result refutes nothing; a local positive is a strong lead that CI must still confirm.
 
+## R9 — What the two measured runs' BFF logs say retroactively (added during T020)
+
+The digest bundles for runs **1603** and **1604** — the two runs PRD §1.1 measured — carry the full
+`mcm-bff-service-nonsecure.log`, spanning 16:53–17:15 and 18:01–19:11 respectively (i.e. the whole of
+each run, not a truncated tail). Neither can answer the refresh question directly, because both code
+paths were silent then. Two things they *do* settle:
+
+### There are exactly two `auth_failed` reasons, and one of them never occurred
+
+[auth.ts:108](../../frontend/mcm-app/src/bff-server/auth.ts#L108) emits `no_token`;
+[auth.ts:118](../../frontend/mcm-app/src/bff-server/auth.ts#L118) emits `invalid_token`. Measured:
+
+| Run | `no_token` | `invalid_token` |
+| --- | ---: | ---: |
+| 1603 (17.9 min, 33 failed) | 219 | **0** |
+| 1604 (1.1 h, 61 failed) | 407 | **0** |
+
+**Not once did a request arrive carrying an access token that failed validation.**
+
+### Why that is not surprising, and why it matters
+
+[auth.ts:152](../../frontend/mcm-app/src/bff-server/auth.ts#L152) sets the access cookie with
+`Max-Age=${accessExpiresInSeconds}` — and the CI realm's `accessTokenLifespan` is **300**. So the
+access cookie **expires and is removed by the browser at the same moment the token does**. An expired
+access token can never be *presented*; the request simply arrives without one.
+
+That has a direct consequence for PRD §6's second open question. `no_token` was set aside as "what the
+deliberately-unauthenticated specs do by design", which is true but incomplete: it is *also* the
+ordinary steady state of **every authenticated worker context each time it crosses a five-minute
+boundary**. `no_token` is therefore a mixture of a fixed per-spec component and a time-driven one —
+and the time-driven component is precisely the moment a token refresh is triggered.
+
+So `no_token` is not evidence of eviction (it never was), but its magnitude is a **rough lower bound on
+how often a refresh was triggered**: hundreds of times per run, across 8 contexts sharing one bucket
+that holds two per 30 seconds.
+
+**Cross-check for T021**: `refresh_total` from the tally should be of the same order as the `no_token`
+count. If it is orders of magnitude smaller, the refresh path is not being driven the way this reading
+implies, and R4 needs revisiting rather than confirming.
+
+**Still not a measurement.** This is consistent with R4 and does not distinguish it from "tokens expired
+and every refresh succeeded". Only the tally does that.
+
 ## R8 — Decision rule for Phase 2
 
 Fixed in advance so the remedy is selected by the number rather than by whichever story is most
