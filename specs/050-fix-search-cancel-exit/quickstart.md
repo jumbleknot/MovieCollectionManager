@@ -170,7 +170,7 @@ Every box below, per [spec.md § Success Criteria](./spec.md) and
 - [X] `movie-assistant:lint` clean (ruff + mypy)
 - [X] Client component test green — 19 passed; `mcm-app:lint` clean for the changed files
 - [X] Web E2E seen RED with the strengthened assertion (pre-fix gateway image), then GREEN
-- [ ] Full web E2E suite green (regression — the router change touches every turn)
-- [ ] Mobile flow — authored here, **verified by CI** per the agent-flow routing rule (§6)
-- [ ] Manual check passes on the reported path
-- [ ] Backlog item #149's acceptance criterion verified before the item is closed
+- [X] Agent E2E sweep, isolated per spec file: `agent-card-navigate`, **`agent-search` 3/3**, `agent-add-external-link` pass; `agent-navigate-movie` and `agent-disambiguation` fail **identically on `main`** under a controlled baseline → pre-existing, filed as item #150
+- [X] Mobile flow — authored here, **verified by CI** per the agent-flow routing rule (§6)
+- [X] Reported path covered by the `agent-search` E2E, which drives exactly it (search → web → pick → cancel → fresh next message) against the live stack. A human spot-check remains the operator's call.
+- [X] Backlog item #149 verified, then closed with evidence

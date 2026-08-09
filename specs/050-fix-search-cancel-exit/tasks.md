@@ -246,7 +246,7 @@ proves it rather than building it.
     [model-provider-scoping](../../openwiki/invariants/model-provider-scoping.md) makes Anthropic the
     sanctioned surface for model decisions. CI is the authority for those two specs.
 
-- [ ] T020 Close backlog item #149 — **only after T019 passes**
+- [X] T020 Close backlog item #149 — **only after T019 passes**
   - **Type**: Chore | **Risk**: None
   - Apply the labels the body already declares but the item lacks (`type/bug`, `priority/p2`) and the `050-fix-search-cancel-exit` milestone; comment with the verification evidence; then `node scripts/backlog.mjs update 149 --state closed`.
   - **Done when**: the item is closed with its acceptance criterion demonstrably met — closure is an explicit act after verification, never "the PR merged".
