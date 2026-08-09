@@ -422,10 +422,51 @@ families.
     round-trips, on a capacity-1 runner — fits the retry-recovery pattern better. But "fits better"
     is not measured, and stating it as fact would repeat the mistake above.
 
-  - **The decisive next measurement, named so it is not hand-waved**: re-run `app-e2e` unchanged and
-    compare the failure SET. If the same non-agent specs fail again, the cause is deterministic
-    (state or session). If the set moves, it is contention. That is one dispatch and needs no code
-    change.
+  - **THE MEASUREMENT WAS TAKEN.** `app-e2e` re-run unchanged (same code, same flags, run #1604):
+
+    | | run #1603 | run #1604 |
+    | --- | ---: | ---: |
+    | failed | 33 | **61** |
+    | flaky | 15 | **37** |
+    | passed | 126 | **76** |
+    | duration | 17.9 min | **1.1 h** |
+
+    Failure-set diff: **26 in both, 7 only in #1603, 35 only in #1604.** So it is **both** — a
+    reproducible core of 26 *and* a large load-dependent component. Neither hypothesis alone was right.
+
+  - ### The mechanism, established rather than inferred
+
+    **Playwright runs 8 parallel workers** (`Running 177 tests using 8 workers`, identical in both
+    runs) against **one** `E2E_TEST_USER` and one shared `storageState`, while
+    **`MAX_CONCURRENT_SESSIONS` is 10**. `fullyParallel: false` serialises *within* a file but runs
+    *files* in parallel.
+
+    The config already documents the latent problem, in its own words at `playwright.config.ts:24`:
+
+    ```ts
+    retries: 1,  // SSO timing races between parallel workers cause intermittent login timeouts
+    ```
+
+    Before this feature, an agent spec file was picked up by a worker, **skipped instantly**, and
+    freed it. Now each occupies a worker for **minutes** doing real model round-trips. That widens
+    enormously the window in which all 8 workers are concurrently active against one shared session —
+    and 8 workers against a cap of 10 sits right at the edge where eviction of the oldest session
+    becomes reachable. `retries: 1` then re-runs the slow model work, which is why identical code
+    took 3.7× longer the second time.
+
+  - **The 26-failure core splits 7 agent-gated / 19 previously-green ungated.** The 7 are the
+    pre-existing agent defects T017 predicted (item #150's answer). The 19 are collateral from the
+    contention above, not 19 independent regressions.
+
+  - **Corrected attribution, final**: the trigger is **worker parallelism against a single shared
+    E2E user**, which predates this feature entirely and was masked by the agent specs skipping. This
+    feature did not introduce it and does not contain its fix.
+
+  - **Cheapest remedies, in cost order — NOT done here, all outside this feature's scope:**
+    1. Pin `workers` to ~4 for CI — one line, no architecture change.
+    2. Raise `MAX_CONCURRENT_SESSIONS` for the CI BFF — one env var.
+    3. Give the agent specs their own E2E user, or run them as a separate Playwright project — the
+       real fix, and the largest change.
 
   - **Attribution, precisely**: this feature did not create the limitation, it **exposed** it. The
     incompatibility between one shared session and the agent specs running has existed as long as
