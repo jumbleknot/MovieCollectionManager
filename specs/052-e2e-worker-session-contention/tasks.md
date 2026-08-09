@@ -349,6 +349,8 @@ security controls, useful well beyond this feature.
     push runs almost nothing. Follow [docs/runbooks/ci-diagnostics.md](../../docs/runbooks/ci-diagnostics.md),
     including its three traps, each of which produces silence that reads as a result.
     ```bash
+    # Placeholders deliberately — `guardrails / naming` runs a topology-scrub gate that fails on a
+    # real tailnet host, and the host + domain were scrubbed from this repo's history once already.
     FORGE=http://<forge-host>:3000/api/v1
     TOK=$(printf "protocol=http\nhost=<forge-host>:3000\n\n" \
             | git credential fill | grep '^password=' | cut -d= -f2-)   # NOT MCM_FORGE_TOKEN — it 403s
