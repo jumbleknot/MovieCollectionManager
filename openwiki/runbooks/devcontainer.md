@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer)
 description: The disposable Linux dev container the AI coding assistant runs inside — its honestly-stated two-tier isolation model (strong host-filesystem isolation, moderate privileged-DinD engine isolation), the default-deny egress firewall, and the VS Code / Windows-host quirks that block a first boot.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook]
-timestamp: 2026-08-08T00:00:00+00:00
+timestamp: 2026-08-09T00:00:00+00:00
 ---
 
 # Containerized dev environment (devcontainer)
@@ -38,6 +38,14 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   then rebuild. With it unset, backlog reads still work via `MCM_FORGE_TOKEN`; writes are refused naming
   the missing variable. See [The agent-driven backlog](/openwiki/runbooks/backlog.md) for credential and
   reach details.
+- **`crates.io` is not allowlisted — `cargo` commands need `--offline` here.** The same
+  default-deny firewall that blocks npm CDN drift also blocks the Cargo registry. All commands
+  that compile or test mc-service need `--offline --manifest-path backend/mc-service/Cargo.toml`.
+  **A failing `--offline` resolve is not an obstacle to work around — it is a lock-discipline
+  check:** it means the change is pulling a package absent from `Cargo.lock`, which CI will
+  also reject. Do not reach for `--online`; inspect what is being added. See
+  [cargo fmt formats the WHOLE crate](/openwiki/gotchas/rust-formatting-scope.md) for the
+  companion formatting trap in this crate.
 - **Local Ollama runs inside the dev container itself, not on the Windows host** — nested
   Docker-in-Docker breaks `host.docker.internal` reachability to the host, so the fix was moving
   Ollama into the container rather than routing around the network gap. See

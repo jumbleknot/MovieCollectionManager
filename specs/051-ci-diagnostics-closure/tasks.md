@@ -941,13 +941,27 @@ closed feature's task notes.
 
 **Independent test**: Search the documentation locations a future session would actually consult.
 
-- [ ] T050 [US6] Confirm `openwiki/policy.yaml` permits the paths this story touches
+- [X] T050 [US6] Confirm `openwiki/policy.yaml` permits the paths this story touches
   - **Type**: Verification | **Risk**: Low | **Covers**: FR-028
   - **Before** writing, not after. A concept written into a path the policy forbids is rework.
   - **Done when**: the target paths are confirmed writable by this actor, or the policy change needed
     is identified.
+  - **THE CHECK FIRED — this task earned its place.** Resolved with `resolvePolicy`/`mayWrite`:
 
-- [ ] T051 [P] [US6] Document offline dependency resolution in `docs/runbooks/devcontainer.md`
+    | Path | Policy | Actor | Agent may write |
+    | --- | --- | --- | --- |
+    | `docs/runbooks/devcontainer.md` | `regenerate` | agent | **yes** |
+    | `openwiki/gotchas/rust-formatting-scope.md` (new) | `regenerate` (catch-all `openwiki/**`) | **generator** | **NO** — `policy governs actor \`generator\`, not \`agent\`` |
+
+    A **new** canonical concept falls under the catch-all `openwiki/**` rule, which is
+    `actor: generator` — so writing it as an agent would have been rework, discovered after the fact.
+    Every existing canonical gotcha carries its **own** explicit entry (`event-driven`, `actor: agent`).
+    **Policy change identified and made first**: an entry for `rust-formatting-scope.md` mirroring
+    `mc-service-musl-openssl.md`, plus the concept added to `protected.yaml`'s `authoritative:` list
+    (G11 requires every concept be provably canonical *or* a derived summary with a resolving
+    `resource`).
+
+- [X] T051 [P] [US6] Document offline dependency resolution in `docs/runbooks/devcontainer.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: FR-025, US6-AC1
   - Add to the existing section that already teaches "check the firewall allowlist before suspecting
     the tool" — crates.io is simply another non-allowlisted host. Include **both** halves: the
@@ -956,15 +970,27 @@ closed feature's task notes.
     example (a TLS feature dragging in two transitive crates) and the `cargo tree -e features -i`
     follow-up.
   - **Done when**: `grep -rn -- "--offline" docs/runbooks/` returns the passage, corollary included.
+  - **DONE** — 10 hits across `docs/runbooks/` and `openwiki/`. Landed inside the existing
+    "check the firewall allowlist BEFORE suspecting Docker" list, because crates.io is simply another
+    non-allowlisted host and the reflex is the one already taught there. Carries **both** halves: the
+    `--offline` invocations, and the corollary written down nowhere until now — **a failing
+    `--offline` resolve is the lock-discipline check, for free**, not an obstacle to work around.
+    Names the 046 worked example (a TLS feature dragging in two transitive crates), the
+    `cargo tree -e features -i` follow-up, and the `git diff Cargo.lock` confirmation.
 
-- [ ] T052 [P] [US6] Correct the stale toolchain-scope claim in `docs/runbooks/devcontainer.md`
+- [X] T052 [P] [US6] Correct the stale toolchain-scope claim in `docs/runbooks/devcontainer.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: FR-027, US6-AC3
   - § Toolchain scope still calls the Rust and Python toolchains a deferred "increment 2"; feature 038
     delivered them, and the same file describes the result elsewhere. It is the first place a reader
     checks whether cargo exists at all, and it sits next to where T051 lands.
   - **Done when**: `grep -rn "increment 2" docs/runbooks/devcontainer.md` returns nothing.
+  - **DONE** — the grep is empty.
+  - **The same trap as the US3 renderer, caught by the same done-when.** The first rewrite said
+    *"They were once planned as a deferred \"increment 2\"; that is no longer true"* — which still
+    contains the phrase, so the grep still matched. Nothing downstream can tell a quotation from a
+    claim. Reworded to describe the correction without restating the retired wording.
 
-- [ ] T053 [US6] Add a canonical `openwiki/gotchas/` concept for the whole-crate formatting trap
+- [X] T053 [US6] Add a canonical `openwiki/gotchas/` concept for the whole-crate formatting trap
   - **Type**: Documentation | **Risk**: Low | **Covers**: FR-026, US6-AC2
   - No upstream document covers Rust formatting convention here, so per CLAUDE.md this is a new
     canonical concept rather than an edit to a derived summary.
@@ -974,14 +1000,39 @@ closed feature's task notes.
     `clippy --all-targets`. Without that context a whole-crate format reads as a harmless tidy-up
     rather than a manufactured diff someone must then prove is unrelated.
   - **Done when**: the concept exists and `grep -rn "rustfmt" openwiki/` returns it.
+  - **DONE** — `openwiki/gotchas/rust-formatting-scope.md`, canonical, carrying all four required
+    parts: the whole-crate scope, `rustfmt <path>` as the single-file alternative, the recovery
+    steps, and the **context** — 7 pre-existing `cargo fmt --check` drift files and 9 pre-existing
+    `clippy --all-targets` failures, with the lint gate being the Nx target. Without that context a
+    whole-crate format reads as a harmless tidy-up rather than a manufactured diff someone must then
+    prove is unrelated.
 
-- [ ] T054 [US6] Regenerate the knowledge index and pass the gates
+- [X] T054 [US6] Regenerate the knowledge index and pass the gates
   - **Type**: Config change | **Risk**: Low | **Covers**: FR-028, US6-AC4
   - **Commands**: `pnpm nx wiki-update`, then `pnpm nx okf-lint`, then
     `node scripts/check-openwiki-governance.mjs`
   - **Expected**: all pass; the CLAUDE.md index is regenerated, **not hand-edited**.
   - **Note**: T009 changed the okf gate. If regeneration surfaces drift that was previously hidden by
     that bug, it is real — fix it, do not suppress it.
+  - **DONE (Linux)**: `okf-lint` → **✅ 62 concepts conformant across 8 directories**;
+    `check-openwiki-governance.mjs` → **✅ 899 paths classified, 61 concepts provably derived or
+    authoritative, protected passages intact**.
+  - **Two corrections to the commands as written.** (1) Both Nx targets need their project:
+    `pnpm nx wiki-update infrastructure-as-code`, `pnpm nx okf-lint infrastructure-as-code`.
+    (2) **The `openwiki` generator is NOT installed in this dev container**, contrary to what
+    `docs/runbooks/devcontainer.md` implies — `openwiki: not found`. It is not a missing capability:
+    the documented, pinned command `npm install -g openwiki@0.2.3` (what `wiki-maintain.yml` runs)
+    supplies it, and needs `sudo`. Named and resolved rather than written off as "cannot run here",
+    per CLAUDE.md's gate on exactly that.
+  - **Verified the failure was real before fixing it**: `okf-lint` failed with
+    `✗ openwiki/gotchas/index.md — concept not listed: …rust-formatting-scope.md (V9)`, so the
+    regeneration was doing work rather than rubber-stamping. The generator also refreshed
+    `openwiki/runbooks/ci-diagnostics.md` and `openwiki/runbooks/devcontainer.md` from this feature's
+    source edits.
+  - **CLAUDE.md's index line was added by the agent, which is correct here** — `policy.yaml` marks
+    `CLAUDE.md` `actor: agent` with the rationale "an agent updates the index as the bundle changes".
+    The generator owns the bundle's own `index.md` files (it added the gotchas entry); the
+    instruction-file index is the agent's. No prose was added, so G8 stays satisfied.
 
 ---
 

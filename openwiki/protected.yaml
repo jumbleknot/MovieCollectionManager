@@ -30,6 +30,7 @@ authoritative:
   - "gotchas/mc-service-musl-openssl.md"
   - "gotchas/mongodb-indexes-and-uniqueness.md"
   - "gotchas/role-enforcement-is-a-layer.md"
+  - "gotchas/rust-formatting-scope.md"
   - "invariants/auth-chain.md"
   - "invariants/feature-validation-checklist.md"
   - "invariants/logging-and-audit.md"

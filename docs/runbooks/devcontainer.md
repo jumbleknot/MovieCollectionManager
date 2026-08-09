@@ -342,6 +342,37 @@ pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Dock
   sudo FIREWALL_ALLOW_CDN_RANGES=1 /bin/bash .devcontainer/init-firewall.sh
   ```
   It is **off by default** to keep the default-deny meaningful.
+- **`crates.io` is not allowlisted either — `cargo` needs `--offline` here.** Same reflex, different
+  tool: a `cargo` command that hangs or fails to resolve is the firewall, not cargo. The vendored
+  registry index in the image is enough for everything already in `Cargo.lock`:
+
+  ```bash
+  cargo build   --offline --manifest-path backend/mc-service/Cargo.toml
+  cargo clippy  --offline --manifest-path backend/mc-service/Cargo.toml
+  cargo test    --offline --manifest-path backend/mc-service/Cargo.toml
+  ```
+
+  **The corollary is the useful half, and it is written down nowhere else: a *failing* `--offline`
+  resolve is a real signal, not an obstacle to work around.** It means the change pulls a package
+  that is **absent from the lock file** — so it is the lock-discipline check, for free, before CI
+  runs it. Do not reach for `--online` to make it go away; find out what is being added and whether
+  you meant to add it.
+
+  Worked example (feature 046): adding `reqwest` as a dev-dependency failed `--offline` because
+  enabling a TLS feature dragged in two transitive crates that were not in the lock file. The
+  follow-up that names them:
+
+  ```bash
+  cargo tree -e features -i <crate> --manifest-path backend/mc-service/Cargo.toml
+  ```
+
+  Then confirm the intended outcome with `git diff Cargo.lock` — a dev-dependency edge appearing
+  against an existing package is expected; a **new `[[package]]` block** is a new dependency and
+  deserves a decision.
+
+  Formatting has its own trap in this crate — `cargo fmt -- <file>` formats the **whole crate**. See
+  [cargo fmt formats the WHOLE crate](/openwiki/gotchas/rust-formatting-scope.md).
+
 - **Nested-container egress is a documented residual.** The firewall controls the dev container's
   own egress *and* dockerd's image pulls (both traverse the `OUTPUT` chain), but it deliberately
   leaves the `FORWARD` chain to dockerd so nested-container networking is not broken. A malicious
@@ -656,10 +687,13 @@ Pilot image = **Node 24 + pnpm (corepack) + watchman + DinD** on `node:24-bookwo
 prod BFF deploys on **node:20**, but the repo's pinned `pnpm@11.17.0` requires Node >= 22.13 (and loads `node:sqlite` at startup)
 (Node ≥ 22/24 only) — on Node 20, `pnpm install` crashes with `ERR_UNKNOWN_BUILTIN_MODULE`. So the
 dev container tracks the **dev toolchain's Node (24, same as the host)**; BFF runtime parity is a
-SHOULD validated in CI, not here. **Rust stable + Python 3.13 + `uv`** are a deferred **increment 2** (added via
-devcontainer features only if they stay within the < 5 min cold-build budget, SC-004). Compose
-stacks build their own Rust/Python images *inside* nested Docker builds, so the pilot image does
-not need those toolchains for `pnpm nx build` / integration tests.
+SHOULD validated in CI, not here. **Rust stable + Python 3.13 + `uv` are PRESENT** — feature 038
+delivered them as devcontainer features, and the rest of this runbook already describes working with
+them (`cargo`, `uv sync`, the Python integration tiers). This paragraph previously described them as
+a deferred future increment, which had been untrue for some time and is the first thing a reader
+checks when asking whether `cargo` exists here at all. Compose stacks still build their own
+Rust/Python images *inside* nested Docker builds, so the pilot image does not need those toolchains
+for `pnpm nx build` / integration tests — it simply has them anyway.
 
 ## OpenWiki — the OKF knowledge wiki (feature 043)
 
