@@ -398,11 +398,34 @@ families.
     Error: gotoHome: home screen did not render — is the global-setup session valid?
     ```
 
-    Session invalidation, not an assertion failure. The suite shares one `E2E_TEST_USER` and one
-    global-setup login. Un-skipping the agent specs roughly doubles the run and adds logins, and past
-    some limit — an absolute/idle session timeout, or the per-user concurrent-session cap that evicts
-    the oldest session — the shared session dies and everything downstream fails regardless of what
-    it tests.
+    **⚠️ CORRECTION — I initially read that message as proof of session invalidation. It is not, and
+    the over-reading is worth keeping because it is this feature's own subject.** The message is the
+    *helper's guess*, not a measurement: `gotoHome` races two selectors for 60 s and, on timeout,
+    throws that sentence. The code cannot distinguish "the session is invalid" from "the app did not
+    render in time" — it only knows the selector never appeared. An error string that names a cause
+    it did not test is exactly the kind of claim this feature exists to stop being trusted.
+
+    **What the evidence actually shows**, from the bundle (38 occurrences of `did not render`):
+
+    | Signal | Reading |
+    | --- | --- |
+    | **15 tests passed on RETRY** | argues **against** a permanently dead session — a dead session cannot recover |
+    | 0 × `ECONNREFUSED` / `502` / `503` | the BFF stayed up throughout |
+    | Keycloak: **exactly 1** `TOKEN_EXCHANGE_ERROR` | one isolated `subject_token validation failure`, not a systemic auth collapse |
+    | 361 × `auth_failed reason:"no_token"` | requests arriving with **no cookie at all** — which is what the deliberately-unauthenticated specs (`auth.spec.ts`, `admin-registration`) do by design, so this is not evidence of eviction |
+    | Gateway: `agent_tool_call … status=error` | the agent tool calls themselves erroring — the pre-existing class T017 *did* predict |
+    | `MAX_CONCURRENT_SESSIONS=10`, one shared `storageState`, only 2 specs log in | the concurrent-session cap is **unlikely** to be reached |
+    | `SESSION_IDLE_TIMEOUT_MS` = 30 min, `SESSION_ABSOLUTE_TIMEOUT_MS` = 24 h, web step = 17.9 min | neither timeout is obviously reached either |
+
+    **Honest verdict: the mechanism is NOT yet established.** Session death is now the *less* likely
+    of the two, and resource contention — the suite roughly doubling in work, with real model
+    round-trips, on a capacity-1 runner — fits the retry-recovery pattern better. But "fits better"
+    is not measured, and stating it as fact would repeat the mistake above.
+
+  - **The decisive next measurement, named so it is not hand-waved**: re-run `app-e2e` unchanged and
+    compare the failure SET. If the same non-agent specs fail again, the cause is deterministic
+    (state or session). If the set moves, it is contention. That is one dispatch and needs no code
+    change.
 
   - **Attribution, precisely**: this feature did not create the limitation, it **exposed** it. The
     incompatibility between one shared session and the agent specs running has existed as long as
