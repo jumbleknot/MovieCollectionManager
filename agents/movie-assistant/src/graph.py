@@ -269,13 +269,49 @@ def _supervisor_node(
         # disabled assistant performs zero side effects. Clears any in-progress add.
         if kill_switch():
             return {"intent": "disabled", **_ADD_STATE_RESET}
+        messages = state.get("messages") or []
+        last = messages[-1] if messages else None
+        # 050 / item #149 — the search-cancel control is routed here, above EVERYTHING that can
+        # answer on the model's behalf: the error-rate breaker, the classifier, and the classifier's
+        # own exception handler.
+        #
+        # The member CHOSE this control; it is not prose to be interpreted (FR-010). Three reasons
+        # for this position, in increasing order of how badly each one fails:
+        #
+        #   1. An escape hatch that can be classified away is not an escape hatch. `exit search`
+        #      happens to classify as `search` today, but 047's ownership guard exists precisely
+        #      because prose-like replies classified differently on Ollama and on Anthropic — a
+        #      route decided by a model is a route decided by WHICH model.
+        #   2. A classifier EXCEPTION returns `degraded` before any routing runs, so a provider
+        #      outage would answer "get me out of here" with "Sorry — I couldn't complete that
+        #      just now."
+        #   3. The error-rate breaker does the same, and it opens after repeated failures — which
+        #      is exactly when a member is most likely to be stuck and wanting out. A routed cancel
+        #      makes no provider call at all, so letting it past costs the cooldown nothing.
+        #
+        # None of those replies is an acknowledgement that the search ended (FR-002) or an exit
+        # (FR-007). Deliberately BELOW the kill switch: a disabled assistant must still do nothing.
+        #
+        # Mirrors the cancel-import control (further down) for the same stated reason. The guard on
+        # `add_stage` is not decoration: the search node's exit clears the add lifecycle, and an
+        # in-progress add is the member's half-finished work — 047 US4 exists because a misroute
+        # here once discarded a member's movie silently.
+        #
+        # Observability consequence, deliberate: `record_turn(intent)` runs after classification,
+        # so a cancel is no longer counted in the classified-intent metric. It is no longer a
+        # classified turn — that is the honest reading, not a gap.
+        if (
+            last is not None
+            and getattr(last, "type", None) == "human"
+            and is_search_cancel(str(getattr(last, "content", "") or ""))
+            and not (state.get("add_stage") or "")
+        ):
+            return {"intent": "search"}
         # Error-rate circuit breaker (T030, Control Tower): when too many recent runs have failed
         # the breaker is open → short-circuit to the same graceful-degradation reply, giving the
         # provider/stack a cooldown. No new user surface; zero side effects.
         if circuit is not None and circuit.opened():
             return {"intent": "degraded", **_ADD_STATE_RESET}
-        messages = state.get("messages") or []
-        last = messages[-1] if messages else None
         # Only classify a genuine user turn. A non-human last message means this run was
         # triggered by a client continuation (e.g. a render_movie_card tool round-trip), not a
         # new request — end quietly ("noop") instead of re-classifying it, which would mislabel
@@ -283,31 +319,6 @@ def _supervisor_node(
         if last is None or getattr(last, "type", None) != "human":
             return {"intent": "noop"}
         text = str(getattr(last, "content", "") or "")
-
-        # 050 FR-010 / item #149 — the search-cancel control is routed BEFORE the classifier.
-        #
-        # The member CHOSE this control; it is not prose to be interpreted. Two reasons this check
-        # sits above `classifier(messages)` rather than below it:
-        #
-        #   1. An escape hatch that can be classified away is not an escape hatch. It happens to
-        #      classify as `search` today, but 047's ownership guard exists precisely because
-        #      prose-like replies classified differently on Ollama and on Anthropic — a route that
-        #      depends on a model is a route that depends on which model.
-        #   2. A classifier EXCEPTION returns `degraded` a few lines below, before any routing runs
-        #      at all. So a provider outage would answer "get me out of here" with "Sorry — I
-        #      couldn't complete that just now." A cancel must not need a healthy LLM.
-        #
-        # Mirrors the cancel-import control (below), for the same stated reason. The guard on
-        # `add_stage` is not decoration: the search node's exit clears the add lifecycle, and an
-        # in-progress add is the member's half-finished work — 047 US4 exists because a misroute
-        # here once discarded a member's movie silently.
-        #
-        # Note the observability consequence, which is deliberate: `record_turn(intent)` runs after
-        # classification, so a cancel is no longer counted in the classified-intent metric. It is
-        # no longer a classified turn — that is the honest reading, not a gap.
-        if is_search_cancel(text) and not (state.get("add_stage") or ""):
-            return {"intent": "search"}
-
         # Graceful degradation (T061/FR-018): a provider/reasoning failure becomes a
         # "couldn't complete" reply, never a crash or a misroute. Clears any in-progress add.
         # The outcome feeds the circuit breaker (T030) — a failure here is the error signal.

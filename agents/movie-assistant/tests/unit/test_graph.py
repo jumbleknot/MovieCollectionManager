@@ -313,6 +313,32 @@ def test_cancel_control_still_exits_when_the_classifier_is_down():
     assert reached.get("search") is True
 
 
+def test_cancel_control_still_exits_when_the_error_rate_breaker_is_open():
+    """The breaker opens after repeated failures — exactly when a member most wants OUT.
+
+    Same requirement as the classifier-down case, one layer up: `circuit.opened()` short-circuits
+    to `degraded` before any routing. A cancel makes no provider call at all once routed, so
+    letting it through costs the cooldown nothing — and answering "get me out of here" with
+    "Sorry — I couldn't complete that just now" is neither an acknowledgement (FR-002) nor an exit
+    (FR-007).
+    """
+
+    class _OpenBreaker:
+        def opened(self):
+            return True
+
+        def record(self, _ok):  # pragma: no cover - not reached on the cancel path
+            raise AssertionError("a cancel must not touch the breaker")
+
+    graph, reached = _cancel_graph(lambda _m: "search", circuit=_OpenBreaker())
+    result = graph.invoke(
+        {"messages": [HumanMessage(content="exit search")]},
+        {"configurable": {"thread_id": "cancel-route-4"}},
+    )
+    assert result.get("intent") != "degraded"
+    assert reached.get("search") is True
+
+
 def test_a_title_containing_the_cancel_words_is_not_routed_as_a_cancel():
     # The exact-match rule, from the router's side: this is an ordinary request and must be
     # classified normally, not hijacked by the control.

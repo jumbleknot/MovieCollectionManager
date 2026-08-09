@@ -168,6 +168,24 @@ is currently green on the broken code:
   assertions (Add disabled, no approval request, card still visible) all pass on the bug.
 - `agent-search.yaml` — the same reply assertion on mobile (FR-008 / US3).
 
+## Discovered during implementation
+
+**FR-012 — two more layers answer before routing.** FR-010 was written against the intent
+classifier. Implementing it showed the classifier is only the first of three things that reply on
+the model's behalf *before* any routing runs:
+
+1. the classifier's own **exception handler**, which returns `degraded`;
+2. the **error-rate circuit breaker**, which returns `degraded` when it has tripped.
+
+Both answer a cancel with "Sorry — I couldn't complete that just now", which is neither an
+acknowledgement nor an exit. The breaker case is the sharper one: it opens after repeated failures,
+which is precisely when a member is most likely to be stuck and wanting out — and a routed cancel
+makes no provider call at all, so letting it past costs the cooldown nothing.
+
+The route therefore sits above all three, and below the administrative kill switch, where a
+disabled assistant is required to do nothing. Recorded as FR-012 in the spec rather than smuggled
+in as an unlisted behaviour change.
+
 ## Risks
 
 | Risk | Likelihood | Mitigation |
@@ -202,3 +220,4 @@ is currently green on the broken code:
 | FR-009 repeat/stale use is inert | D3 `add_stage` guard + client `actioned` state | Import-pending test + existing client test |
 | FR-010 routing independent of the classifier | D3 | `test_graph.py` — classifier recorded as never called |
 | FR-011 test at the level of the defect | D4 | The RED runs against the dispatcher and the router, not `_exit()` |
+| FR-012 honoured while degraded *(added in implementation)* | D3, raised above the breaker | `test_graph.py` — classifier-raises and breaker-open cases |
