@@ -492,6 +492,26 @@ self-serve tooling alone.
     *and* the stricter per-step coverage gate scanning its own tree), **`okf` ✔**, **`secret-scan` ✔**,
     **`agent-gates` ✔**. Host-executor jobs **`devcontainer-image / build-publish` ✔** and
     **`infra-image-scan` ✔** likewise.
+  - **⚠️ THE FIRST CI RUN FOUND A REAL DEFECT IN THIS WRAPPING, and it is the nastiest shape the
+    feature has produced.** `guardrails / sast` **FAILED**. Its `Sync the Python agent env` step
+    carries `working-directory: agents/movie-assistant`, and the instrumentation pass had wrapped it
+    as `bash scripts/ci-log-step.sh …` — a path relative to the **repo root**. From that working
+    directory the script does not exist, so bash exited **127 before `ci-log-step.sh` ever ran**.
+    Therefore **no log was captured and no `_failed-step` marker was written**, and the digest
+    published `Failing step: _not reported_`. An instrumentation bug that leaves the step it
+    instruments both broken *and* undiagnosable is precisely the outcome this feature exists to
+    prevent.
+  - **Two steps were affected** — `guardrails / sast :: Sync the Python agent env` and
+    `app-ci / app-e2e :: Build embedded-bundle E2E APK`. Both now use
+    `bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh"`. Case **`(x)`** gates it repo-wide rather than
+    fixing two and hoping, and it is **mutation-checked**: reverting either step to the relative form
+    turns the case red (25 collected, 24 pass, 1 fail); restoring it turns it green.
+  - **It was diagnosed with NO job log**, which the forge does not expose — this is SC-002 happening
+    unplanned. The digest published correctly (`digest-outcome=published`, US3 working in CI) and
+    carried four of sast's other newly wrapped steps; it was the **shape** of the capture — four
+    installs present, everything after them absent, and no failing-step marker — that localised the
+    fault to a wrapper that could not start. The instrumentation diagnosed a hole in the
+    instrumentation.
   - **How the run was obtained matters, and is now in the runbook.** A branch *push* runs almost
     nothing here — `guardrails` and `app-ci` scope `push:` to `main`, so only `infra-image-scan` and
     `devcontainer-image` fired (path filters matching the workflow diff). Both were dispatched via
