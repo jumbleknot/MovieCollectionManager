@@ -95,6 +95,24 @@ test('no authenticated spec still imports `test` from @playwright/test', () => {
   assert.deepEqual(offenders, [], 'these import the base `test`, which loads the shared session');
 });
 
+test('the CI access token outlives the E2E run, so a frozen storageState stays usable', () => {
+  // Playwright reloads the frozen storageState in a fresh BrowserContext PER TEST. If the access
+  // token expires mid-run, every test after that point must refresh before it can do anything —
+  // measured at a 1.9 s median interval against a per-session limit of 2 per 30 s, which rejected
+  // 35 of 115 attempts (run 1607) and bounced those tests to login. A token that outlives the run
+  // removes the driver; lowering it back would restore the contention silently, with no failing
+  // test to say so.
+  const ci = JSON.parse(
+    readFileSync(resolve(REPO_ROOT, 'infrastructure-as-code/docker/keycloak/ci-realm.json'), 'utf8'),
+  );
+  const JOB_TIMEOUT_MINUTES = 75; // .forgejo/workflows/app-ci.yml, app-e2e
+  assert.ok(
+    ci.accessTokenLifespan >= JOB_TIMEOUT_MINUTES * 60,
+    `ci-realm accessTokenLifespan is ${ci.accessTokenLifespan}s but app-e2e may run for ` +
+      `${JOB_TIMEOUT_MINUTES} min. A token that expires mid-run makes every later test refresh.`,
+  );
+});
+
 test('the worker count is bounded, and stays clear of MAX_CONCURRENT_SESSIONS', () => {
   const cfg = readFileSync(CONFIG, 'utf8');
   const workers = /MAX_E2E_WORKERS\s*=\s*(\d+)/.exec(cfg);

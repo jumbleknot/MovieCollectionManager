@@ -19,9 +19,16 @@
  * container (the same target as the rest of the agent E2E):
  *   E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/agent-session-refresh.spec.ts
  *
- * Suite-safety: this rotates the refresh token for the shared test user. Refresh-token rotation
- * invalidates only the OLD refresh token; the access cookies other specs loaded from storageState
- * stay valid for their natural ~5-min lifetime, so parallel specs are unaffected.
+ * Suite-safety: this rotates the refresh token for its own worker's session. Rotation invalidates
+ * only the OLD refresh token, and since feature 052 each worker holds its own session, so no other
+ * worker shares this one's refresh token or its rate-limit bucket.
+ *
+ * NOTE ON THE "~5 min" ABOVE (feature 052): that is the dev/prod access-token lifespan. In CI it is
+ * 3600s — Playwright's per-test BrowserContext reloads a frozen storageState, so a 300s token left
+ * every test after minute five needing a refresh, at a measured 1.9s median interval against a limit
+ * of 2 per 30s. This test is UNAFFECTED by that value either way: step 2 clears the access cookie
+ * explicitly rather than waiting for expiry, which is what keeps it a real test of the recovery
+ * chain rather than a race against a clock.
  */
 
 import { test, expect } from './fixtures/worker-session';
