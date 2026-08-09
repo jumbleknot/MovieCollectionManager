@@ -38,14 +38,20 @@ so a gate change that is not RED-verified is exactly the defect being fixed.
 **Purpose**: Establish the baselines every later GREEN is measured against. Two of them already
 exist and are recorded rather than re-derived.
 
-- [ ] T001 Capture the Linux baseline of the script suite and record it in this file
+- [X] T001 Capture the Linux baseline of the script suite and record it in this file
   - **Type**: Verification | **Risk**: None
   - **Command**: `node --test "scripts/__tests__/*.test.mjs"`
   - **Expected**: green on Linux. Record the exact test/pass/fail counts here — the Windows target in
     SC-006 is judged against the delta from this, not against zero-in-the-abstract.
-  - **Done when**: counts are written into this task.
+  - **MEASURED (Linux, dev container, 2026-08-09)**: **471 tests, 470 pass, 0 fail, 1 skipped**,
+    exit 0, duration ~5.0s.
+  - **Note the platform delta (FR-031)**: Linux collects **471**, Windows collects **408** (T002).
+    The 63-test gap is `wiki-maintain.test.mjs` aborting at load on Windows (R8d) — its cases are
+    never collected there. That gap is itself evidence for T044, and it is why SC-006's Windows target
+    says the collected total must *rise*.
+  - **Done when**: counts are written into this task. ✔
 
-- [ ] T002 [P] Record the Windows baseline supplied by the operator
+- [X] T002 [P] Record the Windows baseline supplied by the operator
   - **Type**: Verification | **Risk**: None
   - **Measured 2026-08-09, Node v24.14.1, `node --test "scripts/__tests__/*.test.mjs"`**:
     408 tests, 392 pass, **15 fail**, 1 skipped, exit 1, across five files —
@@ -53,15 +59,28 @@ exist and are recorded rather than re-derived.
     `check-toolchain-consistency` (1), `check-ci-digest-coverage` (1), `check-openwiki-okf` (1),
     `gen-dev-env.guard` (1).
   - **Done when**: this baseline is the reference SC-006 is measured against. Do **not** re-derive it
-    locally — it is not reproducible on Linux, which is the point.
+    locally — it is not reproducible on Linux, which is the point. ✔ recorded, not re-derived.
 
-- [ ] T003 [P] Confirm both line-ending defects still reproduce on Linux before fixing them
+- [X] T003 [P] Confirm both line-ending defects still reproduce on Linux before fixing them
   - **Type**: Verification | **Risk**: None | **Covers**: research R8a, R8b
   - **Command**: the two reproductions in [quickstart.md § Story 7](./quickstart.md)
   - **Expected**: `parseExemptions(LF) -> Map(1)` and `parseExemptions(CRLF) -> Map(0)`;
     `Date.parse("…Z\r") -> NaN`.
+  - **OBSERVED (Linux, 2026-08-09)** — both reproduce:
+
+    ```text
+    LF   -> Map(1) { 'myjob' => 'because reasons' }
+    CRLF -> Map(0) {}
+    Date.parse("2026-08-09T00:00:00Z")   -> 1786233600000
+    Date.parse("2026-08-09T00:00:00Z\r") -> NaN
+    ```
+
+  - **Incidental finding, relevant to T005/T006**: importing `check-ci-digest-coverage.mjs` **runs the
+    real gate as an import side effect** — the probe above printed
+    `✓ ci-digest coverage gate passed` before its own output. The existing test file already works
+    around this; the new cases must too, and T020 must not make that side effect throw.
   - **Done when**: both observed. These are the RED evidence for US7 and are reproducible **on
-    Linux**, so US7 needs no Windows host to verify — only to confirm the end-to-end effect.
+    Linux**, so US7 needs no Windows host to verify — only to confirm the end-to-end effect. ✔
 
 ---
 
