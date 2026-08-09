@@ -222,62 +222,92 @@ security controls, useful well beyond this feature.
 
 **Goal**: The counts reach a channel a working session can read, on green runs as well as red.
 
+> **Deviation from the plan's file split, and why.** T016's wiring assertions live in the SAME file as
+> T013–T015 rather than a separate one. They verify one feature — a tally that is correct but wired
+> into the wrong place reports a structural zero, so the script and its wiring are a single contract.
+> The parallel-opportunities note at the foot of this file is corrected accordingly.
+
 ### Tests for User Story 2 ⚠️ Write FIRST, verify RED
 
-- [ ] T013 [P] [US2] Create `scripts/__tests__/e2e-contention-tally.test.mjs`
+- [X] T013 [P] [US2] Create `scripts/__tests__/e2e-contention-tally.test.mjs`
   - **Type**: Test (Node test runner) | **Requirements**: FR-005, FR-007
   - **Assert**: given a fixture log, the script prints exactly one line matching the contract's shape,
     with correct counts.
-  - **Verify RED**: `node --test scripts/__tests__/e2e-contention-tally.test.mjs` FAILS — the script
-    does not exist. Confirm the file was collected, not silently skipped.
-
-- [ ] T014 [US2] Pin the zero-count trap
+- [X] T014 [US2] Pin the zero-count trap
   - **Type**: Test | **Requirements**: FR-006
   - **Assert**: with a fixture log containing **no** matching events, the script prints `0` for each
-    counter and exits **0**.
+    counter and exits **0**. Two cases: a log with unrelated traffic, and an empty log.
   - **Why this is its own task**: `grep -c` exits 1 on zero matches and `ci-log-step.sh` re-raises the
     wrapped exit code by design. Without this pin, the all-zeros measurement — the best possible news —
-    fails the job.
-  - **Verify RED**: FAILS.
+    fails the job. ✔
 
-- [ ] T015 [US2] Pin the unavailable-vs-zero distinction
+- [X] T015 [US2] Pin the unavailable-vs-zero distinction
   - **Type**: Test | **Requirements**: FR-005
   - **Assert**: with the container absent, the script prints `unavailable` (not `0`) for each counter
-    plus a one-line reason, and still exits 0. `0` means "measured, nothing happened"; `unavailable`
-    means "not measured". SC-001 is met only by the former, so conflating them would let a structural
-    failure pass as a clean result.
-  - **Verify RED**: FAILS.
+    plus a one-line reason, and still exits 0. ✔
 
-- [ ] T016 [US2] Pin the step ordering in `.forgejo/workflows/app-ci.yml`
+- [X] T016 [US2] Pin the wiring in `.forgejo/workflows/app-ci.yml`
   - **Type**: Test (guard, alongside `scripts/__tests__/app-e2e-env.guard.test.mjs`)
-  - **Assert**: the tally step exists, carries `if: always()`, appears **after** the Web E2E step and
-    **before** `Tear down CI stacks (always)`, and is invoked through `ci-log-step.sh`.
-  - **Why**: teardown removes the container the counts are read from. A step ordered after it reports
-    zeros for a structural reason indistinguishable from a clean result.
-  - **Verify RED**: FAILS — no such step yet.
+  - **Assert**: the step exists, carries `if: always()`, is invoked through `ci-log-step.sh`, and sits
+    **after** the Web E2E step and **before** `Tear down CI stacks (always)`. ✔
+  - **Verify RED (T013–T016, measured 2026-08-09)**: **7 collected, 0 pass, 7 fail.**
+  - **The first RED was dishonest and was fixed before proceeding.** The initial run read 1 pass /
+    6 fail. That single "pass" was the `always()` assertion: `indexOf` returned `-1`, the negative
+    offset made `slice` return an unrelated tail of the file, and `if: always()` matched a *different*
+    step. It passed precisely because the thing it checked did not exist. Re-anchored on the step
+    block, the honest RED is 7/7 failing. ✔
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Write `scripts/e2e-contention-tally.sh`
+- [X] T017 [US2] Write `scripts/e2e-contention-tally.sh`
   - **Type**: Implementation | **Risk**: Low | **Requirements**: FR-005, FR-006
-  - **Behaviour**: read the live `mcm-bff-service-nonsecure` container log, count the three markers,
-    print the contract line, **always exit 0**.
-  - **Verify GREEN**: T013–T015 pass; `node --test "scripts/__tests__/*.test.mjs"` collected count is
-    **≥** T002's and fail count is 0.
+  - **Behaviour**: read the `mcm-bff-service-nonsecure` container log (or `E2E_CONTENTION_LOG_FILE` —
+    the file seam is the test seam; a script that could only read a live container could only be
+    verified by running CI), count the three audit actions, print the contract line, **always exit 0**.
+  - **Verify GREEN**: 9 collected, 9 passed. Full suite `node --test "scripts/__tests__/*.test.mjs"` →
+    **526 collected, 526 pass, 0 fail, 0 skipped** — **+9** against T002's 517/517/0/0. ✔
 
-- [ ] T018 [US2] Add the tally step to `.forgejo/workflows/app-ci.yml`
+- [X] T018 [US2] Add the tally step to `.forgejo/workflows/app-ci.yml`
   - **Type**: Implementation | **Risk**: Medium — edits the merge-gate workflow
-  - **Placement**: after `Web E2E (Playwright container; host network → dev BFF)`, before
-    `Tear down CI stacks (always)`. `if: always()`. Invoked as
-    `bash scripts/ci-log-step.sh e2e-contention-tally bash scripts/e2e-contention-tally.sh`.
-  - **Verify GREEN**: T016 passes.
+  - **Placement**: immediately after `Web E2E (Playwright container; host network → dev BFF)`, so the
+    window it measures is the web suite's rather than the emulator half's. `if: always()`,
+    `continue-on-error: true`. ✔
 
-- [ ] T019 [US2] Confirm the digest actually carries it
+- [X] T019 [US2] Confirm the channel end-to-end, against the real thing
   - **Type**: Verification | **Requirements**: FR-007, SC-007
-  - **Check**: `selectSources` in `scripts/ci-failure-digest.mjs` ranks `step:` sources 0, and
-    `DIGEST_MAX_SOURCES = 3` does not hold the tally back behind higher-ranked evidence.
-  - **Done when**: verified against the real digest output in T020/T021 — **not** by reading the
-    ranking code alone. Reading the code is what predicted this would work; the run is what shows it.
+  - **MEASURED (2026-08-09)**, not inferred from reading `selectSources`:
+    - live container → `[e2e-contention] refresh_total=0 refresh_429=0 session_evicted=0`
+    - absent container → all three `unavailable`, plus a reason line, **exit 0**
+    - through the real invocation `bash scripts/ci-log-step.sh e2e-contention-tally …` → exit 0, and
+      the line lands in `$HOME/mcm-ci-step-logs/<run>/e2e-contention-tally.log`, which is what the
+      digest collects as a `step:` source (rank 0).
+  - **Mutation-tested, because a guard that cannot fail is decoration** (three mutations, each
+    reverted):
+    | Mutation | Result |
+    | --- | --- |
+    | remove `if: always()` | 1 test fails ✔ |
+    | move the step below `Tear down CI stacks` | **passed at first — the guard was broken** |
+    | bypass `ci-log-step.sh` | 2 tests fail ✔ |
+  - **The ordering guard had the same flaw as the false RED above**, and only mutation testing found
+    it: it matched the bare string `e2e-contention-tally`, which also occurs in the step's own comment
+    and in the reference to the test file. With the step physically relocated below both teardown
+    steps, `indexOf` still found the comment that had stayed behind and reported the correct order.
+    Re-anchored on the `run:` invocation and on line indices; the mutation now fails it. ✔
+
+- [X] T019a [US2] Close the third false-zero mode — discovered by running the thing
+  - **Type**: Implementation + Test | **Requirements**: FR-005, SC-001
+  - **Found**: the live check above returned a clean `0 0 0`. Correct output, wrong conclusion — the
+    running container predates the instrumentation, so those zeros are the *absence* of a measurement
+    wearing a measurement's clothes. The `0`-vs-`unavailable` rule covers a missing source; it does
+    not cover a source built without the events in it.
+  - **Fixed**: `refresh_attempted` fires on every refresh and refresh cadence is set by the 5-minute
+    access-token lifespan, so `refresh_total=0` alongside real BFF traffic means the instrumented
+    image did not ship. The script now emits a `caution:` line saying exactly that — and deliberately
+    stays silent when there was no BFF traffic at all, since warning on a legitimate zero would train
+    the reader to ignore the line in the case that matters.
+  - **Verified against the live container**: `caution: refresh_total=0 across 325 BFF log entries …`.
+  - **Carried into T021**: a measurement run reading `refresh_total=0` has **not** answered SC-001.
+    Rebuild the BFF image from the branch and re-run. ✔
 
 **Checkpoint**: a count emitted anywhere in the BFF now arrives where it can be read.
 
@@ -307,7 +337,9 @@ security controls, useful well beyond this feature.
   - **Record in this task**: `refresh_total`, `refresh_429`, `session_evicted`; the Playwright
     collected/passed/failed/flaky counts; the agent-spec executed and skipped counts; the duration.
   - **Done when**: all three counters have a **numeric** value (SC-001). `unavailable` does not close
-    this task — it means the channel failed and T017/T018 need fixing first.
+    this task — it means the channel failed and T017/T018 need fixing first. **Neither does
+    `refresh_total=0`**: per T019a that means the instrumented BFF image did not ship, so rebuild from
+    the branch and re-run rather than recording a row of zeros as an answer.
 
 - [ ] T022 Apply the decision rule and record the verdict
   - **Type**: Decision | **Risk**: None
@@ -441,6 +473,6 @@ step's scope is determined by the previous step's measurement.
 ## Parallel opportunities
 
 - T001 / T002 / T003 — different tiers, no shared state
-- T005 / T006 / T007 — different test files
-- T013 / T014 / T015 — same file, so **not** parallel; T016 is a different file and is
+- T005 / T006 — different test files. T007 and T008 share files with them and are **not** parallel
+- T013–T016 and T019a — one file, one contract (see the deviation note in Phase 4); **not** parallel
 - T031 / T032 — different documents

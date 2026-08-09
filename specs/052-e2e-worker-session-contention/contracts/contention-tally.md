@@ -52,6 +52,29 @@ Missing input is reported, never silently rendered as zero — the two are oppos
 `unavailable` and `0` must never be conflated. `0` means "measured, nothing happened"; `unavailable`
 means "not measured". SC-001 is satisfied only by the former.
 
+## The third false zero — a BFF without the instrumentation
+
+The `0`-vs-`unavailable` rule covers a missing *source*. It does not cover a present source produced
+by a build that has no instrumentation in it: that reports a clean, confident `0` for all three
+counters, and nothing in the line says otherwise. Found the honest way — running the tally against
+the live dev container, which predated feature 052's events and duly returned a tidy row of zeros.
+
+`refresh_attempted` fires on every refresh attempt, and refresh cadence is set by the **5-minute**
+access-token lifespan, not by anything the tests do. Across a full multi-worker run, `refresh_total=0`
+in the presence of ordinary BFF traffic therefore means *the instrumented image did not ship* — not
+that nothing refreshed. The script emits a second line when it sees that combination:
+
+```text
+[e2e-contention] caution: refresh_total=0 across <N> BFF log entries — over a full run this
+indicates the instrumented build did NOT ship, not that no refresh occurred. …
+```
+
+No caution is emitted when there was no BFF traffic at all: that is a legitimate zero with nothing to
+infer from, and warning there would train the reader to ignore the line in the case that matters.
+
+**Consequence for SC-001**: a measurement run whose tally reads `refresh_total=0` has **not** answered
+the question. Rebuild the BFF image from the branch and re-run.
+
 ## Why this channel
 
 `ci-failure-digest.mjs`'s `selectSources` ranks a `step:` source **0** — above `_ps.txt`, above
