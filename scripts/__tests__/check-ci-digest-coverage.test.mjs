@@ -11,6 +11,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, readdirSync, readFileSync } from
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parse as parseYaml } from 'yaml';
 
 const GATE = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'check-ci-digest-coverage.mjs');
 const REPO_WORKFLOWS = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.forgejo', 'workflows');
@@ -362,4 +363,49 @@ test('(v2) the REAL repo workflows satisfy the per-step rule — the gate ships 
   // fails the very build that introduces it.
   const r = spawnSync('node', [GATE], { encoding: 'utf8' });
   assert.equal(r.status, 0, `the real workflows do not satisfy the per-step rule:\n${r.stdout}${r.stderr}`);
+});
+
+// --- (x) a wrapper under `working-directory:` must not use a repo-root-relative path -------------
+//
+// MEASURED IN CI, 2026-08-09, and it is the nastiest failure shape this feature has produced.
+//
+// `guardrails / sast` failed on the first branch run. Its `Sync the Python agent env` step carries
+// `working-directory: agents/movie-assistant`, and the instrumentation pass had wrapped it as
+// `bash scripts/ci-log-step.sh …` — a path relative to the REPO ROOT. From that working directory
+// the script does not exist, so bash exited 127 before ci-log-step.sh ran at all.
+//
+// Which means: **no log was captured, and no `_failed-step` marker was written** — so the digest
+// published "Failing step: _not reported_" and named nothing. An instrumentation bug that makes the
+// step it instruments both fail AND undiagnosable is precisely the outcome this feature exists to
+// prevent, so it gets a gate rather than a fix and a hope.
+//
+// The wrapping still worked everywhere else: 4 of sast's other newly wrapped steps captured cleanly,
+// which is how the failure was localised without any job log — the forge exposes none.
+
+test('(x) a step with `working-directory:` must reference the wrapper by ABSOLUTE path', () => {
+  const offenders = [];
+  for (const f of readdirSync(REPO_WORKFLOWS).filter((n) => /\.ya?ml$/.test(n))) {
+    const text = readFileSync(join(REPO_WORKFLOWS, f), 'utf8');
+    const doc = parseYaml(text);
+    for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
+      const jobWd = job?.defaults?.run?.['working-directory'];
+      for (const step of Array.isArray(job?.steps) ? job.steps : []) {
+        const wd = step?.['working-directory'] ?? jobWd;
+        const run = typeof step?.run === 'string' ? step.run : null;
+        if (!run || !wd) continue;
+        // A bare `scripts/…` resolves against the working directory, not the repo root.
+        if (/(^|\s)bash\s+scripts\/ci-log-step\.sh/m.test(run)) {
+          offenders.push(`${f} / ${jobName} :: ${step.name ?? '(unnamed)'} (working-directory: ${wd})`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'these wrapped steps run in a working-directory but reference the wrapper relatively, so bash '
+      + 'will exit 127 before ci-log-step.sh runs — no log, no failing-step marker, and a digest that '
+      + `names nothing:\n  ${offenders.join('\n  ')}\n`
+      + 'Use `bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" …` instead.',
+  );
 });

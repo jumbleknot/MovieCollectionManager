@@ -302,7 +302,7 @@ jobs:
       - name: Install JS dependencies
         run: bash scripts/ci-log-step.sh sast-install-js-dependencies pnpm install --frozen-lockfile
       - name: Sync the Python agent env (pip-audit audits the installed venv, not a requirements file)
-        run: bash scripts/ci-log-step.sh sast-sync-python-agent-env uv sync --frozen
+        run: bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" sast-sync-python-agent-env uv sync --frozen
         working-directory: agents/movie-assistant
       - name: Gate selftest (prove fail/suppress/expiry paths before the real scan)
         run: bash scripts/ci-log-step.sh sast-gate-selftest node scripts/check-sast-findings.mjs --selftest
