@@ -377,7 +377,33 @@ security controls, useful well beyond this feature.
     `refresh_total=0`**: per T019a that means the instrumented BFF image did not ship, so rebuild from
     the branch and re-run rather than recording a row of zeros as an answer.
 
-- [ ] T022 Apply the decision rule and record the verdict
+  - **MEASURED — run_number 1605, bundle `1606--app-e2e`, sha 05ec650, 2026-08-09 21:01–21:30**
+    ```text
+    [e2e-contention] refresh_total=66 refresh_429=32 session_evicted=0
+    ```
+    | Playwright | | BFF | |
+    | --- | ---: | --- | ---: |
+    | collected | 177 | refresh_attempted | 66 |
+    | failed | 34 | refresh_rate_limited | **32 (48%)** |
+    | flaky | 18 | session_evicted | **0** |
+    | passed | 122 | `auth_failed` `no_token` | 227 |
+    | **skipped** | **0** | `auth_failed` `invalid_token` | 0 |
+    | did not run | 3 | | |
+    | duration | 21.2 min | | |
+  - **SC-001 satisfied**: all three counters are numeric, and `refresh_total=66` is well clear of the
+    T019a false-zero condition, so the instrumented image demonstrably shipped.
+  - **SC-003 holds**: skip count **0** — the agent specs are still executing. Feature 051's SC-001 has
+    not regressed.
+  - **R9's cross-check passes**: `refresh_total=66` against `no_token=227` is a factor of 3.4, not the
+    orders-of-magnitude gap that would have meant R4 mis-describes how the refresh path is driven.
+    (`no_token` is legitimately larger: the deliberately-unauthenticated specs contribute a fixed
+    share, and after a rejected refresh the client stops retrying, so one 429 is followed by many
+    cookie-less requests.)
+  - **The bundle name is offset from the run number** exactly as the runbook warns — run 1605 published
+    `1606--app-e2e`. Listing package versions rather than constructing `<run_number>--<job>` is what
+    made this readable; the constructed name would have 404'd and read as "no digest". ✔
+
+- [X] T022 Apply the decision rule and record the verdict
   - **Type**: Decision | **Risk**: None
   - **Rule**: [research.md §R8](./research.md), fixed in advance so the remedy is selected by the
     number rather than by whichever story reads best afterwards.
@@ -385,7 +411,30 @@ security controls, useful well beyond this feature.
   - **If both counts are zero**: both candidates are **refuted**. Write that plainly, mark US3 blocked,
     and re-open diagnosis from the Playwright report and `trace: 'on-first-retry'`. Do **not**
     substitute a third untested mechanism and ship against it.
-  - **Done when**: the chosen remedy is named, with the measurement that chose it.
+  - **VERDICT (2026-08-09), from run 1605's tally:**
+
+    | Candidate | Measured | Verdict |
+    | --- | ---: | --- |
+    | Concurrent-session cap evicts (PRD §1.2, §6 Q1) | `session_evicted=0` | **REFUTED** |
+    | Per-session refresh bucket rejects (R4) | `refresh_429=32 / 66` | **CONFIRMED** |
+
+  - **§6 Q1 is answered, and the answer is no.** Eviction never fired — not once in a 21-minute
+    8-worker run. PRD §1.2's "8 workers against a cap of 10 sits right at the edge" conflated workers
+    with sessions, exactly as [research.md §R3](./research.md) predicted: all eight workers present the
+    same `sessionId` from one shared `storageState`, so the user held ~1 session against a cap of 10.
+    **PRD §3.2 (raise `MAX_CONCURRENT_SESSIONS` for the CI BFF) would have been a no-op** — it was the
+    cheapest-looking remedy and it addresses a mechanism that does not fire.
+  - **The real mechanism is the one §6 did not list.** `checkRefreshRateLimit` is keyed on the SESSION
+    and holds 2 per 30 s; eight workers share one session, therefore one bucket. **48% of every token
+    refresh in the run was rejected.** The rejection is invisible to the client — `doRefresh` swallows
+    the 429 and returns false, whose contract is "clear session and redirect to login" — which is why
+    it surfaced as `gotoHome: … is the global-setup session valid?`, a message that names a cause it
+    never tested.
+  - **Chosen remedy: break the shared-session coupling** (R8's `refresh_429 > 0` row). **But R8's
+    specific proposal, PRD §3.3, is now known to be insufficient on its own** — see T023.
+  - **FR-013 — rejected candidates, with the number that rejected them**: PRD §3.2 rejected by
+    `session_evicted=0`; PRD §1.2's mechanism rejected by the same. Both are recorded here rather than
+    quietly dropped, because both were argued from configuration twice before anyone measured. ✔
 
 **Checkpoint**: the mechanism is known by measurement for the first time. US3 can be scoped.
 
