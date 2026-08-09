@@ -225,9 +225,26 @@ proves it rather than building it.
     checks passed!"; mypy → "no issues found in 43 source files". `mcm-app:test render-movie-card`
     → 19 passed. `mcm-app:lint` → 0 errors (11 pre-existing warnings, none in the changed files).
 
-- [ ] T019 Final validation against [openwiki/invariants/feature-validation-checklist.md](../../openwiki/invariants/feature-validation-checklist.md)
+- [X] T019 Final validation against [openwiki/invariants/feature-validation-checklist.md](../../openwiki/invariants/feature-validation-checklist.md)
   - **Type**: Verification | **Risk**: Low
   - Walk the whole "What done means" list in [quickstart.md](./quickstart.md), including the manual reported path (§ 7).
+
+- [X] T018b Agent-E2E regression sweep + baseline attribution
+  - **Type**: Verification | **Risk**: Medium
+  - Run isolated per spec FILE with the `compose.agent-e2e.yaml` rate-limit override, as
+    `scripts/agent-e2e.mjs` requires — the first attempt ran all 174 tests in one invocation without
+    the override and produced failures that were pure shared-test-user rate-limit artifacts.
+  - **Measured**: `agent-card-navigate` 1 passed · **`agent-search` 3 passed** · `agent-navigate-movie`
+    1 failed · `agent-disambiguation` 1 failed · `agent-add-external-link` 1 passed.
+  - **Attribution (the important part).** Both failures were checked against a controlled baseline
+    per [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md): `main`'s copy of the two
+    changed source files restored, gateway rebuilt, image confirmed pre-fix (`grep -c` → 0), same
+    specs re-run → **both fail identically on `main`**. They are pre-existing on this local Ollama
+    surface, not regressions from 050. Filed as **item #150**; branch source verified restored
+    afterwards and the fixed gateway redeployed (`agent-search` re-confirmed 3 passed).
+  - **Honest limitation**: this ran on local Ollama `qwen2.5:latest`, while
+    [model-provider-scoping](../../openwiki/invariants/model-provider-scoping.md) makes Anthropic the
+    sanctioned surface for model decisions. CI is the authority for those two specs.
 
 - [ ] T020 Close backlog item #149 — **only after T019 passes**
   - **Type**: Chore | **Risk**: None
