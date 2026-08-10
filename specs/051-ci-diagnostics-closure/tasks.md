@@ -886,7 +886,7 @@ confusing. It collected its evidence on 2026-08-01 and then threw it away.
 
 **⚠️ GATED ON T034.** Do not implement T036+ until the probe returns.
 
-- [ ] T034 [US4] Run the auto-token capability probe on CI
+- [X] T034 [US4] Run the auto-token capability probe on CI
   - **Type**: Verification | **Risk**: Medium | **Covers**: research R7
   - Add the temporary probe step from [quickstart.md § Story 4](./quickstart.md) on this branch. It
     prints the token's **length** and an HTTP status — **never the token**. Constitution § Secrets
@@ -896,6 +896,50 @@ confusing. It collected its evidence on 2026-08-01 and then threw it away.
   - **If negative**: STOP. Do not implement T036. Renegotiate SC-004 with the operator — the fallback
     becomes "make the secretless condition unmistakable through Story 3's vocabulary" rather than
     "publish anyway". Silently weakening SC-004 is prohibited.
+
+  - ### RESULT: **POSITIVE on capability** (guardrails run #1627, sha `5711195`, 2026-08-10)
+
+    The automatically-provisioned token **can write** `POST /repos/{owner}/{repo}/statuses/{sha}`.
+    Measured by the status the probe itself left behind, which is API-readable:
+
+    ```text
+    success  probe-051-t034  "temporary capability probe"  2026-08-10T22:42:04Z
+    ```
+
+  - **This does NOT contradict feature 042's 403.** That measurement was `CI_DIGEST_TOKEN` — a
+    different credential with different scopes. Both facts hold. The correction that matters is to
+    **research R3**, which called Story 4 "credential selection, not new machinery" and cited
+    `ci-failure-digest.mjs:585-588` as an existing publication path: those lines are a scope-*hint*
+    helper, and the real commit-status path was **deleted** in 042's T040. US4 is re-adding a removed
+    path — but against a credential that, it turns out, is allowed to use it.
+
+  - **⚠️ The agent predicted a NEGATIVE, twice, with confidence, and was wrong.** Recorded because
+    this feature's subject is exactly that: reasoning from an adjacent measurement (042's 403 for a
+    *different* token) and presenting the inference as near-certain. The probe was run precisely
+    because "likely" is not "measured", and it earned its place.
+
+  - **⚠️ A DESIGN FLAW IN THE PROBE ITSELF, worth more than the result.** It printed its findings —
+    token lengths, HTTP status, the control read — to **stdout**, i.e. the job log, which this forge
+    exposes to **no API**. The job went green, so no failure digest was published either. The agent
+    therefore **could not read its own probe's output**. The answer was recoverable only because the
+    probe's side effect (writing a status) is itself the evidence, and statuses *are* readable — a
+    lucky property, not a designed one. A diagnostic that puts its answer where the reader cannot
+    reach is the same defect as the 2026-08-01 digest printing inline to a log nobody can fetch.
+
+  - ### What is STILL NOT established — the half that actually matters for SC-004
+
+    R7 asked two things. Only one is answered.
+
+    | Question | Status |
+    | --- | --- |
+    | Can the auto token write statuses? | **YES — measured above** |
+    | Is it *populated* on a run whose Actions secrets are empty (the AGit-headed 2026-08-01 condition)? | **STILL UNPROVEN** |
+
+    This run had secrets available, so it cannot speak to the secretless case. `github.token` is a
+    runner-provisioned context value rather than an Actions secret, so it *ought* to survive where
+    `secrets.*` do not — but "ought to" is the reasoning this task exists to refuse. Proving it needs
+    an AGit-headed run, which **CLAUDE.md forbids**. The probe's own comment stated this scope limit
+    before it ran; it is not a retrofit.
 
 - [ ] T035 [P] [US4] Write a failing test for credential fallback selection in `scripts/__tests__/ci-failure-digest.test.mjs`
   - **Type**: Test | **Risk**: Low | **Covers**: US4-AC1, US4-AC2, FR-013, FR-015
