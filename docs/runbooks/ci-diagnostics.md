@@ -184,6 +184,19 @@ Two consequences for anyone verifying a branch here:
   log with no summary. So a green `app-e2e` now *does* mean "nothing hidden" — but still not "nothing
   needed a retry", because `flaky` is only visible in a bundle, and a bundle only exists on failure.
 
+**There are now two such gates, for the same reason.** The second is the `Contention gate`
+(`scripts/e2e-contention-tally.sh --gate`), which fails `app-e2e` on `refresh_429 > 0` or
+`session_evicted > 0`. Feature 052's own SC-007 asked for its contention tally to be readable on
+passing runs and could not be satisfied as written — measured on runs 1622/1623, both green, whose
+bundles simply do not exist. Left advisory, a partial return of the worker/session contention would be
+absorbed by `retries: 1`, keep the job green, and never surface.
+
+The pattern generalises, and is worth applying to the next check of this kind: **if a condition is
+only observable on a failing run, it is not being verified — move it into the job.** Note both gates
+run without `continue-on-error`; adding it back leaves a step that still runs and still prints while
+the job passes regardless, which is invisible in the log and is asserted against in
+`scripts/__tests__/`.
+
 To read counts for a green run today you must make it fail, which is not a plan. Publishing the counts
 per run (the way the digest publishes on failure) is the open follow-up.
 

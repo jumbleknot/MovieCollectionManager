@@ -1,8 +1,9 @@
 # PRD — `app-e2e` worker/session contention (make the web E2E suite survive its own agent specs)
 
-**Status:** Proposed
+**Status:** Resolved — see §0. Implemented as feature 052; the residual defects it isolated were
+fixed by the follow-on work on item #150.
 
-**Created:** 2026-08-09
+**Created:** 2026-08-09 · **Resolved:** 2026-08-10
 
 **Context:** Feature 051 fixed a false green: `app-ci / app-e2e` had never executed a single
 `agent-*.spec.ts`, because `E2E_AGENT_PRODUCTION` was set at job level and never forwarded into the
@@ -25,6 +26,56 @@ it; §6 lists what is *not* yet established so the boundary is explicit.
 [openwiki/invariants/feature-validation-checklist.md](../../openwiki/invariants/feature-validation-checklist.md).
 
 ---
+
+## 0. Outcome — what was actually true
+
+Read this before §1. **§1 is still an accurate record of what was measured on 2026-08-09, but two of
+its conclusions were wrong**, and the corrections are the useful part of this document.
+
+### §6's four open questions, answered by measurement
+
+| | Question | Answer |
+| --- | --- | --- |
+| 1 | Does session *eviction* actually fire? | **No. `session_evicted=0`** — not once, in any run. §1.2's mechanism is refuted, and §3.2 (raise `MAX_CONCURRENT_SESSIONS`) would have been a no-op. |
+| 2 | Are the 361 `no_token` events signal or noise? | **Neither, as framed.** They are the *ordinary* state of every authenticated worker crossing a 5-minute access-cookie expiry — the cookie's `Max-Age` equals the token lifespan, so it is deleted, and `invalid_token` never occurs (0 in both measured runs). Not evidence of eviction; a rough lower bound on refresh attempts. |
+| 3 | Is 4 workers enough, or does it need 2 or 1? | **Wrong lever.** Worker count was never the driver. The bound is now 6, and only to keep the per-worker session count clear of the cap. |
+| 4 | Do the 19 collateral failures disappear? | **Yes.** No `movies`, `responsive`, `theme` or `perf` failure survived. |
+
+### The mechanism §6 did not list
+
+`checkRefreshRateLimit` is keyed on the **session** and holds **2 requests per 30 s**. Every worker
+loaded the same `storageState`, so all of them shared one bucket: **32 of 66 refreshes rejected (48%)**.
+A rejected refresh makes the client clear its session and bounce to login — which is why it surfaced
+as `gotoHome: … is the global-setup session valid?`, a message §1.3 correctly warned names a cause it
+never tested.
+
+The **driver** was upstream of the sharing: Playwright builds a fresh `BrowserContext` per test, each
+reloading the frozen `storageState`, whose access cookie expires five minutes in. Median interval
+between refresh attempts was **1.9 s** — roughly one per test, not one per token lifetime.
+
+Fixed by one session per worker **and** a CI access token that outlives the job (`ci-realm`
+`accessTokenLifespan` 300 → 5400 s; dev and prod untouched). `refresh_429`: **32 → 35 → 0**.
+
+### §1.4's bucketing was inverted
+
+It called 7 `agent-*` failures genuine defects and the `assistant-*` ones collateral. With the
+contention gone, **5 of those 7 `agent-*` passed** (they were artifacts), while **8 `assistant-*`
+failed in both runs**. The genuine list was neither the size nor the membership recorded there. Those
+were then fixed under item **#150**, after which two consecutive runs passed with **0 skipped** and
+**0 "did not run"**.
+
+### What this cost, and what it bought
+
+`app-e2e` went from 33/61 failures and 17.9 min/1.1 h on identical code, to green in ~34 min with the
+emulator half restored — the earlier "fast" red runs were a job giving up before the mobile stage. The
+run-to-run variance on the retry-insensitive set fell from **57 to 5**.
+
+### One criterion could not be met as written
+
+SC-007 required the contention tally to be readable "including [on] the ones that pass". It cannot be:
+the failure digest publishes **only on failure**, so a green run leaves no bundle. Resolved by moving
+the judgement into the job — the tally now runs with `--gate` and fails `app-e2e` on any rate-limited
+refresh or eviction, so a partial regression cannot hide behind retries on a green tick.
 
 ## 1. Problem Statement — measured, not inferred
 
