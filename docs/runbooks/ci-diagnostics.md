@@ -166,6 +166,27 @@ expired credential and cost this design a full revision cycle to diagnose.
 
 ---
 
+## A PASSING run publishes no bundle — so CI has to judge its own counts
+
+The digest publishes **on failure**. That is right for diagnosis and wrong for verification: on a
+green run there is nowhere to read `skipped=` from, and `ci-status`/`/actions/tasks` only ever report
+the job's exit status. Combined with the fact that **Playwright exits 0 with tests skipped**, a green
+`app-e2e` carried no information about how many tests actually ran. Feature 040 validated green with
+33 specs skipped on exactly this blind spot (item #150).
+
+Two consequences for anyone verifying a branch here:
+
+- **Do not quote counts you have not read.** If a run is green there is no bundle, so `failed=` /
+  `flaky=` / `passed=` are not available to you. Say what the gate asserts, not what you assume it
+  would have printed.
+- **The assertion lives in the job**, as the `E2E result gate` step
+  (`node scripts/e2e-failure-set.mjs gate …`), which fails on `skipped > 0`, `did not run > 0`, or a
+  log with no summary. So a green `app-e2e` now *does* mean "nothing hidden" — but still not "nothing
+  needed a retry", because `flaky` is only visible in a bundle, and a bundle only exists on failure.
+
+To read counts for a green run today you must make it fail, which is not a plan. Publishing the counts
+per run (the way the digest publishes on failure) is the open follow-up.
+
 ## Verifying a branch WITHOUT opening a pull request
 
 **A push to a feature branch runs almost nothing.** `guardrails` and `app-ci` both scope their
