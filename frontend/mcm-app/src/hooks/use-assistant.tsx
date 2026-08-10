@@ -74,18 +74,33 @@ export function useAssistantRun(): { run: (content: string) => void; isRunning: 
     [resolveAgent, fire],
   );
 
-  // Flush a queued message once the agent becomes available (self-heals an empty-registry tap).
+  // The queue above catches TWO conditions, and this effect has to observe both of them:
+  //
+  //   * no agent resolvable yet  — recovers on `agent` gaining an identity (the empty-registry tap);
+  //   * agent resolvable but RUNNING — recovers only when that run ENDS.
+  //
+  // `isRunning` is a mutable property on a STABLE agent object, and `resolveAgent`/`fire` are
+  // memoised on `[agent, copilotkit]` — both stable too. So keying this effect on `[agent, …]` alone
+  // covered the first condition and silently abandoned the second: a message sent while the
+  // assistant was still answering was queued and then never flushed. Not delayed — lost, with no
+  // error and no echo in the dock (feature 053; measured as ZERO gateway requests for that turn).
+  //
+  // Depending on `isRunning` is what makes the trailing edge of a run a flush point.
+  const isRunning = agent?.isRunning ?? false;
   useEffect(() => {
     const queued = pendingRef.current;
     if (!queued) return;
     const target = resolveAgent();
     if (target && !target.isRunning) {
+      // Cleared BEFORE firing: at-most-once even if the effect re-runs for one transition (React 19
+      // double-invokes effects in dev StrictMode). A duplicate here is not cosmetic — an add turn
+      // delivered twice writes the movie twice.
       pendingRef.current = null;
       fire(target, queued);
     }
-  }, [agent, resolveAgent, fire]);
+  }, [agent, isRunning, resolveAgent, fire]);
 
-  return { run, isRunning: agent?.isRunning ?? false };
+  return { run, isRunning };
 }
 
 export function AssistantProvider({ children }: { children: React.ReactNode }) {
