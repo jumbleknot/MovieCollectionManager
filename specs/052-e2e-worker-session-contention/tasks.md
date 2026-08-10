@@ -497,7 +497,54 @@ feature was created to correct. The tasks below are the *frame*; T023 fills it.
   - **Guarded**: a new assertion pins `accessTokenLifespan ≥ the job timeout`, so lowering it cannot
     silently restore the contention. It failed my own first value (3600 s = 60 min < 75 min). ✔
 
-- [ ] T026 [US4] First verification run — `workflow_dispatch` on this branch
+## Phase 7 RESULT — two consecutive runs, sha 8a97969 (2026-08-10)
+
+| | run A (1611) | run B (1613) |
+| --- | ---: | ---: |
+| tally | `refresh_total=3 refresh_429=0 session_evicted=0` | **identical** |
+| collected / failed / flaky / passed | 177 / 10 / 7 / 157 | 177 / 9 / 5 / 160 |
+| **skipped** | **0** | **0** |
+| duration | 9.3 min | 11.5 min |
+
+**The contention is removed.** `refresh_429` went 32 (48%) → 35 (30%) → **0**, `refresh_total`
+66 → 115 → **3**, evictions 0 throughout, and the runs got *faster* (17.9 min–1.1 h → 9.3–11.5 min)
+because the retry storm that made identical code take 3.7× longer is gone. PRD §6 Q4 is answered:
+the collateral disappeared — no `movies`, `responsive`, `theme` or `perf` failure in either run.
+
+**SC-002 and SC-004 are NOT met, and are not going to be by this feature.** Stated plainly rather
+than reinterpreted:
+
+| Criterion | Verdict |
+| --- | --- |
+| SC-001 numeric answer for both mechanisms | **met** |
+| SC-002 passes on two consecutive runs | **not met** — 8 genuine defects remain, so `app-e2e` is red |
+| SC-003 agent specs execute, zero skips | **met** — 0 skipped in every run of this feature |
+| SC-004 empty failure-set diff | **not met** — 3 tests differ (5 on the retry-insensitive set) |
+| SC-005 residuals are the 7 known `agent-*` defects | **not as written** — see below |
+| SC-006 inside the 75-min budget | **met** — 9.3 and 11.5 min |
+| SC-007 tally readable on every run | **met**, including the bring-up failure, where it correctly said `unavailable` |
+
+**SC-005's premise was wrong, and the measurement is what showed it.** PRD §1.4 called 7 `agent-*`
+failures genuine and the `assistant-*` ones collateral. With the contention gone, **5 of those 7
+`agent-*` pass**, and **8 `assistant-*` fail in both runs**. The bucketing was inverted. Triaged onto
+item **#150** with the full lists.
+
+**Why SC-004's diff is not empty, and why it is no longer this feature's problem.** The 3 differing
+tests are all live-model + live-TMDB agent flows, and **two of them were `flaky` in the other run** —
+they failed there too and merely passed on retry. On the retry-insensitive set (failed ∪ flaky, which
+retry luck cannot move):
+
+| | the PRD's two runs | after 052 |
+| --- | ---: | ---: |
+| unreliable tests | 42 vs 87 | 17 vs 14 |
+| symmetric difference | **57** | **5** |
+
+A 57 → 5 reduction in run-to-run variance is the contention going away. The residual 5 is model
+nondeterminism, which `docs/runbooks/e2e-testing.md` already documents for agent flows. Removing it
+would mean deciding whether live-model assertions belong in a merge gate — a different question, and
+not one to answer by quietly relaxing this feature's success criteria.
+
+- [X] T026 [US4] First verification run — `workflow_dispatch` on this branch
   - **Type**: Measurement
   - **Record**: collected / passed / failed / flaky / skipped; the agent-spec executed and skip counts;
     the tally line; the duration; **and the full failing-test identity list** — T028 cannot diff what
