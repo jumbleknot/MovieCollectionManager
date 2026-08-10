@@ -28,8 +28,18 @@ import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { needsShell } from './shell-probe.mjs';
+
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCRIPT = resolve(REPO_ROOT, 'scripts/e2e-contention-tally.sh');
+
+// Gate every case on the host actually being able to RUN the script, not merely on `bash` existing.
+// MEASURED ON WINDOWS 2026-08-10: all 11 cases here failed with `127 !== 0`, because `bash` on PATH
+// was the WSL shim — it starts fine and cannot see `E:\…`. This is exactly the defect feature 051's
+// US5 removed from ci-log-step.test.mjs, reintroduced by copying the older `spawnSync('bash', …)`
+// shape. Eleven red tests that said nothing about the code under test.
+const needsBash = needsShell('bash', SCRIPT);
+
 const APP_CI = resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml');
 
 /** One structured BFF audit line, as the logger actually writes it. */
@@ -78,7 +88,7 @@ function tallyLine(stdout) {
   return lines[0];
 }
 
-test('counts each event and prints exactly one tally line in the contracted shape', () => {
+test('counts each event and prints exactly one tally line in the contracted shape', needsBash, () => {
   const log = [
     auditLine('refresh_attempted'),
     auditLine('refresh_attempted'),
@@ -98,7 +108,7 @@ test('counts each event and prints exactly one tally line in the contracted shap
   );
 });
 
-test('a zero count is reported as 0 and still exits 0 — the grep -c trap', () => {
+test('a zero count is reported as 0 and still exits 0 — the grep -c trap', needsBash, () => {
   // A log with plenty of traffic but none of the three events. Under naive `grep -c` this is the
   // case that exits 1, fails the ci-log-step wrapper, and reddens a job that had good news.
   const log = [auditLine('login'), auditLine('logout'), auditLine('auth_failed')].join('\n');
@@ -112,7 +122,7 @@ test('a zero count is reported as 0 and still exits 0 — the grep -c trap', () 
   );
 });
 
-test('an empty log is 0, not unavailable', () => {
+test('an empty log is 0, not unavailable', needsBash, () => {
   const { status, stdout } = runTally('');
 
   assert.equal(status, 0);
@@ -122,7 +132,7 @@ test('an empty log is 0, not unavailable', () => {
   );
 });
 
-test('a confident all-zero over real BFF traffic is flagged as a missing build, not a result', () => {
+test('a confident all-zero over real BFF traffic is flagged as a missing build, not a result', needsBash, () => {
   // The false zero the 0-vs-unavailable rule does NOT cover: a BFF running a build without feature
   // 052's instrumentation answers `0` for everything, cleanly and wrongly. refresh cadence is set by
   // the 5-minute access-token lifespan, so across a real run refresh_total=0 means the instrumented
@@ -137,7 +147,7 @@ test('a confident all-zero over real BFF traffic is flagged as a missing build, 
   assert.match(stdout, /\[e2e-contention\] caution: refresh_total=0 across 2 BFF log entries/);
 });
 
-test('no caution when there was no BFF traffic to draw the inference from', () => {
+test('no caution when there was no BFF traffic to draw the inference from', needsBash, () => {
   // An empty log is a legitimate 0 with nothing to conclude from. Warning here would train the
   // reader to ignore the caution line in the case where it matters.
   const { status, stdout } = runTally('');
@@ -146,7 +156,7 @@ test('no caution when there was no BFF traffic to draw the inference from', () =
   assert.doesNotMatch(stdout, /caution:/);
 });
 
-test('an unreadable source reports unavailable — never 0 — and still exits 0', () => {
+test('an unreadable source reports unavailable — never 0 — and still exits 0', needsBash, () => {
   const { status, stdout } = runTally(null);
 
   assert.equal(status, 0, 'a diagnostic must not fail the job it is diagnosing');
@@ -167,7 +177,7 @@ test('an unreadable source reports unavailable — never 0 — and still exits 0
 // If the contention partially returned, retries would absorb it, app-e2e would stay green, and
 // `refresh_429 > 0` would never be seen. So the judgement moves into the job.
 
-test('gate passes a clean run and says so', () => {
+test('gate passes a clean run and says so', needsBash, () => {
   const log = [auditLine('refresh_attempted'), auditLine('refresh_attempted')].join('\n');
   const { status, stdout } = runTally(log, ['--gate']);
 
@@ -176,7 +186,7 @@ test('gate passes a clean run and says so', () => {
   assert.match(stdout, /gate passed/);
 });
 
-test('gate FAILS on a rate-limited refresh — the contention returning', () => {
+test('gate FAILS on a rate-limited refresh — the contention returning', needsBash, () => {
   const log = [auditLine('refresh_attempted'), auditLine('refresh_rate_limited')].join('\n');
   const { status, stdout } = runTally(log, ['--gate']);
 
@@ -189,7 +199,7 @@ test('gate FAILS on a rate-limited refresh — the contention returning', () => 
   assert.match(stdout, /Do NOT silence this by raising the BFF's refresh rate limit/);
 });
 
-test('gate FAILS on a session eviction — the mechanism run 1605 refuted, returning', () => {
+test('gate FAILS on a session eviction — the mechanism run 1605 refuted, returning', needsBash, () => {
   const log = [auditLine('refresh_attempted'), auditLine('session_evicted')].join('\n');
   const { status, stdout } = runTally(log, ['--gate']);
 
@@ -197,7 +207,7 @@ test('gate FAILS on a session eviction — the mechanism run 1605 refuted, retur
   assert.match(stdout, /session_evicted=1/);
 });
 
-test('gate does NOT fail on `unavailable` — it cannot cause a false green', () => {
+test('gate does NOT fail on `unavailable` — it cannot cause a false green', needsBash, () => {
   // This step runs after the web E2E and before teardown, so the container exists whenever the suite
   // ran. `unavailable` therefore implies bring-up already failed and the job is red for an upstream
   // cause; failing again would compete with the real story (run 1611, a Keycloak import error).
@@ -208,7 +218,7 @@ test('gate does NOT fail on `unavailable` — it cannot cause a false green', ()
   assert.doesNotMatch(stdout, /gate passed/, 'an unmeasured run must not claim the gate passed');
 });
 
-test('without --gate the script still never fails, whatever it finds', () => {
+test('without --gate the script still never fails, whatever it finds', needsBash, () => {
   // The diagnostic contract is unchanged: default mode is exit-0 by design, so the tally can be read
   // on a failing run without adding a second, competing failure.
   const log = [auditLine('refresh_rate_limited'), auditLine('session_evicted')].join('\n');
@@ -217,7 +227,7 @@ test('without --gate the script still never fails, whatever it finds', () => {
 
 // ─── The wiring. A correct script in the wrong place reports a structural zero. ──────────────────
 
-test('app-ci runs the tally through ci-log-step, so the digest ranks it above container logs', () => {
+test('app-ci runs the tally through ci-log-step, so the digest ranks it above container logs', needsBash, () => {
   const yml = readFileSync(APP_CI, 'utf8');
   assert.match(
     yml,
@@ -226,7 +236,7 @@ test('app-ci runs the tally through ci-log-step, so the digest ranks it above co
   );
 });
 
-test('app-ci invokes the tally with --gate, and does NOT swallow its exit status', () => {
+test('app-ci invokes the tally with --gate, and does NOT swallow its exit status', needsBash, () => {
   // Two ways to make the gate decorative without breaking anything visible: drop `--gate` (back to
   // advisory, unreadable on a green run), or restore `continue-on-error: true` (the step reports its
   // failure and the job passes anyway). Both leave a step that still runs and still prints, so
@@ -268,7 +278,7 @@ function tallyStepBlock(yml) {
   return lines.slice(start, end).join('\n');
 }
 
-test('the tally step is always() — a passing run\'s counts are the proof the contention is gone', () => {
+test('the tally step is always() — a passing run\'s counts are the proof the contention is gone', needsBash, () => {
   const block = tallyStepBlock(readFileSync(APP_CI, 'utf8'));
 
   assert.match(
@@ -278,7 +288,7 @@ test('the tally step is always() — a passing run\'s counts are the proof the c
   );
 });
 
-test('the tally runs AFTER the web E2E and BEFORE teardown removes the container it reads', () => {
+test('the tally runs AFTER the web E2E and BEFORE teardown removes the container it reads', needsBash, () => {
   const lines = readFileSync(APP_CI, 'utf8').split(/\r?\n/);
 
   // Anchored on the `run:` INVOCATION, never on the bare string `e2e-contention-tally`: that string

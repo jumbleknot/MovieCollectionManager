@@ -25,6 +25,22 @@
 *.yaml text eol=lf
 *.md text eol=lf
 
+# Added after a WINDOWS measurement on 2026-08-10 found the same defect class one file type
+# further out. The rules above were scoped to "what the CI gates parse", but the real class is
+# ANY file whose CONTENT is read and split by code — and a guard test reads TypeScript SOURCE:
+# e2e-collection-ownership.guard.test.mjs does `fn.indexOf('
+}
+')` over e2e-cleanup.ts. On a CRLF
+# checkout that returns -1, the extracted body collapsed to two characters, and the guard failed for
+# a reason that had nothing to do with what it guards. Scoping this list by "which tool parses it"
+# was the mistake; scope it by "is it parsed at all".
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+
 # ── Test fixtures keep their EXACT bytes (feature 052) ────────────────────────────────────────────
 # `*.md text eol=lf` above normalizes on add. That is right for real documents and WRONG for a
 # fixture whose CRLF *is the subject under test*:

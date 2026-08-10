@@ -13,38 +13,14 @@ import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { shellCanRunScript } from './shell-probe.mjs';
+
 const SCRIPT = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'ci-log-step.sh');
 
-/**
- * Can this shell actually RUN the script under test?
- *
- * The previous probe asked `bash -c 'exit 0'` — "does a shell called bash start?". That is not the
- * question. On the operator's Windows host `bash` on PATH is the WSL shim: it starts perfectly, and
- * then cannot see `E:\…` at all. The probe said "usable" and all nine cases failed with status 127,
- * nine red tests that say nothing about the code. (Git Bash is installed there and would work; it is
- * simply not what is on PATH.)
- *
- * So ask the CANDIDATE SHELL whether it can read the script — the capability actually required. Both
- * wrong answers are costly: a false "usable" gives meaningless failures, and a false "unusable"
- * gives a silent skip, which is the false green this feature exists to remove. Hence the skip always
- * carries a reason NAMING the unmet condition.
- */
-export function shellCanRunScript(shell, script) {
-  const r = spawnSync(shell, ['-c', `test -r "${script}"`], { encoding: 'utf8' });
-  if (r.error) {
-    return { usable: false, reason: `\`${shell}\` could not be started (${r.error.code ?? r.error.message})` };
-  }
-  if (r.status !== 0) {
-    return {
-      usable: false,
-      reason:
-        `\`${shell}\` starts but cannot read ${script} — it is a shell from a different filesystem `
-        + 'namespace (typically the WSL bash on PATH for a Windows checkout). Put a shell that can '
-        + 'see this working tree on PATH, e.g. Git Bash, and re-run.',
-    };
-  }
-  return { usable: true, reason: null };
-}
+// The probe lives in ./shell-probe.mjs so other suites inherit it rather than re-deriving it —
+// it was already re-derived wrongly once (see that file's header). Re-exported because the
+// probe meta-tests below exercise it directly.
+export { shellCanRunScript };
 
 // The wrapper is bash (it needs `pipefail`, which POSIX sh lacks). CI runs node:22-bookworm, which
 // has bash and can read the checkout, so nothing here skips in CI.
@@ -145,6 +121,35 @@ test('(g3) the FIRST failing step wins — a later wrapped step does not overwri
 // answer in either direction is bad — a false "usable" gives nine meaningless failures, a false
 // "unusable" gives a silent skip, which is the false green this whole feature exists to remove.
 
+// ⚠️ THE META-TESTS BELOW ASSERT PROPERTIES OF THE HOST, NOT OF THE CODE — so they must gate on the
+// host exactly as the suite does. MEASURED ON WINDOWS 2026-08-10: `(probe1)` and `(probe4)` asserted
+// unconditionally that this machine has a usable bash, and failed on a machine that does not. That is
+// the Linux-assuming shape US5 exists to remove, introduced BY US5, in the very tests that prove the
+// probe works. Left unfixed it would be the third instance of this feature committing its own defect.
+const needsUsableBash = {
+  skip: bashProbe.usable ? false : `no usable bash on this host — ${bashProbe.reason}`,
+};
+
+// `(probe2)`/`(probe3)` additionally need to EXECUTE a generated `#!` script. Windows cannot, so they
+// gate on that capability separately rather than on bash alone — the two are not the same question,
+// which is the whole lesson of the probe they are testing.
+const canExecGeneratedScript = (() => {
+  try {
+    const dir = mkdtempSync(join(tmpdir(), 'exec-probe-'));
+    const sh = join(dir, 'probe-exec');
+    writeFileSync(sh, '#!/usr/bin/env bash\nexit 0\n');
+    chmodSync(sh, 0o755);
+    return spawnSync(sh, [], { encoding: 'utf8' }).status === 0;
+  } catch {
+    return false;
+  }
+})();
+const needsExecutableScripts = {
+  skip: canExecGeneratedScript
+    ? false
+    : 'this host cannot execute a generated `#!` script (Windows), so the detached-shell simulation cannot be built here',
+};
+
 /** A shell that STARTS but is in a different filesystem namespace — the WSL-shim condition. */
 function fakeDetachedShell() {
   const dir = mkdtempSync(join(tmpdir(), 'fake-shell-'));
@@ -155,27 +160,27 @@ function fakeDetachedShell() {
   return sh;
 }
 
-test('(probe1) a real bash that CAN read the script is reported usable', () => {
+test('(probe1) a real bash that CAN read the script is reported usable', needsUsableBash, () => {
   const v = shellCanRunScript('bash', SCRIPT);
   assert.equal(v.usable, true, `bash was rejected on a host that has it: ${v.reason}`);
   assert.equal(v.reason, null);
 });
 
-test('(probe2) a shell that starts but cannot reach the script is reported UNUSABLE, with a reason', () => {
+test('(probe2) a shell that starts but cannot reach the script is reported UNUSABLE, with a reason', needsExecutableScripts, () => {
   const v = shellCanRunScript(fakeDetachedShell(), SCRIPT);
   assert.equal(v.usable, false, 'a shell that cannot see the script under test was reported usable');
   assert.ok(v.reason, 'an unusable shell must skip WITH a reason — a reasonless skip is a false green');
   assert.match(v.reason, /cannot read|cannot reach/i, `the reason does not name the unmet condition: ${v.reason}`);
 });
 
-test('(probe3) the OLD probe would have passed that same shell — this is why it changed', () => {
+test('(probe3) the OLD probe would have passed that same shell — this is why it changed', needsExecutableScripts, () => {
   // Pins the defect itself, so the probe cannot quietly regress to asking the easier question.
   const sh = fakeDetachedShell();
   assert.equal(spawnSync(sh, ['-c', 'exit 0']).status, 0, 'the simulation is wrong — it must START cleanly');
   assert.equal(shellCanRunScript(sh, SCRIPT).usable, false);
 });
 
-test('(probe4) on THIS host the suite does not skip — a skip here would be a false pass', () => {
+test('(probe4) on THIS host the suite does not skip — a skip here would be a false pass', needsUsableBash, () => {
   // Linux dev container and the CI node:22-bookworm image both have a usable bash, so every case
   // above must actually execute. If this ever starts skipping, the skip count is the tell.
   assert.equal(needsBash.skip, false, `the ci-log-step suite skipped on a host with bash: ${needsBash.skip}`);

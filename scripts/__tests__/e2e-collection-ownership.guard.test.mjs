@@ -58,7 +58,15 @@ test('cleanup filters by ownership, not merely by "is it a fixture"', () => {
   const cleanup = readFileSync(CLEANUP, 'utf8');
   const fn = cleanup.slice(cleanup.indexOf('export async function cleanupOwnedCollections'));
   assert.ok(fn.length > 0, 'cleanupOwnedCollections is missing from e2e-cleanup.ts');
-  const body = fn.slice(0, fn.indexOf('\n}\n') + 3);
+  // Split on /\r?\n/ rather than searching for a literal '\n}\n'. MEASURED ON WINDOWS 2026-08-10:
+  // e2e-cleanup.ts checked out CRLF (139/139 lines), so indexOf('\n}\n') returned -1, `body`
+  // collapsed to two characters, and this guard failed for a reason with nothing to do with what it
+  // guards. Same defect class as feature 051's US7, one file type further out — .gitattributes now
+  // also declares eol=lf for *.ts, but a declaration governs future checkouts only, so the parser is
+  // made tolerant too. Both layers, exactly as US7 argues.
+  const lines = fn.split(/\r?\n/);
+  const end = lines.findIndex((l, i) => i > 0 && l === '}');
+  const body = end === -1 ? fn : lines.slice(0, end + 1).join('\n');
   assert.ok(
     body.includes('isOwned('),
     'cleanupOwnedCollections no longer consults isOwned() — a filter that keeps only ' +
