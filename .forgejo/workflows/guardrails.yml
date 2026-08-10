@@ -76,6 +76,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -164,6 +169,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -209,6 +219,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -250,6 +265,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -338,5 +358,10 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
