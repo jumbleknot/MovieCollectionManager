@@ -21,6 +21,7 @@ import {
   runCounts,
   failureSet,
   diffFailureSets,
+  gateCounts,
 } from '../e2e-failure-set.mjs';
 
 /** A Playwright `dot`-reporter tail, in the shape the CI bundle captures. */
@@ -114,4 +115,66 @@ test('an empty or unparseable log yields zero counts rather than throwing', () =
   assert.deepEqual(parsePlaywrightSummary(''), {});
   assert.equal(runCounts('no summary here at all').failed, 0);
   assert.equal(failureSet('').size, 0);
+});
+
+// ── `gate` — the assertion that makes a GREEN app-e2e mean something ─────────────────────────────
+//
+// A passing run's counts are unreadable from outside CI (no job-log API, and the failure digest
+// only publishes on failure), so this judgement has to live in the job itself. These pin the three
+// ways it could go wrong, each of which reads as success if the gate is careless.
+
+test('gate passes a genuinely clean run', () => {
+  const clean = `
+Running 177 tests using 6 workers
+  177 passed (12.0m)
+`;
+  const g = gateCounts(clean);
+  assert.equal(g.ok, true, g.reasons.join('; '));
+  assert.equal(g.counts.passed, 177);
+});
+
+test('gate FAILS on a skip — the false green this repository keeps paying for', () => {
+  // Feature 040 validated green with 33 specs skipped; five stale agent specs then went unnoticed
+  // for three weeks (item #150). Playwright exits 0 here, so only an explicit check catches it.
+  const skipped = `
+Running 177 tests using 6 workers
+  144 passed (10.0m)
+  33 skipped
+`;
+  const g = gateCounts(skipped);
+  assert.equal(g.ok, false);
+  assert.match(g.reasons.join(' '), /SKIPPED/);
+});
+
+test('gate FAILS on "did not run" — a dependent project that never executed', () => {
+  const dnr = `
+Running 177 tests using 6 workers
+  3 did not run
+  174 passed (11.0m)
+`;
+  const g = gateCounts(dnr);
+  assert.equal(g.ok, false);
+  assert.match(g.reasons.join(' '), /DID NOT RUN/);
+});
+
+test('gate FAILS on a log with no summary — "no counts" is not "good counts"', () => {
+  // An empty or truncated capture is indistinguishable from a clean run to a grep for "failed".
+  for (const text of ['', 'Running 177 tests using 6 workers\n', 'docker: connection refused']) {
+    const g = gateCounts(text);
+    assert.equal(g.ok, false, `expected a missing summary to fail the gate: ${JSON.stringify(text)}`);
+    assert.match(g.reasons.join(' '), /no Playwright summary/);
+  }
+});
+
+test('gate does NOT double-report a failure the web-e2e step already raised', () => {
+  // failed>0 already failed that step; failing again here would just obscure which step found it.
+  const failed = `
+Running 177 tests using 6 workers
+  3 failed
+    [chromium] › tests/e2e/web/movies.spec.ts:1:1 › a › b
+  174 passed (11.0m)
+`;
+  const g = gateCounts(failed);
+  assert.equal(g.ok, true, 'failed>0 alone must not trip the gate');
+  assert.equal(g.counts.failed, 3);
 });

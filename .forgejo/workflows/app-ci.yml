@@ -643,6 +643,30 @@ jobs:
             mcr.microsoft.com/playwright:v1.60.0-noble \
             sh -c "corepack enable && pnpm exec playwright test"
 
+      # ── Result gate: a GREEN app-e2e must mean nothing was hidden (051 SC-001) ──────────────────
+      #
+      # Playwright exits 0 with tests SKIPPED, the forge API exposes no job logs, and the failure
+      # digest publishes only on failure. Put together, a passing run's counts could not be read by
+      # anyone, anywhere — so "green" carried no information about how many tests actually ran.
+      #
+      # That is not hypothetical here. Feature 040's final validation reported success with 33 specs
+      # skipped; the five stale agent specs that hid behind it were found three weeks later
+      # (item #150), and only because feature 051 forwarded the env var that had been un-skipping
+      # them all along. The gate reads the counts the web E2E just printed and fails on a skip, on a
+      # test that never ran, or on a log with no summary at all — because "no counts" must never be
+      # read as "good counts". It deliberately does not re-fail on `failed > 0`; the step above
+      # already did that.
+      #
+      # `always()` so it still reports when the web E2E failed, and it reads that step's own captured
+      # log (ci-log-step.sh mirrors every wrapped step to $HOME/mcm-ci-step-logs/$GITHUB_RUN_ID).
+      # Parsing lives in scripts/e2e-failure-set.mjs, which is unit-tested including the skip,
+      # did-not-run, and missing-summary cases.
+      - name: E2E result gate (no skips, nothing left unrun)
+        if: ${{ always() }}
+        run: |
+          bash scripts/ci-log-step.sh e2e-result-gate \
+            node scripts/e2e-failure-set.mjs gate "$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/web-e2e.log"
+
       # ── Contention tally (feature 052 US2, FR-005..FR-007) ──────────────────────────────────────
       # Eight Playwright workers share ONE E2E_TEST_USER and one storageState session. Whether that
       # shared identity is actually being evicted by the concurrent-session cap, or rejected by the

@@ -24,9 +24,16 @@
 // Usage:
 //   node scripts/e2e-failure-set.mjs summary <web-e2e.log>
 //   node scripts/e2e-failure-set.mjs diff <run-a.log> <run-b.log>
+//   node scripts/e2e-failure-set.mjs gate <web-e2e.log>     # CI: exit 1 if anything was hidden
 //
-// Exit status is NOT the verdict — print and read the counts (this whole feature exists because a
-// green tick was trusted over a count). Always exits 0 unless its arguments are unusable.
+// Exit status is NOT the verdict for `summary`/`diff` — print and read the counts (this whole
+// feature exists because a green tick was trusted over a count). Both always exit 0 unless their
+// arguments are unusable.
+//
+// `gate` is the deliberate exception, and the reason it exists is that a PASSING run's counts are
+// otherwise unreadable: the forge API exposes no job logs, and the failure digest only publishes on
+// failure. So on a green run there is nowhere to read `skipped=` from, and a skip reads as a pass.
+// `gate` moves that judgement into CI, where it cannot be skipped by whoever is not looking.
 
 import { readFileSync } from 'node:fs';
 
@@ -141,8 +148,82 @@ function main(argv) {
     return 0;
   }
 
-  console.error('usage: e2e-failure-set.mjs summary <log> | diff <log-a> <log-b>');
+  if (mode === 'gate' && files.length === 1) {
+    return gate(files[0]);
+  }
+
+  console.error('usage: e2e-failure-set.mjs summary <log> | diff <log-a> <log-b> | gate <log>');
   return 2;
+}
+
+/**
+ * Make a GREEN `app-e2e` mean what it looks like it means.
+ *
+ * Playwright exits 0 with tests skipped, and the forge API exposes no job logs, so on a passing run
+ * nobody can read the counts at all — the failure digest only publishes on failure. That combination
+ * is the exact false green this repository keeps paying for: feature 040's final validation reported
+ * success with 33 specs skipped, and five stale agent specs then went unnoticed for three weeks
+ * (item #150). 051's SC-001 says no agent spec may be re-hidden; this is what enforces it, in the
+ * one place that cannot be forgotten.
+ *
+ * Fails the step — and therefore publishes the digest, which is how the counts become readable — on:
+ *   * `skipped > 0`  — a skip reads as a pass. In this job every gate is env-driven, so a skip means
+ *     a variable stopped being forwarded, not that a test became irrelevant.
+ *   * `did not run > 0` — the `lifecycle` project depends on `chromium`, so these are tests that
+ *     never executed. They were reported as `3 did not run` in every measured run for months.
+ *   * a MISSING summary — an empty or truncated log is indistinguishable from a clean run to a
+ *     grep, and "no counts" must never be treated as "good counts".
+ *
+ * It deliberately does NOT fail on `failed > 0`: the web-e2e step already did that, and a second
+ * failure here would just obscure which step found it.
+ */
+export function gateCounts(text) {
+  const c = runCounts(text);
+  const total = c.failed + c.flaky + c.passed + c.didNotRun + c.skipped;
+  const reasons = [];
+  if (total === 0) {
+    reasons.push(
+      'no Playwright summary found in the log — the run produced no counts, which is not the same ' +
+        'as producing good ones (empty log? step never ran? output not captured?)',
+    );
+  }
+  if (c.skipped > 0) {
+    reasons.push(
+      `${c.skipped} test(s) SKIPPED — a skip reads as a pass. Every skip gate in this job is ` +
+        'env-driven (E2E_AGENT_PRODUCTION, TMDB_API_KEY, ANTHROPIC_API_KEY, ' +
+        'KEYCLOAK_SERVICE_CLIENT_SECRET), so this means a variable stopped reaching the ' +
+        'Playwright container — see specs/051-ci-diagnostics-closure/contracts/e2e-env-forwarding.md',
+    );
+  }
+  if (c.didNotRun > 0) {
+    reasons.push(
+      `${c.didNotRun} test(s) DID NOT RUN — the \`lifecycle\` project declares ` +
+        "dependencies: ['chromium'], so these never executed at all.",
+    );
+  }
+  return { counts: c, ok: reasons.length === 0, reasons };
+}
+
+function gate(file) {
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch (err) {
+    console.error(`[e2e-gate] cannot read ${file}: ${err.message}`);
+    console.error('[e2e-gate] treating an unreadable log as a FAILURE — silence is not a pass.');
+    return 1;
+  }
+  const { counts: c, ok, reasons } = gateCounts(text);
+  console.log(
+    `[e2e-gate] failed=${c.failed} flaky=${c.flaky} passed=${c.passed} ` +
+      `did-not-run=${c.didNotRun} skipped=${c.skipped}`,
+  );
+  if (ok) {
+    console.log('[e2e-gate] OK — nothing hidden: no skips, nothing left unrun.');
+    return 0;
+  }
+  for (const r of reasons) console.error(`[e2e-gate] FAIL: ${r}`);
+  return 1;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

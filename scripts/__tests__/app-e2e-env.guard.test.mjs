@@ -149,3 +149,31 @@ test('the deliberately-unforwarded set is documented beside the invocation, not 
     );
   }
 });
+
+// ── The result gate (item #150 follow-up) ────────────────────────────────────────────────────────
+//
+// Forwarding the right env vars is only half of "no silent skip". The other half is checking, after
+// the fact, that nothing WAS skipped — because Playwright exits 0 with tests skipped, the forge API
+// exposes no job logs, and the failure digest publishes only on failure. Without the gate step, a
+// passing run's counts are unreadable by anyone and "green" says nothing about how many tests ran.
+
+test('the app-e2e job gates on the web E2E counts, so a green run cannot hide a skip', () => {
+  assert.match(
+    APP_CI,
+    /e2e-failure-set\.mjs gate/,
+    'the `E2E result gate` step is gone. Without it, `skipped=33` exits 0 and reports success — ' +
+      'exactly how feature 040 validated green while five agent specs were hidden (item #150).',
+  );
+});
+
+test('the result gate runs even when the web E2E failed, and reads that step\'s captured log', () => {
+  const step = APP_CI.slice(APP_CI.indexOf('- name: E2E result gate'));
+  const block = step.slice(0, step.indexOf('# ── Contention tally'));
+  assert.match(block, /if: \$\{\{ always\(\) \}\}/, 'the gate must run on failure too — that is when the counts matter most');
+  assert.match(
+    block,
+    /mcm-ci-step-logs\/\$GITHUB_RUN_ID\/web-e2e\.log/,
+    'the gate must read the run-scoped step log ci-log-step.sh writes; a bare or unscoped path ' +
+      'would read a PREVIOUS run on this persistent runner and pass on stale counts.',
+  );
+});
