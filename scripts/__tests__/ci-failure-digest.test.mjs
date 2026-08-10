@@ -823,3 +823,128 @@ test('(ii4) the outcome line is emitted in a form a machine can find, on every p
     assert.match(r.out, want, `status=${status} did not emit a findable outcome line`);
   }
 });
+
+// --- (jj) credential fallback (feature 051 US4, FR-013/FR-015) ------------------------------------
+//
+// CI_DIGEST_TOKEN is an Actions secret, and it is empty exactly when a run is most confusing: on the
+// AGit-headed run of 2026-08-01 every `secrets.*` arrived blank, so the digest collected its evidence
+// and had nothing to publish it with.
+//
+// T034 measured (guardrails run #1627) that the run's AUTOMATICALLY-PROVISIONED token CAN write
+// `POST /repos/{owner}/{repo}/statuses/{sha}` — it left a real `probe-051-t034` status behind. So a
+// fallback is worth building. What T034 could NOT establish is whether that token is *populated* on a
+// secretless run; proving that needs an AGit push, which CLAUDE.md forbids. Hence `both absent` is a
+// first-class case below rather than a theoretical one.
+
+test('(jj) the purpose-scoped credential is preferred, and the existing path is untouched', async () => {
+  // A fallback that DISPLACES the richer channel is a regression, not a safety net. Asserted first
+  // and explicitly, because it is the failure mode a fallback most easily introduces.
+  const { selectCredential } = await digestModule();
+  const c = selectCredential({ CI_DIGEST_TOKEN: 'purpose-scoped-value', GITHUB_TOKEN: 'auto-value' });
+  assert.equal(c.source, 'purpose-scoped');
+  assert.equal(c.token, 'purpose-scoped-value');
+});
+
+test('(jj2) with no purpose-scoped credential, the run-provisioned token is selected', async () => {
+  const { selectCredential } = await digestModule();
+  for (const env of [{ GITHUB_TOKEN: 'auto-value' }, { ACTIONS_RUNTIME_TOKEN: 'auto-value' }]) {
+    const c = selectCredential(env);
+    assert.equal(c.source, 'auto', `not selected from ${Object.keys(env)[0]}`);
+    assert.equal(c.token, 'auto-value');
+  }
+});
+
+test('(jj3) with NEITHER credential, selection yields nothing — the 2026-08-01 condition', async () => {
+  const { selectCredential } = await digestModule();
+  const c = selectCredential({});
+  assert.equal(c.token, null);
+  assert.equal(c.source, null);
+});
+
+test('(jj4) an EMPTY-STRING secret counts as absent, not as a credential', async () => {
+  // This is precisely how 2026-08-01 presented: `${{ secrets.CI_DIGEST_TOKEN }}` expanded to an
+  // empty string, not to an unset variable. A truthiness check that only tested `undefined` would
+  // sail past it and then fail at the transport with a confusing 401.
+  const { selectCredential } = await digestModule();
+  assert.equal(selectCredential({ CI_DIGEST_TOKEN: '', GITHUB_TOKEN: 'auto-value' }).source, 'auto');
+  assert.equal(selectCredential({ CI_DIGEST_TOKEN: '', GITHUB_TOKEN: '' }).source, null);
+});
+
+test('(jj5) publishing through the fallback is `published`, NOT `failed` — and says it was degraded', async () => {
+  // Deliberate deviation from contracts/digest-outcome.md, which says the fallback records
+  // `failed:no-credential`. That wording would make `published` and `failed` simultaneously true and
+  // break Story 3's own vocabulary, where `failed` means the evidence did NOT reach a channel. The
+  // reader's question is "did the diagnosis get to me?" — via the fallback the answer is yes, in a
+  // degraded form. Both facts are carried instead of collapsing them into a misleading one.
+  const { describeOutcome, OUTCOME } = await digestModule();
+  const d = describeOutcome({
+    gate: { publish: true },
+    tokenPresent: true,
+    credentialSource: 'auto',
+    publishResult: { published: true, channel: 'commit-status' },
+  });
+  assert.equal(d.outcome, OUTCOME.PUBLISHED);
+  assert.equal(d.channel, 'commit-status');
+  assert.equal(d.degraded, true, 'a fallback publication must announce that it was degraded');
+  assert.match(d.summary, /purpose-scoped|CI_DIGEST_TOKEN/, 'the summary must name the missing credential');
+});
+
+test('(jj6) the normal path is NOT marked degraded', async () => {
+  const { describeOutcome } = await digestModule();
+  const d = describeOutcome({
+    gate: { publish: true },
+    tokenPresent: true,
+    credentialSource: 'purpose-scoped',
+    publishResult: { published: true, channel: 'pr-comment' },
+  });
+  assert.notEqual(d.degraded, true);
+});
+
+// --- (kk) size-safe truncation for the fallback channel (US4, FR-014) -----------------------------
+//
+// A commit-status description is short — far shorter than a digest. The fallback therefore carries
+// the failing step's NAME and a TRUNCATED excerpt: enough to name the fault, not to replay the
+// build. Two properties matter, and the second is the one with teeth.
+
+test('(kk) an over-long excerpt is truncated, and truncation never fails the publication', async () => {
+  const { truncateForStatus } = await digestModule();
+  const out = truncateForStatus('x'.repeat(5000), 255);
+  assert.ok(out.length <= 255, `truncation did not respect the cap: ${out.length}`);
+  assert.match(out, /…|\.\.\./, 'truncation must be visible, not silent');
+});
+
+test('(kk2) truncation NEVER splits a redaction placeholder — half a redaction is worse than none', async () => {
+  // The cutter must not land mid-`<redacted-…>`, because `<redacted-jw` reads as noise while
+  // `<red` next to surrounding text can look like the start of real content. More importantly, a
+  // future placeholder that wraps a value would leak its tail if cut inside.
+  const { truncateForStatus } = await digestModule();
+  const text = `${'a'.repeat(240)}<redacted-anthropic-key> trailing`;
+  for (let cap = 230; cap <= 275; cap += 1) {
+    const out = truncateForStatus(text, cap);
+    assert.ok(out.length <= cap, `cap ${cap} exceeded: ${out.length}`);
+    const opens = (out.match(/<redacted/g) || []).length;
+    const closes = (out.match(/<redacted[a-z-]*>/g) || []).length;
+    assert.equal(opens, closes, `cap ${cap} produced a severed placeholder: ${JSON.stringify(out.slice(-40))}`);
+  }
+});
+
+test('(kk3) a short excerpt is returned untouched', async () => {
+  const { truncateForStatus } = await digestModule();
+  assert.equal(truncateForStatus('thread panicked at src/lib.rs:42', 255), 'thread panicked at src/lib.rs:42');
+});
+
+test('(kk4) the fallback status body names the failing STEP, not just the excerpt', async () => {
+  // The single most useful fact is which step broke. An excerpt without it sends the reader hunting.
+  const { buildStatusDescription } = await digestModule();
+  const body = buildStatusDescription({ job: 'naming', step: 'naming-resource-naming-gate', excerpt: 'boom' }, 255);
+  assert.match(body, /naming-resource-naming-gate/);
+  assert.ok(body.length <= 255);
+});
+
+test('(kk5) an empty or missing excerpt still yields a usable description', async () => {
+  // The no-evidence case must not produce an empty status — that is indistinguishable from no status.
+  const { buildStatusDescription } = await digestModule();
+  const body = buildStatusDescription({ job: 'naming', step: '', excerpt: '' }, 255);
+  assert.ok(body.trim().length > 0, 'an empty description is the same as no signal at all');
+  assert.match(body, /naming/);
+});

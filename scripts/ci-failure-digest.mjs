@@ -271,11 +271,49 @@ function classifyFailure(reason) {
  * required the token, the one state that matters most could never be reported — which is precisely
  * what happened.
  */
-export function describeOutcome({ gate = { publish: true }, tokenPresent = true, publishResult = null } = {}) {
+/**
+ * Which credential publishes this digest.
+ *
+ * `CI_DIGEST_TOKEN` is an Actions secret, and it is empty exactly when a run is most confusing: on
+ * the AGit-headed run of 2026-08-01 every `secrets.*` arrived blank, so the digest collected its
+ * evidence and had nothing to publish it with.
+ *
+ * Feature 051 T034 MEASURED (guardrails run #1627) that the run's automatically-provisioned token
+ * can write `POST /repos/{owner}/{repo}/statuses/{sha}` — it left a real `probe-051-t034` status
+ * behind. So falling back to it is worth doing.
+ *
+ * ⚠️ What T034 could NOT establish is whether that token is *populated* on a secretless run; proving
+ * that needs an AGit-headed push, which CLAUDE.md forbids. `both absent` therefore stays a
+ * first-class outcome rather than a theoretical one.
+ *
+ * The empty-STRING check is load-bearing: 2026-08-01 presented as `${{ secrets.CI_DIGEST_TOKEN }}`
+ * expanding to `''`, not as an unset variable. A test for `undefined` alone sails past it and fails
+ * later at the transport with a confusing 401.
+ */
+export function selectCredential(env = process.env) {
+  const usable = (v) => (typeof v === 'string' && v.trim() !== '' ? v : null);
+  const purposeScoped = usable(env.CI_DIGEST_TOKEN);
+  if (purposeScoped) return { token: purposeScoped, source: 'purpose-scoped' };
+  const auto = usable(env.GITHUB_TOKEN) ?? usable(env.ACTIONS_RUNTIME_TOKEN);
+  if (auto) return { token: auto, source: 'auto' };
+  return { token: null, source: null };
+}
+
+export function describeOutcome({ gate = { publish: true }, tokenPresent = true, publishResult = null, credentialSource = 'purpose-scoped' } = {}) {
+  // A publication that went out through the FALLBACK is `published`, not `failed`.
+  //
+  // contracts/digest-outcome.md literally says the fallback records `failed:no-credential`. That
+  // wording would make `published` and `failed` simultaneously true and break Story 3's own
+  // vocabulary, in which `failed` means the evidence did NOT reach a channel. The reader's question
+  // is "did the diagnosis get to me?", and via the fallback the answer is yes — in a degraded form.
+  // So both facts are carried (`published` + `degraded`) instead of collapsed into a misleading one.
+  // Deliberate deviation, recorded here and in T036 rather than applied silently.
+  const degraded = credentialSource === 'auto';
   const done = (outcome, detail, channel, summary) => ({
     outcome,
     detail: detail ?? null,
     channel: channel ?? null,
+    degraded: degraded && outcome === OUTCOME.PUBLISHED,
     summary: redactForPublication(summary),
     // A stable, greppable line. The bundle is the API-readable channel, but on the no-credential
     // path NO bundle can exist — so this is what a human reading the web UI has, and it must be
@@ -296,7 +334,18 @@ export function describeOutcome({ gate = { publish: true }, tokenPresent = true,
     );
   }
   if (publishResult?.published) {
-    return done(OUTCOME.PUBLISHED, null, publishResult.channel ?? null, `digest published via ${publishResult.channel ?? 'unknown channel'}`);
+    const via = publishResult.channel ?? 'unknown channel';
+    return done(
+      OUTCOME.PUBLISHED,
+      null,
+      publishResult.channel ?? null,
+      degraded
+        ? `digest published via ${via} using the run's automatically-provisioned token — the `
+          + 'purpose-scoped CI_DIGEST_TOKEN was absent, so this is the DEGRADED channel: the failing '
+          + "step's name and a short excerpt, not the full bundle. Check whether this run had Actions "
+          + 'secrets at all.'
+        : `digest published via ${via}`,
+    );
   }
   const detail = classifyFailure(publishResult?.reason);
   return done(
@@ -305,6 +354,49 @@ export function describeOutcome({ gate = { publish: true }, tokenPresent = true,
     null,
     `the digest ran and FAILED to publish (${detail}) — ${publishResult?.reason ?? 'no reason reported'}`,
   );
+}
+
+// --- Fallback channel: the commit status (US4, FR-014) -------------------------------------------
+
+/** A commit-status description is short. Measured Forgejo limit is 255; stay under it. */
+export const STATUS_DESCRIPTION_MAX = 255;
+
+/**
+ * Truncate to `max`, visibly, and NEVER inside a redaction placeholder.
+ *
+ * The placeholder rule has teeth. `<redacted-anthropic-key>` cut at `<redacted-anth` is merely
+ * noise, but the reason to forbid it is structural: a future placeholder that WRAPS a value rather
+ * than replacing it would leak its tail when severed, and "half a redaction" is worse than none
+ * because it still looks redacted. So the cut is pulled back to before any unterminated `<redacted…`.
+ *
+ * Truncation must also never *fail* the publication (FR-014) — losing the whole signal to protect a
+ * size limit is the wrong trade.
+ */
+export function truncateForStatus(text, max = STATUS_DESCRIPTION_MAX) {
+  const s = String(text ?? '');
+  if (s.length <= max) return s;
+  const ellipsis = '…';
+  let cut = max - ellipsis.length;
+  // If the cut lands inside an unterminated placeholder, pull back to before it opened.
+  const head = s.slice(0, cut);
+  const lastOpen = head.lastIndexOf('<redacted');
+  if (lastOpen !== -1 && !/^<redacted[a-z-]*>/.test(head.slice(lastOpen))) cut = lastOpen;
+  return s.slice(0, Math.max(0, cut)) + ellipsis;
+}
+
+/**
+ * The fallback status body. The failing STEP is the single most useful fact — an excerpt without it
+ * sends the reader hunting — so it leads, and the excerpt fills whatever room is left.
+ *
+ * Never returns empty: a blank description is indistinguishable from no status at all, which is the
+ * exact ambiguity this whole story removes.
+ */
+export function buildStatusDescription({ job = '', step = '', excerpt = '' } = {}, max = STATUS_DESCRIPTION_MAX) {
+  const where = step ? `${job} / ${step}` : `${job || 'job'} (failing step not reported)`;
+  const head = `CI failure: ${where}`;
+  const body = String(excerpt ?? '').replace(/\s+/g, ' ').trim();
+  if (!body) return truncateForStatus(head, max);
+  return truncateForStatus(`${head} — ${body}`, max);
 }
 
 // --- Publish routing ----------------------------------------------------------------------------
@@ -740,6 +832,12 @@ function httpApi({ base, owner, repo, token }) {
     deleteBundleVersion: (version) =>
       rawCall('DELETE', `${base}/packages/${owner}/generic/${BUNDLE_PACKAGE}/${version}`),
     createComment: (pr, body) => call('POST', `/repos/${owner}/${repo}/issues/${pr}/comments`, { body }),
+    // Re-added by feature 051 US4. It was removed in 042's T040 because the endpoint 403'd for
+    // CI_DIGEST_TOKEN — but T034 measured that the run's AUTOMATICALLY-PROVISIONED token is allowed
+    // to write it, which is a different credential with different scopes. This is the fallback's
+    // only channel, so it is deliberately narrow: one short description, no body.
+    createStatus: (sha, description, context) =>
+      call('POST', `/repos/${owner}/${repo}/statuses/${sha}`, { state: 'failure', description, context }),
     updateComment: (id, body) => call('PATCH', `/repos/${owner}/${repo}/issues/comments/${id}`, { body }),
   };
 }
@@ -765,18 +863,44 @@ async function run() {
   const evidence = collectEvidence();
   const digest = buildDigest(context, evidence);
 
-  const token = process.env.CI_DIGEST_TOKEN;
-  if (!token) {
-    // The 2026-08-01 condition. Nothing can be published — including, without this line, the fact
+  const credential = selectCredential();
+  if (!credential.token) {
+    // BOTH credentials absent. Nothing can be published — including, without this line, the fact
     // that nothing could be published. Say so in a form a human can find in the web UI, then still
     // print the digest inline so the evidence is not simply discarded. Never fail the job.
     emitOutcome(describeOutcome({ gate, tokenPresent: false }));
-    console.log('[ci-failure-digest] CI_DIGEST_TOKEN is not set — printing the digest inline instead.');
+    console.log('[ci-failure-digest] no usable credential (CI_DIGEST_TOKEN and the run token are both empty) — printing the digest inline instead.');
     console.log(digest.markdown);
     return;
   }
 
-  const api = httpApi({ ...forgeEndpoint(), token });
+  // DEGRADED PATH (US4). The purpose-scoped credential is gone, so the rich channels — a PR comment
+  // and the evidence bundle — are out of reach: both need scopes the run token does not have. What
+  // it CAN do, measured in T034, is write a commit status. So publish the one fact that matters most
+  // (which step failed, plus a short excerpt) and stop, rather than throwing the diagnosis away as
+  // 2026-08-01 did.
+  if (credential.source === 'auto') {
+    const api = httpApi({ ...forgeEndpoint(), token: credential.token });
+    const description = buildStatusDescription({
+      job: context.job,
+      step: context.step,
+      excerpt: redactForPublication(evidence.excerpts.at(-1)?.text ?? ''),
+    });
+    let result;
+    try {
+      await api.createStatus(context.sha, description, `ci-digest/${context.job}`);
+      result = { published: true, channel: 'commit-status' };
+    } catch (err) {
+      result = { published: false, reason: redactForPublication(String(err?.message ?? err)) };
+    }
+    emitOutcome(describeOutcome({ gate, tokenPresent: true, credentialSource: 'auto', publishResult: result }));
+    console.log('::group::ci-failure-digest (inline copy — degraded channel, no bundle)');
+    console.log(digest.markdown);
+    console.log('::endgroup::');
+    return;
+  }
+
+  const api = httpApi({ ...forgeEndpoint(), token: credential.token });
 
   const version = bundleVersion(context.runId, context.job);
   context.bundleRef = `${BUNDLE_PACKAGE}:${version}`;

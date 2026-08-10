@@ -158,11 +158,54 @@ Scopes: **`write:issue` + `write:package` + `read:repository`**. Stored as a **F
 secret**, never in git.
 
 Deliberately **not** `CD_PUSH_TOKEN` — that is a whitelisted-user PAT able to push protected `main`,
-and spreading it across ~20 jobs to publish diagnostics would be a real privilege expansion. Also not
-the auto `GITHUB_TOKEN`, which is unused in this repo and declined by the pre-receive hook.
+and spreading it across ~20 jobs to publish diagnostics would be a real privilege expansion.
+
+> **Correction (feature 051 T034).** This section used to add "also not the auto `GITHUB_TOKEN`,
+> which is unused in this repo and declined by the pre-receive hook". The second half conflated two
+> different things: the pre-receive hook governs **git pushes**, not **API writes**. A temporary probe
+> on guardrails run #1627 measured the run-provisioned token successfully writing
+> `POST /repos/{owner}/{repo}/statuses/{sha}` — it left a real `probe-051-t034` status behind. It is
+> still not used for the primary channel (it cannot write issues or packages), but it is no longer
+> "unused", and it is not declined.
 
 **Missing scopes fail loudly, naming the scope.** A bare `401`/`403` is indistinguishable from an
 expired credential and cost this design a full revision cycle to diagnose.
+
+### When `CI_DIGEST_TOKEN` is empty — the degraded fallback
+
+`CI_DIGEST_TOKEN` is an Actions secret, so it is blank **exactly when a run is most confusing**. On
+the AGit-headed run of 2026-08-01 every `${{ secrets.* }}` arrived empty; the digest collected its
+evidence, could not publish it, printed it to a job log the forge API cannot serve, and exited 0.
+Zero comments, no error, no signal.
+
+The digest now falls back:
+
+| `CI_DIGEST_TOKEN` | Channel | Outcome recorded |
+|---|---|---|
+| present | PR comment (on `pull_request`) + evidence bundle | `published` |
+| **empty**, run token present | **commit status** `ci-digest/<job>` carrying the failing step and a short excerpt | `published`, **`degraded: true`** |
+| both empty | nothing publishable | `failed:no-credential` |
+
+**Why the degraded case is `published` and not `failed`.** `contracts/digest-outcome.md` literally
+says the fallback records `failed:no-credential`. That wording would make *published* and *failed*
+simultaneously true and break the outcome vocabulary, in which `failed` means the evidence did **not**
+reach a channel. The reader's question is "did the diagnosis get to me?" — via the fallback the answer
+is yes, in a reduced form. So both facts are carried rather than collapsed: `published` with
+`degraded: true`, and a summary naming the missing credential. A deliberate deviation from the
+contract's wording, not an oversight.
+
+**What the fallback deliberately does not do.** It publishes no bundle and no PR comment — the run
+token has neither `write:package` nor `write:issue`. It carries the failing step's **name** plus a
+truncated excerpt: enough to name the fault, not to replay the build. Truncation never splits a
+`<redacted-…>` placeholder, because half a redaction still *looks* redacted while a future
+value-wrapping placeholder would leak its tail.
+
+> ⚠️ **Residual, stated because it is the half that matters.** T034 proved the run token *can* write
+> statuses. It did **not** prove the token is *populated* on a secretless run — that run had secrets.
+> `github.token` is runner-provisioned rather than an Actions secret, so it ought to survive where
+> `secrets.*` do not, but "ought to" is not a measurement, and proving it needs an AGit-headed push,
+> which [CLAUDE.md](../../CLAUDE.md) forbids. If a future secretless run still publishes nothing, this
+> is the first thing to check.
 
 ---
 

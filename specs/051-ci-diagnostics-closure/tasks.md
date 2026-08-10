@@ -941,7 +941,7 @@ confusing. It collected its evidence on 2026-08-01 and then threw it away.
     an AGit-headed run, which **CLAUDE.md forbids**. The probe's own comment stated this scope limit
     before it ran; it is not a retrofit.
 
-- [ ] T035 [P] [US4] Write a failing test for credential fallback selection in `scripts/__tests__/ci-failure-digest.test.mjs`
+- [X] T035 [P] [US4] Write a failing test for credential fallback selection in `scripts/__tests__/ci-failure-digest.test.mjs`
   - **Type**: Test | **Risk**: Low | **Covers**: US4-AC1, US4-AC2, FR-013, FR-015
   - Assert: purpose-scoped token present → existing path unchanged; absent → fallback selected and the
     `failed:no-credential` outcome recorded. Assert the unchanged case explicitly — a fallback that
@@ -949,22 +949,40 @@ confusing. It collected its evidence on 2026-08-01 and then threw it away.
   - **Verify RED**: `node --test scripts/__tests__/ci-failure-digest.test.mjs`
   - **Expected RED**: failing — no fallback exists.
 
-- [ ] T036 [US4] Implement the fallback in `scripts/ci-failure-digest.mjs`
+- [X] T036 [US4] Implement the fallback in `scripts/ci-failure-digest.mjs`
   - **Type**: Implementation | **Risk**: Medium | **Prerequisite**: T034 positive **and** T035 RED
   - Credential selection, not new machinery — the commit-status path and its `write:repository` scope
     hint already exist (research R3).
   - **Verify GREEN**: `node --test scripts/__tests__/ci-failure-digest.test.mjs` → 0 failures.
+  - **MEASURED (Linux)**: RED **79 collected, 74 pass, 5 fail** → GREEN **79/79**.
+  - **`selectCredential` treats an EMPTY STRING as absent**, which is how 2026-08-01 actually
+    presented — `${{ secrets.CI_DIGEST_TOKEN }}` expanded to `''`, not to an unset variable. A check
+    for `undefined` alone sails past it and fails later at the transport with a confusing 401.
+  - **Deliberate deviation from `contracts/digest-outcome.md`, recorded not silent**: the contract
+    says the fallback records `failed:no-credential`. That would make `published` and `failed`
+    simultaneously true and break Story 3's vocabulary, where `failed` means the evidence did not
+    reach a channel. A fallback publication is `published` + **`degraded: true`**, with a summary
+    naming the missing credential — both facts, rather than one misleading one.
+  - **`createStatus` had to be re-added to the transport**, confirming US4 is new machinery rather
+    than credential selection as research R3 claimed.
 
-- [ ] T037 [P] [US4] Write a failing test for safe truncation
+- [X] T037 [P] [US4] Write a failing test for safe truncation
   - **Type**: Test | **Risk**: Low | **Covers**: US4-AC3, FR-014
   - Assert an over-long excerpt is truncated rather than failing the publication, and that truncation
     never splits a redaction boundary — a half-redacted secret is worse than none.
   - **Verify RED**: `node --test scripts/__tests__/ci-failure-digest.test.mjs`
   - **Expected RED**: failing — no truncation logic.
 
-- [ ] T038 [US4] Implement size-safe truncation carrying the failing step's name and a pointer
+- [X] T038 [US4] Implement size-safe truncation carrying the failing step's name and a pointer
   - **Type**: Implementation | **Risk**: Medium | **Prerequisite**: T037 verified RED
   - **Verify GREEN**: `node --test scripts/__tests__/ci-failure-digest.test.mjs` → 0 failures.
+  - **MEASURED (Linux)**: RED **84 collected, 79 pass, 5 fail** → GREEN **84/84**; `--selftest` exits 0.
+  - The placeholder rule is checked across a **sweep of cap values (230–275)**, not one, because an
+    off-by-one cutter only severs a placeholder at particular lengths. The reason it matters is
+    structural rather than cosmetic: a future placeholder that *wraps* a value instead of replacing
+    it would leak its tail when cut, and half a redaction still looks redacted.
+  - `buildStatusDescription` leads with the failing **step** — the single most useful fact — and never
+    returns empty, because a blank status is indistinguishable from no status at all.
 
 - [ ] T039 [US4] Remove the probe step and document the fallback in `docs/runbooks/ci-diagnostics.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: FR-030
