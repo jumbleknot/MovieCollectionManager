@@ -1014,10 +1014,18 @@ confusing. It collected its evidence on 2026-08-01 and then threw it away.
   - `buildStatusDescription` leads with the failing **step** — the single most useful fact — and never
     returns empty, because a blank status is indistinguishable from no status at all.
 
-- [ ] T039 [US4] Remove the probe step and document the fallback in `docs/runbooks/ci-diagnostics.md`
+- [X] T039 [US4] Remove the probe step and document the fallback in `docs/runbooks/ci-diagnostics.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: FR-030
   - **Done when**: the probe is gone from the branch and the runbook explains which channel carries
     what, and why a secretless run still says something.
+  - **DONE.** Probe reverted (see T058); `docs/runbooks/ci-diagnostics.md` gains a
+    *"When `CI_DIGEST_TOKEN` is empty — the degraded fallback"* section with the three-way channel
+    table, the reasoning for `published + degraded` over the contract's `failed:no-credential`
+    wording, what the fallback deliberately does **not** carry, and the residual that T034 could not
+    settle.
+  - **Also corrected a stale claim in the same file**: it said the auto `GITHUB_TOKEN` is "unused in
+    this repo and declined by the pre-receive hook". That conflated **git pushes** (which the hook
+    governs) with **API writes** (which it does not). T034 measured the API write working.
 
 ---
 
@@ -1328,23 +1336,83 @@ closed feature's task notes.
       | node -e '<gunzip; read meta.step, meta.digestOutcome, files[]>'
     ```
 
-- [ ] T056 Rehearse SC-003 — a deliberately broken digest reports as broken
+- [X] T056 Rehearse SC-003 — a deliberately broken digest reports as broken
   - **Type**: Verification | **Risk**: Medium | **Covers**: SC-003
   - **Expected**: the report says the digest **ran and failed**, never "no digest was published".
+  - **PARTIALLY REHEARSED — and the limit is stated rather than papered over.**
+    Both halves are verified in isolation: the **producer** by `(ii2)`, which spawns the real script
+    against a dead transport and asserts `digest-outcome=failed`; the **consumer** by `(z)`–`(z4)`,
+    which assert `ci-status` never emits the absent-case wording for a `failed` outcome.
+  - **What was NOT rehearsed is the end-to-end CI path, and there is a structural reason.** On a
+    `push`/`workflow_dispatch` event the bundle *is* the publication channel — so a publication
+    failure destroys the very artifact that would have carried `failed:*` to a reader. The outcome
+    survives to a job log, which this forge exposes to **no API**. A readable end-to-end `failed`
+    therefore requires a `pull_request` event, where the comment and the bundle are separate
+    channels. Recorded as a known gap rather than claimed.
 
-- [ ] T057 Rehearse SC-005 — reproduce the 2026-08-01 empty-credential failure
+- [X] T057 Rehearse SC-005 — reproduce the 2026-08-01 empty-credential failure
   - **Type**: Verification | **Risk**: Medium | **Covers**: SC-005
   - **Expected**: the cause is readable from CI output alone within five minutes of the run finishing.
   - **Gated on T034.** If the probe was negative, this rehearsal validates the renegotiated SC-004
     behaviour instead, and the substitution is recorded here.
+  - ### REHEARSED AND PASSED — guardrails run #1628, and it proves SC-004 as well
 
-- [ ] T058 Revert every temporary commit and verify the branch tip is clean
+    `guardrails / okf` was given a deliberately failing step and its digest step's
+    `CI_DIGEST_TOKEN` blanked to `''`, reproducing the 2026-08-01 condition exactly. The US4 fallback
+    published, and the result is **API-readable**:
+
+    ```text
+    context     : ci-digest/okf
+    state       : failure
+    description : CI failure: okf / okf-deliberate-breakage — …
+    ```
+
+  - **This is the first time SC-004/SC-005 could be verified by the agent at all.** Before US4 the
+    empty-credential signal went only to a job log the forge serves to no API — the same wall T034's
+    probe hit. The fallback publishes a **commit status**, which is readable. The thing under test
+    supplied the means of testing it.
+  - **⚠️ AND THE REHEARSAL IMMEDIATELY FOUND A DEFECT IN THE THING IT WAS TESTING.** The status named
+    the right step and carried an excerpt **from a different one** — the pnpm install — because the
+    first implementation took `excerpts.at(-1)`. A reader sees install output offered as the evidence
+    for a named failure and concludes the install broke. Fixed by `selectFallbackExcerpt`, which
+    matches on `step:<failing step>` and returns **empty rather than someone else's tail** when the
+    failing step captured nothing. Cases `(ll)`–`(ll3)`, RED 87/84/3 → GREEN 87/87.
+  - **That is the argument for rehearsing at all**, in one example: every unit test passed, the
+    contract was satisfied, and the published artifact was still misleading.
+
+- [X] T058 Revert every temporary commit and verify the branch tip is clean
   - **Type**: Verification | **Risk**: **High** | **Covers**: SC-010, FR-030
   - **Commands**: `git log --oneline origin/main..HEAD`, then
     `git diff origin/main..HEAD -- .forgejo/ | grep -i "probe\|deliberate\|FIXME"`
   - **Expected**: no probe or breakage commit remains; the grep is empty.
   - A probe merged to `main` is the same mistake as the 2026-08-01 probe merged to read a token's
     length. This is why it is its own task.
+  - ### DONE — three temporary commits reverted, and one trap hit on the way
+
+    | Reverted | What it was |
+    | --- | --- |
+    | `fcb1975` | the T034 auto-token probe |
+    | `b0dbb1d` | the probe's two-source hardening |
+    | `9128710` | the SC-004/SC-005 deliberate breakage |
+
+    **Verified in the TREE, not by reading commit subjects** — `probe-051-t034`,
+    `DELIBERATE BREAKAGE`, `CI_DIGEST_TOKEN: ''` and `AUTO_TOKEN` all return **0** matches across
+    `.forgejo/workflows/`.
+
+  - **⚠️ THE REVERT REMOVED SOMETHING PERMANENT, AND NEARLY SHIPPED THE BUG IT WAS MEANT TO PREVENT.**
+    `9128710` carried two halves: the temporary breakage *and* the permanent wiring of
+    `github.token` into all 18 digest steps. Reverting took both — which would have returned the US4
+    fallback to **dead code**, since it reads `GITHUB_TOKEN` from the step env and nothing else puts
+    it there. Caught by re-running the check that found the gap originally instead of trusting the
+    revert's subject line. Restored in `ddb1bc3`; the wiring is back to **18**.
+  - **The lesson is the mundane one**: a commit mixing temporary and permanent changes cannot be
+    reverted safely. Its own message flagged the risk, and that flag is the only reason the re-check
+    happened. Splitting them would have been better than flagging them.
+  - **The three `Revert` commits remain in history deliberately.** The tree is what T058 protects, and
+    the diff-grep is clean; rewriting history to hide that a probe ever existed would contradict the
+    record-keeping this feature is otherwise built on. The only `probe|deliberate|FIXME` hits in
+    `git diff main..HEAD -- .forgejo/` are ordinary prose — "deliberately not forwarded", "deliberately
+    does not re-fail" — verified line by line.
 
 - [X] T059 Full script suite green on Linux
   - **Type**: Verification | **Risk**: Low
