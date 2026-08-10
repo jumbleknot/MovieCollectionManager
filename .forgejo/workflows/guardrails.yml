@@ -64,48 +64,6 @@ jobs:
         run: bash scripts/ci-log-step.sh secret-scan-validate-scanner-detects node scripts/secret-scan.mjs --selftest
       - name: Scan committed files for credential-shaped strings
         run: bash scripts/ci-log-step.sh secret-scan node scripts/secret-scan.mjs
-
-      # ⛔ TEMPORARY — feature 051 T034 / research R7. REVERT BEFORE MERGE (T058 checks for it).
-      #
-      # Answers the one load-bearing unknown behind Story 4: can the run's AUTOMATICALLY-PROVISIONED
-      # token write `POST /repos/{owner}/{repo}/statuses/{sha}`? Story 4's fallback publishes a commit
-      # status when CI_DIGEST_TOKEN is absent, and that is worth building only if the endpoint accepts
-      # this credential.
-      #
-      # Prior measurement is discouraging and is why this is a probe rather than an assumption: the
-      # commit-status path was REMOVED from ci-failure-digest.mjs in feature 042 (T040) because the
-      # endpoint returned 403 even for the purpose-scoped CI_DIGEST_TOKEN — it needs
-      # `write:repository`.
-      #
-      # SECRETS DISCIPLINE (constitution § Secrets Management): prints the token's LENGTH and an HTTP
-      # STATUS ONLY. Never the value, and never into a file. `set +x` is explicit so a future `set -x`
-      # elsewhere cannot turn this into a leak.
-      #
-      # WHAT THIS CAN AND CANNOT ESTABLISH — stated so the answer is not over-read:
-      #   CAN: whether the auto token exists on a normal run, and whether it may write statuses.
-      #   CANNOT: whether it is populated on an AGit-headed run, where every `secrets.*` is empty.
-      #           That would need an AGit push, which CLAUDE.md forbids. A NEGATIVE here is decisive
-      #           on its own (the endpoint refuses the credential); a POSITIVE is necessary but not
-      #           sufficient, and Story 4 would still owe that second question.
-      # ci-log-step-exempt: this step handles a raw credential on its command line; its output is not
-      # mirrored to ci-log-step.sh's on-runner log, which is unredacted and persists ~7 days
-      - name: 'PROBE — auto-token capability (TEMPORARY, revert before merge)'
-        if: always()
-        continue-on-error: true
-        env:
-          AUTO_TOKEN: ${{ github.token }}
-        run: |
-          set +x
-          echo "auto token length: ${#AUTO_TOKEN}"
-          if [ -z "$AUTO_TOKEN" ]; then
-            echo "PROBE RESULT: auto token is EMPTY on this run"
-            exit 0
-          fi
-          code=$(curl -s -o /dev/null -w '%{http_code}' \
-            -X POST -H "Authorization: token $AUTO_TOKEN" -H 'Content-Type: application/json' \
-            "$GITHUB_SERVER_URL/api/v1/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-            -d '{"state":"success","context":"probe-051-t034","description":"temporary capability probe"}')
-          echo "PROBE RESULT: statuses write -> HTTP $code  (201/200 = usable, 401/403 = refused)"
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
