@@ -1197,6 +1197,64 @@ fault.
     (`git rm --cached -r . && git reset --hard`, then `git status` clean).
   - **Done when**: the operator confirms. Item #157 does not close before this.
 
+  - ### RESULT — operator-run, Windows, Node v24.14.1, sha `a2537a27`, 2026-08-10
+
+    Setup verified rather than assumed: `git rm --cached -r . && git reset --hard` updated **2118
+    files**, and `git status` came back **clean**. Normalization checked directly —
+    `.forgejo/workflows/app-ci.yml` and the stale-concept fixture both **0 CRLF** afterwards. Exactly
+    one tracked `md` file still has CRLF, and it is the deliberate `scripts/__tests__/fixtures/** -text`
+    exemption whose own comment says the CRLF **is the subject under test**. Correct, not a miss.
+
+    | | tests | pass | fail | skipped |
+    | --- | ---: | ---: | ---: | ---: |
+    | Baseline (2026-08-09) | 408 | 392 | **15** | 1 |
+    | Now | **576** | 549 | 16 | 11 |
+
+  - **Criterion 1 — the collected total ROSE, 408 → 576 (+168).** No selector stopped matching. This
+    is the check that distinguishes a fix from a suite that quietly shrank.
+  - **Criterion 2 — every skip carries a reason.** Ten in `ci-log-step`, each naming the unmet
+    condition (the WSL-shim namespace, with the Git Bash remedy). The eleventh is pre-existing and
+    unrelated (`openwiki` not installed).
+
+  - ### ✅ ALL FIVE TARGET FILES PASS — SC-006/007/008 and item #157 are satisfied for 051's scope
+
+    `check-ci-digest-coverage` **(e)**, `check-openwiki-okf` **V12**,
+    `check-toolchain-consistency` **(e)**, `ci-status` **(y)**, `gen-dev-env.guard` **US6-AC2** — all
+    green on Windows, and `wiki-maintain.test.mjs` **no longer aborts at load**. The three gates exit
+    **0** on Windows, including `check-ci-digest-coverage` — **that is PRD §1.3 closed on the platform
+    where it actually failed.**
+
+  - **The okf result is stronger than "exit 0", and this is the sharpest single piece of evidence in
+    the feature.** It now emits **17 drift warnings AND exits 0**. On Windows it previously printed
+    `✅ conformant` with the staleness check silently never running. Warnings present *and* exit 0 is
+    the fail-**open** bug fixed *and* the drift-warns-without-failing contract intact — both observed
+    in one measurement.
+
+  - ### ⚠️ A FALSE GREEN THE PROBE FIX EXPOSED, WHICH NOBODY WENT LOOKING FOR
+
+    The baseline had **nine** `ci-log-step` failures; there are now **ten** reasoned skips. The extra
+    is **`(g2)` "a PASSING step records no marker"** — which *passed* in the baseline. It passed **for
+    the wrong reason**: a `127` exit writes no marker either, so the assertion held while the thing it
+    asserts was never exercised. It now honestly skips. A test that passes because the code never ran
+    is exactly this feature's subject, found by the fix rather than by the search.
+
+  - ### The 16 remaining failures — none in 051's baseline set
+
+    All landed **after** the baseline, and two of the three classes were **051's own responsibility**.
+    All three are fixed in `7ab9c27`:
+
+    | Count | File | Cause | Owner |
+    | ---: | --- | --- | --- |
+    | 11 | `e2e-contention-tally.test.mjs` | bare `spawnSync('bash', …)`, no capability probe — `127 !== 0` | **052 reintroduced the defect 051 removed** |
+    | 4 | `ci-log-step.test.mjs` `(probe1)`–`(probe4)` | the probe meta-tests assert the HOST has a usable bash / can exec a generated `#!` script | **mine** — US5 committing US5's own defect |
+    | 1 | `e2e-collection-ownership.guard.test.mjs` | `e2e-cleanup.ts` is CRLF; `.gitattributes` covered only what *gates* parse, not `.ts` | **mine** — US7's class, one file type further out |
+
+  - **The scoping mistake worth carrying**: the original `.gitattributes` list was chosen by *which
+    tool parses the file*. The correct question is *is it parsed at all* — a guard reads TypeScript
+    **source**. Now declared for `.ts/.tsx/.js/.mjs/.cjs/.json`, and the guard made CR-tolerant as
+    well, because a declaration governs future checkouts only.
+  - **A Windows RE-RUN IS OWED** on `7ab9c27` to confirm 16 → 0. SC-006 stays unticked until then.
+
 ---
 
 ## Phase 9: User Story 6 — the cargo traps are written down (P3)
