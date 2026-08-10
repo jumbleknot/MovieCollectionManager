@@ -93,35 +93,19 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          # TWO sources, deliberately. If only one were read and this forge does not support that
-          # expression, it would resolve to empty and the probe would report "not provisioned" —
-          # conflating an unsupported expression with an absent credential. That is the same
-          # can't-tell-two-states-apart defect Story 3 exists to remove, so the probe must not
-          # commit it. Reading both distinguishes them.
-          AUTO_TOKEN_CTX: ${{ github.token }}
-          AUTO_TOKEN_SECRET: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_TOKEN: ${{ github.token }}
         run: |
           set +x
-          echo "github.token          length: ${#AUTO_TOKEN_CTX}"
-          echo "secrets.GITHUB_TOKEN  length: ${#AUTO_TOKEN_SECRET}"
-          TOKEN="$AUTO_TOKEN_CTX"; SRC="github.token"
-          if [ -z "$TOKEN" ]; then TOKEN="$AUTO_TOKEN_SECRET"; SRC="secrets.GITHUB_TOKEN"; fi
-          if [ -z "$TOKEN" ]; then
-            echo "PROBE RESULT: NO auto token from EITHER source — R7 answered NEGATIVE (nothing to fall back to)"
+          echo "auto token length: ${#AUTO_TOKEN}"
+          if [ -z "$AUTO_TOKEN" ]; then
+            echo "PROBE RESULT: auto token is EMPTY on this run"
             exit 0
           fi
-          echo "PROBE: using $SRC"
           code=$(curl -s -o /dev/null -w '%{http_code}' \
-            -X POST -H "Authorization: token $TOKEN" -H 'Content-Type: application/json' \
+            -X POST -H "Authorization: token $AUTO_TOKEN" -H 'Content-Type: application/json' \
             "$GITHUB_SERVER_URL/api/v1/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -d '{"state":"success","context":"probe-051-t034","description":"temporary capability probe"}')
-          echo "PROBE RESULT: statuses write via $SRC -> HTTP $code  (200/201 = usable, 401/403 = refused)"
-          # A read the token is certain to be allowed, as a control: it separates "this credential is
-          # rejected everywhere" (bad token / bad header shape) from "it is refused for THIS endpoint"
-          # (a scope problem, which is the actual question).
-          rcode=$(curl -s -o /dev/null -w '%{http_code}' \
-            -H "Authorization: token $TOKEN" "$GITHUB_SERVER_URL/api/v1/repos/$GITHUB_REPOSITORY")
-          echo "PROBE CONTROL: repo read via $SRC -> HTTP $rcode  (200 = the credential works at all)"
+          echo "PROBE RESULT: statuses write -> HTTP $code  (201/200 = usable, 401/403 = refused)"
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
