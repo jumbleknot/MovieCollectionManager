@@ -24,6 +24,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { answerOwnership } from './setup/assistant-add-flow';
 
 const APPROVAL_TIMEOUT = 150_000;
 const DONE_TIMEOUT = 90_000;
@@ -107,6 +108,8 @@ test.describe('Assistant context-aware "this" (feature 012, US3)', () => {
     await openCollectionViaHome(page, collectionName);
     await openDock(page);
     await askAddToThis(page);
+    // 040 US4: ownership is asked once the target resolves — here, the ON-SCREEN collection.
+    await answerOwnership(page);
 
     // The approval card resolves the ON-SCREEN collection (no named target). Nothing written yet.
     const approval = page.locator('[data-testid="approval-request"]');

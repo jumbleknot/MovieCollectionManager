@@ -3,9 +3,10 @@
  *
  * Drives the FULL live stack on real react-native-web DOM:
  *   CopilotKit dock → BFF CopilotKit-runtime bridge (mints a run-scoped subject token) →
- *   AG-UI-native gateway (production nodes) → supervisor/curator (Ollama) → web-api-mcp/TMDB
- *   enrich → organizer → approval_gate LangGraph interrupt → ApprovalRequest card →
- *   approve → resume (fresh token) → movie-mcp → mc-service write. Verified via the BFF API.
+ *   AG-UI-native gateway (production nodes) → supervisor/curator → web-api-mcp/TMDB enrich →
+ *   organizer → ownership question (040 US4) → approval_gate LangGraph interrupt →
+ *   ApprovalRequest card → approve → resume (fresh token) → movie-mcp → mc-service write.
+ *   Verified via the BFF API.
  *
  * Proves (FR-005/006/007, SC-001 web leg, create-if-missing FR-005a):
  *   - the assistant previews the add behind an explicit approval (nothing written pre-approval);
@@ -27,6 +28,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { answerOwnership } from './setup/assistant-add-flow';
 
 // Add flow = Ollama classify+extract + TMDB enrich + movie-mcp list + Keycloak exchange, then a
 // resume round. Generous budgets on top of a possible Metro cold-compile.
@@ -95,6 +97,10 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
     await openDock(page);
     await askToAdd(page, collectionName);
 
+    // 040 US4: the add is gated on "Do you own this movie?" BEFORE the proposal is built. "No"
+    // ends the ownership chain at once — this spec is about the approval gate, not ownership.
+    await answerOwnership(page);
+
     // The HITL approval card appears once enrichment + the proposal are ready. Nothing is
     // written yet — the collection must not exist before approval.
     const approval = page.locator('[data-testid="approval-request"]');
@@ -124,6 +130,7 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
     await gotoHome(page);
     await openDock(page);
     await askToAdd(page, collectionName);
+    await answerOwnership(page);
 
     const approval = page.locator('[data-testid="approval-request"]');
     await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
