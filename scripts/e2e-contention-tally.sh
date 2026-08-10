@@ -29,6 +29,19 @@
 # "the step did not run" rather than "nothing was measured". `-u` and `pipefail` are kept.
 set -uo pipefail
 
+# `--gate` — the deliberate exception to the exit-0 rule below (feature 052, SC-007).
+#
+# WHY IT HAD TO EXIST: SC-007 asked for the tally to be readable on every run "including the ones
+# that pass". Measured 2026-08-10, that is impossible as stated — the failure digest publishes ONLY on
+# failure, so bundles 1623/1624--app-e2e (runs 1622/1623, both green) do not exist. The tally is
+# therefore emitted and then unreadable exactly when the run looks fine.
+#
+# That is not merely untidy. If the refresh contention partially returned, the retries would absorb it,
+# `app-e2e` would go green, and `refresh_429 > 0` would be invisible. So the judgement moves INTO the
+# job, where nobody has to remember to look — the same move `e2e-failure-set.mjs gate` makes for skips.
+GATE=0
+[ "${1:-}" = "--gate" ] && GATE=1
+
 CONTAINER="${E2E_CONTENTION_CONTAINER:-mcm-bff-service-nonsecure}"
 MARKER='[e2e-contention]'
 
@@ -60,6 +73,12 @@ fi
 if [ -n "$unavailable_reason" ]; then
   echo "$MARKER refresh_total=unavailable refresh_429=unavailable session_evicted=unavailable"
   echo "$MARKER reason: $unavailable_reason"
+  # `--gate` does NOT fail here, and the reason is structural rather than lenient. This step runs
+  # AFTER the web E2E and BEFORE teardown, so the BFF container exists whenever the web suite ran at
+  # all. `unavailable` therefore implies bring-up already failed — the job is red for a cause that is
+  # upstream of this, and failing again would only compete with it for the reader's attention
+  # (measured on run 1611, where a Keycloak import error was the real story). It cannot produce a
+  # false GREEN, which is the only thing a gate must never allow.
   exit 0
 fi
 
@@ -90,6 +109,23 @@ echo "$MARKER refresh_total=${refresh_total} refresh_429=${refresh_429} session_
 # access-token lifespan, not by test behaviour. Across a full multi-worker E2E run, `refresh_total=0`
 # alongside ordinary BFF traffic therefore means the instrumented build did not ship — not that
 # nothing refreshed. Say so, rather than letting a reader take the zeros at face value.
+if [ "$GATE" = "1" ]; then
+  violations=""
+  [ "$refresh_429" != "0" ] && violations="${violations} refresh_429=${refresh_429}"
+  [ "$session_evicted" != "0" ] && violations="${violations} session_evicted=${session_evicted}"
+  if [ -n "$violations" ]; then
+    echo "$MARKER GATE FAILED —${violations}"
+    echo "$MARKER The worker/session contention has returned. Feature 052 drove refresh_429 from"
+    echo "$MARKER 32/66 to 0 by giving each worker its own session and a CI access token that"
+    echo "$MARKER outlives the run. A non-zero count here means one of those regressed — check"
+    echo "$MARKER MAX_E2E_WORKERS, the per-worker storageState fixture, and ci-realm's"
+    echo "$MARKER accessTokenLifespan. Do NOT silence this by raising the BFF's refresh rate limit:"
+    echo "$MARKER it is an anti-abuse control on a production auth endpoint (052 FR-011)."
+    exit 1
+  fi
+  echo "$MARKER gate passed — no rate-limited refreshes, no session evictions"
+fi
+
 if [ "$refresh_total" = "0" ]; then
   bff_lines=$(printf '%s\n' "$log_source" | grep -c '"service":"mcm-bff"') || bff_lines=0
   case "$bff_lines" in ''|*[!0-9]*) bff_lines=0 ;; esac

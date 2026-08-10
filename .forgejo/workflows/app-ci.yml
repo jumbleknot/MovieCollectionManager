@@ -687,10 +687,16 @@ jobs:
       # digest ranks 0 — above every container log. The script always exits 0 (a diagnostic must not
       # fail the job it diagnoses); scripts/__tests__/e2e-contention-tally.test.mjs pins that, along
       # with the `grep -c`-exits-1-on-zero trap and the 0-vs-unavailable distinction.
-      - name: Contention tally (session evictions + refresh rejections during the web E2E)
+      # `--gate`, and NO `continue-on-error` (052 SC-007). The tally used to be advisory, which was
+      # unreadable in the one case that matters: the failure digest publishes only on failure, so a
+      # GREEN run leaves no bundle and nobody can read `refresh_429` at all (measured — runs 1622/1623
+      # passed and bundles 1623/1624--app-e2e do not exist). A partial return of the contention would
+      # be absorbed by `retries: 1`, keep the job green, and stay invisible. So the check runs where
+      # it cannot be forgotten. It stays silent on `unavailable`, which only happens when bring-up
+      # already failed — see the script.
+      - name: Contention gate (no rate-limited refreshes, no session evictions during the web E2E)
         if: ${{ always() }}
-        continue-on-error: true
-        run: bash scripts/ci-log-step.sh e2e-contention-tally bash scripts/e2e-contention-tally.sh
+        run: bash scripts/ci-log-step.sh e2e-contention-tally bash scripts/e2e-contention-tally.sh --gate
 
       # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────
       - name: Build embedded-bundle E2E APK (release variant = embedded JS)

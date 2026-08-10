@@ -31,10 +31,41 @@ Exactly one line, on stdout, for each `app-e2e` run:
   container the counts are read from; a step ordered after it reports zeros for a structural reason
   indistinguishable from a clean result.
 
+## `--gate` — how SC-007 was actually satisfied
+
+SC-007 asked for the tally to be readable on every run "including the ones that pass". **As written
+that is unachievable, and it was measured rather than argued**: the failure digest publishes only on
+failure, so runs 1622 and 1623 (both green) produced no bundle at all — `1623--app-e2e` and
+`1624--app-e2e` do not exist. The tally is emitted into the step log and is then unreadable in exactly
+the case where everything looks fine.
+
+That is a live blind spot, not a documentation nit. A partial return of the contention would be
+absorbed by `retries: 1`, keep `app-e2e` green, and never surface. So the judgement moves **into the
+job**, the same move `e2e-failure-set.mjs gate` makes for skipped tests:
+
+```bash
+bash scripts/ci-log-step.sh e2e-contention-tally bash scripts/e2e-contention-tally.sh --gate
+```
+
+`--gate` exits **1** when `refresh_429 > 0` or `session_evicted > 0`, and names the three things that
+can regress (`MAX_E2E_WORKERS`, the per-worker `storageState` fixture, `ci-realm`'s
+`accessTokenLifespan`) plus the fix that must not be reached for — raising the BFF's refresh limit,
+which is an anti-abuse control on a production auth endpoint (FR-011).
+
+It deliberately does **not** fail on `unavailable`. This step runs after the web E2E and before
+teardown, so the container exists whenever the suite ran; `unavailable` implies bring-up already
+failed, and a second failure would only compete with the real cause for attention (run 1611, where a
+Keycloak import error was the story). It cannot produce a false green, which is the only thing a gate
+must never allow.
+
+The step carries **no `continue-on-error`** — with it, the gate reports failure and the job passes
+anyway. Both that and a dropped `--gate` leave a step that still runs and still prints, so neither is
+visible by reading the log; `scripts/__tests__/e2e-contention-tally.test.mjs` asserts both.
+
 ## Exit status
 
-**The script always exits 0.** It is a diagnostic; it must never fail a job, and above all it must not
-fail the job when every count is zero.
+**Without `--gate` the script always exits 0.** It is a diagnostic; it must never fail a job, and
+above all it must not fail the job when every count is zero.
 
 The specific trap: `grep -c` exits **1** when it matches nothing, and `ci-log-step.sh` re-raises the
 wrapped command's exit code by design (`pipefail` is load-bearing there). Naive counting therefore

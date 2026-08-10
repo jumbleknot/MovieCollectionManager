@@ -51,7 +51,7 @@ function auditLine(action, extra = {}) {
  * The file seam is what makes this testable at all: a script that could only read a live container
  * could only be verified by running CI, which is the loop this feature exists to shorten.
  */
-function runTally(logContents) {
+function runTally(logContents, args = []) {
   const dir = mkdtempSync(join(tmpdir(), 'contention-tally-'));
   try {
     const env = { ...process.env };
@@ -64,7 +64,7 @@ function runTally(logContents) {
       writeFileSync(file, logContents);
       env.E2E_CONTENTION_LOG_FILE = file;
     }
-    const res = spawnSync('bash', [SCRIPT], { env, encoding: 'utf8' });
+    const res = spawnSync('bash', [SCRIPT, ...args], { env, encoding: 'utf8' });
     return { status: res.status, stdout: res.stdout ?? '', stderr: res.stderr ?? '' };
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -160,6 +160,61 @@ test('an unreadable source reports unavailable — never 0 — and still exits 0
   assert.match(stdout, /\[e2e-contention\] reason: /, 'an unavailable tally must say why');
 });
 
+// ─── `--gate` — because a GREEN run publishes no bundle (SC-007) ─────────────────────────────────
+//
+// Measured 2026-08-10: runs 1622 and 1623 both passed, and bundles 1623/1624--app-e2e do not exist.
+// The digest publishes only on failure, so on a green run the tally is emitted and then unreadable.
+// If the contention partially returned, retries would absorb it, app-e2e would stay green, and
+// `refresh_429 > 0` would never be seen. So the judgement moves into the job.
+
+test('gate passes a clean run and says so', () => {
+  const log = [auditLine('refresh_attempted'), auditLine('refresh_attempted')].join('\n');
+  const { status, stdout } = runTally(log, ['--gate']);
+
+  assert.equal(status, 0);
+  assert.equal(tallyLine(stdout), '[e2e-contention] refresh_total=2 refresh_429=0 session_evicted=0');
+  assert.match(stdout, /gate passed/);
+});
+
+test('gate FAILS on a rate-limited refresh — the contention returning', () => {
+  const log = [auditLine('refresh_attempted'), auditLine('refresh_rate_limited')].join('\n');
+  const { status, stdout } = runTally(log, ['--gate']);
+
+  assert.equal(status, 1, 'a returning contention must fail the job, not just be logged');
+  assert.match(stdout, /GATE FAILED/);
+  assert.match(stdout, /refresh_429=1/);
+  // The message must point at the three things that can regress, and rule out the tempting fix.
+  assert.match(stdout, /MAX_E2E_WORKERS/);
+  assert.match(stdout, /accessTokenLifespan/);
+  assert.match(stdout, /Do NOT silence this by raising the BFF's refresh rate limit/);
+});
+
+test('gate FAILS on a session eviction — the mechanism run 1605 refuted, returning', () => {
+  const log = [auditLine('refresh_attempted'), auditLine('session_evicted')].join('\n');
+  const { status, stdout } = runTally(log, ['--gate']);
+
+  assert.equal(status, 1);
+  assert.match(stdout, /session_evicted=1/);
+});
+
+test('gate does NOT fail on `unavailable` — it cannot cause a false green', () => {
+  // This step runs after the web E2E and before teardown, so the container exists whenever the suite
+  // ran. `unavailable` therefore implies bring-up already failed and the job is red for an upstream
+  // cause; failing again would compete with the real story (run 1611, a Keycloak import error).
+  const { status, stdout } = runTally(null, ['--gate']);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /refresh_total=unavailable/);
+  assert.doesNotMatch(stdout, /gate passed/, 'an unmeasured run must not claim the gate passed');
+});
+
+test('without --gate the script still never fails, whatever it finds', () => {
+  // The diagnostic contract is unchanged: default mode is exit-0 by design, so the tally can be read
+  // on a failing run without adding a second, competing failure.
+  const log = [auditLine('refresh_rate_limited'), auditLine('session_evicted')].join('\n');
+  assert.equal(runTally(log).status, 0);
+});
+
 // ─── The wiring. A correct script in the wrong place reports a structural zero. ──────────────────
 
 test('app-ci runs the tally through ci-log-step, so the digest ranks it above container logs', () => {
@@ -168,6 +223,21 @@ test('app-ci runs the tally through ci-log-step, so the digest ranks it above co
     yml,
     /ci-log-step\.sh\s+e2e-contention-tally\s+bash\s+scripts\/e2e-contention-tally\.sh/,
     'the tally must travel as a `step:` source — the digest keeps only 3 sources and ranks step: 0',
+  );
+});
+
+test('app-ci invokes the tally with --gate, and does NOT swallow its exit status', () => {
+  // Two ways to make the gate decorative without breaking anything visible: drop `--gate` (back to
+  // advisory, unreadable on a green run), or restore `continue-on-error: true` (the step reports its
+  // failure and the job passes anyway). Both leave a step that still runs and still prints, so
+  // neither is noticeable by reading the log.
+  const block = tallyStepBlock(readFileSync(APP_CI, 'utf8'));
+
+  assert.match(block, /e2e-contention-tally\.sh\s+--gate/, 'the step must run the script in gate mode');
+  assert.doesNotMatch(
+    block,
+    /continue-on-error:\s*true/,
+    'continue-on-error makes the gate advisory again — the exact state SC-007 could not verify',
   );
 });
 
