@@ -13,7 +13,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const PROMPT_TIMEOUT = 150_000;
 const PREVIEW_TIMEOUT = 150_000;
@@ -44,7 +44,7 @@ test.describe('Assistant import disambiguation (feature 014, US4 / T056)', () =>
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   // The US4 multi-turn import disambiguation works end-to-end live (buttons → pick → preview →
@@ -61,6 +61,7 @@ test.describe('Assistant import disambiguation (feature 014, US4 / T056)', () =>
   }) => {
     test.setTimeout(360_000);
     const name = `t056-target-${Date.now()}`;
+    ownCollection(name);
     const createRes = await request.post('/bff-api/collections', { data: { name } });
     expect(createRes.ok()).toBeTruthy();
     const collectionId = (await createRes.json()).collectionId as string;

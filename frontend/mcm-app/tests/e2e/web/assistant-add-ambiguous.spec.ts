@@ -26,7 +26,7 @@ import { test, expect } from './fixtures/worker-session';
 import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 import { answerOwnership } from './setup/assistant-add-flow';
 
 const OFFER_TIMEOUT = 150_000;
@@ -78,7 +78,7 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
   );
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('ambiguous title → ordinal pick → approve adds exactly one movie', async ({
@@ -87,6 +87,7 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
   }) => {
     test.setTimeout(360_000);
     const collectionName = `t069-amb-${Date.now()}`;
+    ownCollection(collectionName); // create-if-missing: the assistant makes it on approve
     await gotoHome(page);
     await openDock(page);
 

@@ -19,7 +19,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const PREVIEW_TIMEOUT = 150_000;
 const DONE_TIMEOUT = 120_000;
@@ -53,6 +53,7 @@ async function movieTitles(request: APIRequestContext, collectionId: string): Pr
 }
 
 async function seedEmptyCollection(request: APIRequestContext, name: string): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   return (await res.json()).collectionId as string;
@@ -97,7 +98,7 @@ test.describe('Assistant import flow (feature 014, US2 / T040)', () => {
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('type → choose file → summary preview → approve creates exactly the rows; re-run idempotent', async ({

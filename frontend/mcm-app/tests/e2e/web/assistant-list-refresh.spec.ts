@@ -37,7 +37,7 @@ import { test, expect } from './fixtures/worker-session';
 import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const APPROVAL_TIMEOUT = 150_000;
 // The refresh follows the approve-resume run (token mint → movie-mcp remove → mc-service → bump →
@@ -82,6 +82,7 @@ async function seedCollection(
   name: string,
   titles: string[],
 ): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   const collectionId = (await res.json()).collectionId as string;
@@ -127,7 +128,7 @@ test.describe('Assistant list refresh after a write (feature 012, T072)', () => 
   );
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('an assistant write updates the on-screen movie list with no reload', async ({

@@ -19,7 +19,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const OWNERSHIP_TIMEOUT = 180_000;
 const APPROVAL_TIMEOUT = 150_000;
@@ -29,6 +29,7 @@ const NAV_TIMEOUT = 90_000;
 const MOVIE_TITLE = 'Coherence';
 
 async function seedCollection(request: APIRequestContext, name: string): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   return (await res.json()).collectionId as string;
@@ -63,7 +64,7 @@ test.describe('Assistant TMDB add — ownership + detail navigation (040 US4)', 
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('add from TMDB → "Do you own this?" → No → added owned=false → lands on the detail screen', async ({

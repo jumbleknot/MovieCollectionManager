@@ -17,7 +17,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const APPROVAL_TIMEOUT = 180_000;
 // Approving re-runs the graph via a fresh /run (interrupt resume), so the approve→write→"Done"
@@ -72,7 +72,7 @@ test.describe('Assistant-added TMDB movie external link (013 US5)', () => {
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('added TMDB movie carries the themoviedb.org external link (US5-AC1/AC2)', async ({
@@ -81,6 +81,7 @@ test.describe('Assistant-added TMDB movie external link (013 US5)', () => {
   }) => {
     test.setTimeout(300_000);
     const collectionName = `us5-link-${Date.now()}`;
+    ownCollection(collectionName); // create-if-missing: the assistant makes it on approve
 
     await gotoHome(page);
     await openDock(page);

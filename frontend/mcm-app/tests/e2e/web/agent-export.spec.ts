@@ -13,7 +13,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const DOWNLOAD_TIMEOUT = 150_000;
 
@@ -31,6 +31,7 @@ async function seedCollection(
   name: string,
   titles: string[],
 ): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   const collectionId = (await res.json()).collectionId as string;
@@ -61,7 +62,7 @@ test.describe('Assistant export flow (feature 014, US3 / T049)', () => {
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('ask to export → a multi-tab .xlsx downloads', async ({ page, request }) => {

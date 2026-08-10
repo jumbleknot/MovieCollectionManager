@@ -27,7 +27,7 @@ import { test, expect } from './fixtures/worker-session';
 import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 import { answerOwnership } from './setup/assistant-add-flow';
 
 // Add flow = Ollama classify+extract + TMDB enrich + movie-mcp list + Keycloak exchange, then a
@@ -84,7 +84,7 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
   );
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('approve creates the collection and adds the movie once (create-if-missing)', async ({
@@ -93,6 +93,7 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
   }) => {
     test.setTimeout(300_000);
     const collectionName = `t037-add-${Date.now()}`;
+    ownCollection(collectionName); // the ASSISTANT creates it (create-if-missing) — claim it up front
     await gotoHome(page);
     await openDock(page);
     await askToAdd(page, collectionName);
@@ -127,6 +128,7 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
   test('reject leaves the collection uncreated (no writes)', async ({ page, request }) => {
     test.setTimeout(300_000);
     const collectionName = `t037-reject-${Date.now()}`;
+    ownCollection(collectionName);
     await gotoHome(page);
     await openDock(page);
     await askToAdd(page, collectionName);

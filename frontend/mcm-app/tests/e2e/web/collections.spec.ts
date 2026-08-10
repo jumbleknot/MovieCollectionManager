@@ -22,7 +22,7 @@
 
 import { test, expect } from './fixtures/worker-session';
 import { type Page } from '@playwright/test';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 
@@ -30,7 +30,7 @@ import { E2E_BASE_URL as BASE } from './setup/target';
 // throws. Deletes every collection these tests created so the home-screen list stays
 // at the fixture baseline — keeping later tests fast and independent.
 test.afterEach(async ({ request }) => {
-  await cleanupNonFixtureCollections(request);
+  await cleanupOwnedCollections(request);
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -112,6 +112,7 @@ test.describe('Collection create', () => {
 
   test('valid name → card appears in collection list', async ({ page }) => {
     const name = `Web E2E Collection ${Date.now()}`;
+    ownCollection(name);
     await createCollection(page, name);
     await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
     // Use .first() because multiple collection cards accumulate across test runs
@@ -133,6 +134,7 @@ test.describe('Collection create', () => {
 
   test('cancel → modal closes without creating collection', async ({ page }) => {
     const name = `Cancelled Collection ${Date.now()}`;
+    ownCollection(name);
     await openCreateForm(page);
     await page.fill('[data-testid="collection-form-name-input"]', name);
     await page.click('[data-testid="collection-form-cancel-button"]');
@@ -146,6 +148,7 @@ test.describe('Collection create', () => {
 
   test('duplicate name → error message shown in UI', async ({ page }) => {
     const name = `Duplicate Test ${Date.now()}`;
+    ownCollection(name);
 
     // Create first
     await createCollection(page, name);
@@ -180,6 +183,7 @@ test.describe('Collection browse', () => {
 
   test('"Open" action navigates to collection screen', async ({ page }) => {
     const name = `Open Test ${Date.now()}`;
+    ownCollection(name);
     await createCollection(page, name);
 
     // Click the Open action on the specific newly-created card.
@@ -199,6 +203,7 @@ test.describe('Collection browse', () => {
     // so if the collections hook had an error from a prior failed fetch (or stale
     // state), the user would see "Failed to load collections".
     const name = `Nav Refresh Test ${Date.now()}`;
+    ownCollection(name);
     await createCollection(page, name);
 
     // Open the collection screen
@@ -234,6 +239,7 @@ test.describe('Collection browse', () => {
 
   test('tapping a collection card navigates to collection screen', async ({ page }) => {
     const name = `Card Tap Test ${Date.now()}`;
+    ownCollection(name);
     await createCollection(page, name);
 
     // Click the specific card for the just-created collection (avoids strict mode
@@ -282,6 +288,7 @@ test.describe('FR-009 auto-navigation', () => {
     // Create a collection and mark it as default so FR-009 has something to redirect to.
     // (If the user already has a default collection this also verifies the redirect fired.)
     const name = `FR009 Test ${Date.now()}`;
+    ownCollection(name);
     await createCollection(page, name);
     await page.click('[data-testid="collection-card-action-set-default"]');
     await expect(page.getByTestId('collection-card-default-badge')).toBeVisible({ timeout: 5000 });
@@ -317,6 +324,7 @@ test.describe('Set as default', () => {
 
   test('"Set as Default" action adds Default badge to card', async ({ page }) => {
     const name = `Default Test ${Date.now()}`;
+    ownCollection(name);
     await createCollection(page, name);
 
     // Tap "Set as Default" on the new card
@@ -329,7 +337,9 @@ test.describe('Set as default', () => {
   test('setting new default removes "Default" badge from previously default card', async ({ page }) => {
     // Create two collections so we can transfer the default between them.
     const nameA = `DefaultA ${Date.now()}`;
+    ownCollection(nameA);
     const nameB = `DefaultB ${Date.now() + 1}`;
+    ownCollection(nameB);
     await createCollection(page, nameA);
     await createCollection(page, nameB);
 
@@ -366,6 +376,7 @@ test.describe('Collection edit (RED — stub implementation)', () => {
 
   test('Edit action opens modal pre-filled with current collection name', async ({ page }) => {
     const originalName = `Edit Me ${Date.now()}`;
+    ownCollection(originalName);
     await createCollection(page, originalName);
 
     // Target the specific card — many old "Edit Me" cards accumulate across test runs;
@@ -383,7 +394,9 @@ test.describe('Collection edit (RED — stub implementation)', () => {
 
   test('save changes updates collection name in list', async ({ page }) => {
     const originalName = `Edit Save ${Date.now()}`;
+    ownCollection(originalName);
     const updatedName = `Edited Name ${Date.now()}`;
+    ownCollection(updatedName);
     await createCollection(page, originalName);
 
     // Target the specific card by name
@@ -403,6 +416,7 @@ test.describe('Collection edit (RED — stub implementation)', () => {
 
   test('cancel edit leaves name unchanged', async ({ page }) => {
     const originalName = `No Change ${Date.now()}`;
+    ownCollection(originalName);
     await createCollection(page, originalName);
 
     // Target the specific card by name
@@ -438,6 +452,7 @@ test.describe('Collection delete (RED — dialog not wired)', () => {
 
   test('Delete action shows confirmation dialog', async ({ page }) => {
     const name = `Dialog Test ${Date.now()}`;
+    ownCollection(name);
     await createCollection(page, name);
 
     await page.click('[data-testid="collection-card-action-delete"]');
@@ -448,6 +463,7 @@ test.describe('Collection delete (RED — dialog not wired)', () => {
 
   test('cancel delete — collection remains in list', async ({ page }) => {
     const name = `Keep Me ${Date.now()}`;
+    ownCollection(name);
     await createCollection(page, name);
 
     await page.click('[data-testid="collection-card-action-delete"]');
@@ -465,7 +481,9 @@ test.describe('Collection delete (RED — dialog not wired)', () => {
   test('confirm delete — collection removed from list', async ({ page }) => {
     // Create two collections so we can verify only one is deleted
     const keepName = `Keep Test ${Date.now()}`;
+    ownCollection(keepName);
     const deleteName = `Delete Test ${Date.now()}`;
+    ownCollection(deleteName);
     await createCollection(page, keepName);
     await createCollection(page, deleteName);
 

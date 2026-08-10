@@ -19,7 +19,7 @@ import { type Page } from '@playwright/test';
 import { E2E_BASE_URL as BASE } from "./setup/target";
 import { requireAgentStack } from './setup/agent-stack-gate';
 import { FIXTURE_COLLECTIONS } from "../fixtures/base-dataset";
-import { cleanupNonFixtureCollections } from "./setup/e2e-cleanup";
+import { cleanupOwnedCollections } from "./setup/e2e-cleanup";
 
 const ACTION_TIMEOUT = 180_000;
 const BROWSE = FIXTURE_COLLECTIONS.BROWSE; // 'E2E Browse'
@@ -53,7 +53,7 @@ test.describe("Assistant unified search workflow (013 US7 + US10)", () => {
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test("a named-collection single match is offered as a button, then opens on tap (US7-AC8 + New Scope 1)", async ({
