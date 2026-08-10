@@ -385,6 +385,30 @@ export function truncateForStatus(text, max = STATUS_DESCRIPTION_MAX) {
 }
 
 /**
+ * Choose the excerpt the fallback carries: the one belonging to the FAILING STEP.
+ *
+ * MEASURED IN CI (guardrails run #1628, the SC-004/SC-005 rehearsal). The first implementation took
+ * `excerpts.at(-1)` and published:
+ *
+ *   ci-digest/okf  "CI failure: okf / okf-deliberate-breakage — ! Corepack is about to download …"
+ *
+ * The step name was right and the excerpt came from a different step entirely. A reader sees install
+ * output offered as the evidence for a named failure and concludes the install broke. That is worse
+ * here than in the digest, because the fallback carries exactly ONE excerpt and there is no bundle to
+ * check it against.
+ *
+ * When the failing step has NO captured log, this returns '' rather than someone else's tail —
+ * attributing another step's output to it is actively misleading, and silence is the honest answer.
+ * Only when the failing step is genuinely UNKNOWN does it degrade to the last excerpt.
+ */
+export function selectFallbackExcerpt(excerpts = [], step = '') {
+  if (!excerpts.length) return '';
+  if (!step) return String(excerpts.at(-1)?.text ?? '');
+  const mine = excerpts.find((e) => String(e.source) === `step:${step}`);
+  return mine ? String(mine.text ?? '') : '';
+}
+
+/**
  * The fallback status body. The failing STEP is the single most useful fact — an excerpt without it
  * sends the reader hunting — so it leads, and the excerpt fills whatever room is left.
  *
@@ -884,7 +908,7 @@ async function run() {
     const description = buildStatusDescription({
       job: context.job,
       step: context.step,
-      excerpt: redactForPublication(evidence.excerpts.at(-1)?.text ?? ''),
+      excerpt: redactForPublication(selectFallbackExcerpt(evidence.excerpts, context.step)),
     });
     let result;
     try {

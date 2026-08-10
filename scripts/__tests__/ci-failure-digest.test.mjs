@@ -948,3 +948,50 @@ test('(kk5) an empty or missing excerpt still yields a usable description', asyn
   assert.ok(body.trim().length > 0, 'an empty description is the same as no signal at all');
   assert.match(body, /naming/);
 });
+
+// --- (ll) the fallback excerpt must come from the FAILING step ------------------------------------
+//
+// MEASURED IN CI, guardrails run #1628 (the SC-004/SC-005 rehearsal). The fallback published:
+//
+//   ci-digest/okf  "CI failure: okf / okf-deliberate-breakage — ! Corepack is about to download …"
+//
+// The step NAME was right and the excerpt was from a completely different step — the pnpm install.
+// A reader sees install output presented as the evidence for a named failure and concludes the
+// install broke. That is the same defect this whole feature is about: text that looks like evidence
+// for a claim it is not evidence for. Worse here than in the digest, because the fallback carries
+// exactly ONE excerpt and there is no bundle to check it against.
+
+test('(ll) the fallback excerpt is selected by the FAILING STEP, not by position', async () => {
+  const { selectFallbackExcerpt } = await digestModule();
+  const excerpts = [
+    { source: 'step:okf-install-js-dependencies', text: 'Corepack is about to download pnpm' },
+    { source: 'step:okf-deliberate-breakage', text: 'this failure is intentional' },
+    { source: 'step:okf-gate', text: 'unrelated tail' },
+  ];
+  assert.match(
+    selectFallbackExcerpt(excerpts, 'okf-deliberate-breakage'),
+    /intentional/,
+    'the excerpt did not come from the failing step',
+  );
+});
+
+test('(ll2) with no failing step reported, it falls back to the LAST excerpt rather than nothing', async () => {
+  // Degrading to "some evidence" beats degrading to none — but only when the step is genuinely
+  // unknown, never as the default path.
+  const { selectFallbackExcerpt } = await digestModule();
+  const excerpts = [{ source: 'step:a', text: 'first' }, { source: 'step:b', text: 'last' }];
+  assert.match(selectFallbackExcerpt(excerpts, ''), /last/);
+  assert.equal(selectFallbackExcerpt([], 'anything'), '');
+});
+
+test('(ll3) a failing step with no captured log does NOT borrow another step\'s output', async () => {
+  // The dangerous case. If the failing step produced nothing, presenting a different step's tail
+  // beside its name is actively misleading — say nothing instead.
+  const { selectFallbackExcerpt } = await digestModule();
+  const excerpts = [{ source: 'step:something-else', text: 'not mine' }];
+  assert.equal(
+    selectFallbackExcerpt(excerpts, 'the-failing-step'),
+    '',
+    'output from an unrelated step was attributed to the failing step',
+  );
+});

@@ -361,7 +361,7 @@ families.
     the widened three-part command and states the expected count (**17**), so a future run notices a
     shortfall instead of reading a smaller clean list as a clean result.
 
-- [ ] T017 [US1] Triage whatever the newly-running specs reveal
+- [X] T017 [US1] Triage whatever the newly-running specs reveal
   - **Type**: Verification | **Risk**: **High** | **Covers**: spec Edge Cases, item #150
   - The agent and admin specs run in CI for the first time here. Failures are pre-existing defects,
     not regressions from this change.
@@ -477,6 +477,36 @@ families.
     recreate the false green; fixing session isolation (a per-spec user, a longer E2E session, or the
     agent specs as a separate Playwright project) is an E2E architecture change outside this
     feature's scope. **Escalated to the operator.**
+
+  - ### CLOSED — resolved by features 052 and 053, not by this branch
+
+    The escalation was taken up as two separate features, both now merged into this branch:
+
+    | Feature | What it fixed |
+    | --- | --- |
+    | **052** | the worker/session contention itself — the shared-identity pressure this task surfaced |
+    | **053** | the stale E2E specs the un-skipping exposed, plus a result gate that fails on skips, on unrun tests, and on a log with no summary |
+
+    **Outcome: two consecutive green `app-e2e` runs (1622, 1623) with all 177 tests executed**,
+    including three lifecycle tests that had never run. `skipped=0` and `did not run=0` are now
+    **structurally enforced by a gate** rather than merely observed — which is a stronger result than
+    this task asked for, and the right one: SC-001 was a measurement, and it is now an invariant.
+
+  - **My contention diagnosis was directionally right and incomplete.** I established worker
+    parallelism against a shared identity as the trigger; 052 confirmed and fixed it, and 053 then
+    found that *five stale specs had been hiding behind the skip for three weeks* — a second,
+    independent consequence of the same false green that I had attributed wholly to contention. The
+    "19 collateral failures" figure I recorded was therefore a mixture, not a single population.
+
+  - **A correction to received wisdom, from 053, worth carrying**: "live model = inherently flaky" was
+    substantially wrong, and that framing is what licensed re-running and quarantining agent specs —
+    precisely how the five stale specs stayed hidden. Genuine drift does remain (TMDB ranking), which
+    is why item **#170** asks for an explicit rule rather than a reflex.
+
+  - **Left open deliberately** (053's filings): **#166** (a real user-facing dropped-message defect,
+    mechanism unexplained), **#167** (a green run publishes no bundle, so flake counts are
+    unreadable), **#168** (no valid local full-suite signal), **#169** (shared identity is the root
+    cause behind three separate failures), **#170** (live-model gate policy).
   - **Local observation (Linux dev container, 2026-08-09)**: with both flags forwarded,
     `agent-navigate-movie.spec.ts` executes and **fails** — the offer locator
     `[data-testid="selection-options"]` never becomes visible within the 180s action timeout
