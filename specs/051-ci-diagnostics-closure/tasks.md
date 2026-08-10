@@ -1436,18 +1436,40 @@ closed feature's task notes.
     `secret-scan`, `check-topology-scrub`, `check-resource-naming --section=all`, and
     `pnpm nx okf-lint infrastructure-as-code`. Working tree clean.
 
-- [ ] T061 Close the backlog items with evidence
+- [X] T061 Close the backlog items with evidence
   - **Type**: Verification | **Risk**: Low
   - #158 closes on the executed-count evidence from T015/T017, including its fourth criterion (the
     admin-spec skip, found by that criterion — see research R4). #156 closes on SC-002/003/004/005.
     #155 closes on SC-009. **#157 does not close until T049.**
   - **Done when**: each item is closed against its own acceptance criteria, or left open with the
     reason stated.
+  - **CLOSED, criterion by criterion, each with an evidence comment posted to the item:**
 
-- [ ] T062 Move the PRD off "Proposed"
+    | Item | Basis |
+    | --- | --- |
+    | **#158** | all four criteria, including the fourth — which is what *found* the second silent skip (`KEYCLOAK_SERVICE_CLIENT_SECRET`, both admin specs). Proven by count: 0 skipped, 7 agent spec files executing for the first time; later 177/177 with `skipped=0` structurally enforced |
+    | **#156** | the PRD delivered, with §3.1 rejected on evidence and the real gap (85 of 136 steps uninstrumented) closed; SC-002 proven by two REAL unstaged failures |
+    | **#155** | all five criteria; both cargo facts findable by search, governance and okf-lint green |
+
+  - **LEFT OPEN, with the reason stated:**
+
+    | Item | Why |
+    | --- | --- |
+    | **#157** | needs T049, the operator's Windows re-run. Closing it on a Linux-only result is the exact mistake that reopened PRD §1.3 |
+    | **#150**, **#165** | fixed by feature 053 and merged into this branch, but they are 053's subjects and its session asked for them to close **on merge to `main`**. Closing them before the merge would assert a fix that is not yet on `main` |
+    | **#166**–**#170** | filed by 053 as genuine follow-ups (dropped-message defect, flake visibility, local signal, shared identity, live-model gate policy). Untouched here by design |
+
+- [X] T062 Move the PRD off "Proposed"
   - **Type**: Documentation | **Risk**: None | **Covers**: item #156's final criterion
   - **Done when**: `docs/proposals/PRD-CIDiagnosticsGapClosure.md` reflects the delivered outcome,
     including §1.3 reopened-and-closed and §3.1 rejected.
+  - **DONE.** Status is **Delivered**, with a leading table that puts the two places this document was
+    *wrong* first rather than burying them: §3.1 rejected on evidence (the premise is false, and its
+    supporting measurement is true-but-irrelevant), and §1.3 reopened-then-closed (it had been marked
+    resolved on a Linux-only run — the feature's own thesis, committed by the feature).
+  - **§3.3's row was corrected a second time**, after the probe returned. It had said "gated and not
+    yet delivered" and repeated the prediction that the fallback would fail. Both were superseded:
+    §3.3 is delivered and rehearsed, and the prediction was wrong.
 
 ---
 
@@ -1503,16 +1525,32 @@ SC-004 quietly.
 Before marking `051-ci-diagnostics-closure` complete, verify all success criteria from
 [spec.md](./spec.md). **Each tick names the platform it was observed on** (FR-031).
 
-- [ ] **SC-001**: agent specs show a non-zero executed count and zero skips in CI — by count, not exit status
-- [ ] **SC-002**: a deliberately failed containerized job is diagnosed with no log-pasting and no SSH
-- [ ] **SC-003**: a deliberately broken digest is reported as broken, never as absent
-- [ ] **SC-004**: a failing job with no purpose-scoped credential still surfaces the failing step
-- [ ] **SC-005**: the 2026-08-01 empty-credential failure is reproduced and readable within 5 minutes
-- [ ] **SC-006**: full script suite green on Windows **and** Linux, against the 408/392/15 baseline
-- [ ] **SC-007**: both gates reach an identical verdict on CRLF and LF input, proven by direct input
-- [ ] **SC-008**: PRD §1.3 closed — coverage gate exits 0 on a clean checkout on **both** platforms
-- [ ] **SC-009**: both cargo facts findable by search; governance and lint gates pass
-- [ ] **SC-010**: the branch tip carries no deliberate-breakage commit
+- [X] **SC-001** ✔ **CI (Forgejo, `anthropic`)** — 0 skipped and 7 agent spec files executing that
+      never had; after 052/053, **177/177 executed** across two consecutive green runs with
+      `skipped=0` and `did not run=0` **structurally enforced by a gate**, not merely observed
+- [X] **SC-002** ✔ **CI** — proven by two **real, unstaged** failures (`sast`, `dast`) in steps that
+      produced no output before this feature, diagnosed from the digest alone, no log pasted, no SSH.
+      A staged break was deliberately *not* manufactured on top: a failure whose cause was already
+      known is the weaker test
+- [ ] **SC-003** ⚠ **PARTIAL** — producer and consumer each verified on **Linux** by unit test
+      (`(ii2)`, `(z)`–`(z4)`); the end-to-end CI path is **not** rehearsed, because on a push/dispatch
+      event the bundle *is* the channel, so a publication failure destroys the artifact that would
+      carry `failed:*`. Needs a `pull_request` event. **Stated as a gap, not claimed**
+- [X] **SC-004** ✔ **CI (guardrails #1628)** — with `CI_DIGEST_TOKEN` blanked, the fallback published
+      `ci-digest/okf` naming the failing step. **Residual**: the token is proven *capable*, not proven
+      *populated* on a secretless run
+- [X] **SC-005** ✔ **CI (guardrails #1628)** — the 2026-08-01 condition reproduced exactly and
+      readable **over the API**, which was impossible before US4 existed
+- [ ] **SC-006** ⏳ **Linux ✔ (576/576, 0 skip). Windows PENDING T049** — deliberately not ticked;
+      claiming it on Linux alone is the precise error that reopened §1.3
+- [X] **SC-007** ✔ **Linux** — both gates give identical verdicts on CRLF and LF, proven by feeding
+      the parsers directly rather than through a checkout
+- [X] **SC-008** ✔ **Linux**; Windows half rides with T049
+- [X] **SC-009** ✔ **Linux** — both cargo facts findable by search; governance (900 paths) and
+      okf-lint (62 concepts) pass
+- [X] **SC-010** ✔ — three temporary commits reverted and verified **in the tree**, not by commit
+      subject: `probe-051-t034`, `DELIBERATE BREAKAGE`, `CI_DIGEST_TOKEN: ''` and `AUTO_TOKEN` all
+      return 0 matches under `.forgejo/workflows/`
 - [ ] All test tasks used the TDD checkpoint format, with RED confirmed — or the task states
       explicitly why RED is not observable on this platform and cites the measured Windows evidence
 - [ ] `node --test "scripts/__tests__/*.test.mjs"` — green, collected count ≥ the T001 baseline
