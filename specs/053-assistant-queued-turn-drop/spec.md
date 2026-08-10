@@ -4,11 +4,46 @@
 
 **Created**: 2026-08-10
 
-**Status**: Draft
+**Status**: **ATTEMPT REVERTED — the defect is real and unfixed. Do not re-apply the same fix.**
 
 **Input**: Found while driving `app-e2e` to a reliably green state (backlog #150). `assistant-disambiguate.spec.ts:154`
 failed in CI run 1619 and reproduces locally against a live stack: the member's second message never
 reaches the gateway, is never echoed into the dock, and produces no error.
+
+## ⛔ Read this before touching it again (2026-08-10)
+
+The defect below is **real and reproduced**. The fix described in [plan.md](./plan.md) — adding
+`isRunning` to the flush effect's dependency list — **was implemented, verified locally, merged onto
+the branch, and then REVERTED**, because it caused a large `app-e2e` regression that its local
+verification did not predict.
+
+| commit | app-e2e failed | flaky | gateway requests |
+| --- | ---: | ---: | ---: |
+| before the fix (2eaa30e) | 1 | 5 | 155 |
+| **with the fix (81e03e9), run 1621** | **28** | 0 | 43 |
+| **with the fix (81e03e9), run 1622 — same sha** | **26** | 0 | 56 |
+
+Two runs on the IDENTICAL commit, so this is the change and not run-to-run variance — the same
+two-run standard used to accept a green result, applied to a red one. Every agent/dock spec failed,
+including the simplest (`assistant.spec.ts:78`, "sends a message and renders the streamed reply"),
+all with no assistant message at all and `flaky=0` (none recovered on retry). The stack was healthy:
+the gateway started normally and answered every request it received with 200 — it simply received a
+third of the usual traffic. Turns were not being sent.
+
+**The mechanism is NOT understood.** Checked and eliminated: `assistant_not_configured` short-circuits
+(zero in both runs), MCP/stack degradation (no error signature, containers healthy), and the obvious
+reading that each `useAssistantRun` instance shares state (each has its own `pendingRef`).
+
+What made this fix look safe, and why that was not enough:
+
+* 6/6 unit tests, RED before and GREEN after, on a test double corrected to match the real
+  CopilotKit context (the first double repaired the bug it was meant to catch — see below);
+* 5/5 E2E with `--retries=0` against the live containerized stack, in 23.6 s versus 2.3 min;
+* `refresh_rate_limited=0` alongside, so the instrument was valid.
+
+All of that was true and none of it caught a whole-suite regression. The gap is that the local run
+exercised three spec files in isolation, and the regression only appears under the full suite's
+concurrency. **A local subset pass is not evidence about a change to a SHARED hook.**
 
 ## Why this exists
 

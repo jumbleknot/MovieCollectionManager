@@ -43,6 +43,12 @@ failing against the unfixed code before the fix lands, or it is not evidence.
       with `refresh_rate_limited > 0` is about the harness, not the code, and must be discarded and
       re-run. (SC-002)
       *(Done 2026-08-10: 5/5 with --retries=0 against the live containerized stack in 23.6s (was 2.3 min — the delta is the 120s previously spent waiting for a card that could never arrive). Instrument checked alongside: refresh_rate_limited=0, 18 gateway requests. NOTE: the BFF image had to be rebuilt (`pnpm nx docker-build mcm-app`) and the container recreated first — the dev-container serves a BUILT bundle, so without that the run exercises the old code and proves nothing.)*
-- [ ] **T009** Two consecutive `app-ci` runs; judge by the `e2e-result-gate` line
+- [x] **T009** Two consecutive `app-ci` runs; judge by the `e2e-result-gate` line
       (`failed=0 skipped=0 did-not-run=0`), never by the job's exit status. (SC-003)
-- [ ] **T010** Record the outcome on backlog item #150, including anything still unexplained.
+      *(Done 2026-08-10 — **SC-003 NOT MET, and the fix was REVERTED.** Runs 1621 and 1622 on the
+      identical sha reported failed=28 and failed=26 against 1 on the commit before. See the banner
+      in spec.md. T004's change is reverted; T001–T003's unit test is removed with it, because it
+      asserts behaviour the code no longer has. The spec and plan are kept as the record of what was
+      measured and what is still unexplained.)*
+- [x] **T010** Record the outcome on backlog item #150, including anything still unexplained.
+      *(Done 2026-08-10.)*
