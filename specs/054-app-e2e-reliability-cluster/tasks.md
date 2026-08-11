@@ -294,21 +294,37 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
 
 **Goal**: FR-023 to FR-025. **Depends on**: US4's identity model.
 
-- [ ] **T037** [US6] Raise `accessTokenLifespan` in
+- [x] **T037** [US6] Raise `accessTokenLifespan` in
       `infrastructure-as-code/docker/keycloak/dev-realm.json` to match `ci-realm`. Confirm
       `check-realm-consistency.mjs` still passes — its header states the realms may legitimately differ in
       non-contract fields, including token lifespans. **Run it; do not rely on the header.**
-- [ ] **T038** [US6] Name the substitute coverage for what this costs: assert that the BFF refresh path,
+      *(Done 2026-08-11: 300 → 5400, matching `ci-realm`. Gate RUN, not trusted: `check-realm-consistency`
+      prints "consistent (realm, app clients, e2e-test-user)" and exits 0. JSON re-parsed after the edit.)*
+- [x] **T038** [US6] Name the substitute coverage for what this costs: assert that the BFF refresh path,
       including the 2-per-30 s bucket and its 429, is exercised by `pnpm nx test:integration mcm-app`.
       **If it is not, add it here** — dropping the local coverage without a replacement is not acceptable.
-- [ ] **T039** [US6] Make the local full-suite runner read the contention counters at the end of a run and
+      *(Done 2026-08-11: it already exists and nothing needed adding — verified, not assumed.
+      `tests/integration/rate-limiter.integration.test.ts` covers the 429 ("returns 429 after the real
+      counter exceeds the limit; key has a TTL"), the 2-per-30 s refresh bucket, and both the
+      `refresh_rate_limited` and `refresh_attempted` audit events. Named in the runbook and the
+      checklist so the substitute is explicit rather than implied.)*
+- [x] **T039** [US6] Make the local full-suite runner read the contention counters at the end of a run and
       fail with a message naming the **token lifespan** when `refresh_rate_limited > 0` — rather than leaving
       the member with `gotoHome: home screen did not render`, a sentence that names a cause it never tested.
       (FR-024)
+      *(Done 2026-08-11: `tests/e2e/web/setup/global-teardown.ts`, wired in `playwright.config.ts`.
+      Throws — which fails the run — naming the lifespan, the 2-per-30 s bucket, the frozen-storageState
+      mechanism, and the re-import requirement. No-ops under CI, where the host-side gate already
+      measures this and the Playwright container has no Docker CLI. With no Docker it prints **not
+      measured**, which is deliberately not a pass.)*
 - [ ] **T040** [US6] Run the full local suite and record the contention counters and the five counts.
       A pass here is a claim about the harness, not about the code. (SC-010)
-- [ ] **T041** [US6] Reconcile `openwiki/invariants/feature-validation-checklist.md` and
+- [x] **T041** [US6] Reconcile `openwiki/invariants/feature-validation-checklist.md` and
       `docs/runbooks/e2e-testing.md` so they agree on what a valid local pre-PR signal is. (FR-025)
+      *(Done 2026-08-11: both now say a full local suite IS a valid gate, name the substitute coverage
+      for the refresh path, and carry the trap that **a running Keycloak keeps the old lifespan until
+      the realm is re-imported** — raising the number in the JSON changes nothing for a stack already
+      up. openwiki governance and okf gates both exit 0.)*
 
 ---
 

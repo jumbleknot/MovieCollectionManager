@@ -34,6 +34,11 @@ export default defineConfig({
   testDir: './tests/e2e/web',
   // T008/T009: authenticate once + seed the fixture before any test (FR-004, FR-005, SC-001).
   globalSetup: './tests/e2e/web/setup/global-setup.ts',
+  // 054 US6: fail a LOCAL run whose auth was being rate-limited, naming the token lifespan rather
+  // than letting it surface as `gotoHome: home screen did not render` — a message that names a cause
+  // it never tested. No-ops under CI, where the host-side contention gate already measures this and
+  // the Playwright container has no Docker CLI.
+  globalTeardown: './tests/e2e/web/setup/global-teardown.ts',
   timeout: 90000,   // 90 s: ~15-20 s login (popup + BFF + collections) + 60-70 s test body
   expect: { timeout: 10000 },
   fullyParallel: false,

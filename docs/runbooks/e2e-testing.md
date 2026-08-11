@@ -288,13 +288,24 @@ for months, and only ran for the first time on 2026-08-10.
 
 Three ways a local E2E run produced a confident, wrong answer in one session:
 
-- **A full-suite local run is not a valid instrument.** `dev-realm` still has
-  `accessTokenLifespan: 300` — feature 052 scoped its 5400 s fix to `ci-realm` — so any local run past
-  ~5 minutes re-enters the refresh contention 052 removed from CI. Two 44-minute attempts measured
-  **62 `refresh_rate_limited`** (CI reads 0) and collapsed into 401s and
-  `gotoHome: home screen did not render`, which reads exactly like an application bug. **Read the BFF
-  contention counters for the run's window alongside the result**; if `refresh_rate_limited > 0` the
-  result is about the harness, not the code. Keep local runs under the expiry horizon, or run a subset.
+- **A full-suite local run was not a valid instrument — FIXED in feature 054, and the check now runs
+  itself.** `dev-realm` had `accessTokenLifespan: 300` (feature 052 scoped its 5400 s fix to
+  `ci-realm`), so any local run past ~5 minutes re-entered the refresh contention 052 removed from CI.
+  Two 44-minute attempts measured **62 `refresh_rate_limited`** (CI reads 0) and collapsed into 401s
+  and `gotoHome: home screen did not render`, which reads exactly like an application bug.
+
+  `dev-realm` now matches `ci-realm` at 5400 s. What that costs is local coverage of the refresh path,
+  so the substitute is named rather than left implicit: the 2-per-30 s bucket, its `429`, and the
+  `refresh_rate_limited` audit event are covered by `tests/integration/rate-limiter.integration.test.ts`
+  (`pnpm nx test:integration mcm-app`) — which is where a rate-limit behaviour belongs anyway.
+
+  **You no longer have to remember to read the counters.** A `globalTeardown` reads them at the end of
+  every local run and FAILS the run if `refresh_rate_limited > 0`, with a message naming the token
+  lifespan instead of leaving you with `gotoHome`. With no Docker CLI it prints *not measured* — which
+  is a different statement from zero, and is deliberately not a pass.
+
+  ⚠️ **A running Keycloak keeps the OLD lifespan until the realm is re-imported.** Raising the number
+  in the JSON changes nothing for a stack that is already up.
 - **A container can be "Up" and dead.** `movie-assistant-gateway` showed `Up 37 hours`, had stopped
   logging hours earlier, and did not answer `/health` from inside the BFF container. Five specs
   "reproduced deterministically" against it — a dead stack, not a defect. **Zero gateway requests for
