@@ -1294,6 +1294,50 @@ fault.
 
 ---
 
+### ⛔ CORRECTION (2026-08-11) — the section below is WRONG in two ways
+
+Both errors are mine, both were checkable with evidence I already had, and the original text is kept
+verbatim underneath because the mistake is more instructive than the fix.
+
+**1. Run 1622 did NOT pass. It failed with 26.** The tally "green, green, green, red, green" is
+wrong. I took 1622/1623 from another session's report and never checked them, while applying a much
+harder standard to the runs I observed myself — **including stating the very rule that would have
+caught it**: *"a green run publishes no bundle"*. `1622--app-e2e` has a failure bundle. I printed
+that bundle list, in this session, and did not look. Selectively applying a verification standard —
+rigorously to my own work, not at all to an inherited number — is the exact failure this feature
+exists to remove, committed while documenting it.
+
+Independently re-measured from the bundles:
+
+| run | result | Anthropic calls |
+| --- | --- | ---: |
+| 1622 | **26 failed** / 148 passed | 34 |
+| 1633 | **30 failed** / 144 passed | 24 |
+| healthy runs (053's wider sample) | 1–9 failed | **99–114** |
+
+**2. Calling it "non-determinism" was too vague, and the advice that followed was harmful.** This is
+not a flaky suite. It is a specific, recognisable defect — filed as **#173 (p1)** — in which the
+client stops dispatching turns: roughly three-quarters of the turns are never sent (Anthropic calls
+collapse from ~99–114 to ~24–34), so **every agent spec fails at once with `flaky=0`**. Feature 053
+ruled out contention (`refresh_429=0` in every collapsed run), stack bring-up,
+`assistant_not_configured`, and the known `@expo/server` pipe drop. The client echoes the user's
+message and nothing reaches the BFF, pointing at CopilotKit registry/dispatch on the client side.
+
+**So retract the guidance I gave.** I wrote that a reviewer seeing `app-e2e` red should *"re-run
+before assuming a regression"*. That is precisely the habit that let five stale specs hide for three
+weeks. A red `app-e2e` should be **diagnosed against the #173 signature** — check the Anthropic call
+count in the failure bundle's gateway log; ~24–34 with `flaky=0` is the collapse, not a flake.
+
+**The methodological finding, which outlives all of it**: three separate conclusions in this thread
+were drawn from two runs and overturned by a wider sample — 053's causal attribution to its own fix,
+my "five green one red", and the original "live model = inherently flaky". **Two runs is not a
+sample.** #167 exists because a green run publishes no bundle, so its retry count is unreadable —
+which is what made two-run reasoning feel sufficient.
+
+---
+
+**Original text, retained unaltered:**
+
 ### ⚠️ `app-e2e` IS NOT STABLE — five runs on identical test code
 
 Recorded here because it is the last honest thing this feature owes, and a green tick would hide it.
