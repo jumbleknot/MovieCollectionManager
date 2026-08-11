@@ -389,6 +389,34 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
 
 ---
 
+## Phase 8 — US7: a missing script fails its tests instead of skipping them (P2)
+
+**Numbered last, executed NEXT** — before US4, and before any further RED verification in this
+feature. The number follows document order; the position follows the dependency, which is that every
+remaining RED here is only as trustworthy as the probe that decides whether it runs at all.
+Backlog item **#178**, pulled into this feature because this feature is what it damaged.
+
+- [ ] **T051** [US7] Write `scripts/__tests__/shell-probe.test.mjs` — the probe has no coverage of its
+      own today, which is how a helper whose failure mode is SILENCE went wrong unnoticed. Cover all
+      three outcomes: an absent script reports **usable** (so cases fail rather than skip); a script
+      that exists but the shell cannot read skips **naming the namespace condition**; an unstartable
+      shell skips naming that. **Verify RED.**
+- [ ] **T052** [US7] Fix `shellCanRunScript` in `scripts/__tests__/shell-probe.mjs`: check the host
+      with `existsSync` BEFORE asking the shell. `existsSync` is the right predicate precisely because
+      it runs in node rather than in the shell — conflating those two views is the entire defect.
+      **Verify GREEN (T051).** (FR-028, FR-029)
+- [ ] **T053** [US7] Reproduce the original measurement: temporarily remove `scripts/e2e-turn-tally.sh`
+      and confirm `e2e-turn-tally.test.mjs` now reports **12 failures where it previously reported 12
+      skips**, then restore it. This is the acceptance criterion stated as an experiment rather than as
+      a description, because the defect was invisible in exactly the form a description would take.
+      (SC-012)
+- [ ] **T054** [US7] Confirm the three suites that use the probe are unaffected on a healthy host:
+      `ci-log-step`, `e2e-contention-tally`, `e2e-turn-tally` — same pass counts, same skip counts as
+      before the change. A fix that changed their behaviour would be trading one silent problem for
+      another. Then close item **#178** on its acceptance criteria.
+
+---
+
 ## Dependencies
 
 ```text
@@ -409,3 +437,7 @@ US2 (T004-T010)  ── independent ──┐                          │
   a real user-facing defect behind an open-ended diagnosis.
 - **#173's fix (T047) is evidence-gated**, not scheduled. It has no place in the dependency order because
   nothing in this feature can schedule the event it depends on.
+- **US7 (T051-T054) is numbered last and runs NEXT** — before US4 and before any further RED
+  verification. It is not in the diagram above because it is not a peer of the other stories: it is a
+  precondition on the *evidence*, not on the code. Until it lands, a RED that should fail can silently
+  skip, which is how it went unnoticed in T011.

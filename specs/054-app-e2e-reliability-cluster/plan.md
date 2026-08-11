@@ -63,6 +63,8 @@ scripts/
 ├── e2e-contention-tally.sh           # US3 — the proven pattern the turn tally mirrors
 ├── e2e-turn-tally.sh                 # US3 — NEW: the run-health signal
 └── __tests__/
+    ├── shell-probe.mjs               # US7 — absent script != unusable shell
+    ├── shell-probe.test.mjs          # US7 — NEW: the probe's own coverage
     ├── ci-status.test.mjs            # US1
     ├── ci-failure-digest.test.mjs    # US2
     └── e2e-turn-tally.test.mjs       # US3 — NEW
@@ -310,6 +312,38 @@ runtime realm mutation for no benefit over option 1 once the substitute coverage
 
 ---
 
+## US7 — A missing script fails its tests instead of skipping them
+
+`shellCanRunScript` asks one question — `test -r "<script>"` **through the shell** — and uses the
+answer for two different ones. The predicate is false for an absent file and for an unreachable one,
+and the reason it returns describes only the second.
+
+**Approach**: check the host first, then the shell.
+
+| Condition, in order | Result |
+| --- | --- |
+| the shell cannot be started | skip, naming that |
+| the script does not exist **on the host** (`existsSync`) | **usable** — the cases run and fail honestly |
+| the script exists but `test -r` fails through the shell | skip, naming the namespace condition |
+
+The middle row is the fix and it is deliberately counter-intuitive: reporting a **missing** script as
+*runnable* is right, because the resulting failure is true and legible (`127`, or an assertion about
+output that was never produced), whereas the skip is false and invisible.
+
+`existsSync` is the right predicate for the middle row precisely because it runs in **node**, not in
+the shell — the whole defect is that the shell's view and the host's view were being conflated. On a
+Windows host with the WSL bash on PATH, node sees `E:\…` and the shell does not, which is exactly the
+discrimination the probe needs and did not have.
+
+**Not doing**: making the probe throw, or making an absent script a hard error of its own. A missing
+script is a normal, temporary state during TDD — the correct behaviour is for the tests that need it
+to fail, which is what they are for.
+
+**Verification**: unit only, and the probe gets its own coverage for the first time. A helper whose
+failure mode is silence, with no tests of its own, is the same defect one level up.
+
+---
+
 ## Evidence standard, fixed in advance
 
 Written here so no claim in this feature is judged by a number chosen after seeing the result.
@@ -317,6 +351,7 @@ Written here so no claim in this feature is judged by a number chosen after seei
 | Claim | Standard | Why that number |
 | --- | --- | --- |
 | US1 correctness | Unit, RED then GREEN | Deterministic; a CI run cannot show it (a dispatched run posts no status) |
+| US7's probe is honest | Unit, both directions, plus the measured 12-skip case becoming 12 failures | It is what makes every other RED in this feature mean anything |
 | US2 works | One green `app-e2e` whose counts are then read from a session | The claim is "readable", and one reading proves readable |
 | US3's `verdict` is right | Checked against the measured signature on **every** run, and the result recorded | Cheap: every run is a sample, and a disagreement is itself the finding — perfect agreement is not required (the threshold is heuristic) |
 | US4 removed the class | Two consecutive non-collapsed runs, empty failure-set diff by test identity | 052's SC-004 — a shrinking-but-varying set means reduced, not removed |

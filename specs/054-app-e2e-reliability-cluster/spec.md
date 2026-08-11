@@ -268,6 +268,58 @@ same window.
 
 ---
 
+---
+
+### User Story 7 - A missing script fails its tests instead of skipping them (Priority: P2)
+
+`scripts/__tests__/shell-probe.mjs` decides whether a suite can shell out by running
+`test -r "<script>"` **through the shell**. That predicate is false for a script that does not exist
+just as it is for one the shell cannot reach — and the two are reported identically, with the reason
+written for the second:
+
+> `bash` starts but cannot read `<script>` — it is a shell from a different filesystem namespace
+> (typically the WSL bash on PATH for a Windows checkout)…
+
+So a suite whose script under test is simply **absent** gets a confident, specific, wrong diagnosis
+pointing at Windows and WSL — and, far worse, gets **skips instead of failures**.
+
+**Why this is in this feature rather than in the backlog.** It was found by this feature, writing this
+feature's tests, and it silently weakened this feature's own evidence. Measured 2026-08-11 on Linux
+with a perfectly usable `bash`, writing `e2e-turn-tally.test.mjs` (T011):
+
+| | tests | pass | fail | skipped |
+| --- | ---: | ---: | ---: | ---: |
+| test file written, script not yet created | 15 | 0 | 3 | **12** |
+| identical test file, empty stub script created | 15 | 1 | **14** | 0 |
+
+Twelve cases that should have been the RED half of a RED→GREEN pair reported as **skips**. Under this
+repository's own rule — *a skip reads as a pass* — that is the failure class feature 051 exists to
+remove, reproduced inside the helper written to prevent it. It bites exactly when the discipline is
+being followed, because writing the test before the implementation is the only order in which the
+script is missing.
+
+Tracked as backlog item **#178**, pulled into this feature because every remaining RED verification
+here depends on it.
+
+**Why this priority**: It does not change what the suite tests; it changes whether this feature's own
+RED verifications mean anything. P2 rather than P1 only because the three suites that use the probe
+are correct on a healthy host today.
+
+**Independent Test**: Point a probe at a path that does not exist and assert it reports *usable* — so
+the cases run and fail — while a path that exists but is unreadable through the shell still skips with
+its reason.
+
+**Acceptance Scenarios**:
+
+1. **Given** a script path that does not exist on the host, **When** the probe runs, **Then** it
+   reports the suite as runnable, so the cases FAIL rather than skip.
+2. **Given** a script that exists but the shell cannot read (a different filesystem namespace),
+   **When** the probe runs, **Then** it skips and the reason names that condition.
+3. **Given** a shell that cannot be started at all, **When** the probe runs, **Then** it skips and the
+   reason names that condition.
+4. **Given** any skip this probe produces, **When** it is read, **Then** it never attributes an absent
+   file to a namespace problem.
+
 ### Edge Cases
 
 - **No collapse occurs during the whole feature.** US3's detector is still delivered and correct; #173's
@@ -358,6 +410,15 @@ same window.
 - **FR-025**: `openwiki/invariants/feature-validation-checklist.md` and `docs/runbooks/e2e-testing.md` MUST
   agree.
 
+**Probe honesty (US7)**
+
+- **FR-028**: The shared shell probe MUST distinguish *the script under test is absent* from *the
+  shell cannot reach it*. An absent script MUST NOT produce a skip.
+- **FR-029**: The namespace case (the file exists on the host, the shell cannot read it) MUST still
+  skip, and MUST still name that condition — the defect it was written for is real.
+- **FR-030**: The probe's own behaviour MUST be pinned by tests covering both directions. It is a
+  helper whose failure mode is silence, so an unpinned helper is the same defect one level up.
+
 **Cross-cutting**
 
 - **FR-026**: No production security control may be weakened to suit the test harness. Where a control is
@@ -411,6 +472,9 @@ Stated as observed results, because a green tick on this suite is the thing that
   skip count.
 - **SC-010**: A documented local command produces a full-suite result with zero contention counters, or the
   checklist states the full local suite is not a valid gate and names the substitute.
+- **SC-012**: A suite whose script under test is absent reports **failing** cases, not skipped ones,
+  and the three suites that use the probe are unchanged on a healthy host. Demonstrated against the
+  measured 12-skip case, which becomes 12 failures.
 - **SC-011**: The global-setup cost added by US4 is stated as a measured number, and both verification runs
   finish inside the 75-minute budget.
 
