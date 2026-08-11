@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-08-09T00:00:00+00:00
+timestamp: 2026-08-11T00:00:00+00:00
 ---
 
 # CI self-serve diagnostics
@@ -79,6 +79,32 @@ runtime rather than any literal configured value.
   failing OPEN (timestamp comparison silently skipped) because `.split('\n')` left `\r` on
   values, making `Date.parse` return `NaN`. **A false green is the worse failure; it merges.**
   Fix: split on `/\r?\n/`, normalize at the point of reading, not per-pattern.
+- **When `CI_DIGEST_TOKEN` is empty the digest degrades, not fails.** `CI_DIGEST_TOKEN` is an
+  Actions secret, so it is blank exactly when a run is most confusing (e.g. an AGit-headed push
+  where every `${{ secrets.* }}` arrives empty). The digest now falls back: if the run-provisioned
+  token is present it posts a commit status `ci-digest/<job>` with the failing step name and a
+  truncated excerpt (`published`, `degraded: true`); if both are absent, `failed:no-credential`.
+  **Residual:** T034 proved the run token *can* write statuses but did NOT prove it is populated on
+  a secretless run — that requires an AGit-headed push, which is forbidden. If a secretless run
+  still publishes nothing, check this first.
+- **A passing run publishes no bundle — the result gate is how CI judges its own counts.** The
+  digest publishes only on failure, so on a green run `failed=` / `skipped=` / `passed=` are
+  unreadable from outside. `app-ci` now runs `node scripts/e2e-failure-set.mjs gate <web-e2e.log>`
+  right after the web E2E: it fails on `skipped > 0`, `did not run > 0`, or a log with no summary
+  at all. A second gate (`scripts/e2e-contention-tally.sh --gate`) fails on `refresh_429 > 0` or
+  `session_evicted > 0`. **Neither gate may carry `continue-on-error`** — adding it back makes the
+  step invisible in the log while the job passes regardless. `flaky` is still NOT observable on a
+  green run; do not claim "no flakes" from a green tick.
+- **Verifying a branch without opening a PR: `workflow_dispatch` works, but posts no commit
+  status.** Feature branches trigger almost nothing on `push:` (guardrails and app-ci scope their
+  push trigger to `main`). Both workflows expose `workflow_dispatch`, so a branch can be fully
+  verified without a PR — dispatch with the `git credential fill` credential, not `MCM_FORGE_TOKEN`
+  (read-only, 403s). Two traps: (1) a dispatched run posts **no commit status**, so
+  `ci-status status --sha` keeps saying *waiting* no matter the outcome — read `/actions/tasks`
+  instead; (2) **`run_number` in `/actions/tasks` is NOT the bundle ID** — the bundle name comes
+  from `GITHUB_RUN_ID` (repository-wide counter), not `run_number` (per-workflow counter). Fetching
+  `<run_number>--<job>` returns 404, which looks like "no bundle published". List package versions
+  (`GET /api/v1/packages/{owner}?type=generic&limit=10`) and take the newest for the job.
 
 Full exit-code table, the exact API endpoints and payload measurements, the required-check
 fetch/fallback logic, the PR creation recipe, and the evidence-bundle hardening details:

@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer)
 description: The disposable Linux dev container the AI coding assistant runs inside — its honestly-stated two-tier isolation model (strong host-filesystem isolation, moderate privileged-DinD engine isolation), the default-deny egress firewall, and the VS Code / Windows-host quirks that block a first boot.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook]
-timestamp: 2026-08-09T00:00:00+00:00
+timestamp: 2026-08-11T00:00:00+00:00
 ---
 
 # Containerized dev environment (devcontainer)
@@ -46,10 +46,21 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   also reject. Do not reach for `--online`; inspect what is being added. See
   [cargo fmt formats the WHOLE crate](/openwiki/gotchas/rust-formatting-scope.md) for the
   companion formatting trap in this crate.
-- **Local Ollama runs inside the dev container itself, not on the Windows host** — nested
-  Docker-in-Docker breaks `host.docker.internal` reachability to the host, so the fix was moving
-  Ollama into the container rather than routing around the network gap. See
-  [Model-provider scoping](/openwiki/invariants/model-provider-scoping.md) for how this interacts
+- **`getaddrinfo ENOTFOUND keycloak-service` running the integration tier here is a missing env
+  variable, not a capability gap.** `tests/integration/setup/env.ts` loads `.env.docker` (added by
+  feature 041 for CI) whose URLs are Docker-internal by construction (`keycloak-service:8080`,
+  `mcm-bff-store-mongo:27017`). Nothing overrides them for a host-shell run. The fix is three
+  `export`s before calling `pnpm nx test:integration mcm-app`:
+  `export KEYCLOAK_URL=http://localhost:8099`, `export MONGO_URL=mongodb://localhost:27018`,
+  `export REDIS_TEST_URL=redis://localhost:6379/1`. Measured 2026-08-09: 84 failed / 31 passed
+  without these; 114/115 with them. The `app-e2e` CI job overrides the same four variables for
+  the same reason.
+- **Local Ollama runs inside the dev container itself** via the `dev-ollama` nested container. Re-measured
+  2026-08-09: `host.docker.internal:11434` is now reachable from inside the `movie-assistant-gateway`
+  container, so a local agent E2E run against `MODEL_PROVIDER=ollama` is feasible. **Verify by
+  running the liveness probe before trusting either version of this note** — it has flipped once:
+  `docker exec movie-assistant-gateway python -c "import urllib.request,json; print([m['name'] for m in json.load(urllib.request.urlopen('http://host.docker.internal:11434/api/tags'))['models']])"`.
+  See [Model-provider scoping](/openwiki/invariants/model-provider-scoping.md) for how this interacts
   with the gateway's provider selection.
 - **A Docker CDN blob timeout on `docker compose up` is usually firewall/CDN-IP drift, not a real
   outage** — re-running `init-firewall.sh` to re-resolve the allowlisted CDN IPs and retrying is the
