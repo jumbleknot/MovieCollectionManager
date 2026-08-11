@@ -300,6 +300,85 @@ test('(w) the required-context glob set covers the documented branch-protection 
 });
 
 // ================================================================================================
+// 054 T001/T002 — a context accumulates one status per state transition; only the NEWEST counts.
+//
+// A job that fails and is then re-run successfully on the same event leaves BOTH a `failure` and a
+// `success` for one context. Before this, `computeMergeVerdict` mapped over every status without
+// collapsing, so the stale `failure` still landed in `blocking` and the same context could appear
+// twice in one verdict — as `passed` AND `failed`. Reported as backlog item #176; the reproduction
+// below is the one written into that item.
+//
+// Fails CLOSED, which is why it was a p3 and not a p1: it never called a broken PR mergeable. It
+// sent the reader diagnosing a failure that was already resolved, which is the human-in-the-loop
+// cost feature 042 exists to remove.
+// ================================================================================================
+
+const CTX = 'guardrails / naming (pull_request)';
+const statusAt = (status, created_at, context = CTX) => ({ context, status, created_at });
+
+test('(ww) a stale failure re-run to success on the SAME event resolves to passed', () => {
+  const v = computeMergeVerdict(
+    [statusAt('failure', '2026-08-11T10:00:00Z'), statusAt('success', '2026-08-11T10:30:00Z')],
+    { requiredGlobs: ['guardrails*'], event: 'pull_request' },
+  );
+  assert.equal(v.blocking.length, 0, 'a stale failure still blocked after a successful re-run');
+  assert.equal(v.mergeable, true, 'reported NOT mergeable for a commit the forge would merge');
+});
+
+test('(ww2) NEWEST WINS IN BOTH DIRECTIONS — a newer failure after an older success blocks', () => {
+  // The dangerous direction, and the one an "any success passes" shortcut gets wrong: a job that
+  // passed and was then re-run into a genuine failure must block.
+  const v = computeMergeVerdict(
+    [statusAt('success', '2026-08-11T10:00:00Z'), statusAt('failure', '2026-08-11T10:30:00Z')],
+    { requiredGlobs: ['guardrails*'], event: 'pull_request' },
+  );
+  assert.equal(v.blocking.length, 1, 'a newer genuine failure was absorbed by an older success');
+  assert.equal(v.mergeable, false);
+});
+
+test('(ww3) no context appears more than once in a verdict', () => {
+  const v = computeMergeVerdict(
+    [
+      statusAt('failure', '2026-08-11T10:00:00Z'),
+      statusAt('success', '2026-08-11T10:30:00Z'),
+      statusAt('success', '2026-08-11T10:45:00Z'),
+    ],
+    { requiredGlobs: ['guardrails*'], event: 'pull_request' },
+  );
+  const seen = v.all.map((c) => c.context);
+  assert.equal(seen.length, new Set(seen).size, `one context reported twice: ${seen.join(', ')}`);
+  assert.equal(v.all.length, 1);
+});
+
+test('(ww4) the collapse is per EVENT-SUFFIXED context — push and pull_request stay independent', () => {
+  // The event-suffix rule (case (u)) must survive the collapse: `foo (push)` and
+  // `foo (pull_request)` are different checks that can legitimately disagree. Keying the collapse
+  // on the job name rather than the full context string would silently merge them.
+  const all = [
+    statusAt('failure', '2026-08-11T10:00:00Z', 'guardrails / naming (push)'),
+    statusAt('success', '2026-08-11T10:30:00Z', 'guardrails / naming (pull_request)'),
+  ];
+  const pr = computeMergeVerdict(all, { requiredGlobs: ['guardrails*'], event: 'pull_request' });
+  assert.equal(pr.mergeable, true, "the push context's failure leaked into the pull_request verdict");
+
+  const push = computeMergeVerdict(all, { requiredGlobs: ['guardrails*'], event: 'push' });
+  assert.equal(push.blocking.length, 1, "the pull_request success masked the push context's failure");
+});
+
+test('(ww5) statuses sharing a created_at collapse deterministically — later entry wins', () => {
+  // Equal timestamps are reachable: the forge stamps to the second. Without a stable tiebreak the
+  // verdict would depend on sort implementation, which is a coin-flip verdict rather than a wrong
+  // one — harder to notice and harder to reproduce.
+  const same = '2026-08-11T10:00:00Z';
+  const v = computeMergeVerdict([statusAt('failure', same), statusAt('success', same)], {
+    requiredGlobs: ['guardrails*'],
+    event: 'pull_request',
+  });
+  assert.equal(v.all.length, 1);
+  assert.equal(v.mergeable, true, 'the tiebreak did not take the later array entry');
+});
+
+// ================================================================================================
 // T026 — reading the published digest back.
 // ================================================================================================
 

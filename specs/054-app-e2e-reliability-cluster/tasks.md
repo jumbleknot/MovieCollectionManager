@@ -31,18 +31,27 @@ These are not advice; three of them were each learned by being got wrong in this
 **Goal**: a stale `failure` after a successful re-run of the same context stops blocking.
 **Independently verifiable**: unit only, no CI run.
 
-- [ ] **T001** [US1] Add the reproduction from item #176 to `scripts/__tests__/ci-status.test.mjs`: one
+- [x] **T001** [US1] Add the reproduction from item #176 to `scripts/__tests__/ci-status.test.mjs`: one
       context with an older `failure` and a newer `success` on the same event resolves to `passed`, the
       verdict is mergeable, and the context appears exactly once. **Verify RED.**
-- [ ] **T002** [P] [US1] Add the reverse case to the same file — an older `success` and a newer `failure`
+      *(Done 2026-08-11: RED confirmed — `(ww)` failed with `blocking: 1` and `mergeable: false`,
+      reproducing item #176 exactly. Cases `(ww)`, `(ww3)`, `(ww5)` added.)*
+- [x] **T002** [P] [US1] Add the reverse case to the same file — an older `success` and a newer `failure`
       resolve to `failed` — plus a case asserting `foo (push)` and `foo (pull_request)` stay independent and
       may disagree, and a case where two statuses share a `created_at` (stable tiebreak). **Verify RED** for
       the first, GREEN-on-current for the others (they pin behaviour that already works). (FR-002, FR-004)
-- [ ] **T003** [US1] Add `collapseToNewestPerContext` to `scripts/ci-status.mjs` and apply it between
+      *(Done 2026-08-11: `(ww2)` newest-failure-wins and `(ww4)` event-suffix independence both pass on
+      the UNFIXED code, which is the point — they guard against an "any success passes" shortcut that
+      would satisfy T001 while breaking the dangerous direction. `(ww5)` equal-timestamp tiebreak was
+      RED: two entries survived where one was expected.)*
+- [x] **T003** [US1] Add `collapseToNewestPerContext` to `scripts/ci-status.mjs` and apply it between
       `selectEventContexts` and the `.map` in `computeMergeVerdict`. Key on the **full context string**, not
       on `parseContext(s).job` — that is what keeps the event suffixes distinct and keeps an unsuffixed
       context distinct from a suffixed one. Order by `created_at`, original index as tiebreak.
       **Verify GREEN (T001–T002).** (FR-001, FR-003, SC-001)
+      *(Done 2026-08-11: GREEN — 5/5 new cases. `ci-status.test.mjs` 86/86 pass, 0 fail, 0 skipped;
+      collected total ROSE 81 → 86, which is the check that distinguishes a fix from a shrunk suite.
+      Whole tooling tier `node --test "scripts/__tests__/*.test.mjs"`: **582 pass, 0 fail, 0 skipped**.)*
 
 ---
 

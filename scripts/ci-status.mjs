@@ -337,6 +337,49 @@ export function selectEventContexts(statuses, event) {
   });
 }
 
+/**
+ * Reduce a context's status history to its CURRENT status.
+ *
+ * A context accumulates one status per state transition, so a job that failed and was then re-run
+ * successfully on the same event leaves both a `failure` and a `success` behind. Without this the
+ * verdict classified every entry, so the stale `failure` still landed in `blocking` and one context
+ * could be reported twice — as `passed` AND `failed` (backlog item #176).
+ *
+ * Keyed on the FULL context string rather than on `parseContext(...).job`. Two reasons, and both
+ * produce a wrong verdict rather than an obvious break:
+ *   * `foo (push)` and `foo (pull_request)` are different checks that legitimately disagree — the
+ *     event-suffix rule `selectEventContexts` exists to enforce. Keying on the job would merge them.
+ *   * an unsuffixed `foo` is admitted alongside a suffixed one by that same function, and the two
+ *     are not interchangeable.
+ *
+ * Newest wins in BOTH directions. "Any success passes" would be the easy shortcut and is the
+ * dangerous one: it absorbs a newer genuine failure into an older success.
+ *
+ * Equal `created_at` is reachable (the forge stamps to the second), so the original array index is
+ * the tiebreak. Without it the verdict would depend on sort stability — a coin-flip verdict, which
+ * is harder to notice and harder to reproduce than a consistently wrong one.
+ */
+export function collapseToNewestPerContext(statuses) {
+  const newest = new Map();
+  statuses.forEach((s, index) => {
+    const previous = newest.get(s.context);
+    if (!previous) {
+      newest.set(s.context, { status: s, index });
+      return;
+    }
+    const at = Date.parse(s.created_at ?? '');
+    const previousAt = Date.parse(previous.status.created_at ?? '');
+    const bothUnparseable = Number.isNaN(at) && Number.isNaN(previousAt);
+    const isNewer = bothUnparseable || Number.isNaN(previousAt)
+      ? index > previous.index
+      : Number.isNaN(at)
+        ? false
+        : at > previousAt || (at === previousAt && index > previous.index);
+    if (isNewer) newest.set(s.context, { status: s, index });
+  });
+  return [...newest.values()].map((entry) => entry.status);
+}
+
 /** Infer which event to resolve when the caller did not say: a PR's own contexts win if present. */
 function inferEvent(statuses) {
   return statuses.some((s) => parseContext(s.context).event === 'pull_request') ? 'pull_request' : 'push';
@@ -353,7 +396,7 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
   const chosenEvent = event ?? inferEvent(statuses);
   const patterns = requiredGlobs.map(globToRegExp);
 
-  const checks = selectEventContexts(statuses, chosenEvent)
+  const checks = collapseToNewestPerContext(selectEventContexts(statuses, chosenEvent))
     .filter((s) => !SELF_PUBLISHED_CONTEXT.test(parseContext(s.context).job))
     .map((s) => {
     const { job } = parseContext(s.context);
