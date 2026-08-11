@@ -7,7 +7,7 @@
  * the non-blocking `useFonts` wiring in app/_layout.tsx (a font failure never gates
  * the first paint).
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
 import { E2E_BASE_URL as BASE } from './setup/target';
 
 const FONT_PATTERNS = [

@@ -4,8 +4,9 @@
  * The single-shot exact path is covered by assistant-add.spec.ts (T037, "Coherence"). This
  * exercises the multi-turn disambiguation hardening (T069 / research R14):
  *   ask to add an ambiguous title → assistant offers the matches (NO approval yet) →
- *   user picks by ordinal ("the first one") → assistant resolves a single film → approval card
- *   → approve → movie added to the (create-if-missing) collection EXACTLY ONCE.
+ *   user picks by ordinal ("the first one") → assistant resolves a single film → ownership
+ *   question (040 US4) → approval card → approve → movie added to the (create-if-missing)
+ *   collection EXACTLY ONCE.
  *
  * Proves the disambiguation state machine end-to-end on real react-native-web DOM through the
  * full live stack (CopilotKit dock → BFF runtime → AG-UI gateway production nodes → Ollama
@@ -21,10 +22,12 @@
  * Run (isolated): E2E_AGENT_PRODUCTION=1 pnpm nx e2e mcm-app -- tests/e2e/web/assistant-add-ambiguous.spec.ts
  */
 
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
+import { answerOwnership } from './setup/assistant-add-flow';
 
 const OFFER_TIMEOUT = 150_000;
 const APPROVAL_TIMEOUT = 90_000;
@@ -75,7 +78,7 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
   );
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('ambiguous title → ordinal pick → approve adds exactly one movie', async ({
@@ -84,6 +87,7 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
   }) => {
     test.setTimeout(360_000);
     const collectionName = `t069-amb-${Date.now()}`;
+    ownCollection(collectionName); // create-if-missing: the assistant makes it on approve
     await gotoHome(page);
     await openDock(page);
 
@@ -98,6 +102,8 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
 
     // Turn 2: pick by ordinal → resolves a single film → approval card appears.
     await send(page, 'the first one');
+    // 040 US4: the resolved add asks "Do you own this movie?" before the proposal is built.
+    await answerOwnership(page);
     const approval = page.locator('[data-testid="approval-request"]');
     await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
     await expect(approval).toContainText('Pirates');

@@ -123,6 +123,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
               # NOTE: infrastructure-as-code/komodo/** deliberately excluded — Komodo deploy config does
@@ -141,7 +146,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Ensure origin/main is available as the affected base
-        run: git fetch --no-tags --depth=200 origin main || true
+        run: bash scripts/ci-log-step.sh affected-ensure-origin-main-available git fetch --no-tags --depth=200 origin main || true
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       # Node 24.14.1, NOT 20. pnpm 11 (package.json `packageManager`) declares engines
@@ -182,6 +187,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -196,12 +206,14 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install native build deps (openssl for native-tls)
         run: |
-          apt-get update
-          apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
+          bash scripts/ci-log-step.sh mc-service-checks-install-native-build-deps apt-get update
+          bash scripts/ci-log-step.sh mc-service-checks-install-native-build-deps apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
       - name: Install Rust (stable + clippy)
         run: |
+          bash scripts/ci-log-step.sh mc-service-checks-install-rust bash -e /dev/stdin <<'CI_LOG_STEP'
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component clippy
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          CI_LOG_STEP
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
@@ -224,6 +236,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -264,6 +281,12 @@ jobs:
       # web-api-mcp .env.local + the agent flows' per-user config (TMDB enrichment). Optional: the
       # per-user config supplies it per-request, but a real key lets the enrich/add flows return data.
       TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+      # admin-card.spec.ts / admin-registration.spec.ts seed their admin user through the Keycloak
+      # Admin API and `test.skip(!keycloakAdminEnabled(), …)` when this is unset. It was absent from
+      # this job entirely — so both specs skipped silently on every run, and the `-e` pass-through
+      # added below would have forwarded nothing without this line. Feature 051 (item #158, fourth
+      # acceptance criterion).
+      KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -272,6 +295,7 @@ jobs:
       # (the image has none) and confirm it can reach the daemon socket the runner mounts.
       - name: Set up Docker CLI (job container talks to the runner's daemon socket)
         run: |
+          bash scripts/ci-log-step.sh app-e2e-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
           if ! command -v docker >/dev/null 2>&1; then
             curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
               | tar xz -C /usr/local/bin --strip-components=1 docker/docker
@@ -283,11 +307,14 @@ jobs:
             echo "::error::Docker CLI installed but the daemon is not reachable from the job container. Mount the ci rootless socket into job containers: in the runner config.yaml set container.options to include  -v /run/user/1001/docker.sock:/var/run/docker.sock  (alongside --device /dev/kvm), then restart the runner."
             exit 1
           fi
+          CI_LOG_STEP
 
       - name: Free daemon disk space
         run: |
+          bash scripts/ci-log-step.sh app-e2e-free-daemon-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
           docker image prune -af || true
           df -h || true
+          CI_LOG_STEP
 
       # On the homelab runner the job runs inside a node:22-bookworm container on the ci rootless
       # daemon, so /dev/kvm is provided by the runner config (`container.options: --device /dev/kvm`),
@@ -295,22 +322,26 @@ jobs:
       # KVM is missing — never silently skip the mobile suite (spec Edge Cases, research R1).
       - name: Verify KVM is available
         run: |
+          bash scripts/ci-log-step.sh app-e2e-verify-kvm-available bash -e /dev/stdin <<'CI_LOG_STEP'
           if [ -e /dev/kvm ]; then
             ls -l /dev/kvm
           else
             echo "::error::/dev/kvm not present in the job container — add 'container.options: --device /dev/kvm' to the runner config (Server-Setup-Runbook Phase 7) and ensure the ci user is in the kvm group"
             exit 1
           fi
+          CI_LOG_STEP
 
       # The per-stack aggregators override `include:`d services to attach profiles; that needs a
       # recent Docker Compose (the bundled one rejects it). Install the latest plugin.
       - name: Install latest Docker Compose plugin
         run: |
+          bash scripts/ci-log-step.sh app-e2e-install-latest-docker bash -e /dev/stdin <<'CI_LOG_STEP'
           mkdir -p ~/.docker/cli-plugins
           curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
             -o ~/.docker/cli-plugins/docker-compose
           chmod +x ~/.docker/cli-plugins/docker-compose
           docker compose version
+          CI_LOG_STEP
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -330,7 +361,7 @@ jobs:
           github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh app-e2e-install-dependencies pnpm install --frozen-lockfile
 
       # ── Provision the CI environment (FR-006, closes the android-e2e ci-provisioning gap) ────────
       # The runner is PERSISTENT (not an ephemeral VM), so Keycloak's realm DB + Mongo test data
@@ -340,6 +371,7 @@ jobs:
       # rebuilds stay fast) → every run imports the current realm and seeds fixtures clean.
       - name: Reset stateful CI data (fresh realm + test data each run)
         run: |
+          bash scripts/ci-log-step.sh app-e2e-reset-stateful-ci-data bash -e /dev/stdin <<'CI_LOG_STEP'
           docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit \
             mc-service mc-service-store-mongo mc-service-store-mongo-rs-init \
             mcm-bff-service-nonsecure mcm-bff-cache-redis mcm-bff-store-mongo \
@@ -347,16 +379,19 @@ jobs:
             movie-assistant-mcp-spreadsheet movie-assistant-store-postgres 2>/dev/null || true
           docker volume rm keycloak-store-postgres-data mc-service-store-mongo-data \
             mcm-bff-store-mongo-data movie-assistant-store-postgres-data 2>/dev/null || true
+          CI_LOG_STEP
 
       - name: First-time docker setup (networks + volumes)
         run: |
+          bash scripts/ci-log-step.sh app-e2e-first-time-docker-setup bash -e /dev/stdin <<'CI_LOG_STEP'
           for n in backend-network keycloak-network movie-assistant-mcp-network; do docker network create "$n" || true; done
           # All external volumes the auth + mcm(app) + agents stacks declare by name (must pre-exist).
           for v in mc-service-store-mongo-data keycloak-store-postgres-data mcm-bff-cache-redis-data \
                    mcm-bff-store-mongo-data movie-assistant-store-postgres-data; do docker volume create "$v" || true; done
+          CI_LOG_STEP
 
       - name: Mint per-stack secrets (stacks/*.env)
-        run: node scripts/gen-dev-secrets.mjs
+        run: bash scripts/ci-log-step.sh app-e2e-mint-per-stack-secrets node scripts/gen-dev-secrets.mjs
 
       # KC_DB_PASSWORD is no longer written here — feature 022 made it a single ${KC_DB_PASSWORD}
       # minted by gen-dev-secrets into stacks/auth.env (postgres + Keycloak both interpolate it; the
@@ -369,7 +404,7 @@ jobs:
           COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
           AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
           AGENT_CONFIG_ENC_KEY: ${{ secrets.AGENT_CONFIG_ENC_KEY }}
-        run: node scripts/gen-ci-env.mjs
+        run: bash scripts/ci-log-step.sh app-e2e-write-ci-env-secret-files node scripts/gen-ci-env.mjs
 
       # ── Backend + agent stack (auth BEFORE mcm app profile — manual ordering, FR-006) ───────────
       - name: Bring up Keycloak (auth stack, ci-realm imported) + Redis + Mongo + mc-service
@@ -382,6 +417,7 @@ jobs:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
           AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
         run: |
+          bash scripts/ci-log-step.sh app-e2e-bring-up-keycloak bash -e /dev/stdin <<'CI_LOG_STEP'
           # Throwaway per-run secrets for the CI-realm clients whose secret is ARBITRARY in app-e2e:
           # agent-gateway is refetched from Keycloak at runtime (agent-stack.mjs) and mc-service is
           # bearer-only. Random each run, never committed; they only need to be non-empty + internally
@@ -409,6 +445,7 @@ jobs:
           # Bring up app infra + mc-service + the dev BFF (:8082) together, images now present.
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure up -d --wait
+          CI_LOG_STEP
 
       - name: Bring up containerized agent gateway + MCP (production nodes)
         # agent-stack.mjs fetches the agent-gateway client secret via the mcm-bff-service service
@@ -423,7 +460,7 @@ jobs:
         # in agents/ or mcp-servers/ changed.
         env:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
-        run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+        run: bash scripts/ci-log-step.sh app-e2e-bring-up-containerized-agent env MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
 
       # ── Agent LIVE integration suite (the layer no workflow ran until now) ───────────────────────
       # Until this step, NO project's `test:integration` executed anywhere in CI — only the `-m golden`
@@ -575,7 +612,7 @@ jobs:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
           REDIS_TEST_URL: redis://localhost:6379/1
           MONGO_URL: mongodb://localhost:27018
-        run: pnpm nx test:integration mcm-app
+        run: bash scripts/ci-log-step.sh app-e2e-bff-integration-tests pnpm nx test:integration mcm-app
 
       # ── Web Playwright E2E against the dev-container BFF (FR-008, SC-003) ────────────────────────
       # Its global-setup logs in once and seeds BROWSE/MUTATION/DEFAULT + FIXTURE_MOVIES for the same
@@ -585,6 +622,29 @@ jobs:
       # (browser + deps preinstalled, supported OS) with --network host so it reaches the dev BFF
       # (:8082) and Keycloak (:8099) on the host loopback — the same dev-container E2E path. The host
       # workspace (incl. node_modules from the earlier pnpm install) is mounted in.
+      #
+      # ⚠️ `docker run` forwards ONLY what `-e` names. A variable set in this job's `env:` block and
+      # not named here is invisible inside the container — and every gate the web E2E suite applies
+      # is driven by one. So an omission is not an error; it is a SILENT SKIP behind a green required
+      # gate. Two were live here for the lifetime of this job (feature 051, item #158):
+      # `E2E_AGENT_PRODUCTION` (every agent-*.spec.ts skipped) and `KEYCLOAK_SERVICE_CLIENT_SECRET`
+      # (admin-card + admin-registration skipped). Before changing this list, read
+      # specs/051-ci-diagnostics-closure/contracts/e2e-env-forwarding.md, and note that
+      # scripts/__tests__/app-e2e-env.guard.test.mjs asserts it.
+      #
+      # DELIBERATELY NOT FORWARDED — enumerated against every `process.env` read under
+      # frontend/mcm-app/tests/e2e/, so this is the complete remainder, not a sample:
+      #   KEYCLOAK_URL, KEYCLOAK_REALM, KEYCLOAK_CLIENT_ID, KEYCLOAK_SERVICE_CLIENT_ID
+      #       — the defaults in tests/e2e/web/setup/keycloak-admin.ts already match the CI topology
+      #         (http://localhost:8099, realm grumpyrobot) and `--network host` makes localhost
+      #         resolve identically inside and out.
+      #   E2E_AGENT_OLLAMA_URL — the CI provider is anthropic; this is the dev/test provider's URL.
+      #   E2E_LARGE_LIBRARY, E2E_LARGE_LIBRARY_SIZE — opt-in performance scenario, deliberately off
+      #         in the merge gate.
+      # Do not add these speculatively: each one changes what the merge gate actually tests.
+      #
+      # Secrets use the pass-through form `-e NAME`, never `-e NAME=$NAME` — the latter expands the
+      # value into argv, where it reaches process listings and step logs.
       - name: Web E2E (Playwright container; host network → dev BFF)
         run: |
           bash scripts/ci-log-step.sh web-e2e \
@@ -593,8 +653,65 @@ jobs:
             -e E2E_BFF_TARGET=dev-container \
             -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e CI=1 \
             -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
+            -e E2E_AGENT_PRODUCTION -e E2E_REQUIRE_AGENT_STACK=1 \
+            -e KEYCLOAK_SERVICE_CLIENT_SECRET \
             mcr.microsoft.com/playwright:v1.60.0-noble \
             sh -c "corepack enable && pnpm exec playwright test"
+
+      # ── Result gate: a GREEN app-e2e must mean nothing was hidden (051 SC-001) ──────────────────
+      #
+      # Playwright exits 0 with tests SKIPPED, the forge API exposes no job logs, and the failure
+      # digest publishes only on failure. Put together, a passing run's counts could not be read by
+      # anyone, anywhere — so "green" carried no information about how many tests actually ran.
+      #
+      # That is not hypothetical here. Feature 040's final validation reported success with 33 specs
+      # skipped; the five stale agent specs that hid behind it were found three weeks later
+      # (item #150), and only because feature 051 forwarded the env var that had been un-skipping
+      # them all along. The gate reads the counts the web E2E just printed and fails on a skip, on a
+      # test that never ran, or on a log with no summary at all — because "no counts" must never be
+      # read as "good counts". It deliberately does not re-fail on `failed > 0`; the step above
+      # already did that.
+      #
+      # `always()` so it still reports when the web E2E failed, and it reads that step's own captured
+      # log (ci-log-step.sh mirrors every wrapped step to $HOME/mcm-ci-step-logs/$GITHUB_RUN_ID).
+      # Parsing lives in scripts/e2e-failure-set.mjs, which is unit-tested including the skip,
+      # did-not-run, and missing-summary cases.
+      - name: E2E result gate (no skips, nothing left unrun)
+        if: ${{ always() }}
+        run: |
+          bash scripts/ci-log-step.sh e2e-result-gate \
+            node scripts/e2e-failure-set.mjs gate "$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/web-e2e.log"
+
+      # ── Contention tally (feature 052 US2, FR-005..FR-007) ──────────────────────────────────────
+      # Eight Playwright workers share ONE E2E_TEST_USER and one storageState session. Whether that
+      # shared identity is actually being evicted by the concurrent-session cap, or rejected by the
+      # per-session refresh bucket (2 per 30 s), had been argued twice from configuration alone —
+      # never measured, because both code paths were silent. The BFF now logs them; this step is how
+      # the counts get OUT.
+      #
+      # It has to be its own step rather than a line in the collect-logs step below, for two reasons
+      # that each produce a wrong answer rather than an obvious break:
+      #   * that step is gated on `failure()`, and a PASSING run's counts are precisely what proves
+      #     the contention is gone (SC-007);
+      #   * it must precede `Tear down CI stacks`, which removes the container the counts are read
+      #     from — afterwards every count reads `unavailable` for a structural reason.
+      # Placed immediately after the web E2E so the window it measures is the web suite's, not the
+      # emulator half's.
+      #
+      # Routed through ci-log-step.sh so the output lands as a `step:` source, which the failure
+      # digest ranks 0 — above every container log. The script always exits 0 (a diagnostic must not
+      # fail the job it diagnoses); scripts/__tests__/e2e-contention-tally.test.mjs pins that, along
+      # with the `grep -c`-exits-1-on-zero trap and the 0-vs-unavailable distinction.
+      # `--gate`, and NO `continue-on-error` (052 SC-007). The tally used to be advisory, which was
+      # unreadable in the one case that matters: the failure digest publishes only on failure, so a
+      # GREEN run leaves no bundle and nobody can read `refresh_429` at all (measured — runs 1622/1623
+      # passed and bundles 1623/1624--app-e2e do not exist). A partial return of the contention would
+      # be absorbed by `retries: 1`, keep the job green, and stay invisible. So the check runs where
+      # it cannot be forgotten. It stays silent on `unavailable`, which only happens when bring-up
+      # already failed — see the script.
+      - name: Contention gate (no rate-limited refreshes, no session evictions during the web E2E)
+        if: ${{ always() }}
+        run: bash scripts/ci-log-step.sh e2e-contention-tally bash scripts/e2e-contention-tally.sh --gate
 
       # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────
       - name: Build embedded-bundle E2E APK (release variant = embedded JS)
@@ -617,6 +734,7 @@ jobs:
           # (e.g. 10.0.2.2 instead of localhost) into the JS bundle. No daemon → current env each run.
           GRADLE_OPTS: -Dorg.gradle.daemon=false
         run: |
+          bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" app-e2e-build-embedded-bundle-e2e bash -e /dev/stdin <<'CI_LOG_STEP'
           echo "Baking EXPO_PUBLIC_BFF_NATIVE_URL=$EXPO_PUBLIC_BFF_NATIVE_URL EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=$EXPO_PUBLIC_KEYCLOAK_NATIVE_URL"
           pnpm nx run mcm-app:build-apk
           # Absolute path: this step runs in frontend/mcm-app, but the emulator-runner's script runs
@@ -634,13 +752,16 @@ jobs:
             || { echo "::error::release APK did not bake EXPO_PUBLIC_BFF_NATIVE_URL=localhost:8082 (stale Metro cache or env not inlined)"; exit 1; }
           echo "APK bundle baked localhost:8082 ($hits hit(s)) — EXPO_PUBLIC_* inlined OK"
           echo "APK_PATH=$apk" >> "$GITHUB_ENV"
+          CI_LOG_STEP
 
       # ── Emulator + Maestro agent flows (FR-009) ─────────────────────────────────────────────────
       - name: Install Maestro
         if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') }}
         run: |
+          bash scripts/ci-log-step.sh app-e2e-install-maestro bash -e /dev/stdin <<'CI_LOG_STEP'
           curl -Ls https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          CI_LOG_STEP
 
       # NOTE: do NOT clear the web-seeded agent config here. The mobile `assistant-config-gating`
       # flow (like enable-anthropic/disable) expects the test user to START with the runnable config
@@ -710,6 +831,7 @@ jobs:
       - name: Collect container logs + health on failure
         if: failure()
         run: |
+          bash scripts/ci-log-step.sh app-e2e-collect-container-logs bash -e /dev/stdin <<'CI_LOG_STEP'
           mkdir -p container-logs
           # App AND data-tier containers. The data-tier set (mongo/postgres/redis) was previously MISSING,
           # so a bring-up failure like "mc-service-store-mongo is unhealthy" only landed in the compose
@@ -738,6 +860,7 @@ jobs:
           echo "::group::mc-service-store-mongo (tail 200)"; tail -n 200 container-logs/mc-service-store-mongo.log 2>/dev/null || true; echo "::endgroup::"
           echo "::group::gateway (tail 200)"; tail -n 200 container-logs/movie-assistant-gateway.log 2>/dev/null || true; echo "::endgroup::"
           echo "::group::bff-nonsecure (tail 200)"; tail -n 200 container-logs/mcm-bff-service-nonsecure.log 2>/dev/null || true; echo "::endgroup::"
+          CI_LOG_STEP
 
       - name: Upload container logs on failure
         if: failure()
@@ -756,12 +879,14 @@ jobs:
       - name: Tear down CI stacks (always)
         if: ${{ always() }}
         run: |
+          bash scripts/ci-log-step.sh app-e2e-tear-down-ci-stacks bash -e /dev/stdin <<'CI_LOG_STEP'
           docker compose -p auth \
             -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml down -v --remove-orphans || true
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure down -v --remove-orphans || true
           pnpm nx down-agents-prod infrastructure-as-code || true
+          CI_LOG_STEP
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -774,6 +899,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -810,22 +940,26 @@ jobs:
 
       - name: Set up Docker CLI (job talks to the runner's daemon socket)
         run: |
+          bash scripts/ci-log-step.sh dast-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
           if ! command -v docker >/dev/null 2>&1; then
             curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
               | tar xz -C /usr/local/bin --strip-components=1 docker/docker
           fi
           docker info >/dev/null 2>&1 || { echo "::error::Docker daemon not reachable"; exit 1; }
+          CI_LOG_STEP
 
       - name: Free daemon disk space
-        run: docker image prune -af || true
+        run: bash scripts/ci-log-step.sh dast-free-daemon-disk-space docker image prune -af || true
 
       - name: Install latest Docker Compose plugin
         run: |
+          bash scripts/ci-log-step.sh dast-install-latest-docker bash -e /dev/stdin <<'CI_LOG_STEP'
           mkdir -p ~/.docker/cli-plugins
           curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
             -o ~/.docker/cli-plugins/docker-compose
           chmod +x ~/.docker/cli-plugins/docker-compose
           docker compose version
+          CI_LOG_STEP
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -838,11 +972,12 @@ jobs:
           github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh dast-install-dependencies pnpm install --frozen-lockfile
 
       # Persistent runner: reset stateful data so the realm import picks up ci-realm.json each run.
       - name: Reset stateful CI data
         run: |
+          bash scripts/ci-log-step.sh dast-reset-stateful-ci-data bash -e /dev/stdin <<'CI_LOG_STEP'
           docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit \
             mc-service mc-service-store-mongo mc-service-store-mongo-rs-init \
             mcm-bff-service-nonsecure mcm-bff-cache-redis mcm-bff-store-mongo \
@@ -850,15 +985,18 @@ jobs:
             movie-assistant-mcp-spreadsheet movie-assistant-store-postgres 2>/dev/null || true
           docker volume rm keycloak-store-postgres-data mc-service-store-mongo-data \
             mcm-bff-store-mongo-data movie-assistant-store-postgres-data 2>/dev/null || true
+          CI_LOG_STEP
 
       - name: First-time docker setup (networks + volumes)
         run: |
+          bash scripts/ci-log-step.sh dast-first-time-docker-setup bash -e /dev/stdin <<'CI_LOG_STEP'
           for n in backend-network keycloak-network movie-assistant-mcp-network; do docker network create "$n" || true; done
           for v in mc-service-store-mongo-data keycloak-store-postgres-data mcm-bff-cache-redis-data \
                    mcm-bff-store-mongo-data movie-assistant-store-postgres-data; do docker volume create "$v" || true; done
+          CI_LOG_STEP
 
       - name: Mint per-stack secrets (stacks/*.env)
-        run: node scripts/gen-dev-secrets.mjs
+        run: bash scripts/ci-log-step.sh dast-mint-per-stack-secrets node scripts/gen-dev-secrets.mjs
 
       - name: Write CI env/secret files (.env.docker)
         env:
@@ -867,7 +1005,7 @@ jobs:
           COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
           AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
           AGENT_CONFIG_ENC_KEY: ${{ secrets.AGENT_CONFIG_ENC_KEY }}
-        run: node scripts/gen-ci-env.mjs
+        run: bash scripts/ci-log-step.sh dast-write-ci-env-secret-files node scripts/gen-ci-env.mjs
 
       - name: Bring up auth + mcm (app + dev BFF) stacks
         env:
@@ -875,6 +1013,7 @@ jobs:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
           AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
         run: |
+          bash scripts/ci-log-step.sh dast-bring-up-auth-mcm bash -e /dev/stdin <<'CI_LOG_STEP'
           export AGENT_GATEWAY_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
           export MC_SERVICE_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
           # The ROPC client secret must be identical at realm-import AND at scan time (bearer-auth.js).
@@ -889,11 +1028,12 @@ jobs:
           pnpm nx docker-build mcm-app
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure up -d --wait
+          CI_LOG_STEP
 
       - name: Bring up containerized agent gateway + MCP (gateway scan target — C1)
         env:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
-        run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+        run: bash scripts/ci-log-step.sh dast-bring-up-containerized-agent env MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
 
       # ── Run the FULL (active) scan (D8-guarded by DAST_ALLOW_ACTIVE + --target ci) ────────────────
       - name: DAST full scan (ZAP on backend-network)
@@ -917,7 +1057,7 @@ jobs:
       # in `ps`. E2E_TEST_PASSWORD / ANTHROPIC_API_KEY / MODEL_PROVIDER come from the job env;
       # E2E_ROPC_CLIENT_SECRET was minted at bring-up and exported via $GITHUB_ENV.
       - name: Scan reports for secret leakage
-        run: bash scripts/dast-leak-scan.sh security/zap/reports
+        run: bash scripts/ci-log-step.sh dast-scan-reports-secret-leakage bash scripts/dast-leak-scan.sh security/zap/reports
 
       - name: Upload DAST report (always)
         if: ${{ always() }}
@@ -928,26 +1068,30 @@ jobs:
           if-no-files-found: ignore
 
       - name: Gate on un-allowlisted High findings
-        run: node scripts/check-dast-findings.mjs --report security/zap/reports/report.json --allowlist security/zap/allowlist.yaml
+        run: bash scripts/ci-log-step.sh dast-gate-un-allowlisted-high node scripts/check-dast-findings.mjs --report security/zap/reports/report.json --allowlist security/zap/allowlist.yaml
 
       - name: Dump container logs on failure
         if: failure()
         run: |
+          bash scripts/ci-log-step.sh dast-dump-container-logs-failure bash -e /dev/stdin <<'CI_LOG_STEP'
           docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml logs --tail=150 || true
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure logs --tail=150 || true
           docker logs movie-assistant-gateway --tail=100 || true
+          CI_LOG_STEP
 
       - name: Tear down CI stacks (always)
         if: ${{ always() }}
         run: |
+          bash scripts/ci-log-step.sh dast-tear-down-ci-stacks bash -e /dev/stdin <<'CI_LOG_STEP'
           docker compose -p auth \
             -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml down -v --remove-orphans || true
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure down -v --remove-orphans || true
           pnpm nx down-agents-prod infrastructure-as-code || true
+          CI_LOG_STEP
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -960,6 +1104,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -1052,5 +1201,10 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs

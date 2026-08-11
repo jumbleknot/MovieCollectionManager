@@ -5,9 +5,12 @@
  *   - T014 (US1): a fresh/unconfigured user gets NO dock (gated on a runnable config — T018) and a
  *     forced `POST /bff-api/agent/run` short-circuits with the typed `assistant_not_configured`
  *     marker — no model call, no cost (SC-001/SC-002).
- *   - T024a (US2): enabling + choosing Ollama + supplying the provider URL and a TMDB key, then
+ *   - T024a (US2): enabling + choosing the provider + supplying its credential and a TMDB key, then
  *     Save, makes the dock appear and a real assistant interaction succeed USING those per-user
  *     credentials (X-Agent-Config → gateway model + TMDB) — the end-to-end per-run injection proof.
+ *     The provider follows `SEED_PROVIDER` (E2E_AGENT_PROVIDER): Ollama in the dev container,
+ *     Anthropic in CI. It used to be hard-coded to Ollama, which made three of these tests
+ *     unpassable in CI for an environmental reason — see `fillProviderCredential` below.
  *   - T024b (US2): a bad Anthropic key is rejected per-field (422 surfaced inline) and nothing is
  *     persisted (GET still reports unconfigured).
  *
@@ -19,21 +22,51 @@
  * Run (isolated):  node scripts/agent-e2e.mjs assistant-config
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import {
   seedAgentConfig,
   clearAgentConfig,
+  agentSeedingEnabled,
   SEED_OLLAMA_URL,
   SEED_TMDB_KEY,
+  SEED_PROVIDER,
+  SEED_ANTHROPIC_KEY,
 } from './setup/agent-config-seed';
 
-// Only meaningful against the live gateway with a TMDB key available to seed/configure.
-const PRODUCTION = process.env['E2E_AGENT_PRODUCTION'] === '1' && SEED_TMDB_KEY !== '';
+// Only meaningful against the live gateway with credentials the harness can actually seed.
+// `agentSeedingEnabled()` is the same gate global-setup uses, so this describe runs exactly when a
+// runnable config can exist — for ollama that means E2E_AGENT_PRODUCTION + TMDB, for anthropic a
+// key + TMDB. Deriving it (rather than re-testing TMDB here) is what keeps this from skipping for
+// a reason global-setup does not share.
+const PRODUCTION = process.env['E2E_AGENT_PRODUCTION'] === '1' && agentSeedingEnabled();
 
-// LLM round-trip through Ollama on top of a possible cold-compile — generous, mirrors assistant.spec.
+// LLM round-trip on top of a possible cold-compile — generous, mirrors assistant.spec.
 const ASSISTANT_REPLY_TIMEOUT = 90_000;
+
+/**
+ * Type the credential the SEEDED provider needs into the form.
+ *
+ * These tests used to hard-code the Ollama pair (chip → base-URL input → probe reports `ollama`).
+ * That is not a property of feature 018 — it is a property of the machine the suite happened to be
+ * developed on. `app-e2e` runs `E2E_AGENT_PROVIDER=anthropic` against a stack with no Ollama
+ * anywhere (the workflow deliberately does not forward `E2E_AGENT_OLLAMA_URL`), so validate-on-save
+ * probed `host.docker.internal:11434`, failed, and the banner read "Some settings could not be
+ * validated" instead of "Saved" — three failures in backlog #150 cluster B that were never a
+ * product defect. The dev container CAN reach Ollama (the nested `dev-ollama` container), so the
+ * Ollama path still gets exercised locally; parametrising here is what lets BOTH surfaces run the
+ * same assertions at full strength rather than skipping one of them.
+ */
+async function fillProviderCredential(page: Page): Promise<void> {
+  await page.click(`[data-testid="assistant-config-provider-${SEED_PROVIDER}"]`);
+  if (SEED_PROVIDER === 'ollama') {
+    await page.fill('[data-testid="assistant-config-ollama-url-input"]', SEED_OLLAMA_URL);
+  } else {
+    await page.fill('[data-testid="assistant-config-anthropic-key-input"]', SEED_ANTHROPIC_KEY);
+  }
+}
 
 /** Land on /home with the inherited session, tolerating the FR-009 default-collection redirect. */
 async function gotoHome(page: Page): Promise<void> {
@@ -91,15 +124,14 @@ test.describe('Assistant per-user config (feature 018)', () => {
     expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
   });
 
-  test('configure (Ollama + TMDB) + save → dock appears → an interaction succeeds on my creds', async ({ page }) => {
+  test('configure (provider + TMDB) + save → dock appears → an interaction succeeds on my creds', async ({ page }) => {
     await clearAgentConfig(page.request);
     await gotoProfile(page);
 
-    // Enable, pick Ollama, supply the (container-reachable) base URL + the user's own TMDB key.
+    // Enable, pick the harness provider, supply its credential + the user's own TMDB key.
     // After clearAgentConfig the form loads enabled=false deterministically, so one click enables it.
     await page.click('[data-testid="assistant-config-enabled-toggle"]');
-    await page.click('[data-testid="assistant-config-provider-ollama"]');
-    await page.fill('[data-testid="assistant-config-ollama-url-input"]', SEED_OLLAMA_URL);
+    await fillProviderCredential(page);
     await page.fill('[data-testid="assistant-config-tmdb-key-input"]', SEED_TMDB_KEY);
     await page.click('[data-testid="assistant-config-save"]');
 
@@ -129,7 +161,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
   });
 
   test('test connection re-probes the saved credentials with no re-entry', async ({ page }) => {
-    // Start from the known-good seeded config (Ollama + TMDB on file) — no secret re-entered.
+    // Start from the known-good seeded config (provider credential + TMDB on file) — nothing re-entered.
     await seedAgentConfig(page.request);
     await gotoProfile(page);
 
@@ -137,13 +169,14 @@ test.describe('Assistant per-user config (feature 018)', () => {
 
     const results = page.locator('[data-testid="assistant-config-test-results"]');
     await expect(results).toBeVisible({ timeout: 20000 });
-    // Per-credential status rows report OK for the stored Ollama URL + TMDB key.
-    await expect(page.locator('[data-testid="assistant-config-test-ollama"]')).toContainText(/ok/i);
+    // Per-credential status rows report OK. `testStored` keys each row on the credential it found
+    // on file (`ollama` / `anthropic` / `tmdb`), so the provider row's testID follows the seed.
+    await expect(page.locator(`[data-testid="assistant-config-test-${SEED_PROVIDER}"]`)).toContainText(/ok/i);
     await expect(page.locator('[data-testid="assistant-config-test-tmdb"]')).toContainText(/ok/i);
   });
 
   test('disable → dock disappears + run short-circuits; re-open retains the provider', async ({ page }) => {
-    // Start from the seeded runnable config (enabled, Ollama + TMDB on file).
+    // Start from the seeded runnable config (enabled, provider credential + TMDB on file).
     await seedAgentConfig(page.request);
     await gotoProfile(page);
 
@@ -170,10 +203,20 @@ test.describe('Assistant per-user config (feature 018)', () => {
     expect(res.status()).toBe(200);
     expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
 
-    // Re-open profile: the provider selection + non-secret URL are retained across the disable.
+    // Re-open profile: the provider selection is retained across the disable. Assert it via the
+    // credential block, which the form renders FROM the stored provider — both provider chips are
+    // always mounted, so a chip locator would have passed whichever provider came back.
     await gotoProfile(page);
-    await expect(page.locator('[data-testid="assistant-config-provider-ollama"]')).toBeVisible();
-    await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveValue(SEED_OLLAMA_URL);
+    if (SEED_PROVIDER === 'ollama') {
+      await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveValue(SEED_OLLAMA_URL);
+      await expect(page.locator('[data-testid="assistant-config-anthropic-key-input"]')).toHaveCount(0);
+    } else {
+      // The key itself is never returned (FR-018); the "(configured)" label is how the form says
+      // one is on file, so it is the only retained-secret evidence the client can legitimately see.
+      await expect(page.locator('[data-testid="assistant-config-anthropic-key-input"]')).toBeVisible();
+      await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveCount(0);
+      await expect(page.getByTestId('assistant-config')).toContainText('Anthropic API key (configured)');
+    }
   });
 
   test('a personal cost limit short-circuits runs once the accrued cost exceeds it', async ({ page }) => {

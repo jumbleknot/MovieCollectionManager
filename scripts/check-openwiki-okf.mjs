@@ -60,6 +60,30 @@ function parseArgs(argv) {
 
 // ── front matter ────────────────────────────────────────────────────────────────
 
+/**
+ * Normalize every string the front matter yields, ONCE, at the point the fields are read.
+ *
+ * On a CRLF checkout the last value before the closing `---` keeps a trailing '\r', because the
+ * slice below ends at the '\n' of the terminator and leaves the '\r' inside the scalar. Validators
+ * downstream then see '2001-01-01T00:00:00Z\r'. V5 survived that because it happened to call
+ * `.trim()` first; V12's guard did not, so `Date.parse` returned NaN, the guard read that as "no
+ * usable timestamp", and the staleness check silently never ran while the gate printed
+ * `✅ conformant`. A gate reporting green while not checking is the worst direction of failure, and
+ * it was hiding here in the toolchain of the feature that exists to close exactly this.
+ *
+ * Normalizing at the boundary — not with one more `.trim()` at the call site — is the point: the
+ * asymmetry between two validators was the defect, so the fix has to remove the possibility of a
+ * third validator being written without one.
+ */
+function normalizeFields(value) {
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value)) return value.map(normalizeFields);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, normalizeFields(v)]));
+  }
+  return value;
+}
+
 function extractFrontMatter(text) {
   if (!/^---\r?\n/.test(text)) return { missing: true };
   const end = text.indexOf('\n---', 4);
@@ -70,7 +94,7 @@ function extractFrontMatter(text) {
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return { invalid: 'front matter is not a mapping' };
     }
-    return { fields: parsed };
+    return { fields: normalizeFields(parsed) };
   } catch (err) {
     return { invalid: err.message.split('\n')[0] };
   }
@@ -232,9 +256,10 @@ function validateBundle(bundleRoot) {
       }
     }
 
-    // V5 — timestamp must be ISO 8601.
+    // V5 — timestamp must be ISO 8601. No `.trim()` here: normalizeFields has already done it for
+    // every field, which is what stops the next validator being written without one (see V12 below).
     if (isNonEmptyString(fields.timestamp)) {
-      const ts = fields.timestamp.trim();
+      const ts = fields.timestamp;
       if (!ISO_8601.test(ts) || Number.isNaN(Date.parse(ts))) {
         add('V5', file, `field \`timestamp\` is not a valid ISO 8601 value: ${ts}`);
       }
@@ -242,7 +267,7 @@ function validateBundle(bundleRoot) {
 
     // V6/V7 — resource resolution, offline in both branches.
     if (isNonEmptyString(fields.resource)) {
-      const value = fields.resource.trim();
+      const value = fields.resource;
       const cls = classifyResource(value);
       if (cls.kind === 'external') {
         if (!cls.wellFormed) add('V7', file, `external resource is malformed: ${value}`);

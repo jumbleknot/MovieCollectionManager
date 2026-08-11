@@ -7,12 +7,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parse as parseYaml } from 'yaml';
 
 const GATE = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'check-ci-digest-coverage.mjs');
+const REPO_WORKFLOWS = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.forgejo', 'workflows');
 
 /** Run the gate against a throwaway workflows dir. */
 function runGate(workflows) {
@@ -150,6 +152,106 @@ test('(i2) an instrumentation exemption with NO reason is rejected', () => {
   assert.match(r.out, /reason|justif/i);
 });
 
+// --- (k)-(l) the verdict must not depend on the contributor's line endings (feature 051, US7) ----
+//
+// PRD §1.3 reported this gate failing on three jobs — `app-ci / changes`, `app-ci / trigger-cd`,
+// `infra-image-scan / changes` — that are all correctly exempt, and recorded the local/CI divergence
+// as unexplained. It was line endings. `parseExemptions` split on '\n', leaving a trailing '\r' on
+// every line of a CRLF checkout; the marker pattern `#\s*<marker>:(.*)$` then could not match,
+// because '.' does not consume '\r' (it is a line terminator in JS regexes) and a non-multiline '$'
+// demands end-of-input. The job-header pattern on the adjacent line survived because its `\s*`
+// absorbed the '\r' — and THAT asymmetry is the bug: the parser saw the jobs but not their
+// exemptions, so it reported correctly-exempt jobs as uncovered. Failed CLOSED: noisy, safe, wrong.
+//
+// `.gitattributes` now declares eol=lf for *.yml, which stops the condition being produced. These
+// two cases are the second layer: a gate's verdict must not depend on a contributor's core.autocrlf,
+// because the declaration governs future checkouts and cannot reach a working tree that already
+// exists. Both are RED on Linux against the unfixed parser — no Windows host required (FR-024).
+
+/**
+ * Exercise an export of the gate in a subprocess, feeding it a string DIRECTLY rather than through a
+ * file — the point of FR-024 is to prove the parser, not the checkout.
+ *
+ * The subprocess is needed because importing the gate runs the real scan as a side effect (it is a
+ * script, not a library). `--dir` is pointed at an empty temp dir so that side effect is a no-op:
+ * without it, a repo whose workflows are momentarily red would `process.exit(1)` and take the test
+ * process with it, reporting a parser bug that does not exist.
+ */
+function callGateExport(expr) {
+  const empty = mkdtempSync(join(tmpdir(), 'digest-cov-empty-'));
+  const probe = join(empty, 'probe.mjs');
+  writeFileSync(
+    probe,
+    `import * as m from ${JSON.stringify(pathToFileURL(GATE).href)};\n` +
+      `console.log('<<<RESULT>>>' + JSON.stringify((${expr})(m)));\n`,
+  );
+  // A real file rather than `node -e`, so `--dir` lands in process.argv.slice(2) where the gate
+  // reads it; with `-e` there is no script argv slot and node swallows the flag as its own.
+  const r = spawnSync('node', [probe, '--dir', empty], { encoding: 'utf8' });
+  const marker = `${r.stdout}`.split('<<<RESULT>>>')[1];
+  assert.ok(marker, `subprocess produced no result:\n${r.stdout}${r.stderr}`);
+  return JSON.parse(marker);
+}
+
+test('(k) parseExemptions reads the same markers from CRLF input as from LF input', () => {
+  // Assert on the CONTENTS, not just the size: a reason captured as 'because reasons\r' would keep
+  // the map's size at 1 while corrupting every message the gate prints and every comparison a future
+  // rule makes against it.
+  const both = callGateExport(`(m) => {
+    const lf = [
+      '  covered:',
+      '    steps:',
+      '      - run: echo hi',
+      '  probe:',
+      '    # ci-digest-exempt: trigger-only job, no step can fail meaningfully',
+      '    steps:',
+      '      - run: echo hi',
+      '  changes:',
+      '    # ci-log-step-exempt: dorny/paths-filter only — no command output to capture',
+      '    steps:',
+      '      - run: echo hi',
+      '',
+    ].join('\\n');
+    const crlf = lf.replace(/\\n/g, '\\r\\n');
+    const pairs = (map) => [...map.entries()];
+    return {
+      digestLf: pairs(m.parseExemptions(lf)),
+      digestCrlf: pairs(m.parseExemptions(crlf)),
+      stepLf: pairs(m.parseExemptions(lf, 'ci-log-step-exempt')),
+      stepCrlf: pairs(m.parseExemptions(crlf, 'ci-log-step-exempt')),
+    };
+  }`);
+
+  // Guard the guard: if the LF side ever stops finding anything, the deep-equal below would pass on
+  // two empty maps and prove nothing at all.
+  assert.deepEqual(both.digestLf, [['probe', 'trigger-only job, no step can fail meaningfully']]);
+  assert.deepEqual(both.stepLf, [['changes', 'dorny/paths-filter only — no command output to capture']]);
+
+  assert.deepEqual(both.digestCrlf, both.digestLf, 'ci-digest-exempt markers are invisible on CRLF input');
+  assert.deepEqual(both.stepCrlf, both.stepLf, 'ci-log-step-exempt markers are invisible on CRLF input');
+});
+
+test('(l) the real repo workflows reach the SAME verdict on CRLF as on LF — PRD §1.3', () => {
+  // The regression test for the reported failure itself, end to end through the gate rather than
+  // through one exported function. Same bytes, different line endings, same verdict — or the gate is
+  // deciding a merge on the contributor's version-control configuration.
+  const crlf = {};
+  for (const f of readdirSync(REPO_WORKFLOWS).filter((n) => /\.ya?ml$/.test(n))) {
+    crlf[f] = readFileSync(join(REPO_WORKFLOWS, f), 'utf8').replace(/\r?\n/g, '\r\n');
+  }
+  assert.ok(Object.keys(crlf).length > 0, 'no workflow files found — the case would pass vacuously');
+
+  const lfVerdict = spawnSync('node', [GATE], { encoding: 'utf8' }).status;
+  assert.equal(lfVerdict, 0, 'the LF baseline is not clean — fix that before reading the CRLF result');
+
+  const r = runGate(crlf);
+  assert.equal(
+    r.code,
+    0,
+    `the same workflows fail the gate when checked out with CRLF endings — this is PRD §1.3:\n${r.out}`,
+  );
+});
+
 test('(j) the two exemption markers are INDEPENDENT — one does not waive the other', () => {
   // A job carrying ONLY the instrumentation exemption must still be required to publish a digest.
   const bad = `  nodigest:
@@ -160,4 +262,193 @@ test('(j) the two exemption markers are INDEPENDENT — one does not waive the o
   const r = runGate({ 'a.yml': wf(bad) });
   assert.equal(r.code, 1, 'the instrumentation exemption silently waived the digest requirement');
   assert.match(r.out, /failure-digest step/);
+});
+
+// --- (r)-(v) PER-STEP coverage (feature 051 US2) --------------------------------------------------
+//
+// The old rule asked, per JOB: does it publish a digest, and is AT LEAST ONE step wrapped? One was
+// enough. `guardrails / naming` passed with 2 of 16 steps wrapped — and NEITHER of the two was a
+// gate. The resource-naming gate, the Komodo-sync gate, the topology scrub, the argv-secret gate,
+// the port-collision gate, the restart-policy gate, the CI-digest coverage gate itself, the
+// toolchain gate, the DAST selftest and the realm-consistency gate all ran bare. So when that job
+// failed for the reason it exists to catch, the digest faithfully published the logs of two
+// UNRELATED steps and said nothing about the failure. Fully compliant, completely undiagnosable.
+//
+// Measured across .forgejo/workflows/ before this change: 85 of 136 `run:` steps were bare.
+
+const stepJob = (name, steps) => `  ${name}:\n    runs-on: ubuntu-latest\n    steps:\n${steps}${DIGEST_STEP}`;
+
+test('(r) a job with one wrapped and one BARE run step now FAILS, naming the job and the step', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - name: Wrapped gate\n        run: bash scripts/ci-log-step.sh w node scripts/a.mjs\n      - name: Resource-naming gate\n        run: node scripts/check-resource-naming.mjs')),
+  });
+  assert.equal(r.code, 1, 'one wrapped step still satisfied the whole job — the old rule survived');
+  assert.match(r.out, /naming/);
+  assert.match(r.out, /Resource-naming gate/, 'the message does not name the step that is unwrapped');
+});
+
+test('(r2) a job whose run steps are ALL wrapped passes', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs\n      - run: bash scripts/ci-log-step.sh b node b.mjs')),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(s) a STEP-level `# ci-log-step-exempt:` marker with a reason is honoured', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs\n      # ci-log-step-exempt: runs before actions/checkout, so ci-log-step.sh is not on disk yet\n      - name: Free disk space\n        run: docker system prune -af')),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(s2) a step-level marker with NO reason is rejected, exactly as the job-level one is', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs\n      # ci-log-step-exempt:\n      - name: Free disk space\n        run: docker system prune -af')),
+  });
+  assert.equal(r.code, 1, 'a blank step-level reason was accepted');
+  assert.match(r.out, /reason|justif/i);
+});
+
+test('(s3) a step-level exemption covers ONLY its own step, not the rest of the job', () => {
+  // The whole failure being fixed is one compliant thing standing in for many. An exemption that
+  // leaked to the following steps would rebuild it in the escape hatch.
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      # ci-log-step-exempt: pre-checkout\n      - name: Free disk\n        run: docker system prune -af\n      - name: Resource-naming gate\n        run: node scripts/check-resource-naming.mjs')),
+  });
+  assert.equal(r.code, 1, 'a step-level exemption silently covered a later, unrelated step');
+  assert.match(r.out, /Resource-naming gate/);
+});
+
+test('(t) the digest step itself needs no marker — wrapping the reporter in what it reports on is circular', () => {
+  const r = runGate({ 'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs')) });
+  assert.equal(r.code, 0, `the digest step was demanded to wrap itself:\n${r.out}`);
+});
+
+test('(t2) a `uses:`-only step needs no marker — there is no run: command to capture', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - uses: actions/checkout@v4\n      - run: bash scripts/ci-log-step.sh a node a.mjs')),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(u) THE TWO MARKERS STAY INDEPENDENT — neither satisfies the other\'s rule', () => {
+  // Contract § "there are TWO, and they are not interchangeable". Conflating them would silently
+  // disable one of two gates while every test still passed.
+
+  // (1) a step-level ci-DIGEST-exempt must NOT excuse an unwrapped step.
+  const digestMarkerOnStep = runGate({
+    'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs\n      # ci-digest-exempt: not the right marker for a step\n      - name: Bare gate\n        run: node scripts/check-a.mjs')),
+  });
+  assert.equal(digestMarkerOnStep.code, 1, 'ci-digest-exempt was accepted as a capture exemption');
+
+  // (2) a job-level ci-log-step-exempt must NOT excuse a missing digest step.
+  const captureMarkerNoDigest = runGate({
+    'a.yml': `name: t\non:\n  push:\njobs:\n  nodigest:\n    runs-on: ubuntu-latest\n    # ci-log-step-exempt: nothing to capture\n    steps:\n      - run: echo hi\n`,
+  });
+  assert.equal(captureMarkerNoDigest.code, 1, 'ci-log-step-exempt silently waived the digest requirement');
+  assert.match(captureMarkerNoDigest.out, /failure-digest step/);
+});
+
+test('(v) a JOB-level capture exemption still covers every step in that job', () => {
+  // The pre-existing job-scoped behaviour must not be broken by the step-level extension — jobs like
+  // `changes` (dorny/paths-filter only) rely on it.
+  const r = runGate({
+    'a.yml': `name: t\non:\n  push:\njobs:\n  changes:\n    runs-on: ubuntu-latest\n    # ci-log-step-exempt: dorny/paths-filter only — no command output to capture\n    steps:\n      - run: echo a\n      - run: echo b${DIGEST_STEP}\n`,
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(v2) the REAL repo workflows satisfy the per-step rule — the gate ships with its wrapping', () => {
+  // Contract § Implementation constraints 2: a stricter gate landing ahead of the steps it governs
+  // fails the very build that introduces it.
+  const r = spawnSync('node', [GATE], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `the real workflows do not satisfy the per-step rule:\n${r.stdout}${r.stderr}`);
+});
+
+// --- (x) a wrapper under `working-directory:` must not use a repo-root-relative path -------------
+//
+// MEASURED IN CI, 2026-08-09, and it is the nastiest failure shape this feature has produced.
+//
+// `guardrails / sast` failed on the first branch run. Its `Sync the Python agent env` step carries
+// `working-directory: agents/movie-assistant`, and the instrumentation pass had wrapped it as
+// `bash scripts/ci-log-step.sh …` — a path relative to the REPO ROOT. From that working directory
+// the script does not exist, so bash exited 127 before ci-log-step.sh ran at all.
+//
+// Which means: **no log was captured, and no `_failed-step` marker was written** — so the digest
+// published "Failing step: _not reported_" and named nothing. An instrumentation bug that makes the
+// step it instruments both fail AND undiagnosable is precisely the outcome this feature exists to
+// prevent, so it gets a gate rather than a fix and a hope.
+//
+// The wrapping still worked everywhere else: 4 of sast's other newly wrapped steps captured cleanly,
+// which is how the failure was localised without any job log — the forge exposes none.
+
+test('(x) a step with `working-directory:` must reference the wrapper by ABSOLUTE path', () => {
+  const offenders = [];
+  for (const f of readdirSync(REPO_WORKFLOWS).filter((n) => /\.ya?ml$/.test(n))) {
+    const text = readFileSync(join(REPO_WORKFLOWS, f), 'utf8');
+    const doc = parseYaml(text);
+    for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
+      const jobWd = job?.defaults?.run?.['working-directory'];
+      for (const step of Array.isArray(job?.steps) ? job.steps : []) {
+        const wd = step?.['working-directory'] ?? jobWd;
+        const run = typeof step?.run === 'string' ? step.run : null;
+        if (!run || !wd) continue;
+        // A bare `scripts/…` resolves against the working directory, not the repo root.
+        if (/(^|\s)bash\s+scripts\/ci-log-step\.sh/m.test(run)) {
+          offenders.push(`${f} / ${jobName} :: ${step.name ?? '(unnamed)'} (working-directory: ${wd})`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'these wrapped steps run in a working-directory but reference the wrapper relatively, so bash '
+      + 'will exit 127 before ci-log-step.sh runs — no log, no failing-step marker, and a digest that '
+      + `names nothing:\n  ${offenders.join('\n  ')}\n`
+      + 'Use `bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" …` instead.',
+  );
+});
+
+// --- (x2) a wrapped command must be a COMMAND, not a shell env-var assignment prefix -------------
+//
+// MEASURED IN CI, 2026-08-09, in the same run as (x). `app-ci / dast` failed with exactly one line:
+//
+//   scripts/ci-log-step.sh: line 40: MODEL_PROVIDER=anthropic: command not found
+//
+// The step was `run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod …`. A leading
+// `VAR=value` is SHELL SYNTAX, not an argv element — so once the line is handed to
+// `ci-log-step.sh`, whose core is `"$@"`, the assignment is executed as a command name and fails.
+//
+// The fix is `env VAR=value cmd …`: `env` is a real executable that sets the variable and then
+// execs, so it survives being passed as argv. (`bash -e /dev/stdin` would also work; `env` keeps
+// the one-liner a one-liner.)
+//
+// Worth noting how it was caught: the digest named the failing step AND its log carried the whole
+// cause in a single line. That is the feature working exactly as intended, against its own change.
+
+test('(x2) no wrapped command begins with an env-var assignment — ci-log-step.sh cannot exec one', () => {
+  const offenders = [];
+  for (const f of readdirSync(REPO_WORKFLOWS).filter((n) => /\.ya?ml$/.test(n))) {
+    const doc = parseYaml(readFileSync(join(REPO_WORKFLOWS, f), 'utf8'));
+    for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
+      for (const step of Array.isArray(job?.steps) ? job.steps : []) {
+        const run = typeof step?.run === 'string' ? step.run : null;
+        if (!run) continue;
+        for (const line of run.split('\n')) {
+          const m = line.match(/ci-log-step\.sh"?\s+\S+\s+(\S+)/);
+          if (m && /^[A-Za-z_][A-Za-z0-9_]*=/.test(m[1])) {
+            offenders.push(`${f} / ${jobName} :: ${step.name ?? '(unnamed)'} — ${m[1]}`);
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'these wrapped commands start with a shell env-var assignment, which ci-log-step.sh will try to '
+      + `execute as a command name and fail on:\n  ${offenders.join('\n  ')}\n`
+      + 'Use `env VAR=value <cmd> …` — `env` is a real executable and survives being passed as argv.',
+  );
 });

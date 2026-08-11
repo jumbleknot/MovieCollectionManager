@@ -1,8 +1,32 @@
 # PRD — CI Diagnostics Gap Closure (make a containerized job's failure readable)
 
-**Status:** Proposed
+**Status:** **Delivered (with one section rejected and one reopened-then-closed)** — feature
+[`051-ci-diagnostics-closure`](../../specs/051-ci-diagnostics-closure/spec.md), 2026-08-09.
 
 **Created:** 2026-08-02
+
+## What was delivered, and where this document was wrong
+
+Read this before the body: **two of this document's own claims did not survive planning**, and both
+are annotated in place rather than quietly edited, because how they were wrong is more useful than
+the corrections.
+
+| § | Outcome |
+| --- | --- |
+| **§1.1 / §3.1** — "step logs die with the container" | **REJECTED — the premise is false.** The digest is not a host-side reader; it is a step in the same job and the same container, so it reads the logs before teardown. The measurement offered as support ("no container-job logs on the runner") is true and **irrelevant** — it is evidence about leftovers, not about diagnosability. Nothing was relocated. See §3.1. |
+| **§1.2** — "the digest publishes nothing for these jobs" | **Confirmed, but the cause was different.** Not persistence — **instrumentation coverage**. 85 of 136 `run:` steps were never wrapped, so there was no log to read. `guardrails / naming` had 16 `run:` steps with 2 wrapped and *neither was a gate*. All 85 are now wrapped and the coverage gate requires it per-step. |
+| **§1.3** — "the coverage gate fails on clean `main`" | **REOPENED, then CLOSED.** It was line endings, and the gate was failing **closed** on a CRLF checkout. This spec had itself recorded §1.3 as resolved on the strength of a Linux-only run — the same false green the feature exists to remove. See §1.3. |
+| **§1.4** — a test assumes a drive-letterless temp path | **Fixed**, together with six further Windows defects found by an operator sweep: 15 failures across five files, in three classes. |
+| **§3.2** — make digest failure loud | **Delivered.** Three-way outcome (`not-needed` / `published` / `failed`) with sub-reasons, carried in the bundle *and* as a greppable log line, because on the no-credential path no bundle can be uploaded either. |
+| **§3.3** — decouple the digest from secrets | **DELIVERED.** The probe this was gated on came back **positive**: the run-provisioned token *can* write the statuses endpoint (guardrails #1627, which left a real `probe-051-t034` status behind). When `CI_DIGEST_TOKEN` is empty the digest now publishes a commit status naming the failing step — **rehearsed live** in #1628 by failing a job with its credential blanked. Two corrections came with it: the prediction that this would fail was **wrong** (042's 403 was a *different* credential), and the fallback would have shipped as **dead code** because nothing wired `github.token` into the 18 digest steps. **Residual:** the token is proven *capable*, not proven *populated* on a secretless run — that needs an AGit push, which CLAUDE.md forbids. |
+| **§3.4** — small independent fixes | **Delivered** (items #155, #157, #158). |
+
+**A finding this document did not anticipate, and the one with a security edge:** instrumenting 85
+more steps widened what CI captures, and existing redaction did **not** generalise. Two output
+shapes published credentials unredacted — a URL userinfo section (`https://user:pass@host`) and a
+credential passed as a command-line flag (`docker login -p …`). Neither tripped the fail-closed
+backstop. Both are fixed. §5's instinct to name residual risk explicitly is what made that a task
+rather than a footnote.
 
 **Context:** Feature 042 set out to remove the human-as-transport-layer from CI diagnosis. It
 succeeded for jobs that run on the **host** executor. It does **not** work for jobs that run in the
@@ -74,6 +98,45 @@ Measured 2026-08-01 by stashing all local changes:
 The gate is green in CI, so either it is invoked differently there or the discrepancy is
 environmental. Either way the gate does not currently hold locally, which erodes trust in it.
 
+> **RESOLVED — feature `051-ci-diagnostics-closure`.** It was environmental, and the environment was
+> **line endings**. `parseExemptions` split on `'\n'`, so on a CRLF working tree every line kept a
+> trailing `\r`, and the exemption-marker pattern `#\s*<marker>:(.*)$` could not match it — `.` will
+> not consume `\r` (it is a line terminator in JS regexes) and a non-multiline `$` demands
+> end-of-input. The job-header pattern one line above survived the same input because its `\s*`
+> absorbs the `\r`. **That asymmetry is the entire bug**: the parser saw the three jobs but not the
+> markers exempting them, and reported them as uncovered. The gate was failing CLOSED — noisy and
+> safe, but wrong, and it sent this document's author after the wrong diagnosis.
+>
+> Reproducible on Linux, so no Windows host is needed to see it:
+>
+> ```bash
+> node -e 'import("./scripts/check-ci-digest-coverage.mjs").then(m=>{
+>   const lf = "  myjob:\n    # ci-digest-exempt: because reasons\n";
+>   console.log("LF  ->", m.parseExemptions(lf));
+>   console.log("CRLF->", m.parseExemptions(lf.replace(/\n/g, "\r\n")));
+> })'
+> # before: LF -> Map(1) { 'myjob' => 'because reasons' } ; CRLF -> Map(0) {}
+> ```
+>
+> Fixed at **both** layers: the parser now splits on `/\r?\n/`, and `.gitattributes` declares
+> `eol=lf` for `*.yml`/`*.yaml`/`*.md` so the condition stops being produced. Regression cases `(k)`
+> and `(l)` in `scripts/__tests__/check-ci-digest-coverage.test.mjs` assert the LF and CRLF verdicts
+> are identical, feeding the parser directly rather than through a checkout.
+>
+> **An honest note on how this section came to be marked resolved once already.** Feature 051's spec
+> initially recorded §1.3 as closed on the strength of a green Linux run — a result measured in an
+> environment that never exercised the failing path, generalised into a claim about all of them. That
+> is precisely the false-green this feature exists to remove, committed by the feature itself. It was
+> caught by an operator's Windows sweep and is recorded here rather than quietly corrected, because
+> the correction is more instructive than the fix. FR-031 — every pass claim names the platform it
+> was observed on — exists because of it.
+>
+> **Operator action, once**: the declaration governs future checkouts only. An existing Windows clone
+> needs `git rm --cached -r . && git reset --hard` to pick it up.
+>
+> See [research.md § R8a](../../specs/051-ci-diagnostics-closure/research.md) and
+> [docs/runbooks/ci-diagnostics.md § A gate's verdict must not depend on the checkout](../runbooks/ci-diagnostics.md).
+
 ### 1.4 One test assumes a drive-letterless temp path
 
 `scripts/__tests__/ci-status.test.mjs` `(y) a normal bundle entry resolves inside the bundle root`
@@ -114,6 +177,36 @@ defaulting it to a workspace-relative path, plus a `.gitignore` entry and a rete
 **Open question for planning:** does the act container executor mount the workspace read-write and
 leave it on the host after teardown? Must be verified on the runner, not assumed — the whole point of
 this PRD is that an unverified assumption about where files live cost a day.
+
+> **REJECTED — feature `051-ci-diagnostics-closure`. The premise is false, and the open question is
+> moot.** Recorded here rather than silently dropped, because a deviation from an approved input
+> document has to be visible.
+>
+> **The digest is not a host-side reader.** `Publish failure digest` is a step *inside the same job*,
+> and in the container executor every step of a job runs in the **same container**. It reads the step
+> logs from the same `$HOME`, before teardown, and pushes the evidence out over the forge API. The
+> logs never need to outlive the container, so the open question above does not need answering.
+> Reproduced end to end — see
+> [docs/runbooks/ci-diagnostics.md § Step logs are read IN-JOB](../runbooks/ci-diagnostics.md).
+>
+> **This section's own supporting measurement is true and irrelevant.** "`~/mcm-ci-step-logs/` on the
+> runner contains captures only from `cd-deploy/build-deploy` and the devcontainer image build" is
+> correct: host-executor jobs leave their logs on the host, container jobs consume theirs in-job. The
+> absence of container-job leftovers is evidence about **leftovers**, not about **diagnosability**.
+> Reading it as the latter is the misdiagnosis — and it is worth noting that this PRD was right to
+> insist the assumption be verified before anything was built on it. That instruction is what caught
+> it.
+>
+> **What relocating would have cost**, had it been implemented: a new leak surface (workspace-relative
+> logs on a persistent runner, which §5 already names as a residual risk), a `.gitignore` entry, and a
+> retention sweep that would have to be re-proven in a new location — all to buy nothing the digest
+> did not already have.
+>
+> **The real gap was elsewhere.** Not persistence — **instrumentation coverage**. 85 of 136 `run:`
+> steps produced no capture at all, so there was no log for the digest to read. `guardrails / naming`
+> had 16 `run:` steps with 2 wrapped, and *neither of the two was a gate*. The old coverage gate
+> passed that because it required only **one** wrapped step per job. Feature 051 wraps every step and
+> tightens the gate to match. See [research.md § R1 and § R2](../../specs/051-ci-diagnostics-closure/research.md).
 
 ### 3.2 Make digest failure loud
 

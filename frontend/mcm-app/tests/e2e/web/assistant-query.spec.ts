@@ -31,10 +31,11 @@
  * Run: E2E_AGENT_PRODUCTION=1 pnpm nx e2e mcm-app -- tests/e2e/web/assistant-query.spec.ts
  */
 
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const ANSWER_TIMEOUT = 150_000;
 
@@ -69,6 +70,7 @@ async function seedCollection(
   name: string,
   titles: string[],
 ): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   const collectionId = (await res.json()).collectionId as string;
@@ -111,7 +113,7 @@ test.describe('Assistant query flow (feature 012, US4 / T071)', () => {
   );
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('count → the assistant answers the real number of movies', async ({ page, request }) => {

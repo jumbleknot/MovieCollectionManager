@@ -213,6 +213,118 @@ the next run. Full recipe: [devcontainer runbook](./devcontainer.md).
 
 > **Bounded E2E retry (feature 006, FR-006).** Environmental flakiness on the loaded emulator/Metro is absorbed by **at most one** explicit, visible retry per test — never more (more would risk masking a real defect). Mobile: `scripts/maestro-e2e.mjs` re-prepares and re-runs a failed flow once, logging `⟳ RETRY 1/1`; a genuine regression fails both attempts and still fails the suite. Web: Playwright `retries: 1` in `playwright.config.ts`, plus `global-setup.ts` warms `/home`, the collection screen, and a movie-detail screen so the first test doesn't eat the Metro cold-compile. **Readiness ritual for a reproducible green run (apply only after step-1/step-2 above have ruled out a code regression):** start Metro fresh from `frontend/mcm-app` (it degrades over long sessions); for web E2E stop the emulator first (GPU/SSO contention); for mobile E2E run the emulator startup ritual (`-no-snapshot-load`, `adb reverse tcp:8081 tcp:8081`, `-gpu swiftshader_indirect`).
 
+## Six workers share ONE user — the shared-state traps (item #150 / #165, 2026-08-10)
+
+`playwright.config.ts` sets `fullyParallel: false` and up to **six** workers. That serialises tests
+**within a file** and runs different **files in parallel** — and all of them act as the same
+`E2E_TEST_USER`. Everything that user owns is therefore shared mutable state across workers. This is
+the single largest source of what has been recorded here as live-model / live-TMDB nondeterminism.
+
+### The teardown that deleted other workers' live data
+
+`cleanupNonFixtureCollections` deleted **every** non-fixture collection the user owned, from 21 spec
+files' `afterEach`, justified by `fullyParallel: false` — which, again, only serialises *within* a
+file. Measured across `app-ci` runs 1612/1614/1616/1617: the **median lifetime of a collection was
+1.3 seconds**, and 36 of 40 in run 1617 died within five seconds of creation, while the agent flows
+that create them need them for a minute or more. Traced end to end on
+`agent-add-ownership.spec.ts:154`:
+
+```text
+03:53:43.658  collection_created
+03:53:43.681  movie_created            (the assistant's add applied)
+03:53:43.720  GET .../movies/...       (the detail screen loaded)
+03:53:45.107  collection_deleted       ← 1.4 s later, ~88 s of that test's body still to run
+```
+
+The symptoms did not look like a teardown bug: `agent-import-disambiguate` failed on a literal 404,
+and `agent-import-progress` never got its preview because the collection whose name must match the
+CSV tab had been removed, sending the flow down the disambiguation branch instead.
+
+**The rule now**: teardown deletes only what the test declared with `ownCollection()` — see
+`tests/e2e/web/setup/e2e-cleanup.ts`. Ownership is by NAME because nothing else identifies a creator
+(every worker is the same user, and a collection the ASSISTANT creates never passes through the
+test's request context). Forgetting to declare **leaks** (bounded; global setup sweeps at the start of
+the next run, when nothing is in flight) rather than destroying a live fixture — the safe direction,
+deliberately. `scripts/__tests__/e2e-collection-ownership.guard.test.mjs` pins it.
+
+**When you add a spec that creates a collection**, declare it. The guard fails the build if you POST
+`/bff-api/collections` without calling `ownCollection`, and a collection the assistant creates by name
+(create-if-missing, an import's per-tab collections) has to be declared explicitly.
+
+**Other shared-user state to think about before assuming nondeterminism**: the per-user *agent config*
+(`assistant-config.spec.ts` clears it and re-seeds in `afterEach`), the *default collection* that
+drives the FR-009 redirect, and the `MUTATION` fixture that `movies.spec.ts` empties.
+
+## "Green" told you nothing until the result gate existed (2026-08-10)
+
+Three facts compose into a false green that nobody can even detect:
+
+1. Playwright **exits 0 with tests skipped**;
+2. the forge API **exposes no job logs**;
+3. the failure digest **publishes only on failure**.
+
+So on a passing run the counts could not be read by anyone, anywhere. Feature 040 validated green with
+**33 specs skipped**; the five stale agent specs behind it surfaced three weeks later (item #150).
+052 put the contention tally on an `always()` step precisely so a passing run's numbers would be
+visible — but they land in the digest, which a passing run never publishes.
+
+`app-ci` now runs **`node scripts/e2e-failure-set.mjs gate <web-e2e.log>`** right after the web E2E.
+It fails on `skipped > 0`, on `did not run > 0`, and on a log with **no summary at all** — because
+"no counts" must never be read as "good counts". It deliberately does not re-fail on `failed > 0`
+(the step above already did). `scripts/__tests__/app-e2e-env.guard.test.mjs` pins the wiring,
+including that it reads the **run-scoped** step log — an unscoped path would read a previous run on
+this persistent runner and pass on stale counts.
+
+⚠️ **`flaky` is still NOT observable on a green run.** The gate proves nothing failed and nothing was
+hidden; it cannot tell you whether a test needed its retry. Do not claim "no flakes" from a green
+tick — that requires publishing the counts on success (open backlog item).
+
+⚠️ **`N did not run` is not a skip.** `playwright.config.ts` declares a second project, `lifecycle`,
+with `dependencies: ['chromium']`, so `bff-prod-lifecycle` + `admin-registration` (3 tests) never
+execute while the main project has ANY failure. They reported "3 did not run" in every measured run
+for months, and only ran for the first time on 2026-08-10.
+
+## A local run is only evidence if you check the instrument (2026-08-10)
+
+Three ways a local E2E run produced a confident, wrong answer in one session:
+
+- **A full-suite local run is not a valid instrument.** `dev-realm` still has
+  `accessTokenLifespan: 300` — feature 052 scoped its 5400 s fix to `ci-realm` — so any local run past
+  ~5 minutes re-enters the refresh contention 052 removed from CI. Two 44-minute attempts measured
+  **62 `refresh_rate_limited`** (CI reads 0) and collapsed into 401s and
+  `gotoHome: home screen did not render`, which reads exactly like an application bug. **Read the BFF
+  contention counters for the run's window alongside the result**; if `refresh_rate_limited > 0` the
+  result is about the harness, not the code. Keep local runs under the expiry horizon, or run a subset.
+- **A container can be "Up" and dead.** `movie-assistant-gateway` showed `Up 37 hours`, had stopped
+  logging hours earlier, and did not answer `/health` from inside the BFF container. Five specs
+  "reproduced deterministically" against it — a dead stack, not a defect. **Zero gateway requests for
+  a turn means check liveness first**, not that the product dropped the response:
+  `docker exec mcm-bff-service-nonsecure wget -qO- http://movie-assistant-gateway:8000/health`.
+- **A local SUBSET pass is not evidence about a change to a SHARED hook.** A fix to `useAssistantRun`
+  passed 6/6 unit tests (RED→GREEN) and 5/5 E2E with `--retries=0` in 23.6 s with
+  `refresh_rate_limited=0` — every statement true — and then produced **28 and 26 failures on two runs
+  of the identical sha**, against 1 before it. It exercised three spec files in isolation; the
+  regression only appears under the full suite's concurrency. For a change to code every dock spec
+  loads, the full suite in CI is the only instrument. (The defect it targeted is real and open — see
+  `specs/053-assistant-queued-turn-drop/`.)
+
+## Cycle time: a RED `app-e2e` is fast because it gives up (2026-08-10)
+
+Do not read job duration as a performance signal without checking the outcome. The mobile half (APK
+build + Maestro emulator flows) runs **after** the web E2E, so a failing web suite aborts the job
+before it:
+
+| `app-e2e` outcome | wall clock | what actually ran |
+| --- | ---: | --- |
+| red (runs 1611/1613/1615/1616/1619) | 15–19 min | web E2E only — the job stopped there |
+| green (runs 1617/1618/1622/1623) | 30–35 min | web E2E **+ APK build + emulator flows** |
+| the pre-052 pathological run (1603) | 74 min | web E2E burning per-test timeouts |
+
+So fixing the suite roughly **doubles** the job's wall clock — not because anything got slower, but
+because a green web E2E unlocks the mobile coverage that a red one never reached. Against the job's
+75-minute budget that is comfortable. Within the web E2E step itself the fixes made it *faster*
+(9.3–11.5 min → 7.4 min), because failing tests burn their full timeouts.
+
 ## An agent E2E must assert what the ASSISTANT SAID, not client-local state (050 / item #149)
 
 An agent spec that clicks a control and then asserts only on the client's own reaction proves

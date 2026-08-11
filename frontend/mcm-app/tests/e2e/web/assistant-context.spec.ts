@@ -19,10 +19,12 @@
  * Run: E2E_AGENT_PRODUCTION=1 pnpm nx e2e mcm-app -- tests/e2e/web/assistant-context.spec.ts
  */
 
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
+import { answerOwnership } from './setup/assistant-add-flow';
 
 const APPROVAL_TIMEOUT = 150_000;
 const DONE_TIMEOUT = 90_000;
@@ -31,6 +33,7 @@ const CLARIFY_TIMEOUT = 120_000;
 const MOVIE_TITLE = 'Coherence';
 
 async function seedCollection(request: APIRequestContext, name: string): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   return (await res.json()).collectionId as string;
@@ -90,7 +93,7 @@ test.describe('Assistant context-aware "this" (feature 012, US3)', () => {
   );
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('US3-AC1: "add <movie> to this" on a collection screen adds to that collection', async ({
@@ -106,6 +109,8 @@ test.describe('Assistant context-aware "this" (feature 012, US3)', () => {
     await openCollectionViaHome(page, collectionName);
     await openDock(page);
     await askAddToThis(page);
+    // 040 US4: ownership is asked once the target resolves — here, the ON-SCREEN collection.
+    await answerOwnership(page);
 
     // The approval card resolves the ON-SCREEN collection (no named target). Nothing written yet.
     const approval = page.locator('[data-testid="approval-request"]');

@@ -72,6 +72,26 @@ const REWRITES = [
   // verbatim, and a raw forge PAT matches none of secret-scan's four narrow rules, so the
   // fail-closed verification pass would not catch it either.
   [/((?:^|\s)(?:Authorization:\s*)?token\s+)([A-Za-z0-9_-]{16,})/gi, '$1<redacted>'],
+  // --- added by feature 051 T025, after MEASURING the shapes the newly wrapped steps emit ---------
+  //
+  // Wrapping 85 more `run:` steps widened what CI captures. Probing these rules against the output
+  // the newly instrumented SAST, infra-image-scan, wiki-maintain and cd-deploy steps actually
+  // produce, two shapes of twelve passed through completely unredacted. Neither is caught by the
+  // fail-closed backstop either: that withholds an excerpt only when a HIGH_SIGNAL_SECRET *prefix*
+  // survives, and an ordinary 40-character token has none.
+  //
+  // 1. URL userinfo — `https://user:password@host`. Emitted by `uv sync` against an authenticated
+  //    index, by a git remote carrying a credential, and by any `curl -v`. The username, scheme and
+  //    host are KEPT: they are what makes the line diagnosable, and they are not the secret.
+  //    `(?!<)` preserves idempotency against this rule's own output.
+  [/(\b[a-z][a-z0-9+.-]*:\/\/[^/\s:@]+:)(?!<)([^@\s/]+)(@)/gi, '$1<redacted>$3'],
+  // 2. A credential passed as a command-line FLAG — `docker login -u ci -p <token>`, `trivy
+  //    --password …`, `--api-key=…`. The argv-secret gate stops US writing this shape into a
+  //    workflow; it cannot stop a third-party tool printing it. Deliberately anchored on
+  //    credential-NAMED flags and a 16+ character value, so `docker compose -p mcm` and other short,
+  //    non-secret flag values survive — over-redaction would trade a leak for an unreadable log,
+  //    and reading these logs is the entire point of capturing them.
+  [/((?:^|\s)--?(?:p|pass|password|token|api[_-]?key|secret|credential)[=\s]+)(?!<)([^\s]{16,})/gi, '$1<redacted>'],
 ];
 
 /** Rewrite credential shapes and the forge host. Idempotent: no rule matches its own output. */

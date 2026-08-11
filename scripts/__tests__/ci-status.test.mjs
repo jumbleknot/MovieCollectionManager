@@ -345,9 +345,20 @@ test('(x3) the marker pattern round-trips with the writer\'s own marker format',
 import { safeBundleEntryPath } from '../ci-status.mjs';
 
 test('(y) a normal bundle entry resolves inside the bundle root', () => {
+  // Compare RESOLVED to RESOLVED. `safeBundleEntryPath` returns `resolve(root, …)`, and on Windows
+  // `resolve` prepends the current drive while `join` does not — so the old `join(root, …)`
+  // expectation failed there with `expected '\tmp\bundle-root\logs\app.log'`, `actual
+  // 'E:\tmp\bundle-root\logs\app.log'`. A developer's suite went red for a reason that was not their
+  // fault, which trains people to ignore red.
+  //
+  // Do NOT relax this to `endsWith` or a substring check. It looks like the same assertion and is
+  // not: this block guards a zip-slip path that turns a compromised CI token into arbitrary file
+  // write on a developer's machine, and a suffix match would accept an escape from the bundle root.
+  // Cases (y2)-(y4) below assert `throws` and are drive-agnostic already. T041 mutation-checks that
+  // this change did not weaken them.
   const root = '/tmp/bundle-root';
-  assert.equal(safeBundleEntryPath(root, 'logs/app.log'), join(root, 'logs/app.log'));
-  assert.equal(safeBundleEntryPath(root, 'health/mongo.json'), join(root, 'health/mongo.json'));
+  assert.equal(safeBundleEntryPath(root, 'logs/app.log'), resolve(root, 'logs/app.log'));
+  assert.equal(safeBundleEntryPath(root, 'health/mongo.json'), resolve(root, 'health/mongo.json'));
 });
 
 test('(y2) parent-directory traversal is REJECTED, not sanitised into something plausible', () => {
@@ -818,4 +829,66 @@ test('(vv6) an unknown PR state still warns — fail loud, not silent', () => {
   // misdirected debugging, whereas a spurious warning on a merged PR costs one glance.
   assert.ok(detachedHeadWarning('refs/pull/126/head', {}));
   assert.ok(detachedHeadWarning('refs/pull/126/head', { prState: null }));
+});
+
+// --- (z) the reporter distinguishes a BROKEN digest from an ABSENT one (feature 051 US3) ---------
+//
+// "The digest ran and failed" and "no digest was needed" rendered identically: both produced
+// "no digest was published for them". The reader believes the second, because it is the ordinary
+// case — and on 2026-08-01 that is exactly what happened. The digest had collected the evidence and
+// thrown it away for want of a credential, and the report said nothing had been published, which
+// was true and useless.
+//
+// Loaded per-case, not at module scope: a static import of a not-yet-existing export throws at LOAD
+// time and takes every other case in this file with it, which makes the collected count meaningless.
+
+const statusModule = () => import('../ci-status.mjs');
+
+test('(z) a `failed` outcome is NEVER rendered with the "no digest was published" wording', async () => {
+  const { renderDigestAbsence } = await statusModule();
+  const lines = renderDigestAbsence(
+    [{ job: 'guardrails / naming', description: 'failing' }],
+    [{ job: 'naming', outcome: 'failed', detail: 'no-credential', summary: 'no usable credential was available' }],
+  ).join('\n');
+
+  assert.doesNotMatch(
+    lines,
+    /no digest was published/i,
+    'a BROKEN digest was reported as an absent one — the 2026-08-01 failure, reproduced',
+  );
+  assert.match(lines, /ran and FAILED/i, 'the report does not say the digest itself is broken');
+  assert.match(lines, /no-credential/, 'the sub-reason, which implies the next action, was dropped');
+});
+
+test('(z2) each `failed` sub-reason points at its OWN next action', async () => {
+  const { renderDigestAbsence } = await statusModule();
+  const of = (detail) =>
+    renderDigestAbsence(
+      [{ job: 'g / naming', description: 'failing' }],
+      [{ job: 'naming', outcome: 'failed', detail, summary: 's' }],
+    ).join('\n');
+
+  // Three different faults, three different things to do. Collapsing them leaves the reader as
+  // stuck as an absent digest does.
+  assert.match(of('no-credential'), /secret/i, 'no-credential must point at the run\'s secrets');
+  assert.match(of('forbidden'), /scope/i, 'forbidden must point at the missing scope');
+  assert.match(of('transport'), /retry|forge/i, 'transport must point at a retry or the forge');
+});
+
+test('(z3) a genuinely absent digest KEEPS the original wording — the string is not simply retired', async () => {
+  const { renderDigestAbsence } = await statusModule();
+  // The reserved wording is still correct for `not-needed` and for the job-died-early case. A fix
+  // that removed it everywhere would trade one wrong answer for another.
+  const lines = renderDigestAbsence([{ job: 'g / naming', description: 'failing' }], []).join('\n');
+  assert.match(lines, /no digest was published/i);
+  assert.match(lines, /died BEFORE the digest step ran/i, 'the diagnosis for a genuine absence was lost');
+});
+
+test('(z4) `not-needed` is not reported as a fault at all', async () => {
+  const { renderDigestAbsence } = await statusModule();
+  const lines = renderDigestAbsence(
+    [{ job: 'g / naming', description: 'failing' }],
+    [{ job: 'naming', outcome: 'not-needed', detail: null, summary: 'no digest was needed' }],
+  ).join('\n');
+  assert.doesNotMatch(lines, /ran and FAILED/i, '`not-needed` was rendered as a broken digest');
 });

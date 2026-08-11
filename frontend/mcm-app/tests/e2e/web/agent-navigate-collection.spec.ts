@@ -16,17 +16,19 @@
  *
  * Run: node scripts/agent-e2e.mjs agent-navigate-collection
  */
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const ACTION_TIMEOUT = 180_000;
 const OFFER_TIMEOUT = 180_000;
 const NAV_TIMEOUT = 60_000;
 
 async function seedCollection(request: APIRequestContext, name: string): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   return (await res.json()).collectionId as string;
@@ -61,7 +63,7 @@ test.describe('Assistant navigate-to-collection (040 US1 / Item 4)', () => {
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('ambiguous navigate → tap "Import" OPENS that collection (not an in-collection search)', async ({

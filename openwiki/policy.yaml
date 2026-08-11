@@ -147,6 +147,11 @@ paths:
     actor: agent
     events: [subject-changed, passage-corrected]
     rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/gotchas/rust-formatting-scope.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
   - glob: "openwiki/gotchas/role-enforcement-is-a-layer.md"
     policy: event-driven
     actor: agent

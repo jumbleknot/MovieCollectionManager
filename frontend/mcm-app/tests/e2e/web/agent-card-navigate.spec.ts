@@ -21,11 +21,12 @@
  * Run: node scripts/agent-e2e.mjs agent-card-navigate
  */
 
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const CARD_TIMEOUT = 180_000;
 const NAV_TIMEOUT = 60_000;
@@ -48,6 +49,7 @@ async function seedMovie(
   name: string,
   title: string,
 ): Promise<{ collectionId: string; movieId: string }> {
+  ownCollection(name);
   const c = await request.post('/bff-api/collections', { data: { name } });
   expect(c.ok()).toBeTruthy();
   const collectionId = (await c.json()).collectionId as string;
@@ -78,7 +80,7 @@ test.describe('Assistant clickable movie card (013 US3)', () => {
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('tap the in-collection search result → lands on that movie detail (US3-AC1/AC2)', async ({

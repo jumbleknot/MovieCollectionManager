@@ -13,6 +13,7 @@ import {
   getUserSessionCount,
 } from '@/bff-server/cache-service';
 import { env } from '@/config/env';
+import { logger } from '@/bff-server/logger';
 import type { Session } from '@/types/auth';
 
 const MAX_SESSIONS = env.maxConcurrentSessions;
@@ -128,6 +129,23 @@ async function evictOldestSession(userId: string): Promise<void> {
   const oldest = validSessions[0]!;
 
   await deleteSession(oldest.sessionId, userId);
+
+  // 052 FR-001. This cap used to fire in complete silence, which made "it never fires" and "it fires
+  // constantly" indistinguishable from outside the process — `app-e2e` was diagnosed twice from the
+  // configuration alone for exactly that reason, and the BFF log had zero hits for `evict`,
+  // `concurrent` or `session`. Evicting someone's session is a security-relevant action; it should
+  // have said so regardless of what needed measuring.
+  //
+  // The evicted session id is deliberately NOT logged. Passing it under the key `sessionId` would
+  // have been redacted to the constant "[REDACTED]" by the logger — conveying nothing — while still
+  // tripping `mcm-no-token-logging`, which matches on the key NAME. Passing it under any other key
+  // would have leaked it. There is no version of logging it that is both useful and safe, and the
+  // counts this event exists to produce do not need it. (Caught by the SAST gate on run 1605.)
+  logger.audit('session_evicted', {
+    userId,
+    activeSessions: validSessions.length,
+    maxSessions: MAX_SESSIONS,
+  });
 }
 
 /**

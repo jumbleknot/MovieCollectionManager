@@ -203,3 +203,46 @@ test('(h7) THIS repo agrees — the gate is wired into findDrift, not merely exp
   const nx = findDrift(real).filter((f) => f.file === 'nx.json' || /nx/i.test(f.problem));
   assert.deepEqual(nx, [], `nx pins disagree in this repo: ${JSON.stringify(nx)}`);
 });
+
+// --- (w) a finding's location is emitted platform-independently (feature 051 US5) ----------------
+//
+// `filesToScan` builds each scanned path with `join()`, so on Windows a finding reads
+// `.forgejo\workflows\app-ci.yml` while on Linux it reads `.forgejo/workflows/app-ci.yml`. The test
+// that pins the output then fails on Windows for a reason that is not the developer's fault — and a
+// suite that goes red for reasons nobody caused is a suite people learn to ignore.
+//
+// THIS IS A SOURCE FIX, NOT A TEST FIX. The findings output is a report a human reads and pastes
+// into an issue; a stable forward-slash representation is worth more than the platform's native
+// separator. The test is asserting the more useful contract, so the source moves to meet it.
+//
+// Tested through the normalizer DIRECTLY with a backslash-bearing input, so the case is RED on Linux
+// too. Asserting on `join()` output would pass trivially here and prove nothing about Windows —
+// which is the whole failure mode this story is about.
+
+// Imported per-case, not at module scope: a static import of a not-yet-existing export throws at
+// LOAD time and takes every other case in this file with it, collapsing the collected count to 1 and
+// hiding what the RED actually proves. (That is the same defect T044 fixes on Windows — worth not
+// reproducing here deliberately.)
+const gate = () => import('../check-toolchain-consistency.mjs');
+
+test('(w) a backslash-separated location is emitted with forward slashes', async () => {
+  const { posixLocation } = await gate();
+  assert.equal(posixLocation('.forgejo\\workflows\\app-ci.yml'), '.forgejo/workflows/app-ci.yml');
+  assert.equal(posixLocation('infrastructure-as-code\\docker\\stacks\\mcm.compose.yaml'),
+    'infrastructure-as-code/docker/stacks/mcm.compose.yaml');
+});
+
+test('(w2) an already-POSIX location is unchanged, and normalization is idempotent', async () => {
+  const { posixLocation } = await gate();
+  const p = '.forgejo/workflows/app-ci.yml';
+  assert.equal(posixLocation(p), p);
+  assert.equal(posixLocation(posixLocation('.forgejo\\workflows\\app-ci.yml')), '.forgejo/workflows/app-ci.yml');
+});
+
+test('(w3) every finding this gate reports carries a POSIX location', async () => {
+  const { collectPins } = await gate();
+  // The end-to-end property, not just the helper: a normalizer nothing calls fixes nothing.
+  for (const f of collectPins('  - uses: actions/setup-node\n    node-version: 18.0.0\n', '.forgejo\\workflows\\x.yml')) {
+    assert.doesNotMatch(f.file, /\\/, `a finding kept a backslash location: ${f.file}`);
+  }
+});

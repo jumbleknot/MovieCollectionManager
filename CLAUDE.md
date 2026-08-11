@@ -7,6 +7,8 @@
 - **A tool's "no" is about the tool, not your question — check before claiming anything verified OR impossible** — a skipped test reads as a pass (`MCM_REQUIRE_LIVE_STACK=1`, `E2E_REQUIRE_AGENT_STACK=1`, `MCM_REQUIRE_LIVE_MODEL=1` turn a skip into a failure; watch the SKIP COUNT), and a failing `nx e2e` is about that target, not about E2E — Playwright runs here in its official image. One let a broken commit reach CI; the other hid two specs failing on `main` for months — [the flags, the image recipe, and what each one hid](docs/runbooks/e2e-testing.md)
 - **"It can't run in this environment" needs the same proof as "it passes"** — a credential-driven skip is almost always a missing *file*, not a missing *capability*. 38 errors reading `creds not set` were written off as "this dev container can't run this tier"; the cause was one absent gitignored `.env.local` that `gen-dev-env.mjs` skipped silently, and one command fixed it (13 passed/38 errors → 51 passed/0 failed). Name the missing input and check whether a generator or documented command supplies it before retiring a tier to CI — [detect → resolve, and which absences are genuinely legitimate](docs/runbooks/local-dev.md)
 
+- **Before believing a test result, check the instrument — and remember six E2E workers share ONE user** — a "deterministic reproduction" ran against a gateway that was `Up 37 hours` and dead; a 44-min local suite collapsed into 401s because `dev-realm` keeps a 300 s token (052 scoped its fix to `ci-realm`), not because the app broke; and a shared-user teardown deleted other workers' live collections at a **median age of 1.3 s**, which read as live-model flakiness for months. A local SUBSET pass is not evidence about a change to SHARED code — one passed 5/5 in 23.6 s and then failed 28 and 26 tests on two runs of the same sha. Read the contention counters and the container's health beside every result — [the shared-state traps, the instrument checks, and what a green tick does and does not prove](docs/runbooks/e2e-testing.md)
+
 ## Start here
 
 - [openwiki/quickstart.md](openwiki/quickstart.md) — what this repository is and how the knowledge bundle is organized
@@ -71,6 +73,7 @@
 - **Playwright testID mapping — React Native Web renders testID as data-testid** → [openwiki/gotchas/playwright-testid-mapping.md](openwiki/gotchas/playwright-testid-mapping.md) — React Native Web renders the RN testID prop as a data-testid DOM attribute, and playwright.config.ts sets testIdAttribute to data-testid so Playwright locators…
 - **mc-service errors are RFC 9457 Problem Details, never a stack trace** → [openwiki/gotchas/rfc-9457-problem-details.md](openwiki/gotchas/rfc-9457-problem-details.md) — mc-service maps every DomainError to an application/problem+json response via problem_response() — a stable RFC 9457 body with a non-resolvable .example type URI…
 - **Role enforcement is a layer, not a per-handler check — at every tier** **[canonical]** → [openwiki/gotchas/role-enforcement-is-a-layer.md](openwiki/gotchas/role-enforcement-is-a-layer.md) — Cross-cutting pattern repeated across the frontend, BFF, and mc-service — mc-user/mc-admin role checks are enforced by a centralized middleware/layer at each…
+- **cargo fmt formats the WHOLE crate — a per-file argument does not scope it** **[canonical]** → [openwiki/gotchas/rust-formatting-scope.md](openwiki/gotchas/rust-formatting-scope.md) — Why `cargo fmt -- <file>` reformats every file in the crate rather than the one named, why that is a manufactured diff and not a harmless tidy-up in a…
 - **Session ID vs JWT — Redis session lifecycle and concurrent-session eviction** → [openwiki/gotchas/session-lifecycle-and-eviction.md](openwiki/gotchas/session-lifecycle-and-eviction.md) — Redis-backed BFF sessions track idle/absolute timeout and a per-user concurrent-session cap independently of the Keycloak JWT lifetime; session-manager.ts evicts…
 
 ### Runbooks — operating the system
@@ -132,7 +135,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/050-fix-search-cancel-exit/plan.md`
+`specs/051-ci-diagnostics-closure/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->

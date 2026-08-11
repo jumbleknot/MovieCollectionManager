@@ -15,7 +15,7 @@
  * Run against the dev-container BFF:
  *   E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/agent-cors.spec.ts
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
 import { E2E_BASE_URL as BASE } from './setup/target';
 
 test.describe('agent endpoint CORS (032 US2)', () => {

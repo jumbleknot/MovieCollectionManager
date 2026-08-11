@@ -138,6 +138,40 @@ test('V12 a stale concept emits a drift warning but still exits 0', () => {
   assert.match(out, /stale|drift/i);
 });
 
+test('V12 drift is still reported when the concept is checked out with CRLF endings', () => {
+  // This gate fails OPEN on a CRLF working tree, which is the worst direction and the exact failure
+  // class feature 051 exists to close — found inside the feature's own toolchain.
+  //
+  // The V12 guard reads `Date.parse(fields.timestamp)` on the RAW value. On CRLF input the value
+  // arrives as '…Z\r', which parses to NaN, so the guard concludes "no usable timestamp", the
+  // staleness comparison silently never runs, and the gate prints `✅ conformant`. V5 escapes the
+  // identical bug only because it happens to `.trim()` first — that asymmetry is the bug, so the fix
+  // belongs where the field is READ, not at one more call site.
+  //
+  // The fixture is built here rather than checked in: `.gitattributes` now declares eol=lf for *.md,
+  // so a committed CRLF fixture would be normalised away. Constructing the bytes in the test is also
+  // what FR-024 asks for — prove the parser, not the checkout.
+  const dir = mkdtempSync(join(tmpdir(), 'okf-crlf-'));
+  try {
+    const crlf = (s) => s.replace(/\n/g, '\r\n');
+    writeFileSync(
+      join(dir, 'index.md'),
+      crlf('---\ntype: Reference\ntitle: Test Bundle\ndescription: Index for the CRLF fixture bundle.\ntimestamp: 2026-07-27T00:00:00Z\n---\n# Test Bundle\n- [Stale](stale.md) — how requests are authenticated.\n'),
+    );
+    writeFileSync(
+      join(dir, 'stale.md'),
+      crlf('---\ntype: Runbook\ntitle: Stale\nresource: README.md\ntimestamp: 2001-01-01T00:00:00Z\n---\nBody written long before the source changed.\n'),
+    );
+
+    const { code, out } = runGate(['--bundle', dir]);
+    assert.equal(code, 0, `drift must not affect the exit code, got ${code}\n${out}`);
+    assert.match(out, /stale\.md/, 'the drift check silently did not run on CRLF input — the gate failed OPEN');
+    assert.match(out, /stale|drift/i);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // ── Reporting contract ──────────────────────────────────────────────────────────
 test('all findings are reported in one run, not just the first', () => {
   // Fixing a generated bundle one finding per run would be an N-run loop.

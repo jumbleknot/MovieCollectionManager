@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-08-01T00:00:00+00:00
+timestamp: 2026-08-09T00:00:00+00:00
 ---
 
 # CI self-serve diagnostics
@@ -59,6 +59,26 @@ runtime rather than any literal configured value.
   `merged: true` can co-exist with a `head.sha` that is newer than `main` — the PR page reads as
   though it shipped those commits, but `main` does not contain them. Use
   `git merge-base --is-ancestor <sha> origin/main` to verify, not the API `merged` flag.
+- **Container-executor step logs are read in-job, before teardown — they do not need host
+  persistence.** The wrong mental model ("`$HOME/mcm-ci-step-logs/` disappears when the container
+  dies → containerized jobs are undiagnosable") is tempting and false. `Publish failure digest` is
+  a step *in the same container*, so it reads the logs before teardown and pushes the evidence
+  over the forge API. The absence of leftover files on the host is evidence about leftovers,
+  not about diagnosability.
+- **Per-STEP instrumentation is the real requirement — per-job coverage was never enough.**
+  Before feature 051, 85 of 136 `run:` steps produced no capture. The old coverage gate passed
+  if *any one step* was wrapped; `guardrails / naming` had 2 wrapped steps, neither a gate, so a
+  naming failure published logs from two unrelated steps. `check-ci-digest-coverage.mjs` now
+  requires every `run:` step to be wrapped or carry a justified `# ci-log-step-exempt:` marker.
+  Every new CI job forces a choice: instrument it, or write down why it does not need
+  instrumentation.
+- **Gate verdicts must not depend on line endings.** Two gates violated this in opposite
+  directions at the same time. `check-ci-digest-coverage.mjs` was failing CLOSED on Windows
+  checkouts (reporting exempt jobs as uncovered) because `\r` broke the exemption-marker regex
+  while `\s*` in the job-header pattern swallowed it silently. `check-openwiki-okf.mjs` was
+  failing OPEN (timestamp comparison silently skipped) because `.split('\n')` left `\r` on
+  values, making `Date.parse` return `NaN`. **A false green is the worse failure; it merges.**
+  Fix: split on `/\r?\n/`, normalize at the point of reading, not per-pattern.
 
 Full exit-code table, the exact API endpoints and payload measurements, the required-check
 fetch/fallback logic, the PR creation recipe, and the evidence-bundle hardening details:

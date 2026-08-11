@@ -15,13 +15,19 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSync, statSync, existsSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCRIPT = join(REPO_ROOT, 'scripts', 'wiki-maintain.mjs');
 
-const mod = await import(SCRIPT);
+// `import(SCRIPT)` with a bare absolute path is a valid specifier on POSIX and INVALID on Windows,
+// where the leading drive letter is read as a URL protocol: ERR_UNSUPPORTED_ESM_URL_SCHEME, "Received
+// protocol 'e:'". Because this is at module scope it aborts the WHOLE FILE before a single case runs
+// — which is why the Windows baseline collected 408 tests against Linux's 471. Those 63 cases were
+// not failing; they were never collected, and a suite that silently shrinks looks greener than one
+// that goes red.
+const mod = await import(pathToFileURL(SCRIPT).href);
 
 const FIXTURES = join(REPO_ROOT, 'scripts', '__tests__', 'fixtures', 'wiki-maintain');
 

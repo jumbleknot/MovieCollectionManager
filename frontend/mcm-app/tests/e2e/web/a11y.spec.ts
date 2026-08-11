@@ -12,7 +12,8 @@
  * Runs against the authenticated global-setup session. Theme is forced deterministically
  * via the persisted `mcm.theme` key before load (dark is the app default).
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { E2E_BASE_URL as BASE } from './setup/target';
 

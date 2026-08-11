@@ -83,3 +83,53 @@ docker compose down
 - For more information on configuring Keycloak, please see <https://www.keycloak.org/server/configuration>
 - For more information on Keycloak health checks, please see <https://www.keycloak.org/observability/health>
 - To track progress of Keycloak being able to accept docker secrets via _FILE, please see <https://github.com/keycloak/keycloak/issues/43958>
+
+## ⚠️ Realm JSON takes NO comments — not even a `_comment` key
+
+Keycloak's import deserializes these files into `RealmRepresentation` with unknown fields **rejected**.
+An extra key does not get ignored; the import fails, the server refuses to start, the container goes
+`unhealthy`, and every job that depends on it dies at bring-up:
+
+```text
+ERROR: Unrecognized field "_comment_accessTokenLifespan" (class org.keycloak.representations.idm.RealmRepresentation)
+ERROR: Failed to run import
+```
+
+Measured on app-ci run 1611 (feature 052), where a one-line explanatory key cost a full CI run. Note
+that `python -c "import json"` says the file is **valid** — JSON syntax is not the constraint here, the
+Keycloak schema is. So a local parse check proves nothing about whether the realm will import.
+
+Document a realm setting **here**, not in the JSON. `scripts/__tests__/keycloak-realm-schema.test.mjs`
+fails on any `_`-prefixed key at any depth.
+
+### Why `ci-realm.json` sets `accessTokenLifespan: 5400` while `dev-realm.json` keeps `300`
+
+Feature 052. Playwright creates a fresh `BrowserContext` per test, each reloading the `storageState`
+snapshot global setup froze at the start of the run. With a 300 s token that snapshot is expired five
+minutes in, so **every later test had to refresh before it could do anything** — a measured 1.9 s
+median interval against the BFF's per-session refresh limit of 2 per 30 s, which rejected 35 of 115
+attempts and bounced those tests to the login screen. A token that outlives the job's 75-minute
+timeout removes the driver.
+
+CI only. `dev-realm.json` keeps 300 s so local development still sees realistic expiry, and production
+is untouched — no security control is relaxed. The refresh path keeps deliberate coverage:
+`agent-session-refresh.spec.ts` clears the access cookie explicitly rather than waiting for expiry.
+
+### Proving a realm edit actually imports (one minute, no CI)
+
+The guard catches `_`-prefixed keys; only Keycloak can tell you the realm truly deserializes. Run the
+importer against the real image before pushing a realm change:
+
+```bash
+mkdir -p /tmp/kcimport && cp ci-realm.json /tmp/kcimport/grumpyrobot-realm.json   # name must match the realm
+docker run --rm \
+  -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+  -e KEYCLOAK_CLIENT_SECRET=x -e KEYCLOAK_SERVICE_CLIENT_SECRET=x \
+  -e AGENT_SUBJECT_TOKEN_CLIENT_SECRET=x -e E2E_TEST_PASSWORD=x -e MCM_BFF_TEST_CLIENT_SECRET=x \
+  -v /tmp/kcimport:/opt/keycloak/data/import:ro \
+  quay.io/keycloak/keycloak:26.7.0 import --dir /opt/keycloak/data/import
+# want: "Realm 'grumpyrobot' imported"
+```
+
+The `${VAR}` placeholders are resolved from container env at import time, so any non-empty values do
+for a syntax/schema proof.

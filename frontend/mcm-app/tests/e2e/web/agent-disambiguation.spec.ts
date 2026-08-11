@@ -19,11 +19,12 @@
  * Run: node scripts/agent-e2e.mjs agent-disambiguation
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections } from './setup/e2e-cleanup';
 
 const OFFER_TIMEOUT = 180_000;
 const CARD_TIMEOUT = 150_000;
@@ -59,7 +60,7 @@ test.describe('Assistant disambiguation buttons (013 US4)', () => {
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('ambiguous look-up renders buttons; tapping one proceeds with that match (US4-AC1/AC2)', async ({

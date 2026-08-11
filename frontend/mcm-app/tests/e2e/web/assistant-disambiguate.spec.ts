@@ -31,10 +31,11 @@
  * Or:  E2E_AGENT_PRODUCTION=1 pnpm nx e2e mcm-app -- tests/e2e/web/assistant-disambiguate.spec.ts
  */
 
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 // Generous timeouts: LLM classify+extract + TMDB enrich; the first /run of a session can be cold.
 const OFFER_TIMEOUT = 150_000;
@@ -79,6 +80,7 @@ async function seedCollection(
   name: string,
   movies: { title: string; year: number }[] = [],
 ): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   const collectionId = (await res.json()).collectionId as string;
@@ -146,7 +148,7 @@ test.describe('Assistant disambiguation correctness (feature 012, T082)', () => 
   );
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('look-up disambiguation pick resolves the NON-FIRST (longer-title) option', async ({

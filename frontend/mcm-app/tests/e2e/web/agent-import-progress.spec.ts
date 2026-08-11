@@ -17,11 +17,12 @@
  * applies in roughly 5-10 s through the full stack (measured: 300 rows in 5.0 s at the integration
  * tier), which is thousands of Playwright polls — the assertion is not racing the apply.
  */
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const PREVIEW_TIMEOUT = 150_000;
 const DONE_TIMEOUT = 180_000;
@@ -36,6 +37,7 @@ function importCsv(): string {
 }
 
 async function seedEmptyCollection(request: APIRequestContext, name: string): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   return (await res.json()).collectionId as string;
@@ -70,7 +72,7 @@ test.describe('Assistant import progress (047 US3 / FR-014a, FR-014b)', () => {
   requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('the progress line appears in place while the import applies, then is replaced by the report', async ({

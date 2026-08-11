@@ -86,6 +86,11 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
@@ -120,22 +125,24 @@ jobs:
 
       - name: Install JS dependencies (the scanner + gate use the `yaml` package)
         if: ${{ env.RUN_SCAN == 'true' }}
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh infra-image-scan-install-js-dependencies pnpm install --frozen-lockfile
 
       # The kvm runner executes as the unprivileged `ci` user — no sudo / no write to /usr/local/bin.
       # Install Trivy to a user-writable dir and put it on PATH (same as cd-deploy's Trivy step).
       - name: Install Trivy
         if: ${{ env.RUN_SCAN == 'true' }}
         run: |
+          bash scripts/ci-log-step.sh infra-image-scan-install-trivy bash -e /dev/stdin <<'CI_LOG_STEP'
           mkdir -p "$HOME/.local/bin"
           curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
             | sh -s -- -b "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/trivy" --version
+          CI_LOG_STEP
 
       - name: Gate selftest (prove fail/suppress/expiry before the real scan)
         if: ${{ env.RUN_SCAN == 'true' }}
-        run: node scripts/check-infra-image-findings.mjs --selftest
+        run: bash scripts/ci-log-step.sh infra-image-scan-gate-selftest node scripts/check-infra-image-findings.mjs --selftest
 
       # Enumerate the third-party infra images → Trivy each → normalized findings.json. Fail-closed:
       # a Trivy/pull/parse failure exits non-zero and fails the job (never a clean report on failure).
@@ -168,7 +175,7 @@ jobs:
       # without an admin override (feature 039 AC6). This line makes the skip explicit in the log.
       - name: No infra image ref changed — required context satisfied (scan skipped)
         if: ${{ env.RUN_SCAN != 'true' }}
-        run: echo "No infra image reference changed on this PR; Trivy scan skipped, required context = success."
+        run: bash scripts/ci-log-step.sh infra-image-scan-no-infra-image-ref-changed echo "No infra image reference changed on this PR; Trivy scan skipped, required context = success."
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -181,5 +188,10 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs

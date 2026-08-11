@@ -158,13 +158,147 @@ Scopes: **`write:issue` + `write:package` + `read:repository`**. Stored as a **F
 secret**, never in git.
 
 Deliberately **not** `CD_PUSH_TOKEN` — that is a whitelisted-user PAT able to push protected `main`,
-and spreading it across ~20 jobs to publish diagnostics would be a real privilege expansion. Also not
-the auto `GITHUB_TOKEN`, which is unused in this repo and declined by the pre-receive hook.
+and spreading it across ~20 jobs to publish diagnostics would be a real privilege expansion.
+
+> **Correction (feature 051 T034).** This section used to add "also not the auto `GITHUB_TOKEN`,
+> which is unused in this repo and declined by the pre-receive hook". The second half conflated two
+> different things: the pre-receive hook governs **git pushes**, not **API writes**. A temporary probe
+> on guardrails run #1627 measured the run-provisioned token successfully writing
+> `POST /repos/{owner}/{repo}/statuses/{sha}` — it left a real `probe-051-t034` status behind. It is
+> still not used for the primary channel (it cannot write issues or packages), but it is no longer
+> "unused", and it is not declined.
 
 **Missing scopes fail loudly, naming the scope.** A bare `401`/`403` is indistinguishable from an
 expired credential and cost this design a full revision cycle to diagnose.
 
+### When `CI_DIGEST_TOKEN` is empty — the degraded fallback
+
+`CI_DIGEST_TOKEN` is an Actions secret, so it is blank **exactly when a run is most confusing**. On
+the AGit-headed run of 2026-08-01 every `${{ secrets.* }}` arrived empty; the digest collected its
+evidence, could not publish it, printed it to a job log the forge API cannot serve, and exited 0.
+Zero comments, no error, no signal.
+
+The digest now falls back:
+
+| `CI_DIGEST_TOKEN` | Channel | Outcome recorded |
+|---|---|---|
+| present | PR comment (on `pull_request`) + evidence bundle | `published` |
+| **empty**, run token present | **commit status** `ci-digest/<job>` carrying the failing step and a short excerpt | `published`, **`degraded: true`** |
+| both empty | nothing publishable | `failed:no-credential` |
+
+**Why the degraded case is `published` and not `failed`.** `contracts/digest-outcome.md` literally
+says the fallback records `failed:no-credential`. That wording would make *published* and *failed*
+simultaneously true and break the outcome vocabulary, in which `failed` means the evidence did **not**
+reach a channel. The reader's question is "did the diagnosis get to me?" — via the fallback the answer
+is yes, in a reduced form. So both facts are carried rather than collapsed: `published` with
+`degraded: true`, and a summary naming the missing credential. A deliberate deviation from the
+contract's wording, not an oversight.
+
+**What the fallback deliberately does not do.** It publishes no bundle and no PR comment — the run
+token has neither `write:package` nor `write:issue`. It carries the failing step's **name** plus a
+truncated excerpt: enough to name the fault, not to replay the build. Truncation never splits a
+`<redacted-…>` placeholder, because half a redaction still *looks* redacted while a future
+value-wrapping placeholder would leak its tail.
+
+> ⚠️ **Residual, stated because it is the half that matters.** T034 proved the run token *can* write
+> statuses. It did **not** prove the token is *populated* on a secretless run — that run had secrets.
+> `github.token` is runner-provisioned rather than an Actions secret, so it ought to survive where
+> `secrets.*` do not, but "ought to" is not a measurement, and proving it needs an AGit-headed push,
+> which [CLAUDE.md](../../CLAUDE.md) forbids. If a future secretless run still publishes nothing, this
+> is the first thing to check.
+
 ---
+
+## A PASSING run publishes no bundle — so CI has to judge its own counts
+
+The digest publishes **on failure**. That is right for diagnosis and wrong for verification: on a
+green run there is nowhere to read `skipped=` from, and `ci-status`/`/actions/tasks` only ever report
+the job's exit status. Combined with the fact that **Playwright exits 0 with tests skipped**, a green
+`app-e2e` carried no information about how many tests actually ran. Feature 040 validated green with
+33 specs skipped on exactly this blind spot (item #150).
+
+Two consequences for anyone verifying a branch here:
+
+- **Do not quote counts you have not read.** If a run is green there is no bundle, so `failed=` /
+  `flaky=` / `passed=` are not available to you. Say what the gate asserts, not what you assume it
+  would have printed.
+- **The assertion lives in the job**, as the `E2E result gate` step
+  (`node scripts/e2e-failure-set.mjs gate …`), which fails on `skipped > 0`, `did not run > 0`, or a
+  log with no summary. So a green `app-e2e` now *does* mean "nothing hidden" — but still not "nothing
+  needed a retry", because `flaky` is only visible in a bundle, and a bundle only exists on failure.
+
+**There are now two such gates, for the same reason.** The second is the `Contention gate`
+(`scripts/e2e-contention-tally.sh --gate`), which fails `app-e2e` on `refresh_429 > 0` or
+`session_evicted > 0`. Feature 052's own SC-007 asked for its contention tally to be readable on
+passing runs and could not be satisfied as written — measured on runs 1622/1623, both green, whose
+bundles simply do not exist. Left advisory, a partial return of the worker/session contention would be
+absorbed by `retries: 1`, keep the job green, and never surface.
+
+The pattern generalises, and is worth applying to the next check of this kind: **if a condition is
+only observable on a failing run, it is not being verified — move it into the job.** Note both gates
+run without `continue-on-error`; adding it back leaves a step that still runs and still prints while
+the job passes regardless, which is invisible in the log and is asserted against in
+`scripts/__tests__/`.
+
+To read counts for a green run today you must make it fail, which is not a plan. Publishing the counts
+per run (the way the digest publishes on failure) is the open follow-up.
+
+## Verifying a branch WITHOUT opening a pull request
+
+**A push to a feature branch runs almost nothing.** `guardrails` and `app-ci` both scope their
+`push:` trigger to `main` — a deliberate 2026-07-26 change, because a bare `push:` fired both `push`
+and `pull_request` on a branch with an open PR and ran guardrails twice per push on a capacity-1
+runner. Feature branches are gated through `pull_request` instead.
+
+So pushing `051-ci-diagnostics-closure` triggered only `infra-image-scan` and `devcontainer-image`,
+and only because their **path filters** matched the workflow files in the diff. Nothing else ran, and
+`ci-status status --sha` correctly reported one required context still waiting — which reads like a
+slow queue rather than "these workflows are not going to run at all".
+
+**Both expose `workflow_dispatch`, so a branch can be fully verified without a PR:**
+
+```bash
+FORGE=http://<forge>/api/v1
+TOK=$(printf "protocol=http\nhost=<forge-host>\n\n" | git credential fill | grep '^password=' | cut -d= -f2-)
+
+curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+  -H "Authorization: token $TOK" -H 'Content-Type: application/json' \
+  "$FORGE/repos/<owner>/<repo>/actions/workflows/guardrails.yml/dispatches" \
+  -d '{"ref":"<branch>"}'                                   # -> 204
+
+curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+  -H "Authorization: token $TOK" -H 'Content-Type: application/json' \
+  "$FORGE/repos/<owner>/<repo>/actions/workflows/app-ci.yml/dispatches" \
+  -d '{"ref":"<branch>","inputs":{"provider":"anthropic"}}'  # -> 204
+```
+
+Use the **`git credential fill`** credential, not `MCM_FORGE_TOKEN` — the read token 403s. Pass
+`provider: anthropic` to `app-ci` so the agent E2E specs run on the surface that matters.
+
+⚠️ **A dispatched run posts NO commit status** (the same property already documented for
+`cd-deploy`). `ci-status status --sha` will therefore keep saying *waiting* no matter how the run
+goes — it is reading a channel the run never writes to. Read `/actions/tasks` instead:
+
+```bash
+curl -s -H "Authorization: token $TOK" "$FORGE/repos/<owner>/<repo>/actions/tasks?limit=40"
+```
+
+⚠️ **And note the shape of that payload**: Forgejo puts the outcome in **`status`**
+(`running` / `success` / `failure` / `skipped`), *not* in a GitHub-style `status: completed` plus
+`conclusion`. A poller written to the GitHub shape matches nothing and reports silence — which looks
+exactly like "still running".
+
+⚠️ **`run_number` in `/actions/tasks` is NOT the id the failure bundle is named after.** They are
+offset. An `app-e2e` job reported as `run#1602` published its bundle as **`1603--app-e2e`**, because
+the bundle version comes from `GITHUB_RUN_ID` (a repository-wide counter) while `run_number` is
+per-workflow. Two consequences, both of which cost time here:
+
+- Fetching `<run_number>--<job>` returns **404**, which reads as "no bundle was published" — the
+  digest-absent case — when in fact one exists under a different name. **List the package versions
+  rather than constructing the name**, and take the newest for the job:
+  `GET /api/v1/packages/{owner}?type=generic&limit=10`.
+- A poller keyed on a hard-coded `run_number` threshold silently matches nothing. Key it on the job
+  names you dispatched, or on `head_sha`.
 
 ## Opening a pull request
 
@@ -385,6 +519,173 @@ opt out only with a visible, justified marker:
 
 A blank reason is rejected. So adding a CI job now forces a choice: give it a digest step, or write
 down why it doesn't need one.
+
+## Step logs are read IN-JOB — they do not need to survive teardown
+
+This corrects a diagnosis that reached a PRD and nearly cost a redesign.
+
+**The tempting wrong story.** `ci-log-step.sh` writes to `$HOME/mcm-ci-step-logs/`, which for a
+container-executor job lives inside the container and is destroyed at teardown. So — the reasoning
+went — containerized jobs must be undiagnosable, and the fix is to relocate the logs somewhere the
+host can read them.
+
+**What is actually true.** The digest is **not a host-side reader**. `Publish failure digest` is a
+step *inside the same job*, and in the container executor every step of a job runs in the **same
+container**. The digest therefore reads the step logs from the same `$HOME`, before teardown, and
+pushes the evidence out over the forge API — a PR comment, plus a generic-package bundle for the
+full evidence. Nothing in that path requires the files to outlive the container.
+
+Reproduce it end to end rather than taking this on trust:
+
+```bash
+tmp=$(mktemp -d)
+HOME="$tmp" GITHUB_RUN_ID=999 bash scripts/ci-log-step.sh probe sh -c 'echo "REAL FAILURE"; exit 3'
+T="$tmp" node -e 'import("./scripts/ci-failure-digest.mjs").then(m=>{
+  const home=process.env.T, env={HOME:home,GITHUB_RUN_ID:"999"};
+  console.log(m.readFailingStep(env,home));
+  console.log(m.collectEvidence({home,cwd:process.cwd(),env}).excerpts);})'
+# -> probe ; [ { source: 'step:probe', text: 'REAL FAILURE\n' } ]
+```
+
+**The `T=` assignment must come BEFORE `node`.** Written after it, it is argv, `process.env.T` reads
+back undefined, the probe prints nothing, and it looks like it disproved the point.
+
+**The measurement that misled.** "`~/mcm-ci-step-logs/` on the runner contains captures only from
+`cd-deploy/build-deploy` and the devcontainer image build" is **true, and irrelevant**. Host-executor
+jobs leave their logs lying on the host; container jobs consume theirs in-job and take them with
+them. The absence of container-job leftovers on the host is evidence about **leftovers**, not about
+**diagnosability**. Reading it as the latter is the whole mistake.
+
+### The real requirement is per-STEP instrumentation
+
+If the digest can read the logs, why was every guardrail failure undiagnosable? Because **most steps
+were never wrapped**, so there was no log to read. Measured before feature 051: **85 of 136 `run:`
+steps** produced no capture. `guardrails / naming` had 16 `run:` steps with 2 wrapped, and **neither
+of the two was a gate** — so a naming-gate failure published the logs of two unrelated steps.
+
+The old coverage gate passed all of it because it asked only "does this job publish a digest, and is
+**at least one** step wrapped?". One was enough. It never asked whether the step that can actually
+fail is wrapped. `check-ci-digest-coverage.mjs` now requires **every** `run:` step to be wrapped or
+to carry a justified `# ci-log-step-exempt:` marker of its own.
+
+### Wrapping a step
+
+```yaml
+# one command
+- name: Resource-naming gate
+  run: bash scripts/ci-log-step.sh naming-resource-naming-gate node scripts/check-resource-naming.mjs
+
+# several plain commands — wrap each; they append to one log named for the step
+- name: Inline-secret gate
+  run: |
+    bash scripts/ci-log-step.sh naming-inline-secret-gate node scripts/check-no-inline-secrets.mjs --selftest
+    bash scripts/ci-log-step.sh naming-inline-secret-gate node scripts/check-no-inline-secrets.mjs
+
+# a body that needs a shell (conditionals, loops, pipes, assignments)
+- name: Verify KVM is available
+  run: |
+    bash scripts/ci-log-step.sh app-e2e-verify-kvm-available bash -e /dev/stdin <<'CI_LOG_STEP'
+    if [ -e /dev/kvm ]; then ls -l /dev/kvm; else echo "::error::no kvm"; exit 1; fi
+    CI_LOG_STEP
+```
+
+The heredoc form needs **no escaping** — the body passes through byte-for-byte, so quotes, `${{ }}`
+expressions and shell constructs survive. Use **`bash -e`**, matching the runner default, *not*
+`-euo pipefail`: adding `-u` and `pipefail` to a block that never had them can turn a green step red
+on an unset variable or a SIGPIPE. Exit codes, `::error::` workflow commands and the `_failed-step`
+marker all propagate through the wrapper — verified by execution, not by inspection.
+
+**Choose a short, descriptive log name.** It becomes the digest excerpt's `source`, which is the
+first thing a reader sees. Not a slugified copy of a 90-character step title.
+
+**"It is only a setup step" is not a legitimate exemption.** `pnpm install --frozen-lockfile` failing
+on a lockfile mismatch and `apt-get install` failing on a mirror are recurring CI failure modes whose
+one-line cause is exactly what this machinery exists to surface. The legitimate exemptions are: steps
+that run before `actions/checkout` (the script is not on disk yet), the digest step itself (wrapping
+the reporter in what it reports on is circular), and `uses:`-only steps (no command to capture).
+
+### Two costs of instrumenting a HOST-executor job, accepted deliberately
+
+Container-job captures die with the container. Host-executor captures (`app-e2e`, `dast`,
+`cd-deploy/build-deploy`, `devcontainer-image`) land in `$HOME/mcm-ci-step-logs/<run-id>/` on the
+**persistent** runner and stay there:
+
+- **They are unredacted.** Redaction happens at *publication* time in the digest, not at capture
+  time — `ci-log-step.sh` does no redaction at all. Raw output sits on the runner for up to 7 days
+  (a best-effort `find -mtime +7` prune inside the wrapper). These jobs handle real credentials.
+- **Disk.** The wrapper writes the **full** output; the 200-line / 32 KB caps apply only to the
+  digest *excerpt*. `app-e2e` already runs a "Free daemon disk space" step, so this adds to pressure
+  that job is already managing.
+
+Both were weighed and accepted for the diagnostic value — `app-e2e` is the longest and most
+failure-prone job in the repository, and its stack bring-up and teardown failures were previously
+invisible. If runner disk becomes a problem, the lever is the retention window in `ci-log-step.sh`,
+not un-instrumenting the steps.
+
+## A gate's verdict must not depend on the checkout
+
+**The invariant**: a gate parses repository text, so its answer must be a property of the *commit* —
+never of the contributor's `core.autocrlf`, working tree, or operating system. Two gates in this
+repository violated that at the same time, in **opposite directions**, and one of them stayed hidden
+for months because the direction it failed in was silence.
+
+**The worked example — `check-ci-digest-coverage.mjs`, failing CLOSED.** The gate reported three jobs
+as uncovered — `app-ci / changes`, `app-ci / trigger-cd`, `infra-image-scan / changes` — that are all
+correctly exempt. It reproduced on a Windows checkout and never on Linux, so it was written up as an
+unexplained local/CI divergence (PRD §1.3) and briefly recorded as *resolved* on the strength of a
+green Linux run. The cause:
+
+```js
+const lines = text.split('\n');                          // leaves a trailing \r on a CRLF checkout
+const jobHeader = /^ {2}([A-Za-z0-9_-]+):\s*$/;          // SURVIVES — \s* absorbs the \r
+const markerRe  = new RegExp(`#\\s*${marker}:(.*)$`);    // FAILS — . will not consume \r,
+                                                         //         and non-multiline $ wants EOF
+```
+
+The asymmetry is the whole bug. `\r` is a **line terminator** in JavaScript regular expressions, so
+`.` refuses it and a non-multiline `$` refuses it — but `\s*` swallows it without complaint. The
+parser therefore saw the jobs and not their exemptions, and nothing about the output looked wrong.
+
+**The other direction — `check-openwiki-okf.mjs`, failing OPEN.** Its drift check guarded on
+`Date.parse(fields.timestamp)` applied to the *untrimmed* value. On CRLF the timestamp arrives as
+`…Z\r`, parses to `NaN`, and the guard concludes "no usable timestamp" — so the staleness comparison
+silently never ran and the gate printed `✅ conformant`. The neighbouring validator escaped the
+identical bug only because it happened to call `.trim()` first. **A gate reporting green while not
+checking is the worse of the two failures**, and it is much harder to notice: a false red gets
+investigated, a false green gets merged.
+
+**The two rules that follow.**
+
+1. **Split on `/\r?\n/`, never `'\n'`** — and fix it *at the split*, not by bolting `\r?` or the `m`
+   flag onto whichever pattern happens to be broken today. The next pattern added to the file would
+   inherit the trap. `check-komodo-sync.mjs`, `check-topology-scrub.mjs` and
+   `check-no-argv-secrets.mjs` already do this; `check-openwiki-governance.mjs` takes the equivalent
+   route of `.replace(/\r\n?/g, '\n')` before splitting.
+2. **Normalize a value where it is READ, once — not at each use.** A second `.trim()` at the call site
+   fixes one validator and leaves the asymmetry in place for the next one. The okf gate now trims
+   every front-matter value in `extractFrontMatter`, and the pre-existing per-call trims were removed
+   so they cannot drift apart again.
+
+**`.gitattributes` is a second layer, not a substitute.** It declares `eol=lf` for `*.sh`, `*.yml`,
+`*.yaml` and `*.md`, which stops the condition being produced — but it governs **future checkouts
+only**. It cannot reach a working tree that already exists, so an existing Windows clone must be
+re-normalized once:
+
+```powershell
+git rm --cached -r .
+git reset --hard
+git status        # expect clean; if not, the normalization IS the diff
+```
+
+**Prove it by feeding the parser directly.** A test that writes a fixture file and reads it back
+proves whatever the checkout happened to do, which is the thing under suspicion. Build the LF string,
+derive the CRLF variant with `.replace(/\n/g, '\r\n')`, and assert both reach the same verdict —
+asserting the **LF** side finds something first, or a regression to "finds nothing either way" passes
+as a fix. Both cases are RED on Linux against the unfixed code; no Windows host is needed.
+
+**And name the platform.** Both of these were misread because a result measured on one operating
+system was reported as a general one. A pass claim that does not say where it was observed is not yet
+a pass claim.
 
 ## Maintenance notes
 

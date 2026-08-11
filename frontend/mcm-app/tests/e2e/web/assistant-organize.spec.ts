@@ -15,10 +15,11 @@
  * Run: E2E_AGENT_PRODUCTION=1 pnpm nx e2e mcm-app -- tests/e2e/web/assistant-organize.spec.ts
  */
 
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 
 const PREVIEW_TIMEOUT = 150_000;
 const DONE_TIMEOUT = 90_000;
@@ -54,6 +55,7 @@ async function seedCollection(
   name: string,
   titles: string[],
 ): Promise<string> {
+  ownCollection(name);
   const res = await request.post('/bff-api/collections', { data: { name } });
   expect(res.ok()).toBeTruthy();
   const collectionId = (await res.json()).collectionId as string;
@@ -99,7 +101,7 @@ test.describe('Assistant organize flow (feature 012, US2 / T048)', () => {
   );
 
   test.afterEach(async ({ request }) => {
-    await cleanupNonFixtureCollections(request);
+    await cleanupOwnedCollections(request);
   });
 
   test('multi-item remove → batch preview → approve removes exactly the planned movies', async ({

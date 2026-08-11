@@ -42,18 +42,116 @@ const isAlways = (v) => v === 'always()' || (typeof v === 'string' && /\balways\
  * Find the exemption reasons declared per job. Comments are stripped by the YAML parser, so the raw
  * text is scanned: a `# ci-digest-exempt: <reason>` line associates with the nearest job header above
  * or below it within the job block. Returns a Map<jobName, reason|''>.
+ *
+ * Splitting on /\r?\n/ rather than '\n' is load-bearing, not tidiness. With '\n', a CRLF checkout
+ * leaves a trailing '\r' on every line and `markerRe` below cannot match: '.' will not consume '\r'
+ * (it is a line terminator in JS regexes) and a non-multiline '$' demands end-of-input. `jobHeader`
+ * survives the same input because its `\s*` absorbs the '\r' — so the parser saw the jobs but not
+ * their exemptions, and reported three correctly-exempt jobs as uncovered. That was PRD §1.3, whose
+ * author was on Windows while the agent measured on Linux and pronounced it resolved.
+ *
+ * Fix it HERE, at the split. Adding the `m` flag to `markerRe`, or appending `\r?` to it, would make
+ * this one pattern work and leave the next pattern added to this file to inherit the trap.
+ * `.gitattributes` also declares eol=lf for *.yml — that stops the condition being produced, but it
+ * governs future checkouts only, so it cannot be the sole layer.
  */
 export function parseExemptions(text, marker = 'ci-digest-exempt') {
-  const lines = text.split('\n');
+  const lines = text.split(/\r?\n/);
   const out = new Map();
   const jobHeader = /^ {2}([A-Za-z0-9_-]+):\s*$/;
+  const stepsHeader = /^ {4}steps:\s*$/;
   const markerRe = new RegExp(`#\\s*${marker}:(.*)$`);
   let current = null;
+  let inSteps = false;
   for (const line of lines) {
     const h = line.match(jobHeader);
-    if (h) current = h[1];
+    if (h) { current = h[1]; inSteps = false; }
+    if (stepsHeader.test(line)) inSteps = true;
+    // A JOB-level marker is one written above the job's `steps:` — which is where all three of the
+    // real ones live. Markers inside the steps block are STEP-level and belong to parseJobSteps;
+    // treating them as job-level (the old behaviour) would let one step's exemption silently cover
+    // every later step in the job, rebuilding the exact "one compliant thing stands in for many"
+    // defect this feature removes.
+    if (inSteps) continue;
     const m = line.match(markerRe);
     if (m && current) out.set(current, m[1].trim());
+  }
+  return out;
+}
+
+/**
+ * Per-job, per-step view: each `run:` step paired with its own step-level exemption marker, if any.
+ *
+ * Steps come from the YAML parse (ordered, and it already knows what a step is); markers come from a
+ * line scan, because the parser strips comments. The two are zipped by ORDER, and the zip is
+ * abandoned if the counts disagree — a silently mis-associated marker would attach an exemption to
+ * the wrong step, which is worse than reporting nothing.
+ *
+ * @returns Map<jobName, Array<{name, run, exempt: boolean, reason: string|null}>>
+ */
+export function parseJobSteps(text, doc) {
+  const lines = text.split(/\r?\n/);
+  const jobHeader = /^ {2}([A-Za-z0-9_-]+):\s*$/;
+  const stepsHeader = /^ {4}steps:\s*$/;
+  const markerRe = /#\s*ci-log-step-exempt:(.*)$/;
+
+  /** @type {Map<string, Array<string|null>>} per job, one entry per step start, in order */
+  const markersByJob = new Map();
+  let job = null;
+  let inSteps = false;
+  let stepIndent = null;
+  let pending = null;
+  let started = 0;
+
+  for (const line of lines) {
+    const h = line.match(jobHeader);
+    if (h) { job = h[1]; inSteps = false; stepIndent = null; pending = null; started = 0; markersByJob.set(job, []); continue; }
+    if (!job) continue;
+    if (stepsHeader.test(line)) { inSteps = true; continue; }
+    if (!inSteps) continue;
+
+    const indent = line.search(/\S/);
+    if (indent === -1) continue;
+    // Dedent out of the steps block (e.g. the next top-level job key).
+    if (indent <= 2) { inSteps = false; continue; }
+
+    const isStepStart = /^\s*-\s/.test(line) && (stepIndent === null || indent === stepIndent);
+    if (isStepStart) {
+      if (stepIndent === null) stepIndent = indent;
+      markersByJob.get(job)[started] = pending;
+      pending = null;
+      started += 1;
+      continue;
+    }
+
+    const m = line.match(markerRe);
+    if (!m) continue;
+    const reason = m[1].trim();
+    if (started > 0 && stepIndent !== null && indent > stepIndent) {
+      // Written INSIDE the step body — belongs to the step already open.
+      markersByJob.get(job)[started - 1] = reason;
+    } else {
+      // Written above a step — belongs to the step about to start.
+      pending = reason;
+    }
+  }
+
+  const out = new Map();
+  for (const [name, jobDef] of Object.entries(doc?.jobs ?? {})) {
+    const steps = Array.isArray(jobDef?.steps) ? jobDef.steps : [];
+    const markers = markersByJob.get(name) ?? [];
+    // If the line scan and the YAML parse disagree about how many steps exist, do not guess which
+    // marker belongs to which step. Report no step-level exemptions rather than a wrong one.
+    const aligned = markers.length === steps.length;
+    out.set(
+      name,
+      steps.map((s, i) => ({
+        name: typeof s?.name === 'string' ? s.name : null,
+        run: typeof s?.run === 'string' ? s.run : null,
+        exempt: aligned ? markers[i] != null : false,
+        reason: aligned ? (markers[i] ?? null) : null,
+      })),
+    );
   }
   return out;
 }
@@ -63,6 +161,7 @@ export function findCoverageGaps(text) {
   const doc = parse(text);
   const exemptions = parseExemptions(text);
   const logStepExemptions = parseExemptions(text, 'ci-log-step-exempt');
+  const stepView = parseJobSteps(text, doc);
   const gaps = [];
 
   for (const [name, job] of Object.entries(doc?.jobs ?? {})) {
@@ -100,14 +199,28 @@ export function findCoverageGaps(text) {
       }
       continue;
     }
-    const anyInstrumented = steps.some((s) => LOG_STEP_SCRIPT.test(String(s?.run ?? '')));
-    if (!anyInstrumented) {
+
+    // PER-STEP coverage (feature 051 US2). The rule used to be "at least one wrapped step per job",
+    // and one was enough: `guardrails / naming` passed with 2 of 16 wrapped, NEITHER of them a gate.
+    // So when that job failed for the reason it exists to catch, the digest published the logs of two
+    // unrelated steps and said nothing about the failure — fully compliant, completely undiagnosable.
+    // Now every `run:` step must be wrapped or carry its own justified marker.
+    for (const step of stepView.get(name) ?? []) {
+      if (step.run === null) continue;                       // `uses:`-only — no command to capture
+      if (DIGEST_SCRIPT.test(step.run)) continue;            // wrapping the reporter in what it reports on is circular
+      if (LOG_STEP_SCRIPT.test(step.run)) continue;
+      const where = step.name ? `step "${step.name}"` : 'an unnamed run: step';
+      if (step.exempt) {
+        if (!step.reason) {
+          gaps.push({ job: name, problem: `${where} has a ci-log-step-exempt marker with no reason — state why this step has nothing worth capturing` });
+        }
+        continue;
+      }
       gaps.push({
         job: name,
         problem:
-          'publishes a digest but no step is wrapped with `scripts/ci-log-step.sh` — the digest would ' +
-          'carry no log output. Wrap the step that can actually fail, or add a justified ' +
-          '`# ci-log-step-exempt:` marker',
+          `${where} is not wrapped with \`scripts/ci-log-step.sh\`, so its output cannot reach the ` +
+          'digest. Wrap it, or add a justified `# ci-log-step-exempt:` marker above it',
       });
     }
   }
@@ -163,11 +276,45 @@ function selftest() {
   check(`jobs:\n  probe:\n    # ci-log-step-exempt: nothing to capture\n    steps:\n      - run: echo x\n${guarded}\n`, 0, 'justified log-step exemption is honoured');
   check(`jobs:\n  probe:\n    # ci-log-step-exempt:\n    steps:\n      - run: echo x\n${guarded}\n`, 1, 'blank log-step exemption reason is caught');
 
+  // --- per-step coverage (feature 051 US2) --------------------------------------------------------
+  // Every other gate in `guardrails / naming` proves its FAIL path before the real scan. A rule that
+  // nobody has watched fail is a rule nobody knows works — and the failure this whole feature closes
+  // is a gate that reported green without checking.
+  const wrapped = (n) => `      - name: Step ${n}\n        run: bash scripts/ci-log-step.sh s${n} node ${n}.mjs`;
+  const bare = (n) => `      - name: Step ${n}\n        run: node ${n}.mjs`;
+
+  check(base(`${wrapped('a')}\n${wrapped('b')}\n${guarded}`), 0, 'per-step: every run step wrapped is clean');
+  check(base(`${wrapped('a')}\n${bare('b')}\n${guarded}`), 1, 'per-step: ONE bare step among wrapped ones is caught');
+  check(
+    base(`${wrapped('a')}\n      # ci-log-step-exempt: runs before checkout\n${bare('b')}\n${guarded}`),
+    0,
+    'per-step: a justified step-level exemption is honoured',
+  );
+  check(
+    base(`${wrapped('a')}\n      # ci-log-step-exempt:\n${bare('b')}\n${guarded}`),
+    1,
+    'per-step: a blank step-level exemption reason is caught',
+  );
+  check(
+    base(`      # ci-log-step-exempt: only this one\n${bare('a')}\n${bare('b')}\n${guarded}`),
+    1,
+    'per-step: a step exemption does NOT leak to the following step',
+  );
+  check(
+    base(`${wrapped('a')}\n      # ci-digest-exempt: wrong marker for a step\n${bare('b')}\n${guarded}`),
+    1,
+    'per-step: ci-digest-exempt does not double as a capture exemption',
+  );
+  check(base(`      - uses: actions/checkout@v4\n${wrapped('a')}\n${guarded}`), 0, 'per-step: a uses:-only step needs no marker');
+
   if (fails.length) {
     console.error('✗ ci-digest coverage gate --selftest FAILED:\n  ' + fails.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ ci-digest coverage gate --selftest passed (catches missing/unguarded/uninstrumented steps; honours both justified exemptions)');
+  console.log(
+    '✓ ci-digest coverage gate --selftest passed (catches missing/unguarded/uninstrumented steps and ' +
+      'per-step gaps; honours both justified exemptions at job AND step level, and keeps them independent)',
+  );
 }
 
 const args = process.argv.slice(2);

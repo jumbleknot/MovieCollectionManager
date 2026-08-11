@@ -472,8 +472,12 @@ coverage/
 test-results/
 playwright-report/
 
-# Playwright saved E2E auth session (machine-specific Keycloak cookies — never commit)
-frontend/mcm-app/tests/e2e/web/setup/.auth/user.json
+# Playwright saved E2E auth session (machine-specific Keycloak cookies — never commit).
+# Feature 052 US3 added one file PER WORKER (`user-<parallelIndex>.json`, authFileForWorker) beside
+# the shared `user.json`; only the shared name was listed, so the per-worker ones were untracked and
+# one `git add -A` away from committing live mcm_refresh_token / KEYCLOAK_IDENTITY cookies. Ignore
+# the whole directory so a future naming change cannot reopen the gap.
+frontend/mcm-app/tests/e2e/web/setup/.auth/
 
 # Expo / React Native
 .expo/

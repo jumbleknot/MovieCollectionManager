@@ -77,6 +77,7 @@ jobs:
       - name: Decide whether this push is our own work
         id: self
         run: |
+          bash scripts/ci-log-step.sh maintain-decide-whether-this-push-our bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -99,17 +100,18 @@ jobs:
             exit 0
           fi
           echo "skip=false" >> "$GITHUB_OUTPUT"
+          CI_LOG_STEP
 
       - name: Enable pnpm (corepack, version from package.json packageManager)
         if: steps.self.outputs.skip != 'true'
-        run: corepack enable
+        run: bash scripts/ci-log-step.sh maintain-enable-pnpm corepack enable
 
       - name: Install JS dependencies
         if: steps.self.outputs.skip != 'true'
         # The orchestrator imports `yaml`, a root dependency. Without this the run dies on
         # ERR_MODULE_NOT_FOUND before planning anything — 043's okf job failed its first CI run on
         # exactly this.
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh maintain-install-js-dependencies pnpm install --frozen-lockfile
 
       # The generator is a GLOBAL npm binary, not a workspace dependency: the dev container bakes it
       # into its toolchain image (`npm install -g openwiki@0.2.3`), so it is simply absent on the CI
@@ -120,12 +122,13 @@ jobs:
       # mean CI and local silently running different versions of the thing whose output we gate on.
       - name: Install the OpenWiki generator (pinned to match the dev container)
         if: steps.self.outputs.skip != 'true'
-        run: npm install -g openwiki@0.2.3
+        run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.2.3
 
       # ── property 1 + 2: debounce, with a git-derived ceiling ────────────────────
       - name: Wait out the quiet period unless the maximum deferral is reached
         if: steps.self.outputs.skip != 'true'
         run: |
+          bash scripts/ci-log-step.sh maintain-wait-out-quiet-period-unless bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
           DISPATCH=""
           [ "${{ github.event_name }}" = "workflow_dispatch" ] && DISPATCH="--dispatched"
@@ -136,6 +139,7 @@ jobs:
           else
             echo "Not waiting — either dispatched manually, or the oldest uncovered commit has reached the maximum deferral."
           fi
+          CI_LOG_STEP
 
       # Free, offline, and always safe: this is what makes a paid run reviewable before it happens.
       - name: Plan (offline, no credential, no model)
@@ -145,8 +149,8 @@ jobs:
       - name: Configure git identity for the proposal and marker commits
         if: steps.self.outputs.skip != 'true'
         run: |
-          git config user.name 'openwiki-maintenance'
-          git config user.email 'openwiki-maintenance@users.noreply.local'
+          bash scripts/ci-log-step.sh maintain-configure-git-identity git config user.name 'openwiki-maintenance'
+          bash scripts/ci-log-step.sh maintain-configure-git-identity git config user.email 'openwiki-maintenance@users.noreply.local'
 
       - name: Maintain the bundle and propose the result
         id: run
@@ -208,6 +212,7 @@ jobs:
       - name: Commit the run record
         if: always() && steps.self.outputs.skip != 'true'
         run: |
+          bash scripts/ci-log-step.sh maintain-commit-run-record bash -e /dev/stdin <<'CI_LOG_STEP'
           set -uo pipefail
           git checkout main || git checkout -B main
           if git diff --quiet -- openwiki/.maintenance-state.json; then
@@ -242,13 +247,14 @@ jobs:
           done
           echo "::error::could not push the run record after 3 attempts — the next run will re-cover this range"
           exit 1
+          CI_LOG_STEP
 
       - name: Report the outcome
         if: always() && steps.self.outputs.skip != 'true'
         run: |
-          echo "outcome=${{ steps.run.outputs.outcome }} (exit ${{ steps.run.outputs.exit-code }})"
-          echo "A 'nothing-to-do' outcome means the marker advanced at no cost. It is NOT a failure, and"
-          echo "a credential or generator failure is never reported as nothing-to-do."
+          bash scripts/ci-log-step.sh maintain-report-outcome echo "outcome=${{ steps.run.outputs.outcome }} (exit ${{ steps.run.outputs.exit-code }})"
+          bash scripts/ci-log-step.sh maintain-report-outcome echo "A 'nothing-to-do' outcome means the marker advanced at no cost. It is NOT a failure, and"
+          bash scripts/ci-log-step.sh maintain-report-outcome echo "a credential or generator failure is never reported as nothing-to-do."
 
       # Feature 042 — every job must publish an agent-readable failure digest, or
       # check-ci-digest-coverage.mjs (run by the `naming` job) fails the build.
@@ -257,5 +263,10 @@ jobs:
         continue-on-error: true
         env:
           CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
