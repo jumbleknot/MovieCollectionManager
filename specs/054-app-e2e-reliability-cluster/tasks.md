@@ -396,24 +396,35 @@ feature. The number follows document order; the position follows the dependency,
 remaining RED here is only as trustworthy as the probe that decides whether it runs at all.
 Backlog item **#178**, pulled into this feature because this feature is what it damaged.
 
-- [ ] **T051** [US7] Write `scripts/__tests__/shell-probe.test.mjs` — the probe has no coverage of its
+- [x] **T051** [US7] Write `scripts/__tests__/shell-probe.test.mjs` — the probe has no coverage of its
       own today, which is how a helper whose failure mode is SILENCE went wrong unnoticed. Cover all
       three outcomes: an absent script reports **usable** (so cases fail rather than skip); a script
       that exists but the shell cannot read skips **naming the namespace condition**; an unstartable
       shell skips naming that. **Verify RED.**
-- [ ] **T052** [US7] Fix `shellCanRunScript` in `scripts/__tests__/shell-probe.mjs`: check the host
+      *(Done 2026-08-11: RED 3 fail / 3 pass. The three that PASSED are the conditions the probe was
+      written for — unreadable-through-shell, unstartable shell, and the happy path — so they pin what
+      must not be traded away by the fix.)*
+- [x] **T052** [US7] Fix `shellCanRunScript` in `scripts/__tests__/shell-probe.mjs`: check the host
       with `existsSync` BEFORE asking the shell. `existsSync` is the right predicate precisely because
       it runs in node rather than in the shell — conflating those two views is the entire defect.
       **Verify GREEN (T051).** (FR-028, FR-029)
-- [ ] **T053** [US7] Reproduce the original measurement: temporarily remove `scripts/e2e-turn-tally.sh`
+      *(Done 2026-08-11: GREEN 6/6. Order is start-failure → readable → **absent** → namespace, so the
+      new check cannot mask either pre-existing diagnosis.)*
+- [x] **T053** [US7] Reproduce the original measurement: temporarily remove `scripts/e2e-turn-tally.sh`
       and confirm `e2e-turn-tally.test.mjs` now reports **12 failures where it previously reported 12
       skips**, then restore it. This is the acceptance criterion stated as an experiment rather than as
       a description, because the defect was invisible in exactly the form a description would take.
       (SC-012)
-- [ ] **T054** [US7] Confirm the three suites that use the probe are unaffected on a healthy host:
+      *(Done 2026-08-11 — **measured, not described**: with `scripts/e2e-turn-tally.sh` removed the
+      suite reported **16 tests / 4 pass / 12 fail / 0 skipped**, against the 12 skips recorded in
+      T011. Script restored byte-identically, confirmed by an empty `git diff --stat`.)*
+- [x] **T054** [US7] Confirm the three suites that use the probe are unaffected on a healthy host:
       `ci-log-step`, `e2e-contention-tally`, `e2e-turn-tally` — same pass counts, same skip counts as
       before the change. A fix that changed their behaviour would be trading one silent problem for
       another. Then close item **#178** on its acceptance criteria.
+      *(Done 2026-08-11: `ci-log-step` 14/14, `e2e-contention-tally` 15/15, `e2e-turn-tally` 16/16 —
+      all 0 failed, 0 skipped, unchanged. Whole tooling tier **613 pass / 0 fail / 0 skipped**, up
+      from 607: +6 new probe cases and nothing lost.)*
 
 ---
 
