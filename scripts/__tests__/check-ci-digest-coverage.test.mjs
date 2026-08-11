@@ -452,3 +452,52 @@ test('(x2) no wrapped command begins with an env-var assignment — ci-log-step.
       + 'Use `env VAR=value <cmd> …` — `env` is a real executable and survives being passed as argv.',
   );
 });
+
+// --- (x3) a wrapped step must not run on a path where `Checkout` is skipped ----------------------
+//
+// MEASURED IN CI, 2026-08-11 — the THIRD variant of "the wrapper is not reachable where the step
+// runs", after (x) working-directory and (x2) the env-var prefix.
+//
+// `infra-image-scan` gates its `Checkout` on `if: ${{ env.RUN_SCAN == 'true' }}`, and its
+// scan-skipped step runs on the OTHER branch of that same condition. Wrapping that step with
+// `bash scripts/ci-log-step.sh …` made the job die in 2 seconds: nothing is checked out, so the
+// script is not on disk.
+//
+// It broke EVERY docs-only PR (#172, #174, #175) while passing on PRs that touch infra files —
+// because those take the real-scan path, where checkout does run. That asymmetry is why it survived
+// the branch's own verification: PR #171 changed infra-image-scan.yml, so it never took the skip
+// path. A step only reachable on the cheap path is exactly the one a feature branch never exercises.
+
+test('(x3) no step is wrapped on a path where the job skipped its checkout', () => {
+  const offenders = [];
+  for (const f of readdirSync(REPO_WORKFLOWS).filter((n) => /\.ya?ml$/.test(n))) {
+    const doc = parseYaml(readFileSync(join(REPO_WORKFLOWS, f), 'utf8'));
+    for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
+      const steps = Array.isArray(job?.steps) ? job.steps : [];
+      // The condition under which this job performs its checkout, if it is conditional at all.
+      const checkout = steps.find((s) => /actions\/checkout/.test(String(s?.uses ?? '')));
+      const guard = checkout?.if ? String(checkout.if) : null;
+      if (!guard) continue;
+      // Extract the env var the checkout keys on, e.g. `${{ env.RUN_SCAN == 'true' }}` -> RUN_SCAN.
+      const key = (guard.match(/env\.([A-Za-z_][A-Za-z0-9_]*)/) || [])[1];
+      if (!key) continue;
+      for (const step of steps) {
+        const run = typeof step?.run === 'string' ? step.run : null;
+        if (!run || !/ci-log-step\.sh/.test(run)) continue;
+        const cond = step.if ? String(step.if) : '';
+        // A wrapped step whose own condition is the NEGATION of the checkout's condition can only
+        // run when nothing was checked out.
+        if (new RegExp(`env\\.${key}\\s*!=`).test(cond)) {
+          offenders.push(`${f} / ${jobName} :: ${step.name ?? '(unnamed)'} — runs when ${key} != true, but Checkout requires it`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'these steps are wrapped with scripts/ci-log-step.sh but run on a branch where the job skipped '
+      + `its checkout, so the wrapper is not on disk and the job dies in seconds:\n  ${offenders.join('\n  ')}\n`
+      + 'Leave the step unwrapped and add a justified `# ci-log-step-exempt:` marker.',
+  );
+});
