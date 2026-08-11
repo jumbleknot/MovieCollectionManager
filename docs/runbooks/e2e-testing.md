@@ -304,6 +304,20 @@ Three ways a local E2E run produced a confident, wrong answer in one session:
   lifespan instead of leaving you with `gotoHome`. With no Docker CLI it prints *not measured* — which
   is a different statement from zero, and is deliberately not a pass.
 
+  ⚠️ **In the dev container that guard does NOT fire, and you must run the tally yourself.** The
+  documented containerized recipe (see `docs/runbooks/devcontainer.md` §3) passes `-e CI=true`, which
+  the teardown treats as "CI measures this on the host" and no-ops — correctly, because the Playwright
+  image has no Docker CLI to read the BFF container with anyway. So after a containerized local run,
+  read the counters on the host exactly as CI does:
+
+  ```bash
+  bash scripts/e2e-contention-tally.sh          # tally only
+  bash scripts/e2e-contention-tally.sh --gate   # tally, and exit 1 on any contention
+  ```
+
+  The guard is for a developer running Playwright directly on their own machine; the host-side tally
+  is the check inside the dev container. Neither reports a clean result it did not measure.
+
   ⚠️ **A running Keycloak keeps the OLD lifespan until the realm is re-imported.** Raising the number
   in the JSON changes nothing for a stack that is already up.
 - **A container can be "Up" and dead.** `movie-assistant-gateway` showed `Up 37 hours`, had stopped

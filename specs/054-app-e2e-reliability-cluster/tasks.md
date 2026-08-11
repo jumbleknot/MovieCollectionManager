@@ -220,10 +220,13 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
 **Goal**: FR-013 to FR-017. The root cause behind #165, 052's contention and the session-cap near-miss.
 **Depends on**: US3 (so its verification runs are readable and double as collapse samples).
 
-- [ ] **T020** [US4] **Check first, then build**: confirm that `check-realm-consistency.mjs` compares the
+- [x] **T020** [US4] **Check first, then build**: confirm that `check-realm-consistency.mjs` compares the
       **username set** between the two realm exports (it does — `users only in ci-realm` is one of its
       failure messages). This is why the per-worker users are minted at **runtime** through the Admin API
       rather than baked into `ci-realm.json`. Record the finding in the plan if it has changed.
+      *(Done 2026-08-11: confirmed by reading `contractOf()` — it compares realm name, app-client ids
+      and the **username set**, and emits `users only in ci-realm` on divergence. Unchanged from what
+      plan.md assumed, so runtime minting stands.)*
 - [ ] **T021** [US4] Extend `tests/e2e/web/setup/keycloak-admin.ts` usage in `global-setup.ts` to mint N
       per-worker users (N = the resolved worker count), assign `mc-user`, log each in, and write
       `authFileForWorker(i)`. Reuse the existing minting path rather than adding a second one.
