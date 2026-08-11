@@ -263,26 +263,46 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
 **Goal**: FR-018 to FR-022. **Depends on**: US3's `verdict` (not on #173's mechanism — see
 [plan.md](./plan.md#us5--re-land-the-queued-turn-judged-against-the-verdict)).
 
-- [ ] **T030** [US5] Reinstate 053's unit tests in `frontend/mcm-app/src/hooks/use-assistant.test.tsx`: a
+- [x] **T030** [US5] Reinstate 053's unit tests in `frontend/mcm-app/src/hooks/use-assistant.test.tsx`: a
       message sent while `agent.isRunning === true` is delivered exactly once when the run completes; the
       idle path still fires immediately; a delivered message is not delivered twice.
       **Verify RED.** Drive the transition by flipping `isRunning` on a **stable** agent object — 053 recorded
       that a double returning a fresh `copilotkit` per render repairs the bug it is meant to catch.
-- [ ] **T031** [US5] Reinstate the empty-registry case: a send with no resolvable agent is delivered once an
+      *(Done 2026-08-11: RED 5 failed / 3 passed / 8 collected. The double is a module-level singleton.
+      **A second correction of the same class was needed**: the first version mutated `isRunning`
+      without the intermediate render CopilotKit actually produces, so the dependency never observed
+      true→false and the case failed against a CORRECT fix. `useAgent` re-renders when `isRunning`
+      flips — it is how the dock's thinking state appears at all — so the sequence now models it.)*
+- [x] **T031** [US5] Reinstate the empty-registry case: a send with no resolvable agent is delivered once an
       agent registers. **Verify RED against a deliberately broken flush, then GREEN.** (FR-020)
-- [ ] **T032** [US5] Restore `isRunning` in the flush effect's dependency list in
+      *(Done 2026-08-11: passes throughout, which is the point — it pins the behaviour the queue was
+      originally written for, and a fix that traded one silent drop for another would break it.)*
+- [x] **T032** [US5] Restore `isRunning` in the flush effect's dependency list in
       `frontend/mcm-app/src/hooks/use-assistant.tsx`, keeping `pendingRef.current = null` **before** `fire`.
       **Verify GREEN (T030–T031).** Land as its own commit. (FR-019, FR-021)
-- [ ] **T033** [US5] Add tests for the second-message case: with one message already queued, a second is
+      *(Done 2026-08-11, commit `4ab0ba9` on its own: 5 failed → 5 passed, the two mid-answer cases
+      flipping. Unit tier 1191 passed with only the 3 known FIFO failures outstanding.)*
+- [x] **T033** [US5] Add tests for the second-message case: with one message already queued, a second is
       **either delivered or its supersession surfaced** — never silently lost — and the bound is enforced.
       **Verify RED.** (FR-022)
-- [ ] **T034** [US5] Implement the FIFO queue bounded at **8** messages, replacing the single slot; on
+      *(Done 2026-08-11: 3 cases, all RED after T032 — order, no-silent-discard, and the bound.)*
+- [x] **T034** [US5] Implement the FIFO queue bounded at **8** messages, replacing the single slot; on
       overflow **refuse the send and surface it** rather than dropping it. Land as a **separate commit** from
       T032 so a suite regression can be attributed to one of the two. **Verify GREEN (T033), and re-verify
       T030–T031.** If the replay semantics prove wrong under E2E, fall back to the single slot plus a visible
       pending indicator — which satisfies FR-022 the other way — and **record that decision here** rather
       than taking it quietly.
-- [ ] **T035** [US5] `pnpm nx test mcm-app`, `pnpm nx lint mcm-app`, `pnpm nx typecheck mcm-app` — all clean.
+      *(Done 2026-08-11 as a separate commit `1798189`. **Design point worth keeping**: the flush
+      delivers ONE message per run completion rather than draining the queue, so turns stay
+      serialised — `fire` starts a run and the next flush is driven by that run finishing, exactly as
+      if the member had waited. Draining would fire concurrent runs on one agent. `shift()` happens
+      BEFORE `fire`, which keeps delivery at-most-once under React 19 StrictMode's double-invoked
+      effects. GREEN 8/8. **The single-slot fallback was NOT needed.**)*
+- [x] **T035** [US5] `pnpm nx test mcm-app`, `pnpm nx lint mcm-app`, `pnpm nx typecheck mcm-app` — all clean.
+      *(Done 2026-08-11: **1194 passed / 123 suites, 0 failures, 0 skipped**; lint 0 errors (14
+      pre-existing warnings, none in the new files); `tsc --noEmit` clean after typing the `getAgent`
+      double to allow `undefined` — without that the empty-registry case cannot drive the real
+      branch.)*
 - [ ] **T036** [US5] **≥3 non-collapsed `app-ci` runs**, judged by the `e2e-result-gate` counts with
       collapsed runs excluded by US3's `verdict=` and **named in the report**. Two runs is explicitly not
       accepted for this change; that inference is what caused the revert. Confirm
