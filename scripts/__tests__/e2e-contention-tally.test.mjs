@@ -40,6 +40,16 @@ const SCRIPT = resolve(REPO_ROOT, 'scripts/e2e-contention-tally.sh');
 // shape. Eleven red tests that said nothing about the code under test.
 const needsBash = needsShell('bash', SCRIPT);
 
+// ⚠️ APPLIED ONLY TO THE CASES THAT ACTUALLY SPAWN A SHELL. The four workflow-wiring assertions
+// below (`app-ci runs the tally through ci-log-step`, `… with --gate`, `… is always()`, `… runs
+// AFTER the web E2E`) only `readFileSync(APP_CI)` and match YAML — no shell, no script. Gating them
+// too was measured on Windows 2026-08-10 turning four PASSES into skips: honest skips, but broader
+// than the condition requires, so four assertions silently lost their Windows coverage.
+//
+// That is the same defect as the one this probe exists to fix, in the opposite direction: a gate
+// that does not match the capability actually needed. Under-skipping gives meaningless failures;
+// OVER-skipping gives meaningless passes. Gate each case on what that case does.
+
 const APP_CI = resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml');
 
 /** One structured BFF audit line, as the logger actually writes it. */
@@ -227,7 +237,7 @@ test('without --gate the script still never fails, whatever it finds', needsBash
 
 // ─── The wiring. A correct script in the wrong place reports a structural zero. ──────────────────
 
-test('app-ci runs the tally through ci-log-step, so the digest ranks it above container logs', needsBash, () => {
+test('app-ci runs the tally through ci-log-step, so the digest ranks it above container logs', () => {
   const yml = readFileSync(APP_CI, 'utf8');
   assert.match(
     yml,
@@ -236,7 +246,7 @@ test('app-ci runs the tally through ci-log-step, so the digest ranks it above co
   );
 });
 
-test('app-ci invokes the tally with --gate, and does NOT swallow its exit status', needsBash, () => {
+test('app-ci invokes the tally with --gate, and does NOT swallow its exit status', () => {
   // Two ways to make the gate decorative without breaking anything visible: drop `--gate` (back to
   // advisory, unreadable on a green run), or restore `continue-on-error: true` (the step reports its
   // failure and the job passes anyway). Both leave a step that still runs and still prints, so
@@ -278,7 +288,7 @@ function tallyStepBlock(yml) {
   return lines.slice(start, end).join('\n');
 }
 
-test('the tally step is always() — a passing run\'s counts are the proof the contention is gone', needsBash, () => {
+test('the tally step is always() — a passing run\'s counts are the proof the contention is gone', () => {
   const block = tallyStepBlock(readFileSync(APP_CI, 'utf8'));
 
   assert.match(
@@ -288,7 +298,7 @@ test('the tally step is always() — a passing run\'s counts are the proof the c
   );
 });
 
-test('the tally runs AFTER the web E2E and BEFORE teardown removes the container it reads', needsBash, () => {
+test('the tally runs AFTER the web E2E and BEFORE teardown removes the container it reads', () => {
   const lines = readFileSync(APP_CI, 'utf8').split(/\r?\n/);
 
   // Anchored on the `run:` INVOCATION, never on the bare string `e2e-contention-tally`: that string

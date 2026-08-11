@@ -1171,7 +1171,7 @@ fault.
     step that is silently declined looks exactly like a verification step that passed.
   - File removed and unstaged afterwards; `git status` clean.
 
-- [ ] T049 [US5] Operator Windows re-run — the run that closes item #157
+- [X] T049 [US5] Operator Windows re-run — the run that closes item #157
   - **Type**: Verification | **Risk**: Low | **Covers**: SC-006, SC-007, SC-008
   - **Command (operator, Windows)**: `node --test "scripts/__tests__/*.test.mjs"`
   - **Expected, stated precisely so the re-run has a target rather than a judgement call** — the T002
@@ -1253,7 +1253,44 @@ fault.
     tool parses the file*. The correct question is *is it parsed at all* — a guard reads TypeScript
     **source**. Now declared for `.ts/.tsx/.js/.mjs/.cjs/.json`, and the guard made CR-tolerant as
     well, because a declaration governs future checkouts only.
-  - **A Windows RE-RUN IS OWED** on `7ab9c27` to confirm 16 → 0. SC-006 stays unticked until then.
+  - ### ✅ WINDOWS RE-RUN CONFIRMS 16 → 0 (operator, sha `ccd4526f`, Node v24.14.1)
+
+    | | tests | pass | fail | skipped |
+    | --- | ---: | ---: | ---: | ---: |
+    | Baseline 2026-08-09 | 408 | 392 | **15** | 1 |
+    | After the first fixes (`a2537a27`) | 576 | 549 | 16 | 11 |
+    | **Now (`ccd4526f`)** | **576** | 546 | **0** | 30 |
+
+    `git status` clean after re-normalization. Total **held at 576**, above the 408 baseline — no
+    selector stopped matching. **Every one of the 30 skips names its unmet condition**; no reasonless
+    skip. `.gitattributes` now covers `.ts` (`e2e-cleanup.ts` → `text: set, eol: lf`), and the single
+    remaining CRLF file is the deliberate `fixtures/** -text` whitespace-drift fixture whose CRLF *is*
+    the subject under test.
+
+    All three gates exit **0 on Windows**, including `check-ci-digest-coverage` — **PRD §1.3 closed on
+    the platform where it actually failed**. `check-openwiki-okf` emits **17 drift warnings and exits
+    0**: the fail-**open** bug fixed and the drift-warns-without-failing contract intact, in one
+    observation.
+
+  - **SC-006, SC-007, SC-008 and item #157 are satisfied.**
+
+  - ### ⚠️ AND THE RE-RUN FOUND ONE MORE DEFECT OF MINE — over-skipping
+
+    Four cases went **pass → skip**: the workflow-wiring assertions in
+    `e2e-contention-tally.test.mjs` (`… through ci-log-step`, `… with --gate`, `… is always()`,
+    `… runs AFTER the web E2E`). They only `readFileSync(APP_CI)` and match YAML — **no shell, no
+    script**. I had applied `needsBash` to *every* case in the file with a regex rather than to the
+    ones that shell out, so four assertions silently lost their Windows coverage.
+
+    **This is the same defect as the one the probe exists to fix, in the opposite direction.**
+    Under-skipping gives meaningless failures; **over-skipping gives meaningless passes**. Both are a
+    gate that does not match the capability actually needed — which is FR-019's whole point, and I
+    got it wrong while implementing FR-019. Fixed: 11 cases gated (they spawn the shell), 4 ungated.
+    The split is commented in the file so it is not re-broadened.
+
+    Credit where due: nothing was failing, and the operator flagged it as "a scope question, not a
+    defect" — four assertions quietly losing a platform is exactly the kind of thing that is never
+    noticed, because the suite goes greener, not redder.
 
 ---
 
@@ -1654,11 +1691,13 @@ Before marking `051-ci-diagnostics-closure` complete, verify all success criteri
       *populated* on a secretless run
 - [X] **SC-005** ✔ **CI (guardrails #1628)** — the 2026-08-01 condition reproduced exactly and
       readable **over the API**, which was impossible before US4 existed
-- [ ] **SC-006** ⏳ **Linux ✔ (576/576, 0 skip). Windows PENDING T049** — deliberately not ticked;
-      claiming it on Linux alone is the precise error that reopened §1.3
+- [X] **SC-006** ✔ **BOTH PLATFORMS.** Linux 576/576, 0 skipped. **Windows `ccd4526f`: 576 tests,
+      546 pass, 0 fail, 30 reasoned skips** — 15 → 0 against the baseline, total held above 408, every
+      skip naming its condition. Ticked only now that both halves exist
 - [X] **SC-007** ✔ **Linux** — both gates give identical verdicts on CRLF and LF, proven by feeding
       the parsers directly rather than through a checkout
-- [X] **SC-008** ✔ **Linux**; Windows half rides with T049
+- [X] **SC-008** ✔ **BOTH PLATFORMS** — `check-ci-digest-coverage` exits 0 on Windows, where it
+      previously reported three falsely-uncovered jobs. That is PRD §1.3 closed where it failed
 - [X] **SC-009** ✔ **Linux** — both cargo facts findable by search; governance (900 paths) and
       okf-lint (62 concepts) pass
 - [X] **SC-010** ✔ — three temporary commits reverted and verified **in the tree**, not by commit
