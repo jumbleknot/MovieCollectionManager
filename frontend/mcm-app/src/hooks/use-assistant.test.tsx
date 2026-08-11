@@ -28,8 +28,10 @@ const mockAgentState = {
 
 // ONE instance for the whole module, mirroring the real context value. Recreating this per render is
 // the mistake that made 053's first attempt green against broken code.
+// `getAgent` is typed to allow undefined so the empty-registry case can drive the real branch —
+// `resolveAgent()` returns `agent ?? copilotkit.getAgent(...)`, and both must be able to be empty.
 const mockCopilotkit = {
-  getAgent: jest.fn(() => mockAgentState),
+  getAgent: jest.fn<typeof mockAgentState | undefined, [string]>(() => mockAgentState),
   runAgent: jest.fn(),
 };
 
@@ -46,6 +48,22 @@ import { useAssistantRun } from '@/hooks/use-assistant';
 
 /** Messages actually dispatched to the agent, in order. */
 const sentMessages = () => mockAgentState.addMessage.mock.calls.map((c) => c[0].content);
+
+/**
+ * Simulate the agent completing one run.
+ *
+ * The flush effect deliberately delivers ONE queued message per completion rather than draining the
+ * whole queue: `fire` starts a run, so the next flush is driven by that run finishing — turns stay
+ * serialised, exactly as if the member had waited. Modelling that here is not scaffolding; a test
+ * that re-rendered without the true→false cycle would assert against a sequence the app never
+ * produces.
+ */
+function completeRun(rerender: (props: object) => void) {
+  mockAgentState.isRunning = true;
+  rerender({});
+  mockAgentState.isRunning = false;
+  rerender({});
+}
 
 beforeEach(() => {
   mockAgentState.isRunning = false;
@@ -135,8 +153,9 @@ describe('useAssistantRun — two messages in flight (US5, FR-022)', () => {
 
     mockAgentState.isRunning = false;
     rerender({});
-    rerender({});
+    expect(sentMessages()).toEqual(['first']);
 
+    completeRun(rerender);
     expect(sentMessages()).toEqual(['first', 'second']);
   });
 
@@ -148,7 +167,8 @@ describe('useAssistantRun — two messages in flight (US5, FR-022)', () => {
     for (const m of ['a', 'b', 'c']) act(() => result.current.run(m));
 
     mockAgentState.isRunning = false;
-    for (let i = 0; i < 5; i++) rerender({});
+    rerender({});
+    for (let i = 0; i < 4; i++) completeRun(rerender);
 
     expect(sentMessages()).toEqual(['a', 'b', 'c']);
   });
@@ -169,7 +189,8 @@ describe('useAssistantRun — two messages in flight (US5, FR-022)', () => {
     expect(warned).toMatch(/queue/i);
 
     mockAgentState.isRunning = false;
-    for (let i = 0; i < 15; i++) rerender({});
+    rerender({});
+    for (let i = 0; i < 10; i++) completeRun(rerender);
 
     // The first 8 are kept; the rest were refused rather than silently displacing them.
     expect(sentMessages()).toEqual(['m0', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7']);
