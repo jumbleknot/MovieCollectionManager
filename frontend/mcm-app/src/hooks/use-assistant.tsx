@@ -74,7 +74,16 @@ export function useAssistantRun(): { run: (content: string) => void; isRunning: 
     [resolveAgent, fire],
   );
 
-  // Flush a queued message once the agent becomes available (self-heals an empty-registry tap).
+  // `agent` is a STABLE object whose `isRunning` is a mutable property, so the effect below cannot
+  // see a run finish unless that property is a dependency in its own right. Hoisted here rather than
+  // read inside the effect for exactly that reason.
+  const isRunning = agent?.isRunning ?? false;
+
+  // Flush a queued message once the agent becomes available — which is two conditions, not one:
+  // the empty-registry tap this queue was written for, AND a run completing. The second was
+  // unreachable while the dependency list was `[agent, resolveAgent, fire]`: none of the three
+  // changes when a run FINISHES (both callbacks are memoised on `agent`), so a message typed
+  // mid-answer was dropped permanently, silently, with zero requests to the gateway.
   useEffect(() => {
     const queued = pendingRef.current;
     if (!queued) return;
@@ -83,9 +92,9 @@ export function useAssistantRun(): { run: (content: string) => void; isRunning: 
       pendingRef.current = null;
       fire(target, queued);
     }
-  }, [agent, resolveAgent, fire]);
+  }, [agent, isRunning, resolveAgent, fire]);
 
-  return { run, isRunning: agent?.isRunning ?? false };
+  return { run, isRunning };
 }
 
 export function AssistantProvider({ children }: { children: React.ReactNode }) {
