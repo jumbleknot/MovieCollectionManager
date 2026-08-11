@@ -870,6 +870,14 @@ jobs:
           done
           # One-glance status/health table for EVERY container (which is unhealthy/exited + why).
           docker ps -a --format 'table {{.Names}}\t{{.Status}}' > container-logs/_ps.txt 2>&1 || true
+          # 054 US3: the BROWSER's view of a failing test — console, page errors, and every agent
+          # request that did (or did not) leave the client. This is the one channel item #173 never
+          # had; every server-side one above was already exhausted without finding the collapse.
+          # Underscore-prefixed so the digest ranks it above ordinary container logs, and `|| true`
+          # because a run whose tests all passed the capture threshold writes nothing.
+          for f in frontend/mcm-app/client-evidence/*.log; do
+            [ -e "$f" ] && cp "$f" "container-logs/_$(basename "$f")" || true
+          done
           # Compose-level captures too (any service not named above, plus restart churn).
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs -t --no-color > container-logs/_mcm-stack.log 2>&1 || true
           docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs -t --no-color > container-logs/_auth-stack.log 2>&1 || true

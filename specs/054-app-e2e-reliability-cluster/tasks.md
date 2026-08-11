@@ -166,25 +166,52 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
 
 ### (b) Client-side evidence
 
-- [ ] **T015** [US3] Write `frontend/mcm-app/tests/e2e/web/fixtures/client-evidence.ts`: an auto-fixture
+- [x] **T015** [US3] Write `frontend/mcm-app/tests/e2e/web/fixtures/client-evidence.ts`: an auto-fixture
       attaching `console`, `pageerror` and `requestfailed` listeners plus a record of requests to the BFF
       agent routes, buffered in a ring of the **last 500 entries per test** and flushed to disk **only** when
       `testInfo.status !== testInfo.expectedStatus`. On overflow drop the oldest and **record how many were
       lost in the written file** — a truncated capture must never read as a complete one. (FR-010, FR-012)
-- [ ] **T016** [US3] Add a unit test pinning redaction: `Cookie`, `Set-Cookie` and `Authorization` headers
+      *(Done 2026-08-11: the pure logic lives in `client-evidence-buffer.ts`, dependency-free, because
+      `/tests/e2e/` is in jest's `testPathIgnorePatterns` and a module importing `@playwright/test`
+      cannot be loaded by jest at all — so redaction would have been testable only inside a 30-minute
+      E2E run. Request BODIES are never recorded; `msg.args()` is never touched (it would serialise
+      live handles).)*
+- [x] **T016** [US3] Add a unit test pinning redaction: `Cookie`, `Set-Cookie` and `Authorization` headers
       are dropped and request bodies are never recorded. **Verify RED against an unredacted draft, then
       GREEN.** "We do not log secrets" is exactly the claim that needs a test rather than a comment. (FR-011)
-- [ ] **T017** [US3] Compose the fixture into the `test` exported by `fixtures/worker-session.ts`, and write
+      *(Done 2026-08-11: `tests/unit/client-evidence-buffer.test.ts`, 7 cases. **The first RED was
+      worthless and was redone**: module-not-found collected 0 tests, which proves the file fails to
+      load, not that the assertions discriminate. Re-run against an inert stub: 5 failed / 2 passed /
+      7 collected — the real RED. GREEN 7/7. `x-agent-config` is on the redaction list and is the easy
+      one to miss: it carries the member's model-provider API key.)*
+- [x] **T017** [US3] Compose the fixture into the `test` exported by `fixtures/worker-session.ts`, and write
       the accepted boundary into `docs/runbooks/e2e-testing.md`: `auth.spec.ts`, `security-headers.spec.ts`
       and `bff-prod-lifecycle.spec.ts` deliberately do not import it (the fixture replaces the
       `storageState` option), so they get no capture — and that is where the collapse does not manifest.
-- [ ] **T018** [US3] Ensure the capture output lands in the directory the `failure()` collect step already
+      *(Done 2026-08-11: `worker-session.ts` now composes from `./client-evidence` instead of
+      `@playwright/test`. `e2e-worker-session.test.mjs` still passes 7/7, so the both-ways guard on
+      which specs may import the session fixture is intact.)*
+- [x] **T018** [US3] Ensure the capture output lands in the directory the `failure()` collect step already
       sweeps into the bundle. **Check the step, do not assume the path.**
+      *(Done 2026-08-11: checked rather than assumed — the collect step builds `container-logs/` and
+      copies it to `~/mcm-ci-last-failure`, which is what `collectEvidence` reads, and `selectSources`
+      only admits `*.log` / `_ps.txt`. The Playwright container mounts the workspace at `/work`, so
+      the fixture's `client-evidence/*.log` reaches the host; the collect step now copies them in
+      with an `_` prefix, which ranks them above ordinary container logs. Added to
+      `frontend/mcm-app/.gitignore`.)*
 - [ ] **T019** [US3] **Measure the perturbation against a stated threshold** (FR-012): run the web suite with
       and without the capture and compare. **Pass = wall clock within 5% of the pre-capture baseline AND the
       five counts identical.** Outside that, the capture is the suspect and is re-scoped before anything else
       is concluded from a run carrying it. **Record both wall clocks and both count sets** — a threshold with
       no recorded measurement is not a check.
+      *(BLOCKED 2026-08-11, and the blocker is item #168 itself: this needs two FULL local suite runs,
+      and on the current `dev-realm` a full local run cannot produce a valid result — 300 s tokens put
+      six workers back into the contention 052 removed from CI (measured: 44 min, 62
+      `refresh_rate_limited`). **Resequencing, recorded**: US6 was placed after US4 because "US4's
+      identity model determines the shape of the fix" — but the approach chosen in plan.md is option 1
+      (raise the dev-realm lifespan), which does not depend on the identity model at all. So US6 is
+      independent and moves BEFORE this task, which then measures locally instead of burning two CI
+      dispatches.)*
 
 ---
 

@@ -24,7 +24,14 @@
  * `@playwright/test`, which is why the guard in scripts/__tests__/e2e-worker-session.test.mjs asserts
  * the split both ways.
  */
-import { test as base, expect } from '@playwright/test';
+// 054 US3: composed from the client-evidence base rather than from `@playwright/test` directly, so
+// every spec that uses the authenticated session also gets browser console/network capture on
+// failure. That is the channel item #173 never had — every server-side one was already exhausted.
+//
+// The three specs that deliberately do NOT import this object (see the warning below) therefore get
+// no capture. Accepted: they run unauthenticated by design, and the collapse manifests in the
+// agent/dock specs.
+import { test as base, expect } from './client-evidence';
 import { authFileForWorker } from '../setup/auth-files';
 
 export const test = base.extend<Record<string, never>, { workerStorageState: string }>({
