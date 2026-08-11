@@ -106,9 +106,14 @@ These are not advice; three of them were each learned by being got wrong in this
       No re-run, no SSH to the runner. **This task, not T006, is what SC-002 asserts** — an implementation
       that publishes and a channel that can be read are different claims, and this feature exists because
       that difference was assumed once already. (SC-002, FR-005, FR-006)
-- [ ] **T010** [US2] Update `docs/runbooks/ci-diagnostics.md`: how to read a **passing** run's counts, and
+- [x] **T010** [US2] Update `docs/runbooks/ci-diagnostics.md`: how to read a **passing** run's counts, and
       the fact that this channel now exists at all. State the bundle-name trap (`run_number` is offset; LIST
       the versions).
+      *(Done 2026-08-11: new section "Reading a PASSING run's counts" with the LIST-don't-construct curl,
+      the explicit-`success` gating, the self-limiting behaviour and the `CI_DIGEST_TOKEN` requirement.
+      The old section's closing line — "to read counts for a green run today you must make it fail, which
+      is not a plan" — is marked closed rather than deleted, so the follow-up's resolution is traceable
+      from where it was recorded. `check-openwiki-governance` and `check-openwiki-okf` both exit 0.)*
 
 ---
 
