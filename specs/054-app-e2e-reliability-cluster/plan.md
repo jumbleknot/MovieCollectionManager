@@ -127,7 +127,15 @@ because a dispatched run posts no commit status at all.
 | --- | --- | --- |
 | `cancelled` | none | nothing — a superseded run must not publish a failure for a commit that was never broken (unchanged) |
 | `failure` | `digest` | today's full behaviour: evidence bundle + PR comment (unchanged) |
-| anything else | `counts` | a **small** bundle version carrying only the `step:` sources named below; **no** PR comment |
+| **explicit** `success` | `counts` | a **small** bundle version carrying only the `step:` sources named below; **no** PR comment |
+| anything else (empty, unknown) | none | nothing |
+
+**Deviation from the first draft of this table, recorded rather than silently taken** (T006, 2026-08-11).
+The draft said *anything else → counts*. Implementing it surfaced `ci-failure-digest.test.mjs` case
+**(dd)**, which exists because a job that lost `CI_DIGEST_JOB_STATUS` once published a spurious digest on
+a green run. "Anything that is not a failure" would have resurrected that bug in a cheaper costume — a
+dropped env var would publish. `counts` is therefore gated on an **explicit** `success`, and an unknown
+status still publishes nothing.
 
 `counts` mode collects only `e2e-result-gate` and the two tally steps, so it publishes at most a few
 kilobytes. It is **self-limiting to the jobs that have counts**: if neither step log exists — every job other

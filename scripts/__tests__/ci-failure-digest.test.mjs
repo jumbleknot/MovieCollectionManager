@@ -177,8 +177,12 @@ test('(g2) a genuine failure publishes', () => {
   assert.equal(shouldPublish({ runStatus: 'failure', jobStatus: 'failure' }).publish, true);
 });
 
-test('(g3) a passing job publishes nothing', () => {
-  assert.equal(shouldPublish({ runStatus: 'success', jobStatus: 'success' }).publish, false);
+test('(g3) a passing job publishes no DIGEST — 054 changed what it publishes, not whether', () => {
+  // Was: `publish === false`. Feature 054 (item #167) made a green run publish a counts-only bundle,
+  // because a passing app-e2e's counts were otherwise unreadable without making the job fail. The
+  // property this case actually guards — a passing job never emits a FAILURE digest — is unchanged
+  // and is asserted directly rather than via a flag that now means something wider.
+  assert.notEqual(shouldPublish({ runStatus: 'success', jobStatus: 'success' }).mode, 'digest');
 });
 
 test('(g4) the cancelled check wins even when the job itself reports failure', () => {
@@ -633,8 +637,11 @@ test('(dd) an UNKNOWN job status does not publish (env dropped must not spam gre
   // Was: default 'failure' → a job that lost CI_DIGEST_JOB_STATUS published a spurious digest on a
   // green run. Unknown must be no-publish; the coverage gate guarantees the env for real failures.
   assert.equal(shouldPublish({ runStatus: '', jobStatus: '' }).publish, false);
-  assert.equal(shouldPublish({ runStatus: 'success', jobStatus: 'success' }).publish, false);
-  assert.equal(shouldPublish({ runStatus: 'failure', jobStatus: 'failure' }).publish, true);
+  assert.equal(shouldPublish({ runStatus: 'failure', jobStatus: 'failure' }).mode, 'digest');
+  // 054: an explicit success publishes COUNTS, never a digest. The guard this case exists for — a
+  // DROPPED env var must not publish — is why counts is gated on an explicit `success` rather than
+  // on "not a failure"; the empty-status assertion above is what pins that.
+  assert.equal(shouldPublish({ runStatus: 'success', jobStatus: 'success' }).mode, 'counts');
 });
 
 // --- (ee)-(hh) the three-way outcome (feature 051 US3) --------------------------------------------
@@ -757,8 +764,10 @@ test('(hh2) `failed:no-credential` is reportable WITHOUT the credential that fai
 // be edited out.
 
 import { spawnSync } from 'node:child_process';
-import { resolve as resolvePath, dirname as dirnamePath } from 'node:path';
+import { resolve as resolvePath, dirname as dirnamePath, join } from 'node:path';
 import { fileURLToPath as toPath } from 'node:url';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const DIGEST_SCRIPT = resolvePath(dirnamePath(toPath(import.meta.url)), '..', 'ci-failure-digest.mjs');
 
@@ -994,4 +1003,132 @@ test('(ll3) a failing step with no captured log does NOT borrow another step\'s 
     '',
     'output from an unrelated step was attributed to the failing step',
   );
+});
+
+// ================================================================================================
+// 054 T004/T005/T007/T008 — the publication gate becomes THREE-WAY.
+//
+// A green run left no bundle at all, so a passing app-e2e's counts and retry churn were unreadable
+// without making the job fail (backlog item #167). `shouldPublish` was the single reason: it
+// returned false for any jobStatus that was not `failure`.
+//
+// Three modes now, and the boundaries matter more than the modes:
+//   * cancelled          → publish nothing (unchanged — a superseded run was never broken)
+//   * jobStatus failure  → `digest`, today's full behaviour, unchanged
+//   * jobStatus success  → `counts`, a small counts-only bundle and NO PR comment
+//   * anything else      → publish nothing, which is what keeps case (dd) true
+// ================================================================================================
+
+test('(mm) a passing job now publishes COUNTS — but never a digest', () => {
+  const r = shouldPublish({ runStatus: 'success', jobStatus: 'success' });
+  assert.equal(r.publish, true, 'a green run still publishes nothing — item #167 is not fixed');
+  assert.equal(r.mode, 'counts');
+  assert.notEqual(r.mode, 'digest', 'a passing job would publish a FAILURE digest');
+});
+
+test('(mm2) a genuine failure still routes to the digest, unchanged', () => {
+  const r = shouldPublish({ runStatus: 'failure', jobStatus: 'failure' });
+  assert.equal(r.publish, true);
+  assert.equal(r.mode, 'digest');
+});
+
+test('(mm3) a cancelled run publishes nothing in EITHER mode', () => {
+  // The cancelled check must still come first. A cancelled job reports `failure`, so testing the
+  // job status first would publish a failure digest for a commit that was never broken — and the
+  // counts mode must not become a second way in.
+  const r = shouldPublish({ runStatus: 'cancelled', jobStatus: 'failure' });
+  assert.equal(r.publish, false);
+  assert.equal(r.mode, null);
+  const alsoCancelled = shouldPublish({ runStatus: 'cancelled', jobStatus: 'success' });
+  assert.equal(alsoCancelled.publish, false, 'a cancelled run published counts');
+});
+
+test('(mm4) an UNKNOWN job status still publishes nothing — counts is not a loophole', () => {
+  // Case (dd) exists because a job that lost CI_DIGEST_JOB_STATUS once published a spurious digest
+  // on a green run. `counts` is deliberately gated on an EXPLICIT `success`, not on "anything that
+  // is not a failure" — otherwise a dropped env var would resurrect that bug in a new costume.
+  for (const jobStatus of ['', 'unknown', undefined, null]) {
+    const r = shouldPublish({ runStatus: '', jobStatus });
+    assert.equal(r.publish, false, `an unknown job status (${JSON.stringify(jobStatus)}) published`);
+    assert.equal(r.mode, null);
+  }
+});
+
+test('(mm5) counts mode with NO counts sources publishes nothing at all', async () => {
+  // Self-limiting by construction rather than by a job allowlist: every job other than app-e2e has
+  // no e2e-result-gate / e2e-contention-tally step log, so nothing is uploaded and the package
+  // registry does not grow a version per green job per run. An allowlist would be a second place to
+  // forget to update.
+  const { selectCountsSources } = await digestModule();
+  assert.deepEqual(selectCountsSources([]), []);
+  assert.deepEqual(
+    selectCountsSources([{ source: 'step:affected-nx', text: 'nx output' }]),
+    [],
+    'an unrelated step log was mistaken for a counts source',
+  );
+});
+
+test('(mm6) counts mode collects ONLY the counts sources, not the whole job log', async () => {
+  const { selectCountsSources } = await digestModule();
+  const picked = selectCountsSources([
+    { source: 'step:web-e2e', text: 'thousands of lines' },
+    { source: 'step:e2e-result-gate', text: '[e2e-gate] failed=0 flaky=2 passed=175 did-not-run=0 skipped=0' },
+    { source: 'step:e2e-contention-tally', text: '[e2e-contention] refresh_total=6 refresh_429=0 session_evicted=0' },
+    { source: 'mcm-bff-service-nonsecure.log', text: 'megabytes' },
+  ]);
+  assert.deepEqual(picked.map((e) => e.source).sort(), [
+    'step:e2e-contention-tally',
+    'step:e2e-result-gate',
+  ]);
+});
+
+test('(mm7) retention prunes a counts version exactly as it prunes a digest version', async () => {
+  // #167 asks for a retention story because publishing on EVERY run, not only failures, is what
+  // makes unbounded growth reachable. Confirmed against the real selector rather than assumed.
+  const { selectExpiredVersions, RETENTION_DAYS } = await digestModule();
+  const now = Date.parse('2026-08-11T00:00:00Z');
+  const old = new Date(now - (RETENTION_DAYS + 1) * 86_400_000).toISOString();
+  const fresh = new Date(now - 86_400_000).toISOString();
+  const expired = selectExpiredVersions(
+    [
+      { name: '1700--app-e2e', created_at: old },
+      { name: '1701--app-e2e', created_at: fresh },
+    ],
+    { now },
+  );
+  assert.deepEqual(expired.map((v) => v.name), ['1700--app-e2e']);
+});
+
+test('(mm8) counts mode exits 0 when its TRANSPORT dies — a reporter never fails the build', () => {
+  // FR-007. The same property case (ii2) pins for the digest path, asserted against the REAL process
+  // for the new path rather than reasoned about from the shared try/catch. A green run is precisely
+  // the case where a publication fault must stay invisible to the job's result.
+  const dir = mkdtempSync(join(tmpdir(), 'counts-'));
+  const runDir = join(dir, '90101');
+  mkdirSync(runDir, { recursive: true });
+  writeFileSync(join(runDir, 'e2e-result-gate.log'),
+    '[e2e-gate] failed=0 flaky=2 passed=175 did-not-run=0 skipped=0\n');
+  writeFileSync(join(runDir, 'e2e-contention-tally.log'),
+    '[e2e-contention] refresh_total=6 refresh_429=0 session_evicted=0\n');
+
+  const r = runDigest({
+    GITHUB_RUN_ID: '90101', GITHUB_WORKFLOW: 'app-ci', GITHUB_JOB: 'app-e2e',
+    GITHUB_EVENT_NAME: 'push', CI_DIGEST_JOB_STATUS: 'success',
+    CI_STEP_LOG_ROOT: dir,
+    CI_DIGEST_TOKEN: 'not-a-real-token-just-a-shape',
+  });
+  assert.equal(r.code, 0, `a counts publication failure changed the job outcome:\n${r.out}`);
+  assert.match(r.out, /\[e2e-gate\] failed=0/, 'the counts were not echoed to the job log');
+  assert.match(r.out, /refresh_429=0/, 'the contention tally was not echoed to the job log');
+});
+
+test('(mm9) a green job with no counts steps publishes nothing and says so', () => {
+  const r = runDigest({
+    GITHUB_RUN_ID: '90102', GITHUB_WORKFLOW: 'app-ci', GITHUB_JOB: 'affected',
+    GITHUB_EVENT_NAME: 'push', CI_DIGEST_JOB_STATUS: 'success',
+    CI_STEP_LOG_ROOT: mkdtempSync(join(tmpdir(), 'counts-empty-')),
+    CI_DIGEST_TOKEN: 'not-a-real-token-just-a-shape',
+  });
+  assert.equal(r.code, 0);
+  assert.match(r.out, /no e2e counts steps/, 'the self-limiting path did not say why it published nothing');
 });

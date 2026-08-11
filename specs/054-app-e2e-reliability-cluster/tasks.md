@@ -60,25 +60,45 @@ These are not advice; three of them were each learned by being got wrong in this
 **Goal**: the five counts and the contention triple are readable for a run that PASSED.
 **Depends on**: nothing. **Blocks**: every later story's ability to read a green run.
 
-- [ ] **T004** [US2] Add cases to `scripts/__tests__/ci-failure-digest.test.mjs` pinning the three-way gate:
+- [x] **T004** [US2] Add cases to `scripts/__tests__/ci-failure-digest.test.mjs` pinning the three-way gate:
       `cancelled` → no publication (unchanged); `failure` → `digest` mode (unchanged); anything else →
       `counts` mode. **Verify RED** on the two new expectations. (FR-005)
-- [ ] **T005** [US2] Add a case pinning that `counts` mode with **no** counts sources present publishes
+      *(Done 2026-08-11: cases `(mm)`–`(mm4)` added, all RED. Two EXISTING assertions encoded the old
+      contract and were updated rather than deleted — `(g3)` now asserts the property it actually
+      guards (a passing job never emits a FAILURE digest) instead of a flag that now means something
+      wider, and `(dd)`'s dropped-env guard is unchanged and is why counts is gated on an explicit
+      `success`.)*
+- [x] **T005** [US2] Add a case pinning that `counts` mode with **no** counts sources present publishes
       nothing and still emits its outcome line — the self-limiting behaviour that keeps every job other than
       `app-e2e` out of the package registry without a job allowlist. **Verify RED.**
-- [ ] **T006** [US2] Extend `shouldPublish` in `scripts/ci-failure-digest.mjs` to return a `mode`, and branch
+      *(Done 2026-08-11: `(mm5)`/`(mm6)` RED, plus `(mm9)` driving the real process — a green `affected`
+      job publishes nothing and says "this job runs no e2e counts steps".)*
+- [x] **T006** [US2] Extend `shouldPublish` in `scripts/ci-failure-digest.mjs` to return a `mode`, and branch
       `run()` on it. `counts` mode collects only the `e2e-result-gate` and `e2e-contention-tally` `step:`
       sources, uploads a small bundle version via the existing `bundleVersion(runId, job)` naming, and
       publishes **no** PR comment. **Verify GREEN (T004–T005).** (FR-005, FR-006)
-      *Forward reference, deliberate*: the third source, `e2e-turn-tally`, does not exist until **T013**.
-      Add it to the source list **there**, not here — an absent source is handled, but Phase 2 must be
-      completable and verifiable on its own.
-- [ ] **T007** [US2] Add a case asserting that a **thrown** error inside `counts` mode still exits 0 and
+      *Forward reference, RESOLVED during implementation*: the third source, `e2e-turn-tally`, does not
+      exist until **T013** — but naming it in `COUNTS_SOURCES` now costs nothing, because an absent
+      source is simply not collected. It is listed up front, so T013 adds only the step.
+      *(Done 2026-08-11: GREEN. **Deviation, recorded in plan.md**: the mode table said "anything else →
+      counts"; it is now "explicit `success` → counts, unknown → nothing", because case (dd) exists to
+      stop a dropped `CI_DIGEST_JOB_STATUS` from publishing and the looser rule would have resurrected
+      that bug. **Second deviation**: `COUNTS_SOURCES` names `step:e2e-turn-tally` NOW rather than in
+      T013 — an absent source is simply not collected, so naming it early costs nothing and removes the
+      forward reference entirely.)*
+- [x] **T007** [US2] Add a case asserting that a **thrown** error inside `counts` mode still exits 0 and
       leaves the job's own result untouched. A reporter must never fail the build it measures.
       **Verify RED against a deliberately throwing stub, then GREEN.** (FR-007)
-- [ ] **T008** [US2] Verify retention actually prunes the new versions: read `selectExpiredVersions` and
+      *(Done 2026-08-11: `(mm8)` drives the REAL process with a dead transport — exit 0, and the counts
+      still reach the job log. Asserted against the process rather than reasoned from the shared
+      try/catch, mirroring how `(ii2)` pins the same property for the digest path.)*
+- [x] **T008** [US2] Verify retention actually prunes the new versions: read `selectExpiredVersions` and
       `RETENTION_DAYS`, and add a case covering a counts version older than the retention window.
       **Do not assume it applies** — confirm the pruning path runs on a `counts`-mode publish too. (FR-008)
+      *(Done 2026-08-11: `(mm7)` shows `selectExpiredVersions` is version-agnostic and passed on the
+      UNFIXED code — so the selector was never the question. The real gap was the CALL: `pruneExpiredBundles`
+      ran only on the digest path. `publishCounts` now calls it too, which is what actually bounds a
+      channel that fires on every green run rather than only on failures.)*
 - [ ] **T009** [US2] **Read the counts back, from outside CI.** Dispatch `app-ci`, let `app-e2e` PASS, then
       from a working session LIST the generic-package versions (never construct the name — `run_number` is
       offset from the run id), fetch the counts bundle, and record all eight numbers:
@@ -110,9 +130,8 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       spec count. **Verify GREEN (T011).** (FR-009)
 - [ ] **T013** [US3] Add the step to `.forgejo/workflows/app-ci.yml` under `ci-log-step.sh`, `if: always()`,
       positioned **after** the web E2E and **before** `Tear down CI stacks` — and add the comment saying why
-      that position is load-bearing, alongside the contention tally's. **Also add `e2e-turn-tally` to the
-      `counts` mode source list in `ci-failure-digest.mjs`** — T006's deliberate forward reference lands here,
-      now that the source exists.
+      that position is load-bearing, alongside the contention tally's. (`e2e-turn-tally` is already in
+      `COUNTS_SOURCES` — T006 listed it up front, so nothing is left to remember here.)
 - [ ] **T014** [US3] **Fix the healthy floor and record its provenance.** The contract deliberately carries
       no number yet. Set it from the calibration runs, and write into the contract file: the five run ids it
       came from, the healthy and collapsed ranges, and the sentence stating it is a triage aid rather than a

@@ -207,16 +207,50 @@ export function buildDigest(context, { excerpts = [], health = [], absent = [], 
 // --- Publish guard (FR-001a) ------------------------------------------------------------------------
 
 /**
- * Decide whether this job should publish at all.
+ * Decide whether this job should publish, and in which MODE.
+ *
  * The cancelled check MUST come first: a cancelled job DOES report `failure`, so testing the job
  * status first would publish a failure digest for a commit that was never broken.
+ *
+ * `counts` mode exists because a green run left no bundle at all, so a passing app-e2e's counts and
+ * retry churn could not be read without making the job fail (backlog item #167). It publishes a
+ * small counts-only bundle and no PR comment.
+ *
+ * `counts` is gated on an EXPLICIT `success`, not on "anything that is not a failure". That
+ * asymmetry is deliberate: a job that loses `CI_DIGEST_JOB_STATUS` once published a spurious digest
+ * on a green run, which is why an unknown status publishes nothing. Treating unknown as
+ * publishable-in-a-cheaper-mode would resurrect that bug in a new costume.
  */
 export function shouldPublish({ runStatus, jobStatus }) {
   if (runStatus === 'cancelled') {
-    return { publish: false, reason: 'run was cancelled/superseded by a newer push — the newer run publishes the truth' };
+    return { publish: false, mode: null, reason: 'run was cancelled/superseded by a newer push — the newer run publishes the truth' };
   }
-  if (jobStatus !== 'failure') return { publish: false, reason: `job status is ${jobStatus}, not a failure` };
-  return { publish: true, reason: 'genuine job failure' };
+  if (jobStatus === 'failure') return { publish: true, mode: 'digest', reason: 'genuine job failure' };
+  if (jobStatus === 'success') {
+    return { publish: true, mode: 'counts', reason: 'job passed — publishing counts only, so a green run is readable' };
+  }
+  return { publish: false, mode: null, reason: `job status is ${jobStatus}, neither a failure nor a success` };
+}
+
+/**
+ * The step logs a `counts` publication carries — and nothing else.
+ *
+ * Self-limiting BY CONSTRUCTION rather than by a job allowlist: only app-e2e produces these steps,
+ * so every other job's counts publication finds nothing and uploads nothing. An allowlist would be a
+ * second place to forget to update, and forgetting it fails silently in the direction of publishing
+ * a version per green job per run.
+ *
+ * `e2e-turn-tally` is listed here before the step exists (054 T013 adds it). An absent source is
+ * simply not collected, so naming it early costs nothing and cannot be forgotten later.
+ */
+export const COUNTS_SOURCES = Object.freeze([
+  'step:e2e-result-gate',
+  'step:e2e-contention-tally',
+  'step:e2e-turn-tally',
+]);
+
+export function selectCountsSources(excerpts = []) {
+  return excerpts.filter((e) => COUNTS_SOURCES.includes(e.source));
 }
 
 // --- Outcome signal (feature 051 US3, FR-010/011/012) --------------------------------------------
@@ -885,6 +919,15 @@ async function run() {
   }
 
   const evidence = collectEvidence();
+
+  // COUNTS MODE (054 US2, item #167). A green run published nothing, so its counts and retry churn
+  // could only be read by making the job fail. This branch returns before the digest is built: a
+  // passing job has no failure to describe, and the whole point is that it stays cheap.
+  if (gate.mode === 'counts') {
+    await publishCounts({ context, evidence, gate, emitOutcome });
+    return;
+  }
+
   const digest = buildDigest(context, evidence);
 
   const credential = selectCredential();
@@ -978,6 +1021,69 @@ async function run() {
 
   // Opportunistic retention (FR-021a): no scheduled pipeline exists for this, so each publish
   // prunes. A pruning failure must never fail the publish or the job (FR-021b).
+  await pruneExpiredBundles(api).catch((err) =>
+    console.error(`[ci-failure-digest] prune suppressed: ${redactForPublication(String(err?.message ?? err))}`),
+  );
+}
+
+/**
+ * Publish a PASSING job's counts (054 US2, item #167).
+ *
+ * Deliberately not the digest path: no PR comment, no health blocks, no container logs — a green run
+ * has no failure to describe, and a channel that is expensive on every run is a channel that gets
+ * turned off. What it carries is the `[e2e-gate]` counts and the contention tally, which is the
+ * difference between "nothing failed" and "nothing failed and nothing needed its retry".
+ *
+ * Publishing here can only ADD a package version; it never comments, never sets a status, and never
+ * touches the job's result.
+ */
+async function publishCounts({ context, evidence, gate, emitOutcome }) {
+  const sources = selectCountsSources(evidence.excerpts);
+
+  // The counts go to the job log FIRST and unconditionally. A human can read that in the browser
+  // even when publication fails, and it costs nothing — the same reasoning as the digest's inline
+  // copy, applied to the case that previously produced no output at all.
+  for (const s of sources) console.log(`[ci-failure-digest] ${s.source}\n${s.text.trim()}`);
+
+  if (!sources.length) {
+    emitOutcome(describeOutcome({ gate: { publish: false, reason: 'the job passed and produced no counts sources' } }));
+    console.log('[ci-failure-digest] counts mode — this job runs no e2e counts steps; nothing to publish.');
+    return;
+  }
+
+  const credential = selectCredential();
+  if (credential.source !== 'purpose-scoped') {
+    // The package registry needs the purpose-scoped credential; the run-provisioned token can only
+    // write a commit status, which cannot carry these lines. Say so rather than failing quietly —
+    // the counts are already in the job log above, so nothing is lost, only narrowed.
+    emitOutcome(describeOutcome({
+      gate,
+      tokenPresent: Boolean(credential.token),
+      credentialSource: credential.source ?? 'auto',
+      publishResult: { published: false, reason: 'counts need the purpose-scoped credential to upload a package' },
+    }));
+    return;
+  }
+
+  const api = httpApi({ ...forgeEndpoint(), token: credential.token });
+  const version = bundleVersion(context.runId, context.job);
+  let result;
+  try {
+    await publishBundle(api, version, { excerpts: sources, health: [], absent: evidence.absent }, context);
+    result = { published: true, channel: 'counts-bundle' };
+  } catch (err) {
+    result = { published: false, reason: redactForPublication(String(err?.message ?? err)) };
+  }
+  emitOutcome(describeOutcome({ gate, tokenPresent: true, publishResult: result }));
+  console.log(
+    result.published
+      ? `[ci-failure-digest] counts published (bundle ${version})`
+      : `[ci-failure-digest] counts NOT published — ${result.reason}`,
+  );
+
+  // Retention runs on THIS path too. Publishing on every green run — not only on failures — is
+  // exactly what makes unbounded growth reachable, so the pruning that made the failure-only channel
+  // safe has to follow the channel that replaced it.
   await pruneExpiredBundles(api).catch((err) =>
     console.error(`[ci-failure-digest] prune suppressed: ${redactForPublication(String(err?.message ?? err))}`),
   );
