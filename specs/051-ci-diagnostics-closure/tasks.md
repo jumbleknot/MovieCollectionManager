@@ -1257,6 +1257,61 @@ fault.
 
 ---
 
+### ⚠️ `app-e2e` IS NOT STABLE — five runs on identical test code
+
+Recorded here because it is the last honest thing this feature owes, and a green tick would hide it.
+
+| Run | sha | Result |
+| --- | --- | --- |
+| 1622 | `f749726` | green |
+| 1623 | `f749726` | green |
+| 1625 | `b1b95de` | green |
+| **1633** | `a2537a2` | **RED — 30 failed**, all agent/assistant specs |
+| 1634 | `2eafe4d` | green (10 green / 0 failed across the whole run) |
+
+**Nothing in the app or test surface changed across any of them.** Verified:
+`git diff b1b95de..HEAD -- frontend/ agents/ mcp-servers/ backend/ packages/` is **empty**; the only
+`app-ci.yml` delta is six `GITHUB_TOKEN:` lines in digest steps. So run 1633 was not a regression and
+run 1634 is not a fix — **the agent gate is non-deterministic**, at roughly 1-in-5 on this sample.
+
+**The gateway was healthy during the red run**: every `POST https://api.anthropic.com/v1/messages`
+returned **200 OK**, and `agent_tool_call status=error` was **0**. The failures were UI assertions
+(`element(s) not found`, `toBeVisible`, `toContainText`) against a backend that answered correctly.
+
+**The 052 contention fix held throughout** — even in the red run the tally reported
+`refresh_429=0 session_evicted=0` and its gate passed. So this is a *different* population from the
+contention era, and 052's work is not implicated.
+
+**053's result gate worked exactly as designed**, and is the reason this is legible at all:
+
+```text
+[e2e-gate] failed=30 flaky=0 passed=144 did-not-run=3 skipped=0
+[e2e-gate] FAIL: 3 test(s) DID NOT RUN — the `lifecycle` project declares
+           dependencies: ['chromium'], so these never executed at all.
+```
+
+`skipped=0` held even in the red run, so **US1's property is robust** — the specs run; some of them
+disagree with the model's output.
+
+**This qualifies 053's "live model = inherently flaky was substantially wrong".** That judgement was
+right about the five *stale* specs it fixed — those were real defects hiding behind a skip. It does
+not follow that the remainder is deterministic, and run 1633 is the counter-example. Both things are
+true: stale specs were being excused as flakes, **and** genuine non-determinism remains.
+
+**Consequence for the merge, stated rather than decided here**: 051 merges on a green run, but the
+required `app-e2e` gate will fail roughly 1 run in 5 for reasons unrelated to the commit under test.
+That is backlog item **#170**'s subject (should live-model assertions gate a merge at all) and
+**#167**'s (a green run publishes no bundle, so its retry count is unreadable — the three earlier
+greens may each have needed retries nobody could see). Neither is 051's to decide.
+
+**A methodological note, kept because it is the same error class this feature exists to catch.** The
+first diagnosis of the red run grepped the gateway log for `429`, `401` and `403` and found "hits" —
+all of which were **timestamps and nanosecond fields**, not HTTP statuses. That reading pointed at
+rate-limiting; the correct reading pointed the opposite way. A pattern that matches is not evidence
+until you have checked *what* it matched.
+
+---
+
 ## Phase 9: User Story 6 — the cargo traps are written down (P3)
 
 **Goal**: Two counter-intuitive cargo behaviours cost a session during feature 046 and live only in a
