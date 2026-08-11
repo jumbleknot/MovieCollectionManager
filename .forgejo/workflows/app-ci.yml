@@ -713,6 +713,30 @@ jobs:
         if: ${{ always() }}
         run: bash scripts/ci-log-step.sh e2e-contention-tally bash scripts/e2e-contention-tally.sh --gate
 
+      # ── Run-health verdict (feature 054 US3, FR-009) ───────────────────────────────────────────
+      # Roughly one run in seven COLLAPSES: every agent/dock spec fails at once, flaky=0, and the
+      # gateway receives ~a quarter of its usual traffic while answering everything it gets with 200.
+      # Turns are not being SENT (item #173). From the outside that is indistinguishable from "some
+      # tests failed" — telling them apart meant downloading the bundle and counting
+      # `POST /agent/movie-assistant` by hand, which nobody does, so the reflex became "re-run it".
+      # That reflex hid five stale specs for three weeks, and once caused a sound fix to be reverted
+      # because two consecutive samples of a 1-in-7 event were read as causation.
+      #
+      # It LABELS; it does NOT gate — deliberately, and unlike the contention gate above. A collapsed
+      # run already fails on its test failures; failing it twice adds nothing and buys a new
+      # false-failure mode. So there is no `--gate` here and there should not be one.
+      #
+      # POSITION IS LOAD-BEARING IN BOTH DIRECTIONS, and each produces a wrong answer rather than an
+      # obvious break:
+      #   * AFTER `E2E result gate` — that step's log is where the executed-test denominator comes
+      #     from. Earlier, there is nothing to divide by and every run reads `indeterminate`.
+      #   * BEFORE `Tear down CI stacks` — which removes the gateway container the POSTs are counted
+      #     from. Later, every run reports zeros for a structural reason and looks clean.
+      # scripts/__tests__/e2e-turn-tally.test.mjs asserts both orderings against this file.
+      - name: Run-health verdict (did this run COLLAPSE, or did tests merely fail?)
+        if: ${{ always() }}
+        run: bash scripts/ci-log-step.sh e2e-turn-tally bash scripts/e2e-turn-tally.sh
+
       # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────
       - name: Build embedded-bundle E2E APK (release variant = embedded JS)
         # MOBILE GATE (see the `mobile` filter in `changes`). Runs when: this is a push to main, OR

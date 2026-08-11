@@ -125,22 +125,44 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
 
 ### (a) The run-health verdict
 
-- [ ] **T011** [US3] Write `scripts/__tests__/e2e-turn-tally.test.mjs` against fixture logs: a healthy
+- [x] **T011** [US3] Write `scripts/__tests__/e2e-turn-tally.test.mjs` against fixture logs: a healthy
       signature classifies `healthy`, a collapsed one `collapsed`, an unreadable gateway log and a zero
       executed count both classify `indeterminate`, and the script exits **0** in every case including the
       zero-count one (the `grep -c` exits-1 trap). **Verify RED.**
-- [ ] **T012** [US3] Write `scripts/e2e-turn-tally.sh`, mirroring `scripts/e2e-contention-tally.sh`'s
+      *(Done 2026-08-11. **RED was nearly invisible, and that is a finding.** With the test file
+      written and the script not yet created, the run reported `0 pass / 3 fail / **12 skipped**` on
+      Linux with a perfectly usable bash: `shellCanRunScript` probes with `test -r "$SCRIPT"`, which
+      is false for a MISSING file exactly as for an unreachable one, so it skipped 12 cases while
+      blaming WSL. A skip reads as a pass — the failure class 051 exists to remove, inside the helper
+      written to prevent it. Filed as item **#178**. Re-verified against an empty stub: **14 fail,
+      1 pass, 0 skipped**, which is the real RED.)*
+- [x] **T012** [US3] Write `scripts/e2e-turn-tally.sh`, mirroring `scripts/e2e-contention-tally.sh`'s
       structure, with the classifier in a `classify_run_verdict` shell function. Emit the `[e2e-turns]` line
       from [contracts/run-health-signal.md](./contracts/run-health-signal.md), normalised by executed agent
       spec count. **Verify GREEN (T011).** (FR-009)
-- [ ] **T013** [US3] Add the step to `.forgejo/workflows/app-ci.yml` under `ci-log-step.sh`, `if: always()`,
+      *(Done 2026-08-11: GREEN, 12/12 behaviour cases. **The contract's denominator was wrong and is
+      corrected**: it said "per spec file" quoting 17–19 vs 1.4–2.2, which was arithmetic on a guessed
+      file count — there are 23 agent/dock spec files, giving ≈6.7. Recomputed from the 177-test total
+      the PRD actually recorded: healthy 88–95, collapsed 22–32 posts per 100 tests, floor 50.
+      Integer-scaled by 100 because bash has no floats.)*
+- [x] **T013** [US3] Add the step to `.forgejo/workflows/app-ci.yml` under `ci-log-step.sh`, `if: always()`,
       positioned **after** the web E2E and **before** `Tear down CI stacks` — and add the comment saying why
       that position is load-bearing, alongside the contention tally's. (`e2e-turn-tally` is already in
       `COUNTS_SOURCES` — T006 listed it up front, so nothing is left to remember here.)
-- [ ] **T014** [US3] **Fix the healthy floor and record its provenance.** The contract deliberately carries
+      *(Done 2026-08-11. **Both wiring assertions first failed against a correctly-wired workflow**,
+      because `indexOf` matched COMMENT PROSE — the contention tally's own comment says it "must
+      precede `Tear down CI stacks`" 3 kB earlier in the file. A grep that matched the wrong thing is
+      the trap this feature is about, and it is not less of one for being in the test. Re-anchored on
+      the run commands and the `- name:` headers, plus a new case pinning that the tally carries NO
+      `--gate`. 16/16.)*
+- [x] **T014** [US3] **Fix the healthy floor and record its provenance.** The contract deliberately carries
       no number yet. Set it from the calibration runs, and write into the contract file: the five run ids it
       came from, the healthy and collapsed ranges, and the sentence stating it is a triage aid rather than a
       proof.
+      *(Done 2026-08-11: floor **50 posts per 100 tests**, from runs 1614/1619 (healthy, 95/88) and
+      1621/1622/1633 (collapsed, 24/32/22) — 1.8× below the lowest healthy run and 1.6× above the
+      highest collapsed one. The two boundary runs are pinned as their own test cases, so a threshold
+      change that misclassifies either fails rather than drifts.)*
 
 ### (b) Client-side evidence
 

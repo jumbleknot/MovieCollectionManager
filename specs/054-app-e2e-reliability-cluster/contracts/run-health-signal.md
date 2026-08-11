@@ -8,59 +8,68 @@ Emitted once per `app-e2e` run by `scripts/e2e-turn-tally.sh`, under `scripts/ci
 a `step:` source (the failure digest ranks those 0, above every container log).
 
 ```text
-[e2e-turns] gateway_posts=<n> agent_specs_executed=<m> posts_per_spec=<r> verdict=<healthy|collapsed|indeterminate>
+[e2e-turns] gateway_posts=<n> tests_executed=<m> posts_per_100_tests=<r> verdict=<healthy|collapsed|indeterminate>
 ```
 
 | Field | Meaning |
 | --- | --- |
-| `gateway_posts` | POSTs the agent gateway received during the web-E2E window |
-| `agent_specs_executed` | agent/dock tests executed in that window, from the `e2e-result-gate` counts |
-| `posts_per_spec` | `gateway_posts / agent_specs_executed`, to one decimal |
+| `gateway_posts` | `POST /agent/movie-assistant` requests the gateway received during the web-E2E window |
+| `tests_executed` | `failed + flaky + passed` from the `[e2e-gate]` line the previous step emits |
+| `posts_per_100_tests` | `gateway_posts × 100 / tests_executed`, integer — bash has no floats, and a ratio scaled by 100 keeps the comparison exact rather than approximately right |
 | `verdict` | the classification below |
 
 ## Why it is normalised
 
 The measured discriminator in #173 is a whole-run count:
 
-| run | failed | gateway POSTs | Anthropic calls |
-| --- | ---: | ---: | ---: |
-| 1614 (healthy) | 9 | 169 | 114 |
-| 1619 (healthy) | 1 | 155 | 99 |
-| 1621 (collapsed) | 28 | 43 | 26 |
-| 1622 (collapsed) | 26 | 56 | 34 |
-| 1633 (collapsed) | 30 | 39 | 24 |
+| run | failed | gateway POSTs | Anthropic calls | posts/100 tests |
+| --- | ---: | ---: | ---: | ---: |
+| 1614 (healthy) | 9 | 169 | 114 | **95** |
+| 1619 (healthy) | 1 | 155 | 99 | **88** |
+| 1621 (collapsed) | 28 | 43 | 26 | **24** |
+| 1622 (collapsed) | 26 | 56 | 34 | **32** |
+| 1633 (collapsed) | 30 | 39 | 24 | **22** |
+
+(177 tests collected in each, from PRD §1.1.)
 
 A bare threshold on `gateway_posts` becomes wrong the first time a spec is added, a spec is removed, or the
 mobile half is path-gated out — and it becomes wrong **silently**, reporting `collapsed` for a run that
 merely got smaller. Dividing by the executed count keeps the signal meaningful as the suite changes.
 
+**The denominator is tests, not spec files.** An earlier draft of this contract said "per spec file" and
+quoted 17–19 against 1.4–2.2. That was arithmetic on a guessed file count, not a measurement, and it is
+wrong — there are 23 agent/dock spec *files*, which would give ≈6.7. The numbers above are computed from the
+177-test total the PRD actually recorded. Corrected during T012 rather than carried forward: it is the same
+class of unchecked claim this whole feature exists to stop.
+
 ## Classification
 
 | Condition | `verdict` |
 | --- | --- |
-| `agent_specs_executed == 0`, or the gateway log is unreadable | `indeterminate` |
-| `posts_per_spec` at or above the healthy floor **(value set by T014 — not yet fixed)** | `healthy` |
+| the gateway log is unreadable, or `tests_executed` is 0 / unparseable | `indeterminate` |
+| `posts_per_100_tests` **≥ 50** | `healthy` |
 | otherwise | `collapsed` |
+
+**The floor is 50**, sitting between a measured healthy minimum of 88 and a measured collapsed maximum of
+32 — 1.8× below the lowest healthy run and 1.6× above the highest collapsed one. The gap, not the precision
+of the number, is what makes a crude threshold workable.
 
 `indeterminate` is a first-class outcome, not a fallback. It carries the same `0`-vs-`unavailable`
 distinction `e2e-contention-tally.sh` already makes: a measurement that could not be taken must never read as
 a good one.
 
-## ⚠️ The thresholds are heuristic, calibrated on five runs
+## ⚠️ The threshold is heuristic, calibrated on five runs
 
-**No floor value is fixed in this document yet.** It is derived from the table above and recorded by **T014**,
-together with the run ids it came from — so a reader who goes looking for a number here and finds none is
-seeing the intended state, not an omission. The floor is **a triage aid, not a proof**. Five runs is a small
-calibration set, the two populations are well separated on it (healthy ≈ 17–19 posts/spec against collapsed
-≈ 1.4–2.2 on the same suite), and the gap is what makes a crude threshold workable — but a run near the
-boundary is a run to look at by hand, not one to trust the `verdict` on.
+It is **a triage aid, not a proof**. Five runs is a small calibration set. The two populations are well
+separated on it, which is what makes the threshold usable at all — but a run near the boundary is a run to
+read by hand, not one to trust the `verdict` on.
 
 Two consequences, both deliberate:
 
 - **It labels; it does not gate.** A collapsed run already fails on its test failures. Failing it a second
   time adds nothing and buys a new false-failure mode.
-- **A `healthy` verdict is not evidence a run was correct**, only that turns were being sent at the usual rate.
-  It is what makes a *failure* interpretable, not what makes a pass trustworthy.
+- **A `healthy` verdict is not evidence a run was correct**, only that turns were being sent at the usual
+  rate. It is what makes a *failure* interpretable, not what makes a pass trustworthy.
 
 Recalibrate when the agent spec set changes materially, and record the run ids the new floor came from.
 
@@ -76,11 +85,13 @@ second vocabulary for one thing.
 - On a **passing** run: in the counts bundle published by `ci-failure-digest.mjs` in `counts` mode (FR-005).
   Before that existed, a green run left no bundle at all and this line was unreadable — which is #167.
 
-## Ordering constraint
+## Ordering constraints — two, and both produce a wrong answer rather than a break
 
-The step MUST run **before** `Tear down CI stacks (always)`, which removes the container the count is read
-from. A step ordered after it reports zeros for a structural reason and looks like a clean result — the same
-trap `e2e-contention-tally.sh` documents.
+1. **Before `Tear down CI stacks (always)`**, which removes the container the count is read from. A step
+   ordered after it reports zeros for a structural reason and looks like a clean result — the trap
+   `e2e-contention-tally.sh` documents.
+2. **After `E2E result gate`**, because that step's log is where `tests_executed` comes from. A missing
+   counts line yields `indeterminate` — never a divide-by-zero, and never a confident wrong answer.
 
 The script MUST always exit 0. `grep -c` exits 1 on a zero count, and under `ci-log-step.sh` — which
 re-raises the wrapped command's exit code by design — that would fail the job with a diagnostic that had good
