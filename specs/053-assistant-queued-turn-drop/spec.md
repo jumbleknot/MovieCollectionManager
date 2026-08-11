@@ -4,13 +4,35 @@
 
 **Created**: 2026-08-10
 
-**Status**: **ATTEMPT REVERTED — the defect is real and unfixed. Do not re-apply the same fix.**
+**Status**: **ATTEMPT REVERTED — but the reason was WRONG. See the 2026-08-11 correction below.**
 
 **Input**: Found while driving `app-e2e` to a reliably green state (backlog #150). `assistant-disambiguate.spec.ts:154`
 failed in CI run 1619 and reproduces locally against a live stack: the member's second message never
 reaches the gateway, is never echoed into the dock, and produces no error.
 
-## ⛔ Read this before touching it again (2026-08-10)
+## ✅ Correction (2026-08-11): the revert's premise did not hold
+
+`app-ci` run **1633 reproduced the identical signature with this fix ABSENT** — 30 failed, `flaky=0`,
+~39 gateway POSTs against a healthy run's ~155. So the regression attributed below to this change is
+an intermittent whole-suite collapse that occurs roughly **one run in seven regardless of it**, now
+tracked as backlog item **#173** (p1). Two consecutive samples of that event were mistaken for
+causation.
+
+| run | fix present? | failed | gateway POSTs | anthropic calls |
+| --- | --- | ---: | ---: | ---: |
+| 1619 | no | 1 | 155 | 99 |
+| 1621 | yes | 28 | 43 | 26 |
+| 1622 | yes | 26 | 56 | 34 |
+| **1633** | **no** | **30** | **39** | **24** |
+
+**The fix in [plan.md](./plan.md) was probably sound.** Re-apply it once #173's mechanism is known, so
+the next attempt is not judged against a background of random collapses — and judge it over more than
+two runs, because a ~1-in-7 flip cannot be resolved by two samples.
+
+The revert was still the right call on what was known at the time: an unexplained change in a suite it
+appeared to break. The error was the inference, not the caution.
+
+## ⛔ The original (2026-08-10) reasoning, kept as written
 
 The defect below is **real and reproduced**. The fix described in [plan.md](./plan.md) — adding
 `isRunning` to the flush effect's dependency list — **was implemented, verified locally, merged onto
