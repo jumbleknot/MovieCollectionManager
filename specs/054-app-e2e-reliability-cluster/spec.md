@@ -156,8 +156,9 @@ the published bundle.
    from reading gateway logs by hand.
 2. **Given** a run that failed, **When** the bundle is read, **Then** it contains browser console output and
    the client-side request record for the failing agent/dock specs.
-3. **Given** a healthy run, **When** the same capture runs, **Then** the run's wall clock and its counts are
-   not materially changed by the capture — the instrument must not become the perturbation.
+3. **Given** a healthy run, **When** the same capture runs, **Then** the web-suite wall clock is within
+   **5%** of the pre-capture baseline and the five counts are **identical** — the instrument must not become
+   the perturbation.
 4. **Given** the capture is present, **When** the log is inspected, **Then** it contains no token, cookie,
    password or other credential material.
 5. **Given** a collapse is caught with capture, **When** it is triaged, **Then** the evidence distinguishes
@@ -213,7 +214,7 @@ nevertheless says *do not simply re-apply it*, and that instruction is honoured 
 inference error that caused the revert.
 
 **Why this priority**: It is a genuine user-facing defect — losing typed input with no indication is the
-worst failure mode a chat surface has. It is P2 only because it must be judged against US3's labelling to be
+worst failure mode a chat surface has. It is P2 only because it must be judged against US3's `verdict` to be
 judged at all.
 
 **Independent Test**: Drive `useAssistantRun` with an agent whose `isRunning` is true, send a message, flip
@@ -232,7 +233,7 @@ judged at all.
 5. **Given** two messages are typed while a run is in flight, **When** the run finishes, **Then** the
    member is not left unable to tell what happened to the first — today it is overwritten silently.
 6. **Given** the change is verified in CI, **When** its runs are judged, **Then** collapsed runs are excluded
-   by US3's label and the verdict rests on non-collapsed runs only.
+   by US3's `verdict` field, and the judgement rests on non-collapsed runs only.
 
 ---
 
@@ -283,7 +284,7 @@ same window.
 - **A dispatched run posts no commit status.** US1's fix is therefore not observable on the
   `workflow_dispatch` runs used to verify the rest of this feature; it is verified by unit test and on a PR.
 - **US5 goes green over its non-collapsed runs but the underlying collapse rate rises.** Two effects would be
-  confounded. US3's per-run label is what separates them; if the label is unavailable for a run, that run is
+  confounded. US3's per-run `verdict` is what separates them; if it is unavailable for a run, that run is
   discarded rather than interpreted.
 
 ---
@@ -317,7 +318,10 @@ same window.
 - **FR-010**: The harness MUST capture browser console output and the client-side request record for failing
   agent/dock specs, and that capture MUST reach the published bundle.
 - **FR-011**: The capture MUST carry no token, cookie, password or other credential material.
-- **FR-012**: The capture MUST NOT materially change the suite's wall clock or counts.
+- **FR-012**: The capture MUST NOT perturb what it measures. Stated as a threshold so the check can fail:
+  with the capture enabled, the web-suite wall clock MUST be within **5%** of the pre-capture baseline and
+  the five counts MUST be **identical**. Outside that, the capture is the suspect and is re-scoped before
+  any other conclusion is drawn from a run carrying it.
 
 **Per-worker identity (US4)**
 
@@ -328,7 +332,8 @@ same window.
 - **FR-016**: The worker bound MUST be re-evaluated against `MAX_CONCURRENT_SESSIONS` and its value justified
   by the resulting headroom.
 - **FR-017**: No spec may be skipped, deselected, narrowed or gated to achieve any result in this feature.
-  (Feature 051's SC-001; it must not regress.)
+  (Feature 051's SC-001; it must not regress.) This is the **prohibition**; SC-009 is the **measurement**
+  that detects a breach. Both are kept deliberately — a rule nobody counts is not enforced.
 
 **Queued turn (US5)**
 
@@ -337,9 +342,12 @@ same window.
 - **FR-019**: A message queued because the agent was mid-run MUST be flushed when that run completes, exactly
   once.
 - **FR-020**: The existing empty-registry self-heal MUST keep working.
-- **FR-021**: Delivery MUST NOT depend on the member interacting again.
-- **FR-022**: Where a queued message is superseded by another, the member MUST NOT be left with no indication
-  of what happened to it.
+- **FR-021**: Delivery MUST NOT depend on the member interacting again. (This narrows FR-018 rather than
+  restating it: FR-018 forbids losing the message, FR-021 forbids requiring a second Send to recover it.)
+- **FR-022**: Where a member sends a second message while one is already queued, **each message MUST either
+  be delivered or have its supersession surfaced to the member.** Stated as the property rather than as one
+  of its implementations, because both candidate fixes satisfy it differently — a queue delivers both; a
+  single slot must show that the first was replaced.
 
 **Local signal (US6)**
 
@@ -359,8 +367,10 @@ same window.
 
 ### Key Entities
 
-- **Run label** — the per-run classification `healthy | collapsed | indeterminate`, derived from the
-  turn/gateway-call count. The unit that makes every other verdict in this feature readable.
+- **Run verdict** — the per-run classification `healthy | collapsed | indeterminate`, derived from the
+  turn/gateway-call count and emitted as the `verdict=` field of the `[e2e-turns]` line. **`verdict` is the
+  canonical name for this concept** across spec, plan and contract — it is what the CI line actually emits,
+  so naming it anything else in prose creates a second vocabulary for one thing.
 - **Run counts** — the quintuple `failed / flaky / passed / skipped / did-not-run` from `e2e-result-gate`,
   plus the contention triple. Published on every run, not only failures.
 - **Per-worker identity** — one Keycloak user, one BFF session, and one fixture dataset per Playwright
@@ -378,20 +388,23 @@ Stated as observed results, because a green tick on this suite is the thing that
   and the verdict is mergeable; the regression test is RED before the fix.
 - **SC-002**: For an `app-e2e` run that PASSED, all five counts and all three contention numbers are read
   from a working session with no re-run and no host access.
-- **SC-003**: A run is classified `healthy` or `collapsed` from its published output alone, and the
-  classification agrees with the Anthropic-call signature already measured (healthy 99–114, collapsed 24–34)
-  on every run this feature produces.
+- **SC-003**: A run is classified `healthy`, `collapsed` or `indeterminate` from its published output alone,
+  and that verdict is **checked against** the Anthropic-call signature already measured (healthy 99–114,
+  collapsed 24–34) on every run this feature produces. The criterion is that the check is **performed and
+  its result recorded** — a disagreement is a finding about the detector and must be written down, not
+  smoothed over. Perfect agreement is deliberately **not** required: the threshold is heuristic, calibrated
+  on five runs, and a near-boundary run is one to read by hand.
 - **SC-004**: At least one run's bundle contains browser console output for a failing agent/dock spec — the
   evidence channel that did not exist before this feature.
 - **SC-005**: With per-worker identities in place, no test failure in the suite is attributable to another
   worker's teardown, config change or fixture mutation.
 - **SC-006**: **Ten consecutive `app-ci` runs show no collapse, judged by the `e2e-result-gate` counts and
-  US3's label — and this criterion is recorded as 79%-powered, not as proof.** Against the measured ~1-in-7
+  US3's `verdict` — and this criterion is recorded as 79%-powered, not as proof.** Against the measured ~1-in-7
   rate, (6/7)¹⁰ = 0.214: a clean ten has a **21% chance of occurring even if nothing was fixed**. Twenty runs
   would be needed for 95%. This criterion is deliberately the cheaper one, and any report of it MUST carry
   that sentence rather than reading as a proof of absence.
 - **SC-007**: US5's change is judged over **at least three non-collapsed runs**, with collapsed runs excluded
-  by US3's label and named in the report. A two-run verdict is not accepted for this change, for the reason
+  by US3's `verdict` and named in the report. A two-run judgement is not accepted for this change, for the reason
   recorded in #166's correction.
 - **SC-008**: `assistant-disambiguate.spec.ts:154` passes without retries.
 - **SC-009**: In every run of this feature, `agent-*.spec.ts` shows a non-zero executed count and a **zero**

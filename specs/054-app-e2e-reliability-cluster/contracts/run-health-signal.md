@@ -39,7 +39,7 @@ merely got smaller. Dividing by the executed count keeps the signal meaningful a
 | Condition | `verdict` |
 | --- | --- |
 | `agent_specs_executed == 0`, or the gateway log is unreadable | `indeterminate` |
-| `posts_per_spec` at or above the healthy floor | `healthy` |
+| `posts_per_spec` at or above the healthy floor **(value set by T014 — not yet fixed)** | `healthy` |
 | otherwise | `collapsed` |
 
 `indeterminate` is a first-class outcome, not a fallback. It carries the same `0`-vs-`unavailable`
@@ -48,19 +48,27 @@ a good one.
 
 ## ⚠️ The thresholds are heuristic, calibrated on five runs
 
-The healthy floor is derived from the table above and is **a triage aid, not a proof**. Five runs is a small
+**No floor value is fixed in this document yet.** It is derived from the table above and recorded by **T014**,
+together with the run ids it came from — so a reader who goes looking for a number here and finds none is
+seeing the intended state, not an omission. The floor is **a triage aid, not a proof**. Five runs is a small
 calibration set, the two populations are well separated on it (healthy ≈ 17–19 posts/spec against collapsed
 ≈ 1.4–2.2 on the same suite), and the gap is what makes a crude threshold workable — but a run near the
-boundary is a run to look at by hand, not one to trust the label on.
+boundary is a run to look at by hand, not one to trust the `verdict` on.
 
 Two consequences, both deliberate:
 
 - **It labels; it does not gate.** A collapsed run already fails on its test failures. Failing it a second
   time adds nothing and buys a new false-failure mode.
-- **A `healthy` label is not evidence a run was correct**, only that turns were being sent at the usual rate.
+- **A `healthy` verdict is not evidence a run was correct**, only that turns were being sent at the usual rate.
   It is what makes a *failure* interpretable, not what makes a pass trustworthy.
 
 Recalibrate when the agent spec set changes materially, and record the run ids the new floor came from.
+
+## Naming
+
+`verdict` is the **canonical name** for this concept across `spec.md`, `plan.md` and this contract. It is
+the field the CI line actually emits, so calling it a "label" or a "run-health signal" in prose creates a
+second vocabulary for one thing.
 
 ## Where it is read
 

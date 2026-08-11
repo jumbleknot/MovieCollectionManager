@@ -34,10 +34,10 @@ the collapse once US3 has landed**, so diagnosing #173 in series ahead of them w
 | Principle | Bearing on this feature | Verdict |
 | --- | --- | --- |
 | **Adherence / No Vibe Coding** | Every remedy below is chosen by a measured number or an explicitly stated assumption; the two that are not yet measured (US3's thresholds, US4's cost) are tasks that *produce* the number before the choice is fixed. | Pass |
-| **Behavior-Descriptive Identifiers** | New symbols name behaviour (`collapseToNewestPerContext`, `classifyRunHealth`, `authFileForWorker`), never `FR-###`. Requirement IDs appear only in provenance comments. | Pass |
+| **Behavior-Descriptive Identifiers** | New symbols name behaviour (`collapseToNewestPerContext` in `ci-status.mjs`, the `classify_run_verdict` shell function in `e2e-turn-tally.sh`, `authFileForWorker`), never `FR-###`. Requirement IDs appear only in provenance comments. | Pass |
 | **Documentation** | `docs/runbooks/e2e-testing.md`, `docs/runbooks/ci-diagnostics.md` and `openwiki/invariants/feature-validation-checklist.md` are updated as part of the work, not after. | Pass |
 | **Secrets Management / never log credentials** | US3 captures browser console and request records. FR-011 forbids credential material; the capture redacts `Cookie`, `Authorization` and `Set-Cookie` and does not record request bodies. | Pass — pinned by a test |
-| **No production security control weakened for the harness** | The refresh rate limit (2/30 s) and `MAX_CONCURRENT_SESSIONS` stay as they are. US4 changes the **test topology** (per-worker users), not the control. US6 changes a **dev-only realm's** token lifespan, not a production one. | Pass (FR-026) |
+| **No production security control weakened for the harness** | The refresh rate limit (2/30 s) and `MAX_CONCURRENT_SESSIONS` stay as they are. US4 changes the **test topology** (per-worker users), not the control. US6 changes a **dev-only realm's** token lifespan, not a production one. **Verified against the diff, not asserted from intent** — T043 checks it. | Pass (FR-026) |
 | **Application-Managed User Registration / No Local Credential Stores** | US4 mints per-worker users through the Keycloak Admin API with the existing service account, exactly as `admin-registration.spec.ts` already does. No credential is stored by the application. | Pass |
 | **Testing tiers / a skip reads as a pass** | FR-017 forbids skipping, deselecting, narrowing or gating any spec to reach a result. Every claim is judged by counts. | Pass |
 
@@ -190,9 +190,14 @@ listener in `perf.spec.ts:37`. #173 has exhausted every server-side channel, so 
 An auto-fixture composed into the `test` object exported by
 [worker-session.ts](../../frontend/mcm-app/tests/e2e/web/fixtures/worker-session.ts) attaches `console`,
 `pageerror` and `requestfailed` listeners plus a record of requests to the BFF agent routes, buffered in
-memory in a **bounded ring** and written out **only when the test did not reach its expected status**
-(FR-012 — the instrument must not become the perturbation). Output lands in the directory the `failure()`
-collect step already sweeps into the bundle.
+memory in a ring holding the **last 500 entries per test**, and written out **only when the test did not
+reach its expected status** (FR-012 — the instrument must not become the perturbation). Output lands in the
+directory the `failure()` collect step already sweeps into the bundle.
+
+**On overflow the oldest entries are dropped and the written file records how many were lost**, so a
+truncated capture never reads as a complete one. 500 is chosen against the measured traffic: a healthy run
+drives ~155 turns across the *whole suite*, so one spec never approaches it, while a runaway console loop
+still cannot exhaust memory.
 
 **Redaction (FR-011)**: `Cookie`, `Set-Cookie` and `Authorization` headers are dropped and request bodies are
 not recorded at all. A unit test pins this, because "we do not log secrets" is exactly the claim that needs a
@@ -238,7 +243,7 @@ fails the job for a brand-new reason that looks exactly like the old one.
 
 ---
 
-## US5 — Re-land the queued turn, judged against the label
+## US5 — Re-land the queued turn, judged against the verdict
 
 The reverted fix is a one-line dependency change: [use-assistant.tsx:86](../../frontend/mcm-app/src/hooks/use-assistant.tsx#L86)
 currently reads `[agent, resolveAgent, fire]`, and `agent` is a stable object whose `isRunning` is a mutable
@@ -246,7 +251,7 @@ property, so nothing re-runs the flush effect when a run *finishes*.
 
 **Honouring "do not simply re-apply it".** Item #166's instruction stands, and it is honoured by *how* the
 result is judged rather than by waiting: the revert's error was concluding causation from a 2-vs-1
-comparison against a background whose variance was unlabelled. US3 supplies the label, and SC-007 requires
+comparison against a background whose variance was unlabelled. US3 supplies the `verdict`, and SC-007 requires
 **at least three non-collapsed runs**, with excluded runs named in the report. That is the mechanically
 correct remedy for the mistake actually made — gating on #173's *mechanism* would instead park a real
 user-facing defect behind an open-ended diagnosis.
@@ -256,10 +261,13 @@ user-facing defect behind an open-ended diagnosis.
 1. Restore `isRunning` in the flush effect's deps, with 053's RED→GREEN unit tests reinstated (T001–T003,
    T005 of that feature). `pendingRef.current = null` stays **before** `fire`, which is what makes delivery
    at-most-once under React 19 StrictMode's double-invoked effects.
-2. Address FR-022 — today a second queued message silently overwrites the first. **Recommendation: a bounded
-   FIFO queue** rather than a single slot. It satisfies "MUST NOT be silently discarded" without any UI work,
-   where the alternative (render the pending message in the dock) is a UX addition 053 explicitly scoped out.
-   The trade is that all queued turns replay rather than only the last; the bound caps that. If the replay
+2. Address FR-022 — today a second queued message silently overwrites the first. **Recommendation: a FIFO
+   queue bounded at 8 messages** rather than a single slot. It satisfies FR-022 without any UI work, where
+   the alternative (render the pending message in the dock) is a UX addition 053 explicitly scoped out. The
+   trade is that all queued turns replay rather than only the last; the bound caps that. **On overflow the
+   send is refused and surfaced to the member** — never dropped silently, which would re-create the exact
+   defect this story fixes. Eight is far above any realistic type-ahead during one answer: it is a memory
+   guard, not a UX limit. If the replay
    semantics prove wrong under E2E, the fallback is the single slot plus a visible pending indicator, and
    that decision gets recorded rather than quietly taken.
 
@@ -302,9 +310,9 @@ Written here so no claim in this feature is judged by a number chosen after seei
 | --- | --- | --- |
 | US1 correctness | Unit, RED then GREEN | Deterministic; a CI run cannot show it (a dispatched run posts no status) |
 | US2 works | One green `app-e2e` whose counts are then read from a session | The claim is "readable", and one reading proves readable |
-| US3's label is right | Agrees with the measured signature on **every** run this feature produces | Cheap: every run is a sample, and disagreement is itself the finding |
+| US3's `verdict` is right | Checked against the measured signature on **every** run, and the result recorded | Cheap: every run is a sample, and a disagreement is itself the finding — perfect agreement is not required (the threshold is heuristic) |
 | US4 removed the class | Two consecutive non-collapsed runs, empty failure-set diff by test identity | 052's SC-004 — a shrinking-but-varying set means reduced, not removed |
-| US5 is safe | **≥3 non-collapsed runs**, collapsed runs excluded by label and named | #166's correction: a ~1-in-7 flip cannot be resolved by two samples |
+| US5 is safe | **≥3 non-collapsed runs**, collapsed runs excluded by `verdict` and named | #166's correction: a ~1-in-7 flip cannot be resolved by two samples |
 | The collapse is gone | **10 consecutive runs, explicitly recorded as 79%-powered** | (6/7)¹⁰ = 0.214 — a clean ten has a 21% chance even if nothing was fixed. 20 would buy 95%. The cheaper standard was chosen deliberately; the report must carry that sentence |
 
 **A red `app-e2e` is diagnosed before it is re-run.** The first question is US3's `verdict=` field, then the
