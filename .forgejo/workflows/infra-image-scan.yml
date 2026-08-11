@@ -175,7 +175,11 @@ jobs:
       # without an admin override (feature 039 AC6). This line makes the skip explicit in the log.
       - name: No infra image ref changed — required context satisfied (scan skipped)
         if: ${{ env.RUN_SCAN != 'true' }}
-        run: bash scripts/ci-log-step.sh infra-image-scan-no-infra-image-ref-changed echo "No infra image reference changed on this PR; Trivy scan skipped, required context = success."
+        # ci-log-step-exempt: this step runs on the RUN_SCAN != true path, where `Checkout` is
+        # deliberately skipped — so scripts/ci-log-step.sh is NOT on disk and wrapping it made the
+        # job die in 2s. Measured: it broke every docs-only PR (#172, #174, #175) while PRs that
+        # touch infra files passed, because those take the real-scan path where checkout DOES run.
+        run: echo "No infra image reference changed on this PR; Trivy scan skipped, required context = success."
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
