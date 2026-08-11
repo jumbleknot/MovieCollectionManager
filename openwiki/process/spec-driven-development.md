@@ -4,7 +4,7 @@ title: Proposal → spec → plan → tasks → implementation lifecycle
 description: How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.
 resource: specs/
 tags: [process, spec-kit, sdd, governance]
-timestamp: 2026-08-08T00:35:08+00:00
+timestamp: 2026-08-11T00:00:00+00:00
 ---
 
 # Proposal → spec → plan → tasks → implementation lifecycle
@@ -67,6 +67,21 @@ flowchart LR
   compile failure, and never "trust it works" without observing a real failure. A test that has
   never run red has not been verified. See [Test authoring conventions](/openwiki/process/test-authoring-conventions.md)
   for the general RED/GREEN checkpoint format; this gotcha is specific to test-only features.
+- **A test double that returns a fresh object per render can invalidate memoised callbacks, repairing
+  the bug it was meant to catch.** Measured on feature 053 (T001): the first attempt to observe a RED
+  was not actually red — a test double returning a fresh `copilotkit` per render invalidated the
+  memoised callbacks and re-ran the flush effect for free, repairing the bug it was meant to catch.
+  Checked the installed CopilotKit source (`useCopilotKit` returns the context value straight from
+  `useContext` and `copilotkit` is one class instance), made the double stable to match, and only then
+  observed a genuine RED. If a test goes green on the first run against unfixed code, suspect the double
+  before declaring victory: is the double stable, or does it re-create shared objects on each render?
+- **A local subset pass is not evidence about a change to a shared hook.** Measured on feature 053:
+  a fix to `useAssistantRun` passed 6/6 unit tests (RED→GREEN, double corrected) and 5/5 E2E with
+  `--retries=0` in 23.6 s — every statement true — and then produced **28 and 26 failures on two runs
+  of the identical sha** in CI, against 1 before. The fix was reverted. The local run exercised three
+  spec files in isolation; the regression only appeared under the full suite's concurrency. For a change
+  to code every spec loads (a shared hook, a shared utility, a shared auth flow), the full suite in CI
+  is the only valid instrument.
 - **PowerShell is not installed in the devcontainer — Spec Kit setup scripts will not run there.**
   Every Specify CLI script under `.specify/scripts/powershell/` is a `.ps1` file; there is no bash
   equivalent. If you are inside the devcontainer when a `/speckit-plan` or `/speckit-tasks` step
