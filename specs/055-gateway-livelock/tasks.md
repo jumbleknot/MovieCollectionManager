@@ -27,9 +27,12 @@ and an unstarted US3 — not the most plausible-looking loop, patched.
       *(Done 2026-08-12: `healthy` → paused → `unhealthy` → unpaused → `healthy`. **Caveat**: while
       paused, `docker ps` prints `(Paused)` and MASKS health; the `unhealthy` reading appeared on
       unpause. A real livelock spins rather than freezes, so it shows `Up X (unhealthy)` directly.)*
-- [ ] **T003** [US1] Make the E2E stack bring-up wait on gateway health and FAIL naming it, rather
+- [x] **T003** [US1] Make the E2E stack bring-up wait on gateway health and FAIL naming it, rather
       than proceeding. Check how the agent stack is composed before editing — `scripts/agent-stack.mjs`
       and the compose `depends_on` are two different levers and only one may be in play. (FR-002)
+      *(Done 2026-08-12: **no change needed, verified rather than assumed.** `agent-stack.mjs` already
+      polls `/health` for ~90 s and calls `die()` naming the gateway. The compose `depends_on` lever is
+      not the one in play locally.)*
 - [x] **T004** [US1] Confirm the healthcheck does **not** silently restart the container: a wedged
       gateway must stay wedged and visible. Docker does not restart merely-unhealthy containers, so
       this is a verification that nothing else in the stack does it. (FR-004)
@@ -64,32 +67,64 @@ and an unstarted US3 — not the most plausible-looking loop, patched.
       a Docker Hub image — py-spy ships on PyPI — and the failure read as `pull access denied`, which
       looks like permissions and is a wrong name. Now pip-installed into a throwaway `python:3.13-slim`
       sharing the target's PID namespace, and verified attaching to the live gateway.)*
-- [ ] **T009** [US2] **Arm the watcher and run one full web E2E suite.** Record whether a wedge
+- [x] **T009** [US2] **Arm the watcher and run one full web E2E suite.** Record whether a wedge
       occurred and attach the captured stack to this feature's artifacts.
       **If no wedge occurs: stop. Report it uncaptured and leave US3 unstarted.** (SC-002)
+      *(Done 2026-08-12: **CAUGHT ON THE FIRST ARMED RUN** at `cpu=100.24% mem=1.20%`. Both mechanisms
+      fired; py-spy gave the decisive stack. Recorded under `evidence/`.)*
 
 ---
 
 ## Phase 3 — US3: the gateway cannot enter the state (P1) — ⛔ GATED ON T009
 
-- [ ] **T010** [US3] From the captured stack, state the cause: the specific loop and the condition
+- [x] **T010** [US3] From the captured stack, state the cause: the specific loop and the condition
       that makes it spin. Record the stack itself alongside the statement, so the reasoning stays
       checkable rather than being re-derived. (FR-009, SC-003)
-- [ ] **T011** [US3] Write a failing test that reproduces the condition at the smallest scope it can
+      *(Done 2026-08-12. `drain_audit_tasks` looped `while _PENDING_AUDITS` over a MODULE-LEVEL set
+      shared by every concurrent turn, so its exit condition was one the caller did not control. Other
+      turns kept refilling it; each pass re-gathered and returned at once, holding the GIL and starving
+      the single-threaded event loop. Stack in `evidence/wedged-stack-py-spy.txt`.)*
+- [x] **T011** [US3] Write a failing test that reproduces the condition at the smallest scope it can
       be reproduced at — unit if the loop is reachable directly, integration if it needs the graph.
       **Verify RED.**
-- [ ] **T012** [US3] Fix it. **Verify GREEN (T011).**
-- [ ] **T013** [US3] `pnpm nx test:unit movie-assistant` and `pnpm nx test:integration movie-assistant`
+      *(Done 2026-08-12. **The first version PASSED against the defect and was rewritten** — it used
+      instantly-completing audits, so the shared set emptied between passes. The livelock needs a
+      non-empty set when the `while` re-checks, which is the steady state under load. Faithful repro:
+      500 pending + a producer adding ONE per tick traps it indefinitely. RED confirmed.)*
+- [x] **T012** [US3] Fix it. **Verify GREEN (T011).**- [x] **T012** [US3] Fix it. **Verify GREEN (T011).**
+      *(Done 2026-08-12: drains a SNAPSHOT. Keeps the guarantee that mattered — audits scheduled before
+      the call are awaited — and gives up only waiting on OTHER turns' audits, which was never this
+      caller's business. All five probe scenarios now terminate in ~0.05 s, including 2000-pending
+      against 200/tick.)*
+- [x] **T013** [US3] `pnpm nx test:unit movie-assistant` and `pnpm nx test:integration movie-assistant`
       — record counts, not exit status.
-- [ ] **T014** [US3] **Two consecutive full web E2E suites without restarting the gateway**, with
+      *(Done 2026-08-12: **1131 passed, 2 skipped, 0 failed.**)*
+- [x] **T014** [US3] **Two consecutive full web E2E suites without restarting the gateway**, with
       `/health` answering throughout. One is not a sample: the reproduction is load-driven. (SC-004)
+      *(Done 2026-08-12 — **PASS.** Two consecutive suites, NO gateway restart between them:*
+
+      | run | wall | counts | gateway after |
+      | --- | ---: | --- | --- |
+      | 1 | 569 s | `failed=6 flaky=2 passed=166 did-not-run=3 skipped=0` | `Up (healthy)` |
+      | 2 | **165 s** | **`failed=0 flaky=0 passed=177 did-not-run=0 skipped=0`** | `Up (healthy)` |
+
+      *`/health` answered throughout and CPU settled at 0.2%. Run 2's speed was checked rather than
+      believed: `gateway_posts=166`, `posts_per_100_tests=93`, **109 Anthropic calls** — inside the
+      measured healthy band of 99–114, so it genuinely exercised the agent specs. Same turn count,
+      **2.7× faster**: the drain loop was burning CPU throughout every run, not only at the end.*
+
+      *Run 1's 6 failures are NOT a gateway wedge (verdict healthy, gateway alive) and are 054's T028
+      business — the failure-set diff between the two runs is not empty, so 054's two-run criterion is
+      still unmet.)*
 
 ---
 
 ## Phase 4 — Closure
 
-- [ ] **T015** Update `docs/runbooks/e2e-testing.md`: the one-command stack dump, the healthcheck's
+- [x] **T015** Update `docs/runbooks/e2e-testing.md`: the one-command stack dump, the healthcheck's
       meaning, and the rule that a gateway reporting `Up` is not evidence it is serving.
+      *(Done 2026-08-12: the root cause, the healthcheck's meaning, the deliberate no-auto-restart, and
+      the one-command dump recipe. openwiki governance exits 0.)*
 - [ ] **T016** Close item **#179** on its acceptance criteria, verified, with the stack recorded.
       If US3 was never started for want of a capture, say so on the item and leave it open.
 - [ ] **T017** Unblock feature 054's **T028** — its two-run US4 verification, which this feature

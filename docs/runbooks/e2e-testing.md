@@ -320,10 +320,33 @@ Three ways a local E2E run produced a confident, wrong answer in one session:
 
   ⚠️ **A running Keycloak keeps the OLD lifespan until the realm is re-imported.** Raising the number
   in the JSON changes nothing for a stack that is already up.
-- **A container can be "Up" and dead.** `movie-assistant-gateway` showed `Up 37 hours`, had stopped
-  logging hours earlier, and did not answer `/health` from inside the BFF container. Five specs
-  "reproduced deterministically" against it — a dead stack, not a defect. **Zero gateway requests for
-  a turn means check liveness first**, not that the product dropped the response:
+- **A container can be "Up" and dead — and the cause is now known and FIXED (feature 055, item #179).**
+  `movie-assistant-gateway` showed `Up 37 hours`, had stopped logging hours earlier, and did not answer
+  `/health` from inside the BFF container. Five specs "reproduced deterministically" against it — a dead
+  stack, not a defect. It then recurred three more times during feature 054's verification, invalidating
+  three full runs.
+
+  **Root cause, captured with py-spy while wedged**: `drain_audit_tasks` looped `while _PENDING_AUDITS`
+  over a module-level set shared by every concurrent turn. Other turns kept refilling it, so the loop
+  never exited, held the GIL, and starved the single-threaded event loop — 100% CPU on one core, memory
+  flat, `/health` unanswerable, Docker still reporting `running`. It drains a snapshot now.
+
+  **The gateway has a healthcheck**, so `docker ps` reports `unhealthy` instead of a bare `Up`. It is
+  deliberately NOT auto-restarted: a wedged gateway must stay visible, because silently recovering it
+  erases both the evidence and the incidence rate.
+
+  **If it ever wedges again, get the stack in one command** — the handler is armed at startup:
+
+  ```bash
+  docker kill -s USR1 movie-assistant-gateway    # dump every thread's Python stack
+  docker logs --tail 100 movie-assistant-gateway # read it here
+  ```
+
+  Or arm `scripts/capture-gateway-wedge.sh --out <dir> &` before a suite and it captures on the first
+  health failure — faulthandler stack, py-spy dump, CPU/memory and container state — then stops.
+
+  **Zero gateway requests for a turn still means check liveness first**, not that the product dropped
+  the response:
   `docker exec mcm-bff-service-nonsecure wget -qO- http://movie-assistant-gateway:8000/health`.
 - **A local SUBSET pass is not evidence about a change to a SHARED hook.** A fix to `useAssistantRun`
   passed 6/6 unit tests (RED→GREEN) and 5/5 E2E with `--retries=0` in 23.6 s with
