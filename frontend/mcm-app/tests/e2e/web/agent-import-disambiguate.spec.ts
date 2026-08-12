@@ -55,7 +55,7 @@ test.describe('Assistant import disambiguation (feature 014, US4 / T056)', () =>
   // match + a single immediate GET let the test (and its afterEach cleanup) tear down first; the
   // late write then hit the just-deleted collection (a CORRECT 404, not an mc-service bug). The fix
   // is the poll below: wait for the imported movie to actually land before asserting/teardown.
-  test('unmatched tab → collection buttons → pick → approve creates in the chosen collection', async ({
+  test('unmatched tab → collection buttons → pick → approve creates in the chosen collection', { tag: '@gate' }, async ({
     page,
     request,
   }) => {

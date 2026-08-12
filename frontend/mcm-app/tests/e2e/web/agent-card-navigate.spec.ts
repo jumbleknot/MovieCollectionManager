@@ -83,7 +83,7 @@ test.describe('Assistant clickable movie card (013 US3)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('tap the in-collection search result → lands on that movie detail (US3-AC1/AC2)', async ({
+  test('tap the in-collection search result → lands on that movie detail (US3-AC1/AC2)', { tag: '@gate' }, async ({
     page,
     request,
   }) => {

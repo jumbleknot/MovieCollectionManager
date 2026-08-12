@@ -65,7 +65,7 @@ test.describe('Assistant export flow (feature 014, US3 / T049)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('ask to export → a multi-tab .xlsx downloads', async ({ page, request }) => {
+  test('ask to export → a multi-tab .xlsx downloads', { tag: '@model-decision' }, async ({ page, request }) => {
     test.setTimeout(300_000);
     await seedCollection(request, `t049-exp-${Date.now()}`, ['Zorgon', 'Quaffle']);
 

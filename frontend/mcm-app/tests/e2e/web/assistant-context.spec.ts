@@ -96,7 +96,7 @@ test.describe('Assistant context-aware "this" (feature 012, US3)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('US3-AC1: "add <movie> to this" on a collection screen adds to that collection', async ({
+  test('US3-AC1: "add <movie> to this" on a collection screen adds to that collection', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {
@@ -133,7 +133,7 @@ test.describe('Assistant context-aware "this" (feature 012, US3)', () => {
     expect(names).not.toContain('this');
   });
 
-  test('US3-AC2: "add <movie> to this" on home asks the user to clarify', async ({ page }) => {
+  test('US3-AC2: "add <movie> to this" on home asks the user to clarify', { tag: '@model-decision' }, async ({ page }) => {
     test.setTimeout(300_000);
     await page.goto(`${BASE}/home`);
     await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });

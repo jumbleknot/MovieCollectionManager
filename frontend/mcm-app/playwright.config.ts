@@ -46,8 +46,25 @@ const CONTAINER_BASE_URL =
   : null;
 const baseURL = CONTAINER_BASE_URL ?? 'http://localhost:8081';
 
+// 056 (item #170) — which tier this invocation runs.
+//
+//   E2E_TIER=gate   everything EXCEPT @model-decision — the blocking merge gate
+//   E2E_TIER=model  ONLY @model-decision — non-blocking, runs on main/dispatch
+//   unset           everything (local default, unchanged)
+//
+// IN THE CONFIG, NOT ON THE CLI, and that is not a style preference. MEASURED 2026-08-12 on
+// Playwright 1.60: `--grep-invert` is accepted and DOES NOTHING here — `--grep CORS` lists 1 test
+// while `--grep-invert CORS` lists all 177. A workflow built on the CLI flag would have run the whole
+// suite in the "gate" selection and the split would have been a silent no-op that looked correct.
+// `grepInvert` in the config is applied by the runner itself and is asserted by
+// scripts/__tests__/agent-test-classification.test.mjs.
+const TIER = process.env['E2E_TIER'];
+const MODEL_DECISION = /@model-decision/;
+
 export default defineConfig({
   testDir: './tests/e2e/web',
+  ...(TIER === 'gate' ? { grepInvert: MODEL_DECISION } : {}),
+  ...(TIER === 'model' ? { grep: MODEL_DECISION } : {}),
   // T008/T009: authenticate once + seed the fixture before any test (FR-004, FR-005, SC-001).
   globalSetup: './tests/e2e/web/setup/global-setup.ts',
   // 054 US6: fail a LOCAL run whose auth was being rate-limited, naming the token lifespan rather

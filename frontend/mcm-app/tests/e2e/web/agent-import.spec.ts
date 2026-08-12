@@ -101,7 +101,7 @@ test.describe('Assistant import flow (feature 014, US2 / T040)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('type → choose file → summary preview → approve creates exactly the rows; re-run idempotent', async ({
+  test('type → choose file → summary preview → approve creates exactly the rows; re-run idempotent', { tag: '@gate' }, async ({
     page,
     request,
   }) => {

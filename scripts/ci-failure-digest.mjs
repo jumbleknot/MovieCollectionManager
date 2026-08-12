@@ -248,6 +248,10 @@ export const WEB_E2E_SOURCE = 'step:web-e2e';
 
 export const COUNTS_SOURCES = Object.freeze([
   'step:e2e-result-gate',
+  // 056: the model tier reports separately and must reach the same channel. Without it a green run
+  // would publish the gate's counts and say nothing about the tier that left the gate — which is the
+  // shape of quarantine this split was designed not to become.
+  'step:e2e-result-gate-model',
   'step:e2e-contention-tally',
   'step:e2e-turn-tally',
 ]);

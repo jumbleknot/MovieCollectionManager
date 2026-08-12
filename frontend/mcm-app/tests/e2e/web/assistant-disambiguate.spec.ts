@@ -151,7 +151,7 @@ test.describe('Assistant disambiguation correctness (feature 012, T082)', () => 
     await cleanupOwnedCollections(request);
   });
 
-  test('look-up disambiguation pick resolves the NON-FIRST (longer-title) option', async ({
+  test('look-up disambiguation pick resolves the NON-FIRST (longer-title) option', { tag: '@model-decision' }, async ({
     page,
   }) => {
     /**
@@ -195,7 +195,7 @@ test.describe('Assistant disambiguation correctness (feature 012, T082)', () => 
     await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
   });
 
-  test('move "Title (Year)" resolves and moves the correct film across collections', async ({
+  test('move "Title (Year)" resolves and moves the correct film across collections', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {

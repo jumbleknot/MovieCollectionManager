@@ -19,7 +19,7 @@ import { test, expect } from './fixtures/worker-session';
 import { E2E_BASE_URL as BASE } from './setup/target';
 
 test.describe('agent endpoint CORS (032 US2)', () => {
-  test('runtime /info response carries no Access-Control-Allow-Origin / -Credentials', async ({ request }) => {
+  test('runtime /info response carries no Access-Control-Allow-Origin / -Credentials', { tag: '@gate' }, async ({ request }) => {
     // GET reaches gated(req, false) → auth passes (shared session) → CopilotKit runtime /info.
     const res = await request.get(`${BASE}/bff-api/agent/run`);
     // Must have passed auth to reach the runtime (else the 401 securityHeaders() path has no CORS

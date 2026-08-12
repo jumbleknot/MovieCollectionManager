@@ -1,0 +1,157 @@
+// Feature 056 (item #170) — every agent test must declare which tier it belongs to.
+//
+// `app-e2e` is a required merge gate, and 41 of its tests assert on a live LLM and live TMDB.
+// MEASURED on two runs of IDENTICAL code (sha 1fada7a): #1684 reported
+// `failed=0 flaky=0 passed=177`, #1685 reported `failed=1 flaky=7 passed=166`. Every alternative
+// explanation was excluded by a measured counter — `verdict=healthy` (not the #173 collapse),
+// `refresh_429=0`/`session_evicted=0` (not contention), 8 worker identities (not the shared user of
+// #169), #179's livelock fixed. All eight affected entries were model-decision assertions.
+//
+// So the suite is split: assertions whose verdict is determined by code we control BLOCK a merge;
+// assertions that depend on what the model chose do not. The rule lives in
+// `openwiki/invariants/testing-tiers.md`.
+//
+// THIS GUARD EXISTS BECAUSE THE DEFAULT MUST NOT BE SILENT. An agent test carrying neither tag would
+// otherwise drift into whichever selection happened to match it, and the reader of a green gate could
+// not tell which tier had actually run it. An unclassified test is a failure, not a default (FR-003).
+//
+// Static — it parses the spec files rather than running them, so it runs in the tooling tier instead
+// of needing a 30-minute CI job to enforce a naming rule.
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const E2E_DIR = resolve(REPO_ROOT, 'frontend/mcm-app/tests/e2e/web');
+
+/** The two tiers. Exactly one must be present on every agent test. */
+export const GATE_TAG = '@gate';
+export const MODEL_TAG = '@model-decision';
+
+const AGENT_SPEC = /^(agent|assistant)-.*\.spec\.ts$/;
+
+function agentSpecFiles() {
+  return readdirSync(E2E_DIR).filter((f) => AGENT_SPEC.test(f)).sort();
+}
+
+/**
+ * Every `test(...)` declaration in a spec, with the text of its declaration line(s).
+ *
+ * Deliberately crude: a real parser would be better and is not worth it here, because the shape this
+ * has to catch is a missing TAG, and a tag is a literal string on or just after the title. The guard
+ * fails closed — an unparseable declaration counts as unclassified rather than being skipped.
+ */
+function testDeclarations(text) {
+  const lines = text.split('\n');
+  const out = [];
+  lines.forEach((line, i) => {
+    if (!/^\s*test\s*\(/.test(line)) return;
+    // A declaration may wrap: take this line plus the next two, which covers
+    // `test('title', { tag: '@x' }, async ({ page }) => {` in every style used here.
+    out.push({ line: i + 1, text: lines.slice(i, i + 3).join('\n') });
+  });
+  return out;
+}
+
+const classify = (decl) => ({
+  gate: decl.text.includes(GATE_TAG),
+  model: decl.text.includes(MODEL_TAG),
+});
+
+test('every agent/dock test declares exactly one tier', () => {
+  const unclassified = [];
+  const both = [];
+
+  for (const file of agentSpecFiles()) {
+    const text = readFileSync(join(E2E_DIR, file), 'utf8');
+    for (const decl of testDeclarations(text)) {
+      const { gate, model } = classify(decl);
+      if (gate && model) both.push(`${file}:${decl.line}`);
+      else if (!gate && !model) unclassified.push(`${file}:${decl.line}`);
+    }
+  }
+
+  assert.deepEqual(
+    both,
+    [],
+    `a test cannot be in both tiers — it would run twice and be counted twice:\n  ${both.join('\n  ')}`,
+  );
+  assert.deepEqual(
+    unclassified,
+    [],
+    `${unclassified.length} agent test(s) carry neither ${GATE_TAG} nor ${MODEL_TAG}. An unclassified `
+      + 'test drifts into whichever selection happens to match it, and a reader of a green gate cannot '
+      + 'tell which tier ran it. See openwiki/invariants/testing-tiers.md.\n  '
+      + unclassified.join('\n  '),
+  );
+});
+
+test('the two tiers partition the agent tests — union complete, intersection empty', () => {
+  let gate = 0;
+  let model = 0;
+  let total = 0;
+
+  for (const file of agentSpecFiles()) {
+    for (const decl of testDeclarations(readFileSync(join(E2E_DIR, file), 'utf8'))) {
+      total += 1;
+      const c = classify(decl);
+      if (c.gate) gate += 1;
+      if (c.model) model += 1;
+    }
+  }
+
+  assert.equal(gate + model, total, `partition is not complete: ${gate} + ${model} !== ${total}`);
+  assert.ok(gate > 0, 'no agent test blocks a merge — the gate would prove nothing about the assistant');
+  assert.ok(
+    model > 0,
+    'no agent test is tagged model-decision. Either the classification was not applied, or the split '
+      + 'is pointless — both are worth failing on.',
+  );
+});
+
+test('nothing was skipped or .only-ed to achieve the split', () => {
+  // 051 SC-001 and 054 FR-017: a spec may not be skipped, deselected or deleted to reach green, and
+  // a tier is not an exception. `.only` would silently deselect every OTHER test in the file.
+  const offenders = [];
+  for (const file of agentSpecFiles()) {
+    const text = readFileSync(join(E2E_DIR, file), 'utf8');
+    text.split('\n').forEach((line, i) => {
+      if (/^\s*test\.only\s*\(|^\s*test\.describe\.only\s*\(/.test(line)) offenders.push(`${file}:${i + 1} .only`);
+      if (/^\s*test\.skip\s*\(\s*['"`]/.test(line)) offenders.push(`${file}:${i + 1} test.skip`);
+    });
+  }
+  assert.deepEqual(offenders, [], `skipped or .only-ed agent tests:\n  ${offenders.join('\n  ')}`);
+});
+
+test('the tier selection lives in the CONFIG, because --grep-invert does not work here', () => {
+  // MEASURED 2026-08-12, Playwright 1.60: `--grep CORS` lists 1 test and `--grep-invert CORS` lists
+  // ALL 177. The flag is accepted and does nothing. A workflow built on it would have run the whole
+  // suite in the "gate" selection — the split would have been a silent no-op that looked correct,
+  // which is the exact failure mode this whole cluster of work exists to remove.
+  //
+  // So the selection is `grepInvert`/`grep` in playwright.config.ts, applied by the runner itself.
+  // This pins it, so nobody "simplifies" it back onto the CLI flag.
+  const cfg = readFileSync(resolve(REPO_ROOT, 'frontend/mcm-app/playwright.config.ts'), 'utf8');
+  assert.match(cfg, /grepInvert:\s*MODEL_DECISION/,
+    'the gate selection no longer excludes @model-decision in the config');
+  assert.match(cfg, /grep:\s*MODEL_DECISION/,
+    'the model selection no longer selects @model-decision in the config');
+  assert.match(cfg, /E2E_TIER/, 'the tier switch is gone from the config');
+});
+
+test('app-ci runs BOTH tiers, and only the gate can fail the job', () => {
+  // FR-005: nothing leaves the gate without a tier that runs it. A model tier that is absent from the
+  // workflow is quarantine, which 051 SC-001 and 054 FR-017 both forbid.
+  const yaml = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml'), 'utf8');
+  assert.match(yaml, /E2E_TIER=gate/, 'app-ci does not run the gate tier');
+  assert.match(yaml, /E2E_TIER=model/, 'app-ci does not run the model tier — that would be quarantine');
+
+  // The model tier must not be able to fail the job, or the split achieves nothing.
+  const at = yaml.indexOf('E2E_TIER=model');
+  const stepStart = yaml.lastIndexOf('- name:', at);
+  assert.match(yaml.slice(stepStart, at), /continue-on-error:\s*true/,
+    'the model tier can fail app-e2e — the gate would still be hostage to model drift');
+});

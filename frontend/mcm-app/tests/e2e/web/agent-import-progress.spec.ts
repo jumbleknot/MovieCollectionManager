@@ -75,7 +75,7 @@ test.describe('Assistant import progress (047 US3 / FR-014a, FR-014b)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('the progress line appears in place while the import applies, then is replaced by the report', async ({
+  test('the progress line appears in place while the import applies, then is replaced by the report', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {

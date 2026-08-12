@@ -56,7 +56,7 @@ test.describe("Assistant unified search workflow (013 US7 + US10)", () => {
     await cleanupOwnedCollections(request);
   });
 
-  test("a named-collection single match is offered as a button, then opens on tap (US7-AC8 + New Scope 1)", async ({
+  test("a named-collection single match is offered as a button, then opens on tap (US7-AC8 + New Scope 1)", { tag: '@model-decision' }, async ({
     page,
   }) => {
     test.setTimeout(360_000);
@@ -81,7 +81,7 @@ test.describe("Assistant unified search workflow (013 US7 + US10)", () => {
     expect(page.url()).toMatch(/\/movies\//);
   });
 
-  test('no owned match → "Search the web" → a TMDB preview card with a clickable link (US7-AC10/US10)', async ({
+  test('no owned match → "Search the web" → a TMDB preview card with a clickable link (US7-AC10/US10)', { tag: '@model-decision' }, async ({
     page,
   }) => {
     test.setTimeout(420_000);
@@ -131,7 +131,7 @@ test.describe("Assistant unified search workflow (013 US7 + US10)", () => {
   // The terminal web card is the one place a member is left with add-or-nothing. Cancel ends the
   // search in ONE action, writes nothing, and leaves the next message a fresh request.
 
-  test("cancel from the web card ends the search, adds nothing, and the next message is fresh (US5-AC2..AC4)", async ({
+  test("cancel from the web card ends the search, adds nothing, and the next message is fresh (US5-AC2..AC4)", { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {
