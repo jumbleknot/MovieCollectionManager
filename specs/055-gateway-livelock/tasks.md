@@ -125,8 +125,10 @@ and an unstarted US3 — not the most plausible-looking loop, patched.
       meaning, and the rule that a gateway reporting `Up` is not evidence it is serving.
       *(Done 2026-08-12: the root cause, the healthcheck's meaning, the deliberate no-auto-restart, and
       the one-command dump recipe. openwiki governance exits 0.)*
-- [ ] **T016** Close item **#179** on its acceptance criteria, verified, with the stack recorded.
+- [x] **T016** Close item **#179** on its acceptance criteria, verified, with the stack recorded.
       If US3 was never started for want of a capture, say so on the item and leave it open.
+      *(Done 2026-08-12: closed on all four criteria with the captured stack, the two-run table and
+      the deliberate no-auto-restart recorded on the item.)*
 - [ ] **T017** Unblock feature 054's **T028** — its two-run US4 verification, which this feature
       exists to make possible — and record the link on both.
 
