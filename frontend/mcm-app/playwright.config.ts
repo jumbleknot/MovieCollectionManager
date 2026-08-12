@@ -19,9 +19,19 @@ const MAX_E2E_WORKERS = 10;
 const E2E_WORKERS = Math.max(1, Math.min(MAX_E2E_WORKERS, Math.floor(os.cpus().length / 2)));
 
 // SELF-REPORTING, because the cap and the core count are indistinguishable from the outside: a run
-// printing "using 6 workers" could be capped at 6 or running on a 12-core box, and only one of those
+// printing "using 8 workers" could be capped at 8 or running on a 16-core box, and only one of those
 // is worth changing. Measured once and then guessed at is how the old bound outlived its reason.
-console.log(`[playwright] cores=${os.cpus().length} maxWorkers=${MAX_E2E_WORKERS} → workers=${E2E_WORKERS}`);
+// (It answered the question on run #1684: `cores=16 maxWorkers=10 → workers=8`, so the machine binds
+// and the cap does not — going past 8 means changing the divisor, not the ceiling.)
+//
+// ONCE, not once per worker. Playwright evaluates this config in the main process AND in every
+// worker process, so the first version printed the line ten times into the step log the failure
+// digest carries. `TEST_WORKER_INDEX` is set only in workers, which is the cheapest way to tell them
+// apart. A diagnostic that floods the channel it reports through is a diagnostic people learn to
+// scroll past.
+if (process.env['TEST_WORKER_INDEX'] === undefined) {
+  console.log(`[playwright] cores=${os.cpus().length} maxWorkers=${MAX_E2E_WORKERS} → workers=${E2E_WORKERS}`);
+}
 
 // Feature 007: target the BFF Docker container instead of Metro for the FINAL E2E run.
 //   E2E_BFF_TARGET unset        → Metro dev server on :8081 (default; iterative dev).
