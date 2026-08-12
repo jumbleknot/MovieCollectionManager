@@ -1132,3 +1132,35 @@ test('(mm9) a green job with no counts steps publishes nothing and says so', () 
   assert.equal(r.code, 0);
   assert.match(r.out, /no e2e counts steps/, 'the self-limiting path did not say why it published nothing');
 });
+
+test('(nn) counts mode carries the global-setup identity lines, filtered, not the whole web-e2e log', async () => {
+  // Measured 2026-08-12 on app-ci run #1681: the counts bundle proved the suite was green and the
+  // contention zero, and could NOT say whether per-worker identities actually engaged — that line
+  // lives in the `web-e2e` step log, which is collected only on failure. So a fallback to the shared
+  // user (which global setup warns about, loudly, into that same log) would have been invisible on a
+  // green run. A green run that cannot say WHICH identity model produced it is the same class of gap
+  // as a green run that cannot say how many tests ran.
+  //
+  // Filtered rather than whole: `web-e2e` is thousands of lines, and counts mode exists to be small.
+  const { selectCountsSources } = await digestModule();
+  const picked = selectCountsSources([
+    { source: 'step:e2e-result-gate', text: '[e2e-gate] failed=0' },
+    {
+      source: 'step:web-e2e',
+      text: [
+        'Running 177 tests using 6 workers',
+        '[global-setup] minted 6 worker identities — 5 fresh users + the canonical one for worker 0',
+        '  ok 1 collections.spec.ts:12 › lists collections',
+        '[global-setup] seeded fixtures for 5 worker identities in 1.6s',
+        '  ok 2 movies.spec.ts:20 › adds a movie',
+      ].join('\n'),
+    },
+  ]);
+
+  const web = picked.find((e) => e.source === 'step:web-e2e');
+  assert.ok(web, 'the web-e2e setup lines were not carried into the counts bundle');
+  assert.match(web.text, /minted 6 worker identities/);
+  assert.match(web.text, /seeded fixtures for 5 worker identities/);
+  assert.doesNotMatch(web.text, /collections\.spec\.ts/, 'the whole test log was carried, not just setup');
+  assert.ok(web.text.split('\n').length <= 12, 'the filtered excerpt is not small');
+});

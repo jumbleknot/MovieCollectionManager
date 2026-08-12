@@ -243,14 +243,34 @@ export function shouldPublish({ runStatus, jobStatus }) {
  * `e2e-turn-tally` is listed here before the step exists (054 T013 adds it). An absent source is
  * simply not collected, so naming it early costs nothing and cannot be forgotten later.
  */
+/** The web-E2E step log — carried only as its `[global-setup]` lines. See selectCountsSources. */
+export const WEB_E2E_SOURCE = 'step:web-e2e';
+
 export const COUNTS_SOURCES = Object.freeze([
   'step:e2e-result-gate',
   'step:e2e-contention-tally',
   'step:e2e-turn-tally',
 ]);
 
+/**
+ * The web-E2E step log, reduced to the lines that say HOW the run was set up.
+ *
+ * Measured on app-ci run #1681: the counts bundle proved the suite was green and the contention
+ * zero, and could not say whether per-worker identities actually engaged — that line lives in the
+ * `web-e2e` log, collected only on failure. Global setup warns loudly when it falls back to a shared
+ * identity, and on a green run that warning was unreachable. A green run that cannot say WHICH
+ * identity model produced it has the same gap as one that cannot say how many tests ran.
+ *
+ * Filtered, not whole: `web-e2e` is thousands of lines and counts mode exists to stay small.
+ */
+const SETUP_LINE = /^\s*\[global-setup\]/;
+
 export function selectCountsSources(excerpts = []) {
-  return excerpts.filter((e) => COUNTS_SOURCES.includes(e.source));
+  const named = excerpts.filter((e) => COUNTS_SOURCES.includes(e.source));
+  const web = excerpts.find((e) => e.source === WEB_E2E_SOURCE);
+  if (!web) return named;
+  const setupLines = web.text.split('\n').filter((l) => SETUP_LINE.test(l));
+  return setupLines.length ? [...named, { source: WEB_E2E_SOURCE, text: setupLines.join('\n') }] : named;
 }
 
 // --- Outcome signal (feature 051 US3, FR-010/011/012) --------------------------------------------

@@ -1,21 +1,27 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as os from 'node:os';
 
-// 052 US3: the upper bound on Playwright workers, and therefore on concurrent BFF sessions for the
-// shared E2E user — one session per worker is what keeps them off each other's refresh bucket.
+// The upper bound on Playwright workers.
 //
-// SIX, not eight, and the difference is measured. A local smoke run with the bound at 8 reported
-// `session_evicted=8`: the eight fresh sessions plus what the user already held crossed
-// MAX_CONCURRENT_SESSIONS (10) and `createSession` began evicting. CI starts from a wiped Redis so 8
-// would *just* fit — 8 here plus one for the `lifecycle` project's real login is 9 of 10 — but that
-// is precisely the "sits right at the edge" fragility this feature exists to remove, and shipping at
-// 9/10 would re-create the eviction hazard that run 1605 refuted.
+// HISTORY, because the number has been wrong in both directions. Feature 052 set it to SIX to keep
+// the SHARED E2E user's session count clear of MAX_CONCURRENT_SESSIONS (10): all workers acted as one
+// user, so workers == sessions-for-that-user, and a local smoke run at 8 measured `session_evicted=8`.
+// The cost was wall clock — this file recorded ~21 min → ~28 min for the web suite on that change.
 //
-// The refresh contention is fixed by the per-worker SESSION, not by this number; the bound exists
-// only to keep the session count clear of the cap. Cost is wall-clock (~21 min → ~28 min for the web
-// suite), well inside the job's 75-minute budget.
-const MAX_E2E_WORKERS = 6;
+// 054 US4 removed the reason. `MAX_CONCURRENT_SESSIONS` is PER USER, and each worker is now its own
+// user holding exactly one session, so the cap cannot be approached however many workers run.
+// Measured after that change: `session_evicted=0` locally and in CI (app-ci run #1681). Raised to 10.
+//
+// What still bounds it: the machine (half the cores), and the LOGIN rate limit — `/bff-api/auth/login`
+// allows 5 per 60 s per IP and global setup logs in once per worker, sequentially, at ~15 s each,
+// about 4 per minute. That holds at 10; it would NOT hold if those logins were made concurrent.
+const MAX_E2E_WORKERS = 10;
 const E2E_WORKERS = Math.max(1, Math.min(MAX_E2E_WORKERS, Math.floor(os.cpus().length / 2)));
+
+// SELF-REPORTING, because the cap and the core count are indistinguishable from the outside: a run
+// printing "using 6 workers" could be capped at 6 or running on a 12-core box, and only one of those
+// is worth changing. Measured once and then guessed at is how the old bound outlived its reason.
+console.log(`[playwright] cores=${os.cpus().length} maxWorkers=${MAX_E2E_WORKERS} → workers=${E2E_WORKERS}`);
 
 // Feature 007: target the BFF Docker container instead of Metro for the FINAL E2E run.
 //   E2E_BFF_TARGET unset        → Metro dev server on :8081 (default; iterative dev).
@@ -43,15 +49,7 @@ export default defineConfig({
   expect: { timeout: 10000 },
   fullyParallel: false,
   forbidOnly: !!process.env['CI'],
-  // 052 US3 — BOUNDED, not reduced. Playwright's default (half the cores) already gave 8 on the kvm
-  // runner, so CI behaviour is unchanged; the cap only bites on a bigger host.
-  //
-  // It has to be bounded because the worker count is now also the SESSION count: each worker holds
-  // its own BFF session (tests/e2e/web/fixtures/worker-session.ts) so that no two share a refresh
-  // rate-limit bucket. MAX_CONCURRENT_SESSIONS is 10, and the default on this 20-core dev container
-  // would be 10 — which reaches the cap and makes `createSession` evict, swapping the contention this
-  // feature fixed for the eviction it refuted. scripts/__tests__/e2e-worker-session.test.mjs asserts
-  // the headroom against env.ts.
+  // Bounded by the machine and the login rate limit — see MAX_E2E_WORKERS above.
   workers: E2E_WORKERS,
   retries: 1,  // SSO timing races between parallel workers cause intermittent login timeouts
   // 'dot' = one char per test; combined with RTK keeps a passing run to a compact summary (T005, FR-002)

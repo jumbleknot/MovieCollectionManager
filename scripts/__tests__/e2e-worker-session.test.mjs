@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const WEB_E2E = resolve(REPO_ROOT, 'frontend/mcm-app/tests/e2e/web');
 const CONFIG = resolve(REPO_ROOT, 'frontend/mcm-app/playwright.config.ts');
+const GLOBAL_SETUP = resolve(REPO_ROOT, 'frontend/mcm-app/tests/e2e/web/setup/global-setup.ts');
 const ENV_TS = resolve(REPO_ROOT, 'frontend/mcm-app/src/config/env.ts');
 
 /** Specs that must run UNAUTHENTICATED — they opt out via a file-level `test.use`. */
@@ -113,7 +114,7 @@ test('the CI access token outlives the E2E run, so a frozen storageState stays u
   );
 });
 
-test('the worker count is bounded, and stays clear of MAX_CONCURRENT_SESSIONS', () => {
+test('the worker count is bounded, and the cap it must respect is PER USER', () => {
   const cfg = readFileSync(CONFIG, 'utf8');
   const workers = /MAX_E2E_WORKERS\s*=\s*(\d+)/.exec(cfg);
   assert.ok(workers, 'playwright.config.ts must declare an explicit MAX_E2E_WORKERS bound');
@@ -126,17 +127,37 @@ test('the worker count is bounded, and stays clear of MAX_CONCURRENT_SESSIONS', 
   const cap = /maxConcurrentSessions:.*?['"](\d+)['"]/.exec(readFileSync(ENV_TS, 'utf8'));
   assert.ok(cap, 'could not read the MAX_CONCURRENT_SESSIONS default from env.ts');
 
-  const n = Number(workers[1]);
-  const max = Number(cap[1]);
+  // THIS GUARD CHANGED WITH THE INVARIANT IT PROTECTS (054 US4), rather than being deleted because
+  // it failed. Feature 052 required `workers <= cap - 3`, because every worker acted as the SAME
+  // user: workers WERE that user's concurrent sessions, and a local run at 8 measured
+  // `session_evicted=8`.
+  //
+  // Each worker is now its own USER holding exactly ONE session, and the cap is per user — so the
+  // arithmetic that made the old bound necessary no longer describes anything. What must hold now is
+  // the premise itself: that global setup really does mint an identity per worker. If that ever
+  // regressed to a shared user, `workers <= cap - 3` would be load-bearing again and 10 would be
+  // over it — so this asserts the premise instead of a number derived from it.
+  const setup = readFileSync(GLOBAL_SETUP, 'utf8');
+  assert.match(
+    setup,
+    /createUserWithRoles\(/,
+    'global setup no longer mints per-worker users — the per-USER session cap becomes load-bearing '
+      + 'again, and MAX_E2E_WORKERS must drop back below it (see 052 US3)',
+  );
+  assert.match(
+    setup,
+    /authFileForWorker\(/,
+    'per-worker storage state is gone — workers would share one session again',
+  );
 
-  // Headroom of 3, not 1. Measured: with the bound at 8 a local smoke run reported
-  // `session_evicted=8` — the fresh sessions plus what the user already held crossed the cap. CI
-  // starts clean so 8 would just fit (8 + the lifecycle project's login = 9 of 10), and "just fits"
-  // is the fragility this feature exists to remove, not a passing grade.
+  // One session per worker, so the per-user cap is untouchable however many workers run. The bound
+  // that remains is the machine and the login rate limit, both of which live in the config comment.
   assert.ok(
-    n <= max - 3,
-    `${n} workers means ${n} concurrent sessions for one user against a cap of ${max}. ` +
-      'Leave headroom for the lifecycle project and for sessions the user already holds, or ' +
-      'eviction starts — replacing the refresh problem with the one run 1605 just refuted.',
+    Number(workers[1]) >= 1,
+    'MAX_E2E_WORKERS must be a positive bound',
+  );
+  assert.ok(
+    Number(cap[1]) >= 1,
+    'MAX_CONCURRENT_SESSIONS must still be read, so this guard fails loudly if env.ts drops it',
   );
 });
