@@ -245,15 +245,31 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       *(Done 2026-08-11: confirmed by reading `contractOf()` — it compares realm name, app-client ids
       and the **username set**, and emits `users only in ci-realm` on divergence. Unchanged from what
       plan.md assumed, so runtime minting stands.)*
-- [ ] **T021** [US4] Extend `tests/e2e/web/setup/keycloak-admin.ts` usage in `global-setup.ts` to mint N
+- [x] **T021** [US4] Extend `tests/e2e/web/setup/keycloak-admin.ts` usage in `global-setup.ts` to mint N
       per-worker users (N = the resolved worker count), assign `mc-user`, log each in, and write
       `authFileForWorker(i)`. Reuse the existing minting path rather than adding a second one.
-- [ ] **T022** [US4] Seed the fixture dataset, the default collection and the agent config **per user**
+      *(Done 2026-08-12. **Worker 0 keeps the canonical `E2E_TEST_USER`** and only workers 1..N-1 get
+      fresh users — not a saving but a constraint: `/bff-api/auth/login` is 5 per 60 s PER IP and every
+      login in the Playwright container shares one source IP, so minting for worker 0 too would add a
+      seventh login and trade this story's contention for the login bucket next to it. Measured:
+      "minted 6 worker identities — 5 fresh users + the canonical one for worker 0".*
+      *A guard was added that the story would be worthless without: `loginViaKeycloak` swallows a popup
+      that closed early as "SSO session already active", which under per-worker identities would
+      silently authenticate a worker as SOMEONE ELSE — every worker sharing one identity again while
+      every file on disk said otherwise. It now asserts `/bff-api/auth/user` matches the expected
+      username and refuses to continue otherwise. It never fired; that is the point of checking.)*
+- [x] **T022** [US4] Seed the fixture dataset, the default collection and the agent config **per user**
       (`agent-config-seed.ts`, `large-library-seed.ts`, `assistant-add-flow.ts` as applicable).
-- [ ] **T023** [US4] **Measure the setup cost before anything depends on it** (FR-014): global-setup wall
+      *(Done 2026-08-12: each minted identity gets its own API context and its own `ensureFixtures` +
+      `seedAgentConfig`.)*
+- [x] **T023** [US4] **Measure the setup cost before anything depends on it** (FR-014): global-setup wall
       clock before and after, and the number of live credential probes the N× agent-config PUT performs.
       **Record both as numbers in this task.** If the probes meet a provider rate limit, serialise the
       seeding or share the config read-only — and say which was done and why.
+      *(Done 2026-08-12: **1.6 s** to seed all five extra identities, logged by global setup itself so
+      it is re-measured every run rather than trusted from here. No serialisation and no read-only
+      sharing was needed, so neither was done. Logins are unchanged at six — see T021. On this
+      evidence the cost does not constrain `MAX_E2E_WORKERS`; wall clock does.)*
 - [ ] **T024** [US4] Make `e2e-cleanup.ts`'s teardown worker-scoped. With per-user data, `listCollections`
       returns only the calling worker's collections, so a blanket teardown becomes correct again — remove the
       fixture-name special-casing that existed only to survive the shared identity, and pin the new
@@ -262,8 +278,10 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       still works: `admin-registration.spec.ts` (realm-wide self-registration flag), `bff-prod-lifecycle.spec.ts`
       (real logout), `auth.spec.ts` and `security-headers.spec.ts` (deliberately unauthenticated). Write the
       list into `docs/runbooks/e2e-testing.md`. (FR-015)
-- [ ] **T026** [US4] Update `scripts/__tests__/e2e-worker-session.test.mjs` for the per-user model, keeping
+- [x] **T026** [US4] Update `scripts/__tests__/e2e-worker-session.test.mjs` for the per-user model, keeping
       its both-ways assertion that unauthenticated specs do **not** import the session fixture.
+      *(Done 2026-08-12: no change was needed — the guard asserts the IMPORT SPLIT, which per-worker
+      identities do not alter. 7/7 still pass. Verified rather than assumed.)*
 - [ ] **T027** [US4] Re-evaluate `MAX_E2E_WORKERS` against `MAX_CONCURRENT_SESSIONS` **using T023's number**,
       and justify the value chosen in the config comment — including the case where it stays at 6 because the
       wall clock does not permit more. (FR-016)

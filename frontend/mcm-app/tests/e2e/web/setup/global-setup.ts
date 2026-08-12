@@ -23,7 +23,8 @@ import {
   type FixtureMovie,
 } from '../../fixtures/base-dataset';
 import { agentSeedingEnabled, seedAgentConfig } from './agent-config-seed';
-import { authFileForWorker } from './auth-files';
+import { authFileForWorker, WORKER_IDENTITY_MANIFEST } from './auth-files';
+import { createUserWithRoles, keycloakAdminEnabled } from './keycloak-admin';
 import { ensureLargeLibrary, largeLibraryEnabled } from './large-library-seed';
 import { requireEnv } from './load-e2e-env';
 
@@ -39,6 +40,19 @@ const EXPECTED_BFF_SOURCE = TARGET ?? null;     // 'dev-container' | 'prod-conta
 const AUTH_DIR = path.join(__dirname, '.auth');
 const AUTH_FILE = path.join(AUTH_DIR, 'user.json');
 // Feature 027 US4: credentials come from .env.e2e.local / job env — never a hardcoded fallback.
+/**
+ * One Playwright worker's identity (054 US4).
+ *
+ * `userId` is null for worker 0, which reuses the canonical `E2E_TEST_USER` rather than minting a
+ * throwaway — and is therefore the one identity teardown must NOT delete.
+ */
+interface WorkerIdentity {
+  index: number;
+  username: string;
+  password: string;
+  userId: string | null;
+}
+
 const USER = requireEnv('E2E_TEST_USER');
 const PASS = requireEnv('E2E_TEST_PASSWORD');
 
@@ -81,7 +95,7 @@ function toCreateMovieBody(m: FixtureMovie): Record<string, unknown> {
  * with a valid BFF session cookie. Mirrors the slow path of the per-spec login()
  * helper that this global setup replaces.
  */
-async function loginViaKeycloak(page: Page): Promise<void> {
+async function loginViaKeycloak(page: Page, creds: { username: string; password: string } = { username: USER, password: PASS }): Promise<void> {
   await page.goto(`${BASE}/(auth)/login`);
   await page.waitForSelector('[data-testid="login-screen"]', { timeout: 20000 });
 
@@ -92,8 +106,8 @@ async function loginViaKeycloak(page: Page): Promise<void> {
 
   try {
     await popup.waitForSelector('input[name="username"]', { timeout: 15000 });
-    await popup.fill('input[name="username"]', USER);
-    await popup.fill('input[name="password"]', PASS);
+    await popup.fill('input[name="username"]', creds.username);
+    await popup.fill('input[name="password"]', creds.password);
     await popup.press('input[name="password"]', 'Enter');
   } catch {
     // SSO session already active — popup closed before the form appeared.
@@ -110,6 +124,25 @@ async function loginViaKeycloak(page: Page): Promise<void> {
 
   if (!result) {
     throw new Error('[global-setup] Login failed: could not verify authenticated state after OIDC flow');
+  }
+
+  // WHOSE session is this? (054 US4.) The `catch` above swallows a popup that closed before the form
+  // appeared and calls it "SSO session already active" — which is true, and which under per-worker
+  // identities would silently authenticate this worker as SOMEONE ELSE. Every worker would then share
+  // one identity again while every file on disk said otherwise: the shared-state class this story
+  // exists to remove, wearing a disguise that no count would reveal.
+  //
+  // Browser contexts have isolated cookie jars, so this should never fire. "Should never" is not a
+  // measurement, and the failure it guards is silent.
+  const who = await page.evaluate(async () => {
+    const r = await fetch('/bff-api/auth/user', { credentials: 'include' });
+    return r.ok ? ((await r.json()) as { username?: string }).username ?? null : null;
+  });
+  if (who && who.toLowerCase() !== creds.username.toLowerCase()) {
+    throw new Error(
+      `[global-setup] identity mismatch: logged in as "${who}" but expected "${creds.username}". `
+      + 'A leaked SSO session would give two workers one identity — refusing to continue.',
+    );
   }
 }
 
@@ -275,31 +308,69 @@ async function assertBffSource(api: APIRequestContext): Promise<void> {
 async function mintPerWorkerSessions(
   browser: Awaited<ReturnType<typeof chromium.launch>>,
   workerCount: number,
-): Promise<void> {
+): Promise<WorkerIdentity[]> {
   // Drop any per-worker file left by a previous run before minting. Lowering the worker bound would
   // otherwise leave `user-6.json`/`user-7.json` sitting next to freshly-minted ones — sessions that
-  // are stale, possibly already evicted, and indistinguishable at a glance from live ones. They are
-  // not read at the lower bound, but a stale credential file that merely happens to be unreachable
-  // is a poor thing to leave lying around.
+  // are stale, possibly already evicted, and indistinguishable at a glance from live ones.
   for (const f of fs.readdirSync(AUTH_DIR)) {
     if (/^user-\d+\.json$/.test(f)) fs.rmSync(path.join(AUTH_DIR, f));
   }
 
+  // Worker 0 IS the canonical user, reusing the session the caller already established. That is not
+  // just a saving: `/bff-api/auth/login` is rate-limited at 5 per 60 s PER IP, and inside the
+  // Playwright container every login shares one source IP. Minting a fresh identity for worker 0 too
+  // would add a seventh login and push the run into that bucket — trading the per-user contention
+  // this story removes for the login bucket next to it.
   fs.copyFileSync(AUTH_FILE, authFileForWorker(0));
+  const identities: WorkerIdentity[] = [{ index: 0, username: USER, password: PASS, userId: null }];
 
+  if (!keycloakAdminEnabled()) {
+    // NOT a silent fallback. Without the service-account secret no user can be minted, so every
+    // worker would share one identity — which is the defect, not a degraded mode of the fix. Say so
+    // loudly enough that a green run cannot be mistaken for a run that proved anything.
+    console.warn(
+      '[global-setup] ⚠️  KEYCLOAK_SERVICE_CLIENT_SECRET is unset — cannot mint per-worker users, so '
+      + `all ${workerCount} workers share ${USER}. Per-user buckets (agent rate limit, session cost `
+      + 'ceiling, MAX_CONCURRENT_SESSIONS) are contended again and results are NOT comparable with a '
+      + 'per-worker-identity run. See specs/054-app-e2e-reliability-cluster (US4).',
+    );
+    for (let i = 1; i < workerCount; i += 1) {
+      const ctx = await browser.newContext({ ignoreHTTPSErrors: IGNORE_TLS });
+      try {
+        await loginViaKeycloak(await ctx.newPage());
+        await ctx.storageState({ path: authFileForWorker(i) });
+      } finally {
+        await ctx.close();
+      }
+      identities.push({ index: i, username: USER, password: PASS, userId: null });
+    }
+    return identities;
+  }
+
+  // SEQUENTIAL, deliberately — see the login rate limit above. A login takes ~15 s, so one at a time
+  // keeps the rate under four per minute without explicit pacing.
   for (let i = 1; i < workerCount; i += 1) {
+    const user = await createUserWithRoles(`e2e_w${i}`, ['mc-user']);
     const ctx = await browser.newContext({ ignoreHTTPSErrors: IGNORE_TLS });
     try {
-      await loginViaKeycloak(await ctx.newPage());
+      await loginViaKeycloak(await ctx.newPage(), { username: user.username, password: user.password });
       await ctx.storageState({ path: authFileForWorker(i) });
     } finally {
       await ctx.close();
     }
+    identities.push({ index: i, username: user.username, password: user.password, userId: user.userId });
   }
 
+  // The manifest is what lets global TEARDOWN delete these again. Without it every run would leave N-1
+  // users behind in the realm for ever, and a realm that grows without bound is a slow way to make the
+  // next person's admin queries lie.
+  fs.writeFileSync(WORKER_IDENTITY_MANIFEST, JSON.stringify(identities, null, 2));
+
   console.log(
-    `[global-setup] minted ${workerCount} per-worker session(s) — one refresh bucket each (052 US3)`,
+    `[global-setup] minted ${workerCount} worker identities — ${identities.length - 1} fresh users + the `
+    + 'canonical one for worker 0, so no two workers share a per-USER bucket (054 US4)',
   );
+  return identities;
 }
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
@@ -312,8 +383,10 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     fs.mkdirSync(AUTH_DIR, { recursive: true });
     await context.storageState({ path: AUTH_FILE });
 
-    // 1b. One session per worker, so no two workers share a refresh rate-limit bucket.
-    await mintPerWorkerSessions(browser, Math.max(1, config.workers ?? 1));
+    // 1b. One IDENTITY per worker (054 US4), so no two workers share a per-user bucket — the refresh
+    //     bucket 052 fixed, and also the agent rate limit, the session cost ceiling, and
+    //     MAX_CONCURRENT_SESSIONS, all of which are keyed on the user and were still shared.
+    const identities = await mintPerWorkerSessions(browser, Math.max(1, config.workers ?? 1));
 
     // 2. Verify-or-create the fixture dataset using the saved session.
     const api = await request.newContext({
@@ -342,6 +415,33 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       }
     } finally {
       await api.dispose();
+    }
+
+    // 2b. Every worker needs its OWN fixture dataset, because it can no longer see anyone else's.
+    //     That is the whole point — `listCollections` returns only the caller's data, so a blanket
+    //     teardown becomes correct by construction instead of by discipline (054 US4, FR-013).
+    //
+    //     COST: this is N× the seeding and N× the agent-config PUT, and the PUT runs live credential
+    //     probes. Measured and recorded in tasks.md T023 rather than assumed cheap.
+    const seedStart = Date.now();
+    for (const identity of identities.filter((i) => i.index > 0 && i.userId !== null)) {
+      const workerApi = await request.newContext({
+        baseURL: BASE,
+        storageState: authFileForWorker(identity.index),
+        ignoreHTTPSErrors: IGNORE_TLS,
+      });
+      try {
+        await ensureFixtures(workerApi);
+        if (agentSeedingEnabled()) await seedAgentConfig(workerApi);
+      } finally {
+        await workerApi.dispose();
+      }
+    }
+    if (identities.length > 1) {
+      console.log(
+        `[global-setup] seeded fixtures for ${identities.length - 1} worker identities in `
+        + `${((Date.now() - seedStart) / 1000).toFixed(1)}s (054 US4 T023)`,
+      );
     }
 
     // 3. Warm the heavy collection + movie-detail routes (best-effort) so the first

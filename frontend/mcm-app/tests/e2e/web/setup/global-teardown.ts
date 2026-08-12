@@ -21,13 +21,54 @@
  * `e2e-contention-tally.sh` makes for the same counters in CI.
  */
 import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+
+import { WORKER_IDENTITY_MANIFEST } from './auth-files';
+import { deleteUser, keycloakAdminEnabled } from './keycloak-admin';
 
 /** The BFF container the local dev-container target fronts. Same env var the CI tally honours. */
 const CONTAINER = process.env['E2E_CONTENTION_CONTAINER'] ?? 'mcm-bff-service-nonsecure';
 
 const RATE_LIMITED = '"action":"refresh_rate_limited"';
 
-export default function globalTeardown(): void {
+/**
+ * Delete the throwaway identities global setup minted (054 US4).
+ *
+ * Worker 0 reuses the canonical `E2E_TEST_USER` and carries `userId: null`, so it is skipped — the
+ * manifest's shape is what makes "do not delete the real user" structural rather than a name check
+ * somebody has to keep in sync with the realm.
+ *
+ * Best-effort by design: a realm that keeps a few extra throwaway users is untidy, and a teardown
+ * that fails a green run over untidiness is worse.
+ */
+async function deleteWorkerIdentities(): Promise<void> {
+  if (!existsSync(WORKER_IDENTITY_MANIFEST) || !keycloakAdminEnabled()) return;
+
+  let identities: { username: string; userId: string | null }[] = [];
+  try {
+    identities = JSON.parse(readFileSync(WORKER_IDENTITY_MANIFEST, 'utf8')) as typeof identities;
+  } catch {
+    console.warn('[global-teardown] worker identity manifest unreadable — leaving realm users in place');
+    return;
+  }
+
+  let deleted = 0;
+  for (const identity of identities) {
+    if (!identity.userId) continue; // worker 0 — the canonical user, never ours to delete
+    try {
+      await deleteUser(identity.userId);
+      deleted += 1;
+    } catch (err) {
+      console.warn(`[global-teardown] could not delete ${identity.username}: ${(err as Error).message}`);
+    }
+  }
+  rmSync(WORKER_IDENTITY_MANIFEST, { force: true });
+  if (deleted > 0) console.log(`[global-teardown] deleted ${deleted} per-worker identity/identities (054 US4)`);
+}
+
+export default async function globalTeardown(): Promise<void> {
+  await deleteWorkerIdentities();
+
   // CI measures this on the HOST, where the Docker CLI exists, via `scripts/e2e-contention-tally.sh
   // --gate` — and the Playwright container has no Docker CLI at all, so trying here would report
   // "could not measure" on every CI run and train the reader to ignore the line.

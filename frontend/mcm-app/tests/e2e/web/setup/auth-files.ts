@@ -29,6 +29,12 @@ export const AUTH_DIR = path.join(__dirname, '.auth');
  */
 export const SHARED_AUTH_FILE = path.join(AUTH_DIR, 'user.json');
 
+/**
+ * Where global SETUP records the identities it minted, so global TEARDOWN can delete them again
+ * (054 US4). Without it every run would leave N-1 users behind in the realm for ever.
+ */
+export const WORKER_IDENTITY_MANIFEST = path.join(AUTH_DIR, 'worker-identities.json');
+
 /** The session file belonging to Playwright's `parallelIndex` (0-based, stable across retries). */
 export function authFileForWorker(parallelIndex: number): string {
   return path.join(AUTH_DIR, `user-${parallelIndex}.json`);
