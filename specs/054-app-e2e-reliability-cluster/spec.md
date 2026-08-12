@@ -467,11 +467,25 @@ Stated as observed results, because a green tick on this suite is the thing that
   evidence channel that did not exist before this feature.
 - **SC-005**: With per-worker identities in place, no test failure in the suite is attributable to another
   worker's teardown, config change or fixture mutation.
-- **SC-006**: **Ten consecutive `app-ci` runs show no collapse, judged by the `e2e-result-gate` counts and
-  US3's `verdict` — and this criterion is recorded as 79%-powered, not as proof.** Against the measured ~1-in-7
-  rate, (6/7)¹⁰ = 0.214: a clean ten has a **21% chance of occurring even if nothing was fixed**. Twenty runs
-  would be needed for 95%. This criterion is deliberately the cheaper one, and any report of it MUST carry
-  that sentence rather than reading as a proof of absence.
+- **SC-006**: **The collapse rate is PUBLISHED per run and read across the runs this repository
+  generates anyway** — not established by a dedicated campaign.
+
+  **Amended 2026-08-12, because the criterion was written before the thing that obsoletes it.** It
+  originally required *ten consecutive clean runs*, recorded as 79%-powered: against the measured
+  ~1-in-7 rate, (6/7)¹⁰ = 0.214, so a clean ten has a **21% chance of occurring even if nothing was
+  fixed**, and twenty runs would be needed for 95%.
+
+  US2 and US3 changed what is available. Every run now publishes its counts **and** its `verdict=`,
+  including green ones — so every future `app-ci` run is a sample of the collapse rate, for free and
+  after this feature closes. A ten-run campaign buys one 79%-powered snapshot at ~6 hours of
+  capacity-1 runner and ~1,000 live model calls; continuous publication buys a growing sample at no
+  marginal cost. Paying six hours for a worse version of what the instrument now does continuously is
+  not diligence.
+
+  **The criterion is therefore that the measurement exists and is read, not that a particular streak
+  was achieved.** What it does NOT claim: that the collapse is fixed. Nothing in this feature
+  addresses #173's mechanism, and #173 stays open. This is about whether the rate is *observable* —
+  the thing that was missing.
 - **SC-007**: US5's change is judged over **at least three non-collapsed runs**, with collapsed runs excluded
   by US3's `verdict` and named in the report. A two-run judgement is not accepted for this change, for the reason
   recorded in #166's correction.
