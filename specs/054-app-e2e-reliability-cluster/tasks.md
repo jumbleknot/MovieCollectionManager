@@ -364,6 +364,12 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       same-sha evidence rather than on argument. T028 stays UNMET and is handed to #170 rather than
       reinterpreted into a pass.)*
 
+      *(**RESOLVED 2026-08-12 by feature 056**, which is where #170's decision landed. With the suite
+      split by whether the model decides the verdict, the same exercise on identical code (sha
+      `61ccb3d`, runs #1686/#1687) gives `failed=0` in BOTH runs of BOTH tiers — **the empty
+      failure-set diff this task asks for**. T028 remains unmet *within 054's scope*, which was the
+      honest finding; it is met by 056's SC-004. See `specs/056-agent-gate-split/`.)*
+
       *`e2e-failure-set.mjs diff` → `both=0 onlyA=2 onlyB=1`. The failure sets are **completely
       disjoint**, so the empty-diff criterion fails.*
 

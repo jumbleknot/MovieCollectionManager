@@ -106,9 +106,13 @@ schedule. Every task below is downstream of that.
 - [x] **T012** Full local sweep: tooling tier, `nx lint/typecheck mcm-app`, counts not exit status.- [x] **T012** Full local sweep: tooling tier, `nx lint/typecheck mcm-app`, counts not exit status.
       *(Done 2026-08-12: tooling tier **620 pass / 0 fail / 0 skipped**; typecheck clean; lint 0 errors;
       digest-coverage, openwiki governance, okf and realm-consistency all exit 0.)*
-- [ ] **T013** Close item **#170** on its four acceptance criteria, verified, with the classification
+- [x] **T013** Close item **#170** on its four acceptance criteria, verified, with the classification
       and the measured price recorded on the item.
-- [ ] **T014** Update 054's **T028** to point here — it is unmet in 054 and met (or not) by SC-004.
+      *(Done 2026-08-12: closed on all four criteria, with the classification, the empty-diff pair,
+      the unmeasured PR saving, and the `--grep-invert` trap all recorded on the item.)*
+- [x] **T014** Update 054's **T028** to point here — it is unmet in 054 and met (or not) by SC-004.
+      *(Done 2026-08-12: 054's T028 now records BOTH truths — unmet within 054's scope, which was the
+      honest finding, and met by 056's SC-004.)*
 
 ---
 
