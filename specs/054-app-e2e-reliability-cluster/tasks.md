@@ -340,8 +340,20 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       mechanism, and the re-import requirement. No-ops under CI, where the host-side gate already
       measures this and the Playwright container has no Docker CLI. With no Docker it prints **not
       measured**, which is deliberately not a pass.)*
-- [ ] **T040** [US6] Run the full local suite and record the contention counters and the five counts.
+- [x] **T040** [US6] Run the full local suite and record the contention counters and the five counts.
       A pass here is a claim about the harness, not about the code. (SC-010)
+      *(Done 2026-08-12, and it took THREE attempts to get a valid instrument — which is the finding.*
+      *(1) Playwright cannot run in this dev container; the documented recipe runs it in the official
+      image. (2) The realm served `accessTokenLifespan: 300` despite the JSON saying 5400 — a running
+      Keycloak keeps the old value, exactly the trap US6 documents; applied via `kcadm`. (3) The
+      per-USER agent ceilings locked the shared test user out — see the run below.*
+      *FIRST valid run: **failed=0 flaky=5 passed=172 did-not-run=0 skipped=0**, 445 s wall clock.*
+      *Contention: `refresh_total=2 refresh_429=0` — **052's contention is gone locally**, which is
+      what US6 set out to prove.*
+      *⚠️ RESIDUAL, and it is #169 again: `session_evicted=3`. `MAX_CONCURRENT_SESSIONS` is 10 and
+      keyed on the USER, so six workers plus the `lifecycle` project reach it. `--gate` would fail
+      this run. Per-worker users (US4) remove it by construction; until then SC-010 is met for the
+      refresh bucket and NOT for the session cap, and this line is the honest statement of that.)*
 - [x] **T041** [US6] Reconcile `openwiki/invariants/feature-validation-checklist.md` and
       `docs/runbooks/e2e-testing.md` so they agree on what a valid local pre-PR signal is. (FR-025)
       *(Done 2026-08-11: both now say a full local suite IS a valid gate, name the substitute coverage

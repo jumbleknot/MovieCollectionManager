@@ -147,6 +147,16 @@ test('a run with NO agent traffic at all is collapsed, not indeterminate', needs
   assert.equal(r.status, 0, 'a zero count failed the step — the grep -c exit-1 trap');
   assert.equal(verdictOf(r.stdout), 'collapsed');
   assert.match(turnLine(r.stdout), /gateway_posts=0/);
+
+  // ZERO turns is a different finding from FEW turns. Measured 2026-08-12: the gateway reported
+  // `status=running restarts=0` while /health timed out and it had stopped logging 40 minutes
+  // earlier; two full runs were measured against it and both read `collapsed`. Blaming the client
+  // for a corpse is worse than no detector, because it is confidently wrong in the direction of an
+  // expensive investigation.
+  assert.match(r.stdout, /CHECK GATEWAY LIVENESS FIRST/,
+    'a zero-turn run pointed at the client without ruling the stack out');
+  assert.doesNotMatch(r.stdout, /COLLAPSE SIGNATURE/,
+    'the client-side diagnosis was emitted for a run where no turn reached the gateway at all');
 });
 
 // --- Not-measured must never render as measured --------------------------------------------------

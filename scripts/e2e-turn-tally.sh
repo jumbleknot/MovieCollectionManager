@@ -127,7 +127,19 @@ fi
 
 echo "$MARKER gateway_posts=${gateway_posts} tests_executed=${tests_executed} posts_per_100_tests=${posts_per_100} verdict=${verdict}"
 
-if [ "$verdict" = "collapsed" ]; then
+# ZERO turns is a different finding from FEW turns, and pointing it at the client would be wrong.
+# MEASURED 2026-08-12: `movie-assistant-gateway` reported `status=running restarts=0` while /health
+# timed out and it had stopped logging 40 minutes earlier. Two full local runs were measured against
+# it and both read `collapsed` — a dead stack, not a defect, and the same trap the runbook records
+# ("a container can be Up and dead"). A detector that blames the client for a corpse is worse than no
+# detector, because it is confidently wrong in the direction of an expensive investigation.
+if [ "$verdict" = "collapsed" ] && [ "$gateway_posts" -eq 0 ]; then
+  echo "$MARKER ZERO turns reached the gateway. CHECK GATEWAY LIVENESS FIRST — do not read this as a"
+  echo "$MARKER client-side collapse until you have ruled the stack out. An 'Up' container can be dead:"
+  echo "$MARKER   docker exec mcm-bff-service-nonsecure wget -qO- http://movie-assistant-gateway:8000/health"
+  echo "$MARKER   docker logs --tail 5 -t movie-assistant-gateway   # has it stopped logging?"
+  echo "$MARKER If /health answers and the log is current, THEN this is the #173 client-side signature."
+elif [ "$verdict" = "collapsed" ]; then
   echo "$MARKER COLLAPSE SIGNATURE — the client is not SENDING turns. Do NOT re-run this as a reflex."
   echo "$MARKER A healthy run drives ~88-95 posts per 100 tests; this run drove ${posts_per_100}."
   echo "$MARKER Already ruled out by #173, so do not re-derive them: worker/session contention"
