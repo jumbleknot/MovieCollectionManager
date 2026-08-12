@@ -25,6 +25,32 @@ ENV PATH="/app/.venv/bin:$PATH"
 USER app
 # Private network only — no published port in container/prod compose (see compose.yaml).
 EXPOSE 8000
+
+# Feature 055 (item #179) — a process that is RUNNING is not a process that is SERVING.
+#
+# MEASURED three times on 2026-08-12: this gateway wedged at 100% CPU on one core with memory at 1%,
+# /health timing out and its log 40 minutes stale, while `docker inspect` reported
+# `status=running OOMKilled=false ExitCode=0 RestartCount=0`. `restart: always` is set on the service
+# and is irrelevant to that — the process never exits, so Docker never sees a failure to restart from.
+# With no healthcheck, `docker ps` printed a bare `Up` throughout, and two full E2E suites were
+# measured against the dead process before anything noticed.
+#
+# In the DOCKERFILE rather than in compose, deliberately: the local stack is started by
+# `scripts/agent-stack.mjs` with `docker run`, and prod composes the same image. A compose-only
+# healthcheck would have covered neither of the two places this actually wedged.
+#
+# `python -c` rather than curl/wget: this is a slim image and has neither. Adding a package to run a
+# probe would grow the runtime image and its CVE surface for a health check.
+#
+# 30s/3 retries detects a wedge inside ~90s — far inside the ~7-minute suite it needs to catch —
+# while staying cheap enough not to become the perturbation it is measuring on a single-threaded
+# event loop under load.
+#
+# It does NOT recover the container, and that is the point: a wedged gateway must stay wedged and
+# visible. Docker does not restart a merely-unhealthy container, so `unhealthy` is a report, not a
+# remedy. Silently restarting it would erase both the evidence and the incidence rate.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
 # FastAPI app emitting AG-UI natively (ag-ui-langgraph). create_app() mounts the
 # supervisor graph (T020). Served by uvicorn on the private network.
 CMD ["uvicorn", "src.gateway:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
