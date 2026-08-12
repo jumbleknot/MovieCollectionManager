@@ -99,13 +99,31 @@ These are not advice; three of them were each learned by being got wrong in this
       UNFIXED code — so the selector was never the question. The real gap was the CALL: `pruneExpiredBundles`
       ran only on the digest path. `publishCounts` now calls it too, which is what actually bounds a
       channel that fires on every green run rather than only on failures.)*
-- [ ] **T009** [US2] **Read the counts back, from outside CI.** Dispatch `app-ci`, let `app-e2e` PASS, then
+- [x] **T009** [US2] **Read the counts back, from outside CI.** Dispatch `app-ci`, let `app-e2e` PASS, then
       from a working session LIST the generic-package versions (never construct the name — `run_number` is
       offset from the run id), fetch the counts bundle, and record all eight numbers:
       `failed / flaky / passed / skipped / did-not-run` plus `refresh_total / refresh_429 / session_evicted`.
       No re-run, no SSH to the runner. **This task, not T006, is what SC-002 asserts** — an implementation
       that publishes and a channel that can be read are different claims, and this feature exists because
       that difference was assumed once already. (SC-002, FR-005, FR-006)
+      *(**Done 2026-08-12 — PASSES.** app-ci run #1681 (sha `c69a0c8`), `app-e2e: success`. Bundle
+      `1682--app-e2e` published at 14:33:11Z — a counts bundle for a GREEN run, which has never
+      existed before. Read from a working session with no re-run and no host access:*
+
+      ```text
+      [e2e-gate]       failed=0 flaky=0 passed=177 did-not-run=0 skipped=0
+      [e2e-contention] refresh_total=4 refresh_429=0 session_evicted=0
+      [e2e-turns]      gateway_posts=148 tests_executed=177 posts_per_100_tests=83 verdict=healthy
+      ```
+
+      *All eight numbers, plus the verdict. **`flaky=0`** — previous green runs carried 5.*
+
+      *TWO TRAPS HIT WHILE READING IT, both documented and both fallen into anyway:*
+      *(1) I filtered bundle names on `run_number`; the name comes from `GITHUB_RUN_ID`, and run #1681
+      published `1682--app-e2e`. LIST, never construct — the runbook says so and I quoted it an hour
+      earlier.*
+      *(2) The `git credential fill` token returns an **empty package list** rather than a 403, which
+      reads as "no bundle was published". `MCM_FORGE_TOKEN` is the read credential for packages.)*
 - [x] **T010** [US2] Update `docs/runbooks/ci-diagnostics.md`: how to read a **passing** run's counts, and
       the fact that this channel now exists at all. State the bundle-name trap (`run_number` is offset; LIST
       the versions).
