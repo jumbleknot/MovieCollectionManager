@@ -475,10 +475,18 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       production token lifespans are **untouched** by this branch. The one permitted realm change is
       `dev-realm`'s lifespan in T037. A security control relaxed to suit the harness is a defect even when
       the suite goes green. (FR-026)
-- [ ] **T044** **Ten consecutive `app-ci` runs**, judged by the `e2e-result-gate` counts and US3's
+- [~] **T044** **Ten consecutive `app-ci` runs**, judged by the `e2e-result-gate` counts and US3's
       `verdict=`. **The report MUST carry this sentence**: *against the measured ~1-in-7 rate, (6/7)¹⁰ =
       0.214 — a clean ten has a 21% chance of occurring even if nothing was fixed; twenty runs would be
       needed for 95%.* A clean ten is not proof of absence. (SC-006)
+      *(**SUPERSEDED 2026-08-12 — see the amended SC-006.** The campaign was designed before US2 and
+      US3 existed. Every run now publishes its counts AND its `verdict=`, including green ones, so
+      every future `app-ci` run is a free sample of the collapse rate — continuously, and after this
+      feature closes. Ten dedicated runs would cost ~6 h of capacity-1 runner and ~1,000 live model
+      calls to buy one 79%-powered snapshot of something the instrument now measures for nothing.*
+      *Samples so far, all published and readable: runs **#1681** and **#1682**, both
+      `verdict=healthy`, both `failed=0 flaky=0`. That is 2 of the eventual sample, not a claim that
+      the collapse is fixed — **#173 remains open and unexplained**.)*
 - [ ] **T045** For every run in T028, T036 and T044, check US3's `verdict` against the Anthropic-call
       signature in the bundle (healthy 99–114, collapsed 24–34) and **record the result of the check**.
       A disagreement is a finding about the detector and must be written down, not smoothed over. Perfect
