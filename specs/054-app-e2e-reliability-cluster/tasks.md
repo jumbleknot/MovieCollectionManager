@@ -341,6 +341,29 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       between them). That is two green runs of the FEATURE, not two runs of one configuration. A
       same-sha pair is still owed before T028 is called met outright.*
 
+      *(**SAME-SHA PAIR RUN 2026-08-12, and T028's criterion is NOT MET — recorded as unmet.**
+      Runs #1684 and #1685, both on sha `1fada7a`, both 8 workers:*
+
+      | run | counts | verdict | contention |
+      | --- | --- | --- | --- |
+      | #1684 | `failed=0 flaky=0 passed=177 did-not-run=0 skipped=0` | healthy | `refresh_429=0 session_evicted=0` |
+      | #1685 | `failed=1 flaky=7 passed=166 did-not-run=3 skipped=0` | healthy | `refresh_429=0 session_evicted=0` |
+
+      *The failure-set diff is **not empty on identical code**. But every candidate this feature could
+      address is excluded by measurement: `verdict=healthy` at 93 posts/100 (not a collapse),
+      `session_evicted=0` and `refresh_429=0` (not contention), `minted 8 worker identities` (not a
+      shared identity), and no identity/login/403/fixture error.*
+
+      *All eight entries in #1685 are live-model agent assertions — `assistant-context:136`,
+      `agent-add-ownership:215`, `agent-import-progress:78`, `agent-search:134`,
+      `assistant-disambiguate:198`, `assistant-organize-update-move:119`, `assistant-organize:107`.*
+
+      ***The conclusion this forces**: while live-model assertions sit in the merge gate, the failure
+      set varies run-to-run on identical code, so an empty-diff criterion is not achievable by
+      anything in this feature's scope. That is item **#170**'s decision, and it now rests on measured
+      same-sha evidence rather than on argument. T028 stays UNMET and is handed to #170 rather than
+      reinterpreted into a pass.)*
+
       *`e2e-failure-set.mjs diff` → `both=0 onlyA=2 onlyB=1`. The failure sets are **completely
       disjoint**, so the empty-diff criterion fails.*
 
