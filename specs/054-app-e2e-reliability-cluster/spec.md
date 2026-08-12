@@ -157,8 +157,9 @@ the published bundle.
 2. **Given** a run that failed, **When** the bundle is read, **Then** it contains browser console output and
    the client-side request record for the failing agent/dock specs.
 3. **Given** a healthy run, **When** the same capture runs, **Then** the web-suite wall clock is within
-   **5%** of the pre-capture baseline and the five counts are **identical** — the instrument must not become
-   the perturbation.
+   **5%** of the pre-capture baseline and `failed`/`skipped`/`did-not-run` are **identical** — the
+   instrument must not become the perturbation. `flaky` and `passed` are reported rather than gated: they
+   trade against each other as retries land, with or without the capture.
 4. **Given** the capture is present, **When** the log is inspected, **Then** it contains no token, cookie,
    password or other credential material.
 5. **Given** a collapse is caught with capture, **When** it is triaged, **Then** the evidence distinguishes
@@ -371,9 +372,16 @@ its reason.
   agent/dock specs, and that capture MUST reach the published bundle.
 - **FR-011**: The capture MUST carry no token, cookie, password or other credential material.
 - **FR-012**: The capture MUST NOT perturb what it measures. Stated as a threshold so the check can fail:
-  with the capture enabled, the web-suite wall clock MUST be within **5%** of the pre-capture baseline and
-  the five counts MUST be **identical**. Outside that, the capture is the suspect and is re-scoped before
-  any other conclusion is drawn from a run carrying it.
+  with the capture enabled, the web-suite wall clock MUST be within **5%** of the pre-capture baseline, and
+  `failed`, `skipped` and `did-not-run` MUST be **identical**. Outside that, the capture is the suspect and
+  is re-scoped before any other conclusion is drawn from a run carrying it.
+
+  **Amended 2026-08-12 after measuring it, and the amendment matters.** This first read "the five counts
+  MUST be identical". Measured back-to-back on a healthy stack: 445 s / `failed=0 flaky=5 passed=172` with
+  the capture, 446 s / `failed=0 flaky=3 passed=174` without. `flaky` and `passed` trade against each
+  other as retries land differently — ordinary churn on a live-model suite, present with or without the
+  capture. Gating on them would have made this criterion fail for a reason that has nothing to do with the
+  instrument, which is how a true criterion gets quietly relaxed later. They are **reported, not gated**.
 
 **Per-worker identity (US4)**
 

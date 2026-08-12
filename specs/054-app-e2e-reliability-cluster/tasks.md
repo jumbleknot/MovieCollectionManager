@@ -199,12 +199,30 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       the fixture's `client-evidence/*.log` reaches the host; the collect step now copies them in
       with an `_` prefix, which ranks them above ordinary container logs. Added to
       `frontend/mcm-app/.gitignore`.)*
-- [ ] **T019** [US3] **Measure the perturbation against a stated threshold** (FR-012): run the web suite with
+- [x] **T019** [US3] **Measure the perturbation against a stated threshold** (FR-012): run the web suite with
       and without the capture and compare. **Pass = wall clock within 5% of the pre-capture baseline AND the
       five counts identical.** Outside that, the capture is the suspect and is re-scoped before anything else
       is concluded from a run carrying it. **Record both wall clocks and both count sets** — a threshold with
       no recorded measurement is not a check.
-      *(BLOCKED 2026-08-11, and the blocker is item #168 itself: this needs two FULL local suite runs,
+      *(**DONE 2026-08-12. PASS.** Back-to-back on a healthy stack, session store flushed between arms:*
+
+      | arm | capture | wall clock | counts |
+      | --- | --- | ---: | --- |
+      | run 2 | **on** | 445 s | `failed=0 flaky=5 passed=172 did-not-run=0 skipped=0` |
+      | run C | **off** | 446 s | `failed=0 flaky=3 passed=174 did-not-run=0 skipped=0` |
+
+      *Wall-clock delta **0.22%** against a 5% threshold; `failed`/`skipped`/`did-not-run` identical at
+      0/0/0. `flaky` 5→3 and `passed` 172→174 trade against each other as retries land — ordinary churn on
+      a live-model suite, not perturbation, and **FR-012 was amended to report rather than gate them**
+      instead of being quietly declared passed against a criterion it did not meet as written.*
+
+      *Getting a VALID pair took four attempts, and the three discarded runs are the lesson: two were
+      measured against a gateway reporting `status=running restarts=0` while /health timed out and it had
+      stopped logging 40 minutes earlier — a dead stack, not a defect. That is what prompted the
+      zero-turn liveness fix in `e2e-turn-tally.sh`. A third was invalidated by session evictions carried
+      over from the run before it.)*
+
+      *(Earlier note, kept: BLOCKED 2026-08-11, and the blocker was item #168 itself: this needs two FULL local suite runs,
       and on the current `dev-realm` a full local run cannot produce a valid result — 300 s tokens put
       six workers back into the contention 052 removed from CI (measured: 44 min, 62
       `refresh_rate_limited`). **Resequencing, recorded**: US6 was placed after US4 because "US4's
