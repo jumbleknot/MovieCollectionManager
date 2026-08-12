@@ -276,3 +276,43 @@ test('the turn tally runs AFTER the result gate and BEFORE teardown', () => {
   assert.ok(gate < tally, 'the tally runs BEFORE the result gate, so it has no denominator to read');
   assert.ok(tally < teardown, 'the tally runs AFTER teardown, so the gateway container is already gone');
 });
+
+test('the denominator spans BOTH tiers, so the ratio stays comparable', needsBash, () => {
+  // Feature 056 split the suite. The gateway serves every turn the job drives, but the gate tier's
+  // counts file holds only its own tests. MEASURED on run #1686: 149 posts over 155 gate tests read
+  // as 96 per 100, where the same job pre-split read 83 — the model tier's 22 tests contributed to
+  // the numerator and nothing to the denominator. It did not change that verdict, and that is not a
+  // reason to leave a measurement wrong: the floor is calibrated against a band, and an inflated
+  // ratio drifts out of comparability with it.
+  const dir = mkdtempSync(join(tmpdir(), 'turn-tally-tiers-'));
+  try {
+    const gateway = join(dir, 'gateway.log');
+    writeFileSync(gateway, Array.from({ length: 149 }, () => postLine()).join('\n'));
+    const gate = join(dir, 'counts.log');
+    writeFileSync(gate, gateLine({ failed: 0, flaky: 0, passed: 155 }));
+    const model = join(dir, 'counts-model.log');
+    writeFileSync(model, gateLine({ failed: 0, flaky: 0, passed: 22 }));
+
+    const run = (env) => spawnSync('bash', [SCRIPT], { env: { ...process.env, ...env }, encoding: 'utf8' });
+
+    const both = run({
+      E2E_TURN_GATEWAY_LOG_FILE: gateway,
+      E2E_TURN_COUNTS_FILE: gate,
+      E2E_TURN_MODEL_COUNTS_FILE: model,
+    });
+    assert.match(turnLine(both.stdout), /tests_executed=177/, 'the model tier was not added to the denominator');
+    assert.match(turnLine(both.stdout), /posts_per_100_tests=84/);
+
+    // On a pull request the model tier does not run. An ABSENT file must add nothing — never read as
+    // "zero tests ran", which would be a different claim.
+    const gateOnly = run({
+      E2E_TURN_GATEWAY_LOG_FILE: gateway,
+      E2E_TURN_COUNTS_FILE: gate,
+      E2E_TURN_MODEL_COUNTS_FILE: join(dir, 'absent.log'),
+    });
+    assert.match(turnLine(gateOnly.stdout), /tests_executed=155/, 'an absent model log changed the denominator');
+    assert.equal(gateOnly.status, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

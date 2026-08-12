@@ -94,6 +94,18 @@ fi
 counts_line=$(grep -o '\[e2e-gate\] failed=[0-9]* flaky=[0-9]* passed=[0-9]*[^ ]*.*' "$COUNTS_FILE" 2>/dev/null | tail -n 1)
 [ -z "$counts_line" ] && emit_indeterminate "no [e2e-gate] line in $COUNTS_FILE"
 
+# BOTH TIERS, or the ratio is inflated (feature 056). The gateway serves every turn the job drives,
+# but since the split the counts file above holds only the GATE tier's tests. MEASURED on run #1686:
+# 149 posts against 155 gate tests read as 96 per 100, where the same job pre-split read 83 — the
+# model tier's 22 tests contributed posts to the numerator and nothing to the denominator.
+#
+# It did not change that verdict, and "it happened not to matter" is not a reason to leave a
+# measurement wrong: the threshold is calibrated against a band, and an inflated ratio drifts out of
+# comparability with it.
+MODEL_COUNTS_FILE="${E2E_TURN_MODEL_COUNTS_FILE:-${HOME:-}/mcm-ci-step-logs/${GITHUB_RUN_ID:-local}/e2e-result-gate-model.log}"
+model_counts_line=""
+[ -r "$MODEL_COUNTS_FILE" ] && model_counts_line=$(grep -o '\[e2e-gate\] failed=[0-9]* flaky=[0-9]* passed=[0-9]*[^ ]*.*' "$MODEL_COUNTS_FILE" 2>/dev/null | tail -n 1)
+
 field() {
   local name="$1" v
   v=$(printf '%s' "$counts_line" | grep -o "${name}=[0-9]*" | head -n 1 | cut -d= -f2)
@@ -110,6 +122,15 @@ failed=$(field failed)
 flaky=$(field flaky)
 passed=$(field passed)
 tests_executed=$((failed + flaky + passed))
+
+# Add the model tier's executed count when that tier ran. Absent on a pull request, where only the
+# gate runs — and an absent file must add nothing rather than read as zero tests having run.
+if [ -n "$model_counts_line" ]; then
+  saved_line="$counts_line"
+  counts_line="$model_counts_line"
+  tests_executed=$((tests_executed + $(field failed) + $(field flaky) + $(field passed)))
+  counts_line="$saved_line"
+fi
 
 # Bash division by zero prints nothing and exits 1 — silent in both directions, which is why this is
 # checked rather than guarded by arithmetic.

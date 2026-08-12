@@ -75,13 +75,37 @@ schedule. Every task below is downstream of that.
 
 ## Phase 4 — US4 + validation
 
-- [ ] **T010** [US4] **Two consecutive `app-e2e` runs on identical code with an EMPTY failure-set
+- [x] **T010** [US4] **Two consecutive `app-e2e` runs on identical code with an EMPTY failure-set
       diff.** This is the criterion 054's T028 could not meet and the reason this feature exists.
       (SC-004)
-- [ ] **T011** [US4] Record the price: `app-e2e` wall clock and live-turn count against the
+      *(**MET 2026-08-12.** Runs #1686 and #1687, both on sha `61ccb3d`, both tiers:*
+
+      | run | gate tier | model tier |
+      | --- | --- | --- |
+      | #1686 | `failed=0 flaky=0 passed=155 did-not-run=0 skipped=0` | `failed=0 flaky=0 passed=22` |
+      | #1687 | `failed=0 flaky=1 passed=154 did-not-run=0 skipped=0` | `failed=0 flaky=1 passed=21` |
+
+      *`failed=0` in both runs of both tiers, so the failure-set diff is **empty** — the criterion 054's
+      T028 could not reach on the same sha.*
+      ***Stated rather than glossed**: run #1687's GATE tier carried `flaky=1`. A deterministic-tier
+      test still needed its retry, and `retries: 1` is what turned that into a pass. The criterion is
+      about the failure SET and it is empty; the gate is not perfectly deterministic, and pretending
+      otherwise is how the next surprise gets built.)*
+- [x] **T011** [US4] Record the price: `app-e2e` wall clock and live-turn count against the
       #1684/#1685 baseline, and the model spend across BOTH tiers — moving spend to another step is
       not removing it. (FR-008, SC-006)
-- [ ] **T012** Full local sweep: tooling tier, `nx lint/typecheck mcm-app`, counts not exit status.
+      *(Done 2026-08-12, and the honest half is what is NOT measured.*
+      *Wall clock: **~30 min** running BOTH tiers (#1686, 21:29:27→21:59:40) against the pre-split
+      **~28 min** for 177 tests in one selection — two invocations and two global setups cost a little
+      more than one.*
+      ***The PR saving is NOT yet measured.** A dispatch is not a `pull_request`, so every run here
+      exercised both tiers. What a PR actually pays — the gate alone, 155 tests instead of 177 — gets
+      measured on the pull request itself and is inferred until then.*
+      *Model spend: unchanged per merge to `main` (both tiers run), reduced per PR by the model tier's
+      22 tests. Moving spend to another step is not removing it, and on `main` it is not even moved.)*
+- [x] **T012** Full local sweep: tooling tier, `nx lint/typecheck mcm-app`, counts not exit status.- [x] **T012** Full local sweep: tooling tier, `nx lint/typecheck mcm-app`, counts not exit status.
+      *(Done 2026-08-12: tooling tier **620 pass / 0 fail / 0 skipped**; typecheck clean; lint 0 errors;
+      digest-coverage, openwiki governance, okf and realm-consistency all exit 0.)*
 - [ ] **T013** Close item **#170** on its four acceptance criteria, verified, with the classification
       and the measured price recorded on the item.
 - [ ] **T014** Update 054's **T028** to point here — it is unmet in 054 and met (or not) by SC-004.
