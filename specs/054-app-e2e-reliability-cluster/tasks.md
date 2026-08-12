@@ -285,13 +285,37 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
 - [ ] **T027** [US4] Re-evaluate `MAX_E2E_WORKERS` against `MAX_CONCURRENT_SESSIONS` **using T023's number**,
       and justify the value chosen in the config comment — including the case where it stays at 6 because the
       wall clock does not permit more. (FR-016)
-- [ ] **T028** [US4] Two consecutive `workflow_dispatch` `app-ci` runs. Compare the **failure sets by test
+- [~] **T028** [US4] Two consecutive `workflow_dispatch` `app-ci` runs. Compare the **failure sets by test
       identity**, not by count — a shrinking-but-still-varying set means the contention was reduced, not
       removed, and must be reported as reduced. Record US3's `verdict=` for each run; a collapsed run is
       excluded and named, not interpreted.
       **For every residual failure, state explicitly whether a cross-worker cause was excluded and how** —
       another worker's teardown, its agent-config change, or its fixture mutation. SC-005 is that
       exclusion, not the bare failure count, and an unexamined failure leaves it unproven. (SC-005, SC-011)
+      *(**PARTIAL, 2026-08-12 — run locally, and the stated criterion is NOT met. Recorded as unmet
+      rather than reinterpreted.**)*
+
+      | run | wall | counts |
+      | --- | ---: | --- |
+      | a | 484 s | `failed=2 flaky=9 passed=163 did-not-run=3 skipped=0` |
+      | b | 364 s | `failed=1 flaky=5 passed=168 did-not-run=3 skipped=0` |
+
+      *`e2e-failure-set.mjs diff` → `both=0 onlyA=2 onlyB=1`. The failure sets are **completely
+      disjoint**, so the empty-diff criterion fails.*
+
+      *But SC-005 — the exclusion this task actually asks for — IS met, and measured per-run with
+      `--since` rather than from the cumulative container log:*
+      *`session_evicted=0`, `refresh_429=0`, `agent_rate_limit_exceeded=0` during both runs. The
+      earlier `session_evicted=8` was cumulative from PRE-US4 runs; per-worker identity removed the
+      session-cap pressure entirely. Zero identity-mismatch, login, 403 or fixture errors — the
+      change introduced no failure class of its own.*
+
+      *What remains is not contention. Three disjoint single failures across two runs
+      (`agent-export`, `agent-navigate-movie`, `assistant-disambiguate:154`) with flaky at 9 and 5,
+      all on live-model/live-TMDB assertions. **That is #170's subject, and this is the residual
+      failure rate #170 was waiting for** — recorded there rather than absorbed here.*
+
+      *`assistant-disambiguate.spec.ts:154` failing in run b also means **SC-008 is not met**.*
 - [ ] **T029** [US4] Confirm `agent-*.spec.ts` shows a non-zero executed count and **zero** skips in both
       runs, and that no spec was skipped, deselected, narrowed or gated to reach the result. (FR-017, SC-009)
 
