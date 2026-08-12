@@ -23,7 +23,6 @@ import asyncio
 
 import pytest
 
-from src.tools import mcp_tools
 from src.tools.mcp_tools import _PENDING_AUDITS, _spawn_audit, drain_audit_tasks
 
 
@@ -64,7 +63,7 @@ async def test_drain_terminates_while_other_turns_keep_spawning_audits() -> None
     producer = asyncio.create_task(other_turns_spawning_audits())
     try:
         await asyncio.wait_for(drain_audit_tasks(), timeout=5.0)
-    except asyncio.TimeoutError:  # pragma: no cover - this IS the defect
+    except TimeoutError:  # pragma: no cover - this IS the defect
         pytest.fail(
             "drain_audit_tasks did not terminate while another turn kept spawning audits — "
             "this is the 100%-CPU livelock captured in item #179"

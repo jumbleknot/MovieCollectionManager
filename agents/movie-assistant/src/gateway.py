@@ -21,7 +21,8 @@ def install_stack_dump_signal() -> None:
     MEASURED three times on 2026-08-12: this process wedged at 100% CPU on one core with memory at
     1%, /health timing out and its log 40 minutes stale, while Docker reported `status=running
     ExitCode=0 RestartCount=0`. 100% CPU is the discriminator — a deadlock or a blocked await waits
-    near 0% — so something was executing a tight loop. The gateway is one uvicorn process and asyncio
+    near 0% — so something was executing a tight loop. The gateway is one uvicorn process and
+    asyncio
     is single-threaded, so a spin in the event loop starves every other coroutine on it, which is
     exactly why /health could not be answered while the process stayed alive.
 
@@ -55,7 +56,8 @@ def install_stack_dump_signal() -> None:
         logging.getLogger(__name__).warning("stack-dump signal unavailable: %s", exc)
         return
     logging.getLogger(__name__).info(
-        "stack-dump signal armed: `docker kill -s USR1 movie-assistant-gateway` dumps all thread stacks"
+        "stack-dump signal armed: `docker kill -s USR1 movie-assistant-gateway` "
+        "dumps all thread stacks"
     )
 
 
@@ -141,8 +143,8 @@ def create_app() -> Any:
 
     # AFTER basicConfig, deliberately: this logs the one line that tells an operator the dump signal
     # is available, and a logger configured later would swallow it. Measured — the first version
-    # armed the handler correctly and said nothing, so the capability was invisible to the person who
-    # would need it.
+    # armed the handler correctly and said nothing, so the capability was invisible to the
+    # person who would need it.
     install_stack_dump_signal()
 
     # OpenTelemetry infra export (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
