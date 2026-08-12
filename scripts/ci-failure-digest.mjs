@@ -263,7 +263,11 @@ export const COUNTS_SOURCES = Object.freeze([
  *
  * Filtered, not whole: `web-e2e` is thousands of lines and counts mode exists to stay small.
  */
-const SETUP_LINE = /^\s*\[global-setup\]/;
+// `[playwright]` as well as `[global-setup]`: the config self-reports `cores=N maxWorkers=M ->
+// workers=W`, and that line is the only thing that distinguishes "the cap is binding" from "the box
+// is smaller than the cap". Measured on run #1682 — the identity line reached the bundle and the
+// worker line did not, so the run proved WHICH identity model ran and left the worker question open.
+const SETUP_LINE = /^\s*\[(global-setup|playwright)\]/;
 
 export function selectCountsSources(excerpts = []) {
   const named = excerpts.filter((e) => COUNTS_SOURCES.includes(e.source));

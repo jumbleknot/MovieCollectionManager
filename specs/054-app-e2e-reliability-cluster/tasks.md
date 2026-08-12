@@ -300,9 +300,18 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       its both-ways assertion that unauthenticated specs do **not** import the session fixture.
       *(Done 2026-08-12: no change was needed — the guard asserts the IMPORT SPLIT, which per-worker
       identities do not alter. 7/7 still pass. Verified rather than assumed.)*
-- [ ] **T027** [US4] Re-evaluate `MAX_E2E_WORKERS` against `MAX_CONCURRENT_SESSIONS` **using T023's number**,
+- [x] **T027** [US4] Re-evaluate `MAX_E2E_WORKERS` against `MAX_CONCURRENT_SESSIONS` **using T023's number**,
       and justify the value chosen in the config comment — including the case where it stays at 6 because the
       wall clock does not permit more. (FR-016)
+      *(**Done 2026-08-12, raised 6 → 10, and CI answered what the number should be.** app-ci run
+      #1682 (sha `487498d`) reported `minted 8 worker identities`, so the runner resolves
+      `floor(cores/2) = 8` and **the cap of 10 is NOT what binds — the machine is (16 cores)**. To go
+      past 8 the divisor would have to change, not the ceiling.*
+      *`session_evicted=0` at EIGHT workers. Feature 052 measured `session_evicted=8` at eight workers
+      on the shared identity — same worker count, opposite result, which is US4's claim demonstrated
+      rather than argued.*
+      *Wall clock 29 min → ~27 min. Modest, because `app-e2e` also carries the emulator half; the
+      web-suite share of the saving is not separable from these numbers.)*
 - [~] **T028** [US4] Two consecutive `workflow_dispatch` `app-ci` runs. Compare the **failure sets by test
       identity**, not by count — a shrinking-but-still-varying set means the contention was reduced, not
       removed, and must be reported as reduced. Record US3's `verdict=` for each run; a collapsed run is
@@ -317,6 +326,20 @@ what turns every subsequent dispatched run into a sampling opportunity for #173.
       | --- | ---: | --- |
       | a | 484 s | `failed=2 flaky=9 passed=163 did-not-run=3 skipped=0` |
       | b | 364 s | `failed=1 flaky=5 passed=168 did-not-run=3 skipped=0` |
+
+      *(**UPDATE 2026-08-12 — two consecutive GREEN CI runs, and in CI the diff IS empty.**)*
+
+      | run | workers | counts | verdict |
+      | --- | ---: | --- | --- |
+      | #1681 | 6 | `failed=0 flaky=0 passed=177 did-not-run=0 skipped=0` | healthy |
+      | #1682 | 8 | `failed=0 flaky=0 passed=177 did-not-run=0 skipped=0` | healthy |
+
+      *Both failure sets are EMPTY, so the diff is empty; `flaky=0` in both, where previous green runs
+      carried 5. `session_evicted=0`, `refresh_429=0` in both.*
+      ***Stated precisely, because the criterion says "two consecutive runs" and these were not
+      identical**: the two runs are adjacent shas with different worker counts (the T027 change sits
+      between them). That is two green runs of the FEATURE, not two runs of one configuration. A
+      same-sha pair is still owed before T028 is called met outright.*
 
       *`e2e-failure-set.mjs diff` → `both=0 onlyA=2 onlyB=1`. The failure sets are **completely
       disjoint**, so the empty-diff criterion fails.*
