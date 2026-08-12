@@ -284,6 +284,43 @@ with `dependencies: ['chromium']`, so `bff-prod-lifecycle` + `admin-registration
 execute while the main project has ANY failure. They reported "3 did not run" in every measured run
 for months, and only ran for the first time on 2026-08-10.
 
+## The instrument traps that cost the most (2026-08-12)
+
+Every one of these produced a confident, wrong answer, and every one was checkable in seconds.
+
+- **`--grep-invert` is accepted by Playwright 1.60 and does NOTHING here.** `--grep CORS` lists 1
+  test; `--grep-invert CORS` lists all 177. The tier split is therefore `E2E_TIER` →
+  `grep`/`grepInvert` **in `playwright.config.ts`**, applied by the runner, and a guard pins it there.
+  A CLI-based split would have run the whole suite in the "gate" selection and looked perfect.
+- **A container reporting `running` can be answering nothing.** `movie-assistant-gateway` sat at
+  **100% CPU on one core with memory at 1%**, `/health` timing out, its log 40 minutes stale, while
+  `docker inspect` said `status=running OOMKilled=false ExitCode=0 RestartCount=0`. `restart: always`
+  is irrelevant to a livelock — the process never exits, so Docker never sees a failure. Root cause
+  and the one-command stack dump are below; the image now carries a healthcheck so `docker ps` says
+  `unhealthy` instead of `Up`.
+- **100% CPU means a SPIN, not a deadlock.** A lock wait or a blocked await sits near 0%. That single
+  distinction is what turned an unexplained wedge into a five-minute diagnosis.
+- **`awk 'length($0)>100'` counts BYTES.** Every em-dash in a comment is three, so it over-reports
+  line length badly. Count characters (Python, node) when matching a linter.
+- **A missing script reads as an unusable shell.** `shell-probe`'s `test -r` was false for both, so
+  writing a test before its script skipped 12 cases while blaming WSL — on Linux, with a working bash.
+  A skip reads as a pass; fixed in item #178.
+
+## Two tiers: what blocks a merge, and what merely runs (2026-08-12)
+
+Agent tests carry `@gate` or `@model-decision`. The rule — and what the gate stops proving — is in
+`openwiki/invariants/testing-tiers.md`. Operationally:
+
+```bash
+E2E_TIER=gate   pnpm exec playwright test   # 155 tests, blocking, what a PR pays for
+E2E_TIER=model  pnpm exec playwright test   # 22 tests, non-blocking, main + dispatch only
+# unset → all 177, the local default
+```
+
+An **unclassified** agent test fails the gate rather than defaulting into a tier
+(`scripts/__tests__/agent-test-classification.test.mjs`). Both tiers publish their own counts into the
+same bundle, on green runs as well as red.
+
 ## A local run is only evidence if you check the instrument (2026-08-10)
 
 Three ways a local E2E run produced a confident, wrong answer in one session:

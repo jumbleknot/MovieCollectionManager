@@ -216,6 +216,11 @@ three-way: a cancelled run publishes nothing, a failure publishes the full diges
 success** publishes a small *counts-only* bundle — the `[e2e-gate]` line, the `[e2e-contention]`
 tally, and the `[e2e-turns]` verdict — with no PR comment.
 
+⚠️ **Use `MCM_FORGE_TOKEN` for packages.** The `git credential fill` credential — the one that opens
+pull requests — returns an **empty package list** rather than a 403, which reads as "no bundle was
+published" for a bundle that exists. Measured 2026-08-12: the same query returned 0 versions with one
+token and 50 with the other, seconds apart.
+
 ```bash
 # LIST the versions. Never construct the name: `run_number` in /actions/tasks is OFFSET from the
 # run id the bundle is named after, so a constructed name reads as "no bundle" for a bundle that
