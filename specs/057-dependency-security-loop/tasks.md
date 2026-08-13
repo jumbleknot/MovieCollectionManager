@@ -29,18 +29,73 @@ you expected an assertion failure is not the RED you wrote down. Read the messag
 **Purpose**: three later acceptance criteria compare against a "before" number. Measured afterwards,
 they prove nothing.
 
-- [ ] **T001** [P] Record the Renovate extraction baseline: dispatch `renovate` with `dryRun=true`
+- [x] **T001** [P] Record the Renovate extraction baseline: dispatch `renovate` with `dryRun=true`
       and capture the dependency count extracted from `pnpm-workspace.yaml`. **Expected: zero.**
       Write the number and the run id into this file beside the task. This is the baseline SC-004 and
       FR-014 are measured against — after the manager exists, "non-zero" is only meaningful relative
       to a recorded zero. (SC-004)
-- [ ] **T002** [P] Record the deferred-update baseline from the dependency dashboard:
+
+      > **MEASURED 2026-08-13: the baseline is 12, NOT zero. The expectation was wrong, and this
+      > falsifies R4's central premise.**
+      >
+      > **Source**: run **1704** (task 5753), event `schedule`, `2026-08-13T03:00:14Z`, head
+      > `6afc2c8`, exit 1. No dispatch was needed — that run is itself a pre-change measurement, and
+      > its full `step:renovate` log survives in the failure-digest bundle
+      > `ci-failures/1704--renovate`. A `dryRun=true` dispatch would have measured the *same broken
+      > bot* and returned the same numbers, so this is the identical measurement without a second
+      > red run.
+      >
+      > **The count**: Renovate's *built-in* `npm` manager already covers `pnpm-workspace.yaml`.
+      > Extraction stats from that run: `npm: {fileCount: 4, depCount: 115}` (total 48 files / 355
+      > deps). The Dependency Dashboard the same run wrote at `03:02:59Z` lists
+      > **`pnpm-workspace.yaml (12)`** under Detected Dependencies — all **10** keyed override floors
+      > plus `postcss` and `@expo/dom-webview` (`react-dom` is extracted but hidden by the
+      > react-lock `packageRule`).
+      >
+      > **It already proposes bumps to them.** Pending updates listed for override entries:
+      > `fast-uri@<3.1.4` `>=3.1.4 <4` → `>=3.1.4 <5`; `undici@<6.27.0` → `>=6.27.0 <9`;
+      > `js-yaml@>=3.0.0 <3.15.1` → `>=3.15.1 <6`; `js-yaml@>=4.0.0 <4.3.1` → `>=4.3.1 <6`;
+      > `nanoid@>=3.0.0 <3.3.17` → `>=3.3.17 <7`. All five are queued in the `js majors` group under
+      > Awaiting Schedule.
+      >
+      > **What this does and does not change** — see the US4 note in Phase 6:
+      > - **FR-014 / SC-004 are already satisfied** and cannot be "improved from zero". There is no
+      >   zero to beat.
+      > - **FR-016 is already satisfied for the value half**: Renovate can and does propose raising
+      >   an override floor's patched-version value.
+      > - **The key half is NOT rewritten and cannot be.** Renovate parses `fast-uri@<3.1.4` as the
+      >   *depName* and `>=3.1.4 <4` as the *version*. The vulnerable-range key is an opaque name to
+      >   it. So the bot's proposals are **half-bumps by construction** — which makes T018-T020's
+      >   consistency guard more load-bearing than planned, not less.
+      > - The five pending bumps above happen to keep their lower bounds fixed (they widen the upper
+      >   bound only), so today's queue would pass the guard. A real floor *raise* would not.
+- [x] **T002** [P] Record the deferred-update baseline from the dependency dashboard:
       `node scripts/backlog.mjs show 29`, capturing the count of groups under **Awaiting Schedule**.
       **Expected: 8.** SC-002 asserts this reaches zero. (SC-002)
-- [ ] **T003** [P] Record the allowlist baseline: run `node scripts/check-sast-findings.mjs` and
+
+      > **MEASURED 2026-08-13: 10 groups, not 8.** Counted as `grep -c 'unschedule-branch='` on
+      > `node scripts/backlog.mjs show 29` (the eleventh checkbox,
+      > `create-all-awaiting-schedule-prs`, is a control, not a group). The groups are:
+      > `ci-actions`, `nx-monorepo`, `cargo-deps`, `js-patchminor`, `docker-base-images`,
+      > `major-ci-actions`, `major-nx-monorepo`, `major-docker-base-images`,
+      > `major-js-majors-(review-individually)`, `major-cargo-deps`.
+      > Two more accumulated between the spec's measurement and implementation, which is the fault
+      > continuing to cost. **SC-002 is measured against 10.**
+- [x] **T003** [P] Record the allowlist baseline: run `node scripts/check-sast-findings.mjs` and
       capture that `GHSA-7p8r-x3mc-p8w7` and `GHSA-mwp4-54f8-5fhr` currently appear as **suppressed**,
       plus the total of 8 expiry-bearing entries across `security/sast/allowlist.yaml` (5) and
       `security/infra-images/allowlist.yaml` (3). (SC-003, SC-005)
+
+      > **Entry count confirmed: 8.** `security/sast/allowlist.yaml` — `click` (2026-10-12),
+      > `fast-uri` (2026-08-31), `ip-address` (2026-08-31), `image-size` ×2 (2026-09-07);
+      > `security/infra-images/allowlist.yaml` — 3 entries, all 2026-10-24.
+      >
+      > **Instrument check first.** Running `check-sast-findings.mjs` against the checked-out tree
+      > printed an EMPTY summary and `exit=0`. That is not a baseline: the committed
+      > `security/sast/reports/findings.json` is a stale 794-byte artifact holding **0 findings**, so
+      > the gate had nothing to classify and passed *vacuously*. Suppression baseline was taken only
+      > after `node scripts/sast-scan.mjs --scope full` regenerated the report — see the recorded
+      > result beneath T013.
 
 ---
 
