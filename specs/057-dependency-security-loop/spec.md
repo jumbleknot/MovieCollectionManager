@@ -27,7 +27,7 @@ outside its supported engine.
 | --- | --- | --- |
 | **#160** | The bot fails on every run — `renovate@44.14.12` requires `node ^24.11.0`, the job inherits the container's `v22.23.2` | Run 1587 (task 5278), `schedule`, 2026-08-09T03:50:08Z, exit 1, `EBADENGINE` then `Unsupported node environment` |
 | **#153** | The bot is never awake inside its own permitted window | `renovate.yml:34` runs `0 3 * * *` (03:00 UTC); `renovate.json:16-17` permits `* 3 * * 5` in `America/New_York` = **07:00-07:59 UTC Friday**. The sets never intersect |
-| **#152** | Two accepted risks expire **2026-08-31**, and the bot structurally cannot propose their fix | `security/sast/allowlist.yaml:111-121`. Renovate extracts **zero** deps from `pnpm-workspace.yaml`, so no `overrides:` floor is ever bumped automatically |
+| **#152** | Two accepted risks expire **2026-08-31**, and the bot structurally cannot propose their fix | `security/sast/allowlist.yaml:111-121`. Renovate extracts **zero** deps from `pnpm-workspace.yaml`, so no `overrides:` floor is ever bumped automatically — **see the correction below; the conclusion holds, the stated reason does not** |
 | **#154** | Expiry is binary — full suppression until the date, hard fail the next morning, no signal between | `check-sast-findings.mjs:80` and `check-infra-image-findings.mjs:89`: `if (entry.expiry && entry.expiry < now) return false;` |
 
 ### Why the loop looked healthy
@@ -62,6 +62,26 @@ permanent. The two #152 entries must be removed because the underlying versions 
 re-dated because the date was inconvenient. The one legitimate exception — no published fix exists —
 is already modelled by the `image-size` pair and requires the evidence written into the
 justification.
+
+> **CORRECTION — 2026-08-13 (feature 058 / item #184).** The "extracts **zero**" claim above, and in
+> the paragraph below and in `research.md`, is **false**, and it was inherited from item #152 rather
+> than measured. Run **1704** (2026-08-13, head `6afc2c8`) extracted **twelve** dependencies from
+> `pnpm-workspace.yaml` via Renovate's **built-in npm manager** — all ten keyed override floors plus
+> `postcss` and `@expo/dom-webview` — and the Dependency Dashboard that run wrote lists pending
+> updates for five of them. There is no zero baseline to improve on.
+>
+> The *conclusion* #152 drew survives: no `overrides:` floor is ever bumped automatically. The
+> *reason* is different, and the difference matters. It is not that the file is invisible to the bot;
+> it is that (a) the bot proposes only when the current range fails to satisfy the newest version, and
+> a floor like `>=3.1.5 <4` satisfies every 3.x, and (b) it reasons about the manifest range, never
+> the lockfile resolution. Every one of the five pending updates the dashboard listed was an
+> *upper*-bound widening (`<4`→`<5`, `<7`→`<9`), never a floor raise.
+>
+> This mattered practically twice over: the false premise made a regex `customManager` look like a
+> free win when it would in fact double-manage an already-extracted file, and it caused item #184 to
+> be filed against the half-bump rather than against the stale lockfile that actually cost ten days of
+> red. Feature 058 fixes the real fault. This text is left standing as the record of what was believed
+> at the time — see `specs/058-dependency-refresh-loop/research.md` R6.
 
 **Ship a Renovate manager that reports success while extracting nothing.** That is today's fault
 exactly: Renovate lists `pnpm-workspace.yaml` under Detected Dependencies and extracts zero from it.

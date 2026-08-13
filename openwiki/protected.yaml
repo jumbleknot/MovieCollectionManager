@@ -177,6 +177,17 @@ passages:
     # Two CI-pinning gotchas from PR #141: a version bump that misses a second pin (nx.json's
     # wrapper version vs package.json) is a silent no-op, and an unpinned CI tool (npx --yes
     # renovate) lets an upstream major change config semantics without notice.
-    fingerprint: "sha256:4ff95566333480b15bf4f82fd27fadc3fa88bd5a16825591b58bc3c36fe553c2"
+    #
+    # Re-fingerprinted 2026-08-13 (feature 058, items #186/#184), again in the same change as the
+    # text. One existing sentence became FALSE and three gotchas were added:
+    #   * a "docs/config/lockfile-only PR ... skips the ~23-minute E2E suite" — lockfile PRs no
+    #     longer skip it, so the word was removed rather than left to mislead;
+    #   * the two paths filters disagreed about lockfiles (push acknowledged the risk, pull_request
+    #     denied it), which is item #186;
+    #   * a `mobile` filter entry absent from `app` can NEVER fire, and two were — so a Maestro
+    #     runner change ran no mobile flow while reading as covered;
+    #   * lockFileMaintenance's own default schedule beats the inherited top-level one, so enabling
+    #     it without repeating the window leaves it on and unable to ever fire.
+    fingerprint: "sha256:6a893c817c82865fa0b8a13bd5d38baf3930842ff73229eb2e5720f193e53456"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
