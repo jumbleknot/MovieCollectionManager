@@ -177,6 +177,6 @@ passages:
     # Two CI-pinning gotchas from PR #141: a version bump that misses a second pin (nx.json's
     # wrapper version vs package.json) is a silent no-op, and an unpinned CI tool (npx --yes
     # renovate) lets an upstream major change config semantics without notice.
-    fingerprint: "sha256:7230c32e2ffffcb3cddba63b2dbc1c25441ad0cd342cb4b1f3d16933b3ca1dcc"
+    fingerprint: "sha256:4ff95566333480b15bf4f82fd27fadc3fa88bd5a16825591b58bc3c36fe553c2"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"

@@ -28,10 +28,22 @@ No running stack is needed for anything in Offline, which is Stories 1, 2, 4 (gu
 node --test scripts/__tests__/*.test.mjs
 ```
 
-Expected: all pass. New files (`allowlist-expiry.test.mjs`, `check-override-consistency.test.mjs`,
-`renovate-workflow.guard.test.mjs`) are picked up by the glob — no wiring needed. **If the new test
-names do not appear in the output, the files are not being discovered** — that reads as a pass and is
-the failure mode this note exists for.
+Expected: all pass — **650 tests**, up from 624 before this feature (+16 `allowlist-expiry`,
++10 `check-override-consistency`; `renovate-workflow.guard`'s 2 were already in the 624). New files
+are picked up by the glob — no wiring needed.
+
+**How to check discovery, corrected 2026-08-13.** Node's runner executes these files in-process and
+its reporter prints **test names, not file paths**, so grepping the output for a *filename* returns
+nothing even when the file is running perfectly — a check that fails on correct input. Grep for a
+distinctive **test name** from each new file instead:
+
+```bash
+node --test scripts/__tests__/*.test.mjs 2>&1 \
+  | grep -E 'the warning window is 14 days|the half-bump|BOTH DST offsets|green on arrival'
+```
+
+Expected: four `✔` lines, one per new behaviour. If any is missing, that file is not being
+discovered — which reads as a pass, and is the failure mode this note exists for.
 
 ### Stories 1-2 — the workflow guard (Node pin + schedule)
 
@@ -114,6 +126,14 @@ node scripts/sast-scan.mjs --scope full     # or: pnpm nx sast infrastructure-as
 node scripts/check-sast-findings.mjs
 ```
 
+> **In the dev container use `--only pnpm-audit`, or you will read a false green.** The full-scope
+> run fail-closes on Semgrep (`semgrep.dev` is outside the egress allowlist, by design — re-apply the
+> firewall, never allowlist it) and leaves a **0-finding** report that the gate passes *vacuously*.
+> Both advisories here are `pnpm-audit` findings and that scanner has no such dependency:
+> `node scripts/sast-scan.mjs --scope full --only pnpm-audit` completes and gives a real report.
+> **Read the finding COUNT**: 59 findings / 4 blocking before this feature, 55 / 2 after. The Semgrep
+> half stays CI's to run.
+
 Success is **neither advisory appearing at all** — not as a blocking finding, and not as a suppressed
 one:
 
@@ -125,10 +145,15 @@ Expected: `matches=1` (grep found nothing). A hit under *either* heading means t
 appearing as suppressed means the entry was re-dated rather than the floor raised, which FR-010
 forbids.
 
-Confirm the entries are gone from the file, not just from the output:
+Confirm the entries are gone from the file, not just from the output. **Parse the YAML — do not grep
+the raw text** (corrected 2026-08-13): the remediation leaves a history comment naming both advisory
+ids, exactly as the aiohttp/cryptography note above it does, so `grep -c` returns `1` for a file with
+zero live entries. The check must distinguish an *entry* from a *comment*:
 
 ```bash
-grep -c 'GHSA-7p8r-x3mc-p8w7\|GHSA-mwp4-54f8-5fhr' security/sast/allowlist.yaml
+node -e 'const {parse}=require("yaml");
+const y=parse(require("fs").readFileSync("security/sast/allowlist.yaml","utf8"));
+console.log(y.filter(e=>["GHSA-7p8r-x3mc-p8w7","GHSA-mwp4-54f8-5fhr"].includes(e.id)).length)'
 ```
 
 Expected: `0`.

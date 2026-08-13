@@ -277,17 +277,42 @@ for the right reason.
       >
       > **FR-012**: `minimumReleaseAgeExclude`'s stale `fast-uri@3.1.4` updated to `3.1.5`, and
       > `ip-address@10.5.0` added — that release is dated 2026-08-10, inside the 3-day cooldown.
-- [ ] **T016** [US3] Run the build and the web E2E baseline. These are JS-toolchain transitives, so a
+- [x] **T016** [US3] Run the build and the web E2E baseline. These are JS-toolchain transitives, so a
       bad floor surfaces at **build** time, not in unit tests — `nx test` will pass over a broken
       floor. Covers **US3-AC3**.
       **Verify**: `pnpm nx build mcm-app`, then the web E2E baseline per
       `docs/runbooks/e2e-testing.md`.
       **Expected**: build succeeds; E2E counts unchanged from baseline. (FR-013, SC-008)
-- [ ] **T017** [US3] If no fixed release exists for one advisory at implementation time, re-date
+
+      > **Build: PASS.** `pnpm nx build mcm-app` → *"Successfully ran target build for project
+      > mcm-app"* — Expo web export plus the `mcm-bff:latest` image. This is the signal FR-013 exists
+      > for: `nx test` passes over a broken toolchain floor, a build does not.
+      >
+      > **Web E2E: 135 passed, 39 skipped, 0 failed** (3.3m), dev-container target — the deterministic
+      > baseline, not Metro.
+      >
+      > **Two instrument checks, because both would have produced a false green.**
+      > 1. `mcm-bff-service-nonsecure` had been up 24 hours on the PREVIOUS image. Run as-is, the
+      >    suite would have exercised a bundle built before these floors existed and reported green
+      >    for the wrong artifact. Force-recreated onto the new image first, and confirmed
+      >    `Up 20 seconds (healthy) mcm-bff:latest`.
+      > 2. **The skip count is accounted for, not waved through.** All 39 skips are the agent tier
+      >    (`agent-*.spec.ts` = 20 tests, `assistant-*.spec.ts` = 21; two of those 41 do not gate on a
+      >    live model and ran). They gate on `E2E_AGENT_PRODUCTION=1`, which the *web* baseline
+      >    deliberately does not set — that tier runs separately per
+      >    `openwiki/invariants/testing-tiers.md`. **No non-agent test skipped**, so nothing outside
+      >    the agent tier went unexercised.
+- [x] **T017** [US3] If no fixed release exists for one advisory at implementation time, re-date
       **that single entry** with the absence of a fix written into its justification, following the
       `image-size` precedent — and do not touch the other. Covers **US3-AC5**.
       **Done when**: either this task is recorded as not-needed, or exactly one entry carries a new
       date and a justification naming the missing fix.
+
+      > **NOT NEEDED — recorded, not skipped.** The spec's assumption held: a fixed release exists for
+      > BOTH advisories, checked against npm rather than assumed. `fast-uri@3.1.5` (published
+      > 2026-07-31) satisfies `>=3.1.5`; `ip-address@10.3.1` (2026-07-25) satisfies `>=10.3.1`, and
+      > resolution picked up 10.5.0. Neither entry was re-dated; both were deleted. US3-AC5's escape
+      > hatch was not used, which is the outcome the story wanted.
 
 **Checkpoint**: the 2026-08-31 deadline is cleared and cannot re-block.
 

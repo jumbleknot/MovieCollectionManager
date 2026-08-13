@@ -127,6 +127,44 @@ dep-update flow, not the gate.
   entry matches anything. **To test an allowlist entry locally, hand the gate a synthetic
   `findings.json`** carrying the exact `scanner` / `id` / location triples you expect, plus a
   **negative control** (a finding the entry must NOT suppress). Otherwise push and let CI answer.
+- **…but "the tier cannot run here" is the wrong conclusion — `--only` gets you the SCA half
+  (2026-08-13).** The vacuous pass above is a fact about **Semgrep**, not about the gate. Only
+  Semgrep needs `semgrep.dev`; `pnpm-audit`, `cargo-audit` and `pip-audit` resolve their advisory
+  data from sources the egress allowlist already permits. So the whole SCA half runs to completion
+  locally:
+
+  ```bash
+  node scripts/sast-scan.mjs --scope full --only pnpm-audit   # 55 findings, 2 blocking — a real report
+  node scripts/check-sast-findings.mjs
+  ```
+
+  This matters because every dependency-floor remediation is an SCA finding, and those are exactly
+  the changes you want to verify before pushing. Measured on feature 057: the full-scope run
+  fail-closed on Semgrep and left a 0-finding report the gate passed vacuously, while `--only
+  pnpm-audit` proved both target advisories were genuinely suppressed beforehand and genuinely gone
+  afterwards. **Check the finding COUNT, not the exit code** — a report with 0 findings and a report
+  with no blocking findings print the same green.
+- **An override floor has TWO halves and both must move.** Entries in `pnpm-workspace.yaml`'s
+  `overrides:` map are a range keyed on a range — `fast-uri@<3.1.5: '>=3.1.5 <4'` — where the key
+  names the vulnerable span excluded and the value the patched floor forced. Raise the value alone
+  and you get an override that reads as remediated while no longer excluding the version its own key
+  names. `scripts/check-override-consistency.mjs` enforces `key's exclusive upper bound == value's
+  inclusive lower bound` on every pull request, scoped to keys carrying an `@<range>` suffix (the
+  plain pins `react-dom`, `postcss`, `@expo/dom-webview` have no key half and are out of scope).
+  Renovate produces exactly this mismatch when it proposes a floor raise, so expect bot PRs against
+  this map to need their key half fixed by hand.
+- **Remediate, do not re-date.** Deleting or extending an `expiry` is how a time-box becomes
+  permanent. The legitimate exception — no published fix exists — is modelled by the `image-size`
+  pair and requires the evidence written into the justification. Check npm before assuming: on
+  feature 057 both "needs an acceptance" advisories turned out to have published fixes.
+- **You now get 14 days' notice before an expiry blocks anything.** Both gates report `EXPIRING
+  SOON` / `EXPIRED` / `UNMATCHED ENTRIES` on a normal run **without changing their exit code**, and
+  `--check-expiring` runs weekly in `infra-image-scan` (schedule-only, never on a pull request) and
+  fails on any of the three. The window is `WARNING_WINDOW_DAYS` in `scripts/allowlist-expiry.mjs`,
+  the single definition both gates import. `UNMATCHED ENTRIES` is the one to read closely: it catches
+  the measured trap where an entry keyed on an exact advisory id **does not expire, it just quietly
+  matches nothing** once a scanner switches identifier namespace (pip-audit moving from CVE ids to
+  PYSEC aliases). Full detail in [`security/sast/README.md`](../../security/sast/README.md).
 - **`p/secrets` stays OFF** — `secret-scan.mjs` owns credential detection (FR-006). Do not double-gate.
 - **Rust code is out of Semgrep scope** — clippy (`pnpm nx lint mc-service`) covers Rust patterns;
   cargo-audit covers only Rust *deps*. Consequently `mcm-no-jwt-payload-tracing` enforces the no-JWT-
