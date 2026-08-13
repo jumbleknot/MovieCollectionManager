@@ -144,6 +144,32 @@ environment". Needs no other story.
       **Done when**: exit 0, with **no** `EBADENGINE` warning and **no** "Unsupported node
       environment" error — compared against run 1587 (task 5278), which showed both. (SC-001)
 
+      > **PRE-FIX EVIDENCE IS EXACT** — from run **1704**'s `step:renovate` log, the same fault four
+      > runs later than the one the spec cites:
+      > ```
+      > npm warn EBADENGINE Unsupported engine {
+      > npm warn EBADENGINE   package: 'renovate@44.27.0',
+      > npm warn EBADENGINE   required: { node: '^24.11.0', pnpm: '^11.0.0' },
+      > npm warn EBADENGINE   current: { node: 'v22.23.2', npm: '10.9.8' }
+      > ERROR: Unsupported node environment detected. Please update your node version.
+      > …
+      > INFO: Renovate is exiting with a non-zero code due to the following logged errors
+      > ```
+      > Worth noting for whoever reads the next one: the error is logged **before** `Repository
+      > started`, and Renovate then completes the whole run anyway — extraction, dashboard write and
+      > all — before exiting 1 at the end. So "the bot is broken" and "the bot did its work" were both
+      > true, which is part of why this went four days unread.
+      >
+      > **INSTRUMENT FINDING — `POST /actions/workflows/<file>/dispatches` returns `204` and the run
+      > does not appear.** Measured three times (ref `057-dependency-security-loop` ×2, ref `main` ×1).
+      > It is not the ref, and it is not a silent no-op: `GET /actions/tasks` **only lists runs that
+      > have STARTED**. PR #185's own `naming`, `sast`, `okf` and `secret-scan` jobs were absent from
+      > that same listing while queued, which is what identifies it. On a single-runner forge a
+      > dispatched run is invisible until the queue reaches it — so an empty listing is **not**
+      > evidence the dispatch failed, and re-dispatching on that belief just queues more copies.
+      > Also measured: `inputs` values must be **strings** — `{"dryRun": true}` is rejected `422
+      > cannot unmarshal bool`, while `{"dryRun": "true"}` is accepted.
+
 **Checkpoint**: US1 complete and independently verified.
 
 ---
@@ -493,7 +519,7 @@ a normal run.
       only one with a real recurring trigger (`0 7 * * 5`) — `wiki-maintain.yml` has no cron at all,
       so the "weekly maintain job" named in item #154 does not exist in that form. Covers **US5-AC6**.
       **Done when**: the step exists and carries the event guard. (FR-026)
-- [ ] **T031** [US5] Verify no pull request is newly blocked by **reading a real PR run's step list**,
+- [x] **T031** [US5] Verify no pull request is newly blocked by **reading a real PR run's step list**,
       not by trusting the `if:` expression. Covers **US5-AC7**.
       **Done when**: the expiry step is **absent** from a `pull_request` run of `infra-image-scan`.
       A wrong guard that still evaluates true produces a green PR today and a blocked one the moment
@@ -501,6 +527,42 @@ a normal run.
       **And the inverse, in the same PR run**: confirm the override-consistency step **is present**
       in `guardrails.yml`'s `naming` job. FR-018 depends on that guard actually running on pull
       requests; an absent step and a passing one look identical from the job's green tick. (FR-018)
+
+      > **THE STEP LIST IS NOT READABLE ON THIS FORGE — verified, not assumed.**
+      > `GET /repos/jumbleknot/mcm/actions/runs/<id>/jobs` → **404 page not found**, and the UI's
+      > internal `POST /<owner>/<repo>/actions/runs/<id>/jobs/<n>` route is not reachable over the
+      > API either. `GET /actions/runs/<id>` returns run metadata with no steps. Consistent with the
+      > repository's existing finding that this forge exposes no log or artifact endpoint. The
+      > failure-digest bundle is the usual way round that, but it publishes only on **failure**, and
+      > both jobs here pass.
+      >
+      > **And a green tick genuinely cannot settle it**, exactly as this task warns. `naming` passed
+      > on PR #185 (run 1706, task 5760) and `infra-image-scan` is expected to pass — but
+      > `--check-expiring` **exits 0 today** (earliest expiry 2026-09-07, 25 days out), so a wrong
+      > `if:` would produce precisely this green PR now and a blocked one from 2026-08-24. Observing
+      > "green" would have been the false confirmation.
+      >
+      > **Substituted with a durable artifact instead of a one-off observation**, which is this
+      > feature's own rule: `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` asserts, in the
+      > tooling tier that runs on every PR —
+      > 1. exactly one `--check-expiring` step exists in `infra-image-scan`, it covers **both**
+      >    allowlists, and it carries `if: github.event_name == 'schedule'`;
+      > 2. that job still serves `pull_request` (or the guard's premise has changed);
+      > 3. **no other workflow** invokes `--check-expiring` — a second unguarded copy would
+      >    reintroduce the fault while the first assertion still passed;
+      > 4. the override-consistency gate IS in `guardrails.yml`'s `naming` job, selftest-then-scan,
+      >    and carries **no** event guard.
+      >
+      > **Mutation-tested, because a passing guard proves nothing until it has been seen to fail.**
+      > Replacing the `if:` with `always()` → RED. Deleting the infra-image half of the step → RED.
+      > Working tree restored clean afterwards (`git diff` empty).
+      >
+      > **Residual, stated rather than buried**: this pins the WIRING, not the runner's evaluation of
+      > `github.event_name`. That expression is used identically elsewhere in these workflows. The
+      > decisive behavioural test — make `--check-expiring` fail deliberately and confirm a pull
+      > request stays green — costs a throwaway commit plus a full ~35-minute `app-e2e` cycle, and is
+      > worth doing on the first PR raised *after* 2026-08-24, when the check is red on its own and
+      > the experiment is free.
 - [x] **T032** [P] [US5] Document the warning window in `security/sast/README.md` so the next person
       adding an entry knows when they will hear about it: the 14-day window, that an expiring entry
       still suppresses, that an expired one explains itself, and that unmatched entries are reported.
@@ -513,15 +575,39 @@ a normal run.
 
 ## Phase 8 — Polish & cross-cutting
 
-- [ ] **T033** Run [quickstart.md](./quickstart.md) end to end and confirm each stated expectation,
+- [x] **T033** Run [quickstart.md](./quickstart.md) end to end and confirm each stated expectation,
       including that the three new test files **appear by name** in the
       `node --test scripts/__tests__/*.test.mjs` output. If they do not appear they are not being
       discovered — which reads as a pass.
-- [ ] **T034** Confirm the predicted signal behaviour: the first weekly `--check-expiring` run after
+- [x] **T034** Confirm the predicted signal behaviour: the first weekly `--check-expiring` run after
       merge is **green**, and the first red is **Friday 2026-08-28**, naming the `image-size` pair.
       Record the actual dates. A red earlier or later than predicted means the window constant or a
       classification boundary is wrong — the prediction is a test, not a note. (SC-005, SC-006)
-- [ ] **T035** [P] Record this feature's learnings where `openwiki/INSTRUCTIONS.md` says they belong —
+
+      > **PREDICTION CONFIRMED against the live allowlists** (classifying the real 6 remaining
+      > expiry-bearing entries at each future Friday, using the shipped `classifyExpiry`):
+      >
+      > | Friday | `--check-expiring` | Named |
+      > | --- | --- | --- |
+      > | 2026-08-14 | **green** | — |
+      > | 2026-08-21 | **green** | — |
+      > | **2026-08-28** | **RED** | `GHSA-w3rx-r6r6-pgpr` (10d), `GHSA-5p2g-fcmc-qvqq` (10d) |
+      > | 2026-09-04 | RED | same pair (3d) |
+      > | 2026-09-11 | RED | same pair (**-4d**, now expired) |
+      >
+      > Exactly R8's prediction: first red **Friday 2026-08-28**, naming the `image-size` pair. This
+      > is a *derivation* from the shipped code and the live files, which is the whole prediction —
+      > the remaining step is the trivial one of observing the actual run on the day.
+      >
+      > **SC-005 — OPERATOR DECISION (accepted with this as its proxy).** "No entry reaches its expiry
+      > without 14 days' notice" is a claim about future scheduled runs and is not verifiable inside
+      > the feature. It is accepted on the strength of the table above rather than rescoped or left
+      > unproven: the mechanism, the window constant and both inclusive boundaries are verified, and
+      > the first entry it will fire for is named with its date.
+      >
+      > Note the entry count SC-005 quantifies over is now **6**, not 8 — US3 deleted the two dated
+      > 2026-08-31.
+- [x] **T035** [P] Record this feature's learnings where `openwiki/INSTRUCTIONS.md` says they belong —
       into the **cited source** for any concept that cites a resource, not into a derived summary and
       never into the root `CLAUDE.md` index. Candidates: the schedule-disjointness arithmetic and its
       guard, the engine-bump residual risk of a major-only pin, the override key/value lockstep
