@@ -49,7 +49,14 @@ Let `L` = override lower bound, `U` = override upper bound (`∞` when absent), 
 | `R` outside `[L, U)` | `null` — the override does not govern this resolution |
 | `R ≥ F` | `null` — already remediated |
 | `L ≤ F < U` and `R < F` | `{ action: 'refresh-lockfile', … }` |
-| `F ≥ U` or `F < L` | `{ action: 'raise-floor', … }` |
+| `F ≥ U` | `{ action: 'raise-floor', … }` |
+
+> **Correction (2026-08-13, during implementation).** This table originally also listed `F < L` as a
+> `raise-floor` case. That is **logically unreachable**: reaching the branch requires `R ≥ L` (in
+> range) and `R < F` (unremediated), so `F < L` would give `R ≥ L > F > R`. Confirmed exhaustively
+> over the ordering space — zero satisfying combinations. `raise-floor` is entered **only** via
+> `F ≥ U`. The module keeps the condition as a defensive `||` and test 8 documents the unreachability
+> so a later reader does not re-derive it.
 
 Matching is on the override's **package name** (post-`parseOverrideKey`), so both keyed floors and
 plain pins are considered. Plain pins have no vulnerable-range half and must not be treated as one.

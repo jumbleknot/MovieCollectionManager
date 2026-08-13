@@ -83,7 +83,8 @@ Let `L` = override lower bound, `U` = override upper bound (`∞` when absent), 
 | `F` unparseable, or `permittedRange` unparseable | *no advice* (`null`) | FR-020 — an aid must not guess |
 | `R` outside `[L, U)` | *no advice* (`null`) | FR-019 — the override does not govern this resolution (`undici` 7.x) |
 | `L ≤ F < U` and `R < F` | `refresh-lockfile` | the range **already permits** the fix; the lockfile is what is stale — **the measured incident** |
-| `F ≥ U`, or `F < L` | `raise-floor` | the range cannot reach the fix; both halves must move |
+| `F ≥ U` | `raise-floor` | the range cannot reach the fix; both halves must move |
+| ~~`F < L`~~ | *unreachable* | would require `R ≥ L > F > R`; see the contract's correction note |
 | `R ≥ F` | *no advice* (`null`) | already remediated; the finding is stale rather than actionable |
 
 ### Invariants

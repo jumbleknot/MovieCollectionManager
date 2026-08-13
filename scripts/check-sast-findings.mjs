@@ -25,6 +25,7 @@ import { dirname, resolve } from 'node:path';
 import {
   WARNING_WINDOW_DAYS, classifyExpiry, selectUnmatched, formatExpiring, formatExpired, formatUnmatched,
 } from './allowlist-expiry.mjs';
+import { selectAdvice, formatAdvice } from './override-lever.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_REPORT = resolve(REPO_ROOT, 'security/sast/reports/findings.json');
@@ -147,6 +148,26 @@ function printAllowlistReview({ expiring, expired, unmatched }, now) {
   }
 }
 
+/**
+ * Name WHICH LEVER clears each finding whose package already carries an override (feature 058, #184).
+ *
+ * PURELY ADVISORY — this prints and returns nothing the exit code depends on. It exists because the
+ * gate previously said "fast-uri@3.1.4 is vulnerable, fix >=3.1.5" and left the reader to work out
+ * whether to raise the floor or refresh the lockfile. The range already permitted the fix, so only a
+ * refresh was needed; the gate stayed red for ten days and a four-week acceptance was written for
+ * something one command would have cleared.
+ *
+ * Printed for NON-BLOCKING findings too, deliberately. The whole value is the early signal: a
+ * finding in this state is cheap to clear before its severity promotes it into a merge blocker, and
+ * blocking-only advice would first appear once it was already reddening every branch.
+ */
+function printOverrideLevers(findings, overrides) {
+  const advice = selectAdvice(findings, overrides);
+  if (advice.length === 0) return;
+  console.log('OVERRIDE LEVERS (advisory — does not affect this gate\'s result)');
+  console.log(formatAdvice(advice));
+}
+
 function printSummary({ failures, warnings, suppressed }) {
   console.log('── SAST/SCA gate summary ──────────────────────────────');
   if (failures.length) {
@@ -173,7 +194,7 @@ function printSummary({ failures, warnings, suppressed }) {
  * wrong, so a repository with un-allowlisted blocking findings and a clean allowlist exits 0 here —
  * the blocking gate is the normal run's job.
  */
-export function gate(report, allowlist, now = today(), { checkExpiring = false } = {}) {
+export function gate(report, allowlist, now = today(), { checkExpiring = false, overrides = {} } = {}) {
   const result = evaluate(report, allowlist, now);
 
   if (checkExpiring) {
@@ -194,6 +215,8 @@ export function gate(report, allowlist, now = today(), { checkExpiring = false }
   printSummary(result);
   // Advisory on a normal run — printing these MUST NOT move the exit code (FR-021, SC-007).
   printAllowlistReview(result, now);
+  // Likewise advisory (feature 058, FR-018): it names the remedy, it does not decide the result.
+  printOverrideLevers(report?.findings ?? [], overrides);
   if (result.failures.length) {
     console.error(`✗ SAST gate FAILED: ${result.failures.length} un-allowlisted blocking (High/Critical runtime) finding(s). Fix them or add a justified allowlist entry (security/sast/allowlist.yaml).`);
     return 1;
@@ -344,7 +367,18 @@ function main() {
     console.error(`✗ ${e.message}`);
     process.exit(2);
   }
-  process.exit(gate(report, allowlist, today(), { checkExpiring }));
+  // The override map for lever advice (feature 058). Read HERE rather than inside gate() so gate()
+  // stays pure and unit-testable. An unreadable or absent workspace manifest costs the advice and
+  // NOTHING ELSE — the gate's result must never depend on this file, so a failure here is swallowed
+  // to an empty map rather than exiting 2. That asymmetry is deliberate: this is an aid, not a gate.
+  let overrides = {};
+  try {
+    overrides = parseYaml(readFileSync(resolve(REPO_ROOT, 'pnpm-workspace.yaml'), 'utf8'))?.overrides ?? {};
+  } catch {
+    overrides = {};
+  }
+
+  process.exit(gate(report, allowlist, today(), { checkExpiring, overrides }));
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
