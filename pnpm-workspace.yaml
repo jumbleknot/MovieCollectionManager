@@ -29,7 +29,7 @@ minimumReleaseAgeExclude:
   - brace-expansion@5.0.9
   - fast-uri@3.1.5 # was 3.1.4 — raised 2026-08-13 with the override floor (feature 057)
   - ip-address@10.5.0 # resolved floor for GHSA-mwp4-54f8-5fhr; published 2026-08-10, inside the cooldown
-  - nanoid@3.3.17
+  - nanoid@3.3.18
   - postcss@8.5.23
   - shell-quote@1.10.0
 
@@ -69,7 +69,7 @@ overrides:
   # two Medium advisories on the same package (GHSA-4xrf-jv44-h6hh >=10.2.2, GHSA-22jq-vg5j-6vgg
   # >=10.2.1). Replaces a time-boxed acceptance that was 18 days from blocking every branch.
   ip-address@<10.3.1: '>=10.3.1 <11'
-  nanoid@>=3.0.0 <3.3.17: '>=3.3.17 <4'
+  nanoid@>=3.0.0 <3.3.18: '>=3.3.18 <4'
 
 # NOTE (feature 034): a pnpm-level `minimumReleaseAge` cooldown was tried here but BREAKS cold
 # `pnpm install --frozen-lockfile` in the BFF/agent Docker builds and CI — on an empty store pnpm
