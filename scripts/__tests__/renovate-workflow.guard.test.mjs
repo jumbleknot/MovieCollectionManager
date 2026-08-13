@@ -106,6 +106,79 @@ test('the renovate job pins its own Node rather than inheriting the container ru
   );
 });
 
+test('scheduled lock file maintenance is enabled and carries its OWN explicit window', () => {
+  // Feature 058 / item #184. THE MEASURED FAULT: Renovate proposes only when the current RANGE does
+  // not satisfy the newest version, and it reasons about the MANIFEST range rather than the lockfile
+  // resolution. So an override whose range already permits a published fix looks already-fixed to it
+  // while the lockfile stays pinned below — and nothing is proposed at all.
+  //
+  //   fast-uri  override >=3.1.4 <4 permitted 3.1.5, lockfile pinned 3.1.4.
+  //             fix published 2026-07-31, advisory 2026-08-03, gate red TEN DAYS,
+  //             and a four-week acceptance written — for what a lockfile refresh would have cleared.
+  //   nanoid    the same shape, eight days later, reddening main.
+  //
+  // `lockFileMaintenance` is the direct remedy: it refreshes WITHIN existing ranges, so a transitive
+  // fix an override already permits gets picked up with no config change and no human in the loop.
+  //
+  // AND THE OBVIOUS WAY TO ENABLE IT SILENTLY DOES NOTHING. Verified against renovate@44.29.3's own
+  // config resolver, not from documentation: the option's DEFAULT object already carries
+  // `schedule: ["before 4am on monday"]`, and a child config's value beats the inherited top-level
+  // `schedule`. Measured:
+  //
+  //   defaults only                                        -> ["before 4am on monday"]
+  //   top-level schedule + lockFileMaintenance{enabled}     -> ["before 4am on monday"]   <-- THE TRAP
+  //   ... + lockFileMaintenance{schedule}                   -> ["* 2-4 * * 5"]
+  //
+  // "before 4am on monday" in America/New_York is Monday 04:00-08:00 UTC (EDT) / 05:00-09:00 (EST).
+  // The crons are `0 3 * * *` and `0 7 * * 5`. NEITHER intersects under EITHER offset — so enabling
+  // it without its own key yields a feature that is ON and can NEVER FIRE, reporting nothing. That
+  // is #153 exactly: the fault feature 057 existed to fix, in a new place.
+  const lfm = config.lockFileMaintenance;
+  assert.ok(
+    lfm && lfm.enabled === true,
+    'renovate.json does not enable lockFileMaintenance, so nothing refreshes the lockfile on a ' +
+      'schedule. A transitive fix already permitted by an override range will be proposed by ' +
+      'NOTHING — which is the fast-uri/nanoid failure, not a hypothetical one.',
+  );
+  assert.ok(
+    Array.isArray(lfm.schedule) && lfm.schedule.length > 0,
+    'lockFileMaintenance is enabled but declares NO schedule of its own, so it inherits the option ' +
+      "default [\"before 4am on monday\"] — NOT the top-level `schedule` key, which does not " +
+      'propagate here. That window intersects neither workflow cron under either DST offset, so the ' +
+      'refresh is enabled and can never run, and nothing reports it. Declare the window explicitly.',
+  );
+});
+
+test('the lock file maintenance window intersects a workflow cron under BOTH DST offsets', () => {
+  // Same arithmetic as the branch-creation window below, applied to the second schedule. Split into
+  // its own test so a failure names WHICH window drifted — the two are independent and either can
+  // rot alone.
+  const crons = (workflow?.on?.schedule ?? []).map((entry) => entry.cron);
+  const offsets = TIMEZONE_OFFSETS[config.timezone];
+  assert.ok(offsets, `unknown timezone '${config.timezone}' — add it to TIMEZONE_OFFSETS`);
+
+  const windows = config.lockFileMaintenance?.schedule ?? [];
+  assert.ok(windows.length > 0, 'lockFileMaintenance declares no schedule (see the test above)');
+
+  for (const [label, offsetHours] of Object.entries(offsets)) {
+    const permitted = new Set();
+    for (const window of windows) {
+      for (const slot of windowSlotsInUtc(window, offsetHours)) permitted.add(slot);
+    }
+    const intersecting = crons.filter((cron) => [...cronSlots(cron)].some((slot) => permitted.has(slot)));
+    assert.ok(
+      intersecting.length > 0,
+      `under ${label} (UTC+${offsetHours} from ${config.timezone}) no workflow cron fires inside the ` +
+        'lockFileMaintenance window.\n' +
+        `  workflow crons (UTC):        ${crons.join(' , ')}\n` +
+        `  lockFileMaintenance window:  ${windows.join(' , ')} @ ${config.timezone}\n` +
+        `  permitted UTC dow:hour:      ${[...permitted].sort().join(' ')}\n` +
+        '  The refresh is enabled and the bot is never awake inside its window, so the lockfile is ' +
+        'never refreshed and nothing says so.',
+    );
+  }
+});
+
 test('a workflow cron falls inside the permitted branch-creation window under BOTH DST offsets', () => {
   const crons = (workflow?.on?.schedule ?? []).map((entry) => entry.cron);
   assert.ok(crons.length > 0, 'renovate.yml declares no scheduled trigger at all');
