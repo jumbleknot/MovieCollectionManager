@@ -789,6 +789,14 @@ jobs:
       # scripts/__tests__/e2e-turn-tally.test.mjs asserts both orderings against this file.
       - name: Run-health verdict (did this run COLLAPSE, or did tests merely fail?)
         if: ${{ always() }}
+        env:
+          # On a pull_request only the GATE tier runs, and the gate keeps 19 of the 41 agent tests —
+          # several of which drive no model turn at all. The healthy floor was calibrated on the full
+          # suite, so judging a gate-only run against it labels a green run `collapsed`. Measured on
+          # PR #181: failed=0 flaky=1 passed=154, verdict collapsed. The tally abstains instead, and
+          # says why. Explicit rather than inferred from an absent model log — a LOCAL full-suite run
+          # has none either, and must keep its verdict.
+          E2E_TURN_TIER: ${{ github.event_name == 'pull_request' && 'gate' || '' }}
         run: bash scripts/ci-log-step.sh e2e-turn-tally bash scripts/e2e-turn-tally.sh
 
       # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────

@@ -73,6 +73,27 @@ Two consequences, both deliberate:
 
 Recalibrate when the agent spec set changes materially, and record the run ids the new floor came from.
 
+## ⚠️ The floor does NOT apply to a gate-only run (added 2026-08-13)
+
+Feature 056 split the suite, and a `pull_request` now runs the **gate tier alone** — 19 of the 41
+agent tests, several of which drive no model turn at all. The floor of 50 was calibrated on the FULL
+suite, where the model-decision tests drive most of the turns.
+
+MEASURED on PR #181: `failed=0 flaky=1 passed=154` — green by every count — and 49 posts over 155
+tests = **31 per 100**, which the floor called `collapsed`. A confident wrong label on every pull
+request would teach people to ignore this field, which is the re-run reflex the signal exists to
+remove.
+
+So a gate-only run emits **`verdict=indeterminate` with the reason**, and still reports the raw
+numbers. Abstaining from a verdict is not abstaining from the data. One gate-only sample is not a
+calibration — the same standard this contract already applies to the original five.
+
+Signalled by **`E2E_TURN_TIER=gate`**, set by the workflow, not inferred from an absent model counts
+file: a LOCAL full-suite run has none either, and must keep its verdict.
+
+**To retire this**: collect gate-only samples across several green PRs, then set a gate floor here with
+the run ids it came from — exactly as the original floor records its five.
+
 ## Naming
 
 `verdict` is the **canonical name** for this concept across `spec.md`, `plan.md` and this contract. It is

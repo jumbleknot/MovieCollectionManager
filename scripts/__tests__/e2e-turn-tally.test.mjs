@@ -316,3 +316,72 @@ test('the denominator spans BOTH tiers, so the ratio stays comparable', needsBas
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('a GATE-ONLY run is indeterminate, not collapsed — the floor is calibrated on the full suite', needsBash, () => {
+  // MEASURED on PR #181: gate tier alone gave `failed=0 flaky=1 passed=154` — green by every count —
+  // and 49 posts over 155 tests = 31 per 100, which the floor of 50 called `collapsed`. The floor was
+  // calibrated on a suite INCLUDING the model-decision tests, and those drive most of the turns; the
+  // gate keeps 19 agent tests of 41, several doing no model turn at all.
+  //
+  // A confident wrong label on every pull request would teach people to ignore the field, which is
+  // the re-run reflex this script exists to remove. One gate-only sample is not a calibration, so it
+  // says so instead of guessing.
+  const dir = mkdtempSync(join(tmpdir(), 'turn-tally-gateonly-'));
+  try {
+    const gateway = join(dir, 'gateway.log');
+    writeFileSync(gateway, Array.from({ length: 49 }, () => postLine()).join('\n'));
+    const gate = join(dir, 'counts.log');
+    writeFileSync(gate, gateLine({ failed: 0, flaky: 1, passed: 154 }));
+
+    const r = spawnSync('bash', [SCRIPT], {
+      env: {
+        ...process.env,
+        E2E_TURN_GATEWAY_LOG_FILE: gateway,
+        E2E_TURN_COUNTS_FILE: gate,
+        E2E_TURN_MODEL_COUNTS_FILE: join(dir, 'absent.log'),
+        // EXPLICIT, not inferred from the absent model log: a local full-suite run has no model log
+        // either, and abstaining there would discard the verdict where a developer reads it directly.
+        E2E_TURN_TIER: 'gate',
+      },
+      encoding: 'utf8',
+    });
+
+    assert.equal(r.status, 0);
+    assert.equal(verdictOf(r.stdout), 'indeterminate',
+      'a healthy gate-only run was labelled against a floor calibrated on the full suite');
+    assert.doesNotMatch(r.stdout, /COLLAPSE SIGNATURE/,
+      'the client-side diagnosis was emitted for a run whose tier simply drives fewer turns');
+    assert.match(r.stdout, /calibrated on the FULL suite/, 'the reason does not say why it abstained');
+    // The raw numbers are still reported — abstaining from a VERDICT is not abstaining from the data.
+    assert.match(turnLine(r.stdout), /gateway_posts=49/);
+    assert.match(turnLine(r.stdout), /tests_executed=155/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a LOCAL full-suite run still gets a verdict — no model log is not the same as gate-only', needsBash, () => {
+  // The first version of the tier check inferred "gate only" from the model counts file being absent.
+  // A local full run (`E2E_TIER` unset, all 177 tests in one selection) has no model log either, so
+  // that inference silently abstained exactly where a developer reads the verdict directly.
+  const dir = mkdtempSync(join(tmpdir(), 'turn-tally-local-'));
+  try {
+    const gateway = join(dir, 'gateway.log');
+    writeFileSync(gateway, Array.from({ length: 155 }, () => postLine()).join('\n'));
+    const gate = join(dir, 'counts.log');
+    writeFileSync(gate, gateLine({ failed: 1, flaky: 5, passed: 171 }));
+    const r = spawnSync('bash', [SCRIPT], {
+      env: {
+        ...process.env,
+        E2E_TURN_GATEWAY_LOG_FILE: gateway,
+        E2E_TURN_COUNTS_FILE: gate,
+        E2E_TURN_MODEL_COUNTS_FILE: join(dir, 'absent.log'),
+        E2E_TURN_TIER: '',
+      },
+      encoding: 'utf8',
+    });
+    assert.equal(verdictOf(r.stdout), 'healthy', 'a local full-suite run lost its verdict');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

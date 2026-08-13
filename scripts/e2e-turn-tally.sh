@@ -140,6 +140,34 @@ fi
 # comparison exact rather than approximately right.
 posts_per_100=$(( gateway_posts * 100 / tests_executed ))
 
+# TIER-AWARE, and this is a correction to this script's own calibration (feature 056).
+#
+# The floor of 50 was measured on a suite that INCLUDED the model-decision tests, and those are the
+# ones that drive most gateway turns. After the split a `pull_request` runs the gate tier alone —
+# 19 agent tests instead of 41, several doing no model turn at all — so a perfectly healthy run reads
+# ~31 posts per 100 tests and the floor called it `collapsed`. MEASURED on PR #181's run: green by
+# every count (`failed=0 flaky=1 passed=154`), verdict `collapsed`. A confident wrong label on every
+# PR would teach people to ignore the field, which is the re-run reflex this script exists to remove.
+#
+# The gate-only baseline has ONE sample, and one sample is not a calibration — the contract says so
+# about the original five. So a gate-only run reports `indeterminate` WITH THE REASON rather than
+# guessing a floor. That is the same rule the unreadable-log path already follows: a measurement that
+# cannot be made must not read as a good one, and it must not read as a bad one either.
+#
+# Signalled EXPLICITLY by `E2E_TURN_TIER=gate`, not inferred from the model counts file being absent.
+# That inference was written first and was wrong: a LOCAL full-suite run (`E2E_TIER` unset, all 177 in
+# one selection) also has no model counts file, and abstaining there would throw away the verdict in
+# the one place a developer reads it directly.
+if [ "${E2E_TURN_TIER:-}" = "gate" ]; then
+  echo "$MARKER gateway_posts=${gateway_posts} tests_executed=${tests_executed} posts_per_100_tests=${posts_per_100} verdict=indeterminate"
+  echo "$MARKER reason: gate tier only (the model tier did not run — normal on a pull request). The"
+  echo "$MARKER healthy floor of ${HEALTHY_FLOOR_PER_100} was calibrated on the FULL suite, where the"
+  echo "$MARKER model-decision tests drive most turns; a healthy gate-only run reads far lower. Judging"
+  echo "$MARKER against that floor here would call a green run collapsed. Recalibrate with gate-only"
+  echo "$MARKER samples before giving this a verdict — see specs/056-agent-gate-split/."
+  exit 0
+fi
+
 if [ "$posts_per_100" -ge "$HEALTHY_FLOOR_PER_100" ]; then
   verdict=healthy
 else
