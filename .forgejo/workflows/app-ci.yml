@@ -34,15 +34,40 @@ on:
       - 'packages/**'                     # @mcm/design-system — was ungated (a DS-only PR bypassed app-ci)
       - 'infrastructure-as-code/**'
       - '.forgejo/workflows/app-ci.yml'
+      # Cargo.lock is DELIBERATELY not mirrored into the `changes` job's `app` filter below, unlike the
+      # two pnpm files (feature 058 / item #186, whose third acceptance criterion allows a difference the
+      # file records). The 057 FR-013 argument — "only the E2E tier catches a bad floor" — is specific to
+      # JS transitives, where breakage is a build-time failure `nx test` passes over. Rust is not in that
+      # position: `mc-service-checks` runs clippy and the unit tier on EVERY pull request and both COMPILE
+      # the crate, so a bad Cargo floor already reds a tier that runs. Adding it to `app` would buy an
+      # extra ~23-min E2E for a class already covered.
       - 'Cargo.lock'                      # a lockfile bump changes transitive deps → rebuild the affected images
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'             # feature 058: the override map is the security-floor lever; it moves
+                                          #   with the lockfile, so the two filters must agree about both
   # NO `paths:` filter — app-ci runs on EVERY PR (branch-protection Option 2, 2026-07-07). Rationale:
   # branch protection requires the `app-ci*` checks, but a path-filtered app-ci left non-app PRs (docs,
   # config, lockfiles) with ZERO `app-ci/*` status → the required glob was unmet → unmergeable without an
   # admin override (this bit #30/#31 config, #36/#37 lockfiles, #39 docs — whack-a-mole per class). Running
   # app-ci on every PR makes the required contexts always PRESENT so any PR is mergeable by check. The
   # heavy `app-e2e` (~23 min) is STILL gated — by the `changes` dorny paths-filter job below — so a docs/
-  # config/lockfile PR runs only the light `affected` + `mc-service-checks` jobs, not the E2E suite.
+  # config PR runs only the light `affected` + `mc-service-checks` jobs, not the E2E suite.
+  #
+  # LOCKFILE PRs ARE NO LONGER IN THAT CLASS (feature 058 / item #186, 2026-08-13). This comment used to
+  # end "docs/config/lockfile PR", and that was a considered decision — it is reversed here rather than
+  # quietly edited, because two of its premises stopped holding:
+  #   1. Feature 057's FR-013 established that the E2E tier is the ONLY tier that catches a bad transitive
+  #      floor. These are JS-toolchain transitives, so breakage surfaces at BUILD time — `nx test` passes
+  #      straight over a broken floor. The light jobs a lockfile PR did run are exactly the blind ones.
+  #   2. Feature 057 fixed #153, so Renovate proposes again, and feature 058 enables `lockFileMaintenance`
+  #      — which makes a lockfile-only PR a WEEKLY event rather than a rare hand-written one. The volume
+  #      of the untested class went from ~zero to weekly.
+  # Measured before the change: app-e2e reported `skipped` on both PR #185 and PR #187, and PR #185's only
+  # evidence that its two raised floors did not break the app was a LOCAL run someone remembered to do.
+  # The accepted cost is the ~23-min web+integration half only — `mobile` deliberately does NOT select
+  # these files, so a dependency PR does not pay for the ~35-min emulator half (label `mobile-e2e` to
+  # opt one in). Pinned by scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs, because this forge
+  # exposes no jobs/steps endpoint and a green tick cannot show which filter matched.
   # PAIRED with a branch-protection change: required checks must list the app-ci jobs EXCEPT `trigger-cd`
   # (a push-only job that leaves an orphaned `pending` on PRs) — see
   # docs/proposals/homelab-setup/branch-protection-required-checks-cleanup.md. Do the BP change FIRST.
@@ -90,18 +115,42 @@ jobs:
               - 'security/zap/**'                      # feature 031: DAST scan config re-runs the dast job
               - 'scripts/zap-scan.mjs'                 # feature 031: the scan runner
               - 'scripts/check-dast-findings.mjs'      # feature 031: the gate script
+              # Feature 058 / item #186. A lockfile bump changes transitive deps, and 057's FR-013 says
+              # the E2E tier is the only one that sees a bad floor (`nx test` passes over it). The `push:`
+              # filter above already said so; this one did not, and app-e2e reported `skipped` on PR #185
+              # and PR #187 as a result. Renovate now opens these WEEKLY, so the two filters must agree.
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              # Feature 058: these two were in `mobile` and NOT here, which made them INERT — `mobile`
+              # gates only STEPS INSIDE app-e2e, and app-e2e itself requires `app == 'true'`, so a PR
+              # touching just the Maestro runner set mobile=true, app=false, skipped the whole job and
+              # ran no mobile flow at all. `mobile` must stay a strict subset of `app` for it to mean
+              # anything; the guard test now enforces that rather than a comment claiming it.
+              - 'scripts/ci-mobile-agent-flows.sh'
+              - 'scripts/maestro-run.sh'
             # `mobile` gates ONLY the emulator half of app-e2e (APK build + Maestro agent flows,
             # ~35 min of the run). It is a STRICT SUBSET of `app`: everything that can change what
             # the app renders or how the agent behaves, minus the pieces that can only affect the
             # web/DAST paths. A PR that touches none of this still runs the web E2E and integration
             # tiers — it just does not pay for the emulator.
             #
+            # THE SUBSET PROPERTY IS LOAD-BEARING, and it was VIOLATED until feature 058 — this text
+            # asserted it while two entries broke it. `mobile` gates only STEPS INSIDE app-e2e, and
+            # app-e2e itself runs only when `app` is true, so a path here but not in `app` can NEVER
+            # fire: the PR sets mobile=true, app=false, and the whole job skips. That is what
+            # scripts/ci-mobile-agent-flows.sh and scripts/maestro-run.sh did — changing the Maestro
+            # runner ran no mobile flow, while reading as covered. Both are now in `app` too, and
+            # app-ci-lockfile-filter.guard.test.mjs enforces the subset instead of this comment
+            # claiming it. Add to `mobile` only in the same edit that adds to `app`.
+            #
             # Deliberately still IN, despite being tempting to drop:
             #   .forgejo/workflows/app-ci.yml — a change to the suite must re-prove the whole suite.
             #   backend/**                     — mc-service supplies the movie data the flows assert.
             # Deliberately OUT (vs `app`): infrastructure-as-code/docker/**, security/zap/** and the
             # zap scripts — compose/DAST config the mobile flows do not exercise beyond bring-up,
-            # which the web E2E already covers in the same job.
+            # which the web E2E already covers in the same job. And, from feature 058, pnpm-lock.yaml
+            # + pnpm-workspace.yaml — a dependency bump is a web/bundle risk, so it buys the ~23-min
+            # web+integration half and not the ~35-min emulator half. Label `mobile-e2e` opts one in.
             mobile:
               - 'frontend/**'
               - 'agents/**'

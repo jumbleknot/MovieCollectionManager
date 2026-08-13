@@ -274,8 +274,13 @@ faults are distinguished and the superseded claim is corrected wherever it survi
 - **FR-002**: That same filter MUST select `pnpm-workspace.yaml`.
 - **FR-003**: The mobile sub-filter MUST NOT select either file, so a dependency pull request does not
   pay for the emulator half.
-- **FR-004**: The mobile sub-filter MUST remain a strict subset of the app filter. This is asserted in
-  a comment today and enforced nowhere.
+- **FR-004**: The mobile sub-filter MUST be a strict subset of the app filter. This was asserted in a
+  comment and enforced nowhere — **and the comment was false**. Found while writing the guard test
+  (2026-08-13): `scripts/ci-mobile-agent-flows.sh` and `scripts/maestro-run.sh` were in `mobile` and
+  not in `app`, which makes them **inert**, because the mobile filter gates only steps *inside* the
+  end-to-end job and that job itself requires the app filter to have matched. A pull request touching
+  only the Maestro runner therefore skipped the whole job and ran no mobile flow, while reading as
+  covered. Fixed at the cause by adding both to `app`; the assertion now enforces the property.
 - **FR-005**: The push paths filter MUST select both files, so the two filters agree rather than
   disagree about whether a lockfile change is app-affecting.
 - **FR-006**: The end-to-end job MUST remain gated on the change-detection filter's app output. A
