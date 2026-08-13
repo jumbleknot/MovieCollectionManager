@@ -67,7 +67,7 @@ test.describe('Assistant TMDB add — ownership + detail navigation (040 US4)', 
     await cleanupOwnedCollections(request);
   });
 
-  test('add from TMDB → "Do you own this?" → No → added owned=false → lands on the detail screen', async ({
+  test('add from TMDB → "Do you own this?" → No → added owned=false → lands on the detail screen', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {
@@ -152,7 +152,7 @@ test.describe('Assistant TMDB add — ownership + detail navigation (040 US4)', 
       .click();
   }
 
-  test('typed add → yes → formats → ripped → qualities → the movie carries exactly those values (US4-AC2..AC6)', async ({
+  test('typed add → yes → formats → ripped → qualities → the movie carries exactly those values (US4-AC2..AC6)', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {
@@ -212,7 +212,7 @@ test.describe('Assistant TMDB add — ownership + detail navigation (040 US4)', 
     expect(movies[0].ripQuality).toEqual(['UHD Blu-Ray']);
   });
 
-  test('zero formats confirmed → still added as owned with none recorded (US4-AC8)', async ({
+  test('zero formats confirmed → still added as owned with none recorded (US4-AC8)', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {
@@ -258,7 +258,7 @@ test.describe('Assistant TMDB add — ownership + detail navigation (040 US4)', 
     expect(movies[0].ripQuality).toEqual([]);
   });
 
-  test('typed answers reach the same result as tapping (FR-036)', async ({ page, request }) => {
+  test('typed answers reach the same result as tapping (FR-036)', { tag: '@model-decision' }, async ({ page, request }) => {
     test.setTimeout(900_000);
     const name = `t047typed${Date.now()}`;
     const collectionId = await seedCollection(request, name);
@@ -300,7 +300,7 @@ test.describe('Assistant TMDB add — ownership + detail navigation (040 US4)', 
     expect(movies[0].ownedMedia).toEqual(['DVD', 'Blu-Ray']);
   });
 
-  test('abandoning mid-chain adds nothing (US4-AC7)', async ({ page, request }) => {
+  test('abandoning mid-chain adds nothing (US4-AC7)', { tag: '@model-decision' }, async ({ page, request }) => {
     test.setTimeout(900_000);
     const name = `t047abandon${Date.now()}`;
     const collectionId = await seedCollection(request, name);

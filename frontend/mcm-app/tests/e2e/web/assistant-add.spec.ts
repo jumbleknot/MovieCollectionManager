@@ -87,7 +87,7 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('approve creates the collection and adds the movie once (create-if-missing)', async ({
+  test('approve creates the collection and adds the movie once (create-if-missing)', { tag: '@gate' }, async ({
     page,
     request,
   }) => {
@@ -125,7 +125,7 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
     expect(movies[0].title).toBe(MOVIE_TITLE);
   });
 
-  test('reject leaves the collection uncreated (no writes)', async ({ page, request }) => {
+  test('reject leaves the collection uncreated (no writes)', { tag: '@gate' }, async ({ page, request }) => {
     test.setTimeout(300_000);
     const collectionName = `t037-reject-${Date.now()}`;
     ownCollection(collectionName);

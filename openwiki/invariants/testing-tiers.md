@@ -65,6 +65,60 @@ a keyless golden subset — and it silently rotted for roughly a month without a
 backend-only changes** — a Rust-only or Python-only change is only proven end-to-end by driving it
 through the BFF from the client's perspective.
 
+## Which AGENT assertions may block a merge
+
+**An agent assertion may block a merge only if the same code and the same prompt cannot produce a
+different verdict on a re-run.**
+
+Stated as a property of the assertion, not of its failure history: a test is not promoted for having
+been lucky, nor demoted for having been unlucky.
+
+| Blocks a merge | Does NOT block |
+| --- | --- |
+| the turn reaches the gateway and a reply renders | which words the model chose |
+| the approval gate pauses and resumes | which tool the model selected |
+| a chosen option navigates to the right route | how options were ranked |
+| a tool call reaches mc-service and persists | whether TMDB returned this title first |
+| an error surfaces to the member | whether the model classified an utterance as X |
+
+**Borderline falls into the gate only if the deterministic half can be asserted on its own.**
+Splitting a test is expected; guessing is not. Where a model-decision test is the ONLY coverage of a
+wiring path, the wiring assertion stays in the gate — split out, not moved wholesale.
+
+### What this costs, said plainly
+
+The gate stops proving that the assistant makes the **right decision**. It proves only that the
+machinery around the decision works. That is a real reduction in what a green tick means, and it is
+the price of a gate that means something when it is **red**.
+
+### The evidence that forced it
+
+Two `app-ci` runs on **identical code** (sha `1fada7a`), same worker count, same stack:
+
+| run | counts |
+| --- | --- |
+| #1684 | `failed=0 flaky=0 passed=177 did-not-run=0 skipped=0` |
+| #1685 | `failed=1 flaky=7 passed=166 did-not-run=3 skipped=0` |
+
+Every alternative explanation was excluded by a **measured counter**, not by argument: `verdict=healthy`
+at 93 gateway posts per 100 tests (not the #173 collapse), `refresh_429=0` and `session_evicted=0`
+(not contention), `minted 8 worker identities` (not the shared identity of #169), item #179's gateway
+livelock fixed, and zero identity/login/403/fixture errors. All eight affected entries were
+model-decision assertions.
+
+A required gate that fails on identical code roughly half the time is not gating. It taxes every pull
+request with a coin flip and teaches people to re-run — the habit that hid five stale specs for three
+weeks (#150) and caused a sound fix to be reverted on a two-run inference (#166/#173).
+
+### Where the non-blocking ones run
+
+Tagged `@model-decision`, excluded from the pull-request gate by `--grep-invert`, and run as a second
+non-blocking selection in the SAME job on pushes to `main` and on `workflow_dispatch`. They keep
+running, keep publishing counts through the same bundle channel the gate uses, and cannot silently
+stop — a tier that quietly stopped running would read as one that is passing, which is the failure
+this arrangement exists to avoid. **Nothing leaves the gate without a tier that runs it** (051 SC-001,
+054 FR-017).
+
 ## Gotchas
 
 - **A skip is a failure in CI, not a soft pass.** Locally, a missing dependency skips a suite

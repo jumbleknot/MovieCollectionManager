@@ -66,7 +66,7 @@ test.describe('Assistant navigate-to-collection (040 US1 / Item 4)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('ambiguous navigate → tap "Import" OPENS that collection (not an in-collection search)', async ({
+  test('ambiguous navigate → tap "Import" OPENS that collection (not an in-collection search)', { tag: '@gate' }, async ({
     page,
     request,
   }) => {
@@ -100,7 +100,7 @@ test.describe('Assistant navigate-to-collection (040 US1 / Item 4)', () => {
     });
   });
 
-  test('qualified "navigate to <X> collection" opens X directly (classifier bug-b)', async ({
+  test('qualified "navigate to <X> collection" opens X directly (classifier bug-b)', { tag: '@gate' }, async ({
     page,
     request,
   }) => {

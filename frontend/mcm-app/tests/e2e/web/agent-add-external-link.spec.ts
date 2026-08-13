@@ -75,7 +75,7 @@ test.describe('Assistant-added TMDB movie external link (013 US5)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('added TMDB movie carries the themoviedb.org external link (US5-AC1/AC2)', async ({
+  test('added TMDB movie carries the themoviedb.org external link (US5-AC1/AC2)', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {

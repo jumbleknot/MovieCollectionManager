@@ -63,7 +63,7 @@ test.describe('Assistant disambiguation buttons (013 US4)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('ambiguous look-up renders buttons; tapping one proceeds with that match (US4-AC1/AC2)', async ({
+  test('ambiguous look-up renders buttons; tapping one proceeds with that match (US4-AC1/AC2)', { tag: '@model-decision' }, async ({
     page,
   }) => {
     test.setTimeout(360_000);

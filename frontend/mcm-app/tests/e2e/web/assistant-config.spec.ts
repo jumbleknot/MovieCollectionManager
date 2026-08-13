@@ -109,7 +109,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
     await seedAgentConfig(page.request, { costLimitUsd: null });
   });
 
-  test('off by default: unconfigured user has no dock and a run short-circuits', async ({ page }) => {
+  test('off by default: unconfigured user has no dock and a run short-circuits', { tag: '@gate' }, async ({ page }) => {
     await clearAgentConfig(page.request);
     await gotoHome(page);
 
@@ -124,7 +124,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
     expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
   });
 
-  test('configure (provider + TMDB) + save → dock appears → an interaction succeeds on my creds', async ({ page }) => {
+  test('configure (provider + TMDB) + save → dock appears → an interaction succeeds on my creds', { tag: '@gate' }, async ({ page }) => {
     await clearAgentConfig(page.request);
     await gotoProfile(page);
 
@@ -160,7 +160,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
     await expect(assistantMsg).not.toBeEmpty();
   });
 
-  test('test connection re-probes the saved credentials with no re-entry', async ({ page }) => {
+  test('test connection re-probes the saved credentials with no re-entry', { tag: '@gate' }, async ({ page }) => {
     // Start from the known-good seeded config (provider credential + TMDB on file) — nothing re-entered.
     await seedAgentConfig(page.request);
     await gotoProfile(page);
@@ -175,7 +175,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
     await expect(page.locator('[data-testid="assistant-config-test-tmdb"]')).toContainText(/ok/i);
   });
 
-  test('disable → dock disappears + run short-circuits; re-open retains the provider', async ({ page }) => {
+  test('disable → dock disappears + run short-circuits; re-open retains the provider', { tag: '@gate' }, async ({ page }) => {
     // Start from the seeded runnable config (enabled, provider credential + TMDB on file).
     await seedAgentConfig(page.request);
     await gotoProfile(page);
@@ -219,7 +219,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
     }
   });
 
-  test('a personal cost limit short-circuits runs once the accrued cost exceeds it', async ({ page }) => {
+  test('a personal cost limit short-circuits runs once the accrued cost exceeds it', { tag: '@gate' }, async ({ page }) => {
     // Seed a runnable config with a tiny personal ceiling ($0.01) — at/below the per-turn estimate,
     // so a billable run trips the ceiling within a couple of turns (US5 override → enforceAgentCostCeiling).
     await seedAgentConfig(page.request, { costLimitUsd: 0.01 });
@@ -237,7 +237,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
     expect(status).toBe(429);
   });
 
-  test('a bad Anthropic key is rejected per-field and nothing is persisted', async ({ page }) => {
+  test('a bad Anthropic key is rejected per-field and nothing is persisted', { tag: '@gate' }, async ({ page }) => {
     await clearAgentConfig(page.request);
     await gotoProfile(page);
 

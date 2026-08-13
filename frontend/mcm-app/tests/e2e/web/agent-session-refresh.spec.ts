@@ -43,7 +43,7 @@ async function accessCookie(context: BrowserContext): Promise<string | undefined
 }
 
 test.describe('Agent session recovery — 401 → refresh → retry (server chain)', () => {
-  test('an expired access cookie recovers via /auth/refresh and the retry succeeds', async ({
+  test('an expired access cookie recovers via /auth/refresh and the retry succeeds', { tag: '@gate' }, async ({
     page,
   }) => {
     const context = page.context();

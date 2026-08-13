@@ -81,7 +81,7 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('ambiguous title → ordinal pick → approve adds exactly one movie', async ({
+  test('ambiguous title → ordinal pick → approve adds exactly one movie', { tag: '@gate' }, async ({
     page,
     request,
   }) => {

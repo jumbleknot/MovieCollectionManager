@@ -1,21 +1,37 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as os from 'node:os';
 
-// 052 US3: the upper bound on Playwright workers, and therefore on concurrent BFF sessions for the
-// shared E2E user — one session per worker is what keeps them off each other's refresh bucket.
+// The upper bound on Playwright workers.
 //
-// SIX, not eight, and the difference is measured. A local smoke run with the bound at 8 reported
-// `session_evicted=8`: the eight fresh sessions plus what the user already held crossed
-// MAX_CONCURRENT_SESSIONS (10) and `createSession` began evicting. CI starts from a wiped Redis so 8
-// would *just* fit — 8 here plus one for the `lifecycle` project's real login is 9 of 10 — but that
-// is precisely the "sits right at the edge" fragility this feature exists to remove, and shipping at
-// 9/10 would re-create the eviction hazard that run 1605 refuted.
+// HISTORY, because the number has been wrong in both directions. Feature 052 set it to SIX to keep
+// the SHARED E2E user's session count clear of MAX_CONCURRENT_SESSIONS (10): all workers acted as one
+// user, so workers == sessions-for-that-user, and a local smoke run at 8 measured `session_evicted=8`.
+// The cost was wall clock — this file recorded ~21 min → ~28 min for the web suite on that change.
 //
-// The refresh contention is fixed by the per-worker SESSION, not by this number; the bound exists
-// only to keep the session count clear of the cap. Cost is wall-clock (~21 min → ~28 min for the web
-// suite), well inside the job's 75-minute budget.
-const MAX_E2E_WORKERS = 6;
+// 054 US4 removed the reason. `MAX_CONCURRENT_SESSIONS` is PER USER, and each worker is now its own
+// user holding exactly one session, so the cap cannot be approached however many workers run.
+// Measured after that change: `session_evicted=0` locally and in CI (app-ci run #1681). Raised to 10.
+//
+// What still bounds it: the machine (half the cores), and the LOGIN rate limit — `/bff-api/auth/login`
+// allows 5 per 60 s per IP and global setup logs in once per worker, sequentially, at ~15 s each,
+// about 4 per minute. That holds at 10; it would NOT hold if those logins were made concurrent.
+const MAX_E2E_WORKERS = 10;
 const E2E_WORKERS = Math.max(1, Math.min(MAX_E2E_WORKERS, Math.floor(os.cpus().length / 2)));
+
+// SELF-REPORTING, because the cap and the core count are indistinguishable from the outside: a run
+// printing "using 8 workers" could be capped at 8 or running on a 16-core box, and only one of those
+// is worth changing. Measured once and then guessed at is how the old bound outlived its reason.
+// (It answered the question on run #1684: `cores=16 maxWorkers=10 → workers=8`, so the machine binds
+// and the cap does not — going past 8 means changing the divisor, not the ceiling.)
+//
+// ONCE, not once per worker. Playwright evaluates this config in the main process AND in every
+// worker process, so the first version printed the line ten times into the step log the failure
+// digest carries. `TEST_WORKER_INDEX` is set only in workers, which is the cheapest way to tell them
+// apart. A diagnostic that floods the channel it reports through is a diagnostic people learn to
+// scroll past.
+if (process.env['TEST_WORKER_INDEX'] === undefined) {
+  console.log(`[playwright] cores=${os.cpus().length} maxWorkers=${MAX_E2E_WORKERS} → workers=${E2E_WORKERS}`);
+}
 
 // Feature 007: target the BFF Docker container instead of Metro for the FINAL E2E run.
 //   E2E_BFF_TARGET unset        → Metro dev server on :8081 (default; iterative dev).
@@ -30,23 +46,37 @@ const CONTAINER_BASE_URL =
   : null;
 const baseURL = CONTAINER_BASE_URL ?? 'http://localhost:8081';
 
+// 056 (item #170) — which tier this invocation runs.
+//
+//   E2E_TIER=gate   everything EXCEPT @model-decision — the blocking merge gate
+//   E2E_TIER=model  ONLY @model-decision — non-blocking, runs on main/dispatch
+//   unset           everything (local default, unchanged)
+//
+// IN THE CONFIG, NOT ON THE CLI, and that is not a style preference. MEASURED 2026-08-12 on
+// Playwright 1.60: `--grep-invert` is accepted and DOES NOTHING here — `--grep CORS` lists 1 test
+// while `--grep-invert CORS` lists all 177. A workflow built on the CLI flag would have run the whole
+// suite in the "gate" selection and the split would have been a silent no-op that looked correct.
+// `grepInvert` in the config is applied by the runner itself and is asserted by
+// scripts/__tests__/agent-test-classification.test.mjs.
+const TIER = process.env['E2E_TIER'];
+const MODEL_DECISION = /@model-decision/;
+
 export default defineConfig({
   testDir: './tests/e2e/web',
+  ...(TIER === 'gate' ? { grepInvert: MODEL_DECISION } : {}),
+  ...(TIER === 'model' ? { grep: MODEL_DECISION } : {}),
   // T008/T009: authenticate once + seed the fixture before any test (FR-004, FR-005, SC-001).
   globalSetup: './tests/e2e/web/setup/global-setup.ts',
+  // 054 US6: fail a LOCAL run whose auth was being rate-limited, naming the token lifespan rather
+  // than letting it surface as `gotoHome: home screen did not render` — a message that names a cause
+  // it never tested. No-ops under CI, where the host-side contention gate already measures this and
+  // the Playwright container has no Docker CLI.
+  globalTeardown: './tests/e2e/web/setup/global-teardown.ts',
   timeout: 90000,   // 90 s: ~15-20 s login (popup + BFF + collections) + 60-70 s test body
   expect: { timeout: 10000 },
   fullyParallel: false,
   forbidOnly: !!process.env['CI'],
-  // 052 US3 — BOUNDED, not reduced. Playwright's default (half the cores) already gave 8 on the kvm
-  // runner, so CI behaviour is unchanged; the cap only bites on a bigger host.
-  //
-  // It has to be bounded because the worker count is now also the SESSION count: each worker holds
-  // its own BFF session (tests/e2e/web/fixtures/worker-session.ts) so that no two share a refresh
-  // rate-limit bucket. MAX_CONCURRENT_SESSIONS is 10, and the default on this 20-core dev container
-  // would be 10 — which reaches the cap and makes `createSession` evict, swapping the contention this
-  // feature fixed for the eviction it refuted. scripts/__tests__/e2e-worker-session.test.mjs asserts
-  // the headroom against env.ts.
+  // Bounded by the machine and the login rate limit — see MAX_E2E_WORKERS above.
   workers: E2E_WORKERS,
   retries: 1,  // SSO timing races between parallel workers cause intermittent login timeouts
   // 'dot' = one char per test; combined with RTK keeps a passing run to a compact summary (T005, FR-002)

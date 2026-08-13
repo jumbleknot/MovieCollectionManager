@@ -61,13 +61,37 @@ def _spawn_audit(coro: Any) -> None:
 
 
 async def drain_audit_tasks() -> None:
-    """Await every audit emission scheduled so far. Call once a burst of writes has finished.
+    """Await the audits scheduled BEFORE this call. Call once a burst of writes has finished.
 
     Safe to call when there is nothing pending. Exceptions are already swallowed inside
     `emit_audit`, so this cannot fail the caller.
+
+    ⚠️ SNAPSHOT, NOT `while _PENDING_AUDITS`. That loop caused a 100% CPU livelock that wedged the
+    whole gateway (item #179), captured 2026-08-12:
+
+        Thread 1 (active+gil): "MainThread"
+            _done_callback (asyncio/tasks.py:866)
+            gather (asyncio/tasks.py:916)
+            drain_audit_tasks (src/tools/mcp_tools.py:70)
+            approval_gate (src/runtime_nodes.py:1165)
+
+    `_PENDING_AUDITS` is module-level and shared by every concurrent turn, so "is the set empty" is
+    a condition the caller does not control. While other turns keep spawning audits — the steady
+    state under multi-worker load — it never became true. Each pass re-gathered the outstanding
+    tasks and returned almost immediately, so the loop held the GIL and starved the event loop that
+    this single-process gateway runs everything on: /health stopped answering while Docker still
+    reported `status=running`, memory flat, one core pinned. Measured: with 500 audits outstanding,
+    a producer adding just ONE per tick was enough to trap it indefinitely.
+
+    Draining a snapshot keeps the guarantee that mattered — an audit scheduled before this call is
+    awaited, so §Immutable Audit Logging of Agent Actions still holds — and gives up only the
+    property that caused the wedge: waiting for OTHER turns' audits, which was never this caller's
+    business. Anything spawned during the drain belongs to the next drain, and the references in
+    `_PENDING_AUDITS` keep it alive until then.
     """
-    while _PENDING_AUDITS:
-        await asyncio.gather(*tuple(_PENDING_AUDITS), return_exceptions=True)
+    pending = tuple(_PENDING_AUDITS)
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
 
 # Tool categories — names match contracts/movie-mcp-tools.md + web-api-mcp-tools.md.
 _READ_TOOLS = frozenset(

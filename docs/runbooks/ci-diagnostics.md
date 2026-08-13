@@ -209,7 +209,48 @@ value-wrapping placeholder would leak its tail.
 
 ---
 
-## A PASSING run publishes no bundle — so CI has to judge its own counts
+## Reading a PASSING run's counts
+
+**A green `app-e2e` now publishes its counts.** Feature 054 (item #167) made the publication gate
+three-way: a cancelled run publishes nothing, a failure publishes the full digest, and an **explicit
+success** publishes a small *counts-only* bundle — the `[e2e-gate]` line, the `[e2e-contention]`
+tally, and the `[e2e-turns]` verdict — with no PR comment.
+
+⚠️ **Use `MCM_FORGE_TOKEN` for packages.** The `git credential fill` credential — the one that opens
+pull requests — returns an **empty package list** rather than a 403, which reads as "no bundle was
+published" for a bundle that exists. Measured 2026-08-12: the same query returned 0 versions with one
+token and 50 with the other, seconds apart.
+
+```bash
+# LIST the versions. Never construct the name: `run_number` in /actions/tasks is OFFSET from the
+# run id the bundle is named after, so a constructed name reads as "no bundle" for a bundle that
+# exists.
+curl -s -H "Authorization: token $MCM_FORGE_TOKEN" \
+  "$FORGE/api/v1/packages/$OWNER?type=generic&q=ci-failures&page=1&limit=50" | jq -r '.[].version'
+```
+
+Three things worth knowing before you rely on it:
+
+- **It is gated on an EXPLICIT `success`**, not on "anything that is not a failure". A job that loses
+  `CI_DIGEST_JOB_STATUS` publishes nothing at all. That asymmetry is deliberate: the looser rule would
+  resurrect the bug where a dropped env var published a spurious digest on a green run.
+- **It is self-limiting to `app-e2e`**, by construction rather than by a job allowlist. Counts mode
+  collects only the `e2e-result-gate`, `e2e-contention-tally` and `e2e-turn-tally` step logs; every
+  other job has none, publishes nothing, and says so in its log. An allowlist would be a second place
+  to forget to update.
+- **It needs `CI_DIGEST_TOKEN`.** The run-provisioned token can only write a commit status, which
+  cannot carry these lines. On that path the counts still reach the job log, which a human can read in
+  the browser — narrowed, not lost.
+
+Retention applies here too, and had to be added rather than inherited: pruning previously ran only on
+the digest path, which was safe while the channel fired only on failures. A channel that fires on
+every green run needs it, so the counts publish prunes as well.
+
+**What a green run still does not tell you.** `flaky > 0` does not fail the build — #167 declines to
+propose that deliberately, because one transient blip blocking a merge is a policy change that should
+be decided on this data rather than ahead of it. Read the number; do not assume the gate acted on it.
+
+## Why CI still judges its own counts
 
 The digest publishes **on failure**. That is right for diagnosis and wrong for verification: on a
 green run there is nowhere to read `skipped=` from, and `ci-status`/`/actions/tasks` only ever report
@@ -240,8 +281,10 @@ run without `continue-on-error`; adding it back leaves a step that still runs an
 the job passes regardless, which is invisible in the log and is asserted against in
 `scripts/__tests__/`.
 
-To read counts for a green run today you must make it fail, which is not a plan. Publishing the counts
-per run (the way the digest publishes on failure) is the open follow-up.
+**This section used to end**: "to read counts for a green run today you must make it fail, which is not
+a plan." That follow-up is closed — see *Reading a PASSING run's counts* above. The in-job gates stay
+regardless: a gate that runs where it cannot be forgotten is stronger than a number somebody has to
+remember to go and read.
 
 ## Verifying a branch WITHOUT opening a pull request
 

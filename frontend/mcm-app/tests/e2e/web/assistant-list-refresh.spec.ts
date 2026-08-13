@@ -131,7 +131,7 @@ test.describe('Assistant list refresh after a write (feature 012, T072)', () => 
     await cleanupOwnedCollections(request);
   });
 
-  test('an assistant write updates the on-screen movie list with no reload', async ({
+  test('an assistant write updates the on-screen movie list with no reload', { tag: '@gate' }, async ({
     page,
     request,
   }) => {

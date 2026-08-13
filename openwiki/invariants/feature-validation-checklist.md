@@ -18,7 +18,14 @@ Run all of the following before marking any feature complete. **The web E2E regr
 - [ ] `pnpm nx typecheck mcm-app` — `tsc --noEmit` clean (also run in CI by app-ci's `affected` job)
 - [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
 - [ ] `pnpm nx test:integration mcm-app` — integration tests pass
-- [ ] `pnpm nx e2e mcm-app` — web E2E passes (single login via global setup)
+- [ ] `pnpm nx e2e mcm-app` — web E2E passes (single login via global setup).
+      **A full local suite IS a valid gate again as of feature 054** — `dev-realm`'s
+      `accessTokenLifespan` now matches `ci-realm` (5400 s), so a run past ~5 minutes no longer
+      re-enters the refresh contention that made two 44-minute attempts meaningless (62
+      `refresh_rate_limited`, collapsing into `gotoHome: home screen did not render`). You do not have
+      to check the counters by hand: a `globalTeardown` fails the run if any refresh was rate-limited,
+      naming the token lifespan. **A realm change needs a re-import** — a running Keycloak keeps the
+      old value. See `docs/runbooks/e2e-testing.md`.
 - [ ] **`node scripts/agent-stack.mjs` then `node scripts/agent-e2e.mjs`** — the AGENT web specs.
       `pnpm nx e2e mcm-app` alone does **not** run them: every gated `agent-*.spec.ts` self-skips
       unless `E2E_AGENT_PRODUCTION=1`, so the line above reports green having exercised none of them.

@@ -15,6 +15,52 @@ from typing import Any
 AGENT_PATH = "/agent/movie-assistant"
 
 
+def install_stack_dump_signal() -> None:
+    """Make a wedged gateway able to say what it is doing (feature 055, item #179).
+
+    MEASURED three times on 2026-08-12: this process wedged at 100% CPU on one core with memory at
+    1%, /health timing out and its log 40 minutes stale, while Docker reported `status=running
+    ExitCode=0 RestartCount=0`. 100% CPU is the discriminator — a deadlock or a blocked await waits
+    near 0% — so something was executing a tight loop. The gateway is one uvicorn process and
+    asyncio
+    is single-threaded, so a spin in the event loop starves every other coroutine on it, which is
+    exactly why /health could not be answered while the process stayed alive.
+
+    Which loop was never established, because capturing it requires acting on the LIVE process and
+    nobody was watching. After this, anyone can ask it:
+
+        docker kill -s USR1 movie-assistant-gateway
+        docker logs --tail 100 movie-assistant-gateway
+
+    `faulthandler` writes from the C signal handler, which is what makes it work HERE specifically:
+    it does not need the interpreter to reach a safe point in Python-level scheduling, and a busy
+    loop is precisely what denies that to anything scheduled on the event loop. A handler written in
+    Python would be starved by the condition it exists to diagnose.
+
+    Frames only — no locals, no environment — so it is safe to leave enabled permanently and cannot
+    carry credential material into a log (055 FR-008).
+
+    SIGUSR1 because uvicorn already assigns SIGTERM/SIGINT (shutdown) and SIGHUP (reload); USR1 is
+    unclaimed. Best-effort: a platform without it must not stop the gateway from starting.
+    """
+    import faulthandler
+    import logging
+    import signal
+    import sys
+
+    if not hasattr(signal, "SIGUSR1"):  # pragma: no cover - platform guard
+        return
+    try:
+        faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True, chain=False)
+    except Exception as exc:  # pragma: no cover - never block startup over a diagnostic
+        logging.getLogger(__name__).warning("stack-dump signal unavailable: %s", exc)
+        return
+    logging.getLogger(__name__).info(
+        "stack-dump signal armed: `docker kill -s USR1 movie-assistant-gateway` "
+        "dumps all thread stacks"
+    )
+
+
 def build_app(graph: Any) -> Any:
     """Return a FastAPI app exposing `graph` over AG-UI at AGENT_PATH, plus /health."""
     from ag_ui_langgraph import add_langgraph_fastapi_endpoint  # type: ignore[import-untyped]
@@ -94,6 +140,12 @@ def create_app() -> Any:
         level=getattr(logging, os.environ.get("AGENT_LOG_LEVEL", "INFO").upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
+
+    # AFTER basicConfig, deliberately: this logs the one line that tells an operator the dump signal
+    # is available, and a logger configured later would swallow it. Measured — the first version
+    # armed the handler correctly and said nothing, so the capability was invisible to the
+    # person who would need it.
+    install_stack_dump_signal()
 
     # OpenTelemetry infra export (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
     configure_otel(os.environ)

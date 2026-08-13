@@ -116,7 +116,7 @@ test.describe('Assistant query flow (feature 012, US4 / T071)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('count → the assistant answers the real number of movies', async ({ page, request }) => {
+  test('count → the assistant answers the real number of movies', { tag: '@model-decision' }, async ({ page, request }) => {
     test.setTimeout(360_000);
     const name = `t071-q-${Date.now()}`;
     await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
@@ -129,7 +129,7 @@ test.describe('Assistant query flow (feature 012, US4 / T071)', () => {
     await expect(lastAssistantMsg(page)).toContainText('3 movie', { timeout: ANSWER_TIMEOUT });
   });
 
-  test('list → render_collection_summary + the seeded titles', async ({ page, request }) => {
+  test('list → render_collection_summary + the seeded titles', { tag: '@model-decision' }, async ({ page, request }) => {
     test.setTimeout(360_000);
     const name = `t071-q-${Date.now()}`;
     await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);

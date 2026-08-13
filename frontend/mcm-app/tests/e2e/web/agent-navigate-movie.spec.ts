@@ -84,7 +84,7 @@ test.describe('Assistant navigate to a movie (013 US6)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('navigate → opens the named movie detail, resolved across collections (US6-AC1)', async ({
+  test('navigate → opens the named movie detail, resolved across collections (US6-AC1)', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {

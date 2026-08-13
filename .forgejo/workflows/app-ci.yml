@@ -614,6 +614,23 @@ jobs:
           MONGO_URL: mongodb://localhost:27018
         run: bash scripts/ci-log-step.sh app-e2e-bff-integration-tests pnpm nx test:integration mcm-app
 
+      # ── TWO TIERS (feature 056, item #170) ──────────────────────────────────────────────────────
+      # 41 of these tests assert on a live LLM and live TMDB. MEASURED on two runs of IDENTICAL code
+      # (sha 1fada7a): #1684 gave `failed=0 flaky=0 passed=177`, #1685 gave `failed=1 flaky=7
+      # passed=166`. Every other explanation was excluded by a measured counter — verdict=healthy (not
+      # the #173 collapse), refresh_429=0/session_evicted=0 (not contention), 8 worker identities (not
+      # #169's shared user), #179's livelock fixed. All eight affected entries were model-decision
+      # assertions.
+      #
+      # A required gate that fails on identical code roughly half the time is not gating: it taxes
+      # every PR with a coin flip and teaches people to re-run — the habit that hid five stale specs
+      # for three weeks. So the suite is split by whether the VERDICT is determined by code we control.
+      # The rule is in openwiki/invariants/testing-tiers.md.
+      #
+      # The selection is E2E_TIER, read by playwright.config.ts — NOT `--grep-invert`. Measured on
+      # Playwright 1.60: that flag is accepted and does nothing here (`--grep CORS` lists 1 test,
+      # `--grep-invert CORS` lists all 177), so a CLI-based split would have run everything in the
+      # "gate" selection and been a silent no-op that looked correct.
       # ── Web Playwright E2E against the dev-container BFF (FR-008, SC-003) ────────────────────────
       # Its global-setup logs in once and seeds BROWSE/MUTATION/DEFAULT + FIXTURE_MOVIES for the same
       # E2E_TEST_USER the mobile flows use — so this single run is both the web regression AND the seed.
@@ -645,11 +662,37 @@ jobs:
       #
       # Secrets use the pass-through form `-e NAME`, never `-e NAME=$NAME` — the latter expands the
       # value into argv, where it reaches process listings and step logs.
-      - name: Web E2E (Playwright container; host network → dev BFF)
+      - name: Web E2E (Playwright container; host network → dev BFF) — GATE tier, blocking
         run: |
           bash scripts/ci-log-step.sh web-e2e \
             docker run --rm --network host \
             -v "$PWD":/work -w /work/frontend/mcm-app \
+            -e E2E_TIER=gate \
+            -e E2E_BFF_TARGET=dev-container \
+            -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e CI=1 \
+            -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
+            -e E2E_AGENT_PRODUCTION -e E2E_REQUIRE_AGENT_STACK=1 \
+            -e KEYCLOAK_SERVICE_CLIENT_SECRET \
+            mcr.microsoft.com/playwright:v1.60.0-noble \
+            sh -c "corepack enable && pnpm exec playwright test"
+
+      # The MODEL tier. Non-blocking, and NOT absent — nothing leaves the gate without a tier that
+      # runs it (051 SC-001, 054 FR-017); a tier nobody runs is quarantine wearing a schedule.
+      #
+      # Skipped on `pull_request` so a PR pays only for the deterministic gate. It still runs on every
+      # push to main and every workflow_dispatch, which is also what makes staleness impossible without
+      # a cron: if it stopped running, the next merge to main would say so.
+      #
+      # `continue-on-error` is the whole point — its counts are published and read, but model drift
+      # cannot block a merge.
+      - name: Web E2E (Playwright container) — MODEL tier, non-blocking
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        continue-on-error: true
+        run: |
+          bash scripts/ci-log-step.sh web-e2e-model \
+            docker run --rm --network host \
+            -v "$PWD":/work -w /work/frontend/mcm-app \
+            -e E2E_TIER=model \
             -e E2E_BFF_TARGET=dev-container \
             -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e CI=1 \
             -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
@@ -682,6 +725,17 @@ jobs:
           bash scripts/ci-log-step.sh e2e-result-gate \
             node scripts/e2e-failure-set.mjs gate "$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/web-e2e.log"
 
+      # The model tier's counts are ASSERTED and published, not merely printed — an unread count is
+      # not a report, and a tier that quietly stopped reporting would read as one that is passing.
+      # Non-blocking like the tier itself: this reports on it, it does not gate on it. Absent on a PR
+      # (where the tier does not run), which is why it tolerates a missing log rather than failing.
+      - name: E2E result gate — MODEL tier (reports; never blocks)
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        continue-on-error: true
+        run: |
+          bash scripts/ci-log-step.sh e2e-result-gate-model \
+            node scripts/e2e-failure-set.mjs gate "$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/web-e2e-model.log"
+
       # ── Contention tally (feature 052 US2, FR-005..FR-007) ──────────────────────────────────────
       # Eight Playwright workers share ONE E2E_TEST_USER and one storageState session. Whether that
       # shared identity is actually being evicted by the concurrent-session cap, or rejected by the
@@ -712,6 +766,38 @@ jobs:
       - name: Contention gate (no rate-limited refreshes, no session evictions during the web E2E)
         if: ${{ always() }}
         run: bash scripts/ci-log-step.sh e2e-contention-tally bash scripts/e2e-contention-tally.sh --gate
+
+      # ── Run-health verdict (feature 054 US3, FR-009) ───────────────────────────────────────────
+      # Roughly one run in seven COLLAPSES: every agent/dock spec fails at once, flaky=0, and the
+      # gateway receives ~a quarter of its usual traffic while answering everything it gets with 200.
+      # Turns are not being SENT (item #173). From the outside that is indistinguishable from "some
+      # tests failed" — telling them apart meant downloading the bundle and counting
+      # `POST /agent/movie-assistant` by hand, which nobody does, so the reflex became "re-run it".
+      # That reflex hid five stale specs for three weeks, and once caused a sound fix to be reverted
+      # because two consecutive samples of a 1-in-7 event were read as causation.
+      #
+      # It LABELS; it does NOT gate — deliberately, and unlike the contention gate above. A collapsed
+      # run already fails on its test failures; failing it twice adds nothing and buys a new
+      # false-failure mode. So there is no `--gate` here and there should not be one.
+      #
+      # POSITION IS LOAD-BEARING IN BOTH DIRECTIONS, and each produces a wrong answer rather than an
+      # obvious break:
+      #   * AFTER `E2E result gate` — that step's log is where the executed-test denominator comes
+      #     from. Earlier, there is nothing to divide by and every run reads `indeterminate`.
+      #   * BEFORE `Tear down CI stacks` — which removes the gateway container the POSTs are counted
+      #     from. Later, every run reports zeros for a structural reason and looks clean.
+      # scripts/__tests__/e2e-turn-tally.test.mjs asserts both orderings against this file.
+      - name: Run-health verdict (did this run COLLAPSE, or did tests merely fail?)
+        if: ${{ always() }}
+        env:
+          # On a pull_request only the GATE tier runs, and the gate keeps 19 of the 41 agent tests —
+          # several of which drive no model turn at all. The healthy floor was calibrated on the full
+          # suite, so judging a gate-only run against it labels a green run `collapsed`. Measured on
+          # PR #181: failed=0 flaky=1 passed=154, verdict collapsed. The tally abstains instead, and
+          # says why. Explicit rather than inferred from an absent model log — a LOCAL full-suite run
+          # has none either, and must keep its verdict.
+          E2E_TURN_TIER: ${{ github.event_name == 'pull_request' && 'gate' || '' }}
+        run: bash scripts/ci-log-step.sh e2e-turn-tally bash scripts/e2e-turn-tally.sh
 
       # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────
       - name: Build embedded-bundle E2E APK (release variant = embedded JS)
@@ -846,6 +932,14 @@ jobs:
           done
           # One-glance status/health table for EVERY container (which is unhealthy/exited + why).
           docker ps -a --format 'table {{.Names}}\t{{.Status}}' > container-logs/_ps.txt 2>&1 || true
+          # 054 US3: the BROWSER's view of a failing test — console, page errors, and every agent
+          # request that did (or did not) leave the client. This is the one channel item #173 never
+          # had; every server-side one above was already exhausted without finding the collapse.
+          # Underscore-prefixed so the digest ranks it above ordinary container logs, and `|| true`
+          # because a run whose tests all passed the capture threshold writes nothing.
+          for f in frontend/mcm-app/client-evidence/*.log; do
+            [ -e "$f" ] && cp "$f" "container-logs/_$(basename "$f")" || true
+          done
           # Compose-level captures too (any service not named above, plus restart churn).
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs -t --no-color > container-logs/_mcm-stack.log 2>&1 || true
           docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs -t --no-color > container-logs/_auth-stack.log 2>&1 || true

@@ -116,7 +116,7 @@ test.describe('Assistant organize update + move (feature 012, US2 / T070)', () =
     await cleanupOwnedCollections(request);
   });
 
-  test('in-place update → preview → approve flips the owned flag', async ({ page, request }) => {
+  test('in-place update → preview → approve flips the owned flag', { tag: '@model-decision' }, async ({ page, request }) => {
     test.setTimeout(360_000);
     const name = `t070-upd-${Date.now()}`;
     const collectionId = await seedCollection(request, name, [movieBody('Zorgon', { owned: false })]);
@@ -139,7 +139,7 @@ test.describe('Assistant organize update + move (feature 012, US2 / T070)', () =
     expect(after.find((m) => m.title === 'Zorgon')?.owned).toBe(true);
   });
 
-  test('cross-collection move → preview → approve relocates the movie', async ({ page, request }) => {
+  test('cross-collection move → preview → approve relocates the movie', { tag: '@model-decision' }, async ({ page, request }) => {
     test.setTimeout(360_000);
     const src = `t070-mv-src-${Date.now()}`;
     const dst = `t070-mv-dst-${Date.now()}`;

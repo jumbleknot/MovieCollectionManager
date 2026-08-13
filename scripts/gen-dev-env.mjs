@@ -133,6 +133,23 @@ AGENT_SUBJECT_TOKEN_CLIENT_ID=agent-subject-token
 AGENT_SUBJECT_TOKEN_CLIENT_SECRET=${AGENT_SUBJECT_TOKEN_CLIENT_SECRET}
 AGENT_SUBJECT_TOKEN_AUDIENCE=agent-gateway
 
+# E2E ceilings, mirroring scripts/gen-ci-env.mjs — so a LOCAL full-suite run is not locked out the
+# way CI already is not. Both limits are keyed on the USER, and six Playwright workers share one
+# E2E_TEST_USER, so the shared identity exhausts a per-user bucket built for one person.
+#
+# MEASURED 2026-08-11, before this existed: a local full suite produced 141 agent_rate_limit_exceeded
+# events, the dock's /run/info probe 429'd into runtime_info_fetch_failed -> empty agent registry
+# -> "Agent movie_assistant not found", and the gateway received 24 turns where a healthy run drives
+# ~155. Every agent/dock spec failed together. Indistinguishable, from the outside, from the CI
+# collapse tracked as item #173 — which it is NOT: CI already sets these, and all three collapsed CI
+# bundles report agent_rate_limit_exceeded=0.
+#
+# This is a STOPGAP and is marked as one. It suits the harness by raising a limit, which is the trade
+# feature 052 deliberately refused for the refresh bucket. Per-worker USERS (backlog #169) remove the
+# need for it here and in CI by construction, and this block should be deleted with that change.
+AGENT_SESSION_COST_CEILING_USD=1000
+AGENT_RATE_LIMIT_REQUESTS=10000
+
 # Feature 018 — per-user agent config (BFF→Mongo AES-256-GCM store)
 AGENT_CONFIG_ENC_KEY=${AGENT_CONFIG_ENC_KEY}
 MONGO_URL=mongodb://mcm-bff-store-mongo:27017

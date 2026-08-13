@@ -104,7 +104,7 @@ test.describe('Assistant organize flow (feature 012, US2 / T048)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('multi-item remove → batch preview → approve removes exactly the planned movies', async ({
+  test('multi-item remove → batch preview → approve removes exactly the planned movies', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {

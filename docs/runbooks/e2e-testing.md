@@ -284,21 +284,106 @@ with `dependencies: ['chromium']`, so `bff-prod-lifecycle` + `admin-registration
 execute while the main project has ANY failure. They reported "3 did not run" in every measured run
 for months, and only ran for the first time on 2026-08-10.
 
+## The instrument traps that cost the most (2026-08-12)
+
+Every one of these produced a confident, wrong answer, and every one was checkable in seconds.
+
+- **`--grep-invert` is accepted by Playwright 1.60 and does NOTHING here.** `--grep CORS` lists 1
+  test; `--grep-invert CORS` lists all 177. The tier split is therefore `E2E_TIER` →
+  `grep`/`grepInvert` **in `playwright.config.ts`**, applied by the runner, and a guard pins it there.
+  A CLI-based split would have run the whole suite in the "gate" selection and looked perfect.
+- **A container reporting `running` can be answering nothing.** `movie-assistant-gateway` sat at
+  **100% CPU on one core with memory at 1%**, `/health` timing out, its log 40 minutes stale, while
+  `docker inspect` said `status=running OOMKilled=false ExitCode=0 RestartCount=0`. `restart: always`
+  is irrelevant to a livelock — the process never exits, so Docker never sees a failure. Root cause
+  and the one-command stack dump are below; the image now carries a healthcheck so `docker ps` says
+  `unhealthy` instead of `Up`.
+- **100% CPU means a SPIN, not a deadlock.** A lock wait or a blocked await sits near 0%. That single
+  distinction is what turned an unexplained wedge into a five-minute diagnosis.
+- **`awk 'length($0)>100'` counts BYTES.** Every em-dash in a comment is three, so it over-reports
+  line length badly. Count characters (Python, node) when matching a linter.
+- **A missing script reads as an unusable shell.** `shell-probe`'s `test -r` was false for both, so
+  writing a test before its script skipped 12 cases while blaming WSL — on Linux, with a working bash.
+  A skip reads as a pass; fixed in item #178.
+
+## Two tiers: what blocks a merge, and what merely runs (2026-08-12)
+
+Agent tests carry `@gate` or `@model-decision`. The rule — and what the gate stops proving — is in
+`openwiki/invariants/testing-tiers.md`. Operationally:
+
+```bash
+E2E_TIER=gate   pnpm exec playwright test   # 155 tests, blocking, what a PR pays for
+E2E_TIER=model  pnpm exec playwright test   # 22 tests, non-blocking, main + dispatch only
+# unset → all 177, the local default
+```
+
+An **unclassified** agent test fails the gate rather than defaulting into a tier
+(`scripts/__tests__/agent-test-classification.test.mjs`). Both tiers publish their own counts into the
+same bundle, on green runs as well as red.
+
 ## A local run is only evidence if you check the instrument (2026-08-10)
 
 Three ways a local E2E run produced a confident, wrong answer in one session:
 
-- **A full-suite local run is not a valid instrument.** `dev-realm` still has
-  `accessTokenLifespan: 300` — feature 052 scoped its 5400 s fix to `ci-realm` — so any local run past
-  ~5 minutes re-enters the refresh contention 052 removed from CI. Two 44-minute attempts measured
-  **62 `refresh_rate_limited`** (CI reads 0) and collapsed into 401s and
-  `gotoHome: home screen did not render`, which reads exactly like an application bug. **Read the BFF
-  contention counters for the run's window alongside the result**; if `refresh_rate_limited > 0` the
-  result is about the harness, not the code. Keep local runs under the expiry horizon, or run a subset.
-- **A container can be "Up" and dead.** `movie-assistant-gateway` showed `Up 37 hours`, had stopped
-  logging hours earlier, and did not answer `/health` from inside the BFF container. Five specs
-  "reproduced deterministically" against it — a dead stack, not a defect. **Zero gateway requests for
-  a turn means check liveness first**, not that the product dropped the response:
+- **A full-suite local run was not a valid instrument — FIXED in feature 054, and the check now runs
+  itself.** `dev-realm` had `accessTokenLifespan: 300` (feature 052 scoped its 5400 s fix to
+  `ci-realm`), so any local run past ~5 minutes re-entered the refresh contention 052 removed from CI.
+  Two 44-minute attempts measured **62 `refresh_rate_limited`** (CI reads 0) and collapsed into 401s
+  and `gotoHome: home screen did not render`, which reads exactly like an application bug.
+
+  `dev-realm` now matches `ci-realm` at 5400 s. What that costs is local coverage of the refresh path,
+  so the substitute is named rather than left implicit: the 2-per-30 s bucket, its `429`, and the
+  `refresh_rate_limited` audit event are covered by `tests/integration/rate-limiter.integration.test.ts`
+  (`pnpm nx test:integration mcm-app`) — which is where a rate-limit behaviour belongs anyway.
+
+  **You no longer have to remember to read the counters.** A `globalTeardown` reads them at the end of
+  every local run and FAILS the run if `refresh_rate_limited > 0`, with a message naming the token
+  lifespan instead of leaving you with `gotoHome`. With no Docker CLI it prints *not measured* — which
+  is a different statement from zero, and is deliberately not a pass.
+
+  ⚠️ **In the dev container that guard does NOT fire, and you must run the tally yourself.** The
+  documented containerized recipe (see `docs/runbooks/devcontainer.md` §3) passes `-e CI=true`, which
+  the teardown treats as "CI measures this on the host" and no-ops — correctly, because the Playwright
+  image has no Docker CLI to read the BFF container with anyway. So after a containerized local run,
+  read the counters on the host exactly as CI does:
+
+  ```bash
+  bash scripts/e2e-contention-tally.sh          # tally only
+  bash scripts/e2e-contention-tally.sh --gate   # tally, and exit 1 on any contention
+  ```
+
+  The guard is for a developer running Playwright directly on their own machine; the host-side tally
+  is the check inside the dev container. Neither reports a clean result it did not measure.
+
+  ⚠️ **A running Keycloak keeps the OLD lifespan until the realm is re-imported.** Raising the number
+  in the JSON changes nothing for a stack that is already up.
+- **A container can be "Up" and dead — and the cause is now known and FIXED (feature 055, item #179).**
+  `movie-assistant-gateway` showed `Up 37 hours`, had stopped logging hours earlier, and did not answer
+  `/health` from inside the BFF container. Five specs "reproduced deterministically" against it — a dead
+  stack, not a defect. It then recurred three more times during feature 054's verification, invalidating
+  three full runs.
+
+  **Root cause, captured with py-spy while wedged**: `drain_audit_tasks` looped `while _PENDING_AUDITS`
+  over a module-level set shared by every concurrent turn. Other turns kept refilling it, so the loop
+  never exited, held the GIL, and starved the single-threaded event loop — 100% CPU on one core, memory
+  flat, `/health` unanswerable, Docker still reporting `running`. It drains a snapshot now.
+
+  **The gateway has a healthcheck**, so `docker ps` reports `unhealthy` instead of a bare `Up`. It is
+  deliberately NOT auto-restarted: a wedged gateway must stay visible, because silently recovering it
+  erases both the evidence and the incidence rate.
+
+  **If it ever wedges again, get the stack in one command** — the handler is armed at startup:
+
+  ```bash
+  docker kill -s USR1 movie-assistant-gateway    # dump every thread's Python stack
+  docker logs --tail 100 movie-assistant-gateway # read it here
+  ```
+
+  Or arm `scripts/capture-gateway-wedge.sh --out <dir> &` before a suite and it captures on the first
+  health failure — faulthandler stack, py-spy dump, CPU/memory and container state — then stops.
+
+  **Zero gateway requests for a turn still means check liveness first**, not that the product dropped
+  the response:
   `docker exec mcm-bff-service-nonsecure wget -qO- http://movie-assistant-gateway:8000/health`.
 - **A local SUBSET pass is not evidence about a change to a SHARED hook.** A fix to `useAssistantRun`
   passed 6/6 unit tests (RED→GREEN) and 5/5 E2E with `--retries=0` in 23.6 s with

@@ -1,0 +1,1 @@
+movie-assistant-gateway cpu=100.24% mem=190.2MiB / 15.51GiB (1.20%)

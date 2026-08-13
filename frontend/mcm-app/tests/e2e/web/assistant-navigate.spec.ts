@@ -66,7 +66,7 @@ test.describe('Assistant navigate / prefill (feature 012, US3 / T059)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('navigate → the assistant opens the named collection screen', async ({ page, request }) => {
+  test('navigate → the assistant opens the named collection screen', { tag: '@gate' }, async ({ page, request }) => {
     test.setTimeout(360_000);
     const name = `t059-nav-${Date.now()}`;
     const collectionId = await seedCollection(request, name);
@@ -84,7 +84,7 @@ test.describe('Assistant navigate / prefill (feature 012, US3 / T059)', () => {
     });
   });
 
-  test('prefill → the assistant opens the add-movie form on the named collection', async ({
+  test('prefill → the assistant opens the add-movie form on the named collection', { tag: '@gate' }, async ({
     page,
     request,
   }) => {
