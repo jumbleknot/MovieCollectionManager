@@ -187,6 +187,11 @@ enabled/explicit-schedule assertion fails.
 The pre-existing two tests in this file (Node pinning, cron-in-window) must stay **GREEN** throughout —
 if they go red, the extension broke the shared helpers rather than adding a case.
 
+**Verified RED 2026-08-13**: `✖ 2 / ✔ 2` — the assertion was split into two tests (enabled+explicit,
+and intersects-under-both-offsets) so a failure names *which* window drifted; both went red on the
+absent key. Both pre-existing tests stayed green, confirming the shared `cronSlots` /
+`windowSlotsInUtc` helpers were reused rather than disturbed.
+
 ---
 
 ### T005 — Enable `lockFileMaintenance` with an explicit window
@@ -283,6 +288,25 @@ correct and only possible failure. It is **not** sufficient evidence on its own 
 would look identical if the test asserted nothing. T008's GREEN, showing 17 passing assertions, is what
 closes that gap; if GREEN reports materially fewer than 17, the cases were not written.
 
+**Verified RED 2026-08-13**: `ERR_MODULE_NOT_FOUND: Cannot find module '…/scripts/override-lever.mjs'`,
+`pass 0 / fail 1`. **Verified GREEN after T010**: `tests 17 / pass 17 / fail 0` — the count is the
+evidence, per the caveat above.
+
+> **Two of the 17 were wrong, and finding out cost the useful part of this task.** Recorded because
+> both are the kind of thing that reads as a code bug and is not:
+>
+> 1. **Test 8 asserted a logically unreachable case.** It expected `raise-floor` for a fix floor
+>    *below* the override's lower bound, from the contract's decision table. Reaching that branch
+>    requires `R ≥ L` and `R < F`; adding `F < L` gives `R ≥ L > F > R`. Exhaustively confirmed over
+>    the ordering space: zero satisfying combinations. **The table was wrong, not the module** —
+>    `raise-floor` is entered only via `F ≥ U`. Contract and data-model corrected; the test now
+>    documents the unreachability so it is not re-derived.
+> 2. **Test 17 failed twice for reasons that were not the feature.** First
+>    `Unknown argument(s): --report` — from `check-override-consistency.mjs`, which ran its CLI at
+>    *top level* with no import guard, so importing it for its parsers ran the scan inside the gate's
+>    process. Then `allowlist must be a YAML list` — my fixture used a mapping. Neither was the
+>    advice logic. The first was a genuine latent bug and is fixed at the cause (T008).
+
 ---
 
 ### T008 — Implement the advice module; export the comparator it reuses
@@ -297,7 +321,14 @@ closes that gap; if GREEN reports materially fewer than 17, the cases were not w
    `selectAdvice`, `formatAdvice`. Pure: no clock, no I/O, no `process.exit`.
 2. **Export** `check-override-consistency.mjs`'s currently-private version comparator so this module
    imports it rather than reimplementing range logic. A second range dialect is how the two halves drift
-   apart (FR-021).
+   apart (FR-021). Only an *equality* helper exists, so add an ordered `compareVersions` and express
+   `sameVersion` in terms of it — behaviour-preserving, and the guard's own tests prove it.
+2b. **Add the missing import guard to `check-override-consistency.mjs`.** Its CLI body runs at top
+   level, so importing it executes the scan and can `process.exit` out of the *importing* process,
+   reporting that exit as the caller's result. Nothing had noticed because its own test shells out;
+   this module is its first importer. Same `invokedPath === fileURLToPath(import.meta.url)` guard
+   `check-sast-findings.mjs` already uses. **CLI behaviour must stay byte-for-byte identical** — the
+   file's own tests shell out exactly as before and passing unchanged is the proof.
 3. `raise-floor` messages MUST name **both** halves. A message naming only the value half reproduces the
    half-bump the repository already has a guard for.
 
