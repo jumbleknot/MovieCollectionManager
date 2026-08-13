@@ -107,18 +107,12 @@
 #     advisory id silently stops suppressing when the scanner switches identifier namespace — the
 #     entry does not expire, it just quietly matches nothing.
 
-- scanner: "pnpm-audit"
-  id: "GHSA-7p8r-x3mc-p8w7"
-  locationPattern: "fast-uri@3\\.1\\.4"
-  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally; not introduced by any feature branch. NOT assessed for exploitability. Remediation is a pnpm-workspace override bump (fast-uri already carries a <3.1.4 override this advisory bypasses). Pinned to 3.1.4 so any version change re-evaluates."
-  addedBy: "steve"
-  expiry: "2026-08-31"
-- scanner: "pnpm-audit"
-  id: "GHSA-mwp4-54f8-5fhr"
-  locationPattern: "ip-address@10\\.2\\.0"
-  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally; not introduced by any feature branch. NOT assessed for exploitability. Remediation is a pnpm-workspace override bump. Pinned to 10.2.0 so any version change re-evaluates."
-  addedBy: "steve"
-  expiry: "2026-08-31"
+#     * fast-uri (GHSA-7p8r-x3mc-p8w7) and ip-address (GHSA-mwp4-54f8-5fhr) are DONE (2026-08-13,
+#       feature 057) — entries DELETED, not re-dated, so a regression re-blocks. The floors were
+#       raised in pnpm-workspace.yaml rather than the acceptances renewed: deleting an expiry date
+#       is how a time-box becomes permanent, and these two were 18 days from turning every branch
+#       red. Both halves of each override moved together, per the invariant
+#       check-override-consistency.mjs now enforces.
 
 
 # ── 2026-08-08 advisory wave — image-size (NO PUBLISHED FIX) ─────────────────────────────────────

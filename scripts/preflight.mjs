@@ -38,6 +38,7 @@ const GATES_WITH_SELFTEST = [
   'check-prod-restart-policy',
   'check-ci-digest-coverage',
   'check-toolchain-consistency',
+  'check-override-consistency',
   'check-realm-consistency',
   'secret-scan',
 ];

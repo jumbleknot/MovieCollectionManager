@@ -91,6 +91,46 @@ fields (a blank `justification` or `addedBy` is a **gate error**):
 - **`expiry`** (optional, ISO `YYYY-MM-DD`): while absent or **today-or-later**, the entry suppresses.
   Once the date is **past**, the entry stops suppressing and the finding **blocks again** — use it to
   force re-review of a time-boxed accepted risk (e.g. "accepted until the upstream fix ships").
+  **You will hear about it 14 days before that happens** — see below.
+
+### When you will hear about an expiry — the 14-day warning window
+
+Expiry used to be **binary**: full suppression until the date, then a hard failure the next morning,
+usually surfacing on somebody else's unrelated pull request. There is now a tier in between
+(feature 057). If you add an entry with an `expiry`, this is what happens to it:
+
+| State | What the gate does |
+| --- | --- |
+| **Active** — more than 14 days out | Suppresses, silently. |
+| **Expiring soon** — **14 days or fewer** out, *including the expiry day itself* | **Still suppresses, and the exit code does not move.** Listed under `EXPIRING SOON` with its id, date, days remaining and `addedBy`. |
+| **Expired** — the date has passed | Stops suppressing; the finding blocks. The failure **explains itself**: "this finding was suppressed until `<date>` by an entry added by `<addedBy>`" — so nobody has to open this file to understand a new red. |
+
+Both window boundaries are **inclusive**: exactly 14 days out is already *expiring*, and an entry
+suppresses through the whole of its final day.
+
+**Unmatched entries are reported too.** An entry that suppressed nothing this run is listed under
+`UNMATCHED ENTRIES` — it is either stale (the finding was genuinely remediated and the entry was left
+behind) or, the case that actually bit us, its scanner changed identifier namespace. The
+aiohttp/cryptography entries re-blocked *early* when pip-audit began reporting the same advisories
+under PYSEC aliases instead of CVE ids: an entry keyed on an exact advisory id **does not expire, it
+just quietly matches nothing**. This is only evaluated for scanners that produced at least one
+finding in the run, so a skipped, failed or clean scanner never flags its whole entry set.
+
+**Where you actually see it.** On a normal gate run these three sections are printed and change
+nothing — no pull request is ever newly blocked by them. The signal that is allowed to fail is the
+dedicated mode, which runs **weekly** (Friday) in `infra-image-scan` over both allowlists and is
+deliberately **not** run on pull requests:
+
+```bash
+node scripts/check-sast-findings.mjs --check-expiring        # exit 1 on any expiring/expired/unmatched entry
+node scripts/check-infra-image-findings.mjs --check-expiring
+```
+
+The window is **14 days**, defined in exactly one place — `WARNING_WINDOW_DAYS` in
+[`scripts/allowlist-expiry.mjs`](../../scripts/allowlist-expiry.mjs) — and shared by both gates.
+Fourteen was chosen over 21 or 28 on purpose: keeping entries *out* of the window most of the time is
+what keeps a red check worth reading. The accepted cost is that a remediation needing its own branch
+and a real build gets two weeks' notice rather than three, so **date an entry with that in mind**.
 - **Suppression is gate-only**: an allowlisted finding is removed from the *failure* set but stays
   **visible** in `findings.json` / the reports and is printed as "allowlisted by …" (FR-010) — accepted
   risks remain auditable, never hidden.

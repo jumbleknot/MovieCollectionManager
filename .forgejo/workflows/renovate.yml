@@ -31,7 +31,19 @@ name: renovate
 
 on:
   schedule:
-    - cron: '0 3 * * *' # nightly 03:00 UTC (matches the renovate.json schedule window)
+    # TWO triggers, doing two different jobs. Actions cron is UTC-only and does NOT observe DST.
+    #
+    # The nightly run is OUTSIDE renovate.json's permitted window, and that is deliberate: security
+    # PRs are schedule-EXEMPT (`vulnerabilityAlerts` inherits an empty schedule from its preset), so
+    # they land promptly from this trigger while routine updates correctly defer.
+    - cron: '0 3 * * *' # nightly 03:00 UTC — schedule-EXEMPT security PRs only; routine updates defer here
+    # The window run. This is the one that was missing: until 2026-08-13 the nightly cron above
+    # carried the comment "matches the renovate.json schedule window", which was false — 03:00 UTC is
+    # 23:00 THURSDAY in New York, and the window is Friday. The two sets never intersected, so every
+    # routine update deferred forever across four silent Friday windows (#153). 07:00 UTC is 03:00 EDT
+    # and 02:00 EST; renovate.json's window is widened to `* 2-4 * * 5` so this lands inside it in
+    # both halves of the year. `renovate-workflow.guard.test.mjs` is what now holds this true.
+    - cron: '0 7 * * 5' # Friday 07:00 UTC = 03:00 EDT / 02:00 EST — inside the renovate.json window
   workflow_dispatch:
     inputs:
       dryRun:
@@ -53,6 +65,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # Node 24.14.1, NOT the container's bundled v22.23.2. renovate@44.14.12 raised `engines.node`
+      # to ^24.11.0 INSIDE the pinned major, so from 2026-08-09 every run logged
+      # `npm warn EBADENGINE` and then `ERROR: Unsupported node environment detected`, and exited 1
+      # (run 1704, 2026-08-13). This was the only workflow in the repository with no `setup-node`,
+      # which is exactly why it inherited a runtime nobody had chosen. 24.14.1 is the version every
+      # other job here already runs on — proven, not new.
+      #
+      # This step MUST stay BEFORE `corepack enable`: corepack is provisioned from whichever Node is
+      # on PATH, so installing Node after it would leave corepack bound to the container's Node 22
+      # even once Node 24 exists. `renovate-workflow.guard.test.mjs` asserts both the pin and this
+      # ordering; `check-toolchain-consistency.mjs` validates the version against `engines.node`.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.14.1
       # Renovate runs the manifest bump AND regenerates the lockfile ("artifacts" step) as child
       # processes using tools on PATH (binarySource=global for an npx install). The bare node:22-bookworm
       # runner has neither pnpm nor cargo, so lockfile regen failed → `renovate/artifacts` red and PRs
@@ -98,6 +124,18 @@ jobs:
         # managers). Major is the reproducibility/maintenance balance the original TODO here asked for.
         # Raising 44 -> 45 is a DELIBERATE, reviewed act: read the major's breaking changes and re-run
         # `npx --yes --package renovate@<new> -- renovate-config-validator` against renovate.json first.
+        #
+        # RESIDUAL RISK THE MAJOR PIN DOES NOT COVER — and this one has already fired. The reasoning
+        # above is entirely about CONFIG SEMANTICS: a major could change how renovate.json is read.
+        # It says nothing about the RUNTIME, and a minor/patch INSIDE the pinned major can raise
+        # `engines`. That is precisely what happened: 44.14.12 moved `engines.node` to ^24.11.0, well
+        # inside `renovate@44`, and the pin let it through because the pin was never about that. The
+        # job then ran on the container's Node 22 and exited 1 on every run for four days before
+        # anyone read the nightly red (#160).
+        #
+        # What covers it is the `actions/setup-node` step above, not this pin. So when raising the
+        # major, check the new major's `engines.node` against that step's `node-version` as well as
+        # the config changes — a pin bump and a runtime bump are two separate reviews.
         run: bash scripts/ci-log-step.sh renovate npx --yes renovate@44
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can

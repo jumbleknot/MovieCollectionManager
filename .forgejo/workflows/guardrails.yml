@@ -132,6 +132,19 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh naming-toolchain-consistency-gate node scripts/check-toolchain-consistency.mjs --selftest
           bash scripts/ci-log-step.sh naming-toolchain-consistency-gate node scripts/check-toolchain-consistency.mjs
+      - name: Override-consistency gate (selftest + scan — both halves of every security override floor agree)
+        # The same lockstep problem as the gate above, for the other pair. Each keyed entry in
+        # pnpm-workspace.yaml's `overrides:` map stores the vulnerable range in its KEY and the
+        # patched floor in its VALUE; move one without the other and the override reads as
+        # remediated while no longer excluding the version its own key names.
+        #
+        # This one runs on PULL REQUESTS deliberately (unlike the allowlist expiry check, which is
+        # schedule-only): Renovate's built-in npm manager reads the key as an opaque depName, so
+        # every floor RAISE it proposes is a half-bump by construction. Blocking that before merge
+        # is the whole point — a half-remediation is the failure mode that still looks correct.
+        run: |
+          bash scripts/ci-log-step.sh naming-override-consistency-gate node scripts/check-override-consistency.mjs --selftest
+          bash scripts/ci-log-step.sh naming-override-consistency-gate node scripts/check-override-consistency.mjs
       - name: DAST gate selftest (feature 031 — check-dast-findings fail/suppress/clean paths proven each push)
         run: bash scripts/ci-log-step.sh naming-dast-gate-selftest node scripts/check-dast-findings.mjs --selftest
       - name: Realm-consistency gate (feature 039 — dev-realm.json ⟷ ci-realm.json client/user contract stays in lockstep)

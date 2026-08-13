@@ -60,6 +60,37 @@ flowchart LR
   treated (`sast-scan.mjs` pins `SEMGREP_PIN`). Raising a major is deliberate: read the breaking
   changes, then re-run `npx --yes --package renovate@<new> -- renovate-config-validator` before
   merging.
+- **A major-only pin says nothing about the RUNTIME, and that gap has fired.** The pin above reasons
+  entirely about *config semantics* — what a new major might change about how `renovate.json` is
+  read. A minor or patch **inside** the pinned major can still raise `engines`, and 44.14.12 moved
+  `engines.node` to `^24.11.0` while staying comfortably inside `renovate@44`. The job had no
+  `setup-node` — the only workflow here without one — so it inherited the runner container's
+  `v22.23.2`, logged `npm warn EBADENGINE` and then `ERROR: Unsupported node environment`, and exited
+  1 on **every** run for four days before anyone read the nightly red. Pin the runtime explicitly
+  next to the tool, and treat a major bump as **two** reviews: the config changes, and the new
+  major's `engines` against that pin.
+- **A comment asserting a schedule relationship is not a check, and this one was false for four
+  weeks.** `renovate.yml`'s nightly cron carried "matches the renovate.json schedule window". It did
+  not: `0 3 * * *` is 03:00 UTC, while the config permitted branch creation only during `* 3 * * 5`
+  in `America/New_York` — 07:00–07:59 UTC on Friday. 03:00 UTC is 23:00 **Thursday** in New York, so
+  the sets never intersected and the bot was never awake inside its own window. **It looked healthy
+  the whole time**, because `vulnerabilityAlerts` inherits an empty schedule from its preset, so
+  security PRs bypassed the window and kept landing while every routine update silently deferred —
+  ten groups had accumulated under "Awaiting Schedule" by the time it was found. Two consequences
+  worth carrying: cron here is **UTC-only and does not observe DST**, so a one-hour local window
+  catches only half the year (widen it, as `infra-image-scan.yml` already does); and the durable fix
+  is the arithmetic as a test — `scripts/__tests__/renovate-workflow.guard.test.mjs` converts both
+  files to UTC and fails if they stop intersecting under either offset.
+- **Renovate DOES manage `pnpm-workspace.yaml`, and half-bumps its security overrides by
+  construction.** A widely-repeated claim in this repo's own backlog said it extracts *zero*
+  dependencies from that file. Measured on run 1704 (2026-08-13): the built-in **npm** manager
+  extracts **12**, including every keyed override floor, with pending updates for five of them. What
+  it cannot do is the half that matters — it parses `fast-uri@<3.1.5` as an opaque **depName** and
+  `>=3.1.5 <4` as the version, so it rewrites the value and leaves the vulnerable-range key stale,
+  and Renovate has no mechanism for rewriting a depName. Adding a custom manager does **not** fix
+  this: the file is already managed, so a second manager double-manages it. The guard is the answer
+  instead — `scripts/check-override-consistency.mjs` fails a mismatched pair by name on the pull
+  request, so a half-remediation cannot merge even though it still looks correct.
 - **`app-ci` runs on every PR with no path filter, by design — but the heavy `app-e2e` job is still
   path-gated.** A dorny/paths-filter `changes` job scopes `app-e2e` to paths that affect app runtime
   behavior; a docs/config/lockfile-only PR still gets an `app-ci` status (satisfying branch protection)

@@ -139,7 +139,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/051-ci-diagnostics-closure/plan.md`
+`specs/057-dependency-security-loop/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->

@@ -163,6 +163,35 @@ jobs:
         if: ${{ env.RUN_SCAN == 'true' }}
         run: bash scripts/ci-log-step.sh infra-image-gate node scripts/check-infra-image-findings.mjs
 
+      # Feature 057 (item #154) — the allowlist expiry warning tier, over BOTH allowlists.
+      #
+      # Expiry used to be binary: full suppression until the date, then a hard fail the next morning
+      # on whichever unrelated branch happened to run first, with no signal in between. This step is
+      # that signal. It fails when any entry is within 14 days of expiry, already expired, or matched
+      # nothing this run — 14 days being a deliberate choice for QUIETNESS, since a check that is
+      # usually green is one whose red still gets read.
+      #
+      # THE `if:` IS LOAD-BEARING, not tidiness. This job also serves `pull_request` (un-path-gated,
+      # so it posts the required context on every PR — see the header). Without the guard, a red
+      # expiry check would block every pull request the moment an entry entered the window, which is
+      # exactly what FR-021/SC-007 forbid. Verify it by reading a real PR run's STEP LIST rather than
+      # by trusting this expression: a wrong `if:` that still evaluates true looks identical today
+      # and blocks everything a fortnight later.
+      #
+      # `--check-expiring` is report-only — it does not evaluate blocking findings, so this step
+      # cannot fail for a reason the gate above is already responsible for. The SAST report is not
+      # produced in this job; in this mode its absence correctly means "no scanner produced findings"
+      # (zero unmatched) rather than an error, and the script says so in the log.
+      #
+      # Failure needs no new plumbing: this job already publishes a digest on failure (below).
+      # Prediction, recorded so it is falsifiable: green on 2026-08-14 and 08-21, first RED on
+      # Friday 2026-08-28 naming the image-size pair (expiry 2026-09-07).
+      - name: Allowlist expiry check — both allowlists (weekly schedule only, never on a pull request)
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          bash scripts/ci-log-step.sh allowlist-expiry-check node scripts/check-sast-findings.mjs --check-expiring
+          bash scripts/ci-log-step.sh allowlist-expiry-check node scripts/check-infra-image-findings.mjs --check-expiring
+
       - name: Upload scan report (findings.json + summary + proposed allowlist + raw Trivy)
         if: ${{ env.RUN_SCAN == 'true' && always() }}
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
