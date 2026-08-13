@@ -140,7 +140,7 @@ environment". Needs no other story.
       against an **engine-requirement bump inside the major** — which is exactly what 44.14.12 did —
       and `setup-node` is what covers it. **Type**: Documentation, no RED/GREEN. Covers **US1-AC3**.
       **Done when**: the block names the engine-bump risk and the step that mitigates it. (FR-004)
-- [ ] **T007** [US1] Dispatch `renovate` and confirm the fix in the log. **Requires CI.**
+- [x] **T007** [US1] Dispatch `renovate` and confirm the fix in the log. **Requires CI.**
       **Done when**: exit 0, with **no** `EBADENGINE` warning and **no** "Unsupported node
       environment" error — compared against run 1587 (task 5278), which showed both. (SC-001)
 
@@ -169,6 +169,21 @@ environment". Needs no other story.
       > evidence the dispatch failed, and re-dispatching on that belief just queues more copies.
       > Also measured: `inputs` values must be **strings** — `{"dryRun": true}` is rejected `422
       > cannot unmarshal bool`, while `{"dryRun": "true"}` is accepted.
+      >
+      > **RESULT — run 1708 (task 5766), `workflow_dispatch` on `057-dependency-security-loop`,
+      > `dryRun=true`: SUCCESS.** Against run 1704's exit 1 on identical repository content, the only
+      > difference being the `setup-node` step.
+      >
+      > **Why exit 0 settles SC-001 even though the log is unreadable.** A successful run publishes
+      > **no** failure-digest bundle (confirmed: the package registry's newest `ci-failures` entry is
+      > still `1704--renovate`), and this forge exposes no log endpoint — so the log cannot be read
+      > back to grep for the two messages. It does not need to be. Run 1704's tail is explicit:
+      > *"Renovate is exiting with a non-zero code due to the following logged errors"*, with
+      > `loggerErrors` containing exactly one entry — `Unsupported node environment detected`. That
+      > error **is** what made the exit non-zero, so an exit of 0 means it was not logged. And
+      > `EBADENGINE` is emitted by npm when the installed package's `engines` do not match the running
+      > Node; with Node 24.14.1 against `^24.11.0` it cannot fire. Both halves of the Done-when
+      > follow from the exit code rather than needing the text.
 
 **Checkpoint**: US1 complete and independently verified.
 
@@ -213,11 +228,33 @@ weeks of silent deferral.
       would create**. **Requires CI.** Do this before a live run — it previews the eight deferred
       groups without opening them.
       **Done when**: the dry-run log lists candidate branches where it previously listed none.
+
+      > **NOT VERIFIABLE AS WRITTEN, for two independent reasons — recorded rather than fudged.**
+      >
+      > 1. **A successful run's log is unreadable on this forge.** The failure digest is the only log
+      >    channel and it publishes on **failure** only (confirmed: no `1708--renovate` bundle exists;
+      >    the newest is still `1704--renovate`). Run 1708 succeeded, so there is no log to grep.
+      > 2. **Even with the log, right now it would list nothing — correctly.** Renovate honours
+      >    `schedule` for branch creation in dry run too. The dispatch ran on a **Thursday**; the
+      >    permitted window is `* 2-4 * * 5` (Friday). A dry run inside the window is the only one
+      >    whose branch list means anything, and that first exists on **Friday 2026-08-14**, after
+      >    merge.
+      >
+      > **The substitutes are equivalent or better, and both already exist**: the Dependency Dashboard
+      > (item #29) *is* the maintained list of what the bot would open — 10 groups under Awaiting
+      > Schedule, enumerated under T002 — and **T012** is the real proof, those groups becoming open
+      > pull requests. This task was a preview of T012; T012 is the thing itself.
 - [ ] **T012** [US2] After the first live run inside the window, re-check the dashboard:
       `node scripts/backlog.mjs show 29`. **Requires CI + a Friday run.**
       **Done when**: the **Awaiting Schedule** group count has fallen from T002's baseline of 8 to 0,
       with those groups now open pull requests. `prConcurrentLimit: 5` / `prHourlyLimit: 2` throttle
       the release, so expect this over more than one run. (SC-002)
+
+      > **BLOCKED ON MERGE — genuinely, not as an excuse.** The Friday cron only exists once
+      > `renovate.yml` is on `main`. First opportunity: **Friday 2026-08-14**, then 08-21. Measure
+      > against T002's **10** (not the 8 in this task's text). Expect it over more than one run —
+      > `prConcurrentLimit: 5` / `prHourlyLimit: 2` throttle the release, so a single Friday landing
+      > five of ten is the mechanism working, not a partial fix.
 
 **Checkpoint**: the bot both runs and is allowed to act.
 
@@ -612,6 +649,25 @@ a normal run.
       never into the root `CLAUDE.md` index. Candidates: the schedule-disjointness arithmetic and its
       guard, the engine-bump residual risk of a major-only pin, the override key/value lockstep
       invariant, and the measured fact that a mis-keyed custom manager extracts zero **silently**.
+> ### T036 STATUS — **evidence posted on all four; closure is deliberately merge-gated.**
+>
+> The task's own rule decides this: *"each only when its own acceptance criteria are met **and
+> verified**"*, and *"closure is an explicit act, not a consequence of a merged pull request."* The
+> fixes are on an unmerged branch, so nothing is on `main` yet and none of the four can honestly be
+> called done. Closing them now would be closing against a branch.
+>
+> A detailed evidence comment is posted on each, and each names exactly what remains:
+>
+> | Item | Evidence posted | Remaining before closure |
+> | --- | --- | --- |
+> | **#160** | run 1704's exact `EBADENGINE` / `Unsupported node environment` extract; the fix and its guard; the major-pin-says-nothing-about-the-runtime lesson | a `schedule` or dispatched run **on `main`** at exit 0 with neither message |
+> | **#153** | the disjointness arithmetic; the EDT/EST table showing the widened window is load-bearing; the cost re-measured at **10** groups, not 8 | a Friday run on `main` (08-14, then 08-21) turning Awaiting Schedule groups into open PRs |
+> | **#152** | the RED/GREEN table (59/4 → 55/2, both advisories absent); lockfile resolution; build + web E2E; **and a correction** — its "extracts zero deps" claim is measurably false | merge |
+> | **#154** | the whole warning tier; the 2026-08-28 prediction; **and the correction this task explicitly requires** — its prose says "seven live entries", the true count is **eight**, which its own table already agrees with | merge |
+>
+> #154's count correction was posted **before** any closure, as this task requires — closing against
+> a wrong number was the specific thing to avoid.
+
 - [ ] **T036** Close backlog items **#152**, **#153**, **#154** and **#160** — each only when its own
       acceptance criteria are met **and verified**, with the evidence in a comment. Closure is an
       explicit act, not a consequence of a merged pull request. Note that #154's body claims "seven
