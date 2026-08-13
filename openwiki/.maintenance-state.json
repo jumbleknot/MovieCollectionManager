@@ -1,24 +1,12 @@
 {
-  "coveredCommit": "6afc2c8f6cac7c894464f9aa0fa13c220b01b47c",
-  "coveredAt": "2026-08-13T01:38:17.733Z",
-  "lastOutcome": "failed",
-  "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "sast.md"
-      ],
-      "kind": "create",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "new source, not yet covered: security/sast/README.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    }
-  ],
+  "coveredCommit": "97be1fdcaa1dfa1a82edb799607d97e630cd8ff0",
+  "coveredAt": "2026-08-13T17:31:05.319Z",
+  "lastOutcome": "completed",
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 182,
-    "headCommit": "f7dcc8c7721dbbb47b874f46aeacd445f84ecc36",
+    "headCommit": "e16f96791d2a644a91a8f3dadc42478b5ee04dad",
     "markerBefore": "6afc2c8f6cac7c894464f9aa0fa13c220b01b47c",
     "slices": [
       {
@@ -32,13 +20,35 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/e2e-testing.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "sast.md"
+        ],
+        "kind": "create",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "new source, not yet covered: security/sast/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "sast-scanning.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/sast-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-13T01:38:18.048Z"
+    "updatedAt": "2026-08-13T17:31:05.643Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 8,
+    "pagesWritten": 2,
+    "elapsedSeconds": 315,
     "stoppedAtBudget": false
   }
 }
