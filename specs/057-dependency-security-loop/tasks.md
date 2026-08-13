@@ -184,6 +184,34 @@ environment". Needs no other story.
       > `EBADENGINE` is emitted by npm when the installed package's `engines` do not match the running
       > Node; with Node 24.14.1 against `^24.11.0` it cannot fire. Both halves of the Done-when
       > follow from the exit code rather than needing the text.
+      >
+      > **AND THE CONTROL MAKES IT AN A/B RATHER THAN AN ASSERTION.** The same workflow was dispatched
+      > at `main` (`a2d3073`, no `setup-node`) minutes later — run **1710**, **FAILURE**. It published
+      > a digest, so its log *is* readable, and it shows the fault verbatim and unchanged:
+      > ```
+      > npm warn EBADENGINE   package: 'renovate@44.28.0',
+      > npm warn EBADENGINE   required: { node: '^24.11.0', pnpm: '^11.0.0' },
+      > npm warn EBADENGINE   current: { node: 'v22.23.2', npm: '10.9.8' }
+      > ERROR: Unsupported node environment detected. Please update your node version.
+      > INFO: Renovate is exiting with a non-zero code due to the following logged errors
+      > ```
+      >
+      > | Ref | `setup-node` | Result |
+      > | --- | --- | --- |
+      > | `057-dependency-security-loop` | yes, 24.14.1 | 1708 **success**, 1709 **success** |
+      > | `main` (`a2d3073`) | no | 1710 **failure**, both messages present |
+      >
+      > Same day, same dispatch mechanism, same inputs, same repository content apart from this
+      > feature — so the step is isolated as the cause rather than merely correlated with a green run.
+      > Note the version has moved on to **44.28.0**: the engine floor is not drift in one bad release,
+      > it persists across the pinned major exactly as FR-004's new comment argues.
+      >
+      > **Bundle naming, hit for the second time this session**: the digest for run **1710** is
+      > published as **`1711--renovate`** — the name comes from `GITHUB_RUN_ID`, not `run_number`, so
+      > the obvious guess 404s for a bundle that exists. Probe `runId` and `runId + 1`.
+      >
+      > The same log re-confirms T001's baseline independently: `"npm": {"fileCount": 4, "depCount":
+      > 115}`, identical to run 1704.
 
 **Checkpoint**: US1 complete and independently verified.
 
