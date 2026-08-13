@@ -27,7 +27,8 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - brace-expansion@5.0.9
-  - fast-uri@3.1.4
+  - fast-uri@3.1.5 # was 3.1.4 — raised 2026-08-13 with the override floor (feature 057)
+  - ip-address@10.5.0 # resolved floor for GHSA-mwp4-54f8-5fhr; published 2026-08-10, inside the cooldown
   - nanoid@3.3.17
   - postcss@8.5.23
   - shell-quote@1.10.0
@@ -58,7 +59,16 @@ overrides:
   js-yaml@>=4.0.0 <4.3.1: '>=4.3.1 <5'
   shell-quote@<1.9.0: '>=1.9.0'
   axios@>=1.15.2 <1.18.0: '>=1.18.0 <2'
-  fast-uri@<3.1.4: '>=3.1.4 <4'
+  # RAISED 2026-08-13 (feature 057) from `fast-uri@<3.1.4: '>=3.1.4 <4'`. GHSA-7p8r-x3mc-p8w7
+  # BYPASSES the previous fix, so 3.1.4 is itself vulnerable and the old floor no longer held.
+  # BOTH HALVES MOVE TOGETHER — the key names the vulnerable span, the value the patched floor, and
+  # raising one without the other yields an override that reads as remediated while no longer
+  # excluding the version its own key names. check-override-consistency.mjs enforces that now.
+  fast-uri@<3.1.5: '>=3.1.5 <4'
+  # ADDED 2026-08-13 (feature 057) for GHSA-mwp4-54f8-5fhr (fix >=10.3.1). This floor also clears the
+  # two Medium advisories on the same package (GHSA-4xrf-jv44-h6hh >=10.2.2, GHSA-22jq-vg5j-6vgg
+  # >=10.2.1). Replaces a time-boxed acceptance that was 18 days from blocking every branch.
+  ip-address@<10.3.1: '>=10.3.1 <11'
   nanoid@>=3.0.0 <3.3.17: '>=3.3.17 <4'
 
 # NOTE (feature 034): a pnpm-level `minimumReleaseAge` cooldown was tried here but BREAKS cold

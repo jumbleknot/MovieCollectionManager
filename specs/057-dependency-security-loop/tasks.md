@@ -118,7 +118,7 @@ supported Renovate.
 **Independent test**: dispatch the workflow — exit 0, no `EBADENGINE`, no "Unsupported node
 environment". Needs no other story.
 
-- [ ] **T004** [US1] Write the guard FIRST in `scripts/__tests__/renovate-workflow.guard.test.mjs`:
+- [x] **T004** [US1] Write the guard FIRST in `scripts/__tests__/renovate-workflow.guard.test.mjs`:
       a case asserting `.forgejo/workflows/renovate.yml` contains a `setup-node` step with an
       explicit `node-version`, because a job with no pin silently inherits the runner container's
       Node. Covers **US1-AC1**.
@@ -126,7 +126,7 @@ environment". Needs no other story.
       **Expected RED**: 1 failing — the workflow has no `setup-node` step (it is the only workflow in
       the repository without one). A failure reading "cannot find module" means the file is empty,
       not that the assertion works. (FR-001)
-- [ ] **T005** [US1] Add `actions/setup-node@<sha> # v4` with `node-version: 24.14.1` to
+- [x] **T005** [US1] Add `actions/setup-node@<sha> # v4` with `node-version: 24.14.1` to
       `.forgejo/workflows/renovate.yml`, placed **before** the `corepack enable` step at line 64 —
       corepack is provisioned from whichever Node is on PATH, so ordering is the requirement, not a
       preference. SHA-pin the action as every other workflow does. Covers **US1-AC1, US1-AC2**.
@@ -135,7 +135,7 @@ environment". Needs no other story.
       **Also run**: `node scripts/check-toolchain-consistency.mjs` → exit 0. This existing gate
       validates every `node-version:` in `.forgejo/workflows` against `engines.node` (`>=22.13`), so
       a typo'd version fails here rather than in CI. (FR-001, FR-002, FR-003)
-- [ ] **T006** [US1] Extend the major-pin rationale block at `.forgejo/workflows/renovate.yml:87-99`
+- [x] **T006** [US1] Extend the major-pin rationale block at `.forgejo/workflows/renovate.yml:87-99`
       with the residual risk it does not currently reason about: a major-only pin does not protect
       against an **engine-requirement bump inside the major** — which is exactly what 44.14.12 did —
       and `setup-node` is what covers it. **Type**: Documentation, no RED/GREEN. Covers **US1-AC3**.
@@ -156,7 +156,7 @@ weeks of silent deferral.
 **Independent test**: the guard test passes, a dry run lists branches it would open, and item #29's
 "Awaiting Schedule" list shrinks.
 
-- [ ] **T008** [US2] Add a second case to `scripts/__tests__/renovate-workflow.guard.test.mjs`:
+- [x] **T008** [US2] Add a second case to `scripts/__tests__/renovate-workflow.guard.test.mjs`:
       parse every `cron:` in `renovate.yml` and the `schedule` + `timezone` in `renovate.json`,
       convert both to UTC, and assert at least one trigger falls inside the permitted window **under
       both DST offsets** (EDT and EST). Covers **US2-AC1, US2-AC3**.
@@ -165,7 +165,7 @@ weeks of silent deferral.
       03:00 UTC daily; the window `* 3 * * 5` in `America/New_York` is 07:00-07:59 UTC Friday. The
       sets are disjoint. **This test must fail on `main` before any fix.** (FR-005, FR-007)
       **Note**: T004 and T008 edit the same file, so they are **not** parallel with each other.
-- [ ] **T009** [US2] Add `- cron: '0 7 * * 5'` alongside the existing nightly cron in
+- [x] **T009** [US2] Add `- cron: '0 7 * * 5'` alongside the existing nightly cron in
       `.forgejo/workflows/renovate.yml` (**add**, never move — the nightly run is what keeps
       schedule-exempt security PRs prompt), and widen `renovate.json`'s `schedule` from
       `["* 3 * * 5"]` to `["* 2-4 * * 5"]` so the UTC cron lands inside the window in both EDT and
@@ -177,7 +177,7 @@ weeks of silent deferral.
       `node scripts/check-toolchain-consistency.mjs` — this task edits a workflow file that the
       toolchain gate also parses, so a YAML slip here is reachable beyond the guard you just wrote.
       **Expected**: previously passing checks still pass. (FR-005, FR-006, FR-007)
-- [ ] **T010** [US2] Correct the comment on the nightly cron at `.forgejo/workflows/renovate.yml:34`.
+- [x] **T010** [US2] Correct the comment on the nightly cron at `.forgejo/workflows/renovate.yml:34`.
       It currently reads "nightly 03:00 UTC (matches the renovate.json schedule window)" — the bug
       stated in one sentence. Give each cron a comment describing what it actually does.
       **Type**: Documentation, no RED/GREEN. Covers **US2-AC4**.
@@ -215,14 +215,35 @@ for the right reason.
 > alone puts a red required gate on the branch, which is the exact symptom this feature exists to
 > remove. This is the one place where the "commit after each task" note in Notes does not apply.
 
-- [ ] **T013** [US3] Delete both entries from `security/sast/allowlist.yaml` — the
+- [x] **T013** [US3] Delete both entries from `security/sast/allowlist.yaml` — the
       `GHSA-7p8r-x3mc-p8w7` (fast-uri) and `GHSA-mwp4-54f8-5fhr` (ip-address) blocks at lines
       111-121. **Delete, never re-date** (FR-010). Covers **US3-AC2**.
       **Verify RED**: `node scripts/sast-scan.mjs --scope full && node scripts/check-sast-findings.mjs`
       **Expected RED**: exit 1, with both advisories now listed as **blocking** findings. If the gate
       still exits 0, stop — the entries were suppressing nothing and that is a different finding worth
       recording. (FR-010)
-- [ ] **T014** [US3] Raise `fast-uri`'s floor and add one for `ip-address` in `pnpm-workspace.yaml`'s
+
+      > **INSTRUMENT NOTE — the scan command in this task cannot run in this devcontainer, and the
+      > reason matters.** `node scripts/sast-scan.mjs --scope full` fail-closes: semgrep resolves its
+      > rule packs from `semgrep.dev`, which the devcontainer firewall blocks by design (it must be
+      > re-applied, never allowlisted). The orchestrator then aborts before writing findings, leaving
+      > a report with **0 findings** — which the gate reads as a clean pass. That is the false green
+      > T003 caught.
+      >
+      > This is **not** "the tier cannot run here". Both target advisories are `pnpm-audit` findings,
+      > and that scanner has no such dependency. `node scripts/sast-scan.mjs --scope full --only
+      > pnpm-audit` runs to completion locally: **59 findings, 4 blocking** before this task. The
+      > semgrep half remains CI's to run.
+      >
+      > **T003 baseline, taken against that real report**: both advisories present and **suppressed** —
+      > `[pnpm-audit] High GHSA-7p8r-x3mc-p8w7 — fast-uri@3.1.4 — allowlisted by steve` and
+      > `[pnpm-audit] High GHSA-mwp4-54f8-5fhr — ip-address@10.2.0 — allowlisted by steve`;
+      > 4 suppressed in total; gate exit 0.
+      >
+      > **RED observed** after deleting both entries: `Blocking (un-allowlisted): 2`, naming both
+      > advisories, **exit 1**. The entries were load-bearing. Observed locally only and never pushed —
+      > T013 and T014 landed in one commit, as this phase requires.
+- [x] **T014** [US3] Raise `fast-uri`'s floor and add one for `ip-address` in `pnpm-workspace.yaml`'s
       `overrides:` map. **Move both halves together** — the key's vulnerable range *and* the value's
       patched floor — per the invariant in [data-model.md](./data-model.md). `fast-uri` already
       carries `fast-uri@<3.1.4: '>=3.1.4 <4'` (this advisory bypasses the previous fix, so it is a
@@ -237,11 +258,25 @@ for the right reason.
       ```
       **Expected**: no matches. A hit under *either* heading — blocking or suppressed — means the work
       is not done. (FR-009, FR-011, FR-012)
-- [ ] **T015** [US3] Confirm the lockfile actually resolved the floors, not just that the override
+- [x] **T015** [US3] Confirm the lockfile actually resolved the floors, not just that the override
       text is present: check `pnpm-lock.yaml` resolves `fast-uri` and `ip-address` at or above each
       advisory's fixed version.
       **Done when**: both resolved versions satisfy their advisory. An override that does not change
       resolution is a no-op that reads as a fix. (FR-009)
+
+      > **Resolved, verified in `pnpm-lock.yaml`**: `fast-uri@3.1.5` (advisory fix `>=3.1.5` ✓) and
+      > `ip-address@10.5.0` (advisory fix `>=10.3.1` ✓). Floors written as
+      > `fast-uri@<3.1.5: '>=3.1.5 <4'` (a RAISE — both halves moved, the old key said `<3.1.4`) and
+      > `ip-address@<10.3.1: '>=10.3.1 <11'` (new). `check-override-consistency.mjs` reports
+      > **11 keyed floors agreeing** afterwards, up from 10.
+      >
+      > **T014 GREEN**: rescan gives **55 findings, 2 blocking** (down from 59/4 — the two High
+      > advisories plus the two Medium `ip-address` advisories the same floor cleared). Neither
+      > advisory appears as blocking **or** suppressed; gate exit 0. The 2 remaining blocking findings
+      > are the `image-size` pair, still legitimately allowlisted.
+      >
+      > **FR-012**: `minimumReleaseAgeExclude`'s stale `fast-uri@3.1.4` updated to `3.1.5`, and
+      > `ip-address@10.5.0` added — that release is dated 2026-08-10, inside the 3-day cooldown.
 - [ ] **T016** [US3] Run the build and the web E2E baseline. These are JS-toolchain transitives, so a
       bad floor surfaces at **build** time, not in unit tests — `nx test` will pass over a broken
       floor. Covers **US3-AC3**.
@@ -270,7 +305,7 @@ extraction against T001's recorded zero.
 half-bumps when the first bot proposal arrives. It is also green on today's map (10 keyed floors, 10
 agreements), so it is safe to add alone.
 
-- [ ] **T018** [P] [US4] Write `scripts/__tests__/check-override-consistency.test.mjs` FIRST,
+- [x] **T018** [P] [US4] Write `scripts/__tests__/check-override-consistency.test.mjs` FIRST,
       covering the cases in the
       [contract](./contracts/check-override-consistency.cli.md): value raised with a stale key; key
       raised with a stale value (the mismatch is symmetric); both halves agreeing; the three
@@ -280,7 +315,7 @@ agreements), so it is safe to add alone.
       real file. Covers **US4-AC3, US4-AC4**.
       **Verify RED**: `node --test scripts/__tests__/check-override-consistency.test.mjs`
       **Expected RED**: all cases fail — the script does not exist yet. (FR-017)
-- [ ] **T019** [US4] Implement `scripts/check-override-consistency.mjs` with `--selftest` and `--dir`,
+- [x] **T019** [US4] Implement `scripts/check-override-consistency.mjs` with `--selftest` and `--dir`,
       shaped after `check-toolchain-consistency.mjs` (same flags, same exit codes 0/1/2). Rule: for
       every override whose key carries an `@<range>` suffix, the key's exclusive upper bound must
       equal the value's inclusive lower bound. **Scope it to keyed entries only** — three legitimate
@@ -290,12 +325,48 @@ agreements), so it is safe to add alone.
       failures; `node scripts/check-override-consistency.mjs --selftest` → exit 0;
       `node scripts/check-override-consistency.mjs` → **exit 0 against the real map (10 of 10 agree)**.
       (FR-017, SC-009)
-- [ ] **T020** [US4] Wire the guard into the `naming` job of `.forgejo/workflows/guardrails.yml`,
+- [x] **T020** [US4] Wire the guard into the `naming` job of `.forgejo/workflows/guardrails.yml`,
       selftest-then-scan, beside the toolchain gate at lines 133-134. Unlike the expiry check this
       **does** run on pull requests — blocking a half-bumped proposal before merge is its purpose.
       Its unit test is discovered automatically by the existing `node --test
       scripts/__tests__/*.test.mjs` glob at line 147; no additional wiring. (FR-018)
-- [ ] **T021** [US4] Add a second `customManager` to `renovate.json` over `pnpm-workspace.yaml`, with
+> ### T021/T022 OUTCOME — **the manager is NOT merged. FR-019's path, reached for a different reason.**
+>
+> T001's measured baseline (12, not 0) falsifies the premise both tasks rest on, so they cannot be
+> executed as written and the fallback is the correct branch. Stated plainly:
+>
+> | Requirement | Status |
+> | --- | --- |
+> | FR-014 / SC-004 — non-zero extraction from the override-map file | **Already true before this feature.** 12 deps, run 1704. There is no zero to beat, and no measurement that could show an improvement. |
+> | FR-015 — config passes the bot's own validator | **Met.** `renovate-config-validator` (renovate@44): *"Config validated successfully against 1 file(s)"*. |
+> | FR-016 — the bot can *propose* raising a floor's patched value | **Already true for the value half.** Five override entries carry pending updates on the dashboard today. |
+> | FR-016 — *both halves in one PR* | **Not achievable by the planned mechanism. Recorded UNPROVEN and deferred.** |
+> | FR-017 / FR-018 — the consistency guard | **Met** (T018-T020), and more load-bearing than planned. |
+> | FR-019 — document the limitation, file a follow-up, do not merge the manager | **Met.** |
+>
+> **Why a second manager would be worse than none.** Renovate's built-in `npm` manager already reads
+> `pnpm-workspace.yaml`. A regex `customManager` over the same file would double-manage it — two
+> depNames for one package, two branches, both editing the same lines. The planned design assumed the
+> file was unmanaged; it is not.
+>
+> **What is actually missing, and why it is not fixable here.** The built-in manager parses
+> `fast-uri@<3.1.4` as an opaque **depName** and `>=3.1.4 <4` as the version. It rewrites the value
+> and leaves the vulnerable-range key stale, and Renovate has no mechanism for rewriting a depName.
+> Handing the file to a regex manager instead would mean suppressing the built-in one for that file —
+> a far larger and riskier change than was scoped, which would also drop `postcss`,
+> `@expo/dom-webview` and `react-dom` extraction.
+>
+> **Net effect on the story's safety property: it is delivered.** Every floor raise the bot proposes
+> is a half-bump *by construction*, and the guard fails it by name on the pull request. The accepted
+> cost is that a bot-authored floor raise arrives RED and needs its key half fixed by hand — visible
+> and cheap, against a silent half-remediation that still looks correct. The five updates queued
+> today happen to widen upper bounds only, so they would pass; a real raise would not.
+>
+> Recorded in `renovate.json`'s description block, where the next person to reach for a custom
+> manager will read it, and filed as **backlog item #184** with the measurement, the three options
+> and acceptance criteria that make extraction-vs-proposal a separate check.
+
+- [ ] **T021** [US4] ~~Add a second `customManager` to `renovate.json` over `pnpm-workspace.yaml`, with
       **two `matchStrings`** — one capturing the version inside the vulnerable-range key, one
       capturing the version inside the patched value — both emitting the same `depName` and the `npm`
       datasource. Capture the **bare version** (`3.1.4`), never the whole range: Renovate substitutes
@@ -303,7 +374,9 @@ agreements), so it is safe to add alone.
       both halves in one PR. Use `managerFilePatterns`, **not** the pre-v41 `fileMatch`. Covers
       **US4-AC1**.
       **Verify**: `npx --yes --package renovate@44 -- renovate-config-validator renovate.json` →
-      passes. Covers **US4-AC2**. (FR-015, FR-016)
+      passes.~~ Covers **US4-AC2**. (FR-015, FR-016)
+      **NOT DONE — see the outcome note above.** The validator step WAS run against the edited
+      `renovate.json` and passes, so FR-015/US4-AC2 stand on their own.
 - [ ] **T022** [US4] Prove extraction with a `dryRun=true` dispatch and read the count for
       `pnpm-workspace.yaml` specifically. **Requires CI.** Covers **US4-AC1, US4-AC5**.
       **Done when (1 of 2)**: the count is **non-zero**, against T001's recorded baseline of zero.
@@ -335,14 +408,14 @@ newly-re-blocking finding explains itself.
 **Independent test**: both gates' selftests pass with the new cases, and no gate's exit code moves on
 a normal run.
 
-- [ ] **T023** [P] [US5] Write `scripts/__tests__/allowlist-expiry.test.mjs` FIRST — the 11 cases in
+- [x] **T023** [P] [US5] Write `scripts/__tests__/allowlist-expiry.test.mjs` FIRST — the 11 cases in
       the [module contract](./contracts/allowlist-expiry.module.md), including **both inclusive
       boundaries** (exactly 14 days out → `expiring`; `expiry === today` → `expiring`, still
       suppressing; yesterday → `expired`) and the two unmatched cases that differ only in whether the
       scanner produced findings. Covers **US5-AC1, US5-AC3, US5-AC4**.
       **Verify RED**: `node --test scripts/__tests__/allowlist-expiry.test.mjs`
       **Expected RED**: all 11 fail — the module does not exist. (FR-020, FR-023, FR-024)
-- [ ] **T024** [US5] Implement `scripts/allowlist-expiry.mjs` as a flat sibling module (there is no
+- [x] **T024** [US5] Implement `scripts/allowlist-expiry.mjs` as a flat sibling module (there is no
       `scripts/lib/`; sharing here is by sibling import). Export `WARNING_WINDOW_DAYS = 14` as **the
       only definition in the repository**, plus `classifyExpiry`, `daysUntil`, `selectUnmatched` and
       the three formatters. Pure functions — `today` is always passed in, never read from the clock,
@@ -354,13 +427,13 @@ a normal run.
       `node scripts/check-infra-image-findings.mjs --selftest` → both exit 0. Nothing imports the new
       module yet, so this is a baseline: it proves the gates were healthy *before* T026/T028 wire it
       in, which is what makes a later failure attributable. (FR-020, FR-023, FR-024)
-- [ ] **T025** [US5] Add selftest cases (g1)-(g6) from the
+- [x] **T025** [US5] Add selftest cases (g1)-(g6) from the
       [CLI contract](./contracts/check-expiring.cli.md) to `scripts/check-sast-findings.mjs`,
       extending the existing harness beside case (f). Covers **US5-AC1, US5-AC2, US5-AC3, US5-AC4**.
       **Verify RED**: `node scripts/check-sast-findings.mjs --selftest`
       **Expected RED**: exit 1, listing the new cases as failures — not a crash. A crash means the
       harness was extended wrongly, not that the behaviour is missing. (FR-027)
-- [ ] **T026** [US5] Implement the warning tier in `scripts/check-sast-findings.mjs`: import the
+- [x] **T026** [US5] Implement the warning tier in `scripts/check-sast-findings.mjs`: import the
       shared module, print `EXPIRING SOON`, `EXPIRED` and `UNMATCHED ENTRIES` sections, and evaluate
       unmatched **only for scanners that produced at least one finding**. The expired message must
       state that the finding *was suppressed until* the date by an entry added by that person.
@@ -369,16 +442,16 @@ a normal run.
       **Also verify the binding constraint**: `node scripts/check-sast-findings.mjs; echo "exit=$?"`
       → **`exit=0`**, unchanged. An entry inside the window must still suppress. (FR-020, FR-021,
       FR-022, FR-023)
-- [ ] **T027** [US5] Repeat T025's test-first cycle for `scripts/check-infra-image-findings.mjs`,
+- [x] **T027** [US5] Repeat T025's test-first cycle for `scripts/check-infra-image-findings.mjs`,
       extending its harness beside case (h). Covers **US5-AC5** (identical behaviour).
       **Verify RED**: `node scripts/check-infra-image-findings.mjs --selftest` → exit 1 on the new
       cases. (FR-027)
-- [ ] **T028** [US5] Implement the same tier in `scripts/check-infra-image-findings.mjs`, importing
+- [x] **T028** [US5] Implement the same tier in `scripts/check-infra-image-findings.mjs`, importing
       the **same** constant — no second definition of the window anywhere.
       **Prerequisite**: T027 verified RED.
       **Verify GREEN**: `node scripts/check-infra-image-findings.mjs --selftest` → exit 0; normal run
       exit code unchanged. (FR-024)
-- [ ] **T029** [US5] Add the `--check-expiring` mode to both gates: report-only, skipping the
+- [x] **T029** [US5] Add the `--check-expiring` mode to both gates: report-only, skipping the
       blocking-finding gate entirely, exiting 1 if any entry is expiring, expired or unmatched.
       **Verify**: both `--selftest` runs still pass. The real-repository exit code is **conditional —
       derive it, do not assume it**, because stories are independent and this one may land before or
@@ -390,7 +463,7 @@ a normal run.
       | Any entry already past its expiry | **1** |
       Exit 1 in the middle row is the mechanism **working**, not a failure of this task. Check which
       row you are in before judging the result. (FR-025)
-- [ ] **T030** [US5] Wire the check into the scan job of `.forgejo/workflows/infra-image-scan.yml`,
+- [x] **T030** [US5] Wire the check into the scan job of `.forgejo/workflows/infra-image-scan.yml`,
       guarded by `if: github.event_name == 'schedule'`, covering **both** allowlists. That job is the
       only one with a real recurring trigger (`0 7 * * 5`) — `wiki-maintain.yml` has no cron at all,
       so the "weekly maintain job" named in item #154 does not exist in that form. Covers **US5-AC6**.
@@ -403,7 +476,7 @@ a normal run.
       **And the inverse, in the same PR run**: confirm the override-consistency step **is present**
       in `guardrails.yml`'s `naming` job. FR-018 depends on that guard actually running on pull
       requests; an absent step and a passing one look identical from the job's green tick. (FR-018)
-- [ ] **T032** [P] [US5] Document the warning window in `security/sast/README.md` so the next person
+- [x] **T032** [P] [US5] Document the warning window in `security/sast/README.md` so the next person
       adding an entry knows when they will hear about it: the 14-day window, that an expiring entry
       still suppresses, that an expired one explains itself, and that unmatched entries are reported.
       **Type**: Documentation, no RED/GREEN.
