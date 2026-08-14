@@ -228,10 +228,15 @@
         "matchUpdateTypes so it also covers the MAJOR track (nx v23 split identically —",
         "`major-js-majors-(review-individually)` vs `major-nx-monorepo`). Major and minor still get",
         "their own branches via the standard `major-` branch prefix; what is shared is the GROUP.",
-        "Verified against renovate@44's own package-rule matcher, not by reading the docs."
+        "Verified against renovate@44's own package-rule matcher, not by reading the docs.",
+        "THE `@nx/` PATTERN IS NOT PADDING. The root package.json also carries @nx/expo and",
+        "@nx/playwright, which `group:monorepos` puts in this same group by sourceUrl and which the two",
+        "npm rules above pull out alongside `nx` itself. Grouping ONLY `nx` would fix the nx.json half",
+        "and split the Nx CORE from its PLUGINS instead — core in `nx monorepo`, plugins in",
+        "`js patch/minor`, two PRs — trading one skew for another. All of them move together."
       ],
       "matchManagers": ["npm", "custom.regex"],
-      "matchPackageNames": ["nx"],
+      "matchPackageNames": ["nx", "/^@nx//"],
       "groupName": "nx monorepo",
       "automerge": false
     }

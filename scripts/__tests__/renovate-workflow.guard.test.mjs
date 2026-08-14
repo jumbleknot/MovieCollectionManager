@@ -311,43 +311,80 @@ function resolvedGroupName(dep) {
   return groupName;
 }
 
-/** The two halves exactly as the extract stage produces them (manager names verified against v44). */
-const NX_HALVES = [
-  { label: 'nx.json installation.version', manager: 'custom.regex', packageFile: 'nx.json' },
-  { label: 'package.json devDependencies.nx', manager: 'npm', packageFile: 'package.json' },
+// The nx family as the pipeline presents it. The two HALVES are the pair item #194 is about; the
+// @nx/* PLUGINS are here because grouping only `nx` would have fixed the half-bump by splitting the
+// Nx core from its own plugins instead — core in `nx monorepo`, plugins left in `js patch/minor` —
+// which is the same defect wearing a different pair.
+//
+// `manager: 'custom.regex'` is how renovate@44's ManagersMatcher sees a customManager (it matches
+// `custom.${manager}`), and matching on the dep NAME is faithful because fetch.js normalises
+// `dep.packageName ??= dep.depName` BEFORE applying package rules — verified, because
+// `matchPackageNames` reads packageName and matches NOTHING when it is absent, so a rule that looked
+// correct would silently never fire.
+const NX_FAMILY = [
+  { label: 'nx.json installation.version', manager: 'custom.regex', packageFile: 'nx.json', depName: 'nx' },
+  { label: 'package.json nx', manager: 'npm', packageFile: 'package.json', depName: 'nx' },
+  { label: 'package.json @nx/expo', manager: 'npm', packageFile: 'package.json', depName: '@nx/expo' },
+  { label: 'package.json @nx/playwright', manager: 'npm', packageFile: 'package.json', depName: '@nx/playwright' },
 ];
 
 for (const updateType of ['patch', 'minor', 'major']) {
-  test(`both nx halves are proposed in ONE group on the ${updateType} track`, () => {
-    const groups = NX_HALVES.map((half) => ({
-      ...half,
-      groupName: resolvedGroupName({ ...half, depName: 'nx', datasource: 'npm', updateType }),
+  test(`the whole nx family is proposed in ONE group on the ${updateType} track`, () => {
+    const groups = NX_FAMILY.map((member) => ({
+      ...member,
+      groupName: resolvedGroupName({ ...member, datasource: 'npm', updateType }),
     }));
 
-    const shown = groups.map((g) => `    ${g.label.padEnd(32)} manager=${g.manager.padEnd(13)} group=${JSON.stringify(g.groupName)}`).join('\n');
+    const shown = groups
+      .map((g) => `    ${g.label.padEnd(30)} manager=${g.manager.padEnd(13)} group=${JSON.stringify(g.groupName)}`)
+      .join('\n');
 
     for (const g of groups) {
       assert.notEqual(
         g.groupName,
         null,
-        `on the ${updateType} track, no packageRule in renovate.json groups the ${g.label} half:\n${shown}\n` +
-          '  An ungrouped half gets its OWN branch, so nx arrives as a half-bump and ' +
+        `on the ${updateType} track, no packageRule in renovate.json groups ${g.label}:\n${shown}\n` +
+          '  An ungrouped member gets its OWN branch, so nx arrives as a half-bump and ' +
           'check-toolchain-consistency.mjs reds the `naming` job. Item #194.',
       );
     }
 
+    const distinct = [...new Set(groups.map((g) => g.groupName))];
     assert.equal(
-      groups[0].groupName,
-      groups[1].groupName,
-      `on the ${updateType} track the two nx halves resolve to DIFFERENT groups:\n${shown}\n` +
-        '  Different groups means different branches means a HALF BUMP — nx.json and package.json\n' +
-        '  disagreeing, which makes the manifest fiction because the Nx wrapper is what actually runs.\n' +
-        '  This is PR #193 (nx.json alone) and PR #141 (package.json alone). The usual cause is a rule\n' +
-        "  matching only `npm`: a customManager's manager is `custom.regex`, and LATER rules win, so a\n" +
-        '  broad npm rule placed after the nx rule pulls the package.json half back out. Item #194.',
+      distinct.length,
+      1,
+      `on the ${updateType} track the nx family resolves to ${distinct.length} DIFFERENT groups:\n${shown}\n` +
+        '  Different groups means different branches. For the nx.json/package.json pair that is a HALF\n' +
+        '  BUMP — the two disagreeing makes the manifest fiction, because the Nx WRAPPER is what\n' +
+        '  actually runs (PR #193 moved nx.json alone; PR #141 moved package.json alone). For the\n' +
+        '  @nx/* plugins it splits the Nx core from its plugins across two PRs.\n' +
+        "  The usual cause is a rule matching only `npm`: a customManager's manager is `custom.regex`,\n" +
+        '  and LATER rules win, so a broad npm rule placed after the nx rule pulls those halves back\n' +
+        '  out. Item #194.',
     );
   });
 }
+
+test('the nx grouping rule does NOT swallow unrelated npm packages', () => {
+  // The control. Without this, widening the nx rule until everything landed in one group would pass
+  // every assertion above while quietly collapsing `js patch/minor` into `nx monorepo` — a guard that
+  // only checks "these are together" cannot tell grouping from a blanket override.
+  for (const updateType of ['patch', 'minor', 'major']) {
+    const group = resolvedGroupName({
+      manager: 'npm',
+      packageFile: 'package.json',
+      depName: 'typescript',
+      datasource: 'npm',
+      updateType,
+    });
+    assert.notEqual(
+      group,
+      'nx monorepo',
+      `typescript resolves to the nx group on the ${updateType} track, so the nx rule is matching far ` +
+        'more than nx — every unrelated JS dep would ride along in the nx PR.',
+    );
+  }
+});
 
 test('the nx grouping rule covers both managers and is ordered LAST of the rules that group nx', () => {
   // The two failure modes the assertions above catch only implicitly, named here so a breakage says
