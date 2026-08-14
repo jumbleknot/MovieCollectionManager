@@ -529,12 +529,13 @@ by-eye comparison of two hex strings.
 untidiness. `publish-apk.mjs` therefore prunes at publish time, opportunistically (there is no
 scheduled job for it):
 
-- keep the newest **10** versions by `created_at` — a **count**, not the 30-day window `ci-failures`
+- keep the newest **5** versions by `created_at` — a **count**, not the 30-day window `ci-failures`
   uses, because a quiet month would delete every installable APK and a busy week would keep far more
-  than the disk affords. At the measured size that caps the shelf at **≈ 1.1 GB**; lower
-  `RETAIN_VERSIONS` in `scripts/cd/publish-apk.mjs` if that becomes too much;
+  than the disk affords. At the measured size that caps the shelf at **≈ 550 MB**; `RETAIN_VERSIONS`
+  in `scripts/cd/publish-apk.mjs` is the one knob;
 - **plus** anything pinned: a version whose name ends in **`-keep`** is never pruned *and* does not
-  consume one of the 10 slots. To pin a build, re-upload it under `<version>-keep`;
+  consume one of the 5 slots. To pin a build, re-upload it under `<version>-keep` — that, not a bigger
+  shelf, is how a build outlives the window;
 - a version whose `created_at` will not parse is kept — deleting on a parse failure is the destructive
   direction;
 - a prune failure is logged and swallowed. `prod-apk` is non-blocking (nothing `needs:` it) and a

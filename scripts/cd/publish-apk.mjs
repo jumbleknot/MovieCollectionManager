@@ -42,13 +42,15 @@ export const APK_PACKAGE = 'mcm-app-android';
  * Retention (AC5). MEASURED on run #6036: the universal release APK is 114,365,972 bytes (109 MB) —
  * more than twenty times a ci-failures digest bundle's 5 MB cap, and every deploy produces one. So
  * unbounded accumulation is a disk-exhaustion path on the homelab host, not a tidiness concern.
- * 10 × 109 MB ≈ 1.1 GB is the ceiling this sets.
+ * 5 × 109 MB ≈ 550 MB is the ceiling this sets — chosen once the size was MEASURED (the item was
+ * written against a ~80 MB estimate, at which 10 versions looked affordable and 109 MB ones do not).
  *
  * COUNT-based, not the 30-day window ci-failures uses: a quiet month would delete every APK (leaving
- * nothing installable), and a busy week would keep far more than the disk can afford. "The last 10
- * builds" is the property an operator actually wants from an APK shelf.
+ * nothing installable), and a busy week would keep far more than the disk can afford. "The last 5
+ * builds" is the property an operator actually wants from an APK shelf; anything that must outlive
+ * that window gets a PIN_SUFFIX pin rather than a bigger shelf.
  */
-export const RETAIN_VERSIONS = 10;
+export const RETAIN_VERSIONS = 5;
 
 /**
  * A version whose name ends in this suffix is NEVER pruned, and does not count against RETAIN_VERSIONS
