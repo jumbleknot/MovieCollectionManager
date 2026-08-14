@@ -4,7 +4,7 @@ title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where to run mobile E2E flows (CI for agent flows, local emulator for everything else), the devcontainer-native Linux KVM emulator, and the Windows CMAKE_OBJECT_PATH_MAX build wall that blocks a native rebuild on this workstation.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
-timestamp: 2026-07-22T03:09:25+00:00
+timestamp: 2026-08-14T00:00:00Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -25,6 +25,7 @@ baked into the toolchain image — see [Containerized dev environment](/openwiki
 - **`adb reverse`, not `10.0.2.2`, is required on this workstation.** QEMU's standard Android gateway
   networking is broken here, so the tunnel must be re-established after every emulator restart — this
   is a hard requirement, not an optional convenience.
+- **If you need the production APK (public BFF/Keycloak hosts baked in), don't rebuild — pull it from the generic package registry.** `cd-deploy`'s `prod-apk` job publishes every release APK to `mcm-app-android:<version>-<sha7>` with a `sha256` sidecar, fetchable by URL with a `read:package` token. The `upload-artifact` copy also exists on the run page, but this forge exposes no artifact API, so only a human clicking through the UI can retrieve that one. Recipe: [Homelab server setup §6.7](/openwiki/runbooks/server-setup.md).
 - **Before rebuilding the APK, check whether the last successful CI artifact is already
   native-compatible with HEAD.** A pure JS/Metro change (including a new pure-JS dependency with no
   native module) never needs a rebuild — diff the native-relevant paths against the last green CI
