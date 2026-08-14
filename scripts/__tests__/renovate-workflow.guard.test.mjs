@@ -12,6 +12,12 @@
 //         intersected, so routine updates deferred forever. The cron carried the comment
 //         "matches the renovate.json schedule window", which was the bug stated as a fact.
 //
+//   #194  The customManager that keeps nx.json's `installation.version` in step with package.json's
+//         `nx` carried the comment "Both files therefore move in one PR". It was false as configured
+//         and every nx bump arrived as a HALF bump (measured: PR #193, 2026-08-14, nx.json 22.7.8 /
+//         package.json 22.7.7). Third time in this one pair of files that a COMMENT stood in for a
+//         check, which is why the grouping is now asserted below rather than described.
+//
 // Correcting prose fixes today and prevents nothing, so the durable artifact is this test.
 // Pure file parsing — no network, no bot, no runner.
 
@@ -211,4 +217,175 @@ test('a workflow cron falls inside the permitted branch-creation window under BO
         '  The bot is never awake inside its own window, so every non-security update defers forever.',
     );
   }
+});
+
+// ---------------------------------------------------------------------------------------------
+// Item #194 — nx must be proposed as ONE unit, across BOTH managers and BOTH update tracks.
+// ---------------------------------------------------------------------------------------------
+//
+// nx lives in two files and Renovate reads them with two DIFFERENT managers:
+//
+//   nx.json      installation.version   <- the `customManagers` regex entry, manager `custom.regex`
+//   package.json devDependencies.nx     <- the built-in `npm` manager
+//
+// The Nx WRAPPER wins at runtime, so a bump that moves only one of them makes the manifest fiction:
+// PR #141 moved package.json and not nx.json; PR #193 moved nx.json and not package.json.
+//
+// THE MECHANISM, measured against renovate@44.30.0's own `applyPackageRules` rather than reasoned
+// about (`config:recommended` -> `group:monorepos` puts BOTH halves in `nx monorepo` by sourceUrl):
+//
+//   before the fix   nx.json half   -> "nx monorepo"        package.json half -> "js patch/minor"
+//                    ... and on the major track            package.json half -> "js majors (review individually)"
+//
+// The `js patch/minor` and `js majors` rules match `matchManagers: ["npm"]`. A customManager's
+// manager is `custom.regex`, NOT `npm` — renovate@44's ManagersMatcher matches custom managers as
+// `custom.${manager}`. Because LATER packageRules override earlier ones, those two rules pulled only
+// the package.json half back out of the shared group, onto its own branch. Two groups, two branches,
+// one half-bump — from the manager that existed to prevent exactly that.
+//
+// This guard models the one semantic that matters, "later rules win", over the repository's OWN
+// packageRules. It deliberately does NOT credit the upstream `group:monorepos` preset: relying on an
+// external preset to hold this pair together is what the fix replaced, and a preset can change under
+// us without a commit here. So the requirement asserted is stronger than Renovate's resolved answer —
+// this repository's config must state the grouping itself.
+
+/** The repo's own packageRules only — presets are deliberately excluded (see above). */
+const packageRules = config.packageRules ?? [];
+
+/**
+ * Does one packageRule match a dependency? Models only the `match*` forms this config actually uses,
+ * and THROWS on any it does not know — a guard that silently treats an unrecognised matcher as
+ * "no match" would quietly stop asserting the moment someone adds a rule form, which is the failure
+ * mode this whole file exists to prevent.
+ */
+function ruleMatches(rule, dep) {
+  const known = new Set([
+    'description',
+    'matchManagers',
+    'matchPackageNames',
+    'matchUpdateTypes',
+    'matchDatasources',
+    'matchFileNames',
+    'groupName',
+    'automerge',
+    'enabled',
+    'minimumReleaseAge',
+  ]);
+  for (const key of Object.keys(rule)) {
+    if (!known.has(key)) {
+      throw new Error(
+        `packageRule uses '${key}', which this guard does not model — extend ruleMatches() before ` +
+          'adding it, or the nx grouping assertion below silently stops meaning anything.',
+      );
+    }
+  }
+
+  const matchesName = (pattern, value) => {
+    if (pattern === '*') return true;
+    if (pattern.startsWith('!')) {
+      throw new Error(
+        `matchPackageNames negation '${pattern}' is not modelled — extend ruleMatches() before using it.`,
+      );
+    }
+    if (pattern.startsWith('/') && pattern.lastIndexOf('/') > 0) {
+      return new RegExp(pattern.slice(1, pattern.lastIndexOf('/'))).test(value);
+    }
+    return pattern === value;
+  };
+
+  if (rule.matchManagers && !rule.matchManagers.includes(dep.manager)) return false;
+  if (rule.matchDatasources && !rule.matchDatasources.includes(dep.datasource)) return false;
+  if (rule.matchUpdateTypes && !rule.matchUpdateTypes.includes(dep.updateType)) return false;
+  if (rule.matchFileNames && !rule.matchFileNames.includes(dep.packageFile)) return false;
+  if (rule.matchPackageNames && !rule.matchPackageNames.some((p) => matchesName(p, dep.depName))) return false;
+  return true;
+}
+
+/** The group a dep ends up in: the LAST matching rule that names one wins, as Renovate resolves it. */
+function resolvedGroupName(dep) {
+  let groupName = null;
+  for (const rule of packageRules) {
+    if (!ruleMatches(rule, dep)) continue;
+    if (rule.groupName !== undefined) groupName = rule.groupName;
+  }
+  return groupName;
+}
+
+/** The two halves exactly as the extract stage produces them (manager names verified against v44). */
+const NX_HALVES = [
+  { label: 'nx.json installation.version', manager: 'custom.regex', packageFile: 'nx.json' },
+  { label: 'package.json devDependencies.nx', manager: 'npm', packageFile: 'package.json' },
+];
+
+for (const updateType of ['patch', 'minor', 'major']) {
+  test(`both nx halves are proposed in ONE group on the ${updateType} track`, () => {
+    const groups = NX_HALVES.map((half) => ({
+      ...half,
+      groupName: resolvedGroupName({ ...half, depName: 'nx', datasource: 'npm', updateType }),
+    }));
+
+    const shown = groups.map((g) => `    ${g.label.padEnd(32)} manager=${g.manager.padEnd(13)} group=${JSON.stringify(g.groupName)}`).join('\n');
+
+    for (const g of groups) {
+      assert.notEqual(
+        g.groupName,
+        null,
+        `on the ${updateType} track, no packageRule in renovate.json groups the ${g.label} half:\n${shown}\n` +
+          '  An ungrouped half gets its OWN branch, so nx arrives as a half-bump and ' +
+          'check-toolchain-consistency.mjs reds the `naming` job. Item #194.',
+      );
+    }
+
+    assert.equal(
+      groups[0].groupName,
+      groups[1].groupName,
+      `on the ${updateType} track the two nx halves resolve to DIFFERENT groups:\n${shown}\n` +
+        '  Different groups means different branches means a HALF BUMP — nx.json and package.json\n' +
+        '  disagreeing, which makes the manifest fiction because the Nx wrapper is what actually runs.\n' +
+        '  This is PR #193 (nx.json alone) and PR #141 (package.json alone). The usual cause is a rule\n' +
+        "  matching only `npm`: a customManager's manager is `custom.regex`, and LATER rules win, so a\n" +
+        '  broad npm rule placed after the nx rule pulls the package.json half back out. Item #194.',
+    );
+  });
+}
+
+test('the nx grouping rule covers both managers and is ordered LAST of the rules that group nx', () => {
+  // The two failure modes the assertions above catch only implicitly, named here so a breakage says
+  // which one happened rather than just "the groups differ".
+  const nxRules = packageRules.filter((rule) =>
+    ruleMatches(rule, { manager: 'npm', packageFile: 'package.json', depName: 'nx', datasource: 'npm', updateType: 'minor' }) &&
+    rule.groupName !== undefined,
+  );
+  assert.ok(nxRules.length > 0, 'no packageRule assigns nx a groupName at all');
+
+  const last = nxRules[nxRules.length - 1];
+  assert.ok(
+    Array.isArray(last.matchManagers) &&
+      last.matchManagers.includes('npm') &&
+      last.matchManagers.includes('custom.regex'),
+    'the LAST rule to group nx is\n' +
+      `  ${JSON.stringify({ matchManagers: last.matchManagers, matchPackageNames: last.matchPackageNames, groupName: last.groupName })}\n` +
+      '  which does not match BOTH managers. It must match `npm` (package.json) and `custom.regex`\n' +
+      '  (nx.json, via the customManagers entry) or it groups one half and strands the other.',
+  );
+  assert.equal(
+    last.matchUpdateTypes,
+    undefined,
+    'the nx grouping rule restricts matchUpdateTypes, so at least one update track falls through to\n' +
+      '  the broad npm rules and half-bumps. The major track splits identically (nx v23 showed as both\n' +
+      '  `major-js-majors-(review-individually)` and `major-nx-monorepo` on the dashboard) — leave it\n' +
+      '  unrestricted so it covers every track.',
+  );
+
+  // The rule is only meaningful while the customManager it re-joins still exists.
+  const nxManager = (config.customManagers ?? []).find((m) => m.depNameTemplate === 'nx');
+  assert.ok(
+    nxManager,
+    'renovate.json has no customManager with depNameTemplate "nx", so nx.json\'s installation.version\n' +
+      '  is not read at all and only package.json moves — PR #141 exactly.',
+  );
+  assert.ok(
+    (nxManager.managerFilePatterns ?? []).some((p) => p.includes('nx\\.json')),
+    'the nx customManager no longer targets nx.json',
+  );
 });
