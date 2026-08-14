@@ -60,22 +60,99 @@ all** (`source`, `sourceId`, `title`, `year`, `overview`, `genres`, `posterUrl`,
 plain movie endpoint carries no certification, which is why item #163's diagnosis — "nothing is read
 at all" — is correct even though its remedy needed adjusting (R1).
 
-**Limit — the response shape is NOT verified in this container.** Outbound egress to
-`api.themoviedb.org` is blocked here: `curl --max-time 10 https://api.themoviedb.org/3/` exits 28
-(timeout) while `https://registry.npmjs.org/` returns 200 in the same shell. So the exact nesting of
-the appended block, and the certification string for the reported film, are taken from TMDB's
-documented shape and MUST be confirmed by a test that runs where egress exists (R4) before the
-mapping is called proven. This is a genuine environmental absence, not a capability that can be
-restored by a missing file.
+**Shape — MEASURED live on 2026-08-14** (after R4a made TMDB reachable from the shell). The appended
+block nests under the movie object as `release_dates.results`, a list of per-country blocks:
+
+```jsonc
+{ "id": 412117, "title": "The Secret Life of Pets 2",
+  "release_dates": { "results": [
+    { "iso_3166_1": "US", "release_dates": [
+        { "certification": "PG", "type": 3, "release_date": "2019-06-07T00:00:00.000Z", "note": "" },
+        { "certification": "PG", "type": 5, "release_date": "2019-08-27T00:00:00.000Z", "note": "" } ] } ] } }
+```
+
+**The reported film really is PG** — SC-001's expected value is confirmed against the source, not
+inferred from the item.
+
+**Real fixtures for every branch, all measured the same day.** The third row is the one that would
+have been got wrong by assuming the first entry is the answer:
+
+| TMDB id | Film | US certifications, in published order | Correct result |
+|---|---|---|---|
+| 412117 | The Secret Life of Pets 2 | `PG`, `PG` | `PG` |
+| 603 | The Matrix | `R`, `R`, `""` | `R` |
+| 396535 | Train to Busan | `NR`, `NR` | `NR` — the only case where `NR` is truthful (FR-005) |
+| 152747 | All Is Lost | `""`, `PG-13`, `PG-13` | `PG-13` — **first entry is empty**; a naive `[0]` read returns `null` and loses a real rating |
+| 986280 | Fallen Leaves | seven `""`, then `NR`, `NR` | `NR` — same trap, seven deep |
+| 411397 | Agnes | `""` (only) | `null` |
+| 1245424 | Nightless Night | *no US block at all* | `null` |
+
+This also re-confirms R1 from the live source: TMDB publishes `PG-13` hyphenated, exactly the form
+the product stores. There is nothing to rename.
 
 ---
 
-## R4 — web-api-mcp's integration tier runs NOWHERE today, so the gate must be unit-tier
+## R4a — TMDB egress from the dev-container SHELL: was blocked, now enabled (RESOLVED, not documented around)
 
-**Decision**: The merge-blocking coverage for the certification mapping is **unit** tests under
-`mcp-servers/web-api-mcp/tests/unit/`, driving `get_movie_details` through a stubbed httpx transport.
-The real-TMDB assertion is added to the existing integration suite as well, where it documents and
-verifies the live shape for anyone who runs it with egress — but it is not what gates the merge.
+**Decision**: `api.themoviedb.org` is on the dev-container allowlist. The real-TMDB suite runs here
+automatically; nothing about this feature is hand-run.
+
+**Why it was blocked, and why that was right until now**: `init-firewall.sh` is default-deny on the
+OUTPUT chain and leaves the FORWARD chain alone. Every *runtime* path that calls TMDB — the BFF's
+validate-on-save probe, web-api-mcp's curator enrichment — is a **nested container** on FORWARD, so
+it was never blocked and an allowlist entry would have done nothing for the app. The runbook's
+standing instruction ("do NOT add TMDB to the allowlist") was a guard against widening egress to fix
+a *stale-ipset* symptom, whose real fix is re-running the script. It did not cover a **test runner in
+the shell**, which is what 059 introduces.
+
+**Measured, 2026-08-14, in this container**:
+
+| Probe | Before | After |
+|---|---|---|
+| `curl https://api.themoviedb.org/3/` from the shell | exit 28, timeout | `401` — connected, key rejected |
+| `curl https://registry.npmjs.org/` (control, same shell) | `200` | `200` |
+| `curl https://example.com/` (default-deny control) | timeout | timeout — **default-deny intact** |
+| `nx test:integration web-api-mcp` | could not connect | **5 passed, 0 skipped, 0.79 s** |
+
+**Instrument check on that green.** 0.79 s for a suite that makes real TMDB calls is fast enough to
+suspect it is not calling anything, so it was checked with a failing control: `get_movie_details`
+against the real base returns "The Secret Life of Pets 2" (and confirms `rated` is absent today —
+the defect), while the identical code against an unreachable base raises `ConnectTimeout`. The suite
+does hit the network.
+
+**Changes made**: `api.themoviedb.org` added to `ALLOWED_DOMAINS` in `.devcontainer/init-firewall.sh`
+with the reasoning inline; a `reachable` assertion added to
+`.devcontainer/verify/verify-firewall-allowlist.sh` so a rebuild that loses the entry fails there,
+naming the allowlist, instead of surfacing as a connect timeout inside pytest; the runbook entry in
+`docs/runbooks/devcontainer.md` rewritten to separate the two chains and record the supersession.
+The verifier passes, TMDB included, with default-deny still asserted.
+
+---
+
+## R4b — CI does not run this suite either; this feature enrolls it
+
+**Decision**: `web-api-mcp` joins the CI integration step, using the `TMDB_API_KEY` secret that
+already exists at job level, with skip-escalation so an absent key or lost egress **fails** rather
+than reads green. The certification assertion therefore gates a merge in both environments.
+
+**Evidence**: `.forgejo/workflows/app-ci.yml:572-578` excludes web-api-mcp under 048 FR-013 for two
+reasons — runner egress to TMDB unconfirmed, and "which key a CI run should spend has no answer yet".
+The second is now answered by inspection: `TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}` is already a
+job-level env at line 332 and is already passed into the E2E container at lines 722 and 747. The
+first is answered by the first CI run — deliberately, because an unconfirmed egress path that fails
+loudly is better than one that stays unexamined.
+
+**Why skip-escalation is not optional here**: the suite's conftest skips cleanly when the key is
+absent and has no `MCM_REQUIRE_LIVE_*` guard, so without escalation an unset secret is
+indistinguishable from a pass — the precise failure mode the escalation pattern exists to remove.
+
+---
+
+## R4 — Which tier gates what
+
+**Decision**: The mapping's edge cases are pinned by **unit** tests with a stubbed transport (fast,
+deterministic, every case including ones no real film exhibits); the **integration** suite proves the
+live shape and the named film against real TMDB. Both now block a merge (R4a, R4b).
 
 **Evidence**:
 
@@ -85,20 +162,26 @@ verifies the live shape for anyone who runs it with egress — but it is not wha
 - `mcp-servers/web-api-mcp/tests/integration/conftest.py:1-8` — "Runs against the REAL TMDB API —
   never a cassette… without it the tests skip rather than fail." No `MCM_REQUIRE_LIVE_*` escalation
   exists for this suite, so an absent key is a silent skip.
-- `.forgejo/workflows/app-ci.yml:226` — `nx affected --target=lint,test,typecheck` **does** run
-  `web-api-mcp`'s unit target on every PR. That is the tier that can fail a merge.
-- Measured here: TMDB egress blocked (R3), so the integration suite cannot pass in this devcontainer
-  either.
+- `.forgejo/workflows/app-ci.yml:226` — `nx affected --target=lint,test,typecheck` runs
+  `web-api-mcp`'s unit target on every PR; `test:integration` is a separate target and is reached
+  only by the enrollment R4b adds.
 
 **Constitutional check**: stubbing the HTTP transport in a **unit** test is explicitly permitted —
 "Unit tests test a single function or class in isolation — external dependencies (HTTP clients…)
 MAY be mocked" (§Test Type Integrity). The same stub inside `tests/integration/` would be a
 violation. The unit tests therefore live under `tests/unit/` and the integration suite stays real.
 
-**Alternatives considered**: enrolling web-api-mcp's integration suite in CI so the gate could be a
-real-TMDB test. Rejected as out of scope — it reopens 048 FR-013's two unresolved questions (runner
-egress and whose per-user key a CI run spends), and the E2E job's TMDB usage
-(`app-ci.yml:722`) is evidence about the E2E container's network, not this runner's.
+**Division of labour** — the two tiers are not redundant:
+
+| Case | Unit (stub) | Integration (real TMDB) |
+|---|---|---|
+| Every branch of the extraction rules, including shapes no real film exhibits | ✅ exhaustive | — |
+| The response shape TMDB actually returns | assumes the contract | ✅ the only check |
+| SC-001: "The Secret Life of Pets 2" → `PG` | ✅ from a recorded fixture | ✅ from the source |
+| Runs offline / in seconds | ✅ | needs egress + key |
+
+A stub-only strategy passes forever against a contract TMDB has changed underneath it; a live-only
+strategy cannot cheaply cover an all-empty or missing-block film. Keeping both is the point.
 
 ---
 

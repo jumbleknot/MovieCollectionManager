@@ -39,30 +39,50 @@ pnpm nx test web-api-mcp -- -k certification -v   # expect the new cases listed,
 
 ---
 
-## 2. The live-shape check (must be run by hand, at least once)
+## 2. The live-shape check (real TMDB — runs here and in CI)
 
 ```bash
-# Requires TMDB_API_KEY in mcp-servers/web-api-mcp/.env.local AND outbound egress to
-# api.themoviedb.org. Runs against REAL TMDB — never a cassette.
-pnpm nx test:integration web-api-mcp -- -k certification
+pnpm nx test:integration web-api-mcp
 ```
 
-**This does not run in CI and does not run in the devcontainer.** web-api-mcp is deliberately not
-enrolled in the CI integration step (`app-ci.yml:572`, 048 FR-013), and TMDB egress is blocked in
-this container — measured, not assumed:
+**Proves**: the response shape the stub in section 1 is built on is the shape TMDB actually returns,
+and "The Secret Life of Pets 2" (2019) resolves to `PG` from the source itself.
+
+This runs **in this dev container** and **in CI** — it is not a hand-run step. TMDB is on the
+dev-container allowlist (`.devcontainer/init-firewall.sh`) and web-api-mcp is enrolled in CI's
+integration step with skip-escalation. If it stops working, diagnose in this order:
 
 ```bash
-curl -sS -o /dev/null -w '%{http_code}\n' --max-time 10 https://api.themoviedb.org/3/   # exit 28, timeout
-curl -sS -o /dev/null -w '%{http_code}\n' --max-time 10 https://registry.npmjs.org/     # 200
+# 1. Is the allowlist entry live? (401 = connected; 000/timeout = stale ipset or lost entry)
+curl -sS -o /dev/null -w '%{http_code}\n' --max-time 10 https://api.themoviedb.org/3/
+
+# 2. Stale CDN IPs are the usual cause — re-resolve, don't widen the allowlist
+sudo env FORGE_REGISTRY_HOST="$FORGE_REGISTRY_HOST" /bin/bash .devcontainer/init-firewall.sh
+
+# 3. The allowlist verifier checks TMDB and that default-deny still holds
+bash .devcontainer/verify/verify-firewall-allowlist.sh
 ```
 
-**A skip here is not a pass.** The suite's conftest skips cleanly when `TMDB_API_KEY` is absent, and
-there is no `MCM_REQUIRE_LIVE_*` escalation for it — so an unset key looks identical to success.
-Before trusting this section, confirm the key is present and check the skip count is 0.
+**A skip here is not a pass.** The suite's conftest skips cleanly when `TMDB_API_KEY` is absent, so
+an unset key looks exactly like success. Check the skip count is 0 locally; in CI the escalation
+turns that skip into a failure.
 
-Run it on a host with egress. If the response shape differs from
+**A green here is not proof it called anything, either.** The suite is fast (5 passed in 0.79 s),
+which is a shape a no-op also has. The control that settles it, if you ever doubt a green:
+
+```bash
+cd mcp-servers/web-api-mcp && uv run python -c "
+import asyncio; from src.tools import make_tmdb_client, get_movie_details
+key=[l.split('=',1)[1].strip() for l in open('.env.local') if l.startswith('TMDB_API_KEY=')][0]
+async def m():
+    async with make_tmdb_client(key,'https://example.com/3') as c:
+        await get_movie_details(c,'tmdb:412117')   # MUST raise ConnectTimeout
+asyncio.run(m())"
+```
+
+If the live shape ever differs from
 [contracts/web-api-mcp-get-movie-details.md](./contracts/web-api-mcp-get-movie-details.md), the
-contract is wrong and the unit stub built on it is wrong with it — fix both.
+contract is wrong **and** the unit stub built on it is wrong with it — fix both, never just the test.
 
 ---
 
@@ -104,8 +124,8 @@ The bug was found by a member, and the fix should be confirmed the same way:
 ## Definition of done for this feature
 
 - [ ] Section 1 passes, with the new test cases visibly collected (not zero-collected).
-- [ ] Section 2 has been run **once** on a host with TMDB egress, with a skip count of 0, and the
-      contract matches what TMDB actually returned.
+- [ ] Section 2 passes here with a skip count of 0, **and** the CI integration step runs
+      web-api-mcp — confirmed in the run log, not assumed from the workflow edit.
 - [ ] Section 3 passes, with the previously-existing tests updated rather than untouched.
 - [ ] Section 4 confirmed by hand for both a certified film and an uncertified one.
 - [ ] `pnpm nx affected --target=lint,test,typecheck --base=origin/main --head=HEAD` is clean.

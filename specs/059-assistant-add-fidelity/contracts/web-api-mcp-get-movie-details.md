@@ -45,18 +45,35 @@ Applied to the US entry of the appended release-dates data, in order:
 
 `NR` therefore appears only when the source itself published `NR` (FR-005).
 
+## Source shape (measured live 2026-08-14)
+
+```jsonc
+{ "id": 412117, "title": "The Secret Life of Pets 2",
+  "release_dates": { "results": [
+    { "iso_3166_1": "US", "release_dates": [
+        { "certification": "PG", "type": 3, "release_date": "2019-06-07T00:00:00.000Z", "note": "" },
+        { "certification": "PG", "type": 5, "release_date": "2019-08-27T00:00:00.000Z", "note": "" } ] } ] } }
+```
+
 ## Behaviour table
 
-| Source state | `rated` |
-|---|---|
-| US entry, certification `PG` | `"PG"` |
-| US entry, certification `PG-13` | `"PG-13"` |
-| US entry, certification `NR` | `"NR"` |
-| Several US entries: `""`, then `PG`, then `PG-13` | `"PG"` (first non-empty) |
-| US entry with `""` only | `null` |
-| No US entry at all | `null` |
-| US entry with `TV-14` (outside the vocabulary) | `null` |
-| The request fails | unchanged from today — the error propagates and the add fails; the tool does **not** return a candidate with a blank rating |
+Every row below is a **real film**, measured against live TMDB on 2026-08-14 — not an invented shape.
+
+| TMDB id | Film | US certifications, published order | `rated` |
+|---|---|---|---|
+| 412117 | The Secret Life of Pets 2 | `PG`, `PG` | `"PG"` |
+| 603 | The Matrix | `R`, `R`, `""` | `"R"` |
+| 396535 | Train to Busan | `NR`, `NR` | `"NR"` — the source really says not-rated (FR-005) |
+| 152747 | All Is Lost | `""`, `PG-13`, `PG-13` | `"PG-13"` — **the first entry is empty** |
+| 986280 | Fallen Leaves | seven `""`, then `NR`, `NR` | `"NR"` — same trap, seven deep |
+| 411397 | Agnes | `""` only | `null` |
+| 1245424 | Nightless Night | *no US block at all* | `null` |
+| — | any value outside the vocabulary (e.g. `TV-14`) | — | `null` (FR-006) |
+| — | the request fails | — | unchanged from today: the error propagates and the add fails. The tool does **not** return a candidate with a blank rating |
+
+Rows 4 and 5 are the reason FR-003a says *first non-empty* rather than *first*: a naive
+`us[0]["release_dates"][0]["certification"]` returns `""` for both films and silently loses a real
+`PG-13`/`NR`. This is not a hypothetical edge case — it is the second and fifth film checked.
 
 ## Downstream
 
@@ -69,9 +86,18 @@ unaffected (FR-007).
 
 ## Verification
 
-- **Merge-blocking**: unit tests under `mcp-servers/web-api-mcp/tests/unit/`, driving the tool
-  through a stubbed httpx transport over every row of the table above. Permitted at this tier by
-  §Test Type Integrity; the same stub under `tests/integration/` would violate it.
-- **Live shape**: an assertion added to `mcp-servers/web-api-mcp/tests/integration/test_tmdb.py`,
-  which runs against real TMDB. It runs neither in CI nor in this devcontainer (research R3/R4), so
-  it must be executed by hand on a host with TMDB egress before the feature is called done.
+Both tiers block a merge, and they cover different things:
+
+- **Unit** — `mcp-servers/web-api-mcp/tests/unit/`, driving the tool through a stubbed httpx
+  transport over every row above, including the two shapes that need no network to be wrong.
+  Permitted at this tier by §Test Type Integrity; the same stub under `tests/integration/` would
+  violate it.
+- **Integration** — `mcp-servers/web-api-mcp/tests/integration/test_tmdb.py`, against real TMDB.
+  This is the only check that the shape above is still what TMDB returns. It runs in the dev
+  container (TMDB allowlisted — research R4a) and in CI (web-api-mcp enrolled with skip-escalation —
+  research R4b). A skip is a failure there, because a clean skip on an absent key is
+  indistinguishable from a pass.
+
+Pin the live assertions to the stable, high-traffic films (412117, 603, 396535, 152747). The
+low-traffic rows (411397, 1245424) prove the `null` cases but their TMDB records are editable by
+anyone, so they belong in the unit fixtures rather than in a live assertion that could drift.

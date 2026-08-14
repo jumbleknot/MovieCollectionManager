@@ -51,11 +51,13 @@ Android, untouched here.
 **Performance Goals**: No additional external round trip per add — the certification is appended to
 the request already being made (FR-002a). Latency of an assistant add is unchanged.
 
-**Constraints**: TMDB egress is blocked in this devcontainer (measured, research R3), and
-web-api-mcp's integration suite is not enrolled in CI (research R4). Both constrain *where* the
-work can be proven, and are handled by the test strategy below rather than by assumption.
+**Constraints**: proving the certification against real TMDB required fixing where it can run, not
+documenting where it cannot. TMDB is now on the dev-container allowlist and the real-TMDB suite runs
+here (research R4a, measured); CI enrolls the same suite with skip-escalation (R4b). Neither tier of
+this feature is hand-run.
 
-**Scale/Scope**: ~4 production files, ~6 test files. No new service, tool, or dependency.
+**Scale/Scope**: ~4 production files, ~6 test files, plus three environment files (firewall
+allowlist, its verifier, the CI integration step). No new service, tool, or dependency.
 
 ## Constitution Check
 
@@ -119,6 +121,14 @@ agents/movie-assistant/
 frontend/mcm-app/tests/e2e/web/
 ├── agent-add-ownership.spec.ts        # UPDATED (5 tests walk the old sequence) + new coverage
 └── agent-add-external-link.spec.ts    # UPDATED — same add flow, same shifted sequence
+
+# Environment — so the real-TMDB proof runs automatically in both environments (research R4a/R4b)
+.devcontainer/
+├── init-firewall.sh                   # DONE — api.themoviedb.org allowlisted (shell/OUTPUT chain)
+└── verify/verify-firewall-allowlist.sh # DONE — asserts TMDB reachable; a lost entry fails here
+.forgejo/workflows/app-ci.yml          # TODO — enroll web-api-mcp in the integration step,
+                                       # with skip-escalation so an absent key cannot read green
+docs/runbooks/devcontainer.md          # DONE — records why the old "do NOT allowlist" is superseded
 ```
 
 **Structure Decision**: The existing monorepo layout is used unchanged. The feature is confined to
@@ -164,13 +174,17 @@ registered in `graph._OWNERSHIP_STAGES` and `curator._OWNERSHIP_STAGES` and **no
 | `to_movie_payload` emits `rated: null` not `"NR"`, and the member's `childrens` value | unit (`nx test movie-assistant`) | **every PR — blocks merge** |
 | Stage transitions incl. the new entry stage, re-ask on an unparseable answer, abandonment | unit (`nx test movie-assistant`) | **every PR — blocks merge** |
 | The answer survives the HITL pause and reaches the payload | unit (`nx test movie-assistant`) | **every PR — blocks merge** |
-| `get_movie_details` against real TMDB returns a real certification | integration (`nx test:integration web-api-mcp`) | anywhere with TMDB egress + a key — **not CI, not this devcontainer** (research R3/R4) |
+| `get_movie_details` against real TMDB: the live shape, and "Secret Life of Pets 2" → `PG` | integration (`nx test:integration web-api-mcp`) | this devcontainer (**enabled** — R4a) and CI (**enrolled**, skip-escalated — R4b) — **blocks merge** |
 | "Secret Life of Pets 2" → PG end to end; the question appears first from card and typed add; abandonment adds nothing | E2E `@model-decision` | `main` pushes and dispatch — **non-blocking** |
 
-The one thing this table makes explicit: the integration row runs in neither of the two environments
-available today. It is written because it is the only place the live response shape is checked, and
-it must be run by hand on a host with egress before the feature is called done — that run is a task,
-not an assumption.
+Nothing in this feature is hand-run. The integration row was originally going to be a manual step
+because TMDB was unreachable from the dev-container shell and unenrolled in CI; both were fixed
+rather than documented around (R4a, R4b), which is why the row now says "blocks merge" in two
+environments instead of "run it yourself sometime".
+
+The two Python rows are not redundant with each other. The stub covers shapes no real film exhibits
+(and runs offline in milliseconds); the live run is the only thing that notices if TMDB changes the
+shape the stub is built on. Dropping either leaves a real hole — research R4 tabulates which.
 
 ## Post-design constitution re-check
 
