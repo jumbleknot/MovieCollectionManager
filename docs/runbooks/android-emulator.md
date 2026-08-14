@@ -140,6 +140,13 @@ adb install -r app-debug.apk
 #   NON-EMPTY (native deps / android / app.json changed) → rebuild via one of the paths below.
 ```
 
+> **Want the PRODUCTION APK (public BFF/Keycloak hosts baked), not a dev build?** Don't rebuild — pull
+> it. `cd-deploy`'s `prod-apk` job publishes every release APK to the forge's generic package registry
+> as `mcm-app-android:<version>-<sha7>`, with a `sha256` sidecar, and it is fetchable by URL with a
+> `read:package` token. Recipe: [Server-Setup-Runbook §6.7](Server-Setup-Runbook.md#67-the-generic-package-registry--where-the-prod-apk-lives).
+> (An `upload-artifact` copy also exists on the run page, but this forge exposes **no** artifact API, so
+> only a human clicking through the web UI can retrieve that one.)
+
 **Supported build paths (feature 006) — when a rebuild IS needed:**
 
 - **CI (recommended — use this for APKs):** the `android-apk` GitHub Actions workflow (`.github/workflows/android-apk.yml`) builds the APK on an `ubuntu-latest` runner (~20 min) and publishes it as the `app-debug-apk` artifact (universal/all-ABI debug APK, ~75 MB). A Linux runner has no Windows `CMAKE_OBJECT_PATH_MAX` wall, so it needs none of the workarounds below. **When:** after any native-layer change (Expo SDK/RN bump, new native module, `expo prebuild`) when you need an installable APK — and as the default over the local Windows build. **CI builds the APK only — it runs no test suites.**

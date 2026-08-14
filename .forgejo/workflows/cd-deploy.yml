@@ -344,6 +344,23 @@ jobs:
           fi
           echo "Baking BFF URL: $EXPO_PUBLIC_BFF_NATIVE_URL  |  Keycloak: $EXPO_PUBLIC_KEYCLOAK_NATIVE_URL"
           bash scripts/ci-log-step.sh prod-apk-build pnpm nx run mcm-app:build-apk
+      # Item #161 — publish the APK to the GENERIC package registry, the only scriptable channel this
+      # forge has. `GET /repos/{owner}/{repo}/actions/artifacts` answers 404 "404 page not found" here
+      # (a MISSING ROUTE, not an empty result), so the upload-artifact step below is reachable ONLY by
+      # a human clicking through the run page, and only until the artifact expires. Placed BEFORE that
+      # step so a hiccup in the convenience path cannot cost us the scriptable one.
+      #
+      # continue-on-error AND an unconditional exit 0 inside the script (AC4): `prod-apk` is
+      # deliberately non-blocking — nothing `needs:` it — and a registry hiccup must not change that.
+      # Every failure path still prints `::error::`, so it is visible in the job log.
+      #
+      # REGISTRY_TOKEN is the SAME `actions-ci-push` secret (`write:package`) the container push
+      # already uses — the generic registry takes that scope, so this adds no token and widens none.
+      - name: Publish prod APK to the package registry
+        continue-on-error: true
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: bash scripts/ci-log-step.sh prod-apk-publish node scripts/cd/publish-apk.mjs
       - name: Upload prod APK artifact
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
