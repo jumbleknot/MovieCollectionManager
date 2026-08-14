@@ -1,35 +1,23 @@
 {
-  "coveredCommit": "97be1fdcaa1dfa1a82edb799607d97e630cd8ff0",
-  "coveredAt": "2026-08-13T17:31:05.319Z",
+  "coveredCommit": "7f895387474573d2c75f41d87af0b1168e3e48fa",
+  "coveredAt": "2026-08-14T00:13:48.549Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 182,
-    "headCommit": "e16f96791d2a644a91a8f3dadc42478b5ee04dad",
-    "markerBefore": "6afc2c8f6cac7c894464f9aa0fa13c220b01b47c",
+    "number": 190,
+    "headCommit": "67aa6da4eadefc71a5629ce932d34bb547e8960a",
+    "markerBefore": "7f895387474573d2c75f41d87af0b1168e3e48fa",
     "slices": [
-      {
-        "area": "runbooks",
-        "pages": [
-          "ci-diagnostics.md",
-          "e2e-testing.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/e2e-testing.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
       {
         "area": "projects",
         "pages": [
           "sast.md"
         ],
-        "kind": "create",
+        "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "new source, not yet covered: security/sast/README.md",
+        "reason": "source changed: docs/runbooks/sast-scanning.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       },
       {
@@ -44,11 +32,11 @@
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/sast-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-13T17:31:05.643Z"
+    "updatedAt": "2026-08-14T00:13:48.892Z"
   },
   "lastRunBudget": {
     "pagesWritten": 2,
-    "elapsedSeconds": 315,
+    "elapsedSeconds": 214,
     "stoppedAtBudget": false
   }
 }
