@@ -523,14 +523,16 @@ adb install -r "$FILE"
 The sidecar is written in `sha256sum -c` format precisely so the check is the stock tool and not a
 by-eye comparison of two hex strings.
 
-**Retention — and why it is not optional.** An APK is ~80 MB, two to three orders of magnitude larger
-than a `ci-failures` digest bundle, and **every deploy produces one**. Unbounded accumulation is a
-disk-exhaustion path on this host, not untidiness. `publish-apk.mjs` therefore prunes at publish time,
-opportunistically (there is no scheduled job for it):
+**Retention — and why it is not optional.** **Measured on run #6036:** the universal release APK is
+**114,365,972 bytes (109 MB)** — more than twenty times a `ci-failures` digest bundle's 5 MB cap — and
+**every deploy produces one**. Unbounded accumulation is a disk-exhaustion path on this host, not
+untidiness. `publish-apk.mjs` therefore prunes at publish time, opportunistically (there is no
+scheduled job for it):
 
 - keep the newest **10** versions by `created_at` — a **count**, not the 30-day window `ci-failures`
   uses, because a quiet month would delete every installable APK and a busy week would keep far more
-  than the disk affords;
+  than the disk affords. At the measured size that caps the shelf at **≈ 1.1 GB**; lower
+  `RETAIN_VERSIONS` in `scripts/cd/publish-apk.mjs` if that becomes too much;
 - **plus** anything pinned: a version whose name ends in **`-keep`** is never pruned *and* does not
   consume one of the 10 slots. To pin a build, re-upload it under `<version>-keep`;
 - a version whose `created_at` will not parse is kept — deleting on a parse failure is the destructive
@@ -539,11 +541,12 @@ opportunistically (there is no scheduled job for it):
   registry hiccup must never turn a deploy red — the publish step is `continue-on-error` *and* the
   script always exits 0, printing `::error::` on every failure path so it stays visible in the job log.
 
-**Upload limits.** Nothing in §6.1's compose sets `FORGEJO__packages__LIMIT_SIZE_GENERIC` or
-`LIMIT_TOTAL_OWNER_SIZE`, so both are at the Forgejo default (unlimited) — which is also why the ~47
-multi-hundred-MB container packages push without incident. Each run logs the exact APK size next to the
-upload, so if a limit is ever introduced the refused size is recorded beside the error. **If a limit
-does block it, that is a host-config change and belongs here — not silently in a workflow file.**
+**Upload limits — measured, not assumed.** Nothing in §6.1's compose sets
+`FORGEJO__packages__LIMIT_SIZE_GENERIC` or `LIMIT_TOTAL_OWNER_SIZE`, so both sit at the Forgejo default
+(unlimited); and run **#6036 proved it end-to-end** by pushing the full 109 MB APK and reading it back
+byte-identical (`sha256sum -c` → `OK`). Each run logs the exact APK size next to the upload, so if a
+limit is ever introduced the refused size is recorded beside the error. **If a limit does block it,
+that is a host-config change and belongs here — not silently in a workflow file.**
 
 ---
 

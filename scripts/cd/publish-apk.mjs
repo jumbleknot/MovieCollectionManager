@@ -39,9 +39,10 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const APK_PACKAGE = 'mcm-app-android';
 
 /**
- * Retention (AC5). An APK is two to three ORDERS OF MAGNITUDE larger than a ci-failures digest bundle
- * (~80 MB vs ~5 MB) and every deploy produces one, so unbounded accumulation is a disk-exhaustion path
- * on the homelab host — not a tidiness concern. 10 × ~80 MB ≈ 800 MB is the ceiling this sets.
+ * Retention (AC5). MEASURED on run #6036: the universal release APK is 114,365,972 bytes (109 MB) —
+ * more than twenty times a ci-failures digest bundle's 5 MB cap, and every deploy produces one. So
+ * unbounded accumulation is a disk-exhaustion path on the homelab host, not a tidiness concern.
+ * 10 × 109 MB ≈ 1.1 GB is the ceiling this sets.
  *
  * COUNT-based, not the 30-day window ci-failures uses: a quiet month would delete every APK (leaving
  * nothing installable), and a busy week would keep far more than the disk can afford. "The last 10
