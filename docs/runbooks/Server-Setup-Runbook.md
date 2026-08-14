@@ -476,6 +476,79 @@ Nothing automated uses it — it exists only to POST `workflow_dispatch` while `
 3. Re-mint on demand later (fresh `write:repository` token → drop in `~/.mcm/forgejo-write-token` → use →
    delete). After 022→`main` merges, `cd-deploy` fires on push to `main`, so manual dispatch is rare.
 
+### 6.7 The generic package registry — where the prod APK lives
+
+**Why the APK is here and not in an artifact.** This forge build (`15.0.3+gitea-1.22.0`) exposes **no
+Actions-artifact API**: `GET /api/v1/repos/jumbleknot/mcm/actions/artifacts` answers `404 page not
+found` — a **missing route**, not an empty result. So an `upload-artifact` APK is reachable only by a
+human clicking through the run page, and only until it expires; nothing scriptable can fetch it. The
+**generic** registry (Forgejo has no Android/APK package type) is the channel that *is* readable by API,
+the same one CI failure bundles use. `cd-deploy`'s `prod-apk` job publishes to it on every
+`deploy=true` or `build_apk=true` run, via `scripts/cd/publish-apk.mjs`, **and** keeps the
+`upload-artifact` step as the in-UI convenience path.
+
+| | |
+|---|---|
+| Package | `mcm-app-android` (owner `jumbleknot`, type `generic`) |
+| Version | `<app.json expo.version>-<sha7>`, e.g. `1.0.0-a1b2c3d` — unique per commit |
+| Files | `MovieCollectionManager-<version>-release-<sha7>.apk` + a `.apk.sha256` sidecar |
+| Credential to publish | the existing `actions-ci-push` / `REGISTRY_TOKEN` (`write:package`) — **no new token, no widened scope** (§6.5 is unchanged by this) |
+| Credential to download | any `read:package` token — e.g. `claude-ci-monitor` if you grant it that scope, or a fresh read-only one |
+
+**Signing:** the release APK is signed with the **debug keystore** Expo's prebuild points the release
+`signingConfig` at. Good enough for internal distribution; it is **not** a Play-Store upload key.
+
+**List what is published:**
+
+```bash
+FORGE=http://<tailnet-host>:3000
+curl -fsS -H "Authorization: token $READ_PACKAGE_TOKEN" \
+  "$FORGE/api/v1/packages/jumbleknot?type=generic&q=mcm-app-android&limit=50" \
+  | jq -r '.[] | "\(.version)  \(.created_at)"' | sort -k2 -r
+```
+
+**Pull a specific version and verify it (this is the whole AC2 recipe — download, then prove the
+bytes):**
+
+```bash
+VER=1.0.0-a1b2c3d
+FILE=MovieCollectionManager-1.0.0-release-a1b2c3d.apk
+BASE="$FORGE/api/packages/jumbleknot/generic/mcm-app-android/$VER"   # NOTE: /api/packages, NOT /api/v1
+curl -fsSL -H "Authorization: token $READ_PACKAGE_TOKEN" "$BASE/$FILE"         -o "$FILE"
+curl -fsSL -H "Authorization: token $READ_PACKAGE_TOKEN" "$BASE/$FILE.sha256"  -o "$FILE.sha256"
+sha256sum -c "$FILE.sha256"     # -> "$FILE: OK"
+adb install -r "$FILE"
+```
+
+The sidecar is written in `sha256sum -c` format precisely so the check is the stock tool and not a
+by-eye comparison of two hex strings.
+
+**Retention — and why it is not optional.** **Measured on run #6036:** the universal release APK is
+**114,365,972 bytes (109 MB)** — more than twenty times a `ci-failures` digest bundle's 5 MB cap — and
+**every deploy produces one**. Unbounded accumulation is a disk-exhaustion path on this host, not
+untidiness. `publish-apk.mjs` therefore prunes at publish time, opportunistically (there is no
+scheduled job for it):
+
+- keep the newest **5** versions by `created_at` — a **count**, not the 30-day window `ci-failures`
+  uses, because a quiet month would delete every installable APK and a busy week would keep far more
+  than the disk affords. At the measured size that caps the shelf at **≈ 550 MB**; `RETAIN_VERSIONS`
+  in `scripts/cd/publish-apk.mjs` is the one knob;
+- **plus** anything pinned: a version whose name ends in **`-keep`** is never pruned *and* does not
+  consume one of the 5 slots. To pin a build, re-upload it under `<version>-keep` — that, not a bigger
+  shelf, is how a build outlives the window;
+- a version whose `created_at` will not parse is kept — deleting on a parse failure is the destructive
+  direction;
+- a prune failure is logged and swallowed. `prod-apk` is non-blocking (nothing `needs:` it) and a
+  registry hiccup must never turn a deploy red — the publish step is `continue-on-error` *and* the
+  script always exits 0, printing `::error::` on every failure path so it stays visible in the job log.
+
+**Upload limits — measured, not assumed.** Nothing in §6.1's compose sets
+`FORGEJO__packages__LIMIT_SIZE_GENERIC` or `LIMIT_TOTAL_OWNER_SIZE`, so both sit at the Forgejo default
+(unlimited); and run **#6036 proved it end-to-end** by pushing the full 109 MB APK and reading it back
+byte-identical (`sha256sum -c` → `OK`). Each run logs the exact APK size next to the upload, so if a
+limit is ever introduced the refused size is recorded beside the error. **If a limit does block it,
+that is a host-config change and belongs here — not silently in a workflow file.**
+
 ---
 
 ## Phase 7 — Forgejo Actions runner (on the CI daemon)
