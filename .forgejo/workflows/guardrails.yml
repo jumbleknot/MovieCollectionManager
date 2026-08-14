@@ -59,7 +59,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Validate the scanner detects planted keys (and clean tree passes)
         run: bash scripts/ci-log-step.sh secret-scan-validate-scanner-detects node scripts/secret-scan.mjs --selftest
       - name: Scan committed files for credential-shaped strings
@@ -91,7 +91,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Enable pnpm (corepack, version from package.json packageManager)
         run: bash scripts/ci-log-step.sh naming-enable-pnpm corepack enable
       - name: Install JS dependencies
@@ -202,7 +202,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       # The gate imports `yaml` (a root dependency, as several other check-* gates do), so this job
       # needs the workspace installed exactly like `naming` does. Without it the gate dies on
       # ERR_MODULE_NOT_FOUND before running a single check — a job that fails for its own missing
@@ -247,7 +247,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Enable pnpm (corepack)
         run: bash scripts/ci-log-step.sh agent-gates-enable-pnpm corepack enable
       - name: Install uv
@@ -305,7 +305,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout (full history so the PR-base diff for changed-scope resolves)
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
       - name: Ensure the PR base ref is available for the changed-files diff

@@ -52,7 +52,7 @@ jobs:
     outputs:
       infra: ${{ steps.filter.outputs.infra }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       # PULL REQUESTS ONLY. dorny derives its diff base from the PR event; on any other event it
       # falls back to `github.event.repository.default_branch`, which this Forgejo does NOT put in
       # the payload → the action hard-errors ("requires 'base' input to be configured"). That killed
@@ -63,7 +63,7 @@ jobs:
       # here anyway, and loses nothing: RUN_SCAN already forces every non-PR event through the full
       # sweep.) Skipped → `steps.filter.outputs.infra` is '' → RUN_SCAN falls through to its
       # `github.event_name != 'pull_request'` clause → the sweep runs. Do not drop this `if:`.
-      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
         id: filter
         if: ${{ github.event_name == 'pull_request' }}
         with:
@@ -111,7 +111,7 @@ jobs:
     steps:
       - name: Checkout
         if: ${{ env.RUN_SCAN == 'true' }}
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup pnpm
         if: ${{ env.RUN_SCAN == 'true' }}

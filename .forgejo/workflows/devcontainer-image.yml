@@ -44,7 +44,7 @@ jobs:
       NS: ${{ vars.NS }}
       REGISTRY_USER: ${{ vars.REGISTRY_USER }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # Confirm the Docker CLI + daemon are reachable (mirror cd-deploy's guard); fail LOUD if not.
       - name: Set up Docker CLI (talk to the runner's daemon socket)
