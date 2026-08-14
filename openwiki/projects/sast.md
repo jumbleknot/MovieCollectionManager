@@ -4,7 +4,7 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml.
 tags: [security, sast, sca, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-timestamp: 2026-08-14T00:00:00Z
+timestamp: 2026-08-13T23:03:14Z
 ---
 
 # SAST & SCA static security scanning
@@ -102,6 +102,37 @@ and imported by both gates. A dedicated `--check-expiring` mode runs **weekly** 
   PYSEC aliases; entries keyed on the old CVE ids silently matched nothing rather than expiring. The
   `--check-expiring` weekly run catches this, but the entry's own expiry date did not advance the
   warning — read `UNMATCHED ENTRIES` whenever an advisory you thought was accepted re-blocks.
+
+- **Before raising a floor, check whether the lockfile is the lever, not the override.** Since
+  feature 058 the gate prints an `OVERRIDE LEVERS` advisory section for any finding whose package
+  already carries an override in `pnpm-workspace.yaml`. Example output:
+  ```
+  OVERRIDE LEVERS (advisory — does not affect this gate's result)
+    Already permitted by an existing override — REFRESH THE LOCKFILE:
+      • hono 4.12.29 — the override `>=4.12.25` ALREADY PERMITS 4.12.34; the lockfile is what pins
+        4.12.29. The override needs no edit — refresh the lockfile: `pnpm update hono --lockfile-only`.
+  ```
+  **This distinction cost ten days of red once already.** `fast-uri`'s override `>=3.1.4 <4` already
+  permitted the published fix 3.1.5; the lockfile pinned 3.1.4. The fix predated the advisory by three
+  days. A four-week allowlist acceptance was written for something `pnpm update fast-uri --lockfile-only`
+  would have cleared. `nanoid` repeated it eight days later. If the section says *refresh the lockfile*,
+  editing the override is wasted work — the range is already correct. The section is advisory only and
+  never changes the gate's exit code; it also prints for non-blocking findings, so a cheap fix can be
+  made before severity promotes it into a blocker. Most of these are now cleared weekly by Renovate's
+  `lockFileMaintenance` (see below) without anyone reading an advisory.
+
+  **Two gotchas about Renovate `lockFileMaintenance` (feature 058, 2026-08-13):**
+  - Its `schedule` key in `renovate.json` looks like a duplicate of the top-level schedule and
+    **is not** — the option carries its own default (`before 4am on monday`) that beats the inherited
+    value, and that window intersects neither cron under either DST offset. Delete the key as redundant
+    and the refresh is enabled but can never fire, silently. `renovate-workflow.guard.test.mjs` fails
+    if the key goes missing.
+  - These refresh PRs now run `app-e2e`: a bad transitive floor is a **build-time** break that
+    `nx test` passes straight over, so the E2E tier is the only one that catches it.
+
+  What remains manual is the case the bot cannot propose: a floor that must rise past its own ceiling.
+  Renovate essentially never raises the lower bound of a keyed override — and when it rewrites one it
+  half-bumps — so the `check-override-consistency.mjs` guard is the answer.
 
 - **An override floor has TWO halves and both must move.** Entries in `pnpm-workspace.yaml`'s
   `overrides:` map are keyed-range-on-range: `fast-uri@<3.1.5: '>=3.1.5 <4'`. Raise the value and
