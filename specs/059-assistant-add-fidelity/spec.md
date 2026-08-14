@@ -19,6 +19,15 @@ Splitting them would put two branches into the same function and the same end-to
 
 The user stories are ordered by the items' own priorities: the wrong rating (a `priority/p2` bug that puts false data in a member's library) comes before the missing question (a `priority/p3` capability gap).
 
+## Clarifications
+
+### Session 2026-08-14
+
+- Q: When the certification data cannot be *read* (an error, not an absence), what happens? → A: The certification is obtained in the **same request** as the film's details, so no such state exists — a failed lookup fails the add exactly as today, and "unset" only ever means the source published nothing.
+- Q: Does the approval step show the children's answer or the looked-up rating before the member approves? → A: No — the approval step is unchanged. The children's answer rides on the proposal exactly as 047's ownership answers already do.
+- Q: Where does the children's question sit relative to the "which collection?" question an unnamed-target add asks? → A: After it — the new question is the first of the questions *about the movie*, and target resolution stays one contiguous step.
+- Q: Which certification is recorded when the source publishes several for the US? → A: The first non-empty one in the order the source publishes them — no most-restrictive or release-type rule, so nothing is recorded that no release actually carries.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The rating on an added movie is the film's real rating (Priority: P1)
@@ -61,6 +70,7 @@ A member adds a movie through the assistant. Before being asked whether they own
 7. **Given** a member part-way through the add questions, **When** they abandon the flow — including at the new first question, before any other question has been asked — **Then** the pending add is discarded and nothing is added.
 8. **Given** a member marking an existing movie as a children's movie through another assistant command or the movie edit screen, **When** that completes, **Then** the behaviour is unchanged, and it records the same flag the add-time question sets.
 9. **Given** a spreadsheet import or an organize/update path, which never runs the question flow, **When** movies are created, **Then** they are recorded as not children's movies, exactly as today.
+10. **Given** a member who asks to add a movie without naming a collection, **When** the assistant asks which collection to add it to, **Then** that question still comes first and the children's question follows once the collection is settled.
 
 ---
 
@@ -69,7 +79,7 @@ A member adds a movie through the assistant. Before being asked whether they own
 - **The data source publishes several US entries with different certifications** (for example a theatrical rating and a later home-video rating). The first US certification the source publishes that is non-empty is used, so the outcome is deterministic rather than dependent on response ordering luck.
 - **The data source publishes a US entry with an empty certification string.** Treated as no certification at all — rating unset, not an empty rating.
 - **The film has no US release entry.** Rating unset.
-- **The film-detail lookup itself fails.** Unchanged from today: the add fails the way it already does. This feature does not add a new failure mode, and it does not silently add a movie with a blank rating in place of an error the member should see. (Feature 047's FR-039 rule about never presenting an incomplete read as complete concerns the member's **own** data; a certification is external data, and its documented absence is a legitimate "unset", not a concealed failure.)
+- **The film-detail lookup fails.** Unchanged from today: the add fails the way it already does. Because the certification arrives in that same retrieval (FR-002a), there is no separate "certification unavailable" failure to specify — this feature adds no new failure mode, and never adds a movie with a blank rating in place of an error the member should see. (Feature 047's FR-039 rule about never presenting an incomplete read as complete concerns the member's **own** data; a certification is external data, and its documented absence is a legitimate "unset", not a concealed failure.)
 - **The member answers the children's question with something that is neither yes nor no.** The assistant re-asks, exactly as the existing ownership question does for an unparseable answer — the flow does not advance on an answer it did not understand, and it does not guess.
 - **The member abandons at the new first question**, before the ownership question has ever been asked. Nothing is added (US2-AC7).
 - **A film that is both a children's film and unrated.** The two stories are independent: the children's answer is the member's, the rating is the source's, and neither infers the other. In particular, being a children's movie MUST NOT be used to guess a rating.
@@ -82,7 +92,9 @@ A member adds a movie through the assistant. Before being asked whether they own
 
 - **FR-001**: An assistant-mediated add that resolves a film through the external movie data source MUST record that film's published US certification on the created movie.
 - **FR-002**: The certification MUST be obtained from the data source's release/certification data — an actual lookup. It MUST NOT be inferred from the film's genres, overview, title, or any other proxy.
+- **FR-002a**: The certification MUST be obtained as part of the **same request** that already retrieves the film's details, adding no further call to the external data source. Consequently there is no state in which the film's details were retrieved but its certification could not be: a failed retrieval fails the add exactly as it does today, and an unset rating (FR-004) can only ever mean the source published no certification — never that a read failed.
 - **FR-003**: The published certification MUST be expressed as one of the ratings the product supports, including the two whose published form differs from the product's own name for them (`PG-13` and `NC-17`).
+- **FR-003a**: When the data source publishes more than one US certification for a film, the **first non-empty** one in the order the source publishes them MUST be recorded. The rating MUST NOT be derived by combining entries — no most-restrictive-wins rule and no release-type preference — so a rating no individual release carries can never be written.
 - **FR-004**: When the data source publishes no US certification for the film, the movie MUST be created with its rating **unset**.
 - **FR-005**: The rating "not rated" MUST be recorded only when the data source actually reports the film as not rated. It MUST NOT be used as a placeholder for an absent, unknown, or unrecognised certification.
 - **FR-006**: A published certification in a form the product does not recognise MUST be treated as unset (FR-004) and MUST NOT fail the add.
@@ -90,7 +102,8 @@ A member adds a movie through the assistant. Before being asked whether they own
 
 **The children's-movie question (Story 2)**
 
-- **FR-008**: Every assistant-mediated add MUST ask whether the movie is a children's movie, and MUST ask it **before** the ownership question, as the first question of the follow-up chain.
+- **FR-008**: Every assistant-mediated add MUST ask whether the movie is a children's movie, and MUST ask it **before** the ownership question, as the first of the questions asked *about the movie*.
+- **FR-008a**: When the add did not name a collection and the assistant must ask which collection to add to, that question MUST still come first: the order is collection → children's → ownership → the rest. Abandoning while the collection is still unsettled MUST NOT reach the children's question.
 - **FR-009**: The question MUST be asked regardless of what the member answers about ownership, including the not-owned case that adds the movie immediately with no further questions (047 FR-025).
 - **FR-010**: The created movie MUST carry exactly the answer the member gave.
 - **FR-011**: The question MUST be a simple yes/no. It MUST NOT use the toggle-list-plus-confirm control, which 047 FR-020a specifies for the multi-valued selections (media formats, rip qualities) only.
@@ -104,6 +117,7 @@ A member adds a movie through the assistant. Before being asked whether they own
 
 - **FR-017**: The rest of the add chain — the ownership question, the media formats, the ripped question, the rip qualities, and the rules that formats are recorded only for an owned movie and qualities only for a ripped one — MUST be unchanged in behaviour by the insertion of the new first question (047 FR-020 … FR-028).
 - **FR-018**: Every write in these flows MUST remain behind the existing explicit-approval step (047 FR-037), and a member MUST never be shown or able to act on a collection or movie that is not theirs (047 FR-038).
+- **FR-018a**: The approval step itself MUST be unchanged — it MUST NOT gain a readback of the children's answer or of the looked-up rating. Both ride on the pending add exactly as 047's ownership, format and rip-quality answers already do, so an approval arriving on a later turn still applies exactly what the member chose.
 - **FR-019**: After a successful add the member MUST still be taken to the new movie's detail screen (047 FR-030).
 - **FR-020**: The behaviour that can be verified without a model's judgement — the certification mapping in all its cases, and the values the add payload carries — MUST be pinned by merge-blocking automated tests. The conversational flow proofs, which depend on the model choosing tools, extend the existing agent end-to-end coverage in its non-blocking tier. No requirement of this feature may be left with **no** test that runs.
 - **FR-021**: The existing end-to-end coverage of the 047 ownership chain MUST be updated for the new question. That coverage walks a fixed sequence of turns; an extra question ahead of the ownership question changes that sequence, so coverage left unchanged would be asserting a flow that no longer exists.
@@ -128,7 +142,7 @@ A member adds a movie through the assistant. Before being asked whether they own
 
 ## Assumptions
 
-- **Which certification, when the source publishes more than one for the US**: the first non-empty US certification published is used. Certification data is per-release, and a film can carry several; picking the first non-empty one deterministically is preferred to a rule the member cannot predict. No member-facing choice is offered.
+- **Which certification, when the source publishes more than one for the US**: settled in Clarifications and stated as FR-003a — the first non-empty one published. Certification data is per-release and a film can carry several; a deterministic pick is preferred to a rule the member cannot predict, and to a combining rule that would write a rating no release actually carries. No member-facing choice is offered.
 - **Shared vocabulary for the children's flag**: the add-time answer and the existing conversational "mark X as a kids movie" update resolve to the same flag (FR-016). This settles item #162's stated open question in favour of reuse; the alternative — a second, add-only vocabulary — would let the two paths drift.
 - **The rating is not shown before the add**: the certification is written to the created movie but is not surfaced on the web search preview card. The member sees it on the movie detail screen after the add, which is where the defect was noticed. Adding it to the preview card is a separate, purely presentational change and is out of scope here.
 - **Existing wrongly-stamped movies are not repaired**: movies already in members' libraries carrying a false `NR` are left alone. Backfilling them means re-querying the data source for every movie with an external identifier and an `NR` rating, and cannot distinguish a wrongly-stamped `NR` from one a member set deliberately. Item #163 states this explicitly; it is a separate decision and a separate backlog item if wanted.
