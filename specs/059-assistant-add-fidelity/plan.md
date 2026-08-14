@@ -113,10 +113,16 @@ agents/movie-assistant/
 │       ├── curator.py                 # local _OWNERSHIP_STAGES mirror += awaiting_childrens
 │       ├── organizer.py               # _ask_childrens + the new first transition; chain entry moves
 │       └── approval_gate.py           # thread childrens into to_movie_payload at apply time
-└── tests/unit/
-    ├── test_proposals.py              # extended — payload values
-    ├── test_approval_gate.py          # extended — the answer survives apply
-    └── test_organizer_add_chain.py    # NEW or extended — stage transitions incl. abandonment
+└── tests/
+    ├── unit/
+    │   ├── test_proposals.py          # extended — payload values, and the FR-016 parity guard
+    │   ├── test_approval_gate.py      # extended — the answer survives apply
+    │   ├── test_import_transform.py   # extended — characterization guard for FR-007/SC-007
+    │   └── test_organizer_add_chain.py # NEW or extended — stage transitions incl. abandonment
+    └── integration/                   # asserts the chain's FIRST pause — all four must be updated
+        ├── test_add_flow.py           # :143, :352
+        ├── test_gateway_add_e2e.py    # :202
+        └── test_metadata_unavailable_live.py  # :108
 
 frontend/mcm-app/tests/e2e/web/
 ├── agent-add-ownership.spec.ts        # UPDATED (5 tests walk the old sequence) + new coverage
@@ -173,6 +179,8 @@ registered in `graph._OWNERSHIP_STAGES` and `curator._OWNERSHIP_STAGES` and **no
 | Certification extraction: certified film, no US entry, empty string, unrecognised value, multiple US entries | unit (`nx test web-api-mcp`, stubbed transport) | **every PR — blocks merge** |
 | `to_movie_payload` emits `rated: null` not `"NR"`, and the member's `childrens` value | unit (`nx test movie-assistant`) | **every PR — blocks merge** |
 | Stage transitions incl. the new entry stage, re-ask on an unparseable answer, abandonment | unit (`nx test movie-assistant`) | **every PR — blocks merge** |
+| The chain's first pause across a real graph run (four existing assertions) | integration (`nx test:integration movie-assistant`) | **every PR — blocks merge** |
+| Import and organize callers unchanged (characterization guard) | unit (`nx test movie-assistant`) | **every PR — blocks merge** |
 | The answer survives the HITL pause and reaches the payload | unit (`nx test movie-assistant`) | **every PR — blocks merge** |
 | `get_movie_details` against real TMDB: the live shape, and "Secret Life of Pets 2" → `PG` | integration (`nx test:integration web-api-mcp`) | this devcontainer (**enabled** — R4a) and CI (**enrolled**, skip-escalated — R4b) — **blocks merge** |
 | "Secret Life of Pets 2" → PG end to end; the question appears first from card and typed add; abandonment adds nothing | E2E `@model-decision` | `main` pushes and dispatch — **non-blocking** |
