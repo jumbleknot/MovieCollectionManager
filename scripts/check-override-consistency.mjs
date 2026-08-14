@@ -82,10 +82,29 @@ function parseVersion(v) {
   return [a, b, c];
 }
 
-function sameVersion(x, y) {
+/**
+ * Ordered comparison: negative when `x < y`, 0 when equal, positive when `x > y`.
+ *
+ * EXPORTED FOR REUSE, NOT FOR THIS GATE'S BENEFIT. scripts/override-lever.mjs (feature 058) needs to
+ * ask whether an override's permitted range already admits a published fix, which is the same
+ * version arithmetic this file already does. Exporting it keeps ONE definition of how a version is
+ * parsed and ordered; a second dialect elsewhere is precisely how two halves of a pair drift apart,
+ * which is the class of fault this gate exists to catch.
+ *
+ * This does not widen, narrow or otherwise change what this gate accepts — `sameVersion` below is
+ * now expressed in terms of it and behaves identically, which this file's own tests prove.
+ */
+export function compareVersions(x, y) {
   const a = parseVersion(x);
   const b = parseVersion(y);
-  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+  for (let i = 0; i < 3; i += 1) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+function sameVersion(x, y) {
+  return compareVersions(x, y) === 0;
 }
 
 /**
@@ -227,24 +246,39 @@ function selftest() {
   console.log('✓ check-override-consistency --selftest passed (half-bump detection in both directions, plain-pin scoping, scoped names, unparseable halves)');
 }
 
-const args = process.argv.slice(2);
-let root = REPO_ROOT;
-const rest = [];
-for (let i = 0; i < args.length; i += 1) {
-  if (args[i] === '--dir') {
-    root = args[++i];
-    if (!root) {
-      console.error('--dir requires a directory argument.');
-      process.exit(2);
+function main() {
+  const args = process.argv.slice(2);
+  let root = REPO_ROOT;
+  const rest = [];
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === '--dir') {
+      root = args[++i];
+      if (!root) {
+        console.error('--dir requires a directory argument.');
+        process.exit(2);
+      }
+    } else {
+      rest.push(args[i]);
     }
-  } else {
-    rest.push(args[i]);
   }
+  const unknown = rest.filter((a) => a !== '--selftest');
+  if (unknown.length) {
+    console.error(`Unknown argument(s): ${unknown.join(', ')}. Usage: check-override-consistency.mjs [--selftest] [--dir <d>]`);
+    process.exit(2);
+  }
+  if (rest.includes('--selftest')) selftest();
+  else runScan(root);
 }
-const unknown = rest.filter((a) => a !== '--selftest');
-if (unknown.length) {
-  console.error(`Unknown argument(s): ${unknown.join(', ')}. Usage: check-override-consistency.mjs [--selftest] [--dir <d>]`);
-  process.exit(2);
-}
-if (rest.includes('--selftest')) selftest();
-else runScan(root);
+
+// RUN ONLY WHEN INVOKED DIRECTLY. This body used to be top-level, which meant IMPORTING this file
+// for its parsers ran the whole scan against the repo and could `process.exit` out of the importing
+// process — taking an unrelated test runner or gate down with it, and reporting the exit as that
+// caller's result. Nothing had noticed, because the file's own test invokes it as a SUBPROCESS and
+// feature 058's override-lever.mjs is its first importer: the failure surfaced immediately there as
+// "Unknown argument(s): --report" from a gate that had never heard of `--report`.
+//
+// Same guard as check-sast-findings.mjs. CLI behaviour is byte-for-byte unchanged — this file's own
+// tests shell out exactly as before and must still pass, which is the proof that exporting parsers
+// for reuse did not weaken the gate.
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
+if (invokedPath === fileURLToPath(import.meta.url)) main();

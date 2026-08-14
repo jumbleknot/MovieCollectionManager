@@ -93,10 +93,36 @@ flowchart LR
   request, so a half-remediation cannot merge even though it still looks correct.
 - **`app-ci` runs on every PR with no path filter, by design — but the heavy `app-e2e` job is still
   path-gated.** A dorny/paths-filter `changes` job scopes `app-e2e` to paths that affect app runtime
-  behavior; a docs/config/lockfile-only PR still gets an `app-ci` status (satisfying branch protection)
-  but skips the ~23-minute E2E suite. This exists because branch protection requires the `app-ci*`
-  glob, and a path-filtered trigger left non-app PRs with *no* status at all — an unmergeable PR
-  requiring an admin override, hit repeatedly before the filter was removed from the PR trigger.
+  behavior; a docs/config-only PR still gets an `app-ci` status (satisfying branch protection) but
+  skips the ~23-minute E2E suite. This exists because branch protection requires the `app-ci*` glob,
+  and a path-filtered trigger left non-app PRs with *no* status at all — an unmergeable PR requiring
+  an admin override, hit repeatedly before the filter was removed from the PR trigger.
+- **A LOCKFILE PR is no longer in that skipped class, and the two filters used to disagree about it.**
+  `pnpm-lock.yaml` sat in the `push:` paths filter — *"a lockfile bump changes transitive deps"* — and
+  was absent from the `changes` job's `app` filter that gates `app-e2e` on a **pull request**. So the
+  risk was acknowledged on merge and denied on review: `app-e2e` reported `skipped` on both PR #185
+  and PR #187, and PR #185's only evidence that its two raised floors did not break the app was a
+  *local* run someone remembered to do. That is the one tier that can catch a bad floor — these are
+  JS-toolchain transitives, so breakage surfaces at **build** time and `nx test` passes straight over
+  it. Both pnpm files are now in both filters (feature 058, item #186), and the accepted cost is the
+  web+integration half only: `mobile` deliberately does not select them, so a dependency PR does not
+  pay for the ~35-minute emulator half. `Cargo.lock` still differs on purpose — `mc-service-checks`
+  compiles the crate on every PR, so a bad Cargo floor already reds a tier that runs.
+- **A filter entry that is in `mobile` but not in `app` can never fire.** `mobile` gates only *steps
+  inside* `app-e2e`, and `app-e2e` itself runs only when `app` matched — so a path in the subset but
+  not the superset sets `mobile=true`, `app=false`, and the whole job skips. `mobile`'s own comment
+  claimed it was "a STRICT SUBSET of `app`" while `scripts/ci-mobile-agent-flows.sh` and
+  `scripts/maestro-run.sh` broke it, meaning a change to the Maestro runner ran **no mobile flow at
+  all** while reading as covered. Found by writing the invariant as a test rather than trusting the
+  comment asserting it; both are now in `app` too.
+- **Scheduled lockfile maintenance needs its own window, and the obvious way to enable it is silently
+  inert.** `lockFileMaintenance`'s option default already carries `schedule: ["before 4am on monday"]`,
+  and that child value beats the inherited top-level `schedule` — verified against `renovate@44.29.3`'s
+  own config resolver. Monday 04:00–08:00 UTC (EDT) / 05:00–09:00 (EST) intersects neither
+  `0 3 * * *` nor `0 7 * * 5` under either offset, so enabling it without repeating the window yields
+  a setting that is **on and can never fire**, reporting nothing — the same never-intersecting-schedules
+  fault that deferred every routine update for four weeks. The repeated `schedule` key is therefore
+  load-bearing, not redundant, and `renovate-workflow.guard.test.mjs` fails if it is removed.
 - **`cd-deploy` is `workflow_dispatch`-only — it has no `push:` trigger and no polling gate.**
   Production deploys are event-driven: `app-ci`'s `trigger-cd` job `needs:` its own CI jobs and
   dispatches `cd-deploy(deploy=true)` once green on `main`. This replaced an earlier design where a

@@ -127,6 +127,17 @@ indistinguishable from today's behaviour. The dry run is therefore not ceremony;
 that separates the two outcomes. Baseline to beat: **zero** dependencies extracted from
 `pnpm-workspace.yaml` today.
 
+> **CORRECTION — 2026-08-13 (feature 058 / item #184).** The "baseline to beat: **zero**" above is
+> **false**, and it was inherited from item #152 rather than measured. Run **1704** (2026-08-13, head
+> `6afc2c8`) extracted **twelve** dependencies from `pnpm-workspace.yaml` via the **built-in npm
+> manager**. There is no zero baseline, so a second manager over that file would double-manage it —
+> which is why feature 057 ultimately did not merge one, and why `renovate.json` records that as a
+> measured decision rather than an omission. The conclusion that no floor is ever raised automatically
+> still holds, for a different reason: the bot proposes only when the range fails to satisfy the newest
+> version, and it reasons about the manifest range rather than the lockfile resolution. Left standing
+> as the record of what was believed at the time — see
+> `specs/058-dependency-refresh-loop/research.md` R6.
+
 **Alternatives considered**:
 
 - *Capture the whole range as `currentValue`.* Rejected — relies on Renovate's range-replacement

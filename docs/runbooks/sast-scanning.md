@@ -87,7 +87,32 @@ touched. This is the gate working, not a defect — and it recurs. The playbook 
    pnpm audit --json | node -e "…filter High/Critical…"   # then pnpm why --prod each to split runtime/dev
    ```
 
-4. **Fix vs allowlist.** A **fixable** High (a patched version exists) MUST be bumped, not
+4. **Fix vs allowlist — but FIRST read the `OVERRIDE LEVERS` section, because the answer may not be a
+   floor at all.** Since feature 058 the gate prints, for any finding whose package already carries an
+   override:
+
+   ```
+   OVERRIDE LEVERS (advisory — does not affect this gate's result)
+     Already permitted by an existing override — REFRESH THE LOCKFILE:
+       • hono 4.12.29 — the override `>=4.12.25` ALREADY PERMITS 4.12.34; the lockfile is what pins
+         4.12.29. The override needs no edit — refresh the lockfile: `pnpm update hono --lockfile-only`.
+   ```
+
+   > **This distinction cost ten days of red once already.** `fast-uri`'s override `>=3.1.4 <4`
+   > already permitted the published fix 3.1.5; the *lockfile* pinned 3.1.4. The fix predated the
+   > advisory by three days. A four-week allowlist acceptance was written for something
+   > `pnpm update fast-uri --lockfile-only` would have cleared, because the gate named the vulnerable
+   > version and the fixed version but not **which lever** to pull. `nanoid` repeated it eight days
+   > later and reddened `main`. If the section says *refresh the lockfile*, editing the override is
+   > wasted work — the range is already correct.
+   >
+   > It is **advisory only** and never changes the exit code, and it prints for **non-blocking**
+   > findings too. That is the point: a finding in this state is cheap to clear *before* its severity
+   > promotes it into a merge blocker. Renovate's scheduled `lockFileMaintenance` (also feature 058)
+   > now clears most of them weekly without anyone reading this.
+
+   Only when the section says **raise the floor** — or says nothing, because there is no override yet —
+   does the rest of this step apply. A **fixable** High (a patched version exists) MUST be bumped, not
    allowlisted — allowlisting a fixable High is the wrong call. For a transitive dep, add a
    `pnpm.overrides` entry in `package.json` in the existing `pkg@<vuln: >=fixed` form, **pinned within
    the major** so nothing jumps a version:
@@ -103,9 +128,24 @@ touched. This is the gate working, not a defect — and it recurs. The playbook 
    dev container, so the *full* gate is CI-authoritative; `pnpm audit` locally confirms only the
    pnpm-SCA portion. Push and let CI confirm.
 
-**Structural fix worth considering:** this is a recurring manual tax. Batching security bumps via
-Renovate (so the fix often lands before the gate fires) would reduce it — a policy change to the
-dep-update flow, not the gate.
+**Structural fix — no longer just "worth considering" (feature 058, 2026-08-13).** This was a
+recurring manual tax and two thirds of it is now automated. Renovate's `lockFileMaintenance` runs in
+the Friday window and refreshes the lockfile **within existing ranges**, so a transitive fix an
+override already permits is picked up without anyone reading an advisory. Two things to know:
+
+- Its `schedule` key in `renovate.json` looks like a duplicate of the top-level one and **is not** —
+  the option carries its own default (`before 4am on monday`) that beats the inherited value, and that
+  window intersects neither cron under either DST offset. Delete it as redundant and the refresh is
+  enabled and can never fire, silently. `renovate-workflow.guard.test.mjs` fails if it goes.
+- These refresh PRs now run `app-e2e` (item #186): a bad transitive floor is a **build-time** break
+  that `nx test` passes straight over, so the E2E tier is the only one that catches it.
+
+What remains manual is the case the bot structurally cannot propose: a floor that must **rise** past
+its own ceiling. The bot proposes only when the current range fails to satisfy the newest version, so
+it will essentially never raise the lower bound of a keyed override — and when it rewrites one it
+half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot rewrite it.
+`check-override-consistency.mjs` fails that by name, which is the accepted cost recorded in
+`renovate.json`.
 
 ## Non-obvious gotchas
 
