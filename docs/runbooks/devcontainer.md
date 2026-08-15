@@ -665,6 +665,11 @@ This pin is NOT cosmetic and NOT independent of the lockfile: a lockfile refresh
 so ZERO tests run and the e2e gate reports `no Playwright summary found` rather than a count.
 Measured on PR #199, where the lockfile moved 1.60.0 → 1.62.1 and this tag did not follow.
 
+**The tag here is the operator's copy; the AUTHORITATIVE one is `.forgejo/workflows/app-ci.yml`**
+(two occurrences — CI runs the suite in that image). Changing only this runbook fixes your local
+run and leaves CI broken. The full list of places the pin lives, and why the two halves must land
+in the same change, is in [e2e-testing.md](./e2e-testing.md).
+
 > **`--user "$(id -u):$(id -g)"` is not optional — omit it and you break the NEXT run.** The
 > container runs as **root** by default, and `/workspaces/mcm` is bind-mounted, so every artifact
 > Playwright writes (`test-results/`, `playwright-report/`, `tests/e2e/web/setup/.auth/user.json`)
