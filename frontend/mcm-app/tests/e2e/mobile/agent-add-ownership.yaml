@@ -40,14 +40,41 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "assistant-dock-send"
 
-# ── The ownership question (Yes/No) appears BEFORE the approval gate ──────────────────────────
-# Spans classify + TMDB enrichment, so budget generously (as assistant-add does).
+# ── 059 US2: the children's question is asked FIRST, before ownership ─────────────────────────
+# A turn is ADDED here rather than the ownership assertion loosened: the ordering is what US2
+# guarantees, and `assertVisible: ".*Do you own.*"` failing is exactly how CI caught the shift
+# (run 1822, three attempts, same assertion).
+#
+# Tapping by id is safe even though the ANSWERED children's control stays mounted with the same
+# testID (selection-options renders unconditionally). Maestro takes the first match in the
+# hierarchy, but every one of these buttons posts a VALUE ("yes"/"no") and the graph applies it to
+# whatever stage is currently pending — which is the same reason the `ripped` step below already
+# works with an earlier ownership control still in the transcript.
 - extendedWaitUntil:
     visible:
       id: "selection-options"
     timeout: 180000
 - assertVisible:
-    text: ".*Do you own.*"
+    text: ".*children.*"
+# Nothing is written yet — this is the FIRST question, so the approval card is even further off.
+- assertNotVisible:
+    id: "approval-request"
+- scrollUntilVisible:
+    element:
+      id: "selection-option-control-1"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-control-1"
+
+# ── The ownership question (Yes/No) follows it, still BEFORE the approval gate ────────────────
+# Waits on the QUESTION TEXT, not on `selection-options`: that id is already visible from the
+# children's question above, so waiting on it again would return instantly and assert against the
+# wrong turn.
+- extendedWaitUntil:
+    visible:
+      text: ".*Do you own.*"
+    timeout: 180000
 # Nothing is written yet — the approval card must NOT be up.
 - assertNotVisible:
     id: "approval-request"
@@ -128,13 +155,38 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "assistant-dock-send"
 
-# ── Ownership: answer YES this time (control group: Yes=0, No=1) ──────────────────────────────
+# ── 059 US2: the children's question is asked FIRST, before ownership ─────────────────────────
+# A turn is ADDED here rather than the ownership assertion loosened: the ordering is what US2
+# guarantees, and `assertVisible: ".*Do you own.*"` failing is exactly how CI caught the shift
+# (run 1822, three attempts, same assertion).
+#
+# Tapping by id is safe even though the ANSWERED children's control stays mounted with the same
+# testID (selection-options renders unconditionally). Maestro takes the first match in the
+# hierarchy, but every one of these buttons posts a VALUE ("yes"/"no") and the graph applies it to
+# whatever stage is currently pending — which is the same reason the `ripped` step below already
+# works with an earlier ownership control still in the transcript.
 - extendedWaitUntil:
     visible:
       id: "selection-options"
     timeout: 180000
 - assertVisible:
-    text: ".*Do you own.*"
+    text: ".*children.*"
+# Nothing is written yet — this is the FIRST question, so the approval card is even further off.
+- assertNotVisible:
+    id: "approval-request"
+- scrollUntilVisible:
+    element:
+      id: "selection-option-control-1"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-control-1"
+
+# ── Ownership: answer YES this time (control group: Yes=0, No=1) ──────────────────────────────
+- extendedWaitUntil:
+    visible:
+      text: ".*Do you own.*"
+    timeout: 180000
 - scrollUntilVisible:
     element:
       id: "selection-option-control-0"
