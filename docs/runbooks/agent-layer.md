@@ -66,7 +66,8 @@ guards the NEXT turn back into the owning node — otherwise the follow-up (a ba
 bare "yes") re-classifies as something else and the flow silently derails. The guards:
 `search_stage`, `organize_stage`, `import_stage` (`awaiting_import_choice`), **`navigate_stage`**
 (`awaiting_collection`, 040 US1) and **`add_stage`** (`awaiting_ownership`, 040 US4; plus
-`awaiting_media`, `awaiting_ripped`, `awaiting_rip_quality`, 047 US4). Each has a
+`awaiting_media`, `awaiting_ripped`, `awaiting_rip_quality`, 047 US4; plus `awaiting_childrens`,
+059 US2 — which is now the FIRST of them). Each has a
 matching `_*_STATE_RESET` so a finished flow never leaks into a later turn. The ownership
 guards deliberately **escape** on a clear new command (enrich/organize/navigate/import/export/query/
 search) so the ownership question is never a trap; a bare yes/no stays in the add.
@@ -107,9 +108,10 @@ search) so the ownership question is never a trap; a bare yes/no stays in the ad
 > (`"yes"`, `"Selected: DVD, Blu-Ray"`) rather than a film title: running entity extraction on it
 > finds no movie, clears `candidate`, and drops the member back to *"What movie would you like me
 > to look up?"* mid-flow. 040 added that passthrough for `awaiting_ownership` only; 047 added
-> three more stages and had to widen it. **Adding a stage means updating BOTH `graph.py`'s guard
-> and `curator.py`'s passthrough set** — missing the second produces a mid-flow reset on exactly
-> the turn you forgot.
+> three more stages and had to widen it; 059 added one at the FRONT, where missing the passthrough
+> would reset the member on the very first answer of every add. **Adding a stage means updating
+> BOTH `graph.py`'s guard and `curator.py`'s passthrough set** — missing the second produces a
+> mid-flow reset on exactly the turn you forgot.
 
 > **An ANSWER to a pending question is never a new command (047 PR A).** The escape hatch above —
 > "a clear new command leaves the flow" — is only safe if the guard asks *"does this reply resolve
@@ -137,6 +139,22 @@ search) so the ownership question is never a trap; a bare yes/no stays in the ad
   **047 extends this into a chain** — `awaiting_ownership` → `awaiting_media` → `awaiting_ripped`
   → `awaiting_rip_quality` → proposal — and the proposal is built only once every answer is in,
   so the member approves ONE complete change rather than an add followed by an edit.
+- **US2 children's question (059, item #162).** `organizer._ask_childrens` asks
+  `Is "<title>" a children's movie?` as Yes/No and is now the chain's FIRST question about the
+  movie, so the full sequence is `awaiting_childrens` → `awaiting_ownership` → `awaiting_media` →
+  `awaiting_ripped` → `awaiting_rip_quality` → proposal. It sits ahead of ownership deliberately:
+  the 047 questions are conditional on owning the film, so any later placement would skip the
+  answer for every not-owned add. The collection question keeps its place ahead of it. The answer
+  rides on `ProposalItem.childrens` and is read from state when the proposal is built — the
+  not-owned branch reaches that point WITHOUT passing through the later stages, which is where a
+  value threaded stage-by-stage would be dropped.
+- **US1 the real rating (059, item #163).** `to_movie_payload` previously hardcoded `"rated": "NR"`,
+  so every assistant-added movie claimed to be not-rated. `web-api-mcp.get_movie_details` now
+  requests `append_to_response=release_dates` on the call it already makes and returns the FIRST
+  NON-EMPTY US certification, validated against `{G, PG, PG-13, R, NC-17, NR, Unrated}`; anything
+  else is `null`, sent as a present key (`CreateMovieDto` 422s an omission). There is **no**
+  `PG-13`→`PG13` rename at any boundary — `UsaRating` carries `#[serde(rename = "PG-13")]` and TMDB
+  publishes the hyphenated form, so renaming would send a value mc-service rejects.
 - **US2 import handle (Item 3).** The parsed spreadsheet is stashed **once** in the spreadsheet-mcp
   transient store (`import:parsed:<handle>`, `stash_parsed`/`fetch_parsed`) and only the small opaque
   `import_handle` is checkpointed across clarification turns — re-serialising the whole

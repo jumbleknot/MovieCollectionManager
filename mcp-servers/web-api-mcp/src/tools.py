@@ -59,6 +59,45 @@ def _english_language(details: dict[str, Any]) -> str | None:
     return str(original) if original else None
 
 
+# The US certifications mc-service accepts, as it serializes them. `UsaRating` names its Rust
+# variants PG13/NC17 but carries #[serde(rename = "PG-13")] / #[serde(rename = "NC-17")], so the
+# wire and storage form is hyphenated — and that is also the form TMDB publishes. There is
+# therefore NO rename to perform at this boundary: renaming to PG13 (as backlog item #163's third
+# acceptance criterion asks) would send mc-service a value it rejects, trading a wrong rating for
+# a failed add. Mirrors agents/movie-assistant/src/nodes/import_resolvers.py:_VALID_RATINGS.
+_VALID_CERTIFICATIONS = frozenset({"G", "PG", "PG-13", "R", "NC-17", "NR", "Unrated"})
+
+
+def extract_us_certification(details: dict[str, Any]) -> str | None:
+    """The film's US certification from an appended `release_dates` block, or None.
+
+    Three rules, in order:
+
+    1. Only US entries are considered — a UK `15` or a Finnish `K-12` is not a value this
+       product stores.
+    2. The FIRST NON-EMPTY certification wins, in the order the source publishes them. Not the
+       first entry: TMDB routinely publishes an empty certification ahead of a real one (All Is
+       Lost leads with one, Fallen Leaves with seven), and a naive `[0]` read silently converts
+       a real PG-13 into "no rating".
+    3. The value is accepted only if mc-service would accept it; anything else — an unrecognised
+       value, an all-empty list, no US block, no block at all — yields None.
+
+    None is a truthful "not known", and reaches the payload as `"rated": null`. It is never
+    substituted with "NR", which is a positive claim that the film was rated not-rated. Never
+    raises: a missing or malformed block must not fail an otherwise valid add.
+    """
+    results = (details.get("release_dates") or {}).get("results") or []
+    for block in results:
+        if block.get("iso_3166_1") != "US":
+            continue
+        for entry in block.get("release_dates") or []:
+            certification = str(entry.get("certification") or "").strip()
+            if not certification:
+                continue
+            return certification if certification in _VALID_CERTIFICATIONS else None
+    return None
+
+
 async def search_title(
     client: httpx.AsyncClient, query: str, year: int | None = None
 ) -> dict[str, Any]:
@@ -98,9 +137,17 @@ async def get_movie_details(client: httpx.AsyncClient, source_id: str) -> dict[s
     """TMDB /movie/{id} -> EnrichedMovieCandidate shaped for the mc-service add payload.
 
     `source_id` is a namespaced id like 'tmdb:603'; a bare numeric id is also accepted.
+
+    059 US1: `append_to_response=release_dates` rides on the request we already make, so the
+    film's US certification arrives with the details. One round trip, not two — which keeps the
+    latency of an add unchanged and, more importantly, removes the state where the details
+    resolved but the certification did not. `rated` is always present in the result, null when
+    the source publishes no usable certification.
     """
     movie_id = source_id.split(":", 1)[1] if ":" in source_id else source_id
-    resp = await client.get(f"/movie/{movie_id}")
+    resp = await client.get(
+        f"/movie/{movie_id}", params={"append_to_response": "release_dates"}
+    )
     resp.raise_for_status()
     d: dict[str, Any] = resp.json()
 
@@ -113,4 +160,5 @@ async def get_movie_details(client: httpx.AsyncClient, source_id: str) -> dict[s
         "genres": [g["name"] for g in d.get("genres", [])],
         "posterUrl": _poster_url(d.get("poster_path")),
         "language": _english_language(d),
+        "rated": extract_us_certification(d),
     }

@@ -55,3 +55,39 @@ async def test_tmdb_get_movie_details_shapes_enriched_candidate(
     assert candidate["language"] == "English"  # original_language en -> english_name
     assert candidate["overview"]  # non-empty synopsis
     assert candidate["posterUrl"].startswith("https://")
+
+
+# ── 059 US1: the US certification, against the real source ──────────────────────────────────────
+#
+# The unit suite (tests/unit/test_certification.py) covers every extraction branch against
+# recorded shapes. This is the only check that the shape it is built on is the shape TMDB still
+# returns — a stub passes forever against a contract that has changed underneath it.
+#
+# Pinned to stable, high-traffic films only. The `null` cases (411397 Agnes, 1245424 Nightless
+# Night) live in the unit fixtures instead: their TMDB records are publicly editable, so anyone
+# adding a US release date would turn a live assertion red for a reason that is not a defect.
+
+
+@pytest.mark.parametrize(
+    ("source_id", "title", "expected_rating", "why"),
+    [
+        ("tmdb:412117", "The Secret Life of Pets 2", "PG", "SC-001 — the reported case"),
+        ("tmdb:603", "The Matrix", "R", "a trailing empty certification must not win"),
+        ("tmdb:396535", "Train to Busan", "NR", "the source really says NR (FR-005)"),
+        ("tmdb:152747", "All Is Lost", "PG-13", "the FIRST entry is empty — a [0] read loses it"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_tmdb_get_movie_details_returns_the_real_us_certification(
+    tmdb_api_key: str,
+    tmdb_base_url: str,
+    source_id: str,
+    title: str,
+    expected_rating: str,
+    why: str,
+) -> None:
+    async with make_tmdb_client(tmdb_api_key, tmdb_base_url) as client:
+        candidate = await get_movie_details(client, source_id)
+
+    assert candidate["title"] == title, f"wrong film for {source_id}"
+    assert candidate["rated"] == expected_rating, why

@@ -48,11 +48,34 @@ had been erroring `app-ci` whenever the Anthropic balance ran out.
 | Golden — merge | `LLM_CASSETTE_MODE=replay nx test:golden` | `guardrails.yml` | **none** (cassette replay) |
 | Golden — pre-deploy | `nx test:golden-live` | `cd-deploy.yml`, before build/promote/webhook | `ANTHROPIC_API_CD_GOLDEN` |
 | Agent integration | `nx test:integration movie-assistant -- -m "not golden"` | `app-ci` `app-e2e` | `ANTHROPIC_API_CI_E2E` |
-| MCP integration | `nx test:integration movie-mcp` / `spreadsheet-mcp` | `app-ci` `app-e2e` | none |
+| MCP integration | `nx test:integration movie-mcp` / `spreadsheet-mcp` / `web-api-mcp` | `app-ci` `app-e2e` | `TMDB_API_KEY` (web-api-mcp only) |
 
 Quality gates run **at merge or at deploy, never on a timer** (product-owner constraint): a scheduled
-gate can only ever report damage that already shipped. `web-api-mcp` is deliberately not in CI —
-unconfirmed TMDB egress plus an unsettled per-user credential question.
+gate can only ever report damage that already shipped.
+
+**`web-api-mcp` was the one integration tier that ran nowhere, and 059 enrolled it.** 048 FR-013 had
+excluded it for two reasons it recorded as unresolved rather than merely unexamined: outbound egress
+from the runner to `api.themoviedb.org` was unconfirmed, and "which key a CI run should spend" was
+unsettled because TMDB keys are per-user in this design. Both are now answered:
+
+- **The credential question was answerable by inspection.** `TMDB_API_KEY` was *already* a job-level
+  env on `app-e2e` and already passed into the E2E container. The per-user design governs the
+  **runtime** request path, not this suite; a CI run spends the CI key. The step inherits the
+  job-level binding rather than re-declaring the secret.
+- **The egress question was answered by running it**, deliberately — an unconfirmed path that fails
+  loudly on its first run beats one that stays unexamined. Measured on run 1816:
+  `9 passed in 1.12s`, **0 skipped**. The runner can reach TMDB.
+
+**The order was the load-bearing part.** The skip-escalation went into that suite's conftest
+*before* the enrollment, never after. Measured with the key absent from both the environment and
+`.env.local`: the suite gave **`5 skipped`, exit 0** — indistinguishable from a pass. Enrolling first
+would have opened exactly the window where CI reports green for a suite that ran nothing, which is
+the failure this whole section exists to prevent.
+
+A related trap worth naming, because it made the first attempt at that measurement report a false
+green: `TMDB_API_KEY= pytest …` does **not** reproduce a missing key. The conftest reads
+`os.environ.get(k) or _ENV.get(k)`, so an *empty* variable falls through to `.env.local`. Reproducing
+the CI condition locally means moving the file aside, not blanking the variable.
 
 ## What actually gates CI
 
@@ -112,7 +135,10 @@ weeks (#150) and caused a sound fix to be reverted on a two-run inference (#166/
 
 ### Where the non-blocking ones run
 
-Tagged `@model-decision`, excluded from the pull-request gate by `--grep-invert`, and run as a second
+Tagged `@model-decision`, excluded from the pull-request gate by the `grepInvert` that
+`playwright.config.ts` applies when `E2E_TIER=gate` — **not** by a `--grep-invert` CLI flag, which
+Playwright 1.60 accepts here and silently ignores (`--grep CORS` lists 1 test, `--grep-invert CORS`
+lists all 177). A CLI-based split would have run everything while looking correct. Run as a second
 non-blocking selection in the SAME job on pushes to `main` and on `workflow_dispatch`. They keep
 running, keep publishing counts through the same bundle channel the gate uses, and cannot silently
 stop — a tier that quietly stopped running would read as one that is passing, which is the failure
@@ -151,7 +177,27 @@ this arrangement exists to avoid. **Nothing leaves the gate without a tier that 
   test whatever image happened to be cached on the runner — an `agents/**` or `mcp-servers/**` change
   could go untested against its own code.
 - **If a deployed service/BFF container was changed, rebuild + redeploy it before the E2E run** — the
-  E2E suite otherwise validates a stale image and reports false confidence.
+  E2E suite otherwise validates a stale image and reports false confidence. `scripts/agent-e2e.mjs`
+  recreates **only the BFF**: the gateway and the three MCP servers keep whatever image is on the
+  daemon, so an `agents/**` or `mcp-servers/**` change needs `scripts/agent-stack.mjs` first. Don't
+  trust the rebuild either — interrogate the running container (`docker exec … python -c "from
+  src.tools import <new symbol>"`), which is one command and turns "I rebuilt it" into evidence.
+- **A test that walks a fixed turn SEQUENCE is coverage that a new question silently invalidates.**
+  Inserting one question at the front of the assistant's add chain (059) turned **34** existing tests
+  red across the unit, integration and E2E tiers — every one of them a helper that answered by turn
+  *order* rather than by stage *name*. The rule is to **add a turn**, never to relax an assertion to
+  "some stage": the ordering is usually the guarantee the feature is about, and a relaxed assertion
+  stops proving the question is asked at all. Prefer helpers that match a reply to its question by
+  name, so the next inserted question lengthens the walk instead of silently redirecting every
+  caller's "yes" to a different question.
+- **The dangerous ones are the sequence-walkers that DON'T go red.** Two in 059. A gateway
+  integration test walked a fixed answer list under a comment claiming it matched "by STAGE rather
+  than by a fixed number of turns" — it never did; the list slid by one, the test still reached the
+  approval gate, and it passed while exercising a *different* flow than the one it documents. And
+  three E2E specs sharing an `answerOwnership` helper were missed entirely by the feature's own task
+  list, two of them `@gate`; they surfaced only from a red CI run. **A green that survives a change
+  to the thing under test proves nothing** — when you change a flow, grep for every caller of the
+  shared helper, not just the files the plan named.
 - **Golden tests are the model-cost-bearing surface.** All intent mapping, dedup, and resolution logic
   is pure code and unit/property tested at zero model cost; only actual model *decisions* (intent
   classification, phrasing) are exercised by the golden cassette suite, keeping the expensive tier

@@ -70,6 +70,10 @@ def _config(thread: str) -> dict[str, Any]:
 # ripped → rip qualities), so a test that just wants to reach the approval gate must walk
 # whatever stages the flow asks for rather than assuming a fixed number of turns.
 _CHAIN_ANSWERS = {
+    # 059 US2 put this question at the FRONT of the chain. Answered neutrally here so a test
+    # about the approval gate or idempotency is not also asserting a children's answer — the
+    # question itself is covered by tests/unit/test_organizer_add_chain.py.
+    "awaiting_childrens": "no",
     "awaiting_media": "Selected: none",
     "awaiting_ripped": "no",
     "awaiting_rip_quality": "Selected: none",
@@ -79,20 +83,29 @@ _CHAIN_ANSWERS = {
 async def _add_and_answer_ownership(graph: Any, cfg: dict[str, Any], answer: str = "yes") -> Any:
     """Drive the add flow through the whole ownership chain to the approval interrupt.
 
-    040 US4 introduced "Do you own this?" before the gate; 047 US4 extended it into a chain.
-    Turn 1 asks; each following turn answers the stage the flow is on. Returns the final turn.
+    040 US4 introduced "Do you own this?" before the gate; 047 US4 extended it into a chain;
+    059 US2 added a question ahead of all of them. Turn 1 asks; each following turn answers
+    whatever stage the flow is on. Returns the final turn.
+
+    `answer` is the OWNERSHIP answer specifically — the callers pass "yes"/"no" meaning owned or
+    not. It is matched to its stage by name rather than by turn number, so the extra question
+    059 inserted shifts the sequence without silently redirecting every caller's answer to a
+    different question.
     """
-    turn1 = await graph.ainvoke(
+    result = await graph.ainvoke(
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
-    assert "__interrupt__" not in turn1  # paused for the ownership question, not the approval gate
-    result = await graph.ainvoke({"messages": [("user", answer)]}, cfg)
-    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+    assert "__interrupt__" not in result  # paused for a chain question, not the approval gate
+    for _ in range(6):  # bounded: a stage that never advances fails loudly, not by hanging
         stage = str(result.get("add_stage") or "")
-        if stage not in _CHAIN_ANSWERS:
+        if stage == "awaiting_ownership":
+            reply = answer
+        elif stage in _CHAIN_ANSWERS:
+            reply = _CHAIN_ANSWERS[stage]
+        else:
             return result
-        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, cfg)
+        result = await graph.ainvoke({"messages": [("user", reply)]}, cfg)
     return result
 
 
@@ -192,6 +205,10 @@ async def test_multi_select_answer_survives_a_hostile_classification(hostile: st
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
+    # 059 US2 inserted the children's question ahead of ownership, so reaching the multi-select
+    # takes one more turn. The extra turn is added rather than the target stage relaxed — this
+    # test is specifically about what happens AT the multi-select confirm.
+    await graph.ainvoke({"messages": [("user", "no")]}, cfg)           # → awaiting_ownership
     await graph.ainvoke({"messages": [("user", "yes")]}, cfg)          # → awaiting_media
 
     # Only the multi-select CONFIRM is misclassified — the exact CI failure shape.
@@ -215,6 +232,13 @@ async def test_ownership_yes_no_survives_a_hostile_classification(hostile: str) 
         cfg,
     )
     label["v"] = hostile
+    # 059 US2 added a second Yes/No question, at the FRONT of the chain — so it is now the first
+    # thing a hostile classifier sees. Both answers are asserted: an add abandoned at the new
+    # question is lost just as completely as one abandoned at the ownership question.
+    after_childrens = await graph.ainvoke({"messages": [("user", "no")]}, cfg)
+    assert str(after_childrens.get("add_stage") or "") != "", (
+        f"a children's answer classified as {hostile!r} abandoned the add"
+    )
     result = await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
 
     assert str(result.get("add_stage") or "") != "", (
@@ -235,6 +259,7 @@ async def test_a_genuinely_new_command_still_escapes_the_ownership_chain() -> No
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
+    await graph.ainvoke({"messages": [("user", "no")]}, cfg)   # 059 US2: the children's question
     await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
 
     label["v"] = "query"

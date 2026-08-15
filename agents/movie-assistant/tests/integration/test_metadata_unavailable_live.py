@@ -101,12 +101,20 @@ async def test_metadata_unavailable_skips_the_question_and_still_completes_the_a
     }
 
     try:
-        # Turn 1: the add asks whether the member owns it.
+        # Turn 1: 059 US2 — the chain opens by asking whether it is a children's movie.
         first = await graph.ainvoke(
             {"messages": [("user", f"add Coherence (2013) to {name}")]}, config
         )
-        assert str(first.get("add_stage") or "") == "awaiting_ownership", (
-            f"expected the ownership question, got stage={first.get('add_stage')!r}"
+        assert str(first.get("add_stage") or "") == "awaiting_childrens", (
+            f"expected the children's question, got stage={first.get('add_stage')!r}"
+        )
+
+        # Turn 2: answered, the ownership question follows. Asserted by name — this test needs
+        # to REACH the ownership question, and a walk that accepted any stage could sail past it
+        # and then "pass" without ever exercising the metadata failure it exists to test.
+        ownership = await graph.ainvoke({"messages": [("user", "no")]}, config)
+        assert str(ownership.get("add_stage") or "") == "awaiting_ownership", (
+            f"expected the ownership question, got stage={ownership.get('add_stage')!r}"
         )
 
         # Answer YES — which is what normally triggers the media-format question.

@@ -244,3 +244,51 @@ def test_trim_leaves_a_whitespace_only_cell_blank_on_update() -> None:
     composed = compose_import_payload(existing, payload)
     assert composed["plot"] == "Paul Atreides leads the Fremen.", "a blank cell wiped an attribute"
     assert composed["language"] == "English"
+
+
+# ---------------------------------------------------------------------------
+# 059 T005 (FR-007 / SC-007): characterization guard for the spreadsheet import.
+#
+# A GUARD, not a RED/GREEN pair — it passes before 059 and must still pass after. 059
+# replaces two hardcoded literals in `to_movie_payload` ("rated": "NR", "childrens": False)
+# with a looked-up rating and an asked question. The import path must be untouched by that:
+# it builds its payload from `build_row_payload` + `apply_create_defaults` and never calls
+# `to_movie_payload` at all, so the member's own spreadsheet values stay authoritative.
+#
+# The failure this exists to catch is not hypothetical: the two paths write the same two
+# fields, and "fixing" the add path by editing a shared default would silently overwrite an
+# imported library's ratings with a TMDB lookup the member never asked for.
+
+
+def test_import_rating_comes_from_the_spreadsheet_column_not_an_add_time_default() -> None:
+    payload = build_row_payload(SAMPLE_ROW, _mappings(SAMPLE_ROW))
+    assert payload["rated"] == "R"  # the MPAA cell, verbatim
+
+    other = {**SAMPLE_ROW, "MPAA": "PG-13"}
+    assert build_row_payload(other, _mappings(other))["rated"] == "PG-13"
+
+
+def test_import_childrens_comes_from_the_spreadsheet_column() -> None:
+    yes = {**SAMPLE_ROW, "Children's": "Yes"}
+    assert build_row_payload(yes, _mappings(yes))["childrens"] is True
+    assert build_row_payload(SAMPLE_ROW, _mappings(SAMPLE_ROW))["childrens"] is False
+
+
+def test_import_create_defaults_are_unchanged_by_059() -> None:
+    """An import row that supplies neither field still defaults to childrens=False, rated=None.
+
+    `rated` defaults to null and NOT to "NR": mc-service requires the key to be present
+    (only `language` carries serde(default)), and an absent MPAA cell means the member did
+    not state a rating — which is exactly the distinction 059 restores on the add path.
+    """
+    payload = apply_create_defaults({"title": "Coherence", "contentType": "Movie"})
+    assert payload["childrens"] is False
+    assert payload["rated"] is None
+    assert "rated" in payload  # present-as-null, never omitted
+
+
+def test_import_does_not_route_through_the_add_payload_builder() -> None:
+    """The two paths share the fields, not the code — asserted so a future merge notices."""
+    import src.nodes.import_resolvers as import_resolvers
+
+    assert not hasattr(import_resolvers, "to_movie_payload")

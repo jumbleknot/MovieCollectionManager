@@ -139,7 +139,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/058-dependency-refresh-loop/plan.md`
+`specs/059-assistant-add-fidelity/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->

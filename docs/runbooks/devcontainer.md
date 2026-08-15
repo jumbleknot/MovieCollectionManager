@@ -116,17 +116,30 @@ already in its environment*, and the container recreated.
 - **`TMDB_API_KEY`** — a TMDB **v3** key for the agent's TMDB enrichment/search (web-api-mcp). The
   assistant dock only renders once the test user has a **runnable agent config**, and
   `agent-config-seed.ts` needs a TMDB key to seed one — so the agent web E2E (US1-navigate,
-  US4-add-from-TMDB) requires it. TMDB egress itself is **not** firewall-blocked (web-api-mcp is a
-  nested container → FORWARD chain) — **measured 2026-07-16**: with TMDB *absent* from
-  `ALLOWED_DOMAINS`, a nested container reaches a non-allowlisted domain (`example.com` → 200) and the
-  nested BFF reaches TMDB (`401` = connected, key rejected); only the dev-container **host shell** is
-  blocked (`000`). Every runtime path that calls TMDB (the BFF's validate-on-save probe, web-api-mcp's
-  curator enrichment) is a **nested container**, so **do NOT add TMDB (or any app API) to the
-  allowlist** — if a probe times out, the ruleset is stale: re-apply `init-firewall.sh`. *(Only one
-  thing wants TMDB from the shell: `agent-config-probes.integration.test.ts` runs the probes
-  IN-PROCESS. It is env-gated in here regardless — its Ollama case needs a local
-  `localhost:11434` — so allowlisting TMDB would not make that suite pass. See the test-status note
-  below.)* Free key from themoviedb.org → Settings → API. After rebuild, run
+  US4-add-from-TMDB) requires it. **`api.themoviedb.org` IS on the allowlist as of 059** — and the
+  two chains behave differently, which is the whole of this entry:
+  - **Nested containers never needed it** (FORWARD chain, which `init-firewall.sh` leaves alone).
+    **Measured 2026-07-16**, with TMDB *absent* from `ALLOWED_DOMAINS`: a nested container reached a
+    non-allowlisted domain (`example.com` → 200) and the nested BFF reached TMDB (`401` = connected,
+    key rejected). Every RUNTIME path that calls TMDB — the BFF's validate-on-save probe,
+    web-api-mcp's curator enrichment — is nested, so an allowlist entry does nothing for the app.
+    **If one of those probes times out, the ruleset is stale — re-apply `init-firewall.sh` to
+    re-resolve the CDN IPs. Do not "fix" it by widening the allowlist; that is not what is wrong.**
+  - **The dev-container SHELL (OUTPUT chain) was blocked** (`000`), and that is what changed.
+    Feature 059 makes the TMDB certification a merge-relevant assertion, and its proof is
+    `nx test:integration web-api-mcp` — pytest, in the shell. **Measured 2026-08-14**: before the
+    entry, `curl https://api.themoviedb.org/3/` from the shell timed out (exit 28) while
+    `registry.npmjs.org` returned 200 in the same shell; after re-applying the script it returns
+    `401` (connected) and `example.com` still times out, so default-deny is intact. The entry exists
+    for the TEST RUNNER, not for the app.
+
+  The older blanket instruction ("do NOT add TMDB, or any app API, to the allowlist") is therefore
+  **superseded, not reversed by oversight**: it was a diagnostic guard against widening egress to fix
+  a stale-ipset symptom, and it holds for every runtime path. It did not cover a test runner in the
+  shell. *(The other shell-side TMDB consumer, `agent-config-probes.integration.test.ts`, runs its
+  probes IN-PROCESS but stays env-gated for an unrelated reason — its Ollama case needs a local
+  `localhost:11434`. See the test-status note below.)*
+  Free key from themoviedb.org → Settings → API. After rebuild, run
   `node scripts/gen-dev-env.mjs` inside the container to also write it into
   `mcp-servers/web-api-mcp/.env.local`. Unset → empty → the agent's TMDB flows no-op and the dock stays
   hidden, but the container still comes up.

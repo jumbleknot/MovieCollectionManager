@@ -92,6 +92,9 @@ def _config(thread: str) -> dict[str, Any]:
 # ripped → rip qualities). A test that only wants to reach the approval gate answers whatever
 # stage the flow is on rather than assuming one "yes" suffices.
 _CHAIN_ANSWERS = {
+    # 059 US2 added this question at the FRONT of the chain. Answered neutrally here so a test
+    # about something else is not also asserting a children's answer.
+    "awaiting_childrens": "no",
     "awaiting_media": "Selected: none",
     "awaiting_ripped": "no",
     "awaiting_rip_quality": "Selected: none",
@@ -100,12 +103,22 @@ _CHAIN_ANSWERS = {
 
 async def _answer_ownership_chain(graph: Any, cfg: dict[str, Any], answer: str = "yes") -> Any:
     """Answer the ownership question and every follow-up; return the final turn."""
-    result = await graph.ainvoke({"messages": [("user", answer)]}, cfg)
-    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+    # 059 US2: the caller's `answer` is the OWNERSHIP answer, which is no longer the first reply
+    # — the children's question now comes first. Replies are matched to stages BY NAME rather
+    # than by turn order, so inserting a question shifts the sequence without silently
+    # redirecting every caller's "yes"/"no" to a different question than it was written for.
+    result = await graph.ainvoke(
+        {"messages": [("user", _CHAIN_ANSWERS["awaiting_childrens"])]}, cfg
+    )
+    for _ in range(5):  # bounded: a stage that never advances fails loudly, not by hanging
         stage = str(result.get("add_stage") or "")
-        if stage not in _CHAIN_ANSWERS:
+        if stage == "awaiting_ownership":
+            reply = answer
+        elif stage in _CHAIN_ANSWERS:
+            reply = _CHAIN_ANSWERS[stage]
+        else:
             return result
-        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, cfg)
+        result = await graph.ainvoke({"messages": [("user", reply)]}, cfg)
     return result
 
 

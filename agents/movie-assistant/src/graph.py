@@ -55,8 +55,9 @@ class GraphState(MessagesState):
     options: list[dict[str, Any]]
     apply_result: Any
     # Multi-turn add lifecycle (T069/R14; 040 US4 adds "awaiting_ownership"; 047 US4 adds the
-    # three follow-up stages): "" | "awaiting_pick" | "awaiting_collection" |
-    # "awaiting_ownership" | "awaiting_media" | "awaiting_ripped" | "awaiting_rip_quality".
+    # three follow-up stages; 059 US2 adds "awaiting_childrens" AT THE FRONT): "" |
+    # "awaiting_pick" | "awaiting_collection" | "awaiting_childrens" | "awaiting_ownership" |
+    # "awaiting_media" | "awaiting_ripped" | "awaiting_rip_quality".
     add_stage: str
     # 040 US4: the resolved add target (serialized CollectionRef), persisted across the ownership
     # Yes/No turn so a bare "yes"/"no" reply doesn't re-resolve to the wrong collection.
@@ -67,6 +68,10 @@ class GraphState(MessagesState):
     add_owned_media: list[str]
     add_ripped: bool | None
     add_rip_quality: list[str]
+    # 059 US2: the member's answer to "Is this a children's movie?", held across the rest of the
+    # chain until the proposal is built. None until answered. Cleared by _ADD_STATE_RESET with
+    # everything else, so a concluded or abandoned add cannot leak the answer into the next one.
+    add_childrens: bool | None
     # The option values the CURRENT multi-select offered, so a typed reply (FR-036) resolves
     # against the same set the buttons showed rather than against a list the agent invented.
     add_multi_pending: list[str]
@@ -157,16 +162,27 @@ _ADD_STATE_RESET: dict[str, Any] = {
     "add_ripped": None,
     "add_rip_quality": [],
     "add_multi_pending": [],
+    "add_childrens": None,
 }
 
 # The add stages whose pending question is answered by a bare value the classifier reads as
 # out_of_domain ("yes", "no", "Selected: DVD, Blu-Ray"). Every one of them must keep the turn in
 # the add flow rather than re-classifying it (040 US4 + 047 US4).
 _OWNERSHIP_STAGES = frozenset(
-    {"awaiting_ownership", "awaiting_media", "awaiting_ripped", "awaiting_rip_quality"}
+    {
+        # 059 US2: the chain's first question about the movie. Registered here so a bare "yes"
+        # answering it stays in the add flow instead of being re-classified as a new request.
+        "awaiting_childrens",
+        "awaiting_ownership",
+        "awaiting_media",
+        "awaiting_ripped",
+        "awaiting_rip_quality",
+    }
 )
 
-# The two ownership stages that ask a MULTI-VALUED question; the other two are Yes/No.
+# The ownership stages that ask a MULTI-VALUED question; the rest are Yes/No. `awaiting_childrens`
+# is deliberately NOT here (FR-011): listed as multi-select, a plain "yes" would be resolved
+# against an empty option list and the question could never be answered.
 _MULTI_SELECT_STAGES = frozenset({"awaiting_media", "awaiting_rip_quality"})
 
 

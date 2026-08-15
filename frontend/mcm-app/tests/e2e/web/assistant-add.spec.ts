@@ -28,7 +28,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
-import { answerOwnership } from './setup/assistant-add-flow';
+import { answerChildrens, answerOwnership } from './setup/assistant-add-flow';
 
 // Add flow = Ollama classify+extract + TMDB enrich + movie-mcp list + Keycloak exchange, then a
 // resume round. Generous budgets on top of a possible Metro cold-compile.
@@ -100,6 +100,8 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
 
     // 040 US4: the add is gated on "Do you own this movie?" BEFORE the proposal is built. "No"
     // ends the ownership chain at once — this spec is about the approval gate, not ownership.
+    // 059 US2: the children's question now opens the chain, ahead of ownership.
+    await answerChildrens(page);
     await answerOwnership(page);
 
     // The HITL approval card appears once enrichment + the proposal are ready. Nothing is
@@ -132,6 +134,8 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
     await gotoHome(page);
     await openDock(page);
     await askToAdd(page, collectionName);
+    // 059 US2: the children's question now opens the chain, ahead of ownership.
+    await answerChildrens(page);
     await answerOwnership(page);
 
     const approval = page.locator('[data-testid="approval-request"]');

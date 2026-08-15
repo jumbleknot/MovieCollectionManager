@@ -198,8 +198,9 @@ async def test_gateway_add_gated_until_approval_then_persists(
     cleanup_token = await _downscoped(subject_token, reexchange_env)
 
     try:
-        # 1) The add turn — enrich (real TMDB) + resolve the target, then PAUSE on the 040 US4
-        # ownership question ("Do you own this?"). No interrupt yet, and nothing written.
+        # 1) The add turn — enrich (real TMDB) + resolve the target, then PAUSE on the first
+        # question of the chain (059 US2: "Is this a children's movie?", ahead of the 040 US4
+        # ownership question). No interrupt yet, and nothing written.
         resp = client.post(AGENT_PATH, json=_run_body(thread, name), headers=auth)
         assert resp.status_code == 200
         assert _find_collection_id(cleanup_token, name) is None  # gated: nothing persisted
@@ -213,9 +214,27 @@ async def test_gateway_add_gated_until_approval_then_persists(
         # of the approval gate — see the module docstring for the 040 occurrence. The failure mode
         # is identical and deeply unhelpful: every POST still returns 200 because AG-UI streams the
         # error inside the event stream, so the only symptom is "approved add did not create the
-        # collection" three steps later. Answering by STAGE rather than by a fixed number of turns
-        # means the next question inserted here does not break it a third time.
-        for answer in ("yes", "Selected: none", "no"):
+        # collection" three steps later.
+        #
+        # 059 US2 inserted a third question, and this walk did NOT fail — which is worse than
+        # failing. The comment above used to claim the answers were matched "by STAGE rather than
+        # by a fixed number of turns"; they never were, this is a fixed list. With the extra
+        # question the list silently slid by one ("yes" answered the children's question,
+        # "Selected: none" was unparseable at the ownership question and re-asked it, "no" then
+        # answered ownership) — so the test still reached the gate and still passed, while
+        # exercising a DIFFERENT flow than the one it documents: not-owned, instead of owned with
+        # no formats. A green that survives a change to the thing under test proves nothing.
+        #
+        # The list is now one longer and its intent is stated per answer. Answering genuinely by
+        # stage needs the graph's state, which this test reaches only over HTTP; the tier that
+        # walks stages by name is test_add_flow.py, and the assertion below is what keeps this
+        # walk honest in the meantime.
+        for answer in (
+            "no",  # 059 US2 — is it a children's movie?
+            "yes",  # 040 US4 — do you own it?
+            "Selected: none",  # 047 US4 — which formats?
+            "no",  # 047 US4 — is it ripped?
+        ):
             resp_own = client.post(
                 AGENT_PATH, json=_run_body(thread, name, message=answer), headers=auth
             )

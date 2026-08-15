@@ -94,6 +94,9 @@ def _organizer(collections: list[dict[str, Any]]) -> Any:
 # advances without recording anything, so a test about targeting or idempotency is not also
 # asserting a particular set of formats.
 _CHAIN_ANSWERS = {
+    # 059 US2 added this question at the FRONT of the chain. Answered neutrally here so a test
+    # about something else is not also asserting a children's answer.
+    "awaiting_childrens": "no",
     "awaiting_media": "Selected: none",
     "awaiting_ripped": "no",
     "awaiting_rip_quality": "Selected: none",
@@ -119,7 +122,8 @@ async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") ->
         reply = answer if stage == "awaiting_ownership" else _CHAIN_ANSWERS[stage]
         messages = [*messages, HumanMessage(content=reply)]
         # Carry the state the node accumulates across the chain, as the checkpointer would.
-        for key in ("add_target", "add_owned_media", "add_ripped", "add_multi_pending"):
+        for key in ("add_target", "add_childrens", "add_owned_media", "add_ripped",
+                    "add_multi_pending"):
             if key in out:
                 carried[key] = out[key]
         out = await node({**state, **carried, "add_stage": stage, "messages": messages})
@@ -230,15 +234,30 @@ async def test_proposal_items_carry_deterministic_idempotency_keys() -> None:
 
 async def test_add_asks_ownership_before_building_the_proposal() -> None:
     node = _organizer(_EXISTING)
-    first = await node(_state("Sci-Fi"))
+    # 059 US2 put the children's question ahead of this one, so the ownership question is now
+    # reached on the second turn. The extra turn is walked rather than the assertion relaxed —
+    # this test is about the OWNERSHIP question's shape, and "whatever stage comes first" would
+    # stop proving that it is asked at all. The new first question has its own coverage in
+    # tests/unit/test_organizer_add_chain.py.
+    opening = await node(_state("Sci-Fi"))
+    assert opening["add_stage"] == "awaiting_childrens"
+    first = await node(
+        {
+            **_state("Sci-Fi"),
+            "add_target": opening["add_target"],
+            "add_stage": "awaiting_childrens",
+            "messages": [*_state("Sci-Fi")["messages"], HumanMessage(content="no")],
+        }
+    )
     assert first["add_stage"] == "awaiting_ownership"
     assert first.get("pending_proposal") is None  # nothing to approve yet — no write proposed
     call = first["messages"][-1].tool_calls[0]
     assert call["name"] == "render_selection"
     values = {o["value"] for o in call["args"]["options"]}
     assert values == {"yes", "no"}
-    # The resolved target is persisted so the answer turn doesn't re-resolve it.
-    assert first["add_target"]["collection_id"] == "0123456789abcdef01234567"
+    # The resolved target is persisted so the answer turn doesn't re-resolve it. It is persisted
+    # by the FIRST question now — whichever question opens the chain has to carry it.
+    assert opening["add_target"]["collection_id"] == "0123456789abcdef01234567"
 
 
 async def test_ownership_yes_marks_the_add_item_owned_true() -> None:

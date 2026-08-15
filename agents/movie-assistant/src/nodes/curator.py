@@ -119,7 +119,15 @@ async def enrich_movie(
 # "Selected: DVD, Blu-Ray") rather than a film title. Mirrors graph._OWNERSHIP_STAGES; kept
 # local so the curator has no import dependency on the graph module.
 _OWNERSHIP_STAGES = frozenset(
-    {"awaiting_ownership", "awaiting_media", "awaiting_ripped", "awaiting_rip_quality"}
+    {
+        # 059 US2 — and it is the FIRST stage now, so missing it here would reset the member
+        # on the very first answer of every add.
+        "awaiting_childrens",
+        "awaiting_ownership",
+        "awaiting_media",
+        "awaiting_ripped",
+        "awaiting_rip_quality",
+    }
 )
 
 

@@ -37,7 +37,37 @@ export const OWNERSHIP_TIMEOUT = 180_000;
  * `disambiguation-options`.
  */
 export async function answerOwnership(page: Page, answer: 'Yes' | 'No' = 'No'): Promise<void> {
-  await expect(page.getByTestId('assistant-dock-panel')).toContainText('Do you own', {
+  await answerChainQuestion(page, 'Do you own', answer);
+}
+
+/**
+ * Answer the "Is this a children's movie?" question, which 059 US2 put at the FRONT of the chain —
+ * before the ownership question, so that every add records the answer including the not-owned adds
+ * that short-circuit the rest of the chain.
+ *
+ * Kept as its own exported step rather than folded into `answerOwnership`, so each spec's turn
+ * sequence stays visible at the call site. A helper that quietly swallowed both questions would
+ * make the next inserted question invisible too — and the ordering is precisely what the chain
+ * guarantees.
+ */
+export async function answerChildrens(page: Page, answer: 'Yes' | 'No' = 'No'): Promise<void> {
+  await answerChainQuestion(page, /children/i, answer);
+}
+
+/**
+ * Answer one Yes/No question of the add chain, asserting the question actually arrived first.
+ *
+ * `asks` is not optional garnish. Both questions render the same `selection-options` control, so a
+ * bare `.last()` can match the PREVIOUS question's control while it is still mounted — the answer
+ * then lands on a question already answered and the flow stalls on the approval card, which is the
+ * ambiguous symptom this whole helper exists to remove.
+ */
+async function answerChainQuestion(
+  page: Page,
+  asks: string | RegExp,
+  answer: 'Yes' | 'No',
+): Promise<void> {
+  await expect(page.getByTestId('assistant-dock-panel')).toContainText(asks, {
     timeout: OWNERSHIP_TIMEOUT,
   });
   const options = page.locator('[data-testid="selection-options"]').last();

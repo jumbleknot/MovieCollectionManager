@@ -53,6 +53,12 @@ reachable "https://pypi.org/simple/" "PyPI (pypi.org)"
 reachable "https://files.pythonhosted.org/" "PyPI files (files.pythonhosted.org)"
 reachable "https://astral.sh/" "astral (uv installer)"
 reachable "https://api.expo.dev/" "Expo (api.expo.dev)"
+# 059 — TMDB from the SHELL. web-api-mcp's integration suite runs pytest here (OUTPUT chain), so
+# this entry is load-bearing for a merge-relevant assertion. The app never needed it: every runtime
+# TMDB path is a nested container on the FORWARD chain. A rebuild that loses the entry fails HERE,
+# with the allowlist named, instead of surfacing as a connect timeout inside pytest.
+# (401 is a pass — reachable() accepts any HTTP status; it proves egress, not authentication.)
+reachable "https://api.themoviedb.org/3/" "TMDB (api.themoviedb.org)"
 
 echo "  — default-deny still holds (arbitrary host refused)"
 # A host that is DEFINITELY not on the allowlist. Under default-deny the OUTPUT DROP blackholes it →

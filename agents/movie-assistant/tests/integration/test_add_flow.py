@@ -119,6 +119,9 @@ def _config(thread: str, subject_token: str) -> dict[str, Any]:
 # ripped → rip qualities). A test that only wants to reach the approval gate answers whatever
 # stage the flow is on, with neutral answers that record nothing.
 _CHAIN_ANSWERS = {
+    # 059 US2 put "Is this a children's movie?" at the FRONT of the chain. Answered neutrally so
+    # a test about idempotency or persistence is not also asserting a children's answer.
+    "awaiting_childrens": "no",
     "awaiting_media": "Selected: none",
     "awaiting_ripped": "no",
     "awaiting_rip_quality": "Selected: none",
@@ -131,23 +134,33 @@ async def _add_and_own(
     """Drive the add through the whole ownership chain to the approval interrupt.
 
     040 US4 made the add ask "Do you own this?" BEFORE the approval gate; 047 US4 extended that
-    into a chain. Turn 1 pauses at `awaiting_ownership` (no interrupt); each following turn
-    answers the stage the flow is on. Returns the paused-at-approval result — the drop-in
-    replacement for the pre-US4 single add `ainvoke`.
+    into a chain; 059 US2 added a question ahead of all of them. Turn 1 pauses at
+    `awaiting_childrens` (no interrupt); each following turn answers the stage the flow is on.
+    Returns the paused-at-approval result — the drop-in replacement for the pre-US4 single add
+    `ainvoke`.
+
+    `answer` is the OWNERSHIP answer and is matched to its stage BY NAME, so 059's extra question
+    lengthens the walk without redirecting the caller's "yes"/"no" onto a different question.
     """
     first = await graph.ainvoke(
         {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
         config,
     )
-    assert "__interrupt__" not in first  # paused for the ownership question, not the approval gate
-    assert first.get("add_stage") == "awaiting_ownership"
+    assert "__interrupt__" not in first  # paused for a chain question, not the approval gate
+    # The chain's FIRST pause, asserted by name rather than softened to "some stage" — the
+    # ordering is the guarantee 059 US2 is about, and a relaxed assertion would stop proving it.
+    assert first.get("add_stage") == "awaiting_childrens"
 
-    result = await graph.ainvoke({"messages": [("user", answer)]}, config)
-    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+    result = first
+    for _ in range(6):  # bounded: a stage that never advances fails loudly, not by hanging
         stage = str(result.get("add_stage") or "")
-        if stage not in _CHAIN_ANSWERS:
+        if stage == "awaiting_ownership":
+            reply = answer
+        elif stage in _CHAIN_ANSWERS:
+            reply = _CHAIN_ANSWERS[stage]
+        else:
             return result
-        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, config)
+        result = await graph.ainvoke({"messages": [("user", reply)]}, config)
     return result
 
 
@@ -349,7 +362,13 @@ async def test_ownership_details_persist_exactly_the_chosen_values(
         {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
         config,
     )
-    assert first.get("add_stage") == "awaiting_ownership"
+    # 059 US2: the children's question opens the chain; the ownership question follows it. The
+    # turn is ADDED — this test walks the sequence deliberately, stage by stage, and that is
+    # exactly what must keep being proved.
+    assert first.get("add_stage") == "awaiting_childrens"
+
+    ownership_turn = await graph.ainvoke({"messages": [("user", "no")]}, config)
+    assert ownership_turn.get("add_stage") == "awaiting_ownership"
 
     # Yes → the format question, built from the values mc-service just published.
     media_turn = await graph.ainvoke({"messages": [("user", "yes")]}, config)

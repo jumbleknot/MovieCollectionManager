@@ -134,6 +134,9 @@ def _config(thread: str) -> dict[str, Any]:
 # ripped → rip qualities), so a test that just wants to reach the approval gate must walk
 # whatever stages the flow asks for rather than assuming a fixed number of turns.
 _CHAIN_ANSWERS = {
+    # 059 US2 added this question at the FRONT of the chain. Answered neutrally here so a test
+    # about something else is not also asserting a children's answer.
+    "awaiting_childrens": "no",
     "awaiting_media": "Selected: none",
     "awaiting_ripped": "no",
     "awaiting_rip_quality": "Selected: none",
@@ -146,12 +149,22 @@ async def _answer_ownership(graph: Any, cfg: dict[str, Any], answer: str = "yes"
     040 US4 added "Do you own this?" after the target resolves; 047 US4 extended it into a
     chain, so this walks the remaining stages rather than assuming one answer suffices.
     """
-    result = await graph.ainvoke({"messages": [("user", answer)]}, cfg)
-    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+    # 059 US2: the caller's `answer` is the OWNERSHIP answer, which is no longer the first reply
+    # — the children's question now comes first. Replies are matched to stages BY NAME rather
+    # than by turn order, so inserting a question shifts the sequence without silently
+    # redirecting every caller's "yes"/"no" to a different question than it was written for.
+    result = await graph.ainvoke(
+        {"messages": [("user", _CHAIN_ANSWERS["awaiting_childrens"])]}, cfg
+    )
+    for _ in range(5):  # bounded: a stage that never advances fails loudly, not by hanging
         stage = str(result.get("add_stage") or "")
-        if stage not in _CHAIN_ANSWERS:
+        if stage == "awaiting_ownership":
+            reply = answer
+        elif stage in _CHAIN_ANSWERS:
+            reply = _CHAIN_ANSWERS[stage]
+        else:
             return result
-        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, cfg)
+        result = await graph.ainvoke({"messages": [("user", reply)]}, cfg)
     return result
 
 
@@ -192,8 +205,12 @@ async def test_ambiguous_this_is_captured_and_resolves_current_collection_after_
     turn2 = await graph.ainvoke(
         {"messages": [("user", "the first one")], "ui_snapshot": ui}, cfg
     )
-    assert "__interrupt__" not in turn2  # the pick resolved → asks ownership before the gate
-    assert turn2["add_stage"] == "awaiting_ownership"
+    # The pick resolved → the question chain opens before the gate. 059 US2 moved the chain's
+    # first question to "Is this a children's movie?"; the guarantee under test is that a
+    # resolved pick pauses for the chain rather than proposing a write, so the stage is asserted
+    # by name and not softened to "some stage".
+    assert "__interrupt__" not in turn2
+    assert turn2["add_stage"] == "awaiting_childrens"
 
     turn3 = await _answer_ownership(graph, cfg)  # answer "yes" → approval gate
     assert "__interrupt__" in turn3

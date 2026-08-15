@@ -153,7 +153,12 @@ passages:
     #     in the dev container when one gitignored .env.local was missing: distrust "it can't run
     #     here", an unactionable skip reason is itself a defect, and a generator that silently
     #     no-ops is a gate that skips to green one layer down.
-    fingerprint: "sha256:fa14ce4cdfc2989737301c57607ca128b6b26015716adbaba93e1e3dc9a692ae"
+    #   2026-08-15 — 059. Three more, from inserting one question into the assistant's add chain:
+    #     the E2E runner rebuilds only the BFF (interrogate the container, don't trust the build);
+    #     a test that walks a fixed turn SEQUENCE must gain a turn, never a relaxed assertion; and
+    #     the dangerous sequence-walkers are the ones that DON'T go red — two here, one passing a
+    #     slid-by-one answer list, three specs missed by the task list and caught only by CI.
+    fingerprint: "sha256:b94ac6f19a80944e6ae53b4fb6a24b56b99e5b7379f280d66125d3c769b38326"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/feature-test-scope.md"

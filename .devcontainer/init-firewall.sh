@@ -85,6 +85,17 @@ ALLOWED_DOMAINS=(
   # Expo / EAS.
   "api.expo.dev"
   "exp.host"
+  # 059 — TMDB, for web-api-mcp's integration suite, which runs pytest IN THE DEV-CONTAINER SHELL.
+  # This REVERSES an earlier "do NOT allowlist TMDB" instruction, and the reason that instruction
+  # existed is worth keeping: measured 2026-07-16, every RUNTIME path that calls TMDB (the BFF's
+  # validate-on-save probe, web-api-mcp's curator enrichment) is a NESTED container and so traverses
+  # the FORWARD chain, which this script leaves alone — those paths never needed an allowlist entry,
+  # and adding one for them would have been cargo-culting. What changed is that 059 makes the
+  # certification lookup a merge-relevant assertion, and its integration test runs from the shell
+  # (OUTPUT chain), where TMDB was correctly unreachable. So this entry exists for the TEST RUNNER,
+  # not for the app. api.themoviedb.org is CloudFront-backed (13.33.x measured) and rotates IPs like
+  # the registries above — re-run this script to refresh the ipset if a probe starts timing out.
+  "api.themoviedb.org"
 )
 
 # The project's forge registry host is topology-sensitive — NEVER a git literal (topology-scrub
