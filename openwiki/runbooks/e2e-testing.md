@@ -4,7 +4,7 @@ title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate that now blocks a merge.
 resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook]
-timestamp: 2026-08-11T00:00:00+00:00
+timestamp: 2026-08-15T00:00:00+00:00
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -75,11 +75,19 @@ integration, and golden tests, and how CI enforces the integration tier ahead of
   phrase from earlier turns. Count replies before and after the action, wait for `count + 1`, then
   read only the last one. On mobile (Maestro), scope to signatures the bug *alone* produces — a bare
   `.*couldn't find.*` matches legitimate transcript text in both the passing and failing worlds.
+- **The Playwright image tag MUST follow the lockfile's `@playwright/test` version — they are not
+  independent.** A lockfile maintenance bump that moves `@playwright/test` without moving the
+  `mcr.microsoft.com/playwright:<version>-noble` tag in `docs/runbooks/devcontainer.md` (and in the
+  `docker ps` filter below) makes the browser launch fail outright with
+  `browserType.launch: Executable doesn't exist at /ms-playwright/chromium_headless_shell-…` — ZERO
+  tests run and the e2e gate reports `no Playwright summary found` rather than a count. Measured on
+  PR #199: lockfile moved 1.60.0 → 1.62.1, the image tag did not follow, and the gate failed with
+  that error. Always update the tag together with the lockfile bump; the current pin is **v1.62.1**.
 - **Killing the shell does NOT kill a containerised `docker run`.** The container detaches from the
   CLI process, so cancelling the command leaves Playwright still running — consuming the same shared
   test user and gateway as any subsequent run. Measured 2026-08-09: an abandoned full-suite run was
   still at test 24/174 fifteen minutes after being "stopped". Always confirm and kill:
-  `docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.60.0-noble`.
+  `docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.62.1-noble`.
 - **Include the assistant's *decline* copy in the negatives.** The same routing bug can surface as
   "I couldn't find…" on one model and "I can only help with your movie collections." on another. A
   test that knows only one symptom misses the same defect on a different provider.
