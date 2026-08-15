@@ -267,6 +267,44 @@ def parse_ownership_answer(text: str) -> bool | None:
     return _parse_ownership(text)
 
 
+def _ask_childrens(
+    candidate: EnrichedMovieCandidate, target: CollectionRef | None = None
+) -> dict[str, Any]:
+    """Ask "Is this a children's movie?" as Yes/No buttons — the chain's FIRST question (059 US2).
+
+    Mirrors `_ask_ownership` exactly, including persisting the resolved `target` on the first
+    ask so the bare "yes"/"no" resume turn does not re-resolve it to the wrong collection.
+
+    The Yes/No options reach the client through the same `render_selection` control the 040/047
+    questions use, so a tapped answer and a typed one are the same message by construction
+    (FR-012) and no frontend change is needed (research R7).
+    """
+    out: dict[str, Any] = {
+        "pending_proposal": None,
+        "add_stage": "awaiting_childrens",
+        "messages": [
+            AIMessage(
+                content=f'Is "{candidate.title}" a children\'s movie?',
+                tool_calls=[
+                    {
+                        "name": RENDER_SELECTION,
+                        "args": render_selection(
+                            [
+                                {"label": "Yes", "value": "yes", "kind": "ownership"},
+                                {"label": "No", "value": "no", "kind": "ownership"},
+                            ]
+                        ),
+                        "id": "add-childrens",
+                    }
+                ],
+            )
+        ],
+    }
+    if target is not None:
+        out["add_target"] = target.model_dump()
+    return out
+
+
 def _ask_ownership(
     candidate: EnrichedMovieCandidate, target: CollectionRef | None = None
 ) -> dict[str, Any]:
@@ -394,9 +432,17 @@ def _build_ownership_proposal(
     ripped: bool,
     rip_quality: Sequence[str],
 ) -> dict[str, Any]:
-    """Build the add proposal once every ownership answer is in (047 US4, FR-030)."""
+    """Build the add proposal once every ownership answer is in (047 US4, FR-030).
+
+    059 US2: the children's answer is read from state HERE rather than being threaded through
+    every caller, because the "not owned" branch reaches this function without passing through
+    the later stages — and that shortcut is exactly where a threaded value would be dropped
+    (US2-AC5).
+    """
     stored = state.get("add_target")
     target = CollectionRef.model_validate(stored) if isinstance(stored, dict) else CollectionRef()
+    raw_childrens = state.get("add_childrens")
+    childrens = bool(raw_childrens) if raw_childrens is not None else None
     proposal = build_add_proposal(
         thread_id=str(state.get("thread_id") or ""),
         proposal_id=new_id(),
@@ -407,6 +453,7 @@ def _build_ownership_proposal(
         owned_media=owned_media,
         ripped=ripped,
         rip_quality=rip_quality,
+        childrens=childrens,
     )
     where = target.name or "the collection"
     movie = f"{candidate.title} ({candidate.year})"
@@ -424,6 +471,9 @@ def _build_ownership_proposal(
         "add_ripped": None,
         "add_rip_quality": [],
         "add_multi_pending": [],
+        # Cleared with the rest of the add state: the answer is now checkpointed on the proposal
+        # item, so leaving it here would only let one add's answer leak into the next.
+        "add_childrens": None,
         "messages": [AIMessage(content=content)],
     }
 
@@ -468,6 +518,8 @@ async def _add(
     # and the write proposal is built only once every question is answered — so the member
     # approves ONE complete change instead of an add followed by an edit (FR-030).
     #
+    #   awaiting_childrens --yes/no--> awaiting_ownership   (059 US2 — the answer is recorded
+    #                                                        and carried to the proposal)
     #   awaiting_ownership --no--> proposal (not owned, nothing else recorded)
     #                      --yes-> awaiting_media
     #   awaiting_media     --confirm--> awaiting_ripped        (zero selections is legal, FR-028)
@@ -478,6 +530,14 @@ async def _add(
     # An unresolvable reply RE-ASKS its own question rather than guessing or falling through.
     stage = str(state.get("add_stage") or "")
     reply = _last_user_text(state.get("messages", []))
+
+    if stage == "awaiting_childrens":
+        # Same Yes/No parser as every other single-valued question in the chain, so the
+        # supervisor's stage guard and this branch can never disagree about what an answer is.
+        childrens = _parse_ownership(reply)
+        if childrens is None:
+            return _ask_childrens(candidate)  # re-ask; keeps the persisted add_target + stage
+        return {**_ask_ownership(candidate), "add_childrens": childrens}
 
     if stage == "awaiting_ownership":
         owned = _parse_ownership(reply)
@@ -603,10 +663,14 @@ async def _add(
             ],
         }
 
-    # 040 US4: target resolved — ask "Do you own this movie?" BEFORE building the write proposal.
-    # Persist the resolved target so the Yes/No resume turn doesn't re-resolve it. The proposal is
-    # built (with the ownership answer) on the resume, in the awaiting_ownership branch above.
-    return _ask_ownership(candidate, target)
+    # Target resolved — start the question chain BEFORE building the write proposal, persisting
+    # the resolved target so a bare Yes/No resume turn doesn't re-resolve it.
+    #
+    # 059 US2 moved this entry point: the chain now opens with "Is this a children's movie?"
+    # rather than "Do you own this?" (which follows it). Note where this sits — everything above
+    # is target resolution, so the collection question keeps its position ahead of both
+    # (FR-008a). The proposal is built on a later resume, in the stage branches above.
+    return _ask_childrens(candidate, target)
 
 
 # Cleared whenever an organize turn concludes or escapes (mirrors the search/add resets) so a

@@ -70,6 +70,11 @@ class EnrichedMovieCandidate(BaseModel):
     poster_url: str | None = Field(default=None, alias="posterUrl")
     language: str | None = None
     match_confidence: MatchConfidence | None = Field(default=None, alias="matchConfidence")
+    # 059 US1: the film's US certification as published by the source, validated by web-api-mcp
+    # against the vocabulary mc-service accepts — or None when the source publishes none.
+    # Defaulted, so the disambiguation path (which builds candidates from search results, with no
+    # details call) and every existing construction site keep working unchanged.
+    rated: str | None = None
 
 
 class CollectionRef(BaseModel):
@@ -99,6 +104,12 @@ class ProposalItem(BaseModel):
     owned_media: list[str] = Field(default_factory=list)
     ripped: bool | None = None
     rip_quality: list[str] = Field(default_factory=list)
+    # 059 US2: the member's answer to "Is this a children's movie?", asked before the ownership
+    # question. Checkpointed here for the same reason as the 047 answers — the gate applies the
+    # write from the item, so an approval arriving turns later still applies what was chosen.
+    # None means the question was never asked (import, organize), which the payload renders as
+    # the pre-existing default of False.
+    childrens: bool | None = None
     diff: dict[str, Any] = Field(default_factory=dict)
     revalidation: Revalidation | None = None
     idempotency_key: str
@@ -171,6 +182,7 @@ def to_movie_payload(
     owned_media: Sequence[str] | None = None,
     ripped: bool = False,
     rip_quality: Sequence[str] | None = None,
+    childrens: bool = False,
 ) -> dict[str, Any]:
     """Shape an EnrichedMovieCandidate into the mc-service add-movie payload (FR-022).
 
@@ -185,6 +197,12 @@ def to_movie_payload(
     ownership follow-up questions; all three were previously hardcoded, so the answers had
     nowhere to go. Every default reproduces the old behaviour exactly, keeping the change
     additive for the import and organize callers that do not ask these questions.
+
+    059 US2: `childrens` is the same story one field further — it was the literal False, so the
+    field recorded the absence of a question rather than an answer. It now carries what the
+    member said. The default is False, which is what was written before, so the callers that do
+    not ask are unaffected (FR-015). Same field name as the conversational update path uses
+    (`compose_movie_payload`), deliberately: FR-016 exists to stop the two drifting apart.
 
     On the cross-field rules: formats are dropped when `owned` is false and qualities when
     `ripped` is false. That is NOT this layer re-validating the domain — mc-service's
@@ -212,13 +230,18 @@ def to_movie_payload(
         "language": candidate.language or "English",
         "owned": owned,
         "ripped": ripped,
-        "childrens": False,
+        "childrens": childrens,
         # Copied, never aliased: handing the caller's list back would let a later mutation
         # change a payload that has already been built.
         "ownedMedia": list(owned_media or []) if owned else [],
         "ripQuality": list(rip_quality or []) if ripped else [],
         "genres": list(candidate.genres),
-        "rated": "NR",
+        # 059 US1: the film's real US certification, as web-api-mcp read it from the source.
+        # This was the literal "NR" — so every movie the assistant added claimed to be
+        # not-rated whatever it actually was. None is a truthful "not known" and must stay
+        # PRESENT as null: CreateMovieDto types `rated` Option<T> without serde(default), so
+        # omitting the key 422s the add (research R5).
+        "rated": candidate.rated,
         "directors": [],
         "actors": [],
         "tags": [],
@@ -280,6 +303,7 @@ def _item(
     owned_media: Sequence[str] | None = None,
     ripped: bool | None = None,
     rip_quality: Sequence[str] | None = None,
+    childrens: bool | None = None,
 ) -> ProposalItem:
     return ProposalItem(
         item_id=item_id,
@@ -289,6 +313,7 @@ def _item(
         owned_media=list(owned_media or []),
         ripped=ripped,
         rip_quality=list(rip_quality or []),
+        childrens=childrens,
         diff=diff or {},
         idempotency_key=idempotency_key(thread_id, proposal_id, item_id),
     )
@@ -305,6 +330,7 @@ def build_add_proposal(
     owned_media: Sequence[str] | None = None,
     ripped: bool = False,
     rip_quality: Sequence[str] | None = None,
+    childrens: bool | None = None,
 ) -> Proposal:
     """Build the add-movie proposal, surfacing create-if-missing in the same preview.
 
@@ -312,7 +338,9 @@ def build_add_proposal(
     same proposal (one batch preview, FR-005a/FR-006); otherwise it is a single add item.
 
     047 US4: the ownership follow-up answers ride on the add item, so an approval arriving on a
-    later turn still applies exactly what the member chose.
+    later turn still applies exactly what the member chose. 059 US2 adds the children's answer
+    on the same terms; `None` means the question was not asked (FR-018a leaves the approval
+    text itself unchanged — the item's `diff` is deliberately not extended).
     """
     items: list[ProposalItem] = []
     if target.create_if_missing:
@@ -336,6 +364,7 @@ def build_add_proposal(
             owned_media=owned_media,
             ripped=ripped,
             rip_quality=rip_quality,
+            childrens=childrens,
             diff={"add_movie": candidate.title, "to": target.name or target.collection_id},
         )
     )

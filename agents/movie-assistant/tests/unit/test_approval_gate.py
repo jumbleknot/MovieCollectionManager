@@ -456,3 +456,55 @@ async def test_writes_happen_only_after_an_approve_decision() -> None:
     assert writes == []
     await graph.ainvoke(Command(resume={"decision": "approved"}), config)
     assert len(writes) == 6, f"expected 1 create_collection + 5 adds, got {writes}"
+
+
+# ── 059 US2 T018 (FR-017, research R9): the children's answer survives the HITL pause ──────
+#
+# The gate can be resumed many turns after the proposal was built — the member may answer,
+# wander off, and approve later. Anything held only in graph state is gone by then. The 047
+# ownership answers ride on the ProposalItem for exactly this reason, and the children's
+# answer has to join them: an answer the member gave and the write silently dropped is
+# indistinguishable, in the stored movie, from never having been asked at all.
+
+
+async def test_apply_childrens_answer_is_applied_from_the_checkpointed_item() -> None:
+    seen: dict[str, Any] = {}
+
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        seen["movie"] = args["movie"]
+        return ExecOutcome(status="applied", data={"movieId": "m1"})
+
+    # Built on an earlier turn, with the member's answer, exactly as the organizer builds it.
+    proposal = build_add_proposal(
+        thread_id="t1",
+        proposal_id="p1",
+        candidate=_CANDIDATE,
+        target=CollectionRef(collection_id="0123456789abcdef01234567", name="Sci-Fi"),
+        owned=False,
+        childrens=True,
+    )
+    # …and approved on a LATER turn: the gate is handed the proposal alone, with no graph
+    # state at all. Whatever is not on the item cannot reach the write.
+    await apply_proposal(proposal, execute=execute)
+
+    assert seen["movie"]["childrens"] is True
+
+
+async def test_apply_childrens_false_answer_reaches_the_write_unchanged() -> None:
+    seen: dict[str, Any] = {}
+
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        seen["movie"] = args["movie"]
+        return ExecOutcome(status="applied", data={"movieId": "m1"})
+
+    proposal = build_add_proposal(
+        thread_id="t1",
+        proposal_id="p1",
+        candidate=_CANDIDATE,
+        target=CollectionRef(collection_id="0123456789abcdef01234567", name="Sci-Fi"),
+        owned=False,
+        childrens=False,
+    )
+    await apply_proposal(proposal, execute=execute)
+
+    assert seen["movie"]["childrens"] is False

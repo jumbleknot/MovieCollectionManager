@@ -569,13 +569,39 @@ jobs:
       # Redis db 9 keeps the single-use upload handles clear of the BFF integration suite's db 1 and
       # of db 0; the suite deletes its own keys in a finally block regardless.
       #
-      # web-api-mcp is deliberately NOT enrolled (048 FR-013). Two reasons, both unresolved rather
-      # than merely unexamined: its integration tests reach TMDB, and outbound egress from this
-      # runner to api.themoviedb.org is unconfirmed; and the credential question is unsettled — TMDB
-      # keys are per-user in this design, so which key a CI run should spend has no answer yet.
-      # Enrolling it on an unconfirmed egress path would produce exactly the kind of
-      # skips-or-fails-for-environmental-reasons gate this feature exists to remove.
-      - name: MCP integration suites (movie-mcp + spreadsheet-mcp; skips escalate to failures)
+      # web-api-mcp WAS deliberately not enrolled (048 FR-013), for two reasons recorded as
+      # unresolved rather than merely unexamined:
+      #
+      #   > its integration tests reach TMDB, and outbound egress from this runner to
+      #   > api.themoviedb.org is unconfirmed; and the credential question is unsettled — TMDB
+      #   > keys are per-user in this design, so which key a CI run should spend has no answer yet.
+      #   > Enrolling it on an unconfirmed egress path would produce exactly the kind of
+      #   > skips-or-fails-for-environmental-reasons gate this feature exists to remove.
+      #
+      # 059 enrolls it, because both reasons now have answers (059 research R4a/R4b):
+      #
+      #   * The credential question is answered by inspection, not by a new decision: TMDB_API_KEY
+      #     is ALREADY a job-level env on this job (see the env block above) and is already passed
+      #     into the E2E container further down. A CI run spends the CI key; no per-user key is
+      #     involved, because the per-user design governs the RUNTIME request path, not this suite.
+      #   * The egress question is answered by running it. That is deliberate: an unconfirmed
+      #     egress path that fails loudly on its first run is strictly better than one that stays
+      #     unexamined forever. 048's real objection was to a gate that skips-or-fails for
+      #     environmental reasons WITHOUT SAYING SO — which is why T003 added skip-escalation to
+      #     this suite's conftest BEFORE this enrollment, not after. Measured locally: with the key
+      #     absent from both the environment and .env.local, the flag unset gives `5 skipped` and
+      #     exit 0, the flag set gives exit 1 with the escalation message.
+      #
+      # What this buys: the certification extraction 059 adds is checked against TMDB's real
+      # response shape on every PR. The unit tier stubs the transport (permitted there, and it
+      # covers shapes no real film exhibits) — but a stub passes forever against a contract TMDB
+      # has changed underneath it. This step is the only thing that notices.
+      #
+      # Unlike the two suites beside it, web-api-mcp needs nothing from the local stack — only
+      # egress and the key. TMDB_API_KEY is inherited from this job's env block rather than
+      # re-declared here: one binding, and if it ever goes missing the escalation above turns the
+      # resulting skip into a failure instead of a green run over an unexecuted suite.
+      - name: MCP integration suites (movie-mcp + spreadsheet-mcp + web-api-mcp; skips escalate to failures)
         env:
           MCM_REQUIRE_LIVE_STACK: '1'
           KEYCLOAK_URL: http://localhost:8099
@@ -585,6 +611,7 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh mcp-integration-movie pnpm nx test:integration movie-mcp
           bash scripts/ci-log-step.sh mcp-integration-spreadsheet pnpm nx test:integration spreadsheet-mcp
+          bash scripts/ci-log-step.sh mcp-integration-web-api pnpm nx test:integration web-api-mcp
 
       # ── mc-service integration suite (feature 041 US2) ───────────────────────────────────────────
       # Until this feature NO project's test:integration except the agent suite ran anywhere in CI.

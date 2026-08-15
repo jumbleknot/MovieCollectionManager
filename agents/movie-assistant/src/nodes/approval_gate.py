@@ -218,6 +218,11 @@ async def apply_proposal(
                     owned_media=item.owned_media,
                     ripped=bool(item.ripped),
                     rip_quality=item.rip_quality,
+                    # 059 US2: the children's answer, on the same terms — checkpointed on the
+                    # item, so an approval arriving turns after the question was answered still
+                    # writes what the member said. `None` (never asked: import, organize) keeps
+                    # the pre-existing default of False.
+                    childrens=bool(item.childrens),
                 )
                 if candidate is not None
                 else item.movie_payload

@@ -38,6 +38,27 @@ async function openDock(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
 }
 
+/**
+ * Answer one Yes/No question of the add chain.
+ *
+ * Waits for the question's own TEXT before touching the buttons. Both questions render the same
+ * `selection-options` control, so a bare `.last()` can match the previous question's control
+ * while it is still mounted — the answer then lands on a question that is already answered, and
+ * the flow stalls in a way that reads as a model failure rather than a test bug.
+ */
+async function answerYesNo(page: Page, asks: string | RegExp, answer: 'Yes' | 'No'): Promise<void> {
+  await expect(page.getByTestId('assistant-dock-panel')).toContainText(asks, {
+    timeout: APPROVAL_TIMEOUT,
+  });
+  const options = page.locator('[data-testid="selection-options"]').last();
+  await expect(options).toBeVisible({ timeout: APPROVAL_TIMEOUT });
+  await options
+    .locator('[data-testid^="selection-option-control-"]')
+    .filter({ hasText: new RegExp(`^${answer}$`) })
+    .first()
+    .click();
+}
+
 interface ExternalId { system: string; uniqueId: string; url?: string | null }
 interface StoredMovie { movieId: string; title: string; externalIds: ExternalId[] }
 
@@ -92,13 +113,13 @@ test.describe('Assistant-added TMDB movie external link (013 US5)', () => {
     // movie BEFORE building the proposal, so the approval card no longer follows the request
     // directly. Answering "No" ends the chain immediately (no media/ripped/quality follow-ups) and
     // is the shortest route to the proposal this spec actually cares about — the external-ID link.
-    const ownership = page.locator('[data-testid="selection-options"]').last();
-    await expect(ownership).toBeVisible({ timeout: APPROVAL_TIMEOUT });
-    await ownership
-      .locator('[data-testid^="selection-option-control-"]')
-      .filter({ hasText: /^No$/ })
-      .first()
-      .click();
+    //
+    // 059 US2 put "Is this a children's movie?" ahead of the ownership question, so the chain is
+    // one answer longer. A turn is ADDED rather than the locator loosened: both questions render
+    // the same Yes/No control, so a walk that just clicked the first "No" it saw would still pass
+    // while proving nothing about which question it answered.
+    await answerYesNo(page, /children/i, 'No'); // 059 US2 — is it a children's movie?
+    await answerYesNo(page, 'Do you own', 'No'); // 040 US4 — do you own it?
 
     const approval = page.locator('[data-testid="approval-request"]');
     await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });

@@ -47,6 +47,9 @@ def _organizer(collections: list[dict[str, Any]]) -> Any:
 # ripped → rip qualities), so a test that just wants to reach the approval gate must walk
 # whatever stages the flow asks for rather than assuming a fixed number of turns.
 _CHAIN_ANSWERS = {
+    # 059 US2 added this question at the FRONT of the chain. Answered neutrally here so a test
+    # about something else is not also asserting a children's answer.
+    "awaiting_childrens": "no",
     "awaiting_media": "Selected: none",
     "awaiting_ripped": "no",
     "awaiting_rip_quality": "Selected: none",
@@ -65,7 +68,8 @@ async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") ->
             return out
         reply = answer if stage == "awaiting_ownership" else _CHAIN_ANSWERS[stage]
         messages = [*messages, HumanMessage(content=reply)]
-        for key in ("add_target", "add_owned_media", "add_ripped", "add_multi_pending"):
+        for key in ("add_target", "add_childrens", "add_owned_media", "add_ripped",
+                    "add_multi_pending"):
             if key in out:
                 carried[key] = out[key]
         out = await node({**state, **carried, "add_stage": stage, "messages": messages})

@@ -437,3 +437,172 @@ def test_ownership_fields_survive_the_proposal_round_trip() -> None:
     )
     assert payload["ownedMedia"] == ["Blu-Ray 3D"]
     assert payload["ripQuality"] == ["DVD"]
+
+
+# ---------------------------------------------------------------------------
+# 059 T005 (FR-007 / FR-015 / SC-007): characterization guard for the callers
+# this feature must NOT disturb.
+#
+# This is a GUARD, not a RED/GREEN pair — it passes before the change and must still pass
+# after. `to_movie_payload` is shared by the add path (which 059 rewires), the spreadsheet
+# import and the conversational organize/update path (`compose_movie_payload`), and the two
+# new parameters are defaulted precisely so the latter two keep today's behaviour. Without
+# this, the first sign that a default was got wrong would be a member's imported library
+# quietly acquiring an add-time rating it never had.
+
+
+def test_compose_movie_payload_injects_neither_rated_nor_childrens() -> None:
+    """The organize/update path composes from the STORED document — 059 adds nothing to it.
+
+    A full-replacement update resends what mc-service already holds, overlaid with the
+    member's requested changes. If the add path's new defaults ever leaked into this
+    composer, every conversational update would silently rewrite the movie's rating.
+    """
+    stored = {
+        "movieId": "m1",
+        "collectionId": "c1",
+        "title": "The Matrix",
+        "rated": "R",
+        "childrens": False,
+        "tags": ["classic"],
+    }
+
+    unchanged = compose_movie_payload(stored)
+    assert unchanged["rated"] == "R"  # preserved verbatim, not defaulted
+    assert unchanged["childrens"] is False
+
+    # A change to an unrelated field leaves both alone.
+    tagged = compose_movie_payload(stored, {"addTags": ["sci-fi"]})
+    assert tagged["rated"] == "R"
+    assert tagged["childrens"] is False
+
+    # And a document that carries NEITHER field does not acquire them here.
+    minimal = compose_movie_payload({"movieId": "m2", "title": "Coherence"}, {"owned": True})
+    assert "rated" not in minimal
+    assert "childrens" not in minimal
+
+
+# ---------------------------------------------------------------------------
+# 059 US1 T009 (FR-004, research R5): the add payload carries the film's REAL rating.
+#
+# Before this feature `to_movie_payload` hardcoded "rated": "NR" — so every movie the
+# assistant added claimed to be not-rated regardless of what it actually is. That is the
+# reported defect (item #163): false data written into a member's library on every add.
+
+
+def _rated_candidate(rated: str | None) -> EnrichedMovieCandidate:
+    return EnrichedMovieCandidate(
+        sourceId="tmdb:412117",
+        title="The Secret Life of Pets 2",
+        year=2019,
+        genres=["Animation"],
+        rated=rated,
+    )
+
+
+def test_payload_rated_carries_the_candidates_rating() -> None:
+    assert to_movie_payload(_rated_candidate("PG"))["rated"] == "PG"
+
+
+def test_payload_rated_never_substitutes_nr_when_unknown() -> None:
+    """The old literal. `NR` is a CLAIM the film is not rated — only send it when told so."""
+    payload = to_movie_payload(_rated_candidate(None))
+    assert payload["rated"] is None
+    assert payload["rated"] != "NR"
+
+
+def test_payload_keeps_the_rated_key_present_when_null() -> None:
+    """CreateMovieDto types `rated` Option<T> but without serde(default) — omit it and
+    mc-service 422s the add (research R5, import_resolvers._CREATE_NULL_DEFAULTS)."""
+    assert "rated" in to_movie_payload(_rated_candidate(None))
+
+
+def test_payload_rated_passes_the_hyphenated_form_through() -> None:
+    """No PG13/NC17 rename exists at any boundary (research R1, corrects item #163 AC3)."""
+    assert to_movie_payload(_rated_candidate("PG-13"))["rated"] == "PG-13"
+    assert to_movie_payload(_rated_candidate("NC-17"))["rated"] == "NC-17"
+
+
+def test_candidate_without_rated_still_builds_a_payload() -> None:
+    """`rated` is defaulted on the model, so the disambiguation path — which builds
+    candidates from search results, with no details call — is unaffected."""
+    bare = EnrichedMovieCandidate(sourceId="tmdb:603", title="The Matrix")
+    assert bare.rated is None
+    assert to_movie_payload(bare)["rated"] is None
+
+
+def test_payload_rated_is_nr_when_the_source_says_nr() -> None:
+    """FR-005: the value is not special-cased on the way through — only its origin changed."""
+    assert to_movie_payload(_rated_candidate("NR"))["rated"] == "NR"
+
+
+# ---------------------------------------------------------------------------
+# 059 US2 T017/T019 (FR-010, FR-015, FR-016): the member's children's-movie answer.
+#
+# `"childrens": False` was hardcoded, so the field recorded the absence of a question
+# rather than an answer. It now comes from the member — and must survive the approval
+# pause, which means riding on the ProposalItem rather than on graph state alone.
+
+
+def test_payload_childrens_carries_the_members_answer() -> None:
+    assert to_movie_payload(_ownership_candidate(), childrens=True)["childrens"] is True
+
+
+def test_payload_childrens_defaults_to_false() -> None:
+    """FR-015: the default reproduces today's behaviour exactly, so the import and organize
+    callers — which do not ask this question — are untouched."""
+    assert to_movie_payload(_ownership_candidate())["childrens"] is False
+
+
+def test_payload_childrens_false_is_sent_as_a_real_answer() -> None:
+    assert to_movie_payload(_ownership_candidate(), childrens=False)["childrens"] is False
+
+
+def test_proposal_item_childrens_survives_the_approval_pause() -> None:
+    """The gate applies the write from the ProposalItem, so an answer that reaches the payload
+    builder but not the item is an answer the member gave and never got (research R9)."""
+    proposal = build_add_proposal(
+        thread_id="t1",
+        proposal_id="p1",
+        candidate=_ownership_candidate(),
+        target=CollectionRef(collection_id="c1", name="Favourites"),
+        owned=False,
+        childrens=True,
+    )
+    item = next(i for i in proposal.items if i.operation is Operation.add)
+    assert item.childrens is True
+    assert to_movie_payload(_ownership_candidate(), childrens=bool(item.childrens))["childrens"]
+
+
+def test_proposal_item_childrens_defaults_to_none_when_never_asked() -> None:
+    """None distinguishes "not asked" from "answered no" on the item; the payload still sends
+    a concrete False, because mc-service's field is a bool."""
+    proposal = build_add_proposal(
+        thread_id="t1",
+        proposal_id="p1",
+        candidate=_ownership_candidate(),
+        target=CollectionRef(collection_id="c1", name="Favourites"),
+    )
+    item = next(i for i in proposal.items if i.operation is Operation.add)
+    assert item.childrens is None
+
+
+def test_parity_add_and_update_paths_set_the_same_childrens_field() -> None:
+    """FR-016 exists to stop the two paths drifting; without this nothing notices when they do.
+
+    `compose_movie_payload` already accepts a `childrens` change (the conversational
+    "mark this as a children's movie" path). This asserts the ADD path joins that vocabulary
+    rather than inventing a second one — a `childrensMovie`/`isChildrens` key would pass every
+    other test in this file and write a field mc-service ignores.
+    """
+    added = to_movie_payload(_ownership_candidate(), childrens=True)
+    updated = compose_movie_payload(
+        {"movieId": "m1", "title": "The Matrix", "childrens": False}, {"childrens": True}
+    )
+
+    assert added["childrens"] is True
+    assert updated["childrens"] is True
+    # The same KEY, not merely the same value.
+    assert "childrens" in added and "childrens" in updated
+    assert [k for k in added if "child" in k.lower()] == ["childrens"]
+    assert [k for k in updated if "child" in k.lower()] == ["childrens"]
