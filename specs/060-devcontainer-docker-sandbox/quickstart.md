@@ -168,6 +168,8 @@ ssh -p 2222 coder@localhost
 
 **Pass when**: a dev-container terminal runs the assistant, by either route, and the fallback has actually been used.
 
+**Rollback**: remove the managed `Host *.sbx` block from `~/.ssh/config` and drop any published SSH port (`sbx ports mcm --remove 2222`). Nothing in the repository changed in this phase, and the Docker Desktop editor path is untouched.
+
 ---
 
 ## P5 — Workload proof (G5, G6)
@@ -213,6 +215,8 @@ bash scripts/devcontainer-ollama.sh
 
 **Expected to refuse cleanly**: `bash scripts/devcontainer-android.sh` — `/dev/kvm` is absent. It must say so legibly and not fail obscurely.
 
+**Rollback**: tear the stacks down inside the VM (`pnpm nx down-mcm`, `down-auth`) or discard the whole VM with `sbx rm mcm`. No repository file is modified by this phase except `baseline-measurements.md`, and the Docker Desktop environment still runs the same suites.
+
 ---
 
 ## P6 — Adopt
@@ -227,9 +231,14 @@ Then:
 2. Rewrite the posture section of `docs/runbooks/devcontainer.md`; archive the DinD sections.
 3. Update `CLAUDE.md`, the OpenWiki source documents, and `README.md`.
 4. Prove recreate-from-nothing ≤15 min warm.
-5. After **two consecutive incident-free weeks**: collapse to one `devcontainer.json`, delete `verify-engine-isolation.sh`, and stop offering the Docker Desktop path for assistant sessions.
+5. After **two consecutive incident-free weeks** (see spec.md FR-032 for what counts as an incident): collapse to one `devcontainer.json`, delete `verify-engine-isolation.sh`, and stop offering the Docker Desktop path for assistant sessions.
 
 **Retained deliberately**: Docker Desktop for non-assistant local use and as the mobile-emulator fallback.
+
+**Rollback**: this is the only phase whose steps are not trivially reversible, because step 5 deletes the fallback configuration. Two consequences follow, and they are the reason step 5 is time-gated rather than effort-gated:
+
+- **Before step 5**, rollback is `git revert` of the documentation commits — the environment itself is unaffected, because `.devcontainer/devcontainer.json` is still intact and still builds on Docker Desktop.
+- **After step 5**, rollback is `git revert` of the collapse commit, which restores both the nested-engine configuration and `verify-engine-isolation.sh` from history. Verify the restored config actually builds before relying on it; a config that has not been exercised for a fortnight is a claim, not a fallback.
 
 ---
 

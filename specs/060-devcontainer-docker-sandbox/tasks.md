@@ -4,17 +4,19 @@
 
 **Input**: [spec.md](spec.md) · [plan.md](plan.md) · [research.md](research.md) · [data-model.md](data-model.md) · [contracts/](contracts/) · [quickstart.md](quickstart.md)
 
-Task format follows the repo's [feature-test-tasks-template](../../docs/templates/feature-test-tasks-template.md): every test task carries a **Verify RED** with expected failure output, every paired implementation task a **Verify GREEN**. Documentation/config tasks carry a **Done when** instead.
+Task format follows the repo's [feature-test-tasks-template](../../docs/templates/feature-test-tasks-template.md): every task that **writes or modifies a test** carries a **Verify RED** with expected failure output and a paired task with **Verify GREEN**. Every other task carries a **Done when** — a concrete observable condition, stated on the task line itself for single-step tasks and in a detail block for the rest.
 
-**Platform Parity Table: omitted, justified.** This feature has no frontend surface — it is a developer-environment migration with no web or mobile user flow. The template's "adapting to project type" guidance omits the table for non-multi-client features. The E2E regression requirement is *not* omitted: it appears as T041–T043 and in the Completion Checklist.
+**Platform Parity Table: omitted, justified.** This feature has no frontend surface — it is a developer-environment migration with no web or mobile user flow. The template's "adapting to project type" guidance omits the table for non-multi-client features. The E2E regression requirement is *not* omitted: it appears as T043–T044 and in the Completion Checklist.
+
+**Revision note (post-`/speckit-analyze`)**: renumbered from 61 to 65 tasks. Added T009 (revert procedure for the `init-firewall.sh` change), T034 (scope the portable-runner check per D-15), T051 (reboot survival), T058 (per-phase rollback record). Added TDD checkpoints to T026, T031, T032. Added a `Done when` to every remaining task.
 
 ---
 
 ## Phase 1: Setup
 
 - [ ] T001 Import the Phase 0 host-prep record from `E:\Programming\VSCode\p0-docker-sandbox-host-setup.md` into `specs/060-devcontainer-docker-sandbox/phase-0-host-prep.md`
-- [ ] T002 [P] Record the resolved gate data in `specs/060-devcontainer-docker-sandbox/phase-0-host-prep.md`: `sbx` v0.38.0 (`c022b14634c4bea846ca12870d1d5e97d5868b54`), `/dev/kvm` **absent** (R2 negative), and the two workstation gotchas (PATH, unresponsive `sandboxd`)
-- [ ] T003 Capture the Docker Desktop performance baseline into `specs/060-devcontainer-docker-sandbox/baseline-measurements.md` — time the runbook's bring-up + integration + web E2E sequence on the **current** environment
+- [ ] T002 [P] Record the resolved gate data in `specs/060-devcontainer-docker-sandbox/phase-0-host-prep.md`: `sbx` v0.38.0 (`c022b14634c4bea846ca12870d1d5e97d5868b54`), `/dev/kvm` **absent** (R2 negative), the host's CPU/RAM totals (needed by T018), and the two workstation gotchas — **Done when**: all four are recorded with the date observed
+- [ ] T003 Capture the Docker Desktop performance baseline into `specs/060-devcontainer-docker-sandbox/baseline-measurements.md`
 
 ### T001 — Import the Phase 0 host-prep record into the repository
 
@@ -46,7 +48,8 @@ Do this **before** attention shifts to the sandbox. Docker Desktop is retained, 
 - [ ] T005 Write the generator contract test in `.devcontainer/verify/verify-egress-allowlist-contract.sh`
 - [ ] T006 Create `scripts/gen-egress-policy.mjs` with `--format sbx-policy`, `--format ipset-domains`, and `--check`
 - [ ] T007 Replace the inline `DOMAINS=(...)` array in `.devcontainer/init-firewall.sh` with a read of `gen-egress-policy.mjs --format ipset-domains`
-- [ ] T008 [P] Correct the honest-limits paragraph in `.devcontainer/init-firewall.sh` — the nested-container residual is now covered by sandbox policy, and under `--network=host` the script filters the VM's OUTPUT chain including dockerd's pulls
+- [ ] T008 [P] Correct the honest-limits paragraph in `.devcontainer/init-firewall.sh` — the nested-container residual is now covered by sandbox policy, and under `--network=host` the script filters the VM's OUTPUT chain including dockerd's pulls — **Done when**: no sentence in the header claims nested-container egress is unfiltered, and the OUTPUT-chain scope change is stated
+- [ ] T009 Record the revert procedure for T007/T008 in `specs/060-devcontainer-docker-sandbox/rollback.md`
 
 ### T004 — Migrate the destination list to a canonical file
 
@@ -123,6 +126,8 @@ node scripts/gen-egress-policy.mjs --check
 
 Replace the inline array with a read of `gen-egress-policy.mjs --format ipset-domains`, passing `FORGE_REGISTRY_HOST` through. **Change nothing else.** The reset ordering, the "flush only our own chains, never `-X`" rule that stops dockerd's user chains being deleted, the RFC1918 bridge allows, and the re-runnable ipset refresh all stay exactly as they are — each was earned by a specific failure.
 
+⚠️ This script runs on **every start of the environment you are working in today**. A failure here — a missing `node` on the root PATH under `sudo`, a generator crash — degrades the current dev container's egress on its next start, not some future one. T009 exists because of this.
+
 **Verify GREEN** (in the current Docker Desktop dev container, before any sandbox work):
 
 ```bash
@@ -131,6 +136,29 @@ bash .devcontainer/verify/verify-firewall-allowlist.sh
 ```
 
 **Expected GREEN**: firewall applies without error and `verify-firewall-allowlist.sh` passes — proving the extraction is behaviour-neutral **on the existing environment** before it is relied on in the new one.
+
+**Also run** (the script must survive a container restart, when it runs as root via the lifecycle hook):
+
+```bash
+# rebuild/restart the dev container, then:
+bash .devcontainer/verify/verify-firewall-allowlist.sh
+```
+
+**Expected**: passes on a cold start, not only when invoked by hand.
+
+### T009 — Record the revert procedure for the firewall change
+
+**Type**: Documentation | **Time**: 20 min | **Risk**: None
+
+**Spec reference**: FR-033
+
+**Prerequisite**: T007, T008.
+
+T007/T008 are the only tasks in this feature that modify a file the **current working environment** executes on every start. Create `specs/060-devcontainer-docker-sandbox/rollback.md` and record, as its first entry, how to restore the inline `DOMAINS` array — the commit to revert, and the one-command emergency path (`sudo iptables -P OUTPUT ACCEPT`) that restores egress while the revert is prepared.
+
+This file is extended by T058 with the per-phase rollbacks; it starts here because this is the first genuinely destructive change.
+
+**Done when**: `rollback.md` exists, names the revert commit range for T007/T008, and states the emergency egress-restore command.
 
 ---
 
@@ -142,14 +170,14 @@ bash .devcontainer/verify/verify-firewall-allowlist.sh
 
 **Status**: carried out ahead of this specification. Tasks recorded for the migration record and marked complete; evidence in `phase-0-host-prep.md` (T001).
 
-- [X] T009 [US1] Enable the Windows Hypervisor Platform feature and reboot the workstation
-- [X] T010 [US1] Install the `sbx` CLI via winget and record its version — **v0.38.0**
-- [X] T011 [US1] Authenticate `sbx` against the Docker account
-- [X] T012 [US1] Set the default network policy to a deny-by-default profile (`balanced`, tightened in US2)
-- [X] T013 [US1] Run `sbx diagnose` and clear every flagged item
-- [X] T014 [US1] Create a throwaway sandbox, run a container inside it, and confirm the Windows engine's `docker ps` never lists it
-- [X] T015 [US1] Probe `/dev/kvm` inside the sandbox and record the result — **absent** (gate R2 resolved negative)
-- [X] T016 [US1] Destroy the throwaway sandbox and confirm the existing dev container still opens normally
+- [X] T010 [US1] Enable the Windows Hypervisor Platform feature and reboot the workstation
+- [X] T011 [US1] Install the `sbx` CLI via winget and record its version — **v0.38.0**
+- [X] T012 [US1] Authenticate `sbx` against the Docker account
+- [X] T013 [US1] Set the default network policy to a deny-by-default profile (`balanced`, tightened in US2)
+- [X] T014 [US1] Run `sbx diagnose` and clear every flagged item
+- [X] T015 [US1] Create a throwaway sandbox, run a container inside it, and confirm the Windows engine's `docker ps` never lists it
+- [X] T016 [US1] Probe `/dev/kvm` inside the sandbox and record the result — **absent** (gate R2 resolved negative)
+- [X] T017 [US1] Destroy the throwaway sandbox and confirm the existing dev container still opens normally
 
 **Checkpoint**: US1 complete — the workstation hosts microVMs, and the emulator question is answered before any effort was spent on it.
 
@@ -163,19 +191,35 @@ bash .devcontainer/verify/verify-firewall-allowlist.sh
 
 **⚠ This phase contains G1 — the only gate that can end the feature.**
 
-- [ ] T017 [US2] Create the `mcm` sandbox with explicit sizing (`--cpus 8 --memory 16`) and record the disk envelope (G7) in `specs/060-devcontainer-docker-sandbox/baseline-measurements.md`
-- [ ] T018 [US2] Configure SSH access (`sbx setup ssh`) and prove `ssh mcm.sbx` lands in the VM
-- [ ] T019 [US2] Apply the generated Locked Down allowlist to the `mcm` sandbox from `gen-egress-policy.mjs --format sbx-policy`
-- [ ] T020 [US2] Write the sandbox egress probe suite in `.devcontainer/verify/verify-sandbox-egress.sh`
-- [ ] T021 [US2] **G1 GATE** — prove forge reachability from inside the sandbox: `git clone`, `git fetch`, `git push`, and `docker pull` of the digest-pinned toolchain image
-- [ ] T022 [US2] Install Node ≥18 and `@devcontainers/cli` inside the sandbox
-- [ ] T023 [US2] Provision credentials by the D-07 preference order and confirm nothing relies on env vars riding the SSH session
+- [ ] T018 [US2] Create the `mcm` sandbox sized to **max(host default, floor)** and record the disk envelope (G7) in `specs/060-devcontainer-docker-sandbox/baseline-measurements.md`
+- [ ] T019 [US2] Configure SSH access (`sbx setup ssh`) and prove `ssh mcm.sbx` lands in the VM — **Done when**: `ssh mcm.sbx` returns a shell as `agent@mcm` without an interactive prompt, and `docker info` inside it reports the private engine
+- [ ] T020 [US2] Apply the generated Locked Down allowlist to the `mcm` sandbox from `gen-egress-policy.mjs --format sbx-policy` — **Done when**: `sbx policy ls` shows the Locked Down profile with one entry per canonical destination and no hand-added entry
+- [ ] T021 [US2] Write the sandbox egress probe suite in `.devcontainer/verify/verify-sandbox-egress.sh`
+- [ ] T022 [US2] **G1 GATE** — prove forge reachability from inside the sandbox: `git clone`, `git fetch`, `git push`, and `docker pull` of the digest-pinned toolchain image
+- [ ] T023 [US2] Install Node ≥18 and `@devcontainers/cli` inside the sandbox — **Done when**: `devcontainer --version` answers in the sandbox shell and `node --version` is ≥18
+- [ ] T024 [US2] Provision the six `${localEnv}` credentials into the sandbox by the D-07 **fallback** mechanism, enumerated explicitly
 
-### T020 — Write the sandbox egress probe suite
+### T018 — Create the sandbox, sized against the host's actual defaults
+
+**Type**: Config change | **Time**: 30 min | **Risk**: Medium
+
+**Spec reference**: research.md#D-12, G7
+
+**Prerequisite**: T002 (host CPU/RAM recorded).
+
+⚠️ **Do not hardcode the floor.** The sandbox default is N-1 host CPUs and ~50% host RAM (capped 32 GB). On this workstation that default is plausibly *larger* than the 8 CPU / 16 GB floor the proposal names — so passing `--cpus 8 --memory 16` unconditionally would **under-provision relative to doing nothing at all**, and could itself cause the G6 performance miss the explicit sizing exists to prevent. Metro is the known OOM-prone component and is the first thing that would suffer.
+
+Compute `max(default, floor)` from the totals recorded in T002 and pass that. Record both the default and the chosen value, so a later G6 investigation can tell which one was in play.
+
+Then establish the disk envelope (G7) — `df -h /` inside the VM — before ENOSPC finds it mid-session.
+
+**Done when**: the sandbox exists with sizing ≥ the host default; `baseline-measurements.md` records the host totals, the sandbox default, the chosen values, and the disk envelope.
+
+### T021 — Write the sandbox egress probe suite
 
 **Type**: Test | **Time**: 1 hr | **Risk**: Low
 
-**Spec reference**: spec.md#user-story-2
+**Spec reference**: spec.md#user-story-2, contracts/verify-harness.md
 
 **Scenarios covered**:
 
@@ -188,7 +232,7 @@ bash .devcontainer/verify/verify-firewall-allowlist.sh
 
 Probe each destination group from the sandbox shell; probe `example.com` and require refusal; attempt to alter the policy from inside and require that it remains in effect; probe a workstation loopback service and require unreachability. Assert the audit entry exists for the refusal — a silent block and an audited block are different postures, and only the second is what FR-008 requires.
 
-**Verify RED** (run before T019 applies the policy):
+**Verify RED** (run before T020 applies the policy):
 
 ```bash
 ssh mcm.sbx 'bash /workspaces/mcm/.devcontainer/verify/verify-sandbox-egress.sh'
@@ -196,13 +240,13 @@ ssh mcm.sbx 'bash /workspaces/mcm/.devcontainer/verify/verify-sandbox-egress.sh'
 
 **Expected RED**: exits 1 — `✗ example.com reachable — policy not enforcing` and `✗ no audit entry for refused destination` (bring-up profile is permissive; deny-by-default is not yet applied).
 
-### T021 — G1 gate: prove forge reachability through the sandbox proxy
+### T022 — G1 gate: prove forge reachability through the sandbox proxy
 
 **Type**: Implementation / gate | **Time**: 1–3 hrs | **Risk**: **High**
 
 **Spec reference**: FR-009, US2-AC3, US2-AC4, US2-AC7, research.md#G1
 
-**Prerequisite**: T019, T020.
+**Prerequisite**: T020, T021.
 
 The forge is on a Tailscale overlay; sandbox egress is redirected through a host-side proxy documented as not necessarily following VPN split-tunnel routing. Prove all four operations from inside the sandbox: clone, fetch, push, and `docker pull` of `MCM_DEVCONTAINER_IMAGE` onto the **sandbox's** engine.
 
@@ -211,18 +255,47 @@ The forge is on a Tailscale overlay; sandbox egress is redirected through a host
 **Verify GREEN**:
 
 ```bash
-ssh mcm.sbx 'cd /workspaces/mcm && git fetch --dry-run && git push --dry-run && docker pull "$MCM_DEVCONTAINER_IMAGE"'
+ssh mcm.sbx 'cd /workspaces/mcm && git fetch && git push --dry-run && docker pull "$MCM_DEVCONTAINER_IMAGE"'
 ```
 
 **Expected GREEN**: all three succeed; `docker images` on the sandbox engine lists the pulled digest.
 
-**Also run**:
+**Also run** — `--dry-run` proves negotiation and auth but not write, and US2-AC3 says *pushed*:
+
+```bash
+ssh mcm.sbx 'cd /workspaces/mcm && git push origin HEAD:refs/heads/sbx-reachability-probe && git push origin --delete sbx-reachability-probe'
+```
+
+**Expected**: both succeed — a real write to the forge and its cleanup.
 
 ```bash
 ssh mcm.sbx 'bash /workspaces/mcm/.devcontainer/verify/verify-sandbox-egress.sh'
 ```
 
 **Expected**: 0 failures — allowlist reachable, `example.com` refused and audited, host loopback unreachable.
+
+### T024 — Provision credentials by the fallback mechanism, enumerated
+
+**Type**: Config change | **Time**: 45 min | **Risk**: Medium
+
+**Spec reference**: FR-012, research.md#D-07
+
+Provision all six values the current environment forwards via `${localEnv}`, into a gitignored env file sourced in the sandbox shell before `devcontainer up` — **D-07 preference (3)**:
+
+| Value | Consequence if absent |
+| --- | --- |
+| `MCM_DEVCONTAINER_IMAGE` | container build fails (`base name should not be blank`) — **required** |
+| `FORGE_REGISTRY_HOST` | forge allowlist entry skipped; no forge access |
+| `ANTHROPIC_API_KEY` | agent falls back to ollama; golden record unavailable |
+| `TMDB_API_KEY` | agent TMDB flows no-op; the assistant dock stays hidden |
+| `MCM_FORGE_TOKEN` | CI diagnostics tooling reports missing scope and exits |
+| `MCM_FORGE_ISSUE_TOKEN` | backlog tooling degrades to read-only |
+
+**Deliberately preference (3), not (1).** Preference (1) — host-keychain secrets with proxy header injection — is strictly better, but whether injection reaches sibling containers is unknown until T049 (R7). Provisioning by the fallback first means this phase does not depend on an unanswered question, and T049 upgrades what it can once the answer exists.
+
+⚠️ Nothing may rely on these riding the SSH session: since v0.37.1 SSH does not forward credential env vars unless `ssh.acceptEnv` is configured. This repository has already been bitten by the same shape of silent-empty failure (the "fully quit VS Code after `setx`" trap).
+
+**Done when**: all six resolve inside the sandbox shell; the env file is covered by the root `.gitignore`; and a deliberate `ssh mcm.sbx 'echo $ANTHROPIC_API_KEY'` returns **empty**, proving nothing depends on SSH forwarding.
 
 **Checkpoint**: US2 complete — the migration is viable. Nothing beyond this point is worth attempting until G1 is green.
 
@@ -236,19 +309,20 @@ ssh mcm.sbx 'bash /workspaces/mcm/.devcontainer/verify/verify-sandbox-egress.sh'
 
 **Contains G2 (engine seam) and G3 (workspace path).**
 
-- [ ] T024 [US3] Write `.devcontainer/verify/verify-engine-seam.sh` (in-container, `--vm-check`, `--host-check` modes) per contracts/verify-harness.md
-- [ ] T025 [US3] Write `.devcontainer/verify/verify-workspace-path.sh` with the sibling-probe assertion
-- [ ] T026 [US3] Create `.devcontainer/sandbox/devcontainer.json` — `docker-outside-of-docker:1`, `"runArgs": ["--network=host"]`, no `privileged`, no `DOCKER_CONFIG`
-- [ ] T027 [US3] Clone the repository on the VM at `/workspaces/mcm` and bring the dev container up with `devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json`
-- [ ] T028 [US3] **G2 GATE** — run `verify-engine-seam.sh` in all three modes and confirm green
-- [ ] T029 [US3] **G3 GATE** — run `verify-workspace-path.sh` and confirm the sibling probe sees the repository
-- [ ] T030 [P] [US3] Update `.devcontainer/verify/verify-host-isolation.sh` to be sandbox-aware — no Windows path visible at all
-- [ ] T031 [P] [US3] Update `.devcontainer/verify/verify-personal-layer.sh` to assert the RTK binary is present on the `mcm-claude` volume
-- [ ] T032 [P] [US3] Update `.devcontainer/verify/verify-firewall-allowlist.sh` to read `egress-allowlist.json` instead of re-listing domains inline
-- [ ] T033 [US3] Remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` (it existed only to out-rank the DinD feature's apt plugin)
-- [ ] T034 [US3] Run the full harness in the new dev container and confirm every check green
+- [ ] T025 [US3] Write `.devcontainer/verify/verify-engine-seam.sh` (in-container, `--vm-check`, `--host-check` modes) per contracts/verify-harness.md
+- [ ] T026 [US3] Write `.devcontainer/verify/verify-workspace-path.sh` with the sibling-probe assertion
+- [ ] T027 [US3] Create `.devcontainer/sandbox/devcontainer.json` — `docker-outside-of-docker:1`, `"runArgs": ["--network=host"]`, no `privileged`, no `DOCKER_CONFIG`
+- [ ] T028 [US3] Clone the repository on the VM at `/workspaces/mcm` and bring the dev container up with `devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json` — **Done when**: the container is running and `docker ps` on the sandbox engine lists it
+- [ ] T029 [US3] **G2 GATE** — run `verify-engine-seam.sh` in all three modes and confirm green
+- [ ] T030 [US3] **G3 GATE** — run `verify-workspace-path.sh` and confirm the sibling probe sees the repository
+- [ ] T031 [P] [US3] Update `.devcontainer/verify/verify-host-isolation.sh` to be sandbox-aware — no Windows path visible at all
+- [ ] T032 [P] [US3] Update `.devcontainer/verify/verify-personal-layer.sh` to assert the RTK binary is present on the `mcm-claude` volume
+- [ ] T033 [P] [US3] Update `.devcontainer/verify/verify-firewall-allowlist.sh` to read `egress-allowlist.json` instead of re-listing domains inline
+- [ ] T034 [US3] Scope `.devcontainer/verify/verify-portable-runner.sh` per research.md#D-15 — take the config under test as a parameter; dual-runner for the Docker Desktop config, CLI-only for the sandbox variant
+- [ ] T035 [US3] Remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` — **Done when**: the pin is gone, the image rebuilds, and `docker compose version` inside the dev container reports the sandbox engine's plugin without error
+- [ ] T036 [US3] Run the full twelve-script harness in the new dev container and confirm every check green
 
-### T024 — Write the engine-seam check
+### T025 — Write the engine-seam check
 
 **Type**: New file (test) | **Time**: 2 hrs | **Risk**: Medium
 
@@ -277,13 +351,39 @@ bash .devcontainer/verify/verify-engine-seam.sh
 
 > If this passes on the DinD container, the check is asserting nothing. A check that is green in both environments distinguishes nothing.
 
-### T026 — Create the sandbox dev-container variant
+### T026 — Write the workspace-path check
+
+**Type**: New file (test) | **Time**: 1 hr | **Risk**: Medium
+
+**Spec reference**: spec.md#user-story-3 (AC6), FR-017, contracts/verify-harness.md, research.md#D-03
+
+**Scenarios covered**:
+
+- US3-AC6: a sibling container asked to mount a path from the working tree resolves to the intended content
+
+**File**: `.devcontainer/verify/verify-workspace-path.sh`
+
+Three assertions, per the harness contract: `pwd -P` equals `$MCM_WORKSPACE_PATH` (default `/workspaces/mcm`); a sibling probe (`docker run --rm -v "$MCM_WORKSPACE_PATH:/probe" alpine ls /probe`) succeeds; and the probe's listing contains a known repository marker (`pnpm-workspace.yaml`).
+
+The third assertion is the one that matters. A path mismatch **does not raise an error** — the sibling mounts an empty directory, the run proceeds, and the result is confidently wrong. Asserting only that the mount *succeeded* would reproduce exactly the failure this check exists to catch.
+
+**Verify RED** (run in the **current DinD** dev container, where the workspace is at a different path and `docker` is the nested engine):
+
+```bash
+bash .devcontainer/verify/verify-workspace-path.sh
+```
+
+**Expected RED**: exits 1 — `✗ pwd -P is /workspaces/MovieCollectionManager, expected /workspaces/mcm` and `✗ sibling probe listed 0 entries — path does not exist on the engine host`. Two assertions failing.
+
+> To confirm the third assertion is not trivially green, run once with `MCM_WORKSPACE_PATH=/tmp/empty-probe` (an existing empty directory): the mount succeeds and the marker assertion must still fail — `✗ probe listing has no pnpm-workspace.yaml`. If it passes there, the check is asserting mountability rather than correctness.
+
+### T027 — Create the sandbox dev-container variant
 
 **Type**: Config change | **Time**: 1 hr | **Risk**: Medium
 
 **Spec reference**: FR-013, FR-014, FR-015, FR-016, FR-019, research.md#D-01, #D-02, #D-10
 
-**Prerequisite**: T024, T025 complete and verified RED.
+**Prerequisite**: T025, T026 complete and verified RED.
 
 Copy `.devcontainer/devcontainer.json` to `.devcontainer/sandbox/devcontainer.json` and apply the delta:
 
@@ -300,13 +400,13 @@ Copy `.devcontainer/devcontainer.json` to `.devcontainer/sandbox/devcontainer.js
 
 **Done when**: `devcontainer up --config .devcontainer/sandbox/devcontainer.json` builds and starts on the sandbox engine, and the Docker Desktop path still opens unchanged.
 
-### T028 — G2 gate: the engine seam
+### T029 — G2 gate: the engine seam
 
 **Type**: Implementation / gate | **Time**: 1 hr | **Risk**: High
 
 **Spec reference**: SC-001, SC-002
 
-**Prerequisite**: T024 verified RED, T026, T027.
+**Prerequisite**: T025 verified RED, T027, T028.
 
 **Verify GREEN** (in the new dev container):
 
@@ -333,13 +433,13 @@ bash .devcontainer/verify/verify-engine-seam.sh --host-check
 
 Any failure here is a design defect, not a tuning problem. Do not proceed to US4.
 
-### T029 — G3 gate: workspace path identity
+### T030 — G3 gate: workspace path identity
 
 **Type**: Implementation / gate | **Time**: 30 min | **Risk**: High
 
 **Spec reference**: FR-017, US3-AC6, research.md#D-03
 
-**Prerequisite**: T025 verified RED, T027.
+**Prerequisite**: T026 verified RED, T028.
 
 **Verify GREEN**:
 
@@ -351,6 +451,124 @@ bash .devcontainer/verify/verify-workspace-path.sh
 
 This gate exists because a path mismatch **does not error**. The sibling mounts an empty directory, the run proceeds, and the result is confidently wrong. Fix before any workload runs.
 
+### T031 — Make the host-isolation check sandbox-aware
+
+**Type**: Test refactor | **Time**: 45 min | **Risk**: Low
+
+**Spec reference**: FR-010, contracts/verify-harness.md
+
+**Scenarios covered**:
+
+- US3-AC4 / FR-010: the workstation's filesystem and credentials are unreachable from inside
+
+**File**: `.devcontainer/verify/verify-host-isolation.sh`
+
+Keep the existing assertions (`MCM_DEVCONTAINER=1`, non-root `coder`, no host filesystem or credential mount). Add one: **no Windows path is visible at all** — no `/mnt/[a-z]` mount, no `/host_mnt`, and no path in `/proc/mounts` resolving to a drive letter. Today's environment can legitimately carry a bind mount from `E:\` on the local-checkout path; the sandbox must never.
+
+**Verify RED** (run in the **current DinD** dev container **on the bind-mount path**, i.e. opened from the Windows checkout rather than a named volume):
+
+```bash
+bash .devcontainer/verify/verify-host-isolation.sh
+```
+
+**Expected RED**: exits 1 — `✗ Windows host path visible in /proc/mounts: /workspaces/MovieCollectionManager` (one new assertion failing; the pre-existing assertions still pass).
+
+> On the named-volume path this new assertion passes for the wrong reason. Run the RED from the bind-mount path, or the check is not proven to fail.
+
+### T032 — Assert RTK is present in the personal layer
+
+**Type**: Test refactor | **Time**: 30 min | **Risk**: Low
+
+**Spec reference**: FR-018; constitution §Common Technology Stack — Token Compression
+
+**Scenarios covered**:
+
+- US3-AC7: the developer's personal layer is preserved, matching current behaviour
+
+**File**: `.devcontainer/verify/verify-personal-layer.sh`
+
+Add an assertion that the RTK binary exists on the `mcm-claude` volume (`~/.claude/tools`) and answers `rtk --version`. RTK is constitution-mandated for every AI-assisted shell session, and it is installed by the out-of-repo dotfiles rather than baked into the image — so an environment that lost it looks completely healthy while violating a MUST principle. Nothing currently asserts it.
+
+**Verify RED** (run in a container whose `mcm-claude` volume has no dotfiles layer — e.g. a fresh volume, or temporarily rename `~/.claude/tools`):
+
+```bash
+bash .devcontainer/verify/verify-personal-layer.sh
+```
+
+**Expected RED**: exits 1 — `✗ RTK not found on the personal volume (~/.claude/tools/bin/rtk)`.
+
+> The existing script tolerates an empty personal layer by design (FR-014: the container is team-capable without dotfiles). Decide and document which it is: RTK **required** (fails an empty layer) or **warned**. This task takes the required reading, because the constitution makes it a MUST — and records that choice in the script header.
+
+### T033 — Make the allowlist check read the canonical list
+
+**Type**: Test refactor | **Time**: 45 min | **Risk**: Low
+
+**Spec reference**: FR-007, contracts/egress-allowlist.md
+
+**Scenarios covered**:
+
+- US2-AC1: the enforced allowlist derives from the project's canonical destination list
+
+**File**: `.devcontainer/verify/verify-firewall-allowlist.sh`
+
+Replace the script's own inline expectation with a read of `.devcontainer/egress-allowlist.json`. A check that carries its own copy of the expectation cannot detect drift in the thing it is checking — it will happily pass while the canonical list and the live ruleset disagree, which is precisely the R8 failure this extraction exists to prevent.
+
+**Verify RED** (run against a deliberate divergence — add a destination to `egress-allowlist.json` that the live ipset does not contain, then run the **current** script):
+
+```bash
+bash .devcontainer/verify/verify-firewall-allowlist.sh
+```
+
+**Expected RED**: exits **0** — `PASS` — while the canonical list and the ipset disagree. That false pass *is* the RED: the check is blind to drift.
+
+> This RED is a passing run, not a failing one, so it must be asserted deliberately. Record the injected divergence and the observed exit 0; then remove the divergence before implementing.
+
+### T034 — Scope the portable-runner check
+
+**Type**: Test refactor | **Time**: 30 min | **Risk**: Low
+
+**Spec reference**: research.md#D-15, contracts/verify-harness.md
+
+**Scenarios covered**:
+
+- US3-AC9: the existing configuration keeps working on the workstation's own engine (its runner claim must stay asserted where it still applies)
+
+**File**: `.devcontainer/verify/verify-portable-runner.sh`
+
+Take the config under test as a parameter. Assert dual-runner resolution (VS Code Dev Containers extension **and** `@devcontainers/cli`) for `.devcontainer/devcontainer.json`; assert `@devcontainers/cli` only for `.devcontainer/sandbox/devcontainer.json`.
+
+Feature 037's FR-008 portability claim does not survive the move intact for the sandbox variant — it is built headlessly inside the VM, and the extension attaches rather than builds. Left "unchanged", this check would assert a property the design deliberately gave up, and would either go red for a correct design or push someone to edit the variant to satisfy a claim nobody needs.
+
+**Verify RED** (run the **current, unparameterised** script against the sandbox variant):
+
+```bash
+MCM_DEVCONTAINER_CONFIG=.devcontainer/sandbox/devcontainer.json \
+  bash .devcontainer/verify/verify-portable-runner.sh
+```
+
+**Expected RED**: exits 1 — the script ignores the variable and checks the Docker Desktop config, or asserts extension-buildability the variant does not claim. Either way it is not answering the question asked, which is the defect.
+
+**Verify GREEN** (after implementing):
+
+```bash
+bash .devcontainer/verify/verify-portable-runner.sh .devcontainer/devcontainer.json
+bash .devcontainer/verify/verify-portable-runner.sh .devcontainer/sandbox/devcontainer.json
+```
+
+**Expected GREEN**: the first reports both runners resolving; the second reports CLI-only and explicitly **skips** the extension assertion with a stated reason, rather than silently omitting it.
+
+**Also**: the script header records D-15 as the reason the sandbox variant's runner set is narrower.
+
+### T036 — Run the full harness
+
+**Type**: Config change / verification | **Time**: 45 min | **Risk**: Low
+
+**Spec reference**: FR-020, SC-002
+
+Run all **twelve** scripts enumerated in [contracts/verify-harness.md](contracts/verify-harness.md) § Aggregate run — by name, not by globbing the directory. A glob silently shrinks when a file is renamed or lost, reports success, and has checked less than it claims.
+
+**Done when**: twelve scripts report a result, all twelve are green, and the run fails loudly if fewer than twelve reported. A skipped check counts as a failure.
+
 **Checkpoint**: US3 complete — `privileged` and the nested engine are gone, and it is proven from all three vantage points.
 
 ---
@@ -361,18 +579,18 @@ This gate exists because a path mismatch **does not error**. The sibling mounts 
 
 **Independent test**: connect through and confirm the in-container markers and assistant version; then exercise the fallback once.
 
-- [ ] T035 [US4] **G4 GATE** — connect VS Code Remote-SSH to `mcm.sbx`, then attach via the Dev Containers extension, and confirm `MCM_DEVCONTAINER=1`, `whoami` → `coder`, `claude --version`, and that the configured extensions load
-- [ ] T036 [US4] Confirm `rtk gain` reports active compression in the in-container shell (constitution requirement — a silently RTK-less environment looks healthy while violating it)
-- [ ] T037 [US4] Exercise the sshd-in-container fallback once (`sbx ports mcm --publish 2222:2222`) and record it as used, not theoretical
-- [ ] T038 [US4] Pin the `sbx` version and add a release-notes review step to the update ritual (R5)
+- [ ] T037 [US4] **G4 GATE** — connect VS Code Remote-SSH to `mcm.sbx`, then attach via the Dev Containers extension, and confirm `MCM_DEVCONTAINER=1`, `whoami` → `coder`, `claude --version`, and that the configured extensions load
+- [ ] T038 [US4] Confirm `rtk gain` reports active compression in the in-container shell — **Done when**: `rtk gain` returns >80% compression after a test run, satisfying the constitution's Token Compression requirement
+- [ ] T039 [US4] Exercise the sshd-in-container fallback once (`sbx ports mcm --publish 2222:2222`) — **Done when**: a terminal is reached over the fallback route, and the runbook records it as exercised with the date, not as theoretical
+- [ ] T040 [US4] Pin the `sbx` version and add a release-notes review step to the update ritual (R5) — **Done when**: the pinned version is recorded in the delta runbook and the review step is written into the update procedure
 
-### T035 — G4 gate: the two-hop editor chain
+### T037 — G4 gate: the two-hop editor chain
 
 **Type**: Config change / gate | **Time**: 1 hr | **Risk**: Medium
 
 **Spec reference**: FR-022, US4-AC1, US4-AC2, research.md#D-08
 
-Both hops are standard in isolation; their composition is not documented by Docker. If it fails, the fallback (T037) becomes the documented default and the feature continues — this gate cannot stop the migration, but its outcome decides which route the runbook presents first.
+Both hops are standard in isolation; their composition is not documented by Docker. If it fails, the fallback (T039) becomes the documented default and the feature continues — this gate cannot stop the migration, but its outcome decides which route the runbook presents first.
 
 **Done when**: a dev-container terminal from the host editor reports `1`, `coder`, and a working `claude --version`, by whichever route succeeded — and the runbook records which one is primary.
 
@@ -386,18 +604,19 @@ Both hops are standard in isolation; their composition is not documented by Dock
 
 **Contains G5 (sibling egress — the security payoff) and G6 (performance).**
 
-- [ ] T039 [US5] Bring up the stacks as siblings: `gen-dev-secrets` → `gen-dev-env` → `up-auth` → `docker-build mcm-app` → `up-mcm`
-- [ ] T040 [US5] Run the integration tier with the three documented URL exports unchanged
-- [ ] T041 [US5] Run the web E2E suite via the Playwright official-image recipe with the identical-path mount
-- [ ] T042 [US5] Run one agent E2E spec against Anthropic
-- [ ] T043 [US5] Bring up `dev-ollama` as a sibling and confirm gateway reachability via `host.docker.internal` → VM gateway
-- [ ] T044 [US5] Write the sibling-egress probe in `.devcontainer/verify/verify-firewall-allowlist.sh` — a refused request originating **inside a sibling container**
-- [ ] T045 [US5] **G5 GATE** — prove the sibling refusal is blocked **and** audited in `sbx policy log`
-- [ ] T046 [US5] **G6 GATE** — record migrated wall-clock in `baseline-measurements.md` and compare against T003; escalate with measurements if > 1.5×
-- [ ] T047 [US5] Determine whether proxy header injection reaches sibling containers (R7) and record the resulting credential posture in `research.md`
-- [ ] T048 [US5] Update `scripts/devcontainer-android.sh` to refuse explicitly and legibly when `/dev/kvm` is absent, naming the alternative routes
+- [ ] T041 [US5] Bring up the stacks as siblings: `gen-dev-secrets` → `gen-dev-env` → `up-auth` → `docker-build mcm-app` → `up-mcm` — **Done when**: every step exits 0, `docker ps` lists the stacks alongside the dev container, and a subsequent `down-mcm`/`down-auth` removes them cleanly
+- [ ] T042 [US5] Run the integration tier with the three documented URL exports unchanged — **Done when**: the tier passes with **0 skips** (a credential-driven skip is a missing file, not a missing capability)
+- [ ] T043 [US5] Run the web E2E suite via the Playwright official-image recipe with the identical-path mount — **Done when**: the suite passes and no root-owned artifact is left in `test-results/`
+- [ ] T044 [US5] Run one agent E2E spec against Anthropic — **Done when**: the spec passes against a gateway rebuilt from current source (a container recreated from a non-rebuilt image silently runs old code)
+- [ ] T045 [US5] Bring up `dev-ollama` as a sibling and confirm gateway reachability — **Done when**: `host.docker.internal` resolves to the VM gateway from inside the gateway container and reaches `dev-ollama` on 11434
+- [ ] T046 [US5] Write the sibling-egress probe in `.devcontainer/verify/verify-firewall-allowlist.sh` — a refused request originating **inside a sibling container**
+- [ ] T047 [US5] **G5 GATE** — prove the sibling refusal is blocked **and** audited in `sbx policy log`
+- [ ] T048 [US5] **G6 GATE** — record migrated wall-clock in `baseline-measurements.md` and compare against T003 — **Done when**: every stage from T003 has a paired migrated timing and a computed ratio; a ratio >1.5× is escalated with the measurements, not absorbed
+- [ ] T049 [US5] Determine whether proxy header injection reaches sibling containers (R7), record the posture in `research.md`, and upgrade any credential that can move to D-07 preference (1)
+- [ ] T050 [US5] Update `scripts/devcontainer-android.sh` to refuse explicitly when `/dev/kvm` is absent — **Done when**: it exits 0 with a message naming the absence, the reason (no nested virtualization in the microVM), and both alternative routes (CI, or the retained Docker Desktop environment)
+- [ ] T051 [US5] Prove the environment survives a workstation reboot — **Done when**: after a host restart, `sbx start mcm` returns the sandbox with its images, volumes, workspace clone and shell history intact, the dev container restarts, and the delta runbook states what a reboot does and does not preserve
 
-### T044 — Write the sibling-egress probe
+### T046 — Write the sibling-egress probe
 
 **Type**: Test | **Time**: 45 min | **Risk**: Low
 
@@ -419,13 +638,13 @@ bash .devcontainer/verify/verify-firewall-allowlist.sh
 
 **Expected RED**: exits 1 — `✗ sibling container reached example.com — nested-container egress unfiltered`. This is the documented 037 residual failing on purpose, which is exactly what makes the GREEN meaningful.
 
-### T045 — G5 gate: the closed residual
+### T047 — G5 gate: the closed residual
 
 **Type**: Implementation / gate | **Time**: 45 min | **Risk**: High
 
 **Spec reference**: FR-025, SC-005
 
-**Prerequisite**: T044 verified RED.
+**Prerequisite**: T046 verified RED.
 
 **Verify GREEN** (in the sandbox dev container):
 
@@ -443,6 +662,20 @@ sbx policy log | Select-String example.com
 
 **Expected**: the sibling's refusal appears in the audit log. Blocked-but-unaudited does not satisfy FR-008; if the block is silent, the posture claim is weaker than stated and must be recorded that way.
 
+### T049 — Resolve the credential posture (R7) and upgrade what can move
+
+**Type**: Config change | **Time**: 1 hr | **Risk**: Low
+
+**Spec reference**: FR-027, research.md#D-07
+
+**Prerequisite**: T024 (credentials provisioned by the fallback), T041 (siblings running).
+
+Put `ANTHROPIC_API_KEY` in `sbx secret` **only** — removed from the sandbox env file — and run one agent E2E scenario. If the agent gateway's calls succeed, the egress proxy's header injection reaches sibling containers and the key need never exist inside the VM: move every credential that supports injection to preference (1). If they fail, keep preference (3) and record that the key is VM-resident.
+
+Either outcome is acceptable. What is not acceptable is leaving it ambiguous — the posture statement in the runbook depends on knowing which is true.
+
+**Done when**: `research.md` D-07 records the measured answer in place of its `[gate — P5]` marker, every credential sits at the highest preference level that works, and the runbook's posture statement matches.
+
 **Checkpoint**: US5 complete — the environment works, and the headline security improvement is proven rather than asserted.
 
 ---
@@ -453,16 +686,17 @@ sbx policy log | Select-String example.com
 
 **Independent test**: from a workstation with the tooling but no sandbox, follow the documentation to a working dev container within 15 minutes, with no undocumented step.
 
-- [ ] T049 [US6] Snapshot the proven environment (`sbx template save mcm`) and record the recreate procedure
-- [ ] T050 [US6] Write `docs/runbooks/devcontainer-sandbox.md` — lifecycle, two-layer triage order, port publishing, teardown semantics, disk pruning, foot-guns, and the two workstation gotchas
-- [ ] T051 [US6] Rewrite the posture section of `docs/runbooks/devcontainer.md` and archive the DinD sections (lock deadlock, credsStore, Compose parity)
-- [ ] T052 [P] [US6] Update `CLAUDE.md` — the environment gate entry and knowledge index
-- [ ] T053 [P] [US6] Update `README.md` with the new environment description
-- [ ] T054 [P] [US6] Update the OpenWiki **source** documents so the generator regenerates the bundle correctly (never hand-edit generated pages)
-- [ ] T055 [US6] Prove recreate-from-nothing ≤ 15 min warm and record the measurement
-- [ ] T056 [US6] After two consecutive incident-free weeks: collapse to a single `devcontainer.json`, delete `.devcontainer/verify/verify-engine-isolation.sh`, and stop offering the Docker Desktop path for assistant sessions
+- [ ] T052 [US6] Snapshot the proven environment (`sbx template save mcm`) — **Done when**: `sbx run -t <tag>` recreates a working sandbox and the recreate procedure is written down
+- [ ] T053 [US6] Write `docs/runbooks/devcontainer-sandbox.md` — lifecycle, two-layer triage order, port publishing, teardown semantics, disk pruning, foot-guns, and the two workstation gotchas
+- [ ] T054 [US6] Rewrite the posture section of `docs/runbooks/devcontainer.md` and archive the DinD sections (lock deadlock, credsStore, Compose parity)
+- [ ] T055 [P] [US6] Update `CLAUDE.md` — the environment gate entry and knowledge index — **Done when**: no gate or index entry describes the nested engine as current, and `node scripts/check-openwiki-governance.mjs` passes
+- [ ] T056 [P] [US6] Update `README.md` with the new environment description — **Done when**: the environment section describes the sandbox-hosted dev container and names the emulator exception
+- [ ] T057 [P] [US6] Update the OpenWiki **source** documents so the generator regenerates the bundle correctly — **Done when**: the cited source documents carry the new posture and no generated page under `openwiki/` was hand-edited
+- [ ] T058 [US6] Extend `specs/060-devcontainer-docker-sandbox/rollback.md` with the rollback for every migration phase
+- [ ] T059 [US6] Prove recreate-from-nothing ≤ 15 min warm — **Done when**: a timed run from template to working dev container is recorded, with zero steps outside the documentation
+- [ ] T060 [US6] After two consecutive incident-free weeks (spec.md FR-032 defines "incident"): collapse to a single `devcontainer.json`, delete `.devcontainer/verify/verify-engine-isolation.sh`, and stop offering the Docker Desktop path for assistant sessions — **Done when**: an incident log covering the two weeks is recorded, `.devcontainer/sandbox/` is folded into `.devcontainer/devcontainer.json`, `verify-engine-isolation.sh` is deleted, the full harness is re-run green post-collapse, and `rollback.md`'s P6 entry names the revert commit
 
-### T050 — Write the delta runbook
+### T053 — Write the delta runbook
 
 **Type**: Documentation | **Time**: 3 hrs | **Risk**: None
 
@@ -471,15 +705,15 @@ sbx policy log | Select-String example.com
 Must contain, at minimum:
 
 - **Triage order** for a blocked request: `sbx policy log` **first**, then the in-VM ipset staleness reflex. Without a stated order, two allowlists cost more time than they save (R8).
-- **Lifecycle**: create / stop / start / template / rm, and what each preserves. `sbx rm` is total — the VM, the engine, every sibling, every named volume, and the workspace clone. **Unpushed work is lost.**
-- **Ports**: `sbx ports` publishing, and the LAN-device answer from T057 — either a `netsh portproxy` remedy or an explicit "unsupported" (R9).
+- **Lifecycle**: create / stop / start / template / rm, and what each preserves — including **what a host reboot preserves** (T051). `sbx rm` is total: the VM, the engine, every sibling, every named volume, and the workspace clone. **Unpushed work is lost.**
+- **Ports**: `sbx ports` publishing, and the LAN-device answer from T061 — either a `netsh portproxy` remedy or an explicit "unsupported" (R9).
 - **Foot-guns**: `docker rm -f` on the dev container's own container ends the session (R11); recovery is `devcontainer up` from the VM or a template recreate.
-- **Disk**: the envelope measured in T017 and a pruning practice (G7).
+- **Disk**: the envelope measured in T018 and a pruning practice (G7).
 - **The two workstation gotchas**: `sbx` not on PATH in a fresh shell; `sandboxd` running-but-unresponsive. Both present as "the tool is broken" — which is why they need named entries rather than tribal memory.
 
 **Done when**: the runbook contains all six sections and a developer who has never used `sbx` can follow it from install to working dev container.
 
-### T051 — Rewrite the current runbook's posture section
+### T054 — Rewrite the current runbook's posture section
 
 **Type**: Documentation | **Time**: 1 hr | **Risk**: None
 
@@ -491,15 +725,38 @@ Archive rather than delete the DinD sections. They document real failures (the `
 
 **Done when**: no passage describes the nested engine as the current environment, the new ledger is stated in FR-011's own honest style, and the retained-path sections are clearly marked as such.
 
+### T058 — Record the rollback for every phase
+
+**Type**: Documentation | **Time**: 45 min | **Risk**: None
+
+**Spec reference**: FR-033
+
+**Prerequisite**: T009 (the file exists).
+
+FR-033 requires every migration phase to have a rollback that restores the previous working state. Extend `rollback.md` with one entry per phase, matching [quickstart.md](quickstart.md):
+
+| Phase | Rollback |
+| --- | --- |
+| P1 sandbox bring-up | `sbx rm mcm` |
+| P2 egress + forge gate | reset policy to the bring-up profile; `sbx rm mcm` |
+| P3 dev container | `docker rm -f` the container in the VM; re-run `devcontainer up`; Docker Desktop config untouched |
+| P4 editor chain | remove the managed `Host *.sbx` block; drop the published SSH port |
+| P5 workload | `down-mcm`/`down-auth` in the VM, or `sbx rm mcm` |
+| P6 adopt | `git revert` — see below |
+
+Record the asymmetry honestly: **P6 step 5 is the only irreversible step**, because it deletes the fallback configuration. Before it, rollback is reverting documentation commits and the environment is unaffected. After it, rollback restores the nested-engine config from history — and that config must be **rebuilt and verified before being relied on**, because a configuration unexercised for a fortnight is a claim, not a fallback.
+
+**Done when**: `rollback.md` has an entry per phase, the T007/T008 entry from T009 is retained, and the P6 asymmetry is stated rather than implied.
+
 ---
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
-- [ ] T057 Determine whether `sbx ports` can bind non-loopback for a physical LAN device; implement the `netsh portproxy` remedy or declare the workflow unsupported (R9)
-- [ ] T058 [P] Confirm `.gitignore` covers the sandbox-local env file and any kit carrying topology literals — root `.gitignore` only, no new nested file
-- [ ] T059 [P] Run `verify-committed-clean.sh` and the existing secret/topology gates; confirm no forge hostname, tailnet address or credential entered git
-- [ ] T060 Run `node scripts/check-openwiki-governance.mjs` and confirm the documentation changes pass the governance gate
-- [ ] T061 Update `specs/060-devcontainer-docker-sandbox/research.md` with every gate's actual outcome, replacing the decision rules with what happened
+- [ ] T061 Determine whether `sbx ports` can bind non-loopback for a physical LAN device; implement the `netsh portproxy` remedy or declare the workflow unsupported (R9) — **Done when**: a phone on the LAN reaches Metro on 8081, or the runbook states the workflow is unsupported and names the Expo-tunnel alternative
+- [ ] T062 [P] Confirm the root `.gitignore` covers the sandbox-local env file and any kit carrying topology literals — **Done when**: `git status` is clean with those files present, and no new nested `.gitignore` was added
+- [ ] T063 [P] Run `verify-committed-clean.sh` and the existing secret/topology gates — **Done when**: all pass, and a grep of the diff for the forge host and tailnet address returns nothing
+- [ ] T064 Run `node scripts/check-openwiki-governance.mjs` — **Done when**: exit 0 with every concept provably derived or authoritative
+- [ ] T065 Update `specs/060-devcontainer-docker-sandbox/research.md` with every gate's actual outcome — **Done when**: each of G1–G7 and each `[gate]` marker in D-07/D-08/D-11 is replaced by what happened, so the file records history rather than intent
 
 ---
 
@@ -507,47 +764,58 @@ Archive rather than delete the DinD sections. They document real failures (the `
 
 ```text
 Phase 1 (Setup) ──────────────────────────────────────┐
-                                                       │
-Phase 2 (Foundational: canonical allowlist)  ──────────┤
-   T004 → T005 → T006 → T007 → T008                    │
-                                                       ▼
-Phase 3 (US1) ✅ complete — no blocking edges     Phase 4 (US2)
-                                                   T017 → T018 → T019 → T020 → T021 (G1)
-                                                                                  │
-                                          ┌───────────────────────────────────────┘
+   T002 (host CPU/RAM) ────────────────────┐          │
+                                            │          │
+Phase 2 (Foundational: canonical allowlist) │          │
+   T004 → T005 → T006 → T007 → T008 → T009  │          │
+                                            │          ▼
+Phase 3 (US1) ✅ complete                   └──► Phase 4 (US2)
+                                                  T018 → T019 → T020 → T021 → T022 (G1)
+                                                                        T023, T024
+                                                                              │
+                                          ┌───────────────────────────────────┘
                                           ▼
                                      Phase 5 (US3)
-                                     T024,T025 (RED) → T026 → T027 → T028 (G2), T029 (G3)
+                                     T025,T026 (RED) → T027 → T028 → T029 (G2), T030 (G3)
+                                     T031,T032,T033,T034 [P] → T035 → T036
                                                                     │
                                           ┌─────────────────────────┴────────────┐
                                           ▼                                      ▼
                                     Phase 6 (US4)                          Phase 7 (US5)
-                                    T035 (G4) → T037                       T039…T045 (G5), T046 (G6)
+                                    T037 (G4) → T038,T039,T040             T041…T047 (G5), T048 (G6)
+                                                                           T049 (needs T024), T050, T051
                                           └──────────────┬───────────────────────┘
                                                          ▼
                                                    Phase 8 (US6)
-                                                   T049 → T050,T051 → T055 → T056
+                                                   T052 → T053,T054 → T058 → T059 → T060
                                                          │
                                                          ▼
                                                    Phase 9 (Polish)
+                                                   T061 → T053 (runbook update), T062…T065
 ```
 
-**Hard ordering rules**
+### Hard ordering rules
 
+- **T002 before T018.** The sizing decision needs the host's actual CPU/RAM totals; without them T018 hardcodes a floor that may under-provision.
 - **T003 before cutover.** The baseline is the denominator of SC-006.
-- **T021 (G1) gates everything downstream.** If the forge is unreachable, the feature ends at US2 — do not start Phase 5.
-- **T024/T025 must be RED before T026.** Writing the config first makes the checks trivially green and the TDD gate meaningless.
-- **T044 must be RED on the current DinD container.** That RED *is* the documented 037 residual; without seeing it fail there, the GREEN proves nothing.
-- **T056 is time-gated**, not effort-gated — two consecutive incident-free weeks of daily use.
+- **T009 immediately after T007/T008.** Those are the only tasks that modify a file the environment you are working in executes on every start.
+- **T022 (G1) gates everything downstream.** If the forge is unreachable, the feature ends at US2 — do not start Phase 5.
+- **T025/T026 must be RED before T027.** Writing the config first makes the checks trivially green and the TDD gate meaningless.
+- **T046 must be RED on the current DinD container.** That RED *is* the documented 037 residual; without seeing it fail there, the GREEN proves nothing.
+- **T024 before T049.** Credentials are provisioned by the fallback first, then upgraded once R7 is answered — not guessed at in Phase 4.
+- **T061 before T053 is finalised.** The runbook's ports section needs the LAN answer.
+- **T060 is time-gated**, not effort-gated — two consecutive incident-free weeks of daily use, per FR-032's definition.
 
 ## Parallel execution opportunities
 
 | Phase | Parallel set | Why safe |
 | --- | --- | --- |
 | 1 | T002 ∥ T003 | different files; T003 is wall-clock-bound and can run while T002 is written |
-| 5 | T030 ∥ T031 ∥ T032 | three different verify scripts, no shared state |
-| 8 | T052 ∥ T053 ∥ T054 | `CLAUDE.md`, `README.md`, OpenWiki sources — distinct files |
-| 9 | T058 ∥ T059 | independent gates |
+| 5 | T031 ∥ T032 ∥ T033 | three different verify scripts, no shared state |
+| 8 | T055 ∥ T056 ∥ T057 | `CLAUDE.md`, `README.md`, OpenWiki sources — distinct files |
+| 9 | T062 ∥ T063 | independent gates |
+
+`T034` is deliberately **not** marked `[P]` despite touching a fourth distinct script: it depends on the D-15 scoping decision being settled, and it is the one harness change whose correct answer is a narrowing rather than an addition.
 
 Everything else is sequential: this is a migration, and each phase's gate is the precondition for the next phase being worth attempting.
 
@@ -577,8 +845,9 @@ Before marking `060-devcontainer-docker-sandbox` complete, verify all success cr
 - [ ] **SC-008**: Runbooks, `CLAUDE.md`, OpenWiki and `README.md` all describe the new environment; no passage presents the nested engine as current
 - [ ] **SC-009**: No credential, forge hostname or tailnet address in git; existing gates pass unchanged
 - [ ] **SC-010**: Emulator loss recorded as a scoped exception with named alternatives; no other workflow regressed
+- [ ] Every migration phase has a recorded rollback (`rollback.md`), and the P6 asymmetry is stated
 - [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
-- [ ] `bash .devcontainer/verify/*.sh` — full harness green in the new environment (a **skipped** check counts as a failure)
+- [ ] **Twelve** verify scripts report a result and all are green (enumerated by name — a **skipped** check counts as a failure, and a glob that finds eleven must fail the run)
 - [ ] `node scripts/check-openwiki-governance.mjs` — governance gate passes
 - [ ] `pnpm nx e2e mcm-app` — full-stack web E2E regression green in the new environment
 - [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)

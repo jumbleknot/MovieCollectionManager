@@ -16,19 +16,34 @@ A claim asserted only from inside the thing being claimed about is not proof. Th
 
 ## Harness after migration
 
+This table is the **definition of "the full harness"** referenced by the aggregate run and the Completion Checklist. A script absent from this table is a script that can be skipped without anyone noticing, so every script the feature creates or touches appears here.
+
 | Script | Status | Mode(s) | Asserts |
 | --- | --- | --- | --- |
 | `verify-engine-seam.sh` | **ADDED** — replaces `verify-engine-isolation.sh` | in-container + VM-side + host-side | the new engine boundary (below) |
 | `verify-workspace-path.sh` | **ADDED** | in-container + VM-side | path identity (below) |
+| `verify-egress-allowlist-contract.sh` | **ADDED** | any (pure generator check) | `gen-egress-policy.mjs` satisfies [egress-allowlist.md](egress-allowlist.md): both formats emit one stable-ordered line per destination; `--forge-host` appends to both; omitting it omits cleanly with exit 0; `--check` rejects a bare IP, an empty `reason`, an unknown `group` |
+| `verify-sandbox-egress.sh` | **ADDED** | VM-side (sandbox shell) | allowlisted destinations reachable; a non-allowlisted destination refused **and audited**; policy unalterable from inside; workstation loopback unreachable |
 | `verify-engine-isolation.sh` | **DELETED at adoption** | — | its premise inverts (see below) |
 | `verify-host-isolation.sh` | MODIFIED | in-container | `MCM_DEVCONTAINER=1`, non-root `coder`, no host filesystem/credential mount — now also: no Windows path visible at all |
 | `verify-firewall-allowlist.sh` | MODIFIED | in-container + sibling | reads the canonical list; adds the sibling-egress probe |
 | `verify-personal-layer.sh` | MODIFIED | in-container | personal layer intact — **and RTK present** (constitution-mandated) |
+| `verify-portable-runner.sh` | MODIFIED — **scoped**, see below | in-container | config resolves under the runner(s) that actually build it |
 | `verify-toolchain-present.sh` | unchanged | in-container | Node 24, Rust, uv/Python 3.13, gh, Android SDK, OpenWiki |
 | `verify-caches-persist.sh` | unchanged | in-container | the six named volumes survive recreate |
-| `verify-portable-runner.sh` | unchanged | in-container | config resolves under both runners |
 | `verify-reproducible-recreate.sh` | unchanged | VM-side | recreate from nothing |
 | `verify-committed-clean.sh` | unchanged | in-container | no secret/topology literal committed |
+
+**Twelve scripts after migration** (nine today, minus one replaced, plus three added). The aggregate run enumerates exactly these — see "Aggregate run" below.
+
+### `verify-portable-runner.sh` is scoped, not carried unchanged
+
+Feature 037's FR-008 requires the dev-container asset to resolve unmodified under **both** the VS Code Dev Containers extension and `@devcontainers/cli`. That dual-runner claim does not survive the move intact, and pretending it does would leave a check asserting something the design deliberately changed:
+
+- `.devcontainer/devcontainer.json` (Docker Desktop, retained until adoption) — **both runners**, unchanged claim.
+- `.devcontainer/sandbox/devcontainer.json` — **`@devcontainers/cli` only**. The container is built headlessly inside the VM; the extension *attaches* to the result rather than building it. This is the mechanism that deletes the whole class of VS Code build-path quirks (`${localEnv:VAR:default}` non-application, the Wayland socket, credsStore injection, "fully quit VS Code after `setx`") — see [research.md](../research.md) D-08 and D-15.
+
+The script therefore takes the config under test as a parameter and asserts the runner set appropriate to it. Asserting extension-buildability of the sandbox variant would be asserting a property the design intentionally dropped.
 
 ## Why `verify-engine-isolation.sh` is replaced rather than edited
 
@@ -95,3 +110,15 @@ Assertion 3 is the point of the script. A path mismatch does not raise an error:
 ## Aggregate run
 
 The full harness is run at P3 (environment proof) and again at P6 (adoption). Every script must be green before FR-032's two-week observation clock starts. A skipped check counts as a **failure**, not a pass — the repository's standing rule that a skip reads as a pass unless something forces it to fail.
+
+"Full harness" means exactly these twelve, and the run must **enumerate them by name and count**, not glob the directory — a glob silently shrinks when a file is renamed or lost, and reports success while checking less:
+
+```text
+in-container : engine-seam, workspace-path, host-isolation, firewall-allowlist,
+               personal-layer, portable-runner, toolchain-present, caches-persist,
+               committed-clean, egress-allowlist-contract
+VM-side      : engine-seam --vm-check, sandbox-egress, reproducible-recreate
+host-side    : engine-seam --host-check
+```
+
+The run fails if fewer than twelve scripts report a result.

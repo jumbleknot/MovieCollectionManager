@@ -189,6 +189,23 @@ The host-side mode is kept and widened: it is the only non-fabricable proof, bec
 
 ---
 
+## D-15 — The dual-runner portability claim is scoped, not silently dropped
+
+**Decision**: `verify-portable-runner.sh` takes the config under test as a parameter. `.devcontainer/devcontainer.json` keeps the full dual-runner assertion (VS Code Dev Containers extension **and** `@devcontainers/cli`). `.devcontainer/sandbox/devcontainer.json` asserts `@devcontainers/cli` only.
+
+**Rationale**: Feature 037's FR-008 made "resolves unmodified under both runners" a property of the committed asset. D-08 changes the build path for the sandbox variant: the container is built **headlessly by the CLI inside the VM**, and the extension attaches to the result rather than building it. That is not incidental — it is the mechanism that deletes an entire class of quirks the runbook currently documents (the `${localEnv:VAR:default}` non-application under the extension, the Wayland socket, credsStore injection, and the "fully quit VS Code after `setx`" trap).
+
+Leaving the script marked "unchanged" would have left it asserting a property the design deliberately gave up, on a config it was never meant to cover. That fails in one of two ways, both bad: it goes red for a correct design, or someone edits the sandbox variant to satisfy a claim nobody needs.
+
+**Alternatives considered**:
+
+- *Retain full dual-runner portability for the sandbox variant*: would require the extension to be able to build inside the VM, re-importing the quirks the headless path removes. No benefit — nothing in the workflow builds the sandbox variant from the extension.
+- *Delete the check*: the failure mode the repository's guard rule exists to prevent. The Docker Desktop config still needs it, and will keep needing it as long as that path is retained for non-assistant use.
+
+**Consequence**: this is a **scope narrowing of an existing assertion, recorded as a decision** — the same treatment given to the engine-isolation check in D-06, and for the same reason.
+
+---
+
 ## Open gates, consolidated
 
 | Gate | Phase | Question | If it fails |

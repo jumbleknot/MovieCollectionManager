@@ -24,7 +24,7 @@ The security payoff is concrete and measurable: `init-firewall.sh` documents, in
 
 **Storage**: Docker named volumes on the sandbox engine — `mcm-commandhistory`, `mcm-cargo-registry`, `mcm-cargo-git`, `mcm-uv-cache`, `mcm-pnpm-store`, `mcm-claude` — carried across unchanged. Workspace is a plain directory on the VM filesystem (`/workspaces/mcm`), **not** a named volume (see D-03).
 
-**Testing**: The `.devcontainer/verify/` harness is the test suite for this feature — nine scripts, RED-first, exit-code asserted. `verify-engine-isolation.sh` is **replaced** by an engine-seam check (D-06). Workload proof reuses the existing integration tier, Playwright web E2E, and one agent E2E spec unchanged.
+**Testing**: The `.devcontainer/verify/` harness is the test suite for this feature — RED-first, exit-code asserted. It goes from **nine scripts to twelve**: `verify-engine-isolation.sh` is replaced by `verify-engine-seam.sh` (D-06), and three are added — `verify-workspace-path.sh`, `verify-egress-allowlist-contract.sh`, `verify-sandbox-egress.sh`. Workload proof reuses the existing integration tier, Playwright web E2E, and one agent E2E spec unchanged.
 
 **Target Platform**: Windows 11 host → Docker Sandbox microVM (own Linux kernel) → sandbox Docker engine → unprivileged dev container (Debian, user `coder`) + sibling stacks.
 
@@ -34,7 +34,7 @@ The security payoff is concrete and measurable: `init-firewall.sh` documents, in
 
 **Constraints**: No `privileged`. No engine daemon inside the dev container. No host filesystem, credential or loopback reachable from the VM. No forge hostname, tailnet address or secret literal in git. The existing Docker Desktop path must keep working until adoption. Disk envelope of the microVM is undocumented and must be established before it is discovered by an ENOSPC mid-session.
 
-**Scale/Scope**: One workstation, one developer, one sandbox. ~4 committed config/script files changed, ~2 added, 1 verify script replaced, 4 documentation surfaces updated. Six migration phases, five of which have runtime gates.
+**Scale/Scope**: One workstation, one developer, one sandbox. **~10 committed files changed and ~8 added**, of which: 1 verify script replaced, 3 verify scripts added, 3 verify scripts modified, 2 new non-verify files (`egress-allowlist.json`, `gen-egress-policy.mjs`), 1 new dev-container variant, 1 new runbook, and 4 documentation surfaces updated. Six migration phases, six of which have runtime gates. (The earlier "~4 changed / ~2 added" estimate was wrong by 3–4× and is corrected here — it was made before the verify-harness delta and the allowlist extraction were enumerated in `tasks.md`.)
 
 ## Constitution Check
 
@@ -88,14 +88,17 @@ specs/060-devcontainer-docker-sandbox/
 ├── init-firewall.sh                   # MODIFIED — consume the extracted allowlist; scope note
 ├── egress-allowlist.json              # ADDED — the single canonical destination list
 └── verify/
-    ├── verify-engine-seam.sh          # ADDED — replaces verify-engine-isolation.sh
-    ├── verify-engine-isolation.sh     # DELETED at adoption (premise inverted, see D-06)
-    ├── verify-workspace-path.sh       # ADDED — identical-path assertion (R10)
-    ├── verify-host-isolation.sh       # MODIFIED — sandbox-aware
-    ├── verify-firewall-allowlist.sh   # MODIFIED — reads the canonical list
-    ├── verify-personal-layer.sh       # MODIFIED — assert RTK present
-    └── …                              # caches-persist, toolchain-present, portable-runner,
-                                       #   reproducible-recreate, committed-clean: unchanged
+    ├── verify-engine-seam.sh                # ADDED — replaces verify-engine-isolation.sh
+    ├── verify-engine-isolation.sh           # DELETED at adoption (premise inverted, see D-06)
+    ├── verify-workspace-path.sh             # ADDED — identical-path assertion (R10)
+    ├── verify-egress-allowlist-contract.sh  # ADDED — generator contract (D-04)
+    ├── verify-sandbox-egress.sh             # ADDED — VM-level egress probes (US2)
+    ├── verify-host-isolation.sh             # MODIFIED — sandbox-aware
+    ├── verify-firewall-allowlist.sh         # MODIFIED — canonical list + sibling probe
+    ├── verify-personal-layer.sh             # MODIFIED — assert RTK present
+    ├── verify-portable-runner.sh            # MODIFIED — scoped per D-15
+    └── …                                    # caches-persist, toolchain-present,
+                                             #   reproducible-recreate, committed-clean: unchanged
 
 scripts/
 ├── gen-egress-policy.mjs              # ADDED — emits sbx policy commands + ipset domain list
@@ -120,7 +123,7 @@ README.md                              # MODIFIED — environment description
 | ----------- | ------------ | ------------------------------------- |
 | **Two egress enforcement layers** (host-side sandbox policy + in-VM `init-firewall.sh`) rather than one | The sandbox policy is new and unproven here; `init-firewall.sh`'s allowlist semantics are battle-tested in this repo across three features. Running both during migration gives the smallest behavioural delta and a fallback if policy granularity disappoints. | Sandbox-policy-only is the *intended* end state and is explicitly listed in spec Out of Scope as a later decision — but adopting it in the same change that moves the engine would conflate two failure modes. The cost is R8 (misdiagnosis), paid down by one canonical list (D-04) and a stated triage order. |
 | **Two dev-container configurations** during the migration (`.devcontainer/devcontainer.json` + `.devcontainer/sandbox/devcontainer.json`) | FR-019 requires the current environment to keep working on Docker Desktop until adoption; a single mutated file would break the working environment on the first commit. | Mutating in place would leave no rollback and no A/B for the performance comparison. FR-032 collapses them after two incident-free weeks, so the duplication is time-boxed, not permanent. |
-| **Bash verify harness not invoked through Nx** | Pre-existing condition from features 037/038, unchanged by this feature. These checks run *outside* and *around* the container (host-side mode reads the Windows engine), which is not a workspace-project target shape. | Wrapping the harness in Nx targets is a defensible cleanup but is scope creep here, and would add churn to nine scripts during a migration whose whole risk profile depends on minimal in-repo delta. Recorded so it is a decision, not an oversight. |
+| **Bash verify harness not invoked through Nx** | Pre-existing condition from features 037/038, unchanged by this feature. These checks run *outside* and *around* the container (host-side mode reads the Windows engine), which is not a workspace-project target shape. | Wrapping the harness in Nx targets is a defensible cleanup but is scope creep here, and would add churn to a dozen scripts during a migration whose whole risk profile depends on minimal in-repo delta. Recorded so it is a decision, not an oversight. |
 
 ## Phase gates (execution order and stop conditions)
 
