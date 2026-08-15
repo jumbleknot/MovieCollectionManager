@@ -4,7 +4,7 @@ title: Agent Gateway (LangGraph)
 description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI and reachable only from the BFF. Orchestrates tool calls to three scoped MCP servers; owns no domain data itself.
 resource: docs/runbooks/agent-layer.md
 tags: [langgraph, python, mcp, agent, ai]
-timestamp: 2026-08-09T00:00:00+00:00
+timestamp: 2026-08-18T00:00:00+00:00
 ---
 
 # Agent Gateway (LangGraph)
@@ -35,13 +35,15 @@ degrade gracefully without it. Every tool call funnels through one choke point
 token acquisition → the MCP call → output guardrail validation.
 
 Multi-turn flows park a `*_stage` value on graph state so follow-up turns are guarded back into the
-owning node. The add flow runs an ownership follow-up chain (`awaiting_ownership` →
-`awaiting_media` → `awaiting_ripped` → `awaiting_rip_quality`) that collects every ownership
-answer before building a single Proposal — the member approves one complete change, not a series
-of edits. Media-format and rip-quality options are driven by a `get_movie_metadata` read from
-movie-mcp (which publishes mc-service's `GET /api/v1/movie-metadata`), never hardcoded in the
-agent. The generative-UI surface has three components: `render_selection` (collection/scope/
-ownership Yes-No and search scope/cancel), `render_disambiguation` (curator's movie candidates),
+owning node. The add flow runs a chain that collects every answer before building a single Proposal —
+`awaiting_childrens` → `awaiting_ownership` → `awaiting_media` → `awaiting_ripped` →
+`awaiting_rip_quality` → proposal. The children's question sits first deliberately: the ownership
+questions are conditional on owning the film, so any later placement would skip the children's answer
+for every not-owned add. The member approves one complete change, not a series of edits.
+Media-format and rip-quality options are driven by a `get_movie_metadata` read from movie-mcp
+(which publishes mc-service's `GET /api/v1/movie-metadata`), never hardcoded in the agent. The
+generative-UI surface has three components: `render_selection` (collection/scope/ownership Yes-No,
+search scope/cancel, and children's Yes/No), `render_disambiguation` (curator's movie candidates),
 and `render_multi_select` (media-format and rip-quality toggle lists in the ownership chain).
 
 Model provider is environment-scoped: `MODEL_PROVIDER` selects `ollama` (dev/test default) or
@@ -76,7 +78,20 @@ user's request swap provider/credentials without touching the shared process env
   ownership stage — if it doesn't, a bare "yes" or "DVD" answer runs entity extraction, finds no
   movie, clears `candidate`, and drops the member back to "What movie would you like me to look
   up?" mid-flow. Feature 040 added the passthrough for `awaiting_ownership` only; feature 047 had
-  to widen it for three more stages. Missing the curator half is silent until that specific turn.
+  to widen it for three more stages; feature 059 added `awaiting_childrens` at the front, where
+  missing the passthrough resets the member on the very first answer of every add. Missing the
+  curator half is silent until that specific turn.
+- **`rated` is no longer hardcoded `"NR"` — it is the film's real US certification or `null`.**
+  Before 059 US1, `to_movie_payload` wrote the literal string `"NR"` for every assistant-added
+  movie regardless of its actual rating. `web-api-mcp.get_movie_details` now appends
+  `release_dates` to the TMDB call it already makes and returns the first non-empty US
+  certification, validated against `{G, PG, PG-13, R, NC-17, NR, Unrated}`. The value comes
+  through as `EnrichedMovieCandidate.rated` (defaults `None`). There is **no** rename from
+  `PG-13` to `PG13`: `UsaRating` in mc-service carries `#[serde(rename = "PG-13")]`, TMDB
+  publishes the hyphenated form, and renaming would send a value mc-service rejects. `None`
+  (unknown certification) reaches the payload as `"rated": null` — a present key with a null
+  value. **Do not omit the key or substitute `"NR"`: `CreateMovieDto` types `rated` as
+  `Option<T>` without `serde(default)`, so a missing key 422s the add.**
 - **`[]` and `None` are different answers in the multi-select resolver.** An explicit "none" means *no formats* (a valid answer the member supplied); an unrelated reply means *not answered yet* (re-ask). Collapsing them records an ownership the member never gave.
 - **Whitespace in a resolver key is a resolution bug, not cosmetic.** The import article-loop fix
   (feature 047) found that `_article_prompt` stored a raw cell value (including its trailing space)

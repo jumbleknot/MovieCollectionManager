@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer)
 description: The disposable Linux dev container the AI coding assistant runs inside — its honestly-stated two-tier isolation model (strong host-filesystem isolation, moderate privileged-DinD engine isolation), the default-deny egress firewall, and the VS Code / Windows-host quirks that block a first boot.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook]
-timestamp: 2026-08-11T00:00:00+00:00
+timestamp: 2026-08-15T00:00:00+00:00
 ---
 
 # Containerized dev environment (devcontainer)
@@ -38,6 +38,7 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   then rebuild. With it unset, backlog reads still work via `MCM_FORGE_TOKEN`; writes are refused naming
   the missing variable. See [The agent-driven backlog](/openwiki/runbooks/backlog.md) for credential and
   reach details.
+- **`api.themoviedb.org` is allowlisted for the shell (OUTPUT chain) but NOT needed for the app — the two chains behave differently, and conflating them is the trap.** Feature 059 added the entry to `init-firewall.sh` so that `nx test:integration web-api-mcp` (pytest, in the shell) can reach TMDB. **Nested containers never needed it**: RUNTIME TMDB paths (BFF validate-on-save probe, web-api-mcp curator enrichment) run nested and travel the FORWARD chain, which `init-firewall.sh` leaves to dockerd. Measured 2026-07-16 with TMDB absent from `ALLOWED_DOMAINS`: a nested container reached a non-allowlisted domain (`example.com` → 200) and the nested BFF reached TMDB (`401` = connected, key rejected). If a runtime path times out, the ruleset is stale — **re-apply `init-firewall.sh` to re-resolve the CDN IPs; do not widen the allowlist** (that is still wrong and still masked the real cause). The old blanket "do NOT add TMDB to the allowlist" instruction is superseded, not reversed: it held for runtime paths and still does — what it did not cover is the test runner in the shell. Measured 2026-08-14 after the entry: `curl https://api.themoviedb.org/3/` from the shell returns `401` (connected); `example.com` still times out, so default-deny is intact.
 - **`crates.io` is not allowlisted — `cargo` commands need `--offline` here.** The same
   default-deny firewall that blocks npm CDN drift also blocks the Cargo registry. All commands
   that compile or test mc-service need `--offline --manifest-path backend/mc-service/Cargo.toml`.

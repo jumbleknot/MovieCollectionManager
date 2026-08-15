@@ -4,7 +4,7 @@ title: AI Agents layer architecture (features 012/014/018/040/047)
 description: The call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the user's session token.
 resource: docs/runbooks/agent-layer.md
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
-timestamp: 2026-08-09T00:00:00+00:00
+timestamp: 2026-08-18T00:00:00+00:00
 ---
 
 # AI Agents layer architecture (features 012/014/018/040/047)
@@ -66,14 +66,17 @@ TMDB key); an un-opted-in user cannot trigger a billable run.
 Multi-turn flows (navigate, organize, import, add-with-ownership-question) park a `*_stage` value
 on graph state so the *next* turn is guarded back into the owning node — otherwise a bare
 follow-up answer ("yes", a bare collection name) gets re-classified as an unrelated intent and the
-flow silently derails. Feature 047 extended the add flow into a chain: `awaiting_ownership` →
-`awaiting_media` → `awaiting_ripped` → `awaiting_rip_quality` → proposal. Three distinct
+flow silently derails. Feature 059 extended the add flow further: the full chain is now `awaiting_childrens` →
+`awaiting_ownership` → `awaiting_media` → `awaiting_ripped` → `awaiting_rip_quality` →
+proposal. The children's question sits at the front deliberately: the 047 questions are
+conditional on ownership, so any later placement would skip the answer for every not-owned add.
+Three distinct
 generative-UI selection components exist; see `docs/runbooks/agent-layer.md` for the exact
 node/tool/testID mapping before touching any of them:
 
 | Tool | Component / testID | Used by |
 |---|---|---|
-| `render_selection` | `selection-options` | navigator `_clarify`, import picks, search scope, US4 ownership Yes/No |
+| `render_selection` | `selection-options` | navigator `_clarify`, import picks, search scope, US4 ownership Yes/No, 059 children's Yes/No |
 | `render_disambiguation` | `disambiguation-options` | curator's ambiguous movie-candidate list only |
 | `render_multi_select` (047) | `multi-select-options` | US4 media-format / rip-quality toggle lists |
 
@@ -151,6 +154,17 @@ unconfigured — the agent layer must work in a plain dev environment with none 
     substring, which would hijack a real title like *"How to Exit Search a Building"*, and never
     the bare synonyms (`cancel`, `never mind`), which belong just as much to the import and organize
     flows. Those stay scoped to a live stage, where the stage itself establishes intent.
+- **`rated` is no longer hardcoded `"NR"` — it is the film's real US certification or `null`.**
+  Before 059 US1, `to_movie_payload` wrote the literal string `"NR"` for every assistant-added
+  movie regardless of its actual rating. `web-api-mcp.get_movie_details` now appends
+  `release_dates` to the TMDB call it already makes and returns the first non-empty US
+  certification, validated against `{G, PG, PG-13, R, NC-17, NR, Unrated}`. The value comes
+  through as `EnrichedMovieCandidate.rated` (defaults `None`). There is **no** rename from
+  `PG-13` to `PG13`: `UsaRating` in mc-service carries `#[serde(rename = "PG-13")]`, TMDB
+  publishes the hyphenated form, and renaming would send a value mc-service rejects. `None`
+  (unknown certification) reaches the payload as `"rated": null` — a present key with a null
+  value. **Do not omit the key or substitute `"NR"`: `CreateMovieDto` types `rated` as
+  `Option<T>` without `serde(default)`, so a missing key 422s the add.**
 - **A node-level test passing does NOT mean the graph-level path works.** Calling a node function
   directly bypasses every supervisor guard and every stage-continuation check. **If a change
   touches routing, a guard, or a `*_stage`, drive `build_graph(...)` — not the node.**
