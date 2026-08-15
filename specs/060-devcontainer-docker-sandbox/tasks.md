@@ -318,7 +318,7 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 - [ ] T031 [P] [US3] Update `.devcontainer/verify/verify-host-isolation.sh` to be sandbox-aware — no Windows path visible at all
 - [ ] T032 [P] [US3] Update `.devcontainer/verify/verify-personal-layer.sh` to assert the RTK binary is present on the `mcm-claude` volume
 - [ ] T033 [P] [US3] Update `.devcontainer/verify/verify-firewall-allowlist.sh` to read `egress-allowlist.json` instead of re-listing domains inline
-- [ ] T034 [US3] Scope `.devcontainer/verify/verify-portable-runner.sh` per research.md#D-15 — take the config under test as a parameter; dual-runner for the Docker Desktop config, CLI-only for the sandbox variant
+- [ ] T034 [P] [US3] Parameterise `.devcontainer/verify/verify-portable-runner.sh` by config so both `devcontainer.json` and `sandbox/devcontainer.json` can be checked — mechanical only; the sandbox variant's second-runner claim is settled at G4 (T037), not here
 - [ ] T035 [US3] Remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` — **Done when**: the pin is gone, the image rebuilds, and `docker compose version` inside the dev container reports the sandbox engine's plugin without error
 - [ ] T036 [US3] Run the full twelve-script harness in the new dev container and confirm every check green
 
@@ -523,41 +523,42 @@ bash .devcontainer/verify/verify-firewall-allowlist.sh
 
 > This RED is a passing run, not a failing one, so it must be asserted deliberately. Record the injected divergence and the observed exit 0; then remove the divergence before implementing.
 
-### T034 — Scope the portable-runner check
+### T034 — Parameterise the portable-runner check by config
 
 **Type**: Test refactor | **Time**: 30 min | **Risk**: Low
 
-**Spec reference**: research.md#D-15, contracts/verify-harness.md
+**Spec reference**: FR-019, research.md#D-15, contracts/verify-harness.md
 
 **Scenarios covered**:
 
-- US3-AC9: the existing configuration keeps working on the workstation's own engine (its runner claim must stay asserted where it still applies)
+- US3-AC9: the existing configuration keeps working on the workstation's own engine
 
 **File**: `.devcontainer/verify/verify-portable-runner.sh`
 
-Take the config under test as a parameter. Assert dual-runner resolution (VS Code Dev Containers extension **and** `@devcontainers/cli`) for `.devcontainer/devcontainer.json`; assert `@devcontainers/cli` only for `.devcontainer/sandbox/devcontainer.json`.
+**Mechanical change only.** Take the config under test as a parameter (defaulting to the current behaviour) so both `.devcontainer/devcontainer.json` and `.devcontainer/sandbox/devcontainer.json` can be checked. The script's assertions — `read-configuration`, `devcontainer up`, then the proofs via `devcontainer exec` — are already entirely CLI-side and apply unchanged to both configs. For the sandbox variant they become *more* load-bearing, because the CLI is now the primary build path rather than the alternate one.
 
-Feature 037's FR-008 portability claim does not survive the move intact for the sandbox variant — it is built headlessly inside the VM, and the extension attaches rather than builds. Left "unchanged", this check would assert a property the design deliberately gave up, and would either go red for a correct design or push someone to edit the variant to satisfy a claim nobody needs.
+**Do not narrow the claim in this task.** Whether the sandbox variant retains a second runner is a **G4 measurement** (T037), not a design decision — see research.md D-15. Declaring it CLI-only here would pre-decide that gate and quietly surrender the anti-lock-in property FR-008 exists to hold.
 
-**Verify RED** (run the **current, unparameterised** script against the sandbox variant):
+**Verify RED** (run the current, unparameterised script against the sandbox variant):
 
 ```bash
-MCM_DEVCONTAINER_CONFIG=.devcontainer/sandbox/devcontainer.json \
-  bash .devcontainer/verify/verify-portable-runner.sh
+bash .devcontainer/verify/verify-portable-runner.sh .devcontainer/sandbox/devcontainer.json
 ```
 
-**Expected RED**: exits 1 — the script ignores the variable and checks the Docker Desktop config, or asserts extension-buildability the variant does not claim. Either way it is not answering the question asked, which is the defect.
+**Expected RED**: the argument is ignored and the script checks the repo-root default instead — it reports `✓ committed devcontainer.json resolves…` for the **wrong config**. A pass that answers a different question than the one asked is the defect.
 
-**Verify GREEN** (after implementing):
+> Confirm it is genuinely reading the wrong file: temporarily make the sandbox variant invalid JSON. The current script must still report PASS. If it fails, it is already reading the argument and this task is unnecessary.
+
+**Verify GREEN**:
 
 ```bash
 bash .devcontainer/verify/verify-portable-runner.sh .devcontainer/devcontainer.json
 bash .devcontainer/verify/verify-portable-runner.sh .devcontainer/sandbox/devcontainer.json
 ```
 
-**Expected GREEN**: the first reports both runners resolving; the second reports CLI-only and explicitly **skips** the extension assertion with a stated reason, rather than silently omitting it.
+**Expected GREEN**: each run names the config it checked and passes against **that** config; an invalid sandbox variant now fails the second run.
 
-**Also**: the script header records D-15 as the reason the sandbox variant's runner set is narrower.
+**Also**: the script header records that its assertions are CLI-side, that the extension half of FR-008 is verified by daily use rather than by this script, and that D-15/G4 owns the question of the sandbox variant's second runner.
 
 ### T036 — Run the full harness
 
@@ -579,20 +580,45 @@ Run all **twelve** scripts enumerated in [contracts/verify-harness.md](contracts
 
 **Independent test**: connect through and confirm the in-container markers and assistant version; then exercise the fallback once.
 
-- [ ] T037 [US4] **G4 GATE** — connect VS Code Remote-SSH to `mcm.sbx`, then attach via the Dev Containers extension, and confirm `MCM_DEVCONTAINER=1`, `whoami` → `coder`, `claude --version`, and that the configured extensions load
+- [ ] T037 [US4] **G4 GATE** — connect VS Code Remote-SSH to `mcm.sbx`, reach the dev container by **both** *Attach to Running Container* and *Reopen in Container*, and record which of the two work (D-15)
 - [ ] T038 [US4] Confirm `rtk gain` reports active compression in the in-container shell — **Done when**: `rtk gain` returns >80% compression after a test run, satisfying the constitution's Token Compression requirement
 - [ ] T039 [US4] Exercise the sshd-in-container fallback once (`sbx ports mcm --publish 2222:2222`) — **Done when**: a terminal is reached over the fallback route, and the runbook records it as exercised with the date, not as theoretical
 - [ ] T040 [US4] Pin the `sbx` version and add a release-notes review step to the update ritual (R5) — **Done when**: the pinned version is recorded in the delta runbook and the review step is written into the update procedure
 
-### T037 — G4 gate: the two-hop editor chain
+### T037 — G4 gate: the two-hop editor chain, and which extension operations work
 
-**Type**: Config change / gate | **Time**: 1 hr | **Risk**: Medium
+**Type**: Config change / gate | **Time**: 1.5 hrs | **Risk**: Medium
 
-**Spec reference**: FR-022, US4-AC1, US4-AC2, research.md#D-08
+**Spec reference**: FR-022, US4-AC1, US4-AC2, research.md#D-08, #D-15
 
-Both hops are standard in isolation; their composition is not documented by Docker. If it fails, the fallback (T039) becomes the documented default and the feature continues — this gate cannot stop the migration, but its outcome decides which route the runbook presents first.
+Both hops are standard in isolation; their composition is not documented by Docker. This gate cannot stop the migration — the sshd fallback (T039) is fully functional — but it decides two separate things, and the second is easy to miss:
 
-**Done when**: a dev-container terminal from the host editor reports `1`, `coder`, and a working `claude --version`, by whichever route succeeded — and the runbook records which one is primary.
+**(a) Can a terminal be reached at all?** Remote-SSH to `mcm.sbx`, then the Dev Containers extension, then confirm in the in-container terminal:
+
+```bash
+echo $MCM_DEVCONTAINER    # 1
+whoami                    # coder
+claude --version
+```
+
+…and that the three configured extensions load.
+
+**(b) Which extension operation reached it — attach, reopen, or both?** These are different capabilities and only one of them is a *runner*:
+
+| Operation | What it does | If it works |
+| --- | --- | --- |
+| **Attach to Running Container** | connects to a container the CLI already built | the baseline; expected to work |
+| **Reopen in Container** | **the extension builds**, from inside the Remote-SSH session, on the sandbox engine | the sandbox keeps a second runner — FR-008's anti-lock-in property survives |
+
+Test *Reopen in Container* deliberately, against a **stopped** dev container so the extension has to build rather than silently attach to a running one. That distinction is the whole measurement; a "reopen" that finds the container already up proves nothing.
+
+**Record the outcome in research.md D-15**, replacing its `[gate — P4]` marker:
+
+- **Both work** → delete D-15; the dual-runner property survives in its new direction (CLI daily, extension alternate) and no scoping of `verify-portable-runner.sh` is needed.
+- **Attach only** → the sandbox environment is **hostage to `@devcontainers/cli`**, inside a VM whose Node was provisioned by hand in T023. Record the constraint, and add a **CLI-recovery path** to the delta runbook (T053): how to restore a working builder when the CLI breaks — `sbx template save` restore, or reinstall from the allowlisted npm registry. Today a broken CLI is survivable by opening the folder in VS Code; under this outcome it is not, and the runbook must say what to do instead.
+- **Neither works** → the sshd fallback (T039) becomes the documented primary route.
+
+**Done when**: a dev-container terminal from the host editor reports `1`, `coder`, and a working `claude --version`; both extension operations have been attempted with the container stopped beforehand; D-15 records the measured result; and the runbook names the primary route plus, if applicable, the CLI-recovery path.
 
 ---
 
@@ -708,6 +734,7 @@ Must contain, at minimum:
 - **Lifecycle**: create / stop / start / template / rm, and what each preserves — including **what a host reboot preserves** (T051). `sbx rm` is total: the VM, the engine, every sibling, every named volume, and the workspace clone. **Unpushed work is lost.**
 - **Ports**: `sbx ports` publishing, and the LAN-device answer from T061 — either a `netsh portproxy` remedy or an explicit "unsupported" (R9).
 - **Foot-guns**: `docker rm -f` on the dev container's own container ends the session (R11); recovery is `devcontainer up` from the VM or a template recreate.
+- **CLI-recovery path — required only if T037 landed attach-only.** If the extension cannot build the sandbox variant, `@devcontainers/cli` is the environment's *sole* builder, running on a hand-provisioned Node (T023). Document how to restore a working builder when it breaks: restore from `sbx template save`, or reinstall from the allowlisted npm registry. On the Docker Desktop path this case is survivable by opening the folder in VS Code; here it is not, so the answer cannot be left implicit.
 - **Disk**: the envelope measured in T018 and a pruning practice (G7).
 - **The two workstation gotchas**: `sbx` not on PATH in a fresh shell; `sandboxd` running-but-unresponsive. Both present as "the tool is broken" — which is why they need named entries rather than tribal memory.
 
@@ -811,11 +838,9 @@ Phase 3 (US1) ✅ complete                   └──► Phase 4 (US2)
 | Phase | Parallel set | Why safe |
 | --- | --- | --- |
 | 1 | T002 ∥ T003 | different files; T003 is wall-clock-bound and can run while T002 is written |
-| 5 | T031 ∥ T032 ∥ T033 | three different verify scripts, no shared state |
+| 5 | T031 ∥ T032 ∥ T033 ∥ T034 | four different verify scripts, no shared state |
 | 8 | T055 ∥ T056 ∥ T057 | `CLAUDE.md`, `README.md`, OpenWiki sources — distinct files |
 | 9 | T062 ∥ T063 | independent gates |
-
-`T034` is deliberately **not** marked `[P]` despite touching a fourth distinct script: it depends on the D-15 scoping decision being settled, and it is the one harness change whose correct answer is a narrowing rather than an addition.
 
 Everything else is sequential: this is a migration, and each phase's gate is the precondition for the next phase being worth attempting.
 

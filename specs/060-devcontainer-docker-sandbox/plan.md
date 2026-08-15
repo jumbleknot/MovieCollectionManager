@@ -96,7 +96,7 @@ specs/060-devcontainer-docker-sandbox/
     ├── verify-host-isolation.sh             # MODIFIED — sandbox-aware
     ├── verify-firewall-allowlist.sh         # MODIFIED — canonical list + sibling probe
     ├── verify-personal-layer.sh             # MODIFIED — assert RTK present
-    ├── verify-portable-runner.sh            # MODIFIED — scoped per D-15
+    ├── verify-portable-runner.sh            # MODIFIED — config parameter (D-15/G4)
     └── …                                    # caches-persist, toolchain-present,
                                              #   reproducible-recreate, committed-clean: unchanged
 
@@ -144,7 +144,7 @@ These are unresolvable by research and resolve only by execution. Each has a dec
 
 - **Forge reachability through the sandbox egress proxy** (G1) — the one that can end the feature.
 - **Whether proxy header injection reaches sibling containers** (FR-027) — either outcome acceptable; only the recorded posture differs.
-- **Whether the Dev Containers extension layers over the sandbox Remote-SSH session** (G4) — fallback fully functional.
+- **Whether the Dev Containers extension layers over the sandbox Remote-SSH session** (G4) — and specifically whether it can *build* (Reopen in Container) or only *connect* (Attach to Running Container). The sshd fallback keeps a terminal reachable either way, but the build answer decides whether the sandbox retains a second runner or becomes dependent on `@devcontainers/cli` alone (D-15).
 - **The microVM disk envelope** — establish in P1, before it is discovered by failure.
 - **Whether `sbx ports` can bind non-loopback** for a physical LAN device — remedy or declare unsupported.
 - **v0.38.0 behavioural deltas** from the v0.37-era research the proposal was written against — verify, do not inherit.

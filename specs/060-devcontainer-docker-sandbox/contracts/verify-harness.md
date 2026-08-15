@@ -28,7 +28,7 @@ This table is the **definition of "the full harness"** referenced by the aggrega
 | `verify-host-isolation.sh` | MODIFIED | in-container | `MCM_DEVCONTAINER=1`, non-root `coder`, no host filesystem/credential mount — now also: no Windows path visible at all |
 | `verify-firewall-allowlist.sh` | MODIFIED | in-container + sibling | reads the canonical list; adds the sibling-egress probe |
 | `verify-personal-layer.sh` | MODIFIED | in-container | personal layer intact — **and RTK present** (constitution-mandated) |
-| `verify-portable-runner.sh` | MODIFIED — **scoped**, see below | in-container | config resolves under the runner(s) that actually build it |
+| `verify-portable-runner.sh` | MODIFIED — takes a config parameter; claim settled at G4, see below | host-side | the named config resolves, builds and passes its proofs under `@devcontainers/cli` |
 | `verify-toolchain-present.sh` | unchanged | in-container | Node 24, Rust, uv/Python 3.13, gh, Android SDK, OpenWiki |
 | `verify-caches-persist.sh` | unchanged | in-container | the six named volumes survive recreate |
 | `verify-reproducible-recreate.sh` | unchanged | VM-side | recreate from nothing |
@@ -36,14 +36,19 @@ This table is the **definition of "the full harness"** referenced by the aggrega
 
 **Twelve scripts after migration** (nine today, minus one replaced, plus three added). The aggregate run enumerates exactly these — see "Aggregate run" below.
 
-### `verify-portable-runner.sh` is scoped, not carried unchanged
+### `verify-portable-runner.sh` gains a config parameter — its *claim* is settled at G4, not here
 
-Feature 037's FR-008 requires the dev-container asset to resolve unmodified under **both** the VS Code Dev Containers extension and `@devcontainers/cli`. That dual-runner claim does not survive the move intact, and pretending it does would leave a check asserting something the design deliberately changed:
+**What the script actually asserts today.** Despite FR-008 being a dual-runner requirement, this script's assertions are entirely CLI-side — `devcontainer read-configuration`, `devcontainer up`, then the isolation proofs via `devcontainer exec`. **It never drives the VS Code extension.** The extension is the daily driver and is verified by daily use; the CLI is the independent second runner whose whole purpose, per the script's own header, is that "the setup is not hostage to any single tool."
 
-- `.devcontainer/devcontainer.json` (Docker Desktop, retained until adoption) — **both runners**, unchanged claim.
-- `.devcontainer/sandbox/devcontainer.json` — **`@devcontainers/cli` only**. The container is built headlessly inside the VM; the extension *attaches* to the result rather than building it. This is the mechanism that deletes the whole class of VS Code build-path quirks (`${localEnv:VAR:default}` non-application, the Wayland socket, credsStore injection, "fully quit VS Code after `setx`") — see [research.md](../research.md) D-08 and D-15.
+**What the migration changes.** The two runners swap roles. The CLI becomes the runner that builds daily (headlessly, inside the VM), and the extension becomes the unasserted alternate. The property does not shrink — it points the other way.
 
-The script therefore takes the config under test as a parameter and asserts the runner set appropriate to it. Asserting extension-buildability of the sandbox variant would be asserting a property the design intentionally dropped.
+**This feature's change is mechanical only**: the script takes the config under test as a parameter, so both `.devcontainer/devcontainer.json` and `.devcontainer/sandbox/devcontainer.json` can be checked. Its CLI assertions apply unchanged to both, and become *more* load-bearing for the sandbox variant because they now cover the primary build path.
+
+**What is deliberately not decided here.** Whether the sandbox variant retains a second runner at all depends on a G4 measurement: does *Reopen in Container* work over the sandbox Remote-SSH session (the extension builds), or only *Attach to Running Container* (the CLI must have built it first)? See [research.md](../research.md) D-15. Until G4 answers that:
+
+- The script does **not** assert extension-buildability of either config — it never did.
+- The script does **not** declare the sandbox variant CLI-only — that would pre-decide G4 and quietly give up an anti-lock-in property this repository paid for.
+- If G4 lands attach-only, the constraint is recorded in the runbook **together with a CLI-recovery path**, because a single-runner environment with a hand-provisioned Node has no fallback when that runner breaks.
 
 ## Why `verify-engine-isolation.sh` is replaced rather than edited
 

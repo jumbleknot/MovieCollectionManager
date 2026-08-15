@@ -189,20 +189,34 @@ The host-side mode is kept and widened: it is the only non-fabricable proof, bec
 
 ---
 
-## D-15 — The dual-runner portability claim is scoped, not silently dropped
+## D-15 — The two runners swap roles; whether the anti-lock-in property survives is a **G4 outcome**, not a design decision
 
-**Decision**: `verify-portable-runner.sh` takes the config under test as a parameter. `.devcontainer/devcontainer.json` keeps the full dual-runner assertion (VS Code Dev Containers extension **and** `@devcontainers/cli`). `.devcontainer/sandbox/devcontainer.json` asserts `@devcontainers/cli` only.
+**[gate — P4]** This entry deliberately does **not** decide. It states what changes, what is unknown, and what each outcome obliges.
 
-**Rationale**: Feature 037's FR-008 made "resolves unmodified under both runners" a property of the committed asset. D-08 changes the build path for the sandbox variant: the container is built **headlessly by the CLI inside the VM**, and the extension attaches to the result rather than building it. That is not incidental — it is the mechanism that deletes an entire class of quirks the runbook currently documents (the `${localEnv:VAR:default}` non-application under the extension, the Wayland socket, credsStore injection, and the "fully quit VS Code after `setx`" trap).
+**What FR-008 actually bought.** Feature 037's `verify-portable-runner.sh` header states its purpose plainly: the extension is the daily driver, `@devcontainers/cli` is the **independent second runner**, "so the setup is not hostage to any single tool." The script's assertions are all CLI-side — `read-configuration`, `devcontainer up`, then the isolation proofs through `devcontainer exec`. **It never exercises the VS Code extension.** The extension half of the property is verified by being used every day, not by this script.
 
-Leaving the script marked "unchanged" would have left it asserting a property the design deliberately gave up, on a config it was never meant to cover. That fails in one of two ways, both bad: it goes red for a correct design, or someone edits the sandbox variant to satisfy a claim nobody needs.
+**What the migration changes.** The roles swap:
 
-**Alternatives considered**:
+| | Runner that builds daily | Runner that proves non-lock-in |
+| --- | --- | --- |
+| 037 / Docker Desktop | VS Code Dev Containers extension | `@devcontainers/cli` (this script) |
+| 060 / sandbox | **`@devcontainers/cli`** (headless, inside the VM) | **the extension — unasserted** |
 
-- *Retain full dual-runner portability for the sandbox variant*: would require the extension to be able to build inside the VM, re-importing the quirks the headless path removes. No benefit — nothing in the workflow builds the sandbox variant from the extension.
-- *Delete the check*: the failure mode the repository's guard rule exists to prevent. The Docker Desktop config still needs it, and will keep needing it as long as that path is retained for non-assistant use.
+So the property does not shrink; it **points the other way**, and nothing currently asserts the new direction. The script keeps working and becomes *more* load-bearing, because it now tests the primary build path rather than the alternate one.
 
-**Consequence**: this is a **scope narrowing of an existing assertion, recorded as a decision** — the same treatment given to the engine-isolation check in D-06, and for the same reason.
+**The open question (G4).** D-08's editor chain says the Dev Containers extension "attaches to / **reopens in**" the container. Those are different operations:
+
+- *Attach to Running Container* — the CLI built it; the extension only connects. Always available.
+- *Reopen in Container* — **the extension builds**, from inside the Remote-SSH session, against the sandbox engine. Unknown whether this works.
+
+**Decision rule at G4:**
+
+- **If Reopen in Container works** → the dual-runner property survives intact in its new direction. Delete this entry; `verify-portable-runner.sh` needs no scoping, only the config-path parameter so it can check both configs.
+- **If it does not work** → record it as a known constraint, and accept a real consequence: **the sandbox environment is then hostage to `@devcontainers/cli`**, inside a VM whose Node was provisioned by hand (T023). Today a broken CLI is survivable — you open the folder in VS Code and keep working. Under this outcome there is no such fallback, so the delta runbook owes an explicit recovery path (most likely `sbx template save` restore, or CLI reinstall from the allowlisted npm registry).
+
+**What survives regardless.** The two VS Code-client tweaks — `dev.containers.mountWaylandSocket: false` and the `credsStore` → `DOCKER_CONFIG` workaround — do genuinely disappear. Both exist only because the extension issues `docker run` **host-side on Windows**; in the Remote-SSH session the extension runs on Linux, with no WSLg socket and no Windows credential helper. That part of D-08 holds independently of the G4 outcome.
+
+**Why this is deferred rather than decided.** An earlier revision of this entry decided the negative case in advance — narrowing the sandbox variant to CLI-only on the strength of a prediction about how the extension behaves. That traded away an anti-lock-in property the repository deliberately paid for, on no evidence, in a document that then read as settled. Narrowing a guard is legitimate (see D-06), but only once the cause is known. Here the cause is exactly what G4 measures, so the narrowing waits for it.
 
 ---
 
@@ -213,7 +227,7 @@ Leaving the script marked "unchanged" would have left it asserting a property th
 | **G1** | P2 | Is the tailnet forge reachable through the sandbox egress proxy for git **and** image pull? | Try `DOCKER_SANDBOXES_PROXY=system` routing, then a Tailscale subnet-router/hostname exposure. If neither works: **stop the feature**, record the finding, retain the current environment. |
 | **G2** | P3 | No daemon in-container, unprivileged, invisible to the Windows engine? | Design defect — do not tune around it. |
 | **G3** | P3 | Does the workspace path match on both sides, proven by a sibling probe? | Fix before any workload runs; sibling mounts fail silently. |
-| **G4** | P4 | Does the Dev Containers extension layer over the sandbox Remote-SSH session? | Fallback becomes the documented default; feature continues. |
+| **G4** | P4 | Does the Dev Containers extension layer over the sandbox Remote-SSH session — **attach only, or also Reopen in Container** (D-15)? | Attach works but Reopen does not: record the constraint; the sandbox is then hostage to `@devcontainers/cli`, so the runbook owes an explicit CLI-recovery path. Neither works: the sshd fallback becomes primary. Feature continues in every case. |
 | **G5** | P5 | Is a sibling container's non-allowlisted request refused **and** audited? | The headline security claim is unproven — do not adopt. |
 | **G6** | P5 | Wall-clock ≤ 1.5× baseline? | Escalate with measurements; re-size first. |
 | **G7** | P1 | What is the microVM's disk envelope? | Establish before ENOSPC finds it; document a prune practice. |
