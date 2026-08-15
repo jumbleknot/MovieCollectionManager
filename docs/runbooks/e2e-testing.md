@@ -468,7 +468,7 @@ abandoned full-suite run was still at test 24/174 fifteen minutes after being "s
 isolated re-run and making its timings meaningless. Always confirm and clean up:
 
 ```bash
-docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.60.0-noble \
+docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.62.1-noble \
   --format '{{.ID}}\t{{.Command}}'      # then: docker kill <id>
 ```
 
