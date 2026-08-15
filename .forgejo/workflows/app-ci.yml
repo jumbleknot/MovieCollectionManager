@@ -749,7 +749,7 @@ jobs:
             -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
             -e E2E_AGENT_PRODUCTION -e E2E_REQUIRE_AGENT_STACK=1 \
             -e KEYCLOAK_SERVICE_CLIENT_SECRET \
-            mcr.microsoft.com/playwright:v1.60.0-noble \
+            mcr.microsoft.com/playwright:v1.62.1-noble \
             sh -c "corepack enable && pnpm exec playwright test"
 
       # The MODEL tier. Non-blocking, and NOT absent — nothing leaves the gate without a tier that
@@ -774,7 +774,7 @@ jobs:
             -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
             -e E2E_AGENT_PRODUCTION -e E2E_REQUIRE_AGENT_STACK=1 \
             -e KEYCLOAK_SERVICE_CLIENT_SECRET \
-            mcr.microsoft.com/playwright:v1.60.0-noble \
+            mcr.microsoft.com/playwright:v1.62.1-noble \
             sh -c "corepack enable && pnpm exec playwright test"
 
       # ── Result gate: a GREEN app-e2e must mean nothing was hidden (051 SC-001) ──────────────────

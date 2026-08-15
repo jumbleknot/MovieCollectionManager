@@ -468,9 +468,32 @@ abandoned full-suite run was still at test 24/174 fifteen minutes after being "s
 isolated re-run and making its timings meaningless. Always confirm and clean up:
 
 ```bash
-docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.60.0-noble \
+docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.62.1-noble \
   --format '{{.ID}}\t{{.Command}}'      # then: docker kill <id>
 ```
+
+**That tag is a PIN, and the authoritative copy is the WORKFLOW — not this file.** The tag selects
+the browser build baked into the image, so it must equal the `@playwright/test` version the
+lockfile resolves. It is written in three places, which do not carry equal weight:
+
+| Where | Count | What it is |
+|---|---|---|
+| `.forgejo/workflows/app-ci.yml` | 2 | **authoritative** — the tag CI actually runs the suite in |
+| `docs/runbooks/devcontainer.md` | 3 | the operator's local `docker run` recipe |
+| this file | 1 | the `docker ps` cleanup filter above |
+
+A lockfile bump that moves `@playwright/test` without moving the **workflow's** tag makes the
+browser fail to launch outright — `browserType.launch: Executable doesn't exist at
+/ms-playwright/chromium_headless_shell-…` — so **ZERO tests run**, and the e2e result gate reports
+`no Playwright summary found in the log — the run produced no counts, which is not the same as
+producing good ones` rather than a count. Updating only the docs fixes nothing: CI reads the
+workflow.
+
+Measured on PR #199 (2026-08-15): a Renovate lock-file refresh moved 1.60.0 → 1.62.1, the workflow
+tag stayed at `v1.60.0-noble`, and `app-e2e` burned a full ~35-minute cycle before failing. The two
+halves must land in the SAME change — the pin cannot be fixed ahead of the bump on `main`, because
+bumping it while `main` still holds the older `@playwright/test` breaks `main` the same way in
+reverse. Nothing enforces the coupling yet: item #204.
 
 **Include the decline copy in the negatives.** Measured 2026-08-09 on the broken build: the same
 defect surfaced as *"I can only help with your movie collections."* rather than the mis-search,
