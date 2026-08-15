@@ -27,7 +27,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
-import { answerOwnership } from './setup/assistant-add-flow';
+import { answerChildrens, answerOwnership } from './setup/assistant-add-flow';
 
 const OFFER_TIMEOUT = 150_000;
 const APPROVAL_TIMEOUT = 90_000;
@@ -103,6 +103,8 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
     // Turn 2: pick by ordinal → resolves a single film → approval card appears.
     await send(page, 'the first one');
     // 040 US4: the resolved add asks "Do you own this movie?" before the proposal is built.
+    // 059 US2: the children's question now opens the chain, ahead of ownership.
+    await answerChildrens(page);
     await answerOwnership(page);
     const approval = page.locator('[data-testid="approval-request"]');
     await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });

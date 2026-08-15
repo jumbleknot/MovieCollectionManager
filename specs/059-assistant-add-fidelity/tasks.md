@@ -142,8 +142,10 @@ carries its real rating, the second carries none and still succeeds. Needs nothi
   - The live shape matched [contracts/web-api-mcp-get-movie-details.md](./contracts/web-api-mcp-get-movie-details.md) on all four pinned films — no contract or fixture correction was needed.
   - If the shape differs from [contracts/web-api-mcp-get-movie-details.md](./contracts/web-api-mcp-get-movie-details.md), fix the contract **and** the T006 fixtures — never just the failing assertion.
 
-- [ ] T014 [P] [US1] Add two assertions to `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts` (`@model-decision`): "The Secret Life of Pets 2" (2019) added through the assistant has `rated` = `PG` (SC-001), and a film with no US certification is added successfully with a blank rating (US1-AC4, SC-003) — proving mc-service accepts `"rated": null` on the real write path, not just in the payload
+- [x] T014 [P] [US1] Add two assertions to `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts` (`@model-decision`): "The Secret Life of Pets 2" (2019) added through the assistant has `rated` = `PG` (SC-001), and a film with no US certification is added successfully with a blank rating (US1-AC4, SC-003) — proving mc-service accepts `"rated": null` on the real write path, not just in the payload
   - **Verify**: `node scripts/agent-e2e.mjs agent-add-ownership`
+  - **Written and typechecked**; the RUN is deferred to T025, which rewrites the same file — one stack rebuild and one (very slow, model-driven) suite execution covers both stories rather than two. Results are recorded under T025.
+  - **Film choice, measured against live TMDB 2026-08-15** rather than assumed: "The Secret Life of Pets 2" (2019) resolves `exact` → `tmdb:412117`, `rated = PG`. For the uncertified case, research R3's `null` films were checked for *searchability* as well as rating — `Agnes` searches `ambiguous` (and R3's `tmdb:411397` is the **1995** film, not the 2021 one), so it would have detoured through disambiguation. **`Nightless Night` (2023, `tmdb:1245424`) resolves `exact` with no US block at all** and is what the spec uses.
 
 **Checkpoint**: US1 is independently shippable here — merge-blocking unit + live coverage, and the
 reported defect is fixed end to end.
@@ -222,10 +224,26 @@ answers; the created movie carries exactly what was chosen. Needs nothing from U
   - **Verify GREEN**: same command → back to the T001 baseline counts
   - **Measured GREEN**: **102 passed, 0 failed, 11 skipped** — identical to the T001 baseline.
 
-- [ ] T025 [US2] Update the E2E specs that walk the old turn sequence — 5 tests in `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts` (lines ~70, 155, 215, 261, 303) and 1 in `frontend/mcm-app/tests/e2e/web/agent-add-external-link.spec.ts` (line ~78) — to answer the children's question first, and add new coverage: the question appears before ownership from both a card add and a typed add; abandoning at it adds nothing; and it is answerable **by tapping only and by typing only**, both producing the same movie (FR-012, SC-005)
+- [x] T025 [US2] Update the E2E specs that walk the old turn sequence — 5 tests in `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts` (lines ~70, 155, 215, 261, 303) and 1 in `frontend/mcm-app/tests/e2e/web/agent-add-external-link.spec.ts` (line ~78) — to answer the children's question first, and add new coverage: the question appears before ownership from both a card add and a typed add; abandoning at it adds nothing; and it is answerable **by tapping only and by typing only**, both producing the same movie (FR-012, SC-005)
   - The tap/type assertion belongs on the new question specifically — the existing "typed answers reach the same result as tapping" test (line ~261) covers the 047 questions, and updating it to pass is not the same as asserting the new one.
   - **If these pass unmodified, the question is not being asked** — that is a failure, not a convenience.
   - **Verify**: `node scripts/agent-e2e.mjs agent-add-ownership` and `node scripts/agent-e2e.mjs agent-add-external-link`
+  - **Measured**: `agent-add-ownership` → **12 passed, 0 failed, 0 skipped, 0 flaky** (5 pre-existing, updated + 7 new: 5 for US2, 2 for US1). `agent-add-external-link` → **1 passed** (it now answers two Yes/No questions instead of one). Both files' every test carries `@model-decision`, so this tier does not block a merge — nothing deterministic was left here.
+  - **Three environment findings, none of which was "it can't run here":**
+    1. `node scripts/agent-e2e.mjs` fails instantly with `browserType.launch: Executable doesn't exist` — that is the *target*, not the tests. Playwright runs here only in its official image; the run used `mcr.microsoft.com/playwright:v1.60.0-noble` with `--network host`, `--user "$(id -u):$(id -g)"` and `-e HOME=/tmp` (omitting the user flags leaves root-owned artifacts that break the next run).
+    2. The runbook's reason for forcing `E2E_AGENT_PROVIDER=anthropic` ("the DinD container has no reachable Ollama") **is superseded** — the nested `dev-ollama` container answers `200` on `localhost:11434` in the shared netns, and the seed gate passed on the ollama path. But a **new** reason applies: `SPECIALIST_MODEL=qwen2.5:32b` needs ~19 GB (4.7 GB + 14.2 GB CPU repack) against **15 GB** of RAM, and `llama-server` is OOM-killed — `Load failed … signal: killed`, Ollama answers `500`. Measured, not assumed: the 19 GB model was pulled first, then observed to fail. Anthropic is therefore still the right provider here, for a different reason than the one recorded.
+    3. The gateway and MCP containers were running a **two-day-old image**. `scripts/agent-e2e.mjs` recreates only the BFF, so the stack was rebuilt with `scripts/agent-stack.mjs` and the running containers were then *interrogated* rather than trusted — `extract_us_certification` present and returning `PG-13` for the All-Is-Lost shape, `to_movie_payload` carrying a `childrens` parameter, `awaiting_childrens` in `_OWNERSHIP_STAGES`.
+  - **Instrument check on the green**, because 12 model-driven flows in 1.5 min has the same shape as a suite that ran nothing. The decisive evidence is server-side, in mc-service's own log:
+    - `CreateMovieDto { title: "The Secret Life of Pets 2", …, rated: Some(PG), … }` — **SC-001 proven on the real write path**, not merely in the payload builder.
+    - `childrens: true` × 4 and `childrens: false` × 22 across the run — the member's answer is what gets written.
+    - The 22 × `rated: Some(NR)` are **truthful**: they are all `Coherence`, which live TMDB really does publish as `NR` (checked, precisely because `NR` is the value the old bug produced). `Nightless Night` resolves to `None`, matching the blank-rating test.
+
+- [x] T025a [US2] **Addendum — three MORE E2E specs walk the add chain, and two of them are `@gate`.** Found by CI, not by the task list: run 1816's `app-e2e` failed with `failed=3 flaky=0 passed=149 did-not-run=3 skipped=0`.
+  - The task list named `agent-add-ownership.spec.ts` and `agent-add-external-link.spec.ts`. The real blast radius also includes `assistant-add.spec.ts` (**2 `@gate` tests**), `assistant-add-ambiguous.spec.ts` (**1 `@gate` test**) and `assistant-context.spec.ts` (2 `@model-decision`), all of which reach the chain through the shared `answerOwnership` helper in `tests/e2e/web/setup/assistant-add-flow.ts`.
+  - **These were merge-blocking**, unlike everything T025 covers — `@gate`, not `@model-decision`. The local runs of the two named files could not have caught them, and did not.
+  - The 3 `did-not-run` are a knock-on, not a separate fault: the `lifecycle` project declares `dependencies: ['chromium']`, so a red chromium project means it never starts.
+  - **Fix**: a sibling `answerChildrens` helper, called explicitly at each of the four sites, rather than folding both questions into `answerOwnership`. A helper that silently swallowed both would make the *next* inserted question invisible too — and the ordering is the guarantee. Both helpers now delegate to one `answerChainQuestion(page, asks, answer)` that asserts the question's own TEXT before touching the buttons, because both questions render the same `selection-options` control and a bare `.last()` can match the previous question's still-mounted control.
+  - **Verify GREEN**: the full gate tier, exactly as CI runs it (`E2E_TIER=gate`, official Playwright image) → **155 passed, exit 0**. Plus `assistant-context.spec.ts` on the model tier → **2 passed**.
 
 **Checkpoint**: both stories complete and independently verifiable.
 
@@ -238,10 +256,32 @@ answers; the created movie carries exactly what was chosen. Needs nothing from U
   - **Measured**: `web-api-mcp:lint` → ruff **All checks passed**, mypy **no issues in 4 source files**. `movie-assistant:lint` → ruff **All checks passed**, mypy **no issues in 43 source files**.
   - The diff also touches TypeScript (three E2E spec files), so two more tiers were derived from it and run: `mcm-app:typecheck` → **clean**, `mcm-app:lint` → **0 errors** (14 pre-existing warnings, all in files this feature does not touch).
 
-- [ ] T027 Verify in CI that the enrolled integration step actually ran web-api-mcp — read the run log via `node scripts/ci-status.mjs`, confirm a non-zero collected count for `tests/integration` and a skip count of 0
+- [x] T027 Verify in CI that the enrolled integration step actually ran web-api-mcp — read the run log via `node scripts/ci-status.mjs`, confirm a non-zero collected count for `tests/integration` and a skip count of 0
   - A workflow edit is not evidence that a step ran. If egress from the runner turns out to be blocked, this is where it surfaces — fix the runner path or revert T004 and record why, but do not silence it.
+  - **Measured, run 1816** (`node scripts/ci-status.mjs failure --run 1816 --full` → the evidence bundle's `logs/step_mcp-integration-web-api`):
 
-- [ ] T028 [P] Manual confirmation per [quickstart.md](./quickstart.md) §4 — add "The Secret Life of Pets 2" through the assistant on the local stack, answer the children's question, and read the detail screen: Rated `PG`, and the children's flag as answered
+    ```
+    tests/integration/test_server.py ..
+    tests/integration/test_tmdb.py .......
+    ============================== 9 passed in 1.12s ===============================
+    NX   Successfully ran target test:integration for project web-api-mcp
+    ```
+
+    **9 collected, 9 passed, 0 skipped.** This is the positive evidence the task asks for — the step has its own named log, so it did not have to be inferred from the job's exit status.
+  - **This settles 048 FR-013's open egress question by measurement**: the runner CAN reach `api.themoviedb.org`. It was enrolled *without* that being known, deliberately — an unconfirmed path that fails loudly on its first run beats one that stays unexamined — and the answer is yes. No revert needed.
+  - The job as a whole FAILED on a later step (`web-e2e`), which is a separate defect this feature caused and fixed — see T025's addendum. The MCP step runs before it and is unaffected.
+
+- [x] T028 [P] Manual confirmation per [quickstart.md](./quickstart.md) §4 — add "The Secret Life of Pets 2" through the assistant on the local stack, answer the children's question, and read the detail screen: Rated `PG`, and the children's flag as answered
+  - **Confirmed, in two halves.** The *through-the-dock* half is what T025's E2E does on this same live stack, and mc-service's own log is the evidence — `CreateMovieDto { title: "The Secret Life of Pets 2", …, rated: Some(PG) }`. This session has no browser for a human to look at, so the read-the-detail-screen half was done by driving the identical chain end to end and reading back what that screen renders:
+
+    | Step | Result |
+    |---|---|
+    | web-api-mcp enrichment (real TMDB) | Pets 2 → `'PG'`; Nightless Night → `None` |
+    | `to_movie_payload` (real builder, member answers yes / no) | `rated='PG' childrens=True` / `rated=None childrens=False` |
+    | POST to mc-service | **201** and **201** — the uncertified add is ACCEPTED, which is `"rated": null` being sent as a present key rather than omitted (research R5) |
+    | read back | `The Secret Life of Pets 2 — Rated: PG, Children's: True` · `Nightless Night — Rated: (blank), Children's: False` |
+
+    Before this feature the first row would have read `Rated: NR, Children's: False`. The seeded collection was deleted afterwards (`204`).
 
 - [ ] T029 [P] Comment on backlog items #163 and #162 recording what their acceptance criteria got wrong — the `PG-13` → `PG13` rename that exists at no boundary (item #163 AC3, research R1) and `build_add_movie_payload`, which is `to_movie_payload` (both items, research R2)
   - `node scripts/backlog.mjs comment 163 --body-file …` / `… 162 …`. Correct the criteria before closing, not after.

@@ -24,7 +24,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
-import { answerOwnership } from './setup/assistant-add-flow';
+import { answerChildrens, answerOwnership } from './setup/assistant-add-flow';
 
 const APPROVAL_TIMEOUT = 150_000;
 const DONE_TIMEOUT = 90_000;
@@ -110,6 +110,8 @@ test.describe('Assistant context-aware "this" (feature 012, US3)', () => {
     await openDock(page);
     await askAddToThis(page);
     // 040 US4: ownership is asked once the target resolves — here, the ON-SCREEN collection.
+    // 059 US2: the children's question now opens the chain, ahead of ownership.
+    await answerChildrens(page);
     await answerOwnership(page);
 
     // The approval card resolves the ON-SCREEN collection (no named target). Nothing written yet.
