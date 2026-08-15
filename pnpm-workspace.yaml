@@ -24,6 +24,22 @@ allowBuilds:
   dtrace-provider: false # denied pre-bump
   esbuild: false # denied pre-bump; the prebuilt binary is used, no local compile needed
   msgpackr-extract: false # denied pre-bump
+  # react-native-enriched-markdown@1.0.1 ADDED a postinstall that 0.6.0 did not have, which is why a
+  # lockfile refresh turned this into a hard install failure rather than a silent skip. The script
+  # (`node postinstall.mjs`) DOWNLOADS native assets at install time - tree-sitter grammar C sources
+  # and a RaTeX XCFramework for iOS math - from registry.npmjs.org and github.com, and the manifest
+  # that gates it IS shipped in the published tarball, so it really takes the download path.
+  #
+  # Denied, which is the pre-bump posture: it arrives only as a transitive peer of
+  # react-native-streamdown, nothing in our source renders enriched markdown, and an install-time
+  # fetch of native binaries is what the deny-by-default list above exists to stop - it would also
+  # have to succeed from the egress-restricted dev container on every install.
+  #
+  # Flip to true only if the app starts rendering enriched markdown needing code highlighting or
+  # math on NATIVE, and say so here. The package also honours a consumer opt-out (an
+  # enriched-markdown block in package.json), which is the lighter lever if it is ever wanted
+  # without its downloads.
+  react-native-enriched-markdown: false
 
 minimumReleaseAgeExclude:
   - brace-expansion@5.0.9
