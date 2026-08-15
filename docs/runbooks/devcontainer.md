@@ -459,7 +459,7 @@ official image instead: browsers are baked in, and `--network host` shares the d
 docker run --rm --network host -v "$PWD":/work -w /work/frontend/mcm-app \
   -e E2E_BFF_TARGET=dev-container -e E2E_AGENT_PROVIDER=anthropic \
   -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e ANTHROPIC_API_KEY -e TMDB_API_KEY -e CI=1 \
-  mcr.microsoft.com/playwright:v1.60.0-noble \
+  mcr.microsoft.com/playwright:v1.62.1-noble \
   sh -c "corepack enable && pnpm exec playwright test"
 ```
 
@@ -653,12 +653,17 @@ docker run --rm --network host --env-file ./.env.e2e.local \
   -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
   -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET="$SVC_SECRET" \
   -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
-  -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.60.0-noble \
+  -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.62.1-noble \
   node_modules/.bin/playwright test tests/e2e/web/<spec>.spec.ts --project=chromium --workers=1 --reporter=line
 ```
 
 Pin the image to the repo's Playwright version (`pnpm exec playwright --version`, currently
-**v1.60.0** → `mcr.microsoft.com/playwright:v1.60.0-noble`) so the browser build matches.
+**v1.62.1** → `mcr.microsoft.com/playwright:v1.62.1-noble`) so the browser build matches.
+This pin is NOT cosmetic and NOT independent of the lockfile: a lockfile refresh that moves
+`@playwright/test` without moving this tag makes the browser launch fail outright
+(`browserType.launch: Executable doesn't exist at /ms-playwright/chromium_headless_shell-…`),
+so ZERO tests run and the e2e gate reports `no Playwright summary found` rather than a count.
+Measured on PR #199, where the lockfile moved 1.60.0 → 1.62.1 and this tag did not follow.
 
 > **`--user "$(id -u):$(id -g)"` is not optional — omit it and you break the NEXT run.** The
 > container runs as **root** by default, and `/workspaces/mcm` is bind-mounted, so every artifact
