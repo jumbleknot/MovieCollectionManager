@@ -1202,7 +1202,56 @@ Test *Reopen in Container* deliberately, against a **stopped** dev container so 
 
 **Contains G5 (sibling egress — the security payoff) and G6 (performance).**
 
-- [ ] T041 [US5] Bring up the stacks as siblings: `gen-dev-secrets` → `gen-dev-env` → `up-auth` → `docker-build mcm-app` → `up-mcm` — **Done when**: every step exits 0, `docker ps` lists the stacks alongside the dev container, and a subsequent `down-mcm`/`down-auth` removes them cleanly
+- [~] T041 [US5] Bring up the stacks as siblings: `gen-dev-secrets` → `gen-dev-env` → `up-auth` → `docker-build mcm-app` → `up-mcm` — in progress; **two blocking gaps found and recorded below**
+
+> ### T041 — ⚠️ RECREATE-FROM-NOTHING IS BROKEN, and it is an SC-007 defect
+>
+> The dev stacks declare **external** networks and volumes that **nothing in this repository
+> creates**:
+>
+> ```yaml
+> networks:
+>   keycloak-network:
+>     external: true   # Pre-created: docker network create keycloak-network
+>   backend-network:
+>     external: true   # Assumes the network is already created outside of this compose file.
+> volumes:
+>   keycloak-store-postgres-data:
+>     external: true
+> ```
+>
+> On Docker Desktop they exist from history, so nobody notices. On a **fresh engine — which is
+> exactly what SC-007 means by "recreate from nothing"** — `up-auth` fails immediately with
+> `network keycloak-network declared as external, but could not be found`. The comment even says
+> *"Pre-created: docker network create …"*, i.e. the manual step is acknowledged in a code comment
+> and documented nowhere.
+>
+> Created by hand to proceed (`keycloak-network`, `backend-network`, `mcm-bff-network`,
+> `movie-assistant-mcp-network`, volume `keycloak-store-postgres-data`). **That is a manual step
+> SC-007 forbids**, so it is a real debt: either the bring-up sequence must create them (the
+> agent stack already does exactly this — `scripts/agent-stack.mjs` has `ensureNetwork()`), or T053
+> must document them as an explicit provisioning step. Not fixed unilaterally here because it
+> changes shared `infrastructure-as-code` behaviour beyond this feature's remit.
+>
+> ### T041 — closing the sibling residual has an ONGOING COST, demonstrated
+>
+> The `mcm-app` image build failed at `apk add --no-cache gcompat`. That is **not** an incidental
+> snag — it is G5's premise showing itself:
+>
+> | | Where build traffic goes | Governed? |
+> | --- | --- | --- |
+> | Docker Desktop | build container off the nested dockerd → **FORWARD chain**, which `init-firewall.sh` deliberately ignores | **no** — never was |
+> | Sandbox | host-side policy covers **all** VM egress, builders included | **yes** |
+>
+> So build-time package fetches were *never* governed before and are now. Closing the residual means
+> **every builder's package sources need explicit permission** — `dl-cdn.alpinelinux.org` was the
+> first, and any future base-image change that adds a package source will need the same. That
+> trade-off is now written into the allowlist entry itself rather than discovered again later.
+>
+> ### T041 — first timing signal
+>
+> `up-auth` **43 s (sandbox) vs 43 s (baseline)** — ratio **1.00**.
+
 - [ ] T042 [US5] Run the integration tier with the three documented URL exports unchanged — **Done when**: the tier passes with **0 skips** (a credential-driven skip is a missing file, not a missing capability)
 - [ ] T043 [US5] Run the web E2E suite via the Playwright official-image recipe with the identical-path mount — **Done when**: the suite passes and no root-owned artifact is left in `test-results/`
 - [ ] T044 [US5] Run one agent E2E spec against Anthropic — **Done when**: the spec passes against a gateway rebuilt from current source (a container recreated from a non-rebuilt image silently runs old code)
