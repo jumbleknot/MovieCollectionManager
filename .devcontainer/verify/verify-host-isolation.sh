@@ -77,6 +77,52 @@ else
   ok "no host private SSH keys under ${HOME}/.ssh"
 fi
 
+# 6. 060 (FR-010) — NO WINDOWS PATH IS VISIBLE AT ALL.
+#
+# Checks 3-5 above enumerate *known* host-mount shapes and a specific sentinel. This one is
+# categorical: under the sandbox topology the workstation's filesystem is behind a hypervisor
+# boundary, so no drive-letter path of any form may appear — not just the ones we thought to list.
+#
+# It is deliberately STRICTER than the environment it was written in. On the Docker Desktop path a
+# bind mount from `E:\` is legitimate (opening the local checkout rather than the named volume), so
+# this assertion FAILS there by design — that is the RED, and it is what makes the sandbox's pass
+# mean something. Set MCM_ALLOW_HOST_BIND=1 to downgrade it to a warning when deliberately working
+# on the Docker Desktop bind-mount path.
+# Collected WITHOUT touching `fail`, so the tolerance below can forgive exactly this check and
+# nothing else. Resetting the shared flag here would silently mask a genuine failure from checks
+# 2-5, which is the sort of thing that turns a guard into decoration.
+# Scans the WHOLE mount line, not just the mount point.
+#
+# An earlier revision inspected only the mount POINT and passed on a container that plainly had a
+# Windows bind mount, because the giveaway is in the DEVICE and OPTIONS fields:
+#     E:\134  /workspaces/MovieCollectionManager  9p  rw,...,aname=drvfs;path=E:\;...
+# The mount point there is an ordinary-looking /workspaces/... path. A check that had shipped in
+# that state would have been green in both environments and asserted nothing.
+host_paths=""
+while read -r dev mnt fstype opts _rest; do
+  hit=""
+  case "$mnt" in
+    /mnt/[a-z]|/mnt/[a-z]/*|/host_mnt/*|/[a-z]/Users/*|/run/desktop/mnt/host/*) hit="$mnt" ;;
+  esac
+  # Device field carrying a drive letter, e.g. "E:\134" or "C:\".
+  case "$dev" in
+    [A-Za-z]:*) hit="${hit:-$mnt} (device=$dev)" ;;
+  esac
+  # WSL/Docker Desktop host-filesystem drivers, and a drive letter inside the options.
+  case "$fstype,$opts" in
+    *drvfs*|*"path=/mnt/host"*|*[A-Za-z]:\\*|*"path="[A-Za-z]:*) hit="${hit:-$mnt} (fstype=$fstype)" ;;
+  esac
+  [ -n "$hit" ] && host_paths="${host_paths} ${hit}"
+done < /proc/mounts
+
+if [ -z "$host_paths" ]; then
+  ok "no Windows path visible in /proc/mounts (categorical check, FR-010)"
+elif [ "${MCM_ALLOW_HOST_BIND:-}" = "1" ]; then
+  printf '  ! Windows host path(s) present:%s — tolerated by MCM_ALLOW_HOST_BIND=1 (Docker Desktop bind-mount path)\n' "$host_paths" >&2
+else
+  err "Windows host path(s) visible in /proc/mounts:${host_paths}"
+fi
+
 if [ "$fail" -eq 0 ]; then
   echo "[verify-host-isolation] PASS (SC-001)"; exit 0
 else
