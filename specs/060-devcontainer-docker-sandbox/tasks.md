@@ -14,9 +14,49 @@ Task format follows the repo's [feature-test-tasks-template](../../docs/template
 
 ## Phase 1: Setup
 
-- [ ] T001 Import the Phase 0 host-prep record from `E:\Programming\VSCode\p0-docker-sandbox-host-setup.md` into `specs/060-devcontainer-docker-sandbox/phase-0-host-prep.md`
-- [ ] T002 [P] Record the resolved gate data in `specs/060-devcontainer-docker-sandbox/phase-0-host-prep.md`: `sbx` v0.38.0 (`c022b14634c4bea846ca12870d1d5e97d5868b54`), `/dev/kvm` **absent** (R2 negative), the host's CPU/RAM totals (needed by T018), and the two workstation gotchas — **Done when**: all four are recorded with the date observed
-- [ ] T003 Capture the Docker Desktop performance baseline into `specs/060-devcontainer-docker-sandbox/baseline-measurements.md`
+- [X] T001 Import the Phase 0 host-prep record from `E:\Programming\VSCode\p0-docker-sandbox-host-setup.md` into `specs/060-devcontainer-docker-sandbox/phase-0-host-prep.md`
+- [X] T002 [P] Record the resolved gate data in `specs/060-devcontainer-docker-sandbox/phase-0-host-prep.md`: `sbx` v0.38.0 (`c022b14634c4bea846ca12870d1d5e97d5868b54`), `/dev/kvm` **absent** (R2 negative), the host's CPU/RAM totals (needed by T018), and the two workstation gotchas — **Done when**: all four are recorded with the date observed
+- [X] T003 Capture the Docker Desktop performance baseline into `specs/060-devcontainer-docker-sandbox/baseline-measurements.md`
+
+> **T003 outcome — 1320 s total (22.0 min), all five stages timed on the merged tree.**
+> `up-auth` 43 s · `docker-build` **1024 s** · `up-mcm` 25 s · integration 32 s · web E2E 196 s.
+> Measured **warm** (27 images cached) — the daily-work condition, and the one T048 must reproduce.
+> Verified post-merge without pushing: the container's clone `879d2987` is an **ancestor** of branch
+> HEAD, the `pnpm-lock.yaml` blob hash is **identical**, and the only non-spec differences are three
+> doc/state files. Exact commands are recorded verbatim in
+> [baseline-measurements.md](baseline-measurements.md) — a ratio computed against a different command
+> or a different workload composition is not a ratio.
+>
+> **`docker-build` is 78% of the total and is I/O-bound, not CPU-bound** — ~12 min of it stalled in
+> state `D` on one `chown -R` in the final layer, paying nested-overlayfs cost (DinD overlay2 →
+> WSL2 ext4 → Windows). This is the number most likely to move at G6, since the sandbox removes a
+> nesting level; if it does *not* improve, that is a signal to investigate rather than absorb.
+>
+> **Two findings that change later tasks:**
+>
+> 1. **T042 cannot trust jest's skip count.** The integration tier reports `120 passed / 120 total`,
+>    exit 0, **zero skips** — while **≥9 tests** print `SKIP:` and return successfully (ollama ×4,
+>    OpenSearch ×4, gateway ×1). T042's "0 skips" Done-when must assert on `grep -c 'SKIP:'`; the
+>    obvious implementation would report success while nine tests did nothing.
+> 2. **The web-E2E single failure is a composition gap, not a regression.** `assistant.spec.ts:78`
+>    times out because the bring-up sequence (T041's, and this baseline's) omits `up-agents-prod`, so
+>    no gateway answers the dock. Recorded rather than fixed, so T048 compares like with like. Do not
+>    add the agent stack to one side only.
+
+---
+
+> **T002 outcome — host totals recorded, and they invert the sizing instinct.** i7-12700K, 12
+> physical / **20 logical** cores, **31.8 GB** RAM. The sandbox default (N-1 CPUs, ~50% RAM) is
+> therefore **~19 or 11 CPUs and ~15.9 GB** — so `--cpus 8` would *cut* the sandbox well below the
+> default, and only the 16 GB memory floor actually binds. T018 must pass `max(default, floor)` per
+> resource. Full working in [phase-0-host-prep.md](phase-0-host-prep.md).
+>
+> **A third workstation gotcha was found, and it invalidates the documented recovery.** The wedged
+> daemon process is named **`sbx`, not `sandboxd`**, so `Get-Process sandboxd | Stop-Process` (as
+> written in the original Phase 0 record and in [quickstart.md](quickstart.md)) **exits 0 having
+> done nothing** — a silent no-op that reads as a successful recovery. It also runs **elevated**, so
+> the kill needs an elevated shell even though it is owned by the same user. Both corrections are
+> recorded in [phase-0-host-prep.md](phase-0-host-prep.md) § Gotcha 2 and are owed to T053.
 
 ### T001 — Import the Phase 0 host-prep record into the repository
 
@@ -44,12 +84,58 @@ Do this **before** attention shifts to the sandbox. Docker Desktop is retained, 
 
 ## Phase 2: Foundational (blocking — must complete before User Story 2)
 
-- [ ] T004 Create `.devcontainer/egress-allowlist.json` with all 30 destinations migrated from `.devcontainer/init-firewall.sh`, reasons preserved
-- [ ] T005 Write the generator contract test in `.devcontainer/verify/verify-egress-allowlist-contract.sh`
-- [ ] T006 Create `scripts/gen-egress-policy.mjs` with `--format sbx-policy`, `--format ipset-domains`, and `--check`
-- [ ] T007 Replace the inline `DOMAINS=(...)` array in `.devcontainer/init-firewall.sh` with a read of `gen-egress-policy.mjs --format ipset-domains`
-- [ ] T008 [P] Correct the honest-limits paragraph in `.devcontainer/init-firewall.sh` — the nested-container residual is now covered by sandbox policy, and under `--network=host` the script filters the VM's OUTPUT chain including dockerd's pulls — **Done when**: no sentence in the header claims nested-container egress is unfiltered, and the OUTPUT-chain scope change is stated
-- [ ] T009 Record the revert procedure for T007/T008 in `specs/060-devcontainer-docker-sandbox/rollback.md`
+- [X] T004 Create `.devcontainer/egress-allowlist.json` with all ~~30~~ **28** destinations migrated from `.devcontainer/init-firewall.sh`, reasons preserved
+- [X] T005 Write the generator contract test in `.devcontainer/verify/verify-egress-allowlist-contract.sh`
+- [X] T006 Create `scripts/gen-egress-policy.mjs` with `--format sbx-policy`, `--format ipset-domains`, and `--check`
+- [X] T007 Replace the inline `DOMAINS=(...)` array in `.devcontainer/init-firewall.sh` with a read of `gen-egress-policy.mjs --format ipset-domains` — **Verify GREEN passed** in the current DinD dev container
+- [X] T008 [P] Correct the honest-limits paragraph in `.devcontainer/init-firewall.sh` — the nested-container residual is now covered by sandbox policy, and under `--network=host` the script filters the VM's OUTPUT chain including dockerd's pulls — **Done when**: no sentence in the header claims nested-container egress is unfiltered, and the OUTPUT-chain scope change is stated
+- [X] T009 Record the revert procedure for T007/T008 in `specs/060-devcontainer-docker-sandbox/rollback.md`
+
+> **T004 addition — `mcr.microsoft.com` was added as a 29th destination (approved 2026-08-15).** It was
+> **not** in the inline array, because it was *masked*: the Playwright image was already cached on the
+> DinD engine, so no pull ever traversed the firewall. Two things break that mask under 060 — a fresh
+> sandbox has an empty image cache, and the documented cold-pull escape (`iptables -P OUTPUT ACCEPT`)
+> **cannot work** under a policy enforced host-side and untamperable from inside (FR-008). Without the
+> entry there is no in-environment way to obtain the image, so T043/SC-006 could not pass. This was
+> **measured, not predicted**: the T003 baseline failed exactly here once the pin moved 1.60.0 → 1.62.1
+> (`dial tcp 150.171.70.10:443: i/o timeout`). Canonical list is now **29** destinations (+ the
+> runtime-injected forge host = 30 enforced).
+>
+> **T004 correction — the destination count is 28, not 30.** Counted from the array actually present
+> in `init-firewall.sh` (`awk '/^ALLOWED_DOMAINS=\(/,/^\)/' … | grep -c '"'` → **28**), and the
+> group table in [contracts/egress-allowlist.md](contracts/egress-allowlist.md) independently lists
+> the same 28 (agent 1 + source 5 + registry 12 + packages 9 + app 1). The "30" in this task line
+> was wrong; 28 in-file destinations plus the runtime-injected forge host = 29 enforced entries. The
+> contract file needed no change — only this task line did.
+>
+> **T007 Verify GREEN — evidence.** Run in the current DinD dev container from a genuinely clean
+> iptables state (the container had restarted, which clears the ruleset and the ipset — confirming
+> they are not persisted). Applied with the exact `postStartCommand` invocation
+> (`sudo env FORGE_REGISTRY_HOST=… /bin/bash …/init-firewall.sh`): exit 0, *"read 29 destinations
+> from the canonical allowlist"*, **179** ipset entries against the original script's **178** — a
+> one-IP delta from DNS A-record variance, not a rule difference. `verify-firewall-allowlist.sh`
+> then passed: 7/7 allowlisted sources reachable, `example.com` refused, default-deny intact.
+>
+> Two stronger checks were done before it ever touched iptables, because this script runs on every
+> start: the generator's domain set was diffed against the committed inline array and is
+> **set-identical** (28/28, empty diff), and the script now **fails closed** — missing generator,
+> missing `node`, non-zero generator exit, or an empty resolved list all abort *before* the reset
+> section, so an empty allowlist can never reach `iptables -P OUTPUT DROP`. That combination — empty
+> list plus default-DROP — is a total egress blackout that presents as a network fault rather than a
+> bug in this script, and `mapfile < <(node …)` would have hidden it (process substitution makes the
+> generator's exit status invisible to `set -e`).
+>
+> **Cold-start half**: `docker start` does not run devcontainer lifecycle hooks, so a true
+> VS Code/CLI cold start is still owed. The nearest faithful proof was run instead — the **entire
+> `postStartCommand` chain verbatim** (`init-firewall.sh && devcontainer-ollama.sh &&
+> devcontainer-android.sh`) from the cleared state, exit 0, with ollama and android both reporting
+> ready. A firewall failure would have broken the `&&` chain and silently skipped both.
+>
+> **T008 interpretation.** The Done-when asks that no sentence claim nested-container egress is
+> unfiltered. The rewritten header states the residual *per topology* rather than dropping it: under
+> 060 the host-side sandbox policy governs all VM egress including siblings, while on the **retained
+> Docker Desktop path** no outer layer exists. Stating that scoped truth is more useful than a blanket
+> claim in either direction, and it is what makes the retained path's remaining risk legible.
 
 ### T004 — Migrate the destination list to a canonical file
 
