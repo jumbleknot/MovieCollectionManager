@@ -47,41 +47,65 @@ CONFIG="${MCM_CONFIG:-$REPO_ROOT/.devcontainer/sandbox/devcontainer.json}"
 
 DC="${MCM_DEVCONTAINER_NAME:-$(docker ps --filter 'label=devcontainer.local_folder' --format '{{.Names}}' 2>/dev/null | head -1)}"
 
-# ── THE EXPECTED SET — enumerated by name. Changing this count is a deliberate act. ──────────────
-EXPECTED_COUNT=12
+# ── THE EXPECTED SET — twelve SCRIPTS, enumerated by name ────────────────────────────────────────
+#
+# TWELVE SCRIPTS, NOT TWELVE INVOCATIONS. `verify-engine-seam.sh` is ONE script run in THREE modes
+# (in-container, --vm-check, --host-check), so the contract's aggregate list has fourteen rows but
+# names twelve distinct scripts. Counting invocations gives fourteen and makes the run fail forever;
+# counting scripts is what the contract and the Completion Checklist actually require.
+#
+# engine-seam's slot is green only if ALL THREE of its modes pass — a two-of-three engine seam is
+# not a seam.
+EXPECTED_SCRIPTS=(
+  verify-engine-seam.sh
+  verify-workspace-path.sh
+  verify-host-isolation.sh
+  verify-firewall-allowlist.sh
+  verify-personal-layer.sh
+  verify-portable-runner.sh
+  verify-toolchain-present.sh
+  verify-caches-persist.sh
+  verify-committed-clean.sh
+  verify-egress-allowlist-contract.sh
+  verify-sandbox-egress.sh
+  verify-reproducible-recreate.sh
+)
+EXPECTED_COUNT=${#EXPECTED_SCRIPTS[@]}
 
-reported=0
-passed=0
-failed=0
+declare -A SCRIPT_STATE=()   # script -> pass|fail
 declare -a RESULTS=()
 
-record() {  # $1=name  $2=pass|fail  $3=detail
-  reported=$(( reported + 1 ))
-  if [ "$2" = "pass" ]; then
-    passed=$(( passed + 1 )); RESULTS+=("  PASS  $1")
+# record <script-file> <display-name> <pass|fail> [detail]
+# A script already marked failing STAYS failing: engine-seam must pass in every mode.
+record() {
+  local script="$1" name="$2" state="$3" detail="${4:-}"
+  if [ "$state" = "pass" ]; then
+    RESULTS+=("  PASS  $name")
+    [ "${SCRIPT_STATE[$script]:-}" = "fail" ] || SCRIPT_STATE["$script"]="pass"
   else
-    failed=$(( failed + 1 )); RESULTS+=("  FAIL  $1${3:+  — $3}")
+    RESULTS+=("  FAIL  $name${detail:+  — $detail}")
+    SCRIPT_STATE["$script"]="fail"
   fi
 }
 
 # in_container <display-name> <script> [args…]
 in_container() {
-  local name="$1"; shift
-  if [ -z "$DC" ]; then record "$name" fail "no dev container found"; return; fi
-  if docker exec -u coder -w /workspaces/mcm "$DC" bash ".devcontainer/verify/$1" "${@:2}" >/dev/null 2>&1; then
-    record "$name" pass
+  local script="$1" name="$2"; shift 2
+  if [ -z "$DC" ]; then record "$script" "$name" fail "no dev container found"; return; fi
+  if docker exec -u coder -w /workspaces/mcm "$DC" bash ".devcontainer/verify/$script" "$@" >/dev/null 2>&1; then
+    record "$script" "$name" pass
   else
-    record "$name" fail "non-zero exit in-container"
+    record "$script" "$name" fail "non-zero exit in-container"
   fi
 }
 
 # vm_side <display-name> <script> [args…]
 vm_side() {
-  local name="$1"; shift
-  if MCM_DEVCONTAINER_NAME="$DC" bash "$VERIFY_DIR/$1" "${@:2}" >/dev/null 2>&1; then
-    record "$name" pass
+  local script="$1" name="$2"; shift 2
+  if MCM_DEVCONTAINER_NAME="$DC" bash "$VERIFY_DIR/$script" "$@" >/dev/null 2>&1; then
+    record "$script" "$name" pass
   else
-    record "$name" fail "non-zero exit VM-side"
+    record "$script" "$name" fail "non-zero exit VM-side"
   fi
 }
 
@@ -91,28 +115,28 @@ echo "    config        : ${CONFIG#$REPO_ROOT/}"
 echo
 
 # ── in-container (10) ────────────────────────────────────────────────────────────────────────────
-in_container "engine-seam (in-container)"      verify-engine-seam.sh
-in_container "workspace-path"                  verify-workspace-path.sh
-in_container "host-isolation"                  verify-host-isolation.sh
-in_container "firewall-allowlist"              verify-firewall-allowlist.sh
-in_container "personal-layer"                  verify-personal-layer.sh
-in_container "toolchain-present"               verify-toolchain-present.sh
-in_container "caches-persist"                  verify-caches-persist.sh
-in_container "committed-clean"                 verify-committed-clean.sh
-in_container "egress-allowlist-contract"       verify-egress-allowlist-contract.sh
+in_container verify-engine-seam.sh            "engine-seam (in-container)"
+in_container verify-workspace-path.sh         "workspace-path"
+in_container verify-host-isolation.sh         "host-isolation"
+in_container verify-firewall-allowlist.sh     "firewall-allowlist"
+in_container verify-personal-layer.sh         "personal-layer"
+in_container verify-toolchain-present.sh      "toolchain-present"
+in_container verify-caches-persist.sh         "caches-persist"
+in_container verify-committed-clean.sh        "committed-clean"
+in_container verify-egress-allowlist-contract.sh "egress-allowlist-contract"
 
 # portable-runner drives the CLI, so it runs where the CLI and its engine are: the VM.
-vm_side      "portable-runner"                 verify-portable-runner.sh "$CONFIG" /workspaces/mcm
+vm_side      verify-portable-runner.sh        "portable-runner" "$CONFIG" /workspaces/mcm
 
 # ── VM-side (2 more) ─────────────────────────────────────────────────────────────────────────────
-vm_side      "engine-seam --vm-check"          verify-engine-seam.sh --vm-check
-vm_side      "sandbox-egress"                  verify-sandbox-egress.sh
-vm_side      "reproducible-recreate"           verify-reproducible-recreate.sh
+vm_side      verify-engine-seam.sh            "engine-seam --vm-check" --vm-check
+vm_side      verify-sandbox-egress.sh         "sandbox-egress"
+vm_side      verify-reproducible-recreate.sh  "reproducible-recreate"
 
 # ── host-side (1) — cannot be run from here; must be supplied ────────────────────────────────────
 case "${MCM_HOST_CHECK:-}" in
-  pass) record "engine-seam --host-check (Windows)" pass ;;
-  fail) record "engine-seam --host-check (Windows)" fail "reported failing by the Windows-side run" ;;
+  pass) record verify-engine-seam.sh "engine-seam --host-check (Windows)" pass ;;
+  fail) record verify-engine-seam.sh "engine-seam --host-check (Windows)" fail "reported failing by the Windows-side run" ;;
   *)    echo "  !! MCM_HOST_CHECK not supplied — the Windows-side engine-seam proof was NOT run."
         echo "     Run it on Windows and re-invoke with MCM_HOST_CHECK=pass|fail."
         echo "     It is NOT counted, so this run will report fewer than $EXPECTED_COUNT and fail." ;;
@@ -121,8 +145,23 @@ esac
 echo
 printf '%s\n' "${RESULTS[@]}"
 echo
+
+# Tally by SCRIPT against the enumerated set, never by counting invocations. A file that was
+# renamed, lost, or never reached leaves its slot empty and is named explicitly below — which is
+# the whole point: a check that did not report is indistinguishable from a passing one unless
+# something forces it to be visible.
+reported=0; passed=0; failed=0; missing=""
+for s_name in "${EXPECTED_SCRIPTS[@]}"; do
+  case "${SCRIPT_STATE[$s_name]:-}" in
+    pass) reported=$(( reported + 1 )); passed=$(( passed + 1 )) ;;
+    fail) reported=$(( reported + 1 )); failed=$(( failed + 1 )) ;;
+    *)    missing="$missing $s_name" ;;
+  esac
+done
+
 echo "─────────────────────────────────────────────────────────────"
-echo "  reported: $reported / $EXPECTED_COUNT     passed: $passed     failed: $failed"
+echo "  scripts reported: $reported / $EXPECTED_COUNT     passed: $passed     failed: $failed"
+[ -n "$missing" ] && echo "  NO RESULT from:$missing"
 echo "─────────────────────────────────────────────────────────────"
 
 rc=0
