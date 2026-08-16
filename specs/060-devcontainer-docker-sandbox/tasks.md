@@ -493,9 +493,53 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 
 **Contains G2 (engine seam) and G3 (workspace path).**
 
-- [ ] T025 [US3] Write `.devcontainer/verify/verify-engine-seam.sh` (in-container, `--vm-check`, `--host-check` modes) per contracts/verify-harness.md
-- [ ] T026 [US3] Write `.devcontainer/verify/verify-workspace-path.sh` with the sibling-probe assertion
-- [ ] T027 [US3] Create `.devcontainer/sandbox/devcontainer.json` — `docker-outside-of-docker:1`, `"runArgs": ["--network=host"]`, no `privileged`, no `DOCKER_CONFIG`
+- [X] T025 [US3] Write `.devcontainer/verify/verify-engine-seam.sh` (in-container, `--vm-check`, `--host-check` modes) per contracts/verify-harness.md — **RED confirmed: 5 assertions fail on DinD**
+- [X] T026 [US3] Write `.devcontainer/verify/verify-workspace-path.sh` with the sibling-probe assertion — **RED confirmed via the injected-mismatch form**
+- [X] T027 [US3] Create `.devcontainer/sandbox/devcontainer.json` — `docker-outside-of-docker:1`, `"runArgs": ["--network=host"]`, no `privileged`, no `DOCKER_CONFIG`
+
+> ### T025 — the obvious discriminator does not work, and the task's expected RED was wrong
+>
+> **"Is a docker socket present?" passes in BOTH topologies.** Measured on the current DinD dev
+> container: `/var/run/docker.sock` **exists** there — the *nested* daemon creates it — and
+> `docker info` answers happily. The task's predicted RED line `✗ no docker socket present` is
+> therefore unobtainable, and an assertion written that way would have been green in both
+> environments, i.e. asserting nothing.
+>
+> What actually differs is whether the socket is a **bind mount**:
+>
+> | | socket file | in `/proc/mounts` |
+> | --- | --- | --- |
+> | DinD | present (created by the nested dockerd) | **absent** |
+> | sandbox | present (mounted from the microVM) | **present** |
+>
+> Assertion 3 therefore tests the **mount**, not the file.
+>
+> **Verify RED — 5 assertions fail, more than the 3 predicted.** In-container: `dockerd is running
+> (1 process)`, `containerd is running (10 processes)`, `docker socket is NOT bind-mounted`.
+> Via `--vm-check`: `Privileged: true`, and an **engine-ID mismatch** — in-container
+> `57d6a747…` vs host engine `549976e4…`, which is precisely the extra nesting level this feature
+> deletes.
+>
+> ### T026 — the plain RED is unobtainable on DinD, for a structural reason
+>
+> The plain run **passes on the DinD container (0 failures)**, and that is *not* a defective check:
+> under DinD the nested dockerd **shares the dev container's filesystem**, so a sibling's
+> `-v /workspaces/mcm:/probe` genuinely resolves to the working tree. DinD cannot produce the
+> path-mismatch failure at all. (The task's predicted `pwd -P is /workspaces/MovieCollectionManager`
+> also does not occur — the current container is already at `/workspaces/mcm`.)
+>
+> The genuine RED is the documented injected-mismatch form, and it fails 2 assertions:
+>
+> ```text
+> MCM_WORKSPACE_PATH=/tmp/empty-probe bash .devcontainer/verify/verify-workspace-path.sh
+>   ✓ pwd -P inside the container is /tmp/empty-probe
+>   ✗ sibling probe listed 0 entries
+>   ✗ probe listing has no pnpm-workspace.yaml — the sibling mounted the WRONG content
+> ```
+>
+> That run also *demonstrates* the failure mode rather than merely describing it: **the mount
+> succeeded**. No error, no warning — just wrong content, which is exactly why assertion 3 exists
+> and why asserting mountability alone would reproduce the bug.
 - [ ] T028 [US3] Clone the repository on the VM at `/workspaces/mcm` and bring the dev container up with `devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json` — **Done when**: the container is running and `docker ps` on the sandbox engine lists it
 - [ ] T029 [US3] **G2 GATE** — run `verify-engine-seam.sh` in all three modes and confirm green
 - [ ] T030 [US3] **G3 GATE** — run `verify-workspace-path.sh` and confirm the sibling probe sees the repository
