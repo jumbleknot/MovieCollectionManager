@@ -190,6 +190,18 @@
       "cdnRotating": true
     },
     {
+      "domain": "update.code.visualstudio.com",
+      "group": "packages",
+      "reason": "VS Code update/version API. Required by the EDITOR CHAIN, not by any build: when VS Code Remote-SSH connects to the sandbox it installs a VS Code Server inside the microVM, and the remote CLI first calls https://update.code.visualstudio.com/api/latest/server-linux-x64/stable to resolve the server version. Blocked, the connection stalls forever at 'Downloading VS Code Server…' with the failure visible only in ~/.vscode-server/cli/agent-host-stable.log ('403 Blocked by network policy'), retrying every ~7 minutes. NOTE the client-side setting `remote.SSH.localServerDownload: always` does NOT avoid this: current VS Code uses a CLI-based flow (code-<commit> command-shell / agent host) in which the REMOTE cli performs the resolve and download, so the client setting never applies — measured 2026-08-16 with the setting enabled and the same 403 recurring.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "vscode.download.prss.microsoft.com",
+      "group": "packages",
+      "reason": "VS Code Server payload CDN, paired with update.code.visualstudio.com above — the version API resolves, this serves the actual server archive. Both are needed for the editor chain (FR-022); allowlisting only the API leaves the connection failing one step later. Also editor-only: nothing in the build or test path touches it.",
+      "cdnRotating": true
+    },
+    {
       "domain": "api.expo.dev",
       "group": "packages",
       "reason": "Expo / EAS API — reached by Expo CLI and EAS tooling during runtime operations.",
