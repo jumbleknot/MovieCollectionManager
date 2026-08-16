@@ -248,12 +248,42 @@ This is precisely what G7 existed to find "before ENOSPC finds it mid-session".
 
 | Stage | Baseline | Migrated | Ratio | ≤1.5×? |
 | --- | ---: | ---: | ---: | --- |
-| `up-auth` | 43 s | | | |
-| `docker-build mcm-app` | 1024 s | | | |
-| `up-mcm` | 25 s | | | |
-| integration tier | 32 s | | | |
-| web E2E (gate) | 196 s | | | |
-| **Total** | **1320 s** | | | |
+| `up-auth` | 43 s | **44 s** | **1.02** | ✅ |
+| `docker-build mcm-app` | 1024 s | **293 s** | **0.29** | ✅ **3.5× FASTER** |
+| `up-mcm` | 25 s | *pending* | | |
+| integration tier | 32 s | *pending* | | |
+| web E2E (gate) | 196 s | *pending* | | |
+| **Total** | **1320 s** | *partial* | | |
+
+### `docker-build` is the headline, and the win is UNDERSTATED
+
+1024 s → 293 s is a **731-second saving**, on the stage that was **78% of the baseline total**.
+
+It is understated because the sandbox did **more** work: it began with **8** cached images against the
+baseline's **27**, so it pulled base layers the baseline already had — and still finished in under a
+third of the time.
+
+The cause is exactly what the baseline diagnosis predicted. That stage spent ~12 minutes with a
+`chown -R` in state `D` (uninterruptible I/O) under **DinD overlay2 → WSL2 ext4 → Windows**. The
+sandbox removes a nesting level and runs on a native Linux filesystem, so the same work is no longer
+I/O-starved. `up-auth`, which is network- and healthcheck-bound rather than I/O-bound, is unchanged
+at 1.02 — which is the control that makes the `docker-build` result credible rather than a
+measurement artefact.
+
+### Three recreate-from-nothing defects this run exposed (SC-007)
+
+None is exotic; each is invisible on a machine with history and fatal on a fresh engine. Together
+they mean **SC-007's "zero manual steps beyond documented credential provisioning" does not hold
+today**:
+
+| # | Missing on a fresh engine | Symptom | Where it should be fixed |
+| --- | --- | --- | --- |
+| 1 | external networks (`keycloak-network`, `backend-network`, …) | `network … declared as external, but could not be found` | bring-up should create them — `scripts/agent-stack.mjs` already does this with `ensureNetwork()` |
+| 2 | external volume `keycloak-store-postgres-data` | compose refuses to start the auth stack | same |
+| 3 | locally built image `mc-service:latest` | `pull access denied for mc-service` | T041's sequence builds `mcm-app` but never runs `nx build mc-service` |
+
+The first is even acknowledged in a code comment — *"Pre-created: docker network create
+keycloak-network"* — and documented nowhere else.
 
 A ratio > 1.5× is escalated **with the measurements**, not absorbed. Re-sizing is the first remedy;
 abandonment is the last, and only with numbers behind it.
