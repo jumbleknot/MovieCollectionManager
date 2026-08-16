@@ -380,6 +380,33 @@ proof — and the harness refuses to report them as passed without `MCM_HOST_CHE
 
 ---
 
+## 10b. The `sbx` version, and the ritual before upgrading it (R5)
+
+**Pinned and proven at: `v0.38.0` (`c022b14634c4bea846ca12870d1d5e97d5868b54`).** Everything on this
+page was measured against that build. Record the version whenever you report a problem — several
+behaviours here are version-specific and undocumented.
+
+`sbx` is a fast-moving, pre-1.0 tool that this environment depends on for **isolation and egress
+enforcement**, so an upgrade is a security-relevant change, not a routine one. Before upgrading:
+
+1. **Read the release notes for the intervening versions**, specifically for changes to: network
+   policy semantics, `--network=host` behaviour, port publishing, the idle-stop timeout, secret
+   injection, and template semantics. Each is load-bearing here.
+2. **Capture the before-state**: `bash .devcontainer/verify/verify-reboot-survival.sh --capture`.
+3. **Upgrade**, then re-run the harness: `bash .devcontainer/verify/run-harness.sh`, plus the
+   host-side `verify-sandbox-egress.sh --audit-check`.
+4. **Re-run G5 explicitly.** The sibling-egress refusal is the security claim this whole environment
+   rests on, and it is enforced by the tool being upgraded. A green harness that skipped it proves
+   nothing about the property that matters most.
+5. Note the new version here.
+
+> Behaviours observed on v0.38.0 that a future version may change silently — check each after an
+> upgrade rather than assuming: no `--disk` flag to enlarge the 49 G Docker disk; the ~30 s
+> idle-stop is hardcoded with no knob; `sbx start` does not exist; `sbx run` defaults the workspace
+> to the current directory; templates exclude the Docker image store.
+
+---
+
 ## 11. Foot-guns, collected
 
 - **`sbx start`** does not exist; it prints help. Use `sbx run --name`.

@@ -1144,7 +1144,7 @@ never reaches the sandbox. A harness that had gone green on the first attempt wo
 > published port cannot carry traffic to a VM-side listener at all, exposing one to a physical LAN
 > device is further away than "just bind non-loopback". Note `sbx ports --help` *does* accept an
 > explicit `HOST_IP`, so non-loopback binding is at least expressible.
-- [~] T040 [US4] Pin the `sbx` version and add a release-notes review step to the update ritual (R5) — version captured; **the runbook text lands with T053**
+- [x] T040 [US4] Pin the `sbx` version and add a release-notes review step to the update ritual (R5) — **Done**: pinned at `v0.38.0` (`c022b146`) in [devcontainer-sandbox.md § 10b](../../docs/runbooks/devcontainer-sandbox.md), with a five-step ritual that **re-runs G5 explicitly** on upgrade — the sibling-egress refusal is enforced by the very tool being upgraded, so a harness run that skipped it would prove nothing about the property that matters most — plus the list of v0.38.0-specific behaviours to re-check (no `--disk`, hardcoded idle-stop, no `sbx start`, workspace defaulting, image-less templates)
 
 > **T040** — the exact pin: **`sbx v0.38.0`**, commit `c022b14634c4bea846ca12870d1d5e97d5868b54`,
 > winget package `Docker.sbx` version `0.38.0`. Pin with
@@ -1202,7 +1202,7 @@ Test *Reopen in Container* deliberately, against a **stopped** dev container so 
 
 **Contains G5 (sibling egress — the security payoff) and G6 (performance).**
 
-- [~] T041 [US5] Bring up the stacks as siblings: `gen-dev-secrets` → `gen-dev-env` → `up-auth` → `docker-build mcm-app` → `up-mcm` — in progress; **two blocking gaps found and recorded below**
+- [x] T041 [US5] Bring up the stacks as siblings: `gen-dev-secrets` → `gen-dev-env` → `up-auth` → `docker-build mcm-app` → `up-mcm` — **Done**: the full stack came up healthy on the sandbox engine (mc-service, BFF, both Mongos, Redis, Keycloak, mailpit, dev-ollama) and the timings are folded into T048/G6 (**0.43×**). The two blocking gaps recorded below were both **recreate-from-nothing defects (SC-007)** — a gitignored `.env.e2e.local` that `gen-dev-env.mjs` syncs but never creates, and a missing Playwright image behind an unallowlisted CDN host — not sandbox faults
 
 > ### T041 — ⚠️ RECREATE-FROM-NOTHING IS BROKEN, and it is an SC-007 defect
 >
