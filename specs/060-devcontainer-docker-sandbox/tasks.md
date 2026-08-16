@@ -642,7 +642,27 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 > the microVM's netns — while the container stayed running and VM egress to an allowlisted host
 > still returned 200. The in-VM layer works as designed, one level out, exactly as the rewritten
 > header describes.
-- [ ] T031 [P] [US3] Update `.devcontainer/verify/verify-host-isolation.sh` to be sandbox-aware — no Windows path visible at all
+- [X] T031 [P] [US3] Update `.devcontainer/verify/verify-host-isolation.sh` to be sandbox-aware — no Windows path visible at all — **RED on the bind-mount path, GREEN in the sandbox**
+
+> **T031 — the first version of this check asserted nothing, and the RED is what exposed it.**
+> It inspected only the mount POINT and reported *"✓ no Windows path visible"* on a container that
+> plainly carried an `E:\` bind mount, because the mount point was an ordinary-looking
+> `/workspaces/...` path. The giveaway is in the **device and options** fields:
+>
+> ```text
+> E:\134  /workspaces/MovieCollectionManager  9p  rw,...,aname=drvfs;path=E:\;...
+> ```
+>
+> Shipped in that state it would have been green in both topologies. It now scans the whole mount
+> line — mount-point shapes, a drive-letter device, `drvfs`, and a drive letter in the options.
+>
+> **RED** (a container carrying the Windows checkout, i.e. the Docker Desktop bind-mount path):
+> `✗ Windows host path(s) visible in /proc/mounts: /workspaces/MovieCollectionManager (device=E:\134) (fstype=9p)`
+> **GREEN** (sandbox dev container): all seven assertions pass, including the categorical one.
+>
+> `MCM_ALLOW_HOST_BIND=1` forgives **exactly** this check. An earlier draft reset the shared failure
+> flag, which would have masked genuine failures from checks 2–5 — a guard that forgives everything
+> is decoration.
 - [ ] T032 [P] [US3] Update `.devcontainer/verify/verify-personal-layer.sh` to assert the RTK binary is present on the `mcm-claude` volume
 - [ ] T033 [P] [US3] Update `.devcontainer/verify/verify-firewall-allowlist.sh` to read `egress-allowlist.json` instead of re-listing domains inline
 - [ ] T034 [P] [US3] Parameterise `.devcontainer/verify/verify-portable-runner.sh` by config so both `devcontainer.json` and `sandbox/devcontainer.json` can be checked — mechanical only; the sandbox variant's second-runner claim is settled at G4 (T037), not here

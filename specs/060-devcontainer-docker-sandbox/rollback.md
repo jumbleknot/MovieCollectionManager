@@ -140,3 +140,36 @@ deletes the fallback configuration. Before it, rollback is reverting documentati
 environment is unaffected. After it, rollback restores the nested-engine configuration from history
 — and that configuration must be **rebuilt and verified before being relied on**, because a
 configuration unexercised for a fortnight is a claim, not a fallback.
+
+---
+
+## P3 — Dev container on the sandbox engine (T025 – T031)
+
+### Rollback
+
+```bash
+# Inside the VM: remove the sandbox dev container and rebuild it.
+docker rm -f <dev-container>          # ends the session if run from inside it (R11)
+devcontainer up --workspace-folder /workspaces/mcm \
+                --config .devcontainer/sandbox/devcontainer.json
+```
+
+**The Docker Desktop configuration is untouched by this phase.** `.devcontainer/devcontainer.json`
+is byte-identical to its pre-feature state, so the retained path keeps working throughout (FR-019).
+To abandon the sandbox entirely: `sbx rm mcm` — which takes the VM, its engine, every sibling
+container, every named volume **and the workspace clone**. Unpushed work is lost.
+
+### Operational note that is not a rollback but is needed alongside one
+
+**The sandbox stops when idle, and its containers do not come back by themselves.** A dev container
+will be found `Exited (255)` after any idle period — that exit code means *the microVM went away
+underneath the container*, not that the container crashed. `--restart=always` (now in the sandbox
+variant's `runArgs`) makes it return on its own; verified by `sbx stop mcm`, reconnecting, and
+observing it running with nothing manually started.
+
+Two consequences for anyone recovering this environment:
+
+- Do not diagnose `Exited (255)` as a container fault. Check `uptime -p` inside the VM first — "up
+  0 minutes" means the VM restarted.
+- Any multi-step operation must run **in one session**, or the VM can idle out between steps. This
+  silently truncated a `devcontainer up` mid-run and left a log with no outcome line.
