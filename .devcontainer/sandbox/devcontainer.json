@@ -141,14 +141,31 @@
     // FR-012 — in-container marker asserted by verify-host-isolation.sh and verify-engine-seam.sh.
     "MCM_DEVCONTAINER": "1",
 
-    // DOCKER_CONFIG IS DELIBERATELY ABSENT (research D-10).
-    // On the Docker Desktop path it pointed at /home/coder/.docker-dind to dodge the VS Code Dev
-    // Containers extension writing a HOST-side `credsStore` helper into ~/.docker/config.json that
-    // the nested docker could not execute (exit 255). That workaround's CAUSE is gone: the headless
-    // @devcontainers/cli builds this container inside the VM, so no host credential helper is ever
-    // injected. Carrying the variable forward would preserve a workaround for a problem that no
-    // longer exists — and would silently detach the docker CLI from any registry login performed
-    // in the VM.
+    // DOCKER_CONFIG IS REQUIRED AFTER ALL — D-10 was wrong to drop it, and G4 is why.
+    //
+    // D-10 removed this on the reasoning that the credsStore workaround's cause was gone, because
+    // "the headless @devcontainers/cli builds this container, so no host credential helper is ever
+    // injected". That premise held only while the CLI was the ONLY builder. **G4 proved the VS Code
+    // extension can build this variant too** (Reopen in Container, measured 2026-08-16) — and when
+    // it does, it injects `"credsStore": "dev-containers-<id>"` into ~/.docker/config.json exactly
+    // as it does on Docker Desktop. Removing the shield while ADDING a second builder that needs it
+    // was the error.
+    //
+    // Measured consequence, on a container the extension had built: `pnpm nx up-auth` died with
+    //     error getting credentials - err: exit status 255
+    // pulling PUBLIC images (keycloak, postgres, mailpit) that need no credentials at all.
+    //
+    // ⚠️ And the failure is WORSE than the 037 note describes. That note says the helper is "a
+    // HOST-side binary, absent in the container". Here the binary IS present —
+    // /usr/local/bin/docker-credential-dev-containers-<id> — and it FAILS, because it only works
+    // inside the extension's own session context. So `docker pull` succeeds from a VS Code terminal
+    // and fails from a `docker exec` shell or any script, which is a far nastier bug than a
+    // consistently missing helper: it makes image pulls depend on how the shell was started.
+    //
+    // Pointing DOCKER_CONFIG at a clean, container-local directory makes the docker CLI ignore the
+    // injected helper entirely. A registry login performed inside the container writes here instead,
+    // which is the same arrangement the Docker Desktop path has used since 037.
+    "DOCKER_CONFIG": "/home/coder/.docker-sandbox",
 
     "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
 

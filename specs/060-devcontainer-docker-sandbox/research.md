@@ -177,9 +177,41 @@ that injection scope is a real, configurable dimension rather than automatic.
 | Artifact | Why it existed | Why it goes |
 | --- | --- | --- |
 | Compose v5 parity pin in `toolchain.Dockerfile` | out-rank the DinD feature's apt-installed compose plugin | there is one engine now; parity is with itself |
-| `DOCKER_CONFIG=/home/coder/.docker-dind` | VS Code writes a host-side `credsStore` helper into `~/.docker/config.json` that the nested docker cannot execute | the headless CLI builds the container; the quirk's source is gone |
+| ~~`DOCKER_CONFIG=/home/coder/.docker-dind`~~ **RETAINED — this row was WRONG, see below** | VS Code writes a `credsStore` helper into `~/.docker/config.json` | ~~the headless CLI builds the container; the quirk's source is gone~~ **G4 proved the EXTENSION also builds it, so the injection still happens** |
 | The DinD-lock runbook section | stale-container `meta.db` flock deadlock after rebuilds | no nested engine, no nested lock |
 | `privileged` (implied by the feature) and its FR-004/FR-011 comment block | forced by `docker-in-docker` | replaced by a note that the engine is the sandbox's |
+
+### ⚠️ CORRECTION (2026-08-16): `DOCKER_CONFIG` must be RETAINED — the premise was falsified by G4
+
+This entry claimed the credsStore workaround's cause was gone "because the headless
+`@devcontainers/cli` builds the container inside the VM, so no host credential helper is ever
+injected". That was true only while the CLI was the **only** builder.
+
+**G4 measured the opposite**: the VS Code extension can build the sandbox variant (Reopen in
+Container), and when it does it injects `"credsStore": "dev-containers-<id>"` exactly as on Docker
+Desktop. Removing the shield while simultaneously *establishing a second builder that needs it* is
+the error — and the two decisions were taken in different phases, which is how they were allowed to
+contradict each other.
+
+**Measured on a container the extension had built**, pulling PUBLIC images that need no credentials:
+
+```text
+pnpm nx up-auth  →  error getting credentials - err: exit status 255
+```
+
+**The failure is worse than 037 recorded.** That note describes the helper as "a HOST-side binary,
+absent in the container". It is in fact **present** in the container
+(`/usr/local/bin/docker-credential-dev-containers-<id>`) and **fails**, because it only functions
+inside the extension's own session context. So `docker pull` works from a VS Code terminal and fails
+from a `docker exec` shell or any script — image pulls that depend on how the shell was started,
+which is far nastier to diagnose than a consistently missing helper.
+
+**Resolution**: `DOCKER_CONFIG=/home/coder/.docker-sandbox` is restored in the sandbox variant. The
+other three rows of this table stand — they are genuinely nested-engine-only.
+
+**The transferable lesson**: "this workaround's cause is gone" is a claim about the *whole* future
+environment, and it cannot be settled before the gates that define that environment have run. D-10
+was written in Phase 0 and falsified in Phase 6.
 
 **Rationale**: Carrying dead workarounds forward is how a migration keeps its predecessor's tax. Each of these exists *only* because of the nested engine, and each is individually traceable to it in the current comments — which makes the deletion safe and auditable rather than speculative.
 
