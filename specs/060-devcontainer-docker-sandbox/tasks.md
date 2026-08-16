@@ -752,7 +752,56 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 > **Correct sequencing: remove the pin at T060**, together with `DOCKER_CONFIG`, the DinD feature and
 > `verify-engine-isolation.sh` — all of which retire as one unit. Recorded here rather than silently
 > skipped, because tasks.md places this in Phase 5 and that placement is what is wrong.
-- [ ] T036 [US3] Run the full twelve-script harness in the new dev container and confirm every check green
+- [~] T036 [US3] Run the full twelve-script harness in the new dev container and confirm every check green — **runner built and counting correctly; first full run 12/12 reported, 9 passed, 3 failed with known causes, all three addressed**
+
+> ### T036 — the harness is now executable, not a ritual
+>
+> `.devcontainer/verify/run-harness.sh` enumerates the twelve **by name** and fails if fewer report.
+> Two properties are deliberate:
+>
+> - **It counts SCRIPTS, not invocations.** `verify-engine-seam.sh` is one script run in three modes,
+>   so the contract's fourteen-row table names twelve distinct scripts. My first version counted
+>   invocations — 14 against an expected 12 — and would have failed forever. engine-seam's slot is
+>   green only if **all three** modes pass; a two-of-three engine seam is not a seam.
+> - **It refuses to fake the host-side proof.** That check's whole value is reading the real Windows
+>   engine from *outside* the microVM, which the runner cannot do. Without `MCM_HOST_CHECK` it
+>   reports eleven and fails — an unproven claim is not a passing one.
+>
+> **First full run: 12/12 reported, 9 passed, 3 failed.** None of the three was a defect in the
+> thing being checked:
+>
+> | Failure | Cause | Resolution |
+> | --- | --- | --- |
+> | `reproducible-recreate` | **it destroyed the environment** — see below | script fixed |
+> | `firewall-allowlist` | container started with `docker start`, which does not run `postStartCommand`, so no ipset exists | brought up via `devcontainer up` |
+> | `personal-layer` | the sandbox's `mcm-claude` volume is fresh, so RTK is absent | RTK provisioned — see the gap below |
+>
+> **`verify-reproducible-recreate.sh` tore the dev container down and could not rebuild it**,
+> leaving the VM with no dev container at all. It carried the same three defects T034 fixed in
+> `portable-runner`: no `--config` (so it rebuilt the **Docker Desktop** variant, whose `BASE_IMAGE`
+> fell back to the bare local tag → `docker pull mcm-devcontainer` → *"No manifest found"*), it ran
+> `verify-engine-isolation.sh` whose premise is inverted here, and nothing recorded that it must run
+> **last**. The checks after it reported `No such container`, **which reads as an isolation fault
+> rather than as this script's side effect** — the misdiagnosis is the expensive part, not the bug.
+> Both scripts are now config-parameterised, and the harness re-resolves the container name before
+> the destructive step because `portable-runner`'s own `devcontainer up` can replace it mid-run.
+>
+> ### ⚠️ Provisioning gap this exposed: the personal layer never reaches the sandbox
+>
+> RTK is installed by the **out-of-repo dotfiles** (`cargo install --root ~/.claude/tools`), which
+> have never run in the microVM — so `mcm-claude` there is empty and the environment is **not
+> certified for assistant use** by T032's required reading. That is the check working, not failing.
+>
+> Provisioned for now by extracting the binary from the Docker Desktop volume and moving it in with
+> `docker cp` → **`sbx cp`** → `docker cp` (verified: `rtk 0.42.4` answers in the sandbox container).
+> **That is a manual step, and SC-007 requires zero undocumented manual steps**, so it is a real
+> debt, not a fix:
+>
+> - the supported mechanism is `devcontainer up --dotfiles-repository <url>`, which the runbook
+>   (T053) must document for the sandbox path;
+> - `cargo install rtk` from crates.io is **NOT** a substitute — there is a name collision with an
+>   unrelated crate (`reachingforthejack/rtk`, "Rust Type Kit"), so it would silently install the
+>   wrong tool and `rtk gain` would fail with "command not found" semantics.
 
 ### T025 — Write the engine-seam check
 
