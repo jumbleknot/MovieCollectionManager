@@ -301,6 +301,35 @@ it failed because `sbx template ls` shows nothing — check whether the sandbox 
 
 ---
 
+## 7c. Port publishing — including to a physical LAN device (R9)
+
+```powershell
+sbx ports mcm                                       # list
+sbx ports mcm --publish 8081:8081                   # loopback only (the DEFAULT)
+sbx ports mcm --publish 0.0.0.0:8081:8081           # reachable from the LAN
+sbx ports mcm --unpublish 0.0.0.0:8081:8081
+```
+
+**`sbx ports` binds non-loopback natively — no `netsh portproxy` shim is needed.** The spec is
+`[[HOST_IP:]HOST_PORT:]SANDBOX_PORT[/PROTOCOL]`, and omitting `HOST_IP` is what restricts it to
+loopback. Verified 2026-08-16: publishing `0.0.0.0:8081:8081` showed `0.0.0.0 8081` in `sbx ports`
+and `0.0.0.0:8081` LISTENING in `Get-NetTCPConnection` on Windows.
+
+To reach Metro from a phone: publish on `0.0.0.0`, then browse to `<windows-lan-ip>:8081`. **Windows
+Firewall is the remaining variable** — all three profiles are enabled by default, so an inbound
+allow rule for the port is required; if you would rather not add one, `pnpm start --tunnel` (the
+Expo tunnel) needs no inbound rule at all.
+
+> ⚠️ **`sbx ports` lists nothing when the sandbox is stopped.** That is not the same as "your ports
+> were removed" — it is the idle-stop. Check `sbx ls` before concluding anything was lost. Published
+> ports are restored on restart.
+
+> 💡 **`ssh mcm.sbx` starts a stopped sandbox by itself.** You do not have to `sbx run` first; the
+> connection triggers the start. `scripts/open-sandbox.ps1` still starts it explicitly because it
+> then *waits* for readiness, which is what stops VS Code racing the boot.
+
+---
+
 ## 8. Disk — this is an operational constraint, not a formality
 
 The VM's Docker disk is **49 GB and cannot be enlarged** (v0.38.0 exposes no `--disk` flag). It

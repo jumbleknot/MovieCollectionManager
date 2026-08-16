@@ -1704,10 +1704,52 @@ Record the asymmetry honestly: **P6 step 5 is the only irreversible step**, beca
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
-- [ ] T061 Determine whether `sbx ports` can bind non-loopback for a physical LAN device; implement the `netsh portproxy` remedy or declare the workflow unsupported (R9) — **Done when**: a phone on the LAN reaches Metro on 8081, or the runbook states the workflow is unsupported and names the Expo-tunnel alternative
-- [ ] T062 [P] Confirm the root `.gitignore` covers the sandbox-local env file and any kit carrying topology literals — **Done when**: `git status` is clean with those files present, and no new nested `.gitignore` was added
-- [ ] T063 [P] Run `verify-committed-clean.sh` and the existing secret/topology gates — **Done when**: all pass, and a grep of the diff for the forge host and tailnet address returns nothing
-- [ ] T064 Run `node scripts/check-openwiki-governance.mjs` — **Done when**: exit 0 with every concept provably derived or authoritative
+- [x] T061 Determine whether `sbx ports` can bind non-loopback for a physical LAN device; implement the `netsh portproxy` remedy or declare the workflow unsupported (R9) — **Done when**: a phone on the LAN reaches Metro on 8081, or the runbook states the workflow is unsupported and names the Expo-tunnel alternative
+- [x] T062 [P] Confirm the root `.gitignore` covers the sandbox-local env file and any kit carrying topology literals — **Done when**: `git status` is clean with those files present, and no new nested `.gitignore` was added
+- [x] T063 [P] Run `verify-committed-clean.sh` and the existing secret/topology gates — **Done when**: all pass, and a grep of the diff for the forge host and tailnet address returns nothing
+- [x] T064 Run `node scripts/check-openwiki-governance.mjs` — **Done when**: exit 0 with every concept provably derived or authoritative
+
+> ### T061 — **R9 resolved POSITIVE. No `netsh portproxy` remedy is needed.**
+>
+> `sbx ports` binds non-loopback natively; the spec is `[[HOST_IP:]HOST_PORT:]SANDBOX_PORT`, and
+> omitting `HOST_IP` is merely what *defaults* it to loopback. Measured:
+>
+> ```text
+> sbx ports mcm --publish 0.0.0.0:8081:8081   ->  Published 0.0.0.0:8081 -> 8081/tcp
+> sbx ports mcm                                ->  0.0.0.0  8081  8081  tcp
+> Get-NetTCPConnection -LocalPort 8081         ->  0.0.0.0:8081  LISTENING
+> ```
+>
+> The test port was **unpublished afterwards** — leaving a `0.0.0.0` listener open is a security
+> change, not a convenience. The remaining variable for an actual phone is **Windows Firewall** (all
+> three profiles enabled by default → an inbound allow rule is required); the Expo tunnel
+> (`pnpm start --tunnel`) needs no inbound rule and is named as the alternative.
+>
+> ⚠️ Two things learned by nearly misreading the result:
+>
+> 1. **`sbx ports` lists nothing when the sandbox is stopped.** After unpublishing, the SSH port
+>    2222 also vanished from the listing and it looked as though the unpublish had taken it. It had
+>    not — the sandbox had idle-stopped. `sbx ls` first; ports return on restart.
+> 2. **`ssh mcm.sbx` starts a stopped sandbox by itself.** The connection triggers the start, so
+>    `sbx run` is not a prerequisite. `open-sandbox.ps1` still starts it explicitly because it then
+>    *waits* for readiness — which is what stops VS Code racing the boot.
+>
+> ### T062 / T063 / T064 — release gates GREEN
+>
+> ```text
+> check-topology-scrub   rc=0     check-no-inline-secrets  rc=0
+> check-no-argv-secrets  rc=0     secret-scan              rc=0
+> verify-committed-clean : PASS (SC-010 — committed config is personal-free & secret-free)
+> check-openwiki-governance : rc=0, 961 paths, 63 concepts, protected passages intact
+> ```
+>
+> A broad grep of the 48-file diff returned four matches, **all benign on reading** — which is the
+> point of reading them rather than counting them:
+>
+> | Match | Verdict |
+> | --- | --- |
+> | `.ts.net` in `gen-egress-policy.mjs` | the `TOPOLOGY_SUFFIXES` **blocklist** — the guard that rejects topology-sensitive domains |
+> | `ANTHROPIC_API_KEY=proxy-managed` ×3 | the Docker Sandbox **sentinel**, documented as explicitly not a credential |
 - [ ] T065 Update `specs/060-devcontainer-docker-sandbox/research.md` with every gate's actual outcome — **Done when**: each of G1–G7 and each `[gate]` marker in D-07/D-08/D-11 is replaced by what happened, so the file records history rather than intent
 
 ---
