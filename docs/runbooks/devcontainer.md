@@ -1,7 +1,38 @@
 # Runbook: Containerized Dev Environment (feature 037)
 
+> ## ⚠️ THIS IS NO LONGER THE PRIMARY ENVIRONMENT (feature 060)
+>
+> The AI-assisted development environment now runs as a **dev container inside a Docker Sandbox
+> microVM**. Its operating manual is **[devcontainer-sandbox.md](devcontainer-sandbox.md)** — start
+> there for lifecycle, egress triage, the engine seam, disk, and the one-step launch.
+>
+> **This page documents the RETAINED Docker Desktop / Docker-in-Docker path**, kept for one reason:
+> the **Android emulator**, which needs `/dev/kvm`. The microVM provides no nested virtualization
+> (gate R2, resolved negative), so mobile E2E that must run locally still runs here. Everything else
+> — web E2E, integration, the agent stack, day-to-day assistant work — belongs on the sandbox, which
+> measured **0.43×** the wall-clock of this path across five stages (`docker-build` alone went
+> 1024 s → 293 s).
+>
+> **Still authoritative on this page, and applying to BOTH paths:**
+>
+> - **the credential rule** — [§ Host env vars](#host-env-vars-forwarded-via-localenv-mcm_devcontainer_image-forge_registry_host-mcm_anthropic_api_key-tmdb_api_key-mcm_forge_token-mcm_forge_issue_token)
+>   below. AI-assisted coding runs on the **Claude Max subscription**; `MCM_ANTHROPIC_API_KEY` exists
+>   only for the movie assistant and OpenWiki, and `ANTHROPIC_API_KEY` must never be set in *any*
+>   environment. This is the first gate in `CLAUDE.md`.
+> - the toolchain image contents and the `${localEnv}` forwarding mechanics.
+>
+> **Sections describing the nested engine are historical.** Where behaviour differs on the sandbox
+> path, the difference is called out inline. Do not apply a DinD remedy to a sandbox symptom — the
+> triage order is inverted there (host policy first, see the sandbox runbook § 3).
 
 ## Local Ollama for free agent-flow churn (feat devcontainer-ollama)
+
+> **Docker Desktop path.** On the sandbox, `host.docker.internal` behaves differently and the
+> reasoning below does not transfer: Docker's *implicit* entry resolves to a link-local `fe80::1`
+> and is unreachable, while the gateway's explicit `--add-host host.docker.internal:host-gateway`
+> resolves to the bridge gateway and works. From the dev container itself, use **`localhost:11434`** —
+> under `--network=host` a sibling's published port *is* localhost. See
+> [devcontainer-sandbox.md § 6](devcontainer-sandbox.md).
 
 Heavy agent-flow iteration on the Anthropic API is expensive. Ollama used to serve the dev models for
 free from the Windows host (via `host.docker.internal`), but nested-DinD broke that reach —

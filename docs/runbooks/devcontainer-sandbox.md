@@ -258,6 +258,49 @@ bash .devcontainer/verify/verify-reboot-survival.sh --verify    # AFTER
 
 ---
 
+## 7b. Templates and recreate-from-nothing
+
+```powershell
+sbx template save mcm mcm-proven:060                       # ~17 min, ~16.8 GB
+sbx run -t docker.io/library/mcm-proven:060 --name <new> -d shell C:\path\to\a\scratch\dir
+```
+
+### 🔴 ALWAYS pass the workspace explicitly
+
+**`sbx run` mounts the CURRENT DIRECTORY as the sandbox workspace unless told otherwise**, and it
+does so **read-write over virtiofs**. Creating a sandbox while sitting in the repo therefore mounts
+the repo into the VM and **destroys the host-filesystem isolation this whole environment exists
+for**. Measured 2026-08-16 — a file written inside the recreated sandbox appeared immediately in the
+Windows working copy:
+
+```text
+mcm            ...  C:\Users\Steve\sbx-workspaces\mcm-vm     ← correct: a dedicated scratch dir
+mcm-recreate   ...  E:\...\MovieCollectionManager            ← the repo, writable from the VM
+```
+
+The `mcm` sandbox is correctly configured: its only virtiofs mounts are `/etc/resolv.conf`,
+`/etc/hosts` and a dedicated workspace directory. Keep it that way.
+
+> Note the layering: the **dev container** is separately isolated from the VM's mounts, which is what
+> `verify-host-isolation.sh` asserts at the container level. A Windows mount in the VM is still a
+> real exposure — anything run in the VM shell (not the container) can reach it.
+
+### ⚠️ A template does NOT contain the Docker images
+
+`sbx template save` snapshots the VM root filesystem, **not** the Docker data disk. Measured: a
+sandbox recreated from `mcm-proven:060` came up in **4 seconds** with **zero images**.
+
+So recreate is **fast but COLD**. The 4-second instantiation is followed by a full cold rebuild and
+re-pull of every image — which is where the real time goes, and it is *not* the 293 s warm
+`docker-build` figure. Budget accordingly, and treat "recreate ≤ 15 min" as covering instantiation
+plus provisioning, not instantiation alone.
+
+⚠️ `sbx template save` **stops the sandbox** and holds a lock that blocks other `sbx` commands for
+its full duration (~17 min here). Do not run it when you need the environment, and do not conclude
+it failed because `sbx template ls` shows nothing — check whether the sandbox went to `stopped`.
+
+---
+
 ## 8. Disk — this is an operational constraint, not a formality
 
 The VM's Docker disk is **49 GB and cannot be enlarged** (v0.38.0 exposes no `--disk` flag). It
