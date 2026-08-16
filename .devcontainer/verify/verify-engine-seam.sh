@@ -166,8 +166,19 @@ if [ "${MCM_DEVCONTAINER:-}" != "1" ]; then
 fi
 
 # 2 — NO container-engine daemon may run inside. This is FR-013, and the reason `privileged` dies.
-d_count="$(pgrep -c dockerd 2>/dev/null || echo 0)"
-c_count="$(pgrep -c containerd 2>/dev/null || echo 0)"
+#
+# `pgrep -c` PRINTS "0" **and** EXITS 1 when there is no match, so the obvious
+# `$(pgrep -c X || echo 0)` yields "0\n0" — which breaks `[ -eq ]` with "integer expression
+# expected" and falls through to the failure branch, reporting a daemon that is not running.
+# Measured 2026-08-16: this made the check FAIL on the very environment it is meant to pass on.
+count_proc() {
+  local n
+  n="$(pgrep -c "$1" 2>/dev/null || true)"
+  n="${n%%[!0-9]*}"          # keep only the leading integer
+  printf '%s' "${n:-0}"
+}
+d_count="$(count_proc dockerd)"
+c_count="$(count_proc containerd)"
 if [ "$d_count" -eq 0 ]; then
   ok "no dockerd process inside the container"
 else
