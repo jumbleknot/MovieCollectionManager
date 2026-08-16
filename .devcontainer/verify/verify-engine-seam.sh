@@ -24,10 +24,17 @@
 # answers happily. Asserting mere presence would pass in both environments and therefore assert
 # nothing.
 #
-# What actually differs is whether the socket is a BIND MOUNT:
-#   DinD     — socket created in-container by the nested dockerd; ABSENT from /proc/mounts
-#   sandbox  — socket bind-mounted in from the microVM;           PRESENT in /proc/mounts
+# What actually differs is whether a docker socket is BIND-MOUNTED IN from outside:
+#   DinD     — socket created in-container by the nested dockerd; NOTHING in /proc/mounts
+#   sandbox  — the microVM's socket bind-mounted in;              PRESENT in /proc/mounts
 # So assertion 3 tests the mount, not the file.
+#
+# ⚠️ AND IT IS NOT MOUNTED AT THE OBVIOUS PATH. The docker-outside-of-docker feature bind-mounts
+# the engine socket as **/var/run/docker-host.sock**, then has docker-init.sh run a socat proxy
+# that presents it as /var/run/docker.sock owned by the non-root user. So /var/run/docker.sock in
+# the sandbox container is a socat-created socket, NOT a mount — grepping /proc/mounts for
+# `docker\.sock` alone finds nothing and the assertion fails in the very environment it is meant
+# to pass in. Measured 2026-08-16. The pattern below matches EITHER name.
 #
 # Modes:
 #   (default)        in-container — assertions 1-5
@@ -175,10 +182,12 @@ fi
 # 3 — a docker socket must be BIND-MOUNTED in, and must answer. See the header: presence of the
 # socket FILE does not discriminate, because the nested daemon creates one too.
 command -v docker >/dev/null 2>&1 || err "docker CLI absent — docker-outside-of-docker feature not present"
-if grep -Eq '/(var/run|run)/docker\.sock' /proc/mounts 2>/dev/null; then
-  ok "docker socket is bind-mounted from the microVM"
+# Matches docker.sock OR docker-host.sock — see the header. Either proves the engine socket came
+# from OUTSIDE this container, which is the thing that distinguishes the topologies.
+if mnt="$(grep -Eo '/(var/)?run/docker(-host)?\.sock' /proc/mounts 2>/dev/null | head -1)"; [ -n "$mnt" ]; then
+  ok "engine socket is bind-mounted in from the microVM (${mnt})"
 else
-  err "docker socket is NOT bind-mounted — the reachable engine is a LOCAL daemon, not the microVM's"
+  err "no engine socket is bind-mounted — the reachable engine is a LOCAL daemon, not the microVM's"
 fi
 if docker info >/dev/null 2>&1; then
   ok "docker info answers over the mounted socket"
