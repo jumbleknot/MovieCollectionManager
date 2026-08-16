@@ -666,7 +666,7 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 - [X] T032 [P] [US3] Update `.devcontainer/verify/verify-personal-layer.sh` to assert the RTK binary is present on the `mcm-claude` volume — **RTK is now REQUIRED**, decision recorded in the script header
 - [X] T033 [P] [US3] Update `.devcontainer/verify/verify-firewall-allowlist.sh` to read `egress-allowlist.json` instead of re-listing domains inline — **RED (a passing run) confirmed, GREEN 33/33**
 - [X] T034 [P] [US3] Parameterise `.devcontainer/verify/verify-portable-runner.sh` by config so both `devcontainer.json` and `sandbox/devcontainer.json` can be checked — **RED confirmed structurally**
-- [~] T035 [US3] Remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` — **DEFERRED TO ADOPTION (T060), with reason** — the sandbox no longer uses the pin, but deleting it now breaks the retained path
+- [→] T035 **MOVED to Phase 8 / T060** (operator decision, 2026-08-16) — removing the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` cannot happen while the retained Docker Desktop path shares that image. Its Phase 5 placement was the error; see the T035 block below and the T060 line.
 
 > ### T032 — RTK required, and the RED/GREEN pair is natural rather than contrived
 >
@@ -1142,7 +1142,23 @@ Either outcome is acceptable. What is not acceptable is leaving it ambiguous —
 - [ ] T057 [P] [US6] Update the OpenWiki **source** documents so the generator regenerates the bundle correctly — **Done when**: the cited source documents carry the new posture and no generated page under `openwiki/` was hand-edited
 - [ ] T058 [US6] Extend `specs/060-devcontainer-docker-sandbox/rollback.md` with the rollback for every migration phase
 - [ ] T059 [US6] Prove recreate-from-nothing ≤ 15 min warm — **Done when**: a timed run from template to working dev container is recorded, with zero steps outside the documentation
-- [ ] T060 [US6] After two consecutive incident-free weeks (spec.md FR-032 defines "incident"): collapse to a single `devcontainer.json`, delete `.devcontainer/verify/verify-engine-isolation.sh`, and stop offering the Docker Desktop path for assistant sessions — **Done when**: an incident log covering the two weeks is recorded, `.devcontainer/sandbox/` is folded into `.devcontainer/devcontainer.json`, `verify-engine-isolation.sh` is deleted, the full harness is re-run green post-collapse, and `rollback.md`'s P6 entry names the revert commit
+- [ ] T060 [US6] After two consecutive incident-free weeks (spec.md FR-032 defines "incident"): collapse to a single `devcontainer.json`, delete `.devcontainer/verify/verify-engine-isolation.sh`, **remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` (moved here from T035)**, and stop offering the Docker Desktop path for assistant sessions — **Done when**: an incident log covering the two weeks is recorded, `.devcontainer/sandbox/` is folded into `.devcontainer/devcontainer.json`, `verify-engine-isolation.sh` is deleted, **the Compose pin is removed and the toolchain image rebuilt + re-pinned**, the full harness is re-run green post-collapse, and `rollback.md`'s P6 entry names the revert commit
+
+> **T060 retires four things as ONE UNIT, and they cannot be separated.** `DOCKER_CONFIG`, the
+> `docker-in-docker` feature, `verify-engine-isolation.sh`, and the Compose v5 parity pin all exist
+> **only** to serve the nested engine, and all four stop being needed at the same moment — when the
+> Docker Desktop path is no longer offered.
+>
+> The Compose pin is the one that *looks* separable and is not: it lives in the toolchain image,
+> which **both** configs share. On the sandbox path it is already inert (the sandbox removes
+> `DOCKER_CONFIG`, so nothing looks in `~/.docker-dind/cli-plugins/`, and Compose **5.4.0-2** comes
+> from the feature's apt `moby-compose` instead). On the retained DinD path it is load-bearing —
+> that feature installs Compose **v2.40**, which rejects the mcm stacks' `include:`-override
+> `profiles:` merge. Removing it before adoption would make `up-mcm` fail in the retained
+> environment, which FR-019 forbids.
+>
+> Its removal also needs a **CI image rebuild and a new digest pin**, so it is not a
+> local-only edit in any case.
 
 ### T053 — Write the delta runbook
 

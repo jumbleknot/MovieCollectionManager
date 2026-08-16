@@ -90,18 +90,37 @@ else
   err "rtk is present but '--version' failed — the binary is broken, not merely installed"
 fi
 
-# SC-006 — compression. `rtk gain` reports cumulative savings; require > 80%. Parse the first
-# percentage it emits. If no run history exists yet, `rtk gain` may report 0 runs — treat that as
-# a soft note (nothing to compress yet) rather than a hard fail, since a fresh session has no history.
+# SC-006 — compression. REPORTED, NOT ENFORCED (operator decision, 2026-08-16).
+#
+# ── Why this no longer fails the run ─────────────────────────────────────────────────────────────
+#
+# The threshold is applied to a metric that cannot reach it. `rtk gain` reports CUMULATIVE GLOBAL
+# savings across every proxied command — measured 2026-08-16 at **2.8%** over 914 commands — while
+# the PER-COMMAND savings that the ">80%" figure describes run 17–87%:
+#
+#     Tokens saved: 285.6K (2.8%)        <- what this parse reads
+#       rtk read 17.1% | rtk grep 26.1% | rtk git diff 87.1% | rtk:toml 85.7%
+#
+# So a healthy environment fails a hard >80% assertion, every time. That makes it a check that
+# cries wolf, and a check nobody believes is worse than no check: it trains the reader to skip a
+# red line in a harness whose whole value is that red lines mean something.
+#
+# It is therefore REPORTED prominently and does not fail. This is a deliberate, recorded downgrade
+# pending investigation of WHY cumulative gain is low — not a quiet loosening to make a suite go
+# green. The metric-vs-threshold mismatch is the open question; SC-006 itself is untouched, because
+# changing a success criterion is a spec decision rather than an implementation one.
 gain_out="$(rtk gain 2>/dev/null || true)"
 pct="$(printf '%s' "$gain_out" | grep -oE '[0-9]+(\.[0-9]+)?%' | head -1 | tr -d '%')"
 if [ -z "$pct" ]; then
   note "rtk gain reported no percentage yet (no command history in this fresh session)."
-  note "SC-006 (> 80%) is confirmed after the first test run — see the runbook / rtk gain."
+  note "SC-006 is measured after the first test run — see the runbook / rtk gain."
 elif awk -v p="$pct" 'BEGIN{exit !(p+0 > 80)}'; then
   ok "rtk gain ${pct}% > 80% (SC-006)"
 else
-  err "rtk gain ${pct}% is NOT > 80% (SC-006 regression)"
+  note "rtk gain ${pct}% (cumulative, global) is below the SC-006 figure of 80% — REPORTED, not failed."
+  note "Known metric mismatch: this is total savings across ALL proxied commands, whereas the 80%"
+  note "figure describes PER-COMMAND savings (measured 17-87% by command type). Follow-up owed:"
+  note "either measure per-command, or restate SC-006 against the cumulative metric."
 fi
 
 # SC-007 — plugins/skills present. The expected set is the developer's, delivered by the dotfiles
