@@ -42,7 +42,21 @@
   // sides (no daemon in-container, Privileged:false from the VM, invisible to the Windows engine).
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
-      "moby": true
+      "moby": true,
+      // Skip the STANDALONE `docker-compose` binary. Not a workaround — a removal.
+      //
+      // The feature's default ("v2") downloads that binary from GitHub release artifacts as a
+      // separate step AFTER apt has already installed `moby-compose`, i.e. the `docker compose`
+      // plugin this project actually uses. Under the sandbox topology that extra download runs
+      // inside the governed VM and failed with curl exit 6 (could not resolve host), which is what
+      // surfaced it at all — on Docker Desktop the build has open egress and nobody noticed the
+      // redundant fetch.
+      //
+      // Verified before disabling: the repository contains NO invocation of the legacy hyphenated
+      // `docker-compose` binary. Every call site uses `docker compose` (the plugin), including all
+      // the up-*/down-* Nx targets. So this drops a build-time network dependency and one more
+      // reason to widen the allowlist, rather than papering over a failure.
+      "dockerDashComposeVersion": "none"
     }
   },
 

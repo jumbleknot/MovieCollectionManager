@@ -276,9 +276,24 @@ compose plugin, and the toolchain image ships **neither** (verified — `command
 in `MCM_DEVCONTAINER_IMAGE`). On Docker Desktop the same install happens; it simply never met a
 firewall.
 
-**Decision (operator-approved 2026-08-16): allowlist `deb.debian.org` now, bake the CLI later.**
-`cli.github.com` is added with it — not needed by any build step, but a pre-existing apt source in
-the image, so every `apt-get update` fails on it and buries the real error.
+**Decision (operator-approved 2026-08-16): allowlist the build-time hosts now, bake the CLI later.**
+
+Three entries were needed, and they surfaced **one layer at a time** — each fix revealed the next,
+which is worth knowing before attempting this on a fresh workstation:
+
+| # | Host | Surfaced as |
+| --- | --- | --- |
+| 1 | `deb.debian.org` | `Something wicked happened resolving 'deb.debian.org'` — apt could not reach Debian main/security |
+| 2 | `cli.github.com` | a pre-existing apt source in the image; not fatal, but it fails every `apt-get update` and **buries the real error** |
+| 3 | `packages.microsoft.com` | after (1) was fixed: `curl: (6) Could not resolve host: packages.microsoft.com`, then `gpg: no valid OpenPGP data found` |
+
+(3) exists because the feature carries `"moby": true`, copied from the Docker Desktop config, so it
+installs **Moby** from Microsoft's repository rather than Docker CE from `download.docker.com`.
+Choosing `moby: false` would trade this host for that one, not remove the dependency.
+
+Note the second-order lesson in (3): the `gpg: no valid OpenPGP data found` line is a **downstream
+symptom** of the failed key fetch, not a separate fault. Chasing it as a GPG/keyring problem would
+have been a dead end.
 
 **The intended end state is to remove both entries**, by baking the docker CLI and compose plugin
 into `toolchain.Dockerfile` and dropping the `features` block from the sandbox variant. That is
