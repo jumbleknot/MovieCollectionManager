@@ -7,13 +7,34 @@
 # persistent), FR-014 (its ABSENCE never blocks the container — this script exits 0 with a notice).
 #
 # The personal layer is delivered OUT-OF-REPO by the developer's dotfiles install.sh (FR-009), so
-# it may legitimately be absent (a second person, or a first open before dotfiles are configured).
-# This script therefore has two success paths:
-#   • CONFIGURED  → assert rtk gain > 80%, expected plugins present, logins resolve. Exit 0.
-#   • ABSENT      → print a clear "personal layer absent" notice and exit 0 (FR-014). It NEVER
-#                   fails the run just because a personal convenience is missing.
-# It fails (non-zero) ONLY when the layer is PARTIALLY present and broken (e.g. rtk on PATH but
-# gain < 80%, or a claimed-present plugin missing) — a real regression, not an absence.
+# most of it may legitimately be absent (a second person, or a first open before dotfiles are
+# configured). Plugins, skills and service logins are all treated that way: absent is a notice.
+#
+# ── RTK IS THE EXCEPTION, AND FEATURE 060 (T032) MAKES THAT EXPLICIT ─────────────────────────────
+#
+# The choice this script has to make — and previously left implicit — is whether RTK is REQUIRED or
+# merely WARNED about. It is now **REQUIRED**, and fails an environment that lacks it.
+#
+# Why the stricter reading: the constitution mandates RTK token compression for every AI-assisted
+# shell session (Common Technology Stack — Token Compression). It is not a personal convenience like
+# a plugin set; it is a MUST that this environment exists to satisfy. And because RTK is installed
+# by the out-of-repo dotfiles rather than baked into the image, an environment that lost it looks
+# COMPLETELY HEALTHY while violating that MUST — nothing else in the harness asserts it. That is
+# precisely the class of silent regression the verify harness exists to catch.
+#
+# Tension with 038's FR-014 ("the container is team-capable without dotfiles"), and how it resolves:
+# FR-014 is about the container coming UP and being usable, which this script never blocks. This
+# assertion is about certifying the environment for ASSISTANT use, which is what the harness does.
+# A teammate deliberately running without dotfiles can set MCM_ALLOW_NO_RTK=1 — an EXPLICIT opt-out
+# that must be typed, rather than a silent pass that nobody notices.
+#
+# Success paths:
+#   • CONFIGURED  → assert rtk on the PERSISTED volume, `rtk --version` answers, gain > 80%,
+#                   plugins present, logins resolve. Exit 0.
+#   • RTK ABSENT  → FAIL (unless MCM_ALLOW_NO_RTK=1, which downgrades it to a notice).
+#   • Other parts absent → notice, exit 0 (FR-014).
+# It also fails when the layer is PARTIALLY present and broken (rtk on PATH but gain < 80%, or a
+# claimed-present plugin missing) — a real regression, not an absence.
 
 set -uo pipefail
 
@@ -34,21 +55,40 @@ fi
 # ~/.cargo/bin (research D3/D7). Put that dir on PATH for this check regardless of shell rc.
 export PATH="$HOME/.claude/tools/bin:$PATH"
 
-# --- absence detection -------------------------------------------------------------------
-# The layer is "configured" if RTK is present. No RTK → treat the whole personal layer as
-# not-yet-configured and skip cleanly (FR-014).
-if ! command -v rtk >/dev/null 2>&1; then
-  echo ""
-  note "personal layer ABSENT — 'rtk' not found on PATH (~/.claude/tools/bin)."
-  note "The container is fully team-capable without it. To enable the personal layer, set the"
-  note "VS Code user setting 'dotfiles.repository' (or --dotfiles-repository) to your dotfiles"
-  note "repo whose install.sh builds RTK + installs plugins. See docs/runbooks/devcontainer.md."
-  echo "[verify-personal-layer] SKIP (personal layer not configured — exit 0, FR-014)"
-  exit 0
-fi
+# --- 060 T032: RTK on the PERSISTED volume is REQUIRED -------------------------------------
+# Asserted at the volume path specifically, not merely "somewhere on PATH". RTK must live on the
+# mcm-claude volume so it survives a container recreate; an rtk that happened to be installed into
+# the ephemeral image or ~/.cargo/bin would satisfy `command -v` and then vanish on the next
+# rebuild, which is the failure this placement was chosen to prevent (research D3/D7).
+RTK_BIN="$HOME/.claude/tools/bin/rtk"
 
-# --- CONFIGURED path: assert the layer is healthy ----------------------------------------
-ok "rtk present ($(command -v rtk))"
+if [ ! -x "$RTK_BIN" ]; then
+  if [ "${MCM_ALLOW_NO_RTK:-}" = "1" ]; then
+    echo ""
+    note "RTK not found on the personal volume ($RTK_BIN) — tolerated by MCM_ALLOW_NO_RTK=1."
+    note "The container is team-capable without it, but this environment is NOT certified for"
+    note "assistant use: the constitution mandates RTK token compression for AI-assisted sessions."
+    echo "[verify-personal-layer] SKIP (RTK absent, explicitly tolerated — exit 0)"
+    exit 0
+  fi
+  err "RTK not found on the personal volume ($RTK_BIN)"
+  note "RTK is constitution-mandated for every AI-assisted shell session, and is installed by the"
+  note "out-of-repo dotfiles install.sh ('cargo install --root ~/.claude/tools'). An environment"
+  note "without it looks completely healthy while violating a MUST — which is why this now FAILS"
+  note "rather than skipping. Set 'dotfiles.repository' (or --dotfiles-repository) to the dotfiles"
+  note "repo, or export MCM_ALLOW_NO_RTK=1 to acknowledge an uncertified environment deliberately."
+  echo "[verify-personal-layer] FAIL (RTK absent — constitution MUST unmet)"
+  exit 1
+fi
+ok "rtk present on the persisted volume ($RTK_BIN)"
+
+# It must also RUN. A present-but-broken binary (wrong arch after an image change, truncated
+# install) is a distinct failure from an absent one, and reads identically until it is executed.
+if rtk_ver="$("$RTK_BIN" --version 2>&1)"; then
+  ok "rtk --version answers: $(printf '%s' "$rtk_ver" | head -1)"
+else
+  err "rtk is present but '--version' failed — the binary is broken, not merely installed"
+fi
 
 # SC-006 — compression. `rtk gain` reports cumulative savings; require > 80%. Parse the first
 # percentage it emits. If no run history exists yet, `rtk gain` may report 0 runs — treat that as
