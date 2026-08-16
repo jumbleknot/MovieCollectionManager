@@ -325,7 +325,76 @@ arrives with a BOM that corrupts the *first line only*. During G1 this silently 
 assignment, so a probe ran against an empty hostname and reported total unreachability. Base64-encode
 scripts before sending them over SSH.
 
-### Gotcha 5 — several host-side checks in this migration require elevation
+### Gotcha 5 — the sandbox auto-stops 30 s after the LAST SESSION disconnects (not an idle timer)
+
+This presents as "the VM keeps dying" and as containers mysteriously showing `Exited (255)`. It is
+neither a crash nor an idle timeout. From `sandboxd`'s own log:
+
+```text
+"session disconnected, deferring auto-stop"   runtime=mcm  delay=30000000000   ← 30 s, in ns
+"auto-stop grace period expired, stopping runtime"
+"auto-stopped runtime after last session disconnected"
+```
+
+The trigger is **the last session disconnecting**, with a 30-second grace period. There is **no
+configuration knob** in v0.38.0 — the delay is hardcoded, and nothing in `sbx setup/daemon/run/create
+--help`, `state/config.json` or the per-sandbox `mcm.json` exposes it.
+
+**Why this matters more for automation than for daily use.** A developer working in VS Code
+Remote-SSH holds a session for as long as the window is open, so the VM simply stays up and the
+behaviour is invisible. It bites *scripted* work, where each command is its own connect/disconnect:
+the VM stops 30 s after every command, and any long job started in the background dies with it.
+Two multi-hour runs in this migration were lost that way, and one `devcontainer up` was truncated
+mid-run, leaving a log with no outcome line.
+
+**Remedies, in order of preference:**
+
+1. **Hold a session open** for the duration of the work. Verified 2026-08-16 — with a held session
+   and no other commands, the VM was still up 80 s later, well past the grace period:
+
+   ```bash
+   ssh mcm.sbx 'sleep 7200' &     # keepalive for the duration of a long job
+   ```
+
+2. **`--restart=always`** on the dev container (now in the sandbox variant's `runArgs`) so that when
+   the VM *does* stop, the container returns by itself on the next boot rather than needing a manual
+   `docker start`.
+3. **`setsid nohup`** for anything long-running, so it survives the SSH disconnect that would
+   otherwise kill it *before* the VM even stops. Plain `nohup` on an outer script is not enough if
+   that script backgrounds its own work — the inner job is still hung up.
+
+Diagnosis reflex: an unexpected `Exited (255)` plus `uptime -p` reporting "up 0 minutes" means the
+VM restarted underneath the container. Do not chase it as a container fault.
+
+### Gotcha 6 — `rtk init -g` cannot initiate RTK from a script, and fails silently
+
+RTK compresses nothing by being installed. It works through a Claude Code **PreToolUse hook**
+(`rtk hook claude`) in `~/.claude/settings.json`. The official initiation step will not write that
+hook non-interactively:
+
+```text
+$ rtk init -g
+RTK hook registered (global).
+Patch existing /home/coder/.claude/settings.json? [y/N]
+(non-interactive mode, defaulting to N)
+  MANUAL STEP: Add this to /home/coder/.claude/settings.json: ...
+```
+
+It **prompts**, defaults to **N**, and prints a manual step into a container build log that nobody
+reads. So *every* automated container creation yields RTK installed-but-inactive — the binary
+answers `rtk --version` perfectly and the session gets **zero** compression. This is the structural
+cause of this project's recurring "the assistant ran a whole session without RTK" incidents.
+
+Reproduced end-to-end on the sandbox: dotfiles installed via
+`devcontainer up --dotfiles-repository`, `settings.json` created, plugins and binary present,
+`rtk 0.42.4` answering — and `hooks: {}`.
+
+**Fixed in-repo**: `.devcontainer/ensure-rtk-hook.sh` performs the patch idempotently and runs from
+`postCreateCommand` (once per container creation, the correct cadence).
+`verify-personal-layer.sh` now asserts **initiation**, not merely presence — it previously passed on
+a binary that did nothing, i.e. it shared the blind spot of the incident it was meant to catch.
+
+### Gotcha 7 — several host-side checks in this migration require elevation
 
 Not an `sbx` fault, but the same class of surprise. `Get-WindowsOptionalFeature -Online` (exit
 checklist row 1) and the Gotcha 2 recovery both fail with *"The requested operation requires
