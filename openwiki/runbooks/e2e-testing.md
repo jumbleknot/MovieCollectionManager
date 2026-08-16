@@ -4,7 +4,7 @@ title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate that now blocks a merge.
 resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook]
-timestamp: 2026-08-15T00:00:00+00:00
+timestamp: 2026-08-16T00:00:00+00:00
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -76,13 +76,24 @@ integration, and golden tests, and how CI enforces the integration tier ahead of
   read only the last one. On mobile (Maestro), scope to signatures the bug *alone* produces — a bare
   `.*couldn't find.*` matches legitimate transcript text in both the passing and failing worlds.
 - **The Playwright image tag MUST follow the lockfile's `@playwright/test` version — they are not
-  independent.** A lockfile maintenance bump that moves `@playwright/test` without moving the
-  `mcr.microsoft.com/playwright:<version>-noble` tag in `docs/runbooks/devcontainer.md` (and in the
-  `docker ps` filter below) makes the browser launch fail outright with
+  independent.** The tag selects the browser build baked into the image; a lockfile bump that moves
+  `@playwright/test` without moving the tag makes the browser launch fail outright —
   `browserType.launch: Executable doesn't exist at /ms-playwright/chromium_headless_shell-…` — ZERO
-  tests run and the e2e gate reports `no Playwright summary found` rather than a count. Measured on
-  PR #199: lockfile moved 1.60.0 → 1.62.1, the image tag did not follow, and the gate failed with
-  that error. Always update the tag together with the lockfile bump; the current pin is **v1.62.1**.
+  tests run and the e2e gate reports `no Playwright summary found` rather than a count. The tag lives
+  in three places that do NOT carry equal weight:
+
+  | Where | Count | What it is |
+  |---|---|---|
+  | `.forgejo/workflows/app-ci.yml` | 2 | **authoritative** — the tag CI actually runs the suite in |
+  | `docs/runbooks/devcontainer.md` | 3 | the operator's local `docker run` recipe |
+  | `docs/runbooks/e2e-testing.md` | 1 | the `docker ps` cleanup filter |
+
+  Updating only `devcontainer.md` fixes a local run and leaves CI broken — the workflow is the copy
+  that matters for a merge. The two halves (pin bump + lockfile bump) MUST land in the same change:
+  bumping the pin ahead of the lockfile bump on `main` breaks `main` the same way in reverse. Measured
+  on PR #199: lockfile moved 1.60.0 → 1.62.1, the workflow tag stayed at `v1.60.0-noble`, and
+  `app-e2e` burned a full ~35-minute cycle before failing. Nothing enforces the coupling yet:
+  item #204. Current pin: **v1.62.1**.
 - **Killing the shell does NOT kill a containerised `docker run`.** The container detaches from the
   CLI process, so cancelling the command leaves Playwright still running — consuming the same shared
   test user and gateway as any subsequent run. Measured 2026-08-09: an abandoned full-suite run was
