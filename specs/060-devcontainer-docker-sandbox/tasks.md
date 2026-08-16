@@ -1071,7 +1071,37 @@ never reaches the sandbox. A harness that had gone green on the first attempt wo
 
 **Independent test**: connect through and confirm the in-container markers and assistant version; then exercise the fallback once.
 
-- [ ] T037 [US4] **G4 GATE** — connect VS Code Remote-SSH to `mcm.sbx`, reach the dev container by **both** *Attach to Running Container* and *Reopen in Container*, and record which of the two work (D-15)
+- [X] T037 [US4] **G4 GATE** — ✅ **GREEN — BOTH work.** Attach confirmed; **Reopen BUILT a new container** (`loving_swartz`, created 18:24:49Z) against an engine emptied at 18:20:10Z. D-15 retired.
+
+> ### G4 — the first "it worked" was wrong, and the real blocker was our own design
+>
+> **The measurement had to be taken twice.** The first *Reopen* succeeded against a **stopped but
+> matching** container, which the extension simply **started** — creation time unchanged, nothing
+> built. That is T037's warned-about trap one step along: not already-*running*, but already-
+> *existing*. Only removing the container forces a build, and the creation timestamp is the
+> discriminator. Accepting the first result would have recorded a green that the evidence did not
+> support.
+>
+> **What actually blocked the extension was not capability — it was T024.** The real attempt failed
+> with `docker pull mcm-devcontainer` ×5: `BASE_IMAGE` had fallen back to the bare default because
+> `${localEnv:MCM_DEVCONTAINER_IMAGE}` resolved **empty**. Credentials live in `~/.mcm-sandbox-env`
+> and are deliberately *not* auto-sourced, so that a non-interactive `ssh mcm.sbx 'echo $VAR'`
+> returns empty and proves nothing depends on SSH forwarding. The CLI works because the invoking
+> shell sources it; **the extension builds its environment from a login interactive shell**
+> (`userEnvProbe: loginInteractiveShell`, in its own log) and never sources that file.
+>
+> The two requirements only *look* incompatible. Sourcing from `~/.bashrc` reaches the extension's
+> interactive probe while a non-interactive `ssh host 'cmd'` still never reads it — verified both
+> directions (login-interactive: 130 chars; non-interactive: 0). **D-07's constraint and the
+> extension build path are both satisfied.**
+>
+> ⚠️ **T053 must state this as a requirement**: the sandbox's credential provisioning has to reach
+> the **login-interactive** shell. Without it the extension path does not fail loudly — it silently
+> resolves a **bogus image reference** and dies against Docker Hub, which reads as a broken config
+> rather than a missing environment.
+>
+> **Consequence**: the dual-runner anti-lock-in property FR-008 paid for survives, pointing the
+> other way (CLI daily, extension proven alternate). **No CLI-recovery path is owed** by T053.
 - [ ] T038 [US4] Confirm `rtk gain` reports active compression in the in-container shell — **Done when**: `rtk gain` returns >80% compression after a test run, satisfying the constitution's Token Compression requirement
 - [ ] T039 [US4] Exercise the sshd-in-container fallback once (`sbx ports mcm --publish 2222:2222`) — **Done when**: a terminal is reached over the fallback route, and the runbook records it as exercised with the date, not as theoretical
 - [ ] T040 [US4] Pin the `sbx` version and add a release-notes review step to the update ritual (R5) — **Done when**: the pinned version is recorded in the delta runbook and the review step is written into the update procedure
