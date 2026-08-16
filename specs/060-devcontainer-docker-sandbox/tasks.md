@@ -1281,10 +1281,52 @@ Test *Reopen in Container* deliberately, against a **stopped** dev container so 
 > The "no root-owned artifact" half of the Done-when holds: artifacts are `1001:docker`, from the
 > `--user "$(id -u):$(id -g)"` in the recipe.
 >
+> ⚠️ **The stage log was ZERO BYTES after 194 s of work, and that was D-19, not a redirect quirk.**
+> At the time this looked like a driver bug and the verdict was taken from `.last-run.json` instead —
+> which turned out to be the only trustworthy source available, though not for the reason assumed.
+> The cause was the socat relay truncating the output of a long-running `docker run` (exit 0, empty
+> stdout). Anything re-running this stage should set
+> `DOCKER_HOST=unix:///var/run/docker-host.sock`, or it will collect artifacts with no log again.
+> Two independent stages lost their output to this before it was diagnosed.
+>
 > ⚠️ **Do not re-run this stage with the agent stack up without changing the provider first.** The
 > invocation carries `E2E_AGENT_PROVIDER=anthropic` and the real API key. No spend occurred here
 > only because the gateway was down — an accident of composition, not a safeguard.
-- [ ] T044 [US5] Run one agent E2E spec against Anthropic — **Done when**: the spec passes against a gateway rebuilt from current source (a container recreated from a non-rebuilt image silently runs old code)
+- [x] T044 [US5] Run one agent E2E spec against Anthropic — **Done when**: the spec passes against a gateway rebuilt from current source (a container recreated from a non-rebuilt image silently runs old code)
+
+> ### T044 — **PASS**, and the spec chosen closes the T043/T048 composition gap
+>
+> `assistant.spec.ts` — deliberately **the exact spec that was red on BOTH the baseline and the
+> migrated timing run** — now passes with the agent stack up: `2 passed (12.7s)`, rc=0. That
+> retires the open question from T043: the single web-E2E failure really was the missing stack, not
+> a sandbox defect.
+>
+> **Verified as a real round-trip, not a green tick.** The Done-when is satisfiable by a test that
+> passes without ever reaching the model, so the gateway log was checked for the evidence:
+>
+> ```text
+> POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+> audit agent_tool_call agent=navigator tool=list_collections status=ok
+> audit agent_tool_call agent=navigator tool=list_movies      status=ok
+> ```
+>
+> A real Claude call **and** real MCP tool calls through the production nodes — so
+> `production_nodes_enabled=True` is corroborated by behaviour, not just by the flag.
+>
+> Images were rebuilt from the checkout in the same invocation (`up-agents-prod` rebuilds by
+> default), which is the "silently runs old code" trap the Done-when names.
+>
+> ⚠️ Two credential mechanics this run depended on, both non-obvious:
+>
+> 1. **`anthropicKey()` honours `ANTHROPIC_API_KEY` FIRST** (deliberately, so CI's injected secret
+>    wins). This VM holds a 13-character *sentinel* in that variable, so a naive run injects garbage
+>    and fails with a 401 that reads as a credential fault rather than a precedence one. The real
+>    key lives in gitignored `agents/movie-assistant/.env.local` and the invocation uses
+>    `env -u ANTHROPIC_API_KEY` so the file wins.
+> 2. The key was installed via **stdin, never argv**, and never entered the VM's shell environment —
+>    which is the posture that stops Claude Code itself preferring the API over the subscription
+>    (the cost incident this feature also fixes). `ANTHROPIC_API_KEY len=108` inside the gateway
+>    container confirms the real key reached the process that needed it, and nothing else.
 - [x] T045 [US5] Bring up `dev-ollama` as a sibling and confirm gateway reachability — **Done when**: `host.docker.internal` resolves to the VM gateway from inside the gateway container and reaches `dev-ollama` on 11434
 
 > ### T045 — satisfied, and the answer depends entirely on HOW the container is started
