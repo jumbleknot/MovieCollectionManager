@@ -46,19 +46,72 @@ reachable() {
   fi
 }
 
-echo "  — added package sources are reachable"
-reachable "https://static.crates.io/config.json" "Rust crates (static.crates.io)"
-reachable "https://index.crates.io/config.json" "Rust crates index (index.crates.io)"
-reachable "https://pypi.org/simple/" "PyPI (pypi.org)"
-reachable "https://files.pythonhosted.org/" "PyPI files (files.pythonhosted.org)"
-reachable "https://astral.sh/" "astral (uv installer)"
-reachable "https://api.expo.dev/" "Expo (api.expo.dev)"
-# 059 — TMDB from the SHELL. web-api-mcp's integration suite runs pytest here (OUTPUT chain), so
-# this entry is load-bearing for a merge-relevant assertion. The app never needed it: every runtime
-# TMDB path is a nested container on the FORWARD chain. A rebuild that loses the entry fails HERE,
-# with the allowlist named, instead of surfacing as a connect timeout inside pytest.
-# (401 is a pass — reachable() accepts any HTTP status; it proves egress, not authentication.)
-reachable "https://api.themoviedb.org/3/" "TMDB (api.themoviedb.org)"
+# ── 060 T033: the expectation is READ from the canonical list, never re-listed here ─────────────
+#
+# This script used to carry its own inline copy of the destinations it checked. A check that holds
+# its own copy of the expectation CANNOT DETECT DRIFT IN THE THING IT IS CHECKING — it passes
+# happily while the canonical list and the live ruleset disagree, which is exactly the R8 failure
+# the extraction exists to prevent. Demonstrated before this change: adding a destination to
+# egress-allowlist.json that the live ipset did not contain left this script reporting PASS.
+#
+# The live ruleset is the ipset `allowed-domains`, which holds IPs. So drift is detected by
+# resolving each canonical domain and asserting at least one of its addresses is in the set. That
+# also makes the CDN-rotation class visible: a `cdnRotating: true` entry whose A-records have moved
+# since the last run shows up here as drift, which is the documented "re-run init-firewall.sh"
+# reflex rather than a missing rule.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+GEN="$REPO_ROOT/scripts/gen-egress-policy.mjs"
+
+echo "  — the live ruleset matches the canonical destination list"
+if [ ! -f "$GEN" ]; then
+  err "generator not found at $GEN — cannot derive the expectation"
+elif ! command -v ipset >/dev/null 2>&1; then
+  err "ipset not available — cannot read the live ruleset"
+else
+  live_ips="$(sudo ipset list allowed-domains 2>/dev/null || ipset list allowed-domains 2>/dev/null || true)"
+  if [ -z "$live_ips" ]; then
+    err "ipset 'allowed-domains' is empty or unreadable — has init-firewall.sh run?"
+  else
+    checked=0; drifted=0
+    while read -r d; do
+      [ -z "$d" ] && continue
+      checked=$(( checked + 1 ))
+      found=0
+      for ip in $(getent ahostsv4 "$d" 2>/dev/null | awk '{print $1}' | sort -u); do
+        printf '%s' "$live_ips" | grep -qF "$ip" && { found=1; break; }
+      done
+      if [ "$found" -eq 0 ]; then
+        echo "      … not in the live ipset: $d" >&2
+        drifted=$(( drifted + 1 ))
+      fi
+    done < <(FORGE_REGISTRY_HOST="${FORGE_REGISTRY_HOST:-}" node "$GEN" --format ipset-domains \
+               ${FORGE_REGISTRY_HOST:+--forge-host "$FORGE_REGISTRY_HOST"} 2>/dev/null)
+
+    if [ "$checked" -eq 0 ]; then
+      err "derived ZERO destinations from the canonical list — this check asserted nothing"
+    elif [ "$drifted" -eq 0 ]; then
+      ok "all $checked canonical destinations are represented in the live ipset"
+    else
+      err "$drifted of $checked canonical destinations are NOT in the live ipset — the layers have drifted (re-run init-firewall.sh; if that does not fix it, the rule is genuinely missing)"
+    fi
+  fi
+fi
+
+echo "  — a representative destination per group is actually reachable"
+# Reachability is still probed, but the SAMPLE is derived from the canonical file rather than
+# hardcoded, so a new group cannot be silently left unprobed.
+if [ -f "$REPO_ROOT/.devcontainer/egress-allowlist.json" ]; then
+  while read -r group domain; do
+    [ -z "$domain" ] && continue
+    reachable "https://${domain}/" "${domain} (group: ${group})"
+  done < <(node -e '
+    const l = require(process.argv[1]);
+    const seen = new Set();
+    for (const d of l.destinations) if (!seen.has(d.group)) { seen.add(d.group); console.log(d.group + " " + d.domain); }
+  ' "$REPO_ROOT/.devcontainer/egress-allowlist.json" 2>/dev/null)
+else
+  err "canonical list not found — cannot derive reachability probes"
+fi
 
 echo "  — default-deny still holds (arbitrary host refused)"
 # A host that is DEFINITELY not on the allowlist. Under default-deny the OUTPUT DROP blackholes it →
