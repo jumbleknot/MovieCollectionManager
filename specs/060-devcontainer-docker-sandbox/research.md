@@ -176,6 +176,30 @@ The host-side mode is kept and widened: it is the only non-fabricable proof, bec
 
 **Consequence**: pin the version once the environment is green (R5), and add a release-notes review to the update ritual. The pin is not bureaucracy — an experimental CLI that silently changes a flag is exactly the class of instrument failure CLAUDE.md warns about.
 
+### Measured v0.38.0 deltas (2026-08-16) — the proposal was wrong on four points
+
+Verifying rather than inheriting paid for itself immediately:
+
+| Claim inherited from the proposal / quickstart | v0.38.0 reality |
+| --- | --- |
+| Default sizing is **N-1 host CPUs** | **`--cpus 0 = auto: ALL host CPUs`**. On this host the default is **20**, not 19. |
+| `sbx create --name mcm --cpus 8 --memory 16` | **Not a valid invocation.** The signature is `sbx create [flags] AGENT PATH`; both an agent (`shell`) and a workspace PATH are **required**, and `--memory` takes units (`16g`), not a bare number. |
+| Profiles named **Balanced / Locked Down** are assigned to a sandbox | `sbx policy profile ls` → **"No policy profiles found."** The model is one global policy initialised via `sbx policy init <allow-all\|balanced\|deny-all>`, then `sbx policy allow/deny` rules. **"Locked Down" is `deny-all`.** |
+| Policy directives are `allow network <domain>` | Close enough to work: `sbx policy allow network RESOURCES`, where RESOURCES is a **comma-separated** list and the port suffix is **optional**. `--sandbox <name>` scopes a rule to one sandbox. The generator's existing output is directly usable. |
+
+Two further behaviours worth recording, neither documented in the proposal:
+
+- **The workspace PATH is mandatory and is mounted at the same path inside the VM** (`C:\…\x` →
+  `/c/…/x`). Since D-03 requires `E:\` never be mounted, the sandbox was created against an **empty
+  throwaway host directory**, with the real repository cloned inside the VM at `/workspaces/mcm`.
+- **Egress is an explicit CONNECT proxy, not transparent redirection**:
+  `https_proxy=http://gateway.docker.internal:3128`, with a `PROXY_CA_CERT_B64` and a set of
+  `*_API_KEY=proxy-managed` placeholders injected into the environment. A **blocked host returns
+  HTTP 403 from the proxy, not a timeout** — so any egress probe that asserts "blocked == timeout"
+  (as the in-VM iptables layer produces) will misread the sandbox layer. `verify-sandbox-egress.sh`
+  must accept **either** shape. The `proxy-managed` placeholders are also direct evidence for the
+  D-07 preference-(1) mechanism that T049 must evaluate.
+
 ---
 
 ## D-14 — Workstation operational facts, captured now
@@ -224,10 +248,89 @@ So the property does not shrink; it **points the other way**, and nothing curren
 
 | Gate | Phase | Question | If it fails |
 | --- | --- | --- | --- |
-| **G1** | P2 | Is the tailnet forge reachable through the sandbox egress proxy for git **and** image pull? | Try `DOCKER_SANDBOXES_PROXY=system` routing, then a Tailscale subnet-router/hostname exposure. If neither works: **stop the feature**, record the finding, retain the current environment. |
+| **G1** | P2 | ~~Is the tailnet forge reachable through the sandbox egress proxy for git **and** image pull?~~ | ✅ **RESOLVED GREEN 2026-08-16 — see below. The feature is not stopped.** |
 | **G2** | P3 | No daemon in-container, unprivileged, invisible to the Windows engine? | Design defect — do not tune around it. |
 | **G3** | P3 | Does the workspace path match on both sides, proven by a sibling probe? | Fix before any workload runs; sibling mounts fail silently. |
 | **G4** | P4 | Does the Dev Containers extension layer over the sandbox Remote-SSH session — **attach only, or also Reopen in Container** (D-15)? | Attach works but Reopen does not: record the constraint; the sandbox is then hostage to `@devcontainers/cli`, so the runbook owes an explicit CLI-recovery path. Neither works: the sshd fallback becomes primary. Feature continues in every case. |
 | **G5** | P5 | Is a sibling container's non-allowlisted request refused **and** audited? | The headline security claim is unproven — do not adopt. |
 | **G6** | P5 | Wall-clock ≤ 1.5× baseline? | Escalate with measurements; re-size first. |
-| **G7** | P1 | What is the microVM's disk envelope? | Establish before ENOSPC finds it; document a prune practice. |
+| **G7** | P1 | ~~What is the microVM's disk envelope?~~ | ✅ **RESOLVED 2026-08-16** — root 20 G (19 G free), `/var/lib/docker` a **separate 50 G disk** (47 G free). See below. |
+
+---
+
+## G1 — RESOLVED GREEN (2026-08-16)
+
+**The forge is reachable from inside the sandbox. All four required operations succeed.**
+
+| Operation | Result |
+| --- | --- |
+| `git clone` | ✅ cloned to `/workspaces/mcm`, `pnpm-workspace.yaml` present |
+| `git fetch` | ✅ |
+| `git push` | ✅ **a real write** — pushed `sbx-reachability-probe` to the forge and deleted it (not `--dry-run`) |
+| `docker pull` of the digest-pinned toolchain image | ✅ 13.3 GB image now on the **sandbox's own** engine |
+| `pwd -P` | ✅ `/workspaces/mcm` — D-03's identical-path requirement satisfied |
+
+Neither documented remedy was needed. `DOCKER_SANDBOXES_PROXY=system` was set during diagnosis but
+was **not** what fixed it, and no Tailscale subnet-router exposure was required.
+
+### The two hours this cost, and why — worth reading before trusting any probe here
+
+The gate initially appeared to FAIL, twice, for reasons that were entirely instrumental. Both are
+the failure mode CLAUDE.md warns about: *check the instrument before believing the result.*
+
+1. **Wrong port.** Every early probe used `https://<forge>/` on **443**. The forge is
+   **`http://` on port 3000** (`git remote get-url origin` says so). The proxy's
+   `CONNECT tunnel failed, response 502` was therefore *correct behaviour* — it could not reach a
+   port where nothing listens. This read convincingly as "the host-side proxy does not follow
+   Tailscale routing", which is exactly the failure this gate was written to expect, and would have
+   ended the feature on a false negative. **The control that broke it open**: the *Windows host*
+   could not reach `https://<forge>/` either, while `tailscale status` showed the peer `active;
+   direct` with 152 MB received. A failure reproducible on the host is not a sandbox failure.
+2. **A UTF-8 BOM.** A PowerShell here-string piped to `bash -s` arrives with a BOM that corrupts the
+   first line only. It silently blanked the `F="$1"` assignment, so an entire probe suite ran against
+   an **empty hostname** and reported total unreachability with perfect internal consistency.
+
+A third near-miss is recorded as Gotcha 3 in [phase-0-host-prep.md](phase-0-host-prep.md):
+`ssh mcm.sbx` **silently connects to the Windows host** when `sh` is not on PATH. G1 would have been
+evaluated by running `git clone` on Windows — which succeeds — and passed for the wrong reason.
+
+### Two credentials, opposite scopes — needed by T024
+
+The forge needs **both** tokens, and they are not interchangeable:
+
+| Surface | Working credential | The other one |
+| --- | --- | --- |
+| git clone / fetch / push | the **`git credential fill`** credential | — |
+| container registry (`docker pull`) | **`MCM_FORGE_TOKEN`** | the `git credential fill` credential returns **401 Unauthorized** on the manifest HEAD |
+
+This **inverts** the CLAUDE.md PR-creation gate, where `MCM_FORGE_TOKEN` is the read token that 403s
+and the `git credential fill` credential is the one that works. Neither token covers both surfaces,
+so T024 must provision both and must not "simplify" to one.
+
+Note the 401 is itself evidence *for* reachability: an authenticated HTTP status means the registry
+answered. A routing failure looks like a timeout or a 502, not a 401.
+
+### Registry requires an insecure-registry entry
+
+The forge registry is plain **HTTP on :3000**, so the sandbox engine needs
+`/etc/docker/daemon.json` → `{"insecure-registries":["<forge>:3000"]}` plus a daemon restart before
+`docker login` / `docker pull` will work. This is environment setup the runbook (T053) owes, and it
+is not needed on the Docker Desktop path because that engine was already configured.
+
+---
+
+## G7 — RESOLVED (2026-08-16): the envelope is two disks, not one
+
+| Mount | Device | Size | Free (fresh VM) | Holds |
+| --- | --- | ---: | ---: | --- |
+| `/` | `vdb` | 20 G | 19 G | OS, and the `/workspaces/mcm` clone |
+| `/var/lib/docker` | `vdd` | **50 G** | 47 G | every image, container and volume |
+
+**After pulling the toolchain image alone, `/var/lib/docker` is at 13 G used / 35 G free (27%).**
+That single image is 13.3 GB. Still to land on the same disk: the Playwright image (3.4 GB), the
+built `mcm-app` image, Keycloak, two Postgres, two Mongo, Redis, and `dev-ollama` with its models.
+
+**35 GB is workable but not comfortable**, and there is no `--disk` flag on `sbx create` in v0.38.0
+to enlarge it. A prune practice is therefore a genuine operational requirement rather than a
+formality, and belongs in the delta runbook (T053) with the `docker system prune` / image-retention
+guidance stated explicitly.

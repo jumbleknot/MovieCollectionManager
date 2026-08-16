@@ -277,13 +277,56 @@ This file is extended by T058 with the per-phase rollbacks; it starts here becau
 
 **⚠ This phase contains G1 — the only gate that can end the feature.**
 
-- [ ] T018 [US2] Create the `mcm` sandbox sized to **max(host default, floor)** and record the disk envelope (G7) in `specs/060-devcontainer-docker-sandbox/baseline-measurements.md`
-- [ ] T019 [US2] Configure SSH access (`sbx setup ssh`) and prove `ssh mcm.sbx` lands in the VM — **Done when**: `ssh mcm.sbx` returns a shell as `agent@mcm` without an interactive prompt, and `docker info` inside it reports the private engine
-- [ ] T020 [US2] Apply the generated Locked Down allowlist to the `mcm` sandbox from `gen-egress-policy.mjs --format sbx-policy` — **Done when**: `sbx policy ls` shows the Locked Down profile with one entry per canonical destination and no hand-added entry
+- [X] T018 [US2] Create the `mcm` sandbox sized to **max(host default, floor)** and record the disk envelope (G7) in `specs/060-devcontainer-docker-sandbox/baseline-measurements.md`
+- [X] T019 [US2] Configure SSH access (`sbx setup ssh`) and prove `ssh mcm.sbx` lands in the VM — **Done when**: `ssh mcm.sbx` returns a shell as `agent@mcm` without an interactive prompt, and `docker info` inside it reports the private engine
+- [~] T020 [US2] Apply the generated Locked Down allowlist to the `mcm` sandbox from `gen-egress-policy.mjs --format sbx-policy` — **partial**: the forge rule is applied and proven; the full `deny-all` + 29-destination application is outstanding (see below)
 - [ ] T021 [US2] Write the sandbox egress probe suite in `.devcontainer/verify/verify-sandbox-egress.sh`
-- [ ] T022 [US2] **G1 GATE** — prove forge reachability from inside the sandbox: `git clone`, `git fetch`, `git push`, and `docker pull` of the digest-pinned toolchain image
+- [X] T022 [US2] **G1 GATE** — ✅ **GREEN** — clone, fetch, **real push**, and `docker pull` of the digest-pinned toolchain image all succeed from inside the sandbox
 - [ ] T023 [US2] Install Node ≥18 and `@devcontainers/cli` inside the sandbox — **Done when**: `devcontainer --version` answers in the sandbox shell and `node --version` is ≥18
 - [ ] T024 [US2] Provision the six `${localEnv}` credentials into the sandbox by the D-07 **fallback** mechanism, enumerated explicitly
+
+> ### 🚦 G1 IS GREEN — the migration is viable and the feature continues
+>
+> All four required operations proven from inside the microVM: `git clone`, `git fetch`, a **real
+> `git push`** (probe branch created on the forge and deleted — not `--dry-run`), and `docker pull`
+> of the digest-pinned toolchain image onto the **sandbox's own** engine (13.3 GB). `pwd -P` is
+> `/workspaces/mcm`, so D-03's identical-path requirement already holds. **Neither documented remedy
+> was needed** — no subnet router, and `DOCKER_SANDBOXES_PROXY=system` was set during diagnosis but
+> was not the fix.
+>
+> **G1 first appeared to FAIL, twice, for purely instrumental reasons.** Recorded in full in
+> [research.md](research.md#g1--resolved-green-2026-08-16), because either would have ended the
+> feature on a false negative: (1) every early probe used **`https://…:443`** when the forge is
+> **`http://…:3000`**, so the proxy's `502` was correct behaviour, not a routing failure — the control
+> that broke it open was that the *Windows host* could not reach :443 either, while `tailscale status`
+> showed the peer active; (2) a **UTF-8 BOM** on a PowerShell here-string blanked a variable, so a
+> whole probe suite ran against an empty hostname and failed with perfect internal consistency.
+>
+> **T024 must provision BOTH forge tokens — they have opposite scopes.** git works with the
+> `git credential fill` credential and the registry **401s** on it; `docker pull` works with
+> `MCM_FORGE_TOKEN`. This is the inverse of the CLAUDE.md PR-creation gate. Neither covers both.
+>
+> **T018 sizing — the trap was real and is now measured.** `sbx` reported `cpu 20 / memory 16g` at
+> creation, and `nproc` inside confirms **20**. v0.38.0's default is *all* host CPUs (not N-1), so
+> the proposal's `--cpus 8` would have cut the sandbox by 60% versus doing nothing. Only the 16 GB
+> memory floor binds.
+>
+> **G7 disk envelope — two disks, and tighter than it looks.** `/` is 20 G (19 G free);
+> `/var/lib/docker` is a **separate 50 G disk**. The toolchain image alone takes **13.3 GB → 27%**,
+> leaving 35 G for Playwright (3.4 GB), the built app image, Keycloak, two Postgres, two Mongo,
+> Redis and `dev-ollama` + models. There is no `--disk` flag in v0.38.0, so the prune practice T053
+> owes is a real requirement.
+>
+> **T020 is only partial, deliberately.** The forge rule is applied and proven, but the full
+> `deny-all` + 29-destination application is **not** done, because T021's Verify RED must be observed
+> *first* — the RED requires a permissive policy in which `example.com` is still reachable. Applying
+> the allowlist now would make that RED unobservable. Note also that the task's "Locked Down profile"
+> does not exist in v0.38.0: profiles are absent, and the equivalent is `sbx policy init deny-all`
+> plus explicit allows.
+>
+> ⚠️ **`verify-sandbox-egress.sh` (T021) must not assert "blocked == timeout".** The sandbox proxy
+> returns **HTTP 403** for a refused host, whereas the in-VM iptables layer produces a timeout. A
+> probe written for one shape silently misreads the other — measured: `example.com` → `403`.
 
 ### T018 — Create the sandbox, sized against the host's actual defaults
 

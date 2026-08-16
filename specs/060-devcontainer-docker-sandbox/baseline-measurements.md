@@ -209,19 +209,38 @@ the firewall). The pull itself took **41 s** for ~3.4 GB.
 
 ---
 
-## Sandbox disk envelope (G7) — **outstanding, owed by T018**
-
-Not yet measurable: `sbx` is blocked (see `phase-0-host-prep.md` § Gotcha 2). To be recorded here:
+## Sandbox sizing and disk envelope (G7) — **RESOLVED 2026-08-16 (T018)**
 
 | Field | Value |
 | --- | --- |
-| Host CPU / RAM totals | **20 logical cores / 31.8 GB** *(recorded — T002)* |
-| Sandbox default sizing (as actually applied by `sbx`, not as inferred) | *pending T018* |
-| Chosen sizing = `max(default, floor)` | *pending T018* |
-| `df -h /` inside the VM | *pending T018* |
+| Host CPU / RAM totals | **20 logical cores / 31.8 GB** |
+| Sandbox default, **as documented by v0.38.0** | `--cpus 0 = auto: ALL host CPUs` (**not** N-1); memory 50% of host, max 32 GiB |
+| Sandbox default, **as actually applied** | `cpu 20`, and `nproc` inside the VM confirms **20** |
+| Floor named by the proposal | 8 CPU / 16 GB |
+| **Chosen = `max(default, floor)`** | **CPUs: 20** (default wins — `--cpus` omitted) · **Memory: `-m 16g`** (floor wins, barely) |
+| Verified inside the VM | `nproc` = 20 · `free -g` total = 15 · kernel **7.0.12** (its own, not WSL2's) |
+| `/dev/kvm` | **absent** — R2 negative reconfirmed on the real sandbox |
 
-Reference point for the sizing decision: the Docker Desktop dev container ran this entire workload
-within a **15.51 GiB** ceiling, so the 16 GB floor is genuine parity rather than a guess.
+**The sizing trap was real.** v0.38.0's CPU default is *all* host CPUs, so passing the proposal's
+`--cpus 8` would have cut the sandbox from 20 to 8 — a 60% reduction *relative to doing nothing* —
+and would plausibly have caused the very G6 miss explicit sizing exists to prevent. Only the memory
+floor genuinely binds, and only just (16 GB vs the ~15.9 GB default). Reference point: the Docker
+Desktop dev container ran this whole workload within a **15.51 GiB** ceiling, so 16 GB is measured
+parity rather than a guess.
+
+### Disk envelope — two disks, not one
+
+| Mount | Device | Size | Free (fresh VM) | After the toolchain pull | Holds |
+| --- | --- | ---: | ---: | ---: | --- |
+| `/` | `vdb` | 20 G | 19 G | 19 G | OS + the `/workspaces/mcm` clone |
+| `/var/lib/docker` | `vdd` | **50 G** | 47 G | **35 G free (27% used)** | all images, containers, volumes |
+
+**The toolchain image alone is 13.3 GB.** Still to land on that same 50 G disk: the Playwright image
+(3.4 GB), the built `mcm-app` image, Keycloak, two Postgres, two Mongo, Redis, and `dev-ollama` with
+its models. 35 GB is workable but not comfortable, and **v0.38.0 exposes no `--disk` flag** to
+enlarge it — so the pruning practice owed by T053 is an operational requirement, not a formality.
+
+This is precisely what G7 existed to find "before ENOSPC finds it mid-session".
 
 ---
 

@@ -267,7 +267,65 @@ no-op, so an unverified "I ran the fix" proves nothing:
 Get-CimInstance Win32_Process -Filter "Name = 'sbx.exe'"    # expect no rows
 ```
 
-### Gotcha 3 — several host-side checks in this migration require elevation
+### Gotcha 3 — `ssh <name>.sbx` SILENTLY CONNECTS TO THE WINDOWS HOST when `sh` is missing
+
+**This is the most dangerous entry on this page.** `sbx setup ssh` installs an SSH `ProxyCommand`
+that is executed through `sh`. If `sh` is not on PATH — the default state on this workstation, and
+something `sbx setup ssh` itself warns about in passing — the ProxyCommand cannot run and **OpenSSH
+falls through to the local machine instead of failing**:
+
+```text
+$ ssh mcm.sbx "echo USER=$(whoami) HOST=$(hostname)"
+Connecting to sandbox "mcm"…
+USER=watson-workstatsteve HOST=Watson-Workstation-Win11     ← THE WINDOWS HOST, not the microVM
+```
+
+It prints *"Connecting to sandbox"*, returns a working shell, and exits 0. Every naive check passes.
+
+**Observed 2026-08-15.** Had this gone unnoticed, the G1 forge-reachability gate would have been
+evaluated by running `git clone` **on the Windows host** — which succeeds — and the feature would
+have recorded "the forge is reachable from the sandbox" on the strength of a command that never
+entered the sandbox.
+
+**Never accept a bare exit code from `ssh *.sbx`. Assert the identity:**
+
+```bash
+ssh mcm.sbx 'echo "$(whoami)@$(hostname) $(uname -r)"'
+# REQUIRED: agent@mcm <linux-kernel>      (this VM reports kernel 7.0.12)
+# WRONG:    <you>@<your-windows-box>      → the ProxyCommand did not run
+```
+
+Fix — put Git's `sh` on PATH before any `sbx` SSH use:
+
+```powershell
+$env:Path += ";C:\Program Files\Git\bin"
+```
+
+This is why T019's Done-when is written as *"returns a shell as `agent@mcm`"* rather than *"returns
+a shell"*. The weaker form is satisfied by the failure.
+
+### Gotcha 4 — `git credential fill` returns NOTHING if fed CRLF
+
+Extracting the forge credential to provision it into the sandbox fails silently from PowerShell,
+because git's credential protocol requires **LF-terminated** `key=value` lines and PowerShell's
+pipeline emits CRLF. The symptom is an empty result and exit 128 — indistinguishable from *"no
+credential is stored"*, which sends you looking in the wrong place. The credential was in Windows
+Credential Manager the whole time (`cmdkey /list` confirms three matching entries).
+
+Working form — write the request with explicit LF and redirect it in:
+
+```powershell
+$req = "protocol=http`nhost=<forge>:3000`nusername=<user>`n`n".Replace("`r`n","`n")
+[System.IO.File]::WriteAllText($tmp, $req, (New-Object System.Text.UTF8Encoding($false)))
+cmd /c "`"C:\Program Files\Git\bin\git.exe`" credential fill < `"$tmp`""
+```
+
+Note also the **UTF-8 BOM** trap in the same family: a PowerShell here-string piped to `bash -s`
+arrives with a BOM that corrupts the *first line only*. During G1 this silently blanked a variable
+assignment, so a probe ran against an empty hostname and reported total unreachability. Base64-encode
+scripts before sending them over SSH.
+
+### Gotcha 5 — several host-side checks in this migration require elevation
 
 Not an `sbx` fault, but the same class of surprise. `Get-WindowsOptionalFeature -Online` (exit
 checklist row 1) and the Gotcha 2 recovery both fail with *"The requested operation requires
