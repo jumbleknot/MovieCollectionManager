@@ -280,6 +280,77 @@ Two further behaviours worth recording, neither documented in the proposal:
 
 ---
 
+## D-20 (R7 RESOLVED) — Proxy credential injection reaches the DEV CONTAINER but not bridge siblings
+
+**Determined 2026-08-16 at T049.** R7 asked whether the sandbox's proxy header injection reaches
+sibling containers. The answer is **no for bridge siblings, yes for the dev container** — and the
+reason is worth more than the answer.
+
+**The mechanism.** `sbx secret set anthropic --sandbox mcm` does not place a key anywhere the agent
+can read. Instead the sandbox VM's shell carries:
+
+```text
+ANTHROPIC_API_KEY=proxy-managed          ← a literal marker, not a credential
+OPENAI_API_KEY=proxy-managed
+GH_TOKEN=gho_sbxproxymanaged000000000000000000000
+https_proxy=http://gateway.docker.internal:3128
+NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+/usr/local/share/ca-certificates/proxy-ca.crt
+```
+
+A MITM proxy intercepts the request and substitutes the real stored secret. **The credential never
+exists inside the sandbox at all** — this is D-07 preference (1) in its strongest form.
+
+> This also identifies the 13-character `ANTHROPIC_API_KEY` found in the VM earlier and recorded as
+> "a sentinel, not a real key". It is `proxy-managed` — 13 characters, matching the measured
+> `xxxxx.xxxxxxx` character class exactly. The conclusion drawn at the time (safe, cannot spend) was
+> right; the cause was not known. Consequence for T044: `env -u ANTHROPIC_API_KEY` did not merely
+> dodge a stale variable, it **disabled the proxy-managed path** in favour of the real key in
+> `.env.local`.
+
+**Measured posture**, unauthenticated `GET /v1/models` (free, and a clean auth discriminator):
+
+| Vantage | no secret stored | secret stored | + `https_proxy` and proxy CA |
+| --- | --- | --- | --- |
+| VM shell | 401 | **200** (400 without `anthropic-version`) | — |
+| dev container | 401 | 401 | **200 — injection works** |
+| bridge sibling | 401 | 401 | unreachable (see below) |
+
+**Why the dev container can and siblings cannot.** The proxy listens *outside* the VM (nothing binds
+`:3128` inside it) and is reached at the ULA `fdb0:a2b0:6f8b::`. The dev container runs
+`--network=host` and therefore shares the VM's network namespace, so that address is routable from
+it — it lacked only the `https_proxy` variable and CA trust. A bridge sibling has its own namespace
+and cannot route to the ULA at all, so no amount of environment configuration reaches it.
+
+**Consequence for credential custody:**
+
+- **The gateway container CANNOT move.** It is a bridge sibling, so it must continue to receive the
+  real key by injection (currently from gitignored `agents/movie-assistant/.env.local`). This is the
+  R7 negative, and it is structural rather than a configuration gap.
+- **The dev container CAN move**, and this is the strongest available fix for the API-spend incident
+  that prompted `MCM_ANTHROPIC_API_KEY`. Renaming the variable stops Claude Code *preferring* the
+  API key; proxy-managed credentials mean **the key is not in the container to be preferred, leaked,
+  printed, or committed**. Recipe:
+
+  ```jsonc
+  "containerEnv": {
+    "https_proxy": "http://gateway.docker.internal:3128",
+    "ANTHROPIC_API_KEY": "proxy-managed"
+  }
+  // plus: install /usr/local/share/ca-certificates/proxy-ca.crt into the container's trust store
+  ```
+
+⚠️ **NOT applied in this feature, deliberately.** Setting `https_proxy` routes *every* HTTPS client
+in the dev container through the MITM proxy — including the forge (plain HTTP on :3000), registry
+pulls, pnpm, cargo, uv and the Playwright image fetch, each of which took measurable effort to get
+working in this migration. That is an architectural change to credential handling with a broad blast
+radius, landing late in an otherwise-green feature, and it deserves its own change with its own
+verification rather than being folded in here. The current posture is already safe: the real key is
+gitignored, passed via stdin, scoped to the one container that needs it, and absent from the VM
+shell. Recorded as the recommended follow-up.
+
+---
+
 ## D-19 — The feature's socat relay silently truncates `docker exec`; talk to the engine directly
 
 **Discovered 2026-08-16 at T044.** The most dangerous defect found in this migration, because every

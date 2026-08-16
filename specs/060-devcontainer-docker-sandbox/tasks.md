@@ -1406,7 +1406,34 @@ Test *Reopen in Container* deliberately, against a **stopped** dev container so 
 > **14** soft-skips, same single web-E2E failure — so the ratios are not flattered by work that
 > quietly stopped happening. Full analysis and the `host.docker.internal → fe80::1` finding are in
 > `baseline-measurements.md`.
-- [ ] T049 [US5] Determine whether proxy header injection reaches sibling containers (R7), record the posture in `research.md`, and upgrade any credential that can move to D-07 preference (1)
+- [x] T049 [US5] Determine whether proxy header injection reaches sibling containers (R7), record the posture in `research.md`, and upgrade any credential that can move to D-07 preference (1)
+
+> ### T049 — R7 resolved: **no** for bridge siblings, **yes** for the dev container
+>
+> Full analysis in **D-20**. Measured with an unauthenticated `GET /v1/models` (free, and a clean
+> auth discriminator) across three vantages, before and after `sbx secret set anthropic --sandbox mcm`.
+>
+> The proxy listens OUTSIDE the VM at a ULA (`fdb0:a2b0:6f8b::`); nothing binds `:3128` inside it.
+> The dev container shares the VM's netns (`--network=host`) so it can route there and needs only
+> `https_proxy` + the proxy CA — verified **200 with no key sent**. A bridge sibling has its own
+> namespace, cannot route to the ULA, and therefore cannot be fixed by configuration.
+>
+> **Credential that can move: the dev container's.** Not applied here — setting `https_proxy` routes
+> every HTTPS client through the MITM proxy (forge on plain HTTP :3000, registry pulls, pnpm, cargo,
+> uv, the Playwright image fetch), which is an architectural change with a broad blast radius landing
+> late in an otherwise-green feature. Recorded as the recommended follow-up with the exact recipe.
+> **Credential that cannot move: the gateway's** — structural, not a config gap.
+>
+> ⚠️ This also identified the mystery 13-character `ANTHROPIC_API_KEY` in the VM as the literal
+> `proxy-managed`. The earlier conclusion (safe, cannot spend) was right; the cause was not known.
+> It means T044's `env -u ANTHROPIC_API_KEY` did not just dodge a stale variable — it disabled the
+> proxy-managed path in favour of the real key.
+>
+> 🔑 **Housekeeping the operator should know:** an `anthropic` secret is now stored in the sandbox
+> secret store, scoped to `mcm` (not global). It was needed to answer R7 empirically — the question
+> is not answerable without a real secret to inject, since a dummy key yields 401 either way, which
+> cannot distinguish "not injected" from "injected but invalid". Remove with
+> `sbx secret rm anthropic --sandbox mcm` if the follow-up above is not taken up.
 - [X] T050 [US5] Update `scripts/devcontainer-android.sh` to refuse explicitly when `/dev/kvm` is absent — ✅ all five elements named and verified
 
 > **T050** — the pre-existing message already said *"/dev/kvm not present … skipping (mobile agent
