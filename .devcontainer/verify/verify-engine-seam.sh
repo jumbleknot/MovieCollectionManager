@@ -99,15 +99,23 @@ if [ "${1:-}" = "--host-check" ]; then
     ok "Windows engine lists no MCM stack container"
   fi
 
-  # 7c — nor the dev container itself.
-  if printf '%s' "$host_ps" | grep -Eq 'vsc-mcm|mcm-devcontainer'; then
-    if [ "${MCM_EXPECT_NO_STACKS:-}" = "1" ]; then
-      err "Windows engine lists an MCM dev container — the sandbox dev container is not confined"
-    else
-      ok "a dev container is present on the Windows engine (the retained Docker Desktop one) — not asserted"
-    fi
+  # 7c — nor the SANDBOX's own dev container.
+  #
+  # This must name the sandbox container SPECIFICALLY. A pattern match on "vsc-mcm" is too coarse
+  # while FR-019 holds: the RETAINED Docker Desktop dev container is legitimately running on the
+  # Windows engine throughout the migration, and is built from a near-identical image name. Matching
+  # the pattern therefore fails on the retained container and reports a confinement breach that has
+  # not occurred. Measured 2026-08-16 — the coarse form flagged `practical_shamir`, the Docker
+  # Desktop container, as an escaped sandbox container.
+  #
+  # Pass the sandbox container's name or id via MCM_SANDBOX_CONTAINER (or argument 3).
+  sandbox_ctr="${MCM_SANDBOX_CONTAINER:-${3:-}}"
+  if [ -z "$sandbox_ctr" ]; then
+    ok "sandbox dev-container absence not asserted — set MCM_SANDBOX_CONTAINER to its name/id to assert it"
+  elif printf '%s' "$host_ps" | grep -q "$sandbox_ctr"; then
+    err "the Windows engine LISTS the sandbox dev container '$sandbox_ctr' — it is not confined to the microVM"
   else
-    ok "Windows engine lists no MCM dev container"
+    ok "Windows engine does not list the sandbox dev container '$sandbox_ctr'"
   fi
 
   echo

@@ -540,7 +540,7 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 > That run also *demonstrates* the failure mode rather than merely describing it: **the mount
 > succeeded**. No error, no warning — just wrong content, which is exactly why assertion 3 exists
 > and why asserting mountability alone would reproduce the bug.
-- [~] T028 [US3] Clone the repository on the VM at `/workspaces/mcm` and bring the dev container up with `devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json` — clone ✅ (done at T022); `devcontainer up` in progress, see below
+- [X] T028 [US3] Clone the repository on the VM at `/workspaces/mcm` and bring the dev container up with `devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json` — clone ✅ (done at T022); `devcontainer up` ✅ container built and running on the sandbox engine
 
 > ### T028 — the container BUILD is now governed by egress policy, which nothing anticipated
 >
@@ -576,8 +576,72 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 > it needs a CI image rebuild, republish and re-pin, which would block G2/G3 behind an out-of-session
 > dependency. Until then, the allowlist makes Debian package mirrors reachable from the VM at
 > runtime — a broader surface than the registry entries, and stated as such in the entry's `reason`.
-- [ ] T029 [US3] **G2 GATE** — run `verify-engine-seam.sh` in all three modes and confirm green
-- [ ] T030 [US3] **G3 GATE** — run `verify-workspace-path.sh` and confirm the sibling probe sees the repository
+- [X] T029 [US3] **G2 GATE** — ✅ **GREEN in all three modes**
+- [X] T030 [US3] **G3 GATE** — ✅ **GREEN** — 0 failures, sibling probe sees the repository
+
+> ### 🚦 G2 GREEN — the nested engine and `privileged` are gone, proven from all three vantage points
+>
+> ```text
+> IN-CONTAINER   0 failures
+>   [OK] no dockerd process inside the container
+>   [OK] no containerd process inside the container
+>   [OK] engine socket is bind-mounted in from the microVM (/run/docker-host.sock)
+>   [OK] docker info answers over the mounted socket
+>   [OK] docker build / run / list all succeed on the sandbox engine
+>        engine ID in-container: ec68b46e-b078-4d26-bc86-449274d8b666
+>
+> VM-SIDE        0 failures
+>   [OK] Privileged: false                    ← THE HEADLINE CLAIM (FR-014, SC-001)
+>   [OK] engine ID matches the sandbox engine (ec68b46e…) — one engine, not two
+>   [OK] the dev container is itself a container on that engine (a sibling, not a host)
+>
+> HOST-SIDE      PASS, exit 0                 ← the only NON-FABRICABLE proof
+>   [OK] Windows engine does not list the probe container
+>   [OK] Windows engine does not hold the probe image
+>   [OK] Windows engine lists no MCM stack container
+>   [OK] Windows engine does not list the sandbox dev container
+> ```
+>
+> **G3 GREEN**: `pwd -P` is `/workspaces/mcm`, the sibling probe listed 44 entries, and it sees
+> `pnpm-workspace.yaml` — so the mount resolves to the working tree, not an empty directory.
+>
+> ### Three defects were in MY checks, not in the environment
+>
+> Each would have reported a false result, and each was caught by disbelieving the output:
+>
+> 1. **`pgrep -c` prints `0` AND exits 1.** So `$(pgrep -c X || echo 0)` yields `"0\n0"`, breaking
+>    `[ -eq ]` with *"integer expression expected"* and falling through to the failure branch — the
+>    check reported *"dockerd is running (0\n0 process(es))"* on a container where no daemon runs.
+>    It was failing on exactly the environment it exists to pass on.
+> 2. **The engine socket is not mounted at the obvious path.** The feature bind-mounts it as
+>    `/var/run/docker-host.sock` and socat-proxies it to `docker.sock`, so grepping `/proc/mounts`
+>    for `docker\.sock` alone finds nothing. Widened to match either — after re-confirming the DinD
+>    RED still bites (DinD mounts **no** socket at all), because a fix that destroys the RED is
+>    worse than the original defect.
+> 3. **The host-side dev-container assertion was too coarse.** Matching `vsc-mcm` flagged
+>    `practical_shamir` — the **retained Docker Desktop** container that FR-019 requires to keep
+>    running — as an escaped sandbox container. It now names the sandbox container specifically,
+>    and a **negative control** confirms it still catches a container that genuinely is on the
+>    Windows engine.
+>
+> ### `exit 255` means the microVM went away underneath the container
+>
+> The dev container repeatedly appeared as `Exited (255)` between commands. Not a crash: **the
+> sandbox stops when idle**, and containers inside it do **not** auto-restart. `uptime -p` in the VM
+> read *"up 0 minutes"* immediately after an `ssh` that had just booted it. This also explains the
+> truncated `devcontainer up` log with no outcome — the VM stopped mid-run.
+>
+> Consequences, both owed to the delta runbook (T053): a dev container will be found stopped after
+> any idle period and must be restarted (`docker start` or `devcontainer up`); and any multi-step
+> operation must run **in one session**, or the VM can idle out between steps.
+>
+> ### D-05 confirmed: `init-firewall.sh` programs the VM's chain, and that is safe
+>
+> Tested deliberately with a scheduled auto-revert so the VM could not be locked out. Running the
+> script inside the container set the **VM's** `-P OUTPUT DROP` — confirming `--network=host` shares
+> the microVM's netns — while the container stayed running and VM egress to an allowlisted host
+> still returned 200. The in-VM layer works as designed, one level out, exactly as the rewritten
+> header describes.
 - [ ] T031 [P] [US3] Update `.devcontainer/verify/verify-host-isolation.sh` to be sandbox-aware — no Windows path visible at all
 - [ ] T032 [P] [US3] Update `.devcontainer/verify/verify-personal-layer.sh` to assert the RTK binary is present on the `mcm-claude` volume
 - [ ] T033 [P] [US3] Update `.devcontainer/verify/verify-firewall-allowlist.sh` to read `egress-allowlist.json` instead of re-listing domains inline
