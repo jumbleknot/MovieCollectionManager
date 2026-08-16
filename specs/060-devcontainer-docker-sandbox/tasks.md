@@ -1579,13 +1579,55 @@ Either outcome is acceptable. What is not acceptable is leaving it ambiguous —
 
 **Independent test**: from a workstation with the tooling but no sandbox, follow the documentation to a working dev container within 15 minutes, with no undocumented step.
 
-- [ ] T052 [US6] Snapshot the proven environment (`sbx template save mcm`) — **Done when**: `sbx run -t <tag>` recreates a working sandbox and the recreate procedure is written down
-- [ ] T053 [US6] Write `docs/runbooks/devcontainer-sandbox.md` — lifecycle, two-layer triage order, port publishing, teardown semantics, disk pruning, foot-guns, and the two workstation gotchas
-- [ ] T054 [US6] Rewrite the posture section of `docs/runbooks/devcontainer.md` and archive the DinD sections (lock deadlock, credsStore, Compose parity)
-- [ ] T055 [P] [US6] Update `CLAUDE.md` — the environment gate entry and knowledge index — **Done when**: no gate or index entry describes the nested engine as current, and `node scripts/check-openwiki-governance.mjs` passes
-- [ ] T056 [P] [US6] Update `README.md` with the new environment description — **Done when**: the environment section describes the sandbox-hosted dev container and names the emulator exception
-- [ ] T057 [P] [US6] Update the OpenWiki **source** documents so the generator regenerates the bundle correctly — **Done when**: the cited source documents carry the new posture and no generated page under `openwiki/` was hand-edited
-- [ ] T058 [US6] Extend `specs/060-devcontainer-docker-sandbox/rollback.md` with the rollback for every migration phase
+- [x] T052 [US6] Snapshot the proven environment (`sbx template save mcm`) — **Done when**: `sbx run -t <tag>` recreates a working sandbox and the recreate procedure is written down
+- [x] T053 [US6] Write `docs/runbooks/devcontainer-sandbox.md` — lifecycle, two-layer triage order, port publishing, teardown semantics, disk pruning, foot-guns, and the two workstation gotchas
+- [x] T054 [US6] Rewrite the posture section of `docs/runbooks/devcontainer.md` and archive the DinD sections (lock deadlock, credsStore, Compose parity)
+- [x] T055 [P] [US6] Update `CLAUDE.md` — the environment gate entry and knowledge index — **Done when**: no gate or index entry describes the nested engine as current, and `node scripts/check-openwiki-governance.mjs` passes
+- [x] T056 [P] [US6] Update `README.md` with the new environment description — **Done when**: the environment section describes the sandbox-hosted dev container and names the emulator exception
+- [x] T057 [P] [US6] Update the OpenWiki **source** documents so the generator regenerates the bundle correctly — **Done when**: the cited source documents carry the new posture and no generated page under `openwiki/` was hand-edited
+- [x] T058 [US6] Extend `specs/060-devcontainer-docker-sandbox/rollback.md` with the rollback for every migration phase
+
+> ### T052 — the template works, and it is NOT what it looks like
+>
+> `sbx template save mcm mcm-proven:060` — **1024 s (~17 min), ~16.8 GB**. Recreated with
+> `sbx run -t docker.io/library/mcm-proven:060 --name mcm-recreate -d shell` in **4 seconds**.
+>
+> **Two findings that change what the template is for:**
+>
+> 1. **It contains NO Docker images.** It snapshots the VM root filesystem, not the Docker data
+>    disk — the recreated sandbox reported `docker images` **count 0**. So recreate is fast but
+>    **COLD**: 4 s of instantiation followed by a full rebuild and re-pull. It is a provisioning
+>    shortcut, **not a restore point**, and must not be described as a backup.
+> 2. 🔴 **`sbx run` mounts the CURRENT DIRECTORY as the workspace, read-write over virtiofs.**
+>    Created from the repo directory, the recreated sandbox had
+>    `host → E:\…\MovieCollectionManager` mounted — and a file written inside it **appeared in the
+>    Windows working copy** (probe written, verified, removed). Host-filesystem isolation, the
+>    property this whole environment exists for, is lost by default. The recreate procedure now
+>    mandates an explicit workspace argument.
+>
+> ⚠️ **A first reading of the mount table was too broad and would have been wrong.** `/workspaces/mcm`
+> in that sandbox is on **overlay**, not the Windows mount, and writing there does *not* reach
+> Windows. Only a write probe against the actual virtiofs path settled it. The `mcm` sandbox itself
+> is correctly configured — its only virtiofs mounts are `/etc/resolv.conf`, `/etc/hosts` and a
+> dedicated scratch dir.
+>
+> ⚠️ `sbx template save` **stops the sandbox** and holds a lock blocking other `sbx` commands for its
+> full duration. An empty `sbx template ls` does not mean it failed — check for `stopped`. One
+> attempt was abandoned to a 10-minute timeout before this was understood.
+>
+> ### T055–T058
+>
+> Governance green in the dev container: **rc=0, 961 documentation paths classified** (960 before the
+> new runbook), 63 concepts provably derived or authoritative, protected passages intact.
+>
+> T057 needed no OpenWiki edit at all: `openwiki/runbooks/devcontainer.md` carries
+> `resource: docs/runbooks/devcontainer.md`, making it a **derived summary**. Per this repository's
+> own rule the learning goes into the cited source, so both source runbooks were updated and **no
+> generated page was hand-edited** — which is precisely the Done-when.
+>
+> T058 records P1, P2b, P4 and P5 as procedures rather than intentions. **P6 is deliberately left
+> open**: it is gated on T060's two incident-free weeks and has not been performed, and recording a
+> rollback for a phase that has not run would be a claim, not a procedure.
 - [ ] T059 [US6] Prove recreate-from-nothing ≤ 15 min warm — **Done when**: a timed run from template to working dev container is recorded, with zero steps outside the documentation
 - [ ] T060 [US6] After two consecutive incident-free weeks (spec.md FR-032 defines "incident"): collapse to a single `devcontainer.json`, delete `.devcontainer/verify/verify-engine-isolation.sh`, **remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` (moved here from T035)**, and stop offering the Docker Desktop path for assistant sessions — **Done when**: an incident log covering the two weeks is recorded, `.devcontainer/sandbox/` is folded into `.devcontainer/devcontainer.json`, `verify-engine-isolation.sh` is deleted, **the Compose pin is removed and the toolchain image rebuilt + re-pinned**, the full harness is re-run green post-collapse, and `rollback.md`'s P6 entry names the revert commit
 
