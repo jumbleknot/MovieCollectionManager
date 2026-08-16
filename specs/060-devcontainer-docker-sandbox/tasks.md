@@ -1102,9 +1102,60 @@ never reaches the sandbox. A harness that had gone green on the first attempt wo
 >
 > **Consequence**: the dual-runner anti-lock-in property FR-008 paid for survives, pointing the
 > other way (CLI daily, extension proven alternate). **No CLI-recovery path is owed** by T053.
-- [ ] T038 [US4] Confirm `rtk gain` reports active compression in the in-container shell — **Done when**: `rtk gain` returns >80% compression after a test run, satisfying the constitution's Token Compression requirement
-- [ ] T039 [US4] Exercise the sshd-in-container fallback once (`sbx ports mcm --publish 2222:2222`) — **Done when**: a terminal is reached over the fallback route, and the runbook records it as exercised with the date, not as theoretical
-- [ ] T040 [US4] Pin the `sbx` version and add a release-notes review step to the update ritual (R5) — **Done when**: the pinned version is recorded in the delta runbook and the review step is written into the update procedure
+- [X] T038 [US4] Confirm RTK reports active compression in the in-container shell — ✅ **RTK is live and compressing** in the sandbox container
+
+> **T038** — proven by running real commands *through* rtk in the sandbox dev container and watching
+> the counters move: 4 commands, **578 tokens saved**. So the hook genuinely intercepts; it is not
+> merely present. `ensure-rtk-hook.sh` also ran under the **extension** build path (not just the
+> CLI), which is the path that had never been exercised.
+>
+> **The >80% half of the Done-when is REPORTED, NOT ENFORCED** (operator decision, 2026-08-16), and
+> the reason is that the threshold is applied to a metric that cannot reach it: `rtk gain` reports
+> **cumulative global** savings across every proxied command, while the 60-90% figure describes
+> **per-command** savings. Measured 11.1% cumulative on a 4-command sample here, and 2.8% over 914
+> commands on the Docker Desktop container, with per-command rates of 17-87%. Follow-up owed on the
+> metric; SC-006 itself is untouched.
+- [~] T039 [US4] Exercise the sshd-in-container fallback once (`sbx ports mcm --publish 2222:2222`) — ⚠️ **ATTEMPTED AND IT DOES NOT WORK.** sshd is correct; the `sbx ports` forward does not carry traffic.
+
+> ### T039 — the documented fallback route is NOT currently functional
+>
+> Recorded as a finding rather than a pass, because "exercised" would be false. Everything on the VM
+> side is right; the host-side publish is what fails.
+>
+> | Layer | Result |
+> | --- | --- |
+> | sshd in the dev container | ✅ running, bound to `0.0.0.0:2222` **and** `*:2222` |
+> | VM → `127.0.0.1:2222` | ✅ real banner: `SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u10` |
+> | `sbx ports mcm --publish 2222:2222` | ✅ reports `Published 127.0.0.1:2222 -> 2222/tcp` |
+> | Windows → `127.0.0.1:2222` TCP connect | ✅ accepted |
+> | Windows → **any data** | ❌ **read times out; no banner ever arrives** |
+>
+> Re-publishing *after* sshd was confirmed listening did not change it, so it is not a
+> start-ordering problem. A possibly relevant observation: **the microVM has no global-scope IPv4
+> address** (`ip -4 addr show scope global` is empty) — the sandbox network is IPv6-primary, which
+> is consistent with the egress proxy living at an IPv6 ULA (`[fd76:…]:3128`).
+>
+> **Why this is not blocking**: D-08 designates the sshd route as the fallback *if the primary editor
+> chain fails*. G4 proved the primary chain works in **both** directions (attach and build), so the
+> environment has a working editor route. FR-023 nonetheless requires a fallback that is exercised
+> rather than theoretical, so this is an open debt, not a closed item.
+>
+> **It also pre-answers T061** (D-11's LAN-device question) in a discouraging direction: if a
+> published port cannot carry traffic to a VM-side listener at all, exposing one to a physical LAN
+> device is further away than "just bind non-loopback". Note `sbx ports --help` *does* accept an
+> explicit `HOST_IP`, so non-loopback binding is at least expressible.
+- [~] T040 [US4] Pin the `sbx` version and add a release-notes review step to the update ritual (R5) — version captured; **the runbook text lands with T053**
+
+> **T040** — the exact pin: **`sbx v0.38.0`**, commit `c022b14634c4bea846ca12870d1d5e97d5868b54`,
+> winget package `Docker.sbx` version `0.38.0`. Pin with
+> `winget pin add --id Docker.sbx --version 0.38.0`.
+>
+> This feature has now measured **five** behavioural deltas from the v0.37-era research the proposal
+> was written against (CPU default, `create` signature, absent profiles, `policy` shape, and the
+> `ports` behaviour above), so the pin is not bureaucracy — an experimental CLI that silently
+> changes a flag is exactly the class of instrument failure this repository has been burned by.
+> The release-notes review step is written into the delta runbook at T053, which is where the update
+> ritual lives.
 
 ### T037 — G4 gate: the two-hop editor chain, and which extension operations work
 
