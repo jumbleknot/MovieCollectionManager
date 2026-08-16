@@ -248,6 +248,51 @@ Two further behaviours worth recording, neither documented in the proposal:
 
 ---
 
+## D-16 — The container BUILD is now governed by egress policy, and that is new
+
+**Discovered 2026-08-16 at T028**, not anticipated anywhere in the proposal or this document.
+
+**What changed.** On the Docker Desktop path the dev-container build runs on the **Windows engine**,
+outside every egress control this project has — `init-firewall.sh` governs the *running* container,
+never the build. Under the sandbox topology the build runs **inside the governed microVM**, so
+`apt-get`, feature installers and any other build-time fetch are subject to the sandbox policy for
+the first time.
+
+**How it presented.** `devcontainer up` failed with
+`Feature "Docker (docker-outside-of-docker)" failed to install`, and beneath it:
+
+```text
+W: Failed to fetch http://deb.debian.org/debian/dists/bookworm/InRelease
+   Something wicked happened resolving 'deb.debian.org:http' (-5 - No address associated with hostname)
+```
+
+Two things worth keeping from that message. The failure is at **DNS**, so the policy blocks
+*resolution*, not merely connection — a useful diagnostic signature. And the feature failure is
+reported as a feature bug, with the apt cause buried several lines down; the obvious reading is
+"the feature is broken", which it is not.
+
+**Why the feature needs apt at all**: `docker-outside-of-docker` installs the docker CLI and the
+compose plugin, and the toolchain image ships **neither** (verified — `command -v docker` is empty
+in `MCM_DEVCONTAINER_IMAGE`). On Docker Desktop the same install happens; it simply never met a
+firewall.
+
+**Decision (operator-approved 2026-08-16): allowlist `deb.debian.org` now, bake the CLI later.**
+`cli.github.com` is added with it — not needed by any build step, but a pre-existing apt source in
+the image, so every `apt-get update` fails on it and buries the real error.
+
+**The intended end state is to remove both entries**, by baking the docker CLI and compose plugin
+into `toolchain.Dockerfile` and dropping the `features` block from the sandbox variant. That is
+strictly better on three counts: it removes a build-time network dependency (helping SC-007's
+15-minute recreate budget), it keeps arbitrary Debian packages out of the VM's runtime reach, and it
+matches D-10's principle of baking what is stable rather than installing it per-container. It was
+not done now only because it requires a CI image rebuild, republish and re-pin, which would have
+blocked G2/G3 behind an out-of-session dependency.
+
+**Recorded honestly**: until that lands, the allowlist makes Debian package mirrors reachable from
+the microVM at runtime, which is a broader surface than the container-registry entries beside it.
+
+---
+
 ## D-15 — The two runners swap roles; whether the anti-lock-in property survives is a **G4 outcome**, not a design decision
 
 **[gate — P4]** This entry deliberately does **not** decide. It states what changes, what is unknown, and what each outcome obliges.

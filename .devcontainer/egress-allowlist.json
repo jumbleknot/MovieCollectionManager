@@ -178,6 +178,12 @@
       "cdnRotating": true
     },
     {
+      "domain": "packages.microsoft.com",
+      "group": "packages",
+      "reason": "Microsoft package repository — the source of the Moby engine/CLI/buildx/compose packages. BUILD-TIME ONLY, and required for the same reason as deb.debian.org: the docker-outside-of-docker feature is configured with \"moby\": true (matching the Docker Desktop config it was copied from), so it installs Moby from here rather than Docker CE from download.docker.com. Measured 2026-08-16: with deb.debian.org allowlisted the build got one layer further and then failed on 'curl: (6) Could not resolve host: packages.microsoft.com', followed by 'gpg: no valid OpenPGP data found' — the missing GPG key being a downstream symptom, not a separate fault. Retires together with deb.debian.org and cli.github.com when the docker CLI and compose plugin are baked into toolchain.Dockerfile and the sandbox variant drops its `features` block.",
+      "cdnRotating": true
+    },
+    {
       "domain": "cli.github.com",
       "group": "packages",
       "reason": "GitHub CLI apt repository. Not required by any build step, but it is a pre-existing apt source inside the toolchain image, so every apt-get update under the sandbox topology fails on it and buries the real error in noise. Allowlisted so build logs stay legible and a genuine failure is not mistaken for this one. Retires together with deb.debian.org when the CLI is baked and the feature block goes.",
