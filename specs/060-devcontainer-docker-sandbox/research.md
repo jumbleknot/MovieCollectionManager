@@ -672,17 +672,36 @@ check. Verified both directions: login-interactive sees 130 chars, non-interacti
 build path does not fail loudly; it silently resolves a **bogus image reference** and dies against
 Docker Hub, which reads as a broken config rather than a missing environment.
 
-## Open gates, consolidated
+## Gates — ALL RESOLVED (T065, 2026-08-16)
 
-| Gate | Phase | Question | If it fails |
+Every gate is closed. This table records **what happened**, not what was intended; the "if it fails"
+column is kept because the decision rule is part of the history, not because anything is pending.
+
+| Gate | Phase | Question | Outcome |
 | --- | --- | --- | --- |
-| **G1** | P2 | ~~Is the tailnet forge reachable through the sandbox egress proxy for git **and** image pull?~~ | ✅ **RESOLVED GREEN 2026-08-16 — see below. The feature is not stopped.** |
-| **G2** | P3 | No daemon in-container, unprivileged, invisible to the Windows engine? | Design defect — do not tune around it. |
-| **G3** | P3 | Does the workspace path match on both sides, proven by a sibling probe? | Fix before any workload runs; sibling mounts fail silently. |
-| **G4** | P4 | ~~Does the Dev Containers extension layer over the sandbox Remote-SSH session — attach only, or also Reopen in Container?~~ | ✅ **RESOLVED GREEN 2026-08-16 — BOTH work.** Reopen built a new container (18:24:49Z) against an engine emptied at 18:20:10Z. The dual-runner property survives; no CLI-recovery path is owed. See D-15. |
-| **G5** | P5 | Is a sibling container's non-allowlisted request refused **and** audited? | The headline security claim is unproven — do not adopt. |
-| **G6** | P5 | Wall-clock ≤ 1.5× baseline? | Escalate with measurements; re-size first. |
-| **G7** | P1 | ~~What is the microVM's disk envelope?~~ | ✅ **RESOLVED 2026-08-16** — root 20 G (19 G free), `/var/lib/docker` a **separate 50 G disk** (47 G free). See below. |
+| **G1** | P2 | Is the tailnet forge reachable through the sandbox egress proxy for git **and** image pull? | ✅ **GREEN.** All four required operations succeed. Two false negatives first — probing `:443` when the forge is `http://…:3000`, and a UTF-8 BOM blanking the hostname variable. See below. |
+| **G2** | P3 | No daemon in-container, unprivileged, invisible to the Windows engine? | ✅ **GREEN.** `Privileged:false`, no in-container daemon, engine ID matches the VM's. The check itself carried four defects found by running it — `pgrep -c` printing `0` *and* exiting 1, the socket being mounted as `docker-host.sock`, a host-side assertion matching the retained container, and the harness counting invocations rather than scripts. |
+| **G3** | P3 | Does the workspace path match on both sides, proven by a sibling probe? | ✅ **GREEN.** `/workspaces/mcm` identical on both sides, proven by a sibling `-v` mount resolving against the VM filesystem with the repository marker present. |
+| **G4** | P4 | Does the Dev Containers extension layer over the sandbox Remote-SSH session — attach only, or also Reopen in Container? | ✅ **GREEN — BOTH work.** Reopen built a new container (18:24:49Z) against an engine emptied at 18:20:10Z. The first "both worked" was **false** — Reopen had restarted a stopped-but-matching container; removing it entirely forced a real build. See D-15. |
+| **G5** | P5 | Is a sibling container's non-allowlisted request refused **and** audited? | ✅ **GREEN — the 037 residual is closed.** Sibling → `example.com` `rc=6` NXDOMAIN; raw-IP bypass attempt `rc=35` TLS-terminated; control `registry-1.docker.io` → 401. Audited: all 36 canonical destinations present in the live policy. ⚠️ `nc -z` reports **OPEN** — a connect-only probe would have reported a bypass that does not exist. |
+| **G6** | P5 | Wall-clock ≤ 1.5× baseline? | ✅ **GREEN — 0.43×**, far inside the ceiling. 562 s vs 1320 s across five stages; `docker-build` 1024 s → 293 s. Composition verified identical on both sides (same 120/120, same 14 soft-skips, same single web-E2E failure), so the ratio is not flattered by work that stopped happening. |
+| **G7** | P1 | What is the microVM's disk envelope? | ✅ **RESOLVED** — root 20 G, `/var/lib/docker` a **separate 50 G disk**, not enlargeable. Became a live constraint: hit **94 % (3.1 GB free)**, needing a prune to proceed. The pruning practice is an operational requirement, not a formality. |
+
+### Gate markers in D-07, D-08 and D-11 — what they resolved to
+
+| Marked decision | Resolved to |
+| --- | --- |
+| **D-07** — secrets: most host-resident mechanism that works | **R7 answered at T049 → D-20.** Proxy injection reaches the **dev container** (shares the VM netns; needs `https_proxy` + the proxy CA) but **not bridge siblings** (they cannot route to the proxy's ULA). The gateway therefore keeps real-key injection from gitignored `.env.local`; preference (1) is reachable for the dev container and is recorded as a follow-up rather than applied, because `https_proxy` would re-route every HTTPS client in the container. |
+| **D-08** — editor chain: two standard hops, with a wired fallback | **Both hops work (G4).** The wired fallback was **not needed** — and D-17 recorded a real obstacle on the way: the deny-by-default policy blocked the VS Code Server download until the two Server hosts were allowlisted. ⚠️ FR-023 debt: the sshd fallback is **recorded but never exercised**, so it is a claim, not a proven path. |
+| **D-11** — ports and LAN devices | **R9 resolved POSITIVE at T061.** `sbx ports` binds non-loopback natively (`--publish 0.0.0.0:8081:8081` → `0.0.0.0:8081 LISTENING` on Windows); **no `netsh portproxy` remedy is required**. Windows Firewall remains the only variable for a physical device; the Expo tunnel is the no-inbound-rule alternative. |
+
+### What the gates did NOT catch, and why that matters
+
+Three of this feature's most consequential findings came from **outside** the gate list — D-18 (the
+in-VM firewall was not running at all), D-19 (the socat relay returning exit 0 with empty output),
+and the `sbx run` workspace default mounting the Windows repo read-write. Each surfaced while
+verifying something else. A gate list bounds what you set out to prove; it does not bound what is
+true, and every one of these three passed every gate that existed while being wrong.
 
 ---
 

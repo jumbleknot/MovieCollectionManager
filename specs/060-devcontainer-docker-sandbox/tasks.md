@@ -1750,7 +1750,22 @@ Record the asymmetry honestly: **P6 step 5 is the only irreversible step**, beca
 > | --- | --- |
 > | `.ts.net` in `gen-egress-policy.mjs` | the `TOPOLOGY_SUFFIXES` **blocklist** — the guard that rejects topology-sensitive domains |
 > | `ANTHROPIC_API_KEY=proxy-managed` ×3 | the Docker Sandbox **sentinel**, documented as explicitly not a credential |
-- [ ] T065 Update `specs/060-devcontainer-docker-sandbox/research.md` with every gate's actual outcome — **Done when**: each of G1–G7 and each `[gate]` marker in D-07/D-08/D-11 is replaced by what happened, so the file records history rather than intent
+- [x] T065 Update `specs/060-devcontainer-docker-sandbox/research.md` with every gate's actual outcome — **Done when**: each of G1–G7 and each `[gate]` marker in D-07/D-08/D-11 is replaced by what happened, so the file records history rather than intent
+
+> ### T065 — all seven gates GREEN, and the marked decisions resolved
+>
+> G1 forge reachability · G2 engine seam · G3 workspace path · G4 editor chain (both runners) ·
+> **G5 sibling egress** · **G6 0.43×** · G7 disk envelope. D-07 → D-20 (R7), D-08 → both hops work,
+> D-11 → R9 positive.
+>
+> The table now records **what happened**, including the false results on the way: G1's two false
+> negatives, G4's false "both worked" (a restarted container, not a rebuild), and the four defects
+> in G2's own check.
+>
+> ⚠️ **The section closes with what the gates did NOT catch**, because that is the more useful
+> lesson: D-18, D-19 and the `sbx run` workspace default all surfaced while verifying something
+> else, and **all three passed every gate that existed while being wrong.** A gate list bounds what
+> you set out to prove, not what is true.
 
 ---
 
