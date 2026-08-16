@@ -540,7 +540,42 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 > That run also *demonstrates* the failure mode rather than merely describing it: **the mount
 > succeeded**. No error, no warning — just wrong content, which is exactly why assertion 3 exists
 > and why asserting mountability alone would reproduce the bug.
-- [ ] T028 [US3] Clone the repository on the VM at `/workspaces/mcm` and bring the dev container up with `devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json` — **Done when**: the container is running and `docker ps` on the sandbox engine lists it
+- [~] T028 [US3] Clone the repository on the VM at `/workspaces/mcm` and bring the dev container up with `devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json` — clone ✅ (done at T022); `devcontainer up` in progress, see below
+
+> ### T028 — the container BUILD is now governed by egress policy, which nothing anticipated
+>
+> Recorded as **[research.md D-16](research.md)**. On the Docker Desktop path the dev-container build
+> runs on the **Windows engine**, outside every egress control this project has — `init-firewall.sh`
+> governs the *running* container, never the build. In the sandbox the build runs **inside the
+> governed microVM**, so `apt-get` and feature installers meet the deny-by-default policy for the
+> first time. No part of the spec, plan or proposal predicted this.
+>
+> **The dependencies surfaced one layer at a time** — each fix revealed the next, which is the thing
+> to know before attempting this on a fresh workstation:
+>
+>
+> | # | Failure | Cause | Resolution |
+> | --- | --- | --- | --- |
+> | 1 | `Something wicked happened resolving 'deb.debian.org'` | the feature apt-installs the docker CLI + compose plugin; the toolchain image ships **neither** | allowlist (operator-approved) |
+> | 2 | every `apt-get update` erroring on `cli.github.com` | a pre-existing apt source in the image — **not fatal, but it buries the real error** | allowlist |
+> | 3 | `curl: (6) Could not resolve host: packages.microsoft.com` | `"moby": true` installs Moby from Microsoft's repo, not Docker CE | allowlist |
+> | 4 | standalone `docker-compose` download, curl exit 6 | the feature's default `dockerDashComposeVersion: v2` fetches a GitHub release artifact **after** apt already installed the `docker compose` plugin | **`"dockerDashComposeVersion": "none"` — a removal, not a widening** |
+>
+> **(4) is the one to copy the reasoning from.** The obvious fix was a fifth allowlist entry. Instead
+> the dependency was checked and found redundant: the repository contains **no** invocation of the
+> legacy hyphenated `docker-compose` binary — every call site, including all the `up-*`/`down-*` Nx
+> targets, uses `docker compose` (the plugin, already installed by apt). Disabling the download
+> removes a build-time network dependency *and* one more reason to widen egress.
+>
+> Two diagnostic notes worth keeping: the policy blocks at **DNS** (`No address associated with
+> hostname`), which is a distinctive signature; and `gpg: no valid OpenPGP data found` in (3) was a
+> **downstream symptom** of the failed key fetch, not a separate keyring fault to chase.
+>
+> **The end state is to retire entries 1–3 entirely** by baking the docker CLI and compose plugin
+> into `toolchain.Dockerfile` and dropping the `features` block. That was not done now only because
+> it needs a CI image rebuild, republish and re-pin, which would block G2/G3 behind an out-of-session
+> dependency. Until then, the allowlist makes Debian package mirrors reachable from the VM at
+> runtime — a broader surface than the registry entries, and stated as such in the entry's `reason`.
 - [ ] T029 [US3] **G2 GATE** — run `verify-engine-seam.sh` in all three modes and confirm green
 - [ ] T030 [US3] **G3 GATE** — run `verify-workspace-path.sh` and confirm the sibling probe sees the repository
 - [ ] T031 [P] [US3] Update `.devcontainer/verify/verify-host-isolation.sh` to be sandbox-aware — no Windows path visible at all
