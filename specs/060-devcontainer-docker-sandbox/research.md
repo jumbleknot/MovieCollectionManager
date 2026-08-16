@@ -280,6 +280,92 @@ Two further behaviours worth recording, neither documented in the proposal:
 
 ---
 
+## D-18 — The sandbox path does NOT run init-firewall.sh; it asserts the host-side policy instead
+
+**Discovered 2026-08-16 at T047 (G5).** The plan assumed the two enforcement layers — host-side
+`sbx policy` and in-VM `init-firewall.sh` — would both run on the sandbox path, giving defence in
+depth. Measurement showed the second layer was *absent*, *unreliable by construction*, and
+*hazardous if it did run*. The first layer was carrying the entire load, correctly, unnoticed.
+
+**How it surfaced.** `verify-firewall-allowlist.sh` failed with `ipset 'allowed-domains' is empty or
+unreadable — has init-firewall.sh run?` on a container whose every other egress assertion passed:
+all five allowlist groups reachable, arbitrary hosts refused, sibling containers governed. A
+firewall that is "broken" while every security property it exists to provide is demonstrably intact
+is a sign the *check's premise* is wrong, not the system.
+
+**Three findings, in the order they compound:**
+
+1. **`--network=host` means the VM's namespace, exactly.** Not "similar to" — the same:
+
+   ```text
+   VM   netns: net:[4026532855]
+   cont netns: net:[4026532855]
+   ```
+
+   `init-firewall.sh` sets `iptables -P OUTPUT DROP`. On Docker Desktop that lands in the
+   container's private namespace. Here it would be a **VM-wide default-deny**, applying to the
+   sandbox's own policy proxy and to the egress path of every sibling container. The blast radius
+   of an error is the whole environment. This inverts the script's premise the same way
+   `verify-engine-isolation.sh`'s premise inverted — and is why it is not merely reconfigured.
+
+2. **It was never running, and nothing noticed.** `-P OUTPUT ACCEPT`, no ipset. `postStartCommand`
+   is a *devcontainer-lifecycle* hook: it fires on `devcontainer up`, **not** on a Docker-level
+   restart. This VM idle-stops ~30 s after the last session disconnects and `--restart=always`
+   brings the container back through Docker, so the in-VM layer disappears on the first idle cycle.
+   Evidence: `created=19:17:32, started=19:41:01, restartCount=0` — a 24-minute gap with no restart
+   recorded, because Docker start ≠ restart.
+
+3. **Egress was fully governed the whole time.** Three vantage points, three *different* refusal
+   signatures — a detail that matters, because a check keyed to one signature reports a hole when
+   the mechanism merely changed:
+
+   | Probe | Result | Enforcement layer |
+   | --- | --- | --- |
+   | dev container → `example.com` | curl `000` | no route |
+   | sibling → `example.com` | `rc=6` NXDOMAIN | DNS |
+   | sibling → `https://1.1.1.1/` (raw IP) | `rc=35` TLS eof | TLS interception |
+   | sibling → `registry-1.docker.io` | `401` ✓ | permitted (control) |
+
+**The raw-IP probe is the one that had to be run.** DNS-layer filtering invites the obvious bypass:
+dial the address directly. It does not work — the proxy accepts the TCP connection and terminates
+the TLS session, so no data flows. But note the trap in the same measurement:
+
+```text
+nc -z -w 8 1.1.1.1 443   ->  TCP 1.1.1.1:443 OPEN
+```
+
+**A connect-only probe reports success.** Had G5 been written with `nc -z`, it would have concluded
+that raw-IP egress escapes the policy. The connection genuinely opens; the refusal is one layer up.
+This is the same class as the already-documented "TCP connect proves nothing" note, and it is the
+second time in this feature that a plausible probe would have produced a confident wrong answer.
+
+**Decision.** On the sandbox path the host-side policy **is** the enforcement layer:
+
+- `postStartCommand` runs **`assert-egress-governed.sh`** instead of `init-firewall.sh`. It verifies
+  rather than re-implements, and fails on *either* direction — a reachable blocked host, or an
+  unreachable allowlisted one. The second half is deliberate: a severed network passes a
+  block-only check and looks maximally secure while being merely broken.
+- **`MCM_DEVCONTAINER_PLATFORM=sandbox`** is added, because the two configs were previously
+  indistinguishable from inside the container. Without it a check cannot separate "the firewall
+  failed" from "this path has no firewall by design" — the ambiguity that produced the false
+  failure above.
+- `verify-firewall-allowlist.sh` branches that assertion and **names the host-side
+  `verify-sandbox-egress.sh --audit-check` as the authoritative drift check** rather than silently
+  skipping it. That check confirms all 36 canonical destinations are present in the live policy.
+
+**Known gap, stated rather than papered over.** The guard inherits the restart-blindness of finding
+(2): it will not re-run after a Docker-level restart. It is a creation/attach-time assertion, not a
+continuous monitor. The continuous guarantee is the host-side policy, which survives restarts
+precisely *because* it is not in the VM.
+
+**What this costs.** Defence in depth on this path is genuinely reduced from two layers to one. That
+is an honest trade, not a silent one: the retained layer is the *stronger* of the two — it covers
+sibling containers, which the in-VM firewall never did (its own header disclaims the FORWARD chain,
+the documented 037 residual that G5 closes) — and the layer being dropped was contributing nothing,
+since it was not running.
+
+---
+
 ## D-17 — The editor chain needs VS Code Server, and the deny-by-default policy blocks its download
 
 **Discovered 2026-08-16 at T037 (G4).** Not anticipated by the proposal, the plan, or D-08.

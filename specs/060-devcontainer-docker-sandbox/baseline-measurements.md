@@ -244,16 +244,67 @@ This is precisely what G7 existed to find "before ENOSPC finds it mid-session".
 
 ---
 
-## Migrated measurements (T048) — to be completed
+## Migrated measurements (T048) — COMPLETE
 
 | Stage | Baseline | Migrated | Ratio | ≤1.5×? |
 | --- | ---: | ---: | ---: | --- |
 | `up-auth` | 43 s | **44 s** | **1.02** | ✅ |
 | `docker-build mcm-app` | 1024 s | **293 s** | **0.29** | ✅ **3.5× FASTER** |
-| `up-mcm` | 25 s | *pending* | | |
-| integration tier | 32 s | *pending* | | |
-| web E2E (gate) | 196 s | *pending* | | |
-| **Total** | **1320 s** | *partial* | | |
+| `up-mcm` | 25 s | **22 s** | **0.88** | ✅ |
+| integration tier | 32 s | **9 s** | **0.28** | ✅ |
+| web E2E (gate) | 196 s | **194 s** | **0.99** | ✅ |
+| **Total** | **1320 s** | **562 s** | **0.43** | ✅ |
+
+**SC-002 is met with a wide margin: 0.43× against a 1.5× ceiling.** No stage regressed.
+
+### The composition is verified identical on both sides — the ratios are not flattered
+
+A speed comparison is only worth as much as the proof that both sides did the same work. Three
+checks, each of which could have invalidated the table:
+
+| Check | Baseline | Migrated | |
+| --- | --- | --- | --- |
+| integration pass count | 120 passed / 120 total | 120 passed / 120 total | ✅ identical |
+| integration soft-skips (`grep -c 'SKIP:'`) | **14** | **14** | ✅ identical |
+| web-E2E failing test | `assistant.spec.ts:78` (dock/AG-UI) | `assistant.spec.ts:78` (dock/AG-UI) | ✅ identical |
+
+The soft-skip identity is the one that matters most, and it is the check T042 was written to force.
+Jest reports **`120 passed, 120 total` and ZERO skips on both sides**, while 14 `SKIP:` lines record
+tests that found a dependency unreachable, `console.warn`ed, and returned successfully. Had the
+sandbox made any of those dependencies reachable, more tests would have executed and the 9 s figure
+would not be comparable to 32 s — a composition change masquerading as a slowdown. It did not:
+the same three dependencies (ollama, OpenSearch, agent gateway) are absent on both sides.
+
+⚠️ **`host.docker.internal` is unreachable on BOTH paths, and this is not a sandbox regression.**
+It was tempting to read `ollama not reachable at http://host.docker.internal:11434` in the migrated
+log as a networking fault introduced by the microVM. The baseline records the identical line. What
+*is* new — and worth knowing — is the mechanism, measured inside the sandbox dev container:
+
+```text
+host.docker.internal  ->  fe80::1        link-local IPv6, unreachable  (curl 000)
+localhost:11434       ->  200 ✓          --network=host: the VM's published ports ARE localhost
+127.0.0.1:11434       ->  200 ✓
+dev-ollama:11434      ->  000            no shared user-defined network with siblings
+```
+
+Under `--network=host` the dev container shares the VM's network namespace, so a sibling's published
+port simply *is* `localhost`. `host.docker.internal` — a Docker Desktop convenience — degrades to a
+broken `fe80::1`. Any code reaching a sibling service by that name must use `localhost` on this path.
+
+### The one web-E2E failure is the same composition gap, not a regression
+
+`assistant.spec.ts:78` fails on both sides for the same reason: the bring-up sequence measured here
+does **not** include the agent stack, so the dock never receives a reply. The migrated run's
+integration tier independently corroborates this with `gateway not reachable at
+movie-assistant-gateway`. Per the note above, the gap was deliberately reproduced rather than fixed,
+because closing it on one side only would have made the 194 s ↔ 196 s comparison meaningless.
+
+⚠️ **Cost note on re-running this stage.** The web-E2E invocation carries
+`E2E_AGENT_PROVIDER=anthropic` and passes the real API key. In this run no spend resulted — the
+gateway was down, so nothing reached the provider — but that is an accident of the missing stack,
+not a safeguard. Anyone re-running the timing harness *with* the agent stack up should switch the
+provider to the dev-scoped Ollama first (see the model-provider-scoping invariant), or expect real
+charges.
 
 ### `docker-build` is the headline, and the win is UNDERSTATED
 
