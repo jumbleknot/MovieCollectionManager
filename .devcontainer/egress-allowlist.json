@@ -99,6 +99,12 @@
       "cdnRotating": true
     },
     {
+      "domain": "*.data.mcr.microsoft.com",
+      "group": "registry",
+      "reason": "Microsoft Container Registry BLOB CDN. mcr.microsoft.com above resolves manifests; the actual layers are served from regional hosts such as eastus.data.mcr.microsoft.com, so allowlisting the manifest host alone yields a pull that authenticates and then dies on the first layer with 403 Forbidden. This is the SAME manifest/blob split already documented on this list for Docker Hub (registry-1.docker.io vs production.cloudfront.docker.com), ghcr.io (vs pkg-containers.githubusercontent.com) and quay.io (vs the cdn0N Akamai shards) — the pattern was written down here and still not applied when mcr.microsoft.com was added, which cost a failed Playwright pull to rediscover. Wildcarded because the region prefix varies by client location and is not predictable from the image reference.",
+      "cdnRotating": true
+    },
+    {
       "domain": "quay.io",
       "group": "registry",
       "reason": "Red Hat Quay registry — the project's auth stack pulls Keycloak from quay.io. Manifests resolve from this host; blob layers are served from the Akamai cdn0N.quay.io hosts below, which is why both are listed.",
