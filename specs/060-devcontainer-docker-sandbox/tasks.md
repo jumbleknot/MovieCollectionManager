@@ -688,12 +688,22 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 > `rtk --version answers: rtk 0.42.4`. The sandbox's `mcm-claude` volume is fresh, so it is the
 > natural RED.
 >
-> ⚠️ **A PRE-EXISTING defect surfaced next to it, and it will block T038 and the Completion
-> Checklist.** The SC-006 assertion requires `rtk gain > 80%`, but `rtk gain` reports **cumulative
-> global** savings — measured here at **2.8%** across 914 commands — while *per-command* savings run
-> 17–87%. The threshold is applied to a metric that cannot reach it. Not introduced by this feature
-> and **not silently adjusted**: changing a success-criterion threshold is a spec decision, not an
-> implementation one. Flagged for the operator.
+> ⚠️ **A PRE-EXISTING defect surfaced next to it — RTK gain is now REPORTED, not enforced**
+> (operator decision, 2026-08-16). The SC-006 assertion required `rtk gain > 80%`, but `rtk gain`
+> reports **cumulative global** savings — measured at **2.8%** across 914 commands — while
+> *per-command* savings run 17–87% (`rtk read` 17.1%, `rtk grep` 26.1%, `rtk git diff` 87.1%). The
+> threshold was applied to a metric that cannot reach it, so a **healthy** environment failed it
+> every time.
+>
+> A check that cries wolf is worse than no check: it trains the reader to skip a red line in a
+> harness whose entire value is that red lines mean something. The figure is now printed
+> prominently as a note and does not fail the run.
+>
+> This is a **deliberate, recorded downgrade pending investigation**, not a quiet loosening to make
+> a suite go green. **SC-006 itself is untouched** — changing a success criterion is a spec decision.
+> Follow-up owed: either measure per-command savings, or restate SC-006 against the cumulative
+> metric. Verified after the change: `verify-personal-layer.sh` exits 0 with the 2.8% figure and the
+> mismatch explained inline.
 >
 > ### T033 — the RED is a PASSING run, and it is worse than the task predicted
 >
