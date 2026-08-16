@@ -248,6 +248,48 @@ Two further behaviours worth recording, neither documented in the proposal:
 
 ---
 
+## D-17 — The editor chain needs VS Code Server, and the deny-by-default policy blocks its download
+
+**Discovered 2026-08-16 at T037 (G4).** Not anticipated by the proposal, the plan, or D-08.
+
+Connecting VS Code **Remote-SSH → `mcm.sbx`** stalls at *"Downloading VS Code Server…"*. All four
+hosts it needs are refused by the sandbox policy:
+
+```text
+update.code.visualstudio.com          http=403  Blocked by network policy
+vscode.download.prss.microsoft.com    http=403  Blocked by network policy
+az764295.vo.msecnd.net                http=403  Blocked by network policy
+marketplace.visualstudio.com          http=403  Blocked by network policy
+```
+
+**What partially works, and why it is misleading.** `~/.vscode-server` appears and reaches ~33 MB,
+so the connection *looks* like it is progressing. That is only the small **CLI** binary, which
+Remote-SSH pushes over the SSH channel itself. The server *payload* is a separate CDN download; it
+leaves a `cli/servers/Stable-<commit>.staging` directory with **no `code-server`/`node` binary**, and
+the connection never completes. Judging progress by the directory existing — or by its size — is the
+trap.
+
+**Two ways out, and they differ in posture:**
+
+| Remedy | Effect | Cost |
+| --- | --- | --- |
+| **`"remote.SSH.localServerDownload": "always"`** (client setting) | the **workstation** downloads the server and copies it over the existing SSH channel | **no VM egress at all** — the allowlist is untouched |
+| Allowlist `update.code.visualstudio.com` + `vscode.download.prss.microsoft.com` | the VM downloads it directly | widens egress to Microsoft's CDN for every sandbox |
+
+**Preferred: the client setting.** It keeps the deny-by-default boundary exactly where it is and
+reuses a channel that already exists. The allowlist route trades a real security property for
+convenience that the SSH channel already provides.
+
+**Still open**: whether *extension* installation (the three configured extensions) also needs
+`marketplace.visualstudio.com`. Remote-SSH installs extensions from the client in most cases, so it
+may not — to be measured, not assumed, when the chain completes.
+
+**Consequence for FR-029/SC-007**: recreate-from-nothing must include this setting, or the first
+editor connection to a fresh sandbox hangs with no explanatory error. It belongs in the delta
+runbook (T053) next to the two workstation gotchas.
+
+---
+
 ## D-16 — The container BUILD is now governed by egress policy, and that is new
 
 **Discovered 2026-08-16 at T028**, not anticipated anywhere in the proposal or this document.
