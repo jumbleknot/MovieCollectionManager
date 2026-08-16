@@ -1628,7 +1628,37 @@ Either outcome is acceptable. What is not acceptable is leaving it ambiguous —
 > T058 records P1, P2b, P4 and P5 as procedures rather than intentions. **P6 is deliberately left
 > open**: it is gated on T060's two incident-free weeks and has not been performed, and recording a
 > rollback for a phase that has not run would be a claim, not a procedure.
-- [ ] T059 [US6] Prove recreate-from-nothing ≤ 15 min warm — **Done when**: a timed run from template to working dev container is recorded, with zero steps outside the documentation
+- [x] T059 [US6] Prove recreate-from-nothing ≤ 15 min warm — **Done when**: a timed run from template to working dev container is recorded, with zero steps outside the documentation
+
+> ### T059 — **GREEN: 272 s (4 min 32 s) against a 15-minute budget**
+>
+> | Step | Wall-clock |
+> | --- | ---: |
+> | `sbx run -t mcm-proven:060` (workspace passed **explicitly**) | 4 s |
+> | apply 38 egress rules from the generator (0 failed) | 10 s |
+> | `devcontainer up` — **cold**, including the 13.3 GB image pull | **255 s** |
+> | **Total** | **272 s** |
+>
+> A **working** container, not merely a created one:
+> `{"outcome":"success","remoteUser":"coder","remoteWorkspaceFolder":"/workspaces/mcm"}`, with
+> `pnpm 11.22.0` and `rustc 1.97.1` answering inside it. `devcontainer-android` also refused exactly
+> as designed — naming the cause, both remaining routes, and exiting 0 without blocking start.
+>
+> Note this is a **cold** figure, not a flattered one: the fresh sandbox began with **zero** images
+> and pulled the full toolchain image. The 4.5-minute result is the honest recreate cost.
+>
+> ⚠️ **The first attempt FAILED, and my script was the reason.** The Done-when says *"zero steps
+> outside the documentation"* — I wrote a run that skipped one *inside* it (quickstart P2), assuming
+> the template was self-sufficient. It is not: **policy rules are scoped per sandbox and the template
+> carries none**, so the fresh sandbox had the default profile and the first `docker pull` was
+> refused. The tell was the **speed** — four retries at ~1 s each. A network fault times out; a
+> policy refusal is instant.
+>
+> Recreate is **instantiate → apply policy → provision**. Ninth recreate-from-nothing defect of this
+> feature (SC-007), and like the others invisible on a machine with history: `mcm` has carried the
+> policy since T020, so nothing about the working environment hints a fresh one lacks it.
+>
+> Cleanup done: test sandbox removed, scratch workspace deleted, host disk back to 164.6 GB free.
 - [ ] T060 [US6] After two consecutive incident-free weeks (spec.md FR-032 defines "incident"): collapse to a single `devcontainer.json`, delete `.devcontainer/verify/verify-engine-isolation.sh`, **remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` (moved here from T035)**, and stop offering the Docker Desktop path for assistant sessions — **Done when**: an incident log covering the two weeks is recorded, `.devcontainer/sandbox/` is folded into `.devcontainer/devcontainer.json`, `verify-engine-isolation.sh` is deleted, **the Compose pin is removed and the toolchain image rebuilt + re-pinned**, the full harness is re-run green post-collapse, and `rollback.md`'s P6 entry names the revert commit
 
 > **T060 retires four things as ONE UNIT, and they cannot be separated.** `DOCKER_CONFIG`, the
