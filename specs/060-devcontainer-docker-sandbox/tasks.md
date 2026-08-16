@@ -752,7 +752,7 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 > **Correct sequencing: remove the pin at T060**, together with `DOCKER_CONFIG`, the DinD feature and
 > `verify-engine-isolation.sh` — all of which retire as one unit. Recorded here rather than silently
 > skipped, because tasks.md places this in Phase 5 and that placement is what is wrong.
-- [~] T036 [US3] Run the full twelve-script harness in the new dev container and confirm every check green — **runner built and counting correctly; first full run 12/12 reported, 9 passed, 3 failed with known causes, all three addressed**
+- [X] T036 [US3] Run the full twelve-script harness in the new dev container and confirm every check green — ✅ **12 / 12 reported, 12 passed, 0 failed**
 
 > ### T036 — the harness is now executable, not a ritual
 >
@@ -1051,7 +1051,17 @@ Run all **twelve** scripts enumerated in [contracts/verify-harness.md](contracts
 
 **Done when**: twelve scripts report a result, all twelve are green, and the run fails loudly if fewer than twelve reported. A skipped check counts as a failure.
 
-**Checkpoint**: US3 complete — `privileged` and the nested engine are gone, and it is proven from all three vantage points.
+**Checkpoint**: US3 COMPLETE ✅ — `privileged` and the nested engine are gone, and it is proven from all
+three vantage points.
+
+```text
+scripts reported: 12 / 12     passed: 12     failed: 0
+✓ all 12 checks reported and passed.
+```
+
+Reached only after three rounds, and the two intermediate runs were the valuable ones — the first
+exposed a destructive check that wrecked the environment, the second exposed that the personal layer
+never reaches the sandbox. A harness that had gone green on the first attempt would have proven less.
 
 ---
 
