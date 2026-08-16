@@ -1,0 +1,164 @@
+{
+  // .devcontainer/sandbox/devcontainer.json — feature 060 (dev container on Docker Sandbox)
+  //
+  // THE SANDBOX VARIANT. Identical to ../devcontainer.json except for the engine seam. It runs the
+  // dev container as an ordinary UNPRIVILEGED client of the microVM's own Docker engine, so the
+  // nested engine and the `privileged` flag are DELETED rather than relocated.
+  //
+  // ../devcontainer.json is NOT modified by this feature (FR-019): the Docker Desktop path must
+  // keep working until adoption. FR-032 collapses the two into one file after two consecutive
+  // incident-free weeks, so this duplication is time-boxed, not permanent.
+  //
+  // Select it explicitly:
+  //   devcontainer up --workspace-folder /workspaces/mcm \
+  //                   --config .devcontainer/sandbox/devcontainer.json
+  "name": "mcm-workspace-sandbox",
+
+  // Unchanged from the Docker Desktop config, EXCEPT the relative path: this file lives one
+  // directory deeper, and `dockerfile` resolves relative to the config file's own directory.
+  // See ../devcontainer.json for the full ${localEnv:VAR:default} gotchas — they still apply,
+  // though the VS Code half of them is moot here (the headless CLI performs the build).
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "args": {
+      "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}"
+    }
+  },
+
+  // ── THE CHANGE THIS WHOLE FEATURE IS ABOUT ─────────────────────────────────────────────────
+  // docker-in-docker:2 → docker-outside-of-docker:1.
+  //
+  // The dev container gets the docker CLI + compose plugin and the MICROVM's engine socket. It
+  // runs NO daemon. Application stacks, dev-ollama and throwaway test containers become SIBLINGS
+  // of this container on one engine, not nested children inside it.
+  //
+  // POSTURE (the honest restatement of ../devcontainer.json's FR-011 note): the reachable engine
+  // is the sandbox microVM's, NOT the workstation's. Engine isolation from the workstation is now
+  // STRONG — a hypervisor boundary the container cannot cross — where it was MODERATE. Isolation
+  // *within* the VM is deliberately weak and accepted, because the VM is the disposable blast
+  // radius. `privileged` is gone; there is no nested engine to require it.
+  //
+  // Asserted, not asserted-by-comment: .devcontainer/verify/verify-engine-seam.sh checks all three
+  // sides (no daemon in-container, Privileged:false from the VM, invisible to the Windows engine).
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": true
+    }
+  },
+
+  // "host" here is the SANDBOX VM, never Windows. This single line is what makes the topology
+  // change cost almost no in-repo churn: sibling stacks publish on the VM's loopback, so the whole
+  // documented local service map keeps working VERBATIM — localhost:8082 (BFF), :8099 (Keycloak),
+  // :3001 (mc-service), :27017/:27018 (Mongo), :6379 (Redis) — along with the integration tier's
+  // three URL exports and the Playwright `--network host` recipe. Without it, every one of those
+  // documented addresses would need rewriting and the runbook's validated sequences would all
+  // become suspect.
+  "runArgs": ["--network=host"],
+
+  // FR-002 — never root, never the host user. Unchanged.
+  "remoteUser": "coder",
+
+  // Retained ONLY while init-firewall.sh lives (research D-05): the in-VM iptables layer is kept as
+  // defence-in-depth beneath the host-side sandbox policy for this migration.
+  //
+  // RETIREMENT PATH: when the sandbox policy alone is trusted (spec Out of Scope lists this as a
+  // later decision, taken once the audit trail has earned trust), init-firewall.sh goes and THESE
+  // TWO CAPABILITIES GO WITH IT. They exist for no other reason here — unlike the Docker Desktop
+  // config, where they were subsumed by `privileged` anyway.
+  //
+  // NOTE under --network=host: these now let the container program the VM's OUTPUT chain rather
+  // than its own. That is the intended D-05 behaviour, and it is why init-firewall.sh's header now
+  // documents its scope per-topology.
+  "capAdd": ["NET_ADMIN", "NET_RAW"],
+
+  // `workspaceMount` / `workspaceFolder` remain OMITTED, exactly as in ../devcontainer.json and for
+  // the same reason — but the stakes are higher here. `devcontainer up --workspace-folder
+  // /workspaces/mcm` supplies a default bind mount at the IDENTICAL in-container path, which
+  // FR-017 requires: with one engine, every sibling's `-v` path resolves against the VM's
+  // filesystem, so container path and VM path MUST be equal or those mounts silently bind the
+  // wrong content. Hardcoding either value here is what would break that.
+  // Asserted by .devcontainer/verify/verify-workspace-path.sh — a mismatch does NOT error.
+
+  // Unchanged from the Docker Desktop config. These are volumes on the SANDBOX engine now, and
+  // they survive a dev-container recreate — but NOT `sbx rm`, which takes the VM, its engine,
+  // every sibling, every named volume and the workspace clone with it. That is a teardown semantic
+  // the Docker Desktop path does not have; see docs/runbooks/devcontainer-sandbox.md.
+  "mounts": [
+    "source=mcm-commandhistory,target=/commandhistory,type=volume",
+    "source=mcm-cargo-registry,target=/home/coder/.cargo/registry,type=volume",
+    "source=mcm-cargo-git,target=/home/coder/.cargo/git,type=volume",
+    "source=mcm-uv-cache,target=/home/coder/.cache/uv,type=volume",
+    "source=mcm-pnpm-store,target=/home/coder/.local/share/pnpm/store,type=volume",
+    // The personal layer — plugins/skills, service logins, and the RTK binary installed by the
+    // out-of-repo dotfiles. verify-personal-layer.sh asserts RTK is present, because a silently
+    // RTK-less environment looks healthy while violating a constitution MUST.
+    "source=mcm-claude,target=/home/coder/.claude,type=volume"
+  ],
+
+  "containerEnv": {
+    // FR-012 — in-container marker asserted by verify-host-isolation.sh and verify-engine-seam.sh.
+    "MCM_DEVCONTAINER": "1",
+
+    // DOCKER_CONFIG IS DELIBERATELY ABSENT (research D-10).
+    // On the Docker Desktop path it pointed at /home/coder/.docker-dind to dodge the VS Code Dev
+    // Containers extension writing a HOST-side `credsStore` helper into ~/.docker/config.json that
+    // the nested docker could not execute (exit 255). That workaround's CAUSE is gone: the headless
+    // @devcontainers/cli builds this container inside the VM, so no host credential helper is ever
+    // injected. Carrying the variable forward would preserve a workaround for a problem that no
+    // longer exists — and would silently detach the docker CLI from any registry login performed
+    // in the VM.
+
+    "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "TMDB_API_KEY": "${localEnv:TMDB_API_KEY}",
+    "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}",
+    "MCM_FORGE_ISSUE_TOKEN": "${localEnv:MCM_FORGE_ISSUE_TOKEN}",
+
+    // ⚠️ "localEnv" here is the SANDBOX SHELL that runs `devcontainer up`, not Windows. Those six
+    // values are provisioned into the VM by the D-07 fallback and must be sourced BEFORE the up:
+    //     set -a; . ~/.mcm-sandbox-env; set +a
+    // Nothing may rely on them riding the SSH session: since v0.37.1 SSH does not forward
+    // credential env vars unless ssh.acceptEnv is configured. Measured 2026-08-16 — a bare
+    // `ssh mcm.sbx 'echo $MCM_FORGE_TOKEN'` returns EMPTY, which is the intended state.
+
+    // Non-secret literals, unchanged. Telemetry is disabled BY CONFIGURATION, never by
+    // allowlisting the analytics host — an inversion that must survive this migration.
+    "OPENWIKI_PROVIDER": "anthropic",
+    "OPENWIKI_TELEMETRY_DISABLED": "1"
+  },
+
+  // Retained for the VS Code-attached case. Under --network=host these ports are already the VM's,
+  // so host-side exposure to Windows is `sbx ports mcm --publish …` rather than this list (D-11).
+  "forwardPorts": [8081, 8082, 8099],
+  "portsAttributes": {
+    "8081": { "label": "Metro / Expo Web / dev BFF", "onAutoForward": "notify" },
+    "8082": { "label": "Containerized dev BFF", "onAutoForward": "silent" },
+    "8099": { "label": "Keycloak (OAuth)", "onAutoForward": "silent" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "files.eol": "\n"
+      },
+      "extensions": [
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+
+  // Unchanged from the Docker Desktop config.
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true",
+
+  "postCreateCommand": "pnpm install --config.confirmModulesPurge=false",
+
+  // Unchanged in shape from the Docker Desktop config. Two notes specific to this topology:
+  //  • init-firewall.sh now programs the VM's OUTPUT chain (--network=host), so it also covers the
+  //    sandbox dockerd's image pulls. Its header documents the scope change.
+  //  • There is no nested dockerd to race, so the ordering constraint that placed this "after DinD's
+  //    dockerd is up" no longer applies — but the command is left identical to keep the delta
+  //    minimal and the two configs diffable until they are collapsed.
+  "postStartCommand": "sudo env FORGE_REGISTRY_HOST=$FORGE_REGISTRY_HOST /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
+}
