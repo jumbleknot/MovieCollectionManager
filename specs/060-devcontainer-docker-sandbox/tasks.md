@@ -1448,7 +1448,66 @@ Test *Reopen in Container* deliberately, against a **stopped** dev container so 
 > missing device permission, and a future session spends an hour rediscovering that the capability
 > simply does not exist here. Observed working during the extension-driven build:
 > `devcontainer-android: /dev/kvm not present … skipping`.
-- [ ] T051 [US5] Prove the environment survives a workstation reboot — **Done when**: after a host restart, `sbx start mcm` returns the sandbox with its images, volumes, workspace clone and shell history intact, the dev container restarts, and the delta runbook states what a reboot does and does not preserve
+- [~] T051 [US5] Prove the environment survives a workstation reboot — **Done when**: after a host restart, ~~`sbx start mcm`~~ **`sbx run --name mcm`** returns the sandbox with its images, volumes, workspace clone and shell history intact, the dev container restarts, and the delta runbook states what a reboot does and does not preserve
+
+> ### T051 — PARTIAL. Stop/start proven green; the **host reboot itself is an operator action**
+>
+> ⚠️ **The Done-when names a command that does not exist.** There is no `sbx start` — the invocation
+> silently prints root help rather than erroring, so a runbook built on it would fail in a way that
+> looks like the sandbox is broken. `sbx stop --help` states the real one: *"Stopped sandboxes retain
+> their state and can be restarted with `sbx run`."* The correct form for an existing sandbox is
+> **`sbx run --name mcm -d`** (`--name` re-attaches; without it the positional agent argument would
+> create a *new* sandbox). Corrected above and in the runbook.
+>
+> **What was proven (full `sbx stop mcm` → `sbx run --name mcm -d` cycle, measured 2026-08-16):**
+>
+> | Asset | Result |
+> | --- | --- |
+> | workspace clone | ✓ intact, same commit `7a2e2aee`, 2210 tracked files |
+> | images | ✓ **all 18** — including the 293 s `docker-build` output |
+> | volumes | ✓ all 17 |
+> | containers (existence) | ✓ all 15 |
+> | dev container | ✓ **running again** via `--restart=always` |
+> | shell history | ✓ preserved |
+> | BFF / ollama | ✓ serving `200` |
+>
+> **What a restart does NOT restore** — the delta the Done-when asks for:
+>
+> | Comes back | Does not |
+> | --- | --- |
+> | dev container (`restart=always`) | `movie-assistant-gateway` |
+> | 9 compose containers (`unless-stopped`): Keycloak ×3, mc-service + Mongo, BFF + Redis + Mongo, dev-ollama | the 3 MCP servers |
+> | | (`mc-service-store-mongo-rs-init` — one-shot, correctly exited) |
+>
+> The agent stack is started by `docker run` in `agent-stack.mjs` with no restart policy. **This is
+> deliberately not "fixed".** Adding one would resurrect the gateway from its *pre-rebuild* image
+> after every boot — the "a container recreated from a non-rebuilt image silently runs old code"
+> trap that T044's Done-when exists to catch. Re-run `nx up-agents-prod` explicitly instead.
+>
+> **The instrument** is `.devcontainer/verify/verify-reboot-survival.sh` (`--capture` / `--verify`),
+> written because *"it came back fine"* is unfalsifiable: a partially-restored environment looks
+> identical to a healthy one until the next build takes seventeen minutes. Two defects were found in
+> it by using it, both now fixed:
+>
+> 1. `--capture` reported failure while writing a correct manifest — a function returns its **last**
+>    command's status, and the final line is `[ -f "$h" ] && echo …`, false when `.zsh_history` is
+>    absent.
+> 2. It asserted container **existence** only, so it passed a cycle where four containers were
+>    `exited` — and would equally have passed with the whole compose stack down and nothing serving.
+>    It now records each running container *with its restart policy* and fails if a policy-carrying
+>    one does not return. Proven by RED/GREEN: PASS → `docker stop keycloak-mailpit` → **FAIL naming
+>    it** → restart → PASS.
+>
+> **Remaining leg — needs the operator.** A real workstation reboot additionally tests what a
+> stop/start cannot: that the `sbx` daemon returns, that the VM's backing store at
+> `C:\Users\Steve\sbx-workspaces\mcm-vm` survives a host power cycle, and that nothing depends on
+> Docker Desktop having started first. The before-state is already captured **and copied off the VM**
+> (so a sandbox that returns *empty* can still prove it was not always empty). After the next reboot:
+>
+> ```powershell
+> sbx run --name mcm -d
+> ssh mcm.sbx 'bash /workspaces/mcm/.devcontainer/verify/verify-reboot-survival.sh --verify'
+> ```
 
 ### T046 — Write the sibling-egress probe
 
