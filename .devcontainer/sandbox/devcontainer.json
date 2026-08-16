@@ -141,6 +141,14 @@
     // FR-012 — in-container marker asserted by verify-host-isolation.sh and verify-engine-seam.sh.
     "MCM_DEVCONTAINER": "1",
 
+    // D-18 — WHICH PATH THIS CONTAINER IS ON. The two devcontainer.json files were previously
+    // indistinguishable from inside the container (both set only MCM_DEVCONTAINER=1), so a check
+    // could not tell "the in-VM firewall is missing because it failed" from "…because this path
+    // does not use one". That ambiguity is what let a container run with NO in-VM ruleset while
+    // verify-firewall-allowlist.sh reported the failure as a broken firewall. See D-18 in
+    // research.md: on this path the host-side sandbox policy IS the enforcement layer.
+    "MCM_DEVCONTAINER_PLATFORM": "sandbox",
+
     // DOCKER_CONFIG IS REQUIRED AFTER ALL — D-10 was wrong to drop it, and G4 is why.
     //
     // D-10 removed this on the reasoning that the credsStore workaround's cause was gone, because
@@ -246,11 +254,28 @@
   // up the existing settings first, and no-ops cleanly when no personal layer is installed (FR-014).
   "postCreateCommand": "pnpm install --config.confirmModulesPurge=false && /bin/bash ${containerWorkspaceFolder}/.devcontainer/ensure-rtk-hook.sh",
 
-  // Unchanged in shape from the Docker Desktop config. Two notes specific to this topology:
-  //  • init-firewall.sh now programs the VM's OUTPUT chain (--network=host), so it also covers the
-  //    sandbox dockerd's image pulls. Its header documents the scope change.
-  //  • There is no nested dockerd to race, so the ordering constraint that placed this "after DinD's
-  //    dockerd is up" no longer applies — but the command is left identical to keep the delta
-  //    minimal and the two configs diffable until they are collapsed.
-  "postStartCommand": "sudo env FORGE_REGISTRY_HOST=$FORGE_REGISTRY_HOST /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
+  // D-18 — THIS IS THE ONE DELIBERATE BEHAVIOURAL DIVERGENCE FROM THE DOCKER DESKTOP CONFIG.
+  //
+  // The Docker Desktop config runs init-firewall.sh here. This path DOES NOT, and the earlier
+  // comment claiming it "now programs the VM's OUTPUT chain, so it also covers the sandbox dockerd's
+  // image pulls" was a hypothesis that measurement falsified on 2026-08-16. Two findings:
+  //
+  //   • `--network=host` means this container shares the VM's network namespace IDENTICALLY
+  //     (net:[4026532855] on both sides). init-firewall.sh's default-DROP would therefore be
+  //     VM-WIDE — hitting the sandbox's own policy proxy and every sibling container — rather than
+  //     scoped to this container as it is on Docker Desktop.
+  //   • It was never actually running. postStartCommand does not fire on a Docker-level restart,
+  //     and this VM idle-stops after ~30 s with `--restart=always` restoring the container, so the
+  //     in-VM ruleset vanished on the first idle cycle and no check noticed.
+  //
+  // Egress was nonetheless fully governed throughout, by the host-side sandbox policy, verified from
+  // three vantage points including a raw-IP bypass attempt. Enforcement lives outside the VM — which
+  // is the security thesis of this whole feature, and is also why it covers SIBLING containers (G5,
+  // the closed 037 residual) where the in-VM firewall never did.
+  //
+  // So the layer is not re-implemented here; it is ASSERTED. assert-egress-governed.sh fails loudly
+  // if a non-allowlisted host is reachable, and equally if an allowlisted one is NOT (a severed
+  // network must not read as a security pass). Its header documents the restart-blindness it shares
+  // with any postStart hook.
+  "postStartCommand": "/bin/bash ${containerWorkspaceFolder}/.devcontainer/assert-egress-governed.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
 }

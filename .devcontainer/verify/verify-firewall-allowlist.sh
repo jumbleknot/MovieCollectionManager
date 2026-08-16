@@ -63,7 +63,27 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GEN="$REPO_ROOT/scripts/gen-egress-policy.mjs"
 
 echo "  — the live ruleset matches the canonical destination list"
-if [ ! -f "$GEN" ]; then
+if [ "${MCM_DEVCONTAINER_PLATFORM:-}" = "sandbox" ]; then
+  # ── 060 D-18: THIS ASSERTION DOES NOT APPLY ON THE SANDBOX PATH ────────────────────────────────
+  #
+  # Not a skip for convenience — the thing it inspects deliberately does not exist here. The sandbox
+  # dev container runs `--network=host` sharing the VM's network namespace, so init-firewall.sh is
+  # not run on this path (it would impose a VM-wide default-deny on the sandbox's own policy proxy
+  # and every sibling container). There is therefore no `allowed-domains` ipset to compare against,
+  # and asserting on its absence reported a WORKING, fully-governed container as a firewall failure —
+  # which is what this branch exists to stop.
+  #
+  # The authoritative drift check on this path is host-side, where the policy actually lives:
+  #     .devcontainer/verify/verify-sandbox-egress.sh --audit-check
+  # It cannot be performed from inside the VM, so it is NOT silently folded in here; run-harness.sh
+  # requires that script's host-side mode separately and refuses to fake it (see MCM_HOST_CHECK).
+  #
+  # What IS asserted from in here — and is sufficient to catch an unenforced container — is the
+  # positive/negative pair below: every allowlist group reachable, non-allowlisted hosts refused,
+  # and sibling containers governed.
+  ok "in-VM ipset not applicable (D-18: enforcement is host-side on the sandbox path)"
+  echo "      … authoritative list-vs-policy drift check: verify-sandbox-egress.sh --audit-check (host-side)"
+elif [ ! -f "$GEN" ]; then
   err "generator not found at $GEN — cannot derive the expectation"
 elif ! command -v ipset >/dev/null 2>&1; then
   err "ipset not available — cannot read the live ruleset"
