@@ -57,6 +57,23 @@ collect() {
   echo "## containers"
   docker ps -a --format '{{.Names}}' 2>/dev/null | sort -u
 
+  echo "## running"
+  # Recorded SEPARATELY from mere existence, because they answer different questions and the
+  # difference is the whole point of this check. Measured 2026-08-16 across a stop/start cycle:
+  # all 15 containers still EXISTED, but the four agent containers were `exited` — they are started
+  # by `docker run` in agent-stack.mjs with restart=no, while the compose stacks carry
+  # unless-stopped and the dev container carries always. An existence-only check reports PASS on an
+  # environment where nothing is actually serving.
+  #
+  # Only containers that were RUNNING at capture time and carry a restart policy are expected back;
+  # --verify treats an expected-down container as informational rather than a failure, so the
+  # deliberate design (agent stack is an explicit bring-up, never auto-restored — auto-restarting it
+  # would resurrect a gateway running the PRE-REBUILD image, the "silently runs old code" trap) does
+  # not produce a permanently red check.
+  for c in $(docker ps --format '{{.Names}}' 2>/dev/null | sort -u); do
+    echo "$c=$(docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' "$c" 2>/dev/null)"
+  done
+
   echo "## history"
   # Shell history is explicitly named in the Done-when. It lives in the VM user's home, which is a
   # different persistence question from the Docker volumes, so it is tracked separately.
@@ -140,7 +157,24 @@ fi
 
 cmp_section "images"     "images"     "volumes"
 cmp_section "volumes"    "volumes"    "containers"
-cmp_section "containers" "containers" "history"
+cmp_section "containers" "containers" "running"
+
+# Running state — the assertion that existence alone cannot make. A container that was running with
+# a restart policy MUST be running again; one with restart=no is expected down and is reported, not
+# failed, so the check stays honest without going permanently red on a deliberate design.
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  c="${line%%=*}"; pol="${line#*=}"
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$c"; then
+    :
+  elif [ "$pol" = "no" ] || [ -z "$pol" ]; then
+    echo "      … $c is down, as designed (restart=${pol:-none}; bring it back explicitly)"
+  else
+    echo "  ✗ $c was running with restart=$pol and did NOT come back" >&2; fail=1
+  fi
+done < <(sed -n '/^## running/,/^## history/p' "$MANIFEST" | grep -v '^##' | grep .)
+running_back="$(sed -n '/^## running/,/^## history/p' "$MANIFEST" | grep -v '^##' | grep -c . )"
+[ "$fail" -eq 0 ] && echo "  ✓ every container that was running with a restart policy is running again (of $running_back checked)"
 
 # The dev container must be RUNNING, not merely present. `--restart=always` is what carries this
 # across a VM stop, and it is the one thing that makes the environment self-restoring.
