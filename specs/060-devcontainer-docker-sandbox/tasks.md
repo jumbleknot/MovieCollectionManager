@@ -663,10 +663,85 @@ Provision all six values the current environment forwards via `${localEnv}`, int
 > `MCM_ALLOW_HOST_BIND=1` forgives **exactly** this check. An earlier draft reset the shared failure
 > flag, which would have masked genuine failures from checks 2–5 — a guard that forgives everything
 > is decoration.
-- [ ] T032 [P] [US3] Update `.devcontainer/verify/verify-personal-layer.sh` to assert the RTK binary is present on the `mcm-claude` volume
-- [ ] T033 [P] [US3] Update `.devcontainer/verify/verify-firewall-allowlist.sh` to read `egress-allowlist.json` instead of re-listing domains inline
-- [ ] T034 [P] [US3] Parameterise `.devcontainer/verify/verify-portable-runner.sh` by config so both `devcontainer.json` and `sandbox/devcontainer.json` can be checked — mechanical only; the sandbox variant's second-runner claim is settled at G4 (T037), not here
-- [ ] T035 [US3] Remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` — **Done when**: the pin is gone, the image rebuilds, and `docker compose version` inside the dev container reports the sandbox engine's plugin without error
+- [X] T032 [P] [US3] Update `.devcontainer/verify/verify-personal-layer.sh` to assert the RTK binary is present on the `mcm-claude` volume — **RTK is now REQUIRED**, decision recorded in the script header
+- [X] T033 [P] [US3] Update `.devcontainer/verify/verify-firewall-allowlist.sh` to read `egress-allowlist.json` instead of re-listing domains inline — **RED (a passing run) confirmed, GREEN 33/33**
+- [X] T034 [P] [US3] Parameterise `.devcontainer/verify/verify-portable-runner.sh` by config so both `devcontainer.json` and `sandbox/devcontainer.json` can be checked — **RED confirmed structurally**
+- [~] T035 [US3] Remove the Compose v5 parity pin from `.devcontainer/toolchain.Dockerfile` — **DEFERRED TO ADOPTION (T060), with reason** — the sandbox no longer uses the pin, but deleting it now breaks the retained path
+
+> ### T032 — RTK required, and the RED/GREEN pair is natural rather than contrived
+>
+> The decision the task forces: RTK is **REQUIRED**, not warned about. The constitution mandates it
+> for every AI-assisted shell session, and because it is installed by out-of-repo dotfiles rather
+> than baked into the image, an environment that lost it **looks completely healthy while violating
+> a MUST** — nothing else in the harness asserts it.
+>
+> The tension with 038's FR-014 ("team-capable without dotfiles") resolves cleanly: FR-014 is about
+> the container coming *up*, which this script still never blocks. This assertion certifies the
+> environment for *assistant* use. `MCM_ALLOW_NO_RTK=1` is an explicit opt-out that must be typed.
+>
+> Asserted at the **volume path** (`~/.claude/tools/bin/rtk`), not merely "somewhere on PATH" — an
+> rtk installed into the ephemeral image would satisfy `command -v` and then vanish on the next
+> rebuild, which is the failure that placement exists to prevent. It must also **run**: a
+> present-but-broken binary is a distinct failure that reads identically until executed.
+>
+> **GREEN** on the Docker Desktop container: `rtk present on the persisted volume`,
+> `rtk --version answers: rtk 0.42.4`. The sandbox's `mcm-claude` volume is fresh, so it is the
+> natural RED.
+>
+> ⚠️ **A PRE-EXISTING defect surfaced next to it, and it will block T038 and the Completion
+> Checklist.** The SC-006 assertion requires `rtk gain > 80%`, but `rtk gain` reports **cumulative
+> global** savings — measured here at **2.8%** across 914 commands — while *per-command* savings run
+> 17–87%. The threshold is applied to a metric that cannot reach it. Not introduced by this feature
+> and **not silently adjusted**: changing a success-criterion threshold is a spec decision, not an
+> implementation one. Flagged for the operator.
+>
+> ### T033 — the RED is a PASSING run, and it is worse than the task predicted
+>
+> Two forms, both damning, because a false pass has to be asserted deliberately:
+>
+> - **Structural**: the original script contains **zero** references to `egress-allowlist.json`. It
+>   cannot detect drift *by construction*.
+> - **Behavioural**: it reported **PASS (exit 0)** in a container where the canonical list **does not
+>   exist at all**. It has no relationship to that file whatsoever.
+>
+> **GREEN**: `all 33 canonical destinations are represented in the live ipset`, plus one reachable
+> representative per group and `example.com` still refused. Drift is detected by resolving each
+> canonical domain and asserting an address is in the live ipset — which also makes the
+> `cdnRotating` class visible as the documented "re-run `init-firewall.sh`" reflex rather than a
+> missing rule. The check now fails loudly if it derives **zero** destinations, rather than passing
+> having asserted nothing.
+>
+> ### T034 — RED confirmed structurally; the engine proof had to be selected, not hardcoded
+>
+> The original contains **0** references to `$1` or `--config` and always resolved the repo-root
+> default — the argument was ignored by construction, so a run "against the sandbox variant"
+> answered a different question than the one asked.
+>
+> One thing beyond the mechanical change was unavoidable: the script ran
+> `verify-engine-isolation.sh`, whose premise is **inverted** for the sandbox config (D-06). Running
+> it there would report a failure that is really a check/topology mismatch. The engine proof is now
+> selected from the config under test, and collapses to `engine-seam` when
+> `verify-engine-isolation.sh` is deleted at T060.
+>
+> ### T035 — deferred deliberately, because doing it now would breach FR-019
+>
+> **The sandbox already does not use the pin.** The pin installs Compose v5 into
+> `~/.docker-dind/cli-plugins/`, found only because `DOCKER_CONFIG` points there — and the sandbox
+> variant **removes `DOCKER_CONFIG`** (D-10). Measured in the sandbox container:
+> `DOCKER_CONFIG: <unset>`, `docker compose version: 5.4.0-2`, resolved from the feature's apt
+> `moby-compose` at `/usr/libexec/docker/cli-plugins/`. The baked plugin is still in the image but
+> **inert**. So T035's *intent* — the sandbox no longer depends on the DinD-parity pin — is already
+> satisfied.
+>
+> **Deleting it from `toolchain.Dockerfile` now would break the retained Docker Desktop path.** That
+> image is shared by both configs, and on the DinD path the `docker-in-docker` feature installs
+> Compose **v2.40**, which *rejects* the mcm stacks' `include:`-override `profiles:` merge — the
+> exact failure the pin was created to fix. Removing it would make `up-mcm` fail in the retained
+> environment, which FR-019 forbids until adoption. It also needs a CI image rebuild and re-pin.
+>
+> **Correct sequencing: remove the pin at T060**, together with `DOCKER_CONFIG`, the DinD feature and
+> `verify-engine-isolation.sh` — all of which retire as one unit. Recorded here rather than silently
+> skipped, because tasks.md places this in Phase 5 and that placement is what is wrong.
 - [ ] T036 [US3] Run the full twelve-script harness in the new dev container and confirm every check green
 
 ### T025 — Write the engine-seam check
