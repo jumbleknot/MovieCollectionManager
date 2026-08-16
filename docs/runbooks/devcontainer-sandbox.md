@@ -285,6 +285,27 @@ The `mcm` sandbox is correctly configured: its only virtiofs mounts are `/etc/re
 > `verify-host-isolation.sh` asserts at the container level. A Windows mount in the VM is still a
 > real exposure — anything run in the VM shell (not the container) can reach it.
 
+### 🔴 A template does NOT carry the egress policy either — apply it before anything pulls
+
+**Policy rules are scoped per sandbox** (`--sandbox mcm`). A sandbox created from the template gets
+the **default** profile, not this environment's deny-all + allowlist, so the forge is not reachable
+and the very first `docker pull` is refused. Measured 2026-08-16: `devcontainer up` on a fresh
+sandbox failed four retries in **~1 second each** — which is the tell. A network fault times out; a
+**policy refusal is instant**. Treating that speed as a clue is faster than reading the error.
+
+The recreate sequence is therefore **instantiate → apply policy → provision**, never
+instantiate → provision:
+
+```powershell
+sbx run -t docker.io/library/mcm-proven:060 --name <new> -d shell C:\path\to\scratch\dir
+
+# apply from the GENERATOR, one rule per emitted line — never hand-written, never copied
+node scripts/gen-egress-policy.mjs --format sbx-policy --forge-host $env:FORGE_REGISTRY_HOST
+#   -> for each "allow network <domain>":  sbx policy allow network <domain> --sandbox <new>
+
+devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json
+```
+
 ### ⚠️ A template does NOT contain the Docker images
 
 `sbx template save` snapshots the VM root filesystem, **not** the Docker data disk. Measured: a
