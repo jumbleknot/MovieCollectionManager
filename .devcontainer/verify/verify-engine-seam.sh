@@ -214,6 +214,41 @@ else
   err "docker info does not answer — no reachable engine"
 fi
 
+# 3b — 060 D-19: THE SEAM MUST NOT TRUNCATE OUTPUT OF A SLOW COMMAND.
+#
+# A seam that answers `docker info` instantly can still be broken in a way that is invisible to
+# every fast probe. The docker-outside-of-docker feature fronts the engine socket with
+#     socat UNIX-LISTEN:/var/run/docker.sock,fork,... UNIX-CONNECT:/var/run/docker-host.sock
+# and socat's half-close timeout defaults to 0.5 s. `docker exec` half-closes stdin immediately, so
+# socat tears the relay down mid-response and the CLI returns **exit 0 with EMPTY stdout** for
+# anything slower than the timeout. Measured 2026-08-16 in this container:
+#
+#     sleep 0s -> [LATE-0]        sleep 1s -> [] rc=0        sleep 3s -> [] rc=0
+#
+# Every check above passes in that state. The failure only appears in commands that take a moment —
+# which is to say, in real work. It silently broke the agent-stack bring-up, whose correct assertion
+# reported `production_nodes_enabled=` (empty, not false) against a healthy gateway.
+#
+# So this probe deliberately uses a command that is SLOW and TRIVIAL: 2 seconds of sleep and one
+# word of output. A fast probe here would assert nothing. Fixed by DOCKER_HOST pointing at
+# docker-host.sock directly (D-19); this assertion is what stops it regressing unnoticed.
+seam_out="$(docker exec "$(hostname)" sh -c 'sleep 2; echo mcm-seam-slow-ok' 2>/dev/null || true)"
+if [ -z "$seam_out" ]; then
+  # Fall back to any running container if self-exec is not possible in this context.
+  _c="$(docker ps -q 2>/dev/null | head -1)"
+  [ -n "$_c" ] && seam_out="$(docker exec "$_c" sh -c 'sleep 2; echo mcm-seam-slow-ok' 2>/dev/null || true)"
+fi
+if printf '%s' "$seam_out" | grep -q 'mcm-seam-slow-ok'; then
+  ok "docker exec relays the output of a SLOW (2 s) command — no half-close truncation (D-19)"
+elif [ -z "$(docker ps -q 2>/dev/null | head -1)" ]; then
+  ok "no running container available to probe the slow-exec path — not asserted"
+else
+  err "docker exec returned EMPTY for a 2 s command — the seam truncates slow output (D-19). \
+Every fast probe still passes in this state, and scripts capturing docker exec output will get \"\" \
+with exit 0. Fix: DOCKER_HOST=unix:///var/run/docker-host.sock (bypass the socat relay), or run \
+socat with -t 60."
+fi
+
 # 4 (in-container half) — record the engine ID; --vm-check compares it against the VM's.
 engine_id="$(docker info -f '{{.ID}}' 2>/dev/null || echo unknown)"
 echo "  → engine ID seen in-container: ${engine_id}"

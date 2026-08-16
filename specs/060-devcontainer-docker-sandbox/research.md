@@ -280,6 +280,78 @@ Two further behaviours worth recording, neither documented in the proposal:
 
 ---
 
+## D-19 — The feature's socat relay silently truncates `docker exec`; talk to the engine directly
+
+**Discovered 2026-08-16 at T044.** The most dangerous defect found in this migration, because every
+existing check passes while it is active.
+
+**Symptom.** `pnpm nx up-agents-prod` died with:
+
+```text
+[agent-stack] ERROR: gateway is NOT running production nodes (production_nodes_enabled=)
+```
+
+Note the value: **empty, not `false`**. Meanwhile the gateway was `Up (healthy)`, its own log said
+`gateway graph: MCP-backed (production) nodes`, and running the identical assertion by hand printed
+`True`. The assertion was correct; its instrument was lying.
+
+**Cause.** `docker-outside-of-docker` bind-mounts the engine socket as `/var/run/docker-host.sock`
+and publishes `/var/run/docker.sock` as a socat relay onto it:
+
+```text
+socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user=coder,backlog=128 \
+      UNIX-CONNECT:/var/run/docker-host.sock
+```
+
+**`-t` is absent, so socat's half-close timeout is its default 0.5 s.** `docker exec` half-closes
+stdin immediately — it has nothing to send — and socat then tears down the entire relay half a
+second later, including the response stream still delivering output.
+
+**The measurement that pinned it**, identical script run from two vantage points:
+
+| command | from the VM | from the dev container |
+| --- | --- | --- |
+| `docker exec … sleep 0; echo` | `LATE-0` | `LATE-0` |
+| `docker exec … sleep 1; echo` | `LATE-1` | **`[]` rc=0** |
+| `docker exec … sleep 3; echo` | `LATE-3` | **`[]` rc=0** |
+
+**Exit code 0 with empty stdout.** Not an error, not a broken pipe — a confident wrong answer. A
+fast command works, so the seam looks perfectly healthy under any quick probe, and only real work
+fails.
+
+**Two false trails it sent me down first**, both worth recording:
+
+1. *"It's a startup race"* — plausible (the whole run took 10 s and the script's own message says
+   the production graph takes 20–40 s), and wrong. Re-running reproduced it exactly, which a race
+   would not.
+2. *"The seam loses `docker exec` output"* — nearly right but too broad, and my first test of it was
+   **broken by nested shell quoting**: `python -c ""` returns rc=0 with no output, so my escaping
+   manufactured the very symptom I was investigating. Putting the program in a **file** and running
+   that same file from both vantage points is what made the comparison trustworthy. A bisect then
+   showed `echo`, `print(1)` and `import os` all fine while the heavy import failed — which looked
+   like a payload problem and was actually elapsed time.
+
+**Decision.** Set `DOCKER_HOST=unix:///var/run/docker-host.sock` in the sandbox `containerEnv`,
+removing socat from the path. The relay exists to solve a permission problem that does not exist
+here — `srw-rw---- 1 root coder /var/run/docker-host.sock` is already group-owned by the runtime
+user. Verified: direct `sleep 3` returns `OK-3`, and the production-nodes assertion returns `True`.
+
+Tuning socat with `-t 60` also works but requires overriding `/usr/local/share/docker-init.sh`, a
+file the feature owns and rewrites on rebuild. One environment variable beats patching a vendored
+script.
+
+**Not applicable to the Docker Desktop path**, which runs a real nested dockerd on
+`/var/run/docker.sock` with no relay. This is a genuine migration-introduced regression, and it is
+the strongest argument in this feature for why the verify harness probes *behaviour* rather than
+configuration: nothing about the socket's presence, ownership, or `docker info` response
+distinguishes the broken state from the working one.
+
+**Guard.** `verify-engine-seam.sh` assertion 3b now runs a deliberately **slow and trivial**
+command (2 s sleep, one word out) and fails if the output is empty. A fast probe there would assert
+nothing at all.
+
+---
+
 ## D-18 — The sandbox path does NOT run init-firewall.sh; it asserts the host-side policy instead
 
 **Discovered 2026-08-16 at T047 (G5).** The plan assumed the two enforcement layers — host-side

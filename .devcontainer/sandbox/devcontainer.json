@@ -149,6 +149,46 @@
     // research.md: on this path the host-side sandbox policy IS the enforcement layer.
     "MCM_DEVCONTAINER_PLATFORM": "sandbox",
 
+    // D-19 — TALK TO THE ENGINE DIRECTLY, NOT THROUGH THE FEATURE'S socat RELAY.
+    //
+    // The docker-outside-of-docker feature bind-mounts the VM's engine socket as
+    // /var/run/docker-host.sock and publishes /var/run/docker.sock as a socat relay onto it:
+    //
+    //   socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user=coder,backlog=128 \
+    //         UNIX-CONNECT:/var/run/docker-host.sock
+    //
+    // Note what is MISSING: `-t`. socat's half-close timeout defaults to **0.5 seconds**, so half a
+    // second after the client half-closes stdin — which `docker exec` does immediately, having no
+    // input to send — socat tears down the whole relay, including the response stream still
+    // carrying the command's output.
+    //
+    // The measured effect is worse than a broken pipe, because it is SILENT. `docker exec` returns
+    // **exit code 0 with empty stdout** for any command that takes longer than the timeout:
+    //
+    //   sleep 0s -> [LATE-0]      sleep 1s -> []  rc=0      sleep 3s -> []  rc=0
+    //
+    // A fast command works, so the seam looks healthy; a slow one silently yields "". That is a
+    // wrong answer delivered confidently — the exact failure class this repository keeps paying for.
+    // It cost the agent-stack bring-up, which died on `gateway is NOT running production nodes
+    // (production_nodes_enabled=)` — an EMPTY value, not `false` — while the gateway was healthy and
+    // its own log read `gateway graph: MCP-backed (production) nodes`. The assertion was correct and
+    // its instrument was lying.
+    //
+    // The relay exists to solve a permissions problem that does not exist here:
+    //     srw-rw---- 1 root coder /var/run/docker-host.sock
+    // is already group-owned by `coder`, so the CLI can address the engine socket directly and drop
+    // socat out of the path entirely. Verified: via socat `sleep 3` -> []; direct -> [OK-3], and the
+    // production-nodes assertion returns True.
+    //
+    // Tuning socat with `-t 60` would also work, but it means overriding a script the feature owns
+    // (/usr/local/share/docker-init.sh) on every rebuild. One env var beats patching a vendored file.
+    //
+    // ⚠️ NOT applicable to the Docker Desktop config: docker-in-docker runs a real nested dockerd on
+    // /var/run/docker.sock with no relay, so this variable would point at a socket that is not there.
+    // If the feature ever stops group-owning docker-host.sock, docker fails LOUDLY here rather than
+    // returning empty output — which is the better failure of the two.
+    "DOCKER_HOST": "unix:///var/run/docker-host.sock",
+
     // DOCKER_CONFIG IS REQUIRED AFTER ALL — D-10 was wrong to drop it, and G4 is why.
     //
     // D-10 removed this on the reasoning that the credsStore workaround's cause was gone, because
