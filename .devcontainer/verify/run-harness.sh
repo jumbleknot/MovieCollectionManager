@@ -131,7 +131,15 @@ vm_side      verify-portable-runner.sh        "portable-runner" "$CONFIG" /works
 # ── VM-side (2 more) ─────────────────────────────────────────────────────────────────────────────
 vm_side      verify-engine-seam.sh            "engine-seam --vm-check" --vm-check
 vm_side      verify-sandbox-egress.sh         "sandbox-egress"
-vm_side      verify-reproducible-recreate.sh  "reproducible-recreate"
+
+# ⚠️ ORDER IS LOAD-BEARING: verify-reproducible-recreate.sh is DESTRUCTIVE — it removes the dev
+# container and rebuilds it. Everything above talks to the container it tears down, so it MUST run
+# last. Measured 2026-08-16: when its rebuild failed, every later check reported "No such
+# container", which reads as an isolation fault rather than as this script's side effect.
+# `verify-portable-runner.sh` above also runs `devcontainer up` and can REPLACE the container, so
+# $DC is re-resolved here rather than reused from the top of the run.
+DC="${MCM_DEVCONTAINER_NAME:-$(docker ps --filter 'label=devcontainer.local_folder' --format '{{.Names}}' 2>/dev/null | head -1)}"
+vm_side      verify-reproducible-recreate.sh  "reproducible-recreate" "$CONFIG" /workspaces/mcm
 
 # ── host-side (1) — cannot be run from here; must be supplied ────────────────────────────────────
 case "${MCM_HOST_CHECK:-}" in
