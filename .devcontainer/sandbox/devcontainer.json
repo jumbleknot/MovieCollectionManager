@@ -119,9 +119,21 @@
     "source=mcm-cargo-git,target=/home/coder/.cargo/git,type=volume",
     "source=mcm-uv-cache,target=/home/coder/.cache/uv,type=volume",
     "source=mcm-pnpm-store,target=/home/coder/.local/share/pnpm/store,type=volume",
-    // The personal layer — plugins/skills, service logins, and the RTK binary installed by the
-    // out-of-repo dotfiles. verify-personal-layer.sh asserts RTK is present, because a silently
-    // RTK-less environment looks healthy while violating a constitution MUST.
+    // The personal layer — plugins/skills, service logins, the RTK binary AND the Claude Code
+    // PreToolUse hook that actually routes commands through it.
+    //
+    // ⚠️ THIS VOLUME IS EMPTY ON A FRESH SANDBOX, and nothing populates it automatically. The
+    // sandbox engine has its own volumes, so the personal layer does NOT come across from the
+    // Docker Desktop environment. Install it once per container creation:
+    //
+    //     devcontainer up --workspace-folder /workspaces/mcm \
+    //       --config .devcontainer/sandbox/devcontainer.json \
+    //       --dotfiles-repository https://github.com/jumbleknot/mcm-dotfiles
+    //
+    // RTK IS NOT ACTIVE JUST BECAUSE THE BINARY EXISTS. It compresses only via the `rtk hook
+    // claude` PreToolUse entry in ~/.claude/settings.json, which install.sh writes. Binary without
+    // hook = every command unproxied and ZERO gains, while `rtk --version` answers perfectly — a
+    // failure this project has hit before. verify-personal-layer.sh now asserts BOTH.
     "source=mcm-claude,target=/home/coder/.claude,type=volume"
   ],
 
@@ -182,7 +194,16 @@
   // Unchanged from the Docker Desktop config.
   "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true",
 
-  "postCreateCommand": "pnpm install --config.confirmModulesPurge=false",
+  // ONE-TIME PER CONTAINER CREATION, which is exactly the right cadence for both steps.
+  //
+  // ensure-rtk-hook.sh is not belt-and-braces — it is load-bearing. `rtk init -g` (run by the
+  // dotfiles install.sh) PROMPTS before patching ~/.claude/settings.json and, non-interactively,
+  // DEFAULTS TO NO, printing a "MANUAL STEP" into a build log nobody reads. So every automated
+  // container creation otherwise yields RTK installed-but-inactive: `rtk --version` answers, and
+  // the session gets zero compression. That is the structural cause of this project's recurring
+  // "the assistant ran without RTK" incidents. The script performs that patch idempotently, backs
+  // up the existing settings first, and no-ops cleanly when no personal layer is installed (FR-014).
+  "postCreateCommand": "pnpm install --config.confirmModulesPurge=false && /bin/bash ${containerWorkspaceFolder}/.devcontainer/ensure-rtk-hook.sh",
 
   // Unchanged in shape from the Docker Desktop config. Two notes specific to this topology:
   //  • init-firewall.sh now programs the VM's OUTPUT chain (--network=host), so it also covers the

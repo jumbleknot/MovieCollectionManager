@@ -90,6 +90,34 @@ else
   err "rtk is present but '--version' failed — the binary is broken, not merely installed"
 fi
 
+# ── PRESENT IS NOT INITIATED — and this distinction has bitten this project before ──────────────
+#
+# RTK does not compress anything by existing. It works through a Claude Code **PreToolUse hook**
+# (`rtk hook claude`) declared in ~/.claude/settings.json, which rewrites commands before they run.
+# With the binary installed but the hook missing, every command runs UNPROXIED and the session gets
+# ZERO compression — while `command -v rtk`, `rtk --version` and this script's earlier assertions
+# all pass happily.
+#
+# That is not hypothetical: it is a known past failure of this project (the assistant running a
+# whole session without RTK active), and it was reproduced exactly on the sandbox environment on
+# 2026-08-16 — RTK copied in by hand, `rtk --version` answering 0.42.4, and NO settings.json at all.
+# The check passed. So the check was wrong, not merely incomplete.
+#
+# Initiation is a ONE-TIME-PER-CONTAINER-CREATION step, performed by the dotfiles install.sh. The
+# supported mechanism is:
+#     devcontainer up … --dotfiles-repository https://github.com/jumbleknot/mcm-dotfiles
+SETTINGS="$HOME/.claude/settings.json"
+if [ ! -f "$SETTINGS" ]; then
+  err "RTK is NOT INITIATED — $SETTINGS is absent, so no PreToolUse hook exists and RTK compresses NOTHING"
+  note "Install the personal layer with:  devcontainer up … --dotfiles-repository <dotfiles-url>"
+elif grep -q 'rtk hook' "$SETTINGS" 2>/dev/null; then
+  ok "RTK is initiated — 'rtk hook' wired into the Claude Code PreToolUse hook"
+else
+  err "RTK is NOT INITIATED — $SETTINGS exists but declares no 'rtk hook' PreToolUse entry"
+  note "The binary is installed and answers, but nothing routes commands through it: zero gains."
+  note "Re-run the dotfiles install; see docs/runbooks/devcontainer-sandbox.md."
+fi
+
 # SC-006 — compression. REPORTED, NOT ENFORCED (operator decision, 2026-08-16).
 #
 # ── Why this no longer fails the run ─────────────────────────────────────────────────────────────
