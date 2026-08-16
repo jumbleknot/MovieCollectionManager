@@ -1,24 +1,37 @@
 #!/usr/bin/env bash
-# init-firewall.sh — feature 037 (containerized dev-env)
+# init-firewall.sh — feature 037 (containerized dev-env); allowlist extracted in feature 060
 #
 # Governing: FR-002 (network blast-radius reduction for the in-container agent), research D4
-#            (Anthropic Claude Code reference: default-deny egress + allowlist).
+#            (Anthropic Claude Code reference: default-deny egress + allowlist),
+#            060 FR-007 (one canonical destination list, every enforcement config derived from it).
 #
-# Default-DENY the dev container's OWN outbound traffic (OUTPUT chain), allowlisting only the
-# destinations the workflow needs. This blocks a compromised dependency / agent process from
-# exfiltrating to an arbitrary host, while git / pnpm / Claude Code / DinD image pulls keep
-# working.
+# Default-DENY outbound traffic on the OUTPUT chain, allowlisting only the destinations the
+# workflow needs. This blocks a compromised dependency / agent process from exfiltrating to an
+# arbitrary host, while git / pnpm / Claude Code / image pulls keep working.
 #
-# Scope & honest limits (see docs/runbooks/devcontainer.md):
-#   • Controls the dev container's egress AND the in-container dockerd's image pulls (both
-#     originate in this netns → OUTPUT). Registry domains are allowlisted in the DinD section.
-#   • Does NOT independently firewall the egress of *nested running containers* (their traffic
-#     is FORWARD-ed + MASQUERADE-d by the DinD dockerd). We deliberately leave the FORWARD
-#     chain to dockerd so nested-container networking is not broken (research D3/T015a). That
-#     residual is documented, not hidden — consistent with the feature's honest-posture stance.
-#   • CDN-backed registries (Docker Hub / ghcr.io) rotate IPs; this script resolves by DOMAIN
-#     and is re-runnable (idempotent) so it can be re-invoked to refresh the ipset if a pull
-#     starts failing mid-session (T015a).
+# Scope & honest limits (see docs/runbooks/devcontainer.md and docs/runbooks/devcontainer-sandbox.md):
+#   • Controls the egress of whatever netns it runs in, AND that netns's dockerd image pulls.
+#     THE SCOPE OF "THAT NETNS" CHANGED IN FEATURE 060 and is the thing to get right here:
+#       – Docker Desktop path (037/038, retained): this runs inside the privileged dev container,
+#         so OUTPUT covers the dev container's own traffic plus the NESTED dockerd's pulls.
+#       – Sandbox path (060): the dev container joins the sandbox VM's network namespace
+#         (`--network=host`, where "host" is the microVM). OUTPUT is therefore the VM's OUTPUT
+#         chain, and now also filters the SANDBOX dockerd's image pulls. The registry entries in
+#         the allowlist remain necessary for exactly the same structural reason, one level out.
+#   • This script deliberately leaves the FORWARD chain to dockerd, so it does not itself police
+#     container-to-internet traffic — doing so would break container networking (research
+#     D3/T015a). Where that traffic IS policed depends on the topology, and under feature 060 it
+#     is policed: the Docker Sandbox network policy is enforced HOST-SIDE, outside the microVM,
+#     and governs ALL VM egress including every sibling container. That is the primary control;
+#     this script is defence-in-depth beneath it. On the retained Docker Desktop path no such
+#     outer layer exists, which is the residual that motivated the migration.
+#   • Triage order when a request is blocked (two layers, one canonical list): check
+#     `sbx policy log` FIRST, then reach for the in-VM ipset-staleness reflex below. Without a
+#     stated order the two layers cost more diagnosis time than they save (research R8/D-05).
+#   • CDN-backed registries (Docker Hub / ghcr.io / quay's Akamai shards) rotate IPs; this script
+#     resolves by DOMAIN and is re-runnable (idempotent) so it can be re-invoked to refresh the
+#     ipset if a pull starts failing mid-session (T015a). Entries in that class are flagged
+#     `cdnRotating: true` in the canonical list.
 #
 # Must run as root (wired via a root lifecycle hook in devcontainer.json before dropping to
 # `coder`). Re-running rebuilds the ruleset from scratch.
@@ -34,79 +47,59 @@ fi
 echo "init-firewall: applying default-deny egress with allowlist"
 
 # --- allowlist domains -------------------------------------------------------------------
-# US1 core: Anthropic API (Claude Code), GitHub (git/clone), npm registry (pnpm/npm install).
-# US2 (T014) appends the container-image registries DinD pulls from. The forge registry host
-# is injected from the env var FORGE_REGISTRY_HOST (topology-scrub rule — never a git literal).
-ALLOWED_DOMAINS=(
-  "api.anthropic.com"
-  "registry.npmjs.org"
-  "github.com"
-  "api.github.com"
-  "codeload.github.com"
-  "objects.githubusercontent.com"
-  "raw.githubusercontent.com"
-  # US2 (T014) — container-image registries the in-container dockerd pulls from for compose
-  # stacks / integration tests. Without these, `docker pull` inside the container fails and the
-  # allowlist is the FIRST suspect (data-model invariant). These CDN-backed hosts rotate IPs;
-  # this script resolves by domain and is re-runnable to refresh the ipset (T015a).
-  "registry-1.docker.io"
-  "auth.docker.io"
-  "index.docker.io"
-  "production.cloudflare.docker.com"
-  "production.cloudfront.docker.com"
-  "ghcr.io"
-  "pkg-containers.githubusercontent.com"
-  # quay.io — the project's compose stacks pull Keycloak from quay.io (auth stack). Manifests
-  # resolve from quay.io; blob layers are served from Akamai (cdn0N.quay.io). NOTE: Akamai (like
-  # Docker Hub's CloudFront blobs) rotates IPs faster than a one-shot A-record ipset can track and
-  # is NOT covered by FIREWALL_ALLOW_CDN_RANGES (AWS/Cloudflare only), so a cold compose pull may
-  # still time out on a blob. See the runbook — for a first stack pull, either relax egress for the
-  # pull (`sudo iptables -P OUTPUT ACCEPT`) then re-run this script, or pre-pull the images.
-  "quay.io"
-  "cdn.quay.io"
-  "cdn01.quay.io"
-  "cdn02.quay.io"
-  "cdn03.quay.io"
-  # 038 (T030) — RUNTIME package sources for the full toolchain (FR-012/SC-009). The BAKED toolchain
-  # is fetched at IMAGE-BUILD time, BEFORE this firewall exists (research D5), so these matter only
-  # for RUNTIME fetches: `cargo add`/`cargo install` of a new crate, `uv add`, the dotfiles RTK
-  # build (`cargo install --git`), and Expo/EAS calls. crates.io/PyPI are CDN-backed (Fastly) and
-  # rotate IPs — this script resolves by DOMAIN and is re-runnable to refresh the ipset (same caveat
-  # as the Docker/quay registries above); a cold runtime `cargo install` that stalls on a blob can
-  # use the documented escape (`sudo iptables -P OUTPUT ACCEPT` for the fetch, then re-run this).
-  # Rust — crates registry + index + downloaded crate blobs.
-  "crates.io"
-  "static.crates.io"
-  "index.crates.io"
-  # Python — uv / Specify CLI: PyPI metadata + package blobs, and the astral installer host.
-  "pypi.org"
-  "files.pythonhosted.org"
-  "astral.sh"
-  # Expo / EAS.
-  "api.expo.dev"
-  "exp.host"
-  # 059 — TMDB, for web-api-mcp's integration suite, which runs pytest IN THE DEV-CONTAINER SHELL.
-  # This REVERSES an earlier "do NOT allowlist TMDB" instruction, and the reason that instruction
-  # existed is worth keeping: measured 2026-07-16, every RUNTIME path that calls TMDB (the BFF's
-  # validate-on-save probe, web-api-mcp's curator enrichment) is a NESTED container and so traverses
-  # the FORWARD chain, which this script leaves alone — those paths never needed an allowlist entry,
-  # and adding one for them would have been cargo-culting. What changed is that 059 makes the
-  # certification lookup a merge-relevant assertion, and its integration test runs from the shell
-  # (OUTPUT chain), where TMDB was correctly unreachable. So this entry exists for the TEST RUNNER,
-  # not for the app. api.themoviedb.org is CloudFront-backed (13.33.x measured) and rotates IPs like
-  # the registries above — re-run this script to refresh the ipset if a probe starts timing out.
-  "api.themoviedb.org"
-)
+# Feature 060 (FR-007): the destination list is no longer inlined here. It lives in
+# .devcontainer/egress-allowlist.json — the single canonical list — and is read through
+# scripts/gen-egress-policy.mjs, which emits the SAME list to the host-side sandbox network
+# policy. Two enforcement layers with two hand-maintained lists turn a blocked fetch into the
+# union of two allowlists and diagnosis into guesswork (research R8/D-04); one file prevents it.
+#
+# Each entry's recorded reason (why a CDN host rotates, why quay needs four Akamai shards, why
+# TMDB is listed at all) moved WITH it into that file. Read it there before adding anything.
+#
+# The forge registry host is still injected at runtime from FORGE_REGISTRY_HOST and is NEVER a
+# git literal (topology-scrub rule) — it is passed to the generator, not stored in the list.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+GEN="${REPO_ROOT}/scripts/gen-egress-policy.mjs"
 
-# The project's forge registry host is topology-sensitive — NEVER a git literal (topology-scrub
-# gate). Inject it at runtime via FORGE_REGISTRY_HOST (set in the gitignored devcontainer env /
-# remoteEnv). Skip cleanly when unset — no literal, no fallback (secrets-management rule).
+if [ ! -f "${GEN}" ]; then
+  echo "init-firewall: FATAL — ${GEN} not found; refusing to apply default-deny with no allowlist" >&2
+  exit 1
+fi
+if ! command -v node >/dev/null 2>&1; then
+  # This script runs as ROOT via a lifecycle hook, whose PATH is not the interactive user's.
+  echo "init-firewall: FATAL — 'node' not on root's PATH; cannot read the canonical allowlist" >&2
+  exit 1
+fi
+
+GEN_ARGS=(--format ipset-domains)
 if [ -n "${FORGE_REGISTRY_HOST:-}" ]; then
-  ALLOWED_DOMAINS+=("${FORGE_REGISTRY_HOST}")
+  GEN_ARGS+=(--forge-host "${FORGE_REGISTRY_HOST}")
   echo "init-firewall: forge registry host allowlisted from env"
 else
   echo "init-firewall: FORGE_REGISTRY_HOST unset — forge registry NOT allowlisted (set it to pull from the forge)"
 fi
+
+# Capture into a variable rather than `mapfile < <(node …)`: with process substitution the
+# generator's exit status is INVISIBLE to `set -e` (mapfile's own status is what is checked), so a
+# crashed generator would yield an EMPTY array and this script would then apply default-DROP with
+# nothing allowlisted — a total egress blackout that looks like a network fault, not a bug here.
+if ! DOMAINS_RAW="$(node "${GEN}" "${GEN_ARGS[@]}")"; then
+  echo "init-firewall: FATAL — gen-egress-policy.mjs failed; refusing to apply default-deny" >&2
+  exit 1
+fi
+
+mapfile -t ALLOWED_DOMAINS <<< "${DOMAINS_RAW}"
+
+# Belt and braces: an empty or whitespace-only list must never reach the DROP policy below.
+if [ "${#ALLOWED_DOMAINS[@]}" -eq 0 ] || [ -z "${ALLOWED_DOMAINS[0]}" ]; then
+  echo "init-firewall: FATAL — canonical allowlist resolved to zero domains; refusing to apply default-deny" >&2
+  exit 1
+fi
+echo "init-firewall: read ${#ALLOWED_DOMAINS[@]} destinations from the canonical allowlist"
+
+# NOTE: the forge registry host is appended by the generator above via --forge-host, so there is
+# no second append here. Skip-cleanly-when-unset is preserved — it is now the generator's
+# documented behaviour rather than a branch in this script (contracts/egress-allowlist.md).
 
 # --- reset -------------------------------------------------------------------------------
 # Reset INPUT/OUTPUT policy to ACCEPT FIRST: `iptables -F` clears rules but NOT the default
