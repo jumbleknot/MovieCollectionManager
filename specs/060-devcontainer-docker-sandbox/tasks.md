@@ -279,11 +279,66 @@ This file is extended by T058 with the per-phase rollbacks; it starts here becau
 
 - [X] T018 [US2] Create the `mcm` sandbox sized to **max(host default, floor)** and record the disk envelope (G7) in `specs/060-devcontainer-docker-sandbox/baseline-measurements.md`
 - [X] T019 [US2] Configure SSH access (`sbx setup ssh`) and prove `ssh mcm.sbx` lands in the VM — **Done when**: `ssh mcm.sbx` returns a shell as `agent@mcm` without an interactive prompt, and `docker info` inside it reports the private engine
-- [~] T020 [US2] Apply the generated Locked Down allowlist to the `mcm` sandbox from `gen-egress-policy.mjs --format sbx-policy` — **partial**: the forge rule is applied and proven; the full `deny-all` + 29-destination application is outstanding (see below)
-- [ ] T021 [US2] Write the sandbox egress probe suite in `.devcontainer/verify/verify-sandbox-egress.sh`
+- [X] T020 [US2] Apply the generated Locked Down allowlist to the `mcm` sandbox from `gen-egress-policy.mjs --format sbx-policy` — **Done**: `policy init deny-all` + all 30 rules applied from the generator, none hand-added
+- [X] T021 [US2] Write the sandbox egress probe suite in `.devcontainer/verify/verify-sandbox-egress.sh` — RED then GREEN, both halves
 - [X] T022 [US2] **G1 GATE** — ✅ **GREEN** — clone, fetch, **real push**, and `docker pull` of the digest-pinned toolchain image all succeed from inside the sandbox
-- [ ] T023 [US2] Install Node ≥18 and `@devcontainers/cli` inside the sandbox — **Done when**: `devcontainer --version` answers in the sandbox shell and `node --version` is ≥18
-- [ ] T024 [US2] Provision the six `${localEnv}` credentials into the sandbox by the D-07 **fallback** mechanism, enumerated explicitly
+- [X] T023 [US2] Install Node ≥18 and `@devcontainers/cli` inside the sandbox — **node v22.22.1**, **devcontainer 0.88.0**
+- [X] T024 [US2] Provision the six `${localEnv}` credentials into the sandbox by the D-07 **fallback** mechanism, enumerated explicitly
+
+> ### T021 — RED confirmed in BOTH directions, and the first GREEN was a false negative
+>
+> **RED (specified form).** `example.com` is *already* refused under the `balanced` bring-up policy,
+> so the task's stated RED was **not observable** as written. A genuine RED was produced by injecting
+> a deliberate divergence — `sbx policy allow network --sandbox mcm example.com` — which flipped the
+> assertion exactly as predicted: `✗ example.com is REACHABLE — deny-by-default is NOT enforcing`.
+> The rule was then removed. A second, independent RED came for free: under `balanced`, `github.com`
+> and `api.themoviedb.org` were unreachable (2 failures).
+>
+> **The first GREEN attempt reported `github.com` unreachable — and the probe was wrong, not the
+> policy.** `curl -i` was downloading GitHub's entire homepage, which exceeds the timeout through the
+> proxy. Verified by hand: `HTTP/2 200`, curl exit 0. Had this been "fixed" by adding entries to the
+> allowlist, egress would have been silently widened to chase a bug in the test. The probe now reads
+> `%{http_code}` instead of the body.
+>
+> **Final state — VM-side 0 failures, host-side audit 0 failures**: 5/5 groups reachable,
+> `example.com` refused, `--noproxy` and a cleared proxy environment both still refused (so
+> enforcement is at the network layer, not advisory), workstation loopback unreachable, the refusal
+> present in `sbx policy log`, and all 29 canonical destinations present in the live policy.
+>
+> Three instrument lessons are baked into the script's header because each produced a confident wrong
+> answer: a refusal here is an **HTTP 403 with a `Blocked by network policy` body, not a timeout**;
+> a **TCP connect proves nothing** (`gateway.docker.internal:11434` and `:5432` both "connect" with
+> nothing behind them, so every probe is application-level); and `sbx policy ls <sandbox>` returns a
+> **summary naming no resources**, so grepping it reports every destination as absent — `--json` is
+> required.
+>
+> ⚠️ Two PowerShell-specific traps also cost time and belong in T053: `Select-Object -First N`
+> **terminates the upstream native command** (it aborted `sbx policy init` mid-run, leaving the
+> policy uninitialised), and piping a script's output through `sed` makes `$?` **sed's** exit code,
+> not the script's — which briefly showed a failing check as `EXIT=0`.
+>
+> ### T024 — provisioned at preference (3), but preference (1) is REAL and T049 should take it
+>
+> All six resolve when the file is sourced (`mode=600`, owner `agent`, at `~/.mcm-sandbox-env`,
+> outside the repository so no `.gitignore` entry is needed). The file is **deliberately not
+> auto-sourced from `.bashrc`**, which is what makes the D-07 hard-constraint check meaningful.
+>
+> **The no-SSH-forwarding check passed, with a nuance worth recording.** `MCM_FORGE_TOKEN` came back
+> **empty** over a bare SSH command, as required. `ANTHROPIC_API_KEY` came back **non-empty — but the
+> value is the sandbox's own `proxy-managed` sentinel**, not a forwarded secret. That is not a
+> failure; it is direct evidence for **D-07 preference (1)**, which `sbx secret --help` confirms:
+> *"the proxy uses stored secrets to authenticate API requests on behalf of the agent. The secret is
+> never exposed directly."* The sandbox pre-wires `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GH_TOKEN`
+> and others as `proxy-managed` placeholders.
+>
+> **My env file currently OVERRIDES that placeholder with the real key — a deliberate downgrade to
+> preference (3)**, exactly as T024 specifies, so this phase does not depend on an unanswered
+> question. T049 should reverse it. The open half remains whether injection reaches **sibling
+> containers** (the agent gateway's calls), which only Phase 7 can answer.
+>
+> **T022 also required a credential finding**: the forge git credential was installed at
+> `~/.git-credentials` (mode 600) and the registry needed `MCM_FORGE_TOKEN` separately — see the G1
+> block above.
 
 > ### 🚦 G1 IS GREEN — the migration is viable and the feature continues
 >

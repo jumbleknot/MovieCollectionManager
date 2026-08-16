@@ -111,6 +111,41 @@ The host-side mode is kept and widened: it is the only non-fabricable proof, bec
 
 **[gate — P5]** Whether injection reaches **sibling** containers (the agent gateway's Anthropic calls) is unproven. Decision rule: either outcome is acceptable; only the recorded posture differs. If injection covers siblings, `ANTHROPIC_API_KEY` need never enter the VM and that is a stated isolation improvement; if not, it is provisioned as today and the posture note says so.
 
+### Measured 2026-08-16 — preference (1) EXISTS and is already partly active
+
+Half of this gate is now answered, and it changes what T049 should do.
+
+**The sandbox pre-wires the placeholders by itself.** Inside the VM, with nothing configured by this
+feature, the environment already contains:
+
+```text
+ANTHROPIC_API_KEY=proxy-managed
+OPENAI_API_KEY=proxy-managed
+GH_TOKEN=gho_sbxproxymanaged<zero-padded placeholder, truncated here>
+XAI_API_KEY / NEBIUS_API_KEY / MISTRAL_API_KEY / GOOGLE_API_KEY / OPENROUTER_API_KEY=proxy-managed
+PROXY_CA_CERT_B64=<the proxy's CA>
+```
+
+`sbx secret --help` states the mechanism plainly: *"When a sandbox starts, the proxy uses stored
+secrets to authenticate API requests on behalf of the agent. **The secret is never exposed
+directly.**"* Secrets are scopable globally or per-sandbox, and `sbx secret ls` even offers to import
+host environment variables (`sbx setup`).
+
+**So preference (1) is not speculative — it is the sandbox's default posture, and T024 currently
+overrides it.** The credential file written at T024 sets a *real* `ANTHROPIC_API_KEY`, replacing the
+`proxy-managed` sentinel and putting the key inside the VM. That is the deliberate preference-(3)
+choice T024 specifies, taken so that Phase 4 does not depend on an unanswered question — but it is a
+downgrade, and **T049 should reverse it** by storing the key with `sbx secret` and removing it from
+the env file.
+
+**What remains genuinely open** is the half that matters most: whether proxy injection reaches
+**sibling containers** — specifically the agent gateway's outbound Anthropic calls, which originate
+in a container the assistant created, not in the sandbox shell. Only Phase 7 can answer that, and
+the T049 procedure (put the key in `sbx secret` only, then run one agent E2E scenario) is exactly
+the right test. Note the registry-secret documentation is explicit that registry credentials are
+*host-only by default* and reach sandboxes only with `--all-sandboxes`/`--sandbox`, which is a hint
+that injection scope is a real, configurable dimension rather than automatic.
+
 ---
 
 ## D-08 — Editor chain: two standard hops, with a wired fallback
