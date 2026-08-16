@@ -113,6 +113,32 @@ else
   err "canonical list not found — cannot derive reachability probes"
 fi
 
+# ── 060 T046/T047 (G5): THE SIBLING PROBE — the security payoff of the whole feature ────────────
+#
+# This is the assertion the migration exists to make true, and it must be a REAL probe from a REAL
+# sibling container. Inferring it from the policy's stated scope proves nothing: the entire claim is
+# that enforcement happens OUTSIDE the VM and therefore covers containers the assistant creates, and
+# the only way to know is to have such a container try.
+#
+# It is RED by design on the Docker Desktop path. init-firewall.sh's own header says it does not
+# police the FORWARD chain, so a nested container there reaches anything it likes — the documented
+# 037 residual. Seeing it fail there is what makes the GREEN here mean something.
+echo "  — sibling-container egress is governed (G5 — the closed 037 residual)"
+if ! command -v docker >/dev/null 2>&1; then
+  err "docker CLI absent — cannot run the sibling probe"
+else
+  # curlimages/curl is tiny and has no shell, so the probe is exactly one request.
+  sib_out="$(docker run --rm curlimages/curl:latest \
+      -s -i --max-time 15 "https://${BLOCKED_HOST_SIBLING:-example.com}/" 2>&1 || true)"
+  if printf '%s' "$sib_out" | grep -q 'Blocked by network policy'; then
+    ok "sibling container REFUSED ${BLOCKED_HOST_SIBLING:-example.com} (refusal came from the sandbox policy)"
+  elif [ -z "$(printf '%s' "$sib_out" | tr -d '[:space:]')" ]; then
+    ok "sibling container could not reach ${BLOCKED_HOST_SIBLING:-example.com} (no response — blackholed)"
+  else
+    err "sibling container REACHED ${BLOCKED_HOST_SIBLING:-example.com} — nested/sibling egress is UNFILTERED"
+  fi
+fi
+
 echo "  — default-deny still holds (arbitrary host refused)"
 # A host that is DEFINITELY not on the allowlist. Under default-deny the OUTPUT DROP blackholes it →
 # curl times out (exit 28) or fails to connect. If it SUCCEEDS, egress is open → default-deny broken
