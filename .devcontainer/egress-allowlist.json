@@ -172,6 +172,12 @@
       "cdnRotating": false
     },
     {
+      "domain": "dl-cdn.alpinelinux.org",
+      "group": "packages",
+      "reason": "Alpine package CDN. Required by the mcm-app IMAGE BUILD — frontend/mcm-app/Dockerfile's runner stage does `apk add --no-cache gcompat`. THIS IS A DIRECT COST OF THE FEATURE'S HEADLINE SECURITY WIN, and worth understanding rather than just allowlisting: on the Docker Desktop path an image build runs in a container off the nested dockerd, whose traffic traverses the FORWARD chain that init-firewall.sh deliberately leaves alone — so build-time package fetches were NEVER governed and nobody had to think about them. Under the sandbox the policy is enforced host-side and covers ALL VM egress including build containers, which is precisely the 037 residual this migration closes (FR-025/G5). Closing it means every builder's package fetches now need explicit permission. Measured 2026-08-16: without this the build dies at `apk add --no-cache gcompat` -> exit 1. Retires with the other build-time entries if the runner stage ever stops needing gcompat.",
+      "cdnRotating": true
+    },
+    {
       "domain": "deb.debian.org",
       "group": "packages",
       "reason": "Debian package mirrors (main + security). REQUIRED AT DEV-CONTAINER BUILD TIME ONLY, and only under the sandbox topology. The docker-outside-of-docker devcontainer feature apt-installs the docker CLI and the compose plugin, which the toolchain image does not ship. On the Docker Desktop path this never needed an allowlist entry because the container build runs on the HOST engine, outside any egress governance; in the sandbox the build runs INSIDE the governed microVM, so the build itself is now subject to policy. Measured 2026-08-16: without this the build fails at DNS — 'Something wicked happened resolving deb.debian.org (-5 - No address associated with hostname)' — and the feature install aborts. THIS ENTRY SHOULD BE REMOVED once the docker CLI and compose plugin are baked into toolchain.Dockerfile and the sandbox variant drops its `features` block; that is the intended end state (it also removes a build-time network dependency, which helps SC-007's recreate budget). Until then, note honestly that this makes arbitrary Debian packages reachable from the VM at runtime, which is a broader surface than the registry entries above.",
