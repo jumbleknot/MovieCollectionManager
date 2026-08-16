@@ -128,12 +128,104 @@ that has not run yet would be a claim, not a procedure. The intended shape, from
 
 | Phase | Rollback | Status |
 | --- | --- | --- |
-| P1 sandbox bring-up | `sbx rm mcm` | to be recorded at T058 |
-| P2 egress + forge gate | reset policy to the bring-up profile; `sbx rm mcm` | partially recorded above (in-repo half) |
-| P3 dev container | `docker rm -f` the container in the VM; re-run `devcontainer up`; Docker Desktop config untouched | to be recorded at T058 |
-| P4 editor chain | remove the managed `Host *.sbx` block; drop the published SSH port | to be recorded at T058 |
-| P5 workload | `down-mcm` / `down-auth` in the VM, or `sbx rm mcm` | to be recorded at T058 |
-| P6 adopt | `git revert` — **the only irreversible step**, see below | to be recorded at T058 |
+| P1 sandbox bring-up | `sbx rm mcm` | ✅ **recorded (T058)** — see P1 below |
+| P2 egress + forge gate | reset policy to the bring-up profile; `sbx rm mcm` | ✅ **recorded** — in-repo half above, policy half in P2b below |
+| P3 dev container | `docker rm -f` the container in the VM; re-run `devcontainer up`; Docker Desktop config untouched | ✅ **recorded** — see P3 below |
+| P4 editor chain | remove the managed `Host *.sbx` block; drop the published SSH port | ✅ **recorded (T058)** — see P4 below |
+| P5 workload | `down-mcm` / `down-auth` in the VM, or `sbx rm mcm` | ✅ **recorded (T058)** — see P5 below |
+| P6 adopt | `git revert` — **the only irreversible step**, see below | ⏳ not yet performed (T060, gated on two incident-free weeks) |
+
+---
+
+### P1 — Sandbox bring-up (T001 – T003)
+
+```powershell
+sbx stop mcm      # non-destructive: state is retained, restart with `sbx run --name mcm -d`
+sbx rm  mcm       # DESTRUCTIVE: VM, engine, every image/volume AND the workspace clone
+```
+
+⚠️ **`sbx rm` takes the workspace clone with it.** Anything unpushed inside `/workspaces/mcm` is
+gone. Push first — this environment's source of truth is the forge, not the VM.
+
+⚠️ **There is no `sbx start`.** It prints root help rather than erroring, so a rollback procedure
+written around it appears to do nothing. Restart is `sbx run --name mcm -d`.
+
+Nothing on the Windows host is modified by this phase apart from the sandbox's own state directory
+and `C:\Users\Steve\sbx-workspaces\mcm-vm`. Docker Desktop is untouched.
+
+---
+
+### P2b — Egress policy (host-side half)
+
+The in-repo half (the generator and `init-firewall.sh`) is covered above. The **live policy** is
+host-side state, not a file in git, so it reverts separately:
+
+```powershell
+sbx policy ls mcm --json                       # inspect what is actually applied
+sbx policy rm <rule-id>                        # remove one rule
+sbx policy reset                               # back to defaults — REMOVES THE ALLOWLIST
+```
+
+⚠️ `sbx policy reset` restores the *default* profile, which is **not** this feature's deny-all +
+36-destination allowlist. Re-apply from the generator afterwards, never by hand:
+
+```powershell
+node scripts/gen-egress-policy.mjs --format sbx-policy --forge-host $env:FORGE_REGISTRY_HOST
+```
+
+Verify the restore actually took: `verify-sandbox-egress.sh --audit-check`. Do not assume it did —
+a policy that silently failed to apply looks exactly like one that applied and permits everything.
+
+---
+
+### P4 — Editor chain (T036 – T040)
+
+Entirely host-side and trivially reversible; nothing in the VM changes.
+
+```powershell
+# 1. Remove the managed block from the SSH config (added by sbx; keep the rest of the file).
+notepad $env:USERPROFILE\.ssh\config     # delete the `Host mcm.sbx` block
+
+# 2. Drop the published SSH port if it was pinned.
+sbx ports ls mcm
+sbx ports rm mcm 2222
+
+# 3. The one-step launcher is a repo file — deleting scripts/open-sandbox.ps1 is the whole
+#    rollback for it. The manual four-step route (Remote-SSH -> Open Folder -> Attach) keeps
+#    working regardless, since the launcher only automates it.
+```
+
+**VS Code state to be aware of:** entries created under **File → Open Recent** point at
+`vscode-remote://dev-container+…@ssh-remote+mcm.sbx/…`. After `sbx rm mcm` those entries remain and
+fail on click. They are cosmetic — clear them from the Recent list; nothing else depends on them.
+
+---
+
+### P5 — Workload (T041 – T051)
+
+Stacks inside the VM, torn down with the same targets used everywhere else:
+
+```bash
+pnpm nx down-agents-prod infrastructure-as-code   # agent stack (does NOT auto-restart; see below)
+pnpm nx down-mcm  infrastructure-as-code
+pnpm nx down-auth infrastructure-as-code
+```
+
+To reclaim the disk this phase consumed (the VM's Docker disk is 49 GB and cannot be enlarged):
+
+```bash
+docker builder prune -f     # safe; never touches images
+docker image prune -f       # DANGLING ONLY — never -a (evicts the 3.5 GB Playwright image)
+```
+
+**Rolling back the workload does not roll back the environment**, and vice versa. The stacks are
+ordinary compose projects with no sandbox-specific state; if all you need is a clean slate, tear the
+stacks down rather than removing the sandbox and paying the cold-rebuild cost.
+
+⚠️ **The template is not a backup.** `mcm-proven:060` snapshots the VM root filesystem and contains
+**no Docker images** — a sandbox recreated from it comes up in 4 s and then needs a full cold
+rebuild. It is a provisioning shortcut, not a restore point. Recreate with the workspace named
+explicitly, or `sbx run` mounts the current directory (see the sandbox runbook § 7b).
 
 **The asymmetry to record honestly at T058**: P6 step 5 is the only irreversible step, because it
 deletes the fallback configuration. Before it, rollback is reverting documentation commits and the
