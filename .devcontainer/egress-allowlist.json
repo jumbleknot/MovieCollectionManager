@@ -40,7 +40,13 @@
     {
       "domain": "objects.githubusercontent.com",
       "group": "source",
-      "reason": "Release-asset and LFS object blob host for GitHub. Distinct from github.com in the same way a registry's blob CDN is distinct from its API.",
+      "reason": "Release-asset and LFS object blob host for GitHub. Distinct from github.com in the same way a registry's blob CDN is distinct from its API. NOTE: GitHub has migrated RELEASE-ASSET delivery to release-assets.githubusercontent.com (see the next entry); this host is retained for LFS objects and older redirect targets, and must not be treated as covering release downloads.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "release-assets.githubusercontent.com",
+      "group": "source",
+      "reason": "CURRENT release-asset delivery host for GitHub. A download from github.com/<org>/<repo>/releases/download/... answers 302 to THIS host, and allowlisting github.com (or even objects.githubusercontent.com) does not cover it. Measured 2026-08-16: `uv run --with httpx` needed a standalone CPython 3.13 and died with `dns error` on the redirect target, failing the agent-stack bring-up at the Keycloak-secret step — a failure whose message named github.com, not the host actually blocked. This is the FIFTH instance on this list of the same front-door-vs-blob-host split (Docker Hub, ghcr, quay, MCR, now GitHub releases), with the extra wrinkle that the blob host CHANGED under a previously-correct entry: objects.githubusercontent.com was right when it was written and silently stopped covering release downloads. When a fetch fails with a DNS error, resolve the REDIRECT CHAIN before adding the host that appears in the error message.",
       "cdnRotating": false
     },
     {
