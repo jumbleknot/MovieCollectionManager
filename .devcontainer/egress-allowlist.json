@@ -1,0 +1,194 @@
+{
+  "$comment": "Canonical egress destinations for the MCM engineering environment. Consumed ONLY by scripts/gen-egress-policy.mjs, which emits BOTH the host-side sandbox network policy (--format sbx-policy) and the in-VM firewall domain array (--format ipset-domains). NEVER hand-edit either emitted form, and never let a consumer keep its own copy of this list: two enforcement layers with two hand-maintained lists turn a blocked fetch into the union of two allowlists, and diagnosis into guesswork (research.md R8/D-04). The forge registry host is deliberately NOT in this file — it is topology-sensitive, gated out of git, and injected at runtime from FORGE_REGISTRY_HOST via the generator's --forge-host parameter, exactly as init-firewall.sh has always done.",
+  "$schemaNotes": {
+    "domain": "FQDN. Never a bare IP — CDN-backed hosts rotate, and the list is resolved by domain and re-runnable.",
+    "group": "One of: agent | source | registry | packages | app.",
+    "reason": "Non-empty. An unexplained allowlist entry is an unreviewable one.",
+    "cdnRotating": "true marks the ipset-staleness class — entries whose blob timeouts are a re-resolve, not a missing rule. Set true only where the recorded evidence says the host actually rotates."
+  },
+  "$mustNeverAppearHere": [
+    "The forge / registry host, or any tailnet address — injected at runtime from FORGE_REGISTRY_HOST.",
+    "Any credential, token or key.",
+    "The OpenWiki analytics host. Telemetry is disabled BY CONFIGURATION (OPENWIKI_TELEMETRY_DISABLED=1), never by allowlisting the destination. This inversion is deliberate and must survive the migration."
+  ],
+  "destinations": [
+    {
+      "domain": "api.anthropic.com",
+      "group": "agent",
+      "reason": "Anthropic API — the Claude Code CLI the assistant runs in, and the agent gateway's model backend when MODEL_PROVIDER=anthropic. Also the re-record path for the golden-pair cassette harness. This is the one entry without which the dev container has no assistant at all.",
+      "cdnRotating": false
+    },
+
+    {
+      "domain": "github.com",
+      "group": "source",
+      "reason": "git clone/fetch over HTTPS for public dependencies and tooling. GitHub IP churn is handled separately and more robustly than an A-record snapshot: init-firewall.sh additionally pulls the git/web/api/packages CIDR ranges from api.github.com/meta and adds them as networks, falling back to A-record resolution if that fetch fails. That is why this host is not marked as the ipset-staleness class.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "api.github.com",
+      "group": "source",
+      "reason": "GitHub REST API — used by gh, by tooling, and by init-firewall.sh itself to fetch the published egress CIDR ranges. Blocking it does not merely break the API: it silently degrades the firewall to A-record-only allowlisting (the script warns and continues).",
+      "cdnRotating": false
+    },
+    {
+      "domain": "codeload.github.com",
+      "group": "source",
+      "reason": "Tarball/zipball download host for GitHub archives. A separate host from github.com and reached by package managers fetching git-archive dependencies; allowlisting github.com alone does not cover it.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "objects.githubusercontent.com",
+      "group": "source",
+      "reason": "Release-asset and LFS object blob host for GitHub. Distinct from github.com in the same way a registry's blob CDN is distinct from its API.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "raw.githubusercontent.com",
+      "group": "source",
+      "reason": "Raw file fetches from GitHub — installer scripts and pinned single-file resources fetched by tooling at runtime.",
+      "cdnRotating": false
+    },
+
+    {
+      "domain": "registry-1.docker.io",
+      "group": "registry",
+      "reason": "Docker Hub registry API — manifest resolution for every compose stack image. Feature 037 T014. Under the DinD topology these registry entries were needed because the NESTED dockerd shared the dev container's netns and so its pulls hit the OUTPUT chain. Under the sandbox topology with --network=host they are needed for exactly the same structural reason, one level out: the script now programs the VM's OUTPUT chain, which covers the sandbox dockerd's pulls. Without these, docker pull fails and the allowlist is the FIRST suspect.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "auth.docker.io",
+      "group": "registry",
+      "reason": "Docker Hub token/authentication endpoint. A pull fails at the auth step, not the blob step, if this is missing — which reads as a credentials problem rather than a firewall one.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "index.docker.io",
+      "group": "registry",
+      "reason": "Docker Hub index/search endpoint, still contacted during normal pull resolution.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "production.cloudflare.docker.com",
+      "group": "registry",
+      "reason": "Docker Hub blob-layer CDN (Cloudflare-fronted). Allowlisting these two STABLE blob hostnames — rather than widening to whole CDN provider ranges — was the actual fix for the failing pull in feature 037 and is sufficient in the common case. FIREWALL_ALLOW_CDN_RANGES=1 remains the opt-in broad fallback for repeated stale-IP failures.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "production.cloudfront.docker.com",
+      "group": "registry",
+      "reason": "Docker Hub blob-layer CDN (CloudFront-fronted). Rotates IPs faster than a one-shot A-record ipset can track, so a mid-session blob timeout here means re-run init-firewall.sh to refresh the ipset — it does not mean a rule is missing.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "ghcr.io",
+      "group": "registry",
+      "reason": "GitHub Container Registry — the source of the devcontainer features (docker-outside-of-docker, and previously docker-in-docker) and of assorted tool images.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "pkg-containers.githubusercontent.com",
+      "group": "registry",
+      "reason": "GHCR blob-layer host. ghcr.io resolves manifests; layers come from here. Allowlisting ghcr.io alone yields a pull that authenticates and then stalls on the first layer.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "mcr.microsoft.com",
+      "group": "registry",
+      "reason": "Microsoft Container Registry — the source of mcr.microsoft.com/playwright:<pin>, the official Playwright image the documented web-E2E recipe runs in (chromium cannot be installed in-container; the browser CDN and apt mirrors are deliberately not allowlisted). THIS ENTRY IS NEW IN FEATURE 060 and was not in the inline array it replaced, because until now it was masked: the image was already cached on the DinD engine, so no pull ever traversed the firewall. Two things break that mask under 060. (1) A fresh sandbox has an EMPTY image cache, so the first web-E2E run must actually pull ~3.4 GB from here. (2) The documented cold-pull escape — `sudo iptables -P OUTPUT ACCEPT`, pull, re-apply — DOES NOT WORK under sandbox policy, which is enforced host-side and is untamperable from inside the VM by design (FR-008). Without this entry there is therefore no in-environment way to obtain the image at all, and T043/SC-006 cannot pass. Measured 2026-08-15: the baseline run failed exactly this way (`dial tcp 150.171.70.10:443: i/o timeout`) once the pin moved 1.60.0 → 1.62.1 and the cached image no longer matched.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "quay.io",
+      "group": "registry",
+      "reason": "Red Hat Quay registry — the project's auth stack pulls Keycloak from quay.io. Manifests resolve from this host; blob layers are served from the Akamai cdn0N.quay.io hosts below, which is why both are listed.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "cdn.quay.io",
+      "group": "registry",
+      "reason": "Quay blob-layer CDN (Akamai). Akamai rotates IPs faster than a one-shot A-record ipset can track, and — unlike the Docker Hub blob hosts — it is NOT covered by the FIREWALL_ALLOW_CDN_RANGES opt-in, which only knows AWS-CloudFront and Cloudflare. A cold Keycloak pull can therefore still time out on a blob even with the range fallback enabled. Documented escape: relax egress for the pull (sudo iptables -P OUTPUT ACCEPT), pull, then re-run init-firewall.sh — or pre-pull the images.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "cdn01.quay.io",
+      "group": "registry",
+      "reason": "Quay blob-layer CDN shard (Akamai). Same rotation and same FIREWALL_ALLOW_CDN_RANGES blind spot as cdn.quay.io; the shards are addressed individually by the registry so all of them must be present.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "cdn02.quay.io",
+      "group": "registry",
+      "reason": "Quay blob-layer CDN shard (Akamai). See cdn01.quay.io — the shard chosen for a given layer is not predictable, so allowlisting a subset produces intermittent, layer-dependent pull failures.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "cdn03.quay.io",
+      "group": "registry",
+      "reason": "Quay blob-layer CDN shard (Akamai). See cdn01.quay.io.",
+      "cdnRotating": true
+    },
+
+    {
+      "domain": "registry.npmjs.org",
+      "group": "packages",
+      "reason": "npm registry — pnpm/npm install for the JS workspace. Feature 037 US1 core.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "crates.io",
+      "group": "packages",
+      "reason": "Rust crates registry. Feature 038 T030 — RUNTIME package sources for the full toolchain. Note the timing distinction that makes these entries easy to misjudge: the BAKED toolchain is fetched at IMAGE-BUILD time, BEFORE this firewall exists (research D5), so these entries matter only for RUNTIME fetches — cargo add / cargo install of a new crate, and the dotfiles RTK build (cargo install --git).",
+      "cdnRotating": true
+    },
+    {
+      "domain": "static.crates.io",
+      "group": "packages",
+      "reason": "Downloaded crate blob host for crates.io. CDN-backed (Fastly) and rotates IPs; a cold runtime cargo install that stalls on a blob is a stale ipset, not a missing rule — re-run init-firewall.sh.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "index.crates.io",
+      "group": "packages",
+      "reason": "Sparse registry index for crates.io. Separate host from crates.io and from static.crates.io; cargo contacts all three during a cold resolve.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "pypi.org",
+      "group": "packages",
+      "reason": "PyPI metadata — uv and the Specify CLI. Feature 038 T030, same build-time-vs-runtime distinction as the crates entries: only RUNTIME fetches (uv add, uv tool install) traverse this firewall.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "files.pythonhosted.org",
+      "group": "packages",
+      "reason": "PyPI package blob host. CDN-backed (Fastly) and rotates IPs — pypi.org alone gives a resolve that then stalls on the download.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "astral.sh",
+      "group": "packages",
+      "reason": "Astral installer host — the uv installer script. Needed only when uv itself is (re)installed at runtime rather than consumed from the baked image.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "api.expo.dev",
+      "group": "packages",
+      "reason": "Expo / EAS API — reached by Expo CLI and EAS tooling during runtime operations.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "exp.host",
+      "group": "packages",
+      "reason": "Expo services host, paired with api.expo.dev.",
+      "cdnRotating": false
+    },
+
+    {
+      "domain": "api.themoviedb.org",
+      "group": "app",
+      "reason": "TMDB API. Feature 059 added this, REVERSING an earlier explicit 'do NOT allowlist TMDB' instruction, and the history matters because the reasoning has now changed twice. Under DinD (measured 2026-07-16) every RUNTIME path that calls TMDB — the BFF's validate-on-save probe, web-api-mcp's curator enrichment — was a NESTED container and so traversed the FORWARD chain, which init-firewall.sh deliberately leaves to dockerd; those paths never needed an entry, and adding one for them would have been cargo-culting. What changed in 059 is that the certification lookup became a merge-relevant assertion whose integration test (nx test:integration web-api-mcp) runs from the dev-container SHELL, i.e. the OUTPUT chain, where TMDB was correctly unreachable. Hence the entry — for the TEST RUNNER, not the app. UNDER FEATURE 060 THAT DISTINCTION NO LONGER HOLDS: the sandbox network policy is enforced host-side and governs ALL VM egress including every sibling container, so the app's own TMDB traffic is now governed by this list too. The entry is therefore required for BOTH the test runner and the application paths, and the old 'test runner only' wording would understate what this line now authorises.",
+      "cdnRotating": true
+    }
+  ]
+}
