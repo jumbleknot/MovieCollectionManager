@@ -114,7 +114,26 @@
     // (secret-scan). This is a real `sk-ant-...` API key (pay-per-token) — SEPARATE from a Claude Code
     // subscription login. Set it on the host (setx ANTHROPIC_API_KEY ...); unset → empty → the agent
     // falls back to its default (ollama) and golden record is unavailable, but the container still comes up.
-    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    //
+    // ⚠️ RENAMED 2026-08-16 (feature 060) — DELIBERATELY **NOT** `ANTHROPIC_API_KEY`, as a COST
+    // CONTROL. Claude Code prefers ANTHROPIC_API_KEY over an existing subscription login whenever
+    // it finds one in its environment, so exporting the raw name into this container's shell made
+    // EVERY assistant session bill the pay-per-token API instead of the subscription — silently,
+    // with nothing in the UI showing which was in use. Measured: ~$15 of unintended API spend in a
+    // single day on a workstation with a valid subscription login sitting unused.
+    //
+    // The key is still needed by the agent gateway, the golden RE-RECORD path and the E2E runs, so
+    // it is carried under a name Claude Code does not recognise and mapped back to
+    // ANTHROPIC_API_KEY only at the point of use (scripts/agent-stack.mjs passes it INTO the
+    // gateway container; wiki-maintain.mjs accepts either; the Playwright recipe passes it with
+    // `-e`). Those are separate processes/containers running no assistant, so the raw name is safe
+    // there and unsafe here.
+    //
+    // Set `MCM_ANTHROPIC_API_KEY` on the host — and NOT `ANTHROPIC_API_KEY`, for the same reason,
+    // since the host runs Claude Code too. CI is unaffected: it injects ANTHROPIC_API_KEY from
+    // repository secrets into jobs with no interactive assistant, and every consumer honours that
+    // name first.
+    "MCM_ANTHROPIC_API_KEY": "${localEnv:MCM_ANTHROPIC_API_KEY}",
     // TMDB v3 API key for the movie-assistant agent's TMDB enrichment/search (web-api-mcp) and the
     // agent web E2E: the assistant dock only renders once the test user has a RUNNABLE agent config,
     // and agent-config-seed.ts requires a TMDB key (`SEED_TMDB_KEY = process.env.TMDB_API_KEY`) to seed

@@ -151,7 +151,31 @@
     // in the VM.
 
     "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
-    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+
+    // ⚠️ DELIBERATELY **NOT** NAMED `ANTHROPIC_API_KEY`. This is a cost control, not cosmetics.
+    //
+    // Claude Code prefers ANTHROPIC_API_KEY over an existing subscription login whenever it finds
+    // one in its environment. Exporting the raw name into this container's shell therefore makes
+    // EVERY assistant session bill the pay-per-token API instead of the subscription — silently,
+    // with no warning and nothing in the UI to indicate which is being used. Measured 2026-08-16:
+    // roughly $15 of unintended API spend in a single day, on a workstation that had a perfectly
+    // valid subscription login sitting unused.
+    //
+    // The key is still needed — by the agent gateway, the golden cassette RE-RECORD path, and the
+    // containerized E2E runs — so it is carried under a name Claude Code does not recognise, and
+    // mapped back to ANTHROPIC_API_KEY only at the point of use:
+    //   • scripts/agent-stack.mjs   → passes `-e ANTHROPIC_API_KEY=…` INTO the gateway container
+    //   • scripts/wiki-maintain.mjs → accepts either name
+    //   • the Playwright E2E recipe → `-e ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY"`
+    // Each of those is a separate process or container where no assistant runs, so the raw name is
+    // safe there and unsafe here.
+    //
+    // Set `MCM_ANTHROPIC_API_KEY` on the host (and NOT `ANTHROPIC_API_KEY`, for exactly the same
+    // reason — the host runs Claude Code too). CI is unaffected: it injects ANTHROPIC_API_KEY from
+    // repository secrets into jobs that run no interactive assistant, and every consumer above
+    // still honours that name first.
+    "MCM_ANTHROPIC_API_KEY": "${localEnv:MCM_ANTHROPIC_API_KEY}",
+
     "TMDB_API_KEY": "${localEnv:TMDB_API_KEY}",
     "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}",
     "MCM_FORGE_ISSUE_TOKEN": "${localEnv:MCM_FORGE_ISSUE_TOKEN}",

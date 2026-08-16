@@ -100,19 +100,50 @@ committed config.
    `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (a clean dir) so the inner DinD docker CLI
    ignores that helper. No action needed; just don't remove it.
 
-### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, ANTHROPIC_API_KEY, TMDB_API_KEY, MCM_FORGE_TOKEN, MCM_FORGE_ISSUE_TOKEN)
+### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, MCM_ANTHROPIC_API_KEY, TMDB_API_KEY, MCM_FORGE_TOKEN, MCM_FORGE_ISSUE_TOKEN)
 
 `devcontainer.json` forwards a few HOST env vars into the container (build arg + `containerEnv`) via
 `${localEnv:VAR}` so no host-sensitive value enters git. **The extension reads them from the VS Code
 process's environment** — so setting one is not enough; VS Code must be *relaunched with that value
 already in its environment*, and the container recreated.
 
-- **`ANTHROPIC_API_KEY`** — needed for the movie-assistant agent's Anthropic model backend and the
-  **golden cassette RE-RECORD** path (golden's surface is Claude — `claude-haiku-4-5` /
+- **`MCM_ANTHROPIC_API_KEY`** — needed for the movie-assistant agent's Anthropic model backend and
+  the **golden cassette RE-RECORD** path (golden's surface is Claude — `claude-haiku-4-5` /
   `claude-sonnet-4-6`; replay is keyless). Ollama is unreachable from the containerized gateway (the
   nested-DinD `host.docker.internal` resolves to the dev container, not the Windows host), so Anthropic
   is the in-container model path; `api.anthropic.com` is already in the `init-firewall.sh` allowlist.
   Use a real `sk-ant-…` **API key** (pay-per-token) — this is NOT your Claude Code subscription login.
+
+  > ### ★★★ SET `MCM_ANTHROPIC_API_KEY`, **NEVER** `ANTHROPIC_API_KEY` — on the host OR in here
+  >
+  > **Claude Code prefers `ANTHROPIC_API_KEY` over an existing subscription login whenever it finds
+  > one in its environment.** There is no warning and nothing in the UI showing which is in use, so
+  > an assistant session bills the pay-per-token API while a perfectly valid subscription sits
+  > unused. **Measured 2026-08-16: ~$15 of unintended API spend in a single day**, on a workstation
+  > where `oauthAccount` was present the whole time.
+  >
+  > This variable was called `ANTHROPIC_API_KEY` until feature 060 and was forwarded straight into
+  > the container shell — so it hit *both* the host and the dev container. It is now carried under a
+  > name Claude Code does not recognise and mapped back to `ANTHROPIC_API_KEY` **only at the point of
+  > use**, each of which is a separate process or container running no assistant:
+  >
+  > | Consumer | How it gets the key |
+  > | --- | --- |
+  > | agent gateway | `scripts/agent-stack.mjs` passes `-e ANTHROPIC_API_KEY=…` **into the container** |
+  > | OpenWiki maintenance | `scripts/wiki-maintain.mjs` accepts either name |
+  > | containerized web/agent E2E | the Playwright recipe passes `-e ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY"` |
+  >
+  > **CI is unaffected** — it injects `ANTHROPIC_API_KEY` from repository secrets into jobs that run
+  > no interactive assistant, and every consumer above still honours that name first.
+  >
+  > If you already have `ANTHROPIC_API_KEY` set on the host, move it:
+  >
+  > ```powershell
+  > [Environment]::SetEnvironmentVariable('MCM_ANTHROPIC_API_KEY', [Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User'), 'User')
+  > [Environment]::SetEnvironmentVariable('ANTHROPIC_API_KEY', $null, 'User')
+  > ```
+  >
+  > Then **fully quit** VS Code and every terminal — the `setx` gotcha below applies here too.
 - **`TMDB_API_KEY`** — a TMDB **v3** key for the agent's TMDB enrichment/search (web-api-mcp). The
   assistant dock only renders once the test user has a **runnable agent config**, and
   `agent-config-seed.ts` needs a TMDB key to seed one — so the agent web E2E (US1-navigate,
@@ -649,7 +680,7 @@ docker run --rm --network host --env-file ./.env.e2e.local \
   -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
   -e E2E_BFF_TARGET=dev-container -e CI=true \
   -e E2E_AGENT_PRODUCTION=1 -e E2E_AGENT_PROVIDER=anthropic \
-  -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" -e TMDB_API_KEY="$TMDB_API_KEY" \
+  -e ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY" -e TMDB_API_KEY="$TMDB_API_KEY" \
   -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
   -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET="$SVC_SECRET" \
   -e KEYCLOAK_CLIENT_ID=movie-collection-manager \

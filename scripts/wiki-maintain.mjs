@@ -878,7 +878,7 @@ export function runMaintenance({
   since = null,
   policy = null,
   invoke = undefined,
-  credential = process.env.ANTHROPIC_API_KEY ?? null,
+  credential = process.env.ANTHROPIC_API_KEY ?? process.env.MCM_ANTHROPIC_API_KEY ?? null,
   requireCredential = true,
   pageBudget = PAGE_BUDGET,
   timeBudgetSeconds = TIME_BUDGET_SECONDS,
@@ -1689,8 +1689,11 @@ async function main(argv) {
     // A credential failure is exit 2 and is reported as such. Classifying it as `nothing-to-do`
     // would be the worst available lie: the cheap path would look reachable while the work silently
     // never happened, and the marker would advance over a range nothing examined (FR-017).
-    if (!opts.dryRun && !process.env.ANTHROPIC_API_KEY) {
-      console.error('[wiki-maintain] ANTHROPIC_API_KEY is not set — --execute needs the model credential.');
+    // Accepts either name. The dev container supplies only MCM_ANTHROPIC_API_KEY, because exporting
+    // the raw ANTHROPIC_API_KEY into the shell makes Claude Code bill the pay-per-token API instead
+    // of the subscription (see .devcontainer/devcontainer.json). CI still sets the raw name.
+    if (!opts.dryRun && !process.env.ANTHROPIC_API_KEY && !process.env.MCM_ANTHROPIC_API_KEY) {
+      console.error('[wiki-maintain] No Anthropic credential (ANTHROPIC_API_KEY / MCM_ANTHROPIC_API_KEY) — --execute needs it.');
       console.error('[wiki-maintain] This is a missing credential, NOT "nothing to do". Run --plan for the free path.');
       return 2;
     }

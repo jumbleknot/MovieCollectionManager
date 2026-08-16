@@ -221,17 +221,29 @@ function checkHostOllama() {
   process.exit(1);
 }
 
-/** Resolve ANTHROPIC_API_KEY from the host env or agents/movie-assistant/.env.local (never logged). */
+/**
+ * Resolve the Anthropic credential from the env or agents/movie-assistant/.env.local (never logged).
+ *
+ * Accepts MCM_ANTHROPIC_API_KEY as well as ANTHROPIC_API_KEY, and the dev container now supplies
+ * only the MCM_-prefixed name. That is a COST control, not cosmetics: Claude Code prefers
+ * ANTHROPIC_API_KEY over an existing subscription login whenever it finds it in the environment, so
+ * exporting the raw name into the dev-container shell silently bills every assistant session to the
+ * pay-per-token API instead of the subscription. Measured 2026-08-16 — roughly $15 in a day.
+ *
+ * ANTHROPIC_API_KEY is still honoured first so CI, which injects it from repository secrets into a
+ * job that runs no interactive assistant, is unaffected.
+ */
 function anthropicKey() {
   if ((process.env.ANTHROPIC_API_KEY || '').trim()) return process.env.ANTHROPIC_API_KEY.trim();
+  if ((process.env.MCM_ANTHROPIC_API_KEY || '').trim()) return process.env.MCM_ANTHROPIC_API_KEY.trim();
   const envFile = resolve(REPO_ROOT, 'agents/movie-assistant/.env.local');
   if (existsSync(envFile)) {
     for (const line of readFileSync(envFile, 'utf8').split(/\r?\n/)) {
-      const m = /^ANTHROPIC_API_KEY=(.+)$/.exec(line.trim());
+      const m = /^(?:MCM_)?ANTHROPIC_API_KEY=(.+)$/.exec(line.trim());
       if (m) return m[1].trim().replace(/^["']|["']$/g, '');
     }
   }
-  die('MODEL_PROVIDER=anthropic but no ANTHROPIC_API_KEY (set it in the env or agents/movie-assistant/.env.local)');
+  die('MODEL_PROVIDER=anthropic but no Anthropic credential (set MCM_ANTHROPIC_API_KEY or ANTHROPIC_API_KEY in the env, or ANTHROPIC_API_KEY in agents/movie-assistant/.env.local)');
 }
 
 function fetchGatewaySecret() {
