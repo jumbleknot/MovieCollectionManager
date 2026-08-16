@@ -67,7 +67,23 @@
   // three URL exports and the Playwright `--network host` recipe. Without it, every one of those
   // documented addresses would need rewriting and the runbook's validated sequences would all
   // become suspect.
-  "runArgs": ["--network=host"],
+  //
+  // `--restart=always` answers a foot-gun unique to this topology: THE SANDBOX STOPS WHEN IDLE,
+  // and containers inside it do not come back by themselves. Measured 2026-08-16 — a dev container
+  // repeatedly presented as `Exited (255)` between commands, which reads as a crash; it was the
+  // microVM going away underneath it (`uptime -p` reported "up 0 minutes" immediately after an ssh
+  // that had just booted it). The same event truncated a `devcontainer up` mid-run, leaving a log
+  // with no outcome line.
+  //
+  // With this set, the container returns on its own: verified by `sbx stop mcm`, reconnecting, and
+  // observing `running` with nothing manually started. dockerd itself starts at VM boot (not via
+  // systemd — the sandbox template handles it), so the restart policy is honoured.
+  //
+  // `always` rather than `unless-stopped` is deliberate and follows this repository's own scar
+  // tissue: features 028/030 found `unless-stopped` insufficient for coming back after a host
+  // restart and had to move to `always`. Note it does NOT defend against the R11 foot-gun — a
+  // `docker rm -f` on the dev container's own container still ends the session.
+  "runArgs": ["--network=host", "--restart=always"],
 
   // FR-002 — never root, never the host user. Unchanged.
   "remoteUser": "coder",
