@@ -1211,7 +1211,20 @@ Test *Reopen in Container* deliberately, against a **stopped** dev container so 
 - [ ] T047 [US5] **G5 GATE** — prove the sibling refusal is blocked **and** audited in `sbx policy log`
 - [ ] T048 [US5] **G6 GATE** — record migrated wall-clock in `baseline-measurements.md` and compare against T003 — **Done when**: every stage from T003 has a paired migrated timing and a computed ratio; a ratio >1.5× is escalated with the measurements, not absorbed
 - [ ] T049 [US5] Determine whether proxy header injection reaches sibling containers (R7), record the posture in `research.md`, and upgrade any credential that can move to D-07 preference (1)
-- [ ] T050 [US5] Update `scripts/devcontainer-android.sh` to refuse explicitly when `/dev/kvm` is absent — **Done when**: it exits 0 with a message naming the absence, the reason (no nested virtualization in the microVM), and both alternative routes (CI, or the retained Docker Desktop environment)
+- [X] T050 [US5] Update `scripts/devcontainer-android.sh` to refuse explicitly when `/dev/kvm` is absent — ✅ all five elements named and verified
+
+> **T050** — the pre-existing message already said *"/dev/kvm not present … skipping (mobile agent
+> flows run in CI)"*, which covered the absence and one route but **not** the reason or the retained
+> environment. It now names all five, checked mechanically rather than by eye: the **absence**, the
+> **reason** (the microVM offers no nested virtualization — gate R2, and permanent, versus Docker
+> Desktop where it means the host exposes no KVM), **route 1** (CI, already recommended for agent
+> flows), **route 2** (the **retained Docker Desktop** container, deliberately kept as the emulator
+> fallback), and that it **exits 0** so it never blocks container start.
+>
+> The verbosity is deliberate. Without it the failure is indistinguishable from a broken image or a
+> missing device permission, and a future session spends an hour rediscovering that the capability
+> simply does not exist here. Observed working during the extension-driven build:
+> `devcontainer-android: /dev/kvm not present … skipping`.
 - [ ] T051 [US5] Prove the environment survives a workstation reboot — **Done when**: after a host restart, `sbx start mcm` returns the sandbox with its images, volumes, workspace clone and shell history intact, the dev container restarts, and the delta runbook states what a reboot does and does not preserve
 
 ### T046 — Write the sibling-egress probe
