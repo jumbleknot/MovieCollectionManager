@@ -63,6 +63,13 @@ collect() {
   for h in "$HOME/.bash_history" "$HOME/.zsh_history"; do
     [ -f "$h" ] && echo "$(basename "$h")=$(wc -l < "$h" 2>/dev/null | tr -d ' ')"
   done
+
+  # A function returns the status of its LAST command. The loop above ends in
+  # `[ -f "$h" ] && echo …`, which is FALSE whenever the last candidate history file is absent
+  # (.zsh_history usually is) — so `collect` returned 1 and --capture reported "capture failed"
+  # while having written a perfectly good manifest. Measured 2026-08-16. Return success explicitly:
+  # the caller's error handling should fire on a real write failure, not on a missing optional file.
+  return 0
 }
 
 case "$MODE" in
