@@ -140,6 +140,44 @@
       "matchStrings": ["\"installation\":\\s*\\{[\\s\\S]*?\"version\":\\s*\"(?<currentValue>[^\"]+)\""],
       "depNameTemplate": "nx",
       "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Keep the Playwright CONTAINER IMAGE tag in app-ci.yml in lockstep with the @playwright/test",
+        "version pnpm-lock.yaml resolves. Item #204, measured on PR #199 (2026-08-15): a lock-file",
+        "maintenance PR moved the lockfile 1.60.0 -> 1.62.1 and left BOTH image pins at",
+        "v1.60.0-noble. The tag selects the BAKED BROWSER BUILD, so the runner looked for an",
+        "executable the image does not carry and ZERO TESTS RAN. It did not fail the suite — it",
+        "produced no counts at all (`[e2e-gate] failed=0 flaky=0 passed=0`), which the result gate",
+        "caught only after a full ~35-minute app-e2e cycle and only as a generic 'app-e2e failed'.",
+        "NOTHING EXTRACTED THIS TAG BEFORE. Measured with `RENOVATE_PLATFORM=local",
+        "RENOVATE_DRY_RUN=extract`: app-ci.yml is matched by the `github-actions` manager ONLY, and",
+        "that manager reads `uses:` and container:/services: images — not an image inside a `run:`",
+        "shell block. So the lockfile half moved on a schedule and the tag half moved by hand.",
+        "EXTRACTION IS NOT GROUPING. This entry alone does NOT make both files move together — the",
+        "`playwright pin` packageRule below is what does, and it must stay ordered after the broad",
+        "`js patch/minor` / `js majors` rules. That distinction is not theoretical: the nx pair had",
+        "this exact manager for months and still half-bumped twice (PR #141, PR #193) because a",
+        "later npm rule pulled its lockfile half back out. Do not delete that rule as redundant.",
+        "THE npm DATASOURCE IS DELIBERATE, not a shortcut. It gives both halves ONE depName, so a",
+        "single matchPackageNames re-joins them; it keeps the tag out of `docker:pinDigests`, which",
+        "would rewrite the literal string that scripts/__tests__/app-e2e-env.guard.test.mjs locates",
+        "the docker run by; and it keeps it out of the `docker base images` group, which would file",
+        "Playwright alongside Postgres and Keycloak rather than with its own runner.",
+        "ACCEPTED RESIDUAL RISK: npm can publish @playwright/test@X before",
+        "mcr.microsoft.com/playwright:vX-noble exists, so a proposed tag can 404. That is accepted",
+        "because it fails LOUDLY — `docker run` exits on `manifest unknown` and reds the job — which",
+        "is the opposite of the silent zero-test run this whole entry exists to remove. Trading a",
+        "loud failure for a silent one is the point. Revisit only if a publication lag actually",
+        "bites; the docker-datasource alternative was rejected on the three grounds above.",
+        "check-toolchain-consistency.mjs fails a drifted pin in ~0.4s regardless, so a bot that",
+        "somehow moves one half still cannot merge."
+      ],
+      "managerFilePatterns": ["/^\\.forgejo/workflows/app-ci\\.yml$/"],
+      "matchStrings": ["mcr\\.microsoft\\.com/playwright:v(?<currentValue>\\d[\\w.]*)-noble"],
+      "depNameTemplate": "@playwright/test",
+      "datasourceTemplate": "npm"
     }
   ],
   "packageRules": [
@@ -238,6 +276,32 @@
       "matchManagers": ["npm", "custom.regex"],
       "matchPackageNames": ["nx", "/^@nx//"],
       "groupName": "nx monorepo",
+      "automerge": false
+    },
+    {
+      "description": [
+        "PLAYWRIGHT MOVES AS ONE UNIT — item #204, the same shape as the nx rule above and for the",
+        "same measured reason. @playwright/test lives in pnpm-lock.yaml (built-in `npm` manager) and",
+        "the mcr.microsoft.com/playwright:v<x>-noble tag lives in app-ci.yml (the customManagers",
+        "regex entry above, manager `custom.regex`). The tag selects the baked browser build, so a",
+        "PR that moves only the lockfile runs ZERO tests and reports no counts at all — PR #199,",
+        "~35 minutes to surface, and it presented as a generic 'app-e2e failed'.",
+        "THIS RULE MUST STAY AFTER `js patch/minor` AND `js majors`. Both match",
+        "matchManagers: [\"npm\"], a customManager's manager is `custom.regex`, and LATER rules",
+        "override earlier ones — so placed any earlier, those two would pull the lockfile half back",
+        "out onto its own branch and leave the tag half alone. That is exactly how the nx pair",
+        "half-bumped on PR #141 and PR #193, from the manager that existed to prevent it.",
+        "NO matchUpdateTypes, deliberately: restricting it would let at least one track fall through",
+        "to the broad npm rules, and the major track splits identically to patch/minor.",
+        "THE EXACT NAME, NEVER A /playwright/ PATTERN. A substring match would also capture",
+        "@nx/playwright and steal it from the `nx monorepo` group — splitting the Nx core from its",
+        "own plugins, i.e. trading one skew for another. renovate-workflow.guard.test.mjs asserts",
+        "both halves share a group on all three tracks, that this rule matches BOTH managers and is",
+        "ordered last, and — as the control — that @nx/playwright still lands in `nx monorepo`."
+      ],
+      "matchManagers": ["npm", "custom.regex"],
+      "matchPackageNames": ["@playwright/test"],
+      "groupName": "playwright pin",
       "automerge": false
     }
   ],

@@ -426,3 +426,138 @@ test('the nx grouping rule covers both managers and is ordered LAST of the rules
     'the nx customManager no longer targets nx.json',
   );
 });
+
+// ---------------------------------------------------------------------------------------------
+// Item #204 — the Playwright pair must be proposed as ONE unit, for the same reason nx must.
+// ---------------------------------------------------------------------------------------------
+//
+// Playwright lives in two files that Renovate reads with two DIFFERENT managers:
+//
+//   pnpm-lock.yaml            @playwright/test          <- the built-in `npm` manager
+//   .forgejo/workflows/       mcr.microsoft.com/        <- a `customManagers` regex entry,
+//     app-ci.yml                playwright:v<x>-noble      manager `custom.regex`
+//
+// The image TAG selects the baked browser build. On PR #199 (2026-08-15) a lock-file-maintenance PR
+// moved the lockfile 1.60.0 -> 1.62.1 and left both tags at v1.60.0-noble: the browser was not at
+// the path the runner looked in, ZERO tests ran, and the suite reported no counts at all rather than
+// failures. That is worse than a break — `failed=0 passed=0` is only distinguishable from success by
+// a gate that knows to look.
+//
+// The SAME splitting mechanism as nx applies here, so the same assertions are needed: `js
+// patch/minor` and `js majors` match `matchManagers: ["npm"]`, a customManager's manager is
+// `custom.regex`, and LATER rules win — so a grouping rule placed before them has its npm half
+// pulled straight back out onto its own branch.
+
+const PLAYWRIGHT_PAIR = [
+  { label: 'app-ci.yml image tag', manager: 'custom.regex', packageFile: '.forgejo/workflows/app-ci.yml', depName: '@playwright/test' },
+  { label: 'pnpm-lock @playwright/test', manager: 'npm', packageFile: 'package.json', depName: '@playwright/test' },
+];
+
+for (const updateType of ['patch', 'minor', 'major']) {
+  test(`both halves of the Playwright pin are proposed in ONE group on the ${updateType} track`, () => {
+    const groups = PLAYWRIGHT_PAIR.map((member) => ({
+      ...member,
+      groupName: resolvedGroupName({ ...member, datasource: 'npm', updateType }),
+    }));
+
+    const shown = groups
+      .map((g) => `    ${g.label.padEnd(28)} manager=${g.manager.padEnd(13)} group=${JSON.stringify(g.groupName)}`)
+      .join('\n');
+
+    for (const g of groups) {
+      assert.notEqual(
+        g.groupName,
+        null,
+        `on the ${updateType} track, no packageRule in renovate.json groups ${g.label}:\n${shown}\n` +
+          '  An ungrouped member gets its OWN branch, so the image tag and the lockfile can land in\n' +
+          '  separate PRs — and the drifted half runs ZERO tests rather than failing. Item #204.',
+      );
+    }
+
+    const distinct = [...new Set(groups.map((g) => g.groupName))];
+    assert.equal(
+      distinct.length,
+      1,
+      `on the ${updateType} track the Playwright pair resolves to ${distinct.length} DIFFERENT groups:\n${shown}\n` +
+        '  Different groups means different branches, which is a half-bump: the image tag selects the\n' +
+        '  baked browser build, so a lockfile that moves without it produces `failed=0 passed=0` and\n' +
+        "  a generic \"app-e2e failed\" 35 minutes later (PR #199).\n" +
+        "  The usual cause is a rule matching only `npm`: a customManager's manager is `custom.regex`,\n" +
+        '  and LATER rules win, so a broad npm rule placed after this one pulls the lockfile half back\n' +
+        '  out. Item #204.',
+    );
+  });
+}
+
+test('the Playwright grouping rule covers both managers and is ordered LAST of the rules that group it', () => {
+  const rules = packageRules.filter((rule) =>
+    ruleMatches(rule, { manager: 'npm', packageFile: 'package.json', depName: '@playwright/test', datasource: 'npm', updateType: 'minor' }) &&
+    rule.groupName !== undefined,
+  );
+  assert.ok(rules.length > 0, 'no packageRule assigns @playwright/test a groupName at all');
+
+  const last = rules[rules.length - 1];
+  assert.ok(
+    Array.isArray(last.matchManagers) &&
+      last.matchManagers.includes('npm') &&
+      last.matchManagers.includes('custom.regex'),
+    'the LAST rule to group @playwright/test is\n' +
+      `  ${JSON.stringify({ matchManagers: last.matchManagers, matchPackageNames: last.matchPackageNames, groupName: last.groupName })}\n` +
+      '  which does not match BOTH managers. It must match `npm` (pnpm-lock.yaml) and `custom.regex`\n' +
+      '  (app-ci.yml, via the customManagers entry) or it groups one half and strands the other.',
+  );
+  assert.equal(
+    last.matchUpdateTypes,
+    undefined,
+    'the Playwright grouping rule restricts matchUpdateTypes, so at least one update track falls\n' +
+      '  through to the broad npm rules and half-bumps. Leave it unrestricted so it covers every track,\n' +
+      '  exactly as the nx rule does.',
+  );
+
+  // The rule is only meaningful while the customManager it re-joins still exists.
+  const manager = (config.customManagers ?? []).find((m) => m.depNameTemplate === '@playwright/test');
+  assert.ok(
+    manager,
+    'renovate.json has no customManager with depNameTemplate "@playwright/test", so the image tag in\n' +
+      '  app-ci.yml is extracted by NOTHING — the github-actions manager reads `uses:` and container\n' +
+      '  images, not an image inside a `run:` shell block. Only the lockfile half would move.',
+  );
+  assert.ok(
+    (manager.managerFilePatterns ?? []).some((p) => p.includes('app-ci')),
+    'the Playwright customManager no longer targets .forgejo/workflows/app-ci.yml',
+  );
+  assert.equal(
+    manager.datasourceTemplate,
+    'npm',
+    'the Playwright customManager must use the npm datasource so both halves carry ONE depName and a\n' +
+      '  single matchPackageNames re-joins them. A docker datasource splits the pair\'s name and drags\n' +
+      '  the tag into the `docker base images` group and `docker:pinDigests`.',
+  );
+});
+
+test('the Playwright grouping rule does NOT swallow @nx/playwright or unrelated npm packages', () => {
+  // The control. Without it, widening the rule until everything shared one group would satisfy every
+  // assertion above while collapsing the config. @nx/playwright is the specific hazard: it belongs to
+  // the nx family, and a `/playwright/` pattern would steal it and split the Nx core from its plugins.
+  for (const updateType of ['patch', 'minor', 'major']) {
+    const nxPlaywright = resolvedGroupName({
+      manager: 'npm', packageFile: 'package.json', depName: '@nx/playwright', datasource: 'npm', updateType,
+    });
+    assert.equal(
+      nxPlaywright,
+      'nx monorepo',
+      `@nx/playwright resolves to ${JSON.stringify(nxPlaywright)} on the ${updateType} track, not the nx ` +
+        'group — the Playwright rule is matching by substring and has stolen an nx plugin.',
+    );
+
+    const unrelated = resolvedGroupName({
+      manager: 'npm', packageFile: 'package.json', depName: 'typescript', datasource: 'npm', updateType,
+    });
+    assert.notEqual(
+      unrelated,
+      resolvedGroupName({ manager: 'npm', packageFile: 'package.json', depName: '@playwright/test', datasource: 'npm', updateType }),
+      `typescript shares the Playwright group on the ${updateType} track, so the rule matches far more ` +
+        'than Playwright and every unrelated JS dep would ride along in its PR.',
+    );
+  }
+});
