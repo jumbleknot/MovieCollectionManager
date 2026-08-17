@@ -88,6 +88,34 @@
   // FR-002 — never root, never the host user. Unchanged.
   "remoteUser": "coder",
 
+  // ── THE REAL FIX for the VM-user / container-user UID split (recreate defect #10) ─────────────
+  //
+  // The workspace clone is created by the VM's user; the dev container runs as `coder`. They were
+  // DIFFERENT UIDs, and the same UID renders under a different name on each side, which disguises
+  // the whole problem:
+  //
+  //     VM        : uid=1000(agent)   ← clones the repo; any `ssh <sandbox> 'git …'` writes as this
+  //     container : uid=1001(coder)   ← `coder` lands on 1001 because node:24-bookworm already
+  //                                     occupies 1000 with its `node` user, and toolchain.Dockerfile
+  //                                     creates coder with a plain `useradd` (next free uid)
+  //     uid 1000 seen INSIDE the container renders as `node`
+  //
+  // So every file written VM-side was unwritable by the container user, and git failed deep on
+  // individual object writes with messages that read like repository corruption:
+  //     "111 of 256 .git/objects subdirs plus 27 worktree files are owned by node, not coder"
+  //
+  // `updateRemoteUserUID` is the dev-container spec's own answer: on Linux it renumbers the remote
+  // user to match the owner of the workspace, in a derived layer, at build time. It is set
+  // EXPLICITLY here rather than left to its `true` default because the default demonstrably did not
+  // take effect on this path — leaving it implicit is what allowed the mismatch to persist unnoticed
+  // through a full migration, and an implicit default that silently no-ops is indistinguishable from
+  // one that worked.
+  //
+  // This supersedes fix-workspace-ownership.sh as the CURE; that script remains as the REPAIR,
+  // because a tree already poisoned by earlier VM-side git writes still needs fixing once, and
+  // because the standing rule (run git INSIDE the container) is easier to violate than to remember.
+  "updateRemoteUserUID": true,
+
   // Retained ONLY while init-firewall.sh lives (research D-05): the in-VM iptables layer is kept as
   // defence-in-depth beneath the host-side sandbox policy for this migration.
   //
@@ -281,7 +309,12 @@
   },
 
   // Unchanged from the Docker Desktop config.
-  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true",
+  // The trailing fix-workspace-ownership.sh call is NOT redundant with the chowns before it.
+  // Those cover cache dirs and generated artefacts; the WORKSPACE ITSELF (and critically `.git`) is
+  // created by the VM's user — a different UID from the container's — so git object writes fail deep
+  // with errors that read like repository corruption. See that script's header. It repairs only
+  // mismatched paths, so the normal case costs one `find`.
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true; /bin/bash ${containerWorkspaceFolder}/.devcontainer/fix-workspace-ownership.sh ${containerWorkspaceFolder} || true",
 
   // ONE-TIME PER CONTAINER CREATION, which is exactly the right cadence for both steps.
   //
@@ -317,5 +350,10 @@
   // if a non-allowlisted host is reachable, and equally if an allowlisted one is NOT (a severed
   // network must not read as a security pass). Its header documents the restart-blindness it shares
   // with any postStart hook.
-  "postStartCommand": "/bin/bash ${containerWorkspaceFolder}/.devcontainer/assert-egress-governed.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
+  // fix-workspace-ownership.sh runs on EVERY start, not just creation, because the mismatch is
+  // re-introduced by ordinary use: any `ssh <sandbox> 'git -C /workspaces/... …'` writes new objects
+  // as the VM user, and that is an easy reflex. It exits after a single `find` when nothing is
+  // wrong, so the cost on a healthy tree is negligible. `|| true` keeps a permissions oddity from
+  // blocking container start — the egress assertion below is the one that must be able to fail.
+  "postStartCommand": "/bin/bash ${containerWorkspaceFolder}/.devcontainer/fix-workspace-ownership.sh ${containerWorkspaceFolder} || true; /bin/bash ${containerWorkspaceFolder}/.devcontainer/assert-egress-governed.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
 }

@@ -119,24 +119,37 @@ The repo ships a [Dev Containers](https://containers.dev/) definition (`.devcont
 
 - **Isolation first** — the assistant runs as a non-root user with no path to the host filesystem, SSH keys, or credential stores. Containers and test stacks build on the **microVM's own engine as siblings** (`docker-outside-of-docker`), behind a **deny-by-default egress policy enforced outside the VM** — which is what makes it cover sibling containers too, closing the gap the in-container firewall never could.
 - **Faster, measurably** — the same five-stage bring-up takes **0.43×** the Docker-in-Docker wall-clock; `docker-build` alone went **1024 s → 293 s**, because a nesting level and the Windows filesystem are both out of the path.
-- **One-step entry** — `pwsh scripts/open-sandbox.ps1` starts the sandbox if it is idle-stopped and opens VS Code directly inside the dev container.
+- **One-step entry** — `.\scripts\open-sandbox.ps1` (Windows PowerShell 5.1; `pwsh` not required) starts the sandbox if it is idle-stopped and opens VS Code directly inside the dev container.
 - **Full toolchain, pre-provisioned** — Rust + cargo tooling, Python via `uv`, Specify CLI, Node 24/pnpm/Nx, and `gh` are baked into a prebuilt `mcm-devcontainer` image (pulled from the forge registry by digest, or built locally via `node scripts/build-devcontainer-image.mjs`), so nothing is reinstalled per session.
 - **Fast** — budgets: cold first build < 5 min, warm recreate < 90 s, stop→start < 15 s; `cargo`/`pnpm`/`uv` caches persist across recreates on named volumes.
 - **Personal AI layer (optional)** — point the Dev Containers `dotfiles.repository` setting at your personal dotfiles repo to restore your Claude Code plugins/skills, RTK (built once from source in-container), and service logins; these persist on a personal-config volume, and the container is fully team-capable without them.
 
-**Interactive (daily driver):** VS Code → Command Palette → *Dev Containers: Clone Repository in Named Container Volume* → this repo's URL.
+**Interactive (daily driver — sandbox path):**
 
-**Headless:**
+```powershell
+.\scripts\open-sandbox.ps1     # Windows PowerShell 5.1; pwsh is NOT required
+```
+
+Starts the microVM if it has idle-stopped (it stops ~30 s after the last session) and opens VS Code **directly inside the dev container** — replacing the four-step *Remote-SSH → Open Folder → Attach* route. First-time setup of the sandbox itself: [docs/runbooks/devcontainer-sandbox.md](docs/runbooks/devcontainer-sandbox.md).
+
+**Headless (run inside the VM, where the engine and the workspace clone live):**
 
 ```bash
-npm install -g @devcontainers/cli
-devcontainer up --workspace-folder .
-devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-toolchain-present.sh
+ssh mcm.sbx
+devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json
 ```
+
+**Retained Docker Desktop path** (needed only for the Android emulator): VS Code → Command Palette → *Dev Containers: Clone Repository in Named Container Volume* → this repo's URL, using `.devcontainer/devcontainer.json`.
 
 ### Expo/Metro limitation — native mobile stays on the host
 
-The dev container is a headless Linux environment, so it **cannot run the Android emulator or iOS Simulator**. Native mobile build, emulator, and device-debug work (including Maestro mobile E2E) remains a host-side activity — the container covers everything else: backend/API development, compose-based test stacks, the **web target**, and the **Metro bundler** (watchman-backed, hot-reload at native speed).
+The dev container covers backend/API development, compose-based test stacks, the **web target**, and the **Metro bundler** (watchman-backed, hot-reload at native speed). It never runs the **iOS Simulator** (macOS-only), and whether it can run the **Android emulator** depends on the path:
+
+| Path | Android emulator |
+|---|---|
+| **Docker Sandbox microVM** (default) | ❌ **never** — no nested virtualization, so `/dev/kvm` cannot exist |
+| Docker Desktop / DinD (retained) | ✅ headless with hardware accel, via the host's `/dev/kvm` |
+| CI | ✅ and the **recommended** route for agent flows |
 
 How to develop the Expo app from inside the container:
 

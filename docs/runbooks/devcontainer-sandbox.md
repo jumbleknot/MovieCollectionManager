@@ -42,11 +42,15 @@ The manual route is *open VS Code → Remote-SSH: Connect to Host → Open Folde
 Attach to Running Container*. Don't do that. Use:
 
 ```powershell
-pwsh scripts/open-sandbox.ps1
+.\scripts\open-sandbox.ps1
 ```
 
 It checks whether the sandbox is running, starts it if not, waits for SSH, and opens VS Code
 **directly inside the dev container**.
+
+> Runs on **Windows PowerShell 5.1** — the default shell. `pwsh` (PowerShell 7) is **not** required
+> and is not installed by default on Windows. If script execution is blocked by policy:
+> `powershell -ExecutionPolicy Bypass -File .\scripts\open-sandbox.ps1`
 
 For zero commands, make a shortcut with this target and pin it:
 
@@ -359,6 +363,131 @@ Expo tunnel) needs no inbound rule at all.
 > 💡 **`ssh mcm.sbx` starts a stopped sandbox by itself.** You do not have to `sbx run` first; the
 > connection triggers the start. `scripts/open-sandbox.ps1` still starts it explicitly because it
 > then *waits* for readiness, which is what stops VS Code racing the boot.
+
+---
+
+## 7d. 🔴 Run git INSIDE the container, never from the VM shell
+
+The VM user and the container user are **different UIDs**, and the same UID renders under a different
+name on each side — which makes the symptom read like corruption rather than permissions:
+
+| | UID | shows as |
+| --- | ---: | --- |
+| VM shell (does the clone; any `ssh <sandbox> 'git …'`) | **1000** | `agent` |
+| dev container | **1001** | `coder` |
+| a VM-created file, seen from inside the container | 1000 | **`node`** (the base image's user) |
+
+Anything git writes from the VM is unwritable by the container user. It fails deep, on individual
+object writes:
+
+```text
+111 of 256 .git/objects subdirs plus 27 worktree files are owned by node, not coder,
+so any object write fails
+```
+
+**Two ways in, and the second keeps happening:** the documented recreate clones from the VM shell, so
+a fresh environment is born with it; and any later `ssh <sandbox> 'git -C /workspaces/… fetch|pull'`
+re-poisons it. That is an easy reflex when scripting the sandbox from the host, and it is how the
+111 subdirs above were created.
+
+**The rule: git runs in the container.** To automate from outside, go through
+`docker exec -u coder …`, never the VM shell.
+
+### ✅ FIXED (2026-08-17) — `coder` is uid 1000, matching the VM user
+
+`toolchain.Dockerfile` creates `coder` at **1000:1000**, moving the base image's `node` to 1100
+first. At that point in the build the image is nearly empty, so the renumber is free. Verified after
+re-pinning:
+
+```text
+VM        : 1000:1000  (agent)
+container : 1000:1000  (coder)
+container git write: OK
+VM        git write: OK          ← both sides, which no earlier attempt achieved
+workspace paths not owned by me: 0
+```
+
+**Applying it is a re-pin, not a local build.** Pushing a `toolchain.Dockerfile` change *is* the
+trigger — the `devcontainer-image` workflow builds and publishes automatically, so check for a
+`build-publish` run before building anything by hand:
+
+```bash
+# 1. find the published image (tagged by commit sha) and CONFIRM it carries the fix
+docker pull <registry>/<ns>/mcm-devcontainer:<sha>
+docker run --rm --entrypoint bash <same> -lc 'id -u coder'      # must print 1000
+# 2. re-pin: MCM_DEVCONTAINER_IMAGE lives in ~/.mcm-sandbox-env (NOT ~/.bashrc), unquoted `export`
+#    is absent — substitute only the digest, and VERIFY the value actually changed
+# 3. chown the tree to 1000, then `devcontainer up --remove-existing-container`
+```
+
+⚠️ The historical account below is kept because the failure modes are instructive, and because the
+same trap will reappear for anyone renumbering a user in a large image.
+
+⚠️ **Do not shortcut this with a layer on top of the prebuilt image.** Tried 2026-08-17; it cannot
+work. Changing a file's ownership **copies it up into the new overlay layer**, so a UID renumber
+duplicates the entire ~13 GB image. The build died in `exporting layers` with `no space left on
+device` on the Android system image, and filled the VM's disk to 100% doing it.
+
+> **Recovery, worth knowing on its own:** `docker builder prune -f` freed almost nothing, because
+> BuildKit only drops *unused* cache. **`docker builder prune -af`** reclaimed **17.8 GB**.
+
+Two further approaches were tried and rejected — recorded so they are not retried:
+
+| Approach | Result |
+| --- | --- |
+| `"updateRemoteUserUID": true` (the dev-container spec's own mechanism) | did not engage — set explicitly, container rebuilt, `coder` stayed 1001 |
+| chown the tree to the container user | symmetric see-saw: `container git write: OK / VM git write: FAILED` |
+
+**Until the image is rebuilt**, the supported posture is the rule above — and the VM shell's
+inability to write the repo *enforces* it rather than merely encouraging it.
+
+[`fix-workspace-ownership.sh`](../../.devcontainer/fix-workspace-ownership.sh) still runs at create
+and at every start, repairing only mismatched paths (a healthy tree costs one `find`). It exists for
+a tree already poisoned by earlier VM-side writes; understand it as moving the problem between the
+two users, not solving it:
+
+```bash
+bash .devcontainer/fix-workspace-ownership.sh /workspaces/mcm
+```
+
+> A UID mismatch also trips git's *dubious ownership* guard, a different and equally confusing
+> error. The script sets `safe.directory` as well.
+
+---
+
+## 7e. 🔴 A full disk does not announce itself — it wears other symptoms
+
+The 49 GB Docker disk filled three times on 2026-08-17, and **not once did the error mention disk**:
+
+| What it printed | What it looked like | What it was |
+| --- | --- | --- |
+| feature install `exit code: 100` | an apt or feature-config fault | disk full |
+| `At least one invalid signature was encountered` / `is not signed` | GPG or MITM-proxy corruption of `deb.debian.org` | disk full — apt wrote a truncated `InRelease`, so verification failed |
+| build died in `exporting layers` | needed a bit more room | disk full, on a 13 GB copy-up |
+
+**`df` is the authority; `docker system df` is not.** Docker reported gigabytes `RECLAIMABLE` while
+`df` said 0 bytes free, because it counts shared layers optimistically. Three separate prunes freed
+"space" that never appeared. What finally freed 13 GB was deleting the **derived** `vsc-mcm:latest`
+image *after* its parent toolchain image was gone — until then its layers were shared and deleting
+either freed almost nothing.
+
+**Order that actually works when the disk is full:**
+
+```bash
+df -h /var/lib/docker                # believe THIS, not docker system df
+docker builder prune -af             # -f alone drops only UNUSED cache; -af got 17.8 GB, then 7.5 GB
+docker image rm <old-toolchain-digest>   # parent first…
+docker image rm vsc-mcm-<hash>:latest    # …then the derived image, which now owns its layers
+```
+
+⚠️ **Build cache can mask a broken environment.** Those `apt` failures had been present for a while;
+builds "succeeded" by reusing a cached feature-install layer that never ran apt. Pruning the cache
+did not cause the failure — it *revealed* it. A green build that reused cache proved less than it
+appeared to, which is the same lesson as a skipped test reading as a pass.
+
+> **Two dev-container images will not fit.** The toolchain image is ~14 GB and the derived container
+> another ~13.5 GB. Pulling a new toolchain image while the old one and its derived image are still
+> present exceeds the disk on its own. Remove the previous pair as part of re-pinning.
 
 ---
 
