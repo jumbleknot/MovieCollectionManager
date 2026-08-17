@@ -243,7 +243,12 @@ function runCli(args, { env = {}, cwd = REPO_ROOT } = {}) {
     writeFileSync(p, `#!/bin/sh\necho "${name} $*" >> "${sentinel}"\nexit 1\n`, { mode: 0o755 });
   }
   const clean = { ...process.env, ...env };
-  delete clean.ANTHROPIC_API_KEY;
+  // Scrub EVERY name the script accepts a credential from, read from the script itself. Item #209:
+  // this deleted `ANTHROPIC_API_KEY` alone while wiki-maintain.mjs had long since also accepted
+  // `MCM_ANTHROPIC_API_KEY` — the name CLAUDE.md says the key is actually carried under in all three
+  // sanctioned environments. So "with NO model credential" was false wherever anyone really works,
+  // and `--execute` sailed past its own guard into the real path.
+  for (const name of mod.CREDENTIAL_ENV_NAMES) delete clean[name];
   const r = spawnSync(process.execPath, [SCRIPT, ...args], {
     cwd,
     encoding: 'utf8',
@@ -746,6 +751,48 @@ test('resume: --max-slices bounds one invocation and carries the rest forward', 
 });
 
 // ── C1: the CLI surface ─────────────────────────────────────────────────────────
+
+// ── C0: the harness itself — item #209 ──────────────────────────────────────
+//
+// The credential-absence tests below are only meaningful if the absence is CONSTRUCTED. For months
+// it was merely INHERITED from whatever the ambient environment happened to lack, so every one of
+// them passed on CI (which sets neither name for this job) and failed on every developer machine
+// (which sets `MCM_ANTHROPIC_API_KEY`). A guard on the harness is the only thing that catches that,
+// because each individual test still looks correct.
+
+test('harness: runCli scrubs EVERY credential name the script accepts, not a stale subset', () => {
+  // Derived from the script, never re-listed here — re-listing is the defect (#209).
+  assert.ok(mod.CREDENTIAL_ENV_NAMES.length > 0, 'the script exposes no credential names to scrub');
+
+  for (const name of mod.CREDENTIAL_ENV_NAMES) {
+    // Inject the name explicitly so the assertion does NOT depend on the ambient environment: this
+    // must fail on CI (where nothing is set) just as loudly as on a developer machine.
+    const { code, out } = runCli(['--execute'], { env: { [name]: 'sk-ant-planted-by-the-test' } });
+    assert.equal(
+      code, 2,
+      `with ${name} planted, the child still reached the real path instead of the exit-2 credential ` +
+        `guard — so a credential survived runCli's scrub.\n` +
+        `  It is NOT necessarily ${name} that leaked: any name in CREDENTIAL_ENV_NAMES ` +
+        `(${mod.CREDENTIAL_ENV_NAMES.join(', ')}) left in the ambient environment does this, which is ` +
+        'exactly how #209 hid — the scrub listed one name and the script accepted two.\n' +
+        `  Scrub the list from the script, never a copy of it.\n${out}`,
+    );
+  }
+});
+
+test('harness: running the suite leaves the TRACKED maintenance state untouched', () => {
+  // The second half of #209, and the same root cause: a leaked credential let --execute run the real
+  // path, which persisted `nothing-to-do` over a marker no maintenance run produced. A `git add -A`
+  // before committing would then falsify the record that decides when the wiki is next refreshed.
+  const r = spawnSync('git', ['status', '--porcelain', '--', mod.STATE_FILE], {
+    cwd: REPO_ROOT, encoding: 'utf8',
+  });
+  assert.equal(
+    (r.stdout ?? '').trim(), '',
+    `running this suite modified ${mod.STATE_FILE}:\n${r.stdout}\n` +
+      '  No test may write tracked state. Restore it and fix the write at its cause.',
+  );
+});
 
 test('CLI: --execute without a credential exits 2 rather than pretending there was nothing to do', () => {
   // FR-017: a credential failure must NEVER be reported as `nothing-to-do`. That is the one
