@@ -15,7 +15,19 @@
     {
       "domain": "api.anthropic.com",
       "group": "agent",
-      "reason": "Anthropic API — the Claude Code CLI the assistant runs in, and the agent gateway's model backend when MODEL_PROVIDER=anthropic. Also the re-record path for the golden-pair cassette harness. This is the one entry without which the dev container has no assistant at all.",
+      "reason": "Anthropic API — the Claude Code CLI the assistant runs in, and the agent gateway's model backend when MODEL_PROVIDER=anthropic. Also the re-record path for the golden-pair cassette harness. NOTE: this host carries model traffic ONLY — it does NOT cover Claude Code's subscription sign-in, which uses platform.claude.com and code.claude.com (next two entries). Allowlisting this one alone yields a CLI that cannot authenticate.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "platform.claude.com",
+      "group": "agent",
+      "reason": "Claude Code SUBSCRIPTION AUTHENTICATION. Signing in with a Claude.ai subscription (rather than an API key) fails with `getaddrinfo ENOTFOUND platform.claude.com` without this — and the failure happens AFTER the browser flow on the host reports success, so it reads as a broken login rather than a blocked host. Measured 2026-08-17. This is the same front-door-vs-second-host split this list documents for registries, now on the auth path: api.anthropic.com is the model API and does not cover sign-in.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "code.claude.com",
+      "group": "agent",
+      "reason": "Claude Code service endpoint — the most-referenced host in the CLI binary (455 occurrences vs 110 for platform.claude.com and 81 for api.anthropic.com). Required alongside platform.claude.com for the subscription-authenticated session. Discovered by extracting hostnames from the compiled binary itself (`grep -aoE '[a-z0-9][a-z0-9.-]*\\.(anthropic|claude)\\.(com|ai)' claude.exe | sort | uniq -c`) rather than by guessing and re-testing — a technique worth reusing whenever a closed-source tool is blocked by the policy.",
       "cdnRotating": false
     },
 
