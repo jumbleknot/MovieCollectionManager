@@ -26,6 +26,9 @@
 //   2. The pnpm version is SINGLE-SOURCED by `packageManager`. Any other place naming a pnpm
 //      version must name the SAME one. `pnpm/action-setup` with no `version:` is the preferred
 //      form — it reads `packageManager` — and is always accepted.
+//   3. The Playwright CONTAINER IMAGE tag in app-ci.yml must name the version pnpm-lock.yaml
+//      resolves for `@playwright/test` (item #204). The tag selects the baked browser build, so a
+//      half-bump does not fail the suite — it runs ZERO tests and reports no counts at all.
 //
 // Deliberately NOT checked: that a pin is the newest available. This gate is about internal
 // agreement, which is offline-checkable and deterministic; "is there a newer Node" is Renovate's
@@ -41,6 +44,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -204,6 +208,150 @@ export function findNxPinDrift(root = REPO_ROOT) {
   }];
 }
 
+/** The npm package whose version the Playwright container image must match. */
+const PLAYWRIGHT_PACKAGE = '@playwright/test';
+
+/** The one workflow that runs Playwright in a pinned container. */
+const PLAYWRIGHT_WORKFLOW = '.forgejo/workflows/app-ci.yml';
+
+/**
+ * Every DISTINCT `@playwright/test` version `pnpm-lock.yaml` resolves to.
+ *
+ * The LOCKFILE, not package.json, and that is the whole point. The manifest declares `^1.36.0` and
+ * was unchanged before and after the bump that broke CI — only the resolution moved, so a gate
+ * reading the manifest would pass the exact PR it exists to catch.
+ *
+ * Reads the map's own KEYS rather than matching the name in the text, because pnpm writes compound
+ * peer-suffixed keys that embed one package name inside another —
+ * `'@nx/playwright@22.7.8(…)(@playwright/test@1.62.1)(…)'`. A text match finds the name in there and
+ * is then only as correct as the file's indentation.
+ *
+ * Returns a SET rather than a single version so the caller can tell "absent" (0) from "ambiguous"
+ * (>1); collapsing either to a pick is how a gate starts passing vacuously.
+ */
+export function collectLockfilePlaywrightVersions(root = REPO_ROOT) {
+  const lockPath = join(root, 'pnpm-lock.yaml');
+  if (!existsSync(lockPath)) return [];
+  const lock = parseYaml(readFileSync(lockPath, 'utf8'));
+  const prefix = `${PLAYWRIGHT_PACKAGE}@`;
+  const versions = new Set();
+  for (const key of Object.keys(lock?.packages ?? lock?.snapshots ?? {})) {
+    if (!key.startsWith(prefix)) continue;
+    versions.add(key.slice(prefix.length).split('(')[0]); // drop any peer suffix
+  }
+  return [...versions];
+}
+
+/**
+ * Every Playwright container-image pin in one file's text.
+ *
+ * The `v` prefix and the `-noble` suffix are ANCHORS, not decoration: the tag as a whole selects the
+ * baked browser build, so a `-jammy` line carrying the same number is a different image and must not
+ * be read as this pin.
+ *
+ * Comment lines are skipped for the same reason collectPins() skips them — app-ci.yml carries heavy
+ * comment prose around this block, and prose describing a past pin is prose.
+ *
+ * @returns {{file:string,line:number,value:string}[]}
+ */
+export function collectPlaywrightImagePins(text, file) {
+  const location = posixLocation(file);
+  const pins = [];
+  text.split('\n').forEach((line, i) => {
+    if (/^\s*#/.test(line)) return;
+    const m = line.match(/mcr\.microsoft\.com\/playwright:v(\d[\w.]*)-noble\b/);
+    if (m) pins.push({ file: location, line: i + 1, value: m[1] });
+  });
+  return pins;
+}
+
+/**
+ * The Playwright runner and its container image must name the SAME version.
+ *
+ * MEASURED on PR #199, 2026-08-15, and it is the nastiest shape this gate covers. A lock-file
+ * maintenance PR moved `@playwright/test` 1.60.0 -> 1.62.1 while app-ci.yml kept
+ * `mcr.microsoft.com/playwright:v1.60.0-noble`. The tag selects the BAKED BROWSER BUILD, so the
+ * browser executable was simply not at the path the runner looked in and ZERO tests ran. The suite
+ * did not fail — it produced no counts at all, which the e2e result gate caught only after a full
+ * ~35-minute app-e2e cycle, and only as a generic "app-e2e failed".
+ *
+ * Deliberately scoped to ONE workflow rather than to PINNED_FILES: `specs/**` records the old tag as
+ * a point-in-time measurement of past features, and scanning those would fail the gate on its own
+ * history.
+ *
+ * Both halves must be present or both absent. A repo that pins the image without resolving the
+ * package, or resolves the package without pinning an image, is as broken as one whose halves
+ * disagree — and "found nothing to compare" is the one answer a gate must never treat as a pass.
+ *
+ * @returns {{file:string,line:number,problem:string}[]}
+ */
+export function findPlaywrightPinDrift(root = REPO_ROOT) {
+  // No lockfile: not a pnpm workspace, nothing to cross-check — the same judgement findNxPinDrift
+  // makes about a missing nx.json.
+  if (!existsSync(join(root, 'pnpm-lock.yaml'))) return [];
+
+  const workflowPath = join(root, PLAYWRIGHT_WORKFLOW);
+  return comparePlaywrightPins(
+    collectLockfilePlaywrightVersions(root),
+    existsSync(workflowPath)
+      ? collectPlaywrightImagePins(readFileSync(workflowPath, 'utf8'), PLAYWRIGHT_WORKFLOW)
+      : [],
+  );
+}
+
+/**
+ * The comparison itself, kept free of the filesystem so `--selftest` can prove the gate REJECTS a
+ * mismatched pair without writing anything. A gate that cannot be shown to fail is not a gate, and
+ * a demonstration that needs a temp directory is one nobody runs.
+ *
+ * @returns {{file:string,line:number,problem:string}[]}
+ */
+export function comparePlaywrightPins(versions, pins) {
+  if (!versions.length) {
+    if (!pins.length) return []; // Playwright is not used here at all.
+    return pins.map((pin) => ({
+      file: pin.file,
+      line: pin.line,
+      problem:
+        `the Playwright image is pinned to v${pin.value}-noble but the lockfile resolves no ` +
+        `${PLAYWRIGHT_PACKAGE} at all — the pinned browser build has no runner to match`,
+    }));
+  }
+
+  if (versions.length > 1) {
+    return [{
+      file: 'pnpm-lock.yaml', line: 1,
+      problem:
+        `${PLAYWRIGHT_PACKAGE} resolves to ${versions.length} versions (${versions.join(', ')}) — one ` +
+        'image tag cannot match them all, so the pin cannot be checked. De-duplicate the resolution.',
+    }];
+  }
+
+  const [resolved] = versions;
+  if (!pins.length) {
+    return [{
+      file: PLAYWRIGHT_WORKFLOW, line: 1,
+      problem:
+        `the lockfile resolves ${PLAYWRIGHT_PACKAGE} ${resolved} but this workflow pins no ` +
+        'mcr.microsoft.com/playwright:v<version>-noble image — found no pin to check, which is not ' +
+        'the same as finding an agreeing one. If the tag moved or changed variant, update this gate ' +
+        'at the cause rather than letting it pass vacuously.',
+    }];
+  }
+
+  return pins
+    .filter((pin) => pin.value !== resolved)
+    .map((pin) => ({
+      file: pin.file,
+      line: pin.line,
+      problem:
+        `Playwright image v${pin.value}-noble disagrees with the ${resolved} that pnpm-lock.yaml ` +
+        `resolves for ${PLAYWRIGHT_PACKAGE}. The image tag selects the baked browser build, so the ` +
+        'runner looks for an executable the image does not carry and ZERO tests run — the suite ' +
+        'reports no counts rather than failures. Move both halves together.',
+    }));
+}
+
 /** @returns {{file:string,line:number,problem:string}[]} */
 export function findDrift(root = REPO_ROOT) {
   const pkgPath = join(root, 'package.json');
@@ -241,6 +389,7 @@ export function findDrift(root = REPO_ROOT) {
   }
 
   findings.push(...findNxPinDrift(root));
+  findings.push(...findPlaywrightPinDrift(root));
   return findings;
 }
 
@@ -255,10 +404,10 @@ function runScan() {
   if (findings.length) {
     console.error(`✗ toolchain-consistency gate FAILED: ${findings.length} pin(s) disagree:`);
     for (const f of findings) console.error(`  ${f.file}:${f.line} — ${f.problem}`);
-    console.error('\nEvery Node pin must satisfy package.json `engines.node`, and the pnpm version is single-sourced by `packageManager`.');
+    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by `packageManager`, and the Playwright image tag must name the version pnpm-lock.yaml resolves.');
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced; nx agrees with nx.json installation.version)');
+  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced; nx agrees with nx.json installation.version; the Playwright image tag matches the lockfile)');
 }
 
 function selftest() {
@@ -288,11 +437,30 @@ function selftest() {
   t('action-setup version parsed', as.length === 1 && as[0].kind === 'pnpm' && as[0].value === '10.33.0');
   t('a COMMENT naming a pin is ignored', collectPins('      # pin `version: 10.33.0` explicitly, which…', 'x.yml').length === 0);
 
+  // The Playwright pair (item #204). The case that matters is the MISMATCH: everything else here
+  // can pass while the comparison is disabled, so a demonstration that the gate can FAIL is the
+  // only one worth running in CI.
+  const image = (v) => `            mcr.microsoft.com/playwright:v${v}-noble \\`;
+  const pinsFor = (...vs) => collectPlaywrightImagePins(vs.map(image).join('\n'), 'app-ci.yml');
+
+  const one = pinsFor('1.62.1');
+  t('a playwright image pin is extracted', one.length === 1 && one[0].value === '1.62.1');
+  t('BOTH occurrences are extracted', pinsFor('1.62.1', '1.60.0').length === 2);
+  t('a COMMENTED image line is not a pin', collectPlaywrightImagePins(`      # ${image('1.60.0')}`, 'x.yml').length === 0);
+  t('a -jammy variant is not the -noble pin', collectPlaywrightImagePins(image('1.62.1').replace('-noble', '-jammy'), 'x.yml').length === 0);
+
+  t('an agreeing pair is clean', comparePlaywrightPins(['1.62.1'], pinsFor('1.62.1', '1.62.1')).length === 0);
+  t('THE BUG: a drifted image tag is REJECTED', comparePlaywrightPins(['1.62.1'], pinsFor('1.60.0', '1.60.0')).length === 2);
+  t('a PARTIAL bump is REJECTED', comparePlaywrightPins(['1.62.1'], pinsFor('1.62.1', '1.60.0')).length === 1);
+  t('no pin at all is REJECTED, not passed vacuously', comparePlaywrightPins(['1.62.1'], []).length === 1);
+  t('an ambiguous resolution is REJECTED', comparePlaywrightPins(['1.62.1', '1.60.0'], pinsFor('1.62.1')).length === 1);
+  t('neither half present is not drift', comparePlaywrightPins([], []).length === 0);
+
   if (fails.length) {
     console.error('✗ toolchain-consistency --selftest FAILED:\n  - ' + fails.join('\n  - '));
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity)');
+  console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity, Playwright drift rejection)');
 }
 
 const args = process.argv.slice(2);

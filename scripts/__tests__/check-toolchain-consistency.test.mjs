@@ -20,10 +20,13 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const GATE = resolve(HERE, '..', 'check-toolchain-consistency.mjs');
 
 /** Build a throwaway repo root with the given files, and run findDrift against it. */
-function repo({ pkg, workflows = {}, dockerfiles = {}, nxJson = null }) {
+function repo({ pkg, workflows = {}, dockerfiles = {}, nxJson = null, lockfile = null }) {
   const root = mkdtempSync(join(tmpdir(), 'toolchain-'));
   writeFileSync(join(root, 'package.json'), JSON.stringify(pkg, null, 2));
   if (nxJson) writeFileSync(join(root, 'nx.json'), JSON.stringify(nxJson, null, 2));
+  // Taken as TEXT, not as an object to serialise: the cases that matter are malformed, absent and
+  // multi-resolution lockfiles, and a serialised object cannot express any of them.
+  if (lockfile !== null) writeFileSync(join(root, 'pnpm-lock.yaml'), lockfile);
   mkdirSync(join(root, '.forgejo', 'workflows'), { recursive: true });
   for (const [n, body] of Object.entries(workflows)) writeFileSync(join(root, '.forgejo', 'workflows', n), body);
   for (const [rel, body] of Object.entries(dockerfiles)) {
@@ -245,4 +248,219 @@ test('(w3) every finding this gate reports carries a POSIX location', async () =
   for (const f of collectPins('  - uses: actions/setup-node\n    node-version: 18.0.0\n', '.forgejo\\workflows\\x.yml')) {
     assert.doesNotMatch(f.file, /\\/, `a finding kept a backslash location: ${f.file}`);
   }
+});
+
+// --- (p) the Playwright image pin (feature 061, item #204) ---------------------------------------
+//
+// THE BUG, measured on PR #199 (2026-08-15). A lock-file-maintenance PR moved @playwright/test
+// 1.60.0 → 1.62.1 while `.forgejo/workflows/app-ci.yml` kept
+// `mcr.microsoft.com/playwright:v1.60.0-noble`. The image TAG selects the baked browser build, so
+// the browser never launched and ZERO tests ran — `[e2e-gate] failed=0 flaky=0 passed=0`, which is
+// not the same as producing good counts. It cost a full ~35-minute app-e2e cycle and presented as a
+// generic "app-e2e failed"; the diagnosis needed a container-log read.
+//
+// The manifest is NOT the authority and these tests must keep proving it: package.json declares
+// `^1.36.0`, which was unchanged before and after the move. Only the RESOLUTION moved, so a gate
+// reading package.json would have passed the exact PR it exists to catch.
+
+/** pnpm-lock.yaml text whose `section` map has exactly the given keys. */
+const lockText = (keys, section = 'packages') =>
+  `lockfileVersion: '9.0'\n\n${section}:\n` +
+  keys.map((k) => `  '${k}':\n    resolution: {integrity: sha512-deadbeef}\n`).join('');
+
+/** An app-ci.yml-shaped workflow whose Playwright docker run pins each given version in turn. */
+const workflowPinning = (...versions) =>
+  'jobs:\n  app-e2e:\n    steps:\n' +
+  versions
+    .map(
+      (v) =>
+        '      - name: E2E\n        run: |\n          docker run --network host \\\n' +
+        `            mcr.microsoft.com/playwright:v${v}-noble \\\n` +
+        '            sh -c "corepack enable && pnpm exec playwright test"\n',
+    )
+    .join('');
+
+test('(p) the resolved version comes from the lockfile, not the manifest range', async () => {
+  const { collectLockfilePlaywrightVersions } = await gate();
+  const root = repo({ pkg: PKG, lockfile: lockText(['@playwright/test@1.62.1']) });
+  assert.deepEqual(collectLockfilePlaywrightVersions(root), ['1.62.1']);
+});
+
+test('(p2) a lockfile that carries the package only under snapshots still resolves', async () => {
+  const { collectLockfilePlaywrightVersions } = await gate();
+  const root = repo({ pkg: PKG, lockfile: lockText(['@playwright/test@1.62.1'], 'snapshots') });
+  assert.deepEqual(collectLockfilePlaywrightVersions(root), ['1.62.1']);
+});
+
+test('(p3) a COMPOUND peer key that merely contains the name is not a resolution', async () => {
+  // The case that makes parsing worth 320ms over a text match. This key is real — pnpm-lock.yaml
+  // carries `'@nx/playwright@22.7.8(...)(@playwright/test@1.62.1)(...)'`, and a regex looking for
+  // the name anywhere finds it INSIDE that key. Correctness would then rest on the lockfile's
+  // indentation never changing; reading the map's own keys cannot be defeated that way.
+  const { collectLockfilePlaywrightVersions } = await gate();
+  const root = repo({
+    pkg: PKG,
+    lockfile: lockText(['@nx/playwright@22.7.8(@babel/traverse@7.29.8)(@playwright/test@1.62.1)(nx@22.7.8)']),
+  });
+  assert.deepEqual(collectLockfilePlaywrightVersions(root), []);
+});
+
+test('(p4) a lockfile without the package resolves nothing — it does not invent a version', async () => {
+  const { collectLockfilePlaywrightVersions } = await gate();
+  const root = repo({ pkg: PKG, lockfile: lockText(['typescript@5.9.0']) });
+  assert.deepEqual(collectLockfilePlaywrightVersions(root), []);
+});
+
+test('(p5) two resolutions are BOTH returned — the caller must never silently pick one', async () => {
+  const { collectLockfilePlaywrightVersions } = await gate();
+  const root = repo({
+    pkg: PKG,
+    lockfile: lockText(['@playwright/test@1.62.1', '@playwright/test@1.60.0']),
+  });
+  assert.deepEqual(collectLockfilePlaywrightVersions(root).sort(), ['1.60.0', '1.62.1']);
+});
+
+test('(p6) one image pin is found, with its version and 1-indexed line', async () => {
+  const { collectPlaywrightImagePins } = await gate();
+  const pins = collectPlaywrightImagePins(workflowPinning('1.62.1'), 'app-ci.yml');
+  assert.equal(pins.length, 1);
+  assert.equal(pins[0].value, '1.62.1');
+  assert.equal(pins[0].file, 'app-ci.yml');
+  // Counted from the fixture, not read off the implementation: jobs/app-e2e/steps (1-3), then
+  // `- name:` (4), `run: |` (5), `docker run` (6), and the image on 7.
+  assert.equal(pins[0].line, 7, 'the reported line must be the one a reader can open');
+});
+
+test('(p7) EVERY occurrence is found — a partial bump is only visible if both are read', async () => {
+  const { collectPlaywrightImagePins } = await gate();
+  const pins = collectPlaywrightImagePins(workflowPinning('1.62.1', '1.60.0'), 'app-ci.yml');
+  assert.equal(pins.length, 2, 'reading only the first occurrence passes a half-bump');
+  assert.deepEqual(pins.map((p) => p.value), ['1.62.1', '1.60.0']);
+  assert.notEqual(pins[0].line, pins[1].line, 'each occurrence needs its own line number');
+});
+
+test('(p8) the scan is not capped at the two occurrences that exist today', async () => {
+  const { collectPlaywrightImagePins } = await gate();
+  const pins = collectPlaywrightImagePins(workflowPinning('1.62.1', '1.62.1', '1.60.0'), 'app-ci.yml');
+  assert.equal(pins.length, 3, 'a third docker run added later must be covered without editing the gate');
+});
+
+test('(p9) a COMMENT naming an image is not treated as a pin', async () => {
+  // app-ci.yml carries heavy comment prose around this block, and this feature adds more. The same
+  // immunity collectPins() already has for Node/pnpm pins — prose describing a past pin is prose.
+  const { collectPlaywrightImagePins } = await gate();
+  const text = '      # was mcr.microsoft.com/playwright:v1.60.0-noble before the 1.62.1 bump\n';
+  assert.deepEqual(collectPlaywrightImagePins(text, 'app-ci.yml'), []);
+});
+
+test('(p10) a different OS variant is not interchangeable with the pinned one', async () => {
+  // The suffix is what selects the image, not decoration. A -jammy line pinning the "right" number
+  // is still a different browser build, so it must not be read as the -noble pin.
+  const { collectPlaywrightImagePins } = await gate();
+  const text = '            mcr.microsoft.com/playwright:v1.62.1-jammy \\\n';
+  assert.deepEqual(collectPlaywrightImagePins(text, 'app-ci.yml'), []);
+});
+
+test('(p11) no image line at all yields no pins — the emptiness is the caller\'s to judge', async () => {
+  const { collectPlaywrightImagePins } = await gate();
+  assert.deepEqual(collectPlaywrightImagePins('jobs:\n  a:\n    steps: []\n', 'app-ci.yml'), []);
+});
+
+test('(p12) an image pin finding carries a POSIX location', async () => {
+  const { collectPlaywrightImagePins } = await gate();
+  const pins = collectPlaywrightImagePins(workflowPinning('1.62.1'), '.forgejo\\workflows\\app-ci.yml');
+  assert.equal(pins[0].file, '.forgejo/workflows/app-ci.yml');
+});
+
+/** A root whose lockfile resolves `resolved` and whose app-ci.yml pins each of `pinned`. */
+const playwrightRepo = (resolved, ...pinned) =>
+  repo({
+    pkg: PKG,
+    lockfile: lockText(resolved.map((v) => `@playwright/test@${v}`)),
+    workflows: { 'app-ci.yml': workflowPinning(...pinned) },
+  });
+
+test('(p13) an agreeing pair is clean', async () => {
+  const { findPlaywrightPinDrift } = await gate();
+  assert.deepEqual(findPlaywrightPinDrift(playwrightRepo(['1.62.1'], '1.62.1', '1.62.1')), []);
+});
+
+test('(p14) THE BUG: a lockfile-only bump is caught, and names BOTH versions', async () => {
+  const { findPlaywrightPinDrift } = await gate();
+  const d = findPlaywrightPinDrift(playwrightRepo(['1.62.1'], '1.60.0', '1.60.0'));
+  assert.equal(d.length, 2, 'every stale occurrence is its own finding');
+  assert.equal(d[0].file, '.forgejo/workflows/app-ci.yml');
+  assert.match(d[0].problem, /1\.62\.1/, 'the resolved runner version must be named');
+  assert.match(d[0].problem, /1\.60\.0/, 'and the stale tag version');
+  assert.match(d[0].problem, /browser/i, 'and WHY it matters — the tag selects the browser build');
+  assert.match(d[0].problem, /zero tests|no tests/i, 'and what the symptom looks like');
+});
+
+test('(p15) THE PARTIAL BUMP: one of two occurrences moved is still a failure', async () => {
+  // Criterion 2 of item #204. A gate that reads only the first occurrence passes this.
+  const { findPlaywrightPinDrift } = await gate();
+  const d = findPlaywrightPinDrift(playwrightRepo(['1.62.1'], '1.62.1', '1.60.0'));
+  assert.equal(d.length, 1, 'the one stale occurrence must be reported');
+  assert.match(d[0].problem, /1\.60\.0/);
+});
+
+test('(p16) the tag disappearing is a FINDING, never a vacuous pass', async () => {
+  // A gate that passes because it found nothing to compare has stopped working without saying so.
+  const { findPlaywrightPinDrift } = await gate();
+  const d = findPlaywrightPinDrift(playwrightRepo(['1.62.1']));
+  assert.equal(d.length, 1);
+  assert.match(d[0].problem, /no .*playwright.*image|found no/i);
+});
+
+test('(p17) two resolved versions are reported rather than one being picked', async () => {
+  const { findPlaywrightPinDrift } = await gate();
+  const d = findPlaywrightPinDrift(playwrightRepo(['1.62.1', '1.60.0'], '1.62.1', '1.62.1'));
+  assert.equal(d.length, 1);
+  assert.equal(d[0].file, 'pnpm-lock.yaml');
+  assert.match(d[0].problem, /1\.60\.0/);
+  assert.match(d[0].problem, /1\.62\.1/);
+});
+
+test('(p18) an image pinned for a package the lockfile does not carry is reported', async () => {
+  const { findPlaywrightPinDrift } = await gate();
+  const d = findPlaywrightPinDrift(playwrightRepo([], '1.62.1'));
+  assert.equal(d.length, 1);
+  assert.match(d[0].problem, /lockfile/i);
+});
+
+test('(p19) a repo using Playwright NOWHERE is not drift — the halves are both absent', async () => {
+  const { findPlaywrightPinDrift } = await gate();
+  assert.deepEqual(findPlaywrightPinDrift(playwrightRepo([])), []);
+  // And a repo with no lockfile at all is simply not a pnpm workspace to cross-check.
+  assert.deepEqual(findPlaywrightPinDrift(repo({ pkg: PKG })), []);
+});
+
+test('(p20) the REAL repo agrees — lockfile and both image tags name one version', async () => {
+  const { findPlaywrightPinDrift } = await gate();
+  const real = resolve(HERE, '..', '..');
+  const d = findPlaywrightPinDrift(real);
+  assert.deepEqual(d, [], `the Playwright pin has drifted: ${JSON.stringify(d, null, 2)}`);
+});
+
+test('(p22) the success line NAMES the Playwright relation it just proved', () => {
+  // A gate that checks four relations and enumerates three leaves a reader unable to tell whether
+  // the fourth ran. "It passed" must say what it passed, or a silently-disabled check reads exactly
+  // like a working one.
+  const r = spawnSync('node', [GATE], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.match(r.stdout, /playwright/i, `the success line does not mention Playwright: ${r.stdout}`);
+});
+
+test('(p21) the relation is wired into findDrift, not merely exported', async () => {
+  // The (h7) lesson, for the second pair: a function nothing calls gates nothing. Proven by
+  // pointing findDrift at a root that is clean for Node/pnpm/nx and drifted ONLY on Playwright.
+  const { findDrift: find } = await gate();
+  const root = repo({
+    pkg: PKG,
+    lockfile: lockText(['@playwright/test@1.62.1']),
+    workflows: { 'app-ci.yml': workflowPinning('1.60.0') },
+  });
+  const d = find(root);
+  assert.equal(d.length, 1, `findDrift must surface the Playwright relation, got ${JSON.stringify(d)}`);
+  assert.match(d[0].problem, /1\.60\.0/);
 });
