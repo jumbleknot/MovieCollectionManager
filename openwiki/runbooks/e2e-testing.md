@@ -4,7 +4,7 @@ title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate that now blocks a merge.
 resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook]
-timestamp: 2026-08-16T00:00:00+00:00
+timestamp: 2026-08-17T00:00:00+00:00
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -92,8 +92,19 @@ integration, and golden tests, and how CI enforces the integration tier ahead of
   that matters for a merge. The two halves (pin bump + lockfile bump) MUST land in the same change:
   bumping the pin ahead of the lockfile bump on `main` breaks `main` the same way in reverse. Measured
   on PR #199: lockfile moved 1.60.0 → 1.62.1, the workflow tag stayed at `v1.60.0-noble`, and
-  `app-e2e` burned a full ~35-minute cycle before failing. Nothing enforces the coupling yet:
-  item #204. Current pin: **v1.62.1**.
+  `app-e2e` burned a full ~35-minute cycle before failing. **The coupling is now enforced by
+  `scripts/check-toolchain-consistency.mjs`** (feature 061): it reads the version `pnpm-lock.yaml`
+  resolves and compares it against every occurrence of the tag in `app-ci.yml`, failing the `naming`
+  guardrails job in ~0.4 s — before `app-e2e` starts. A partial bump (only one of the two occurrences
+  moved) fails exactly like moving neither. Renovate now proposes both halves in one PR (the
+  `playwright pin` group in `renovate.json`). Run it before you push:
+  ```bash
+  node scripts/check-toolchain-consistency.mjs
+  ```
+  **DIAGNOSTIC — `failed=0 flaky=0 passed=0` means check the image pin FIRST.** A drifted tag does
+  not present as a test failure — it presents as the *absence* of results, and the e2e result gate's
+  `no Playwright summary found` is the only signal. Run the gate above before opening a single
+  container log. Current pin: **v1.62.1**.
 - **Killing the shell does NOT kill a containerised `docker run`.** The container detaches from the
   CLI process, so cancelling the command leaves Playwright still running — consuming the same shared
   test user and gateway as any subsequent run. Measured 2026-08-09: an abandoned full-suite run was
