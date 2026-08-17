@@ -1,5 +1,13 @@
 {
   "$comment": "Canonical egress destinations for the MCM engineering environment. Consumed ONLY by scripts/gen-egress-policy.mjs, which emits BOTH the host-side sandbox network policy (--format sbx-policy) and the in-VM firewall domain array (--format ipset-domains). NEVER hand-edit either emitted form, and never let a consumer keep its own copy of this list: two enforcement layers with two hand-maintained lists turn a blocked fetch into the union of two allowlists, and diagnosis into guesswork (research.md R8/D-04). The forge registry host is deliberately NOT in this file — it is topology-sensitive, gated out of git, and injected at runtime from FORGE_REGISTRY_HOST via the generator's --forge-host parameter, exactly as init-firewall.sh has always done.",
+  "$consideredAndExcluded": {
+    "$why": "Hosts that were FOUND while diagnosing a block and deliberately left out. Recorded because the next person to hit a Claude Code failure will extract the same hostname list and needs to know which absences are intentional — otherwise the allowlist grows by accretion, every unfamiliar name looking like a missing rule. Distinct from $mustNeverAppearHere: these are permissible, merely unnecessary. Add one only with a symptom that requires it.",
+    "$howTheListWasObtained": "grep -aoE '[a-z0-9][a-z0-9.-]*\\.(anthropic|claude)\\.(com|ai)' /usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe | sort | uniq -c | sort -rn — reading hostnames out of the compiled binary beats guess-and-retry against a deny-by-default policy.",
+    "www.anthropic.com / docs.anthropic.com / docs.claude.com / support.claude.com / support.anthropic.com / status.claude.com": "Documentation, support and status pages. The CLI only ever prints these as links for a human to open in a browser ON THE HOST; nothing in the container fetches them. Excluded.",
+    "api-staging.anthropic.com": "Anthropic's staging API. Never used by a released CLI against a production account. Excluded — allowlisting a staging endpoint on a production credential path is a needless widening.",
+    "downloads.claude.ai": "Claude Code SELF-UPDATE. Excluded deliberately: the CLI version in this environment is part of the toolchain image, and a container that silently updates its own assistant mid-session is a reproducibility problem, not a feature. Updates arrive by rebuilding the image. ADD THIS ONLY IF you decide in-place self-update is wanted — the symptom will be an update check failing, never a broken session.",
+    "gmail.mcp.claude.com / gcal.mcp.claude.com / microsoft365.mcp.claude.com": "Anthropic-hosted MCP connectors for Gmail, Google Calendar and Microsoft 365. This project's MCP servers are self-hosted and scoped (movie / web-api / spreadsheet); these connectors reach personal data stores that have no business being reachable from a repository's dev container. Excluded, and the bar for adding one should be high."
+  },
   "$schemaNotes": {
     "domain": "FQDN. Never a bare IP — CDN-backed hosts rotate, and the list is resolved by domain and re-runnable.",
     "group": "One of: agent | source | registry | packages | app.",
@@ -9,7 +17,8 @@
   "$mustNeverAppearHere": [
     "The forge / registry host, or any tailnet address — injected at runtime from FORGE_REGISTRY_HOST.",
     "Any credential, token or key.",
-    "The OpenWiki analytics host. Telemetry is disabled BY CONFIGURATION (OPENWIKI_TELEMETRY_DISABLED=1), never by allowlisting the destination. This inversion is deliberate and must survive the migration."
+    "The OpenWiki analytics host. Telemetry is disabled BY CONFIGURATION (OPENWIKI_TELEMETRY_DISABLED=1), never by allowlisting the destination. This inversion is deliberate and must survive the migration.",
+    "Any Claude Code / Anthropic telemetry or analytics endpoint (statsig.* and similar). Same inversion as the OpenWiki rule above: telemetry is turned off by configuration, never permitted by allowlisting. A blocked telemetry host is a WORKING configuration, not a fault to be fixed by adding a rule."
   ],
   "destinations": [
     {

@@ -281,7 +281,12 @@
   },
 
   // Unchanged from the Docker Desktop config.
-  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true",
+  // The trailing fix-workspace-ownership.sh call is NOT redundant with the chowns before it.
+  // Those cover cache dirs and generated artefacts; the WORKSPACE ITSELF (and critically `.git`) is
+  // created by the VM's user — a different UID from the container's — so git object writes fail deep
+  // with errors that read like repository corruption. See that script's header. It repairs only
+  // mismatched paths, so the normal case costs one `find`.
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true; /bin/bash ${containerWorkspaceFolder}/.devcontainer/fix-workspace-ownership.sh ${containerWorkspaceFolder} || true",
 
   // ONE-TIME PER CONTAINER CREATION, which is exactly the right cadence for both steps.
   //
@@ -317,5 +322,10 @@
   // if a non-allowlisted host is reachable, and equally if an allowlisted one is NOT (a severed
   // network must not read as a security pass). Its header documents the restart-blindness it shares
   // with any postStart hook.
-  "postStartCommand": "/bin/bash ${containerWorkspaceFolder}/.devcontainer/assert-egress-governed.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
+  // fix-workspace-ownership.sh runs on EVERY start, not just creation, because the mismatch is
+  // re-introduced by ordinary use: any `ssh <sandbox> 'git -C /workspaces/... …'` writes new objects
+  // as the VM user, and that is an easy reflex. It exits after a single `find` when nothing is
+  // wrong, so the cost on a healthy tree is negligible. `|| true` keeps a permissions oddity from
+  // blocking container start — the egress assertion below is the one that must be able to fail.
+  "postStartCommand": "/bin/bash ${containerWorkspaceFolder}/.devcontainer/fix-workspace-ownership.sh ${containerWorkspaceFolder} || true; /bin/bash ${containerWorkspaceFolder}/.devcontainer/assert-egress-governed.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
 }
