@@ -86,11 +86,39 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# --- 037 base: non-root workspace user `coder` (uid 1001) --------------------------------
-# node:24-bookworm ships uid 1000 as `node`; create `coder` alongside (uid 1001) with
+# --- 037 base: non-root workspace user `coder` (uid 1000) --------------------------------
 # passwordless sudo for in-container admin (firewall, apt) without ever granting host privilege.
+#
+# ── 060: `coder` MUST be uid 1000, and that is why `node` is moved out of the way ──────────────
+#
+# node:24-bookworm ships uid 1000 as `node`, so a plain `useradd` put `coder` on 1001. On the Docker
+# Sandbox path the workspace lives in the microVM and is owned by the VM user at **uid 1000**, so a
+# 1001 container user cannot write it. git does not fail cleanly at the top level — it fails deep on
+# individual object writes, with messages that read like repository corruption:
+#
+#     "111 of 256 .git/objects subdirs plus 27 worktree files are owned by node, not coder,
+#      so any object write fails"
+#
+# ("node" there is simply how uid 1000 renders inside the container — the same uid the VM calls
+# `agent`. The name difference is what disguises the whole problem.)
+#
+# THE RENUMBER MUST HAPPEN HERE, at user-creation time, and nowhere else. Doing it later as a layer
+# on top of the built image is impossible: changing a file's ownership COPIES IT UP into the new
+# overlay layer, so renumbering after the Android SDK and Rust toolchain are installed duplicates
+# the whole ~13 GB image. Measured 2026-08-17 — it died in `exporting layers` with `no space left on
+# device` on the system image. Done here it costs nothing, because these files do not exist yet.
+#
+# Rejected alternatives are recorded in .devcontainer/Dockerfile's header so they are not retried.
 ARG USERNAME=coder
-RUN useradd --create-home --shell /bin/bash "${USERNAME}" \
+ARG USER_UID=1000
+ARG USER_GID=1000
+# Move node aside rather than deleting it — reversible, and anything referencing the name still
+# resolves. Nothing in this project runs as `node`.
+RUN if id -u node >/dev/null 2>&1 && [ "$(id -u node)" = "1000" ]; then \
+      usermod -u 1100 node && groupmod -g 1100 node; \
+    fi
+RUN groupadd -g "${USER_GID}" "${USERNAME}" \
+    && useradd --create-home --shell /bin/bash -u "${USER_UID}" -g "${USER_GID}" "${USERNAME}" \
     && echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
     && chmod 0440 "/etc/sudoers.d/${USERNAME}" \
     # Persistent shell history dir (named volume in devcontainer.json).
