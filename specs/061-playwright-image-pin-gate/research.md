@@ -313,8 +313,41 @@ exercised by the normal local pre-push path with no change.
 
 ---
 
+---
+
+## R9 — Instrument trap found during implementation: `--test-name-pattern` position
+
+**`node --test <file> --test-name-pattern "x"` silently runs the WHOLE suite.** Everything after the
+script path becomes the script's own `process.argv`, not a node option, so the flag is parsed by
+nobody and discarded.
+
+Measured — identical counts with and without a filter that should have matched exactly one test:
+
+```
+$ node --test scripts/__tests__/check-toolchain-consistency.test.mjs
+ℹ tests 35   ℹ pass 28   ℹ fail 7
+
+$ node --test scripts/__tests__/check-toolchain-consistency.test.mjs --test-name-pattern "p6"
+ℹ tests 35   ℹ pass 28   ℹ fail 7      ← inert
+
+$ node --test --test-name-pattern="p6" scripts/__tests__/check-toolchain-consistency.test.mjs
+ℹ tests 1    ℹ pass 0    ℹ fail 1      ← correct
+```
+
+**Why it matters here specifically**: this is the exact shape of the traps CLAUDE.md already
+catalogues (`--grep-invert` accepted by Playwright 1.60 and silently doing nothing). A TDD **Verify
+RED** run using the broken form still shows failures — the ones you wanted — so it *looks* right
+while actually running everything, and a **Verify GREEN** using it would report other tests' failures
+as if they belonged to the task. `tasks.md` was written with the broken form and has been corrected;
+the correct form is `--test-name-pattern` **before** the file path.
+
+It was not RTK: `rtk proxy node --test <file> --test-name-pattern "p6"` reproduced it identically.
+
+---
+
 ## Open questions
 
 **None.** All three areas that could have blocked were resolved by measurement rather than
 assumption: the lockfile parse shape (R2), the offline extraction recipe and its baseline (R6), and
-the `packageName`-normalisation trap that the existing guard had already settled (R5).
+the `packageName`-normalisation trap that the existing guard had already settled (R5). A fourth
+(R9) was found during implementation and is recorded above.

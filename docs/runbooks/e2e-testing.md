@@ -493,7 +493,28 @@ Measured on PR #199 (2026-08-15): a Renovate lock-file refresh moved 1.60.0 → 
 tag stayed at `v1.60.0-noble`, and `app-e2e` burned a full ~35-minute cycle before failing. The two
 halves must land in the SAME change — the pin cannot be fixed ahead of the bump on `main`, because
 bumping it while `main` still holds the older `@playwright/test` breaks `main` the same way in
-reverse. Nothing enforces the coupling yet: item #204.
+reverse.
+
+**The coupling is now enforced by `scripts/check-toolchain-consistency.mjs`** (feature 061, item
+#204 — before that, nothing enforced it and the rule above was a rule nobody could fail). It reads
+the version `pnpm-lock.yaml` resolves and compares it against **every** occurrence of the tag in
+`app-ci.yml`, failing the `naming` guardrails job in ~0.4 s — so the drift is now caught before
+`app-e2e` starts rather than 35 minutes into it:
+
+```bash
+node scripts/check-toolchain-consistency.mjs            # ~0.4 s; exit 1 names the file, line and both versions
+node scripts/check-toolchain-consistency.mjs --selftest # proves the check can still fail
+```
+
+A **partial** bump fails too — the gate scans for occurrences rather than assuming the count, so
+moving one of the two is rejected exactly like moving neither. Renovate now proposes both halves in
+one PR (the `playwright pin` group in `renovate.json`), so the drift should not arrive at all.
+
+> **DIAGNOSTIC — `failed=0 flaky=0 passed=0` means check the image pin FIRST.** A drifted tag does
+> not present as a test failure. It presents as the *absence* of results, and the e2e result gate's
+> `no Playwright summary found` is the only thing that distinguishes it from success. If you see
+> zero counts, run the gate above before reading a single container log — that is the diagnosis PR
+> #199 arrived at the slow way.
 
 **Include the decline copy in the negatives.** Measured 2026-08-09 on the broken build: the same
 defect surfaced as *"I can only help with your movie collections."* rather than the mis-search,

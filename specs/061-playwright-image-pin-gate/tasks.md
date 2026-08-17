@@ -32,7 +32,7 @@ entire measured value; US2 and US3 are additive.
 
 ## Phase 1: Setup
 
-### T001 — Capture the Renovate extraction baseline before any config change
+### T001 ✅ — Capture the Renovate extraction baseline before any config change
 
 **Type**: Utility script | **Time**: 5 min | **Risk**: None
 
@@ -73,7 +73,7 @@ the drift, both versions and every offending location.
 **Independent test**: break one image tag, run the gate, get exit 1 with a diagnosable message;
 restore, get exit 0. Delivers the item's entire measured value with no bot or docs change.
 
-### T002 — [US1] Extend the test `repo()` helper to write a lockfile and a Playwright workflow
+### T002 ✅ — [US1] Extend the test `repo()` helper to write a lockfile and a Playwright workflow
 
 **Type**: Test refactor | **Time**: 20 min | **Risk**: Low
 
@@ -94,7 +94,7 @@ node --test scripts/__tests__/check-toolchain-consistency.test.mjs
 ```
 **Expected**: still all passing — this task adds capability, not assertions. The RED comes in T003.
 
-### T003 — [US1] Write the lockfile-resolution unit tests
+### T003 ✅ — [US1] Write the lockfile-resolution unit tests
 
 **Type**: Test | **Time**: 30 min | **Risk**: None
 
@@ -123,11 +123,11 @@ implementation would pass this suite. Take the literal shape from
 
 **Verify RED**:
 ```bash
-node --test scripts/__tests__/check-toolchain-consistency.test.mjs --test-name-pattern "lockfile"
+node --test --test-name-pattern="lockfile" scripts/__tests__/check-toolchain-consistency.test.mjs
 ```
 **Expected RED**: all new cases fail — `SyntaxError: The requested module '../check-toolchain-consistency.mjs' does not provide an export named 'resolveLockfilePlaywrightVersion'`.
 
-### T004 — [US1] Implement `resolveLockfilePlaywrightVersion`
+### T004 ✅ — [US1] Implement `resolveLockfilePlaywrightVersion`
 
 **Type**: Implementation | **Time**: 30 min | **Risk**: Low
 
@@ -145,7 +145,7 @@ the measured failure) — provenance, which is the constitution's sanctioned com
 
 **Verify GREEN**:
 ```bash
-node --test scripts/__tests__/check-toolchain-consistency.test.mjs --test-name-pattern "lockfile"
+node --test --test-name-pattern="lockfile" scripts/__tests__/check-toolchain-consistency.test.mjs
 ```
 **Expected GREEN**: 0 failures.
 
@@ -155,7 +155,7 @@ node --test scripts/__tests__/check-toolchain-consistency.test.mjs
 ```
 **Expected**: previously passing tests still pass.
 
-### T005 — [US1] Write the image-occurrence scanning unit tests
+### T005 ✅ — [US1] Write the image-occurrence scanning unit tests
 
 **Type**: Test | **Time**: 30 min | **Risk**: None
 
@@ -183,11 +183,11 @@ existing selftest and test (d) assert `collectPins()` on single lines:
 
 **Verify RED**:
 ```bash
-node --test scripts/__tests__/check-toolchain-consistency.test.mjs --test-name-pattern "image"
+node --test --test-name-pattern="image" scripts/__tests__/check-toolchain-consistency.test.mjs
 ```
 **Expected RED**: all new cases fail — `does not provide an export named 'collectPlaywrightImagePins'`.
 
-### T006 — [US1] Implement `collectPlaywrightImagePins`
+### T006 ✅ — [US1] Implement `collectPlaywrightImagePins`
 
 **Type**: Implementation | **Time**: 30 min | **Risk**: Low
 
@@ -200,11 +200,11 @@ Line scan for `mcr.microsoft.com/playwright:v<version>-noble`, skipping `/^\s*#/
 
 **Verify GREEN**:
 ```bash
-node --test scripts/__tests__/check-toolchain-consistency.test.mjs --test-name-pattern "image"
+node --test --test-name-pattern="image" scripts/__tests__/check-toolchain-consistency.test.mjs
 ```
 **Expected GREEN**: 0 failures.
 
-### T007 — [US1] Write the drift-detection and wiring tests
+### T007 ✅ — [US1] Write the drift-detection and wiring tests
 
 **Type**: Test | **Time**: 40 min | **Risk**: None
 
@@ -235,11 +235,11 @@ the `nx` suite added (h7) for.
 
 **Verify RED**:
 ```bash
-node --test scripts/__tests__/check-toolchain-consistency.test.mjs --test-name-pattern "playwright"
+node --test --test-name-pattern="playwright" scripts/__tests__/check-toolchain-consistency.test.mjs
 ```
 **Expected RED**: all new cases fail — `does not provide an export named 'findPlaywrightPinDrift'`.
 
-### T008 — [US1] Implement `findPlaywrightPinDrift` and wire it into `findDrift`
+### T008 ✅ — [US1] Implement `findPlaywrightPinDrift` and wire it into `findDrift`
 
 **Type**: Implementation | **Time**: 45 min | **Risk**: Medium
 
@@ -261,7 +261,7 @@ point-in-time record and is explicitly out of scope; scanning it would fail the 
 
 **Verify GREEN**:
 ```bash
-node --test scripts/__tests__/check-toolchain-consistency.test.mjs --test-name-pattern "playwright"
+node --test --test-name-pattern="playwright" scripts/__tests__/check-toolchain-consistency.test.mjs
 ```
 **Expected GREEN**: 0 failures.
 
@@ -272,7 +272,7 @@ node scripts/check-toolchain-consistency.mjs; echo "exit=$?"
 ```
 **Expected**: all pass; the gate exits `0` on the real repo (SC-007).
 
-### T009 — [US1] Extend `--selftest` to prove the new relation can fail
+### T009 ✅ — [US1] Extend `--selftest` to prove the new relation can fail
 
 **Type**: Test | **Time**: 30 min | **Risk**: None
 
@@ -316,7 +316,7 @@ recurring chore.
 **Independent test**: config validates; the offline extraction shows the tag discovered; the guard
 test shows both halves in one group across all three update tracks.
 
-### T010 — [US2] Write the grouping and control assertions
+### T010 ✅ — [US2] Write the grouping and control assertions
 
 **Type**: Test | **Time**: 45 min | **Risk**: Low
 
@@ -348,13 +348,13 @@ carries its own control test.
 
 **Verify RED**:
 ```bash
-node --test scripts/__tests__/renovate-workflow.guard.test.mjs --test-name-pattern "playwright"
+node --test --test-name-pattern="playwright" scripts/__tests__/renovate-workflow.guard.test.mjs
 ```
 **Expected RED**: the grouping cases fail — `AssertionError: no packageRule in renovate.json groups
 @playwright/test` / the customManager assertion fails with `renovate.json has no customManager with
 depNameTemplate "@playwright/test"`.
 
-### T011 — [US2] Add the `customManagers` entry
+### T011 ✅ — [US2] Add the `customManagers` entry
 
 **Type**: Config change | **Time**: 30 min | **Risk**: Medium
 
@@ -376,7 +376,7 @@ redundant.
 
 **Done when**: `npx --yes --package renovate@44 -- renovate-config-validator` passes.
 
-### T012 — [US2] Add the `packageRules` grouping entry, ordered last
+### T012 ✅ — [US2] Add the `packageRules` grouping entry, ordered last
 
 **Type**: Config change | **Time**: 30 min | **Risk**: Medium
 
@@ -394,7 +394,7 @@ use any rule key outside `ruleMatches()`'s `known` set (it **throws** on an unkn
 
 **Verify GREEN**:
 ```bash
-node --test scripts/__tests__/renovate-workflow.guard.test.mjs --test-name-pattern "playwright"
+node --test --test-name-pattern="playwright" scripts/__tests__/renovate-workflow.guard.test.mjs
 ```
 **Expected GREEN**: 0 failures.
 
@@ -404,7 +404,7 @@ node --test scripts/__tests__/renovate-workflow.guard.test.mjs
 ```
 **Expected**: all pass, including `the whole nx family is proposed in ONE group` on all three tracks.
 
-### T013 — [US2] Verify extraction by result against the T001 baseline
+### T013 ✅ — [US2] Verify extraction by result against the T001 baseline
 
 **Type**: Config change (verification) | **Time**: 15 min | **Risk**: None
 
@@ -427,7 +427,7 @@ with `packageFile: .forgejo/workflows/app-ci.yml`, `depName: @playwright/test` a
 **Record the measured before/after in the commit message.** This is the criterion the item words as
 "verified by result, not by reading config"; a claim without the diff does not satisfy it.
 
-### T014 — [US2] Record the residual risk in the config's own description
+### T014 ✅ — [US2] Record the residual risk in the config's own description
 
 **Type**: Documentation | **Time**: 10 min | **Risk**: None
 
@@ -447,7 +447,7 @@ caused it, rather than having to reconstruct it.
 
 ## Phase 5: User Story 3 — The runbooks name the gate (P3)
 
-### T015 — [P] [US3] Name the enforcing gate in the devcontainer runbook
+### T015 ✅ — [P] [US3] Name the enforcing gate in the devcontainer runbook
 
 **Type**: Documentation | **Time**: 10 min | **Risk**: None
 
@@ -462,7 +462,7 @@ guardrails job, in ~1 s. Note that Renovate now moves both halves in one PR.
 **Done when**: `grep -n "check-toolchain-consistency" docs/runbooks/devcontainer.md` returns a hit
 adjacent to the pin rule.
 
-### T016 — [P] [US3] Name the enforcing gate in the E2E testing runbook
+### T016 ✅ — [P] [US3] Name the enforcing gate in the E2E testing runbook
 
 **Type**: Documentation | **Time**: 15 min | **Risk**: None
 
@@ -482,7 +482,7 @@ and the zero-count signature is written down.
 
 ## Phase 6: Polish & cross-cutting
 
-### T017 — Extend the gate's success line to name the fourth relation
+### T017 ✅ — Extend the gate's success line to name the fourth relation
 
 **Type**: Implementation | **Time**: 10 min | **Risk**: None
 
@@ -498,7 +498,7 @@ been bitten by.
 **Done when**: `node scripts/check-toolchain-consistency.mjs` prints a line naming the Playwright
 pair, and any test asserting that line is updated with it.
 
-### T018 — Update the guardrails step comment
+### T018 ✅ — Update the guardrails step comment
 
 **Type**: Documentation | **Time**: 5 min | **Risk**: None
 
@@ -513,7 +513,7 @@ replaces (~35 min → ~1 s). **No `run:` line changes** — the existing two lin
 
 **Done when**: the step name and comment describe what the gate now checks.
 
-### T019 — Run the full local validation
+### T019 ✅ — Run the full local validation
 
 **Type**: Test | **Time**: 15 min | **Risk**: None
 
@@ -536,7 +536,7 @@ diff touches, not the ones you remember. This diff is `scripts/`, `renovate.json
 
 **Expected**: all green; `git status` clean.
 
-### T020 — Close backlog item #204 against its acceptance criteria
+### T020 ⏳ (blocked on merge) — Close backlog item #204 against its acceptance criteria
 
 **Type**: Documentation | **Time**: 10 min | **Risk**: None
 
@@ -593,23 +593,61 @@ Ship US1 first and confirm the gate starts green on `main` for the right reason 
 both tags `v1.62.1-noble`) before adding the bot half — that ordering means the bot's first Playwright
 PR arrives into a repository that can already detect a half-bump.
 
+## Measured outcomes
+
+| Claim | Measured |
+|---|---|
+| Gate runtime (SC-001, budget 30 s) | **0.425 s** — versus the ~35 min the same drift took on PR #199 |
+| A partial bump is rejected (SC-003) | `app-ci.yml:752 — Playwright image v1.60.0-noble disagrees with the 1.62.1 that pnpm-lock.yaml resolves…`, exit 1, drill restored clean |
+| The selftest can fail (SC-004) | Comparison disabled ⇒ exit 1 naming all four rejection cases; restored ⇒ exit 0 |
+| Gate passes for the right reason (SC-007) | lockfile `1.62.1`; both tags `v1.62.1-noble`; exit 0 |
+| Extraction before (FR-011) | 2 `@playwright/test` deps, both manifest **ranges** (`^1.36.0`, `^1.59.1`); `app-ci.yml` matched by `github-actions` **only** |
+| Extraction after (FR-011) | **4** deps — the 2 new ones `packageFile .forgejo/workflows/app-ci.yml`, `depName @playwright/test`, `currentValue 1.62.1`, `replaceString mcr.microsoft.com/playwright:v1.62.1-noble`, **×2** |
+| Config validity | `renovate-config-validator` — `Config validated successfully against 1 file(s)` |
+| Unit tests | `check-toolchain-consistency.test.mjs` 45/45; `renovate-workflow.guard.test.mjs` 14/14 |
+| Full script suite | 733 tests, **731 pass, 1 fail** — pre-existing and unrelated (see below) |
+| Preflight | 26 of 27 checks pass; the 1 failure is the same pre-existing test |
+
+**The one failure is pre-existing and out of scope.** `wiki-maintain.test.mjs` → *"CLI: --execute
+without a credential exits 2"* fails identically on `main` @ `68a40784`. Cause: its `runCli()` helper
+deletes `ANTHROPIC_API_KEY` from the child environment but not **`MCM_ANTHROPIC_API_KEY`**, which is
+the name this repo actually carries the key under — so in any environment with the key set, the
+child finds a credential and does not exit 2. Proven: `env -u MCM_ANTHROPIC_API_KEY node --test …`
+⇒ 1 pass. Filed as a separate backlog item rather than folded into this feature.
+
+## Deviations from the plan
+
+Both were refinements discovered while implementing, recorded rather than made silently:
+
+1. **`collectLockfilePlaywrightVersions` returns the version SET instead of a throwing
+   `resolveLockfilePlaywrightVersion`** — lets the caller tell *absent* from *ambiguous* (different
+   findings, different messages) without exception control flow. See
+   [contracts/gate-cli.md](./contracts/gate-cli.md).
+2. **`comparePlaywrightPins` was split out** so `--selftest` proves rejection with no filesystem
+   access, keeping the demonstration runnable in CI on every PR.
+
+And one correction to this file itself: every `Verify RED`/`Verify GREEN` command originally wrote
+`node --test <file> --test-name-pattern "x"`, which is **silently inert** — everything after the
+script path becomes the script's own argv. Corrected to put the flag first; measured in
+[research.md](./research.md) R9.
+
 ## Completion Checklist
 
 Before marking `061-playwright-image-pin-gate` complete, verify all success criteria from
 [spec.md](./spec.md):
 
-- [ ] **SC-001**: a drifted pin is rejected in under 30 s of check runtime
-- [ ] **SC-002**: a drift failure is diagnosable from the message alone — no container logs
-- [ ] **SC-003**: a partial bump is rejected; no combination of occurrences yields a false pass
-- [ ] **SC-004**: `--selftest` runs in CI on every PR and demonstrates the gate can fail
+- [x] **SC-001**: a drifted pin is rejected in under 30 s of check runtime
+- [x] **SC-002**: a drift failure is diagnosable from the message alone — no container logs
+- [x] **SC-003**: a partial bump is rejected; no combination of occurrences yields a false pass
+- [x] **SC-004**: `--selftest` runs in CI on every PR and demonstrates the gate can fail
 - [ ] **SC-005**: a Playwright bump arrives as exactly one PR containing both halves
-- [ ] **SC-006**: bot behaviour confirmed by an executed validation/extraction run, not by inspection
-- [ ] **SC-007**: the gate passes on the current tree for the right reason (`1.62.1` / `v1.62.1-noble` ×2)
-- [ ] **SC-008**: both runbooks state the rule **and** name its enforcement
-- [ ] Platform parity table — N/A, toolchain feature with no UI flow
-- [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
-- [ ] `node --test scripts/__tests__/*.test.mjs` — script unit tests pass
-- [ ] `node scripts/check-toolchain-consistency.mjs --selftest` and the real scan both pass
+- [x] **SC-006**: bot behaviour confirmed by an executed validation/extraction run, not by inspection
+- [x] **SC-007**: the gate passes on the current tree for the right reason (`1.62.1` / `v1.62.1-noble` ×2)
+- [x] **SC-008**: both runbooks state the rule **and** name its enforcement
+- [x] Platform parity table — N/A, toolchain feature with no UI flow
+- [x] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
+- [x] `node --test scripts/__tests__/*.test.mjs` — script unit tests pass
+- [x] `node scripts/check-toolchain-consistency.mjs --selftest` and the real scan both pass
 - [ ] `node scripts/preflight.mjs` — the local pre-push path is green
-- [ ] `git status` clean — the deliberate-break drill was restored
+- [x] `git status` clean — the deliberate-break drill was restored
 - [ ] `rtk gain` — token compression confirmed (run last; measures the runs above)

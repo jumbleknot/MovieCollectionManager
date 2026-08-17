@@ -78,15 +78,31 @@ Exported for unit testing, named for behaviour per the constitution's Behavior-D
 Identifiers principle. Requirement provenance belongs in a JSDoc comment on each, never in the name.
 
 ```js
-/** The single @playwright/test version pnpm-lock.yaml resolves to. Throws if it is not unique. */
-export function resolveLockfilePlaywrightVersion(root)
+/** Every DISTINCT @playwright/test version pnpm-lock.yaml resolves to. */
+export function collectLockfilePlaywrightVersions(root)  // -> string[]
 
 /** Every non-comment Playwright image-tag occurrence in one file's text. */
-export function collectPlaywrightImagePins(text, file) // -> [{ file, line, value }]
+export function collectPlaywrightImagePins(text, file)   // -> [{ file, line, value }]
 
-/** Findings where the resolved runner version and an image tag disagree. */
-export function findPlaywrightPinDrift(root)           // -> [{ file, line, problem }]
+/** The comparison itself — no filesystem, so --selftest can drive it. */
+export function comparePlaywrightPins(versions, pins)    // -> [{ file, line, problem }]
+
+/** Reads both files, then delegates to comparePlaywrightPins. */
+export function findPlaywrightPinDrift(root)             // -> [{ file, line, problem }]
 ```
+
+> **Two refinements to this contract, made during implementation and recorded here rather than
+> silently.**
+>
+> 1. **`collectLockfilePlaywrightVersions` returns the SET, it does not throw.** The plan proposed a
+>    `resolveLockfilePlaywrightVersion` that threw when the version was not unique. Returning the
+>    distinct versions instead lets the caller distinguish *absent* (0) from *ambiguous* (>1) —
+>    which are different findings with different messages — without exception-based control flow,
+>    and makes each case directly unit-testable.
+> 2. **`comparePlaywrightPins` was split out of `findPlaywrightPinDrift`.** FR-006 requires
+>    `--selftest` to prove the gate REJECTS a mismatched pair, and the existing selftest writes no
+>    files. Keeping the comparison free of the filesystem is what lets the demonstration run in-CI
+>    on every PR instead of needing a temp directory.
 
 ### 4. `--selftest` gains cases
 
