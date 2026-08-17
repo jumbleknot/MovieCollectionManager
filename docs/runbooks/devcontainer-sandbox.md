@@ -42,11 +42,15 @@ The manual route is *open VS Code → Remote-SSH: Connect to Host → Open Folde
 Attach to Running Container*. Don't do that. Use:
 
 ```powershell
-pwsh scripts/open-sandbox.ps1
+.\scripts\open-sandbox.ps1
 ```
 
 It checks whether the sandbox is running, starts it if not, waits for SSH, and opens VS Code
 **directly inside the dev container**.
+
+> Runs on **Windows PowerShell 5.1** — the default shell. `pwsh` (PowerShell 7) is **not** required
+> and is not installed by default on Windows. If script execution is blocked by policy:
+> `powershell -ExecutionPolicy Bypass -File .\scripts\open-sandbox.ps1`
 
 For zero commands, make a shortcut with this target and pin it:
 

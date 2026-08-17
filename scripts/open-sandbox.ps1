@@ -46,9 +46,14 @@
   Print the URI and exit without launching VS Code (useful for building a shortcut).
 
 .EXAMPLE
-  pwsh scripts/open-sandbox.ps1
+  # Windows PowerShell 5.1 (the default shell on Windows) — no PowerShell 7 required.
+  .\scripts\open-sandbox.ps1
 .EXAMPLE
-  pwsh scripts/open-sandbox.ps1 -PrintOnly
+  .\scripts\open-sandbox.ps1 -PrintOnly
+.NOTES
+  Runs on Windows PowerShell 5.1; PowerShell 7 (`pwsh`) is NOT required and is not installed by
+  default on Windows. If script execution is blocked by policy:
+      powershell -ExecutionPolicy Bypass -File .\scripts\open-sandbox.ps1
 #>
 [CmdletBinding()]
 param(
@@ -67,15 +72,47 @@ function Test-Cmd([string]$Name) {
   return [bool]$c
 }
 
+# ── Invoke-Native — the ONLY way this script calls an external executable ────────────────────────
+#
+# ⚠️ WINDOWS POWERSHELL 5.1 TRAP, and the reason this is a helper rather than a few inline calls.
+#
+# In 5.1 every stderr line from a native exe is wrapped in an ErrorRecord (NativeCommandError). With
+# `$ErrorActionPreference = 'Stop'` that becomes a **TERMINATING error even when the exe exits 0**.
+# Both tools this script drives write routine progress to stderr:
+#
+#     sbx run … -> "Attaching to existing sandbox "mcm" (workspace: …)."
+#     ssh     … -> "Connecting to sandbox "mcm"…"
+#
+# so a perfectly successful command aborted the script. Measured 2026-08-17 on 5.1.26100.9168.
+#
+# It was originally "fixed" at the ssh call site only, which was a local patch to a structural
+# problem: `sbx ls` and `sbx run` had the identical exposure and the bug simply moved. Worse, the
+# regression test missed it — `-PrintOnly` was run against an ALREADY-RUNNING sandbox, so the
+# start path never executed. The failing branch was the one a real user hits first.
+#
+# Exit code is the only trustworthy signal from a native command here. This helper suppresses the
+# error escalation, lets stderr through to the console, and returns the exit code for the caller
+# to judge.
+function Invoke-Native {
+  param([Parameter(Mandatory)][string]$Exe, [string[]]$Arguments = @(), [switch]$Capture)
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    if ($Capture) { $out = & $Exe @Arguments 2>&1 } else { & $Exe @Arguments 2>&1 | Out-Null; $out = $null }
+    return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $out }
+  } finally { $ErrorActionPreference = $prev }
+}
+
 if (-not (Test-Cmd 'sbx')) {
-  Write-Error "sbx not on PATH. Add %LOCALAPPDATA%\DockerSandboxes\bin to PATH."
+  throw "sbx not on PATH. Add %LOCALAPPDATA%\DockerSandboxes\bin to PATH, or run the full path."
 }
 
 # ── 1. make sure the sandbox is actually running ────────────────────────────────────────────────
 # `sbx ls` is the only status source; parse the row for this sandbox rather than trusting exit code.
-$row = (& sbx ls 2>$null | Select-String -Pattern "^\s*$([regex]::Escape($Sandbox))\s")
+$ls = Invoke-Native -Exe 'sbx' -Arguments @('ls') -Capture
+$row = $ls.Output | Select-String -Pattern "^\s*$([regex]::Escape($Sandbox))\s"
 if (-not $row) {
-  Write-Error "sandbox '$Sandbox' does not exist. Create it first (see docs/runbooks/devcontainer-sandbox.md)."
+  throw "sandbox '$Sandbox' does not exist. Create it first (see docs/runbooks/devcontainer-sandbox.md)."
 }
 
 if ($row -match '\brunning\b') {
@@ -84,31 +121,19 @@ if ($row -match '\brunning\b') {
   Write-Host "  sandbox '$Sandbox' is stopped (the microVM idle-stops ~30s after the last session) - starting..."
   # -d prints the id and exits rather than opening an interactive session; --name re-attaches to the
   # EXISTING sandbox (without it, the positional agent argument would create a new one).
-  & sbx run --name $Sandbox -d | Out-Null
-  if ($LASTEXITCODE -ne 0) { Write-Error "sbx run failed for '$Sandbox'." }
+  $run = Invoke-Native -Exe 'sbx' -Arguments @('run', '--name', $Sandbox, '-d')
+  if ($run.ExitCode -ne 0) { throw "sbx run failed for '$Sandbox' (exit $($run.ExitCode))." }
 
   # Wait for SSH rather than assuming: VS Code's attach fails confusingly if it races the boot.
-  #
-  # ⚠️ Windows PowerShell 5.1: do NOT redirect a native exe's stderr (`2>$null`) here. 5.1 wraps each
-  # stderr line in an ErrorRecord (NativeCommandError), and with $ErrorActionPreference='Stop' that
-  # becomes a TERMINATING error even when the exe exits 0. `ssh` writes "Connecting to sandbox …" to
-  # stderr on every call, so the redirect turned a perfectly successful probe into a script abort.
-  # Measured 2026-08-16. Exit code is the only trustworthy signal; let stderr through and suppress
-  # error escalation for the duration of the loop instead.
   $ready = $false
-  $prevEap = $ErrorActionPreference
-  $ErrorActionPreference = 'Continue'
-  try {
-    foreach ($i in 1..30) {
-      & ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=3 $SshHost 'true' | Out-Null
-      if ($LASTEXITCODE -eq 0) { $ready = $true; break }
-      Start-Sleep -Seconds 2
-    }
-  } finally {
-    $ErrorActionPreference = $prevEap
+  foreach ($i in 1..30) {
+    $probe = Invoke-Native -Exe 'ssh' -Arguments @(
+      '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no', '-o', 'ConnectTimeout=3', $SshHost, 'true')
+    if ($probe.ExitCode -eq 0) { $ready = $true; break }
+    Start-Sleep -Seconds 2
   }
   if (-not $ready) {
-    Write-Error "sandbox started but $SshHost did not answer SSH within ~60s. Check: sbx ls / ssh $SshHost"
+    throw "sandbox started but $SshHost did not answer SSH within ~60s. Check: sbx ls / ssh $SshHost"
   }
   Write-Host "  sandbox is up and answering SSH"
 }
