@@ -40,6 +40,25 @@
   //
   // Asserted, not asserted-by-comment: .devcontainer/verify/verify-engine-seam.sh checks all three
   // sides (no daemon in-container, Privileged:false from the VM, invisible to the Windows engine).
+  // ── THE `:1` HERE IS A FLOATING TAG. THE ACTUAL PIN IS devcontainer-lock.json ────────────────
+  //
+  // Per the Dev Containers spec the CLI re-resolves a floating tag to a concrete digest on EVERY
+  // build and writes the result to `devcontainer-lock.json` beside this file. That lock file is
+  // **tracked in git on purpose** — it is 037's SC-005 supply-chain control (`devcontainer-lock.json`
+  // pins the feature by digest), which 038 T035 says to refresh only on an intentional bump.
+  //
+  // ⚠️ DO NOT DELETE IT, and do not "clean up" a digest change you see in a diff:
+  //
+  //   • It reappears after every rebuild because it is REGENERATED, not left behind. Proof it is
+  //     build-time and not session-time: on 2026-08-17 its mtime was 23:02:27 while the container
+  //     started 23:05:04 (`/proc/1`) — written ~2.5 minutes BEFORE the container existed, during
+  //     feature resolution. Deleting it removes the artifact, never the producer.
+  //   • Untracked, it shows as a permanent `??` in `git status`. That was the state feature 060
+  //     shipped: this config was added without carrying the DinD path's convention across, so the
+  //     sandbox silently accepted whatever `:1` resolved to on any given rebuild.
+  //   • Tracked, a rebuild rewrites it with the SAME digest → clean tree. If it ever appears as
+  //     MODIFIED, upstream moved the tag: that diff is the intended supply-chain SIGNAL. Review the
+  //     digest change deliberately; discarding it is discarding the only notice you get.
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
       "moby": true,
