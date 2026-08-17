@@ -1,0 +1,321 @@
+{
+  // .devcontainer/sandbox/devcontainer.json — feature 060 (dev container on Docker Sandbox)
+  //
+  // THE SANDBOX VARIANT. Identical to ../devcontainer.json except for the engine seam. It runs the
+  // dev container as an ordinary UNPRIVILEGED client of the microVM's own Docker engine, so the
+  // nested engine and the `privileged` flag are DELETED rather than relocated.
+  //
+  // ../devcontainer.json is NOT modified by this feature (FR-019): the Docker Desktop path must
+  // keep working until adoption. FR-032 collapses the two into one file after two consecutive
+  // incident-free weeks, so this duplication is time-boxed, not permanent.
+  //
+  // Select it explicitly:
+  //   devcontainer up --workspace-folder /workspaces/mcm \
+  //                   --config .devcontainer/sandbox/devcontainer.json
+  "name": "mcm-workspace-sandbox",
+
+  // Unchanged from the Docker Desktop config, EXCEPT the relative path: this file lives one
+  // directory deeper, and `dockerfile` resolves relative to the config file's own directory.
+  // See ../devcontainer.json for the full ${localEnv:VAR:default} gotchas — they still apply,
+  // though the VS Code half of them is moot here (the headless CLI performs the build).
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "args": {
+      "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}"
+    }
+  },
+
+  // ── THE CHANGE THIS WHOLE FEATURE IS ABOUT ─────────────────────────────────────────────────
+  // docker-in-docker:2 → docker-outside-of-docker:1.
+  //
+  // The dev container gets the docker CLI + compose plugin and the MICROVM's engine socket. It
+  // runs NO daemon. Application stacks, dev-ollama and throwaway test containers become SIBLINGS
+  // of this container on one engine, not nested children inside it.
+  //
+  // POSTURE (the honest restatement of ../devcontainer.json's FR-011 note): the reachable engine
+  // is the sandbox microVM's, NOT the workstation's. Engine isolation from the workstation is now
+  // STRONG — a hypervisor boundary the container cannot cross — where it was MODERATE. Isolation
+  // *within* the VM is deliberately weak and accepted, because the VM is the disposable blast
+  // radius. `privileged` is gone; there is no nested engine to require it.
+  //
+  // Asserted, not asserted-by-comment: .devcontainer/verify/verify-engine-seam.sh checks all three
+  // sides (no daemon in-container, Privileged:false from the VM, invisible to the Windows engine).
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": true,
+      // Skip the STANDALONE `docker-compose` binary. Not a workaround — a removal.
+      //
+      // The feature's default ("v2") downloads that binary from GitHub release artifacts as a
+      // separate step AFTER apt has already installed `moby-compose`, i.e. the `docker compose`
+      // plugin this project actually uses. Under the sandbox topology that extra download runs
+      // inside the governed VM and failed with curl exit 6 (could not resolve host), which is what
+      // surfaced it at all — on Docker Desktop the build has open egress and nobody noticed the
+      // redundant fetch.
+      //
+      // Verified before disabling: the repository contains NO invocation of the legacy hyphenated
+      // `docker-compose` binary. Every call site uses `docker compose` (the plugin), including all
+      // the up-*/down-* Nx targets. So this drops a build-time network dependency and one more
+      // reason to widen the allowlist, rather than papering over a failure.
+      "dockerDashComposeVersion": "none"
+    }
+  },
+
+  // "host" here is the SANDBOX VM, never Windows. This single line is what makes the topology
+  // change cost almost no in-repo churn: sibling stacks publish on the VM's loopback, so the whole
+  // documented local service map keeps working VERBATIM — localhost:8082 (BFF), :8099 (Keycloak),
+  // :3001 (mc-service), :27017/:27018 (Mongo), :6379 (Redis) — along with the integration tier's
+  // three URL exports and the Playwright `--network host` recipe. Without it, every one of those
+  // documented addresses would need rewriting and the runbook's validated sequences would all
+  // become suspect.
+  //
+  // `--restart=always` answers a foot-gun unique to this topology: THE SANDBOX STOPS WHEN IDLE,
+  // and containers inside it do not come back by themselves. Measured 2026-08-16 — a dev container
+  // repeatedly presented as `Exited (255)` between commands, which reads as a crash; it was the
+  // microVM going away underneath it (`uptime -p` reported "up 0 minutes" immediately after an ssh
+  // that had just booted it). The same event truncated a `devcontainer up` mid-run, leaving a log
+  // with no outcome line.
+  //
+  // With this set, the container returns on its own: verified by `sbx stop mcm`, reconnecting, and
+  // observing `running` with nothing manually started. dockerd itself starts at VM boot (not via
+  // systemd — the sandbox template handles it), so the restart policy is honoured.
+  //
+  // `always` rather than `unless-stopped` is deliberate and follows this repository's own scar
+  // tissue: features 028/030 found `unless-stopped` insufficient for coming back after a host
+  // restart and had to move to `always`. Note it does NOT defend against the R11 foot-gun — a
+  // `docker rm -f` on the dev container's own container still ends the session.
+  "runArgs": ["--network=host", "--restart=always"],
+
+  // FR-002 — never root, never the host user. Unchanged.
+  "remoteUser": "coder",
+
+  // Retained ONLY while init-firewall.sh lives (research D-05): the in-VM iptables layer is kept as
+  // defence-in-depth beneath the host-side sandbox policy for this migration.
+  //
+  // RETIREMENT PATH: when the sandbox policy alone is trusted (spec Out of Scope lists this as a
+  // later decision, taken once the audit trail has earned trust), init-firewall.sh goes and THESE
+  // TWO CAPABILITIES GO WITH IT. They exist for no other reason here — unlike the Docker Desktop
+  // config, where they were subsumed by `privileged` anyway.
+  //
+  // NOTE under --network=host: these now let the container program the VM's OUTPUT chain rather
+  // than its own. That is the intended D-05 behaviour, and it is why init-firewall.sh's header now
+  // documents its scope per-topology.
+  "capAdd": ["NET_ADMIN", "NET_RAW"],
+
+  // `workspaceMount` / `workspaceFolder` remain OMITTED, exactly as in ../devcontainer.json and for
+  // the same reason — but the stakes are higher here. `devcontainer up --workspace-folder
+  // /workspaces/mcm` supplies a default bind mount at the IDENTICAL in-container path, which
+  // FR-017 requires: with one engine, every sibling's `-v` path resolves against the VM's
+  // filesystem, so container path and VM path MUST be equal or those mounts silently bind the
+  // wrong content. Hardcoding either value here is what would break that.
+  // Asserted by .devcontainer/verify/verify-workspace-path.sh — a mismatch does NOT error.
+
+  // Unchanged from the Docker Desktop config. These are volumes on the SANDBOX engine now, and
+  // they survive a dev-container recreate — but NOT `sbx rm`, which takes the VM, its engine,
+  // every sibling, every named volume and the workspace clone with it. That is a teardown semantic
+  // the Docker Desktop path does not have; see docs/runbooks/devcontainer-sandbox.md.
+  "mounts": [
+    "source=mcm-commandhistory,target=/commandhistory,type=volume",
+    "source=mcm-cargo-registry,target=/home/coder/.cargo/registry,type=volume",
+    "source=mcm-cargo-git,target=/home/coder/.cargo/git,type=volume",
+    "source=mcm-uv-cache,target=/home/coder/.cache/uv,type=volume",
+    "source=mcm-pnpm-store,target=/home/coder/.local/share/pnpm/store,type=volume",
+    // The personal layer — plugins/skills, service logins, the RTK binary AND the Claude Code
+    // PreToolUse hook that actually routes commands through it.
+    //
+    // ⚠️ THIS VOLUME IS EMPTY ON A FRESH SANDBOX, and nothing populates it automatically. The
+    // sandbox engine has its own volumes, so the personal layer does NOT come across from the
+    // Docker Desktop environment. Install it once per container creation:
+    //
+    //     devcontainer up --workspace-folder /workspaces/mcm \
+    //       --config .devcontainer/sandbox/devcontainer.json \
+    //       --dotfiles-repository https://github.com/jumbleknot/mcm-dotfiles
+    //
+    // RTK IS NOT ACTIVE JUST BECAUSE THE BINARY EXISTS. It compresses only via the `rtk hook
+    // claude` PreToolUse entry in ~/.claude/settings.json, which install.sh writes. Binary without
+    // hook = every command unproxied and ZERO gains, while `rtk --version` answers perfectly — a
+    // failure this project has hit before. verify-personal-layer.sh now asserts BOTH.
+    "source=mcm-claude,target=/home/coder/.claude,type=volume"
+  ],
+
+  "containerEnv": {
+    // FR-012 — in-container marker asserted by verify-host-isolation.sh and verify-engine-seam.sh.
+    "MCM_DEVCONTAINER": "1",
+
+    // D-18 — WHICH PATH THIS CONTAINER IS ON. The two devcontainer.json files were previously
+    // indistinguishable from inside the container (both set only MCM_DEVCONTAINER=1), so a check
+    // could not tell "the in-VM firewall is missing because it failed" from "…because this path
+    // does not use one". That ambiguity is what let a container run with NO in-VM ruleset while
+    // verify-firewall-allowlist.sh reported the failure as a broken firewall. See D-18 in
+    // research.md: on this path the host-side sandbox policy IS the enforcement layer.
+    "MCM_DEVCONTAINER_PLATFORM": "sandbox",
+
+    // D-19 — TALK TO THE ENGINE DIRECTLY, NOT THROUGH THE FEATURE'S socat RELAY.
+    //
+    // The docker-outside-of-docker feature bind-mounts the VM's engine socket as
+    // /var/run/docker-host.sock and publishes /var/run/docker.sock as a socat relay onto it:
+    //
+    //   socat UNIX-LISTEN:/var/run/docker.sock,fork,mode=660,user=coder,backlog=128 \
+    //         UNIX-CONNECT:/var/run/docker-host.sock
+    //
+    // Note what is MISSING: `-t`. socat's half-close timeout defaults to **0.5 seconds**, so half a
+    // second after the client half-closes stdin — which `docker exec` does immediately, having no
+    // input to send — socat tears down the whole relay, including the response stream still
+    // carrying the command's output.
+    //
+    // The measured effect is worse than a broken pipe, because it is SILENT. `docker exec` returns
+    // **exit code 0 with empty stdout** for any command that takes longer than the timeout:
+    //
+    //   sleep 0s -> [LATE-0]      sleep 1s -> []  rc=0      sleep 3s -> []  rc=0
+    //
+    // A fast command works, so the seam looks healthy; a slow one silently yields "". That is a
+    // wrong answer delivered confidently — the exact failure class this repository keeps paying for.
+    // It cost the agent-stack bring-up, which died on `gateway is NOT running production nodes
+    // (production_nodes_enabled=)` — an EMPTY value, not `false` — while the gateway was healthy and
+    // its own log read `gateway graph: MCP-backed (production) nodes`. The assertion was correct and
+    // its instrument was lying.
+    //
+    // The relay exists to solve a permissions problem that does not exist here:
+    //     srw-rw---- 1 root coder /var/run/docker-host.sock
+    // is already group-owned by `coder`, so the CLI can address the engine socket directly and drop
+    // socat out of the path entirely. Verified: via socat `sleep 3` -> []; direct -> [OK-3], and the
+    // production-nodes assertion returns True.
+    //
+    // Tuning socat with `-t 60` would also work, but it means overriding a script the feature owns
+    // (/usr/local/share/docker-init.sh) on every rebuild. One env var beats patching a vendored file.
+    //
+    // ⚠️ NOT applicable to the Docker Desktop config: docker-in-docker runs a real nested dockerd on
+    // /var/run/docker.sock with no relay, so this variable would point at a socket that is not there.
+    // If the feature ever stops group-owning docker-host.sock, docker fails LOUDLY here rather than
+    // returning empty output — which is the better failure of the two.
+    "DOCKER_HOST": "unix:///var/run/docker-host.sock",
+
+    // DOCKER_CONFIG IS REQUIRED AFTER ALL — D-10 was wrong to drop it, and G4 is why.
+    //
+    // D-10 removed this on the reasoning that the credsStore workaround's cause was gone, because
+    // "the headless @devcontainers/cli builds this container, so no host credential helper is ever
+    // injected". That premise held only while the CLI was the ONLY builder. **G4 proved the VS Code
+    // extension can build this variant too** (Reopen in Container, measured 2026-08-16) — and when
+    // it does, it injects `"credsStore": "dev-containers-<id>"` into ~/.docker/config.json exactly
+    // as it does on Docker Desktop. Removing the shield while ADDING a second builder that needs it
+    // was the error.
+    //
+    // Measured consequence, on a container the extension had built: `pnpm nx up-auth` died with
+    //     error getting credentials - err: exit status 255
+    // pulling PUBLIC images (keycloak, postgres, mailpit) that need no credentials at all.
+    //
+    // ⚠️ And the failure is WORSE than the 037 note describes. That note says the helper is "a
+    // HOST-side binary, absent in the container". Here the binary IS present —
+    // /usr/local/bin/docker-credential-dev-containers-<id> — and it FAILS, because it only works
+    // inside the extension's own session context. So `docker pull` succeeds from a VS Code terminal
+    // and fails from a `docker exec` shell or any script, which is a far nastier bug than a
+    // consistently missing helper: it makes image pulls depend on how the shell was started.
+    //
+    // Pointing DOCKER_CONFIG at a clean, container-local directory makes the docker CLI ignore the
+    // injected helper entirely. A registry login performed inside the container writes here instead,
+    // which is the same arrangement the Docker Desktop path has used since 037.
+    "DOCKER_CONFIG": "/home/coder/.docker-sandbox",
+
+    "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
+
+    // ⚠️ DELIBERATELY **NOT** NAMED `ANTHROPIC_API_KEY`. This is a cost control, not cosmetics.
+    //
+    // Claude Code prefers ANTHROPIC_API_KEY over an existing subscription login whenever it finds
+    // one in its environment. Exporting the raw name into this container's shell therefore makes
+    // EVERY assistant session bill the pay-per-token API instead of the subscription — silently,
+    // with no warning and nothing in the UI to indicate which is being used. Measured 2026-08-16:
+    // roughly $15 of unintended API spend in a single day, on a workstation that had a perfectly
+    // valid subscription login sitting unused.
+    //
+    // The key is still needed — by the agent gateway, the golden cassette RE-RECORD path, and the
+    // containerized E2E runs — so it is carried under a name Claude Code does not recognise, and
+    // mapped back to ANTHROPIC_API_KEY only at the point of use:
+    //   • scripts/agent-stack.mjs   → passes `-e ANTHROPIC_API_KEY=…` INTO the gateway container
+    //   • scripts/wiki-maintain.mjs → accepts either name
+    //   • the Playwright E2E recipe → `-e ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY"`
+    // Each of those is a separate process or container where no assistant runs, so the raw name is
+    // safe there and unsafe here.
+    //
+    // Set `MCM_ANTHROPIC_API_KEY` on the host (and NOT `ANTHROPIC_API_KEY`, for exactly the same
+    // reason — the host runs Claude Code too). CI is unaffected: it injects ANTHROPIC_API_KEY from
+    // repository secrets into jobs that run no interactive assistant, and every consumer above
+    // still honours that name first.
+    "MCM_ANTHROPIC_API_KEY": "${localEnv:MCM_ANTHROPIC_API_KEY}",
+
+    "TMDB_API_KEY": "${localEnv:TMDB_API_KEY}",
+    "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}",
+    "MCM_FORGE_ISSUE_TOKEN": "${localEnv:MCM_FORGE_ISSUE_TOKEN}",
+
+    // ⚠️ "localEnv" here is the SANDBOX SHELL that runs `devcontainer up`, not Windows. Those six
+    // values are provisioned into the VM by the D-07 fallback and must be sourced BEFORE the up:
+    //     set -a; . ~/.mcm-sandbox-env; set +a
+    // Nothing may rely on them riding the SSH session: since v0.37.1 SSH does not forward
+    // credential env vars unless ssh.acceptEnv is configured. Measured 2026-08-16 — a bare
+    // `ssh mcm.sbx 'echo $MCM_FORGE_TOKEN'` returns EMPTY, which is the intended state.
+
+    // Non-secret literals, unchanged. Telemetry is disabled BY CONFIGURATION, never by
+    // allowlisting the analytics host — an inversion that must survive this migration.
+    "OPENWIKI_PROVIDER": "anthropic",
+    "OPENWIKI_TELEMETRY_DISABLED": "1"
+  },
+
+  // Retained for the VS Code-attached case. Under --network=host these ports are already the VM's,
+  // so host-side exposure to Windows is `sbx ports mcm --publish …` rather than this list (D-11).
+  "forwardPorts": [8081, 8082, 8099],
+  "portsAttributes": {
+    "8081": { "label": "Metro / Expo Web / dev BFF", "onAutoForward": "notify" },
+    "8082": { "label": "Containerized dev BFF", "onAutoForward": "silent" },
+    "8099": { "label": "Keycloak (OAuth)", "onAutoForward": "silent" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "files.eol": "\n"
+      },
+      "extensions": [
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+
+  // Unchanged from the Docker Desktop config.
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true",
+
+  // ONE-TIME PER CONTAINER CREATION, which is exactly the right cadence for both steps.
+  //
+  // ensure-rtk-hook.sh is not belt-and-braces — it is load-bearing. `rtk init -g` (run by the
+  // dotfiles install.sh) PROMPTS before patching ~/.claude/settings.json and, non-interactively,
+  // DEFAULTS TO NO, printing a "MANUAL STEP" into a build log nobody reads. So every automated
+  // container creation otherwise yields RTK installed-but-inactive: `rtk --version` answers, and
+  // the session gets zero compression. That is the structural cause of this project's recurring
+  // "the assistant ran without RTK" incidents. The script performs that patch idempotently, backs
+  // up the existing settings first, and no-ops cleanly when no personal layer is installed (FR-014).
+  "postCreateCommand": "pnpm install --config.confirmModulesPurge=false && /bin/bash ${containerWorkspaceFolder}/.devcontainer/ensure-rtk-hook.sh",
+
+  // D-18 — THIS IS THE ONE DELIBERATE BEHAVIOURAL DIVERGENCE FROM THE DOCKER DESKTOP CONFIG.
+  //
+  // The Docker Desktop config runs init-firewall.sh here. This path DOES NOT, and the earlier
+  // comment claiming it "now programs the VM's OUTPUT chain, so it also covers the sandbox dockerd's
+  // image pulls" was a hypothesis that measurement falsified on 2026-08-16. Two findings:
+  //
+  //   • `--network=host` means this container shares the VM's network namespace IDENTICALLY
+  //     (net:[4026532855] on both sides). init-firewall.sh's default-DROP would therefore be
+  //     VM-WIDE — hitting the sandbox's own policy proxy and every sibling container — rather than
+  //     scoped to this container as it is on Docker Desktop.
+  //   • It was never actually running. postStartCommand does not fire on a Docker-level restart,
+  //     and this VM idle-stops after ~30 s with `--restart=always` restoring the container, so the
+  //     in-VM ruleset vanished on the first idle cycle and no check noticed.
+  //
+  // Egress was nonetheless fully governed throughout, by the host-side sandbox policy, verified from
+  // three vantage points including a raw-IP bypass attempt. Enforcement lives outside the VM — which
+  // is the security thesis of this whole feature, and is also why it covers SIBLING containers (G5,
+  // the closed 037 residual) where the in-VM firewall never did.
+  //
+  // So the layer is not re-implemented here; it is ASSERTED. assert-egress-governed.sh fails loudly
+  // if a non-allowlisted host is reachable, and equally if an allowlisted one is NOT (a severed
+  // network must not read as a security pass). Its header documents the restart-blindness it shares
+  // with any postStart hook.
+  "postStartCommand": "/bin/bash ${containerWorkspaceFolder}/.devcontainer/assert-egress-governed.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
+}

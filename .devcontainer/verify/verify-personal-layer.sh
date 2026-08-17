@@ -7,13 +7,34 @@
 # persistent), FR-014 (its ABSENCE never blocks the container — this script exits 0 with a notice).
 #
 # The personal layer is delivered OUT-OF-REPO by the developer's dotfiles install.sh (FR-009), so
-# it may legitimately be absent (a second person, or a first open before dotfiles are configured).
-# This script therefore has two success paths:
-#   • CONFIGURED  → assert rtk gain > 80%, expected plugins present, logins resolve. Exit 0.
-#   • ABSENT      → print a clear "personal layer absent" notice and exit 0 (FR-014). It NEVER
-#                   fails the run just because a personal convenience is missing.
-# It fails (non-zero) ONLY when the layer is PARTIALLY present and broken (e.g. rtk on PATH but
-# gain < 80%, or a claimed-present plugin missing) — a real regression, not an absence.
+# most of it may legitimately be absent (a second person, or a first open before dotfiles are
+# configured). Plugins, skills and service logins are all treated that way: absent is a notice.
+#
+# ── RTK IS THE EXCEPTION, AND FEATURE 060 (T032) MAKES THAT EXPLICIT ─────────────────────────────
+#
+# The choice this script has to make — and previously left implicit — is whether RTK is REQUIRED or
+# merely WARNED about. It is now **REQUIRED**, and fails an environment that lacks it.
+#
+# Why the stricter reading: the constitution mandates RTK token compression for every AI-assisted
+# shell session (Common Technology Stack — Token Compression). It is not a personal convenience like
+# a plugin set; it is a MUST that this environment exists to satisfy. And because RTK is installed
+# by the out-of-repo dotfiles rather than baked into the image, an environment that lost it looks
+# COMPLETELY HEALTHY while violating that MUST — nothing else in the harness asserts it. That is
+# precisely the class of silent regression the verify harness exists to catch.
+#
+# Tension with 038's FR-014 ("the container is team-capable without dotfiles"), and how it resolves:
+# FR-014 is about the container coming UP and being usable, which this script never blocks. This
+# assertion is about certifying the environment for ASSISTANT use, which is what the harness does.
+# A teammate deliberately running without dotfiles can set MCM_ALLOW_NO_RTK=1 — an EXPLICIT opt-out
+# that must be typed, rather than a silent pass that nobody notices.
+#
+# Success paths:
+#   • CONFIGURED  → assert rtk on the PERSISTED volume, `rtk --version` answers, gain > 80%,
+#                   plugins present, logins resolve. Exit 0.
+#   • RTK ABSENT  → FAIL (unless MCM_ALLOW_NO_RTK=1, which downgrades it to a notice).
+#   • Other parts absent → notice, exit 0 (FR-014).
+# It also fails when the layer is PARTIALLY present and broken (rtk on PATH but gain < 80%, or a
+# claimed-present plugin missing) — a real regression, not an absence.
 
 set -uo pipefail
 
@@ -34,34 +55,100 @@ fi
 # ~/.cargo/bin (research D3/D7). Put that dir on PATH for this check regardless of shell rc.
 export PATH="$HOME/.claude/tools/bin:$PATH"
 
-# --- absence detection -------------------------------------------------------------------
-# The layer is "configured" if RTK is present. No RTK → treat the whole personal layer as
-# not-yet-configured and skip cleanly (FR-014).
-if ! command -v rtk >/dev/null 2>&1; then
-  echo ""
-  note "personal layer ABSENT — 'rtk' not found on PATH (~/.claude/tools/bin)."
-  note "The container is fully team-capable without it. To enable the personal layer, set the"
-  note "VS Code user setting 'dotfiles.repository' (or --dotfiles-repository) to your dotfiles"
-  note "repo whose install.sh builds RTK + installs plugins. See docs/runbooks/devcontainer.md."
-  echo "[verify-personal-layer] SKIP (personal layer not configured — exit 0, FR-014)"
-  exit 0
+# --- 060 T032: RTK on the PERSISTED volume is REQUIRED -------------------------------------
+# Asserted at the volume path specifically, not merely "somewhere on PATH". RTK must live on the
+# mcm-claude volume so it survives a container recreate; an rtk that happened to be installed into
+# the ephemeral image or ~/.cargo/bin would satisfy `command -v` and then vanish on the next
+# rebuild, which is the failure this placement was chosen to prevent (research D3/D7).
+RTK_BIN="$HOME/.claude/tools/bin/rtk"
+
+if [ ! -x "$RTK_BIN" ]; then
+  if [ "${MCM_ALLOW_NO_RTK:-}" = "1" ]; then
+    echo ""
+    note "RTK not found on the personal volume ($RTK_BIN) — tolerated by MCM_ALLOW_NO_RTK=1."
+    note "The container is team-capable without it, but this environment is NOT certified for"
+    note "assistant use: the constitution mandates RTK token compression for AI-assisted sessions."
+    echo "[verify-personal-layer] SKIP (RTK absent, explicitly tolerated — exit 0)"
+    exit 0
+  fi
+  err "RTK not found on the personal volume ($RTK_BIN)"
+  note "RTK is constitution-mandated for every AI-assisted shell session, and is installed by the"
+  note "out-of-repo dotfiles install.sh ('cargo install --root ~/.claude/tools'). An environment"
+  note "without it looks completely healthy while violating a MUST — which is why this now FAILS"
+  note "rather than skipping. Set 'dotfiles.repository' (or --dotfiles-repository) to the dotfiles"
+  note "repo, or export MCM_ALLOW_NO_RTK=1 to acknowledge an uncertified environment deliberately."
+  echo "[verify-personal-layer] FAIL (RTK absent — constitution MUST unmet)"
+  exit 1
+fi
+ok "rtk present on the persisted volume ($RTK_BIN)"
+
+# It must also RUN. A present-but-broken binary (wrong arch after an image change, truncated
+# install) is a distinct failure from an absent one, and reads identically until it is executed.
+if rtk_ver="$("$RTK_BIN" --version 2>&1)"; then
+  ok "rtk --version answers: $(printf '%s' "$rtk_ver" | head -1)"
+else
+  err "rtk is present but '--version' failed — the binary is broken, not merely installed"
 fi
 
-# --- CONFIGURED path: assert the layer is healthy ----------------------------------------
-ok "rtk present ($(command -v rtk))"
+# ── PRESENT IS NOT INITIATED — and this distinction has bitten this project before ──────────────
+#
+# RTK does not compress anything by existing. It works through a Claude Code **PreToolUse hook**
+# (`rtk hook claude`) declared in ~/.claude/settings.json, which rewrites commands before they run.
+# With the binary installed but the hook missing, every command runs UNPROXIED and the session gets
+# ZERO compression — while `command -v rtk`, `rtk --version` and this script's earlier assertions
+# all pass happily.
+#
+# That is not hypothetical: it is a known past failure of this project (the assistant running a
+# whole session without RTK active), and it was reproduced exactly on the sandbox environment on
+# 2026-08-16 — RTK copied in by hand, `rtk --version` answering 0.42.4, and NO settings.json at all.
+# The check passed. So the check was wrong, not merely incomplete.
+#
+# Initiation is a ONE-TIME-PER-CONTAINER-CREATION step, performed by the dotfiles install.sh. The
+# supported mechanism is:
+#     devcontainer up … --dotfiles-repository https://github.com/jumbleknot/mcm-dotfiles
+SETTINGS="$HOME/.claude/settings.json"
+if [ ! -f "$SETTINGS" ]; then
+  err "RTK is NOT INITIATED — $SETTINGS is absent, so no PreToolUse hook exists and RTK compresses NOTHING"
+  note "Install the personal layer with:  devcontainer up … --dotfiles-repository <dotfiles-url>"
+elif grep -q 'rtk hook' "$SETTINGS" 2>/dev/null; then
+  ok "RTK is initiated — 'rtk hook' wired into the Claude Code PreToolUse hook"
+else
+  err "RTK is NOT INITIATED — $SETTINGS exists but declares no 'rtk hook' PreToolUse entry"
+  note "The binary is installed and answers, but nothing routes commands through it: zero gains."
+  note "Re-run the dotfiles install; see docs/runbooks/devcontainer-sandbox.md."
+fi
 
-# SC-006 — compression. `rtk gain` reports cumulative savings; require > 80%. Parse the first
-# percentage it emits. If no run history exists yet, `rtk gain` may report 0 runs — treat that as
-# a soft note (nothing to compress yet) rather than a hard fail, since a fresh session has no history.
+# SC-006 — compression. REPORTED, NOT ENFORCED (operator decision, 2026-08-16).
+#
+# ── Why this no longer fails the run ─────────────────────────────────────────────────────────────
+#
+# The threshold is applied to a metric that cannot reach it. `rtk gain` reports CUMULATIVE GLOBAL
+# savings across every proxied command — measured 2026-08-16 at **2.8%** over 914 commands — while
+# the PER-COMMAND savings that the ">80%" figure describes run 17–87%:
+#
+#     Tokens saved: 285.6K (2.8%)        <- what this parse reads
+#       rtk read 17.1% | rtk grep 26.1% | rtk git diff 87.1% | rtk:toml 85.7%
+#
+# So a healthy environment fails a hard >80% assertion, every time. That makes it a check that
+# cries wolf, and a check nobody believes is worse than no check: it trains the reader to skip a
+# red line in a harness whose whole value is that red lines mean something.
+#
+# It is therefore REPORTED prominently and does not fail. This is a deliberate, recorded downgrade
+# pending investigation of WHY cumulative gain is low — not a quiet loosening to make a suite go
+# green. The metric-vs-threshold mismatch is the open question; SC-006 itself is untouched, because
+# changing a success criterion is a spec decision rather than an implementation one.
 gain_out="$(rtk gain 2>/dev/null || true)"
 pct="$(printf '%s' "$gain_out" | grep -oE '[0-9]+(\.[0-9]+)?%' | head -1 | tr -d '%')"
 if [ -z "$pct" ]; then
   note "rtk gain reported no percentage yet (no command history in this fresh session)."
-  note "SC-006 (> 80%) is confirmed after the first test run — see the runbook / rtk gain."
+  note "SC-006 is measured after the first test run — see the runbook / rtk gain."
 elif awk -v p="$pct" 'BEGIN{exit !(p+0 > 80)}'; then
   ok "rtk gain ${pct}% > 80% (SC-006)"
 else
-  err "rtk gain ${pct}% is NOT > 80% (SC-006 regression)"
+  note "rtk gain ${pct}% (cumulative, global) is below the SC-006 figure of 80% — REPORTED, not failed."
+  note "Known metric mismatch: this is total savings across ALL proxied commands, whereas the 80%"
+  note "figure describes PER-COMMAND savings (measured 17-87% by command type). Follow-up owed:"
+  note "either measure per-command, or restate SC-006 against the cumulative metric."
 fi
 
 # SC-007 — plugins/skills present. The expected set is the developer's, delivered by the dotfiles

@@ -34,7 +34,27 @@ fi
 
 grant_kvm() {
   if [ ! -e /dev/kvm ]; then
-    echo "devcontainer-android: /dev/kvm not present — this host has no nested KVM. Emulator would be unusably slow; skipping (mobile agent flows run in CI)."
+    # 060 (FR-028 / SC-010) — REFUSE LEGIBLY, naming the absence, the reason, and BOTH alternative
+    # routes. This is the documented scoped exception of the Docker Sandbox migration, not a fault
+    # to be debugged: the microVM provides no nested virtualization (gate R2, resolved negative in
+    # Phase 0), so /dev/kvm cannot appear there however the container is configured.
+    #
+    # The message is deliberately explicit because the failure is otherwise indistinguishable from
+    # a broken image or a missing permission, and a future session would spend an hour
+    # rediscovering that the capability is simply not available. Software-rendered emulation is
+    # ruled out: it is unusable in practice, not merely slow.
+    echo "devcontainer-android: /dev/kvm is NOT PRESENT — no hardware virtualisation on this host."
+    echo "devcontainer-android:   Cause: on the Docker Sandbox path this is EXPECTED and permanent — the"
+    echo "devcontainer-android:          microVM offers no nested virtualization (feature 060, gate R2)."
+    echo "devcontainer-android:          On Docker Desktop it instead means the host exposes no KVM."
+    echo "devcontainer-android:   This is a documented SCOPED EXCEPTION, not a broken environment."
+    echo "devcontainer-android:   Two routes remain for mobile E2E:"
+    echo "devcontainer-android:     1. CI — already the RECOMMENDED path for agent flows"
+    echo "devcontainer-android:          (local Metro OOM-crashes after ~1-2 /run calls anyway)."
+    echo "devcontainer-android:     2. The RETAINED Docker Desktop dev container, which keeps KVM and"
+    echo "devcontainer-android:          is deliberately kept as the mobile-emulator fallback."
+    echo "devcontainer-android:   See docs/runbooks/android-emulator.md and docs/runbooks/devcontainer-sandbox.md."
+    echo "devcontainer-android: skipping emulator preparation (exit 0 — this never blocks container start)."
     return 1
   fi
   if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then return 0; fi

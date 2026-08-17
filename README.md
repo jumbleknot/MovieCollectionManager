@@ -115,9 +115,11 @@ Full environment details, profiles, and endpoints: [docs/runbooks/local-dev.md](
 
 ## Run in Dev Containers
 
-The repo ships a [Dev Containers](https://containers.dev/) definition (`.devcontainer/`, features 037/038) that runs the entire workshop — including the AI coding assistant — inside a disposable, isolated Linux container:
+The repo ships a [Dev Containers](https://containers.dev/) definition (`.devcontainer/`, features 037/038/060) that runs the entire workshop — including the AI coding assistant — inside a disposable, isolated Linux container. **As of feature 060 that container is hosted on a Docker Sandbox microVM** rather than Docker-in-Docker:
 
-- **Isolation first** — the assistant runs as a non-root user with no path to the host filesystem, SSH keys, or credential stores; source lives on a named Linux volume, and containers/test stacks build against an in-container Docker-in-Docker engine behind a default-deny egress firewall.
+- **Isolation first** — the assistant runs as a non-root user with no path to the host filesystem, SSH keys, or credential stores. Containers and test stacks build on the **microVM's own engine as siblings** (`docker-outside-of-docker`), behind a **deny-by-default egress policy enforced outside the VM** — which is what makes it cover sibling containers too, closing the gap the in-container firewall never could.
+- **Faster, measurably** — the same five-stage bring-up takes **0.43×** the Docker-in-Docker wall-clock; `docker-build` alone went **1024 s → 293 s**, because a nesting level and the Windows filesystem are both out of the path.
+- **One-step entry** — `pwsh scripts/open-sandbox.ps1` starts the sandbox if it is idle-stopped and opens VS Code directly inside the dev container.
 - **Full toolchain, pre-provisioned** — Rust + cargo tooling, Python via `uv`, Specify CLI, Node 24/pnpm/Nx, and `gh` are baked into a prebuilt `mcm-devcontainer` image (pulled from the forge registry by digest, or built locally via `node scripts/build-devcontainer-image.mjs`), so nothing is reinstalled per session.
 - **Fast** — budgets: cold first build < 5 min, warm recreate < 90 s, stop→start < 15 s; `cargo`/`pnpm`/`uv` caches persist across recreates on named volumes.
 - **Personal AI layer (optional)** — point the Dev Containers `dotfiles.repository` setting at your personal dotfiles repo to restore your Claude Code plugins/skills, RTK (built once from source in-container), and service logins; these persist on a personal-config volume, and the container is fully team-capable without them.
@@ -142,7 +144,9 @@ How to develop the Expo app from inside the container:
 - **Physical device** — point Expo Go / a dev build at the in-container Metro server over LAN; if LAN routing to the container isn't available, use the documented **Expo tunnel fallback** (`pnpm start --tunnel`).
 - **Emulator / native builds** — switch to the host for `expo run:android`, APK builds, and `pnpm nx e2e:mobile`; mobile agent E2E flows run in CI regardless (see [docs/runbooks/android-emulator.md](docs/runbooks/android-emulator.md)).
 
-Verification scripts under `.devcontainer/verify/` prove host isolation, engine isolation, cache persistence, and toolchain completeness. Full procedure: [docs/runbooks/devcontainer.md](docs/runbooks/devcontainer.md).
+The **Android emulator is the one documented exception** and the sole reason the Docker Desktop path is retained: the microVM offers no nested virtualization, so `/dev/kvm` cannot appear there however the container is configured. `scripts/devcontainer-android.sh` refuses legibly and names both remaining routes (CI, or the retained Docker Desktop container) rather than failing as if broken.
+
+Verification scripts under `.devcontainer/verify/` prove host isolation, the engine seam, cache persistence, and toolchain completeness. Full procedure: **[docs/runbooks/devcontainer-sandbox.md](docs/runbooks/devcontainer-sandbox.md)** (the sandbox path) and [docs/runbooks/devcontainer.md](docs/runbooks/devcontainer.md) (the retained Docker Desktop path).
 
 ## Development
 

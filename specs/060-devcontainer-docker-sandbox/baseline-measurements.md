@@ -1,0 +1,340 @@
+# Baseline measurements — Docker Desktop (DinD) dev container
+
+**Feature**: 060-devcontainer-docker-sandbox | **Measured**: 2026-08-15 / 2026-08-16 (UTC)
+
+This file is the **denominator of SC-006**. Without it the ≤1.5× budget is unfalsifiable, and G6
+cannot be evaluated in either direction. T048 records the migrated timings alongside these and
+computes the ratio.
+
+**The single most important rule for T048: run the identical commands against the identical
+workload composition.** They are recorded verbatim below for that reason. A ratio computed against
+a different command, a different tier selection, or a different set of running stacks is not a
+ratio — it is two unrelated numbers divided by each other.
+
+---
+
+## Environment measured
+
+| Property | Value |
+| --- | --- |
+| Workstation | 12th Gen Intel Core i7-12700K — 12 physical / **20 logical** cores, **31.8 GB** RAM |
+| OS | Windows 11 Home 10.0.26200 |
+| Host container engine | Docker Desktop **29.7.2** |
+| Nested (DinD) engine | **29.6.2-1** — the engine that actually ran the workload |
+| Dev container memory ceiling | **15.51 GiB** (observed via `docker stats`) |
+| Dev container | `practical_shamir`, `Privileged=true`, `NetworkMode=bridge` |
+| Workspace path | `/workspaces/mcm` — a **named volume** (`vsc-remote-containers`), not a bind mount |
+| Thermal / load state | interactive workstation, no other heavy job running |
+
+### Code under measurement
+
+| Property | Value |
+| --- | --- |
+| Commit measured | `879d2987` (dev container's clone, on `main`) |
+| Feature branch HEAD | `abae6ede` |
+| Relationship | `879d2987` is an **ancestor of** `abae6ede` |
+| Difference, excluding `specs/060-*` | 3 files only: `.specify/feature.json`, `CLAUDE.md` (1 line), `openwiki/.maintenance-state.json` |
+| `pnpm-lock.yaml` blob | `bc15195a60c84c20bb8d4b000a125b6ca0e355bf` — **identical** in both trees |
+| Playwright resolved version | **1.62.1** (`pnpm exec playwright --version`) |
+
+**Why this satisfies the "measure on the merged tree" requirement.** The concern was that a
+pre-merge baseline would compare two different codebases, because the merge carried a ~9,500-line
+lockfile change. It does not apply here: the lockfile blob hash is *byte-identical* between the
+measured commit and the branch HEAD, and the only differences outside the spec directory are three
+documentation/state files that no measured stage touches. The measured tree is post-merge for every
+purpose this baseline serves.
+
+### Warm, not cold — and deliberately so
+
+**27 images were already cached** on the DinD engine before the run. This is the *warm* baseline:
+
+- it is the daily-work condition, and therefore the condition the 1.5× budget should govern;
+- it is reproducible, whereas a cold run's time is dominated by network throughput;
+- the migrated run at T048 will also be warm, after its first pull.
+
+A cold baseline would be dominated by pull time and would **flatter** the sandbox, because the
+sandbox's own cold pulls are a one-time cost. If a cold comparison is ever wanted it must be
+captured on both sides.
+
+---
+
+## Results
+
+| Stage | Wall-clock | Exit | Composition |
+| --- | ---: | ---: | --- |
+| `up-auth` | **43 s** | 0 | auth stack to all-healthy |
+| `docker-build mcm-app` | **1024 s** | 0 | ~17 min — see the note below, this dominates |
+| `up-mcm` | **25 s** | 0 | app + bff-nonsecure to `--wait` healthy |
+| integration tier | **32 s** | 0 | 30 suites, **120 passed / 120 total** (jest time 26.4 s) |
+| web E2E (`E2E_TIER=gate`) | **196 s** | 1 | **134 passed / 1 failed / 17 skipped** of 152 |
+| **Total measured** | **1320 s ≈ 22.0 min** | | |
+
+The web-E2E stage was run twice and measured **195 s** then **196 s** — reproducible to within 1 s.
+
+### Exact commands (T048 must re-run these verbatim)
+
+```bash
+# 1. up-auth — nx target, then poll until every container of the project is healthy
+pnpm nx up-auth infrastructure-as-code
+
+# 2. docker-build
+pnpm nx docker-build mcm-app
+
+# 3. up-mcm — the runbook's §1 form, with BOTH profiles and --wait, so the timing means "ready"
+docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+  --env-file infrastructure-as-code/docker/stacks/mcm.env \
+  --profile app --profile bff-nonsecure up -d --wait
+
+# 4. integration tier — the three URL exports are load-bearing (see CLAUDE.md gate 4)
+export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' \
+  infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
+export BFF_BASE_URL=http://localhost:8082
+export AGENT_CONFIG_ENC_KEY=$(grep '^AGENT_CONFIG_ENC_KEY=' frontend/mcm-app/.env.docker | cut -d= -f2-)
+export KEYCLOAK_URL=http://localhost:8099
+export MONGO_URL=mongodb://localhost:27018
+export REDIS_TEST_URL=redis://localhost:6379/1
+pnpm nx test:integration mcm-app
+
+# 5. web E2E — official Playwright image, identical-path mount, gate tier
+docker run --rm --network host --env-file ./frontend/mcm-app/.env.e2e.local \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v /workspaces/mcm:/workspaces/mcm \
+  -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+  -e E2E_BFF_TARGET=dev-container -e CI=true -e E2E_TIER=gate \
+  -e E2E_AGENT_PROVIDER=anthropic \
+  -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
+  -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
+  -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET="$svc" \
+  -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
+  -w /workspaces/mcm/frontend/mcm-app \
+  mcr.microsoft.com/playwright:v1.62.1-noble \
+  node_modules/.bin/playwright test --project=chromium --reporter=line
+```
+
+Stacks were torn down (`down-mcm`, `down-auth`) **before** timing began, so `up-auth` and `up-mcm`
+measure a real bring-up rather than a no-op against already-running stacks. Neither `down` target
+passes `-v`, so named volumes and the seeded Keycloak realm survived.
+
+---
+
+## What the numbers mean, and the traps in them
+
+### `docker-build` is 78% of the total, and it is I/O-bound, not CPU-bound
+
+1024 s of the 1320 s total is one stage. It was stalled for ~12 minutes on a single step:
+
+```text
+#24 [runner 13/13] RUN addgroup -S mcm && adduser -S mcm -G mcm && chown -R mcm:mcm /app/runtime
+```
+
+The `chown -R` process sat in state **`D`** (uninterruptible sleep — blocked on I/O), accumulating
+CPU at ~4.6% of one core. This is nested-overlayfs cost: **DinD overlay2 → Docker Desktop's WSL2
+ext4 → Windows**, with every inode change paying the full stack.
+
+**This is the single most interesting number for G6**, because it is exactly what the migration
+should improve: the sandbox has *one less nesting level* and a native Linux filesystem. If the
+migration is going to win anywhere, it is here — and if `docker-build` does **not** improve
+substantially, that is a signal worth investigating rather than a result to absorb. Conversely, a
+naive "a VM must be slower" expectation is not supported by this measurement.
+
+### The integration tier passes 120/120 — and at least 9 of those tests did nothing
+
+⚠️ **This directly affects T042**, whose Done-when is *"the tier passes with 0 skips"*.
+
+Jest reports **`Tests: 120 passed, 120 total`** and exits 0. It reports **zero skips**. But the log
+contains 14 `SKIP:` lines from tests that detect an unreachable dependency, `console.warn` a skip
+message, and then **return successfully**:
+
+| Soft-skipped because | Tests affected |
+| --- | --- |
+| `ollama not reachable at http://host.docker.internal:11434` | 4 |
+| `OpenSearch unreachable` | 4 |
+| `gateway not reachable at http://movie-assistant-gateway:8000` | 1 |
+
+**Jest's skip counter cannot see these.** They are passes by construction. This is the repository's
+own standing gate — *a skipped test reads as a pass unless something forces it to fail* — in its
+natural habitat, and the obvious implementation of T042 would report success while nine tests did
+nothing.
+
+**T042 must therefore assert on `grep -c 'SKIP:'`, not on the jest skip count**, and compare that
+count against this baseline of ≥9. Note also that if the sandbox makes any of these dependencies
+*reachable*, more tests will actually execute and the 32 s figure will no longer be comparable —
+that is a composition change, not a slowdown, and must be reported as such.
+
+### The web-E2E failure is a workload-composition gap, not a regression
+
+The one failing test is:
+
+```text
+assistant.spec.ts:78 › Assistant dock (feature 012) › sends a message and renders the
+                       streamed AG-UI assistant reply
+Test timeout of 90000ms exceeded — locator('[data-testid="assistant-msg-assistant"]') not found
+```
+
+It fails because **the agent stack was not running**. The bring-up sequence measured here (and the
+one T041 specifies) is `up-auth` → `docker-build` → `up-mcm`; it does **not** include
+`MODEL_PROVIDER=anthropic pnpm nx up-agents-prod`. With no gateway, the dock never receives a reply.
+
+This is recorded rather than fixed, because **T048's comparison must use the same composition**. The
+migrated run will have the same gap and the ratio stays honest. Do not "fix" the baseline by adding
+the agent stack on one side only.
+
+The **17 skipped** tests are Playwright-level skips within the gate tier and are likewise part of
+the composition to reproduce.
+
+### The Playwright pin failed the first run — loudly, which was luck
+
+The first web-E2E attempt failed in 31 s with `rc=125`:
+
+```text
+Unable to find image 'mcr.microsoft.com/playwright:v1.62.1-noble' locally
+dial tcp 150.171.70.10:443: i/o timeout
+```
+
+Two independent causes, both worth carrying forward:
+
+1. **The pin moved and the cache did not.** The DinD engine held **only `v1.60.0-noble`** while the
+   repo now resolves **1.62.1**. Using the authoritative pin produced a *loud* failure. Had the
+   cached `v1.60.0-noble` tag been used instead, the failure would have been the silent variant —
+   browser launch fails, **zero tests run**, and the gate reports `no Playwright summary found`
+   rather than a count.
+2. **`mcr.microsoft.com` was never in the egress allowlist.** It only ever worked because the image
+   was already cached. This is now fixed — see the note in `.devcontainer/egress-allowlist.json`,
+   and the T004 entry in `tasks.md`. Under the sandbox this would have been fatal rather than
+   inconvenient, because the in-VM `iptables -P OUTPUT ACCEPT` escape does not exist when policy is
+   enforced host-side.
+
+The image was obtained via the runbook's documented cold-pull escape (relax egress → pull → re-apply
+the firewall). The pull itself took **41 s** for ~3.4 GB.
+
+---
+
+## Sandbox sizing and disk envelope (G7) — **RESOLVED 2026-08-16 (T018)**
+
+| Field | Value |
+| --- | --- |
+| Host CPU / RAM totals | **20 logical cores / 31.8 GB** |
+| Sandbox default, **as documented by v0.38.0** | `--cpus 0 = auto: ALL host CPUs` (**not** N-1); memory 50% of host, max 32 GiB |
+| Sandbox default, **as actually applied** | `cpu 20`, and `nproc` inside the VM confirms **20** |
+| Floor named by the proposal | 8 CPU / 16 GB |
+| **Chosen = `max(default, floor)`** | **CPUs: 20** (default wins — `--cpus` omitted) · **Memory: `-m 16g`** (floor wins, barely) |
+| Verified inside the VM | `nproc` = 20 · `free -g` total = 15 · kernel **7.0.12** (its own, not WSL2's) |
+| `/dev/kvm` | **absent** — R2 negative reconfirmed on the real sandbox |
+
+**The sizing trap was real.** v0.38.0's CPU default is *all* host CPUs, so passing the proposal's
+`--cpus 8` would have cut the sandbox from 20 to 8 — a 60% reduction *relative to doing nothing* —
+and would plausibly have caused the very G6 miss explicit sizing exists to prevent. Only the memory
+floor genuinely binds, and only just (16 GB vs the ~15.9 GB default). Reference point: the Docker
+Desktop dev container ran this whole workload within a **15.51 GiB** ceiling, so 16 GB is measured
+parity rather than a guess.
+
+### Disk envelope — two disks, not one
+
+| Mount | Device | Size | Free (fresh VM) | After the toolchain pull | Holds |
+| --- | --- | ---: | ---: | ---: | --- |
+| `/` | `vdb` | 20 G | 19 G | 19 G | OS + the `/workspaces/mcm` clone |
+| `/var/lib/docker` | `vdd` | **50 G** | 47 G | **35 G free (27% used)** | all images, containers, volumes |
+
+**The toolchain image alone is 13.3 GB.** Still to land on that same 50 G disk: the Playwright image
+(3.4 GB), the built `mcm-app` image, Keycloak, two Postgres, two Mongo, Redis, and `dev-ollama` with
+its models. 35 GB is workable but not comfortable, and **v0.38.0 exposes no `--disk` flag** to
+enlarge it — so the pruning practice owed by T053 is an operational requirement, not a formality.
+
+This is precisely what G7 existed to find "before ENOSPC finds it mid-session".
+
+---
+
+## Migrated measurements (T048) — COMPLETE
+
+| Stage | Baseline | Migrated | Ratio | ≤1.5×? |
+| --- | ---: | ---: | ---: | --- |
+| `up-auth` | 43 s | **44 s** | **1.02** | ✅ |
+| `docker-build mcm-app` | 1024 s | **293 s** | **0.29** | ✅ **3.5× FASTER** |
+| `up-mcm` | 25 s | **22 s** | **0.88** | ✅ |
+| integration tier | 32 s | **9 s** | **0.28** | ✅ |
+| web E2E (gate) | 196 s | **194 s** | **0.99** | ✅ |
+| **Total** | **1320 s** | **562 s** | **0.43** | ✅ |
+
+**SC-002 is met with a wide margin: 0.43× against a 1.5× ceiling.** No stage regressed.
+
+### The composition is verified identical on both sides — the ratios are not flattered
+
+A speed comparison is only worth as much as the proof that both sides did the same work. Three
+checks, each of which could have invalidated the table:
+
+| Check | Baseline | Migrated | |
+| --- | --- | --- | --- |
+| integration pass count | 120 passed / 120 total | 120 passed / 120 total | ✅ identical |
+| integration soft-skips (`grep -c 'SKIP:'`) | **14** | **14** | ✅ identical |
+| web-E2E failing test | `assistant.spec.ts:78` (dock/AG-UI) | `assistant.spec.ts:78` (dock/AG-UI) | ✅ identical |
+
+The soft-skip identity is the one that matters most, and it is the check T042 was written to force.
+Jest reports **`120 passed, 120 total` and ZERO skips on both sides**, while 14 `SKIP:` lines record
+tests that found a dependency unreachable, `console.warn`ed, and returned successfully. Had the
+sandbox made any of those dependencies reachable, more tests would have executed and the 9 s figure
+would not be comparable to 32 s — a composition change masquerading as a slowdown. It did not:
+the same three dependencies (ollama, OpenSearch, agent gateway) are absent on both sides.
+
+⚠️ **`host.docker.internal` is unreachable on BOTH paths, and this is not a sandbox regression.**
+It was tempting to read `ollama not reachable at http://host.docker.internal:11434` in the migrated
+log as a networking fault introduced by the microVM. The baseline records the identical line. What
+*is* new — and worth knowing — is the mechanism, measured inside the sandbox dev container:
+
+```text
+host.docker.internal  ->  fe80::1        link-local IPv6, unreachable  (curl 000)
+localhost:11434       ->  200 ✓          --network=host: the VM's published ports ARE localhost
+127.0.0.1:11434       ->  200 ✓
+dev-ollama:11434      ->  000            no shared user-defined network with siblings
+```
+
+Under `--network=host` the dev container shares the VM's network namespace, so a sibling's published
+port simply *is* `localhost`. `host.docker.internal` — a Docker Desktop convenience — degrades to a
+broken `fe80::1`. Any code reaching a sibling service by that name must use `localhost` on this path.
+
+### The one web-E2E failure is the same composition gap, not a regression
+
+`assistant.spec.ts:78` fails on both sides for the same reason: the bring-up sequence measured here
+does **not** include the agent stack, so the dock never receives a reply. The migrated run's
+integration tier independently corroborates this with `gateway not reachable at
+movie-assistant-gateway`. Per the note above, the gap was deliberately reproduced rather than fixed,
+because closing it on one side only would have made the 194 s ↔ 196 s comparison meaningless.
+
+⚠️ **Cost note on re-running this stage.** The web-E2E invocation carries
+`E2E_AGENT_PROVIDER=anthropic` and passes the real API key. In this run no spend resulted — the
+gateway was down, so nothing reached the provider — but that is an accident of the missing stack,
+not a safeguard. Anyone re-running the timing harness *with* the agent stack up should switch the
+provider to the dev-scoped Ollama first (see the model-provider-scoping invariant), or expect real
+charges.
+
+### `docker-build` is the headline, and the win is UNDERSTATED
+
+1024 s → 293 s is a **731-second saving**, on the stage that was **78% of the baseline total**.
+
+It is understated because the sandbox did **more** work: it began with **8** cached images against the
+baseline's **27**, so it pulled base layers the baseline already had — and still finished in under a
+third of the time.
+
+The cause is exactly what the baseline diagnosis predicted. That stage spent ~12 minutes with a
+`chown -R` in state `D` (uninterruptible I/O) under **DinD overlay2 → WSL2 ext4 → Windows**. The
+sandbox removes a nesting level and runs on a native Linux filesystem, so the same work is no longer
+I/O-starved. `up-auth`, which is network- and healthcheck-bound rather than I/O-bound, is unchanged
+at 1.02 — which is the control that makes the `docker-build` result credible rather than a
+measurement artefact.
+
+### Three recreate-from-nothing defects this run exposed (SC-007)
+
+None is exotic; each is invisible on a machine with history and fatal on a fresh engine. Together
+they mean **SC-007's "zero manual steps beyond documented credential provisioning" does not hold
+today**:
+
+| # | Missing on a fresh engine | Symptom | Where it should be fixed |
+| --- | --- | --- | --- |
+| 1 | external networks (`keycloak-network`, `backend-network`, …) | `network … declared as external, but could not be found` | bring-up should create them — `scripts/agent-stack.mjs` already does this with `ensureNetwork()` |
+| 2 | external volume `keycloak-store-postgres-data` | compose refuses to start the auth stack | same |
+| 3 | locally built image `mc-service:latest` | `pull access denied for mc-service` | T041's sequence builds `mcm-app` but never runs `nx build mc-service` |
+
+The first is even acknowledged in a code comment — *"Pre-created: docker network create
+keycloak-network"* — and documented nowhere else.
+
+A ratio > 1.5× is escalated **with the measurements**, not absorbed. Re-sizing is the first remedy;
+abandonment is the last, and only with numbers behind it.
