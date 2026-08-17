@@ -393,11 +393,35 @@ re-poisons it. That is an easy reflex when scripting the sandbox from the host, 
 **The rule: git runs in the container.** To automate from outside, go through
 `docker exec -u coder …`, never the VM shell.
 
-### The fix, and why it waits for the next toolchain image build
+### ✅ FIXED (2026-08-17) — `coder` is uid 1000, matching the VM user
 
-`toolchain.Dockerfile` now creates `coder` at **uid 1000:1000**, moving the base image's `node` to
-1100 first. At that point in the build the image is nearly empty, so the change is free. **It takes
-effect the next time the toolchain image is built** — a running container still has 1001 until then.
+`toolchain.Dockerfile` creates `coder` at **1000:1000**, moving the base image's `node` to 1100
+first. At that point in the build the image is nearly empty, so the renumber is free. Verified after
+re-pinning:
+
+```text
+VM        : 1000:1000  (agent)
+container : 1000:1000  (coder)
+container git write: OK
+VM        git write: OK          ← both sides, which no earlier attempt achieved
+workspace paths not owned by me: 0
+```
+
+**Applying it is a re-pin, not a local build.** Pushing a `toolchain.Dockerfile` change *is* the
+trigger — the `devcontainer-image` workflow builds and publishes automatically, so check for a
+`build-publish` run before building anything by hand:
+
+```bash
+# 1. find the published image (tagged by commit sha) and CONFIRM it carries the fix
+docker pull <registry>/<ns>/mcm-devcontainer:<sha>
+docker run --rm --entrypoint bash <same> -lc 'id -u coder'      # must print 1000
+# 2. re-pin: MCM_DEVCONTAINER_IMAGE lives in ~/.mcm-sandbox-env (NOT ~/.bashrc), unquoted `export`
+#    is absent — substitute only the digest, and VERIFY the value actually changed
+# 3. chown the tree to 1000, then `devcontainer up --remove-existing-container`
+```
+
+⚠️ The historical account below is kept because the failure modes are instructive, and because the
+same trap will reappear for anyone renumbering a user in a large image.
 
 ⚠️ **Do not shortcut this with a layer on top of the prebuilt image.** Tried 2026-08-17; it cannot
 work. Changing a file's ownership **copies it up into the new overlay layer**, so a UID renumber
@@ -428,6 +452,42 @@ bash .devcontainer/fix-workspace-ownership.sh /workspaces/mcm
 
 > A UID mismatch also trips git's *dubious ownership* guard, a different and equally confusing
 > error. The script sets `safe.directory` as well.
+
+---
+
+## 7e. 🔴 A full disk does not announce itself — it wears other symptoms
+
+The 49 GB Docker disk filled three times on 2026-08-17, and **not once did the error mention disk**:
+
+| What it printed | What it looked like | What it was |
+| --- | --- | --- |
+| feature install `exit code: 100` | an apt or feature-config fault | disk full |
+| `At least one invalid signature was encountered` / `is not signed` | GPG or MITM-proxy corruption of `deb.debian.org` | disk full — apt wrote a truncated `InRelease`, so verification failed |
+| build died in `exporting layers` | needed a bit more room | disk full, on a 13 GB copy-up |
+
+**`df` is the authority; `docker system df` is not.** Docker reported gigabytes `RECLAIMABLE` while
+`df` said 0 bytes free, because it counts shared layers optimistically. Three separate prunes freed
+"space" that never appeared. What finally freed 13 GB was deleting the **derived** `vsc-mcm:latest`
+image *after* its parent toolchain image was gone — until then its layers were shared and deleting
+either freed almost nothing.
+
+**Order that actually works when the disk is full:**
+
+```bash
+df -h /var/lib/docker                # believe THIS, not docker system df
+docker builder prune -af             # -f alone drops only UNUSED cache; -af got 17.8 GB, then 7.5 GB
+docker image rm <old-toolchain-digest>   # parent first…
+docker image rm vsc-mcm-<hash>:latest    # …then the derived image, which now owns its layers
+```
+
+⚠️ **Build cache can mask a broken environment.** Those `apt` failures had been present for a while;
+builds "succeeded" by reusing a cached feature-install layer that never ran apt. Pruning the cache
+did not cause the failure — it *revealed* it. A green build that reused cache proved less than it
+appeared to, which is the same lesson as a skipped test reading as a pass.
+
+> **Two dev-container images will not fit.** The toolchain image is ~14 GB and the derived container
+> another ~13.5 GB. Pulling a new toolchain image while the old one and its derived image are still
+> present exceeds the disk on its own. Remove the previous pair as part of re-pinning.
 
 ---
 
