@@ -366,6 +366,71 @@ Expo tunnel) needs no inbound rule at all.
 
 ---
 
+## 7d. 🔴 Run git INSIDE the container, never from the VM shell
+
+The VM user and the container user are **different UIDs**, and the same UID renders under a different
+name on each side — which makes the symptom read like corruption rather than permissions:
+
+| | UID | shows as |
+| --- | ---: | --- |
+| VM shell (does the clone; any `ssh <sandbox> 'git …'`) | **1000** | `agent` |
+| dev container | **1001** | `coder` |
+| a VM-created file, seen from inside the container | 1000 | **`node`** (the base image's user) |
+
+Anything git writes from the VM is unwritable by the container user. It fails deep, on individual
+object writes:
+
+```text
+111 of 256 .git/objects subdirs plus 27 worktree files are owned by node, not coder,
+so any object write fails
+```
+
+**Two ways in, and the second keeps happening:** the documented recreate clones from the VM shell, so
+a fresh environment is born with it; and any later `ssh <sandbox> 'git -C /workspaces/… fetch|pull'`
+re-poisons it. That is an easy reflex when scripting the sandbox from the host, and it is how the
+111 subdirs above were created.
+
+**The rule: git runs in the container.** To automate from outside, go through
+`docker exec -u coder …`, never the VM shell.
+
+### The fix, and why it waits for the next toolchain image build
+
+`toolchain.Dockerfile` now creates `coder` at **uid 1000:1000**, moving the base image's `node` to
+1100 first. At that point in the build the image is nearly empty, so the change is free. **It takes
+effect the next time the toolchain image is built** — a running container still has 1001 until then.
+
+⚠️ **Do not shortcut this with a layer on top of the prebuilt image.** Tried 2026-08-17; it cannot
+work. Changing a file's ownership **copies it up into the new overlay layer**, so a UID renumber
+duplicates the entire ~13 GB image. The build died in `exporting layers` with `no space left on
+device` on the Android system image, and filled the VM's disk to 100% doing it.
+
+> **Recovery, worth knowing on its own:** `docker builder prune -f` freed almost nothing, because
+> BuildKit only drops *unused* cache. **`docker builder prune -af`** reclaimed **17.8 GB**.
+
+Two further approaches were tried and rejected — recorded so they are not retried:
+
+| Approach | Result |
+| --- | --- |
+| `"updateRemoteUserUID": true` (the dev-container spec's own mechanism) | did not engage — set explicitly, container rebuilt, `coder` stayed 1001 |
+| chown the tree to the container user | symmetric see-saw: `container git write: OK / VM git write: FAILED` |
+
+**Until the image is rebuilt**, the supported posture is the rule above — and the VM shell's
+inability to write the repo *enforces* it rather than merely encouraging it.
+
+[`fix-workspace-ownership.sh`](../../.devcontainer/fix-workspace-ownership.sh) still runs at create
+and at every start, repairing only mismatched paths (a healthy tree costs one `find`). It exists for
+a tree already poisoned by earlier VM-side writes; understand it as moving the problem between the
+two users, not solving it:
+
+```bash
+bash .devcontainer/fix-workspace-ownership.sh /workspaces/mcm
+```
+
+> A UID mismatch also trips git's *dubious ownership* guard, a different and equally confusing
+> error. The script sets `safe.directory` as well.
+
+---
+
 ## 8. Disk — this is an operational constraint, not a formality
 
 The VM's Docker disk is **49 GB and cannot be enlarged** (v0.38.0 exposes no `--disk` flag). It
