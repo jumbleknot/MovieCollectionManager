@@ -1,53 +1,32 @@
 {
-  "coveredCommit": "3b2910bd18044fff1fe4e81d4b620e284840149c",
-  "coveredAt": "2026-08-17T00:30:16.325Z",
+  "coveredCommit": "151dc58e035d3ae16ff04141ab504595e125d34c",
+  "coveredAt": "2026-08-17T18:03:08.638Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 208,
-    "headCommit": "0e50f927fdb44fa112bc8cb100980f13c62c1cf6",
-    "markerBefore": "3b2910bd18044fff1fe4e81d4b620e284840149c",
+    "number": 211,
+    "headCommit": "ed5dc513c09731674b797b549a602d6760d207aa",
+    "markerBefore": "151dc58e035d3ae16ff04141ab504595e125d34c",
     "slices": [
-      {
-        "area": "projects",
-        "pages": [
-          "repository.md"
-        ],
-        "kind": "create",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "new source, not yet covered: README.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/repository.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
       {
         "area": "runbooks",
         "pages": [
-          "devcontainer.md"
+          "devcontainer.md",
+          "e2e-testing.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/devcontainer.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "devcontainer-sandbox.md"
-        ],
-        "kind": "create",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/e2e-testing.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer.md; openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-17T00:30:16.640Z"
+    "updatedAt": "2026-08-17T18:03:08.953Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 4,
-    "elapsedSeconds": 467,
+    "pagesWritten": 1,
+    "elapsedSeconds": 117,
     "stoppedAtBudget": false
   }
 }
