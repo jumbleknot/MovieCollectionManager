@@ -126,9 +126,16 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh naming-ci-digest-coverage-gate node scripts/check-ci-digest-coverage.mjs --selftest
           bash scripts/ci-log-step.sh naming-ci-digest-coverage-gate node scripts/check-ci-digest-coverage.mjs
-      - name: Toolchain-consistency gate (selftest + scan — every Node/pnpm pin agrees)
+      - name: Toolchain-consistency gate (selftest + scan — every Node/pnpm/nx/Playwright pin agrees)
         # Catches, in ~1 s, the class that cost two CI cycles on the pnpm 11 bump: a Node pin below
         # the package manager's `engines` floor, and a pnpm version pinned in more than one place.
+        #
+        # Also the Playwright pair (feature 061, item #204): the mcr.microsoft.com/playwright:v<x>-noble
+        # tag in app-ci.yml must name the @playwright/test version pnpm-lock.yaml resolves. That tag
+        # selects the BAKED BROWSER BUILD, so a half-bump does not fail the suite — it runs ZERO tests
+        # and reports no counts at all, which on PR #199 took a full ~35-minute app-e2e cycle to
+        # surface and presented as a generic "app-e2e failed". This step now catches it here instead,
+        # before app-e2e starts.
         run: |
           bash scripts/ci-log-step.sh naming-toolchain-consistency-gate node scripts/check-toolchain-consistency.mjs --selftest
           bash scripts/ci-log-step.sh naming-toolchain-consistency-gate node scripts/check-toolchain-consistency.mjs

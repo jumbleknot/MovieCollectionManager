@@ -732,6 +732,21 @@ Measured on PR #199, where the lockfile moved 1.60.0 → 1.62.1 and this tag did
 run and leaves CI broken. The full list of places the pin lives, and why the two halves must land
 in the same change, is in [e2e-testing.md](./e2e-testing.md).
 
+**This rule is now ENFORCED, not merely stated** (feature 061, item #204).
+`scripts/check-toolchain-consistency.mjs` compares the `@playwright/test` version `pnpm-lock.yaml`
+resolves against **every** occurrence of the tag in the workflow, and fails the `naming` guardrails
+job in ~0.4 s if any disagrees — including a partial bump where only one of the two moved. Run it
+before you push:
+
+```bash
+node scripts/check-toolchain-consistency.mjs
+```
+
+Renovate now also proposes both halves in a single PR (the `playwright pin` group in
+`renovate.json`), so the drift should not arrive in the first place. Note that the gate covers the
+**workflow** only: the operator copies in this file are not checked, because `specs/**` and the
+runbooks carry old tags as point-in-time records. Keeping this recipe current is still manual.
+
 > **`--user "$(id -u):$(id -g)"` is not optional — omit it and you break the NEXT run.** The
 > container runs as **root** by default, and `/workspaces/mcm` is bind-mounted, so every artifact
 > Playwright writes (`test-results/`, `playwright-report/`, `tests/e2e/web/setup/.auth/user.json`)

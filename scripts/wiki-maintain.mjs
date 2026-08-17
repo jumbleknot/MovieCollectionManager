@@ -55,6 +55,26 @@ export { loadPolicy, resolvePolicy, mayWrite, isCoverageTarget } from './openwik
 // FR-012 requires the marker to advance even on a run that creates no proposal.
 export const STATE_FILE = 'openwiki/.maintenance-state.json';
 
+/**
+ * Every environment variable this script will accept an Anthropic credential from, in precedence
+ * order.
+ *
+ * EXPORTED because the test suite has to be able to construct the ABSENCE of a credential, and
+ * re-listing these names there is what item #209 was: the list said `ANTHROPIC_API_KEY` alone, the
+ * `MCM_`-prefixed name was added here and never mirrored, and from then on every credential-absence
+ * test passed a credential to the child. It failed in every sanctioned environment — CLAUDE.md
+ * carries the key under the `MCM_` name on the host, in the Docker Desktop dev container and in the
+ * Sandbox VM — and, because `--execute` then skipped its own guard and ran the real path, the suite
+ * also rewrote the TRACKED state file on every run.
+ *
+ * Read this constant rather than repeating the names, so the next addition cannot desynchronise.
+ */
+export const CREDENTIAL_ENV_NAMES = ['ANTHROPIC_API_KEY', 'MCM_ANTHROPIC_API_KEY'];
+
+/** The credential from the first name that carries one, or null. */
+export const credentialFromEnv = (env = process.env) =>
+  CREDENTIAL_ENV_NAMES.map((name) => env[name]).find(Boolean) ?? null;
+
 // Exactly the three outcomes FR-017 requires distinguishing. A credential, capacity or generator
 // failure must never be classified as `nothing-to-do` — that would make the cheap path look reachable
 // while the work silently never happened.
@@ -878,7 +898,7 @@ export function runMaintenance({
   since = null,
   policy = null,
   invoke = undefined,
-  credential = process.env.ANTHROPIC_API_KEY ?? process.env.MCM_ANTHROPIC_API_KEY ?? null,
+  credential = credentialFromEnv(),
   requireCredential = true,
   pageBudget = PAGE_BUDGET,
   timeBudgetSeconds = TIME_BUDGET_SECONDS,
@@ -1692,8 +1712,8 @@ async function main(argv) {
     // Accepts either name. The dev container supplies only MCM_ANTHROPIC_API_KEY, because exporting
     // the raw ANTHROPIC_API_KEY into the shell makes Claude Code bill the pay-per-token API instead
     // of the subscription (see .devcontainer/devcontainer.json). CI still sets the raw name.
-    if (!opts.dryRun && !process.env.ANTHROPIC_API_KEY && !process.env.MCM_ANTHROPIC_API_KEY) {
-      console.error('[wiki-maintain] No Anthropic credential (ANTHROPIC_API_KEY / MCM_ANTHROPIC_API_KEY) — --execute needs it.');
+    if (!opts.dryRun && !credentialFromEnv()) {
+      console.error(`[wiki-maintain] No Anthropic credential (${CREDENTIAL_ENV_NAMES.join(' / ')}) — --execute needs it.`);
       console.error('[wiki-maintain] This is a missing credential, NOT "nothing to do". Run --plan for the free path.');
       return 2;
     }
