@@ -4,7 +4,7 @@ title: Dev container on Docker Sandbox microVM (primary environment)
 description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy, the socat engine seam, networking quirks, restart/reboot survival, disk limits, and the template-recreate trap that destroys host-filesystem isolation.
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-08-17T00:00:00+00:00
+timestamp: 2026-08-17T22:32:15+00:00
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -81,6 +81,10 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 - **`pnpm` is not in the VM shell — only inside the dev container.** VM-level scripts that call `pnpm` directly fail with `rc=127`. Use `docker exec … bash -lc` to run them inside the container.
 
 - **`sbx secret rm` and interactive `sbx` prompts default to *No* non-interactively.** Pass `-f` to skip the confirmation. `rtk init -g` also answers "no" silently and prints a manual step — that is why `ensure-rtk-hook.sh` exists.
+
+- **Run git inside the dev container, not the VM shell — uid mismatch was the cause, and is now fixed.** Prior to 2026-08-17 the VM user (`agent`) was uid 1000 and the container user (`coder`) was uid 1001; anything git wrote from the VM landed owned by uid 1000, which the container saw as `node` (not `coder`), making object writes fail silently on 111 of 256 `.git/objects` subdirs. **FIXED (2026-08-17):** `toolchain.Dockerfile` now creates `coder` at 1000:1000, moving the base image's `node` to 1100. Both sides are now 1000:1000 and git works from either. To automate from outside the container, prefer `docker exec -u coder …` — this remains the safe, portable form. `fix-workspace-ownership.sh` still runs at create/start to repair any already-poisoned tree.
+
+- **A full disk does not announce itself — it wears other symptoms.** The 49 GB Docker disk has filled three times, and not once did the error name disk: `exit code: 100` on a feature install (looks like an apt fault), `is not signed` / `At least one invalid signature was encountered` (looks like GPG or MITM-proxy corruption of `deb.debian.org`), and a build dying in `exporting layers` (looks like an export problem). `docker system df` is unreliable — it reported gigabytes "reclaimable" while `df -h /var/lib/docker` said 0 bytes free, because it counts shared layers optimistically. Believe `df`. Prune order that works: `docker builder prune -af` first (`-f` alone drops only unused cache; `-af` reclaimed 17.8 GB), then remove the old toolchain image, then the derived image (which now owns its layers). **Two dev-container images will not fit simultaneously** — the toolchain image is ~14 GB and the derived container another ~13.5 GB; remove the previous pair before pulling a new toolchain image. Warning: build cache can mask a broken environment — apt failures may be hidden by a cached feature-install layer that never ran apt, so pruning the cache reveals failures rather than causing them.
 
 ## One-step launch
 
