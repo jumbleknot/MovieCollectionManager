@@ -292,6 +292,26 @@ Every one of these produced a confident, wrong answer, and every one was checkab
   test; `--grep-invert CORS` lists all 177. The tier split is therefore `E2E_TIER` →
   `grep`/`grepInvert` **in `playwright.config.ts`**, applied by the runner, and a guard pins it there.
   A CLI-based split would have run the whole suite in the "gate" selection and looked perfect.
+- **`node --test <file> --test-name-pattern "x"` silently runs EVERYTHING** (found on feature 061,
+  recorded in its `research.md` R9). Node stops parsing its own flags at the script path — anything
+  after it becomes the *script's* `argv`, so `--test-name-pattern` is handed to the test file, which
+  ignores it. Nothing warns; the filter simply does not exist.
+
+  This is the most dangerous form of the class because it corrupts **Verify RED**: you write a
+  failing test, run the natural-looking command expecting one failure, see the whole suite pass or
+  fail for unrelated reasons, and draw a conclusion about your new test that the run never made.
+  A RED that reports "0 failures" because the filter was ignored is indistinguishable from a RED
+  that reports "0 failures" because the assertion is vacuous — and this repository's TDD rule treats
+  the latter as a defect.
+
+  ```bash
+  node --test --test-name-pattern "adds a movie" tests/foo.test.js   # ✅ flags BEFORE the path
+  node --test --test-name-pattern "adds a movie" 'tests/**/*.test.js' # ✅ glob, flags first
+  node --test tests/foo.test.js --test-name-pattern "adds a movie"    # ❌ runs everything, silently
+  ```
+
+  **Check it, do not trust it**: run the filtered form and confirm the reported test COUNT actually
+  dropped. A filter that changes nothing is a filter that was not applied.
 - **A container reporting `running` can be answering nothing.** `movie-assistant-gateway` sat at
   **100% CPU on one core with memory at 1%**, `/health` timing out, its log 40 minutes stale, while
   `docker inspect` said `status=running OOMKilled=false ExitCode=0 RestartCount=0`. `restart: always`
