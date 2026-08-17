@@ -1,13 +1,20 @@
 ---
 type: Runbook
-title: Containerized dev environment (devcontainer)
-description: The disposable Linux dev container the AI coding assistant runs inside — its honestly-stated two-tier isolation model (strong host-filesystem isolation, moderate privileged-DinD engine isolation), the default-deny egress firewall, and the VS Code / Windows-host quirks that block a first boot.
+title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
+description: The RETAINED Docker Desktop / Docker-in-Docker dev container path — kept solely for Android emulator support via /dev/kvm. The primary AI-assisted dev environment is now the Docker Sandbox microVM; see devcontainer-sandbox.md. Documents the two-tier isolation model, default-deny egress firewall, and Windows-host quirks.
 resource: docs/runbooks/devcontainer.md
-tags: [devcontainer, docker, security, isolation, runbook]
-timestamp: 2026-08-15T00:00:00+00:00
+tags: [devcontainer, docker, security, isolation, runbook, android]
+timestamp: 2026-08-17T00:00:00+00:00
 ---
 
-# Containerized dev environment (devcontainer)
+# Containerized dev environment (devcontainer — Docker Desktop / DinD path)
+
+> **This is the RETAINED path, not the primary one (feature 060).** The primary AI-assisted
+> development environment is now the [Docker Sandbox microVM](devcontainer-sandbox.md), which
+> measured **0.43×** the wall-clock of this path across five build stages. This Docker Desktop /
+> Docker-in-Docker path is kept for one reason: the **Android emulator**, which needs `/dev/kvm`
+> that the microVM cannot provide. Everything else — web E2E, integration, the agent stack, day-to-day
+> assistant work — belongs on the sandbox.
 
 The committed [`.devcontainer/`](../../.devcontainer/) directory gives the AI coding assistant a
 throwaway Linux container to run inside, so a compromised dependency or errant agent command has a
@@ -30,14 +37,27 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   Code, not the headless CLI.** The Wayland-socket mount must be disabled via a user setting
   (`dev.containers.mountWaylandSocket: false`); the Docker credential-helper injection is already
   fixed in committed config — don't remove that fix.
-- **A host env var forwarded via `${localEnv}` (`ANTHROPIC_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`,
-  `MCM_FORGE_ISSUE_TOKEN`) is read from the VS Code process's own environment at launch time.** Setting
-  it after VS Code is already running does nothing — VS Code must be relaunched with the value already
-  present, then the container recreated. For `MCM_FORGE_ISSUE_TOKEN`: `setx` alone is not enough; fully
-  quit VS Code (`taskkill /F /IM Code.exe`) and relaunch from a shell where the value is already visible,
-  then rebuild. With it unset, backlog reads still work via `MCM_FORGE_TOKEN`; writes are refused naming
-  the missing variable. See [The agent-driven backlog](/openwiki/runbooks/backlog.md) for credential and
-  reach details.
+- **A host env var forwarded via `${localEnv}` (`MCM_ANTHROPIC_API_KEY`, `MCM_DEVCONTAINER_IMAGE`,
+  `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`) is read from the VS Code process's own
+  environment at launch time.** Setting it after VS Code is already running does nothing — VS Code must
+  be relaunched with the value already present, then the container recreated. `setx` alone is not
+  enough; fully quit VS Code (`taskkill /F /IM Code.exe`) and relaunch from a shell where the value is
+  already visible, then rebuild. With `MCM_FORGE_ISSUE_TOKEN` unset, backlog reads still work via
+  `MCM_FORGE_TOKEN`; writes are refused naming the missing variable. See
+  [The agent-driven backlog](/openwiki/runbooks/backlog.md) for credential and reach details.
+- **NEVER set `ANTHROPIC_API_KEY` directly — use `MCM_ANTHROPIC_API_KEY` (feature 060).** Claude
+  Code silently prefers `ANTHROPIC_API_KEY` over an existing subscription login with no warning and
+  nothing in the UI showing which is in use. **Measured 2026-08-16: ~$15 of unintended API spend in a
+  single day** on a workstation where the subscription was present the whole time. The key is now
+  carried as `MCM_ANTHROPIC_API_KEY` and mapped to `ANTHROPIC_API_KEY` only at the point of use
+  (agent gateway, OpenWiki maintenance, containerized E2E recipe) — processes that run no interactive
+  assistant. CI injects `ANTHROPIC_API_KEY` from repository secrets into jobs that also run no
+  assistant. If you already have `ANTHROPIC_API_KEY` set on the host, move it:
+  ```powershell
+  [Environment]::SetEnvironmentVariable('MCM_ANTHROPIC_API_KEY', [Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User'), 'User')
+  [Environment]::SetEnvironmentVariable('ANTHROPIC_API_KEY', $null, 'User')
+  ```
+  Then fully quit VS Code and every terminal before relaunching.
 - **`api.themoviedb.org` is allowlisted for the shell (OUTPUT chain) but NOT needed for the app — the two chains behave differently, and conflating them is the trap.** Feature 059 added the entry to `init-firewall.sh` so that `nx test:integration web-api-mcp` (pytest, in the shell) can reach TMDB. **Nested containers never needed it**: RUNTIME TMDB paths (BFF validate-on-save probe, web-api-mcp curator enrichment) run nested and travel the FORWARD chain, which `init-firewall.sh` leaves to dockerd. Measured 2026-07-16 with TMDB absent from `ALLOWED_DOMAINS`: a nested container reached a non-allowlisted domain (`example.com` → 200) and the nested BFF reached TMDB (`401` = connected, key rejected). If a runtime path times out, the ruleset is stale — **re-apply `init-firewall.sh` to re-resolve the CDN IPs; do not widen the allowlist** (that is still wrong and still masked the real cause). The old blanket "do NOT add TMDB to the allowlist" instruction is superseded, not reversed: it held for runtime paths and still does — what it did not cover is the test runner in the shell. Measured 2026-08-14 after the entry: `curl https://api.themoviedb.org/3/` from the shell returns `401` (connected); `example.com` still times out, so default-deny is intact.
 - **`crates.io` is not allowlisted — `cargo` commands need `--offline` here.** The same
   default-deny firewall that blocks npm CDN drift also blocks the Cargo registry. All commands
