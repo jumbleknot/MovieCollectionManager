@@ -1448,7 +1448,36 @@ Test *Reopen in Container* deliberately, against a **stopped** dev container so 
 > missing device permission, and a future session spends an hour rediscovering that the capability
 > simply does not exist here. Observed working during the extension-driven build:
 > `devcontainer-android: /dev/kvm not present … skipping`.
-- [~] T051 [US5] Prove the environment survives a workstation reboot — **Done when**: after a host restart, ~~`sbx start mcm`~~ **`sbx run --name mcm`** returns the sandbox with its images, volumes, workspace clone and shell history intact, the dev container restarts, and the delta runbook states what a reboot does and does not preserve
+- [x] T051 [US5] Prove the environment survives a workstation reboot — **Done when**: after a host restart, ~~`sbx start mcm`~~ **`sbx run --name mcm`** returns the sandbox with its images, volumes, workspace clone and shell history intact, the dev container restarts, and the delta runbook states what a reboot does and does not preserve
+
+> ### T051 — **GREEN across a REAL workstation reboot** (operator-run, 2026-08-16)
+>
+> ```text
+> [verify-reboot-survival] T051 / FR-030
+>   ✓ workspace clone intact; HEAD moved fcf0602e → 56248ecc (expected if work continued)
+>   ✓ images: all 18 survived
+>   ✓ volumes: all 17 survived
+>   ✓ containers: all 15 survived
+>   ✓ every container that was running with a restart policy is running again (of 10 checked)
+>   ✓ dev container is RUNNING again (bold_thompson)
+>   ✓ .bash_history preserved (14 lines)
+> [verify-reboot-survival] PASS
+> ```
+>
+> This tests three things the earlier `sbx stop`/`sbx run` cycle could not: that the **`sbx` daemon
+> returns**, that the VM's backing store survives a **host power cycle**, and that nothing depends on
+> Docker Desktop having started first.
+>
+> **The documented delta held exactly as predicted.** The four `movie-assistant-*` containers came
+> back `exited` (`restart=no`, deliberate — a restart policy would resurrect the gateway from its
+> pre-rebuild image) and `mc-service-store-mongo-rs-init` is a correctly-exited one-shot. Everything
+> else — dev container plus the nine compose containers — is running. Predicting the delta and then
+> matching it is what makes this a measurement rather than an observation.
+>
+> 💡 **New finding: `sandboxd` does NOT auto-start at boot.** The operator's transcript opens with
+> `Starting sandboxd daemon... Daemon started (PID: 17648)` — `sbx run` starts it on demand, so no
+> manual step is owed. Worth knowing because someone reaching for `ssh mcm.sbx` first could read a
+> daemon-not-running error as a broken environment rather than a cold host.
 
 > ### T051 — PARTIAL. Stop/start proven green; the **host reboot itself is an operator action**
 >

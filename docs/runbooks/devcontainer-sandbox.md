@@ -92,6 +92,17 @@ help, so a procedure built on it appears to do nothing and reads as a broken san
 positional argument is an **agent**, not a sandbox. `sbx run mcm` would try to run an agent called
 `mcm`; without `--name` you can end up with a second sandbox rather than your existing one.
 
+### After a workstation reboot
+
+`sandboxd` **does not auto-start at boot**. `sbx run --name mcm -d` starts it on demand, so no manual
+step is owed — but reaching for `ssh mcm.sbx` first can surface a daemon error that reads like a
+broken environment rather than a cold host. Start with `sbx run`.
+
+Everything else survives a real reboot, verified 2026-08-16: workspace clone, all images, all
+volumes, all containers, shell history, and every container that was running **with a restart
+policy** comes back on its own. See § 7 for the delta (the agent stack does not, by design) and use
+`verify-reboot-survival.sh --verify` rather than judging by eye.
+
 ### The microVM stops when idle — this is the normal case, not a fault
 
 The VM stops roughly **30 seconds after the last session disconnects**. It is hardcoded; there is no
