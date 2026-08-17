@@ -4,7 +4,7 @@ title: MovieCollectionManager repository — structure and working conventions
 description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two dev-environment options (sandbox microVM and Docker Desktop), the mandatory pre-work gates (credential rule, SDD gate, PR-head rule), and the load-bearing gotchas that cost a session when missed.
 resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
-timestamp: 2026-08-17T00:00:00+00:00
+timestamp: 2026-08-18T00:00:00+00:00
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -61,11 +61,13 @@ enforced **outside the VM** — closing the gap an in-container firewall never c
 **One-step entry:**
 
 ```powershell
-pwsh scripts/open-sandbox.ps1
+.\scripts\open-sandbox.ps1
 ```
 
-It checks whether the sandbox is running, starts it if not, waits for SSH, and opens VS Code
-directly inside the dev container. See **[docs/runbooks/devcontainer-sandbox.md](../../docs/runbooks/devcontainer-sandbox.md)** for the full
+Runs on **Windows PowerShell 5.1** — the default shell. `pwsh` (PowerShell 7) is **not** required
+and is not installed by default on Windows. It checks whether the sandbox is running, starts it if
+not, waits for SSH, and opens VS Code directly inside the dev container. See
+**[docs/runbooks/devcontainer-sandbox.md](../../docs/runbooks/devcontainer-sandbox.md)** for the full
 operating manual: lifecycle, egress triage, engine seam, disk limits, and the credential rule.
 
 ### Retained: Docker Desktop / Docker-in-Docker
@@ -198,6 +200,21 @@ the VM, and the in-VM firewall would be VM-wide under `--network=host`. When som
 **host policy first, in-VM second** — the opposite of the Docker Desktop path. `nc -z <ip> 443`
 reports OPEN against a blocked destination because the proxy accepts the TCP connection and refuses
 at TLS; always probe with a real request.
+
+### Run git inside the container, not the VM shell — and the UID fix (§7d)
+
+The VM user (`agent`, uid 1000) and the container user (`coder`) were different UIDs. Anything git
+wrote from the VM shell was unwritable by the container user — the failure appeared deep in
+`.git/objects` and read like corruption rather than permissions.
+
+**Rule: git runs in the container.** For automation from outside, go through
+`docker exec -u coder …`, never `ssh <sandbox> 'git …'`.
+
+**✅ FIXED 2026-08-17:** `toolchain.Dockerfile` now creates `coder` at **1000:1000** (moving the
+base image's `node` to 1100 first), so both sides share the same uid. The rule above still stands
+for automation scripts — `ssh <sandbox> 'git …'` re-poisons the tree even after the fix. See
+[docs/runbooks/devcontainer-sandbox.md §7d](../../docs/runbooks/devcontainer-sandbox.md) for the
+re-pin procedure and the two rejected alternatives.
 
 ---
 
