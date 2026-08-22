@@ -271,6 +271,8 @@ function ruleMatches(rule, dep) {
     'enabled',
     'minimumReleaseAge',
     'prPriority',
+    'matchCurrentVersion',
+    'dependencyDashboardApproval',
   ]);
   for (const key of Object.keys(rule)) {
     if (!known.has(key)) {
@@ -297,6 +299,15 @@ function ruleMatches(rule, dep) {
   if (rule.matchManagers && !rule.matchManagers.includes(dep.manager)) return false;
   if (rule.matchDatasources && !rule.matchDatasources.includes(dep.datasource)) return false;
   if (rule.matchUpdateTypes && !rule.matchUpdateTypes.includes(dep.updateType)) return false;
+  if (rule.matchCurrentVersion) {
+    // Only the one form this config uses. Anything else must be modelled before it is used, or the
+    // rule silently matches everything — the same fail-open shape as an unknown label name.
+    if (rule.matchCurrentVersion !== '<1.0.0') {
+      throw new Error(`matchCurrentVersion '${rule.matchCurrentVersion}' is not modelled — extend ruleMatches().`);
+    }
+    if (dep.currentVersion === undefined) return false;
+    if (!/^0\./.test(dep.currentVersion)) return false;
+  }
   if (rule.matchFileNames && !rule.matchFileNames.includes(dep.packageFile)) return false;
   if (rule.matchPackageNames && !rule.matchPackageNames.some((p) => matchesName(p, dep.depName))) return false;
   return true;
@@ -656,5 +667,82 @@ test('the weekly PR budget reaches past the rolling groups that sort ahead of th
       `(${JSON.stringify(config.prHourlyLimit)}), or it — not the hourly budget — becomes the binding\n` +
       '  constraint and one run can never spend its allowance. It is deliberately the backstop that\n' +
       '  bounds review debt; raising the hourly budget past it would silently do nothing.',
+  );
+});
+
+// ---------------------------------------------------------------------------------------------
+// Version-lock SCOPE. Both assertions below exist because a lock that is correct but scoped to one
+// file is not a lock — and this repository has now paid for that twice.
+//
+// renovate.json already records the first: "React is version-locked to the Expo SDK across the WHOLE
+// workspace, not just the app… the previous app-only ignore let Renovate bump those two, splitting
+// React." That fix was applied to react/react-dom/react-test-renderer and `react-native` ITSELF was
+// left behind in the app-scoped rule. Measured 2026-08-21, PR #217: react-native 0.85.3 -> 0.87.0 in
+// packages/design-system/package.json, which the app-scoped rule does not reach. RN 0.87 narrowed the
+// press-event type and produced 15 typecheck errors.
+//
+// The property being asserted is deliberately "what does this dep resolve to IN EACH package file",
+// not "does a rule mentioning react-native exist" — the broken config would have passed the latter.
+
+/** The `enabled` a dep resolves to: last matching rule that sets one wins, as Renovate resolves it. */
+function resolvedEnabled(dep) {
+  let enabled = true;
+  for (const rule of packageRules) {
+    if (!ruleMatches(rule, dep)) continue;
+    if (rule.enabled !== undefined) enabled = rule.enabled;
+  }
+  return enabled;
+}
+
+const RN_FAMILY = ['react-native', 'react-native-reanimated', 'react-native-worklets', '@react-native/babel-preset'];
+const WORKSPACE_MANIFESTS = ['package.json', 'frontend/mcm-app/package.json', 'packages/design-system/package.json'];
+
+for (const packageFile of WORKSPACE_MANIFESTS) {
+  test(`the React Native family is version-locked in ${packageFile}, not just in the app`, () => {
+    for (const depName of RN_FAMILY) {
+      const enabled = resolvedEnabled({ manager: 'npm', packageFile, depName, datasource: 'npm', updateType: 'minor' });
+      assert.equal(
+        enabled,
+        false,
+        `${depName} is UPDATABLE in ${packageFile}.\n` +
+          '  RN is version-locked to the Expo SDK across the WHOLE workspace — upgrades go through\n' +
+          '  `expo install` / the expo upgrade skill, never a raw Renovate bump. A rule scoped with\n' +
+          '  matchFileNames to the app leaves every other manifest open, which is how\n' +
+          '  react-native 0.85.3 -> 0.87.0 reached PR #217 via packages/design-system.',
+      );
+    }
+  });
+}
+
+test('a cargo 0.x minor bump is treated as breaking, not as routine', () => {
+  // For a 0.x crate a MINOR bump is a semver-major in effect, but Renovate classifies it as `minor`
+  // and it lands in the routine `cargo deps` group. Measured 2026-08-21, PR #216: base64 0.22 -> 0.23
+  // and reqwest 0.12 -> 0.13 arrived as routine. reqwest 0.13 feature-gated RequestBuilder::form, so
+  // the integration test targets stopped compiling, and it added a SECOND reqwest to the graph — which
+  // backend/mc-service/Cargo.toml's own comment explicitly forbids.
+  const zeroVer = { manager: 'cargo', packageFile: 'backend/mc-service/Cargo.toml', depName: 'reqwest', datasource: 'crate', updateType: 'minor', currentVersion: '0.12.28' };
+  const oneVer = { ...zeroVer, depName: 'serde', currentVersion: '1.0.228' };
+
+  const zeroGroup = resolvedGroupName(zeroVer);
+  const oneGroup = resolvedGroupName(oneVer);
+
+  assert.notEqual(
+    zeroGroup,
+    oneGroup,
+    `a 0.x crate resolves to ${JSON.stringify(zeroGroup)}, the same group as a 1.x crate ` +
+      `(${JSON.stringify(oneGroup)}).\n` +
+      '  A 0.x minor is a BREAKING change and must not ride in the routine group, where it arrives red\n' +
+      '  every week and blocks the genuinely-routine bumps batched with it.',
+  );
+
+  const rule = packageRules.find(
+    (r) => r.matchManagers?.includes('cargo') && r.matchCurrentVersion !== undefined,
+  );
+  assert.ok(rule, 'no cargo rule discriminates on matchCurrentVersion, so 0.x cannot be told from 1.x');
+  assert.equal(
+    rule.dependencyDashboardApproval,
+    true,
+    'the 0.x cargo rule does not require dashboard approval. Without it these re-propose every week\n' +
+      '  and spend the weekly PR budget (item #218) on upgrades known to need hand-holding.',
   );
 });

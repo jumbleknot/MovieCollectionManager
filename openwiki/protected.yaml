@@ -202,6 +202,13 @@ passages:
     #   * a dry run creates nothing by design and `dryRun` DEFAULTS to true, so a dispatched run
     #     that produces no PR reads as a gate blocking the work. That misreading is what recorded
     #     the wrong conclusion in item #184.
-    fingerprint: "sha256:bd2ef1022b05489cbd1ebb3fdde822f00d7a4b8ebe50359ad259339b3b092ac8"
+    #
+    # Re-fingerprinted 2026-08-22 (second time today), in the same change as the text. Two gotchas
+    # added about version-lock SCOPE, both found triaging red Renovate PRs #216/#217:
+    #   * a lock scoped to one manifest is not a lock — the react/react-dom repo-wide repair was
+    #     never extended to react-native, and `react-native-*` was locked nowhere at all;
+    #   * a 0.x crate's minor bump is a semver-major, files as routine, and broke the mc-service
+    #     integration TEST TARGETS while mc-service-checks stayed green because it does not build them.
+    fingerprint: "sha256:588f12c5d45a102cbdf22ab6072e2969697b92ba2ab8d8446a9cef510b7e4f42"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
