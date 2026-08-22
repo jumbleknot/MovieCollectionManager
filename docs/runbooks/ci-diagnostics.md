@@ -246,6 +246,34 @@ Retention applies here too, and had to be added rather than inherited: pruning p
 the digest path, which was safe while the channel fired only on failures. A channel that fires on
 every green run needs it, so the counts publish prunes as well.
 
+⚠️ **The same credential split hits the CONTAINER REGISTRY, and it lies in the other direction.**
+`docker manifest inspect <forge>/…/mcm-devcontainer:<sha>` answers **`no such manifest`** when the
+CLI is not logged in — not `unauthorized`. That reads as "the image was never published" for an
+image that is sitting right there, which is precisely the wrong conclusion to draw about a build you
+have just dispatched. Measured 2026-08-22: the identical command gave `no such manifest` for a tag
+whose image was **already pulled and listed in `docker images` locally**.
+
+**Always run the control first** — inspect a tag you KNOW exists. If that also reports missing, the
+instrument is unauthenticated and you have learned nothing about the tag you care about. `curl`
+against the registry API is the reliable probe, and `MCM_FORGE_TOKEN` is the credential that works
+(the `git credential fill` one returns **401** here — a third scope behaviour on the same forge):
+
+```bash
+ACCEPT='application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json'
+curl -sS -o /dev/null -w 'HTTP %{http_code}  digest=%header{docker-content-digest}\n' \
+  -u "$OWNER:$MCM_FORGE_TOKEN" -H "Accept: $ACCEPT" \
+  "$FORGE/v2/$OWNER/mcm-devcontainer/manifests/$SHA"
+```
+
+**To prove WHAT is in a published image without pulling 14 GB**, walk index -> amd64 manifest ->
+config blob and read its `history[].created_by`. That is how the `pwsh` layer was confirmed present
+in the CI-built image (and how you check the image did not accidentally end as `USER root`):
+
+```bash
+node -e 'const j=require("./config.json");
+  console.log(j.history.map(h=>h.created_by||"").filter(c=>/pwsh/i.test(c)).join("\n"), j.config.User)'
+```
+
 **What a green run still does not tell you.** `flaky > 0` does not fail the build — #167 declines to
 propose that deliberately, because one transient blip blocking a merge is a policy change that should
 be decided on this data rather than ahead of it. Read the number; do not assume the gate acted on it.
