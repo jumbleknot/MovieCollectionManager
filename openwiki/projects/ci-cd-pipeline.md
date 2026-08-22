@@ -123,6 +123,31 @@ flowchart LR
   a setting that is **on and can never fire**, reporting nothing — the same never-intersecting-schedules
   fault that deferred every routine update for four weeks. The repeated `schedule` key is therefore
   load-bearing, not redundant, and `renovate-workflow.guard.test.mjs` fails if it is removed.
+- **Enabling a Renovate channel is not the same as it ever running — `lockFileMaintenance` was on,
+  in-window, and starved for weeks.** The window fix above made it *able* to fire; it still never
+  did, because two limits interact in a way neither is documented for. `sortBranches` hard-codes
+  `["pin","digest","patch","minor","major","lockFileMaintenance"]`, so the lockfile refresh is
+  processed **last** — behind even majors — and only `isVulnerabilityAlert` or a positive
+  `prPriority` moves it. Meanwhile `handleConcurrentLimits()` checks the hourly PR limit **first,
+  for every limit key**, so spending `prHourlyLimit` also makes `isLimitReached("Branches")` true and
+  `processBranch` returns `branch-limit-reached` **before the branch is created**. With one in-window
+  run a week and `prHourlyLimit: 2`, the two rolling groups (`cargo deps`, `js patch/minor`) took both
+  slots every Friday and the refresh was cut off before it had a branch to leave behind — so the six
+  nightly runs that followed had nothing to resume and returned `not-scheduled` themselves. Measured
+  across 2026-08-14 and 2026-08-21: two in-window runs, zero lock-file branches. The only such PR that
+  has ever existed (#199) came from a human ticking `unlimit-branch` on the Dependency Dashboard,
+  which bypasses **both** gates. The config comment recorded the cost as *"a crowded-out refresh
+  defers a week"*; it deferred for ever. Fixed with a `prPriority` packageRule plus a budget that
+  reaches past the rolling groups (item #218). **Enabled, in-window and reporting nothing is a state
+  worth testing for directly** — throughput has to exceed arrival or the tail is invisible rather than
+  deferred, which no schedule check can see.
+- **A dry run creates nothing BY DESIGN, and `renovate.yml`'s `dryRun` dispatch input defaults to
+  `true`.** A dispatched run that succeeds and produces no PR therefore looks exactly like a gate
+  blocking the work. That misreading is what put a wrong conclusion into item #184 — "the schedule
+  beats a dashboard tick", inferred from a run that was simply told to create nothing. This forge
+  exposes no log endpoint, so the mode is not readable from the run page: read
+  `event_payload.inputs` from `GET /repos/{owner}/{repo}/actions/runs/{index_in_repo + 1}`, or read
+  the step name, which now carries `MODE DRY RUN` / `MODE LIVE`.
 - **`cd-deploy` is `workflow_dispatch`-only — it has no `push:` trigger and no polling gate.**
   Production deploys are event-driven: `app-ci`'s `trigger-cd` job `needs:` its own CI jobs and
   dispatches `cd-deploy(deploy=true)` once green on `main`. This replaced an earlier design where a

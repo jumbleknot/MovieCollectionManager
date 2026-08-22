@@ -49,6 +49,13 @@ on:
       dryRun:
         description: 'Dry run (log the PRs it would open, create nothing)'
         type: boolean
+        # DEFAULTS TO TRUE, and that default has already produced a wrong conclusion. Item #184
+        # recorded "the schedule beats a dashboard unlimit tick" from run 5963 (2026-08-14T09:34Z)
+        # running, succeeding and creating nothing. It created nothing because it was a DRY RUN.
+        # The forge exposes no log endpoint, so the mode is NOT readable from the run page — read it
+        # from the API instead: GET /repos/{owner}/{repo}/actions/runs/{index_in_repo + 1} and look at
+        # event_payload.inputs. The step name below also carries the mode, so a run listing shows it.
+        # Keep the default TRUE: a dispatch that creates PRs by accident is the worse failure.
         default: true
 
 concurrency:
@@ -94,7 +101,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
-      - name: Run Renovate
+      - name: Run Renovate — MODE ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'DRY RUN (creates nothing)' || 'LIVE' }}
         env:
           # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
           COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
