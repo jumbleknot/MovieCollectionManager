@@ -28,8 +28,8 @@
     "tamagui": "^2.3.0"
   },
   "devDependencies": {
-    "@expo-google-fonts/inter": "^0.2.3",
-    "@expo-google-fonts/outfit": "^0.2.3",
+    "@expo-google-fonts/inter": "^0.4.0",
+    "@expo-google-fonts/outfit": "^0.4.0",
     "@tamagui/font-inter": ">=2.0.0",
     "@testing-library/react-native": "^13.2.0",
     "@types/jest": "^30.0.0",
