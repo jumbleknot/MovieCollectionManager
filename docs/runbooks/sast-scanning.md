@@ -159,19 +159,37 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
   registry, RustSec DB, npm advisories, OSV/PyPI). If any fetch fails, that scanner **fails fast**
   (exit 1, `scanners[].error` recorded) rather than reporting a false clean. Residual: an upstream
   outage blocks the gate — re-run when it recovers. No secret is ever required.
-- **The gate passes VACUOUSLY in the dev container — a local green proves nothing about a new
-  allowlist entry (047).** Semgrep cannot reach its rule registry through the egress allowlist, so
+- **Semgrep needs `semgrep.dev`, and a local green is worthless until you have CONFIRMED it is
+  reachable (047, item #222).** Semgrep resolves the five `p/*` community packs in
+  `security/sast/semgrep.yaml` from its public registry **at scan time**, so with that host blocked
   it fails closed (per the point above) and `security/sast/reports/findings.json` ends up **empty**
-  — the reason is recorded in `scanners[].error`, which is easy to miss. Running
-  `check-sast-findings.mjs` then exits 0 on zero findings, which is not evidence that an allowlist
-  entry matches anything. **To test an allowlist entry locally, hand the gate a synthetic
-  `findings.json`** carrying the exact `scanner` / `id` / location triples you expect, plus a
-  **negative control** (a finding the entry must NOT suppress). Otherwise push and let CI answer.
-- **…but "the tier cannot run here" is the wrong conclusion — `--only` gets you the SCA half
-  (2026-08-13).** The vacuous pass above is a fact about **Semgrep**, not about the gate. Only
-  Semgrep needs `semgrep.dev`; `pnpm-audit`, `cargo-audit` and `pip-audit` resolve their advisory
-  data from sources the egress allowlist already permits. So the whole SCA half runs to completion
-  locally:
+  — the reason recorded in `scanners[].error`, which is easy to miss. `check-sast-findings.mjs` then
+  exits 0 on zero findings: a green that proves nothing about the code and nothing about a new
+  allowlist entry. That was the standing state of every dev container from 047 until the host was
+  added to `.devcontainer/egress-allowlist.json` on 2026-08-22.
+- **…and adding it to the canonical list is only HALF the change.** Egress is enforced in two
+  layers, and only one of them reads the committed file on its own: the in-VM iptables half
+  re-applies from `init-firewall.sh`, while the **host-side sandbox policy is scoped per sandbox**
+  and does not pick up a new destination until an operator re-applies it
+  (`sbx policy allow network semgrep.dev --sandbox <name>` — see
+  [devcontainer-sandbox.md](devcontainer-sandbox.md#4-egress-allowlist)). So the committed entry
+  does not tell you which world you are in. One command does:
+
+  ```bash
+  curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
+  node scripts/sast-scan.mjs --scope full --only semgrep           # exit >=2 => registry unreachable
+  ```
+
+  A Semgrep result you did not sanity-check this way is the same green either way, which is the
+  whole trap.
+- **Check the finding COUNT, not the exit code.** A report with 0 findings and a report with no
+  *blocking* findings print the same green. This is the general form of the trap above and it
+  outlives the allowlist fix — an upstream registry outage reproduces it exactly.
+- **When Semgrep is unreachable for any reason, "the tier cannot run here" is still the wrong
+  conclusion — `--only` gets you the SCA half (2026-08-13).** The vacuous pass is a fact about
+  **Semgrep**, not about the gate. `pnpm-audit`, `cargo-audit` and `pip-audit` resolve their
+  advisory data from sources the egress allowlist already permits, so the whole SCA half runs to
+  completion regardless:
 
   ```bash
   node scripts/sast-scan.mjs --scope full --only pnpm-audit   # 55 findings, 2 blocking — a real report
@@ -182,8 +200,7 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
   the changes you want to verify before pushing. Measured on feature 057: the full-scope run
   fail-closed on Semgrep and left a 0-finding report the gate passed vacuously, while `--only
   pnpm-audit` proved both target advisories were genuinely suppressed beforehand and genuinely gone
-  afterwards. **Check the finding COUNT, not the exit code** — a report with 0 findings and a report
-  with no blocking findings print the same green.
+  afterwards.
 - **An override floor has TWO halves and both must move.** Entries in `pnpm-workspace.yaml`'s
   `overrides:` map are a range keyed on a range — `fast-uri@<3.1.5: '>=3.1.5 <4'` — where the key
   names the vulnerable span excluded and the value the patched floor forced. Raise the value alone

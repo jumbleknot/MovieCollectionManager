@@ -252,6 +252,12 @@
       "reason": "Expo services host, paired with api.expo.dev.",
       "cdnRotating": false
     },
+    {
+      "domain": "semgrep.dev",
+      "group": "packages",
+      "reason": "Semgrep rule REGISTRY. item #222. security/sast/semgrep.yaml names five community packs (p/typescript, p/react, p/nodejs, p/python, p/owasp-top-ten) which scripts/sast-scan.mjs expands into --config p/... flags, and Semgrep resolves those names from this host AT SCAN TIME \u2014 so the packs are a runtime fetch, not something the toolchain image can bake. Without this entry `nx sast` cannot run in the dev container at all: measured 2026-08-22, `curl https://semgrep.dev/` answers `(6) Could not resolve host`, and sast-scan.mjs reports it as its exit>=2 'registry unreachable' case. That made a MERGE-BLOCKING gate CI-only by accident rather than by decision \u2014 the failure was only ever seen after a push. NOTE what this does NOT authorise: the scanner runs with --metrics=off --disable-version-check, so Semgrep telemetry stays off BY CONFIGURATION, never by the absence of this rule (see $mustNeverAppearHere); no SEMGREP_APP_TOKEN is involved, the packs are served anonymously; and p/secrets remains deliberately absent from the config (FR-006 \u2014 the secret-scan gate owns credential detection). cdnRotating is false because nothing here has been MEASURED to rotate \u2014 if pack fetches start timing out after a clean resolve, that is the staleness class and this flag is what should change.",
+      "cdnRotating": false
+    },
 
     {
       "domain": "api.themoviedb.org",
