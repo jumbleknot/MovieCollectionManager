@@ -148,6 +148,29 @@ flowchart LR
   exposes no log endpoint, so the mode is not readable from the run page: read
   `event_payload.inputs` from `GET /repos/{owner}/{repo}/actions/runs/{index_in_repo + 1}`, or read
   the step name, which now carries `MODE DRY RUN` / `MODE LIVE`.
+- **A version lock scoped to ONE manifest is not a lock, and this repo has paid for it twice.**
+  `renovate.json` locks React Native because Expo SDK upgrades must go through `expo install`, not a
+  raw bump — but the rule was `matchFileNames`-scoped to `frontend/mcm-app/package.json`, and
+  `react-native` also lives in `packages/design-system`. PR #217 duly bumped it there, 0.85.3 →
+  0.87.0, and RN 0.87 narrowed the press-event type so `GestureResponderEvent` no longer satisfied
+  Tamagui's `PressableProps['onPress']` — 15 typecheck errors in 14 files. The instructive part is
+  that the config **already carried the fix for this exact mistake**, for `react`/`react-dom`, with a
+  comment explaining that an app-only ignore had let the copies elsewhere drift. React Native was
+  simply left out of that repair. A second gap sat beside it: the pattern list had `react-native` and
+  `/^@react-native//` but nothing matching `react-native-*`, so reanimated, worklets, gesture-handler,
+  screens and safe-area-context — all Expo-matrix-pinned — were never locked anywhere. The durable
+  form of the check is to assert the **resolved value per manifest**, not that a rule mentioning the
+  package exists; the broken config passed the latter.
+- **For a `0.x` crate a MINOR bump is a semver-major, and Renovate files it as routine.** PR #216
+  carried `base64 0.22 → 0.23` and `reqwest 0.12 → 0.13` in the ordinary `cargo deps` group.
+  `reqwest 0.13` feature-gated `RequestBuilder::form`, so every mc-service integration **test target**
+  stopped compiling — and `mc-service-checks` passed anyway, because it does not build them; only
+  `app-e2e` caught it, as an opaque failing step. It also added a *second* `reqwest` beside the
+  0.12.28 that `axum-keycloak-auth` pulls, which the crate's own dev-dependency comment forbids, and
+  `base64 0.23` could not replace 0.22.1 because bson, mongodb, jsonwebtoken, hyper-util and axum all
+  still require it. Neither bump had any safe content; both now route to a review group behind
+  `dependencyDashboardApproval`, because a breaking upgrade cannot be made green by configuration —
+  left in the routine group it just arrives red every week and crowds out the bumps batched with it.
 - **`cd-deploy` is `workflow_dispatch`-only — it has no `push:` trigger and no polling gate.**
   Production deploys are event-driven: `app-ci`'s `trigger-cd` job `needs:` its own CI jobs and
   dispatches `cd-deploy(deploy=true)` once green on `main`. This replaced an earlier design where a

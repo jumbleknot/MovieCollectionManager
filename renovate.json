@@ -261,6 +261,30 @@
       "enabled": false
     },
     {
+      "description": [
+        "React NATIVE is version-locked repo-wide for the same reason as react/react-dom above, and it",
+        "was LEFT BEHIND when that fix was made — the rule that locks it is matchFileNames-scoped to",
+        "frontend/mcm-app/package.json, while react-native also lives in packages/design-system.",
+        "MEASURED 2026-08-21, PR #217: react-native 0.85.3 -> 0.87.0 arrived via design-system. RN 0.87",
+        "narrowed the press-event type, so GestureResponderEvent stopped satisfying Tamagui's",
+        "PressableProps['onPress'] — 15 typecheck errors across 14 files.",
+        "THE `/^react-native-/` PATTERN IS THE SECOND HALF AND IS NOT REDUNDANT. The app-scoped rule",
+        "lists `react-native` and `/^@react-native//` but nothing matching react-native-reanimated,",
+        "react-native-worklets, gesture-handler, screens or safe-area-context — all of which the Expo",
+        "SDK pins in its own version matrix, and all five of which #217 also bumped. They were never",
+        "locked ANYWHERE, not even in the app.",
+        "renovate-workflow.guard.test.mjs asserts the resolved `enabled` for this family in EVERY",
+        "workspace manifest, because a rule that merely MENTIONS react-native passed the old check."
+      ],
+      "matchPackageNames": [
+        "react-native",
+        "/^react-native-/",
+        "/^@react-native//",
+        "/^@react-native-community//"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Group Docker base-image updates into one PR per image (postgres, keycloak, mongo, opensearch, vault, node, caddy, langfuse, clickhouse…). This is the main security win.",
       "matchDatasources": ["docker"],
       "groupName": "docker base images",
@@ -277,6 +301,29 @@
       "matchManagers": ["cargo"],
       "groupName": "cargo deps",
       "automerge": false
+    },
+    {
+      "description": [
+        "A 0.x crate's MINOR bump is a semver-MAJOR in effect, but Renovate classifies it as `minor`,",
+        "so it rides in the routine `cargo deps` group above. This rule must stay AFTER that one: the",
+        "last matching rule wins the groupName.",
+        "MEASURED 2026-08-21, PR #216. base64 0.22 -> 0.23 and reqwest 0.12 -> 0.13 arrived as routine.",
+        "reqwest 0.13 feature-gated RequestBuilder::form, so every mc-service integration TEST TARGET",
+        "stopped compiling — and `mc-service-checks` went green anyway, because it does not build them;",
+        "only app-e2e caught it, as an opaque step failure. reqwest 0.13 also added a SECOND reqwest to",
+        "the graph alongside the 0.12.28 that axum-keycloak-auth pulls, which backend/mc-service/",
+        "Cargo.toml's own dev-dependency comment explicitly forbids. base64 0.23 could not REPLACE",
+        "0.22.1 either — bson, mongodb, jsonwebtoken, hyper-util and axum all still require it — so it",
+        "only duplicated the crate.",
+        "dependencyDashboardApproval keeps these OFF the weekly PR budget (item #218) until a human asks",
+        "for one. Grouping alone would not help: a breaking upgrade cannot be made green by config, so",
+        "without approval it simply arrives red every week and crowds out the genuinely routine bumps."
+      ],
+      "matchManagers": ["cargo"],
+      "matchCurrentVersion": "<1.0.0",
+      "matchUpdateTypes": ["minor"],
+      "groupName": "cargo 0.x breaking (review individually)",
+      "dependencyDashboardApproval": true
     },
     {
       "description": "Group Python (uv / pyproject) updates.",
