@@ -193,6 +193,15 @@ passages:
     #     runner change ran no mobile flow while reading as covered;
     #   * lockFileMaintenance's own default schedule beats the inherited top-level one, so enabling
     #     it without repeating the window leaves it on and unable to ever fire.
-    fingerprint: "sha256:6a893c817c82865fa0b8a13bd5d38baf3930842ff73229eb2e5720f193e53456"
+    #
+    # Re-fingerprinted 2026-08-22 (item #218), again in the same change as the text. Two gotchas
+    # added, both about a channel that is enabled, in-window and still proposes nothing:
+    #   * lockFileMaintenance is sorted LAST by Renovate and the hourly PR limit gates BRANCH
+    #     creation as well as PR creation, so the weekly budget was spent before it was reached —
+    #     it did not defer a week, it deferred for ever;
+    #   * a dry run creates nothing by design and `dryRun` DEFAULTS to true, so a dispatched run
+    #     that produces no PR reads as a gate blocking the work. That misreading is what recorded
+    #     the wrong conclusion in item #184.
+    fingerprint: "sha256:bd2ef1022b05489cbd1ebb3fdde822f00d7a4b8ebe50359ad259339b3b092ac8"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"

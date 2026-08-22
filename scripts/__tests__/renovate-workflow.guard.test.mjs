@@ -270,6 +270,7 @@ function ruleMatches(rule, dep) {
     'automerge',
     'enabled',
     'minimumReleaseAge',
+    'prPriority',
   ]);
   for (const key of Object.keys(rule)) {
     if (!known.has(key)) {
@@ -560,4 +561,100 @@ test('the Playwright grouping rule does NOT swallow @nx/playwright or unrelated 
         'than Playwright and every unrelated JS dep would ride along in its PR.',
     );
   }
+});
+
+// ---------------------------------------------------------------------------------------------
+// Item #218 — the queue must DRAIN, not merely be permitted to move.
+//
+// Both assertions below exist because the config can be entirely valid, land inside its window, and
+// still propose nothing for the tail of the queue. That is not hypothetical: between 2026-08-13 and
+// 2026-08-22 the bot ran inside its window twice and `lockFileMaintenance` — the channel that clears
+// a CVE finding the manifest range ALREADY permits — never once produced a branch. The single PR it
+// ever produced (#199) came from a human ticking `unlimit-branch` on the Dependency Dashboard.
+//
+// Measured against renovate@44's own dist, byte-identical 44.30.3 (which created #199) → 44.39.2:
+//
+//   workers/repository/process/sort.js
+//     sortOrder = ["pin","digest","patch","minor","major","lockFileMaintenance"]
+//     `lockFileMaintenance` is LAST — behind even majors. Only isVulnerabilityAlert or a positive
+//     prPriority moves it.
+//
+//   workers/global/limits.js → handleConcurrentLimits()
+//     the hourly PR limit is checked FIRST, for EVERY key, so spending prHourlyLimit also makes
+//     isLimitReached("Branches") true.
+//
+//   workers/repository/update/branch/index.js:148
+//     !branchExists && isLimitReached("Branches") → returns "branch-limit-reached" BEFORE the branch
+//     is created. A crowded-out update therefore leaves NOTHING behind, and the six nightly runs that
+//     follow cannot resume it — they return "not-scheduled" (:244) before branch creation too.
+
+test('lockFileMaintenance carries a positive prPriority, or Renovate sorts it dead last', () => {
+  const rules = packageRules.filter(
+    (rule) =>
+      rule.prPriority !== undefined &&
+      Array.isArray(rule.matchUpdateTypes) &&
+      rule.matchUpdateTypes.includes('lockFileMaintenance'),
+  );
+
+  assert.equal(
+    rules.length,
+    1,
+    `expected exactly ONE packageRule setting prPriority for lockFileMaintenance, found ${rules.length}.\n` +
+      "  Renovate's sortOrder hard-codes lockFileMaintenance LAST, behind even majors, so without a\n" +
+      '  positive prPriority it is reached only in a week when nothing else is pending — which has\n' +
+      '  never happened here. Two rolling groups (cargo-deps, js-patchminor) regenerate weekly and\n' +
+      '  sort ahead of it.\n' +
+      '  NOTE: prPriority is `parents: ["packageRules"]` — setting it inside the lockFileMaintenance\n' +
+      '  block instead looks right and is SILENTLY INERT.',
+  );
+
+  const [rule] = rules;
+  assert.ok(
+    Number.isInteger(rule.prPriority) && rule.prPriority > 0,
+    `the lockFileMaintenance rule sets prPriority=${JSON.stringify(rule.prPriority)}, which does not ` +
+      'outrank the default 0 that every routine update carries.',
+  );
+
+  assert.equal(
+    config.lockFileMaintenance?.prPriority,
+    undefined,
+    'lockFileMaintenance.prPriority is set. That is the plausible-looking placement and it does NOT\n' +
+      '  work: prPriority is parents:["packageRules"], so Renovate ignores it there. It IS reported by\n' +
+      '  renovate-config-validator (WARN, exit 1) — but NOTHING in CI runs that validator, so this\n' +
+      '  assertion is what actually catches it. Move it to a packageRules entry with matchUpdateTypes.',
+  );
+  assert.equal(
+    rule.matchPackageNames,
+    undefined,
+    'the lockFileMaintenance rule narrows by matchPackageNames. A lockFileMaintenance upgrade is\n' +
+      '  built by updates/flatten.js with NO dep attached, so matchPackageNames matches nothing and\n' +
+      '  the rule never fires — the failure this whole item is about, in a new place.',
+  );
+});
+
+test('the weekly PR budget reaches past the rolling groups that sort ahead of the tail', () => {
+  // The two rolling groups are proposed essentially every week and sort as patch/minor, i.e. ahead
+  // of majors and of lockFileMaintenance. A budget of 2 is spent on exactly those two, every week,
+  // for ever. The floor is 2 (them) + 1 (lockFileMaintenance) + 1 (any one of the standing tail),
+  // which is what makes the queue drain rather than merely rotate.
+  const ROLLING_GROUPS_PLUS_HEADROOM = 4;
+
+  assert.ok(
+    Number.isInteger(config.prHourlyLimit) && config.prHourlyLimit >= ROLLING_GROUPS_PLUS_HEADROOM,
+    `prHourlyLimit is ${JSON.stringify(config.prHourlyLimit)}, below the floor of ` +
+      `${ROLLING_GROUPS_PLUS_HEADROOM}.\n` +
+      '  This limit does NOT only gate PR creation: handleConcurrentLimits() checks it first for\n' +
+      '  every key, so spending it also blocks BRANCH creation, and a starved update leaves nothing\n' +
+      '  behind for a later run to finish. With one in-window run per week, this number IS the\n' +
+      "  weekly throughput, and it must exceed the arrival rate or the tail is invisible rather\n" +
+      '  than deferred (item #218).',
+  );
+
+  assert.ok(
+    Number.isInteger(config.prConcurrentLimit) && config.prConcurrentLimit > config.prHourlyLimit,
+    `prConcurrentLimit (${JSON.stringify(config.prConcurrentLimit)}) must stay above prHourlyLimit ` +
+      `(${JSON.stringify(config.prHourlyLimit)}), or it — not the hourly budget — becomes the binding\n` +
+      '  constraint and one run can never spend its allowance. It is deliberately the backstop that\n' +
+      '  bounds review debt; raising the hourly budget past it would silently do nothing.',
+  );
 });
