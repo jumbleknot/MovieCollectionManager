@@ -1,0 +1,54 @@
+# Item #218 — verify the lockfile refresh fires UNAIDED, and say so where the decision is made.
+#
+# WHY THIS EXISTS. Item #184 waited a week on "close this when a lock-file-maintenance PR appears".
+# The PR had already appeared and merged; nobody looked. The same item then recorded a wrong
+# conclusion from a run that created nothing because it was a DRY RUN. A note asking a human to check
+# later is precisely the mechanism that failed, twice — so the check runs itself and writes its
+# verdict onto the item.
+#
+# It is COMMENT-ONLY and always exits 0, deliberately. A weekly red on a knowingly-open item trains
+# people to ignore it, and the comment on the item is already the report. It also stops by itself:
+# the script no-ops once item #218 is closed, so nothing has to be cleaned up afterwards.
+name: lockfile-refresh-check
+
+on:
+  schedule:
+    # Friday 10:00 UTC — AFTER renovate's own `0 7 * * 5` window run has finished and its PRs exist.
+    # Deliberately not on the hour that `renovate.yml` and `infra-image-scan.yml` already share
+    # (`0 7 * * 5`): there is one runner, and a check that queues behind the thing it is checking
+    # would read the state before the work happened.
+    - cron: '0 10 * * 5'
+  # Dispatchable so the check can be PROVEN to work now rather than discovered broken on a Friday.
+  # Unlike renovate.yml there is no dryRun input, because this job creates nothing — it only comments.
+  workflow_dispatch:
+
+concurrency:
+  group: lockfile-refresh-check
+  cancel-in-progress: false
+
+jobs:
+  lockfile-refresh-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+      - name: Check whether the lockfile refresh fired unaided
+        env:
+          # write:issue — the same purpose-scoped secret the failure digest uses. The script reads the
+          # forge with it too, so no second credential is involved.
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+        run: bash scripts/ci-log-step.sh lockfile-refresh-check node scripts/check-lockfile-refresh.mjs
+      # Feature 042 — every job publishes a guarded failure digest. This one should never fail (the
+      # script traps its own errors and exits 0), which is exactly why the digest stays: if it ever
+      # does fail, the forge exposes no log endpoint and this is the only channel that would say so.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
