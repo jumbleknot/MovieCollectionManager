@@ -7,8 +7,8 @@
 #
 # Asserts, from INSIDE the dev container, that every tool the team workflow needs resolves on PATH
 # and prints a version — Rust + the cargo-utility set the repo's quality/security gates invoke
-# (033/034/035 + tarpaulin coverage), the Python/uv + Specify SDD toolchain, Node/pnpm/Nx, gh, and
-# the baked Android SDK + emulator that make mobile E2E runnable in-container.
+# (033/034/035 + tarpaulin coverage), the Python/uv + Specify + pwsh SDD toolchain, Node/pnpm/Nx, gh,
+# and the baked Android SDK + emulator that make mobile E2E runnable in-container.
 #
 # RED-first: run against the 037 baseline image (Node+pnpm only) this FAILS immediately — rustc,
 # uv, gh, specify, and the cargo utilities are all "command not found". GREEN after the US1
@@ -182,6 +182,12 @@ echo "  — Python / SDD toolchain"
 check_tool uv
 check_tool uvx --version
 check_tool specify --help
+# pwsh is HALF of the SDD toolchain, not a nicety: Spec Kit ships its lifecycle scripts as
+# PowerShell only (.specify/scripts/powershell/), so an image with `specify` but without `pwsh`
+# cannot run create-new-feature.ps1 & co. That regression is silent — the spec set still gets
+# written, by hand, with .specify/feature.json edited directly — so assert it here or nothing
+# ever reports it (item #221).
+check_tool pwsh --version
 
 echo "  — Node / JS toolchain"
 check_tool node
