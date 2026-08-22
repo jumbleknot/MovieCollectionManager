@@ -186,8 +186,13 @@ that sandbox was created — a committed entry changes nothing for it. So the de
 blocked, with the commit sitting in git looking like the fix:
 
 ```powershell
-sbx policy allow network <domain> --sandbox <name>   # operator, on the Windows host
+sbx ls                                             # confirm the name and that it is running
+sbx policy allow network <domain> --sandbox mcm    # operator, on the Windows host
+sbx policy ls --sandbox mcm                        # the rule should now be listed
 ```
+
+`mcm` is this environment's sandbox — the same name every command in section 2 uses. It is only a
+variable in the recreate-from-template flow below, where you are naming a NEW sandbox.
 
 Confirm from inside the container rather than inferring from the diff — a request, never `nc -z`:
 
