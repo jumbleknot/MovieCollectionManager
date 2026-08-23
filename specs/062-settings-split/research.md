@@ -114,21 +114,27 @@ parent height, clipping all content.
 
 ---
 
-### AMENDED during implementation — a nested `Stack` broke the destination on NATIVE
+### AMENDED during implementation — `Slot`, not a nested `Stack`
 
 **Superseded**: `settings/_layout.tsx` renders `<Slot />`, not `<Stack />`. The directory route,
 the group layout, and `SettingsNav` above the routed area are all unchanged.
 
-**Measured**: with a nested `Stack`, CI run 2040 failed `assistant-config-gating` **3/3 attempts**
-on `Assert that id: settings-profile-screen is visible` — while the preceding
-`Tap on id: nav-settings` completed. Consistent, not flaky. The whole web tier (164 tests) passed
-on the same commit, so nothing in that tier could see it. Nor could this dev container: the
-Android emulator needs `/dev/kvm`, which the Docker Sandbox microVM does not provide.
+> **CORRECTION (run 2043).** An earlier version of this note claimed the nested `Stack` was the
+> CAUSE of a native failure. **That was wrong, and the claim is withdrawn.** Replacing it with a
+> `Slot` did not fix the failure: run 2043 failed the same flow 3/3, now on `settings-nav` —
+> the sub-navigation itself, which sits ABOVE the routed area and cannot be starved of height by
+> whatever renders the child. The two runs together say the whole settings subtree fails to mount
+> on native, and neither the navigator nor the layout height is why.
+>
+> The change is kept on its own merits (below), not as a fix. The real cause is still open, and is
+> being pursued with device-side evidence rather than a third hypothesis — see the diagnostics note
+> at the end of this section.
 
-**Why this decision was the suspect.** A nested `Stack` made `settings/` the **first nested
-navigator in the app** — `collections/[collectionId]/` is a directory route with **no**
-`_layout.tsx`, so its children flatten into the `(app)` Stack. R4 introduced a structure with no
-working native precedent here, and the failure was native-only, structural and 100% reproducible.
+**Why it looked like the suspect.** A nested `Stack` made `settings/` the **first nested navigator
+in the app** — `collections/[collectionId]/` is a directory route with **no** `_layout.tsx`, so its
+children flatten into the `(app)` Stack. R4 introduced a structure with no working native precedent
+here, and the failure was native-only, structural and 100% reproducible. That reasoning was
+plausible and it was still a guess; it cost a CI cycle and did not hold.
 
 **A `Slot` is also the better primitive, not merely the fix.** The settings areas are a tab row
 navigated with `router.replace` — they deliberately keep no history of their own. A stack
@@ -138,14 +144,37 @@ of its arguments; the load-bearing ones — a directory route with a group layou
 address — are untouched.
 
 **Verified after the change**: the full web gate tier still passes (165 tests, 0 failed, 0
-skipped), including the cold deep-load of a sub-page address. `Slot` could have silently broken
+skipped), including the cold deep-load of a sub-page address — so the swap costs nothing on web. `Slot` could have silently broken
 the per-area `useFocusEffect` that reports each screen label, and nothing asserted that, so
 `settings.spec.ts` gained a case that intercepts `/bff-api/agent/ui-state` and asserts `settings`,
 `settings-backups` and `settings-assistant` each reach the wire.
 
-**Alternative rejected**: keeping the nested `Stack` and hunting the native layout fault. Rejected
-because the navigator earns nothing here — its history and transitions are both unwanted — so
-retaining it would mean debugging a component the design does not need.
+**Alternative rejected**: reverting to the nested `Stack` once it was clear the swap fixed nothing.
+Rejected because the navigator earns nothing here — its history and transitions are both unwanted —
+so restoring it would re-add an unnecessary component for symmetry with a superseded plan.
+
+---
+
+### What is ruled OUT so far, and how
+
+Recorded so the next reader does not re-walk these:
+
+| Hypothesis | Ruled out by |
+| --- | --- |
+| The settings routes are missing from the commit | `git ls-files` — all 5 route files, the component and the 3 screens are tracked |
+| The APK is stale / built from an older commit | Build log names `…-release-f3014ab.apk`, and `nav-settings` (this branch only) is tappable on the device |
+| A stale Metro cache omitted the new route directory | The build clears `metro-cache` + `metro-file-map` and runs `expo prebuild --clean` |
+| The routes are not bundled for native | `expo export --platform android` locally: the Hermes bundle contains `settings-nav`, `settings-profile-screen`, `settings-assistant-screen`, `settings-backups-screen`, `nav-settings` and 5 occurrences of `(app)/settings` |
+| `SettingsNav`/`Tabs` throw under the React Native renderer | `settings-nav.test.tsx` renders both under jest-expo (the RN renderer, not RNW) — 9 tests pass |
+| The routed area is starved of height by the sub-navigation | Run 2043: `settings-nav` ITSELF is not visible, and it is the parent of nothing |
+| It only affects the web build | CI's own web tier ran all 165 tests green on the same commit |
+
+**Still open**: why the subtree does not mount on the device. The remaining channels — Maestro's
+view hierarchy and the emulator's `adb logcat` — were both unreachable from a session, so
+`scripts/ci-mobile-agent-flows.sh` now captures them into `mobile-diagnostics/`, which the
+workflow folds into the `container-logs` failure bundle that
+`node scripts/ci-status.mjs failure --run <id> --full` can retrieve. That gap is why two cycles
+produced hypotheses instead of an answer.
 
 ---
 

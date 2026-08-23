@@ -100,10 +100,44 @@ run_flow() {
   bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$1.yaml" ${extra[@]+"${extra[@]}"}
 }
 
+# ── Device-side diagnostics on a failed attempt (feature 062) ─────────────────────────────────────
+#
+# WHY THIS EXISTS. A mobile flow that fails on `Assert that id: X is visible` says only that X was
+# not found. It cannot say whether the screen crashed, rendered empty, or was never navigated to —
+# and the two channels that CAN say are both unreachable from a session:
+#
+#   * the Maestro debug directory (view hierarchy + screenshots) is uploaded as a Forgejo Actions
+#     artifact, and this Forgejo build exposes NO artifacts API — `/api/v1/repos/…/actions/runs/
+#     {n}/artifacts` 404s, and the web download needs a browser session cookie. The failure digest
+#     even reports it as "not present", because it looks for a local directory that never exists.
+#   * `adb logcat` holds the ReactNativeJS exception for a JS render error, and the emulator is
+#     TERMINATED by the android-emulator-runner action before the workflow's collect-logs step
+#     runs — so logcat must be captured HERE, inside the emulator script, or not at all.
+#
+# Both are copied into `mobile-diagnostics/`, which the collect step folds into `container-logs/`
+# — the bundle `node scripts/ci-status.mjs failure --run <id> --full` can actually retrieve.
+#
+# Measured on run 2043: the settings destination failed 3/3 on native while the whole 165-test web
+# tier passed on the same commit, and no channel existed to see what the device was showing.
+capture_mobile_diagnostics() {
+  local flow="$1" attempt="$2" dest="mobile-diagnostics/${flow}-attempt${attempt}"
+  mkdir -p "$dest" || return 0
+  # ReactNativeJS carries a JS exception; AndroidRuntime carries a native crash. `-d` dumps and
+  # exits rather than streaming. Never fail the run on a diagnostic.
+  adb logcat -d -v time ReactNativeJS:V ReactNative:V AndroidRuntime:E '*:S'     > "$dest/logcat-react.log" 2>&1 || true
+  adb logcat -d -v time > "$dest/logcat-full.log" 2>&1 || true
+  # Maestro writes a timestamped directory per flow run; take the newest.
+  local latest
+  latest="$(ls -1dt "$HOME"/.maestro/tests/*/ 2>/dev/null | head -1)"
+  [ -n "$latest" ] && cp -r "$latest" "$dest/maestro/" 2>/dev/null || true
+  echo "--- captured device diagnostics -> $dest ---"
+}
+
 for flow in "${flows[@]}"; do
   echo "=== flow: $flow ==="
   attempt=1; max=3
   until run_flow "$flow"; do
+    capture_mobile_diagnostics "$flow" "$attempt"
     if [ "$attempt" -ge "$max" ]; then
       echo "::error::flow $flow failed after $max attempts"
       exit 1
@@ -136,6 +170,7 @@ echo "=== flow: admin-settings-access (fresh Chrome SSO — logs in as the seede
 attempt=1; max=3
 reset_chrome_sso
 until run_flow admin-settings-access; do
+  capture_mobile_diagnostics admin-settings-access "$attempt"
   if [ "$attempt" -ge "$max" ]; then
     echo "::error::flow admin-settings-access failed after $max attempts"
     exit 1

@@ -1016,6 +1016,12 @@ jobs:
           for f in frontend/mcm-app/client-evidence/*.log; do
             [ -e "$f" ] && cp "$f" "container-logs/_$(basename "$f")" || true
           done
+          # 062: the DEVICE's view of a failed mobile flow — Maestro's view hierarchy + screenshots
+          # and the emulator logcat (ReactNativeJS exceptions). Captured inside the emulator script,
+          # because the android-emulator-runner terminates the emulator before this step runs, and
+          # because this Forgejo build exposes no artifacts API to fetch the uploaded copy with.
+          # Underscore-prefixed so the digest ranks it above ordinary container logs.
+          [ -d mobile-diagnostics ] && cp -r mobile-diagnostics container-logs/_mobile-diagnostics || true
           # Compose-level captures too (any service not named above, plus restart churn).
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs -t --no-color > container-logs/_mcm-stack.log 2>&1 || true
           docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs -t --no-color > container-logs/_auth-stack.log 2>&1 || true
