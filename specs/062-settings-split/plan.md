@@ -64,7 +64,7 @@ enhancement, 2 route deletions, 1 component + 1 unit test deletion, ~20 E2E spec
 | --- | --- | --- | --- |
 | Frontend Separation of Concerns — App-Layer | Routes never define screen components; every route returns a screen from the Screens-Layer | Each of the four routes is a thin file returning a screen from `src/screens/settings/` (or the existing `src/screens/admin/`). `_layout.tsx` composes navigation only. This *improves* on today's `admin/settings.tsx`, which inlines `ProtectedRoute` + the UI-state call in the route file. | PASS |
 | Frontend Separation of Concerns — Components-Layer | One named export; kebab-case filename; styles at file bottom | `components/settings/settings-nav.tsx` exports `SettingsNav` only | PASS |
-| Design System | All UI composed from `@mcm/design-system`; new components extend it, never bypass it | The sub-navigation composes the design system's `Tabs`. The `testID` gap is closed **inside** `Tabs`, not routed around it in app code — a bypass would have been an ad-hoc `StyleSheet` tab row. | PASS |
+| Design System | All UI composed from `@mcm/design-system`; new components extend it, never bypass it | The sub-navigation composes the design system's `Tabs`. The `testID` gap is closed **inside** `Tabs`, not routed around it in app code — a bypass would have been an ad-hoc `StyleSheet` tab row. | PASS **(re-audited post-implementation — this row was initially optimistic; see below)** |
 | Behavior-Descriptive Identifiers | No `FR-###`/`US#` in identifiers; requirement IDs live in a JSDoc comment | Every new symbol is named for behaviour (`SettingsNav`, `AssistantSettingsScreen`). Requirement provenance goes in the file JSDoc. | PASS |
 | Behavior-Descriptive Identifiers — exemption | Stable E2E selectors are an exempt external contract, annotated with a justifying comment | The testID renames in [contracts/ui-contract.md](./contracts/ui-contract.md) carry that annotation | PASS |
 | Accessibility First | WCAG 2.2 AA; ARIA labels on non-text elements; visible focus | Sub-navigation entries are text labels with `accessibilityRole="tab"` and `accessibilityState={{selected}}`; the design system already applies both | PASS |
@@ -80,6 +80,48 @@ enhancement, 2 route deletions, 1 component + 1 unit test deletion, ~20 E2E spec
 | Code Coverage ≥ 70% for new features | Measured via coverage tooling | Three new screens and one new component all get unit tests | PASS |
 
 **No violations. The Complexity Tracking table is therefore omitted.**
+
+### Post-implementation design-system re-audit (2026-08-23)
+
+The Design System row above was marked PASS at planning time and was optimistic. A re-audit after
+implementation found four deviations, all in `backups-settings-screen.tsx` — the only screen
+authored from scratch rather than moved — plus one defaulted decision. All are fixed:
+
+| Finding | Resolution |
+| --- | --- |
+| `<Card onPress={undefined}>` — copied from `admin-settings-card.tsx`, where it suppressed `Card`'s press handling under a wrapping `Pressable`. No `Pressable` here, and `onPress` is already optional. | Removed |
+| Body copy sat loose in the screen `View` with a hand-rolled `marginTop={12}`, bypassing `CardContent` — which the design system exports for exactly this | Moved into `CardContent` |
+| `marginTop={12}` is off the base-8 grid the constitution's Consistency rule requires | Gone with the above |
+| The `CardHeader` subtitle and the body copy both said "not yet available" | Deduplicated |
+| `Tabs` `type` was left to default (`primary`). Primary tabs are the row directly beneath the app bar; this is sub-navigation WITHIN one destination, one level below the app bar `NavigationBar` already owns. | Switched to `type="secondary"` |
+
+**The `secondary` switch exposed a third latent defect in `Tabs`**, alongside the `testID` and
+`flex-basis` ones already recorded — `Tabs` had no consumer before this feature, so neither the
+`scrollable` nor the `secondary` path had ever been rendered. Secondary drew a 32dp pill in
+`theme.primary` at `zIndex: 1` — **in front of** the label — and coloured the active label
+`theme.primary` too, so the active tab's text was invisible inside its own indicator. The pill was
+also fixed at 64dp, sized for the icon it borrowed the geometry from, while a text tab
+("Movie Assistant") measures 154dp.
+
+Fixed inside `Tabs` against this package's OWN precedent rather than by inventing a treatment:
+`NavigationBar` already documents a "64x32dp pill behind the active icon" using
+`secondaryContainer` / `onSecondaryContainer` with the content carrying `zIndex`. `Tabs` secondary
+now matches — pill behind (`zIndex: 0`), content above, `secondaryContainer` fill, active label
+`onSecondaryContainer`, and the pill hugs the tab instead of a fixed 64dp.
+
+**Measured in Chromium at 390×844 after the fix**, rather than reasoned about: pill
+`rgb(61,71,89)` = `secondaryContainer`, `zIndex 0`, 90×32 hugging the 90dp active tab; active label
+`rgb(215,227,248)` = `onSecondaryContainer` at weight 700; inactive label `rgb(197,198,207)` =
+`onSurfaceVariant` at weight 500. **Contrast 7.23:1 (dark) and 13.27:1 (light)** — AA everywhere,
+AAA in dark. A regression guard for the two colours converging again lives in
+`navigation.test.tsx` and was proved able to fail.
+
+**One repo-wide deviation is NOT fixed here and is filed instead as item #238**: the app uses zero
+design-system spacing tokens — 222 hard-coded spacing values across 41 files, including
+`admin-settings-screen.tsx` (`padding: 24, gap: 16`) and `login-screen.tsx` (`padding: 32`). This
+feature's code matches the house style, so it neither introduced nor worsened the gap. The item
+also records that the constitution says "base-8" while `tokens/spacing.ts` says 4dp — a
+contradiction that must be settled before any migration.
 
 ## Project Structure
 

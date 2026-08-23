@@ -80,6 +80,11 @@ export function SettingsNav(): React.JSX.Element {
       <Tabs
         tabs={tabs}
         activeKey={activeKey}
+        // SECONDARY, not the default primary. Primary tabs are the ones that sit directly beneath
+        // the app bar; this row is sub-navigation WITHIN the settings destination, one level below
+        // the app bar that NavigationBar already owns. Using primary here would read as a second
+        // top-level navigation rather than a subdivision of one destination.
+        type="secondary"
         scrollable
         onTabChange={(key) => {
           const target = areas.find((area) => area.key === key);

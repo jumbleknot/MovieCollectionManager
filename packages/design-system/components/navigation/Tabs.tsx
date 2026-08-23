@@ -3,7 +3,8 @@
  *
  * Types:
  *   primary   — sits just below the AppBar; full-width indicator line
- *   secondary — sits within content; shorter pill indicator
+ *   secondary — sits within content (e.g. a sub-navigation one level below the AppBar);
+ *               filled `secondaryContainer` pill behind the label
  *
  * Usage:
  *   <Tabs
@@ -66,9 +67,11 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
     const layout = layouts[activeKey]
     if (!layout) return
 
-    const isPrimary = type === 'primary'
-    const targetX   = isPrimary ? layout.x : layout.x + (layout.width - 64) / 2
-    const targetW   = isPrimary ? layout.width : 64
+    // The secondary pill hugs the TAB, rather than the fixed 64dp NavigationBar uses — that
+    // width is sized for an icon, and a text tab ("Movie Assistant" measures ~153dp) would
+    // overflow it on both sides. Same role, different content.
+    const targetX = layout.x
+    const targetW = layout.width
 
     Animated.parallel([
       Animated.spring(indicatorX, {
@@ -112,6 +115,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             }}
             style={({ pressed }) => [
               scrollable ? styles.tabScrollable : styles.tabFlex,
+              type === 'secondary' ? styles.tabAboveIndicator : null,
               pressed ? styles.tabPressed : null,
             ]}
           >
@@ -160,7 +164,13 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
               fontSize={14}
               fontWeight={isActive ? '700' : '500'}
               letterSpacing={0.1}
-              color={isActive ? theme.primary?.val : theme.onSurfaceVariant?.val}
+              color={
+                isActive
+                  ? type === 'secondary'
+                    ? theme.onSecondaryContainer?.val
+                    : theme.primary?.val
+                  : theme.onSurfaceVariant?.val
+              }
               numberOfLines={1}
             >
               {tab.label}
@@ -179,8 +189,14 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
           width:           indicatorW,
           height:          type === 'primary' ? 3 : 32,
           borderRadius:    type === 'primary' ? 2 : 16,
-          backgroundColor: theme.primary?.val,
-          zIndex:          1,
+          // MD3 container role, matching this package's own NavigationBar active indicator
+          // ("64x32dp pill behind the active icon", secondaryContainer / onSecondaryContainer).
+          // It was `theme.primary` — an opaque saturated fill drawn IN FRONT of the label, in the
+          // same colour as the active label, so the active tab's text was invisible inside it.
+          backgroundColor: type === 'primary' ? theme.primary?.val : theme.secondaryContainer?.val,
+          // Primary's 3dp bar draws OVER the bottom border by design; the secondary pill draws
+          // BEHIND the tab content, which carries zIndex 1 (see styles.tabAboveIndicator).
+          zIndex:          type === 'primary' ? 1 : 0,
           // For secondary: center vertically
           ...(type === 'secondary' ? { bottom: undefined, top: undefined, alignSelf: 'center' } : {}),
         }}
@@ -218,5 +234,7 @@ const styles = StyleSheet.create({
   // Measured on feature 062's first web run; `Tabs` had no app consumer before, so nothing had
   // ever laid `scrollable` out in a browser. Grow/shrink off, basis auto = size to content.
   tabScrollable: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+  // Secondary only: the filled pill is drawn behind the label rather than over it.
+  tabAboveIndicator: { zIndex: 1 },
   tabPressed:    { opacity: 0.8 },
 })

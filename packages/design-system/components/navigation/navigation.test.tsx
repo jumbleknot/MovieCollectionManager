@@ -133,6 +133,28 @@ describe('Tabs', () => {
     // see it. It is asserted in a real browser, in settings.spec.ts. Same division as the testID.
   });
 
+  it('colours the active label for CONTRAST against the secondary variant\'s filled pill', () => {
+    // The secondary indicator is a filled `secondaryContainer` pill drawn BEHIND the label, so
+    // the active label must be `onSecondaryContainer`. It was `primary` — the same colour the
+    // pill itself used to be — which rendered the active tab's text invisible inside it. This
+    // path had no consumer before feature 062, so nothing had ever rendered it.
+    const { getByText: getSecondary } = renderDS(
+      <Tabs tabs={tabs} activeKey="index" onTabChange={() => {}} type="secondary" />,
+    );
+    const { getByText: getPrimary } = renderDS(
+      <Tabs tabs={tabs} activeKey="index" onTabChange={() => {}} type="primary" />,
+    );
+
+    const secondaryActive = getSecondary('Profile').props.style;
+    const primaryActive = getPrimary('Profile').props.style;
+    const colourOf = (style: unknown): unknown =>
+      (Array.isArray(style) ? Object.assign({}, ...style.flat(Infinity).filter(Boolean)) : style as object)?.['color' as never];
+
+    // Different roles, so the two variants cannot silently converge on one colour again.
+    expect(colourOf(secondaryActive)).toBeTruthy();
+    expect(colourOf(secondaryActive)).not.toBe(colourOf(primaryActive));
+  });
+
   it('renders tabs without a testID unchanged, so existing callers are unaffected', () => {
     const { getByText, queryByTestId } = renderDS(
       <Tabs
