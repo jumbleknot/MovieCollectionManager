@@ -279,4 +279,42 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && uv tool install --from git+https://github.com/github/spec-kit.git specify-cli \
     && specify --help >/dev/null 2>&1 || echo "toolchain.Dockerfile: 'specify' installed (help probe non-zero is tolerated at build time)"
 
+# --- PowerShell (pwsh) — the SDD toolchain's OTHER half [root, then back to coder] --------
+# item #221. Spec Kit ships its lifecycle scripts as PowerShell ONLY (.specify/scripts/powershell/),
+# so without `pwsh` the /speckit-* commands cannot run create-new-feature.ps1 & co. That failure is
+# SILENT — nothing errors, the assistant just does the bookkeeping by hand and edits
+# .specify/feature.json directly, which is how every spec set in this repository has been produced.
+# Since SDD is a hard gate for implementation work (CLAUDE.md), the tool that maintains its
+# artifacts belongs in the shared image, next to `specify` above.
+#
+# WHY THE BINARY ARCHIVE, NOT THE APT REPO: the tar.gz is self-contained (its own .NET runtime), so
+# it needs no packages.microsoft.com apt source and no runtime allowlist entry — fetched at
+# IMAGE-BUILD time, before the firewall exists (research D5), exactly like every other layer here.
+# libicu72 is what the bundled runtime needs for globalization; it happens to be present today only
+# as a transitive dependency of the base apt set, so install it EXPLICITLY rather than inherit it —
+# otherwise a future trim of that set turns pwsh into a startup crash with a globalization message
+# that names neither this layer nor the package it lost.
+#
+# WHY AT THE TAIL: a Dockerfile layer invalidates everything after it, and the cargo-utilities layer
+# above is the bulk of the one-time build cost (SC-011). Inserting this beside the other root-level
+# tools would rebuild that for a 100 MB tarball. Slow->fast ordering (research D4) puts it here.
+#
+# renovate: datasource=github-releases depName=PowerShell/PowerShell
+ARG POWERSHELL_VERSION=7.6.5
+USER root
+RUN set -eux; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends libicu72; \
+    rm -rf /var/lib/apt/lists/*; \
+    mkdir -p /opt/microsoft/powershell/7; \
+    curl -fsSL -o /tmp/powershell.tar.gz \
+      "https://github.com/PowerShell/PowerShell/releases/download/v${POWERSHELL_VERSION}/powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz"; \
+    tar -xzf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7; \
+    rm -f /tmp/powershell.tar.gz; \
+    chmod +x /opt/microsoft/powershell/7/pwsh; \
+    ln -sf /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh; \
+    pwsh --version
+USER ${USERNAME}
+
 ENV SHELL=/bin/bash

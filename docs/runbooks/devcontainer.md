@@ -825,6 +825,29 @@ checks when asking whether `cargo` exists here at all. Compose stacks still buil
 Rust/Python images *inside* nested Docker builds, so the pilot image does not need those toolchains
 for `pnpm nx build` / integration tests — it simply has them anyway.
 
+## Spec Kit — `pwsh` is half of the SDD toolchain (item #221)
+
+The Spec Kit lifecycle scripts ship as **PowerShell only** (`.specify/scripts/powershell/`), so
+`specify` on its own is not enough: without `pwsh` the `/speckit-*` commands cannot run
+`create-new-feature.ps1` & co. That failure is **silent** — nothing errors, the spec set simply gets
+written by hand with `.specify/feature.json` edited directly, which is how every numbered feature in
+`specs/` was produced before this landed. Since SDD is a hard gate for implementation work
+(CLAUDE.md), the tool that maintains its artifacts belongs in the shared image.
+
+`pwsh` is therefore **baked into the toolchain image** as the self-contained linux-x64 binary
+archive (`/opt/microsoft/powershell/7`, symlinked to `/usr/bin/pwsh`), pinned and Renovate-tracked
+like the Compose plugin beside it. Being a build-time fetch it needs **no** egress-allowlist entry.
+
+```bash
+pwsh --version
+pwsh -NoProfile -File .specify/scripts/powershell/create-new-feature.ps1 -DryRun -Json -ShortName 'probe' 'a probe'
+```
+
+The dry run is the honest check — it exercises the numbering logic (`{"BRANCH_NAME":"0NN-probe",…}`)
+without creating a branch or a directory. `verify-toolchain-present.sh` asserts `pwsh` alongside
+`specify`, because an image that silently loses this layer regresses to hand-written specs and
+nothing else would report it.
+
 ## OpenWiki — the OKF knowledge wiki (feature 043)
 
 `openwiki@0.2.3` is **baked into the toolchain image** (`.devcontainer/toolchain.Dockerfile`, beside

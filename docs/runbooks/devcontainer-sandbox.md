@@ -177,6 +177,29 @@ node scripts/gen-egress-policy.mjs --format ipset-domains
 Source of truth: `.devcontainer/egress-allowlist.json`. Add a destination there and regenerate;
 never add a rule by hand to one layer.
 
+### 🔴 Adding a destination does NOT reach a RUNNING sandbox
+
+The two layers pick a new entry up differently, and only one of them does so by itself. The in-VM
+iptables half re-reads the canonical file every time `init-firewall.sh` runs (postStart). The
+**host-side policy is scoped per sandbox** (`--sandbox <name>`) and holds whatever was applied when
+that sandbox was created — a committed entry changes nothing for it. So the destination stays
+blocked, with the commit sitting in git looking like the fix:
+
+```powershell
+sbx ls                                             # confirm the name and that it is running
+sbx policy allow network <domain> --sandbox mcm    # operator, on the Windows host
+sbx policy ls --sandbox mcm                        # the rule should now be listed
+```
+
+`mcm` is this environment's sandbox — the same name every command in section 2 uses. It is only a
+variable in the recreate-from-template flow below, where you are naming a NEW sandbox.
+
+Confirm from inside the container rather than inferring from the diff — a request, never `nc -z`:
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' https://<domain>/
+```
+
 ### The trap that has now bitten five times: front door ≠ blob host
 
 A service's API host and its download/CDN host are different names, and allowlisting the first
