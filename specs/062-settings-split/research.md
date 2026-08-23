@@ -169,7 +169,37 @@ Recorded so the next reader does not re-walk these:
 | The routed area is starved of height by the sub-navigation | Run 2043: `settings-nav` ITSELF is not visible, and it is the parent of nothing |
 | It only affects the web build | CI's own web tier ran all 165 tests green on the same commit |
 
-**Still open**: why the subtree does not mount on the device. The remaining channels — Maestro's
+### ANSWERED (run 2043 artifacts): the app was CRASHING, not failing to lay out
+
+The Maestro failure screenshot for `step-022-assertCondition-settings-nav` is the **Android
+launcher**, not the app. The process died on navigating to Settings. That retired both earlier
+hypotheses at once — a route that does not resolve and a subtree starved of height both leave the
+app running.
+
+**Cause**: `Tabs`' `onLayout` handler built a NEW `layouts` object on every layout event, even when
+the rect was identical. That re-rendered the row, which let Android dispatch `onLayout` again,
+which built another new object — an unbounded `onLayout` → `setState` → re-layout loop. The
+`layouts` object was also a dependency of the effect that starts a JS-driven `Animated.spring`, so
+each pass restarted the animation too.
+
+**Why nothing caught it.** React Native Web fires `onLayout` only on a real size change, so the web
+tier (165 tests, green on every one of these commits) could not see it. jest-expo runs **no layout
+pass at all**, so the design system's own suite could not either. It needed a real Android view
+hierarchy, and `Tabs` had no consumer before this feature.
+
+**Fixed** in `mergeTabLayout` (exported so the bail-out is unit-testable rather than only its side
+effects): an identical rect returns the SAME map reference, so React skips the render. The effect
+was also narrowed to depend on the active tab's `x`/`width` rather than the whole map, so another
+tab's re-measure cannot restart the spring. Both guards were mutation-tested — each fails when its
+own fix is removed, and an earlier version of the second test was DELETED for being unable to fail
+under either mutation.
+
+**The instrument, not just the fix.** Two cycles produced hypotheses instead of an answer because
+the device-side channels were unreachable from a session. `scripts/ci-mobile-agent-flows.sh` now
+captures `adb logcat` and the Maestro debug directory into `mobile-diagnostics/`, folded into the
+`container-logs` bundle that `ci-status.mjs failure --run <id> --full` can retrieve.
+
+**Superseded**: why the subtree did not mount on the device. The remaining channels — Maestro's
 view hierarchy and the emulator's `adb logcat` — were both unreachable from a session, so
 `scripts/ci-mobile-agent-flows.sh` now captures them into `mobile-diagnostics/`, which the
 workflow folds into the `container-logs` failure bundle that

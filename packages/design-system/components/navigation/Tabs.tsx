@@ -50,6 +50,33 @@ export interface TabsProps {
   scrollable?:  boolean  // allow horizontal scroll for many tabs
 }
 
+/**
+ * Merge one tab's measured rect into the layout map, returning the map UNCHANGED when the rect is
+ * identical.
+ *
+ * Returning the same reference makes React skip the re-render. That is not an optimisation — it
+ * breaks a feedback loop: an updater that always built a new object re-rendered the row, which let
+ * Android dispatch `onLayout` again, which built another new object, unbounded.
+ *
+ * Invisible on React Native Web, which fires `onLayout` only on a real size change, and it does not
+ * reproduce under jest-expo, which runs no layout pass. On a real Android device it is a render
+ * storm that KILLS THE APP PROCESS — feature 062, CI run 2043: tapping through to the settings
+ * destination dropped the emulator to the launcher, and the failure screenshot is the Android home
+ * screen. Exported so the bail-out itself is unit-testable rather than only its side effects.
+ */
+export function mergeTabLayout(
+  prev: Record<string, LayoutRectangle>,
+  key: string,
+  next: LayoutRectangle,
+): Record<string, LayoutRectangle> {
+  const cur = prev[key]
+  if (cur && cur.x === next.x && cur.y === next.y &&
+      cur.width === next.width && cur.height === next.height) {
+    return prev
+  }
+  return { ...prev, [key]: next }
+}
+
 export const Tabs = React.memo<TabsProps>(function Tabs({
   tabs,
   activeKey,
@@ -62,16 +89,22 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
   const indicatorX    = useState(() => new Animated.Value(0))[0]
   const indicatorW    = useState(() => new Animated.Value(0))[0]
 
-  // Animate indicator to active tab's position
+  // Animate indicator to active tab's position.
+  //
+  // Depends on the ACTIVE tab's x/width, not on the `layouts` object — so a re-measure of some
+  // OTHER tab cannot restart the spring. Together with the bail-out in onLayout below, this is
+  // what stops the feedback loop described there.
+  const activeLayout = layouts[activeKey]
+  const activeX = activeLayout?.x
+  const activeW = activeLayout?.width
   useEffect(() => {
-    const layout = layouts[activeKey]
-    if (!layout) return
+    if (activeX === undefined || activeW === undefined) return
 
     // The secondary pill hugs the TAB, rather than the fixed 64dp NavigationBar uses — that
     // width is sized for an icon, and a text tab ("Movie Assistant" measures ~153dp) would
     // overflow it on both sides. Same role, different content.
-    const targetX = layout.x
-    const targetW = layout.width
+    const targetX = activeX
+    const targetW = activeW
 
     Animated.parallel([
       Animated.spring(indicatorX, {
@@ -85,7 +118,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
         bounciness:      2,
       }),
     ]).start()
-  }, [activeKey, layouts, type, indicatorW, indicatorX])
+  }, [activeX, activeW, indicatorW, indicatorX])
 
   const TabRow = (
     <XStack
@@ -111,7 +144,10 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             // trap as the testID this component already documents.
             aria-selected={isActive}
             onLayout={(e) => {
-              setLayouts(prev => ({ ...prev, [tab.key]: e.nativeEvent.layout }))
+              // See mergeTabLayout: an identical rect returns the SAME map reference, so React
+              // skips the re-render and Android cannot re-dispatch onLayout into a loop.
+              const next = e.nativeEvent.layout
+              setLayouts(prev => mergeTabLayout(prev, tab.key, next))
             }}
             style={({ pressed }) => [
               scrollable ? styles.tabScrollable : styles.tabFlex,

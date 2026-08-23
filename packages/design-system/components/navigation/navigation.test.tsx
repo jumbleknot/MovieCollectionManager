@@ -6,7 +6,7 @@
  * that a per-tab testID reaches a host node so automation can locate a tab.
  */
 import React from 'react';
-import { Text } from 'react-native';
+import { Animated, Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from '@tamagui/core';
@@ -14,7 +14,7 @@ import config from '../../tamagui.config';
 import { AppBar } from './AppBar';
 import { IconButton } from '../primitives/IconButton';
 import { NavigationBar, type NavDestination } from './NavigationBar';
-import { Tabs, type TabItem } from './Tabs';
+import { Tabs, mergeTabLayout, type TabItem } from './Tabs';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 400, height: 800 },
@@ -153,6 +153,50 @@ describe('Tabs', () => {
     // Different roles, so the two variants cannot silently converge on one colour again.
     expect(colourOf(secondaryActive)).toBeTruthy();
     expect(colourOf(secondaryActive)).not.toBe(colourOf(primaryActive));
+  });
+
+  it('mergeTabLayout returns the SAME map for an identical rect, so React skips the re-render', () => {
+    // The bail-out that breaks the onLayout → setState → re-layout → onLayout loop. Asserted on
+    // reference identity, because that is precisely what makes React skip the render; a deep-equal
+    // check would pass on the broken version too. The loop killed the app process on a device
+    // (feature 062, CI run 2043) and is invisible to both RNW and this renderer.
+    const rect = { x: 0, y: 0, width: 90, height: 40 };
+    const state = { index: rect };
+
+    expect(mergeTabLayout(state, 'index', { ...rect })).toBe(state);
+    expect(mergeTabLayout(state, 'index', { ...rect, width: 120 })).not.toBe(state);
+    expect(mergeTabLayout(state, 'assistant', rect)).not.toBe(state);
+    // A real change is still recorded.
+    expect(mergeTabLayout(state, 'index', { ...rect, width: 120 })['index'].width).toBe(120);
+  });
+
+  it('does not restart the indicator animation when a DIFFERENT tab re-measures', () => {
+    // The effect depends on the ACTIVE tab's x/width, not on the whole `layouts` map. Widening it
+    // back to the map makes any other tab's re-measure restart the spring — a second contributor
+    // to the render loop that killed the app process on a device (feature 062, CI run 2043).
+    //
+    // Asserted on a NON-active tab changing size, because that is the only mutation that can tell
+    // the two dependency shapes apart: an identical rect is already stopped dead by the
+    // mergeTabLayout bail-out above, so a test built on one could never fail.
+    const springSpy = jest.spyOn(Animated, 'spring');
+    try {
+      const { getByTestId } = renderDS(
+        <Tabs tabs={tabs} activeKey="index" onTabChange={() => {}} />,
+      );
+      fireEvent(getByTestId('settings-nav-profile'), 'layout', {
+        nativeEvent: { layout: { x: 0, y: 0, width: 90, height: 40 } },
+      });
+      const afterActive = springSpy.mock.calls.length;
+      expect(afterActive).toBeGreaterThan(0); // the ACTIVE tab's own layout does animate
+
+      // A different tab, a genuinely different rect: the active indicator has not moved.
+      fireEvent(getByTestId('settings-nav-assistant'), 'layout', {
+        nativeEvent: { layout: { x: 90, y: 0, width: 154, height: 40 } },
+      });
+      expect(springSpy.mock.calls.length).toBe(afterActive);
+    } finally {
+      springSpy.mockRestore();
+    }
   });
 
   it('renders tabs without a testID unchanged, so existing callers are unaffected', () => {
