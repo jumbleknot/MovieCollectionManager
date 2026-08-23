@@ -11,8 +11,25 @@
  * value-bearing string can ride this channel into the model context.
  */
 
-/** Known app screens the agent may be told the user is on (structural labels only). */
-const ALLOWED_SCREENS = ['home', 'collection', 'movie-detail', 'profile'] as const;
+/**
+ * Known app screens the agent may be told the user is on (structural labels only).
+ *
+ * This list is the ENFORCEMENT point for the screen-label vocabulary — the union in
+ * `hooks/use-ui-state.tsx` ends in `| string` and constrains nothing at runtime. A label
+ * reported but not listed here is silently reduced to `unknown`, which is exactly how the
+ * old admin route's `admin-settings` drifted for a whole feature cycle (feature 062).
+ */
+const ALLOWED_SCREENS = [
+  'home',
+  'collection',
+  'movie-detail',
+  // Feature 062 — the settings destination's four areas, each independently addressable.
+  // They replace 'profile', which nothing reports since the pre-split route was removed.
+  'settings',
+  'settings-assistant',
+  'settings-backups',
+  'settings-admin',
+] as const;
 
 /** Structural filter DIMENSIONS only — never their values (FR-016). */
 const ALLOWED_FILTER_KEYS = [

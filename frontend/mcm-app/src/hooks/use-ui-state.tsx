@@ -19,7 +19,18 @@ import { useFocusEffect } from 'expo-router';
 import { BFF_BASE_URL } from '@/config/bff-url';
 
 export interface UiSnapshot {
-  current_screen: 'home' | 'collection' | 'movie-detail' | 'profile' | string;
+  // A developer hint only — it ends in `| string`, so it constrains nothing at runtime.
+  // The authoritative vocabulary is ALLOWED_SCREENS in bff-server/ui-state-sanitizer.ts;
+  // a label added here but not there is silently reduced to 'unknown'.
+  current_screen:
+    | 'home'
+    | 'collection'
+    | 'movie-detail'
+    | 'settings'
+    | 'settings-assistant'
+    | 'settings-backups'
+    | 'settings-admin'
+    | string;
   collection_id?: string | null;
   movie_id?: string | null;
   active_filter_keys?: string[];

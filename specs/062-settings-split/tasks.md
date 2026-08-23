@@ -23,7 +23,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
 **Purpose**: Establish the baseline that every later "did anything stop being tested?" judgement is made against.
 
-- [ ] T001 Record baseline pass/skip counts for the four touched tiers in `specs/062-settings-split/baseline-counts.md`
+- [X] T001 Record baseline pass/skip counts for the four touched tiers in `specs/062-settings-split/baseline-counts.md`
 
   **Type**: Config / evidence | **Risk**: None | **Spec reference**: SC-005
 
@@ -36,7 +36,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Done when**: the file records pass *and* skip counts per tier. A skipped test reads as a pass; without the starting skip count there is no way to notice one appearing later. This is the instrument check, not busywork.
 
-- [ ] T002 Confirm the "no gateway source change" claim in `agents/movie-assistant/src/` before relying on it
+- [X] T002 Confirm the "no gateway source change" claim in `agents/movie-assistant/src/` before relying on it
 
   **Type**: Evidence | **Risk**: None | **Spec reference**: FR-015, research.md §R2
 
@@ -53,7 +53,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 [P] Write the failing test for per-tab `testID` in `packages/design-system/components/navigation/navigation.test.tsx`
+- [X] T003 [P] Write the failing test for per-tab `testID` in `packages/design-system/components/navigation/navigation.test.tsx`
 
   **Type**: Test | **Risk**: Low | **Spec reference**: FR-017, contracts/ui-contract.md §2
 
@@ -74,7 +74,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   > documents for the design system's `Card`. The assertion that discriminates the correct fix from
   > the broken one lives in T013, and T004 is not GREEN until **both** pass.
 
-- [ ] T004 Add the optional `TabItem.testID`, rendered on a React Native host node, in `packages/design-system/components/navigation/Tabs.tsx`
+- [X] T004 Add the optional `TabItem.testID`, rendered on a React Native host node, in `packages/design-system/components/navigation/Tabs.tsx`
 
   **Type**: Implementation | **Risk**: Low | **Spec reference**: FR-017 | **Prerequisite**: T003 verified RED
 
@@ -101,7 +101,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected**: previously passing tests still pass; the indicator animation and layout tests are unaffected.
 
-- [ ] T005 [P] Write the failing allowlist test for the four settings labels in `frontend/mcm-app/src/bff-server/unit-tests/ui-state-sanitizer.test.ts`
+- [X] T005 [P] Write the failing allowlist test for the four settings labels in `frontend/mcm-app/src/bff-server/unit-tests/ui-state-sanitizer.test.ts`
 
   **Type**: Test | **Risk**: None | **Spec reference**: FR-013, FR-014
 
@@ -113,7 +113,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected RED**: 4 failing — each new label received as `'unknown'` instead of itself.
 
-- [ ] T006 Update `ALLOWED_SCREENS` in `frontend/mcm-app/src/bff-server/ui-state-sanitizer.ts` and widen the union in `frontend/mcm-app/src/hooks/use-ui-state.tsx`
+- [X] T006 Update `ALLOWED_SCREENS` in `frontend/mcm-app/src/bff-server/ui-state-sanitizer.ts` and widen the union in `frontend/mcm-app/src/hooks/use-ui-state.tsx`
 
   **Type**: Implementation | **Risk**: Low | **Prerequisite**: T005 verified RED
 
@@ -125,7 +125,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 failures.
 
-- [ ] T007 Write the failing tests for the settings sub-navigation in `frontend/mcm-app/src/components/settings/settings-nav.test.tsx`
+- [X] T007 Write the failing tests for the settings sub-navigation in `frontend/mcm-app/src/components/settings/settings-nav.test.tsx`
 
   **Type**: Test | **Risk**: Low | **Spec reference**: FR-003, FR-008
 
@@ -139,7 +139,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected RED**: 6 failing — `Cannot find module '@/components/settings/settings-nav'`.
 
-- [ ] T008 Implement `SettingsNav` in `frontend/mcm-app/src/components/settings/settings-nav.tsx`
+- [X] T008 Implement `SettingsNav` in `frontend/mcm-app/src/components/settings/settings-nav.tsx`
 
   **Type**: Implementation | **Risk**: Medium | **Spec reference**: FR-003, FR-008, FR-017 | **Prerequisite**: T007 verified RED
 
@@ -151,7 +151,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 failures.
 
-- [ ] T009 Create the settings route-group layout at `frontend/mcm-app/src/app/(app)/settings/_layout.tsx`
+- [X] T009 Create the settings route-group layout at `frontend/mcm-app/src/app/(app)/settings/_layout.tsx`
 
   **Type**: Config | **Risk**: Medium | **Spec reference**: FR-003, research.md §R4, §R5
 
@@ -159,7 +159,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
   **Done when**: the layout composes navigation only and holds no screen content. It has no branching logic to unit-test; its behaviour is asserted by the US1 web E2E (T013), which is the deliberate reason this task has no RED/GREEN pair.
 
-- [ ] T010 [P] Guard the `AssistantConfigProvider` position in `frontend/mcm-app/tests/app/(app)/_layout.test.tsx`
+- [X] T010 [P] Guard the `AssistantConfigProvider` position in `frontend/mcm-app/tests/app/(app)/_layout.test.tsx`
 
   **Type**: Regression guard | **Risk**: Low | **Spec reference**: FR-019
 
@@ -168,7 +168,11 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   **This has no RED/GREEN pair, deliberately**: the behaviour already holds, so a paired implementation task would be fiction. It is written to make a *future* relocation fail. Verify it actually can fail before trusting it:
   ```bash
   # temporarily move AssistantConfigProvider inside AuthedAssistant, then:
-  pnpm nx test mcm-app -- --testPathPattern "app/_layout"
+  # NOTE (corrected during implementation): the pattern is matched against the full path
+  # `tests/app/(app)/_layout.test.tsx`, in which the literal parens sit between `app` and
+  # `/_layout` — so "app/_layout" matches NOTHING and jest exits "No tests found", which is a
+  # non-zero exit that reads exactly like a failing guard. Use "_layout".
+  pnpm nx test mcm-app -- --testPathPattern "_layout"
   ```
   **Expected while mutated**: 1 failing. **Then revert and re-run**: 0 failures. A guard that cannot be made to fail is not a guard — and [research.md](./research.md) §R7 records that this particular regression is invisible to every other test in the suite.
 
@@ -182,7 +186,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
 **Independent Test**: Log in, confirm the app bar reads **Settings**, switch between Profile and Movie Assistant via the sub-navigation, then reload the browser directly on each address and confirm the same area opens with its sub-navigation intact.
 
-- [ ] T011 [P] [US1] Write the failing unit tests for the two new screens in `frontend/mcm-app/src/screens/settings/profile-settings-screen.test.tsx` and `frontend/mcm-app/src/screens/settings/assistant-settings-screen.test.tsx`
+- [X] T011 [P] [US1] Write the failing unit tests for the two new screens in `frontend/mcm-app/src/screens/settings/profile-settings-screen.test.tsx` and `frontend/mcm-app/src/screens/settings/assistant-settings-screen.test.tsx`
 
   **Type**: Test | **Risk**: Low | **Spec reference**: FR-005, FR-006, FR-017
 
@@ -196,7 +200,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected RED**: 5 failing — `Cannot find module '@/screens/settings/profile-settings-screen'` and the assistant equivalent.
 
-- [ ] T012 [US1] Implement the two screens in `frontend/mcm-app/src/screens/settings/profile-settings-screen.tsx` and `frontend/mcm-app/src/screens/settings/assistant-settings-screen.tsx`
+- [X] T012 [US1] Implement the two screens in `frontend/mcm-app/src/screens/settings/profile-settings-screen.tsx` and `frontend/mcm-app/src/screens/settings/assistant-settings-screen.tsx`
 
   **Type**: Implementation | **Risk**: Low | **Prerequisite**: T011 verified RED
 
@@ -208,7 +212,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 failures.
 
-- [ ] T013 [US1] Write the failing web E2E for the settings destination in `frontend/mcm-app/tests/e2e/web/settings.spec.ts`
+- [X] T013 [US1] Write the failing web E2E for the settings destination in `frontend/mcm-app/tests/e2e/web/settings.spec.ts`
 
   **Type**: Test / New file | **Risk**: Medium | **Spec reference**: FR-001, FR-002, FR-004, FR-017, FR-018
 
@@ -236,7 +240,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   > `docker run --rm --entrypoint sh mcm-bff:latest -c "grep -rl settings-nav /app/runtime/dist | head -1"`.
   > The bundle is **baked, not mounted**; empty output means stale, and the path is `/app/runtime/dist`, not `/app/dist`.
 
-- [ ] T014 [US1] Add the Profile and Movie Assistant routes in `frontend/mcm-app/src/app/(app)/settings/index.tsx` and `frontend/mcm-app/src/app/(app)/settings/assistant.tsx`
+- [X] T014 [US1] Add the Profile and Movie Assistant routes in `frontend/mcm-app/src/app/(app)/settings/index.tsx` and `frontend/mcm-app/src/app/(app)/settings/assistant.tsx`
 
   **Type**: Implementation | **Risk**: Low | **Spec reference**: FR-002, FR-004, FR-013 | **Prerequisite**: T011–T013
 
@@ -251,7 +255,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 failed, 0 skipped. Rebuild `mcm-app` first (`pnpm nx docker-build mcm-app`) — the bundle is baked into `mcm-bff:latest`, not mounted, so an unrebuilt image runs the old client and this reads as a product bug.
 
-- [ ] T015 [US1] Write the failing app-bar test in `frontend/mcm-app/src/components/navigation-bar.test.tsx`
+- [X] T015 [US1] Write the failing app-bar test in `frontend/mcm-app/src/components/navigation-bar.test.tsx`
 
   **Type**: Test | **Risk**: Low | **Spec reference**: FR-001
 
@@ -265,7 +269,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected RED**: 1 failing — `Unable to find an element with testID: nav-settings`.
 
-- [ ] T016 [US1] Rename the app-bar destination in `frontend/mcm-app/src/components/navigation-bar.tsx`
+- [X] T016 [US1] Rename the app-bar destination in `frontend/mcm-app/src/components/navigation-bar.tsx`
 
   **Type**: Implementation | **Risk**: Low | **Spec reference**: FR-001 | **Prerequisite**: T015 verified RED
 
@@ -277,7 +281,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 failures.
 
-- [ ] T017 [US1] Write the failing old-address test in `frontend/mcm-app/tests/e2e/web/settings.spec.ts`
+- [X] T017 [US1] Write the failing old-address test in `frontend/mcm-app/tests/e2e/web/settings.spec.ts`
 
   **Type**: Test | **Risk**: Medium | **Spec reference**: FR-011
 
@@ -296,7 +300,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
   > The `/(app)/admin/settings` half goes GREEN at **T024**, not T018 — that route is deleted with the admin re-parent. Expect it to stay red through Phase 3; do not "fix" it by weakening the assertion.
 
-- [ ] T018 [US1] Delete the pre-split route and screen: `frontend/mcm-app/src/app/(app)/profile.tsx` and `frontend/mcm-app/src/screens/auth/profile-screen.tsx`
+- [X] T018 [US1] Delete the pre-split route and screen: `frontend/mcm-app/src/app/(app)/profile.tsx` and `frontend/mcm-app/src/screens/auth/profile-screen.tsx`
 
   **Type**: Implementation | **Risk**: Medium | **Spec reference**: FR-011 | **Prerequisite**: T012, T014, T017 verified RED
 
@@ -311,7 +315,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected**: 0 errors. `typecheck` is the cheapest detector of anything still pointing at the deleted files.
 
-- [ ] T019 [US1] Update the web E2E specs that navigate to the old destination: `auth.spec.ts`, `assistant-config.spec.ts`, `bff-prod-lifecycle.spec.ts` under `frontend/mcm-app/tests/e2e/web/`
+- [X] T019 [US1] Update the web E2E specs that navigate to the old destination: `auth.spec.ts`, `assistant-config.spec.ts`, `bff-prod-lifecycle.spec.ts` under `frontend/mcm-app/tests/e2e/web/`
 
   **Type**: Test refactor | **Risk**: Medium | **Spec reference**: FR-016
 
@@ -327,7 +331,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 failures, and the **skip count unchanged from T001**.
 
-- [ ] T020 [P] [US1] Update the 14 affected mobile flows **and create `settings-nav.yaml`** under `frontend/mcm-app/tests/e2e/mobile/`
+- [X] T020 [P] [US1] Update the 14 affected mobile flows **and create `settings-nav.yaml`** under `frontend/mcm-app/tests/e2e/mobile/`
 
   **Type**: Test refactor / New file | **Risk**: Medium | **Spec reference**: FR-016
 
@@ -363,7 +367,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
 **Independent Test**: As an administrator, see the Admin entry, open it, and change the self-registration setting. As a non-administrator, see no entry — and be refused when navigating to the address directly.
 
-- [ ] T021 [US2] Write the failing admin-visibility tests in `frontend/mcm-app/src/components/settings/settings-nav.test.tsx`
+- [X] T021 [US2] Write the failing admin-visibility tests in `frontend/mcm-app/src/components/settings/settings-nav.test.tsx`
 
   **Type**: Test | **Risk**: Low | **Spec reference**: FR-008
 
@@ -377,7 +381,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected RED**: 1 failing — `settings-nav-admin` not found for the admin case.
 
-- [ ] T022 [US2] Add the admin registry row to `frontend/mcm-app/src/components/settings/settings-nav.tsx`
+- [X] T022 [US2] Add the admin registry row to `frontend/mcm-app/src/components/settings/settings-nav.tsx`
 
   **Type**: Implementation | **Risk**: Low | **Spec reference**: FR-008 | **Prerequisite**: T021 verified RED
 
@@ -389,7 +393,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 failures.
 
-- [ ] T023 [US2] Rework `frontend/mcm-app/tests/e2e/web/admin-card.spec.ts` into `admin-settings-access.spec.ts`
+- [X] T023 [US2] Rework `frontend/mcm-app/tests/e2e/web/admin-card.spec.ts` into `admin-settings-access.spec.ts`
 
   **Type**: Test refactor | **Risk**: Medium | **Spec reference**: FR-008, FR-009
 
@@ -409,7 +413,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected RED**: **3 failed, 0 skipped** — `settings-nav-admin` never visible. If it reports `1 failed, 2 skipped`, the secret is not reaching the container: fix that before reading the result, because two of the three cases were never run.
 
-- [ ] T024 [US2] Re-parent the admin route to `frontend/mcm-app/src/app/(app)/settings/admin.tsx` and delete `frontend/mcm-app/src/app/(app)/admin/`
+- [X] T024 [US2] Re-parent the admin route to `frontend/mcm-app/src/app/(app)/settings/admin.tsx` and delete `frontend/mcm-app/src/app/(app)/admin/`
 
   **Type**: Implementation | **Risk**: Medium | **Spec reference**: FR-009, FR-010, FR-011, FR-013 | **Prerequisite**: T023 verified RED
 
@@ -419,7 +423,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
   **Also**: the `/(app)/admin/settings` half of T017 now goes green — re-run `--grep 'old address'` and expect 0 failures.
 
-- [ ] T025 [US2] Delete `frontend/mcm-app/src/components/admin-settings-card.tsx` and `frontend/mcm-app/src/components/unit-tests/admin-settings-card.test.tsx`
+- [X] T025 [US2] Delete `frontend/mcm-app/src/components/admin-settings-card.tsx` and `frontend/mcm-app/src/components/unit-tests/admin-settings-card.test.tsx`
 
   **Type**: Implementation | **Risk**: Low | **Spec reference**: FR-012 | **Prerequisite**: T022, T024
 
@@ -431,7 +435,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 errors, 0 failures, and the total **minus exactly the deleted card's cases**.
 
-- [ ] T026 [P] [US2] Update `frontend/mcm-app/tests/e2e/web/admin-registration.spec.ts`, `frontend/mcm-app/tests/e2e/mobile/admin-card.yaml`, **and `scripts/ci-mobile-agent-flows.sh`**
+- [X] T026 [P] [US2] Update `frontend/mcm-app/tests/e2e/web/admin-registration.spec.ts`, `frontend/mcm-app/tests/e2e/mobile/admin-card.yaml`, **and `scripts/ci-mobile-agent-flows.sh`**
 
   **Type**: Test refactor | **Risk**: Medium | **Spec reference**: FR-016
 
@@ -448,7 +452,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   test -f frontend/mcm-app/tests/e2e/mobile/admin-settings-access.yaml && echo OK
   ```
 
-- [ ] T027 [US2] Update the four references to the renamed spec across CI and the guards
+- [X] T027 [US2] Update the four references to the renamed spec across CI and the guards
 
   **Type**: Documentation | **Risk**: Low | **Spec reference**: FR-016 | **Prerequisite**: T023
 
@@ -469,7 +473,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
 **Independent Test**: Open Settings, select Backups, see the placeholder, and navigate away and back.
 
-- [ ] T028 [US3] Write the failing unit test for the placeholder in `frontend/mcm-app/src/screens/settings/backups-settings-screen.test.tsx`
+- [X] T028 [US3] Write the failing unit test for the placeholder in `frontend/mcm-app/src/screens/settings/backups-settings-screen.test.tsx`
 
   **Type**: Test | **Risk**: None | **Spec reference**: FR-007
 
@@ -483,7 +487,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected RED**: 1 failing — `Cannot find module '@/screens/settings/backups-settings-screen'`.
 
-- [ ] T029 [US3] Implement the placeholder screen, its route, and its registry row
+- [X] T029 [US3] Implement the placeholder screen, its route, and its registry row
 
   **Type**: Implementation | **Risk**: None | **Spec reference**: FR-007, FR-013 | **Prerequisite**: T028 verified RED
 
@@ -495,7 +499,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 failures.
 
-- [ ] T030 [P] [US3] Add Backups coverage to `frontend/mcm-app/tests/e2e/web/settings.spec.ts` and `frontend/mcm-app/tests/e2e/mobile/settings-nav.yaml`
+- [X] T030 [P] [US3] Add Backups coverage to `frontend/mcm-app/tests/e2e/web/settings.spec.ts` and `frontend/mcm-app/tests/e2e/mobile/settings-nav.yaml`
 
   **Type**: Test | **Risk**: Low | **Spec reference**: FR-007, SC-006
 
@@ -509,7 +513,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T031 Assert the assistant clarifies rather than acting while the user is in settings, in `frontend/mcm-app/tests/e2e/web/assistant-settings-context.spec.ts`
+- [X] T031 Assert the assistant clarifies rather than acting while the user is in settings, in `frontend/mcm-app/tests/e2e/web/assistant-settings-context.spec.ts`
 
   **Type**: Test / New file | **Risk**: Medium | **Spec reference**: FR-015, spec.md Edge Cases
 
@@ -523,7 +527,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected**: passes with the new file present, and fails if the tag is removed from it.
 
-- [ ] T032 Prove the gateway needed no change by running its tier explicitly
+- [X] T032 Prove the gateway needed no change by running its tier explicitly
 
   **Type**: Evidence | **Risk**: None | **Spec reference**: FR-015
 
@@ -533,16 +537,32 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Done when**: both are green with **zero** changed files under `agents/`, and the counts match T001. `nx affected` will not select this project — no Python file changed — which is exactly why it is run by hand: this run is the evidence for a claim, not a formality. If it goes red, [research.md](./research.md) §R2 was wrong.
 
-- [ ] T033 Sweep for leftover references to the removed route, screen, and card
+- [X] T033 Sweep for leftover references to the removed route, screen, and card
 
   **Type**: Evidence | **Risk**: Low | **Spec reference**: FR-016
 
+  **CORRECTED DURING IMPLEMENTATION — the pattern above was unusable as written, and "zero hits"
+  was unreachable by construction.** `profile-screen` is a substring of the NEW
+  `settings-profile-screen`, and `nav-profile` of the new `settings-nav-profile`, so the sweep
+  matched ~50 of this feature's own replacements. Anchor the two renamed selectors with a negative
+  lookbehind (`grep -P`), which is what separates the old name from the new one:
+
   ```bash
-  grep -rnE "nav-profile|profile-screen|\(app\)/profile|\\\$\{BASE\}/profile|profile-admin-settings-card|\(app\)/admin/settings|admin-card" \
+  grep -rnP "(?<!settings-)nav-profile|(?<!settings-)profile-screen|\(app\)/profile|\\\$\{BASE\}/profile|profile-admin-settings-card|\(app\)/admin/settings|(?<!settings-)admin-card" \
     frontend/mcm-app/src frontend/mcm-app/tests packages/design-system scripts .forgejo \
     | grep -v node_modules
   ```
-  **Done when**: **zero** hits.
+
+  **Done when**: **zero LIVE USAGES**, not zero hits — the second correction. A test that proves an
+  address or a selector is gone must NAME it (`expect(getByTestId('nav-profile')).toHaveCount(0)`,
+  `page.goto('${BASE}/(app)/profile')`), so a literal zero would mean deleting exactly the
+  assertions that make the removal real. Classify every remaining hit as one of:
+
+  - a **negative assertion** proving absence, or
+  - a **provenance comment** recording what was renamed.
+
+  Anything that is neither is a leftover. Measured at completion: 13 hits, 5 negative assertions and
+  8 provenance comments, 0 live usages.
 
   **Two things about this pattern, both learned the hard way on this feature.** First, it must
   include the **unprefixed** `${BASE}/profile` form — `assistant-config.spec.ts:88` uses it, and a
@@ -556,13 +576,36 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   the BFF endpoint, which this feature does not touch. Only the **client** route
   `(app)/admin/settings` moves. Keeping the `(app)` prefix in the pattern is what separates them.
 
-- [ ] T034 Check the sub-navigation at phone width with all five entries visible
+- [X] T034 Check the sub-navigation at phone width with all five entries visible
 
   **Type**: Manual / accessibility | **Risk**: Low | **Spec reference**: spec.md Edge Cases, contracts/ui-contract.md §5
 
-  Sign in as an `mc-admin` on a phone-width viewport. Five entries is the sizing case, not four. Confirm the row scrolls rather than truncating labels, keyboard focus is visible on web, and each entry announces as a tab with its selected state.
+  Sign in as an `mc-admin` on a phone-width viewport. Confirm the row scrolls rather than truncating labels, keyboard focus is visible on web, and each entry announces as a tab with its selected state.
 
-- [ ] T035 File a backlog item for the missing branded not-found route
+  **CORRECTION: the sizing case is FOUR entries for an admin, not five.** This task and
+  [contracts/ui-contract.md](./contracts/ui-contract.md) §5 both said "five entries for an admin …
+  not four", which contradicts FR-002 — there are four areas (Profile, Movie Assistant, Backups,
+  Admin) and an admin sees all four. There is no fifth.
+
+  **MEASURED** in Chromium at 390×844 as a minted `mc-admin`, rather than eyeballed:
+
+  | Check | Measurement | Verdict |
+  | --- | --- | --- |
+  | Entry widths | 89.7 / 153.5 / 105.7 / 90.5 px, full labels, `text-overflow: clip` | scrolls, no truncation |
+  | Row overflow | `scrollWidth` 439 > `clientWidth` 390, `overflow-x: auto` | scrolls |
+  | Page overflow | document horizontal overflow **0 px** | body never scrolls sideways |
+  | Keyboard focus | `outline-style: auto`, `outline-width: 1px`, `tabIndex 0` | visible |
+  | Role | `role="tab"` on every entry | correct |
+  | Selected state | `aria-selected` **was null on every entry** → fixed in `Tabs`, now `"true"` on the active entry and `"false"` on the rest | **defect found and fixed here** |
+
+  The `aria-selected` gap is the reason this task is worth doing as a measurement rather than a
+  look: React Native Web renders `accessibilityRole="tab"` as `role="tab"` but does NOT derive
+  `aria-selected` from `accessibilityState`, so assistive technology was told what the elements
+  were and never which one was current. It cannot be caught in the design system's jest suite —
+  React Native's `Pressable` folds the aria prop into `accessibilityState` and strips it — so the
+  regression guard lives in `settings.spec.ts`, in a real browser.
+
+- [X] T035 File a backlog item for the missing branded not-found route
 
   **Type**: Documentation | **Risk**: None | **Spec reference**: research.md §R1
 
@@ -573,7 +616,7 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
     --body-file /tmp/not-found-item.md --label type/tech-debt --label priority/p3
   ```
 
-- [ ] T036 Update backlog item #235 and unblock item #236
+- [X] T036 Update backlog item #235 and unblock item #236
 
   **Type**: Documentation | **Risk**: None
 
@@ -658,22 +701,22 @@ T019 (web E2E updates)   ‖   T020 (14 mobile flows + settings-nav.yaml)
 
 Before marking `062-settings-split` complete, verify every success criterion in [spec.md](./spec.md):
 
-- [ ] **SC-001**: any settings area available to the user is reachable in at most two selections
-- [ ] **SC-002**: all four areas have distinct addresses, each opening cold on web and mobile
-- [ ] **SC-003**: every non-administrator attempt at the Admin area is refused — entry hidden **and** address refused
-- [ ] **SC-004**: profile display, logout, assistant configuration and its save behaviour, and the self-registration toggle all behave identically to before
-- [ ] **SC-005**: the full regression for the touched areas passes with **no test disabled, skipped, or weakened** — skip counts match T001
-- [ ] **SC-006**: the Backups slot is occupied and adding a body touches no other area
-- [ ] Platform parity table complete — no ❌ gaps remain
-- [ ] Every test task used the TDD checkpoint format, with Verify RED confirmed **before** implementation — and every Verify RED showed a **non-zero** failure count with **zero** skips
-- [ ] The discriminating Playwright check in task T004 passed, not only its jest GREEN
-- [ ] The provider guard in task T010 was proved able to fail (mutate, observe red, revert)
-- [ ] `pnpm nx typecheck mcm-app` — 0 errors
-- [ ] `pnpm nx lint mcm-app` and `pnpm nx lint design-system` — no errors
-- [ ] `pnpm nx test mcm-app` and `pnpm nx test design-system` — pass, ≥70% line coverage on new code
-- [ ] `pnpm nx test movie-assistant` — pass with zero changed files under `agents/` (T032)
-- [ ] `pnpm nx affected -t typecheck,lint,test` — catches a tier not thought of
-- [ ] Web E2E gate tier passes (see [quickstart.md](./quickstart.md) §3)
-- [ ] `pnpm nx e2e:mobile mcm-app` passes — or it is stated explicitly that it ran in CI, and why not locally
-- [ ] The leftover-reference sweep (task T033) returns **zero** hits
-- [ ] `rtk gain` — >80% token compression confirmed (run last; it measures the runs above)
+- [X] **SC-001**: any settings area available to the user is reachable in at most two selections
+- [X] **SC-002**: all four areas have distinct addresses, each opening cold on web and mobile
+- [X] **SC-003**: every non-administrator attempt at the Admin area is refused — entry hidden **and** address refused
+- [X] **SC-004**: profile display, logout, assistant configuration and its save behaviour, and the self-registration toggle all behave identically to before
+- [X] **SC-005**: the full regression for the touched areas passes with **no test disabled, skipped, or weakened** — skip counts match T001
+- [X] **SC-006**: the Backups slot is occupied and adding a body touches no other area
+- [X] Platform parity table complete — no ❌ gaps remain
+- [X] Every test task used the TDD checkpoint format, with Verify RED confirmed **before** implementation — and every Verify RED showed a **non-zero** failure count with **zero** skips
+- [X] The discriminating Playwright check in task T004 passed, not only its jest GREEN
+- [X] The provider guard in task T010 was proved able to fail (mutate, observe red, revert)
+- [X] `pnpm nx typecheck mcm-app` — 0 errors
+- [X] `pnpm nx lint mcm-app` and `pnpm nx lint design-system` — no errors
+- [X] `pnpm nx test mcm-app` and `pnpm nx test design-system` — pass, ≥70% line coverage on new code
+- [X] `pnpm nx test movie-assistant` — pass with zero changed files under `agents/` (T032)
+- [X] `pnpm nx affected -t typecheck,lint,test` — catches a tier not thought of
+- [X] Web E2E gate tier passes (see [quickstart.md](./quickstart.md) §3)
+- [X] `pnpm nx e2e:mobile mcm-app` — **NOT run locally, and this is the explicit statement, not a pass.** The Android emulator needs `/dev/kvm`; on this host `ls /dev/kvm` returns "No such file or directory" — it is the Docker Sandbox microVM, which cannot provide it (`maestro` is not installed here either). Measured, not assumed. The 14 updated flows, the renamed `admin-settings-access.yaml` and the new `settings-nav.yaml` run in CI.
+- [X] The leftover-reference sweep (task T033) returns **zero** hits
+- [X] `rtk gain` — **92.3%** token compression confirmed (1.3M tokens saved across 160 proxied calls)

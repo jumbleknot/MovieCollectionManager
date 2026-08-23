@@ -17,7 +17,7 @@
  */
 
 import React, { useEffect, useState } from 'react'
-import { Animated, ScrollView, type LayoutRectangle } from 'react-native'
+import { Animated, Pressable, ScrollView, StyleSheet, type LayoutRectangle } from 'react-native'
 import { View, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'
 
@@ -28,6 +28,17 @@ export interface TabItem {
   label:  string
   icon?:  React.ReactNode
   badge?: boolean | number
+  /**
+   * STABLE EXTERNAL-CONTRACT SELECTOR — exempt from the constitution's
+   * behaviour-descriptive-identifier rule under its carve-out for E2E selectors.
+   *
+   * Rendered on the plain RN `Pressable` host node below, never on the Tamagui `View`: a
+   * Tamagui component does NOT forward testID → data-testid on React-Native-Web, the same
+   * limitation `mcm-app`'s admin-settings-card documents for the design system's `Card`.
+   * The host node maps testID → data-testid on web and id on native, so jest, Playwright and
+   * Maestro all locate and press the same element. Optional — existing callers are unaffected.
+   */
+  testID?: string
 }
 
 export interface TabsProps {
@@ -83,23 +94,35 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
         const isActive = tab.key === activeKey
 
         return (
-          <View
+          <Pressable
             key={tab.key}
-            flex={scrollable ? 0 : 1}
+            testID={tab.testID}
+            onPress={() => onTabChange(tab.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            // BOTH, and the second is not redundant — it was measured missing. React Native Web
+            // renders `accessibilityRole="tab"` as role="tab" but does NOT emit `aria-selected`
+            // from `accessibilityState`, so a screen reader on web was told which elements were
+            // tabs and never which one was current. jest-expo renders React Native, not the DOM,
+            // so the accessibilityState assertion passes there either way — the same shape of
+            // trap as the testID this component already documents.
+            aria-selected={isActive}
+            onLayout={(e) => {
+              setLayouts(prev => ({ ...prev, [tab.key]: e.nativeEvent.layout }))
+            }}
+            style={({ pressed }) => [
+              scrollable ? styles.tabScrollable : styles.tabFlex,
+              pressed ? styles.tabPressed : null,
+            ]}
+          >
+          <View
+            flex={scrollable ? undefined : 1}
             alignItems="center"
             justifyContent="center"
             paddingVertical={type === 'primary' ? 16 : 10}
             paddingHorizontal={scrollable ? 24 : 0}
             minWidth={scrollable ? undefined : 0}
-            onPress={() => onTabChange(tab.key)}
             cursor="pointer"
-            onLayout={(e) => {
-              setLayouts(prev => ({ ...prev, [tab.key]: e.nativeEvent.layout }))
-            }}
-            accessible
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isActive }}
-            pressStyle={{ opacity: 0.8 }}
             hoverStyle={{ backgroundColor: theme.onSurface?.val + '14' }}
           >
             {/* Icon */}
@@ -143,6 +166,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
               {tab.label}
             </Text>
           </View>
+          </Pressable>
         )
       })}
 
@@ -181,3 +205,18 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
 })
 
 Tabs.displayName = 'MCM.Tabs'
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+// On the RN host node only. The tab's visual treatment stays on the Tamagui View inside,
+// which is where the design tokens live; these three carry layout and press feedback that
+// have to sit on the host node so the testID and the press target are the same element.
+const styles = StyleSheet.create({
+  tabFlex:       { flex: 1 },
+  // NOT `flex: 0` — in React Native that is flexGrow:0 + flexShrink:0 + flexBasis:0, and a
+  // zero basis collapses the tab to zero WIDTH inside the horizontal ScrollView. On web the
+  // element then has a testID, a role and its label text, and is still `hidden` to Playwright.
+  // Measured on feature 062's first web run; `Tabs` had no app consumer before, so nothing had
+  // ever laid `scrollable` out in a browser. Grow/shrink off, basis auto = size to content.
+  tabScrollable: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+  tabPressed:    { opacity: 0.8 },
+})

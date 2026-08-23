@@ -14,10 +14,10 @@ appId: com.grumpyrobot.mcmapp
 
 # Clear the Keycloak SSO session via MCM logout (BFF calls end_session endpoint)
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - extendedWaitUntil:
     visible:
-      id: "profile-screen"
+      id: "settings-profile-screen"
     timeout: 5000
 - tapOn:
     id: "btn-logout"

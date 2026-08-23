@@ -113,8 +113,8 @@ test.describe('BFF container — auth lifecycle (T013/US3)', () => {
 
     // 6. Real logout (not mocked) → BFF clears cookies, deletes the Redis session, and terminates
     //    the Keycloak SSO session.
-    await page.goto(`${BASE}/(app)/profile`);
-    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
     await page.click('[data-testid="btn-logout"]');
     await expect(page.getByTestId('logout-dialog')).toBeVisible({ timeout: 5000 });
     await page.click('[data-testid="btn-logout-confirm"]');

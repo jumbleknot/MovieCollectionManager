@@ -111,7 +111,7 @@ appId: com.grumpyrobot.mcmapp
 # The on-screen list was loaded empty before the assistant add and does not auto-refresh, so
 # re-navigate (home → tap the collection) to fetch the updated list.
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:
@@ -136,7 +136,7 @@ appId: com.grumpyrobot.mcmapp
 
 # ── Teardown: delete the created collection so re-runs start clean. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:

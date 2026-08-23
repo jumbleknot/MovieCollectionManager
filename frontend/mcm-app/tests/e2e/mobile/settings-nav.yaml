@@ -1,0 +1,74 @@
+appId: com.grumpyrobot.mcmapp
+---
+# Feature 062 (T020/T030): the settings destination's sub-navigation on mobile.
+#
+# Covers the mobile half of US1-AC2 (Profile is the landing area), US1-AC3 (the sub-navigation
+# switches to Movie Assistant) and US3-AC1/AC2 (the Backups placeholder is a real, addressable
+# area you can navigate away from and back to).
+#
+# TIER: LOCAL, not the CI gate. CI's only mobile invocation is scripts/ci-mobile-agent-flows.sh,
+# which runs a hardcoded array of agent flows plus admin-settings-access — a flow absent from that
+# array never runs in the gate, which is already true of home-screen.yaml and logout.yaml. This is
+# a pure navigation check the web tier covers on every run, and each CI flow costs emulator minutes
+# on a single runner. Marked as local tier in the Platform Parity Table rather than quietly counted.
+#
+# Requires: Keycloak + BFF running, seeded test user.
+# Run: scripts/maestro-run.sh tests/e2e/mobile/settings-nav.yaml
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible:
+    id: "navigation-bar"
+
+# ── The destination is Settings, and it lands on the Profile area ──
+- tapOn:
+    id: "nav-settings"
+- extendedWaitUntil:
+    visible:
+      id: "settings-profile-screen"
+    timeout: 10000
+- assertVisible:
+    id: "settings-nav"
+- assertVisible:
+    id: "profile-display"
+
+# ── Sub-navigation switches to the Movie Assistant area ──
+- tapOn:
+    id: "settings-nav-assistant"
+- extendedWaitUntil:
+    visible:
+      id: "settings-assistant-screen"
+    timeout: 10000
+- assertVisible:
+    id: "assistant-config"
+# The sub-navigation lives in the group layout, not the screen, so it survives the switch.
+- assertVisible:
+    id: "settings-nav"
+
+# ── The Backups area renders its placeholder ──
+- tapOn:
+    id: "settings-nav-backups"
+- extendedWaitUntil:
+    visible:
+      id: "settings-backups-screen"
+    timeout: 10000
+- assertVisible:
+    id: "settings-nav"
+
+# ── …and navigation works in both directions from there ──
+- tapOn:
+    id: "settings-nav-profile"
+- extendedWaitUntil:
+    visible:
+      id: "settings-profile-screen"
+    timeout: 10000
+- tapOn:
+    id: "settings-nav-backups"
+- extendedWaitUntil:
+    visible:
+      id: "settings-backups-screen"
+    timeout: 10000

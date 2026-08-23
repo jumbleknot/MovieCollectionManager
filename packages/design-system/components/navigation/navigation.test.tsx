@@ -1,7 +1,9 @@
 /**
- * Design-system unit tests — AppBar + IconButton + NavigationBar (feature 015, T013).
+ * Design-system unit tests — AppBar + IconButton + NavigationBar (feature 015, T013)
+ * and Tabs (feature 062, T003).
  * Verifies title/subtitle render, label/role forwarding, active state, the badge
- * count clamp, destination press callbacks, and the disabled accessibility state.
+ * count clamp, destination press callbacks, the disabled accessibility state, and
+ * that a per-tab testID reaches a host node so automation can locate a tab.
  */
 import React from 'react';
 import { Text } from 'react-native';
@@ -12,6 +14,7 @@ import config from '../../tamagui.config';
 import { AppBar } from './AppBar';
 import { IconButton } from '../primitives/IconButton';
 import { NavigationBar, type NavDestination } from './NavigationBar';
+import { Tabs, type TabItem } from './Tabs';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 400, height: 800 },
@@ -91,5 +94,55 @@ describe('NavigationBar', () => {
       <NavigationBar destinations={destinations} activeKey="home" />,
     );
     expect(getByLabelText('Home').props.accessibilityState).toEqual({ selected: true });
+  });
+});
+
+describe('Tabs', () => {
+  const tabs: TabItem[] = [
+    { key: 'index', label: 'Profile', testID: 'settings-nav-profile' },
+    { key: 'assistant', label: 'Movie Assistant', testID: 'settings-nav-assistant' },
+  ];
+
+  it('renders a per-tab testID and fires onTabChange for the pressed tab', () => {
+    const onTabChange = jest.fn();
+    const { getByTestId } = renderDS(
+      <Tabs tabs={tabs} activeKey="index" onTabChange={onTabChange} />,
+    );
+
+    fireEvent.press(getByTestId('settings-nav-assistant'));
+
+    expect(onTabChange).toHaveBeenCalledTimes(1);
+    expect(onTabChange).toHaveBeenCalledWith('assistant');
+  });
+
+  it('keeps the testID node the accessible tab, carrying its selected state', () => {
+    const { getByTestId } = renderDS(
+      <Tabs tabs={tabs} activeKey="index" onTabChange={() => {}} />,
+    );
+
+    expect(getByTestId('settings-nav-profile').props.accessibilityRole).toBe('tab');
+    expect(getByTestId('settings-nav-profile').props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: true }),
+    );
+    expect(getByTestId('settings-nav-assistant').props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: false }),
+    );
+    // The WEB half of this contract — that `aria-selected` actually reaches the DOM — CANNOT be
+    // asserted here and is deliberately not faked: React Native's Pressable normalizes the aria
+    // prop INTO accessibilityState and strips it, so the RN renderer this suite uses can never
+    // see it. It is asserted in a real browser, in settings.spec.ts. Same division as the testID.
+  });
+
+  it('renders tabs without a testID unchanged, so existing callers are unaffected', () => {
+    const { getByText, queryByTestId } = renderDS(
+      <Tabs
+        tabs={[{ key: 'a', label: 'Alpha' }, { key: 'b', label: 'Beta' }]}
+        activeKey="a"
+        onTabChange={() => {}}
+      />,
+    );
+
+    expect(getByText('Alpha')).toBeTruthy();
+    expect(queryByTestId('undefined')).toBeNull();
   });
 });

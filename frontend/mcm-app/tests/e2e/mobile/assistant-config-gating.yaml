@@ -22,12 +22,20 @@ appId: com.grumpyrobot.mcmapp
       id: "home-screen-create-button"
     timeout: 20000
 
-# ── Reach the not-runnable state: Profile → assistant config → disable → save. ──
+# ── Reach the not-runnable state: Settings → Movie Assistant → disable → save. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - extendedWaitUntil:
     visible:
-      id: "profile-screen"
+      id: "settings-profile-screen"
+    timeout: 10000
+# Feature 062: the assistant config moved off the landing area into its own settings area,
+# so the flow takes one more hop to reach it. Assertions below are unchanged.
+- tapOn:
+    id: "settings-nav-assistant"
+- extendedWaitUntil:
+    visible:
+      id: "settings-assistant-screen"
     timeout: 10000
 # The config is seeded-runnable, so the assistant dock overlay is mounted on this screen. If it is
 # OPEN (its state persists across navigation) its chat panel covers the config form's Save button —

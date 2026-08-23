@@ -18,12 +18,20 @@ appId: com.grumpyrobot.mcmapp
       id: "home-screen-create-button"
     timeout: 20000
 
-# ── Profile → assistant config: enable, Anthropic key, TMDB key, Save. ──
+# ── Settings → Movie Assistant: enable, Anthropic key, TMDB key, Save. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - extendedWaitUntil:
     visible:
-      id: "profile-screen"
+      id: "settings-profile-screen"
+    timeout: 10000
+# Feature 062: the assistant config moved off the landing area into its own settings area,
+# so the flow takes one more hop to reach it. Assertions below are unchanged.
+- tapOn:
+    id: "settings-nav-assistant"
+- extendedWaitUntil:
+    visible:
+      id: "settings-assistant-screen"
     timeout: 10000
 # The profile screen has paddingBottom so the Save button scrolls clear of the bottom-left dock
 # toggle; pressKey Back dismisses the keyboard before each scroll so taps land correctly.
