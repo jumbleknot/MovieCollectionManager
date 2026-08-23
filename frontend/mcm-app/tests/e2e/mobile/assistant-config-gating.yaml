@@ -25,6 +25,14 @@ appId: com.grumpyrobot.mcmapp
 # ── Reach the not-runnable state: Settings → Movie Assistant → disable → save. ──
 - tapOn:
     id: "nav-settings"
+# Assert the SHELL before the AREA, so a failure here says which of the two broke. Both are real
+# invariants of the destination, but the split is also diagnostic: `settings-nav` visible with
+# `settings-profile-screen` missing means the group layout mounted and the routed area got no
+# height; both missing means navigation never happened. CI run 2040 could not distinguish them.
+- extendedWaitUntil:
+    visible:
+      id: "settings-nav"
+    timeout: 10000
 - extendedWaitUntil:
     visible:
       id: "settings-profile-screen"

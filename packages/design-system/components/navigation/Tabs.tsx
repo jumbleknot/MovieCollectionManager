@@ -211,6 +211,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
         horizontal
         showsHorizontalScrollIndicator={false}
         bounces={false}
+        style={styles.scroller}
       >
         {TabRow}
       </ScrollView>
@@ -236,5 +237,10 @@ const styles = StyleSheet.create({
   tabScrollable: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
   // Secondary only: the filled pill is drawn behind the label rather than over it.
   tabAboveIndicator: { zIndex: 1 },
+  // Size to content, never expand. An unconstrained horizontal ScrollView in a column flex
+  // parent grows to fill the cross axis on native and squeezes whatever follows it — the reason
+  // this app's column-selector.tsx pins its own horizontal ScrollView with `maxHeight: 64`.
+  // Expressed as grow/shrink rather than a pixel height so the row still sizes to its content.
+  scroller:      { flexGrow: 0, flexShrink: 0 },
   tabPressed:    { opacity: 0.8 },
 })

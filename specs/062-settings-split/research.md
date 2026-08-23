@@ -114,6 +114,41 @@ parent height, clipping all content.
 
 ---
 
+### AMENDED during implementation — a nested `Stack` broke the destination on NATIVE
+
+**Superseded**: `settings/_layout.tsx` renders `<Slot />`, not `<Stack />`. The directory route,
+the group layout, and `SettingsNav` above the routed area are all unchanged.
+
+**Measured**: with a nested `Stack`, CI run 2040 failed `assistant-config-gating` **3/3 attempts**
+on `Assert that id: settings-profile-screen is visible` — while the preceding
+`Tap on id: nav-settings` completed. Consistent, not flaky. The whole web tier (164 tests) passed
+on the same commit, so nothing in that tier could see it. Nor could this dev container: the
+Android emulator needs `/dev/kvm`, which the Docker Sandbox microVM does not provide.
+
+**Why this decision was the suspect.** A nested `Stack` made `settings/` the **first nested
+navigator in the app** — `collections/[collectionId]/` is a directory route with **no**
+`_layout.tsx`, so its children flatten into the `(app)` Stack. R4 introduced a structure with no
+working native precedent here, and the failure was native-only, structural and 100% reproducible.
+
+**A `Slot` is also the better primitive, not merely the fix.** The settings areas are a tab row
+navigated with `router.replace` — they deliberately keep no history of their own. A stack
+navigator exists to provide push/pop history and native screen transitions, and this row wants
+neither. R4's own rationale ("it matches the structure already in the codebase") was the weakest
+of its arguments; the load-bearing ones — a directory route with a group layout, each area a real
+address — are untouched.
+
+**Verified after the change**: the full web gate tier still passes (165 tests, 0 failed, 0
+skipped), including the cold deep-load of a sub-page address. `Slot` could have silently broken
+the per-area `useFocusEffect` that reports each screen label, and nothing asserted that, so
+`settings.spec.ts` gained a case that intercepts `/bff-api/agent/ui-state` and asserts `settings`,
+`settings-backups` and `settings-assistant` each reach the wire.
+
+**Alternative rejected**: keeping the nested `Stack` and hunting the native layout fault. Rejected
+because the navigator earns nothing here — its history and transitions are both unwanted — so
+retaining it would mean debugging a component the design does not need.
+
+---
+
 ## R5 — Directory-based routing, because of a trap already documented in this repo
 
 **Decision**: `settings/` is a directory route with a `_layout.tsx`, never a `settings.tsx` file

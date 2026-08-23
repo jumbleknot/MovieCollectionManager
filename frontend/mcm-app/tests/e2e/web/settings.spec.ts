@@ -54,6 +54,43 @@ test.describe('Settings destination', () => {
   });
 
   /**
+   * FR-013 / data-model.md §2 — each area reports its OWN screen label to the assistant.
+   *
+   * Asserted on the wire rather than inferred. The label is what the BFF sanitizer allowlists and
+   * the assistant reads, and nothing else in the suite proves an area actually SENDS one: the
+   * assistant-clarifies test passes whether the label is `settings-backups` or `unknown`, because
+   * neither resolves a collection. The report rides `useFocusEffect`, so it is precisely what the
+   * group layout's routing primitive can silently break.
+   */
+  test('each settings area reports its own screen label to the BFF', async ({ page }) => {
+    const reported: string[] = [];
+    await page.route('**/bff-api/agent/ui-state', async (route) => {
+      try {
+        const body = route.request().postDataJSON() as { current_screen?: string };
+        if (body?.current_screen) reported.push(body.current_screen);
+      } catch {
+        /* a non-JSON body is not what this test is about */
+      }
+      await route.continue();
+    });
+
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30000 });
+    await expect.poll(() => reported, { timeout: 20000 }).toContain('settings');
+
+    await page.getByTestId('settings-nav-backups').click();
+    await expect(page.getByTestId('settings-backups-screen')).toBeVisible({ timeout: 30000 });
+    await expect.poll(() => reported, { timeout: 20000 }).toContain('settings-backups');
+
+    await page.getByTestId('settings-nav-assistant').click();
+    await expect(page.getByTestId('settings-assistant-screen')).toBeVisible({ timeout: 30000 });
+    await expect.poll(() => reported, { timeout: 20000 }).toContain('settings-assistant');
+
+    // Nothing outside the allowlisted vocabulary rode this channel.
+    expect(reported.every((s) => /^(home|collection|movie-detail|settings(-assistant|-backups|-admin)?)$/.test(s))).toBe(true);
+  });
+
+  /**
    * contracts/ui-contract.md §5. Each entry must announce as a tab AND announce which one is
    * current. Asserted HERE and not in the design system's jest suite, because it cannot be
    * asserted there: React Native's Pressable folds `aria-selected` into `accessibilityState` and
