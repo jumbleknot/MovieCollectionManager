@@ -209,6 +209,12 @@ passages:
     #     never extended to react-native, and `react-native-*` was locked nowhere at all;
     #   * a 0.x crate's minor bump is a semver-major, files as routine, and broke the mc-service
     #     integration TEST TARGETS while mc-service-checks stayed green because it does not build them.
-    fingerprint: "sha256:588f12c5d45a102cbdf22ab6072e2969697b92ba2ab8d8446a9cef510b7e4f42"
+    #
+    # Re-fingerprinted 2026-08-23, in the same change as the text. A sentence in this section was
+    # measured FALSE and is corrected rather than removed: it justified excluding Cargo.lock from the
+    # `app` paths filter on the grounds that mc-service-checks compiles the crate on every PR. It does
+    # not compile the crate's TEST targets, so on a Cargo-only PR nothing in CI builds them and
+    # app-e2e is path-gated away. Item #229 tracks the fix.
+    fingerprint: "sha256:42e1ac79819dd295ae8c50076407ecf4bea13bb882c2f779c4feca588ef4ee1f"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"

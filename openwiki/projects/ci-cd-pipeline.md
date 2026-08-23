@@ -106,8 +106,18 @@ flowchart LR
   JS-toolchain transitives, so breakage surfaces at **build** time and `nx test` passes straight over
   it. Both pnpm files are now in both filters (feature 058, item #186), and the accepted cost is the
   web+integration half only: `mobile` deliberately does not select them, so a dependency PR does not
-  pay for the ~35-minute emulator half. `Cargo.lock` still differs on purpose — `mc-service-checks`
-  compiles the crate on every PR, so a bad Cargo floor already reds a tier that runs.
+  pay for the ~35-minute emulator half. **`Cargo.lock` is excluded from the `app` filter, and the
+  reason recorded here for that was FALSE** — it read "`mc-service-checks` compiles the crate on every
+  PR, so a bad Cargo floor already reds a tier that runs". It compiles the crate; it does not compile
+  the crate's TEST targets — `clippy` runs without `--all-targets` and `cargo test` runs with `--lib`.
+  So on a Cargo-only pull request nothing in CI builds `tests/integration/*.rs`, and `app-e2e` — the
+  only job that does — is path-gated away. Measured 2026-08-23 on PR #216: every required context
+  green with `app-e2e` `skipped (path-gated → satisfied)`, on a change whose earlier revision had
+  broken all three integration test binaries. That earlier revision was caught only because it also
+  carried unrelated JS lockfile changes from a `main` merge, which put it back inside the `app`
+  filter — **caught by coincidence, not by design**. Item #229 tracks the fix (`--all-targets`, which
+  is cheap and needs no database); until it lands, a Cargo-only PR is verified by whoever runs
+  `cargo test --no-run` locally, and by nothing else.
 - **A filter entry that is in `mobile` but not in `app` can never fire.** `mobile` gates only *steps
   inside* `app-e2e`, and `app-e2e` itself runs only when `app` matched — so a path in the subset but
   not the superset sets `mobile=true`, `app=false`, and the whole job skips. `mobile`'s own comment
