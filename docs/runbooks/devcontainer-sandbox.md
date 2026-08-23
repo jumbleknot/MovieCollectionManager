@@ -432,15 +432,66 @@ workspace paths not owned by me: 0
 
 **Applying it is a re-pin, not a local build.** Pushing a `toolchain.Dockerfile` change *is* the
 trigger — the `devcontainer-image` workflow builds and publishes automatically, so check for a
-`build-publish` run before building anything by hand:
+`build-publish` run before building anything by hand.
+
+**The procedure, in full — and it runs in the VM shell, not the container.** A container cannot
+rebuild itself; `devcontainer up` must run from `ssh mcm.sbx`, and it destroys the container you may
+be working in. Everything below is one VM-shell session, because step 3's `set -a` only holds there.
 
 ```bash
-# 1. find the published image (tagged by commit sha) and CONFIRM it carries the fix
-docker pull <registry>/<ns>/mcm-devcontainer:<sha>
-docker run --rm --entrypoint bash <same> -lc 'id -u coder'      # must print 1000
-# 2. re-pin: MCM_DEVCONTAINER_IMAGE lives in ~/.mcm-sandbox-env (NOT ~/.bashrc), unquoted `export`
-#    is absent — substitute only the digest, and VERIFY the value actually changed
-# 3. chown the tree to 1000, then `devcontainer up --remove-existing-container`
+NEW=<the 64-hex digest from the build's run summary>          # NOT the tag — pin by digest
+REG="$FORGE_REGISTRY_HOST:3000"
+
+# 1. pull, and CONFIRM the image carries the change BEFORE it becomes your environment
+docker pull $REG/<ns>/mcm-devcontainer@sha256:$NEW
+docker run --rm --entrypoint bash $REG/<ns>/mcm-devcontainer@sha256:$NEW -lc 'id -u coder; pwsh --version'
+
+# 2. edit the pin. MCM_DEVCONTAINER_IMAGE lives in ~/.mcm-sandbox-env (NOT ~/.bashrc). The file is
+#    KEY='value' — quoted, and with NO `export` keyword. Substitute only the digest.
+cp ~/.mcm-sandbox-env ~/.mcm-sandbox-env.bak
+sed -i "/^MCM_DEVCONTAINER_IMAGE=/s|@sha256:[0-9a-f]\{64\}|@sha256:$NEW|" ~/.mcm-sandbox-env
+grep MCM_DEVCONTAINER_IMAGE ~/.mcm-sandbox-env
+
+# 3. source it, and GATE on the result rather than eyeballing it
+set -a; . ~/.mcm-sandbox-env; set +a
+case "$MCM_DEVCONTAINER_IMAGE" in
+  *"$NEW") echo "PIN OK — safe to rebuild" ;;
+  *)       echo "PIN NOT APPLIED — stop; devcontainer up would build the OLD image" ;;
+esac
+
+# 4. only on PIN OK. (For the UID fix specifically, chown the tree to 1000 first.)
+devcontainer up --workspace-folder /workspaces/mcm \
+  --config .devcontainer/sandbox/devcontainer.json --remove-existing-container
+```
+
+🔴 **Two ways this silently re-creates the OLD container, both measured 2026-08-22.**
+
+**`set -a` is load-bearing.** `~/.mcm-sandbox-env` has no `export` keyword, and
+`.devcontainer/sandbox/devcontainer.json` reads the pin as
+`${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}` from **the shell running `devcontainer up`**.
+Source it without `set -a` and the variable is set but not exported, so `localEnv` misses it and the
+build **falls back to the literal default `mcm-devcontainer`** — a stale local image, with no error.
+
+**An all-`CACHED` build is the tell.** A re-pin that did not take produces a build where every layer
+reports `CACHED` and a container that starts perfectly, having changed nothing. Read the one line
+that settles it — `devcontainer up` echoes it:
+
+```text
+docker buildx build … --build-arg BASE_IMAGE=<registry>/<ns>/mcm-devcontainer@sha256:<digest>
+```
+
+If that digest is the old one, stop; nothing after it matters. A genuine re-pin is **not**
+all-CACHED, because the layers above the new base must rebuild.
+
+⚠️ **`devcontainer up` prints its full `docker run` invocation, including every `-e` secret in clear
+text** — `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`. Treat
+that output as credential material: do not paste it into an issue, a chat, or a transcript, and
+rotate all four if you already have.
+
+Afterwards, confirm from **inside** the new container — the pin is not the proof, the tool is:
+
+```bash
+bash .devcontainer/verify/verify-toolchain-present.sh      # asserts the whole baked toolchain
 ```
 
 ⚠️ The historical account below is kept because the failure modes are instructive, and because the
