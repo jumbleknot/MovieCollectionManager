@@ -335,6 +335,18 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
   Create `settings-nav.yaml`: log in, tap `nav-settings`, assert `settings-profile-screen`, tap `settings-nav-assistant`, assert `assistant-config`. It is created **here** rather than in Phase 5 because the Platform Parity Table maps **US1**-AC2 and US1-AC3 to it — leaving it to US3 would mean US1's stated independent test could not be run on mobile until two phases later. T030 extends it with the Backups case.
 
+  **Which tier this new flow lands in, stated rather than assumed.** The local runner
+  (`frontend/mcm-app/scripts/maestro-e2e.mjs`) **globs** the flow directory, so `settings-nav.yaml`
+  is picked up with no registration. CI does **not** use that runner: `app-ci.yml:964` invokes
+  `scripts/ci-mobile-agent-flows.sh`, which runs a **hardcoded `flows=(…)` array** of nine agent
+  flows plus a specially-cased `admin-card`. A flow absent from that array never runs in the gate —
+  which is already true of `home-screen.yaml`, `logout.yaml`, and `login-invalid.yaml`.
+
+  **Decision: do not add `settings-nav.yaml` to the CI array.** It is a pure navigation check that
+  the web tier covers on every run, and each CI flow costs emulator minutes on a single runner. So
+  it is **local-tier** coverage, and the Platform Parity Table marks it as such. Do not let the
+  table imply gate coverage it does not have.
+
   **Verify GREEN**:
   ```bash
   pnpm nx e2e:mobile mcm-app
@@ -419,11 +431,22 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   ```
   **Expected GREEN**: 0 errors, 0 failures, and the total **minus exactly the deleted card's cases**.
 
-- [ ] T026 [P] [US2] Update `frontend/mcm-app/tests/e2e/web/admin-registration.spec.ts` and `frontend/mcm-app/tests/e2e/mobile/admin-card.yaml`
+- [ ] T026 [P] [US2] Update `frontend/mcm-app/tests/e2e/web/admin-registration.spec.ts`, `frontend/mcm-app/tests/e2e/mobile/admin-card.yaml`, **and `scripts/ci-mobile-agent-flows.sh`**
 
-  **Type**: Test refactor | **Risk**: Low | **Spec reference**: FR-016
+  **Type**: Test refactor | **Risk**: Medium | **Spec reference**: FR-016
 
-  Both reach the admin screen through the deleted affordance or the old address; retarget them at `settings-nav-admin`. Rename `admin-card.yaml` to `admin-settings-access.yaml` to match what it now tests. Its direct-URL half is **N/A on mobile** — see the Platform Parity Table for the written justification.
+  Both specs reach the admin screen through the deleted affordance or the old address; retarget them at `settings-nav-admin`. Rename `admin-card.yaml` to `admin-settings-access.yaml` to match what it now tests. Its direct-URL half is **N/A on mobile** — see the Platform Parity Table for the written justification.
+
+  **The mobile flow is invoked BY NAME from CI, so the rename is a functional break, not a cosmetic one.** `scripts/ci-mobile-agent-flows.sh:136` calls `run_flow admin-card`, which resolves to `bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/admin-card.yaml"` — a path that will not exist. It sits inside a 3-attempt `until` loop, so CI burns three emulator runs before emitting `::error::flow admin-card failed after 3 attempts`. Update **every** occurrence in that script: the `run_flow` call at :136, the echo at :133, and the explanatory prose at :19, :24, :116 and :120–121 — the last of which also names the deleted `profile-admin-settings-card` testID in the `reset_chrome_sso` rationale. That rationale itself still holds (the flow logs in as `e2e-admin-user`, not `e2e-test-user`); only the flow name and the selector it scrolls to change.
+
+  **Done when**:
+  ```bash
+  grep -rn "admin-card" scripts/ .forgejo/ frontend/mcm-app/tests | grep -v node_modules
+  ```
+  returns **zero** hits, and the flow path named in the script exists on disk:
+  ```bash
+  test -f frontend/mcm-app/tests/e2e/mobile/admin-settings-access.yaml && echo OK
+  ```
 
 - [ ] T027 [US2] Update the four references to the renamed spec across CI and the guards
 
@@ -515,10 +538,23 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
   **Type**: Evidence | **Risk**: Low | **Spec reference**: FR-016
 
   ```bash
-  grep -rn "nav-profile\|profile-screen\|(app)/profile\|profile-admin-settings-card\|(app)/admin/settings" \
-    frontend/mcm-app/src frontend/mcm-app/tests packages/design-system | grep -v node_modules
+  grep -rnE "nav-profile|profile-screen|\(app\)/profile|\\\$\{BASE\}/profile|profile-admin-settings-card|\(app\)/admin/settings|admin-card" \
+    frontend/mcm-app/src frontend/mcm-app/tests packages/design-system scripts .forgejo \
+    | grep -v node_modules
   ```
-  **Done when**: **zero** hits. The starting point was 64 hits across 20 files; a non-zero result here means a spec still navigates somewhere that no longer exists — and on a mobile flow that reads as a timeout, not a 404.
+  **Done when**: **zero** hits.
+
+  **Two things about this pattern, both learned the hard way on this feature.** First, it must
+  include the **unprefixed** `${BASE}/profile` form — `assistant-config.spec.ts:88` uses it, and a
+  sweep matching only `(app)/profile` returns zero while that line is still wrong. Second, it must
+  search **`scripts/` and `.forgejo/`**, not only `src` and `tests`: `ci-mobile-agent-flows.sh`
+  invokes a mobile flow by name and CI never uses the glob-based local runner, so a rename breaks
+  there and nowhere else.
+
+  It must **not** be widened to a bare `admin/settings`. That would match
+  `src/app/bff-api/admin/settings+api.ts`, `src/hooks/use-app-settings.ts`, and their unit test —
+  the BFF endpoint, which this feature does not touch. Only the **client** route
+  `(app)/admin/settings` moves. Keeping the `(app)` prefix in the pattern is what separates them.
 
 - [ ] T034 Check the sub-navigation at phone width with all five entries visible
 
@@ -550,21 +586,28 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 | Scenario | Web (Playwright) | Mobile (Maestro) | Status |
 |---|---|---|---|
 | US1-AC1: app bar reads Settings | `settings.spec.ts` | `home-screen.yaml` | ✅ |
-| US1-AC2: Profile area is the landing area | `settings.spec.ts` | `settings-nav.yaml` (created in T020) | ✅ |
-| US1-AC3: sub-navigation switches to Movie Assistant | `settings.spec.ts` | `settings-nav.yaml` (created in T020) | ✅ |
+| US1-AC2: Profile area is the landing area | `settings.spec.ts` | `settings-nav.yaml` (created in T020 — local tier¹) | ✅ |
+| US1-AC3: sub-navigation switches to Movie Assistant | `settings.spec.ts` | `settings-nav.yaml` (created in T020 — local tier¹) | ✅ |
 | US1-AC4: cold load of a sub-page address | `settings.spec.ts` | N/A — Maestro drives the app UI and has no address-bar equivalent; native deep-linking needs `adb shell am start -a android.intent.action.VIEW -d …`, which is outside the flow model. The router config is shared React, and web covers it. | N/A |
 | US1-AC5: saving assistant config refreshes the dock in-session | `assistant-config.spec.ts` | `assistant-config-enable.yaml` | ✅ |
 | US2-AC1: admin sees the Admin entry | `admin-settings-access.spec.ts` | `admin-settings-access.yaml` | ✅ |
 | US2-AC2: non-admin sees no Admin entry | `admin-settings-access.spec.ts` | `admin-settings-access.yaml` | ✅ |
 | US2-AC3: non-admin refused at the address directly | `admin-settings-access.spec.ts` | N/A — the route is unreachable from a Maestro flow: there is no in-app affordance to a route the user cannot see, and no address bar. `ProtectedRoute` → `AuthGuard` is platform-agnostic React. | N/A |
 | US2-AC4: self-registration toggle unchanged | `admin-registration.spec.ts` | `admin-settings-access.yaml` | ✅ |
-| US3-AC1: Backups placeholder renders | `settings.spec.ts` | `settings-nav.yaml` (extended in T030) | ✅ |
-| US3-AC2: navigation works away from and back to Backups | `settings.spec.ts` | `settings-nav.yaml` (extended in T030) | ✅ |
+| US3-AC1: Backups placeholder renders | `settings.spec.ts` | `settings-nav.yaml` (extended in T030 — local tier¹) | ✅ |
+| US3-AC2: navigation works away from and back to Backups | `settings.spec.ts` | `settings-nav.yaml` (extended in T030 — local tier¹) | ✅ |
 | FR-011: old addresses are unmatched | `settings.spec.ts` | N/A — the routes are deleted, so no in-app affordance can reach them and there is no address bar to type them into. | N/A |
 | FR-015: assistant clarifies while in settings | `assistant-settings-context.spec.ts` (`@model-decision`) | N/A — a model-decision assertion; the tier split deliberately keeps these off the blocking gate on one platform rather than duplicating a ~50%-flaky assertion across two. | N/A |
 | FR-019: assistant-config provider stays above the settings group | `assistant-config.spec.ts` + unit guard (T010) | `assistant-config-enable.yaml` | ✅ |
 
 No `❌ Gap` rows. Every `N/A` carries a written justification.
+
+¹ **Local tier, not the CI gate.** CI's only mobile invocation is `scripts/ci-mobile-agent-flows.sh`
+(`app-ci.yml:964`), which runs a hardcoded array of nine agent flows plus `admin-settings-access`.
+`pnpm nx e2e:mobile` — the glob-based runner that picks up every flow — is never run in CI. So
+`settings-nav.yaml` runs locally and not in the gate, exactly like `home-screen.yaml` and
+`logout.yaml` today. Marked rather than quietly counted: the web tier is what gates these
+scenarios, and the table would otherwise over-claim. See T020 for why it is not added to the array.
 
 ---
 
