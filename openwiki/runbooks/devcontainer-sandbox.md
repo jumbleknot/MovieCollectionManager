@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Dev container on Docker Sandbox microVM (primary environment)
-description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy, the socat engine seam, networking quirks, restart/reboot survival, disk limits, and the template-recreate trap that destroys host-filesystem isolation.
+description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy, the socat engine seam, networking quirks, restart/reboot survival, disk limits, the template-recreate trap that destroys host-filesystem isolation, and the re-pin procedure with the two ways it silently rebuilds the old image.
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-08-17T22:32:15+00:00
+timestamp: 2026-08-22T00:00:00+00:00
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -83,6 +83,50 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 - **`sbx secret rm` and interactive `sbx` prompts default to *No* non-interactively.** Pass `-f` to skip the confirmation. `rtk init -g` also answers "no" silently and prints a manual step — that is why `ensure-rtk-hook.sh` exists.
 
 - **Run git inside the dev container, not the VM shell — uid mismatch was the cause, and is now fixed.** Prior to 2026-08-17 the VM user (`agent`) was uid 1000 and the container user (`coder`) was uid 1001; anything git wrote from the VM landed owned by uid 1000, which the container saw as `node` (not `coder`), making object writes fail silently on 111 of 256 `.git/objects` subdirs. **FIXED (2026-08-17):** `toolchain.Dockerfile` now creates `coder` at 1000:1000, moving the base image's `node` to 1100. Both sides are now 1000:1000 and git works from either. To automate from outside the container, prefer `docker exec -u coder …` — this remains the safe, portable form. `fix-workspace-ownership.sh` still runs at create/start to repair any already-poisoned tree.
+
+  **Applying it is a re-pin, not a local build.** Pushing a `toolchain.Dockerfile` change *is* the trigger — the `devcontainer-image` workflow builds and publishes automatically, so check for a `build-publish` run before building anything by hand.
+
+  **The procedure, in full — and it runs in the VM shell, not the container.** A container cannot rebuild itself; `devcontainer up` must run from `ssh mcm.sbx`, and it destroys the container you may be working in. Everything below is one VM-shell session, because step 3's `set -a` only holds there.
+
+  ```bash
+  NEW=<the 64-hex digest from the build's run summary>          # NOT the tag — pin by digest
+  REG="$FORGE_REGISTRY_HOST:3000"
+
+  # 1. pull, and CONFIRM the image carries the change BEFORE it becomes your environment
+  docker pull $REG/<ns>/mcm-devcontainer@sha256:$NEW
+  docker run --rm --entrypoint bash $REG/<ns>/mcm-devcontainer@sha256:$NEW -lc 'id -u coder; pwsh --version'
+
+  # 2. edit the pin. MCM_DEVCONTAINER_IMAGE lives in ~/.mcm-sandbox-env (NOT ~/.bashrc). The file is
+  #    KEY='value' — quoted, and with NO `export` keyword. Substitute only the digest.
+  cp ~/.mcm-sandbox-env ~/.mcm-sandbox-env.bak
+  sed -i "/^MCM_DEVCONTAINER_IMAGE=/s|@sha256:[0-9a-f]\{64\}|@sha256:$NEW|" ~/.mcm-sandbox-env
+  grep MCM_DEVCONTAINER_IMAGE ~/.mcm-sandbox-env
+
+  # 3. source it, and GATE on the result rather than eyeballing it
+  set -a; . ~/.mcm-sandbox-env; set +a
+  case "$MCM_DEVCONTAINER_IMAGE" in
+    *"$NEW") echo "PIN OK — safe to rebuild" ;;
+    *)       echo "PIN NOT APPLIED — stop; devcontainer up would build the OLD image" ;;
+  esac
+
+  # 4. only on PIN OK. (For the UID fix specifically, chown the tree to 1000 first.)
+  devcontainer up --workspace-folder /workspaces/mcm \
+    --config .devcontainer/sandbox/devcontainer.json --remove-existing-container
+  ```
+
+  🔴 **Two ways this silently re-creates the OLD container, both measured 2026-08-22.**
+
+  **`set -a` is load-bearing.** `~/.mcm-sandbox-env` has no `export` keyword, and `.devcontainer/sandbox/devcontainer.json` reads the pin as `${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}` from **the shell running `devcontainer up`**. Source it without `set -a` and the variable is set but not exported, so `localEnv` misses it and the build **falls back to the literal default `mcm-devcontainer`** — a stale local image, with no error.
+
+  **An all-`CACHED` build is the tell.** A re-pin that did not take produces a build where every layer reports `CACHED` and a container that starts perfectly, having changed nothing. Read the one line that settles it — `devcontainer up` echoes it:
+
+  ```text
+  docker buildx build … --build-arg BASE_IMAGE=<registry>/<ns>/mcm-devcontainer@sha256:<digest>
+  ```
+
+  If that digest is the old one, stop; nothing after it matters. A genuine re-pin is **not** all-CACHED, because the layers above the new base must rebuild.
+
+  ⚠️ **`devcontainer up` prints its full `docker run` invocation, including every `-e` secret in clear text** — `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`. Treat that output as credential material: do not paste it into an issue, a chat, or a transcript, and rotate all four if you already have.
 
 - **A full disk does not announce itself — it wears other symptoms.** The 49 GB Docker disk has filled three times, and not once did the error name disk: `exit code: 100` on a feature install (looks like an apt fault), `is not signed` / `At least one invalid signature was encountered` (looks like GPG or MITM-proxy corruption of `deb.debian.org`), and a build dying in `exporting layers` (looks like an export problem). `docker system df` is unreliable — it reported gigabytes "reclaimable" while `df -h /var/lib/docker` said 0 bytes free, because it counts shared layers optimistically. Believe `df`. Prune order that works: `docker builder prune -af` first (`-f` alone drops only unused cache; `-af` reclaimed 17.8 GB), then remove the old toolchain image, then the derived image (which now owns its layers). **Two dev-container images will not fit simultaneously** — the toolchain image is ~14 GB and the derived container another ~13.5 GB; remove the previous pair before pulling a new toolchain image. Warning: build cache can mask a broken environment — apt failures may be hidden by a cached feature-install layer that never ran apt, so pruning the cache reveals failures rather than causing them.
 
