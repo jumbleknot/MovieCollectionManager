@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-timestamp: 2026-08-13T23:03:14Z
+timestamp: 2026-08-22T21:30:00Z
 ---
 
 # SAST & SCA static scanning
@@ -45,14 +45,25 @@ container images rather than first-party code or first-party dependency graphs.
 - **Rust source itself is out of Semgrep's scope** — clippy covers Rust source patterns and
   cargo-audit covers only Rust dependencies, so the mc-service Rust surface relies on clippy + review
   for the patterns Semgrep enforces elsewhere.
-- **The gate passes vacuously in the devcontainer — a local green proves nothing about a new
-  allowlist entry.** Semgrep cannot reach its rule registry through the egress allowlist, so it
-  exits 1 and leaves `security/sast/reports/findings.json` **empty** — the reason is recorded in
-  `scanners[].error`, which is easy to miss. Running `check-sast-findings.mjs` then exits 0 on zero
-  findings, which is not evidence that an allowlist entry matches anything. **To test an allowlist
-  entry locally, hand the gate a synthetic `findings.json`** carrying the exact `scanner`/`id`/location
-  triples you expect, plus a **negative control** (a finding the entry must NOT suppress). Otherwise
-  push and let CI answer.
+- **`semgrep.dev` is now in the egress allowlist — but adding it to the canonical list is only
+  HALF the change (item #222, 2026-08-22).** Semgrep resolves the five `p/*` community packs in
+  `security/sast/semgrep.yaml` from its public registry at scan time. That host was unallowlisted
+  from day one, so Semgrep failed closed and left `security/sast/reports/findings.json` **empty**;
+  `check-sast-findings.mjs` then exited 0 — a green that proved nothing. It was added to
+  `.devcontainer/egress-allowlist.json`, but egress is enforced in **two layers**, and only one
+  re-reads the committed file by itself: the in-VM iptables half re-applies from `init-firewall.sh`,
+  while the **host-side sandbox policy is scoped per sandbox** and does not pick up a new destination
+  until an operator re-applies it (`sbx policy allow network semgrep.dev --sandbox mcm` on the
+  Windows host — see [devcontainer-sandbox.md](devcontainer-sandbox.md#4-egress-allowlist)). The
+  committed entry does not tell you which world you are in. One command does:
+  ```bash
+  curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
+  node scripts/sast-scan.mjs --scope full --only semgrep            # exit >=2 => registry unreachable
+  ```
+  A Semgrep result you did not sanity-check this way is the same green either way — which is the
+  whole trap. **To test an allowlist entry locally when Semgrep is unreachable, hand the gate a
+  synthetic `findings.json`** carrying the exact `scanner`/`id`/location triples you expect, plus a
+  **negative control** (a finding the entry must NOT suppress). Otherwise push and let CI answer.
 - **…but "the tier cannot run here" is the wrong conclusion — `--only` gets you the SCA half.**
   The vacuous pass above is a fact about **Semgrep**, not about the gate. Only Semgrep needs
   `semgrep.dev`; `pnpm-audit`, `cargo-audit` and `pip-audit` resolve their advisory data from sources
@@ -121,6 +132,11 @@ container images rather than first-party code or first-party dependency graphs.
   What remains manual is the case the bot cannot propose: a floor that must rise past its own ceiling.
   Renovate essentially never raises the lower bound of a keyed override — and when it rewrites one it
   half-bumps — so the `check-override-consistency.mjs` guard is the answer.
+
+- **Paths in `locationPattern` must use forward slashes.** Allowlist entries are matched against
+  paths normalized to forward slashes so they are portable across the Windows dev host and the Linux
+  CI runner. A pattern written with backslashes matches nothing on the runner and passes silently on
+  the Windows side — the gate accepts it, but the finding re-blocks in CI.
 
 Full scanner matrix, local invocation, the CI gate steps, the triage/allowlist workflow, and the
 step-by-step "gate went red on an untouched dep" playbook: `docs/runbooks/sast-scanning.md`.
