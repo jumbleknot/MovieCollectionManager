@@ -120,7 +120,15 @@ run_flow() {
 # Measured on run 2043: the settings destination failed 3/3 on native while the whole 165-test web
 # tier passed on the same commit, and no channel existed to see what the device was showing.
 capture_mobile_diagnostics() {
-  local flow="$1" attempt="$2" dest="mobile-diagnostics/${flow}-attempt${attempt}"
+  # SEPARATE `local` statements, deliberately. Bash expands every assignment word in a single
+  # `local` builtin call BEFORE any of the locals exist, so `local a="$1" b="${a}"` interpolates the
+  # OUTER `a`, not the one being assigned. Measured on run 2049: the admin flow's capture landed in
+  # `mobile-diagnostics/assistant-config-disable-attempt1` — the previous flow's name (the global
+  # left behind by the `for flow in …` loop) and the global `attempt`. The evidence was filed under
+  # the wrong flow, which is the one thing a diagnostic must never do.
+  local flow="$1"
+  local attempt="$2"
+  local dest="mobile-diagnostics/${flow}-attempt${attempt}"
   mkdir -p "$dest" || return 0
   # ReactNativeJS carries a JS exception; AndroidRuntime carries a native crash. `-d` dumps and
   # exits rather than streaming. Never fail the run on a diagnostic.

@@ -206,6 +206,87 @@ workflow folds into the `container-logs` failure bundle that
 `node scripts/ci-status.mjs failure --run <id> --full` can retrieve. That gap is why two cycles
 produced hypotheses instead of an answer.
 
+### CONFIRMED on a device (run 2049): the `Tabs` fix holds
+
+The `mergeTabLayout` fix was verified on a real Android device by CI run **2049**, on the same
+commit that carries it (`97e1ebf6`). It is no longer an untested hypothesis.
+
+`assistant-config-gating` — the flow that failed **3/3** on run 2043, at the first assertion after
+tapping the Settings nav entry — now passes **on its first attempt**, and the whole agent suite runs
+past it:
+
+```text
+Tap on id: nav-settings...                        COMPLETED
+Assert that id: settings-nav is visible...        COMPLETED     ← failed 3/3 on run 2043
+Assert that id: settings-profile-screen is visible... COMPLETED
+Tap on id: settings-nav-assistant...              COMPLETED
+Assert that id: settings-assistant-screen is visible... COMPLETED
+```
+
+The app process survives the entire flow, through the assistant configuration screen and back to
+home. The render storm is gone. The web gate tier on the same run: `failed=0 flaky=1 passed=164`.
+
+### The remaining failure is a DIFFERENT defect, and it is not a crash
+
+Run 2049 still fails `app-e2e`, but at `admin-settings-access`, 3/3, and for an unrelated reason.
+Recorded here so the next reader does not mistake it for the crash returning: **the app does not
+die**, `settings-profile-screen` asserts visible, and the settings subtree mounts correctly.
+
+The device evidence is unambiguous. From the accessibility dump at the failure point:
+
+```text
+viewIdResName: settings-nav-admin
+boundsInScreen: Rect(361, 80 - 320, 121)
+clickable: true; enabled: true; visible: false
+```
+
+The Admin entry **is rendered and enabled**; it is laid out starting at **x=361 on a 320px-wide
+screen**, so it clips to nothing and Maestro reports "Element not found". Role gating is not
+involved — the same run's screenshot shows `Roles: mc-admin, mc-user`, so `isAdmin(user)` was true.
+
+And the gesture meant to bring it into view never touched the row:
+
+```text
+Maestro.swipeFromCenter: Swiping LEFT from center      (×7)
+```
+
+`scrollUntilVisible: direction: RIGHT` is implemented as a swipe from the **screen** centre. On a
+320×640 device that is ~(160,320), inside `settings-profile-screen` — the VERTICAL `ScrollView` at
+`[0,121][320,640]`. The sub-navigation is the 41px-tall `HorizontalScrollView` at `[0,80][320,121]`
+and never received the gesture: seven swipes, nothing scrolled.
+
+**Fixed** in `admin-settings-access.yaml` by swiping `from: id: settings-nav` — targeting the row
+itself, so the correct `HorizontalScrollView` scrolls, and correctly on any screen size rather than
+via a hardcoded percentage of screen height. An explicit `extendedWaitUntil` on `settings-nav-admin`
+was added before the tap, so the flow is strictly stronger than before: "the entry never came into
+view" now fails distinctly from "tapping it went nowhere".
+
+**Not fixed, and deliberately not fixed here** — the entry is off-screen *for a human* too. Tab
+widths measured on that screen are 95 + 159 + 103 + 92 = **449px against a 320px viewport**, and 449
+still exceeds a 412dp phone, so an mc-admin must discover an unindicated horizontal scroll to reach
+the Admin area. `tasks.md:146` chose `scrollable` "so five entries remain usable at phone width";
+*usable* was never verified on a device. That is a design change touching a specified label
+(FR-002/AC3 name "Movie Assistant"), so it is **item #240**, not a quiet edit inside this feature.
+
+### Two instrument defects found while getting this evidence
+
+Both matter more than the bug they hid, per CLAUDE.md's rule about checking the instrument.
+
+1. **The diagnostics were filed under the wrong flow.** `capture_mobile_diagnostics` used
+   `local flow="$1" attempt="$2" dest="…${flow}-attempt${attempt}"`. Bash expands every assignment
+   word in a single `local` call **before** any of those locals exist, so `${flow}` resolved to the
+   *outer* global left behind by the `for flow in …` loop. Run 2049's admin-flow evidence landed in
+   `mobile-diagnostics/assistant-config-disable-attempt1`. **Fixed** by splitting into separate
+   `local` statements, verified by reproducing the wrong name and then the right one.
+
+2. **The bundle never carried the evidence at all.** `ci-failure-digest.mjs` packs
+   `container-logs/` from a flat, non-recursive listing filtered to `*.log`, `_ps.txt` and
+   `*.health.json`. `_mobile-diagnostics` is a **directory**, so it is silently dropped — and the
+   digest then prints `maestro debug output — not present`, which reads as "the capture never
+   happened" when it did. Run 2049's evidence was reachable only via `ssh ci@homelab` on the
+   runner's `~/mcm-ci-last-failure` copy. Filed as **item #241**; not fixed here because the fix
+   has to solve the 5 MB cap's ranking too, which is outside this feature.
+
 ---
 
 ## R5 — Directory-based routing, because of a trap already documented in this repo
