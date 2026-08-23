@@ -4,7 +4,7 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml.
 tags: [security, sast, sca, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-timestamp: 2026-08-13T23:03:14Z
+timestamp: 2026-08-22T21:30:00Z
 ---
 
 # SAST & SCA static security scanning
@@ -77,12 +77,23 @@ and imported by both gates. A dedicated `--check-expiring` mode runs **weekly** 
   doubt, trust the digest's tag (`[pnpm-audit] runtime` vs `[pnpm-audit/dev]`). This exact mistake
   wrongly accused the gate of a bug on 2026-07-21; the gate was right.
 
-- **Semgrep fails closed in the devcontainer — the gate passes vacuously on zero findings.** Semgrep
-  cannot reach its rule registry through the egress allowlist, so it exits 1 and leaves
-  `security/sast/reports/findings.json` **empty**. Running `check-sast-findings.mjs` then exits 0 —
-  not evidence that an allowlist entry matches anything. **To test an allowlist entry locally, hand
-  the gate a synthetic `findings.json`** with the exact `scanner`/`id`/location triples plus a
-  negative control. Otherwise push and let CI answer.
+- **`semgrep.dev` is now in the egress allowlist — but adding it to the canonical list is only HALF
+  the change (item #222, 2026-08-22).** Semgrep resolves the five `p/*` community packs in
+  `security/sast/semgrep.yaml` from its public registry at scan time. That host was unallowlisted
+  from day one, so Semgrep failed closed and left `security/sast/reports/findings.json` **empty**;
+  `check-sast-findings.mjs` then exited 0 — a green that proved nothing. It was added to
+  `.devcontainer/egress-allowlist.json`, but egress is enforced in **two layers**, and only one
+  re-reads the committed file by itself: the in-VM iptables half re-applies from `init-firewall.sh`,
+  while the **host-side sandbox policy is scoped per sandbox** and does not pick up a new destination
+  until an operator re-applies it (`sbx policy allow network semgrep.dev --sandbox mcm` on the
+  Windows host — see `docs/runbooks/devcontainer-sandbox.md` § 4). The committed entry does not tell
+  you which world you are in. One command does:
+  ```bash
+  curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
+  node scripts/sast-scan.mjs --scope full --only semgrep            # exit >=2 => registry unreachable
+  ```
+  A Semgrep result you did not sanity-check this way is the same green either way, which is the
+  whole trap.
 
 - **…but SCA still works inside the devcontainer — `--only` gets you the half that matters.**
   `pnpm-audit`, `cargo-audit`, and `pip-audit` resolve from sources the egress allowlist already
@@ -154,6 +165,11 @@ and imported by both gates. A dedicated `--check-expiring` mode runs **weekly** 
 - **No caching yet.** `actions/cache` is not mirrored on the self-hosted runner, so cargo-audit is
   compiled fresh each CI run (~2–3 min). A monthly-keyed cache of `~/.cargo/bin/cargo-audit` and
   `~/.cargo/advisory-db` is a future optimization.
+
+- **Paths in `locationPattern` must use forward slashes.** Allowlist entries are matched against
+  paths normalized to forward slashes so they are portable across the Windows dev host and the Linux
+  CI runner. A pattern written with backslashes matches nothing on the runner and passes silently on
+  the Windows side — the gate accepts it, but the finding re-blocks in CI.
 
 See [CI/CD pipeline](/openwiki/projects/ci-cd-pipeline.md) for how the `sast` job sits in the
 `guardrails.yml` workflow, and `security/sast/README.md` for the full config reference and custom
