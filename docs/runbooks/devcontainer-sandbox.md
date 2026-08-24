@@ -387,6 +387,55 @@ Expo tunnel) needs no inbound rule at all.
 > connection triggers the start. `scripts/open-sandbox.ps1` still starts it explicitly because it
 > then *waits* for readiness, which is what stops VS Code racing the boot.
 
+### 🔴 The sandbox and the Windows host share ONE port space — and a VS Code forward holds it
+
+Measured 2026-08-23. `sbx ports`, **VS Code's dev-container port forwarding**, and anything published
+by Docker Desktop on Windows all bind the *same* `127.0.0.1` port space. There is no separation: a
+port the sandbox has forwarded is a port the host cannot bind, and vice versa. This is the same class
+of fault as [the prod/CI published-port collision](/openwiki/invariants/published-port-reservation.md),
+one layer down.
+
+**It cost most of a session, in two different disguises.**
+
+*Disguise 1 — a bind that fails loudly.* Bringing up the host's `auth` stack while the dev container
+was open:
+
+```text
+Error response from daemon: ports are not available: exposing port TCP 127.0.0.1:8099 ->
+127.0.0.1:0: listen tcp4 127.0.0.1:8099: bind: Only one usage of each socket address ...
+```
+
+That one is honest — you know immediately. **The damage is what you do next:** the natural reflex is
+`docker compose up -d`, which does not merely start the container, it *reconciles* it and prints
+`Container keycloak-service Recreated`. The original container is destroyed. Use `docker start <name>`,
+or `up -d --no-recreate`, when the container already exists.
+
+*Disguise 2 — the dangerous one, a forward with nothing behind it.* VS Code keeps the host port bound
+for the lifetime of the window **even when the service inside the sandbox has stopped**. A client then
+completes the TCP handshake and waits forever for a response that never comes. No refusal, no error,
+no timeout — just a hang. An Android emulator sat on its splash screen indefinitely because the app's
+dev-server connection was `ESTAB` to a VS Code forward serving nothing.
+
+**Diagnose by asking who owns the port, not whether it answers:**
+
+```powershell
+Get-NetTCPConnection -LocalPort 8099 -State Listen |
+  ForEach-Object { "{0} <- PID {1} ({2})" -f $_.LocalAddress, $_.OwningProcess,
+                    (Get-Process -Id $_.OwningProcess).ProcessName }
+```
+
+| Owning process | What it is |
+| --- | --- |
+| `Code` | a **VS Code dev-container forward** — may be a dead tunnel; closing the window or "Stop Forwarding Port" releases it |
+| `com.docker.backend` | a Docker Desktop published port (a host stack) |
+| `ssh` | a manual `ssh -L` tunnel |
+
+**A reachability check is not an ownership check.** `curl` succeeding proves *something* is listening;
+it does not prove it is the something you meant. When two Keycloaks exist — one in the sandbox, one on
+the host — `localhost:8099` answers either way, and credentials from the host's `auth.env` are rejected
+by the sandbox's instance. That reads exactly like "my password broke" and is not. Confirm which
+instance you are talking to before concluding anything about credentials.
+
 ---
 
 ## 7d. 🔴 Run git INSIDE the container, never from the VM shell

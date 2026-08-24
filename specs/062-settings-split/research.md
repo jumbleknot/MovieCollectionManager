@@ -268,6 +268,59 @@ the Admin area. `tasks.md:146` chose `scrollable` "so five entries remain usable
 *usable* was never verified on a device. That is a design change touching a specified label
 (FR-002/AC3 name "Movie Assistant"), so it is **item #240**, not a quiet edit inside this feature.
 
+### VERIFIED on the local emulator too — including a real mutation test
+
+Both fixes were re-verified on a Windows-host emulator (Pixel_7-35, debug APK built in a container,
+Metro on host 8081, the `auth` + `mcm` stacks local), independently of CI.
+
+`settings-nav.yaml` — **passes end to end**, including the assertion that died 3/3 on run 2043:
+
+```text
+Tap on id: nav-settings...                              COMPLETED
+Assert that id: settings-profile-screen is visible...   COMPLETED
+Assert that id: settings-nav is visible...              COMPLETED   ← crash point on run 2043
+Tap on id: settings-nav-assistant...                    COMPLETED
+Assert that id: settings-assistant-screen is visible... COMPLETED
+```
+
+`admin-settings-access.yaml` — **passes**, and the gesture change was then mutation-tested properly.
+
+**The first mutation attempt PASSED, and that was the important result.** Running the pre-fix flow
+(`git show 97e1ebf6:…admin-settings-access.yaml`) at the emulator's native 1080px width, the old
+`scrollUntilVisible RIGHT` **succeeded** — so at that size the device cannot tell the fix from its
+absence, and a green run there would have proved nothing. Measured why:
+
+| Tab | Bounds (1080px screen) | Width |
+| --- | --- | --- |
+| `settings-nav-profile` | `[0,282][241,390]` | 241 |
+| `settings-nav-assistant` | `[241,282][653,390]` | 412 |
+| `settings-nav-backups` | `[653,282][933,390]` | 280 |
+| `settings-nav-admin` | `[933,282][1080,390]` | **147** (clipped from ~240) |
+
+Natural content is 1173px against 1080px. Admin is ~61% visible, so uiautomator reports a valid
+on-screen rect and Maestro accepts it. On CI's narrower device the same node reported
+`Rect(361, 80 - 320, 121)` — an **empty** rect, entirely off-screen. The failure is width-dependent.
+
+So the discriminating condition was constructed: Admin begins at x=933, therefore any width below
+that puts it fully off-screen. With `adb shell wm size 900x2400` (width only — shrinking both axes
+reflows the Keycloak form and breaks `_login-admin-helper`'s `Tap on point (50%,47%)`), on one device,
+one login, one variable changed:
+
+| Gesture | Result at width 900 |
+| --- | --- |
+| `scrollUntilVisible RIGHT` (pre-fix) | **FAILED** — `No visible element found: id: settings-nav-admin` |
+| `swipe from: id: settings-nav` (fixed) | **PASSED** — through to `admin-settings-screen` |
+
+That is the causal link, not merely a green run. It also independently confirms item #240: the entry
+really is unreachable once the screen is narrow enough, for a human as much as for Maestro.
+
+**Environment findings worth keeping** (written up in `docs/runbooks/android-emulator.md` and
+`docs/runbooks/devcontainer-sandbox.md`): the runbook's claim that `10.0.2.2` is broken on this
+workstation is **false** — measured against a negative control — and an RN 0.85 debug build fetches
+its bundle from `10.0.2.2:8081` regardless of `adb reverse`, so Metro must own host port 8081. But
+Keycloak must be reached at `localhost:8099` to match its pinned `KC_HOSTNAME`, or its cookies are
+dropped and login fails with `cookie_not_found` → `no code param`. Metro by gateway, auth by tunnel.
+
 ### Two instrument defects found while getting this evidence
 
 Both matter more than the bug they hid, per CLAUDE.md's rule about checking the instrument.
