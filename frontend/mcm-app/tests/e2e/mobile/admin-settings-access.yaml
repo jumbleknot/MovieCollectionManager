@@ -31,31 +31,25 @@ appId: com.grumpyrobot.mcmapp
       id: "settings-profile-screen"
     timeout: 10000
 
-# Bring the Admin entry into view, then tap by id (NOT bare text — feature 040 tapOn gotcha: bare
-# text can match a node behind the floating dock overlay). The sub-navigation is horizontally
-# scrollable, so four entries at phone width put Admin off-screen.
+# Tap by id, NOT bare text (feature 040 tapOn gotcha: bare text can match a node behind the
+# floating dock overlay).
 #
-# SWIPE FROM `settings-nav`, NOT `scrollUntilVisible`. This was measured on the device, not guessed
-# (CI run 2049, mobile-diagnostics). `scrollUntilVisible: direction: RIGHT` is implemented as
-# `Maestro.swipeFromCenter: Swiping LEFT from center` — it swipes the middle of the SCREEN. On a
-# 320x640 emulator the centre (~160,320) lands inside `settings-profile-screen`, the VERTICAL
-# ScrollView at [0,121][320,640]; the sub-navigation is the 41px-tall HorizontalScrollView at
-# [0,80][320,121] and never receives the gesture. It swiped seven times and scrolled nothing.
+# NO SWIPE. There used to be a `swipe: from: id: settings-nav, direction: LEFT` here, because the
+# sub-navigation was a HORIZONTALLY SCROLLABLE tab row and four entries at phone width pushed Admin
+# off-screen — the accessibility dump at the CI run 2049 failure read `viewIdResName:
+# settings-nav-admin … boundsInScreen: Rect(361, 80 - 320, 121) … visible: false`: laid out starting
+# at x=361 on a 320px screen, clipped to nothing. Rendered and enabled the whole time, never
+# reachable.
 #
-# The entry was rendered and enabled the whole time — the accessibility dump at the failure point
-# reads `viewIdResName: settings-nav-admin … boundsInScreen: Rect(361, 80 - 320, 121) … visible:
-# false`: laid out starting at x=361 on a 320px-wide screen, so it clips to nothing and Maestro
-# reports "Element not found". That is an OFF-SCREEN element, not a missing or role-gated one — the
-# same run's screenshot shows `Roles: mc-admin, mc-user`, so `isAdmin(user)` was true.
+# The sub-navigation is now a VERTICAL list (feature 062 Phase 7, backlog #240), so every entry is
+# within the viewport at 320px and there is nothing to scroll. The swipe was deleted rather than
+# left in place: a LEFT swipe on a vertical list is a no-op, so it would keep PASSING while testing
+# nothing — a gesture describing a shape the product no longer has. The web tier now asserts the
+# geometry directly ("every settings entry is fully on-screen at a phone width" in settings.spec.ts).
 #
-# `from:` targets the swipe at the tab row itself, so it is the HorizontalScrollView that scrolls,
-# and it stays correct on any screen size (no hardcoded percentage of screen height).
-- swipe:
-    from:
-      id: "settings-nav"
-    direction: LEFT
-# Assert it explicitly rather than relying on tapOn's implicit wait: a failure here says "the Admin
-# entry never came into view", which is a different defect from "tapping it went nowhere".
+# Assert visibility explicitly rather than relying on tapOn's implicit wait: a failure here says
+# "the Admin entry is not visible", which is a different defect from "tapping it went nowhere" —
+# and if the vertical list ever regresses to something that clips, this is what goes red.
 - extendedWaitUntil:
     visible:
       id: "settings-nav-admin"

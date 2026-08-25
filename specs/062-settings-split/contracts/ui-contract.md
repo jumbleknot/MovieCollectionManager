@@ -104,8 +104,15 @@ Client reports → BFF sanitizes (sole point) → gateway consumes.
 
 ## 5. Accessibility contract
 
-- Each sub-navigation entry: `accessibilityRole="tab"` with `accessibilityState={{ selected }}`.
-- The container: a labelled tab list, so assistive technology announces it as one group.
+- Each sub-navigation entry: `accessibilityRole="menuitem"` with
+  `accessibilityState={{ selected }}`, and `aria-current="page"` on the active entry.
+  These are list semantics, not tab semantics — the sub-navigation is a vertical list, and a
+  `tab` role would misdescribe it to assistive technology.
+- The container: a labelled menu (`accessibilityRole="menu"` + an accessible name), so
+  assistive technology announces it as one named group.
+- **Every entry must be fully within the viewport at 320px wide.** This is a contract, not a
+  styling preference: the previous horizontal row rendered, was locatable and navigated
+  correctly while its last entry sat off-screen, so no existing assertion caught it.
 - Focus is visible on keyboard traversal on web.
 - The row remains usable when its entries exceed the viewport width — five entries for an admin on
   a phone is the sizing case that must be checked, not four.

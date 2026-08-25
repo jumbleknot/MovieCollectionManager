@@ -15,6 +15,7 @@ import { AppBar } from './AppBar';
 import { IconButton } from '../primitives/IconButton';
 import { NavigationBar, type NavDestination } from './NavigationBar';
 import { Tabs, mergeTabLayout, type TabItem } from './Tabs';
+import { NavList, type NavListItem } from './NavList';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 400, height: 800 },
@@ -210,5 +211,67 @@ describe('Tabs', () => {
 
     expect(getByText('Alpha')).toBeTruthy();
     expect(queryByTestId('undefined')).toBeNull();
+  });
+});
+
+
+/**
+ * NavList (feature 062 follow-up). The settings sub-navigation moved off `Tabs` because a
+ * horizontal row could not fit its labels (item #240) and because Tabs draws selection as a
+ * sliding pill SEPARATE from the hover background, so the two shapes disagree by construction.
+ * What is worth asserting here is the contract the app depends on, not the styling itself.
+ */
+describe('NavList', () => {
+  const ITEMS: NavListItem[] = [
+    { key: 'index', label: 'Profile', testID: 'nav-index' },
+    { key: 'assistant', label: 'Movie Assistant', testID: 'nav-assistant' },
+    { key: 'admin', label: 'Admin', testID: 'nav-admin' },
+  ];
+
+  it('renders a row per item with its label', () => {
+    const { getByText } = renderDS(<NavList items={ITEMS} activeKey="index" onSelect={() => {}} />);
+    expect(getByText('Profile')).toBeTruthy();
+    expect(getByText('Movie Assistant')).toBeTruthy();
+    expect(getByText('Admin')).toBeTruthy();
+  });
+
+  it('puts each testID on a host node so automation can locate the row', () => {
+    // A testID on the Tamagui View inside would be dropped on React Native Web and be
+    // unreachable from Playwright — the trap Tabs and Card both document.
+    const { getByTestId } = renderDS(<NavList items={ITEMS} activeKey="index" onSelect={() => {}} />);
+    for (const item of ITEMS) expect(getByTestId(item.testID!)).toBeTruthy();
+  });
+
+  it('marks only the active row as selected and current', () => {
+    const { getByTestId } = renderDS(
+      <NavList items={ITEMS} activeKey="assistant" onSelect={() => {}} />,
+    );
+    expect(getByTestId('nav-assistant').props.accessibilityState).toEqual({ selected: true });
+    expect(getByTestId('nav-index').props.accessibilityState).toEqual({ selected: false });
+    expect(getByTestId('nav-assistant').props['aria-current']).toBe('page');
+    expect(getByTestId('nav-index').props['aria-current']).toBeUndefined();
+  });
+
+  it('reports the selected key, not the index, so reordering the registry cannot misroute', () => {
+    const onSelect = jest.fn();
+    const { getByTestId } = renderDS(
+      <NavList items={ITEMS} activeKey="index" onSelect={onSelect} />,
+    );
+    fireEvent.press(getByTestId('nav-admin'));
+    expect(onSelect).toHaveBeenCalledWith('admin');
+  });
+
+  it('announces itself as a named menu', () => {
+    const { getByLabelText } = renderDS(
+      <NavList items={ITEMS} activeKey="index" onSelect={() => {}} accessibilityLabel="Settings sections" />,
+    );
+    expect(getByLabelText('Settings sections')).toBeTruthy();
+  });
+
+  it('renders every row in compact mode too — compact changes size, never the item set', () => {
+    const { getByTestId } = renderDS(
+      <NavList items={ITEMS} activeKey="index" onSelect={() => {}} compact />,
+    );
+    for (const item of ITEMS) expect(getByTestId(item.testID!)).toBeTruthy();
   });
 });

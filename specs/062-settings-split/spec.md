@@ -114,7 +114,13 @@ A user finds a Backups area in settings that announces itself and states that th
 - **Old addresses are removed rather than redirected** (operator decision, 2026-08-23). Both the pre-split profile address and the pre-split administrator-settings address 404. Accepted consequence: an existing bookmark to either breaks with no forwarding. Rationale: the app is not publicly linked, the administrator address was unreachable by design until the deleted card was added, and two permanent redirect stubs would outlive their usefulness.
 - **Each area reports a distinct screen label** (operator decision, 2026-08-23), rather than all four sharing one. This adds vocabulary the assistant may later use to tailor help per settings area. It changes no current assistant behaviour: reference resolution reads only the collection and movie-detail labels.
 - **The pre-split page reported no screen label at all**, and the administrator screen reported a label that the server-side allowlist already reduced to unknown. Bringing all four areas onto the allowlist therefore also closes existing drift, not just the drift this change introduces.
-- **The sub-navigation takes the same form on web and mobile** — a row of area entries above the area body — rather than a mobile-specific drill-down list. This keeps one interaction model and one set of automation identifiers across platforms.
+- **The sub-navigation is a vertical list of area entries, in one interaction model across web and
+  mobile** — beside the area body on wide viewports, stacked above it on narrow ones. It was a
+  horizontal row of entries until that shape was measured on a device (2026-08-25): the entries
+  totalled 449px against a 320px viewport, putting the last one off-screen behind a horizontal
+  scroll with no affordance announcing it (backlog item #240). A vertical list has room for the
+  full labels, so no area is hidden at any supported width. A drill-down — where selecting
+  Settings shows a menu rather than an area — was rejected because it contradicts FR-004.
 - **No new server capability is required.** Every area's content already exists, or is a placeholder; the settings destination composes existing screens and adds navigation.
 - **No change to who may do what.** The administrator role requirement, and the server-side enforcement behind the administrator settings endpoint, are unchanged by this feature.
 - **Both the touched frontend and the assistant gateway are in scope for verification**, because the screen-label vocabulary spans them.

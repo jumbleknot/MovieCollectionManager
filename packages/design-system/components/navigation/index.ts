@@ -6,3 +6,6 @@ export type { NavigationBarProps, NavDestination } from './NavigationBar'
 
 export { Tabs }           from './Tabs'
 export type { TabsProps, TabItem, TabsType } from './Tabs'
+
+export { NavList }         from './NavList'
+export type { NavListProps, NavListItem } from './NavList'

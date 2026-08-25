@@ -20,6 +20,7 @@
 import React, { useEffect, useState } from 'react'
 import { Animated, Pressable, ScrollView, StyleSheet, type LayoutRectangle } from 'react-native'
 import { View, Text, useTheme } from '@tamagui/core'
+import { withAlpha, stateLayer } from '../../tokens/with-alpha'
 import { XStack } from '@tamagui/stacks'
 
 export type TabsType = 'primary' | 'secondary'
@@ -163,7 +164,11 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             paddingHorizontal={scrollable ? 24 : 0}
             minWidth={scrollable ? undefined : 0}
             cursor="pointer"
-            hoverStyle={{ backgroundColor: theme.onSurface?.val + '14' }}
+            // NOT `theme.onSurface?.val + '14'`. That concatenation assumes a 6-digit hex and
+            // produces an invalid colour for any other notation — which renders NOTHING rather
+            // than erroring — and 8% over a dark surface is invisible even when it is valid.
+            // Measured on feature 062: this hover could not be seen at all in dark mode.
+            hoverStyle={{ backgroundColor: withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover) }}
           >
             {/* Icon */}
             {tab.icon && (

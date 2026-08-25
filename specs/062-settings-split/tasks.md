@@ -624,6 +624,104 @@ Constitution-mandated frontend layout: App-Layer `frontend/mcm-app/src/app/`, Co
 
 ---
 
+## Phase 7: Sub-navigation shape and dark-mode correction (post-implementation, 2026-08-25)
+
+**Why this phase exists**: local device testing after the feature was implemented surfaced three
+defects no assertion in Phases 1–6 could have caught — the sub-navigation rendered, was locatable,
+and navigated correctly while being partly off-screen and unreadable in dark mode. The shape change
+is a **spec amendment** (spec.md Assumptions, contracts/ui-contract.md §5), not a quiet edit.
+
+- [x] T037 Replace the `hex + '14'` alpha concatenation with `withAlpha` in `packages/design-system/tokens/with-alpha.ts`
+
+  **Type**: Test + Implementation | **Risk**: Low | **Spec reference**: FR-003
+
+  `theme.onSurface?.val + '14'` assumes a 6-digit hex; any other notation yields an invalid colour
+  that React Native and the browser both DROP without erroring, and 8% over `#0F1117` is invisible
+  even when valid. Both failure modes are silent, which is why the unit tests target the non-hex
+  cases rather than the happy path. Applied at the cause in `Tabs.tsx` too, even though Settings no
+  longer consumes it — it is a latent bug in a shared component.
+
+  **Verify GREEN**: `pnpm nx test design-system` — 105 passed.
+
+- [x] T038 Widen the design-system jest `testMatch` from `components/**` to the whole package
+
+  **Type**: Config | **Risk**: Low
+
+  `with-alpha.test.ts` was written under `tokens/` and **never executed** — the suite reported green
+  while the file tested nothing (92 passed → 98 with 13 tests added, and Test Suites did not move).
+  A test that does not run reads as a pass. Fixed at the config, so a new directory cannot be
+  invisible to the runner again.
+
+  **Verify GREEN**: `pnpm nx test design-system` — Test Suites 11 → **12**, Tests 98 → **105**.
+
+- [x] T039 Add `NavList` to the design system and swap `SettingsNav` onto it
+
+  **Type**: Test + Implementation | **Risk**: Medium | **Spec reference**: FR-003, FR-017 | **Closes #240**
+
+  A vertical MD3 drawer-item list. Fixes the selected/hover shape mismatch **by construction**: one
+  rounded row carries both states, rather than a sliding pill separate from the hover background,
+  which cannot be made to agree by tuning. The registry, admin filter, active-key logic and
+  `router.replace` are unchanged. `Tabs` keeps its `testID` support — it is correct and tested, it
+  just loses this consumer.
+
+  **Verify GREEN**: `pnpm nx test design-system` (6 NavList cases) and `pnpm nx test mcm-app`.
+
+- [x] T040 Paint the settings layout background in `src/app/(app)/settings/_layout.tsx`
+
+  **Type**: Implementation | **Risk**: Low | **Spec reference**: FR-003
+
+  **Root cause, measured — not the tokens.** Walking the painted ancestors of
+  `settings-profile-screen` in dark mode: depth 1 `rgb(15,17,23)` (correct), depth 6
+  **`rgb(242,242,242)`**, depth 9 `rgb(15,17,23)`, depth 10 `rgb(23,32,48)`. `rgb(242,242,242)` is
+  React Navigation's `DefaultTheme.colors.background`: the navigator paints its screen container
+  light because the app passes it no theme. Every screen covered it by painting its own background,
+  so it was invisible until this feature put chrome inside that container without painting.
+  `onSurfaceVariant` is ~11:1 on the correct surface — there was never a contrast token to retune.
+
+  This is a **local workaround**; the cause is backlog item **#243**, whose acceptance criteria
+  require removing this line.
+
+- [x] T041 Make the layout responsive: rail beside the content at ≥768px, stacked above below it
+
+  **Type**: Implementation | **Risk**: Medium | **Spec reference**: FR-003, spec.md Edge Cases
+
+  Compact rows in the stacked layout, so four or five entries do not push the content far down a
+  phone screen.
+
+- [x] T042 Rewrite the tab-semantics assertion and add two regression tests in `tests/e2e/web/settings.spec.ts`
+
+  **Type**: Test | **Risk**: Low | **Spec reference**: FR-003, FR-017
+
+  The `role="tab"` / `aria-selected` assertion became wrong when the widget changed, so it asserts
+  `role="menuitem"` / `aria-current` instead — **changed because the widget changed, not relaxed**.
+  Two new tests cover what nothing previously could:
+  - every entry is fully within a 320px viewport (the #240 defect);
+  - no ancestor of `settings-nav` computes `rgb(242,242,242)` (the #243 defect), so dropping the
+    background paint fails loudly rather than silently reappearing as a bright band in dark mode.
+
+- [x] T043 Delete the obsolete horizontal swipe from `tests/e2e/mobile/admin-settings-access.yaml`
+
+  **Type**: Test refactor | **Risk**: Medium | **Spec reference**: FR-016
+
+  The flow swiped `from: id: settings-nav, direction: LEFT` to bring the Admin entry into view —
+  a gesture that existed only because the sub-navigation scrolled horizontally. The vertical list
+  puts every entry inside a 320px viewport, so there is nothing to scroll.
+
+  **It was deleted rather than left in place, and that distinction matters.** A LEFT swipe on a
+  vertical list is a no-op: the step would keep PASSING while testing nothing, describing a shape
+  the product no longer has. That is the same rot as a silently-skipping spec — it does not go red,
+  it just stops meaning anything. The measured history (CI run 2049: `boundsInScreen: Rect(361, 80
+  - 320, 121)`, rendered and enabled but clipped off a 320px screen) is kept in the comment as the
+  *reason the shape changed*, not as a live instruction.
+
+  The geometry it used to work around is now asserted directly in the web tier
+  (`settings.spec.ts` → "every settings entry is fully on-screen at a phone width").
+
+  **Verify**: `grep -n "^- swipe" tests/e2e/mobile/admin-settings-access.yaml` returns nothing, and
+  the flow still has its `settings-nav-admin` visibility assertion before the tap.
+
+---
+
 ## Platform Parity Table
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Status |

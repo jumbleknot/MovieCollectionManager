@@ -5,9 +5,14 @@
  * user, indicating which is active), FR-008 (the Admin entry appears only for an mc-admin),
  * FR-017 (stable, addressable identifiers for the container and each entry).
  *
- * Composes the design system's `Tabs` rather than hand-rolling a tab row — the constitution
- * requires new UI to extend the design system, not bypass it. `Tabs` gained an optional
- * per-tab `testID` in this feature (rendered on an RN host node) for exactly this consumer.
+ * Composes the design system's `NavList` rather than hand-rolling a row — the constitution
+ * requires new UI to extend the design system, not bypass it.
+ *
+ * It was a horizontal `Tabs` row until the shape was measured on a device: 449px of tabs in a
+ * 320px viewport put the Admin entry off-screen behind an unindicated horizontal scroll (backlog
+ * item #240), and `Tabs` draws selection as a sliding pill separate from the hover background,
+ * so the two shapes disagree by construction. A vertical `NavList` has room for full labels and
+ * uses ONE rounded row for both states.
  *
  * ROLE VISIBILITY IS PRESENTATION, NEVER ENFORCEMENT. Filtering the admin row out for a
  * non-admin hides a link; it does not control access. `(app)/settings/admin.tsx` carries
@@ -18,7 +23,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Tabs, type TabItem } from '@mcm/design-system';
+import { NavList, type NavListItem } from '@mcm/design-system';
 import { useRouter, usePathname } from 'expo-router';
 import { useAuth } from '@/hooks/use-auth';
 import { isAdmin } from '@/utils/role-checker';
@@ -51,7 +56,12 @@ const SETTINGS_AREAS: SettingsArea[] = [
   { key: 'admin',     label: 'Admin',           href: `${SETTINGS_GROUP}/admin`,     testID: 'settings-nav-admin', adminOnly: true },
 ];
 
-export function SettingsNav(): React.JSX.Element {
+interface SettingsNavProps {
+  /** Compact rows for the narrow layout, where the list stacks above the content. */
+  compact?: boolean;
+}
+
+export function SettingsNav({ compact = false }: SettingsNavProps = {}): React.JSX.Element {
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -69,7 +79,7 @@ export function SettingsNav(): React.JSX.Element {
         : pathname.endsWith(`/settings/${area.key}`),
     )?.key ?? '';
 
-  const tabs: TabItem[] = areas.map((area) => ({
+  const items: NavListItem[] = areas.map((area) => ({
     key: area.key,
     label: area.label,
     testID: area.testID,
@@ -77,25 +87,20 @@ export function SettingsNav(): React.JSX.Element {
 
   return (
     <View testID="settings-nav" style={styles.container}>
-      <Tabs
-        tabs={tabs}
+      <NavList
+        items={items}
         activeKey={activeKey}
-        // SECONDARY, not the default primary. Primary tabs are the ones that sit directly beneath
-        // the app bar; this row is sub-navigation WITHIN the settings destination, one level below
-        // the app bar that NavigationBar already owns. Using primary here would read as a second
-        // top-level navigation rather than a subdivision of one destination.
-        type="secondary"
-        scrollable
-        onTabChange={(key) => {
+        compact={compact}
+        accessibilityLabel="Settings sections"
+        onSelect={(key) => {
           const target = areas.find((area) => area.key === key);
           // REPLACE, not navigate/push — and this was measured, not assumed. research.md §R4
           // specifies `router.navigate`; on expo-router 56 it PUSHES a sibling settings area
           // instead of popping back to it, so profile → backups → assistant → backups left TWO
-          // `settings-backups-screen` nodes mounted in the nested Stack at once. On web that is a
-          // strict-mode violation for every settings testID (two elements, same id) and on both
-          // platforms it builds a back-stack of tabs the user has to walk out of one at a time.
-          // A tab row has no history of its own: exactly one area is mounted, and Back leaves
-          // settings rather than stepping through the tabs visited.
+          // `settings-backups-screen` nodes mounted at once. On web that is a strict-mode
+          // violation for every settings testID (two elements, same id) and on both platforms it
+          // builds a back-stack of areas the user has to walk out of one at a time. This list has
+          // no history of its own: exactly one area is mounted, and Back leaves settings.
           if (target) router.replace(target.href as never);
         }}
       />
@@ -105,6 +110,6 @@ export function SettingsNav(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   // Layout only — every colour, spacing and type decision lives inside the design system's
-  // Tabs, which is the point of composing it rather than hand-rolling a row here.
+  // NavList, which is the point of composing it rather than hand-rolling a list here.
   container: { width: '100%' },
 });

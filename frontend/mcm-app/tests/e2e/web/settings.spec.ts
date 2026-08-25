@@ -98,20 +98,67 @@ test.describe('Settings destination', () => {
    * reached the DOM while `aria-selected` was null on every entry — assistive technology was told
    * what the elements were and never which was current.
    */
-  test('each sub-navigation entry announces as a tab and announces which is current', async ({ page }) => {
+  test('each sub-navigation entry announces as a menu item and announces which is current', async ({ page }) => {
     await page.goto(`${BASE}/(app)/settings`);
     await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30000 });
 
+    // List semantics, not tab semantics. The sub-navigation was a horizontal `Tabs` row until
+    // item #240 measured 449px of tabs in a 320px viewport; it is now a vertical NavList, so the
+    // correct role is menuitem and the current entry is marked with aria-current, not
+    // aria-selected. The assertion changed because the widget changed — it was not relaxed.
     for (const id of ['settings-nav-profile', 'settings-nav-assistant', 'settings-nav-backups']) {
-      await expect(page.getByTestId(id)).toHaveAttribute('role', 'tab');
+      await expect(page.getByTestId(id)).toHaveAttribute('role', 'menuitem');
     }
-    await expect(page.getByTestId('settings-nav-profile')).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByTestId('settings-nav-assistant')).toHaveAttribute('aria-selected', 'false');
+    await expect(page.getByTestId('settings-nav-profile')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByTestId('settings-nav-assistant')).not.toHaveAttribute('aria-current', 'page');
 
     await page.getByTestId('settings-nav-assistant').click();
     await expect(page.getByTestId('settings-assistant-screen')).toBeVisible({ timeout: 30000 });
-    await expect(page.getByTestId('settings-nav-assistant')).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByTestId('settings-nav-profile')).toHaveAttribute('aria-selected', 'false');
+    await expect(page.getByTestId('settings-nav-assistant')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByTestId('settings-nav-profile')).not.toHaveAttribute('aria-current', 'page');
+  });
+
+  /**
+   * The defect that motivated the shape change (item #240) and the dark-mode band behind it.
+   * Both were invisible to every existing assertion: the old row rendered, was locatable, and
+   * navigated correctly while still being unreadable and partly off-screen.
+   */
+  test('every settings entry is fully on-screen at a phone width', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30000 });
+
+    const viewport = page.viewportSize()!;
+    for (const id of ['settings-nav-profile', 'settings-nav-assistant', 'settings-nav-backups']) {
+      const box = await page.getByTestId(id).boundingBox();
+      expect(box, `${id} has no layout box`).not.toBeNull();
+      // The old horizontal row put later entries beyond the right edge behind a scroll with no
+      // affordance — a box that starts inside the viewport but ends outside it.
+      expect(box!.x, `${id} starts off-screen`).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width, `${id} ends off-screen`).toBeLessThanOrEqual(viewport.width);
+    }
+  });
+
+  test('the settings navigation sits on the app surface, not the navigator default', async ({ page }) => {
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30000 });
+
+    // React Navigation paints its screen container with its LIGHT default, rgb(242,242,242),
+    // because no navigation theme is passed (item #243). Feature 062 put chrome inside that
+    // container, so the untinted band showed through as a bright strip in dark mode. Assert no
+    // ancestor of the nav is still that colour — this fails if the background paint is dropped.
+    const offenders = await page.evaluate(() => {
+      const out: string[] = [];
+      let el: Element | null = document.querySelector('[data-testid="settings-nav"]');
+      while (el && el !== document.documentElement) {
+        if (getComputedStyle(el).backgroundColor === 'rgb(242, 242, 242)') {
+          out.push(el.tagName + (el.getAttribute('data-testid') ?? ''));
+        }
+        el = el.parentElement;
+      }
+      return out;
+    });
+    expect(offenders, 'React Navigation light default is painting behind the settings nav').toEqual([]);
   });
 
   /**
