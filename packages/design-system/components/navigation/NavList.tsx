@@ -57,7 +57,6 @@ export const NavList = React.memo<NavListProps>(function NavList({
   // The state layer is drawn from `onSurface` at an MD3 hover opacity rather than a hardcoded
   // hex suffix. See tokens/with-alpha.ts for why the `hex + '14'` form fails silently.
   const hoverLayer = withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover)
-  const pressLayer = withAlpha(theme.onSurface?.val as string | undefined, stateLayer.press)
 
   return (
     <View
@@ -87,8 +86,16 @@ export const NavList = React.memo<NavListProps>(function NavList({
               // ONE shape for both states — this is the property the component exists for.
               borderRadius={28}
               backgroundColor={isActive ? theme.secondaryContainer?.val : 'transparent'}
+              // hoverStyle ONLY — never `pressStyle` on this inner Tamagui View. Measured on
+              // Android (CI run 2063): a Tamagui `pressStyle` makes the View a touch responder,
+              // which SWALLOWS the press, so the outer Pressable's onPress never fires. The tap
+              // itself succeeds — Maestro logged `Tap on id: settings-nav-assistant... COMPLETED`
+              // — and then nothing navigates, so it reads as a routing bug rather than a styling
+              // one. Web bubbles mouse events, so all 167 web tests passed while Android failed;
+              // jest renders React Native but `fireEvent.press` targets the Pressable directly, so
+              // the unit tier cannot see it either. The pressed visual belongs on the outer
+              // Pressable (styles.rowPressed), which is what `Tabs` does for the same reason.
               hoverStyle={isActive ? undefined : { backgroundColor: hoverLayer }}
-              pressStyle={isActive ? undefined : { backgroundColor: pressLayer }}
               cursor="pointer"
             >
               {item.icon}

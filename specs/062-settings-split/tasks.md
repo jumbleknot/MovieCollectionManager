@@ -740,6 +740,33 @@ is a **spec amendment** (spec.md Assumptions, contracts/ui-contract.md §5), not
 
   **Verify GREEN**: `app-ci / app-e2e` on the branch.
 
+- [x] T045 Remove `pressStyle` from NavList's inner Tamagui View — it swallowed the press on Android
+
+  **Type**: Implementation | **Risk**: High | **Spec reference**: FR-003
+
+  **CI run 2063: the web tier passed 167/167 and the MOBILE tier failed.** `assistant-config-gating`
+  logged `Tap on id: settings-nav-assistant... COMPLETED` followed by
+  `Assert that id: settings-assistant-screen is visible... FAILED` — the tap landed, and nothing
+  navigated.
+
+  Cause: a Tamagui `pressStyle` makes that View a touch responder on native, so it consumes the
+  press and the outer `Pressable`'s `onPress` never fires. `Tabs` puts its pressed visual on the
+  outer `Pressable` (`styles.tabPressed`) and carries only `hoverStyle` on the inner View — the
+  same shape, for the same reason. NavList now matches it.
+
+  **Three tiers were blind to this, which is the point worth keeping:**
+  - **Web E2E** passes — mouse events bubble, so the press reaches the Pressable regardless.
+  - **jest** passes — it renders React Native, but `fireEvent.press` targets the Pressable
+    directly, so the responder never competes.
+  - Only a real touch on a real device shows it. This is the same class as the `testID`-on-Tamagui
+    trap this component's header already documents: correct-looking code, silent on every tier
+    except the one that drives the actual platform.
+
+  It also reads as the wrong defect: a tap that "completes" and does not navigate looks like a
+  routing bug, not a styling one.
+
+  **Verify GREEN**: `app-ci / app-e2e` — the `maestro-agent-flows` step, not just `web-e2e`.
+
 ---
 
 ## Platform Parity Table
