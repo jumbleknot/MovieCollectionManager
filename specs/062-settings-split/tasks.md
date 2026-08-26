@@ -720,6 +720,26 @@ is a **spec amendment** (spec.md Assumptions, contracts/ui-contract.md §5), not
   **Verify**: `grep -n "^- swipe" tests/e2e/mobile/admin-settings-access.yaml` returns nothing, and
   the flow still has its `settings-nav-admin` visibility assertion before the tap.
 
+- [x] T044 Correct the navigator-background assertion to the nearest painted ancestor
+
+  **Type**: Test fix | **Risk**: Low | **Spec reference**: FR-003
+
+  T042's regression test walked the WHOLE ancestor chain asserting nothing computed
+  `rgb(242,242,242)`. That is not the invariant the fix establishes. The layout paints an opaque
+  container *beneath* React Navigation's screen container; the navigator's own container is still
+  light and stays light until #243 is fixed. So the test failed on an element two levels further
+  up, reporting a defect the fix was never meant to address.
+
+  **CI run 2060: `163 passed, 1 failed` — the single failure was this test, not the product.**
+  Every functional assertion passed, including the 320px viewport check and the `menuitem` role
+  change. The fix was sound; the assertion was wrong.
+
+  Now asserts the **nearest painted ancestor** is not the navigator default, which is what actually
+  governs the colour rendered behind the nav, plus that a painted ancestor exists at all — a nav
+  sitting on nothing is the original defect.
+
+  **Verify GREEN**: `app-ci / app-e2e` on the branch.
+
 ---
 
 ## Platform Parity Table

@@ -145,20 +145,32 @@ test.describe('Settings destination', () => {
 
     // React Navigation paints its screen container with its LIGHT default, rgb(242,242,242),
     // because no navigation theme is passed (item #243). Feature 062 put chrome inside that
-    // container, so the untinted band showed through as a bright strip in dark mode. Assert no
-    // ancestor of the nav is still that colour — this fails if the background paint is dropped.
-    const offenders = await page.evaluate(() => {
-      const out: string[] = [];
+    // container, so the untinted band showed through as a bright strip in dark mode.
+    //
+    // ASSERT THE NEAREST PAINTED ANCESTOR, not the whole chain. The navigator's container is
+    // still light and stays light until #243 is fixed — the layout paints an OPAQUE container
+    // beneath it, which is what the user actually sees behind the nav. An earlier version of
+    // this test walked to the root and failed on the navigator container two levels further up
+    // (CI run 2060), reporting a defect the fix was never meant to address. What governs the
+    // rendered colour is the first painted ancestor, so that is what is asserted.
+    const nearest = await page.evaluate(() => {
       let el: Element | null = document.querySelector('[data-testid="settings-nav"]');
       while (el && el !== document.documentElement) {
-        if (getComputedStyle(el).backgroundColor === 'rgb(242, 242, 242)') {
-          out.push(el.tagName + (el.getAttribute('data-testid') ?? ''));
+        const bg = getComputedStyle(el).backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+          return { bg, testid: el.getAttribute('data-testid') };
         }
         el = el.parentElement;
       }
-      return out;
+      return null;
     });
-    expect(offenders, 'React Navigation light default is painting behind the settings nav').toEqual([]);
+
+    // Nothing painted at all would mean the band is whatever shows through — the original defect.
+    expect(nearest, 'no painted ancestor: the settings nav sits on an untinted surface').not.toBeNull();
+    expect(
+      nearest!.bg,
+      'the nearest painted surface behind the settings nav is React Navigation\'s light default',
+    ).not.toBe('rgb(242, 242, 242)');
   });
 
   /**
