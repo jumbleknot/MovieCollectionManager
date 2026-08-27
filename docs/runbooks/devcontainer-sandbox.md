@@ -689,6 +689,44 @@ robocopy "$env:LOCALAPPDATA\DockerSandboxes\sandboxes" "E:\DockerSandboxes\sandb
 cmd /c mklink /J "$env:LOCALAPPDATA\DockerSandboxes\sandboxes" "E:\DockerSandboxes\sandboxes"
 ```
 
+🔴 **The move breaks SSH until you fix the ACLs — and that breaks `open-sandbox.ps1`.** Files under
+`%LOCALAPPDATA%` are owner-only; the same files on another volume inherit that volume's ACL, which
+grants `Authenticated Users`. Windows OpenSSH refuses a config it considers world-readable, so
+`ssh <name>.sbx` — and therefore the one-step VS Code launcher, which uses the Windows ssh client —
+fails with:
+
+```text
+Bad permissions. Try removing permissions for user: NT AUTHORITY\Authenticated Users (S-1-5-11)
+Bad owner or permissions on …/sandboxes/config/ssh/config
+```
+
+Restrict the directory and let the files inherit from it. Do **not** pass `(OI)(CI)` with `/T` — those
+flags are meaningless on a *file*, so `/inheritance:r` strips the inherited ACEs and the grant adds
+nothing, leaving a file with **no ACEs at all** that not even its owner can read (measured):
+
+```powershell
+$ssh = "E:\DockerSandboxes\sandboxes\config\ssh"
+icacls $ssh /inheritance:r /grant:r "$($env:USERNAME):(OI)(CI)F" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"
+icacls "$ssh\*" /reset        # files inherit from the directory
+& C:\Windows\System32\OpenSSH\ssh.exe -o BatchMode=yes <name>.sbx "echo SSH_OK"
+```
+
+⚠️ **`ssh <name>.sbx` does not work from Git Bash, and the error blames DNS.** `sbx setup ssh` writes
+an `Include` with a **Windows-style absolute path**, which MSYS OpenSSH does not recognise as
+absolute — it resolves it *relative to `~/.ssh/`*, matches nothing, and silently continues to DNS:
+
+```text
+debug1: /c/Users/<you>/.ssh/config line 2: include ~/.ssh/C:/Users/<you>/AppData/…/config matched no files
+ssh: Could not resolve hostname <name>.sbx: Name or service not known
+```
+
+"Could not resolve hostname" reads as a network or sandbox fault; it is a config path that never
+loaded. Windows OpenSSH (`C:\Windows\System32\OpenSSH\ssh.exe`) handles the same file correctly, and
+that is the client VS Code uses — so the launcher is unaffected. From Git Bash use `sbx exec <name>`
+or the Windows client by full path. Confirm which client is at fault with `ssh -v … 2>&1 | grep -i
+include` before touching the sandbox.
+
+
 ⚠️ **Re-verify the junction after every `sbx` upgrade** — an MSI could recreate the folder. It
 survived the v0.38.0 → v0.39.0 upgrade (measured 2026-08-27), which is evidence, not a guarantee:
 
