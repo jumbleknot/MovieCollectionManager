@@ -161,10 +161,52 @@ else
   err "rtk present but no plugins/skills found under ~/.claude — partial/broken personal setup (SC-007)"
 fi
 
-# SC-007 — logins persist. A logged-in state resolves without a re-auth prompt. `gh auth status`
-# is a non-interactive, safe probe; Claude/Expo logins live in ~/.claude (persisted). We check gh
-# as the representative persisted login (best-effort — a not-logged-in gh is a note, not a fail,
-# because login is the developer's one-time action, not something this script performs).
+# SC-007 — the Claude Code IDENTITY is on the persisted volume, not the container overlay.
+#
+# This assertion exists because the comment it replaces was wrong in the specific way that hid a
+# real gap for a year: "Claude/Expo logins live in ~/.claude (persisted)" is only half true. The
+# OAuth tokens do (`~/.claude/.credentials.json`), but Claude Code's global config — `oauthAccount`,
+# `userID`, `machineID`, and every project's session history — is `~/.claude.json`, a SIBLING in
+# $HOME that the `mcm-claude` volume never covered. The credential surviving alone is what made
+# SC-007 look satisfied while a recreate silently reset the identity beside it (item #257).
+#
+# The check is the DEVICE ID, not the path spelling. `~/.claude` is a mounted volume, so it sits on
+# a different filesystem from $HOME; comparing `stat -c %d` proves the config root really is the
+# volume rather than an overlay directory that merely has the right name. A misspelled or unset
+# CLAUDE_CONFIG_DIR therefore fails here instead of reading as healthy.
+#
+# Scoped to MCM_DEVCONTAINER=1 (FR-012's marker): outside the container there is no volume to assert
+# and no promise to keep.
+if [ "${MCM_DEVCONTAINER:-0}" = "1" ]; then
+  claude_cfg="${CLAUDE_CONFIG_DIR:-}"
+  if [ -z "$claude_cfg" ]; then
+    err "CLAUDE_CONFIG_DIR is unset — the global config falls back to ~/.claude.json on the EPHEMERAL overlay, so the account identity and project history do not survive a recreate (SC-007, item #257). Expected /home/coder/.claude via containerEnv."
+  elif [ ! -d "$claude_cfg" ]; then
+    err "CLAUDE_CONFIG_DIR=$claude_cfg does not exist — Claude Code cannot persist its config there (SC-007)."
+  elif [ "$(stat -c %d "$claude_cfg" 2>/dev/null)" = "$(stat -c %d "$HOME" 2>/dev/null)" ]; then
+    err "CLAUDE_CONFIG_DIR=$claude_cfg is on the SAME filesystem as \$HOME — it is not the mcm-claude volume, so the config is ephemeral (SC-007, item #257)."
+  else
+    ok "Claude config root is the persisted volume: CLAUDE_CONFIG_DIR=$claude_cfg (SC-007)"
+    if [ -s "$claude_cfg/.claude.json" ]; then
+      ok "global config present on the volume — identity/history survive a recreate (SC-007)"
+    else
+      note "no $claude_cfg/.claude.json yet — Claude Code writes it on first run; it will land on the volume."
+    fi
+    # Only meaningful once the var is set correctly. A leftover at the old location is then harmless
+    # (nothing reads it) but it is stale state that READS as live, so name it rather than leave it to
+    # be rediscovered. Deliberately NOT reported when the var is unset — there the file is the live
+    # config, and calling it stale would be exactly backwards.
+    if [ -s "$HOME/.claude.json" ]; then
+      note "a stale $HOME/.claude.json remains on the overlay — nothing reads it now; safe to delete."
+    fi
+  fi
+fi
+
+# SC-007 — service logins persist. `gh auth status` is a non-interactive, safe probe and `gh`'s
+# credential is stored under the persisted ~/.claude; we check it as the representative service
+# login (best-effort — a not-logged-in gh is a note, not a fail, because login is the developer's
+# one-time action, not something this script performs). The Claude-side login is asserted directly
+# above rather than inferred from this one.
 if command -v gh >/dev/null 2>&1; then
   if gh auth status >/dev/null 2>&1; then
     ok "gh login resolves without re-auth (persisted — SC-007)"

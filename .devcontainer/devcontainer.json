@@ -99,6 +99,32 @@
     // helper (public/forge image pulls need no host cred forwarding here). VS Code's own ~/.docker
     // is untouched. See docs/runbooks/devcontainer.md.
     "DOCKER_CONFIG": "/home/coder/.docker-dind",
+    // Item #257 — put Claude Code's GLOBAL CONFIG FILE on the persistent volume. `mcm-claude`
+    // mounts the ~/.claude *directory*, but the global config is `~/.claude.json`, a SIBLING in
+    // $HOME on the ephemeral overlay — so a recreate dropped `oauthAccount`, `userID`, `machineID`
+    // and every project's session history, while `~/.claude/.credentials.json` (the actual OAuth
+    // tokens) persisted. That is why 038's SC-007 "0 re-login on recreate" appeared to hold: the
+    // credential survived and the identity beside it did not. Measured 2026-08-27.
+    //
+    // CLAUDE_CONFIG_DIR relocates the config ROOT. From the shipped binary's own path builder
+    // (claude-code 2.1.224):
+    //     globalConfig: path.join(e || os.homedir(), ".claude.json")
+    //     userSettings: path.join(e || path.join(os.homedir(), ".claude"), "settings.json")
+    // — `e` being this variable. Pointing it at ~/.claude is therefore a **no-op for every path
+    // except `.claude.json`**: settings, plugins, projects, sessions, backups and credentials all
+    // already live there and resolve unchanged; only the one orphaned file moves onto the volume.
+    // Verified empirically — a run with it set to an empty temp dir created `.claude.json`,
+    // `backups/`, `projects/`, `plugins/` and `sessions/` inside that dir.
+    //
+    // ⚠️ NOT a symlink from ~/.claude.json into the volume, which is the obvious alternative:
+    // Claude Code REPLACES this file rather than editing in place (hence its rolling `backups/`),
+    // and a write-then-rename would swap the symlink for a regular overlay file — silently
+    // restoring the bug with nothing to show for it. The env var cannot decay that way.
+    //
+    // containerEnv (not remoteEnv) so a plain `docker exec` shell — the sandbox path, where VS Code
+    // is not always the entry point — sees it too. Seeding of an existing config is done once by
+    // onCreateCommand's persist-claude-config.sh.
+    "CLAUDE_CONFIG_DIR": "/home/coder/.claude",
     // 038 — the forge registry / git host, so init-firewall.sh auto-allowlists it on every start
     // (default-deny otherwise blocks git pull/push to the tailnet forge). Sourced from the HOST env
     // via ${localEnv} so the topology-sensitive host literal NEVER enters git (topology-scrub) — set
@@ -244,7 +270,7 @@
   // line makes a rebuild self-heal EXISTING damage, so a container recreate is a clean recovery
   // rather than a manual chown hunt. Scoped to the known artifact paths — not a blanket chown of
   // the whole tree, which would be slow on a large workspace and would mask a real problem.
-  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true",
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true; /bin/bash ${containerWorkspaceFolder}/.devcontainer/persist-claude-config.sh || true",
 
   "postCreateCommand": "pnpm install --config.confirmModulesPurge=false",
 
