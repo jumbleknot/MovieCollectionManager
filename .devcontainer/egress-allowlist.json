@@ -247,9 +247,21 @@
       "cdnRotating": false
     },
     {
+      "domain": "mcp.expo.dev",
+      "group": "agent",
+      "reason": "Expo's REMOTE MCP SERVER, reached over HTTP by the `expo` Claude Code plugin's MCP client. Without it the plugin fails at startup with `getaddrinfo ENOTFOUND mcp.expo.dev` and the session reports the server as unavailable \u2014 measured 2026-08-27 (item #253). This is the front-door-vs-second-host trap this file documents for registries, now on the MCP path: api.expo.dev IS allowlisted and answers 200 from the dev container, and it does NOT cover this name. The allowlist resolves per FQDN, not per apex domain. Grouped `agent` rather than `packages` alongside api.expo.dev because the consumer is the coding assistant's own tooling, like api.anthropic.com / code.claude.com, not the build or test path \u2014 nothing in CI touches it. NOTE the failure signature: a blocked host NXDOMAINs here rather than being refused at the route, so `curl` reports rc=6 and writes http_code 000. The 000 is curl's placeholder for a request never made, not evidence of a route-layer block.",
+      "cdnRotating": false
+    },
+    {
       "domain": "exp.host",
       "group": "packages",
       "reason": "Expo services host, paired with api.expo.dev.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "mcp.context7.com",
+      "group": "agent",
+      "reason": "Context7's REMOTE MCP SERVER (operated by Upstash), reached over HTTP by the `context7` Claude Code plugin at https://mcp.context7.com/mcp. Without it the plugin fails at session start with `getaddrinfo ENOTFOUND mcp.context7.com` \u2014 same root cause and same day as mcp.expo.dev above, item #253. ADDED AS A DELIBERATE DECISION, not as a like-for-like fix, because this is the first entry that sends OUR PROMPT TEXT to a third party rather than fetching from one. What crosses the boundary is bounded and worth stating exactly: the plugin exposes two tools, `resolve-library-id` (a library search string) and `query-docs` (a library identifier plus the question being asked), so the payload is a public library name and a natural-language question. Repository source is NOT sent, and no credential is involved \u2014 CONTEXT7_API_KEY is unset here, so the connection is anonymous. The question text can still describe what is being built, which is the actual exposure and the reason this entry says so rather than reading like the Expo one. NOT a telemetry endpoint, so the $mustNeverAppearHere inversion does not apply: this host is REQUESTED BY US on demand and returns documentation, where the barred entries receive unsolicited analytics. Grouped `agent` with mcp.expo.dev and the Claude Code hosts \u2014 assistant tooling, not the build or test path; nothing in CI touches it. Only the `mcp.` name is listed: the bare context7.com apex is NOT needed and stays blocked. If requests later fail after a clean resolve, follow the redirect chain before adding a second host \u2014 that is the front-door-vs-second-host class this file documents, not a stale entry.",
       "cdnRotating": false
     },
     {

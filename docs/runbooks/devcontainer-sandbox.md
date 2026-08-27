@@ -153,7 +153,7 @@ A check keyed to one refusal signature reports a hole when the mechanism merely 
 
 | From | Blocked destination looks like |
 | --- | --- |
-| dev container | no route — `curl` writes `000` |
+| dev container | `rc=6` — NXDOMAIN (DNS-layer refusal); `curl` also writes `000` |
 | sibling container | `rc=6` — NXDOMAIN (DNS-layer refusal) |
 | raw IP from a sibling | `rc=35` — TLS terminated mid-handshake |
 | VM shell | HTTP **403** with `Blocked by network policy` |
@@ -161,6 +161,28 @@ A check keyed to one refusal signature reports a hole when the mechanism merely 
 ⚠️ **`nc -z <ip> 443` reports OPEN against a blocked destination.** The proxy accepts the TCP
 connection and refuses at TLS. A connect-only probe will tell you egress is wide open when it is
 not. Always probe with a real request.
+
+⚠️ **`000` is not a signature — it is curl's placeholder for a request that was never made.** The
+dev-container row above read "no route — `curl` writes `000`" until 2026-08-27 (item #253), which
+says route layer and hands you the one field that cannot distinguish the layers. It cost a triage
+pass: `curl -w '%{http_code}'` against a non-allowlisted host prints `000` and the resolver error
+goes to *stderr*, so a probe that captures only stdout reports a route-level block for what is
+actually NXDOMAIN. **Read the exit code, not the status code.** Measured from the dev container:
+
+```bash
+getent hosts registry.npmjs.org   # allowlisted -> resolves;      curl -> 200, rc=0
+getent hosts example.com          # NOT allowlisted -> no answer;  curl -> 000, rc=6
+```
+
+Both vantage points refuse at DNS because both enforce the same per-FQDN allowlist. Node surfaces
+that same refusal as `getaddrinfo ENOTFOUND <host>` — the signature `platform.claude.com` and
+`mcp.expo.dev` were each first diagnosed from.
+
+⚠️ **The allowlist resolves per FQDN, never per apex domain.** A sibling name on an already-allowed
+domain is a separate entry and is refused without one — `api.expo.dev` answers 200 from the dev
+container while `mcp.expo.dev` NXDOMAINs. This is the same front-door-vs-blob-host trap tabulated in
+§4, and the lesson is that it is not specific to registries: it applies to every second hostname a
+service uses, MCP endpoints included.
 
 ---
 
