@@ -11,7 +11,7 @@
   //
   // Select it explicitly:
   //   devcontainer up --workspace-folder /workspaces/mcm \
-  //                   --config .devcontainer/sandbox/devcontainer.json
+  //                   --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json
   "name": "mcm-workspace-sandbox",
 
   // Unchanged from the Docker Desktop config, EXCEPT the relative path: this file lives one
@@ -174,7 +174,7 @@
     // Docker Desktop environment. Install it once per container creation:
     //
     //     devcontainer up --workspace-folder /workspaces/mcm \
-    //       --config .devcontainer/sandbox/devcontainer.json \
+    //       --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json \
     //       --dotfiles-repository https://github.com/jumbleknot/mcm-dotfiles
     //
     // RTK IS NOT ACTIVE JUST BECAUSE THE BINARY EXISTS. It compresses only via the `rtk hook
@@ -262,6 +262,34 @@
     // which is the same arrangement the Docker Desktop path has used since 037.
     "DOCKER_CONFIG": "/home/coder/.docker-sandbox",
 
+    // Item #257 — put Claude Code's GLOBAL CONFIG FILE on the persistent volume. `mcm-claude`
+    // (above) mounts the ~/.claude *directory*, but the global config is `~/.claude.json`, a
+    // SIBLING in $HOME on the ephemeral overlay — so a recreate dropped `oauthAccount`, `userID`,
+    // `machineID` and every project's session history, while `~/.claude/.credentials.json` (the
+    // actual OAuth tokens) persisted. That asymmetry is why 038's SC-007 "0 re-login on recreate"
+    // appeared to hold: the credential survived and the identity beside it did not. Measured
+    // 2026-08-27 in THIS sandbox container (`/dev/vdd on /home/coder/.claude`, while
+    // `/home/coder/.claude.json` was a plain overlay file).
+    //
+    // CLAUDE_CONFIG_DIR relocates the config ROOT. From the shipped binary's own path builder
+    // (claude-code 2.1.224):
+    //     globalConfig: path.join(e || os.homedir(), ".claude.json")
+    //     userSettings: path.join(e || path.join(os.homedir(), ".claude"), "settings.json")
+    // — `e` being this variable. Pointing it at ~/.claude is a **no-op for every path except
+    // `.claude.json`**: settings, plugins, projects, sessions, backups and credentials already
+    // live there and resolve unchanged; only the one orphaned file moves onto the volume.
+    //
+    // ⚠️ NOT a symlink from ~/.claude.json into the volume: Claude Code REPLACES this file rather
+    // than editing in place (hence its rolling `backups/`), so a write-then-rename swaps the
+    // symlink for a regular overlay file — silently restoring the bug. The env var cannot decay.
+    //
+    // containerEnv (not remoteEnv) matters MORE on this path than on the Docker Desktop one: the
+    // sandbox is routinely entered by `ssh mcm.sbx` + `docker exec`, where remoteEnv would not
+    // apply. Seeding of an existing config is done once by onCreateCommand's
+    // persist-claude-config.sh. Kept in step with ../devcontainer.json (the two are duplicates
+    // until FR-032 collapses them).
+    "CLAUDE_CONFIG_DIR": "/home/coder/.claude",
+
     "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
 
     // ⚠️ DELIBERATELY **NOT** NAMED `ANTHROPIC_API_KEY`. This is a cost control, not cosmetics.
@@ -333,7 +361,7 @@
   // created by the VM's user — a different UID from the container's — so git object writes fail deep
   // with errors that read like repository corruption. See that script's header. It repairs only
   // mismatched paths, so the normal case costs one `find`.
-  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true; /bin/bash ${containerWorkspaceFolder}/.devcontainer/fix-workspace-ownership.sh ${containerWorkspaceFolder} || true",
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true; /bin/bash ${containerWorkspaceFolder}/.devcontainer/fix-workspace-ownership.sh ${containerWorkspaceFolder} || true; /bin/bash ${containerWorkspaceFolder}/.devcontainer/persist-claude-config.sh || true",
 
   // ONE-TIME PER CONTAINER CREATION, which is exactly the right cadence for both steps.
   //

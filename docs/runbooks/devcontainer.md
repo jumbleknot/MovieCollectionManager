@@ -993,6 +993,67 @@ on subsequent opens.
 To force a toolchain refresh after a new image: `rustup update`, or `docker volume rm` the relevant
 cache volume, then reopen.
 
+### ★★ Claude Code's global config is `~/.claude.json` — a SIBLING of the volume, not inside it
+
+`mcm-claude` mounts the `~/.claude` **directory**, so it is easy to assume all of Claude Code's
+state persists. It does not. The global config file lives *beside* that directory in `$HOME`, on the
+ephemeral overlay. Measured 2026-08-27 in the sandbox dev container:
+
+```
+/dev/vdd on /home/coder/.claude type ext4    ← the volume, the DIRECTORY
+/home/coder/.claude.json                     ← plain file on the overlay, NOT a symlink
+```
+
+| File | Holds | Before item #257 |
+| --- | --- | --- |
+| `~/.claude/.credentials.json` | `claudeAiOauth` (access + refresh token), `mcpOAuth`, org uuid | persisted |
+| `~/.claude.json` | `oauthAccount`, `userID`, `machineID`, per-project session history, `pluginUsage` | **lost on recreate** |
+
+> **This is why 038's SC-007 ("0 re-login across a recreate") appeared to hold when it was not
+> actually being kept.** The *credential* was on the volume, so the login genuinely survived; the
+> account identity and every project's session history sitting next to it did not. A guarantee that
+> holds by accident fails silently the moment the accident stops — and
+> `verify-personal-layer.sh` said so in a comment ("Claude/Expo logins live in ~/.claude
+> (persisted)"), which is the half-truth that kept anyone from looking.
+
+**The fix is `CLAUDE_CONFIG_DIR=/home/coder/.claude` in `containerEnv`**, not a symlink. That
+variable relocates the config *root*; from the shipped binary's own path builder (claude-code
+2.1.224):
+
+```js
+globalConfig: path.join(e || os.homedir(), ".claude.json")
+userSettings: path.join(e || path.join(os.homedir(), ".claude"), "settings.json")
+```
+
+— `e` being `CLAUDE_CONFIG_DIR`. Pointing it at `~/.claude` is therefore **a no-op for every path
+except `.claude.json`**: settings, plugins, projects, sessions, backups and credentials already
+resolve there and are unchanged; only the one orphaned file moves onto the volume. Verified
+empirically — a run with the variable set to an empty temp dir created `.claude.json`, `backups/`,
+`projects/`, `plugins/` and `sessions/` inside it.
+
+> ⚠️ **Do not "fix" this with a symlink from `~/.claude.json` into the volume.** Claude Code
+> *replaces* that file rather than editing it in place (hence its rolling `~/.claude/backups/`), so
+> a write-then-rename swaps the symlink for a regular overlay file — restoring the bug silently,
+> with the symlink you added still in the commit history to reassure you.
+
+`.devcontainer/persist-claude-config.sh` (run once by `onCreateCommand`) seeds the new location so
+the switch carries the existing identity across instead of starting blank beside a valid credential.
+It is idempotent and never blocks the container (FR-014): target present → no-op; else `~/.claude.json`
+→ copy it; else restore the newest parseable snapshot from `~/.claude/backups/` (the path that
+recovers the identity *after* the recreate that destroyed the overlay copy); else do nothing and let
+Claude Code create it on the volume.
+
+> **Both config files carry it.** `.devcontainer/sandbox/devcontainer.json` is a *duplicate* of
+> `.devcontainer/devcontainer.json`, not an extension of it (feature 060, until FR-032 collapses
+> them), and it has its own `containerEnv` and its own `onCreateCommand`. A change made to only one
+> of them applies to only one path — and since the sandbox is the path in daily use, editing the
+> Docker Desktop file alone produces a fix that is real, committed, and inert.
+
+`verify-personal-layer.sh` now asserts this directly, by **device ID** rather than by path spelling
+— `stat -c %d` on the config root must differ from `$HOME`, which proves it is really the mounted
+volume and not an overlay directory that merely has the right name. An unset or misspelled
+`CLAUDE_CONFIG_DIR` fails the harness instead of reading as healthy.
+
 ### Personal layer via an out-of-repo dotfiles repo (never committed here)
 
 The committed `.devcontainer/` carries **zero** personal tools, plugins, or credentials (FR-009).

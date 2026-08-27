@@ -117,6 +117,69 @@ configuration knob. Consequences you will actually meet:
   `ssh mcm.sbx 'sleep 5400'` in another window, and launch the work with `setsid nohup … &`.
 - The dev container carries `--restart=always` so it returns by itself; see §7 for what does not.
 
+### Recreating the DEV CONTAINER — after a `devcontainer.json` change
+
+**Two different things are called "recreate", and confusing them is expensive.** Recreating the
+*sandbox* (`sbx rm` + template, §7b/§8b) destroys the microVM, the workspace and every volume.
+Recreating the *dev container* keeps all of that and rebuilds only the container — it is what you
+want after editing `devcontainer.json`, and it is the common case that was previously documented
+only inside §7d's UID-fix narrative, where it reads as part of an image re-pin.
+
+**It runs in the VM shell, and it destroys the container you are working in.** A container cannot
+rebuild itself, so an assistant session inside it ends when this runs. `containerEnv`, `mounts` and
+`onCreateCommand` changes take effect **only** at container creation — editing them changes nothing
+until this is done.
+
+```bash
+ssh mcm.sbx                       # the VM shell, NOT the container
+
+# 1. Gate first: the VM's copy of the repo must actually carry your change. A recreate that used
+#    the old config is indistinguishable from one that worked, so check rather than assume.
+grep -c <the-thing-you-added> /workspaces/mcm/.devcontainer/sandbox/devcontainer.json
+
+# 2. `set -a` is LOAD-BEARING even when you are not re-pinning. ~/.mcm-sandbox-env has no `export`
+#    keyword, and the config reads the pin as ${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}
+#    from THIS shell. Source it without -a and the variable is set but not exported: `localEnv`
+#    misses it and the build silently falls back to the stale local `mcm-devcontainer` image.
+set -a; . ~/.mcm-sandbox-env; set +a
+echo "$MCM_DEVCONTAINER_IMAGE"    # must print the pinned @sha256:<digest>, not a bare tag
+
+# 3. recreate
+devcontainer up --workspace-folder /workspaces/mcm \
+  --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json --remove-existing-container
+```
+
+🔴 **`--config` resolves against your CWD, not against `--workspace-folder`.** The VM shell lands in
+`/home/agent/workspace`, so the relative form every snippet in this runbook used until 2026-08-27
+fails there — and it fails in a way that reads like the file is missing rather than like the path is
+wrong:
+
+```text
+Error: Dev container config (/home/agent/workspace/.devcontainer/sandbox/devcontainer.json) not found.
+```
+
+The gate commands above are unaffected because they name absolute paths, so step 1 passes and step 3
+is what breaks. Pass `--config` absolutely (as shown), or `cd /workspaces/mcm` first.
+
+**Editing `.devcontainer/devcontainer.json` alone changes nothing on this path.**
+`.devcontainer/sandbox/devcontainer.json` is a *duplicate*, not an extension (feature 060, until
+FR-032 collapses them), with its own `containerEnv` and its own `onCreateCommand`. The sandbox is
+the path in daily use, so a change made only to the Docker Desktop file is real, committed, and
+inert — and the recreate that "didn't work" sends you looking at the wrong thing. Edit both.
+
+⚠️ **`devcontainer up` echoes its full `docker run` invocation, including every `-e` secret in clear
+text** — `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`. Treat
+that output as credential material: never paste it into an issue, a chat, or a transcript.
+
+**Hold the VM shell open for the whole build.** The idle-stop above fires ~30 s after the last
+session disconnects, and a half-built container is one of the ways `Exited (255)` appears.
+
+When the **image** is what changed (a `toolchain.Dockerfile` edit), this is not enough — you need the
+full pull → verify → re-pin → rebuild sequence in §7d, including the all-`CACHED` tell that says the
+re-pin did not take. Nothing survives this that would not survive a plain restart, so §8b's
+"what a recreate destroys" does **not** apply here: volumes, `/workspaces/mcm` and
+`~/.mcm-sandbox-env` all live in the VM, which this leaves untouched.
+
 ---
 
 ## 3. Layering — where each rule is actually enforced
@@ -363,7 +426,7 @@ sbx run -t docker.io/library/mcm-proven:060 --name <new> -d shell C:\path\to\scr
 node scripts/gen-egress-policy.mjs --format sbx-policy --forge-host $env:FORGE_REGISTRY_HOST
 #   -> for each "allow network <domain>":  sbx policy allow network <domain> --sandbox <new>
 
-devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json
+devcontainer up --workspace-folder /workspaces/mcm --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json
 ```
 
 ### ⚠️ A template does NOT contain the Docker images
@@ -509,6 +572,10 @@ trigger — the `devcontainer-image` workflow builds and publishes automatically
 rebuild itself; `devcontainer up` must run from `ssh mcm.sbx`, and it destroys the container you may
 be working in. Everything below is one VM-shell session, because step 3's `set -a` only holds there.
 
+> This is the **image-change** variant, which is why steps 1-3 exist. For the far more common
+> `devcontainer.json`-only change, use §2's *Recreating the DEV CONTAINER* — same step 4, no re-pin.
+> Step 3's `set -a` is required either way.
+
 ```bash
 NEW=<the 64-hex digest from the build's run summary>          # NOT the tag — pin by digest
 REG="$FORGE_REGISTRY_HOST:3000"
@@ -532,7 +599,7 @@ esac
 
 # 4. only on PIN OK. (For the UID fix specifically, chown the tree to 1000 first.)
 devcontainer up --workspace-folder /workspaces/mcm \
-  --config .devcontainer/sandbox/devcontainer.json --remove-existing-container
+  --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json --remove-existing-container
 ```
 
 🔴 **Two ways this silently re-creates the OLD container, both measured 2026-08-22.**
