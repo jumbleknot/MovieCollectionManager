@@ -10,12 +10,12 @@ appId: com.grumpyrobot.mcmapp
     clearState: false
 - runFlow: "_login-helper.yaml"
 
-# Navigate to profile where the logout button lives
+# Navigate to Settings, whose landing (Profile) area holds the logout button
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - extendedWaitUntil:
     visible:
-      id: "profile-screen"
+      id: "settings-profile-screen"
     timeout: 5000
 
 # T-113a: Logout button opens confirmation dialog
@@ -27,13 +27,13 @@ appId: com.grumpyrobot.mcmapp
     timeout: 5000
 - assertVisible: "Are you sure you want to logout?"
 
-# T-113b: Cancel keeps the user on the home/profile screen
+# T-113b: Cancel keeps the user on the settings Profile area
 - tapOn:
     id: "btn-logout-cancel"
 - assertNotVisible:
     id: "logout-dialog"
 - assertVisible:
-    id: "profile-screen"
+    id: "settings-profile-screen"
 
 # T-113: Confirm logout → login screen
 - tapOn:

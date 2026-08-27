@@ -4,7 +4,7 @@ appId: com.grumpyrobot.mcmapp
 # Mobile leg of tests/e2e/web/assistant-config.spec.ts "disable".
 #
 # CI seeds the test user with a runnable config (T050), so the dock starts mounted. Toggling the
-# assistant off in the Profile form + saving makes the config not-runnable → the dock unmounts
+# assistant off in the Movie Assistant settings form + saving makes the config not-runnable → the dock unmounts
 # (FR-002 / T018). Disabling keeps the non-secret settings (provider/URL) — re-enabling is covered
 # on the web leg.
 #
@@ -26,12 +26,20 @@ appId: com.grumpyrobot.mcmapp
 - assertVisible:
     id: "assistant-dock-toggle"
 
-# ── Profile → assistant config → disable → save. ──
+# ── Settings → Movie Assistant → disable → save. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - extendedWaitUntil:
     visible:
-      id: "profile-screen"
+      id: "settings-profile-screen"
+    timeout: 10000
+# Feature 062: the assistant config moved off the landing area into its own settings area,
+# so the flow takes one more hop to reach it. Assertions below are unchanged.
+- tapOn:
+    id: "settings-nav-assistant"
+- extendedWaitUntil:
+    visible:
+      id: "settings-assistant-screen"
     timeout: 10000
 # Close the assistant dock if its chat panel is open (its state persists across navigation) — it
 # would otherwise cover the config form's Save button. No-op when the dock is closed.

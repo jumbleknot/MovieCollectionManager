@@ -1,0 +1,65 @@
+appId: com.grumpyrobot.mcmapp
+---
+# Admin settings area — mobile (feature 062; renamed from admin-card.yaml).
+# An mc-admin opens Settings, sees the Admin entry in the sub-navigation, and taps through to the
+# admin settings screen. Feature 040 US3 built the screen but wired no affordance; a Profile card
+# was the follow-on, and feature 062 replaces that card with this sub-navigation entry.
+#
+# The direct-URL refusal half of US2-AC3 is N/A on mobile — Maestro drives the app UI and has no
+# address bar, and there is no in-app affordance to a route the user cannot see. Web covers it; the
+# guard is platform-agnostic React (ProtectedRoute → AuthGuard). See the Platform Parity Table.
+#
+# NOTE: this flow is invoked BY NAME from scripts/ci-mobile-agent-flows.sh — renaming the file
+# without updating that script makes CI burn three emulator retries on a path that does not exist.
+#
+# Requires: Keycloak (with the seeded e2e-admin-user, roles mc-user + mc-admin) + BFF running.
+# Run: scripts/maestro-run.sh tests/e2e/mobile/admin-settings-access.yaml
+- launchApp:
+    stopApp: false
+    clearState: true
+- runFlow: "_login-admin-helper.yaml"
+
+# Open the Settings destination; it lands on the Profile area.
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "navigation-bar"
+- tapOn:
+    id: "nav-settings"
+- extendedWaitUntil:
+    visible:
+      id: "settings-profile-screen"
+    timeout: 10000
+
+# Tap by id, NOT bare text (feature 040 tapOn gotcha: bare text can match a node behind the
+# floating dock overlay).
+#
+# NO SWIPE. There used to be a `swipe: from: id: settings-nav, direction: LEFT` here, because the
+# sub-navigation was a HORIZONTALLY SCROLLABLE tab row and four entries at phone width pushed Admin
+# off-screen — the accessibility dump at the CI run 2049 failure read `viewIdResName:
+# settings-nav-admin … boundsInScreen: Rect(361, 80 - 320, 121) … visible: false`: laid out starting
+# at x=361 on a 320px screen, clipped to nothing. Rendered and enabled the whole time, never
+# reachable.
+#
+# The sub-navigation is now a VERTICAL list (feature 062 Phase 7, backlog #240), so every entry is
+# within the viewport at 320px and there is nothing to scroll. The swipe was deleted rather than
+# left in place: a LEFT swipe on a vertical list is a no-op, so it would keep PASSING while testing
+# nothing — a gesture describing a shape the product no longer has. The web tier now asserts the
+# geometry directly ("every settings entry is fully on-screen at a phone width" in settings.spec.ts).
+#
+# Assert visibility explicitly rather than relying on tapOn's implicit wait: a failure here says
+# "the Admin entry is not visible", which is a different defect from "tapping it went nowhere" —
+# and if the vertical list ever regresses to something that clips, this is what goes red.
+- extendedWaitUntil:
+    visible:
+      id: "settings-nav-admin"
+    timeout: 10000
+- tapOn:
+    id: "settings-nav-admin"
+
+# Landed on the admin settings screen — the plain-View testID is the reliable landing proof (the DS
+# Switch toggle-self-registration does not reliably forward its testID, so we don't assert on it here).
+- extendedWaitUntil:
+    visible:
+      id: "admin-settings-screen"
+    timeout: 15000

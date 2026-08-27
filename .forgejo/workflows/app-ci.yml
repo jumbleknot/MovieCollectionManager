@@ -330,7 +330,7 @@ jobs:
       # web-api-mcp .env.local + the agent flows' per-user config (TMDB enrichment). Optional: the
       # per-user config supplies it per-request, but a real key lets the enrich/add flows return data.
       TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-      # admin-card.spec.ts / admin-registration.spec.ts seed their admin user through the Keycloak
+      # admin-settings-access.spec.ts / admin-registration.spec.ts seed their admin user through the Keycloak
       # Admin API and `test.skip(!keycloakAdminEnabled(), …)` when this is unset. It was absent from
       # this job entirely — so both specs skipped silently on every run, and the `-e` pass-through
       # added below would have forwarded nothing without this line. Feature 051 (item #158, fourth
@@ -721,7 +721,7 @@ jobs:
       # is driven by one. So an omission is not an error; it is a SILENT SKIP behind a green required
       # gate. Two were live here for the lifetime of this job (feature 051, item #158):
       # `E2E_AGENT_PRODUCTION` (every agent-*.spec.ts skipped) and `KEYCLOAK_SERVICE_CLIENT_SECRET`
-      # (admin-card + admin-registration skipped). Before changing this list, read
+      # (admin-settings-access + admin-registration skipped). Before changing this list, read
       # specs/051-ci-diagnostics-closure/contracts/e2e-env-forwarding.md, and note that
       # scripts/__tests__/app-e2e-env.guard.test.mjs asserts it.
       #
@@ -1016,6 +1016,12 @@ jobs:
           for f in frontend/mcm-app/client-evidence/*.log; do
             [ -e "$f" ] && cp "$f" "container-logs/_$(basename "$f")" || true
           done
+          # 062: the DEVICE's view of a failed mobile flow — Maestro's view hierarchy + screenshots
+          # and the emulator logcat (ReactNativeJS exceptions). Captured inside the emulator script,
+          # because the android-emulator-runner terminates the emulator before this step runs, and
+          # because this Forgejo build exposes no artifacts API to fetch the uploaded copy with.
+          # Underscore-prefixed so the digest ranks it above ordinary container logs.
+          [ -d mobile-diagnostics ] && cp -r mobile-diagnostics container-logs/_mobile-diagnostics || true
           # Compose-level captures too (any service not named above, plus restart churn).
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs -t --no-color > container-logs/_mcm-stack.log 2>&1 || true
           docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs -t --no-color > container-logs/_auth-stack.log 2>&1 || true

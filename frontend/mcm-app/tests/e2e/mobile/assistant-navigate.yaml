@@ -71,7 +71,7 @@ appId: com.grumpyrobot.mcmapp
 
 # ── prefill: back to home, then "open the add movie form for my <name> collection". ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:

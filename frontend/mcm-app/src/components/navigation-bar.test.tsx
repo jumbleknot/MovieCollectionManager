@@ -58,6 +58,28 @@ describe('NavigationBar theme toggle', () => {
     const { getByTestId } = renderNavBar();
     expect(getByTestId('navigation-bar')).toBeTruthy();
     expect(getByTestId('nav-home')).toBeTruthy();
-    expect(getByTestId('nav-profile')).toBeTruthy();
+  });
+});
+
+/**
+ * Feature 062 (T015) — FR-001. The per-user destination is Settings, not Profile. The
+ * negative assertion is half the requirement: no destination may still be labelled Profile.
+ */
+describe('NavigationBar settings destination', () => {
+  it('offers a Settings destination labelled "Settings"', () => {
+    const { getByTestId, getByText } = renderNavBar();
+    expect(getByTestId('nav-settings')).toBeTruthy();
+    expect(getByText('Settings')).toBeTruthy();
+  });
+
+  it('targets the settings group', () => {
+    const { getByTestId } = renderNavBar();
+    expect(getByTestId('nav-settings').props.accessibilityLabel).toBe('Navigate to Settings');
+  });
+
+  it('no longer offers a Profile destination', () => {
+    const { queryByTestId, queryByText } = renderNavBar();
+    expect(queryByTestId('nav-profile')).toBeNull();
+    expect(queryByText('Profile')).toBeNull();
   });
 });

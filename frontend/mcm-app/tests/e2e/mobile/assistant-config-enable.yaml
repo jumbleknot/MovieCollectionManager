@@ -3,7 +3,7 @@ appId: com.grumpyrobot.mcmapp
 # T046 (mobile, US2): enable + bring-your-own credentials → dock appears → one interaction.
 # Mobile leg of tests/e2e/web/assistant-config.spec.ts "configure (Ollama + TMDB) + save".
 #
-# Configures from the Profile form using the user's OWN credentials (no shared key — SC-002):
+# Configures from the Movie Assistant settings form using the user's OWN credentials (no shared key — SC-002):
 #   provider=Ollama + the emulator-reachable base URL + a TMDB key (from a CI secret env var).
 # Validate-on-save probes both live; on success the dock mounts and a real query streams a reply
 # using the per-user creds (X-Agent-Config → gateway model + per-run X-TMDB-Key).
@@ -23,12 +23,20 @@ appId: com.grumpyrobot.mcmapp
       id: "home-screen-create-button"
     timeout: 20000
 
-# ── Profile → assistant config: enable, Ollama URL, TMDB key, Save. ──
+# ── Settings → Movie Assistant: enable, Ollama URL, TMDB key, Save. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - extendedWaitUntil:
     visible:
-      id: "profile-screen"
+      id: "settings-profile-screen"
+    timeout: 10000
+# Feature 062: the assistant config moved off the landing area into its own settings area,
+# so the flow takes one more hop to reach it. Assertions below are unchanged.
+- tapOn:
+    id: "settings-nav-assistant"
+- extendedWaitUntil:
+    visible:
+      id: "settings-assistant-screen"
     timeout: 10000
 - scrollUntilVisible:
     element:

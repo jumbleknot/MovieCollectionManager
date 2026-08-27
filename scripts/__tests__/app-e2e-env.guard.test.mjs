@@ -8,8 +8,8 @@
 // Two of them were live at once, for the entire lifetime of the `app-e2e` job:
 //
 //   E2E_AGENT_PRODUCTION            set at job level, never forwarded → every agent-*.spec.ts skipped
-//   KEYCLOAK_SERVICE_CLIENT_SECRET  absent from the job env AND the -e list → admin-card.spec.ts and
-//                                   admin-registration.spec.ts skipped
+//   KEYCLOAK_SERVICE_CLIENT_SECRET  absent from the job env AND the -e list → admin-settings-access.spec.ts
+//                                   and admin-registration.spec.ts skipped
 //
 // Neither was a broken assertion or a flaky run. The suite reported success, the gate went green,
 // and the agent surface that `mcm` exists to ship was never exercised by CI at all.
@@ -102,7 +102,7 @@ test('the Playwright container is handed KEYCLOAK_SERVICE_CLIENT_SECRET — the 
   assert.match(
     playwrightDockerRun(),
     /-e KEYCLOAK_SERVICE_CLIENT_SECRET(?![=\w])/,
-    'KEYCLOAK_SERVICE_CLIENT_SECRET is not forwarded — admin-card.spec.ts and admin-registration.spec.ts will skip',
+    'KEYCLOAK_SERVICE_CLIENT_SECRET is not forwarded — admin-settings-access.spec.ts and admin-registration.spec.ts will skip',
   );
 });
 

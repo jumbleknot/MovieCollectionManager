@@ -7,7 +7,11 @@
  */
 module.exports = {
   preset: 'jest-expo',
-  testMatch: ['<rootDir>/components/**/*.test.{ts,tsx}'],
+  // Was `components/**` only, which silently EXCLUDED tokens/ — with-alpha.test.ts was written,
+  // committed and never executed, reporting green while testing nothing. Match the whole
+  // package instead, so a new test directory cannot be invisible to the runner again.
+  testMatch: ['<rootDir>/**/*.test.{ts,tsx}'],
+  testPathIgnorePatterns: ['/node_modules/'],
   transformIgnorePatterns: [
     'node_modules/\\.pnpm/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?|@expo-google-fonts|react-navigation|@react-navigation|@unimodules|unimodules|sentry-expo|native-base|react-native-svg|react-native-safe-area-context|@tamagui|tamagui|@react-native-async-storage|uuid)[^/]*/node_modules)',
     'node_modules/(?!(\\.pnpm|(jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?|@expo-google-fonts|react-navigation|@react-navigation|@unimodules|unimodules|sentry-expo|native-base|react-native-svg|react-native-safe-area-context|@tamagui|tamagui|@react-native-async-storage|uuid))',

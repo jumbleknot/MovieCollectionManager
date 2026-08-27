@@ -403,13 +403,13 @@ test.describe('Auth guard', () => {
   });
 });
 
-// ─── Profile screen (authenticated) ───────────────────────────────────────────
+// ─── Settings → Profile area (authenticated) ──────────────────────────────────
 
-test.describe('Profile screen (authenticated)', () => {
+test.describe('Settings — Profile area (authenticated)', () => {
   test('shows navigation bar and profile display', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/profile`);
-    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('navigation-bar')).toBeVisible();
     await expect(page.getByTestId('profile-display')).toBeVisible();
     await expect(page.getByTestId('btn-logout')).toBeVisible();
@@ -417,8 +417,8 @@ test.describe('Profile screen (authenticated)', () => {
 
   test('displays correct user details in profile', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/profile`);
-    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('testuser')).toBeVisible();
     await expect(page.getByText('test@example.com')).toBeVisible();
   });
@@ -426,8 +426,8 @@ test.describe('Profile screen (authenticated)', () => {
   // US3 Scenario 2 / FR-009: all six required profile fields rendered
   test('profile display shows all required fields (username, email, first name, last name, roles, status)', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/profile`);
-    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('profile-username')).toBeVisible();
     await expect(page.getByTestId('profile-email')).toBeVisible();
     await expect(page.getByTestId('profile-first-name')).toBeVisible();
@@ -443,8 +443,8 @@ test.describe('Profile screen (authenticated)', () => {
 
   test('logout button opens confirmation dialog', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/profile`);
-    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
     await page.click('[data-testid="btn-logout"]');
     await expect(page.getByTestId('logout-dialog')).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('Are you sure you want to logout?')).toBeVisible();
@@ -452,13 +452,13 @@ test.describe('Profile screen (authenticated)', () => {
 
   test('cancelling logout dialog keeps user on the profile screen', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/profile`);
-    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
     await page.click('[data-testid="btn-logout"]');
     await expect(page.getByTestId('logout-dialog')).toBeVisible({ timeout: 5000 });
     await page.click('[data-testid="btn-logout-cancel"]');
     await expect(page.getByTestId('logout-dialog')).not.toBeVisible();
-    await expect(page.getByTestId('profile-screen')).toBeVisible();
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible();
   });
 
   test('confirming logout ends the session and returns to the login screen', async ({ page }) => {
@@ -466,8 +466,8 @@ test.describe('Profile screen (authenticated)', () => {
     await page.route('**/bff-api/auth/logout', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, message: 'Logged out successfully.' }) }),
     );
-    await page.goto(`${BASE}/(app)/profile`);
-    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/settings`);
+    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
     await page.click('[data-testid="btn-logout"]');
     await expect(page.getByTestId('logout-dialog')).toBeVisible({ timeout: 5000 });
     await page.click('[data-testid="btn-logout-confirm"]');

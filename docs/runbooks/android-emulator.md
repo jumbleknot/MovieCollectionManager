@@ -98,9 +98,76 @@ agent flows run in the `app-ci.yml` `app-e2e` job (local Metro OOM-crashes after
 Use Maestro CLI for all Android UI testing. **(For agent flows, prefer the CI job above — this
 local ritual is for non-agent flows and for the rare local agent-flow debug.)**
 
-### Why `adb reverse` is required (not optional)
+### Which address for which service — `10.0.2.2` for Metro, `adb reverse` for Keycloak/BFF
 
-QEMU networking (10.0.2.2) is broken on this Windows 11/HyperV machine — the emulator cannot reach the host via the standard Android gateway. `adb reverse tcp:8081 tcp:8081` tunnels Metro through the ADB connection so `localhost:8081` inside the emulator routes to Metro on the host. This must be re-run after every emulator (re)start.
+> **CORRECTION (measured 2026-08-23).** This section previously said "QEMU networking (10.0.2.2) is
+> broken on this Windows 11/HyperV machine — the emulator cannot reach the host". **That is not true,
+> and acting on it wasted a session.** From the emulator, `10.0.2.2` both pings the host and completes
+> TCP connections to it. Verified with a negative control (a port with no listener returns `rc=1`
+> while real ports return `rc=0`), because "nothing answered" alone never distinguishes a broken
+> gateway from an empty port:
+>
+> ```text
+> adb shell 'nc -w 4 10.0.2.2 8082 </dev/null >/dev/null 2>&1; echo rc=$?'   # rc=0
+> adb shell 'nc -w 4 localhost 59999 </dev/null >/dev/null 2>&1; echo rc=$?' # rc=1  (control)
+> ```
+
+The two transports are not interchangeable, and each is required for a *different* reason.
+
+**Metro → `10.0.2.2:8081`, and `adb reverse` cannot change that.** An RN 0.85 debug build resolves its
+dev server to `10.0.2.2:8081` by default, **not** `localhost`, so a `adb reverse tcp:8081` tunnel is
+simply not consulted for the bundle fetch. Proved by reading the app's own sockets:
+
+```text
+adb root; adb shell "ss -tnp | grep 8081"
+ESTAB  [::ffff:10.0.2.15]:40178  [::ffff:10.0.2.2]:8081
+```
+
+So **Metro must be published on host port 8081**. If something else already holds that port, the app
+hangs on the splash screen *forever with no redbox and no error* — the handshake succeeds and no
+response ever comes. A stale VS Code dev-container forward does exactly this; see
+[the shared-port-space section](devcontainer-sandbox.md) for how to identify the owner. Check the
+owner, not the reachability:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8081 -State Listen |
+  ForEach-Object { (Get-Process -Id $_.OwningProcess).ProcessName }
+```
+
+**Keycloak and the BFF → `localhost` via `adb reverse`, because of cookies.** Keycloak is pinned with
+`KC_HOSTNAME=http://localhost:8099`, so it issues its cookies for `localhost`. Reaching the *same*
+server at `10.0.2.2:8099` loses them and login dies mid-flow with a Keycloak `error="cookie_not_found"`
+and an app-side `[native-auth-callback] no code param — aborting`. Point the app at `localhost` and
+tunnel it:
+
+```powershell
+adb reverse tcp:8082 tcp:8082    # BFF
+adb reverse tcp:8099 tcp:8099    # Keycloak
+```
+
+Re-run those after every emulator restart. Set them via `EXPO_PUBLIC_BFF_NATIVE_URL` /
+`EXPO_PUBLIC_KEYCLOAK_NATIVE_URL` **with `--reset-cache`** — Metro's transform cache does not key on
+inlined `EXPO_PUBLIC_*` values, so without it you keep serving the old URLs. Verify rather than assume,
+by grepping the bundle Metro actually serves:
+
+```bash
+curl -sS "http://localhost:8081/.expo/.virtual-metro-entry.bundle?platform=android&dev=true" -o /tmp/b.js
+grep -c 'localhost:8082' /tmp/b.js     # expect 1
+grep -c '10\.0\.2\.2:8082' /tmp/b.js   # expect 0
+```
+
+### Two emulator-state traps that look like app bugs
+
+- **A second MCM build steals the OAuth redirect.** `app.json` sets `"scheme": "mcm-app"`, so *every*
+  installed build claims `mcm-app://native-auth-callback` regardless of bundle id. With a pre-rebrand
+  `com.jumbleknot.mcmapp` still installed alongside `com.grumpyrobot.mcmapp`, Android shows an
+  "Open with" chooser mid-login that Maestro cannot answer, and the flow times out. Check with
+  `adb shell pm list packages -3`; resolve by uninstalling the stale build, or once via the chooser's
+  **Always**. CI never sees this — its emulator is fresh.
+- **A live Chrome SSO session breaks the *next* login.** If Keycloak has already authenticated the
+  browser, the helper still types credentials into the form and Keycloak rejects the submission with
+  `error="already_logged_in"`, redirecting back with **no `code`**. `scripts/ci-mobile-agent-flows.sh`
+  exists partly for this: `adb shell pm clear com.android.chrome`, then re-skip the FRE.
 
 ### Session startup ritual (mandatory order)
 

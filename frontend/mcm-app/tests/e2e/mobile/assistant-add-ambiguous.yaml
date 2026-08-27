@@ -70,7 +70,7 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "assistant-dock-toggle"
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:

@@ -17,6 +17,7 @@ export { typeScale, fontFamilies, fontWeights,
 export { spaceTokens, sizeTokens, radiusTokens,
          zIndexTokens, shapeScale }               from './tokens/spacing'
 export { elevation, componentElevation }          from './tokens/elevation'
+export { withAlpha, stateLayer }                  from './tokens/with-alpha'
 export { motion, duration, easingCSS,
          easingCoords, transitions }              from './tokens/motion'
 

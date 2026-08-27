@@ -4,7 +4,7 @@ appId: com.grumpyrobot.mcmapp
 # Mobile leg of tests/e2e/web/assistant-config.spec.ts "test connection".
 #
 # CI seeds the test user with a runnable config (T050), so a saved Ollama URL + TMDB key are on
-# file. From the Profile form, "Test connection" re-probes the stored, server-decrypted creds and
+# file. From the Movie Assistant settings form, "Test connection" re-probes the stored, server-decrypted creds and
 # renders per-credential status — no secret re-entered, no secret shown (FR-013/015/018).
 #
 # Requires: full agent stack (HANDOFF.md) + Ollama reachable from the emulator + adb reverse
@@ -20,12 +20,20 @@ appId: com.grumpyrobot.mcmapp
       id: "home-screen-create-button"
     timeout: 20000
 
-# ── Profile → assistant config → Test connection (no re-entry). ──
+# ── Settings → Movie Assistant → Test connection (no re-entry). ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - extendedWaitUntil:
     visible:
-      id: "profile-screen"
+      id: "settings-profile-screen"
+    timeout: 10000
+# Feature 062: the assistant config moved off the landing area into its own settings area,
+# so the flow takes one more hop to reach it. Assertions below are unchanged.
+- tapOn:
+    id: "settings-nav-assistant"
+- extendedWaitUntil:
+    visible:
+      id: "settings-assistant-screen"
     timeout: 10000
 - scrollUntilVisible:
     element:

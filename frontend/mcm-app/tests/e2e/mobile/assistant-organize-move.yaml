@@ -108,7 +108,7 @@ appId: com.grumpyrobot.mcmapp
 
 # ── Verify: the DESTINATION now contains Coherence. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:
@@ -133,7 +133,7 @@ appId: com.grumpyrobot.mcmapp
 
 # ── Verify: the SOURCE no longer contains Coherence. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:
@@ -156,7 +156,7 @@ appId: com.grumpyrobot.mcmapp
 
 # ── Teardown: delete both created collections so re-runs start clean. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:

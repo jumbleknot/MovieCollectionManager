@@ -1,6 +1,6 @@
 appId: com.grumpyrobot.mcmapp
 ---
-# T-099: Authenticated home → profile shows navigation bar, profile display, and correct user details.
+# T-099: Authenticated home → Settings shows navigation bar, profile display, and correct user details.
 # Requires: Keycloak + BFF running, seeded test user.
 # Run: scripts/maestro-run.sh tests/e2e/mobile/home-screen.yaml
 - launchApp:
@@ -18,12 +18,12 @@ appId: com.grumpyrobot.mcmapp
 - assertVisible:
     id: "navigation-bar"
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 
-# Profile screen shows all required elements
+# The Settings landing area (Profile) shows all required elements
 - extendedWaitUntil:
     visible:
-      id: "profile-screen"
+      id: "settings-profile-screen"
     timeout: 10000
 - assertVisible:
     id: "profile-display"
@@ -47,8 +47,10 @@ appId: com.grumpyrobot.mcmapp
 # Username text matches the seeded test account
 - assertVisible: ${MAESTRO_E2E_TEST_USER}
 
-# NEGATIVE gating (feature 040 follow-on): the admin-settings card is admin-only, so the mc-user
-# test account must NOT see it. (The positive path is admin-card.yaml; the web + unit suites cover
-# this gating in CI.)
+# NEGATIVE gating (feature 040 follow-on; retargeted in 062): the admin affordance is admin-only,
+# so the mc-user test account must NOT see it. Feature 062 deleted the card this asserted on — left
+# naming the dead `profile-admin-settings-card` the assertion would pass vacuously forever, so it is
+# updated at the cause to the sub-navigation entry that replaced it. (The positive path is
+# admin-settings-access.yaml; the web + unit suites cover this gating in CI.)
 - assertNotVisible:
-    id: "profile-admin-settings-card"
+    id: "settings-nav-admin"

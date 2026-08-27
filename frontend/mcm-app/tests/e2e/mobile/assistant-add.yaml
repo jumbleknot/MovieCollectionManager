@@ -63,13 +63,13 @@ appId: com.grumpyrobot.mcmapp
     text: "Done.*"
 
 # ── Teardown: delete the created collection so re-runs start clean (Independent State).
-# Close the dock, then force a fresh home mount (Profile → My Collections) so the newly-created
+# Close the dock, then force a fresh home mount (Settings → My Collections) so the newly-created
 # collection is refetched (the home list was loaded at login, before the add). Scroll its unique
 # name into view and delete THAT card (the Delete action below the unique name — not another card).
 - tapOn:
     id: "assistant-dock-toggle"
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:

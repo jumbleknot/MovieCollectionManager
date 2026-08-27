@@ -64,7 +64,7 @@ async function registrationAllowed(page: Page): Promise<boolean> {
 
 /** Set the toggle to `desired` via the admin UI switch, verifying against the public status. */
 async function setRegistration(adminPage: Page, desired: boolean): Promise<void> {
-  await adminPage.goto(`${BASE}/(app)/admin/settings`);
+  await adminPage.goto(`${BASE}/(app)/settings/admin`);
   await expect(adminPage.getByTestId('admin-settings-screen')).toBeVisible({ timeout: 30000 });
   // The design-system Switch renders role="switch" (its testID isn't forwarded to the DOM node).
   const toggle = adminPage.getByRole('switch', { name: /self-registration/i });
@@ -144,7 +144,7 @@ test.describe('US3 — admin disables self-registration', () => {
     // `page` uses the shared mc-user (e2e-test-user) session from global-setup.
     await page.goto(`${BASE}/home`);
     await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 30000 });
-    await page.goto(`${BASE}/(app)/admin/settings`);
+    await page.goto(`${BASE}/(app)/settings/admin`);
     // AuthGuard(mc-admin) bounces a non-admin — the screen + toggle must never render for them.
     await expect(page.getByTestId('admin-settings-screen')).toHaveCount(0);
     await expect(page.getByTestId('toggle-self-registration')).toHaveCount(0);

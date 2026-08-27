@@ -83,10 +83,16 @@ async function gotoHome(page: Page): Promise<void> {
   if (!result) throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
 }
 
-/** Open the profile screen and wait for the assistant config form to mount. */
-async function gotoProfile(page: Page): Promise<void> {
-  await page.goto(`${BASE}/profile`);
-  await page.waitForSelector('[data-testid="profile-screen"]', { state: 'visible', timeout: 60000 });
+/**
+ * Open the assistant settings area and wait for the config form to mount.
+ *
+ * Feature 062: the config used to sit on the single scrolling Profile page and mounted on the
+ * landing area. It now has its own address, so this navigates one level deeper. The ASSERTIONS
+ * below are unchanged — only the way the form is reached moved.
+ */
+async function gotoAssistantSettings(page: Page): Promise<void> {
+  await page.goto(`${BASE}/(app)/settings/assistant`);
+  await page.waitForSelector('[data-testid="settings-assistant-screen"]', { state: 'visible', timeout: 60000 });
   await page.waitForSelector('[data-testid="assistant-config"]', { state: 'visible', timeout: 60000 });
   // The form hydrates from the server view; wait out the loading placeholder.
   await page.waitForSelector('[data-testid="assistant-config-loading"]', { state: 'detached', timeout: 15000 }).catch(() => {});
@@ -126,7 +132,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
 
   test('configure (provider + TMDB) + save → dock appears → an interaction succeeds on my creds', { tag: '@gate' }, async ({ page }) => {
     await clearAgentConfig(page.request);
-    await gotoProfile(page);
+    await gotoAssistantSettings(page);
 
     // Enable, pick the harness provider, supply its credential + the user's own TMDB key.
     // After clearAgentConfig the form loads enabled=false deterministically, so one click enables it.
@@ -163,7 +169,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
   test('test connection re-probes the saved credentials with no re-entry', { tag: '@gate' }, async ({ page }) => {
     // Start from the known-good seeded config (provider credential + TMDB on file) — nothing re-entered.
     await seedAgentConfig(page.request);
-    await gotoProfile(page);
+    await gotoAssistantSettings(page);
 
     await page.click('[data-testid="assistant-test-connection"]');
 
@@ -178,7 +184,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
   test('disable → dock disappears + run short-circuits; re-open retains the provider', { tag: '@gate' }, async ({ page }) => {
     // Start from the seeded runnable config (enabled, provider credential + TMDB on file).
     await seedAgentConfig(page.request);
-    await gotoProfile(page);
+    await gotoAssistantSettings(page);
 
     // Toggle the assistant off and save. The config is runnable here so the bottom-left dock is
     // mounted; the form's action row is right-aligned (DS convention) so the dock never intercepts.
@@ -206,7 +212,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
     // Re-open profile: the provider selection is retained across the disable. Assert it via the
     // credential block, which the form renders FROM the stored provider — both provider chips are
     // always mounted, so a chip locator would have passed whichever provider came back.
-    await gotoProfile(page);
+    await gotoAssistantSettings(page);
     if (SEED_PROVIDER === 'ollama') {
       await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveValue(SEED_OLLAMA_URL);
       await expect(page.locator('[data-testid="assistant-config-anthropic-key-input"]')).toHaveCount(0);
@@ -239,7 +245,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
 
   test('a bad Anthropic key is rejected per-field and nothing is persisted', { tag: '@gate' }, async ({ page }) => {
     await clearAgentConfig(page.request);
-    await gotoProfile(page);
+    await gotoAssistantSettings(page);
 
     await page.click('[data-testid="assistant-config-enabled-toggle"]');
     await page.click('[data-testid="assistant-config-provider-anthropic"]');

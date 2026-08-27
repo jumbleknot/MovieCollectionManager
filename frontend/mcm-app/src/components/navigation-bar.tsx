@@ -1,6 +1,6 @@
 /**
  * Navigation bar component (T-082; feature 015 re-skin)
- * Displays Home and Profile links with the app wordmark — the web top app bar.
+ * Displays Home and Settings links with the app wordmark — the web top app bar.
  *
  * Re-skinned onto the MCM Cinema design system (Tamagui): cinematic dark app-bar
  * surface, Cinematic-Blue primary wordmark + active link, neutral inactive links.
@@ -22,9 +22,13 @@ export function NavigationBar(): React.JSX.Element {
   const { theme: themeName, toggle } = useThemePref();
   const isDark = themeName === 'dark';
 
+  // `testID` values here are STABLE EXTERNAL-CONTRACT SELECTORS — exempt from the
+  // behaviour-descriptive-identifier rule under the constitution's E2E-selector carve-out.
+  // `nav-profile` became `nav-settings` in feature 062 when the destination was renamed and
+  // split into the settings route group.
   const links: { label: string; href: string; testID: string }[] = [
     { label: 'My Collections', href: '/(app)/home', testID: 'nav-home' },
-    { label: 'Profile', href: '/(app)/profile', testID: 'nav-profile' },
+    { label: 'Settings', href: '/(app)/settings', testID: 'nav-settings' },
   ];
 
   return (

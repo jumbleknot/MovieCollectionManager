@@ -16,12 +16,12 @@
 # runnable config → the 4 agent flows drive the dock → disable tears down (so the next run starts
 # disabled for the gating assertion). cwd is the repo root.
 #
-# After the agent flows, `admin-card` (040 follow-on — a NON-agent nav flow) runs LAST and SPECIALLY:
+# After the agent flows, `admin-settings-access` (a NON-agent nav flow) runs LAST and SPECIALLY:
 # it logs in as the seeded mc-admin `e2e-admin-user` (not `e2e-test-user`), so it must first drop the
 # persistent e2e-test-user Keycloak SSO session that the agent flows leave in Chrome — see reset_chrome_sso
 # below. It rides in this script because this is the single CI mobile emulator runner (reuses the harness).
 #
-# Env (from the job): E2E_TEST_USER, E2E_TEST_PASSWORD, ANTHROPIC_API_KEY, TMDB_API_KEY. `admin-card`
+# Env (from the job): E2E_TEST_USER, E2E_TEST_PASSWORD, ANTHROPIC_API_KEY, TMDB_API_KEY. `admin-settings-access`
 # reuses E2E_TEST_PASSWORD (the realm seeds e2e-admin-user with ${E2E_TEST_PASSWORD}); its username is
 # the fixed public identity `e2e-admin-user`, hardcoded in _login-admin-helper.yaml (not a secret).
 set -euo pipefail
@@ -100,10 +100,52 @@ run_flow() {
   bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$1.yaml" ${extra[@]+"${extra[@]}"}
 }
 
+# ── Device-side diagnostics on a failed attempt (feature 062) ─────────────────────────────────────
+#
+# WHY THIS EXISTS. A mobile flow that fails on `Assert that id: X is visible` says only that X was
+# not found. It cannot say whether the screen crashed, rendered empty, or was never navigated to —
+# and the two channels that CAN say are both unreachable from a session:
+#
+#   * the Maestro debug directory (view hierarchy + screenshots) is uploaded as a Forgejo Actions
+#     artifact, and this Forgejo build exposes NO artifacts API — `/api/v1/repos/…/actions/runs/
+#     {n}/artifacts` 404s, and the web download needs a browser session cookie. The failure digest
+#     even reports it as "not present", because it looks for a local directory that never exists.
+#   * `adb logcat` holds the ReactNativeJS exception for a JS render error, and the emulator is
+#     TERMINATED by the android-emulator-runner action before the workflow's collect-logs step
+#     runs — so logcat must be captured HERE, inside the emulator script, or not at all.
+#
+# Both are copied into `mobile-diagnostics/`, which the collect step folds into `container-logs/`
+# — the bundle `node scripts/ci-status.mjs failure --run <id> --full` can actually retrieve.
+#
+# Measured on run 2043: the settings destination failed 3/3 on native while the whole 165-test web
+# tier passed on the same commit, and no channel existed to see what the device was showing.
+capture_mobile_diagnostics() {
+  # SEPARATE `local` statements, deliberately. Bash expands every assignment word in a single
+  # `local` builtin call BEFORE any of the locals exist, so `local a="$1" b="${a}"` interpolates the
+  # OUTER `a`, not the one being assigned. Measured on run 2049: the admin flow's capture landed in
+  # `mobile-diagnostics/assistant-config-disable-attempt1` — the previous flow's name (the global
+  # left behind by the `for flow in …` loop) and the global `attempt`. The evidence was filed under
+  # the wrong flow, which is the one thing a diagnostic must never do.
+  local flow="$1"
+  local attempt="$2"
+  local dest="mobile-diagnostics/${flow}-attempt${attempt}"
+  mkdir -p "$dest" || return 0
+  # ReactNativeJS carries a JS exception; AndroidRuntime carries a native crash. `-d` dumps and
+  # exits rather than streaming. Never fail the run on a diagnostic.
+  adb logcat -d -v time ReactNativeJS:V ReactNative:V AndroidRuntime:E '*:S'     > "$dest/logcat-react.log" 2>&1 || true
+  adb logcat -d -v time > "$dest/logcat-full.log" 2>&1 || true
+  # Maestro writes a timestamped directory per flow run; take the newest.
+  local latest
+  latest="$(ls -1dt "$HOME"/.maestro/tests/*/ 2>/dev/null | head -1)"
+  [ -n "$latest" ] && cp -r "$latest" "$dest/maestro/" 2>/dev/null || true
+  echo "--- captured device diagnostics -> $dest ---"
+}
+
 for flow in "${flows[@]}"; do
   echo "=== flow: $flow ==="
   attempt=1; max=3
   until run_flow "$flow"; do
+    capture_mobile_diagnostics "$flow" "$attempt"
     if [ "$attempt" -ge "$max" ]; then
       echo "::error::flow $flow failed after $max attempts"
       exit 1
@@ -113,12 +155,14 @@ for flow in "${flows[@]}"; do
   done
 done
 
-# ── admin-card (040 follow-on) — NON-agent nav flow, run LAST and specially ──────────────────────────
+# ── admin-settings-access (040 follow-on, 062 rename) — NON-agent nav flow, run LAST and specially ───
 # It logs in as a DIFFERENT user (the seeded mc-admin `e2e-admin-user`) than every agent flow above
 # (`e2e-test-user`). Those flows leave a persistent e2e-test-user Keycloak SSO session in Chrome — flows
 # 2+ SKIP the credential form and re-auth silently via that session (visible in the CI log). Without
-# intervention admin-card would do the same → authenticate as e2e-test-user (mc-user) → the admin card
-# is correctly gated out → `scrollUntilVisible profile-admin-settings-card` times out and the flow fails.
+# intervention admin-settings-access would do the same → authenticate as e2e-test-user (mc-user) → the
+# Admin sub-navigation entry is correctly gated out → `scrollUntilVisible settings-nav-admin` times out
+# and the flow fails. (Feature 062 renamed the flow and the selector; the rationale is unchanged — it
+# still logs in as e2e-admin-user, not e2e-test-user.)
 # `pm clear com.android.chrome` drops the SSO cookie so Keycloak shows the login form and the admin's
 # credentials actually get used. That also resets Chrome's First-Run Experience, so we re-skip the FRE
 # right after (and again on each retry, since a prior attempt re-establishes the SSO session).
@@ -130,15 +174,16 @@ reset_chrome_sso() {
   done
 }
 
-echo "=== flow: admin-card (fresh Chrome SSO — logs in as the seeded mc-admin) ==="
+echo "=== flow: admin-settings-access (fresh Chrome SSO — logs in as the seeded mc-admin) ==="
 attempt=1; max=3
 reset_chrome_sso
-until run_flow admin-card; do
+until run_flow admin-settings-access; do
+  capture_mobile_diagnostics admin-settings-access "$attempt"
   if [ "$attempt" -ge "$max" ]; then
-    echo "::error::flow admin-card failed after $max attempts"
+    echo "::error::flow admin-settings-access failed after $max attempts"
     exit 1
   fi
-  echo "flow admin-card failed (attempt $attempt/$max) — retrying"
+  echo "flow admin-settings-access failed (attempt $attempt/$max) — retrying"
   attempt=$((attempt + 1))
   reset_chrome_sso
 done

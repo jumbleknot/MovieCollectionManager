@@ -66,7 +66,7 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "assistant-dock-toggle"
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:
@@ -89,7 +89,7 @@ appId: com.grumpyrobot.mcmapp
 
 # ── Teardown: delete the created collection so re-runs start clean. ──
 - tapOn:
-    id: "nav-profile"
+    id: "nav-settings"
 - tapOn:
     id: "nav-home"
 - extendedWaitUntil:

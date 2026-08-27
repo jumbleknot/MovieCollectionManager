@@ -138,7 +138,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/061-playwright-image-pin-gate/plan.md`
+`specs/062-settings-split/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->
