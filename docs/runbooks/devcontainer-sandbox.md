@@ -614,10 +614,93 @@ appeared to, which is the same lesson as a skipped test reading as a pass.
 
 ---
 
-## 8. Disk — this is an operational constraint, not a formality
+## 8. Disk — three volumes, all of them resizable
 
-The VM's Docker disk is **49 GB and cannot be enlarged** (v0.38.0 exposes no `--disk` flag). It
-reached **94 % (3.1 GB free)** during this feature, which is enough to fail an image pull.
+> **Corrected 2026-08-27 (item #246).** This section used to state that the VM's Docker disk was
+> **"49 GB and cannot be enlarged (v0.38.0 exposes no `--disk` flag)"**. The premise was right — there
+> is no *flag* — but the conclusion was wrong, and it is why pruning was treated as the only lever
+> through five image rebuilds. The sizes are set by **environment variables**, read at sandbox
+> **creation** time, and all three exist in v0.38.0.
+
+A sandbox has **three** independently sized volumes. Confirm which one is binding before turning a
+knob — raising the wrong one changes nothing:
+
+| Device | Default | Mounted at | Holds | Knob |
+| --- | ---: | --- | --- | --- |
+| `vdd` | 50 GiB | `/var/lib/docker` | every Docker image/layer **and the dev container's own writable layer** — this is the `/` the dev container reports | `DOCKER_SANDBOXES_DOCKER_SIZE` |
+| `vdb` | 20 GiB | `/` (VM root) | `/workspaces/<name>` — the working tree | `DOCKER_SANDBOXES_ROOT_SIZE` |
+| — | 50 GiB | cloned workspace | only in `--clone` mode; unused here | `DOCKER_SANDBOXES_CLONED_WORKSPACE_SIZE` |
+
+**`/var/lib/docker` is not visible from inside the dev container** (`No such file or directory`), and
+`df /` there reports `vdd` because the container's overlay upper dir lives on it. That is what made
+the topology hard to read from the inside. Establish it from the **VM shell** instead:
+
+```bash
+sbx exec <name> sh -c 'lsblk | grep ^vd; df -h /var/lib/docker /'
+```
+
+### Changing a size — creation-time only, so it means recreate
+
+```powershell
+[Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_DOCKER_SIZE','100GB','User')
+[Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_ROOT_SIZE','40GB','User')
+# then a NEW shell, so sbx and the daemon inherit them
+```
+
+Set them at **User scope, not `$env:`**. A later `sbx` upgrade makes this load-bearing: **v0.42.0
+drops the default Docker volume from 50 GB to 10 GB**, so any future recreate that forgets the
+variable silently gets a far smaller disk than the one before it.
+
+Verify from the **host**, never with `df` inside — on <= v0.39.0 a recreate that reuses a deleted
+sandbox's name can inherit its old volumes, and `df` will report the old size as if the resize took:
+
+```powershell
+Get-ChildItem "$env:LOCALAPPDATA\DockerSandboxes\sandboxes\state\sandboxd" -Recurse -Filter *.img |
+  ForEach-Object { "{0,8:N1} GB  {1}" -f ($_.Length/1GB), $_.Name }
+# expect: mcm-docker.img = the DOCKER_SIZE, rwlayer.img = the ROOT_SIZE
+```
+
+The spec records what was actually stamped — read it with a **case-sensitive** JSON parser
+(PowerShell's `ConvertFrom-Json` rejects the file: it carries both `HTTP_PROXY` and `http_proxy`):
+
+```bash
+# in state/sandboxd/runtimes/mcm.json
+node -e "const s=JSON.parse(require('fs').readFileSync('mcm.json','utf8')).Spec; console.log(s.DinDVolumeSize, s.RootFilesystemSize)"
+```
+
+### Sparse is real, but only until written
+
+A fresh 100 GB volume occupies **438 MB** on the host. But blocks are **never released back**: the
+previous 50 GiB volume had reached 100 % once and was still holding **53.6 GB of real bytes** at
+deletion. Treat a declared size as a future host cost, not a free option. Check with
+`compact /q <path to mcm-docker.img>` — it prints allocated vs declared.
+
+### Relocating the data root off `C:`
+
+There is **no supported setting** ([docker/sbx-releases#228](https://github.com/docker/sbx-releases/issues/228),
+open since 2026-06-11; the maintainer's `msiexec INSTALLFOLDER=` suggestion moves only the install).
+A junction on the **`sandboxes` subfolder** works — junctioning the *parent* `DockerSandboxes` folder
+is what broke for the issue reporter, because it also holds `bin\sbx.exe`:
+
+```powershell
+sbx rm <name> --force        # do this FIRST: the tree drops to ~8 GB, so the move is cheap
+sbx daemon stop
+robocopy "$env:LOCALAPPDATA\DockerSandboxes\sandboxes" "E:\DockerSandboxes\sandboxes" /E /MOVE
+cmd /c mklink /J "$env:LOCALAPPDATA\DockerSandboxes\sandboxes" "E:\DockerSandboxes\sandboxes"
+```
+
+⚠️ **Re-verify the junction after every `sbx` upgrade** — an MSI could recreate the folder. It
+survived the v0.38.0 → v0.39.0 upgrade (measured 2026-08-27), which is evidence, not a guarantee:
+
+```powershell
+Get-Item "$env:LOCALAPPDATA\DockerSandboxes\sandboxes" -Force | Select-Object LinkType, Target
+```
+
+⚠️ **`sbx rm` on <= v0.39.0 does not reclaim everything** — it left **7.7 GB** of containerd template
+cache behind. That content is reusable, so it is not waste, but do not read the leftover as a failed
+delete. v0.42.0 fixes both this and the name-reuse inheritance above.
+
+### Reclaiming space without a resize
 
 ```bash
 docker builder prune -f     # reclaimed 3.665 GB; never touches images
@@ -626,6 +709,74 @@ docker image prune -f       # DANGLING ONLY
 
 ⚠️ **Never `docker image prune -a`.** It evicts the 3.5 GB Playwright image (and any other image not
 currently attached to a container), which the web-E2E recipe needs and which must then be re-pulled.
+
+### Measured, 2026-08-27 — the resize plus item #244 together
+
+| | before | after |
+| --- | --- | --- |
+| Docker volume | 50 GiB, 6.3 GB free (87 %) | **100 GB, 58 GB free after a full build** |
+| VM root / `/workspaces` | 20 GiB | **40 GB** |
+| `mcm-bff` image | 5.85 GB | **1.73 GB** |
+| `pnpm nx docker-build mcm-app` in the dev container | failed twice at `exporting layers`, 4.2 GB then 6.9 GB free | **succeeds, 9 m 22 s, export 26.6 s** |
+
+---
+
+## 8b. 🔴 A cold recreate needs three things the template does not carry
+
+Beyond the egress policy (§7b), a sandbox created from scratch is missing setup that nothing in the
+provisioning path supplies. All three were hit on 2026-08-27; each stops the recreate dead.
+
+**1. The `devcontainer` CLI is not installed.** §7b's recreate sequence calls `devcontainer up`, and
+the binary does not exist in a fresh sandbox:
+
+```bash
+sudo npm install -g @devcontainers/cli
+```
+
+**2. `/etc/docker/daemon.json` has no `insecure-registries`.** The forge registry is plain **HTTP on
+:3000**, so every pull fails with `http: server gave HTTP response to HTTPS client`. This was already
+identified as owed by [specs/060 research](../../specs/060-devcontainer-docker-sandbox/research.md)
+(T053) and never landed:
+
+```bash
+printf '{\n  "insecure-registries": ["%s:3000"]\n}\n' "$FORGE_REGISTRY_HOST" | sudo tee /etc/docker/daemon.json
+```
+
+**3. `/etc/init.d/docker restart` does not work here** — it exits on
+`ulimit: error setting limit (Invalid argument)`, leaves the new config unapplied, and `docker info`
+keeps answering, so it reads as success. There is no systemd (PID 1 is `tini`). Restart the
+**sandbox** instead, which brings `dockerd` up with the new config:
+
+```bash
+sbx stop <name>            # the next `sbx exec` restarts it
+```
+
+> ⚠️ **An instant failure is not always a policy refusal.** §7b says a ~1 s failure means the egress
+> policy refused the connection, since "a network fault times out; a policy refusal is instant". True,
+> but incomplete: the HTTPS/HTTP mismatch above fails in **0.034 s** and has nothing to do with
+> policy. Instant means *rejected before leaving the host*, which has at least two causes — read the
+> error text before acting on the timing.
+
+### What a recreate destroys, and what to save first
+
+`/workspaces/<name>` is **a plain directory on `vdb`, not a mount** — the host workspace directory is
+empty, so `sbx rm` destroys the working tree. Pushed commits are safe; these are not, and
+`~/.mcm-sandbox-env` is the one that hurts, because it carries `MCM_DEVCONTAINER_IMAGE` (the pin
+§7b's rebuild needs) alongside `FORGE_REGISTRY_HOST` and four credentials:
+
+```bash
+ssh <name>.sbx 'cd ~ && tar czf /tmp/home.tgz .git-credentials .gitconfig .gitignore_global .bashrc .bash_profile .env.e2e.local .mcm-sandbox-env* .mcm-reboot-manifest.txt'
+ssh <name>.sbx 'cd /workspaces/<name> && git status --porcelain --ignored=matching -uall | grep "^!!" | cut -c4- | grep -E "[.]env" | tar czf /tmp/env.tgz -T -'
+```
+
+🔴 **Validate the archive, do not trust the exit code.** `tar -T -` fed an empty list writes a valid
+**45-byte archive with zero entries**, and `sbx cp` copies it with no error — a backup that exists,
+is named correctly, and contains nothing. This happened on 2026-08-27 when a `sed` in the pipeline
+failed under PowerShell quoting (`cut -c4-` above avoids it). Always:
+
+```bash
+tar tzf <archive> | wc -l          # compare against the file count you expected
+```
 
 ---
 
