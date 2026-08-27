@@ -1,32 +1,31 @@
 {
-  "coveredCommit": "862ba08fa82c6390221517d7fd446e7f80c7bddd",
-  "coveredAt": "2026-08-27T14:28:59.385Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "3affd3a135383f2fe3242866634fc2df6f5c4dea",
+  "coveredAt": "2026-08-27T16:09:18.376Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 245,
-    "headCommit": "4ea777d09d0a10782f9165154b241a3c588a8e47",
-    "markerBefore": "0a6d0177f7fa5acdaf7cb55d0f2b05b57856c3ac",
+    "number": 250,
+    "headCommit": "b81927ba071a0da64f626d353f9546cccc108bb3",
+    "markerBefore": "3affd3a135383f2fe3242866634fc2df6f5c4dea",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "android-emulator.md",
           "devcontainer-sandbox.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer-sandbox.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md; openwiki/runbooks/devcontainer-sandbox.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/devcontainer-sandbox.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-27T11:14:09.880Z"
+    "updatedAt": "2026-08-27T16:09:18.695Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 1,
+    "elapsedSeconds": 139,
     "stoppedAtBudget": false
   }
 }
