@@ -146,8 +146,20 @@ echo "$MCM_DEVCONTAINER_IMAGE"    # must print the pinned @sha256:<digest>, not 
 
 # 3. recreate
 devcontainer up --workspace-folder /workspaces/mcm \
-  --config .devcontainer/sandbox/devcontainer.json --remove-existing-container
+  --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json --remove-existing-container
 ```
+
+🔴 **`--config` resolves against your CWD, not against `--workspace-folder`.** The VM shell lands in
+`/home/agent/workspace`, so the relative form every snippet in this runbook used until 2026-08-27
+fails there — and it fails in a way that reads like the file is missing rather than like the path is
+wrong:
+
+```text
+Error: Dev container config (/home/agent/workspace/.devcontainer/sandbox/devcontainer.json) not found.
+```
+
+The gate commands above are unaffected because they name absolute paths, so step 1 passes and step 3
+is what breaks. Pass `--config` absolutely (as shown), or `cd /workspaces/mcm` first.
 
 **Editing `.devcontainer/devcontainer.json` alone changes nothing on this path.**
 `.devcontainer/sandbox/devcontainer.json` is a *duplicate*, not an extension (feature 060, until
@@ -414,7 +426,7 @@ sbx run -t docker.io/library/mcm-proven:060 --name <new> -d shell C:\path\to\scr
 node scripts/gen-egress-policy.mjs --format sbx-policy --forge-host $env:FORGE_REGISTRY_HOST
 #   -> for each "allow network <domain>":  sbx policy allow network <domain> --sandbox <new>
 
-devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json
+devcontainer up --workspace-folder /workspaces/mcm --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json
 ```
 
 ### ⚠️ A template does NOT contain the Docker images
@@ -587,7 +599,7 @@ esac
 
 # 4. only on PIN OK. (For the UID fix specifically, chown the tree to 1000 first.)
 devcontainer up --workspace-folder /workspaces/mcm \
-  --config .devcontainer/sandbox/devcontainer.json --remove-existing-container
+  --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json --remove-existing-container
 ```
 
 🔴 **Two ways this silently re-creates the OLD container, both measured 2026-08-22.**

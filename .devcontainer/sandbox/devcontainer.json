@@ -11,7 +11,7 @@
   //
   // Select it explicitly:
   //   devcontainer up --workspace-folder /workspaces/mcm \
-  //                   --config .devcontainer/sandbox/devcontainer.json
+  //                   --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json
   "name": "mcm-workspace-sandbox",
 
   // Unchanged from the Docker Desktop config, EXCEPT the relative path: this file lives one
@@ -174,7 +174,7 @@
     // Docker Desktop environment. Install it once per container creation:
     //
     //     devcontainer up --workspace-folder /workspaces/mcm \
-    //       --config .devcontainer/sandbox/devcontainer.json \
+    //       --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json \
     //       --dotfiles-repository https://github.com/jumbleknot/mcm-dotfiles
     //
     // RTK IS NOT ACTIVE JUST BECAUSE THE BINARY EXISTS. It compresses only via the `rtk hook
