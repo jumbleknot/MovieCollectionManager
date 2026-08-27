@@ -51,10 +51,22 @@ ENV EXPO_PUBLIC_KEYCLOAK_URL=$EXPO_PUBLIC_KEYCLOAK_URL
 # Generate the Expo Router server bundle into dist/
 RUN npx expo export --platform web
 
-# ── Stage 2: Production runtime ───────────────────────────────────────────────
-# Lean image with only production deps + the built output.
-FROM node:24.14.1-alpine3.23 AS runner
+# ── Stage 2: Production dependency tree ───────────────────────────────────────
+# Resolves the workspace and materializes a standalone PRODUCTION tree at
+# /app/runtime. This is its own stage rather than part of the runner because the
+# work leaves ~2 GB of build-only residue behind that the runtime never touches:
+# the full workspace install at /app/node_modules (1.6 GB — devDeps included,
+# because pnpm resolves the whole graph before --prod filters it) plus pnpm's
+# content-addressable store under /root (~390 MB). Done in the runner, all of
+# that is baked into the shipped image; done here, only /app/runtime is copied
+# out. Measured 2026-08-27: 4.56 GB → ~1.4 GB.
+#
+# It also keeps this layer keyed on the manifests and lockfile alone, so editing
+# app source does not re-run the 1.2 GB deploy — which matters because the build
+# cache competes for the same constrained disk as the images (item #246).
+FROM node:24.14.1-alpine3.23 AS deps
 
+# glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
 
 RUN corepack enable && corepack prepare pnpm@11.22.0 --activate
@@ -67,37 +79,57 @@ WORKDIR /app
 # node_modules (feature 015).
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/mcm-app/package.json ./frontend/mcm-app/
+# server.js and its plain-CommonJS security-header builder (feature 032) are
+# copied into the PACKAGE directory, not the image root: `pnpm deploy` carries
+# the package's own files across, which is how they arrive at /app/runtime.
 COPY frontend/mcm-app/server.js ./frontend/mcm-app/
-# Feature 032: the plain-CommonJS security-header builder required by server.js at boot.
 COPY frontend/mcm-app/web-security-headers.js ./frontend/mcm-app/
 COPY packages/design-system/ ./packages/design-system/
 
-# Install workspace deps, then deploy production-only to a standalone directory. In the SAME layer,
-# remove BOTH bundled Node package managers — the runtime is `node server.js`, so neither npm nor
-# pnpm is ever invoked at runtime. Each ships its own `tar` < 7.5.19, both carrying the fixable
-# CRITICAL CVE-2026-59873 (node-tar gzip-bomb DoS) that fails the cd-deploy Trivy gate
-# (`--severity CRITICAL --ignore-unfixed`):
-#   • node:24-alpine's npm         → /usr/local/lib/node_modules/npm/.../tar (7.5.9)
-#   • corepack's pnpm@10.33.0 dist → /root/.cache/node/corepack/.../tar     (7.5.12)
-# Removing both eliminates the vulnerable code outright — a real fix, not a Trivy suppression — and
-# shrinks the runtime attack surface. node:24-latest still ships npm with tar < 7.5.19 and pnpm
-# 10.33.0 bundles 7.5.12, so neither a base bump nor the pinned pnpm clears this; remove until the
-# upstream managers carry the fix. Removal is AFTER `pnpm install` (its root `preinstall` runs
-# `npx --yes only-allow pnpm`, so npx must exist during install; pnpm itself runs the deploy) and in
-# the SAME RUN so no vulnerable blob survives in an earlier layer.
+# npm stays intact in THIS stage: the root package.json preinstall runs
+# `npx --yes only-allow pnpm`, so npx must exist for the install to succeed. The
+# CVE removal belongs in the runner, which is the stage that actually ships.
 RUN pnpm install --frozen-lockfile && \
-    pnpm deploy --filter=mcm-app --prod --legacy /app/runtime && \
-    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
-           /root/.cache/node/corepack
+    pnpm deploy --filter=mcm-app --prod --legacy /app/runtime
+
+# ── Stage 3: Production runtime ───────────────────────────────────────────────
+# Receives artifacts only. No package manager runs here and none is needed —
+# the runtime is `node server.js`.
+FROM node:24.14.1-alpine3.23 AS runner
+
+# Three things in one layer, all of which must precede the COPYs below:
+#   • gcompat — glibc compatibility for native Node modules (ioredis, etc.).
+#   • Remove the bundled npm. It ships its own `tar` < 7.5.19, carrying the
+#     fixable CRITICAL CVE-2026-59873 (node-tar gzip-bomb DoS) that fails the
+#     cd-deploy Trivy gate (`--severity CRITICAL --ignore-unfixed`). Removing it
+#     eliminates the vulnerable code outright — a real fix, not a suppression.
+#     node:24-latest still ships npm with tar < 7.5.19, so a base bump does not
+#     clear this; remove until the upstream manager carries the fix. The pnpm
+#     half of the old removal is now structural: corepack is never activated in
+#     this stage, so no pnpm dist is ever downloaded to /root/.cache.
+#   • Create mcm, so the COPYs below can set ownership as they write.
+RUN apk add --no-cache gcompat && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx && \
+    addgroup -S mcm && adduser -S mcm -G mcm
+
+# --chown on the COPY, never `chown -R` afterwards. A layer records a whole
+# changed file rather than a metadata delta, so re-owning the tree in a separate
+# RUN stored a second full copy of it — a 1.33 GB layer contributing no new
+# content, and enough to fail `exporting layers` on a full disk (item #244).
+#
+# WORKDIR comes AFTER these, and both destinations are absolute: WORKDIR creates
+# the directory as root, and --chown then applies only to what is copied INTO an
+# already-existing destination. Setting the workdir first left /app/runtime
+# itself owned by root — measured, and a real behavioural difference from the
+# chown -R it replaces, not a cosmetic one.
+COPY --from=deps    --chown=mcm:mcm /app/runtime         /app/runtime
+COPY --from=builder --chown=mcm:mcm /app/standalone/dist /app/runtime/dist
 
 WORKDIR /app/runtime
 
-# Built Expo Router output (client assets + server functions)
-COPY --from=builder /app/standalone/dist ./dist
-
-# Drop to a non-root user before running the server (defense-in-depth; feature 034).
-# The server only reads /app/runtime and logs to stdout — no writable runtime path needed.
-RUN addgroup -S mcm && adduser -S mcm -G mcm && chown -R mcm:mcm /app/runtime
+# Drop to a non-root user before running the server (defense-in-depth; feature
+# 034). The server only reads /app/runtime and logs to stdout — no writable
+# runtime path needed.
 USER mcm
 
 EXPOSE 3000
