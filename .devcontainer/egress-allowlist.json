@@ -247,6 +247,12 @@
       "cdnRotating": false
     },
     {
+      "domain": "mcp.expo.dev",
+      "group": "agent",
+      "reason": "Expo's REMOTE MCP SERVER, reached over HTTP by the `expo` Claude Code plugin's MCP client. Without it the plugin fails at startup with `getaddrinfo ENOTFOUND mcp.expo.dev` and the session reports the server as unavailable \u2014 measured 2026-08-27 (item #253). This is the front-door-vs-second-host trap this file documents for registries, now on the MCP path: api.expo.dev IS allowlisted and answers 200 from the dev container, and it does NOT cover this name. The allowlist resolves per FQDN, not per apex domain. Grouped `agent` rather than `packages` alongside api.expo.dev because the consumer is the coding assistant's own tooling, like api.anthropic.com / code.claude.com, not the build or test path \u2014 nothing in CI touches it. NOTE the failure signature: a blocked host NXDOMAINs here rather than being refused at the route, so `curl` reports rc=6 and writes http_code 000. The 000 is curl's placeholder for a request never made, not evidence of a route-layer block.",
+      "cdnRotating": false
+    },
+    {
       "domain": "exp.host",
       "group": "packages",
       "reason": "Expo services host, paired with api.expo.dev.",
