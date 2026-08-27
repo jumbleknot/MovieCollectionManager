@@ -695,7 +695,21 @@ function resolvedEnabled(dep) {
 }
 
 const RN_FAMILY = ['react-native', 'react-native-reanimated', 'react-native-worklets', '@react-native/babel-preset'];
-const WORKSPACE_MANIFESTS = ['package.json', 'frontend/mcm-app/package.json', 'packages/design-system/package.json'];
+// The Expo SDK companions. The three UNPREFIXED names are the point: `expo`, `/^expo-/` and
+// `/^@expo//` — every pattern the app-scoped rule carries — miss all three, so they were locked in no
+// manifest at all. @expo/dom-webview is here because it is declared in pnpm-workspace.yaml, which a
+// matchFileNames rule scoped to the app cannot reach. Measured 2026-08-27 on item #29: all four were
+// queued in `js majors` for 56 -> 57 while `expo` itself stayed pinned at ^56.0.8.
+const EXPO_FAMILY = ['expo', 'expo-router', '@expo/dom-webview', 'babel-preset-expo', 'jest-expo', 'eslint-config-expo'];
+// NOT SDK-pinned and must stay updatable — asserted so a future widening of the Expo lock cannot
+// swallow them silently. `/^@expo//` needs a slash after `@expo`; these separate with a hyphen.
+const EXPO_FALSE_FRIENDS = ['@expo-google-fonts/inter', '@expo-google-fonts/outfit'];
+const WORKSPACE_MANIFESTS = [
+  'package.json',
+  'frontend/mcm-app/package.json',
+  'packages/design-system/package.json',
+  'pnpm-workspace.yaml',
+];
 
 for (const packageFile of WORKSPACE_MANIFESTS) {
   test(`the React Native family is version-locked in ${packageFile}, not just in the app`, () => {
@@ -713,6 +727,44 @@ for (const packageFile of WORKSPACE_MANIFESTS) {
     }
   });
 }
+
+for (const packageFile of WORKSPACE_MANIFESTS) {
+  test(`the Expo SDK companion family is version-locked in ${packageFile}, not just in the app`, () => {
+    for (const depName of EXPO_FAMILY) {
+      const enabled = resolvedEnabled({ manager: 'npm', packageFile, depName, datasource: 'npm', updateType: 'major' });
+      assert.equal(
+        enabled,
+        false,
+        `${depName} is UPDATABLE in ${packageFile}.\n` +
+          '  The Expo SDK companions are version-locked to the SDK across the WHOLE workspace —\n' +
+          '  upgrades go through `expo install` / the expo upgrade skill together with `expo` and\n' +
+          '  `react-native`, never a raw Renovate bump. babel-preset-expo, jest-expo and\n' +
+          '  eslint-config-expo carry no expo prefix, so every pattern in the app-scoped rule misses\n' +
+          '  them; @expo/dom-webview is declared in pnpm-workspace.yaml, which that rule cannot reach.\n' +
+          '  Measured 2026-08-27 (item #29): all four were queued 56 -> 57 while expo stayed on ^56.',
+      );
+    }
+  });
+}
+
+test('the Expo lock does NOT swallow @expo-google-fonts, which is not SDK-pinned', () => {
+  for (const depName of EXPO_FALSE_FRIENDS) {
+    const enabled = resolvedEnabled({
+      manager: 'npm',
+      packageFile: 'frontend/mcm-app/package.json',
+      depName,
+      datasource: 'npm',
+      updateType: 'major',
+    });
+    assert.equal(
+      enabled,
+      true,
+      `${depName} is DISABLED, but it is a font package with no tie to the Expo SDK matrix.\n` +
+        '  A lock wide enough to catch it is wider than the defect it was written for, and it will\n' +
+        '  silently stop proposing updates for it — the failure mode of an over-broad ignore.',
+    );
+  }
+});
 
 test('a cargo 0.x minor bump is treated as breaking, not as routine', () => {
   // For a 0.x crate a MINOR bump is a semver-major in effect, but Renovate classifies it as `minor`

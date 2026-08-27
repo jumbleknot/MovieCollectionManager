@@ -285,6 +285,48 @@
       "enabled": false
     },
     {
+      "description": [
+        "The EXPO SDK COMPANION packages are version-locked repo-wide. This is the THIRD instance of",
+        "one scope defect, after react/react-dom and react-native above, and it is the widest: the",
+        "app-scoped rule two above lists `expo`, `/^expo-/` and `/^@expo//`, and NONE of those three",
+        "patterns matches a companion that carries no expo prefix at all. babel-preset-expo,",
+        "jest-expo and eslint-config-expo were therefore locked NOWHERE — not in the app either.",
+        "The `/^@expo//` half was locked only inside frontend/mcm-app/package.json, while",
+        "@expo/dom-webview is declared in pnpm-workspace.yaml, which that rule does not reach.",
+        "MEASURED 2026-08-27 from the Dependency Dashboard (item #29). The `js majors` group was",
+        "holding babel-preset-expo ~56.0.14 -> ~57.0.0, jest-expo ~56.0.4 -> ~57.0.0,",
+        "eslint-config-expo ~56.0.4 -> ~57.0.0 and @expo/dom-webview ^56.0.5 -> ^57.0.0, while `expo`",
+        "itself sat at ^56.0.8 and react-native at 0.85.3 — both correctly disabled. Taking that",
+        "group would have left an SDK-56 RUNTIME running SDK-57 BUILD AND TEST TOOLING. That is a",
+        "worse failure than the RN one it rhymes with: babel-preset-expo compiles the app bundle and",
+        "jest-expo supplies the jest preset, so the halves that move are the TRANSFORM and the TEST",
+        "ENVIRONMENT, which fail as unexplained transform errors rather than as typecheck errors",
+        "pointing at a dependency.",
+        "NOT matchFileNames-scoped, deliberately. eslint-config-expo and jest-expo also live in",
+        "packages/design-system/package.json — the exact manifest react-native escaped through in",
+        "PR #217 — and @expo/dom-webview lives in pnpm-workspace.yaml. An app-scoped lock would miss",
+        "both, which is the whole defect being fixed here.",
+        "`/-expo$/` is the forward-looking half and is what covers the three unprefixed companions.",
+        "It is written as a suffix pattern rather than three literals because the SDK names its",
+        "companions by suffix, so the next one arrives already locked rather than after an incident.",
+        "@expo-google-fonts/* is deliberately NOT matched and must stay updatable: it is not pinned",
+        "to the SDK matrix, and no pattern here reaches it — `/^@expo//` requires a SLASH after",
+        "`@expo`, while the font packages separate with a HYPHEN.",
+        "Upgrades to any of this family go through `expo install` / the expo upgrade skill together",
+        "with `expo` and `react-native`, never a raw Renovate bump.",
+        "renovate-workflow.guard.test.mjs asserts the resolved `enabled` for this family in EVERY",
+        "workspace manifest, pnpm-workspace.yaml included, for the same reason it does for RN: a rule",
+        "that merely MENTIONS expo passed the old check."
+      ],
+      "matchPackageNames": [
+        "expo",
+        "/^expo-/",
+        "/^@expo//",
+        "/-expo$/"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Group Docker base-image updates into one PR per image (postgres, keycloak, mongo, opensearch, vault, node, caddy, langfuse, clickhouse…). This is the main security win.",
       "matchDatasources": ["docker"],
       "groupName": "docker base images",
