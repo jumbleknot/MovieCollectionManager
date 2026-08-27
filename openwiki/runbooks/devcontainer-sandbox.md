@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Dev container on Docker Sandbox microVM (primary environment)
-description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy, the socat engine seam, networking quirks, restart/reboot survival, disk limits, the template-recreate trap that destroys host-filesystem isolation, and the re-pin procedure with the two ways it silently rebuilds the old image.
+description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy, the socat engine seam, networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure, and the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart).
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-08-23T00:00:00+00:00
+timestamp: 2026-08-27T00:00:00+00:00
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -50,7 +50,36 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 
 - **The agent stack does NOT come back after restart.** `movie-assistant-gateway` and the 3 MCP servers are started with `restart=no` deliberately — a restart policy would resurrect the gateway from its pre-rebuild image (the "silently runs old code" trap). Restart explicitly: `MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code`. Verify with `verify-reboot-survival.sh --verify`, not by eye.
 
-- **Docker disk is 49 GB and cannot be enlarged (v0.38.0).** It reached 94% (3.1 GB free) during feature 060. Reclaim space with `docker builder prune -f` (safe, never touches images). **Never `docker image prune -a`** — it evicts the 3.5 GB Playwright image which must then be re-pulled.
+- **The sandbox has three independently sized volumes — all resizable, but only at creation time.** Corrected 2026-08-27: the previous claim ("49 GB Docker disk, cannot be enlarged") was wrong. Sizes are set by environment variables that `sbx` reads when creating a new sandbox:
+
+  | Device | Default | Mounted at | Holds | Knob |
+  |---|---:|---|---|---|
+  | `vdd` | 50 GiB | `/var/lib/docker` | every Docker image/layer and the dev container's own writable layer — this is the `/` the dev container reports | `DOCKER_SANDBOXES_DOCKER_SIZE` |
+  | `vdb` | 20 GiB | `/` (VM root) | `/workspaces/<name>` — the working tree | `DOCKER_SANDBOXES_ROOT_SIZE` |
+
+  Set at **User scope** in PowerShell before creating a new sandbox — `$env:` is session-only and will not survive a new shell:
+
+  ```powershell
+  [Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_DOCKER_SIZE','100GB','User')
+  [Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_ROOT_SIZE','40GB','User')
+  ```
+
+  ⚠️ **v0.42.0 drops the default Docker volume from 50 GB to 10 GB.** Any future recreate that forgets to set the variable silently gets a far smaller disk. Set it at User scope so it survives upgrades.
+
+  ⚠️ **`/var/lib/docker` is not visible from inside the dev container.** `df /` in the container reports `vdd` (the Docker volume) because the container's overlay upper dir lives on it. Use the VM shell to see both: `sbx exec <name> sh -c 'lsblk | grep ^vd; df -h /var/lib/docker /'`.
+
+  ⚠️ **Verify the resize from the host, not `df` inside.** On <= v0.39.0, recreating a sandbox with the same name can inherit the old sandbox's volumes; `df` will report the old size as if the resize took. Check the `.img` file sizes instead:
+
+  ```powershell
+  Get-ChildItem "$env:LOCALAPPDATA\DockerSandboxes\sandboxes\state\sandboxd" -Recurse -Filter *.img |
+    ForEach-Object { "{0,8:N1} GB  {1}" -f ($_.Length/1GB), $_.Name }
+  ```
+
+  ⚠️ **Two dev-container images will not fit simultaneously.** The toolchain image is ~14 GB and the derived container another ~13.5 GB. Remove the previous pair before pulling a new toolchain image. Reclaim space without a resize: `docker builder prune -f` (safe, never touches images). **Never `docker image prune -a`** — it evicts the 3.5 GB Playwright image which must then be re-pulled.
+
+- **Relocating the data root off `C:` breaks SSH until ACLs are fixed.** There is no supported setting for moving the sandbox data root — a junction on `%LOCALAPPDATA%\DockerSandboxes\sandboxes` works, but files on another volume inherit that volume's ACL (grants `Authenticated Users`). Windows OpenSSH refuses a config it considers world-readable, so `ssh mcm.sbx` and `open-sandbox.ps1` fail with `Bad permissions… NT AUTHORITY\Authenticated Users`. Fix with `icacls` on the directory (not the files directly — using `(OI)(CI)` with `/T` on files strips ACEs entirely, leaving files no one can read): `icacls $ssh /inheritance:r /grant:r "$($env:USERNAME):(OI)(CI)F" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"` then `icacls "$ssh\*" /reset`. Re-verify the junction after every `sbx` upgrade — an MSI could recreate the folder.
+
+- **`ssh mcm.sbx` does not work from Git Bash — and the error blames DNS.** `sbx setup ssh` writes an `Include` with a Windows-style absolute path; MSYS OpenSSH resolves it relative to `~/.ssh/`, matches nothing, and continues silently to DNS: `Could not resolve hostname mcm.sbx: Name or service not known`. Use `C:\Windows\System32\OpenSSH\ssh.exe` (which VS Code also uses) or `sbx exec mcm` from Git Bash. Diagnose with `ssh -v … 2>&1 | grep -i include` before touching the sandbox.
 
 - **Template recreate destroys host-filesystem isolation unless the workspace is specified explicitly (critical, measured 2026-08-16).** `sbx run` mounts the **current directory** as the sandbox workspace read-write over virtiofs unless told otherwise. Creating a sandbox while sitting in the repo mounts the repo into the VM — a file written inside immediately appeared in the Windows working copy. Always pass a dedicated scratch directory: `sbx run -t … --name <new> -d shell C:\path\to\scratch\dir`.
 
@@ -79,6 +108,14 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 - **The sandbox, VS Code dev-container forwarding, and Docker Desktop all share the same `127.0.0.1` port space on Windows — measured 2026-08-23.** There is no separation: a port the sandbox has forwarded is a port the host cannot bind, and vice versa. This surfaces in two disguises: (1) a loud bind error (`"bind: Only one usage of each socket address"`) when bringing up the host's auth stack while the dev container is open — the natural reflex of `docker compose up -d` will **recreate** (not just start) the existing container and destroy it; use `docker start <name>` or `up -d --no-recreate` instead. (2) **The dangerous one:** VS Code keeps the host port bound for the lifetime of the window **even when the service inside the sandbox has stopped**. A client completes the TCP handshake and then waits forever with no error. An Android emulator sat on its splash screen indefinitely because the app's dev-server connection was `ESTAB` to a dead VS Code forward. Diagnose by ownership, not reachability: `Get-NetTCPConnection -LocalPort <port> -State Listen | ForEach-Object { "{0} <- PID {1} ({2})" -f $_.LocalAddress, $_.OwningProcess, (Get-Process -Id $_.OwningProcess).ProcessName }`. `Code` = VS Code forward (close the window or "Stop Forwarding Port"); `com.docker.backend` = Docker Desktop published port; `ssh` = manual tunnel.
 
 - **`sbx` is pinned at v0.38.0 — an upgrade is a security-relevant change, not a routine one.** It is load-bearing for isolation and egress enforcement. Before upgrading: read release notes for changes to network policy semantics, `--network=host` behaviour, port publishing, idle-stop timeout, secret injection, and template semantics; capture before-state with `verify-reboot-survival.sh --capture`; re-run the full harness; re-run G5 explicitly (sibling-egress refusal is the core security claim). Record the new version in the source runbook.
+
+- **A cold recreate (new sandbox from scratch) needs three things the provisioning path does not supply.** All three were hit 2026-08-27; each stops the recreate dead:
+
+  1. **The `devcontainer` CLI is not installed.** Install it first: `sudo npm install -g @devcontainers/cli`.
+  2. **`/etc/docker/daemon.json` has no `insecure-registries`.** The forge registry is plain HTTP on `:3000`, so every pull fails with `http: server gave HTTP response to HTTPS client`. Write the file: `printf '{\n  "insecure-registries": ["%s:3000"]\n}\n' "$FORGE_REGISTRY_HOST" | sudo tee /etc/docker/daemon.json`.
+  3. **`/etc/init.d/docker restart` does not work in the sandbox** — it exits on `ulimit: error setting limit (Invalid argument)`, leaves the new config unapplied, and `docker info` keeps answering so it reads as success. There is no systemd (PID 1 is `tini`). Restart the **sandbox** (`sbx stop <name>`), which brings `dockerd` up with the new config on the next `sbx exec`.
+
+  ⚠️ An instant failure is not always a policy refusal. §7b says a ~1 s failure is the egress-policy tell because "a network fault times out". True, but the HTTPS/HTTP mismatch above fails in 0.034 s and has nothing to do with policy. Read the error text before acting on the timing.
 
 - **`pnpm` is not in the VM shell — only inside the dev container.** VM-level scripts that call `pnpm` directly fail with `rc=127`. Use `docker exec … bash -lc` to run them inside the container.
 
