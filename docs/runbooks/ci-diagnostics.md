@@ -56,6 +56,54 @@ change that could not have affected them all.* It is detected two independent wa
 description is literally `"Has been cancelled"`, and the owning run's `status` is `cancelled`. Either
 alone suffices, so a UI wording change cannot silently turn it back into `failed`.
 
+### "Every job died together" has a SECOND cause — the install step
+
+The superseded tell above (*every job dies on a change that could not have affected them all*) is not
+unique to cancellation. A broken `pnpm install` produces the identical shape: every job that installs
+dependencies goes red, including ones with no relationship to the diff.
+
+Measured 2026-08-28 on PR #263 — `affected`, `mc-service-checks`, `naming`, `okf`, `agent-gates` and
+`sast` all failed, plus advisory `dast`, on a one-line `@ag-ui/client` bump. The cause was a
+supply-chain policy rejecting a transitive published 1.7 hours earlier, at
+`step:<job>-install-js-dependencies`. Nothing was wrong with the change.
+
+**So when the whole board goes red: check `status` for `cancelled` FIRST, then open any one failing
+job's digest and look at which STEP failed.** If it is the install step, the other five digests will
+say the same thing and reading them is wasted effort. See
+[the Renovate runbook](renovate.md) for the cooldown/transitive interaction behind this one.
+
+### Ask the right diff question — two-dot, not three-dot
+
+When deciding whether a branch still contributes anything over `main`:
+
+```bash
+git diff main branch      # ✅ what the trees actually differ by
+git diff main...branch    # ❌ what the branch adds since the MERGE BASE
+```
+
+The three-dot form happily lists changes `main` already has by another route, so a fully-superseded
+branch still looks like it carries work. Measured on PR #262: three-dot said "three version moves
+remain unique to this PR"; two-dot showed merging it would have **downgraded** crates, and Renovate
+autoclosed it as satisfied minutes later.
+
+### `--run N --full` resolves the wrong commit — use the `--pr`/`--job` form
+
+Item #226, reconfirmed 2026-08-28. The command every digest footer prints:
+
+```bash
+node scripts/ci-status.mjs failure --run 2147 --full     # answered "No failed jobs on this commit."
+node scripts/ci-status.mjs failure --pr 263 --job naming --full   # ✅ fetched the bundle correctly
+```
+
+on a run that had definitively failed, with the branch head verified unmoved first. **The wrong answer
+is a confident negative, not an error** — "No failed jobs on this commit" reads as "CI is fine", which
+is the worst possible reading mid-triage. `watch --branch main` has the same shape: it reported green
+on a commit that was two merges stale.
+
+**Prefer `--sha $(git rev-parse <ref>)` or `--pr N`.** An abbreviated sha is refused outright, which is
+the tool behaving well — the forge's `head_sha` filter is exact-match, so a short sha would return zero
+runs and look like "no CI ran".
+
 ### The event-suffix rule
 
 Context strings carry an event suffix, and **the same job appears once per event with outcomes that
