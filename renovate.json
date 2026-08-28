@@ -204,6 +204,38 @@
       "matchStrings": ["mcr\\.microsoft\\.com/playwright:v(?<currentValue>\\d[\\w.]*)-noble"],
       "depNameTemplate": "@playwright/test",
       "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Keep frontend/mcm-app/Dockerfile's `corepack prepare pnpm@<version>` pins in lockstep with",
+              "package.json's `packageManager`. Renovate manages the manifest field and has no visibility of the",
+              "Dockerfile, so every bot-authored pnpm bump arrived as a HALF BUMP and failed",
+              "check-toolchain-consistency.mjs by construction \u2014 item #225.",
+              "MEASURED TWICE. PR #217 (2026-08-21) moved packageManager to pnpm@11.22.0 and left both Dockerfile",
+              "lines at 11.17.0. PR #263 (2026-08-28) moved it to 11.24.0 and left both at 11.22.0, reddening",
+              "`guardrails / naming` on a branch Renovate REGENERATES weekly \u2014 so it re-blocked on that schedule.",
+              "THIRD INSTANCE OF ONE SHAPE, and the second Renovate produces: nx (item #194, package.json vs",
+              "nx.json) and Playwright (item #204, lockfile vs the image tag in app-ci.yml) are the two above.",
+              "EXTRACTION IS NOT GROUPING \u2014 the lesson both of those recorded the hard way. This entry alone does",
+              "NOT make the halves move together; the `pnpm pin` packageRule below is what does, and it must stay",
+              "ordered after the broad `js patch/minor` / `js majors` rules. The nx pair carried a customManager",
+              "for months and still half-bumped twice (PR #141, PR #193) because a later npm rule pulled its",
+              "manifest half back out.",
+              "SCOPED TO THE DOCKERFILE BY NAME, deliberately. docs/runbooks/dev-environment-setup.md also says",
+              "`corepack prepare pnpm@latest`, which is prose for a human and not a pin \u2014 the toolchain gate's own",
+              "PINNED_FILES list excludes it for the same reason, and a broader pattern would file `latest` as a",
+              "version and propose bumps against documentation.",
+              "UNVERIFIED AND FLAGGED: the file carries the version on TWO byte-identical lines (build stage and",
+              "runtime stage). Whether Renovate rewrites both, or only the first, is not established here \u2014 see",
+              "item #225 for the check to run on the first bot-authored pnpm bump after this lands, and for the",
+              "ARG-single-sourcing fallback if it turns out to rewrite only one. The toolchain gate still fails",
+              "closed either way, so the worst case is the status quo, not a silent half-bump."
+      ],
+      "managerFilePatterns": ["/^frontend/mcm-app/Dockerfile$/"],
+      "matchStrings": ["corepack\\s+prepare\\s+pnpm@(?<currentValue>[\\d.]+)"],
+      "depNameTemplate": "pnpm",
+      "datasourceTemplate": "npm"
     }
   ],
   "packageRules": [
@@ -477,6 +509,33 @@
       "matchUpdateTypes": ["minor", "major"],
       "groupName": "copilotkit (review individually)",
       "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": [
+        "pnpm MOVES AS ONE UNIT \u2014 item #225, the same requirement as the nx and Playwright rules above and",
+              "for the same reason. pnpm's version lives in package.json's `packageManager` (built-in `npm`",
+              "manager) and in frontend/mcm-app/Dockerfile's corepack pins (the customManagers entry above, whose",
+              "manager is `custom.regex`). If only the manifest half moves, check-toolchain-consistency.mjs reds",
+              "`guardrails / naming` and the PR cannot merge.",
+              "THIS RULE IS WHAT ACTUALLY HOLDS THEM TOGETHER. The customManager only EXTRACTS. Without this,",
+              "`js patch/minor` (matchManagers: [npm]) claims the manifest half and, because later rules override",
+              "earlier ones, strands the Dockerfile half on its own branch \u2014 exactly how the nx pair half-bumped",
+              "twice with its manager already in place (PR #141, PR #193).",
+              "ORDERED LAST for that reason. matchUpdateTypes is deliberately UNRESTRICTED so it covers patch,",
+              "minor and major alike; restricting it would let one track fall through to the broad npm rules and",
+              "half-bump, which is the trap the Playwright rule's own guard test asserts against.",
+              "SIDE EFFECT, INTENDED: this takes pnpm OUT of the `js patch/minor` group. A pnpm bump now arrives",
+              "as its own PR carrying every half, instead of riding with unrelated packages whose red it would",
+              "then be confused with \u2014 PR #263 carried exactly that confusion, a pnpm half-bump reddening `naming`",
+              "alongside an unrelated CopilotKit break reddening `affected`.",
+              "renovate-workflow.guard.test.mjs asserts both halves share a group on all three tracks, that this",
+              "rule matches BOTH managers and is ordered last, that the customManager still exists and targets the",
+              "Dockerfile, and \u2014 as the control \u2014 that unrelated npm packages still land in `js patch/minor`."
+      ],
+      "matchManagers": ["npm", "custom.regex"],
+      "matchPackageNames": ["pnpm"],
+      "groupName": "pnpm pin",
       "automerge": false
     }
   ],
