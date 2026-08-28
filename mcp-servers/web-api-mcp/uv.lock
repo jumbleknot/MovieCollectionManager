@@ -1084,16 +1084,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "mcp", specifier = ">=1.28.1" },
-    { name = "opentelemetry-exporter-otlp", specifier = ">=1.27" },
-    { name = "opentelemetry-sdk", specifier = ">=1.27" },
+    { name = "httpx", specifier = ">=0.27,<1" },
+    { name = "mcp", specifier = ">=1.28.1,<2" },
+    { name = "opentelemetry-exporter-otlp", specifier = ">=1.27,<2" },
+    { name = "opentelemetry-sdk", specifier = ">=1.27,<2" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "mypy", specifier = ">=1.11" },
-    { name = "pytest", specifier = ">=8.3" },
-    { name = "pytest-asyncio", specifier = ">=0.24" },
-    { name = "ruff", specifier = ">=0.6" },
+    { name = "mypy", specifier = ">=1.11,<3" },
+    { name = "pytest", specifier = ">=8.3,<10" },
+    { name = "pytest-asyncio", specifier = ">=0.24,<2" },
+    { name = "ruff", specifier = ">=0.6,<1" },
 ]

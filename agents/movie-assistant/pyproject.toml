@@ -6,37 +6,37 @@ requires-python = ">=3.13"
 # Versions are intentionally left as lower bounds here; the committed uv lockfile
 # (`uv lock`) pins exact versions (constitution: dependencies pinned via lockfile).
 dependencies = [
-    "langgraph>=0.2",
-    "langchain-core>=0.3",
-    "langchain-ollama>=0.2",      # default provider (research R1)
-    "langchain-anthropic>=0.3",   # documented fallback provider
+    "langgraph>=0.2,<2",
+    "langchain-core>=0.3,<2",
+    "langchain-ollama>=0.2,<2",      # default provider (research R1)
+    "langchain-anthropic>=0.3,<2",   # documented fallback provider
     # Agent Gateway = FastAPI app emitting AG-UI natively via ag-ui-langgraph
     # (copilotkit.LangGraphAGUIAgent + add_langgraph_fastapi_endpoint).
-    "fastapi>=0.115",
-    "uvicorn>=0.30",
-    "ag-ui-langgraph>=0.0.6",
-    "copilotkit>=0.1",
-    "mcp>=1.28.1",
-    "nemoguardrails>=0.11",
-    "guardrails-ai>=0.5",
-    "pydantic>=2.7",
-    "langfuse>=2.0",
-    "opentelemetry-sdk>=1.27",
-    "opentelemetry-exporter-otlp>=1.27",
-    "hvac>=2.0",                  # HashiCorp Vault client — runtime secret injection (T030a)
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+    "ag-ui-langgraph>=0.0.6,<1",
+    "copilotkit>=0.1,<1",
+    "mcp>=1.28.1,<2",
+    "nemoguardrails>=0.11,<1",
+    "guardrails-ai>=0.5,<1",
+    "pydantic>=2.7,<3",
+    "langfuse>=2.0,<5",
+    "opentelemetry-sdk>=1.27,<2",
+    "opentelemetry-exporter-otlp>=1.27,<2",
+    "hvac>=2.0,<3",                  # HashiCorp Vault client — runtime secret injection (T030a)
     "psycopg[binary]>=3.2",       # PostgreSQL checkpointer (agent-db)
-    "httpx>=0.27",
-    "unleashclient>=6.7.0",
+    "httpx>=0.27,<1",
+    "unleashclient>=6.7.0,<7",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3",
-    "pytest-asyncio>=0.24",
-    "ruff>=0.6",
-    "mypy>=1.11",
-    "hypothesis>=6.155.2",
-    "redis>=8.0.0",
+    "pytest>=8.3,<10",
+    "pytest-asyncio>=0.24,<2",
+    "ruff>=0.6,<1",
+    "mypy>=1.11,<3",
+    "hypothesis>=6.155.2,<7",
+    "redis>=8.0.0,<9",
 ]
 
 [tool.ruff]

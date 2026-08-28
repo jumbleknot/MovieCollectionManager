@@ -5,19 +5,19 @@ description = "Scoped-capability MCP server — parse/build spreadsheets (CSV/.x
 requires-python = ">=3.13"
 # Lower bounds only; exact versions pinned by the committed uv lockfile.
 dependencies = [
-    "mcp>=1.28.1",
-    "openpyxl>=3.1",              # .xlsx read+write (no pandas — keep the image light; R2)
-    "redis>=5.0",                 # transient upload store (import:file:<handle>; R3)
-    "opentelemetry-sdk>=1.27",    # OTel infra tracing → otel-lgtm (parity with movie-mcp)
-    "opentelemetry-exporter-otlp>=1.27",
+    "mcp>=1.28.1,<2",
+    "openpyxl>=3.1,<4",              # .xlsx read+write (no pandas — keep the image light; R2)
+    "redis>=5.0,<9",                 # transient upload store (import:file:<handle>; R3)
+    "opentelemetry-sdk>=1.27,<2",    # OTel infra tracing → otel-lgtm (parity with movie-mcp)
+    "opentelemetry-exporter-otlp>=1.27,<2",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3",
-    "pytest-asyncio>=0.24",
-    "ruff>=0.6",
-    "mypy>=1.11",
+    "pytest>=8.3,<10",
+    "pytest-asyncio>=0.24,<2",
+    "ruff>=0.6,<1",
+    "mypy>=1.11,<3",
 ]
 
 [tool.ruff]
