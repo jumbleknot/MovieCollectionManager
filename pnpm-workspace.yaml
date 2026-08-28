@@ -41,6 +41,12 @@ allowBuilds:
   # without its downloads.
   react-native-enriched-markdown: false
 
+# Excludes from PNPM 11's OWN release-age policy — the one it applies when it verifies the lockfile
+# against supply-chain policies on install. Item #271: this list existing is the proof that policy is
+# live, and it was the only signal that contradicted the (now corrected) comment further down claiming
+# release age is enforced by Renovate alone. Entries here are SECURITY-FLOOR exceptions: a fix landed
+# inside the cooldown and the gate needs it now. Do NOT add a package merely because a fresh
+# transitive is blocking a branch — that spends a security mechanism on impatience; wait the ~24h out.
 minimumReleaseAgeExclude:
   - brace-expansion@5.0.9
   - fast-uri@3.1.5 # was 3.1.4 — raised 2026-08-13 with the override floor (feature 057)
@@ -90,7 +96,28 @@ overrides:
 # NOTE (feature 034): a pnpm-level `minimumReleaseAge` cooldown was tried here but BREAKS cold
 # `pnpm install --frozen-lockfile` in the BFF/agent Docker builds and CI — on an empty store pnpm
 # fetches registry metadata and REJECTS any pinned dependency published younger than the threshold
-# (frozen installs cannot re-resolve to an older version, so the build fails). The release-age
-# cooldown is therefore owned solely by Renovate (`renovate.json` catch-all `minimumReleaseAge`),
-# which gates PROPOSALS without touching installs. Do not re-add minimumReleaseAge/blockExoticSubdeps/
-# trustPolicy here — the `pnpm-*` supply-chain findings stay as accepted non-blocking Medium warnings.
+# (frozen installs cannot re-resolve to an older version, so the build fails). Do not re-add
+# minimumReleaseAge/blockExoticSubdeps/trustPolicy here — the `pnpm-*` supply-chain findings stay as
+# accepted non-blocking Medium warnings.
+#
+# CORRECTED 2026-08-28 (item #271). The clause that stood here — "the release-age cooldown is
+# therefore owned SOLELY by Renovate, which gates PROPOSALS without touching installs" — was FALSE in
+# both halves, and it is the kind of false that costs a triage rather than a nit: it tells a reader
+# that an install can never fail on release age, so when one does the error looks impossible.
+#
+# 1. IT IS NOT OWNED SOLELY BY RENOVATE. We set no cooldown, but pnpm 11 verifies the lockfile against
+#    supply-chain policies on install and applies a release-age policy of its own. That is a
+#    VERIFY-time check, not the RESOLVE-time rejection this note describes above, which is why
+#    removing our setting did not remove it and why the two statements do not actually conflict.
+#    `minimumReleaseAgeExclude` at the top of this file is the standing proof it is live.
+#
+# 2. GATING PROPOSALS IS NOT THE SAME AS GATING WHAT LANDS. renovate.json's catch-all
+#    `minimumReleaseAge: 3 days` covers the package Renovate PROPOSES. It does nothing about the
+#    TRANSITIVES a lockfile regeneration drags in. MEASURED on PR #263: Renovate proposed
+#    `@ag-ui/client 0.0.58 -> 0.0.59`, fully policy-compliant; regenerating the lockfile resolved
+#    `zod@4.5.1`, published 1.7 hours earlier, and SIX required contexts went red at `pnpm install` —
+#    affected, mc-service-checks, naming, okf, agent-gates, sast. None of them was about the change.
+#
+# The handling is to WAIT: the offending transitive ages past the ~24h cutoff and a re-run passes.
+# See docs/runbooks/renovate.md for the triage, and item #271 for the open decision on whether to
+# mitigate this or keep accepting it.
