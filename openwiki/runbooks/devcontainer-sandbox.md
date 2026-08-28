@@ -4,7 +4,7 @@ title: Dev container on Docker Sandbox microVM (primary environment)
 description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure, and the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart).
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-08-27T18:04:22+00:00
+timestamp: 2026-08-27T22:00:00+00:00
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -121,6 +121,20 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 
   ⚠️ An instant failure is not always a policy refusal. §7b says a ~1 s failure is the egress-policy tell because "a network fault times out". True, but the HTTPS/HTTP mismatch above fails in 0.034 s and has nothing to do with policy. Read the error text before acting on the timing.
 
+- **`--config` in `devcontainer up` resolves against your CWD, NOT against `--workspace-folder`.** The VM shell lands in `/home/agent/workspace`, so a relative path in every `devcontainer up` snippet fails there with a message that reads like the file is missing rather than like the path is wrong:
+
+  ```text
+  Error: Dev container config (/home/agent/workspace/.devcontainer/sandbox/devcontainer.json) not found.
+  ```
+
+  Always pass `--config` absolutely: `--config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json`. Or `cd /workspaces/mcm` first. The gate commands that use absolute paths (such as the `grep -c` check) are unaffected; it is the `devcontainer up` step itself that breaks.
+
+- **`~/.claude.json` was NEVER on the `mcm-claude` volume — SC-007 held by accident, not by design (item #257, measured 2026-08-27).** The `mcm-claude` volume mounts the `~/.claude` **directory**; but Claude Code's global config is `~/.claude.json`, a sibling in `$HOME` on the ephemeral overlay. A recreate therefore dropped `oauthAccount`, `userID`, `machineID`, and every project's session history, while `~/.claude/.credentials.json` (the actual OAuth tokens) survived. That asymmetry is why "0 re-login on recreate" appeared true: the credential survived and the identity beside it did not.
+
+  **Fix (item #257):** `CLAUDE_CONFIG_DIR=/home/coder/.claude` in `containerEnv` relocates the config root, so Claude Code resolves `.claude.json` inside the volume rather than in `$HOME`. Every other path (settings, plugins, projects, sessions, backups, credentials) already lived there and resolves unchanged — only the one orphaned file moves onto the volume. `persist-claude-config.sh` in `onCreateCommand` seeds an existing config on the first run after the change, so no identity is lost during the migration.
+
+  ⚠️ **A symlink from `~/.claude.json` into the volume does NOT work.** Claude Code replaces the file rather than editing it in place (hence the rolling `backups/`), so a write-then-rename replaces the symlink itself with a regular overlay file — silently restoring the bug. The `CLAUDE_CONFIG_DIR` env var cannot decay this way.
+
 - **`pnpm` is not in the VM shell — only inside the dev container.** VM-level scripts that call `pnpm` directly fail with `rc=127`. Use `docker exec … bash -lc` to run them inside the container.
 
 - **`sbx secret rm` and interactive `sbx` prompts default to *No* non-interactively.** Pass `-f` to skip the confirmation. `rtk init -g` also answers "no" silently and prints a manual step — that is why `ensure-rtk-hook.sh` exists.
@@ -154,7 +168,7 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 
   # 4. only on PIN OK. (For the UID fix specifically, chown the tree to 1000 first.)
   devcontainer up --workspace-folder /workspaces/mcm \
-    --config .devcontainer/sandbox/devcontainer.json --remove-existing-container
+    --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json --remove-existing-container
   ```
 
   🔴 **Two ways this silently re-creates the OLD container, both measured 2026-08-22.**

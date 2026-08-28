@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer — Docker Desktop / DinD pat
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container path — kept solely for Android emulator support via /dev/kvm. The primary AI-assisted dev environment is now the Docker Sandbox microVM; see devcontainer-sandbox.md. Documents the two-tier isolation model, default-deny egress firewall, and Windows-host quirks.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
-timestamp: 2026-08-17T00:00:00+00:00
+timestamp: 2026-08-27T22:00:00+00:00
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -89,6 +89,7 @@ API, GitHub, npm, the container-image registries DinD pulls from).
 - **The Android emulator now runs natively in the dev container** (baked-in SDK + system image, host
   `/dev/kvm` passthrough) — see [Android emulator & APK builds](/openwiki/runbooks/android-emulator.md)
   for the boot ritual and the mobile-agent-flow caveat that still applies inside the container.
+- **`~/.claude.json` was NEVER on the `mcm-claude` volume — SC-007 held by accident, not by design (item #257, measured 2026-08-27).** The `mcm-claude` volume mounts the `~/.claude` **directory**; but Claude Code's global config is `~/.claude.json`, a sibling in `$HOME` on the ephemeral overlay. A container recreate therefore dropped `oauthAccount`, `userID`, `machineID`, and session history, while `~/.claude/.credentials.json` (the actual OAuth tokens) survived. **Fix (item #257):** `CLAUDE_CONFIG_DIR=/home/coder/.claude` in `containerEnv` relocates the config root so `.claude.json` resolves inside the volume. `persist-claude-config.sh` in `onCreateCommand` seeds an existing config on the first run after the change. ⚠️ A symlink does NOT work — Claude Code replaces the file rather than editing in place (write-then-rename swaps the symlink for an overlay file, silently restoring the bug). The env var cannot decay.
 - **"Docker won't start after a rebuild" is almost always a stale container holding the DinD lock, not
   corruption.** DinD's data-root lives on a persistent named volume keyed by workspace hash, so a
   rebuilt container reuses the same volume. If a *previous* dev-container instance is still running,
