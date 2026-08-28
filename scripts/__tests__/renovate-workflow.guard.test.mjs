@@ -766,6 +766,102 @@ test('the Expo lock does NOT swallow @expo-google-fonts, which is not SDK-pinned
   }
 });
 
+// ---------------------------------------------------------------------------------------------
+// @copilotkit/* ships BREAKING changes in MINOR bumps — item #266. Same defect as the cargo 0.x rule
+// below, with a version number that does not advertise it: there the version string says "0.x" and
+// warns you, here the package is past 1.0 and the minor looks routine.
+//
+// Measured 2026-08-28, PR #263 (item #265): @copilotkit/react-native 1.67.1 -> 1.69.0 removed the
+// `useRenderToolRegistry` export and generative-UI `render({ args })` started passing PARTIAL args.
+// The PR also carried @ai-sdk/openai and pnpm — both routine — and one breaking member made the whole
+// thing unmergeable and unsplittable, weekly, for as long as the migration takes.
+//
+// As with the RN and Expo locks, the property asserted is what a dep RESOLVES to, not that a rule
+// mentioning copilotkit exists: a rule placed before the broad `js patch/minor` rule would pass the
+// latter and be silently overridden.
+
+const COPILOTKIT_MEMBERS = ['@copilotkit/react-native', '@copilotkit/runtime'];
+const copilotkitDep = (depName, updateType) => ({
+  manager: 'npm',
+  packageFile: 'frontend/mcm-app/package.json',
+  depName,
+  datasource: 'npm',
+  updateType,
+});
+
+for (const updateType of ['minor', 'major']) {
+  test(`a @copilotkit/* ${updateType} bump is reviewed individually, not batched as routine`, () => {
+    const routine = resolvedGroupName(copilotkitDep('@ai-sdk/openai', updateType));
+    for (const depName of COPILOTKIT_MEMBERS) {
+      const group = resolvedGroupName(copilotkitDep(depName, updateType));
+      assert.notEqual(
+        group,
+        routine,
+        `${depName} resolves to ${JSON.stringify(group)} on the ${updateType} track — the same group as a\n` +
+          `  routine npm package (${JSON.stringify(routine)}).\n` +
+          '  CopilotKit ships BREAKING changes in minor bumps (PR #263: useRenderToolRegistry removed,\n' +
+          '  render({args}) became partial), so one member arrives red and blocks every routine bump\n' +
+          '  batched with it — every week, because Renovate regenerates the branch.',
+      );
+      assert.ok(group, `${depName} resolves to NO group at all on the ${updateType} track`);
+    }
+  });
+}
+
+test('the copilotkit rule requires dashboard approval, or it re-proposes a red PR every week', () => {
+  const rule = packageRules.find((r) => (r.matchPackageNames ?? []).some((p) => p.includes('copilotkit')));
+  assert.ok(rule, 'no packageRule mentions @copilotkit at all');
+  assert.equal(
+    rule.dependencyDashboardApproval,
+    true,
+    'the copilotkit rule does not require dashboard approval. A breaking upgrade cannot be made green\n' +
+      '  by config, so without approval it arrives red every week and spends the weekly PR budget\n' +
+      '  (item #218) on an upgrade known to need hand-holding — exactly what the cargo 0.x rule avoids.',
+  );
+});
+
+test('the copilotkit rule is ordered LAST of the rules that group it', () => {
+  const rules = packageRules.filter(
+    (rule) => ruleMatches(rule, copilotkitDep('@copilotkit/runtime', 'minor')) && rule.groupName !== undefined,
+  );
+  assert.ok(rules.length > 0, 'no packageRule assigns @copilotkit/* a groupName at all');
+
+  const last = rules[rules.length - 1];
+  assert.ok(
+    (last.matchPackageNames ?? []).some((p) => p.includes('copilotkit')),
+    'the LAST rule to group @copilotkit/* is\n' +
+      `  ${JSON.stringify({ matchManagers: last.matchManagers, groupName: last.groupName })}\n` +
+      '  which is a BROAD npm rule, not the copilotkit rule. Later packageRules override earlier ones,\n' +
+      '  so a copilotkit rule placed before `js patch/minor` / `js majors` is pulled straight back out —\n' +
+      '  the trap that half-bumped the nx pair twice (PR #141, #193) and stranded the Playwright tag (#204).',
+  );
+});
+
+test('the copilotkit gate leaves the PATCH track routine, so a security patch is not approval-gated', () => {
+  // Deliberate, and the reason is not "patches are safe": vulnerabilityAlerts is schedule-exempt so a
+  // known-vulnerable dep gets a PR within a day, and approval-gating every track would take that back.
+  // The cargo 0.x rule gates `minor` only for the same shape of reason.
+  const group = resolvedGroupName(copilotkitDep('@copilotkit/runtime', 'patch'));
+  assert.equal(
+    group,
+    'js patch/minor',
+    `a @copilotkit/* PATCH resolves to ${JSON.stringify(group)} rather than the routine group.\n` +
+      '  Gating the patch track puts a SECURITY remediation behind a human dashboard tick, undoing the\n' +
+      '  schedule-exemption vulnerabilityAlerts exists for. Gate the breaking tracks, not this one.',
+  );
+});
+
+test('the copilotkit rule does NOT swallow unrelated npm packages', () => {
+  for (const depName of ['@ai-sdk/openai', 'express', '@tamagui/core']) {
+    const group = resolvedGroupName(copilotkitDep(depName, 'minor'));
+    assert.equal(
+      group,
+      'js patch/minor',
+      `${depName} resolves to ${JSON.stringify(group)} — the copilotkit rule has widened past its family.`,
+    );
+  }
+});
+
 test('a cargo 0.x minor bump is treated as breaking, not as routine', () => {
   // For a 0.x crate a MINOR bump is a semver-major in effect, but Renovate classifies it as `minor`
   // and it lands in the routine `cargo deps` group. Measured 2026-08-21, PR #216: base64 0.22 -> 0.23
