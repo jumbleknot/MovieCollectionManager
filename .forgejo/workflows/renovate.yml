@@ -101,6 +101,31 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
+      # uv, for the pep621 lockFileMaintenance channel — item #218. WITHOUT THIS THE CHANNEL IS NOT
+      # SLOW, IT IS DEAD, and dead silently: Renovate shells out to the package manager through execa,
+      # a missing binary rejects, and the rejection is SUPPRESSED to a repo-level
+      # "WARN: execa promise rejection suppressed" on the Dependency Dashboard. The channel simply
+      # never appears. No PR, no error, nothing to notice.
+      #
+      # MEASURED 2026-08-28, run 2191: a dispatch with `unschedule-branch=renovate/lock-file-maintenance-
+      # python-deps` ticked — schedule AND budget both taken out of the picture — created no branch at
+      # all, while the dashboard grew that warning. The two channels WITH a toolchain on PATH (pnpm via
+      # corepack, cargo via rustup above) both produce PRs; the one without never has.
+      #
+      # It is not "nothing to refresh": `uv lock --upgrade --dry-run` in agents/movie-assistant offers
+      # substantial work (uvicorn 0.49.0 -> 0.52.4, websockets 15 -> 16, wrapt 1 -> 2, and more) across
+      # four lockfiles — agents/movie-assistant and the three mcp-servers.
+      #
+      # This is the third toolchain on this job for the same reason the comment above gives for the
+      # first two. The failure mode generalises: any Renovate channel whose lockfile needs a binary
+      # this runner lacks goes silently missing, so a new manager means a new toolchain here.
+      - name: Set up uv (for pep621 / uv.lock maintenance)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
+          # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
+          # Same pin and same reasoning as app-ci.yml and cd-deploy.yml.
+          github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
       - name: Run Renovate — MODE ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'DRY RUN (creates nothing)' || 'LIVE' }}
         env:
           # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
