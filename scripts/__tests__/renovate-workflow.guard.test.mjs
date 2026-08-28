@@ -767,6 +767,150 @@ test('the Expo lock does NOT swallow @expo-google-fonts, which is not SDK-pinned
 });
 
 // ---------------------------------------------------------------------------------------------
+// pnpm MOVES AS ONE UNIT — item #225. Third instance of the shape nx (#194) and Playwright (#204)
+// already record: the version lives in package.json's `packageManager` (built-in `npm` manager) AND in
+// frontend/mcm-app/Dockerfile's corepack pins (the customManagers entry, manager `custom.regex`).
+//
+// Measured twice. PR #217 (2026-08-21) moved packageManager to 11.22.0 and left both Dockerfile lines
+// at 11.17.0. PR #263 (2026-08-28) moved it to 11.24.0 and left both at 11.22.0 — reddening
+// `guardrails / naming` on a branch Renovate regenerates weekly.
+//
+// EXTRACTION IS NOT GROUPING. The customManager only extracts; the `pnpm pin` packageRule is what
+// keeps the halves in one branch, and it only works while it stays ordered after the broad npm rules.
+
+const pnpmDep = (manager, packageFile, updateType) => ({
+  manager,
+  packageFile,
+  depName: 'pnpm',
+  datasource: 'npm',
+  updateType,
+});
+const PNPM_HALVES = [
+  ['npm', 'package.json'],
+  ['custom.regex', 'frontend/mcm-app/Dockerfile'],
+];
+
+for (const updateType of ['patch', 'minor', 'major']) {
+  test(`both halves of the pnpm pin are proposed in ONE group on the ${updateType} track`, () => {
+    const groups = PNPM_HALVES.map(([manager, packageFile]) => ({
+      half: `${manager}:${packageFile}`,
+      groupName: resolvedGroupName(pnpmDep(manager, packageFile, updateType)),
+    }));
+    const distinct = new Set(groups.map((g) => g.groupName));
+    assert.equal(
+      distinct.size,
+      1,
+      `the pnpm halves resolve to DIFFERENT groups on the ${updateType} track:\n` +
+        groups.map((g) => `    ${g.half} -> ${JSON.stringify(g.groupName)}`).join('\n') +
+        '\n  They must share one branch or the bump half-lands and check-toolchain-consistency.mjs\n' +
+        '  reds `guardrails / naming` — measured on PR #217 and again on PR #263.',
+    );
+    assert.ok(groups[0].groupName, `pnpm resolves to NO group at all on the ${updateType} track`);
+  });
+}
+
+test('the pnpm grouping rule covers both managers and is ordered LAST of the rules that group it', () => {
+  const rules = packageRules.filter(
+    (rule) => ruleMatches(rule, pnpmDep('npm', 'package.json', 'minor')) && rule.groupName !== undefined,
+  );
+  assert.ok(rules.length > 0, 'no packageRule assigns pnpm a groupName at all');
+
+  const last = rules[rules.length - 1];
+  assert.ok(
+    Array.isArray(last.matchManagers) &&
+      last.matchManagers.includes('npm') &&
+      last.matchManagers.includes('custom.regex'),
+    'the LAST rule to group pnpm is\n' +
+      `  ${JSON.stringify({ matchManagers: last.matchManagers, groupName: last.groupName })}\n` +
+      '  which does not match BOTH managers. It must match `npm` (package.json packageManager) and\n' +
+      '  `custom.regex` (the Dockerfile corepack pins) or it groups one half and strands the other.',
+  );
+  assert.equal(
+    last.matchUpdateTypes,
+    undefined,
+    'the pnpm grouping rule restricts matchUpdateTypes, so at least one update track falls through to\n' +
+      '  the broad npm rules and half-bumps — the trap the Playwright rule is also asserted against.',
+  );
+});
+
+test('the pnpm customManager exists and targets the Dockerfile that carries the pins', () => {
+  const manager = (config.customManagers ?? []).find((m) => m.depNameTemplate === 'pnpm');
+  assert.ok(
+    manager,
+    'renovate.json has no customManager with depNameTemplate "pnpm", so the Dockerfile corepack pins\n' +
+      '  are extracted by NOTHING and only the package.json half can ever move.',
+  );
+  assert.ok(
+    (manager.managerFilePatterns ?? []).some((p) => p.includes('mcm-app/Dockerfile')),
+    'the pnpm customManager no longer targets frontend/mcm-app/Dockerfile',
+  );
+  assert.equal(
+    manager.datasourceTemplate,
+    'npm',
+    'the pnpm customManager must use the npm datasource so both halves carry ONE depName and a single\n' +
+      '  matchPackageNames re-joins them.',
+  );
+});
+
+test('the pnpm customManager regex extracts EVERY corepack pin in the Dockerfile, not just the first', () => {
+  // The file pins pnpm in TWO stages (builder and deps). A pattern that matched only one would look
+  // correct in review and still half-bump — which is the entire defect being fixed.
+  const manager = (config.customManagers ?? []).find((m) => m.depNameTemplate === 'pnpm');
+  const dockerfile = readFileSync(resolve(REPO_ROOT, 'frontend/mcm-app/Dockerfile'), 'utf8');
+  const expected = [...dockerfile.matchAll(/corepack\s+prepare\s+pnpm@/g)].length;
+  assert.ok(expected >= 2, `expected the Dockerfile to carry >=2 corepack pins, found ${expected}`);
+
+  const found = manager.matchStrings.flatMap((s) => [...dockerfile.matchAll(new RegExp(s, 'g'))]);
+  assert.equal(
+    found.length,
+    expected,
+    `the customManager regex matches ${found.length} of the ${expected} corepack pins in\n` +
+      '  frontend/mcm-app/Dockerfile. Every stage that pins pnpm must be extracted, or the stages it\n' +
+      '  misses stay behind and the toolchain gate reds anyway.',
+  );
+  for (const m of found) {
+    assert.ok(
+      m.groups?.currentValue,
+      'a matched corepack pin captured no `currentValue` named group, so Renovate has no version to update',
+    );
+  }
+});
+
+test('the pnpm customManager does NOT claim the `pnpm@latest` prose in the docs', () => {
+  // docs/runbooks/dev-environment-setup.md says `corepack prepare pnpm@latest --activate`. That is
+  // instruction for a human, not a pin — the toolchain gate's PINNED_FILES excludes it for the same
+  // reason. Matching it would file `latest` as a version and propose bumps against documentation.
+  const manager = (config.customManagers ?? []).find((m) => m.depNameTemplate === 'pnpm');
+  const docs = readFileSync(resolve(REPO_ROOT, 'docs/runbooks/dev-environment-setup.md'), 'utf8');
+  for (const s of manager.matchStrings) {
+    assert.equal(
+      new RegExp(s).test(docs),
+      false,
+      `the pnpm customManager pattern ${JSON.stringify(s)} matches the docs prose. Even though\n` +
+        '  managerFilePatterns scopes it out today, a pattern loose enough to match `pnpm@latest` will\n' +
+        '  capture a non-version the moment the file list widens.',
+    );
+  }
+});
+
+test('the pnpm grouping rule does NOT swallow unrelated npm packages', () => {
+  for (const depName of ['express', '@ai-sdk/openai']) {
+    const group = resolvedGroupName({
+      manager: 'npm',
+      packageFile: 'frontend/mcm-app/package.json',
+      depName,
+      datasource: 'npm',
+      updateType: 'minor',
+    });
+    assert.equal(
+      group,
+      'js patch/minor',
+      `${depName} resolves to ${JSON.stringify(group)} — the pnpm rule has widened past its own pin.`,
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------------------------
 // @copilotkit/* ships BREAKING changes in MINOR bumps — item #266. Same defect as the cargo 0.x rule
 // below, with a version number that does not advertise it: there the version string says "0.x" and
 // warns you, here the package is past 1.0 and the minor looks routine.
