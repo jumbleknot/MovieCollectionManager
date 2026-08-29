@@ -20,7 +20,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const GATE = resolve(HERE, '..', 'check-toolchain-consistency.mjs');
 
 /** Build a throwaway repo root with the given files, and run findDrift against it. */
-function repo({ pkg, workflows = {}, dockerfiles = {}, nxJson = null, lockfile = null }) {
+function repo({ pkg, workflows = {}, dockerfiles = {}, nxJson = null, lockfile = null, manifests = {} }) {
   const root = mkdtempSync(join(tmpdir(), 'toolchain-'));
   writeFileSync(join(root, 'package.json'), JSON.stringify(pkg, null, 2));
   if (nxJson) writeFileSync(join(root, 'nx.json'), JSON.stringify(nxJson, null, 2));
@@ -32,6 +32,12 @@ function repo({ pkg, workflows = {}, dockerfiles = {}, nxJson = null, lockfile =
   for (const [rel, body] of Object.entries(dockerfiles)) {
     mkdirSync(join(root, dirname(rel)), { recursive: true });
     writeFileSync(join(root, rel), body);
+  }
+  // Nested package.json manifests, for the (m) family. Serialised rather than taken as text: the
+  // cases that matter are all about a KEY being present, which an object expresses exactly.
+  for (const [rel, body] of Object.entries(manifests)) {
+    mkdirSync(join(root, dirname(rel)), { recursive: true });
+    writeFileSync(join(root, rel), JSON.stringify(body, null, 2));
   }
   return root;
 }
@@ -463,4 +469,87 @@ test('(p21) the relation is wired into findDrift, not merely exported', async ()
   const d = find(root);
   assert.equal(d.length, 1, `findDrift must surface the Playwright relation, got ${JSON.stringify(d)}`);
   assert.match(d[0].problem, /1\.60\.0/);
+});
+
+// --- (m) the SECOND packageManager field (item #286) ---------------------------------------------
+//
+// Measured 2026-08-29. frontend/mcm-app/package.json carried its own `"packageManager"` alongside the
+// root's. Both were written as pnpm@10.33.0 by the npm→pnpm migration (a19962b9); every later bump
+// moved the ROOT only, so by the time the root reached pnpm@11.22.0 the app manifest was still on the
+// 10.x track — Renovate had been maintaining it there separately (871d79aa moved it 10.33.0 →
+// 10.34.5), and the Dependency Dashboard was proposing a `pnpm to v11` MAJOR against it.
+//
+// The gate did not see it: findDrift reads the ROOT `packageManager` as the single source and then
+// checks workflows and Dockerfiles against it. It never looked at another package.json. This is the
+// fourth instance of the shape the gate exists for (#194 nx, #204 Playwright, #225 the Dockerfile
+// corepack pins) — and the only one where the duplicate pin lives in the same KIND of file as the
+// source, which is exactly why nothing noticed.
+//
+// THE RULE IS "DECLARED ONCE", NOT "DECLARED CONSISTENTLY". A nested manifest whose value AGREES is
+// still a finding: corepack and pnpm both resolve `packageManager` from the NEAREST package.json
+// above the cwd, so a second field silently wins for anything run inside that directory, and an
+// agreeing copy is only ever one bot PR away from drifting — which is precisely how this one drifted.
+
+test('(m) THE BUG: a workspace package declaring its own packageManager is caught', () => {
+  const root = repo({
+    pkg: PKG,
+    manifests: { 'frontend/app/package.json': { name: 'app', packageManager: 'pnpm@10.34.5' } },
+  });
+  const d = findDrift(root);
+  assert.equal(d.length, 1, `expected exactly one finding, got ${JSON.stringify(d)}`);
+  assert.equal(d[0].file, 'frontend/app/package.json');
+  assert.ok(d[0].line > 0, `finding must carry a real line number, got ${d[0].line}`);
+  assert.match(d[0].problem, /packageManager/);
+  assert.match(d[0].problem, /10\.34\.5/, 'the finding must name the shadowing version');
+  assert.match(d[0].problem, /11\.17\.0/, 'the finding must name the root it disagrees with');
+});
+
+test('(m2) an AGREEING nested packageManager is still a finding — the rule is declared ONCE', () => {
+  // Not pedantry: this repo's copy agreed on the day it was written and drifted a whole major later.
+  const root = repo({
+    pkg: PKG,
+    manifests: { 'packages/ds/package.json': { name: 'ds', packageManager: 'pnpm@11.17.0' } },
+  });
+  const d = findDrift(root);
+  assert.equal(d.length, 1, `an agreeing duplicate must still be reported, got ${JSON.stringify(d)}`);
+  assert.match(d[0].problem, /remove it/i, `the finding must say to REMOVE it: ${d[0].problem}`);
+});
+
+test('(m3) a nested manifest WITHOUT the field is clean — the control', () => {
+  const root = repo({
+    pkg: PKG,
+    manifests: { 'packages/ds/package.json': { name: 'ds', private: true } },
+  });
+  assert.deepEqual(findDrift(root), []);
+});
+
+test('(m4) the ROOT manifest is the single source and is never reported against itself', () => {
+  // Guards the obvious off-by-one: a walker that does not exclude the root reports the source.
+  assert.deepEqual(findDrift(repo({ pkg: PKG })), []);
+});
+
+test('(m5) THE REAL REPO declares packageManager exactly ONCE', () => {
+  // The invariant this whole family exists to hold, asserted against the tree rather than a fixture.
+  const d = findDrift().filter((f) => /packageManager/.test(f.problem));
+  assert.deepEqual(d, [], `a second packageManager field is back: ${JSON.stringify(d)}`);
+});
+
+test('(m6) importing the gate does NOT run the scan — the module is importable', () => {
+  // THE INSTRUMENT CHECK. This module ran `runScan()` at import: every test here imports it, so the
+  // scan executed on every run, and once the repo actually drifted it called process.exit(1) DURING
+  // IMPORT. The whole file then reported as one opaque `✖ …test.mjs 'test failed'` at 1:1 — including
+  // (m5), the assertion that the real repo is clean, which therefore could never have FAILED honestly.
+  // A gate whose test suite dies exactly when the gate fires proves nothing. Found while adding (m).
+  const r = spawnSync('node', ['--input-type=module', '-e', `await import(${JSON.stringify(GATE)}); console.log('IMPORTED');`], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `importing the gate must not exit: ${r.stdout}${r.stderr}`);
+  assert.match(r.stdout, /IMPORTED/);
+  assert.doesNotMatch(`${r.stdout}${r.stderr}`, /toolchain-consistency gate/, 'importing the module ran the CLI scan');
+});
+
+test('(m7) the success line NAMES the single-declaration relation it just proved', () => {
+  // The (p22) lesson, for the fourth relation: "it passed" must say WHAT it passed, or a check that
+  // has been silently disabled reads exactly like a working one.
+  const r = spawnSync('node', [GATE], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.match(r.stdout, /root manifest only/i, `the success line does not mention the single declaration: ${r.stdout}`);
 });
