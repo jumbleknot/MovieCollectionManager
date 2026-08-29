@@ -24,7 +24,7 @@ import {
 } from '../../fixtures/base-dataset';
 import { agentSeedingEnabled, seedAgentConfig } from './agent-config-seed';
 import { authFileForWorker, WORKER_IDENTITY_MANIFEST } from './auth-files';
-import { createUserWithRoles, keycloakAdminEnabled } from './keycloak-admin';
+import { createUserWithRoles, keycloakAdminEnabled, reapStaleWorkerUsers } from './keycloak-admin';
 import { ensureLargeLibrary, largeLibraryEnabled } from './large-library-seed';
 import { requireEnv } from './load-e2e-env';
 
@@ -314,6 +314,21 @@ async function mintPerWorkerSessions(
   // are stale, possibly already evicted, and indistinguishable at a glance from live ones.
   for (const f of fs.readdirSync(AUTH_DIR)) {
     if (/^user-\d+\.json$/.test(f)) fs.rmSync(path.join(AUTH_DIR, f));
+  }
+
+  // …and the REALM users behind those files (item #183). Teardown deletes what the manifest records,
+  // but a killed run never reaches teardown and the write below then overwrites the manifest — so
+  // its users lose the only record that would ever have deleted them. Reaping here instead of only
+  // there makes the cleanup self-healing: setup always runs.
+  //
+  // BEFORE the manifest is overwritten, and before minting, so this run's own fresh users are never
+  // candidates regardless of the age threshold.
+  const reaped = await reapStaleWorkerUsers();
+  if (reaped) {
+    console.log(
+      `[global-setup] reaped ${reaped} stale per-worker identity/identities left by an interrupted `
+      + 'run (item #183)',
+    );
   }
 
   // Worker 0 IS the canonical user, reusing the session the caller already established. That is not
