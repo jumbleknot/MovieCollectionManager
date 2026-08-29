@@ -26,6 +26,13 @@
 //   2. The pnpm version is SINGLE-SOURCED by `packageManager`. Any other place naming a pnpm
 //      version must name the SAME one. `pnpm/action-setup` with no `version:` is the preferred
 //      form — it reads `packageManager` — and is always accepted.
+//   2b. `packageManager` itself is declared EXACTLY ONCE, in the ROOT manifest (item #286). This is
+//      the one rule that does not offer "or match it": corepack and pnpm resolve the field from the
+//      NEAREST package.json above the cwd, so a second one silently WINS inside that directory, and
+//      Renovate's npm manager maintains it as a SEPARATE dependency on its own track. Measured —
+//      frontend/mcm-app/package.json held a copy that the migration wrote as pnpm@10.33.0 alongside
+//      the root's, which Renovate then carried to 10.34.5 while the root went to 11.22.0. An
+//      agreeing copy is one bot PR from drifting; removal is the only state that cannot come apart.
 //   3. The Playwright CONTAINER IMAGE tag in app-ci.yml must name the version pnpm-lock.yaml
 //      resolves for `@playwright/test` (item #204). The tag selects the baked browser build, so a
 //      half-bump does not fail the suite — it runs ZERO tests and reports no counts at all.
@@ -352,6 +359,86 @@ export function comparePlaywrightPins(versions, pins) {
     }));
 }
 
+/** Directories a manifest walk must never descend into. Installed trees are full of package.json. */
+const MANIFEST_SKIP_DIRS = new Set([
+  'node_modules', '.git', '.venv', 'target', 'dist', 'build', '.nx', '.pnpm-store',
+  'coverage', 'test-results', 'playwright-report', '.expo', 'android', 'ios',
+]);
+
+/** Every package.json under `root` EXCEPT the root's own, as POSIX repo-relative paths. */
+export function collectNestedManifests(root) {
+  const out = [];
+  const walk = (dir, rel) => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return; // an unreadable directory is not a manifest claim; the okf job surfaces real IO faults
+    }
+    for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      if (entry.isDirectory()) {
+        if (MANIFEST_SKIP_DIRS.has(entry.name)) continue;
+        walk(join(dir, entry.name), rel ? `${rel}/${entry.name}` : entry.name);
+      } else if (entry.isFile() && entry.name === 'package.json' && rel) {
+        out.push(`${rel}/package.json`);
+      }
+    }
+  };
+  walk(root, '');
+  return out;
+}
+
+/**
+ * `packageManager` must be declared EXACTLY ONCE, in the root manifest — item #286.
+ *
+ * MEASURED 2026-08-29. frontend/mcm-app/package.json carried a second copy. The npm→pnpm migration
+ * (a19962b9) wrote pnpm@10.33.0 into BOTH manifests; every later bump moved the root only, so when
+ * the root reached 11.22.0 the app was still on the 10.x track — Renovate had been maintaining it
+ * there as a separate dependency (871d79aa: 10.33.0 → 10.34.5) and the Dependency Dashboard was
+ * proposing a `pnpm to v11` MAJOR against it. This gate could not see it: it reads the root field as
+ * the single source and then checks workflows and Dockerfiles, never another package.json.
+ *
+ * Fourth instance of the shape this file exists for (#194 nx, #204 Playwright, #225 the Dockerfile
+ * corepack pins), and the only one where the duplicate lives in the same KIND of file as the source.
+ *
+ * THE RULE IS "DECLARED ONCE", NOT "DECLARED CONSISTENTLY", and that is deliberate — it is the one
+ * place this gate does not offer "or match it". corepack and pnpm both resolve `packageManager` from
+ * the NEAREST package.json above the cwd, so a second field silently WINS for anything run inside
+ * that directory; and an agreeing copy is one bot PR from drifting, which is exactly how this one
+ * drifted a whole major. Removing it is the only state that cannot come apart again.
+ *
+ * @returns {{file:string,line:number,problem:string}[]}
+ */
+export function findNestedPackageManagerDrift(root = REPO_ROOT) {
+  const rootPnpm = String(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).packageManager ?? '');
+  const findings = [];
+
+  for (const rel of collectNestedManifests(root)) {
+    const text = readFileSync(join(root, rel), 'utf8');
+    let declared;
+    try {
+      declared = JSON.parse(text).packageManager;
+    } catch {
+      // A manifest that cannot be parsed cannot be cleared, and silence would read as "no field".
+      findings.push({ file: posixLocation(rel), line: 1, problem: 'package.json is not parseable JSON — the gate cannot confirm it declares no `packageManager`' });
+      continue;
+    }
+    if (declared === undefined) continue;
+
+    const lineIdx = text.split(/\r?\n/).findIndex((l) => /"packageManager"\s*:/.test(l));
+    findings.push({
+      file: posixLocation(rel),
+      line: lineIdx === -1 ? 1 : lineIdx + 1,
+      problem:
+        `declares its own packageManager ${JSON.stringify(declared)} — the root declares ${JSON.stringify(rootPnpm)}. ` +
+        'corepack and pnpm resolve this field from the NEAREST package.json above the cwd, so this one ' +
+        'silently wins for anything run in this directory, and Renovate maintains it as a SEPARATE ' +
+        'dependency that drifts onto its own track. Remove it — the root manifest is the single source.',
+    });
+  }
+  return findings;
+}
+
 /** @returns {{file:string,line:number,problem:string}[]} */
 export function findDrift(root = REPO_ROOT) {
   const pkgPath = join(root, 'package.json');
@@ -388,6 +475,7 @@ export function findDrift(root = REPO_ROOT) {
     }
   }
 
+  findings.push(...findNestedPackageManagerDrift(root));
   findings.push(...findNxPinDrift(root));
   findings.push(...findPlaywrightPinDrift(root));
   return findings;
@@ -404,10 +492,10 @@ function runScan() {
   if (findings.length) {
     console.error(`✗ toolchain-consistency gate FAILED: ${findings.length} pin(s) disagree:`);
     for (const f of findings) console.error(`  ${f.file}:${f.line} — ${f.problem}`);
-    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by `packageManager`, and the Playwright image tag must name the version pnpm-lock.yaml resolves.');
+    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by the ROOT `packageManager` and declared nowhere else, and the Playwright image tag must name the version pnpm-lock.yaml resolves.');
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced; nx agrees with nx.json installation.version; the Playwright image tag matches the lockfile)');
+  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced and declared in the root manifest only; nx agrees with nx.json installation.version; the Playwright image tag matches the lockfile)');
 }
 
 function selftest() {
@@ -463,11 +551,22 @@ function selftest() {
   console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity, Playwright drift rejection)');
 }
 
-const args = process.argv.slice(2);
-const unknown = args.filter((a) => a !== '--selftest');
-if (unknown.length) {
-  console.error(`Unknown argument(s): ${unknown.join(', ')}. Usage: check-toolchain-consistency.mjs [--selftest]`);
-  process.exit(2);
+// Same guard idiom as check-override-consistency.mjs / check-sast-findings.mjs, and here it is not
+// merely tidiness. This block used to run at IMPORT, so `check-toolchain-consistency.test.mjs` — which
+// imports findDrift — executed the scan on every run, and the day the repo actually drifted the scan
+// called process.exit(1) DURING IMPORT: the whole suite collapsed to one opaque `✖ …test.mjs` at 1:1,
+// and (m5), the test asserting the real repo is clean, could never have failed honestly. A gate whose
+// own tests die exactly when the gate fires proves nothing. CLI behaviour is byte-for-byte unchanged.
+function main() {
+  const args = process.argv.slice(2);
+  const unknown = args.filter((a) => a !== '--selftest');
+  if (unknown.length) {
+    console.error(`Unknown argument(s): ${unknown.join(', ')}. Usage: check-toolchain-consistency.mjs [--selftest]`);
+    process.exit(2);
+  }
+  if (args.includes('--selftest')) selftest();
+  else runScan();
 }
-if (args.includes('--selftest')) selftest();
-else runScan();
+
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
+if (invokedPath === fileURLToPath(import.meta.url)) main();

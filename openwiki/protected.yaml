@@ -133,7 +133,10 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "invariants/package-manager-enforcement.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:ea440ba5b3c6df13d57002ad8a07fcc08d4bf76abcfc236e118fea005a634ea3"
+    # Re-fingerprinted 2026-08-29 (item #286) in the same change as the text, per the gate's rule: the
+    # "declared exactly once, in the ROOT manifest" bullet was added after a shadow pnpm 10.x pin in
+    # frontend/mcm-app/package.json was found a whole major behind the root's.
+    fingerprint: "sha256:58c48fcbc248b4c58d15f387c73b0a687b0f6571995600949d0940850e2b663c"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/rtk-token-compression.md"
