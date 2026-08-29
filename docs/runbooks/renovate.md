@@ -95,6 +95,36 @@ clobbering a concurrent bot rewrite.
 > blanks. `--is-ancestor` answers the question rather than leaving it to be inferred from silence.
 > (§4's two-dot warning is the sibling check, asking what a NON-empty branch would still change.)
 
+**The mechanism, from renovate@44's own dist** (`workers/repository/update/branch/reuse.js`,
+`shouldReuseExistingBranch`) — this is a config interaction, not a bug:
+
+- **No branch** → `Branch needs creating` → `reuseExistingBranch: false`, and Renovate regenerates the
+  content from scratch. This is the healthy path.
+- **Branch exists** → the `isBranchBehindBase` guard, the one thing that would notice the branch is
+  already in `main`, runs **only** when `rebaseWhen` is `behind-base-branch` or a `keepUpdatedLabel`
+  is set. `renovate.json` sets **`rebaseWhen: "conflicted"`**, so it is skipped outright
+  (`Skipping behind base branch check due to rebaseWhen=conflicted`). An already-merged branch is an
+  *ancestor* of `main`, so it is not conflicted either — control falls through to
+  `reuseExistingBranch = true` and Renovate opens a PR from the **stale commit verbatim**.
+
+Corroborated on PR #288: its head is still `c4d4a5e4`, dated 2026-08-28 07:03. The 21:43Z run that
+opened it created no new commit — it did not regenerate, did not rebase, and did not notice.
+
+A surviving branch distorts one more thing: `branch/index.js` gates the branch budget behind
+`!branchExists`, so a reused branch **bypasses the branch limit** (§1) entirely.
+
+> ✅ **Renovate does NOT need a merged branch to survive — proven by symmetry.** When PR #276 merged,
+> `renovate/lock-file-maintenance-python-deps` **was** deleted (that merge passed
+> `delete_branch_after_merge`); the python channel is nonetheless listed on the dashboard under
+> **Awaiting Schedule**, exactly like the js one whose branch survived. Dashboard tracking comes from
+> Renovate's own update computation, not from branch existence. So the surviving branch buys nothing
+> and costs an empty PR.
+
+> ⛔ **Never delete a branch that is an OPEN PR's head.** It is hand-closing by another route and
+> carries the same consequence as §4's rule — for `lockFileMaintenance` it marks the channel rejected.
+> `renovate/lock-file-maintenance-cargo-deps` must therefore stay until PR #288 autocloses, even
+> though its content is already in `main`. Only a stale branch with **no open PR** is safe to remove.
+
 ---
 
 ## 3. Forcing a run
@@ -148,6 +178,15 @@ curl -sS -H "Authorization: token $TOKEN" "$API/actions/runs?event=workflow_disp
 # then poll it until status leaves `waiting`
 curl -sS -H "Authorization: token $TOKEN" "$API/actions/runs/<id>"
 ```
+
+The string form in the recipe above is confirmed to resolve **live** (run 2285, 2026-08-29: heads
+moved, ticks consumed, PRs #288/#289 created). Do not read that as "the string form is safe by
+construction" — it is not. `renovate.yml` computes
+`(github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'full' || ''`, and under GitHub
+expression semantics a non-empty string `"false"` is **truthy**, which would select `'full'` — a dry
+run. It ran live only because Forgejo coerced the value against the input's declared `type: boolean`.
+That coercion is a property of this forge build, not of the recipe, which is exactly why the
+empirical check below is mandatory rather than advisory.
 
 Two traps in that payload: the run's `event` field renders as the **empty string** for a dispatch
 (the `?event=workflow_dispatch` filter still matches it, so filter — do not read the field), and
