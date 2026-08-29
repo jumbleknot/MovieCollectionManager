@@ -119,5 +119,7 @@ overrides:
 #    affected, mc-service-checks, naming, okf, agent-gates, sast. None of them was about the change.
 #
 # The handling is to WAIT: the offending transitive ages past the ~24h cutoff and a re-run passes.
-# See docs/runbooks/renovate.md for the triage, and item #271 for the open decision on whether to
-# mitigate this or keep accepting it.
+# DECIDED 2026-08-28 (item #271) — this is ACCEPTED rather than mitigated: it is infrequent, it fails
+# loudly and safely (a red gate, never a silent bad merge), and the triage is written down. Do not
+# "fix" it by adding the transitive to minimumReleaseAgeExclude above; re-run after the cutoff.
+# docs/runbooks/renovate.md carries the triage and the mitigations that were rejected.

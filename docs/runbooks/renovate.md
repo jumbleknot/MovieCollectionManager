@@ -181,8 +181,15 @@ change. The tell is the breadth: when `okf` and `sast` fail together, suspect th
 
 **Handling: wait.** The transitive ages past the ~24h cutoff and a re-run passes. Do **not** add it to
 `pnpm-workspace.yaml`'s `minimumReleaseAgeExclude` — that list is for security-floor exceptions, and
-using it here spends a security mechanism on impatience. Item #271 holds the open decision on whether
-to mitigate this class or keep accepting it.
+using it here spends a security mechanism on impatience.
+
+> **DECIDED 2026-08-28 (item #271): this is ACCEPTED, not mitigated.** It is infrequent, it fails
+> loudly and safely — a red gate, never a silent bad merge — and with this runbook it is a two-minute
+> diagnosis. Mitigations were considered and rejected as costing more than the friction: shifting the
+> Renovate window to dodge fresh publishes trades a certain constraint for a probabilistic one, and
+> pinning the verify-time policy explicitly re-opens the cold-`--frozen-lockfile` question feature 034
+> already settled. **If you are here because a PR is red on this: re-run after the cutoff. That is the
+> whole procedure.** Revisit only if it starts blocking multiple PRs a week.
 
 ### Extraction is not grouping
 
