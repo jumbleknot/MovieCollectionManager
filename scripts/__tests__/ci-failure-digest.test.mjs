@@ -559,7 +559,7 @@ test('(x2) a job with no instrumented step SAYS so rather than reporting nothing
 // T046/T048 — failing-step name from the marker, and a comment-safe size cap.
 // ================================================================================================
 
-import { readFailingStep, COMMENT_MAX_BYTES } from '../ci-failure-digest.mjs';
+import { readFailingStep, readRunHealth as readFailingStepModuleRunHealth, COMMENT_MAX_BYTES } from '../ci-failure-digest.mjs';
 
 test('(y) the digest names the failing step from the marker', () => {
   const d = buildDigest(ctx({ step: 'guardrails / naming' }), { excerpts: [] });
@@ -569,6 +569,34 @@ test('(y) the digest names the failing step from the marker', () => {
 
 test('(y2) readFailingStep returns null when no step was wrapped', () => {
   assert.equal(readFailingStep({ GITHUB_RUN_ID: 'nope', HOME: '/nonexistent' }), null);
+});
+
+// --- (y3) the READER half of item #180 ----------------------------------------------------------
+//
+// scripts/__tests__/ci-log-step.test.mjs (g4) pins that the two jobs WRITE separate markers; this
+// pins that the digest READS its own. Both halves derive the path independently, so a change to one
+// alone is exactly the kind of silent drift that produced the original defect.
+//
+// The second assertion is the one that matters: there is deliberately NO run-scoped fallback. A
+// fallback would keep reading the sibling job's marker on precisely the overlapping runs the fix is
+// for, so the bug would survive behind it and the tests would still be green.
+test('(y3) readFailingStep reads THIS job\'s marker, and does not fall back to a run-scoped one', () => {
+  const root = mkdtempSync(join(tmpdir(), 'failing-step-'));
+  mkdirSync(join(root, '1683', 'dast'), { recursive: true });
+  mkdirSync(join(root, '1683', 'app-e2e'), { recursive: true });
+  writeFileSync(join(root, '1683', 'dast', '_failed-step'), 'dast-install-latest-docker\n');
+  writeFileSync(join(root, '1683', 'app-e2e', '_failed-step'), 'web-e2e\n');
+  // The pre-fix layout, left in place on purpose: nothing may read it any more.
+  writeFileSync(join(root, '1683', '_failed-step'), 'dast-install-latest-docker\n');
+
+  const inJob = (job) => ({ CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '1683', GITHUB_JOB: job });
+  assert.equal(readFailingStep(inJob('app-e2e')), 'web-e2e');
+  assert.equal(readFailingStep(inJob('dast')), 'dast-install-latest-docker');
+  assert.equal(
+    readFailingStep({ CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '1683', GITHUB_JOB: 'affected' }),
+    null,
+    'a job with no marker of its own adopted the run-scoped one — the fallback re-creates #180',
+  );
 });
 
 test('(z) a huge digest is capped to a comment-safe size, and says it was', () => {
@@ -1104,7 +1132,10 @@ test('(mm8) counts mode exits 0 when its TRANSPORT dies — a reporter never fai
   // for the new path rather than reasoned about from the shared try/catch. A green run is precisely
   // the case where a publication fault must stay invisible to the job's result.
   const dir = mkdtempSync(join(tmpdir(), 'counts-'));
-  const runDir = join(dir, '90101');
+  // run id AND job — ci-log-step.sh writes `<root>/<run>/<job>/` since item #180, and the reader
+  // derives the same path independently. A test that wrote the old run-scoped layout would pass
+  // against a reader that had silently stopped matching the writer.
+  const runDir = join(dir, '90101', 'app-e2e');
   mkdirSync(runDir, { recursive: true });
   writeFileSync(join(runDir, 'e2e-result-gate.log'),
     '[e2e-gate] failed=0 flaky=2 passed=175 did-not-run=0 skipped=0\n');
@@ -1163,4 +1194,61 @@ test('(nn) counts mode carries the global-setup identity lines, filtered, not th
   assert.match(web.text, /seeded fixtures for 5 worker identities/);
   assert.doesNotMatch(web.text, /collections\.spec\.ts/, 'the whole test log was carried, not just setup');
   assert.ok(web.text.split('\n').length <= 12, 'the filtered excerpt is not small');
+});
+
+// ================================================================================================
+// Item #173 — the run-health verdict is a DIGEST FIELD, not a job-log line nobody can fetch.
+// ================================================================================================
+//
+// Roughly one app-e2e run in seven collapses: every agent/dock spec fails at once, flaky=0, and the
+// gateway receives ~a quarter of its usual turns. scripts/e2e-turn-tally.sh has told that apart from
+// "some tests failed" since feature 054 — but it prints into a job log, and this forge exposes no
+// job logs through its API. So on a red app-e2e the reader still could not answer "is this the
+// collapse or is it my change?" without opening the run page by hand.
+//
+// Publishing only on failure is sufficient rather than a compromise: a collapsed run FAILS by
+// construction, so a run that produced no digest was not a collapse.
+
+test('(hh) a collapsed run says so in the digest table', async () => {
+  const { readRunHealth, buildDigest: build } = await digestModule();
+  const root = mkdtempSync(join(tmpdir(), 'run-health-'));
+  const jobDir = join(root, '1633', 'app-e2e');
+  mkdirSync(jobDir, { recursive: true });
+  writeFileSync(join(jobDir, 'e2e-turn-tally.log'),
+    '[e2e-turns] gateway_posts=39 tests_executed=177 posts_per_100_tests=22 verdict=collapsed\n'
+    + '[e2e-turns] COLLAPSE SIGNATURE — the client is not SENDING turns. Do NOT re-run this as a reflex.\n');
+
+  const health = readRunHealth({ CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '1633', GITHUB_JOB: 'app-e2e' });
+  assert.match(health.verdict, /verdict=collapsed/);
+  const d = build({ ...ctx({ step: 'web-e2e' }), runHealth: health }, { excerpts: [] });
+  assert.match(d.markdown, /Run health/, 'the digest table has no run-health row');
+  assert.match(d.markdown, /verdict=collapsed/, 'the verdict did not reach the published digest');
+});
+
+test('(hh2) an INDETERMINATE verdict is published with its reason, never rendered as a result', () => {
+  // A gate-tier pull request always reads `indeterminate` (feature 056 — the healthy floor was
+  // calibrated on the full suite). Showing that as healthy, or hiding it, would be a confident label
+  // drawn from a measurement deliberately not taken — the failure mode the tally itself avoids.
+  const root = mkdtempSync(join(tmpdir(), 'run-health-'));
+  const jobDir = join(root, '1700', 'app-e2e');
+  mkdirSync(jobDir, { recursive: true });
+  writeFileSync(join(jobDir, 'e2e-turn-tally.log'),
+    '[e2e-turns] gateway_posts=48 tests_executed=155 posts_per_100_tests=30 verdict=indeterminate\n'
+    + '[e2e-turns] reason: gate tier only (the model tier did not run — normal on a pull request).\n');
+
+  const health = readFailingStepModuleRunHealth({ CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '1700', GITHUB_JOB: 'app-e2e' });
+  assert.match(health.verdict, /verdict=indeterminate/);
+  assert.match(health.reason, /gate tier only/, 'the reason was dropped, leaving an unexplained abstention');
+  const d = buildDigest({ ...ctx({ step: 'web-e2e' }), runHealth: health }, { excerpts: [] });
+  assert.match(d.markdown, /indeterminate/);
+  assert.match(d.markdown, /gate tier only/);
+});
+
+test('(hh3) a job that never ran the tally gets no run-health row at all', () => {
+  // "Not measured" and "measured healthy" are opposite statements. Every job but app-e2e is in the
+  // first case, and a row reading `healthy` there would be manufactured.
+  const health = readFailingStepModuleRunHealth({ CI_STEP_LOG_ROOT: '/nonexistent', GITHUB_RUN_ID: 'x', GITHUB_JOB: 'affected' });
+  assert.equal(health, null);
+  const d = buildDigest({ ...ctx({ step: 'x' }), runHealth: health }, { excerpts: [] });
+  assert.equal(/Run health/.test(d.markdown), false, 'a job with no measurement was given a verdict');
 });

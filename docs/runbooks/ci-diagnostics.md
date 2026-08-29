@@ -687,6 +687,51 @@ The old coverage gate passed all of it because it asked only "does this job publ
 fail is wrapped. `check-ci-digest-coverage.mjs` now requires **every** `run:` step to be wrapped or
 to carry a justified `# ci-log-step-exempt:` marker of its own.
 
+### The same defect, one level down: per-COMMAND, not per-block (item #177 variant 4)
+
+"Every `run:` step must be wrapped" was still decided by a **substring test against the whole
+block** — `/ci-log-step\.sh/.test(step.run)`. So a multi-line `run:` block passed if the wrapper
+appeared anywhere in it, and every command above that line ran unwrapped: **no log, and no
+`_failed-step` marker either**, so the digest named nothing at all.
+
+Measured 2026-08-29 — three live steps had a failure path outside their wrapper and the gate
+reported all three clean:
+
+| Workflow / job | The command that ran unwrapped |
+| --- | --- |
+| `cd-deploy / prod-apk` | `exit 1` on the BASE_DOMAIN guard |
+| `devcontainer-image / build-publish` | `: "${REGISTRY:?…}"` |
+| `wiki-maintain / maintain` | `exit 2` on a malformed dispatch input |
+
+This is the same class as `guardrails / naming` passing with 2 of 16 **steps** wrapped, exactly one
+level further down: 1 of N **commands**. All three now wrap the whole block with the heredoc idiom
+below, so their guard failures are captured too. Pinned by `(x4)` in
+`scripts/__tests__/check-ci-digest-coverage.test.mjs`.
+
+### The gate checks PRESENCE, not REACHABILITY — say so out loud
+
+This is a stated limitation, not an oversight, and it is written down here because a known limit
+beats a general check nobody trusts (item #177's third acceptance criterion).
+
+`check-ci-digest-coverage.mjs` reads YAML and shell **as text**. It can answer "is this command
+inside the wrapper?" — it cannot answer "**can the wrapper actually run where this step runs?**".
+Four ways the wrapping has been present and non-functional have shipped, none of them found by the
+presence rule:
+
+| Variant | Why the wrapping was inert | Caught by |
+| --- | --- | --- |
+| `working-directory:` on the step | `bash scripts/ci-log-step.sh` is repo-root-relative → bash exits 127 before the wrapper runs, so no log **and** no marker | `(x)` |
+| Command begins with an env-var assignment | `MODEL_PROVIDER=x cmd` is shell syntax, not argv; `"$@"` tries to execute the assignment | `(x2)` |
+| The job's `Checkout` is conditional | The script is not on disk on the branch where checkout is skipped | `(x3)` |
+| A command runs outside the wrapper in the same block | The wrapper runs fine; it is simply not what executes the failing command | `(x4)` |
+
+The first three are **shape-specific regression cases against the real workflows**, not a general
+property — a fifth environmental variant would ship the same way. The fourth is a general rule, but
+still a **heuristic**: it reads shell line by line rather than parsing it, so a command hidden inside
+a single-line `case … esac`, or behind an `&&` on a control-flow line, is not seen. Treat all of it
+as a floor, and when a job dies in seconds with no digest content, suspect the wrapper's
+preconditions before suspecting the code.
+
 ### Wrapping a step
 
 ```yaml
@@ -817,11 +862,21 @@ a pass claim.
   scan the whole tree and cannot distinguish a test fixture from a real leak. Collapsing them into
   single strings fails the gates — this happened three times while building this feature.
 - **Only INSTRUMENTED steps mirror their output.** A step wrapped with `scripts/ci-log-step.sh`
-  writes its combined stdout+stderr to a per-run directory the collector reads at the HIGHEST
-  priority — the failing step's own output outranks any container log. Wrap a step like this:
+  writes its combined stdout+stderr to a per-run, **per-job** directory the collector reads at the
+  HIGHEST priority — the failing step's own output outranks any container log. Wrap a step like this:
 
   ```yaml
+  # one command
   run: bash scripts/ci-log-step.sh <log-name> <command> [args...]
+
+  # a whole multi-command block — everything between the delimiters runs INSIDE the wrapper, so a
+  # guard that `exit`s early is captured too. Use `bash /dev/stdin` (no `-e`) when the block reads
+  # `$?` and dispatches on it.
+  run: |
+    bash scripts/ci-log-step.sh <log-name> bash -e /dev/stdin <<'CI_LOG_STEP'
+    : "${SOME_VAR:?set it}"
+    <command>
+    CI_LOG_STEP
   ```
 
   Instrumented steps: `app-e2e` (agent-integration, mc-service-integration, web-e2e,
@@ -834,6 +889,24 @@ a pass claim.
   > ⚠️ The wrapper sets `pipefail` deliberately. `cmd | tee` returns **tee's** exit status, so
   > without it a FAILING step reports SUCCESS and CI goes silently green — strictly worse than
   > missing logs. `scripts/__tests__/ci-log-step.test.mjs` pins this; removing `pipefail` fails it.
+- **The step-log directory is scoped by run AND by job** —
+  `$HOME/mcm-ci-step-logs/<run-id>/<job>/`. `app-e2e` and `dast` are two jobs of one run on the same
+  self-hosted runner and share `$HOME`, so a run-scoped directory gave them one `_failed-step` file
+  and one pool of step logs between them: whichever failed first wrote the marker, and the other
+  published it as its own. Measured on run **#1683** — the `app-e2e` digest reported
+  `dast-install-latest-docker`, a step in the **dast** job (item #180). There is deliberately **no
+  run-scoped fallback**: one would keep reading the sibling's marker on exactly the overlapping runs
+  the scoping is for. Writer (`ci-log-step.sh`) and reader (`stepLogDir` in `ci-failure-digest.mjs`)
+  derive the path independently and must move together; `(g4)`/`(g5)` and `(y3)` pin both halves.
+- **On a red `app-e2e`, read the `Run health` row FIRST** (item #173). Roughly one run in seven
+  *collapses*: every agent/dock spec fails at once, `flaky=0`, and the gateway receives about a
+  quarter of its usual turns because the client stops **sending** them. `scripts/e2e-turn-tally.sh`
+  labels that, and its verdict is now a digest field rather than a line in a job log this forge's API
+  cannot serve. `verdict=collapsed` means the failures say nothing about your diff and a re-run is
+  warranted — the one case where the re-run reflex is right. `indeterminate` is normal on a pull
+  request (gate tier only, feature 056) and is published with its reason rather than guessed at. A
+  collapsed run always **fails**, so a run that produced no digest was not a collapse — which is how
+  "no collapse in the last ten runs" is read.
 - **The digest is size-capped for the comment channel.** A PR comment / commit status has a ~64 KB
   limit; a full `app-e2e` digest measured 90 KB. The digest markdown is trimmed to fit with a note,
   while the bundle keeps every log as a separate file — so nothing is lost, only relocated.

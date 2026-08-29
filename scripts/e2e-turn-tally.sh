@@ -46,7 +46,9 @@ CONTAINER="${E2E_TURN_GATEWAY_CONTAINER:-movie-assistant-gateway}"
 # Both file seams are test seams. A script that could only read a live container and a live CI step
 # log could only be verified by running CI — the loop this feature exists to shorten.
 GATEWAY_LOG_FILE="${E2E_TURN_GATEWAY_LOG_FILE:-}"
-COUNTS_FILE="${E2E_TURN_COUNTS_FILE:-${HOME:-}/mcm-ci-step-logs/${GITHUB_RUN_ID:-local}/e2e-result-gate.log}"
+# Run- AND job-scoped, matching ci-log-step.sh's `dir=` (item #180): app-e2e and dast share this
+# runner's $HOME, so a run-only path would read whichever job wrote last.
+COUNTS_FILE="${E2E_TURN_COUNTS_FILE:-${HOME:-}/mcm-ci-step-logs/${GITHUB_RUN_ID:-local}/${GITHUB_JOB:-local}/e2e-result-gate.log}"
 
 gateway_log=""
 unavailable_reason=""
@@ -102,7 +104,7 @@ counts_line=$(grep -o '\[e2e-gate\] failed=[0-9]* flaky=[0-9]* passed=[0-9]*[^ ]
 # It did not change that verdict, and "it happened not to matter" is not a reason to leave a
 # measurement wrong: the threshold is calibrated against a band, and an inflated ratio drifts out of
 # comparability with it.
-MODEL_COUNTS_FILE="${E2E_TURN_MODEL_COUNTS_FILE:-${HOME:-}/mcm-ci-step-logs/${GITHUB_RUN_ID:-local}/e2e-result-gate-model.log}"
+MODEL_COUNTS_FILE="${E2E_TURN_MODEL_COUNTS_FILE:-${HOME:-}/mcm-ci-step-logs/${GITHUB_RUN_ID:-local}/${GITHUB_JOB:-local}/e2e-result-gate-model.log}"
 model_counts_line=""
 [ -r "$MODEL_COUNTS_FILE" ] && model_counts_line=$(grep -o '\[e2e-gate\] failed=[0-9]* flaky=[0-9]* passed=[0-9]*[^ ]*.*' "$MODEL_COUNTS_FILE" 2>/dev/null | tail -n 1)
 

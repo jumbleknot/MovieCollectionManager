@@ -156,6 +156,83 @@ export function parseJobSteps(text, doc) {
   return out;
 }
 
+/**
+ * Shell scaffolding that cannot carry diagnostic output of its own: control keywords and block
+ * terminators, `set -o` lines, and pure variable assignments. Everything else in a `run:` block is
+ * treated as a COMMAND that can fail the step, and therefore has to be inside the wrapper.
+ *
+ * Deliberately conservative in the direction of flagging: `echo` is NOT scaffolding here, because
+ * the existing rule "a job whose only step is `- run: echo work` publishes an empty digest" is one
+ * this gate already enforces and must keep enforcing.
+ */
+const SHELL_KEYWORD = /^(if|then|elif|else|fi|for|while|until|do|done|case|esac|function)\b|^[;)}{&|]/;
+const SHELL_ASSIGNMENT = /^(export|local|declare|readonly|typeset)\s+[A-Za-z_]|^[A-Za-z_][A-Za-z0-9_]*\+?=/;
+const SHELL_SETOPT = /^set\s+[-+]/;
+
+/**
+ * Split a `run:` block into logical command lines, with heredoc BODIES removed.
+ *
+ * The heredoc removal is the load-bearing part. The idiom this repo uses to wrap a whole multi-line
+ * block is `bash scripts/ci-log-step.sh <name> bash -e /dev/stdin <<'CI_LOG_STEP' … CI_LOG_STEP` —
+ * everything between the delimiters already runs INSIDE the wrapper, so counting those lines as
+ * unwrapped commands would report every correctly-wrapped block in the repository as a gap.
+ *
+ * Continuation lines (`\` at end of line) are joined, so a wrapper invocation split across lines is
+ * still recognised as one command rather than as a wrapped line followed by bare arguments.
+ */
+export function commandLines(run) {
+  const out = [];
+  let heredoc = null;
+  let logical = '';
+  for (const raw of String(run).split(/\r?\n/)) {
+    if (heredoc !== null) {
+      if (raw.trim() === heredoc) heredoc = null;
+      continue;
+    }
+    const t = raw.trim();
+    if (!t || t.startsWith('#')) continue;
+    logical += (logical ? ' ' : '') + t.replace(/\\$/, '');
+    if (/\\$/.test(t)) continue; // continued on the next line
+    const hd = logical.match(/<<-?\s*["']?([A-Za-z_][A-Za-z0-9_]*)["']?/);
+    if (hd) heredoc = hd[1];
+    out.push(logical);
+    logical = '';
+  }
+  if (logical) out.push(logical);
+  return out;
+}
+
+/**
+ * The commands in a `run:` block that execute OUTSIDE `ci-log-step.sh` (feature 042 durability,
+ * item #177 variant 4).
+ *
+ * WHY THIS EXISTS, and why it is not just another shape check. The three shapes already pinned by
+ * cases (x), (x2) and (x3) in the test file are all environmental — the wrapper is invoked but
+ * cannot run where the step runs. This one is a hole in the GATE'S OWN RULE: coverage was decided by
+ * `/ci-log-step\.sh/.test(step.run)`, a substring test against the whole block, so a 40-line `run:`
+ * block passed if the wrapper appeared anywhere in it. Every command before that line failed
+ * unwrapped — no log, and no `_failed-step` marker either, so the digest named nothing.
+ *
+ * MEASURED 2026-08-29: three live steps had a failure path outside their wrapper —
+ * `cd-deploy / prod-apk` (`exit 1` on the BASE_DOMAIN guard), `devcontainer-image / build-publish`
+ * (`: "${REGISTRY:?…}"`), and `wiki-maintain / maintain` (`exit 2` on a malformed dispatch input,
+ * plus the step's final exit expression). The gate reported all three clean.
+ *
+ * It is the same class the per-step rule closed one level up: "one compliant thing stands in for
+ * many". `guardrails / naming` once passed with 2 of 16 steps wrapped; this passed with 1 of N
+ * COMMANDS wrapped.
+ *
+ * HEURISTIC, and knowingly so: it reads shell as lines, not as a parse tree, so a command hidden
+ * inside a single-line `case … esac` or behind an `&&` on a keyword line is not seen. It is a floor,
+ * not a proof — see docs/runbooks/ci-diagnostics.md, "presence, not reachability".
+ */
+export function unwrappedCommands(run) {
+  return commandLines(run).filter((line) => {
+    if (LOG_STEP_SCRIPT.test(line)) return false;
+    return !(SHELL_KEYWORD.test(line) || SHELL_ASSIGNMENT.test(line) || SHELL_SETOPT.test(line));
+  });
+}
+
 /** @returns {{job: string, problem: string}[]} one entry per uncovered job. */
 export function findCoverageGaps(text) {
   const doc = parse(text);
@@ -205,10 +282,16 @@ export function findCoverageGaps(text) {
     // So when that job failed for the reason it exists to catch, the digest published the logs of two
     // unrelated steps and said nothing about the failure — fully compliant, completely undiagnosable.
     // Now every `run:` step must be wrapped or carry its own justified marker.
+    //
+    // PER-COMMAND, not per-block (item #177 variant 4). `LOG_STEP_SCRIPT.test(step.run)` was a
+    // substring test against the WHOLE `run:` block, so one wrapper line covered every other command
+    // in it — three live steps had a failure path outside their wrapper and the gate called them
+    // clean. See unwrappedCommands() for the measurement.
     for (const step of stepView.get(name) ?? []) {
       if (step.run === null) continue;                       // `uses:`-only — no command to capture
       if (DIGEST_SCRIPT.test(step.run)) continue;            // wrapping the reporter in what it reports on is circular
-      if (LOG_STEP_SCRIPT.test(step.run)) continue;
+      const bare = unwrappedCommands(step.run);
+      if (bare.length === 0) continue;
       const where = step.name ? `step "${step.name}"` : 'an unnamed run: step';
       if (step.exempt) {
         if (!step.reason) {
@@ -216,11 +299,16 @@ export function findCoverageGaps(text) {
         }
         continue;
       }
+      // Naming the offending command matters: on a long block the reader cannot otherwise tell
+      // WHICH line the gate objects to, and the whole point is that the block LOOKS wrapped.
+      const cited = bare.length === 1 ? `\`${bare[0].slice(0, 80)}\`` : `${bare.length} commands, first \`${bare[0].slice(0, 80)}\``;
       gaps.push({
         job: name,
         problem:
-          `${where} is not wrapped with \`scripts/ci-log-step.sh\`, so its output cannot reach the ` +
-          'digest. Wrap it, or add a justified `# ci-log-step-exempt:` marker above it',
+          `${where} runs ${cited} outside \`scripts/ci-log-step.sh\`, so a failure there reaches the ` +
+          'digest with no output and no failing-step marker. Wrap the whole block (the ' +
+          '`bash scripts/ci-log-step.sh <name> bash -e /dev/stdin <<\'CI_LOG_STEP\'` idiom), or add a ' +
+          'justified `# ci-log-step-exempt:` marker above the step',
       });
     }
   }

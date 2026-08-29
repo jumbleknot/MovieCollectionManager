@@ -26,8 +26,18 @@ shift
 
 # Scoped by run id so a PERSISTENT runner (this one is) cannot leak a previous run's output into
 # this run's digest. Falls back to `local` off-CI.
+#
+# And by JOB (item #180). `app-e2e` and `dast` run on the SAME self-hosted runner and share $HOME, so
+# a run-scoped directory was ONE directory shared by both: whichever job failed first wrote
+# `_failed-step`, and the other read it and published it as its own. MEASURED on app-ci run #1683 —
+# the `app-e2e` digest reported `dast-install-latest-docker`, a step in the dast job. The same
+# sharing put each job's step logs into the other's digest as `step:` excerpts, which is why the
+# whole directory is scoped here and not just the marker file.
+#
+# There is deliberately NO run-scoped fallback on the reader side: a fallback would let the defect
+# survive behind it on exactly the runs where the two jobs overlap.
 root="${CI_STEP_LOG_ROOT:-$HOME/mcm-ci-step-logs}"
-dir="$root/${GITHUB_RUN_ID:-local}"
+dir="$root/${GITHUB_RUN_ID:-local}/${GITHUB_JOB:-local}"
 mkdir -p "$dir"
 
 # Best-effort prune of old runs; never allowed to fail the step.

@@ -335,7 +335,12 @@ jobs:
       - name: Build release APK (public BFF host baked)
         env:
           APK_VARIANT: release
+        # The guard is INSIDE the wrapper (item #177 variant 4). It used to sit above it, so an unset
+        # BASE_DOMAIN failed the step with the `::error::` annotation in the job log only — no capture
+        # and no `_failed-step` marker, leaving the digest to report "_not reported_" for the one
+        # failure mode this step exists to produce.
         run: |
+          bash scripts/ci-log-step.sh prod-apk-build bash -e /dev/stdin <<'CI_LOG_STEP'
           # An unset BASE_DOMAIN var expands to the literal "https://mcm." / "https://auth." — non-empty,
           # so a `:?` guard misses it and the APK bakes a dead URL. Fail loudly on those exact forms.
           if [ "$EXPO_PUBLIC_BFF_NATIVE_URL" = "https://mcm." ] || [ "$EXPO_PUBLIC_KEYCLOAK_NATIVE_URL" = "https://auth." ]; then
@@ -343,7 +348,8 @@ jobs:
             exit 1
           fi
           echo "Baking BFF URL: $EXPO_PUBLIC_BFF_NATIVE_URL  |  Keycloak: $EXPO_PUBLIC_KEYCLOAK_NATIVE_URL"
-          bash scripts/ci-log-step.sh prod-apk-build pnpm nx run mcm-app:build-apk
+          pnpm nx run mcm-app:build-apk
+          CI_LOG_STEP
       # Item #161 — publish the APK to the GENERIC package registry, the only scriptable channel this
       # forge has. `GET /repos/{owner}/{repo}/actions/artifacts` answers 404 "404 page not found" here
       # (a MISSING ROUTE, not an empty result), so the upload-artifact step below is reachable ONLY by
