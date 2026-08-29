@@ -4,7 +4,7 @@ title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, and the silent failure modes that produce absence instead of errors.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-08-28T00:00:00+00:00
+timestamp: 2026-08-29T00:00:00+00:00
 ---
 
 # Renovate dependency bot
@@ -60,8 +60,13 @@ Nothing auto-merges. Every group carries `automerge: false`.
   six required contexts at `pnpm install` — none of them about the change. **Handling: wait.** The
   transitive ages past the ~24 h cutoff and a re-run passes. Do NOT add it to
   `pnpm-workspace.yaml`'s `minimumReleaseAgeExclude` — that list is for security-floor exceptions,
-  not impatience. See [CI self-serve diagnostics](ci-diagnostics.md) for the board shape this
-  produces.
+  not impatience. **DECIDED 2026-08-28 (item #271): this friction is ACCEPTED, not mitigated.** It
+  is infrequent, fails loudly and safely (a red gate, never a silent bad merge), and is a
+  two-minute diagnosis with this runbook. Mitigations were considered and rejected: shifting the
+  window trades a certain constraint for a probabilistic one; pinning the verify-time policy
+  re-opens the cold-`--frozen-lockfile` question feature 034 already settled. Revisit only if it
+  starts blocking multiple PRs a week. See [CI self-serve diagnostics](ci-diagnostics.md) for the
+  board shape this produces.
 - **Extraction is not grouping.** A `customManagers` entry makes Renovate *see* a second copy of a
   version. It does not make both copies move in one PR — a later broad rule can claim one half and
   strand the other. Every extracted pair needs a `packageRule` matching both managers, ordered after
