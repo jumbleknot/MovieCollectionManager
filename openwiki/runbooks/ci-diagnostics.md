@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-08-11T00:00:00+00:00
+timestamp: 2026-08-28T00:00:00+00:00
 ---
 
 # CI self-serve diagnostics
@@ -23,6 +23,27 @@ runtime rather than any literal configured value.
   nothing was actually broken — the tell is that unrelated jobs die together on a change that
   couldn't have affected them all, confirmed by the literal "Has been cancelled" description or the
   owning run's `cancelled` status.
+- **"Every job died together" has a SECOND cause: a broken `pnpm install`.** A supply-chain policy
+  rejecting a fresh transitive produces the identical board shape — every job that installs
+  dependencies goes red, with no relationship to the diff. Measured 2026-08-28 on PR #263:
+  `affected`, `mc-service-checks`, `naming`, `okf`, `agent-gates`, and `sast` all failed on a
+  one-line `@ag-ui/client` bump; the cause was `zod@4.5.1` published 1.7 hours earlier. **When the
+  whole board goes red: check `status` for `cancelled` FIRST, then open any one failing job's digest
+  and look at which STEP failed.** If it is the install step, the other digests will say the same
+  thing — reading all six is wasted effort. See [Renovate](renovate.md) for the cooldown/transitive
+  interaction.
+- **"Does this branch still contribute?" is a two-dot diff question, not three-dot.**
+  `git diff main...branch` reports what the branch adds since the merge base — changes `main` already
+  has by another route will appear as still-live work. `git diff main branch` shows what the trees
+  actually differ by. Measured on PR #262: three-dot said "three version moves remain unique to this
+  PR"; two-dot showed merging it would have downgraded crates, and Renovate autoclosed it minutes
+  later.
+- **`--run N --full` resolves the wrong commit — use `--pr N --job <name>` or `--sha`.** The command
+  every digest footer prints (`failure --run 2147 --full`) answered "No failed jobs on this commit"
+  on a run that had definitively failed (item #226, reconfirmed 2026-08-28). The wrong answer is a
+  **confident negative**, not an error — "No failed jobs on this commit" reads as "CI is fine". Use
+  `--sha $(git rev-parse <ref>)` or `--pr N`. An abbreviated sha is refused outright; a short sha
+  returns zero runs and reads as "no CI ran".
 - **The "superseded" trap is the dangerous direction: it fails loud, announcing a broken build that
   isn't.** The other misreport (skipped) fails safe. Both were measured against real API responses,
   not inferred from documentation.
