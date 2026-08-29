@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-08-28T00:00:00+00:00
+timestamp: 2026-08-29T00:00:00+00:00
 ---
 
 # CI self-serve diagnostics
@@ -93,6 +93,32 @@ runtime rather than any literal configured value.
   requires every `run:` step to be wrapped or carry a justified `# ci-log-step-exempt:` marker.
   Every new CI job forces a choice: instrument it, or write down why it does not need
   instrumentation.
+- **Per-COMMAND coverage is the follow-on trap — a substring test is not a parse (item #177 variant 4).**
+  "Every `run:` step must be wrapped" was checked by testing whether `ci-log-step.sh` appeared
+  anywhere in the block — so a multi-line block passed if the wrapper appeared at the bottom, and
+  every command above it ran unwrapped: no log, no `_failed-step` marker, digest names nothing.
+  Measured 2026-08-29 on three live steps: `cd-deploy / prod-apk` (`exit 1` on the BASE_DOMAIN
+  guard), `devcontainer-image / build-publish` (`: "${REGISTRY:?…}"`), `wiki-maintain / maintain`
+  (`exit 2` on a malformed dispatch input). Fix: wrap the whole multi-command block with the heredoc
+  idiom so every command runs inside the wrapper. The gate checks PRESENCE, not REACHABILITY — it
+  reads YAML and shell as text and cannot verify the wrapper can actually execute where it is placed.
+  When a job dies in seconds with no digest content, suspect wrapper preconditions first.
+- **The step-log directory is scoped by run AND job — a run-scoped directory causes sibling-job contamination (item #180).**
+  `app-e2e` and `dast` run as two jobs of one run on the same self-hosted runner (shared `$HOME`).
+  A run-scoped directory gave them one `_failed-step` file and one pool of step logs; whichever
+  failed first wrote the marker, and the other published it as its own. Measured on run **#1683**:
+  `app-e2e` digest reported `dast-install-latest-docker`, a step in the `dast` job. The fix is
+  `$HOME/mcm-ci-step-logs/<run-id>/<job>/`. There is deliberately no run-scoped fallback — one
+  would keep reading the sibling's marker on exactly the overlapping runs the scoping is for.
+  Writer (`ci-log-step.sh`) and reader (`stepLogDir` in `ci-failure-digest.mjs`) derive the path
+  independently and must move together.
+- **On a red `app-e2e`, read the `Run health` row FIRST (item #173).** Roughly one run in seven
+  *collapses*: every agent/dock spec fails at once, `flaky=0`, and the gateway receives about a
+  quarter of its usual turns because the client stops sending them. `scripts/e2e-turn-tally.sh`
+  labels this, and its verdict is now a digest field. `verdict=collapsed` means the failures say
+  nothing about your diff — the one case where the re-run reflex is correct. `indeterminate` is
+  normal on a pull request (gate tier only, feature 056). A collapsed run always fails, so a run
+  that produced no digest was not a collapse.
 - **Gate verdicts must not depend on line endings.** Two gates violated this in opposite
   directions at the same time. `check-ci-digest-coverage.mjs` was failing CLOSED on Windows
   checkouts (reporting exempt jobs as uncovered) because `\r` broke the exemption-marker regex
