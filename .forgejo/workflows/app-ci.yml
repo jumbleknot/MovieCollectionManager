@@ -792,14 +792,16 @@ jobs:
       # already did that.
       #
       # `always()` so it still reports when the web E2E failed, and it reads that step's own captured
-      # log (ci-log-step.sh mirrors every wrapped step to $HOME/mcm-ci-step-logs/$GITHUB_RUN_ID).
+      # log (ci-log-step.sh mirrors every wrapped step to
+      # $HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/$GITHUB_JOB — per-JOB since item #180, because app-e2e
+      # and dast share this runner's $HOME and were reading each other's captures).
       # Parsing lives in scripts/e2e-failure-set.mjs, which is unit-tested including the skip,
       # did-not-run, and missing-summary cases.
       - name: E2E result gate (no skips, nothing left unrun)
         if: ${{ always() }}
         run: |
           bash scripts/ci-log-step.sh e2e-result-gate \
-            node scripts/e2e-failure-set.mjs gate "$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/web-e2e.log"
+            node scripts/e2e-failure-set.mjs gate "$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/$GITHUB_JOB/web-e2e.log"
 
       # The model tier's counts are ASSERTED and published, not merely printed — an unread count is
       # not a report, and a tier that quietly stopped reporting would read as one that is passing.
@@ -810,7 +812,7 @@ jobs:
         continue-on-error: true
         run: |
           bash scripts/ci-log-step.sh e2e-result-gate-model \
-            node scripts/e2e-failure-set.mjs gate "$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/web-e2e-model.log"
+            node scripts/e2e-failure-set.mjs gate "$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/$GITHUB_JOB/web-e2e-model.log"
 
       # ── Contention tally (feature 052 US2, FR-005..FR-007) ──────────────────────────────────────
       # Eight Playwright workers share ONE E2E_TEST_USER and one storageState session. Whether that

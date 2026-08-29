@@ -173,7 +173,21 @@ jobs:
           # the first CI run of this workflow, and correctly so.
           INPUT_MAX_SLICES: ${{ github.event.inputs.max-slices }}
           INPUT_SINCE: ${{ github.event.inputs.since }}
+        # Wrapped so the generator's own account of what it did reaches the feature-042 digest.
+        # Without this the failing step reports "_not reported_" and a run that wrote nothing leaves
+        # no evidence of WHY — which is exactly the gap that made the 50% failure rate unexplainable.
+        #
+        # The WHOLE block is inside the wrapper (item #177 variant 4). Only the generator call used to
+        # be, so the two dispatch-input validation failures below (`exit 2`) failed the step from
+        # OUTSIDE it — no capture, no `_failed-step` marker, and a digest that named nothing for the
+        # one failure an operator can actually cause by hand.
+        #
+        # `bash /dev/stdin`, NOT `bash -e /dev/stdin`: this block reads the generator's exit code and
+        # dispatches on it (0 and 3 are both success — FR-017). Under `-e` the shell would abort at
+        # the generator's non-zero exit before `CODE=$?` ever ran, turning a budget stop into a
+        # failure and losing the outputs the later steps read.
         run: |
+          bash scripts/ci-log-step.sh wiki-maintain-execute bash /dev/stdin <<'CI_LOG_STEP'
           set -uo pipefail
           # Validated as well as quoted: an operator-supplied value should be rejected for being
           # malformed, not merely rendered harmless.
@@ -187,11 +201,7 @@ jobs:
             ARGS+=(--since "$INPUT_SINCE")
           fi
 
-          # Wrapped so the generator's own account of what it did reaches the feature-042 digest.
-          # Without this the failing step reports "_not reported_" and a run that wrote nothing leaves
-          # no evidence of WHY — which is exactly the gap that made the 50% failure rate unexplainable.
-          bash scripts/ci-log-step.sh wiki-maintain-execute \
-            node scripts/wiki-maintain.mjs --execute --propose ${ARGS[@]+"${ARGS[@]}"}
+          node scripts/wiki-maintain.mjs --execute --propose ${ARGS[@]+"${ARGS[@]}"}
           CODE=$?
           echo "exit-code=$CODE" >> "$GITHUB_OUTPUT"
 
@@ -205,6 +215,7 @@ jobs:
           esac
           # 0 and 3 both mean "nothing is broken".
           [ "$CODE" = "0" ] || [ "$CODE" = "3" ]
+          CI_LOG_STEP
 
       # The run record must be COMMITTED: runners are ephemeral, and the marker has to advance even on
       # a run that created no proposal (FR-012). `[skip ci]` keeps it from triggering this job again

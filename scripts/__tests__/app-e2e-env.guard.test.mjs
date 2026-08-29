@@ -172,8 +172,9 @@ test('the result gate runs even when the web E2E failed, and reads that step\'s 
   assert.match(block, /if: \$\{\{ always\(\) \}\}/, 'the gate must run on failure too — that is when the counts matter most');
   assert.match(
     block,
-    /mcm-ci-step-logs\/\$GITHUB_RUN_ID\/web-e2e\.log/,
-    'the gate must read the run-scoped step log ci-log-step.sh writes; a bare or unscoped path ' +
-      'would read a PREVIOUS run on this persistent runner and pass on stale counts.',
+    /mcm-ci-step-logs\/\$GITHUB_RUN_ID\/\$GITHUB_JOB\/web-e2e\.log/,
+    'the gate must read the run- AND job-scoped step log ci-log-step.sh writes; a bare or ' +
+      'run-only path would read a PREVIOUS run on this persistent runner and pass on stale ' +
+      'counts, or read the sibling `dast` job that shares this runner\'s $HOME (item #180).',
   );
 });

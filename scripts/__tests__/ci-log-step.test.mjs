@@ -27,13 +27,13 @@ export { shellCanRunScript };
 const bashProbe = shellCanRunScript('bash', SCRIPT);
 const needsBash = { skip: bashProbe.usable ? false : bashProbe.reason };
 
-function run(args, { runId = 'test-run' } = {}) {
+function run(args, { runId = 'test-run', job = 'test-job' } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
   const r = spawnSync('bash', [SCRIPT, ...args], {
     encoding: 'utf8',
-    env: { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: runId },
+    env: { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: runId, GITHUB_JOB: job },
   });
-  const dir = join(root, runId);
+  const dir = join(root, runId, job);
   const logs = existsSync(dir) ? readdirSync(dir) : [];
   return { code: r.status, stdout: r.stdout ?? '', root, dir, logs };
 }
@@ -75,9 +75,9 @@ test('(d) output of a FAILING command is captured before the failure propagates'
 test('(e) logs are scoped per run — a persistent runner cannot leak a previous run in', needsBash, () => {
   // This runner IS persistent, so an unscoped directory would put a stale run's output into
   // today's digest and send the reader after a failure that already got fixed.
-  const a = run(['demo', 'bash', '-c', 'echo run-one'], { runId: 'run-1' });
+  const a = run(['demo', 'bash', '-c', 'echo run-one'], { runId: 'run-1', job: 'j' });
   assert.match(readFileSync(join(a.dir, 'demo.log'), 'utf8'), /run-one/);
-  assert.equal(a.dir.endsWith('run-1'), true, 'log directory is not scoped by run id');
+  assert.equal(a.dir.endsWith(join('run-1', 'j')), true, 'log directory is not scoped by run id');
 });
 
 test('(f) bad usage exits 2 rather than silently doing nothing', needsBash, () => {
@@ -86,26 +86,67 @@ test('(f) bad usage exits 2 rather than silently doing nothing', needsBash, () =
 
 test('(g) a failing wrapped step records its name so the digest can report it', needsBash, () => {
   const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
-  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-x' };
+  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-x', GITHUB_JOB: 'j' };
   spawnSync('bash', [SCRIPT, 'agent-gates-lint', 'bash', '-c', 'exit 1'], { encoding: 'utf8', env });
-  const marker = join(root, 'run-x', '_failed-step');
+  const marker = join(root, 'run-x', 'j', '_failed-step');
   assert.ok(existsSync(marker), 'no _failed-step marker was written');
   assert.equal(readFileSync(marker, 'utf8').trim(), 'agent-gates-lint');
 });
 
 test('(g2) a PASSING step records no marker', needsBash, () => {
   const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
-  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-y' };
+  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-y', GITHUB_JOB: 'j' };
   spawnSync('bash', [SCRIPT, 'ok', 'bash', '-c', 'exit 0'], { encoding: 'utf8', env });
-  assert.equal(existsSync(join(root, 'run-y', '_failed-step')), false, 'a passing step wrote a marker');
+  assert.equal(existsSync(join(root, 'run-y', 'j', '_failed-step')), false, 'a passing step wrote a marker');
 });
 
 test('(g3) the FIRST failing step wins — a later wrapped step does not overwrite it', needsBash, () => {
   const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
-  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-z' };
+  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-z', GITHUB_JOB: 'j' };
   spawnSync('bash', [SCRIPT, 'first-fail', 'bash', '-c', 'exit 1'], { encoding: 'utf8', env });
   spawnSync('bash', [SCRIPT, 'second-fail', 'bash', '-c', 'exit 1'], { encoding: 'utf8', env });
-  assert.equal(readFileSync(join(root, 'run-z', '_failed-step'), 'utf8').trim(), 'first-fail');
+  assert.equal(readFileSync(join(root, 'run-z', 'j', '_failed-step'), 'utf8').trim(), 'first-fail');
+});
+
+// --- (g4) TWO JOBS, ONE RUN — item #180 ---------------------------------------------------------
+//
+// `app-e2e` and `dast` are two jobs of the same run on the same self-hosted runner, sharing $HOME.
+// Run-scoped, they shared ONE `_failed-step` file: whichever failed first wrote it and the other
+// published it as its own failing step. MEASURED on app-ci run #1683 — the `app-e2e` digest
+// reported `dast-install-latest-docker`, a step in the dast job.
+//
+// It was harmless that once only because both jobs died of the same upstream cause. The normal case
+// is two jobs failing for different reasons, and then the digest sends its reader to the wrong job
+// with full confidence and no way to tell from the digest that it happened.
+test('(g4) two jobs failing in ONE run each record their OWN failing step', needsBash, () => {
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const inJob = (job) => ({ ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-shared', GITHUB_JOB: job });
+  spawnSync('bash', [SCRIPT, 'dast-install-latest-docker', 'bash', '-c', 'exit 1'], { encoding: 'utf8', env: inJob('dast') });
+  spawnSync('bash', [SCRIPT, 'web-e2e', 'bash', '-c', 'exit 1'], { encoding: 'utf8', env: inJob('app-e2e') });
+
+  const marker = (job) => readFileSync(join(root, 'run-shared', job, '_failed-step'), 'utf8').trim();
+  assert.equal(marker('dast'), 'dast-install-latest-docker');
+  assert.equal(
+    marker('app-e2e'),
+    'web-e2e',
+    'app-e2e adopted the sibling job\'s failing step — the marker is not job-scoped',
+  );
+});
+
+// --- (g5) one job's step LOGS must not appear in another job's evidence -------------------------
+//
+// The same sharing put each job's `*.log` into the other's digest as `step:` excerpts, because the
+// collector globs every .log in the directory. Item #180 scoped that out of its own criteria on the
+// belief the step logs were "already correct"; they were not, and scoping the whole directory fixes
+// both for the price of one.
+test('(g5) two jobs in ONE run do not see each other\'s step logs', needsBash, () => {
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const inJob = (job) => ({ ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-shared2', GITHUB_JOB: job });
+  spawnSync('bash', [SCRIPT, 'dast-zap', 'bash', '-c', 'echo zap'], { encoding: 'utf8', env: inJob('dast') });
+  spawnSync('bash', [SCRIPT, 'web-e2e', 'bash', '-c', 'echo playwright'], { encoding: 'utf8', env: inJob('app-e2e') });
+
+  assert.deepEqual(readdirSync(join(root, 'run-shared2', 'app-e2e')), ['web-e2e.log']);
+  assert.deepEqual(readdirSync(join(root, 'run-shared2', 'dast')), ['dast-zap.log']);
 });
 
 // --- (probe) the capability probe must answer the question being ASKED (feature 051 US5) ---------

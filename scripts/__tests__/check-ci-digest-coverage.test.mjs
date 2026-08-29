@@ -501,3 +501,119 @@ test('(x3) no step is wrapped on a path where the job skipped its checkout', () 
       + 'Leave the step unwrapped and add a justified `# ci-log-step-exempt:` marker.',
   );
 });
+
+// --- (x4) a wrapped step must not run COMMANDS OUTSIDE its wrapper -------------------------------
+//
+// The fourth variant, and the first that is a hole in the gate's OWN RULE rather than in the
+// environment the wrapper runs in. (x), (x2) and (x3) all describe a wrapper that is invoked and
+// cannot run; this describes a wrapper that runs perfectly and is not what executes the command that
+// fails.
+//
+// Coverage was `/ci-log-step\.sh/.test(step.run)` — a substring test against the WHOLE `run:` block.
+// So a block passed if the wrapper appeared anywhere in it, and every command above that line
+// executed unwrapped: no log, and no `_failed-step` marker either, so the digest named nothing at
+// all. It is the same class the per-step rule closed one level up ("one compliant thing stands in
+// for many"): `guardrails / naming` once passed with 2 of 16 STEPS wrapped, and this passed with 1
+// of N COMMANDS wrapped.
+//
+// MEASURED 2026-08-29 — three live steps had a failure path outside their wrapper, and the gate
+// reported all three clean:
+//   cd-deploy / prod-apk               `exit 1` on the BASE_DOMAIN guard
+//   devcontainer-image / build-publish `: "${REGISTRY:?…}"`
+//   wiki-maintain / maintain           `exit 2` on a malformed dispatch input
+// All three now wrap the whole block with the `bash -e /dev/stdin <<'CI_LOG_STEP'` idiom the repo
+// already uses elsewhere, so the guard failures are captured too.
+//
+// MUTATION RED: revert `unwrappedCommands` to the old substring test in
+// scripts/check-ci-digest-coverage.mjs and the first case here returns 0 gaps.
+test('(x4) a command that runs OUTSIDE the wrapper in a wrapped block is caught', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('build', [
+      '      - name: Build image',
+      '        run: |',
+      '          : "${REGISTRY:?set the REGISTRY var}"',
+      '          bash scripts/ci-log-step.sh build docker build .',
+    ].join('\n'))),
+  });
+  assert.equal(r.code, 1, 'the wrapper appearing anywhere in the block still satisfied the whole block');
+  assert.match(r.out, /Build image/, 'the message does not name the step');
+  assert.match(r.out, /REGISTRY/, 'the message does not name the command that runs unwrapped');
+});
+
+test('(x4b) the heredoc idiom that wraps a WHOLE block is not flagged', () => {
+  // The remediation must not itself read as a violation, or the rule is unusable. Everything between
+  // the delimiters already runs inside the wrapper, so those lines are not unwrapped commands.
+  const r = runGate({
+    'a.yml': wf(stepJob('build', [
+      '      - name: Build image',
+      '        run: |',
+      "          bash scripts/ci-log-step.sh build bash -e /dev/stdin <<'CI_LOG_STEP'",
+      '          : "${REGISTRY:?set the REGISTRY var}"',
+      '          TAG="${REGISTRY}/x:${GITHUB_SHA}"',
+      '          docker build -t "$TAG" .',
+      '          CI_LOG_STEP',
+    ].join('\n'))),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(x4c) shell scaffolding is not a command — control flow and assignments need no wrapper', () => {
+  // Flagging `fi` or `TAG=x` would make the rule unusable and train people to blanket-exempt, which
+  // is how a gate stops gating.
+  const r = runGate({
+    'a.yml': wf(stepJob('build', [
+      '      - name: Build image',
+      '        run: |',
+      '          set -euo pipefail',
+      '          TAG="x"',
+      '          export NS="y"',
+      '          if [ -n "$TAG" ]; then',
+      '            bash scripts/ci-log-step.sh build docker build -t "$TAG" .',
+      '          fi',
+    ].join('\n'))),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(x4d) a justified step-level exemption still covers a block with unwrapped commands', () => {
+  // The escape hatch has to keep working, or a step that genuinely cannot be wrapped has nowhere to
+  // go but a blanket job-level exemption — strictly worse.
+  const r = runGate({
+    'a.yml': wf(stepJob('build', [
+      '      # ci-log-step-exempt: runs before actions/checkout, so the wrapper is not on disk yet',
+      '      - name: Free disk',
+      '        run: |',
+      '          docker system prune -af',
+      '          df -h',
+    ].join('\n'))),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(x4e) the real workflows have no command running outside a wrapper', async () => {
+  const { unwrappedCommands: gateUnwrappedCommands } = await import(pathToFileURL(GATE).href);
+  // The live assertion, in the same shape as (x), (x2) and (x3): the fixtures above prove the rule
+  // detects the shape, this proves the repository is clean of it.
+  const offenders = [];
+  for (const f of readdirSync(REPO_WORKFLOWS).filter((n) => n.endsWith('.yml'))) {
+    const text = readFileSync(join(REPO_WORKFLOWS, f), 'utf8');
+    const doc = parseYaml(text);
+    for (const [jobName, jobDef] of Object.entries(doc?.jobs ?? {})) {
+      for (const step of jobDef?.steps ?? []) {
+        const run = typeof step?.run === 'string' ? step.run : null;
+        if (!run || !/ci-log-step\.sh/.test(run)) continue;
+        for (const cmd of gateUnwrappedCommands(run)) {
+          offenders.push(`${f} / ${jobName} :: ${step.name ?? '(unnamed)'} — ${cmd.slice(0, 90)}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'these steps invoke scripts/ci-log-step.sh but also run commands outside it, so a failure there '
+      + `produces no log and no _failed-step marker:\n  ${offenders.join('\n  ')}\n`
+      + "Wrap the whole block (`bash scripts/ci-log-step.sh <name> bash -e /dev/stdin <<'CI_LOG_STEP'`), "
+      + 'or add a justified `# ci-log-step-exempt:` marker above the step.',
+  );
+});

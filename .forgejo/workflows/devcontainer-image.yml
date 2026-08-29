@@ -59,11 +59,16 @@ jobs:
       # Build the heavy toolchain image. Context = repo root (the Dockerfile COPYs nothing; the
       # thin .devcontainer/Dockerfile is NOT built here — this publishes its `FROM` base).
       - name: Build toolchain image
+        # The `:?` var guard is INSIDE the wrapper (item #177 variant 4). Above it, an unset REGISTRY
+        # or NS failed the step before the wrapper ever ran — no capture, no `_failed-step` marker,
+        # and a digest that named nothing for a one-line misconfiguration.
         run: |
+          bash scripts/ci-log-step.sh devcontainer-image-build bash -e /dev/stdin <<'CI_LOG_STEP'
           : "${REGISTRY:?set the REGISTRY Forgejo var}" "${NS:?set the NS Forgejo var}"
           TAG="${REGISTRY}/${NS}/mcm-devcontainer:${GITHUB_SHA}"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
-          bash scripts/ci-log-step.sh devcontainer-image-build docker build -f .devcontainer/toolchain.Dockerfile -t "$TAG" .
+          docker build -f .devcontainer/toolchain.Dockerfile -t "$TAG" .
+          CI_LOG_STEP
 
       # Login → push → capture the immutable @sha256 digest (same pattern as cd-deploy). The forge
       # push token is REGISTRY_TOKEN (Forgejo reserves the FORGEJO_/GITEA_/GITHUB_ secret prefixes).

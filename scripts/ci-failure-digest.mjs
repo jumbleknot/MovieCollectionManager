@@ -129,6 +129,14 @@ export function buildDigest(context, { excerpts = [], health = [], absent = [], 
     ['Commit', `\`${safe(context.sha).slice(0, 8)}\``],
     context.pr ? ['PR', `#${context.pr}`] : null,
     ['Failing step', safe(context.step) || '_not reported_'],
+    // Item #173. On a red `app-e2e` the first question is "is this the ~1-in-7 collapse, or is it my
+    // change?" — and until this row existed the answer lived only in a job log the forge API cannot
+    // serve. A `collapsed` verdict means the client stopped SENDING turns and the failures say
+    // nothing about the diff; a re-run is warranted, which is the one case where the re-run reflex
+    // is correct rather than the habit that hid five stale specs for three weeks.
+    context.runHealth
+      ? ['Run health', `\`${safe(context.runHealth.verdict)}\`${context.runHealth.reason ? ` — ${safe(context.runHealth.reason)}` : ''}`]
+      : null,
     ['Run', `\`${context.runId}\``],
   ].filter(Boolean);
 
@@ -577,9 +585,65 @@ function readIfPresent(path) {
  * `~/mcm-ci-last-failure/` is written by exactly one job today (app-ci/app-e2e). Missing evidence is
  * the normal case, not an error.
  */
-/** The per-run directory scripts/ci-log-step.sh mirrors step output + the failing-step marker to. */
+/**
+ * The per-run, PER-JOB directory scripts/ci-log-step.sh mirrors step output + the failing-step
+ * marker to.
+ *
+ * Per-job is the fix for item #180. `app-e2e` and `dast` are two jobs of ONE run on the same
+ * self-hosted runner, sharing $HOME — so a run-scoped directory gave them one `_failed-step` file
+ * and one pool of step logs between them. Whichever failed first wrote the marker; the other
+ * published it as its own. MEASURED on run #1683: `app-e2e`'s digest named
+ * `dast-install-latest-docker`. That is the digest sending its reader to another job's step with
+ * full confidence, and nothing in the digest says it happened.
+ *
+ * There is deliberately NO run-scoped fallback: a fallback would keep reading the sibling's marker
+ * on exactly the overlapping runs this fixes, so the bug would survive behind it. Pinned by (y3) in
+ * scripts/__tests__/ci-failure-digest.test.mjs.
+ *
+ * Must stay in lockstep with the `dir=` line in scripts/ci-log-step.sh — writer and reader derive
+ * the same path independently, which is the drift that produced the original defect.
+ */
 function stepLogDir(env = process.env, home = env.HOME ?? '') {
-  return join(env.CI_STEP_LOG_ROOT || join(home, 'mcm-ci-step-logs'), env.GITHUB_RUN_ID || 'local');
+  return join(
+    env.CI_STEP_LOG_ROOT || join(home, 'mcm-ci-step-logs'),
+    env.GITHUB_RUN_ID || 'local',
+    env.GITHUB_JOB || 'local',
+  );
+}
+
+/**
+ * The run-health verdict scripts/e2e-turn-tally.sh printed for THIS job — or null if it did not run.
+ *
+ * WHY IT IS PROMOTED TO A DIGEST FIELD (item #173). Roughly one `app-e2e` run in seven COLLAPSES:
+ * every agent/dock spec fails at once, `flaky=0`, and the gateway receives about a quarter of its
+ * usual turns. The tally that tells that apart from "some tests failed" has existed since feature
+ * 054 — but it prints into a job log, and this forge exposes no job logs through its API. So the one
+ * question a reader has on a red `app-e2e` ("is this the collapse, or is it my change?") was
+ * answerable only by a human opening the run page, which is the out-of-band step this whole feature
+ * exists to remove.
+ *
+ * It is enough to publish it only here, on a failure, and that is not a compromise: a collapsed run
+ * FAILS by construction (28-30 agent specs go red together), so a run with no digest cannot have
+ * been a collapse. "No collapse in the last N runs" is therefore readable as "no digest in the last
+ * N runs reported one" — which is what item #173's tenth-consecutive-run criterion needs.
+ *
+ * The tally's own `indeterminate` verdicts are carried through verbatim, reason and all. A gate-tier
+ * pull request always reads `indeterminate` (feature 056), and rendering that as anything else would
+ * be a confident label drawn from a measurement that was deliberately not taken.
+ */
+export function readRunHealth(env = process.env, home = env.HOME ?? '') {
+  const log = join(stepLogDir(env, home), 'e2e-turn-tally.log');
+  try {
+    if (!existsSync(log)) return null;
+    const lines = readFileSync(log, 'utf8').split(/\r?\n/);
+    // The LAST verdict line: the script is re-run in local loops, and only the newest is this job's.
+    const verdict = lines.filter((l) => /^\[e2e-turns\].*\bverdict=/.test(l)).pop();
+    if (!verdict) return null;
+    const reason = lines.find((l) => /^\[e2e-turns\] reason:/.test(l));
+    return { verdict: verdict.replace(/^\[e2e-turns\]\s*/, '').trim(), reason: reason ? reason.replace(/^\[e2e-turns\] reason:\s*/, '').trim() : null };
+  } catch {
+    return null;
+  }
 }
 
 /** The first wrapped step that failed, recorded by ci-log-step.sh — or null if none was wrapped. */
@@ -778,6 +842,7 @@ export function readJobContext(env = process.env) {
     workflow: env.GITHUB_WORKFLOW ?? 'unknown-workflow',
     job: env.GITHUB_JOB ?? 'unknown-job',
     step: env.CI_DIGEST_FAILING_STEP || readFailingStep(env) || '',
+    runHealth: readRunHealth(env),
     sha: env.GITHUB_SHA ?? '',
     runId: env.GITHUB_RUN_ID ?? '',
     event: env.GITHUB_EVENT_NAME ?? 'push',
