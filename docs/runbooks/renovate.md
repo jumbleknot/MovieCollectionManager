@@ -120,6 +120,27 @@ A surviving branch distorts one more thing: `branch/index.js` gates the branch b
 > Renovate's own update computation, not from branch existence. So the surviving branch buys nothing
 > and costs an empty PR.
 
+> ⚠️ **`renovate/lock-file-maintenance` is HARD-EXEMPT from Renovate's own pruning — by exact name.**
+> `finalize/prune.js` filters it out before `cleanUpBranches` ever sees it:
+>
+> ```js
+> const lockFileBranch = `${config.branchPrefix}lock-file-maintenance`;
+> renovateBranches = renovateBranches.filter((branch) => branch !== lockFileBranch);
+> ```
+>
+> So Renovate will **never** clean that branch up, and after a merge it lingers for ever. Enabling
+> **`default_delete_branch_after_merge`** (done 2026-08-29, item #290) is therefore not merely tidier
+> — it is the *only* mechanism that removes this particular branch, and the one stale copy that
+> predated the setting had to be deleted by hand.
+>
+> Note the comparison is `!==` on the exact name, so the **suffixed** group branches this repository
+> actually produces — `renovate/lock-file-maintenance-cargo-deps`,
+> `renovate/lock-file-maintenance-python-deps`, created because the cargo and python groups carry
+> their own `groupName` — are **not** exempt. They are prunable, which is why leaving PR #288 for
+> autoclose is the right call rather than merging an empty PR: `cleanUpBranches` closes the PR
+> (retitling it `- autoclosed`) and deletes the branch, provided `isBranchModified` is false — which
+> it is, for any branch nobody hand-pushed to (§4).
+
 > ⛔ **Never delete a branch that is an OPEN PR's head.** It is hand-closing by another route and
 > carries the same consequence as §4's rule — for `lockFileMaintenance` it marks the channel rejected.
 > `renovate/lock-file-maintenance-cargo-deps` must therefore stay until PR #288 autocloses, even
