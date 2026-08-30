@@ -76,10 +76,17 @@ differs by exactly the number of characters you intended and is the same length.
 clobbering a concurrent bot rewrite.
 
 > ⚠️ **A `renovate/*` branch that already exists is not evidence of pending work — check ANCESTRY
-> before ticking it.** This repository has `default_delete_branch_after_merge: false`, so a merged
-> Renovate PR leaves its branch behind. Renovate keeps listing that branch on the dashboard, and a
-> tick opens a PR for content `main` already has. Item #290 tracks whether the setting can simply be
-> turned on; until it is, this check is the mitigation.
+> before ticking it.** A merged Renovate PR used to leave its branch behind; Renovate keeps listing
+> that branch on the dashboard, and a tick opens a PR for content `main` already has.
+>
+> **`default_delete_branch_after_merge` is now `true`** (item #290 — verified against the repository
+> API on 2026-08-30, and the last stale ref was removed the same day). Keep this ancestry check
+> anyway, for two reasons that outlive the setting:
+>
+> 1. **The repo default covers the UI merge button only.** A merge through the API leaves the branch
+>    unless the request passes `delete_branch_after_merge: true` **explicitly** — so an agent- or
+>    script-driven merge can still create a stale ref while the setting reads `true`.
+> 2. A branch can predate the setting, or be pushed by hand.
 >
 > Measured 2026-08-29 (item #290, PR #288). `renovate/lock-file-maintenance-cargo-deps` was merged as PR #260
 > and `renovate/lock-file-maintenance` as PR #261; both refs survived. An `unschedule-branch` tick on
@@ -141,10 +148,19 @@ A surviving branch distorts one more thing: `branch/index.js` gates the branch b
 > (retitling it `- autoclosed`) and deletes the branch, provided `isBranchModified` is false — which
 > it is, for any branch nobody hand-pushed to (§4).
 
-> ⛔ **Never delete a branch that is an OPEN PR's head.** It is hand-closing by another route and
-> carries the same consequence as §4's rule — for `lockFileMaintenance` it marks the channel rejected.
-> `renovate/lock-file-maintenance-cargo-deps` must therefore stay until PR #288 autocloses, even
-> though its content is already in `main`. Only a stale branch with **no open PR** is safe to remove.
+> ⚠️ **Deleting a branch that is an OPEN PR's head closes that PR** — treat it as hand-closing and
+> apply §4's rule and its measured exception. It is safe for `lockFileMaintenance`; assume it is not
+> safe for anything else.
+>
+> **CORRECTED 2026-08-30 (item #290).** This block previously read *"⛔ Never delete a branch that is
+> an OPEN PR's head … for `lockFileMaintenance` it marks the channel rejected"*, and named
+> `renovate/lock-file-maintenance-cargo-deps` as one that "must stay until PR #288 autocloses". The
+> stated consequence was **false for the one channel it named** — see §4 for the code path. The
+> branch was deleted on 2026-08-30 and PR #288 closed with it.
+>
+> Recorded so the correction is not merely asserted: this repository had the rule *and* the wrong
+> reason for it, which is the shape it has been bitten by before — a comment standing in for a check
+> (#194, #204, and §2's own `--is-ancestor` note).
 
 ---
 
@@ -229,12 +245,49 @@ JS patch/minor update.
 **Never hand-push to a Renovate branch** to resolve a conflict. Renovate detects the branch was
 modified and can stop managing it. Use `rebase-branch=` + a dispatch instead.
 
-**An EMPTY PR from a stale branch is still a Renovate PR — do not hand-close it.** The temptation is
-strong, because a PR with no diff is obviously not going to merge. But the rule above does not have an
-exception for it: hand-closing PR #288 would mark `lockFileMaintenance` rejected and silently disable
-the one channel that clears a CVE the manifest range already permits (§5). Leave it; Renovate
-autocloses this class itself. If the queued CI is genuinely in the way, CANCEL the runs — that frees
-the runner without signalling rejection — and still leave the PR alone.
+**An EMPTY PR from a stale branch is still a Renovate PR — prefer leaving it.** Renovate autocloses
+this class itself, and letting it do so costs nothing but a week. If the queued CI is genuinely in the
+way, CANCEL the runs rather than closing the PR — that frees the runner without touching the PR.
+
+> ✅ **MEASURED EXCEPTION, verified against renovate@44.52.0's own dist (item #290, 2026-08-30):
+> closing a `lockFileMaintenance` PR does NOT mark the channel rejected.** The suppression this
+> section warns about is gated on `recreateClosed`, and that flag is assigned per upgrade shape in
+> `workers/repository/updates/generate.js`:
+>
+> ```js
+> upg.recreateClosed = upg.recreateWhen === "always";                       // :137  the DEFAULT
+> if (upg.isLockFileMaintenance) upg.recreateClosed = upg.recreateWhen !== "never";  // :150
+> ```
+>
+> `recreateWhen` defaults to `"auto"` and is not set anywhere in this repository's `renovate.json`
+> (verified: no top-level key, no packageRule). So the default is `false` — the rule above is right
+> for an ordinary update — while `lockFileMaintenance` resolves to **`true`**, and
+> `update/branch/check-existing.js` then returns before it ever looks for a closed PR:
+>
+> ```js
+> if (config.recreateClosed) { logger.debug("recreateClosed is true. No need to check for closed PR."); return null; }
+> ```
+>
+> With `existingPr` null, `update/branch/index.js:116`'s `"already-existed"` skip is unreachable.
+> Three GROUPED shapes get the same exemption (`:188` single-update group, `:196` multi-version
+> group, `:200` multi-value digest group) — so the blanket rule is more conservative than the code in
+> several cases. **Keep it blanket anyway**: knowing which shape a given PR resolved to means reading
+> Renovate's resolution, which is not a thing to do at merge time. The exception is documented so a
+> future reader can act on it deliberately, not so the rule gets relaxed by default.
+>
+> ⚠️ **This was found the wrong way round.** PR #288's branch was deleted on 2026-08-30 *before* this
+> block had been read, in violation of the rule as it then stood; the code was read afterwards and
+> happened to vindicate the action. That is luck in ordering, not method — had the rule been right,
+> the deletion would have disabled the channel that had just silently cleared the `image-size`
+> advisories (item #303). Read §2 and §4 in full before touching a Renovate branch.
+>
+> **Falsifiable prediction, recorded 2026-08-30:** the cargo lockfile channel is unharmed, so
+> Renovate's next in-window run (Friday 2026-09-04, 06:00–08:00 UTC) should list
+> `renovate/lock-file-maintenance-cargo-deps` on the Dependency Dashboard again — alongside
+> `renovate/lock-file-maintenance` and `-python-deps`, both of which are already listed as awaiting
+> schedule **with no branch on `origin` at all**, which is independent evidence that the dashboard
+> listing comes from Renovate's update computation rather than from branch existence. If it does not
+> reappear, this correction is wrong and the blanket rule should be restored without the exception.
 
 **Autoclose is normal and is not a failure.** When a bump is already satisfied on `main`, Renovate
 closes the PR itself and deletes the branch — the title gains `- autoclosed`. Measured on PR #262
