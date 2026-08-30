@@ -4,7 +4,7 @@ title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, and the silent failure modes that produce absence instead of errors.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-08-29T23:53:00+00:00
+timestamp: 2026-08-30T00:00:00+00:00
 ---
 
 # Renovate dependency bot
@@ -53,13 +53,19 @@ Nothing auto-merges. Every group carries `automerge: false`.
   live (run 2285) but is NOT safe by construction — `"false"` is a truthy string under GitHub
   expression semantics and would select a dry run; it resolved live only because Forgejo coerced it
   against the input's declared `type: boolean`. The empirical check is mandatory, not advisory.
-- **Never hand-close a Renovate PR — including an empty one.** Closing one marks that update
-  rejected — Renovate stops proposing it until a human ticks the dashboard to revive it. This rule
-  has no exception for a PR with no diff: closing an empty PR from a stale branch (e.g. PR #288)
-  would mark `lockFileMaintenance` rejected and silently disable the one channel that clears a CVE
-  the manifest range already permits. If the queued CI is in the way, cancel the runs — that frees
-  the runner without signalling rejection. Leave the PR; Renovate autocloses this class itself
-  (retitling it `- autoclosed`) and deletes the branch, provided nobody hand-pushed to it.
+- **Never hand-close a Renovate PR — with one measured exception for `lockFileMaintenance`.**
+  Closing an ordinary update PR marks it rejected — Renovate stops proposing it until a human ticks
+  the dashboard to revive it. If the queued CI is in the way, cancel the runs — that frees the
+  runner without signalling rejection. Leave the PR; Renovate autocloses this class itself (retitling
+  it `- autoclosed`) and deletes the branch, provided nobody hand-pushed to it.
+
+  **MEASURED EXCEPTION (item #290, 2026-08-30, verified against renovate@44.52.0 dist): closing a
+  `lockFileMaintenance` PR does NOT mark the channel rejected.** The suppression is gated on
+  `recreateClosed`, and that flag is `true` for `lockFileMaintenance` (set at `:150` of
+  `workers/repository/updates/generate.js`) — so `check-existing.js` returns `null` before it ever
+  looks for a closed PR, and the channel is unaffected. Keep the blanket rule anyway: knowing which
+  shape a given PR resolved to means reading Renovate's resolution at merge time, which is not a
+  thing to do routinely. Act on the exception only deliberately.
 - **Never hand-push to a Renovate branch.** Renovate detects the branch was modified and can stop
   managing it. Use `rebase-branch=` + a dispatch instead.
 - **A channel whose toolchain is missing dies silently.** If a lockfile manager's binary is not on
@@ -117,8 +123,11 @@ Nothing auto-merges. Every group carries `automerge: false`.
   setting had to be deleted by hand. The comparison is `!==` on the exact name: the suffixed group
   branches this repository produces (`renovate/lock-file-maintenance-cargo-deps`,
   `renovate/lock-file-maintenance-python-deps`) are **not** exempt — they are prunable by autoclose.
-  Never delete a branch that is an open PR's head — it is hand-closing by another route and marks
-  the channel rejected. Only a stale branch with no open PR is safe to remove.
+  Deleting a branch that is an open PR's head closes that PR — treat it as hand-closing for ordinary
+  updates (marks the channel rejected). It is safe for `lockFileMaintenance`: the `recreateClosed`
+  exception (see the Never hand-close gotcha above) means the channel is unaffected. Assume it is
+  not safe for anything else without reading the renovation code. Only a stale branch with no open
+  PR is unconditionally safe to remove.
 
 ## Dashboard checkbox reference (item #29)
 
