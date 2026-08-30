@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-08-29T00:00:00+00:00
+timestamp: 2026-08-30T01:15:39+00:00
 ---
 
 # CI self-serve diagnostics
@@ -142,6 +142,27 @@ runtime rather than any literal configured value.
   `session_evicted > 0`. **Neither gate may carry `continue-on-error`** — adding it back makes the
   step invisible in the log while the job passes regardless. `flaky` is still NOT observable on a
   green run; do not claim "no flakes" from a green tick.
+- **`--job` filter was fail-open — "no digest published" under a filter is a claim about the filter,
+  not about the digest.** Measured 2026-08-30 on PR #289: `failure --pr 289 --job "infra-image-scan /
+  infra-image-scan"` (the context form this tool prints in its own status table) reported "1 job(s)
+  failed, but no digest was published for them". The digest was on the PR the whole time, naming all
+  five blocking findings. The marker carries the **bare** job name (`job=infra-image-scan`); the
+  filter compared against the `workflow / job` context string, matched nothing, and an unmatched filter
+  rendered as absence — the same fail-open shape as the backlog tool's unknown-label bug. That sent a
+  session into an hour of local Trivy reproduction to re-derive what the digest already stated.
+  Fixed: `--job` now accepts either form, and a filter that excludes every digest names what IS
+  available instead of claiming absence. The habit is the durable protection: **if absence is reported
+  under a `--job` filter, drop the filter and look again before concluding no digest was published.**
+- **A session merging through the API must pass `delete_branch_after_merge: true` every time — the
+  repo setting does not cover API merges.** `default_delete_branch_after_merge: true` (enabled
+  2026-08-29) is the default for the **web UI merge button only**. An API merge omitting the flag
+  leaves the branch behind regardless. Measured the same evening: PRs #287 and #293 passed the flag
+  and their branches were gone; PR #291 omitted it and had to be cleaned up by hand. This is not mere
+  housekeeping: a surviving `renovate/*` branch makes Renovate reuse the stale commit instead of
+  regenerating — `renovate/lock-file-maintenance` in particular is hard-exempt from Renovate's own
+  pruning, so nothing will ever clean it up. Two branches **not** to delete: an open PR's head (same
+  consequence as hand-closing it), and automation-owned branches like `openwiki-maintenance` (their
+  workflow recreates them each scheduled run; a lingering ref is normal working state, not debris).
 - **Verifying a branch without opening a PR: `workflow_dispatch` works, but posts no commit
   status.** Feature branches trigger almost nothing on `push:` (guardrails and app-ci scope their
   push trigger to `main`). Both workflows expose `workflow_dispatch`, so a branch can be fully
