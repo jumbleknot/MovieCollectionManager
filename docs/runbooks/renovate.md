@@ -180,15 +180,30 @@ POST /api/v1/repos/{owner}/{repo}/actions/workflows/renovate.yml/dispatches
 Ticks and the dispatch compose: tick everything you want in one pass, then dispatch once. Independent
 channels cannot confound each other, and one dispatch is one runner slot.
 
-### You cannot read the run's mode — verify it empirically
+### Reading the run's mode — the status, then the empirical check
 
-Item #268. On this Forgejo build all three routes are dead:
+Item #268. Every **introspective** route is dead on this Forgejo build:
 
 - the step name renders the **raw uninterpolated** `${{ … }}` expression on the run page;
 - `/actions/runs/{id}/jobs` → `404 page not found`;
 - there is no log endpoint.
 
 `event_payload.inputs` works, but only echoes what you **sent** — not what the expression resolved to.
+
+**A dispatched run now publishes its RESOLVED mode itself**, as a commit status on the dispatched
+sha, posted *before* Renovate runs (so a LIVE dispatch is recognisable early enough to abandon):
+
+```bash
+curl -sS -H "Authorization: token $TOKEN" "$API/commits/<dispatched sha>/status" \
+  | jq '.statuses[] | select(.context=="renovate/mode") | .description'   # "LIVE" or "DRY RUN (creates nothing)"
+```
+
+It is built only from proven parts (env-var resolution in `run:` blocks, and the statuses endpoint
+the failure digest already writes with `github.token` — guardrails #1627), **not** from `run-name:`,
+which is the same expression class the step name already failed on. ⚠️ Until the first real dispatch
+after 2026-08-30 has been seen to post it, treat the status as unverified on this forge and use the
+empirical check below; after that, the status answers the mode and the empirical check remains the
+authority on what the run *did*.
 
 **The signal that does work is empirical**, because a live run moves things and a dry run cannot:
 
@@ -288,6 +303,42 @@ way, CANCEL the runs rather than closing the PR — that frees the runner withou
 > schedule **with no branch on `origin` at all**, which is independent evidence that the dashboard
 > listing comes from Renovate's update computation rather than from branch existence. If it does not
 > reappear, this correction is wrong and the blanket rule should be restored without the exception.
+
+### Merging past `renovate/stability-days` — the rule (item #298)
+
+The check enforces `renovate.json`'s `minimumReleaseAge: 3 days` — feature 034's control against a
+compromised just-published release. Branch protection treats it as advisory, so the forge *permits*
+merging past it; this section says when that is acceptable, so the answer stops depending on who is
+at the keyboard.
+
+**Default: HOLD.** Merging past a pending `stability-days` is permitted only when **all three** hold:
+
+1. **The wait cannot satisfy it** — the pending state is *structural*, not *temporal*. Temporal:
+   the release ages past a knowable date and the check goes green (the PR #263 zod case — wait).
+   Structural: something resets the clock faster than it can run down (measured pre-#297: floating
+   base-image tags rebuilt upstream re-pinned the digest weekly, so the 3-day clock never survived
+   a regeneration).
+2. **The posture has been measured first**, with the gate's own criteria, and recorded on the PR —
+   for images, the `--severity CRITICAL --ignore-unfixed` recipe in
+   [infra-image-scanning](infra-image-scanning.md); for packages, the SAST/audit gates on the PR
+   itself.
+3. **The update has security value now** — it clears a live finding or unblocks a red gate on
+   `main`. Impatience does not qualify; that reasoning is the one `pnpm-workspace.yaml` records for
+   rejecting `minimumReleaseAgeExclude` as a convenience lever.
+
+Applied to the two cases that prompted the rule: **#263 was correctly parked** (temporal — the zod
+transitive aged out at a knowable instant) and **#289 was acceptably merged** (structural at the
+time — pre-#297 floating tags meant no wait would ever satisfy it — and its posture was scanned
+first). They were both right, and the distinguishing fact is criterion 1.
+
+**Post-#297 the structural case should no longer exist for the docker group**: the eight images are
+version-tagged, so a proposal is a discrete release event and the cooldown is satisfiable. The
+observation protocol in `specs/063-infra-image-version-pins/quickstart.md` (T014) confirms or
+refutes this on the next `docker base images` PR — if `stability-days` is observed settling
+unaided, criterion 1 should essentially never hold again and the whole rule collapses to **wait**.
+(One residual: `docker:pinDigests` digest-only refreshes of a rebuilt tag can still reset the
+clock; if that is observed keeping the group perpetually pending, record it on item #298's
+successor rather than merging past silently.)
 
 **Autoclose is normal and is not a failure.** When a bump is already satisfied on `main`, Renovate
 closes the PR itself and deletes the branch — the title gains `- autoclosed`. Measured on PR #262
@@ -389,10 +440,39 @@ bumps riding with it stay blocked for as long as the migration takes (measured o
    printing the client metadata document — `{}` versus a full document — after two plausible
    hypotheses about servers and versions had both been falsified.
 
+## 7. Accepted residuals — decided, not overlooked
+
+Recorded from the 2026-08-30 latent-issue audit so the next reader knows each was *seen* and
+*decided*, rather than rediscovering it as a suspected defect:
+
+- **`engines.node: ">=22.13"` is a FLOOR, not a pin, and it stays one.** Every pin runs 24.x; the
+  floor states compatibility, not reality. `check-toolchain-consistency.mjs` checks satisfaction,
+  deliberately. Raise the floor only when a tool requires it — and note item #225's still-unenforced
+  criterion that a pnpm bump re-checks it.
+- **Node rides two Renovate groups.** Workflow `node-version` entries ride `ci actions`
+  (github-actions manager); Dockerfile `FROM node` rides `docker base images`. A Node bump can
+  therefore arrive as two PRs, and the pins already differ (24.19.0 workflows / 24.14.1 app
+  Dockerfile / bare `24` in infra-image-scan.yml). Accepted **while the gate floor-checks** — none
+  of this can merge unsafe. If Node drift ever bites for real, the fix is the nx/playwright/pnpm
+  pattern: one group, one guard.
+- **`runs-on: ubuntu-latest` is extracted** by the github-runners manager (15 refs). On act_runner
+  the label maps to a runner-side container and a "bump" would be meaningless — if such a proposal
+  ever appears, close it as not applicable (it is not a `lockFileMaintenance` PR; the §4 rule about
+  hand-closing marks only that one label rejected, which is the intent here).
+- **`npx --yes renovate@44` is major-pinned and Renovate cannot see it** — already documented in
+  `renovate.yml` as a deliberate, reviewed residual with its own bump procedure. Not re-decided
+  here.
+
+The audit's *actionable* findings are items **#307** (floating/rotting merge-gating toolchains:
+Rust, semgrep, cargo-audit, uv), **#308** (the #297 class in app Dockerfiles), and **#309**
+(`renovate-config-validator` runs nowhere in CI).
+
 ## Related
 
 - `renovate.json` — grouping, version locks, cooldowns, and the reasoning for each
 - `.forgejo/workflows/renovate.yml` — schedule, toolchains, dispatch inputs
 - `scripts/__tests__/renovate-workflow.guard.test.mjs` — the assertions that keep the above true
+- `scripts/renovate-health.mjs` / item **#311** — the weekly health digest: channel liveness, stale
+  branches, budget consumption, `stability-days` states. Close item #311 to stop it.
 - [CI self-serve diagnostics](ci-diagnostics.md) — reading a failure without log access
 - [The agent-driven backlog](backlog.md) — item #29 and the `status/bot-managed` rule

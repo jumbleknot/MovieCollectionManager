@@ -153,11 +153,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
+          bash scripts/ci-log-step.sh renovate-publish-mode bash -e /dev/stdin <<'CI_LOG_STEP'
           if [ -n "$RENOVATE_DRY_RUN" ]; then mode="DRY RUN (creates nothing)"; else mode="LIVE"; fi
           echo "resolved mode: $mode (RENOVATE_DRY_RUN='$RENOVATE_DRY_RUN')"
           curl -fsS -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' \
             "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -d "{\"context\":\"renovate/mode\",\"state\":\"success\",\"description\":\"$mode\"}" >/dev/null
+          CI_LOG_STEP
       - name: Run Renovate
         env:
           # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
