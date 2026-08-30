@@ -573,7 +573,50 @@ export function extractDigests(comments, job = null) {
       const m = first.match(DIGEST_MARKER_RE);
       return m && first.startsWith(m[0]) ? { id: c.id, job: m[1], body: c.body, author: c.user?.login ?? c.author ?? null } : null;
     })
-    .filter((d) => d && (job === null || d.job === job));
+    .filter((d) => d && (job === null || d.job === normalizeJobFilter(job)));
+}
+
+/**
+ * Accept EITHER the bare job name a digest marker carries (`infra-image-scan`) or the
+ * `workflow / job` CONTEXT form this tool prints in its own status table
+ * (`infra-image-scan / infra-image-scan`).
+ *
+ * MEASURED 2026-08-30, PR #289. `failure --pr 289 --job "infra-image-scan / infra-image-scan"` —
+ * the value copied straight out of this tool's own output — matched nothing, and an unmatched
+ * filter renders as "no digest was published for them". The digest was on the PR the whole time,
+ * naming all five blocking findings; the mismatch cost a session an hour of local Trivy
+ * reproduction to re-derive them. Every other consumer here already normalises with
+ * `c.job.split('/').pop().trim()`; this path did not.
+ *
+ * The trailing segment is taken only when it is NON-EMPTY, so `"app-ci / "` cannot degrade into a
+ * match-everything filter — a fail-OPEN filter is the defect being fixed, not a style to copy.
+ */
+/**
+ * Explain a `--job` selection that filtered EVERY digest out, when digests do exist.
+ *
+ * The (x2b) defect was not really the name mismatch — it was that the mismatch was INDISTINGUISHABLE
+ * from absence. `renderDigestAbsence` legitimately owns "nothing was published"; this owns "something
+ * was published and your filter excluded it", which is a different fact and a different fix. Returns
+ * `[]` for both non-cases (no filter, or genuinely nothing published) so the caller can fall through
+ * to the real absence path without a false positive.
+ *
+ * @returns {string[]} lines to emit, or [] when nothing was filtered out
+ */
+export function describeFilteredOutDigests(allDigests, job) {
+  if (job === null || job === undefined) return [];
+  if (!allDigests.length) return [];
+  const available = [...new Set(allDigests.map((d) => d.job))].sort();
+  return [
+    `No digest matches --job "${job}", but ${allDigests.length} digest(s) ARE published on this PR.`,
+    `Available: ${available.join(', ')}`,
+    'Re-run without --job, or pass one of the names above. A filter that matches nothing is NOT',
+    'evidence that a digest is missing — that mismatch once cost an hour of local reproduction.',
+  ];
+}
+
+export function normalizeJobFilter(job) {
+  const tail = String(job).split('/').pop().trim();
+  return tail === '' ? String(job).trim() : tail;
 }
 
 // --- Transport ------------------------------------------------------------------------------------
@@ -820,6 +863,13 @@ async function cmdFailure(target, conn) {
   const digests = extractDigests(comments, target.job ?? null);
 
   if (!digests.length) {
+    // Fail CLOSED on a filter that excluded everything: saying "no digest was published" when one is
+    // sitting on the PR is the exact failure this path is being fixed for.
+    const filteredOut = describeFilteredOutDigests(extractDigests(comments, null), target.job ?? null);
+    if (filteredOut.length) {
+      for (const line of filteredOut) emit(line);
+      return EXIT.FAILED;
+    }
     // Before concluding "absent", ask each failing job's bundle whether its digest RAN and failed.
     // A bundle fetch that itself fails must not turn a diagnostic into an error, so it degrades to
     // the absent case — which is what this code did unconditionally before.
