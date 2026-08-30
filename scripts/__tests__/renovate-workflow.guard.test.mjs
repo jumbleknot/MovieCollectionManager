@@ -274,6 +274,12 @@ function ruleMatches(rule, dep) {
     'matchCurrentVersion',
     'dependencyDashboardApproval',
     'allowedVersions',
+    // Feature 063 / item #297. Added here FIRST and on its own, because this set is deliberately
+    // fail-closed: the moment `versioning` appears in renovate.json, every one of the 43 assertions
+    // in this file throws on the unknown key rather than on its own subject. Teaching the model the
+    // key changes no behaviour and asserts nothing new — it is what lets the assertions below say
+    // anything at all.
+    'versioning',
   ]);
   for (const key of Object.keys(rule)) {
     if (!known.has(key)) {
@@ -709,6 +715,21 @@ function resolvedEnabled(dep) {
   return enabled;
 }
 
+/**
+ * The versioning scheme a dep ends up under: the LAST matching rule that names one wins, as Renovate
+ * resolves it. `null` means "not overridden", which is the correct answer for every docker dep whose
+ * tags are semver-shaped — Renovate's own `docker` default reads those, and stating a scheme for them
+ * would be noise pretending to be rigour. Only the date-tagged family needs an override (feature 063).
+ */
+function resolvedVersioning(dep) {
+  let versioning = null;
+  for (const rule of packageRules) {
+    if (!ruleMatches(rule, dep)) continue;
+    if (rule.versioning !== undefined) versioning = rule.versioning;
+  }
+  return versioning;
+}
+
 const RN_FAMILY = ['react-native', 'react-native-reanimated', 'react-native-worklets', '@react-native/babel-preset'];
 // The Expo SDK companions. The three UNPREFIXED names are the point: `expo`, `/^expo-/` and
 // `/^@expo//` — every pattern the app-scoped rule carries — miss all three, so they were locked in no
@@ -1114,4 +1135,287 @@ test('vault still rides the `docker base images` group, so a digest refresh is n
   // The hold blocks a VERSION move, not the image. If this ever resolves to null, vault has fallen
   // out of the grouped PR and its digest pin would drift alone.
   assert.equal(resolvedGroupName(vaultDep('patch')), 'docker base images');
+});
+
+// ---------------------------------------------------------------------------------------------
+// THE EIGHT FORMERLY-FLOATING INFRA IMAGES — feature 063 / item #297.
+//
+// THE DEFECT. `docker:pinDigests` gives reproducibility but not a VERSION. Eight third-party infra
+// images were referenced as `:latest`, `:latest-debug`, or with no tag at all, so Renovate had
+// nothing to order and filed every change as `updateType: digest`. Two consequences, both measured:
+// a rebuild that crossed a major was indistinguishable from a security patch at review time, and an
+// allowlist entry keyed to a floating ref could never be discharged by an upgrade, because the key
+// matches for ever.
+//
+// WHAT IS ASSERTED, AND WHY IT IS NOT A FIXTURE. The `from` version of every row below is read out
+// of the COMPOSE FILES THEMSELVES, not declared here. That is what makes this a test: today those
+// files say `latest`, which parses to no version under any scheme, so `updateType()` returns
+// `digest` and every row fails. It also means a future revert to a floating tag reddens this file
+// rather than passing quietly against a stale constant.
+//
+// The `to` versions ARE synthetic, deliberately — asserting what Renovate would propose requires its
+// network step, and a guard that pretended to know the next published tag would be asserting its own
+// fixture. The property under test is the CLASSIFICATION of a move, which is pure.
+
+const INFRA_COMPOSE_FILES = [
+  'infrastructure-as-code/docker/keycloak/compose.yaml',
+  'infrastructure-as-code/docker/observability/compose.yaml',
+  'infrastructure-as-code/docker/observability/compose.prod.yaml',
+];
+
+/**
+ * Every third-party `image:` reference in those files as { repository, tag, location }.
+ *
+ * The ref grammar is the same one scripts/infra-image-scan.mjs had to be corrected for (item #297's
+ * first half): strip `@<digest>` FIRST, and treat a colon as a tag separator only when it falls
+ * after the last `/`, or `host:5000/repo` parses its registry PORT as the tag. Reimplemented here
+ * rather than imported so this guard does not start depending on the scanner it sits beside.
+ */
+function infraComposeRefs() {
+  const refs = [];
+  for (const file of INFRA_COMPOSE_FILES) {
+    const lines = readFileSync(resolve(REPO_ROOT, file), 'utf8').split(/\r?\n/);
+    lines.forEach((l, i) => {
+      const m = /^\s*image:\s*["']?([^"'#\s]+)/.exec(l);
+      if (!m || m[1].includes('${')) return;
+      const withoutDigest = m[1].split('@')[0];
+      const lastColon = withoutDigest.lastIndexOf(':');
+      const lastSlash = withoutDigest.lastIndexOf('/');
+      const hasTag = lastColon > lastSlash;
+      refs.push({
+        repository: hasTag ? withoutDigest.slice(0, lastColon) : withoutDigest,
+        tag: hasTag ? withoutDigest.slice(lastColon + 1) : 'latest', // no tag IS `latest`
+        location: `${file}:${i + 1}`,
+      });
+    });
+  }
+  return refs;
+}
+
+const composeRefs = infraComposeRefs();
+const tagsFor = (repository) => composeRefs.filter((r) => r.repository === repository).map((r) => r.tag);
+
+const dockerDep = (depName, updateType = 'minor') => ({
+  manager: 'docker-compose', datasource: 'docker', depName, updateType,
+});
+
+/**
+ * Parse a docker tag to { major, minor, patch } under a resolved versioning scheme, or `null` when
+ * the tag carries no orderable version. **`null` is the whole defect**: `latest` parses to null
+ * under every scheme, which is precisely why Renovate can only call the change a digest.
+ */
+function parseTag(tag, versioning) {
+  if (versioning === null) {
+    // Renovate's `docker` default. The optional `-<suffix>` is its compatibility stream — a
+    // `1.20.1-debug` tag is version 1.20.1 within the `debug` stream, and only ever compares
+    // against other `-debug` tags. Covers every semver-shaped tag this repository uses.
+    const m = /^v?(\d+)\.(\d+)\.(\d+)(?:-.+)?$/.exec(tag);
+    return m ? { major: +m[1], minor: +m[2], patch: +m[3] } : null;
+  }
+  if (versioning.startsWith('regex:')) {
+    const m = new RegExp(versioning.slice('regex:'.length)).exec(tag);
+    if (!m?.groups) return null;
+    // renovate@44's regex versioning requires at least one of major/minor/patch and treats an absent
+    // group as zero. All three are present in the scheme this repository declares.
+    return { major: +(m.groups.major ?? 0), minor: +(m.groups.minor ?? 0), patch: +(m.groups.patch ?? 0) };
+  }
+  throw new Error(`versioning scheme '${versioning}' is not modelled — extend parseTag() before using it.`);
+}
+
+/** The updateType Renovate reports for from -> to. `digest` when either side carries no version. */
+function updateType(fromTag, toTag, versioning) {
+  const a = parseTag(fromTag, versioning);
+  const b = parseTag(toTag, versioning);
+  if (!a || !b) return 'digest'; // nothing orderable — an opaque content change
+  if (b.major !== a.major) return 'major';
+  if (b.minor !== a.minor) return 'minor';
+  if (b.patch !== a.patch) return 'patch';
+  return 'digest';
+}
+
+/**
+ * Does a resolved `allowedVersions` permit a tag? Models the `/regex/` form only, and throws on
+ * anything else — a range like vault's `<1.19` is a different question, and silently answering
+ * "permitted" for a form this helper cannot read is the fail-open shape the whole file avoids.
+ */
+function allowedVersionsPermits(allowed, tag) {
+  if (allowed === null) return true; // unconstrained
+  if (allowed.startsWith('/') && allowed.lastIndexOf('/') > 0) {
+    return new RegExp(allowed.slice(1, allowed.lastIndexOf('/'))).test(tag);
+  }
+  throw new Error(`allowedVersions '${allowed}' is not a regex form — extend allowedVersionsPermits().`);
+}
+
+// Contract C1, row for row (specs/063-infra-image-version-pins/contracts/renovate-rules.md).
+// `from` is asserted to be the tag REALLY in the compose files before it is used.
+const C1_ROWS = [
+  { repository: 'axllent/mailpit', from: 'v1.31.0', to: 'v2.0.0', expected: 'major' },
+  { repository: 'axllent/mailpit', from: 'v1.31.0', to: 'v1.32.0', expected: 'minor' },
+  { repository: 'curlimages/curl', from: '8.21.0', to: '8.21.1', expected: 'patch' },
+  { repository: 'grafana/otel-lgtm', from: '0.32.0', to: '0.33.0', expected: 'minor' },
+  { repository: 'openpolicyagent/opa', from: '1.20.1', to: '2.0.0', expected: 'major' },
+  { repository: 'unleashorg/unleash-server', from: '8.1.0', to: '9.0.0', expected: 'major' },
+];
+
+for (const { repository, from, to, expected } of C1_ROWS) {
+  test(`${repository} ${from} -> ${to} resolves to update type '${expected}', not an opaque digest`, () => {
+    assert.ok(
+      tagsFor(repository).includes(from),
+      `contract C1 says ${repository} is on ${from}, but the compose files carry ` +
+        `${JSON.stringify(tagsFor(repository))}.\n` +
+        '  A floating tag has no version to classify, so every change to this image arrives as\n' +
+        '  `updateType: digest` and a major rebuild is indistinguishable from a security patch.',
+    );
+    assert.equal(
+      updateType(from, to, resolvedVersioning(dockerDep(repository, expected))),
+      expected,
+      `${repository} ${from} -> ${to} did not classify as ${expected}.`,
+    );
+  });
+}
+
+test('no formerly-floating infra image resolves to a digest-only update type', () => {
+  // The C1 table's last row, applied to every reference rather than to the six it names — this is
+  // the one that also covers minio, whose tags need the declared regex versioning to be orderable
+  // at all. `-debug` is included: a variant left floating is still a reference nobody can classify.
+  const FORMERLY_FLOATING = [
+    'axllent/mailpit', 'curlimages/curl', 'grafana/otel-lgtm',
+    'minio/mc', 'minio/minio', 'openpolicyagent/opa', 'unleashorg/unleash-server',
+  ];
+  for (const ref of composeRefs.filter((r) => FORMERLY_FLOATING.includes(r.repository))) {
+    const versioning = resolvedVersioning(dockerDep(ref.repository));
+    assert.notEqual(
+      parseTag(ref.tag, versioning),
+      null,
+      `${ref.repository}:${ref.tag} (${ref.location}) carries no orderable version under ` +
+        `${versioning === null ? 'the docker default' : versioning}, so Renovate can only report a\n` +
+        '  digest change. This is the defect item #297 was filed for.',
+    );
+  }
+});
+
+test('the minio date-tagged family orders by calendar, and its update type says only that', () => {
+  // Contract C4. The mapping is year->major, month->minor, day->patch, so a January release reports
+  // `major` because the YEAR ADVANCED, not because anything broke (FR-004, research R2). Asserted
+  // rather than merely commented, so the calendar semantics cannot quietly become semver ones.
+  for (const repository of ['minio/minio', 'minio/mc']) {
+    const versioning = resolvedVersioning(dockerDep(repository));
+    assert.ok(
+      versioning !== null && versioning.startsWith('regex:'),
+      `${repository} has no regex versioning, so its RELEASE.<date> tags are unparseable — ` +
+        'renovate@44\'s `loose` scheme returns null for them (measured against its own dist), ' +
+        'which is invisible rather than unordered.',
+    );
+    assert.equal(updateType('RELEASE.2025-09-07T16-13-09Z', 'RELEASE.2026-01-15T10-00-00Z', versioning), 'major');
+    assert.equal(updateType('RELEASE.2025-09-07T16-13-09Z', 'RELEASE.2025-10-01T10-00-00Z', versioning), 'minor');
+    assert.equal(updateType('RELEASE.2025-09-07T16-13-09Z', 'RELEASE.2025-09-08T10-00-00Z', versioning), 'patch');
+
+    // The trailing `Z$` anchor is load-bearing: the same namespace publishes `-cpuv1` builds, and
+    // without the anchor Renovate could drift onto one — the same defect class as opa's `-dev`
+    // and `-rootless` tags (FR-006).
+    assert.equal(
+      parseTag('RELEASE.2025-09-07T16-13-09Z-cpuv1', versioning),
+      null,
+      `${repository}'s versioning regex accepts a -cpuv1 variant — the trailing Z$ anchor is missing.`,
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------------------------
+// openpolicyagent/opa MOVES AS ONE UNIT — contract C2/C3, FR-005/FR-006.
+//
+// This is the ONLY genuine pairing risk in the eight. Two DIFFERENT tags (`1.20.1` and
+// `1.20.1-debug`) in two different files under ONE dependency name, so nothing about the file
+// layout forces them to move together. curl, otel-lgtm, minio, mc and unleash each carry an
+// IDENTICAL ref in both observability files — Renovate sees one dependency with two locations and
+// rewrites both by construction — so that shape is asserted ONCE below as a control, not five times
+// as if it were five risks.
+//
+// The half-bump shape this repository has now paid for four times (#194 nx, #204 Playwright, #225
+// pnpm, the vault allowlist key in PR #289) is why the assertion is on the RESOLVED value rather
+// than on the presence of a rule: in every one of those four, a mechanism existed that looked
+// sufficient and was silently overridden by a later, broader rule.
+
+const OPA_TAGS = ['1.20.1', '1.20.1-debug'];
+
+test('both openpolicyagent/opa refs resolve to the same group and the same version ceiling', () => {
+  for (const updateTypeTrack of ['patch', 'minor', 'major']) {
+    const dep = dockerDep('openpolicyagent/opa', updateTypeTrack);
+    assert.equal(
+      resolvedGroupName(dep),
+      'docker base images',
+      `opa (${updateTypeTrack}) fell out of the grouped PR — the plain and -debug refs would then ` +
+        'be proposed on separate branches and could land half-bumped.',
+    );
+    assert.equal(
+      resolvedEnabled(dep),
+      true,
+      `opa (${updateTypeTrack}) is DISABLED — an image excluded from updates cannot be patched at all.`,
+    );
+  }
+  // One dependency name, so one resolved ceiling by construction — asserted because the ceiling is
+  // what constrains WHICH tags may be proposed, and a per-variant ceiling would let them diverge.
+  const ceilings = new Set(['patch', 'minor', 'major'].map((u) => resolvedAllowedVersions(dockerDep('openpolicyagent/opa', u))));
+  assert.equal(ceilings.size, 1, `opa resolves to more than one version ceiling: ${JSON.stringify([...ceilings])}`);
+});
+
+test('openpolicyagent/opa may only be proposed the plain and -debug variants it actually uses', () => {
+  const allowed = resolvedAllowedVersions(dockerDep('openpolicyagent/opa'));
+  assert.notEqual(
+    allowed,
+    null,
+    'openpolicyagent/opa is unconstrained. It publishes 3573 tags including -dev, -rootless and\n' +
+      '  -static builds; this repository uses exactly two of them. An unconstrained ceiling lets\n' +
+      '  Renovate propose a variant nothing here runs.',
+  );
+
+  // Permit-what-is-used rather than deny-what-is-known-bad: a denylist of `-dev`/`-rootless` goes
+  // stale the moment upstream invents a third suffix, and C3's pre-release markers are open-ended.
+  for (const tag of [...OPA_TAGS, '2.0.0', '2.0.0-debug']) {
+    assert.ok(allowedVersionsPermits(allowed, tag), `opa ceiling rejects '${tag}', which is a variant in use (or its successor).`);
+  }
+  for (const tag of ['1.20.1-dev', '1.20.1-rootless', '1.20.1-static', '1.20.1-static-debug', '1.21.0-rc1', '1.21.0-alpha.1', '1.21.0-beta', 'nightly', 'edge', '1.20.1-debug-static']) {
+    assert.ok(!allowedVersionsPermits(allowed, tag), `opa ceiling PERMITS '${tag}', which nothing here runs (FR-006 / contract C3).`);
+  }
+
+  // Both refs are really present, in the two files, with the two tags — the pairing this is about.
+  assert.deepEqual(tagsFor('openpolicyagent/opa').sort(), [...OPA_TAGS].sort());
+});
+
+test('the opa ceiling does NOT leak onto other docker images — the control', () => {
+  for (const depName of ['postgres', 'redis', 'grafana/otel-lgtm', 'curlimages/curl', 'hashicorp/vault']) {
+    const allowed = resolvedAllowedVersions(dockerDep(depName));
+    assert.notEqual(
+      allowed,
+      '/^\\d+\\.\\d+\\.\\d+(-debug)?$/',
+      `${depName} picked up opa's variant restriction — the rule has widened past its own image.`,
+    );
+  }
+});
+
+test('the five identically-referenced images are one dependency with two locations — the control', () => {
+  // Not five risks. Each of these carries the SAME ref string in compose.yaml and compose.prod.yaml,
+  // so Renovate rewrites both locations in one go and no configuration is needed to pair them.
+  // Asserted so that if someone ever makes local and prod diverge, the claim above stops being true
+  // loudly rather than silently.
+  for (const repository of ['curlimages/curl', 'grafana/otel-lgtm', 'minio/minio', 'minio/mc', 'unleashorg/unleash-server']) {
+    const tags = new Set(tagsFor(repository));
+    assert.equal(
+      tags.size,
+      1,
+      `${repository} carries different tags across the observability files (${JSON.stringify([...tags])}).\n` +
+        '  It is no longer structurally paired, and now needs the same explicit handling as opa.',
+    );
+    assert.equal(tagsFor(repository).length, 2, `${repository} is expected in both observability files`);
+    assert.equal(resolvedGroupName(dockerDep(repository)), 'docker base images');
+  }
+});
+
+test('all eight formerly-floating references stay in the `docker base images` group', () => {
+  // C2's first row. They must not be stranded into per-image PRs on the single CI runner.
+  for (const repository of ['axllent/mailpit', 'curlimages/curl', 'grafana/otel-lgtm', 'minio/minio', 'minio/mc', 'openpolicyagent/opa', 'unleashorg/unleash-server']) {
+    for (const updateTypeTrack of ['patch', 'minor', 'major']) {
+      assert.equal(resolvedGroupName(dockerDep(repository, updateTypeTrack)), 'docker base images', `${repository} (${updateTypeTrack}) is not grouped`);
+    }
+  }
 });

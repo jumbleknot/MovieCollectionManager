@@ -4,6 +4,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { enumerateImages, normalizeTrivy, buildProposedAllowlist } from '../infra-image-scan.mjs';
 import { parse as parseYaml } from 'yaml';
+import { readFileSync, globSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SEV = { CRITICAL: 'Critical', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low', UNKNOWN: 'Low' };
 
@@ -158,4 +161,155 @@ test('(fd4) a digest-only ref with no tag is floating, and a registry PORT is no
   const imgs = enumerateImages(files);
   assert.equal(imgs.find((i) => i.ref.startsWith('minio/mc')).floatingTag, true, 'no tag == latest == floating');
   assert.equal(imgs.find((i) => i.ref.includes(':5000')).floatingTag, true, 'a registry port was parsed as the tag');
+});
+
+// ---------------------------------------------------------------------------------------------
+// THE DECLARED-EXCEPTION COUNT — feature 063 / item #297, contract C5 / SC-006.
+//
+// After the eight floating references are version-pinned, two remain floating BY DESIGN:
+// `minio/minio` and `minio/mc` publish `RELEASE.<iso-date>` tags, which `isFloatingTag` cannot
+// order and therefore — correctly — refuses to call version-pinned.
+//
+// THE TEMPTING FIX IS THE ONE THE SPEC FORBIDS. Widening `isFloatingTag` to recognise `RELEASE.*`
+// would make the report read clean, and would couple a general-purpose classifier to one vendor's
+// tag convention while teaching it to vouch for an ordering it does not have. The classifier's job
+// is to be suspicious of tags it cannot order, and these genuinely are such tags (research R4).
+//
+// So the exceptions are DECLARED rather than hidden, and the declaration is machine-readable: the
+// images carrying the date-tagged regex-versioning rule in renovate.json ARE the declared set. That
+// makes this assertion two-directional without a second list to drift out of step:
+//
+//   MORE floating than declared  -> a reference regressed to a floating tag, or a new one arrived
+//   FEWER (and 0 in particular)  -> the classifier was widened to quieten the output
+//
+// A count assertion alone would accept the wrong two images, so the SET is compared as well.
+
+test('(063) the floating references are EXACTLY the declared exceptions — not fewer, not more', () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+
+  // The declaration: every image under a `regex:^RELEASE\.` versioning rule. Read from renovate.json
+  // rather than restated here, so the declaration and the exception cannot disagree.
+  const renovate = JSON.parse(readFileSync(resolve(repoRoot, 'renovate.json'), 'utf8'));
+  const declared = new Set(
+    (renovate.packageRules ?? [])
+      .filter((r) => typeof r.versioning === 'string' && r.versioning.startsWith('regex:^RELEASE'))
+      .flatMap((r) => r.matchPackageNames ?? []),
+  );
+
+  // The reality: the same enumeration the scanner and the CI gate run, over the real infra tree.
+  const files = globSync('infrastructure-as-code/**/*.{yaml,yml}', { cwd: repoRoot }).map((p) => ({
+    path: p,
+    content: readFileSync(resolve(repoRoot, p), 'utf8'),
+  }));
+  const floating = enumerateImages(files).filter((i) => i.floatingTag);
+  // repository = the ref with `@<digest>` and any tag removed (the grammar isFloatingTag uses).
+  const floatingRepos = new Set(floating.map((i) => {
+    const withoutDigest = i.ref.split('@')[0];
+    const lastColon = withoutDigest.lastIndexOf(':');
+    return lastColon > withoutDigest.lastIndexOf('/') ? withoutDigest.slice(0, lastColon) : withoutDigest;
+  }));
+
+  assert.ok(
+    declared.size > 0,
+    'renovate.json declares no date-tagged exceptions at all. SC-006 measures the floating count\n' +
+      '  against a DECLARED list; with an empty list the count is being compared to nothing.',
+  );
+
+  assert.deepEqual(
+    [...floatingRepos].sort(),
+    [...declared].sort(),
+    'The floating references are not the declared exceptions.\n' +
+      `  floating in infrastructure-as-code/**: ${JSON.stringify(floating.map((i) => i.ref))}\n` +
+      `  declared in renovate.json:            ${JSON.stringify([...declared].sort())}\n` +
+      '  MORE than declared means a reference is floating without a recorded reason (FR-001).\n' +
+      '  FEWER — and a count of 0 especially — means isFloatingTag was widened to hide the\n' +
+      '  exceptions rather than declare them, which is the move research R4 rejected.',
+  );
+
+  assert.equal(
+    floating.length,
+    2,
+    `expected exactly 2 floating references (minio/minio, minio/mc), found ${floating.length}: ` +
+      JSON.stringify(floating.map((i) => i.ref)),
+  );
+});
+
+// ---------------------------------------------------------------------------------------------
+// SUPPRESSIONS MUST BE DISCHARGEABLE BY AN UPGRADE — feature 063 / item #297, FR-007, US2.
+//
+// `check-infra-image-findings.mjs` matches an allowlist entry's `image` as an UNANCHORED regex
+// against the full scanned reference. That one property decides whether a suppression can ever end:
+//
+//   `hashicorp/vault:1\.18`  still matches `hashicorp/vault:1.18@sha256:…` (a digest appended to the
+//                            ref does not break the key) but STOPS matching `1.21`. When PR #289
+//                            bumped vault, five Criticals surfaced — a dischargeable key doing its
+//                            job, loudly, which is the behaviour wanted.
+//   `minio/minio`            matches EVERY tag of that image that will ever exist. It cannot stop
+//                            matching, so it suppresses the Critical it was written for and every
+//                            future one in the same image, in silence and for ever.
+//
+// The second shape is the defect. A suppression keyed to a floating reference is not an accepted
+// risk with a review date, it is a permanent hole that no upgrade can close.
+//
+// TWO DIRECTIONS ARE ASSERTED, because each alone is satisfiable by a broken key:
+//   (1) the entry STILL MATCHES the reference in the compose files today — a re-key that matches
+//       nothing suppresses nothing, and the gate reports it only as an `unmatched` line;
+//   (2) the entry STOPS MATCHING a later version of the same image — which is what discharges it.
+
+/** An entry may fail (2) only by SAYING SO. A declaration, not a way around the assertion. */
+const NOT_KEYABLE = 'NOT VERSION-KEYABLE:';
+
+test('(063) every allowlist entry for a formerly-floating image can be discharged by an upgrade', () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  const allowlist = parseYaml(readFileSync(resolve(repoRoot, 'security/infra-images/allowlist.yaml'), 'utf8'));
+
+  // The reference as the SCANNER reports it — read from the compose files, so this cannot drift.
+  const files = globSync('infrastructure-as-code/**/*.{yaml,yml}', { cwd: repoRoot }).map((p) => ({
+    path: p, content: readFileSync(resolve(repoRoot, p), 'utf8'),
+  }));
+  const refFor = (repository) => enumerateImages(files).map((i) => i.ref)
+    .find((r) => r.startsWith(`${repository}:`) || r.startsWith(`${repository}@`));
+
+  // A plausible NEXT version of each image, with a different digest — the upgrade that must
+  // discharge the entry. Synthetic on purpose: what upstream publishes next is Renovate's network
+  // step, and a test that guessed it would be asserting its own fixture rather than the key.
+  const NEXT = {
+    'grafana/otel-lgtm': 'grafana/otel-lgtm:0.33.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
+    'minio/minio': 'minio/minio:RELEASE.2026-01-15T10-00-00Z@sha256:2222222222222222222222222222222222222222222222222222222222222222',
+    'minio/mc': 'minio/mc:RELEASE.2026-01-15T10-00-00Z@sha256:3333333333333333333333333333333333333333333333333333333333333333',
+  };
+
+  let checked = 0;
+  for (const [repository, nextRef] of Object.entries(NEXT)) {
+    const currentRef = refFor(repository);
+    assert.ok(currentRef, `${repository} is not referenced in infrastructure-as-code/** any more — is this list stale?`);
+
+    for (const entry of allowlist) {
+      // Only the entries written FOR this image. Keyed on the repository appearing in the entry's
+      // own pattern, so an unrelated entry that happens to match nothing is not dragged in.
+      if (!entry.image.includes(repository)) continue;
+      checked += 1;
+      const re = new RegExp(entry.image);
+
+      assert.ok(
+        re.test(currentRef),
+        `allowlist key ${JSON.stringify(entry.image)} (${entry.id}) NO LONGER MATCHES ${currentRef}.\n` +
+          '  It suppresses nothing, so the finding it was written for is now un-allowlisted and the\n' +
+          '  gate blocks — while the gate reports the entry only as an UNMATCHED line, which is easy\n' +
+          '  to read as tidy-up rather than as the cause.',
+      );
+
+      if (entry.justification.includes(NOT_KEYABLE)) continue; // declared, with its reason stated
+      assert.ok(
+        !re.test(nextRef),
+        `allowlist key ${JSON.stringify(entry.image)} (${entry.id}) STILL MATCHES ${nextRef}.\n` +
+          `  It is keyed to a floating reference, so no upgrade can ever discharge it: it suppresses\n` +
+          '  the advisory it was written for AND every future one in the same image, silently and\n' +
+          `  permanently (FR-007). Key it to the version, or record why it cannot be with a\n` +
+          `  justification beginning "${NOT_KEYABLE}".`,
+      );
+    }
+  }
+
+  assert.ok(checked > 0, 'no allowlist entries were examined — the repository names above are stale, so this test asserts nothing.');
 });
