@@ -160,6 +160,24 @@ jobs:
             "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -d "{\"context\":\"renovate/mode\",\"state\":\"success\",\"description\":\"$mode\"}" >/dev/null
           CI_LOG_STEP
+      # Item #309, the half the PR gate cannot cover. `guardrails / renovate-config` validates an
+      # EDIT to renovate.json before it merges. It cannot see a semantic change that arrives with a
+      # renovate@44 MINOR — nothing in the repository changed, so no PR runs — and that is the #160
+      # shape in its config edition: the major pin below is entirely about config SEMANTICS, and a
+      # release inside the pinned major can still deprecate or rename a key we use. Validating here,
+      # with the SAME major that is about to run, is what catches it, at most a week later.
+      #
+      # BLOCKING on purpose. A config this Renovate would reject is a Renovate that is already
+      # silently mismanaging the repository, so stopping the run is strictly better than letting it
+      # act on a config half of which it ignores — and it fails visibly, with a failure digest,
+      # rather than as the absence this whole file's comments keep warning about.
+      #
+      # Near-free: this is the FIRST renovate@44 pull of the job, and the `Run Renovate` step below
+      # then resolves from the same ~/.npm/_npx cache inside this container rather than pulling
+      # again — so the cost is the validation itself, not a second download. The flags are the
+      # measured ones; see the `renovate-config` job in guardrails.yml for what each one holds up.
+      - name: Validate renovate.json before acting on it (item #309)
+        run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
       - name: Run Renovate
         env:
           # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
