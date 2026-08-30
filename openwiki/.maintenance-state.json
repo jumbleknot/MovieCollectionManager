@@ -1,13 +1,13 @@
 {
-  "coveredCommit": "3ebbce0e8b0fd17e0225d4f8070e9744a8334968",
-  "coveredAt": "2026-08-30T20:43:31.050Z",
+  "coveredCommit": "0a5cc7007322358197c48641758c59717d51f3b2",
+  "coveredAt": "2026-08-30T23:21:23.565Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 313,
-    "headCommit": "061bfd14dbead0a9cad43422bcca60e7a1087f7c",
-    "markerBefore": "3ebbce0e8b0fd17e0225d4f8070e9744a8334968",
+    "number": 316,
+    "headCommit": "dae24b26f84bc626631b2f189ff804ed913e6672",
+    "markerBefore": "0a5cc7007322358197c48641758c59717d51f3b2",
     "slices": [
       {
         "area": "runbooks",
@@ -21,11 +21,11 @@
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-30T20:43:31.393Z"
+    "updatedAt": "2026-08-30T23:21:23.944Z"
   },
   "lastRunBudget": {
     "pagesWritten": 1,
-    "elapsedSeconds": 131,
+    "elapsedSeconds": 78,
     "stoppedAtBudget": false
   }
 }
