@@ -208,6 +208,44 @@
     {
       "customType": "regex",
       "description": [
+        "Keep the pinned Trivy version current in BOTH workflows that install it. Item #303.",
+        "WHAT WAS WRONG. Both installs fetched the install script from the MOVING branch `main` and",
+        "piped it into sh, then passed NO tag — and the script's own usage says 'If tag is missing,",
+        "then the latest will be used'. Two floating references on one line, in the tool that decides",
+        "whether a Critical blocks a deploy, with NO digest pin underneath. Strictly worse than the",
+        "infra images item #297 fixed: docker:pinDigests at least made those reproducible while",
+        "unclassifiable; this had neither property.",
+        "THE COST WAS PAID IMMEDIATELY, during #297. The local sweep that produced the stale-",
+        "suppression evidence ran aquasec/trivy:0.74.0 while CI ran an unknown version, so two scans",
+        "of BYTE-IDENTICAL images could not be compared with confidence — purely because one side's",
+        "scanner had no version to name.",
+        "WHY THIS MANAGER EXISTS AT ALL. A pin with nothing maintaining it trades a floating",
+        "reference for a ROTTING one — the failure mode feature 063's research R3 had to rule out by",
+        "hand for minio. Trivy is actively released, so the pin must be maintained. github-releases is",
+        "the correct datasource: Trivy ships GitHub releases, not an npm package, and the tag form",
+        "(`v0.74.0`) is what both the URL and the positional install argument take.",
+        "ONE ASSIGNMENT, TWO USES — deliberately. The version is written once as TRIVY_VERSION and",
+        "interpolated into both the script URL and the install tag, so a bump cannot move one and",
+        "leave the other. Pinning the script to one release while installing a different one is a pin",
+        "that does not say what it means — the half-bump shape #194/#204/#225 already record.",
+        "EXTRACTION IS NOT GROUPING (same caveat as the Playwright entry above). This manager makes",
+        "the version VISIBLE to Renovate; it does not by itself keep the two FILES in step. The guard",
+        "in renovate-workflow.guard.test.mjs asserts the RESOLVED state — both pinned, both agreeing,",
+        "the script ref equal to the installed tag, and this manager's matchStrings actually capturing",
+        "a currentValue in each file. A manager whose regex misses is indistinguishable from no",
+        "manager at all, which is how the nx half-bump survived review twice."
+      ],
+      "managerFilePatterns": [
+        "/^\\.forgejo/workflows/infra-image-scan\\.yml$/",
+        "/^\\.forgejo/workflows/cd-deploy\\.yml$/"
+      ],
+      "matchStrings": ["TRIVY_VERSION=(?<currentValue>v[\\d.]+)"],
+      "depNameTemplate": "aquasecurity/trivy",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": [
         "Keep frontend/mcm-app/Dockerfile's `corepack prepare pnpm@<version>` pins in lockstep with",
               "package.json's `packageManager`. Renovate manages the manifest field and has no visibility of the",
               "Dockerfile, so every bot-authored pnpm bump arrived as a HALF BUMP and failed",

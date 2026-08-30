@@ -193,8 +193,16 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh build-deploy-install-trivy bash -e /dev/stdin <<'CI_LOG_STEP'
           mkdir -p "$HOME/.local/bin"
-          curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sh -s -- -b "$HOME/.local/bin"
+          # PINNED — item #303. Both the install SCRIPT and the VERSION it installs were floating:
+          # the script came from the moving branch `main` and was piped straight into sh, and no tag
+          # was passed, so `install.sh [-b] bindir [-c] client [-d] [tag]` installed "the latest".
+          # Two floating references in the tool that decides whether a Critical blocks a deploy, and
+          # with no digest pin underneath — strictly worse than the infra images item #297 fixed.
+          # Renovate keeps this current (customManagers in renovate.json, datasource github-releases);
+          # renovate-workflow.guard.test.mjs asserts both files stay pinned and agree.
+          TRIVY_VERSION=v0.74.0
+          curl -fsSL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_VERSION}/contrib/install.sh" \
+            | sh -s -- -b "$HOME/.local/bin" "${TRIVY_VERSION}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/trivy" --version
           CI_LOG_STEP

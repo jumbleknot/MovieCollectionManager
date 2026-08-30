@@ -31,22 +31,24 @@
 # infra-image-scan job on this PR re-blocks the gate and the entries come back with CI evidence
 # attached. That PR-side scan IS the CI-side confirmation the follow-up asked for; `security/
 # infra-images/**` is in the workflow's path filter, so touching this file triggers a full sweep.
-# ── NEW advisories on unchanged pinned images (triaged 2026-07-26, run 1162) ──────────────────────
-# All three below are floating/major-only tags that ALREADY resolve to newest, so there is no bump to
-# make — the same situation documented for opensearch:2. Remediation is upstream rebuilding the image
-# with the fixed dep. Locally Trivy-verified (--severity CRITICAL --ignore-unfixed) on 2026-07-26.
+# ── NEW advisories on unchanged pinned images (triaged 2026-07-26) — ALL THREE REMEDIATED UPSTREAM,
+#    ENTRIES DELETED 2026-08-30 (item #303) ─────────────────────────────────────────────────────────
+# The three entries that stood here — grafana/otel-lgtm GHSA-r277-6w6q-xmqw (kin-openapi) and
+# langfuse/langfuse:3 + langfuse/langfuse-worker:3 GHSA-7rqj-j65f-68wh (next-auth) — are gone.
 #
-# These three carry a 90-day `expiry` (2026-10-24) — a deliberate divergence from the undated seed
-# baseline above. They suppress three REAL, unfixed Criticals, and an undated entry means the gate
-# stays permanently quiet about them with nothing to force re-triage. Expiry converts silence into a
-# deadline: past that date they stop suppressing and the gate re-blocks, which is a prompt to re-check
-# whether upstream has shipped the fix — not a claim that the risk is gone. Both remain internal-only
-# and dormant by default (`--profile observability`), which is why suppression is defensible at all.
-- image: 'grafana/otel-lgtm:0\.32\.0'
-  id: 'GHSA-r277-6w6q-xmqw'
-  justification: 'Fixable Critical in github.com/getkin/kin-openapi (v0.140.0→0.144.0), bundled by the upstream image. SUPPRESSES NOTHING AS OF 2026-08-30 and is retained pending CI confirmation: a full local Trivy scan (aquasec/trivy:0.74.0, ghcr.io DB mirrors) of the pinned 0.32.0 digest found 354 findings but ZERO blocking, and GHSA-r277-6w6q-xmqw appears in no image in the sweep — Grafana has evidently already rebuilt with kin-openapi>=0.144.0. It is therefore reported under UNMATCHED ENTRIES. That is NOT a symptom of the re-key below: matching needs image AND id, and with the advisory absent from the report no key of any shape could match, which is why the two untouched langfuse entries report identically. Delete this entry once the CI-side scan confirms the same, so a regression re-blocks. Internal-only: observability stack, --profile observability, dormant by default. RE-KEYED 2026-08-30 from `grafana/otel-lgtm:latest` to the 0.32.0 pin (feature 063 / item #297) — the ref it was written against no longer exists, and an entry that matches nothing suppresses nothing. This key is now DISCHARGEABLE: it matches 0.32.0 with or without a digest appended, and stops matching the moment Renovate moves the pin, so the fix ends the suppression instead of a human having to remember it. The old justification said "`latest` already floats to newest so no pin/bump clears it" — that reasoning was correct only while the image was floating and no longer applies. Expires 2026-10-24 to force re-triage rather than suppressing indefinitely.'
-  addedBy: 'triage-2026-07-26; re-keyed 063'
-  expiry: '2026-10-24'
+# Their reasoning was "a floating/major-only tag already resolves to newest, so there is no bump to
+# make; remediation is upstream rebuilding the image with the fixed dep". Upstream did exactly that.
+# Verified 2026-08-30 by a full local Trivy sweep of all 21 infra images (aquasec/trivy:0.74.0,
+# ghcr.io DB mirrors): NEITHER advisory appears on ANY image, and all three images report zero
+# blocking findings (otel-lgtm 354 findings / 0 blocking; each langfuse image 17 / 0).
+#
+# WHY DELETED RATHER THAN LEFT TO EXPIRE ON 2026-10-24. An entry that matches nothing does not sit
+# harmlessly until its date — the gate reports it under UNMATCHED ENTRIES, and `--check-expiring`
+# fails on it. These three (with two more in the SAST allowlist) had kept the weekly allowlist-expiry
+# run red for three consecutive weeks, which is how they were found. The signal that exists to catch
+# ONE stale suppression cannot do that while saturated by five, and expiry would not have cleared
+# them — an expired entry that matches nothing keeps failing, it just changes which list it fails in.
+# Deleting is also the direction that restores blocking: if either advisory returns, it re-blocks.
 - image: 'hashicorp/vault:1\.18'
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): fixable Critical in stdlib. Bump to 1.21.4 would clear THIS one (Go retoolchained) but NOT the sibling libcrypto3/grpc Crits, and 1.21.4 adds NEW pgx Criticals (Trivy-verified, feature 036) — no fully-clean upstream tag yet; internal-only + dormant. Re-triage when a clean vault tag ships.'
@@ -59,16 +61,6 @@
   id: 'CVE-2026-33186'
   justification: 'Baseline (035): fixable Critical in google.golang.org/grpc. Verified NOT cleared by a bump to 1.21.4 (still ships grpc v1.75.1 < fix 1.79.3; Trivy, feature 036) — no clean upstream tag yet; internal-only + dormant.'
   addedBy: 'seed'
-- image: 'langfuse/langfuse:3'
-  id: 'GHSA-7rqj-j65f-68wh'
-  justification: 'NEW fixable Critical in next-auth (4.24.14→4.24.15), bundled by the upstream image. The `3` tag is a major-version float already resolving to newest 3.x, so no pin/bump clears it — blocked until LangFuse rebuilds with next-auth>=4.24.15. Internal-only: observability stack, --profile observability, dormant by default; LangFuse auth is not an internet-facing surface here. Expires 2026-10-24 to force re-triage rather than suppressing indefinitely.'
-  addedBy: 'triage-2026-07-26'
-  expiry: '2026-10-24'
-- image: 'langfuse/langfuse-worker:3'
-  id: 'GHSA-7rqj-j65f-68wh'
-  justification: 'NEW fixable Critical in next-auth (4.24.14→4.24.15) — same upstream dep as langfuse/langfuse:3 above (both images ship it). Major-version float already at newest 3.x, so no pin/bump clears it. Internal-only: observability stack, --profile observability, dormant by default. Expires 2026-10-24 to force re-triage rather than suppressing indefinitely.'
-  addedBy: 'triage-2026-07-26'
-  expiry: '2026-10-24'
 - image: 'minio/mc:RELEASE\.2025-08-13T08-35-41Z'
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3). RE-KEYED 2026-08-30 from the bare repository name to the pinned release (feature 063 / item #297): the bare key matched EVERY tag of this image that will ever exist, so it could never be discharged — it suppressed this advisory and every future one in the same image, silently and permanently. Keyed to the release, it stops matching the moment the pin moves. NOTE on "awaiting Renovate base-image bump": MinIO stopped publishing community releases after 2025-09, so RELEASE.2025-08-13T08-35-41Z IS the newest mc tag upstream offers and there is no bump to await today — verified against registry-1.docker.io on 2026-08-30. The key discharges automatically if MinIO resumes publishing.'
