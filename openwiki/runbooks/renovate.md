@@ -4,7 +4,7 @@ title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, and the silent failure modes that produce absence instead of errors.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-08-30T00:00:00+00:00
+timestamp: 2026-08-30T17:08:17.796Z
 ---
 
 # Renovate dependency bot
@@ -39,12 +39,17 @@ Nothing auto-merges. Every group carries `automerge: false`.
   prevents accidents; the cost is that a forced dry run looks exactly like a forced live run —
   nothing moves, no error. Run 5963 (2026-08-14) was recorded as "the schedule beats a dashboard
   unlimit tick" when it had simply been a dry run.
-- **You cannot read a run's mode — verify it empirically.** The step name renders the raw
-  uninterpolated `${{ … }}` expression; `/actions/runs/{id}/jobs` returns 404; there is no log
-  endpoint. The signal that works: `git ls-remote origin 'refs/heads/renovate/*'` before and after,
-  plus checking whether ticks reverted to `- [ ]`. Heads moved AND ticks consumed ⇒ it ran live.
-  **Apply this check only after the run starts — not after the dispatch.** The dispatch returns
-  `HTTP 204` immediately but the run only queues. A queued run is invisible in `/actions/tasks`
+- **A dispatched run now publishes its RESOLVED mode as a commit status — but the empirical check
+  remains mandatory.** Item #268. Every introspective route is dead on this Forgejo build: the step
+  name renders the raw uninterpolated `${{ … }}` expression; `/actions/runs/{id}/jobs` returns 404;
+  there is no log endpoint. The run now posts a `renovate/mode` commit status on the dispatched SHA
+  *before* Renovate runs (`"LIVE"` or `"DRY RUN (creates nothing)"`), built from proven parts (env-var
+  resolution in `run:` blocks and the statuses endpoint). ⚠️ Until the first real dispatch after
+  2026-08-30 has been seen to post it, treat the status as unverified on this forge. The empirical
+  check remains the authority on what the run *did*: `git ls-remote origin 'refs/heads/renovate/*'`
+  before and after, plus checking whether ticks reverted to `- [ ]`. Heads moved AND ticks consumed
+  ⇒ it ran live. **Apply this check only after the run starts — not after the dispatch.** The dispatch
+  returns `HTTP 204` immediately but the run only queues. A queued run is invisible in `/actions/tasks`
   (that endpoint lists jobs, and a job row does not exist until the job starts); use
   `/actions/runs?event=workflow_dispatch` instead. Sequence: confirm the run exists → wait for
   `status` to leave `waiting` → then read heads and ticks. Measured 2026-08-29: a dispatch was
@@ -128,6 +133,27 @@ Nothing auto-merges. Every group carries `automerge: false`.
   exception (see the Never hand-close gotcha above) means the channel is unaffected. Assume it is
   not safe for anything else without reading the renovation code. Only a stale branch with no open
   PR is unconditionally safe to remove.
+- **Merging past a pending `renovate/stability-days` check is only acceptable when three conditions
+  all hold (item #298).** Branch protection treats the check as advisory, so the forge permits
+  merging past it — this rule says when that is acceptable. **Default: HOLD.** The three conditions
+  are: (1) the wait *cannot* satisfy it — the pending state is structural, not temporal (temporal: the
+  release ages past a knowable date and goes green — wait; structural: something resets the clock
+  faster than it can run down); (2) the posture has been measured first with the gate's own criteria
+  and recorded on the PR (for images, the `--severity CRITICAL --ignore-unfixed` recipe in
+  [infra-image-scanning](infra-image-scanning.md); for packages, the SAST/audit gates on the PR); and
+  (3) the update has security value now — it clears a live finding or unblocks a red gate on `main`.
+  Impatience does not qualify. Post-#297 the structural case should no longer arise for the docker
+  group (images are version-tagged); if `stability-days` settles unaided on the next docker PR, criterion
+  1 should essentially never hold again and the rule collapses to **wait**. ⚠️ Use a two-dot diff
+  (`git diff main branch`, not `git diff main...branch`) to ask what a PR would still change —
+  the three-dot form is against the merge base and will list changes `main` already has by another
+  route.
+- **The weekly health digest (item #311) goes and looks so you do not have to.** `scripts/renovate-health.mjs`
+  runs every Friday at 11:00 UTC (after the window run finishes) via `.forgejo/workflows/renovate-health.yml`
+  and posts a comment on item #311. It classifies every `renovate/*` branch by ancestry, reports budget
+  consumption, surfaces Repository Problems warnings, and flags pending `stability-days` states. Always
+  exits 0 — the comment is the report. **A week of silence means the job itself died.** Dispatchable
+  for on-demand verification. Close item #311 to stop the digest permanently.
 
 ## Dashboard checkbox reference (item #29)
 
@@ -147,3 +173,23 @@ close it — ticking a checkbox is the one sanctioned interaction.
 A tick is a one-character edit. Read the body immediately before writing, assert the target checkbox
 appears exactly once and is untenanted, and assert the resulting body differs by exactly the number
 of characters you intended.
+
+## Accepted residuals (decided, not overlooked)
+
+Recorded from the 2026-08-30 latent-issue audit so the next reader knows each was seen and decided,
+rather than rediscovering it as a suspected defect.
+
+- **`engines.node: ">=22.13"` is a floor, not a pin, and it stays one.** Every pin runs 24.x; the
+  floor states compatibility, not reality. `check-toolchain-consistency.mjs` checks satisfaction,
+  deliberately. Raise the floor only when a tool requires it.
+- **Node rides two Renovate groups.** Workflow `node-version` entries ride `ci actions`
+  (github-actions manager); Dockerfile `FROM node` rides `docker base images`. A Node bump can
+  arrive as two PRs, and the pins already differ. Accepted **while the gate floor-checks** — none of
+  this can merge unsafe. If Node drift ever bites, the fix is the nx/playwright/pnpm pattern: one
+  group, one guard.
+- **`runs-on: ubuntu-latest` is extracted** by the github-runners manager (15 refs). On act_runner
+  the label maps to a runner-side container and a "bump" would be meaningless — if such a proposal
+  appears, close it as not applicable (this is not a `lockFileMaintenance` PR; the hand-close rule
+  marks only that one label rejected, which is the intent here).
+- **`npx --yes renovate@44` is major-pinned and Renovate cannot see it** — documented in
+  `renovate.yml` as a deliberate residual with its own bump procedure.
