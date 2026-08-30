@@ -199,7 +199,7 @@ Delivers value even if Phases 4–5 never land.
   - **Done when**: a reader meeting a 2025 date or a `[floating tag]` line finds the reason without
     reading this spec.
 
-- [ ] T016 [P] Update item #297 with the outcome and close it using `scripts/backlog.mjs`
+- [X] T016 [P] Update item #297 with the outcome and close it using `scripts/backlog.mjs`
   - **Done when**: acceptance criteria are verified against the merged result and the item records the
     declared exceptions.
 
