@@ -4,7 +4,7 @@ title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, and the silent failure modes that produce absence instead of errors.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-08-29T00:00:00+00:00
+timestamp: 2026-08-29T23:53:00+00:00
 ---
 
 # Renovate dependency bot
@@ -43,9 +43,23 @@ Nothing auto-merges. Every group carries `automerge: false`.
   uninterpolated `${{ … }}` expression; `/actions/runs/{id}/jobs` returns 404; there is no log
   endpoint. The signal that works: `git ls-remote origin 'refs/heads/renovate/*'` before and after,
   plus checking whether ticks reverted to `- [ ]`. Heads moved AND ticks consumed ⇒ it ran live.
-- **Never hand-close a Renovate PR.** Closing one marks that update rejected — Renovate stops
-  proposing it until a human ticks the dashboard to revive it. Closing `js-patchminor` silently
-  blocks every JS patch/minor update.
+  **Apply this check only after the run starts — not after the dispatch.** The dispatch returns
+  `HTTP 204` immediately but the run only queues. A queued run is invisible in `/actions/tasks`
+  (that endpoint lists jobs, and a job row does not exist until the job starts); use
+  `/actions/runs?event=workflow_dispatch` instead. Sequence: confirm the run exists → wait for
+  `status` to leave `waiting` → then read heads and ticks. Measured 2026-08-29: a dispatch was
+  written up as "did nothing" because `/actions/tasks` showed nothing new — the run had been waiting
+  24 minutes behind a ~35-minute `app-e2e`. Also: the `dryRun: "false"` string form is confirmed
+  live (run 2285) but is NOT safe by construction — `"false"` is a truthy string under GitHub
+  expression semantics and would select a dry run; it resolved live only because Forgejo coerced it
+  against the input's declared `type: boolean`. The empirical check is mandatory, not advisory.
+- **Never hand-close a Renovate PR — including an empty one.** Closing one marks that update
+  rejected — Renovate stops proposing it until a human ticks the dashboard to revive it. This rule
+  has no exception for a PR with no diff: closing an empty PR from a stale branch (e.g. PR #288)
+  would mark `lockFileMaintenance` rejected and silently disable the one channel that clears a CVE
+  the manifest range already permits. If the queued CI is in the way, cancel the runs — that frees
+  the runner without signalling rejection. Leave the PR; Renovate autocloses this class itself
+  (retitling it `- autoclosed`) and deletes the branch, provided nobody hand-pushed to it.
 - **Never hand-push to a Renovate branch.** Renovate detects the branch was modified and can stop
   managing it. Use `rebase-branch=` + a dispatch instead.
 - **A channel whose toolchain is missing dies silently.** If a lockfile manager's binary is not on
@@ -81,6 +95,30 @@ Nothing auto-merges. Every group carries `automerge: false`.
   same update moved from `unlimit-branch=` under Rate-Limited to `unschedule-branch=` under
   Awaiting Schedule to `other-branch=` under Other Branches across three runs on one day. Ticking a
   name from memory writes a box Renovate does not read.
+- **A surviving `renovate/*` branch is not evidence of pending work — check ancestry before
+  ticking.** `default_delete_branch_after_merge` was false until 2026-08-29 (item #290), so merged
+  Renovate PRs left their branches behind and Renovate kept listing them. Ticking `unschedule-branch`
+  for an already-merged branch opens an empty PR that queues a full CI cycle. Before ticking any
+  listed branch, run `git merge-base --is-ancestor origin/renovate/<branch> main && echo "EMPTY"`.
+  Do NOT substitute `git diff --stat main...branch` — for an already-merged branch it prints nothing,
+  and blank output reads as "no changes" rather than "already in main". Why it happens: `renovate.json`
+  sets `rebaseWhen: "conflicted"`, which causes `shouldReuseExistingBranch` (in
+  `workers/repository/update/branch/reuse.js`) to skip the `isBranchBehindBase` guard entirely. An
+  ancestor branch is not conflicted, so control falls through to `reuseExistingBranch: true` and
+  Renovate opens a PR from the stale commit verbatim. A reused branch also bypasses the branch
+  budget limit, because the budget gate is conditioned on `!branchExists`. Renovate does NOT need
+  the branch to survive — proven by symmetry: when PR #276 merged and deleted its branch, the python
+  channel still appeared on the dashboard under Awaiting Schedule. Surviving branches buy nothing
+  and cost empty PRs.
+- **`renovate/lock-file-maintenance` is hard-exempt from Renovate's own pruning — by exact name.**
+  `finalize/prune.js` filters it out before `cleanUpBranches` ever sees it, so Renovate will never
+  clean it up and after a merge it lingers forever. `default_delete_branch_after_merge` (enabled
+  2026-08-29) is therefore the *only* mechanism that removes it; the one stale copy predating the
+  setting had to be deleted by hand. The comparison is `!==` on the exact name: the suffixed group
+  branches this repository produces (`renovate/lock-file-maintenance-cargo-deps`,
+  `renovate/lock-file-maintenance-python-deps`) are **not** exempt — they are prunable by autoclose.
+  Never delete a branch that is an open PR's head — it is hand-closing by another route and marks
+  the channel rejected. Only a stale branch with no open PR is safe to remove.
 
 ## Dashboard checkbox reference (item #29)
 
