@@ -4,7 +4,7 @@ title: Infra-image CVE scanning
 description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code) — the coverage gap left by SAST/SCA and the built-image scanner, gated on fixable Critical findings only.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
-timestamp: 2026-07-11T09:00:36-04:00
+timestamp: 2026-08-30T00:23:07+00:00
 ---
 
 # Infra-image CVE scanning
@@ -38,6 +38,18 @@ currency alone cannot.
 - **Adding this as a required PR check is a manual operator step** — the agent cannot configure branch
   protection itself; the weekly scheduled run is a safety net, not a merge gate, until an operator wires
   the PR-triggered context into branch protection.
+- **In the devcontainer, both the install path and the default DB mirror fail silently.** Measured
+  2026-08-30 diagnosing PR #289. (1) The Trivy install script (`contrib/install.sh`) resolves a version
+  number and then downloads nothing through the egress seam — exit 0, no binary. Do not read "found
+  version: 0.74.0" as success; check for `$HOME/.local/bin/trivy`. (2) Trivy's default DB mirror
+  (`mirror.gcr.io`) is not in the egress policy; a scan dies with `no such host`. `ghcr.io` is
+  reachable. (3) The Java DB has its own separate default mirror — omit `--java-db-repository` and JVM
+  images (`opensearchproject/opensearch`, Keycloak) fail deep in layer analysis, reading like a scan
+  failure rather than a config gap. The workaround is to run Trivy from its own Docker image, pointing
+  both databases at `ghcr.io/aquasecurity/trivy-db:2` and `ghcr.io/aquasecurity/trivy-java-db:1`; use
+  `--severity CRITICAL --ignore-unfixed` to match the gate's own criterion (so the count answers "would
+  the gate block this image", not "how many CVEs does it have"). Full command in
+  `docs/runbooks/infra-image-scanning.md`.
 
 Full scanner-vs-scanner coverage table, allowlist entry shape, baseline-seeding steps, and remediation
 ownership: `docs/runbooks/infra-image-scanning.md`.
