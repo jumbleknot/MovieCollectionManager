@@ -1551,3 +1551,48 @@ test('Renovate tracks the Trivy pin, so pinning does not simply mean going stale
     assert.ok(hit, `the Trivy customManager's matchStrings capture no currentValue in ${file}`);
   }
 });
+
+// ── Item #268: a dispatched run's mode must be READABLE, from proven parts only ─────────────────
+
+test('a dispatched run publishes its RESOLVED mode as a commit status before Renovate runs', () => {
+  const raw = readFileSync(WORKFLOW, 'utf8');
+
+  // ONE assignment, at job level. Every earlier introspective route (step-name interpolation, a
+  // jobs endpoint, logs) is measured-dead on this forge (item #268, run 2161), so the status step
+  // and the Renovate step must read the SAME resolved value — a per-step copy of the expression
+  // could drift, and the status would then report a mode the run does not have.
+  const jobEnv = workflow?.jobs?.renovate?.env ?? {};
+  const modeExpr = String(jobEnv.RENOVATE_DRY_RUN ?? '');
+  assert.ok(
+    modeExpr.includes('workflow_dispatch') && modeExpr.includes('inputs.dryRun') && modeExpr.includes("'full'"),
+    'RENOVATE_DRY_RUN is not assigned at the job level from the dispatch input — the mode status and the run can then disagree',
+  );
+  for (const s of steps) {
+    assert.ok(
+      !(s?.env && 'RENOVATE_DRY_RUN' in s.env),
+      `step ${JSON.stringify(s?.name)} re-declares RENOVATE_DRY_RUN — one assignment, two consumers, or the published mode can drift from the real one`,
+    );
+  }
+
+  // The publish step: dispatch-only (a scheduled run is live by construction, and a nightly status
+  // on main's tip would be noise), posting context `renovate/mode` via the statuses endpoint the
+  // digest already proved writable with github.token (guardrails #1627).
+  const publishIndex = steps.findIndex((s) => typeof s?.run === 'string' && s.run.includes('renovate/mode'));
+  assert.notEqual(publishIndex, -1, 'no step publishes the renovate/mode commit status — a dispatched run has no readable mode (item #268)');
+  const publish = steps[publishIndex];
+  assert.ok(String(publish.if ?? '').includes('workflow_dispatch'), 'the mode status must be scoped to workflow_dispatch — scheduled runs are live by construction');
+  assert.ok(publish.run.includes('/statuses/'), 'the mode step does not post to the statuses endpoint');
+  assert.ok(publish.run.includes('RENOVATE_DRY_RUN'), 'the mode step does not read the resolved RENOVATE_DRY_RUN, so it would report the sent value rather than the resolved one — the exact event_payload.inputs mistake');
+
+  // BEFORE Renovate runs, so a LIVE dispatch is distinguishable early enough to abandon (item
+  // #268's fourth criterion), not diagnosed after the fact.
+  const renovateIndex = steps.findIndex((s) => typeof s?.run === 'string' && s.run.includes('renovate@'));
+  assert.notEqual(renovateIndex, -1, 'could not locate the Renovate step to order against');
+  assert.ok(publishIndex < renovateIndex, 'the mode status is published after Renovate runs, so a live dispatch cannot be recognised early');
+
+  // The claim this replaces must stay dead: step names render ${{ }} RAW on this forge.
+  assert.ok(
+    !raw.includes('step name below also carries the mode'),
+    'the false step-name claim (item #268) has been reintroduced',
+  );
+});

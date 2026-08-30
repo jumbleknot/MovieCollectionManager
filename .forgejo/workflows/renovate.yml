@@ -52,10 +52,18 @@ on:
         # DEFAULTS TO TRUE, and that default has already produced a wrong conclusion. Item #184
         # recorded "the schedule beats a dashboard unlimit tick" from run 5963 (2026-08-14T09:34Z)
         # running, succeeding and creating nothing. It created nothing because it was a DRY RUN.
-        # The forge exposes no log endpoint, so the mode is NOT readable from the run page — read it
-        # from the API instead: GET /repos/{owner}/{repo}/actions/runs/{index_in_repo + 1} and look at
-        # event_payload.inputs. The step name below also carries the mode, so a run listing shows it.
         # Keep the default TRUE: a dispatch that creates PRs by accident is the worse failure.
+        #
+        # HOW TO READ A DISPATCHED RUN'S MODE — item #268. Three introspective routes are DEAD on
+        # this forge (measured, run 2161): step names render their ${{ }} raw, /actions/runs/{id}/jobs
+        # is 404, and there is no log endpoint. event_payload.inputs echoes what you SENT, not what
+        # the expression resolved to. The comment that stood here claiming otherwise was false.
+        # The 'Publish dispatch mode' step below therefore posts the RESOLVED mode as a commit
+        # status (`renovate/mode` on the dispatched sha) BEFORE Renovate runs — built only from
+        # proven parts: env-var resolution in `run:` (used everywhere) and the statuses endpoint
+        # (measured writable with github.token, guardrails #1627). The empirical fallback stays
+        # authoritative: a live run moves branch heads and consumes dashboard ticks; a dry run
+        # cannot (docs/runbooks/renovate.md §3).
         default: true
 
 concurrency:
@@ -65,6 +73,15 @@ concurrency:
 jobs:
   renovate:
     runs-on: ubuntu-latest
+    env:
+      # THE ONE ASSIGNMENT OF THE RUN'S MODE — job-level so the 'Publish dispatch mode' step and the
+      # Renovate step read the SAME resolved value; a per-step copy of this expression could drift
+      # and the status would then report a mode the run does not have (the half-bump shape, for
+      # config). Under GitHub expression semantics a non-empty STRING "false" would be truthy and
+      # select 'full' (a dry run); it resolves correctly here only because Forgejo coerces the value
+      # against the input's declared `type: boolean` — a property of this forge build, which is why
+      # the empirical heads-and-ticks check in the runbook stays mandatory rather than advisory.
+      RENOVATE_DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'full' || '' }}
     # Run Renovate via npx INSIDE the runner's default node:22-bookworm container (which is how the
     # act_runner containerizes `ubuntu-latest` jobs). We deliberately do NOT use a job-level
     # `container: renovate/renovate` — none of the other workflows do, and container-on-container on
@@ -126,7 +143,24 @@ jobs:
           # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
           # Same pin and same reasoning as app-ci.yml and cd-deploy.yml.
           github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
-      - name: Run Renovate — MODE ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'DRY RUN (creates nothing)' || 'LIVE' }}
+      # Item #268 — make a dispatched run's mode READABLE, before the run finishes. Scoped to
+      # workflow_dispatch only: a scheduled run is always live by construction, and posting a status
+      # on main's tip every night would be pure noise. Read it back with
+      #   GET /repos/{owner}/{repo}/commits/{sha}/status   → context `renovate/mode`.
+      # Posted BEFORE Renovate runs so a LIVE dispatch can be distinguished (and abandoned) early.
+      - name: Publish dispatch mode (item #268)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          bash scripts/ci-log-step.sh renovate-publish-mode bash -e /dev/stdin <<'CI_LOG_STEP'
+          if [ -n "$RENOVATE_DRY_RUN" ]; then mode="DRY RUN (creates nothing)"; else mode="LIVE"; fi
+          echo "resolved mode: $mode (RENOVATE_DRY_RUN='$RENOVATE_DRY_RUN')"
+          curl -fsS -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' \
+            "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -d "{\"context\":\"renovate/mode\",\"state\":\"success\",\"description\":\"$mode\"}" >/dev/null
+          CI_LOG_STEP
+      - name: Run Renovate
         env:
           # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
           COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
@@ -141,8 +175,7 @@ jobs:
           # Read-only github.com PAT for changelog + github-actions version lookups (anti-rate-limit).
           # RENOVATE_-prefixed to dodge Forgejo's reserved GITHUB_ prefix; empty no-op until the secret exists.
           RENOVATE_GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
-          # workflow_dispatch dryRun input → full dry run; scheduled runs are live.
-          RENOVATE_DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'full' || '' }}
+          # RENOVATE_DRY_RUN comes from the JOB env above — one assignment, two consumers (item #268).
           LOG_LEVEL: info
         # npx pulls the renovate package into the node runner. PINNED to a major (2026-08-08): it was
         # `npx --yes renovate`, i.e. always-latest, so a Renovate major could land in CI unannounced

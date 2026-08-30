@@ -1,0 +1,62 @@
+# Item #311 — the weekly Renovate health digest.
+#
+# WHY THIS EXISTS. Renovate's failure mode on this forge is ABSENCE, and absence is unreadable:
+# a dead channel is one suppressed WARN line on the dashboard (#218), a stale branch is an empty PR
+# and a wasted ~35-minute CI cycle (#290), open PRs silently eat next week's PR budget, and a
+# pending stability-days has to be gone-and-looked-at (#298). Each was discovered by incident. This
+# job goes and looks, weekly, and comments what it found on item #311.
+#
+# COMMENT-ONLY AND ALWAYS EXIT 0, like lockfile-refresh-check: a weekly red on a monitoring job
+# trains people to ignore it — the comment is the report, and it always posts (a one-line ✅ when
+# healthy) so that SILENCE means this job died, rather than silence meaning health.
+# CLOSING ITEM #311 IS THE KILL SWITCH — the script no-ops once it is closed.
+name: renovate-health
+
+on:
+  schedule:
+    # Friday 11:00 UTC — after renovate's window run (07:00) has finished AND after
+    # lockfile-refresh-check (10:00), on the shared single runner. A health check that queues
+    # behind (or beside) the thing it is checking would read the state before the work happened —
+    # the same reasoning as lockfile-refresh-check's own offset.
+    - cron: '0 11 * * 5'
+  # Dispatchable so the check can be PROVEN working now rather than discovered broken on a Friday.
+  # No dryRun input needed at the workflow level — the script's own --dry-run covers local proving,
+  # and a dispatched run posting one extra comment to #311 is harmless by design.
+  workflow_dispatch:
+
+concurrency:
+  group: renovate-health
+  cancel-in-progress: false
+
+jobs:
+  renovate-health:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0, unlike the other comment-only jobs — the stale-branch classification runs
+      # `git merge-base --is-ancestor origin/renovate/* origin/main`, and on a shallow single-ref
+      # checkout that question is unanswerable (the script reports those branches as `unknown`
+      # rather than dropping them, but a digest full of unknowns answers nothing).
+      - name: Checkout (full history + all refs, for ancestry checks)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+      - name: Post the weekly Renovate health digest
+        env:
+          # write:issue — the same purpose-scoped secret the failure digest and
+          # lockfile-refresh-check use. The script reads the forge with it too.
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+        run: bash scripts/ci-log-step.sh renovate-health node scripts/renovate-health.mjs
+      # Feature 042 — every job publishes a guarded failure digest. This one should never fail (the
+      # script traps its own errors and exits 0), which is exactly why the digest stays: if it ever
+      # does fail, the forge exposes no log endpoint and this is the only channel that would say so.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
