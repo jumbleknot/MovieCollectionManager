@@ -273,6 +273,7 @@ function ruleMatches(rule, dep) {
     'prPriority',
     'matchCurrentVersion',
     'dependencyDashboardApproval',
+    'allowedVersions',
   ]);
   for (const key of Object.keys(rule)) {
     if (!known.has(key)) {
@@ -685,6 +686,20 @@ test('the weekly PR budget reaches past the rolling groups that sort ahead of th
 // not "does a rule mentioning react-native exist" — the broken config would have passed the latter.
 
 /** The `enabled` a dep resolves to: last matching rule that sets one wins, as Renovate resolves it. */
+/**
+ * The version ceiling a dep ends up under: the LAST matching rule that names one wins, as Renovate
+ * resolves it. `null` means unconstrained — which is the correct answer for almost every dep, and is
+ * what the control test asserts so a widened rule cannot pass unnoticed.
+ */
+function resolvedAllowedVersions(dep) {
+  let allowed = null;
+  for (const rule of packageRules) {
+    if (!ruleMatches(rule, dep)) continue;
+    if (rule.allowedVersions !== undefined) allowed = rule.allowedVersions;
+  }
+  return allowed;
+}
+
 function resolvedEnabled(dep) {
   let enabled = true;
   for (const rule of packageRules) {
@@ -1037,4 +1052,66 @@ test('a cargo 0.x minor bump is treated as breaking, not as routine', () => {
     'the 0.x cargo rule does not require dashboard approval. Without it these re-propose every week\n' +
       '  and spend the weekly PR budget (item #218) on upgrades known to need hand-holding.',
   );
+});
+
+// ---------------------------------------------------------------------------------------------
+// hashicorp/vault is HELD BELOW 1.19 — PR #289 (2026-08-30), and this is a SECURITY decision, not a
+// currency one. Renovate's `docker base images` group proposed 1.18 -> 1.21 and reddened
+// `infra-image-scan / infra-image-scan`. Measured with the gate's own criteria
+// (`trivy --severity CRITICAL --ignore-unfixed`) against the exact digest the PR pinned:
+//
+//   vault:1.18  4 findings / 3 unique advisories — ALL THREE allowlisted (seed entries)
+//     CVE-2025-68121 (stdlib) · CVE-2026-31789 (libcrypto3, libssl3) · CVE-2026-33186 (grpc)
+//   vault:1.21  5 findings / 4 unique advisories — NONE suppressed
+//     CVE-2026-31789 (libcrypto3, libssl3) · CVE-2026-33186 (grpc)  ← carried over, still unfixed
+//     CVE-2026-33815 · CVE-2026-33816 (github.com/jackc/pgx/v5)     ← NEW in 1.21
+//     (CVE-2025-68121 IS cleared by 1.21 — the Go retoolchain — so the bump is net +1 advisory)
+//
+// TWO independent reasons it went red, and both matter. (1) The three allowlist entries are keyed to
+// the regex `hashicorp/vault:1\.18`, which cannot match `hashicorp/vault:1.21@sha256:...` — the
+// matcher is an UNANCHORED `new RegExp(e.image).test(f.image)`, which is also why appending a digest
+// does NOT break the other entries (`minio/mc`, `grafana/otel-lgtm:latest`,
+// `opensearchproject/opensearch:2` all still match). (2) The two pgx Criticals are genuinely new and
+// allowlisted nowhere.
+//
+// This was ALREADY MEASURED AND WRITTEN DOWN by feature 036, in the allowlist justifications the
+// seed entries carry: "Bump to 1.21.4 would clear THIS one (Go retoolchained) but NOT the sibling
+// libcrypto3/grpc Crits, and 1.21.4 adds NEW pgx Criticals (Trivy-verified)". The bump walked into a
+// documented trap. The standing decision there — "no fully-clean upstream tag yet; internal-only +
+// dormant. Re-triage when a clean vault tag ships" — is what this rule now ENFORCES rather than
+// merely records.
+//
+// `allowedVersions` rather than `enabled: false`, deliberately: digest refreshes WITHIN 1.18 are
+// still wanted (docker:pinDigests keeps the pin honest), and only the version move is blocked.
+// Widening the allowlist to bless 1.21 was rejected — that makes a red gate green by accepting a
+// strictly worse image, which is the one thing an allowlist must never be used for.
+
+const vaultDep = (updateType) => ({
+  manager: 'docker-compose', datasource: 'docker', depName: 'hashicorp/vault', updateType,
+});
+
+test('hashicorp/vault is held below 1.19 on every update track', () => {
+  for (const updateType of ['patch', 'minor', 'major']) {
+    assert.equal(
+      resolvedAllowedVersions(vaultDep(updateType)),
+      '<1.19',
+      `vault ${updateType} is not held — a 1.21 bump un-suppresses 3 allowlisted Criticals and adds 2 new pgx ones.`,
+    );
+  }
+});
+
+test('the vault hold does NOT leak onto other docker images — the control', () => {
+  for (const depName of ['postgres', 'redis', 'quay.io/keycloak/keycloak', 'opensearchproject/opensearch']) {
+    assert.equal(
+      resolvedAllowedVersions({ manager: 'docker-compose', datasource: 'docker', depName, updateType: 'minor' }),
+      null,
+      `${depName} picked up vault's version hold — the rule has widened past its own image.`,
+    );
+  }
+});
+
+test('vault still rides the `docker base images` group, so a digest refresh is not stranded', () => {
+  // The hold blocks a VERSION move, not the image. If this ever resolves to null, vault has fallen
+  // out of the grouped PR and its digest pin would drift alone.
+  assert.equal(resolvedGroupName(vaultDep('patch')), 'docker base images');
 });

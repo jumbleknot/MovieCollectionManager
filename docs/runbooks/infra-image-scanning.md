@@ -40,6 +40,41 @@ node scripts/check-infra-image-findings.mjs --selftest   # prove fail/suppress/e
 node --test scripts/__tests__/infra-image-scan.test.mjs
 ```
 
+### In the dev container: two silent blocks, and the way round both
+
+Measured 2026-08-30 while diagnosing PR #289. The devcontainer *can* run this scan — it just cannot
+run it the way CI does, and **both** obstacles fail silently rather than erroring:
+
+1. **The Trivy install script produces no binary.** `contrib/install.sh` resolves the version from
+   GitHub (`found version: 0.74.0`) and then downloads nothing — the release tarball comes back empty
+   through the egress seam, exit 0. `$HOME/.local/bin/trivy` simply does not exist afterwards. Do not
+   read the version line as success; check for the binary.
+2. **Trivy's default DB mirror does not resolve.** `mirror.gcr.io` is not in the egress policy, so a
+   scan dies with `dial tcp: lookup mirror.gcr.io ... no such host`. `ghcr.io` *is* reachable (a `401`
+   from `/v2/` is the normal auth challenge, not a block).
+
+So run Trivy from its own image and point **both** databases at ghcr. The Java DB is a separate
+download with its own default mirror — omit `--java-db-repository` and JVM images
+(`opensearchproject/opensearch`, Keycloak) fail *after* pulling, deep in layer analysis, which reads
+like a scan failure rather than a config gap:
+
+```bash
+docker volume create trivy-cache
+docker run --rm -v trivy-cache:/root/.cache/trivy aquasec/trivy:0.74.0 image --quiet \
+  --scanners vuln \
+  --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+  --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
+  --severity CRITICAL --ignore-unfixed --format json \
+  'hashicorp/vault:1.21@sha256:4e33...'
+```
+
+`--severity CRITICAL --ignore-unfixed` is deliberately the **gate's own** criterion (see below), so a
+count from this command answers "would the gate block this image" rather than "how many CVEs does it
+have". Keep the cache volume — the DB download dominates the runtime of a single-image scan.
+
+This is the recipe that diagnosed PR #289 when the job published **no failure digest** despite its
+digest step being `if: always()`.
+
 ## The gate
 
 `blocking = FIXABLE Critical` (a `FixedVersion` exists upstream). Unfixable Critical and all Medium/Low are **report-only warnings** — a bump can't clear an unfixable CVE, so it must not wedge the gate (same intent as `cd-deploy`'s `--ignore-unfixed`). The gate fails on any blocking finding not covered by a **live** (non-expired) allowlist entry.
