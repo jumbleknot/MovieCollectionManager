@@ -75,6 +75,77 @@ assert the target checkbox appears exactly once and is untenanted, and assert th
 differs by exactly the number of characters you intended and is the same length. Anything less risks
 clobbering a concurrent bot rewrite.
 
+> ⚠️ **A `renovate/*` branch that already exists is not evidence of pending work — check ANCESTRY
+> before ticking it.** This repository has `default_delete_branch_after_merge: false`, so a merged
+> Renovate PR leaves its branch behind. Renovate keeps listing that branch on the dashboard, and a
+> tick opens a PR for content `main` already has. Item #290 tracks whether the setting can simply be
+> turned on; until it is, this check is the mitigation.
+>
+> Measured 2026-08-29 (item #290, PR #288). `renovate/lock-file-maintenance-cargo-deps` was merged as PR #260
+> and `renovate/lock-file-maintenance` as PR #261; both refs survived. An `unschedule-branch` tick on
+> the cargo one produced an **empty PR** that then queued a full CI cycle ahead of real work.
+>
+> ```bash
+> git merge-base --is-ancestor origin/renovate/<branch> main && echo "EMPTY — already in main"
+> ```
+>
+> Do **not** substitute `git diff --stat main...branch` for this. For an already-merged branch it
+> prints **nothing**, which reads as "no output" rather than "no changes" — that is exactly how this
+> was missed, in a survey where the one real branch printed a stat and the two empty ones printed
+> blanks. `--is-ancestor` answers the question rather than leaving it to be inferred from silence.
+> (§4's two-dot warning is the sibling check, asking what a NON-empty branch would still change.)
+
+**The mechanism, from renovate@44's own dist** (`workers/repository/update/branch/reuse.js`,
+`shouldReuseExistingBranch`) — this is a config interaction, not a bug:
+
+- **No branch** → `Branch needs creating` → `reuseExistingBranch: false`, and Renovate regenerates the
+  content from scratch. This is the healthy path.
+- **Branch exists** → the `isBranchBehindBase` guard, the one thing that would notice the branch is
+  already in `main`, runs **only** when `rebaseWhen` is `behind-base-branch` or a `keepUpdatedLabel`
+  is set. `renovate.json` sets **`rebaseWhen: "conflicted"`**, so it is skipped outright
+  (`Skipping behind base branch check due to rebaseWhen=conflicted`). An already-merged branch is an
+  *ancestor* of `main`, so it is not conflicted either — control falls through to
+  `reuseExistingBranch = true` and Renovate opens a PR from the **stale commit verbatim**.
+
+Corroborated on PR #288: its head is still `c4d4a5e4`, dated 2026-08-28 07:03. The 21:43Z run that
+opened it created no new commit — it did not regenerate, did not rebase, and did not notice.
+
+A surviving branch distorts one more thing: `branch/index.js` gates the branch budget behind
+`!branchExists`, so a reused branch **bypasses the branch limit** (§1) entirely.
+
+> ✅ **Renovate does NOT need a merged branch to survive — proven by symmetry.** When PR #276 merged,
+> `renovate/lock-file-maintenance-python-deps` **was** deleted (that merge passed
+> `delete_branch_after_merge`); the python channel is nonetheless listed on the dashboard under
+> **Awaiting Schedule**, exactly like the js one whose branch survived. Dashboard tracking comes from
+> Renovate's own update computation, not from branch existence. So the surviving branch buys nothing
+> and costs an empty PR.
+
+> ⚠️ **`renovate/lock-file-maintenance` is HARD-EXEMPT from Renovate's own pruning — by exact name.**
+> `finalize/prune.js` filters it out before `cleanUpBranches` ever sees it:
+>
+> ```js
+> const lockFileBranch = `${config.branchPrefix}lock-file-maintenance`;
+> renovateBranches = renovateBranches.filter((branch) => branch !== lockFileBranch);
+> ```
+>
+> So Renovate will **never** clean that branch up, and after a merge it lingers for ever. Enabling
+> **`default_delete_branch_after_merge`** (done 2026-08-29, item #290) is therefore not merely tidier
+> — it is the *only* mechanism that removes this particular branch, and the one stale copy that
+> predated the setting had to be deleted by hand.
+>
+> Note the comparison is `!==` on the exact name, so the **suffixed** group branches this repository
+> actually produces — `renovate/lock-file-maintenance-cargo-deps`,
+> `renovate/lock-file-maintenance-python-deps`, created because the cargo and python groups carry
+> their own `groupName` — are **not** exempt. They are prunable, which is why leaving PR #288 for
+> autoclose is the right call rather than merging an empty PR: `cleanUpBranches` closes the PR
+> (retitling it `- autoclosed`) and deletes the branch, provided `isBranchModified` is false — which
+> it is, for any branch nobody hand-pushed to (§4).
+
+> ⛔ **Never delete a branch that is an OPEN PR's head.** It is hand-closing by another route and
+> carries the same consequence as §4's rule — for `lockFileMaintenance` it marks the channel rejected.
+> `renovate/lock-file-maintenance-cargo-deps` must therefore stay until PR #288 autocloses, even
+> though its content is already in `main`. Only a stale branch with **no open PR** is safe to remove.
+
 ---
 
 ## 3. Forcing a run
@@ -112,6 +183,41 @@ node scripts/backlog.mjs show 29 | grep -E '^\s*- \[x\]'   # ticks consumed == l
 
 Heads moved **and** ticks consumed back to `- [ ]` ⇒ it ran live.
 
+**Wait for the run to actually START before applying that check — and do not look for it in
+`/actions/tasks`.** The dispatch returns `HTTP 204` immediately, but the run only *queues*: there is
+one runner, and it may already be inside a ~35-minute `app-e2e`.
+
+Measured 2026-08-29. A dispatch at 21:19Z returned 204; `/actions/tasks?limit=50` listed 75 renovate
+rows whose newest was **eight hours old**, and no new one — which reads exactly like "the dispatch did
+nothing", and was written up that way before being corrected. **`/actions/tasks` lists JOBS, and a job
+row does not exist until the job starts.** The run was there the whole time, under a different
+endpoint:
+
+```bash
+# does the run EXIST? (a queued run appears here and nowhere else)
+curl -sS -H "Authorization: token $TOKEN" "$API/actions/runs?event=workflow_dispatch&limit=5"
+# then poll it until status leaves `waiting`
+curl -sS -H "Authorization: token $TOKEN" "$API/actions/runs/<id>"
+```
+
+The string form in the recipe above is confirmed to resolve **live** (run 2285, 2026-08-29: heads
+moved, ticks consumed, PRs #288/#289 created). Do not read that as "the string form is safe by
+construction" — it is not. `renovate.yml` computes
+`(github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'full' || ''`, and under GitHub
+expression semantics a non-empty string `"false"` is **truthy**, which would select `'full'` — a dry
+run. It ran live only because Forgejo coerced the value against the input's declared `type: boolean`.
+That coercion is a property of this forge build, not of the recipe, which is exactly why the
+empirical check below is mandatory rather than advisory.
+
+Two traps in that payload: the run's `event` field renders as the **empty string** for a dispatch
+(the `?event=workflow_dispatch` filter still matches it, so filter — do not read the field), and
+`status` sits at `waiting` for as long as the queue is deep. The run above waited ~24 minutes, then
+ran for ~3.
+
+So a 15-minute poll of heads-and-ticks times out on **queue depth alone** and proves nothing about the
+mode. Sequence it: confirm the run exists → wait for `status` to leave `waiting` → *then* read heads
+and ticks. Anything else re-derives the item #268 mistake with a new cause.
+
 ---
 
 ## 4. Renovate PRs — what not to do
@@ -122,6 +228,13 @@ JS patch/minor update.
 
 **Never hand-push to a Renovate branch** to resolve a conflict. Renovate detects the branch was
 modified and can stop managing it. Use `rebase-branch=` + a dispatch instead.
+
+**An EMPTY PR from a stale branch is still a Renovate PR — do not hand-close it.** The temptation is
+strong, because a PR with no diff is obviously not going to merge. But the rule above does not have an
+exception for it: hand-closing PR #288 would mark `lockFileMaintenance` rejected and silently disable
+the one channel that clears a CVE the manifest range already permits (§5). Leave it; Renovate
+autocloses this class itself. If the queued CI is genuinely in the way, CANCEL the runs — that frees
+the runner without signalling rejection — and still leave the PR alone.
 
 **Autoclose is normal and is not a failure.** When a bump is already satisfied on `main`, Renovate
 closes the PR itself and deletes the branch — the title gains `- autoclosed`. Measured on PR #262
