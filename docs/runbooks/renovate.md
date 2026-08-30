@@ -524,6 +524,33 @@ inside the repository then resolves the channel *and its components* from `rust-
 which is why `--component clippy` is no longer written in `app-ci.yml`. There is no `stable` literal
 left in any workflow, and the guard test fails if one returns.
 
+> ⛔ **A Rust bump needs the devcontainer image REBUILT before local `cargo` works again — and
+> until it is, `cargo`/`rustc`/`nx test mc-service` FAIL in the dev container.** This is inherent to
+> pinning an exact version, not to which version was chosen. Measured 2026-08-30, immediately after
+> adding the file:
+>
+> ```
+> $ rustup show active-toolchain
+> info: syncing channel updates for 1.98.0-x86_64-unknown-linux-gnu
+> error: could not download … https://static.rust-lang.org/dist/channel-rust-1.98.0.toml.sha256
+>        dns error: No address associated with hostname
+> ```
+>
+> Two facts combine. **rustup keys toolchains by NAME**: the image installs one called
+> `stable-x86_64-unknown-linux-gnu`, and a file naming `1.98.0` asks for a *different* toolchain — so
+> rustup tries to fetch it even when the bytes on disk are the same compiler. (Confirmed by setting
+> the channel to `1.97.1`, the exact version the image has as `stable`: it still tried to download.)
+> And **`static.rust-lang.org` is not on the dev container's egress allowlist**, so that fetch cannot
+> succeed.
+>
+> The good news is that the fix is already automatic and needs no operator step: a Renovate `rust
+> toolchain` PR moves `rust-toolchain.toml` **and** `.devcontainer/toolchain.Dockerfile` together —
+> that is what the grouping rule is for — and `devcontainer-image.yml` is path-triggered on
+> `.devcontainer/toolchain.Dockerfile`, so merging one rebuilds the image with a toolchain named
+> `1.98.0`, which the file then resolves locally with no download at all. **The only manual step is
+> pulling the rebuilt image.** CI is unaffected throughout: it installs rustup fresh with
+> `--default-toolchain none` on a runner with open egress.
+
 `rust-toolchain.toml` needs **no customManager**: renovate@44 ships a built-in `rust-toolchain`
 manager (`managerFilePatterns` `/(^|/)rust-toolchain(\.toml)?$/`). Adding one would double-manage
 the file — two depNames for one package, two branches, both editing the same line — the exact
