@@ -479,6 +479,36 @@ VS Code's Dev Containers **credential-helper proxy** forwards the credential ove
 > push the branch (which needs no API token) and open the PR in the web UI. **Never** fall back to
 > AGit — a PR you cannot get CI signal from is worse than one you opened by hand.
 
+### Deleting the branch on merge — the repo default does NOT cover an API merge
+
+`default_delete_branch_after_merge: true` (enabled 2026-08-29, item #290) is the default for the
+**merge button in the web UI**. A merge driven through the API is unaffected unless the request says
+so:
+
+```bash
+# deletes the head branch
+--data '{"Do":"merge","delete_branch_after_merge":true}'
+# leaves it behind, even with the repo default ON
+--data '{"Do":"merge"}'
+```
+
+Measured the same evening: PR #287 and PR #293 passed the flag and their branches were gone; PR #291
+omitted it and `290-renovate-runbook-dispatch-and-stale-branches` survived the merge and had to be
+deleted by hand. **So a session merging through the API must pass the flag every time** — the repo
+setting will not cover for it.
+
+This is not housekeeping. A surviving `renovate/*` branch makes Renovate reuse a stale commit instead
+of regenerating, which is how an empty PR gets opened
+([renovate.md §2](./renovate.md), item #290) — and `renovate/lock-file-maintenance` in particular is
+hard-exempt from Renovate's own pruning, so nothing else will ever clean it up.
+
+Two branches you should **not** delete:
+
+- **An open PR's head.** It is hand-closing by another route, with the same consequence — for a
+  `lockFileMaintenance` branch it marks the channel rejected.
+- **A branch an automation owns and recreates**, e.g. `openwiki-maintenance`. Its workflow re-creates
+  it each scheduled run, so a lingering ref there is its normal working state rather than debris.
+
 ### "Is it merged?" — `merged: true` is not the answer
 
 `GET /pulls/{n}` reports `head.sha` as the branch's **current tip, not the commit that was merged**.
@@ -597,6 +627,29 @@ was rejected as widening the security posture for a rare failure class. For thos
 out-of-band `~/mcm-ci-last-failure/` bundle on the runner (see
 [e2e-testing.md](./e2e-testing.md) diagnosis step 6) — the access path is documented in private memory,
 not here.
+
+> ⚠️ **Before believing "no digest", drop `--job` and look again.** Measured 2026-08-30 on PR #289:
+> `failure --pr 289 --job "infra-image-scan / infra-image-scan"` — the value copied straight out of
+> this tool's own status table — reported *"1 job(s) failed, but no digest was published for them"*.
+> The digest was on the PR the whole time and named all five blocking findings. The marker carries the
+> **bare** job name (`job=infra-image-scan`); the filter was comparing it against the `workflow / job`
+> **context** form, matched nothing, and an unmatched filter rendered as absence. That mismatch sent a
+> session into an hour of local Trivy reproduction to re-derive what the digest already said.
+>
+> Both halves are fixed — `--job` now accepts either form, and a filter that excludes every digest
+> now names what IS available instead of claiming absence — but the habit is the durable protection:
+> **absence reported under a filter is a claim about the filter until you have checked without it.**
+> The bundle is the second opinion, and it is retrievable directly when you want the raw evidence:
+>
+> ```bash
+> curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" \
+>   ".../api/packages/<owner>/generic/ci-failures/<runId>--<job>/bundle.json.gz" -o b.gz
+> ```
+>
+> Its `meta.digestOutcome` states whether the digest published and by which channel (`pr-comment`
+> here), which distinguishes "never ran" from "ran, and you did not find it". Note the package
+> listing is **paginated** — checking three pages of four and concluding "nothing was published since
+> 2026-08-28" is how the wrong conclusion was reached the first time.
 
 ---
 

@@ -382,7 +382,7 @@ test('(ww5) statuses sharing a created_at collapse deterministically — later e
 // T026 — reading the published digest back.
 // ================================================================================================
 
-import { extractDigests, DIGEST_MARKER_RE } from '../ci-status.mjs';
+import { extractDigests, DIGEST_MARKER_RE, describeFilteredOutDigests } from '../ci-status.mjs';
 
 test('(x) digests are extracted from PR comments by marker, ignoring unrelated comments', () => {
   const comments = [
@@ -402,6 +402,54 @@ test('(x2) a single job can be selected', () => {
   ];
   assert.equal(extractDigests(comments, 'sast').length, 1);
   assert.equal(extractDigests(comments, 'nope').length, 0);
+});
+
+test('(x2b) THE BUG: --job accepts the "workflow / job" CONTEXT form this tool itself prints', () => {
+  // Measured 2026-08-30, PR #289. `ci-status failure --pr 289 --job "infra-image-scan / infra-image-scan"`
+  // reported "no digest was published" for a digest that was sitting on the PR the whole time. The
+  // marker carries the BARE job name (`job=infra-image-scan`); the `--job` value a reader naturally
+  // passes is the CONTEXT string from this tool's own status table (`infra-image-scan / infra-image-scan`),
+  // and `d.job === job` matched neither. Every other consumer in ci-status.mjs normalises with
+  // `c.job.split('/').pop().trim()` — this one path did not.
+  //
+  // The cost was not the typo: the mismatch reads as ABSENCE, so it sent a whole session into an
+  // hour of local Trivy reproduction to re-derive five findings the digest already named.
+  const comments = [
+    { id: 2, body: '<!-- ci-digest:job=infra-image-scan -->\nA' },
+    { id: 3, body: '<!-- ci-digest:job=app-e2e -->\nB' },
+  ];
+  assert.equal(extractDigests(comments, 'infra-image-scan / infra-image-scan').length, 1,
+    'the context form matched nothing — an unmatched filter reads as "no digest exists"');
+  assert.equal(extractDigests(comments, 'app-ci / app-e2e').length, 1);
+  // The bare form must keep working — it is what the non-PR bundle path already passes.
+  assert.equal(extractDigests(comments, 'app-e2e').length, 1);
+});
+
+test('(x2c) a genuinely absent job still matches nothing — normalisation must not become a wildcard', () => {
+  const comments = [{ id: 2, body: '<!-- ci-digest:job=app-e2e -->\nA' }];
+  assert.equal(extractDigests(comments, 'guardrails / sast').length, 0);
+  assert.equal(extractDigests(comments, 'nope').length, 0);
+  assert.equal(extractDigests(comments, 'app-ci / ').length, 0, 'an empty job half must not match everything');
+});
+
+test('(x2d) a --job that filters every digest out says SO, instead of reporting absence', () => {
+  // The deeper half of the (x2b) defect: normalising the filter fixes the case that was measured,
+  // but any future mismatch would go straight back to rendering as "no digest was published". A
+  // filter that matches nothing when candidates EXIST must fail closed and name what is available.
+  const all = [{ job: 'app-e2e' }, { job: 'sast' }];
+  const lines = describeFilteredOutDigests(all, 'guardrails / okf');
+  assert.ok(lines.length > 0, 'a filtered-out selection produced no explanation at all');
+  const text = lines.join('\n');
+  assert.match(text, /okf/, 'the message does not name the filter that matched nothing');
+  assert.match(text, /app-e2e/, 'the message does not name the digests that DO exist');
+  assert.match(text, /sast/);
+});
+
+test('(x2e) genuine absence stays silent here — this must not manufacture a false positive', () => {
+  // No digests at all is the real absence case, and renderDigestAbsence already owns it.
+  assert.deepEqual(describeFilteredOutDigests([], 'guardrails / okf'), []);
+  // No filter means nothing was filtered out.
+  assert.deepEqual(describeFilteredOutDigests([{ job: 'app-e2e' }], null), []);
 });
 
 test('(x3) the marker pattern round-trips with the writer\'s own marker format', () => {
