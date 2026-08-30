@@ -1,6 +1,6 @@
 # spreadsheet-mcp MCP server. Build context = repo root (-f mcp-servers/spreadsheet-mcp/Dockerfile).
 FROM python:3.13-slim AS build
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:latest@sha256:95f2aa1fe59274951cfe9b0cbc7972e879ff1004bc8945d130a32eb0dbd85945 /uv /usr/local/bin/uv
 WORKDIR /app
 COPY mcp-servers/spreadsheet-mcp/pyproject.toml mcp-servers/spreadsheet-mcp/uv.lock ./
 RUN uv sync --frozen --no-dev

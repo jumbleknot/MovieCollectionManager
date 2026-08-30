@@ -172,7 +172,7 @@ services:
     logging: *obs-logging
 
   langfuse-minio:
-    image: minio/minio
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: langfuse-minio
     restart: always
     command: ["server", "/data", "--console-address", ":9001"]
@@ -197,7 +197,7 @@ services:
   # langfuse-worker can depend on `service_healthy` (below) instead of `service_completed_successfully`
   # (which a never-exiting container would never satisfy).
   langfuse-minio-init:
-    image: minio/mc
+    image: minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     container_name: langfuse-minio-init
     restart: always
     depends_on:
@@ -222,7 +222,7 @@ services:
 
   # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
   otel-lgtm:
-    image: grafana/otel-lgtm:latest
+    image: grafana/otel-lgtm:latest@sha256:d6b20e35890ef2f91d13944805939acdaf1e5d3ffbf9f9aed08586312826c815
     container_name: otel-lgtm
     restart: always
     ports:
@@ -251,7 +251,7 @@ services:
   opa-service:
     # #PROD `-debug` variant: distroless `opa` has no shell; -debug adds busybox so the /health
     # healthcheck (and Komodo status) works. Policies already `import rego.v1` (OPA 1.x compatible).
-    image: openpolicyagent/opa:latest-debug
+    image: openpolicyagent/opa:latest-debug@sha256:f6aa14fd47f8863bbd3726675e36b946ad20bd63a34c10fcf8c35884832491f3
     container_name: opa-service
     restart: always
     command:
@@ -275,7 +275,7 @@ services:
 
   # ── Unleash — agent feature flags / kill-switch ─────────────────────────────────────────────
   unleash-service:
-    image: unleashorg/unleash-server:latest
+    image: unleashorg/unleash-server:latest@sha256:16f3ffb914880e7d0f23629a0c1b77aebea3aa619b0305f76eb50b3fb75998a9
     container_name: unleash-service
     restart: always
     depends_on:
@@ -317,7 +317,7 @@ services:
   # Seed 3 default-off flags, then STAY ALIVE idling (nothing depends on it) so Komodo's stack-health
   # doesn't count an exited container as unhealthy (same pattern as langfuse-minio-init / agent-audit-init).
   unleash-seed:
-    image: curlimages/curl:latest
+    image: curlimages/curl:latest@sha256:7c12af72ceb38b7432ab85e1a265cff6ae58e06f95539d539b654f2cfa64bb13
     container_name: unleash-seed
     restart: always
     depends_on:

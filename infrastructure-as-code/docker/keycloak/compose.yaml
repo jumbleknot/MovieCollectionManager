@@ -85,7 +85,7 @@ services:
       start_period: 5s
 
   keycloak-mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:latest@sha256:c96991d9bef73594c246d89ca81411d4e916f03e76a7d2d72fa2ab5dd3c9ce24
     container_name: keycloak-mailpit
     restart: unless-stopped
     ports:
