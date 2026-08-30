@@ -1419,3 +1419,135 @@ test('all eight formerly-floating references stay in the `docker base images` gr
     }
   }
 });
+
+// ---------------------------------------------------------------------------------------------
+// TRIVY IS PINNED — item #303, and it is the SAME defect class as item #297.
+//
+// Both Trivy installs fetched an unpinned install script from a MOVING BRANCH and then installed
+// whatever version was latest that day:
+//
+//   curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+//     | sh -s -- -b "$HOME/.local/bin"
+//
+// Two floating references on one line, in the tool that decides whether a Critical blocks a deploy.
+// The script came from `main` and was piped straight into `sh`; no tag was passed, and the script's
+// own usage says "If tag is missing, then the latest will be used".
+//
+// WORSE THAN THE COMPOSE FILES WERE. `docker:pinDigests` at least made the infra images reproducible
+// while unclassifiable. This had NEITHER property — no version and no digest underneath it.
+//
+// The concrete cost, paid during #297: the local sweep that produced the stale-suppression evidence
+// ran aquasec/trivy:0.74.0 while CI ran an unknown version, so two scans of byte-identical images
+// could not be compared with confidence — purely because one side's scanner had no version.
+//
+// Asserted on the RESOLVED state rather than on the presence of a version string, because this
+// repository has four recorded cases (#194, #204, #225, PR #289) where a mechanism existed, looked
+// sufficient, and was silently overridden by something broader.
+
+const TRIVY_WORKFLOWS = ['.forgejo/workflows/infra-image-scan.yml', '.forgejo/workflows/cd-deploy.yml'];
+
+/**
+ * The Trivy install as configured in one workflow: { scriptRef, installedTag }.
+ *
+ * The pinned form writes the version ONCE and interpolates it into both the script URL and the
+ * install argument, so both sites read `${TRIVY_VERSION}` literally. This resolves that ONE
+ * indirection against the assignment — and only that one. A hard-coded tag anywhere is left as
+ * written, so a URL pinned to v0.70.0 beside `TRIVY_VERSION=v0.74.0` still fails the equality check
+ * below rather than being quietly normalised into agreement.
+ */
+function trivyInstall(file) {
+  const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
+  const assigned = /TRIVY_VERSION=(v[\d.]+)/.exec(text)?.[1] ?? null;
+  const deref = (raw) => (raw === '${TRIVY_VERSION}' ? assigned : raw);
+
+  // The ref in the install-script URL — `main` is the floating form this guard exists to reject.
+  const url = /raw\.githubusercontent\.com\/aquasecurity\/trivy\/([^/"']+)\/contrib\/install\.sh/.exec(text);
+  // The positional [tag] handed to the script. Absent means "install the latest", which is the
+  // second floating reference — so an assignment that is never USED must not read as pinned.
+  const arg = /install\.sh["']?\s*\\?\s*\|\s*sh\s+-s\s+--\s+-b\s+\S+\s+["']?([^"'\s]+)/.exec(text);
+
+  return {
+    present: Boolean(url),
+    scriptRef: url ? deref(url[1]) : null,
+    installedTag: arg ? deref(arg[1]) : null,
+    text,
+  };
+}
+
+for (const file of TRIVY_WORKFLOWS) {
+  test(`Trivy is version-pinned in ${file}, not installed from a moving branch`, () => {
+    const t = trivyInstall(file);
+    assert.ok(t.present, `${file} no longer installs Trivy by this recipe — update the guard rather than deleting it.`);
+
+    assert.notEqual(
+      t.scriptRef,
+      'main',
+      `${file} fetches the Trivy install script from the MOVING branch 'main' and pipes it into sh.\n` +
+        '  Whatever is on that branch at run time executes on the runner, and the script is the\n' +
+        '  thing that installs the scanner deciding whether a Critical blocks a deploy.',
+    );
+    assert.match(
+      t.scriptRef ?? '',
+      /^v\d+\.\d+\.\d+$/,
+      `${file}'s install-script ref is '${t.scriptRef}', which is not a version tag.`,
+    );
+
+    assert.ok(
+      t.installedTag,
+      `${file} passes no tag to the Trivy install script, so it installs whatever is newest that day.\n` +
+        "  The script's own usage is `install.sh [-b] bindir [-c] client [-d] [tag]` — \"If tag is\n" +
+        '  missing, then the latest will be used." Unpinned, with no digest underneath it.',
+    );
+    assert.equal(
+      t.scriptRef,
+      t.installedTag,
+      `${file} pins the install SCRIPT to ${t.scriptRef} but installs ${t.installedTag} — a script\n` +
+        '  from one release installing a different one is a pin that does not say what it means.',
+    );
+  });
+}
+
+test('both workflows agree on the Trivy version, so the gate and the deploy scan agree', () => {
+  const [scan, deploy] = TRIVY_WORKFLOWS.map(trivyInstall);
+
+  // Assert BOTH are pinned before comparing them. Without this the test passes vacuously while
+  // neither is pinned at all — `null === null` — which is the trivially-green shape the constitution
+  // requires be fixed before implementing, not a check.
+  for (const [file, t] of TRIVY_WORKFLOWS.map((f, i) => [f, [scan, deploy][i]])) {
+    assert.ok(t.installedTag, `${file} pins no Trivy version, so "the two agree" would compare nothing to nothing.`);
+  }
+
+  assert.equal(
+    scan.installedTag,
+    deploy.installedTag,
+    'infra-image-scan and cd-deploy install DIFFERENT Trivy versions. Both apply the same\n' +
+      '  CRITICAL-only criterion, so a disagreement means one can block what the other passes and\n' +
+      '  neither result explains the other.',
+  );
+});
+
+test('Renovate tracks the Trivy pin, so pinning does not simply mean going stale', () => {
+  // A pin with nothing maintaining it trades a floating reference for a rotting one. The existing
+  // Playwright-image customManager is the pattern this follows.
+  const managers = config.customManagers ?? [];
+  const trivy = managers.filter((m) => (m.depNameTemplate ?? '') === 'aquasecurity/trivy');
+  assert.equal(trivy.length, 1, 'expected exactly one customManager tracking aquasecurity/trivy');
+
+  assert.equal(trivy[0].datasourceTemplate, 'github-releases', 'Trivy releases are GitHub releases, not an npm package');
+
+  const patterns = trivy[0].managerFilePatterns ?? trivy[0].fileMatch ?? [];
+  for (const file of TRIVY_WORKFLOWS) {
+    assert.ok(
+      patterns.some((p) => new RegExp(p.replace(/^\/|\/$/g, '')).test(file)),
+      `the Trivy customManager does not cover ${file}, so that file's pin would rot while the other moved.`,
+    );
+  }
+
+  // And the regex must actually match what is in the files — a manager whose matchString misses is
+  // indistinguishable from no manager at all, which is how the nx half-bump (#194) survived review.
+  for (const file of TRIVY_WORKFLOWS) {
+    const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
+    const hit = trivy[0].matchStrings.some((ms) => new RegExp(ms, 'm').exec(text)?.groups?.currentValue);
+    assert.ok(hit, `the Trivy customManager's matchStrings capture no currentValue in ${file}`);
+  }
+});
