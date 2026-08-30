@@ -3,9 +3,13 @@
 # These are the cheap, KEYLESS gates that run on every push/PR and gate the commit, identical to
 # GitHub Actions today (FR-001, FR-002, FR-003).
 #
-# ACTION-LIGHT by design: the only `uses:` is `actions/checkout` (mirrored on the instance's default
-# action registry), so this workflow runs on the homelab runner WITHOUT pointing action resolution at
-# github. Toolchain setup is plain shell on the `node:22-bookworm` runner image: pnpm via corepack
+# ACTION-LIGHT by design: `uses:` is kept to actions mirrored on the instance's default action
+# registry, so this workflow runs on the homelab runner WITHOUT pointing action resolution at
+# github. That is currently `actions/checkout` in every job, `actions/upload-artifact` in `sast`,
+# and `actions/setup-node` in `renovate-config`. This sentence previously said "the only `uses:` is
+# `actions/checkout`" and had been false since `sast` gained its artifact upload — a claim standing
+# in for a property, which is the shape this repository is repeatedly bitten by. It is a
+# description, not a rule: what is load-bearing is the MIRRORED registry, not the count. Toolchain setup is plain shell on the `node:22-bookworm` runner image: pnpm via corepack
 # (pinned by package.json `packageManager`), uv via its installer. Path scoping from the original
 # separate workflows is intentionally dropped — all three gate jobs run over the whole tree on every
 # PR and every push to `main` (they are cheap and keyless; running unconditionally is strictly safer
@@ -366,6 +370,72 @@ jobs:
         with:
           name: sast-report
           path: security/sast/reports/
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: when the secret above is empty (an AGit-headed run has NO secrets), the
+          # digest publishes a commit status with this run-provisioned token instead. Without this
+          # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
+          # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
+
+  # Item #309 — the UNKNOWN-KEY class, which every other gate here is structurally unable to catch.
+  #
+  # Every check in this workflow, and every assertion in renovate-workflow.guard.test.mjs, is
+  # ENUMERATIVE: it names a hazard that has already fired and asserts the resolved state that
+  # prevents it. A config key that Renovate does not recognise fires nothing. A major renaming a key
+  # (v41 renamed customManagers' `fileMatch` to `managerFilePatterns`) or a plain typo in a new rule
+  # does not error — the config SILENTLY MANAGES NOTHING, which is the same "absence reads as
+  # health" mechanism behind #153, #218 and #268, and the documented reason the npx pin below is
+  # major-only. renovate.json itself used to record that the validator catching this class runs
+  # nowhere; this job is why that sentence is gone.
+  #
+  # PLACEMENT. Here rather than in app-ci because branch protection requires the glob `guardrails*`,
+  # so a job added to this file is a required context BY CONSTRUCTION — no operator step, and no
+  # required context that never reports.
+  #
+  # UNCONDITIONAL, deliberately. Item #309 proposed path-gating this on `renovate.json` changing,
+  # on the assumption that the ~240 MB npx pull was too heavy for every PR. That assumption was
+  # measured and is wrong: a COLD `npx --yes --package renovate@44 -- renovate-config-validator`
+  # took **27 s** wall-clock end to end (2026-08-30), against a `naming` job in this same workflow
+  # that already runs `pnpm install --frozen-lockfile`. A path filter would have bought seconds and
+  # cost the one property that matters — that a green board means the validator RAN. The guard test
+  # asserts there is no `if:` and no `needs:` on this job for exactly that reason.
+  #
+  # BOTH FLAGS ARE LOAD-BEARING, measured against this repository's own renovate.json on
+  # renovate@44.52.0:
+  #   without `--no-global` the file is checked as a GLOBAL self-hosted config ("Validating
+  #     renovate.json as global config"), not as the repo config Renovate will actually read;
+  #   without `--strict` a managerFilePatterns->fileMatch rename is reported as a WARN and the
+  #     command EXITS 0 — green on precisely the class this job exists to catch.
+  # With both, that mutation exits 1, and so does a typo'd key ("Invalid configuration option").
+  renovate-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # renovate@44 raised `engines.node` to ^24.11.0 INSIDE the pinned major, and the runner
+      # container ships Node 22 — the #160 shape, which reddened every renovate run for four days
+      # because that job had no setup-node either. 24.19.0 is what renovate.yml's own job pins;
+      # renovate-workflow.guard.test.mjs asserts the two stay equal, so the validator can never end
+      # up certifying a config against a runtime the real run does not have.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+      - name: Validate renovate.json (strict, as a repo config)
+        run: bash scripts/ci-log-step.sh renovate-config-validate npx --yes --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

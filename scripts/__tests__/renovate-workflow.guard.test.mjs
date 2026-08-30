@@ -1586,7 +1586,11 @@ test('a dispatched run publishes its RESOLVED mode as a commit status before Ren
 
   // BEFORE Renovate runs, so a LIVE dispatch is distinguishable early enough to abandon (item
   // #268's fourth criterion), not diagnosed after the fact.
-  const renovateIndex = steps.findIndex((s) => typeof s?.run === 'string' && s.run.includes('renovate@'));
+  // `renovate@` alone would now also match the item #309 config-validation step that runs just
+  // before this one. The ordering being asserted is against the step that ACTS, so exclude it.
+  const renovateIndex = steps.findIndex(
+    (s) => typeof s?.run === 'string' && s.run.includes('renovate@') && !s.run.includes('renovate-config-validator'),
+  );
   assert.notEqual(renovateIndex, -1, 'could not locate the Renovate step to order against');
   assert.ok(publishIndex < renovateIndex, 'the mode status is published after Renovate runs, so a live dispatch cannot be recognised early');
 
@@ -1594,5 +1598,167 @@ test('a dispatched run publishes its RESOLVED mode as a commit status before Ren
   assert.ok(
     !raw.includes('step name below also carries the mode'),
     'the false step-name claim (item #268) has been reintroduced',
+  );
+});
+
+// ── Item #309: renovate.json's own config must be VALIDATED in CI ───────────────────────────────
+//
+// The tests above are enumerative: each asserts the RESOLVED behaviour of a hazard that has already
+// fired. That shape cannot catch the UNKNOWN-KEY class — a Renovate major renaming a config key
+// (v41 renamed customManagers' `fileMatch` to `managerFilePatterns`), or a plain typo in a new
+// rule. Neither fails loudly; the config silently manages nothing, which is the same "absence reads
+// as health" mechanism behind #153, #218 and #268. `renovate-config-validator` catches exactly that
+// class — but only when it is actually RUN, and only when it is run with the two flags below.
+//
+// MEASURED 2026-08-30, renovate@44.52.0, against this repository's own renovate.json:
+//   `renovate-config-validator renovate.json`                       → "Validating as GLOBAL config",
+//        managerFilePatterns→fileMatch reported as WARN, **exit 0**  ← the mutation passes
+//   `renovate-config-validator --strict --no-global renovate.json`  → "as repo config", **exit 1**
+// Both flags are load-bearing, so both are asserted rather than left to whoever writes the step.
+
+const GUARDRAILS = resolve(REPO_ROOT, '.forgejo/workflows/guardrails.yml');
+const guardrails = parseYaml(readFileSync(GUARDRAILS, 'utf8'));
+
+const WORKFLOWS_WITH_RENOVATE = [
+  ['.forgejo/workflows/renovate.yml', workflow],
+  ['.forgejo/workflows/guardrails.yml', guardrails],
+];
+
+/** Every step in either workflow that invokes the config validator, with the job it lives in. */
+function validatorSteps() {
+  const out = [];
+  for (const [file, wf] of WORKFLOWS_WITH_RENOVATE) {
+    for (const [jobName, job] of Object.entries(wf?.jobs ?? {})) {
+      for (const step of job?.steps ?? []) {
+        if (typeof step?.run === 'string' && step.run.includes('renovate-config-validator')) {
+          out.push({ file, jobName, job, step });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Every `renovate@<major>` reference in an executed command, across both workflows.
+ *
+ * Read from the PARSED steps, not the raw text: comments in renovate.yml cite `renovate@44.14.12`
+ * and `renovate@44.29.3` as historical measurements, and a guard that scanned prose would either
+ * be satisfied by a comment or broken by one.
+ */
+function renovateMajorRefs() {
+  const refs = [];
+  for (const [file, wf] of WORKFLOWS_WITH_RENOVATE) {
+    for (const [jobName, job] of Object.entries(wf?.jobs ?? {})) {
+      for (const step of job?.steps ?? []) {
+        if (typeof step?.run !== 'string') continue;
+        for (const m of step.run.matchAll(/renovate@(\d+)/g)) {
+          refs.push({ file, jobName, step: step.name ?? '(unnamed)', major: m[1] });
+        }
+      }
+    }
+  }
+  return refs;
+}
+
+test('renovate.json is config-validated on every pull request, strictly and as a REPO config', () => {
+  const inGuardrails = validatorSteps().filter((v) => v.file === '.forgejo/workflows/guardrails.yml');
+  assert.ok(
+    inGuardrails.length > 0,
+    'no job in guardrails.yml runs renovate-config-validator, so an unknown or renamed config key\n' +
+      '  can merge — it does not fail loudly, it silently manages nothing (item #309).\n' +
+      '  guardrails.yml is the placement that gates the EDIT: branch protection requires `guardrails*`,\n' +
+      '  so any job added there is a required context by construction, with no operator step.',
+  );
+
+  for (const { jobName, job, step } of inGuardrails) {
+    assert.match(
+      step.run,
+      /--strict\b/,
+      `guardrails job '${jobName}' runs the validator without --strict. Measured: without it a\n` +
+        '  managerFilePatterns→fileMatch rename is reported as a WARN and the command EXITS 0, so the\n' +
+        '  gate is green on exactly the class it was added for.',
+    );
+    assert.match(
+      step.run,
+      /--no-global\b/,
+      `guardrails job '${jobName}' runs the validator without --no-global, so the file is validated\n` +
+        '  as a GLOBAL self-hosted config ("Validating renovate.json as global config") rather than as\n' +
+        '  the repo config Renovate will actually read.',
+    );
+    assert.match(step.run, /renovate\.json/, `guardrails job '${jobName}' does not name renovate.json`);
+
+    // Unconditional. A path-gated or `if:`-gated validator that quietly does not run is the very
+    // shape this repository keeps being bitten by — and it is not needed: measured 2026-08-30, a
+    // COLD `npx --yes --package renovate@44 -- renovate-config-validator` (a ~240 MB pull) took
+    // 27 s wall-clock, against a `naming` job that already runs `pnpm install --frozen-lockfile`.
+    assert.equal(job.if, undefined, `guardrails job '${jobName}' is conditional, so the validator can silently not run`);
+    assert.equal(step.if, undefined, `the validator step in '${jobName}' is conditional, so it can silently not run`);
+    assert.equal(job.needs, undefined, `guardrails job '${jobName}' has a needs: gate, so an upstream skip would skip the validator`);
+  }
+});
+
+test('the validator job pins the same Node as the run that reads the same config', () => {
+  const inGuardrails = validatorSteps().filter((v) => v.file === '.forgejo/workflows/guardrails.yml');
+  assert.ok(inGuardrails.length > 0, 'no guardrails job runs the validator, so there is no Node pin to compare');
+  const { job } = inGuardrails[0];
+  const nodeOf = (j) => (j?.steps ?? []).find((s) => String(s?.uses ?? '').startsWith('actions/setup-node'))?.with?.['node-version'];
+
+  const validatorNode = nodeOf(job);
+  const runNode = nodeOf(workflow?.jobs?.renovate);
+  assert.ok(
+    validatorNode,
+    'the validator job does not pin its own Node. renovate@44 raised `engines.node` to ^24.11.0\n' +
+      '  INSIDE the pinned major, and the runner container ships Node 22 — the #160 shape, which\n' +
+      '  reddened every renovate run for four days because that job had no setup-node either.',
+  );
+  assert.equal(
+    String(validatorNode),
+    String(runNode),
+    `the validator runs on Node ${validatorNode} while the real Renovate run uses ${runNode} — the\n` +
+      '  validator would then be certifying a config against a runtime the run does not have.',
+  );
+});
+
+test('the weekly run validates the config BEFORE it acts on it', () => {
+  // The PR gate above catches an EDIT. It cannot catch a semantic change that arrives with a
+  // renovate@44 MINOR — the same class of drift as #160, config edition — because nothing in the
+  // repository changed. Validating inside the weekly run is what covers that, and it must come
+  // first: a config the running Renovate would reject should stop the run, not be discovered from
+  // its output a week later.
+  const idx = (pred) => steps.findIndex((s) => typeof s?.run === 'string' && pred(s.run));
+  const validateIndex = idx((r) => r.includes('renovate-config-validator'));
+  const runIndex = idx((r) => r.includes('renovate@') && !r.includes('renovate-config-validator'));
+
+  assert.notEqual(validateIndex, -1, 'the weekly renovate run does not validate renovate.json first (item #309, option 2)');
+  assert.notEqual(runIndex, -1, 'could not locate the Renovate step to order against');
+  assert.ok(validateIndex < runIndex, 'renovate.json is validated AFTER Renovate has already acted on it');
+});
+
+test('every renovate@<major> the CI runs agrees, so the validator checks what the run will read', () => {
+  const refs = renovateMajorRefs();
+  assert.ok(
+    refs.length >= 3,
+    `expected at least three renovate@<major> invocations (the guardrails validator, the weekly\n` +
+      `  pre-run validation, and the run itself) — found ${refs.length}. A validator on a different\n` +
+      '  major validates a config grammar the run does not use.',
+  );
+  const majors = [...new Set(refs.map((r) => r.major))];
+  assert.equal(
+    majors.length,
+    1,
+    'the renovate majors disagree:\n' +
+      refs.map((r) => `    ${r.file} · ${r.jobName} · ${r.step} → renovate@${r.major}`).join('\n') +
+      '\n  A major is exactly where config semantics change (v41 renamed fileMatch), so a validator\n' +
+      '  pinned elsewhere would pass a config the run mis-reads — the defect it exists to catch.',
+  );
+});
+
+test('the claim that nothing in CI runs the validator is gone from renovate.json', () => {
+  const raw = readFileSync(CONFIG, 'utf8');
+  assert.ok(
+    !/NOTHING in CI runs/i.test(raw),
+    "renovate.json still says the validator runs nowhere in CI. It now does — a comment standing in\n" +
+      '  for a check is the shape this repository has been bitten by repeatedly (#194, #204, #290).',
   );
 });

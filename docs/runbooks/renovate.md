@@ -200,10 +200,19 @@ curl -sS -H "Authorization: token $TOKEN" "$API/commits/<dispatched sha>/status"
 
 It is built only from proven parts (env-var resolution in `run:` blocks, and the statuses endpoint
 the failure digest already writes with `github.token` — guardrails #1627), **not** from `run-name:`,
-which is the same expression class the step name already failed on. ⚠️ Until the first real dispatch
-after 2026-08-30 has been seen to post it, treat the status as unverified on this forge and use the
-empirical check below; after that, the status answers the mode and the empirical check remains the
-authority on what the run *did*.
+which is the same expression class the step name already failed on.
+
+> ✅ **VERIFIED on this forge, run 2397 (2026-08-30), item #268 closed.** A dispatch with
+> `dryRun: "true"` against sha `95d1371c` posted `renovate/mode` = **"DRY RUN (creates nothing)"**
+> at 22:37:35Z — **13 seconds** after the run started (22:37:22Z), against a 2m42s run. Note *what
+> that reading proves*: the step is `if [ -n "$RENOVATE_DRY_RUN" ]`, so it prints `LIVE` whenever
+> the job-level expression fails to resolve. Seeing "DRY RUN" is therefore positive evidence that
+> the `${{ }}` resolved — a failure to interpolate could not have produced it.
+
+The status answers the mode; the empirical check below remains the authority on what the run
+*did*. Read both, and mind the empirical check's own limit: **outside the Friday window a LIVE run
+also creates nothing** for routine work, so unmoved heads are *consistent with* a dry run there
+rather than decisive.
 
 **The signal that does work is empirical**, because a live run moves things and a dry run cannot:
 
@@ -465,11 +474,51 @@ Recorded from the 2026-08-30 latent-issue audit so the next reader knows each wa
 
 The audit's *actionable* findings are items **#307** (floating/rotting merge-gating toolchains:
 Rust, semgrep, cargo-audit, uv), **#308** (the #297 class in app Dockerfiles), and **#309**
-(`renovate-config-validator` runs nowhere in CI).
+(`renovate-config-validator` runs nowhere in CI) — **#309 is now closed**, see below.
+
+## 8. The config validator — what it catches that the guard test cannot (item #309)
+
+Everything in §5 and every assertion in `renovate-workflow.guard.test.mjs` is **enumerative**: it
+names a hazard that has already fired. The **unknown-key** class fires nothing. A major renaming a
+key (v41: `fileMatch` → `managerFilePatterns`), or a typo in a new rule, does not error — the
+config **silently manages nothing**, which is §5's mechanism in a new place.
+
+`renovate-config-validator` catches exactly that class, and since item #309 it runs in **two**
+places, both on the same `renovate@44` major the real run uses (the guard test asserts all three
+references agree):
+
+| where | catches | when |
+| --- | --- | --- |
+| `guardrails / renovate-config` — required by the `guardrails*` glob, **unconditional** | an EDIT to `renovate.json` | before it merges |
+| a step in `renovate.yml`, before `Run Renovate` | a key deprecated by a renovate@44 **minor** — nothing in the repo changed, so no PR runs | at most a week later |
+
+> ⚠️ **Both flags are load-bearing. Measured 2026-08-30 against this repository's own
+> `renovate.json` on renovate@44.52.0:**
+>
+> | invocation | result |
+> | --- | --- |
+> | `renovate-config-validator renovate.json` | *"Validating as **global** config"*; `fileMatch` rename → WARN, **exit 0** — the mutation PASSES |
+> | `… --strict --no-global renovate.json` | *"as **repo** config"*; same mutation → **exit 1** |
+>
+> Without `--no-global` the file is checked as a *global self-hosted* config, not as the repo config
+> Renovate will read. Without `--strict` a needed migration is a warning, not a failure — green on
+> precisely the class the check exists to catch.
+
+**It is deliberately NOT path-gated**, and that reverses item #309's own recommendation. The
+proposal assumed the ~240 MB npx pull was too heavy for every PR; measured, a **cold** run took
+**27 s** wall-clock, in a workflow whose `naming` job already runs `pnpm install --frozen-lockfile`.
+A path filter would have bought seconds and cost the property that matters — that a green board
+means the validator *ran*. The guard test asserts the job carries no `if:` and no `needs:`.
+
+The validator does **not** replace the guard test. They catch different things: the validator
+catches a key Renovate does not know; the guard test catches a key it knows but **ignores where it
+is written** (the `prPriority`-inside-`lockFileMaintenance` case, §5 and `renovate.json`'s own
+comment).
 
 ## Related
 
 - `renovate.json` — grouping, version locks, cooldowns, and the reasoning for each
+- `.forgejo/workflows/guardrails.yml` — the `renovate-config` job (§8), the required config validator
 - `.forgejo/workflows/renovate.yml` — schedule, toolchains, dispatch inputs
 - `scripts/__tests__/renovate-workflow.guard.test.mjs` — the assertions that keep the above true
 - `scripts/renovate-health.mjs` / item **#311** — the weekly health digest: channel liveness, stale
