@@ -34,8 +34,9 @@ code changes.
 **Constraints**: Content-neutral (FR-002). Must not extend the floating-tag classifier merely to
 quieten its output (spec edge cases, research R4). Paired references must move together (FR-005).
 
-**Scale/Scope**: 8 image references across 6 compose files, 1 Renovate config, 1 allowlist, 2 guard
-test files.
+**Scale/Scope**: 8 image references across 3 compose files (`keycloak/compose.yaml`,
+`observability/compose.yaml`, `observability/compose.prod.yaml`), 1 Renovate config, 1 allowlist,
+2 guard test files.
 
 ## Constitution Check
 
@@ -79,7 +80,6 @@ specs/063-infra-image-version-pins/
 ```text
 infrastructure-as-code/docker/
 ├── keycloak/compose.yaml            # axllent/mailpit
-├── bff/compose.yaml                 # (caddy — already versioned, untouched)
 ├── observability/compose.yaml       # otel-lgtm, opa:latest, unleash, curl, minio ×2
 └── observability/compose.prod.yaml  # otel-lgtm, opa:latest-debug, unleash, curl, minio ×2
 

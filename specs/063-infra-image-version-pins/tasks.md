@@ -30,6 +30,9 @@ fixed before implementation begins.
     cannot silently stop being asserted. Adding `versioning` to `renovate.json` therefore breaks every
     existing assertion in this file until the model knows the key. Add it to the known set, and add a
     `resolvedVersioning(dep)` helper mirroring `resolvedGroupName` / `resolvedAllowedVersions`.
+  - **No RED/GREEN cycle, and that is deliberate**: this task asserts nothing new — it teaches the
+    model a key so later tasks can assert. Its regression cover is the existing 43 assertions, which
+    must still pass unchanged.
   - **Done when**: the existing 43 assertions still pass unchanged, and `resolvedVersioning` is
     exported for use by later tasks.
 
@@ -61,9 +64,15 @@ Delivers value even if Phases 4–5 never land.
 
 - [ ] T004 [P] [US1] Assert paired movement and variant exclusion in `scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Scenarios covered**: US1-AC1; FR-005, FR-006; contract C2, C3
-  - Assert both `openpolicyagent/opa` refs resolve to the same group **and** the same proposed version;
-    assert `-dev`, `-rootless` and pre-release tags are never allowed. Include the **control**: an
-    unrelated docker image still lands in `docker base images`, so a rule that widened too far fails.
+  - Assert both `openpolicyagent/opa` refs resolve to the same group and the same `allowedVersions`,
+    and that neither is excluded; assert `-dev`, `-rootless` and pre-release tags are never allowed.
+    **Do NOT assert "the same proposed version"** — the guard resolves CONFIGURATION (`ruleMatches`
+    and the `resolved*` helpers) and performs no version lookup, so such a test would be asserting its
+    own fixture. Version equality is confirmed by inspecting the generated PR (T014's window).
+  - Assert the pairing where it is a real risk. opa is the ONLY genuine case: two different tags in
+    two files under one dependency name. curl, otel-lgtm, minio, mc and unleash carry an IDENTICAL ref
+    in both observability files, so Renovate sees one dependency with two locations and rewrites both
+    by construction — assert that once as a control, not five times as if it were five risks.
   - **Verify RED**: `node --test --test-name-pattern 'opa' scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Expected RED**: no rule constrains `openpolicyagent/opa`, so the variant-exclusion assertions fail.
 
@@ -87,10 +96,24 @@ Delivers value even if Phases 4–5 never land.
 
 - [ ] T007 [US1] Add `regex` versioning for the date-tagged family to `renovate.json`
   - **Prerequisite**: T006.
-  - Apply `versioning: "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T…"` to
-    `minio/minio` and `minio/mc`. **The comment MUST state that the mapping is calendar-derived**: a
-    January release reports `major` because the year advanced, not because anything broke (FR-004,
-    research R2). Record that `loose` was measured and cannot parse these tags at all.
+  - Apply to `minio/minio` and `minio/mc`:
+    `versioning: "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T\\d{2}-\\d{2}-\\d{2}Z$"`
+  - **The trailing `Z$` anchor is load-bearing.** The same namespace publishes `-cpuv1` variants
+    (e.g. `RELEASE.2025-09-07T16-13-09Z-cpuv1`). Without the anchor Renovate could drift onto one —
+    the same defect class as opa's `-dev`/`-rootless` tags (FR-006).
+  - **No `build` group, deliberately.** renovate@44's regex versioning pushes `build` through
+    `Number.parseInt`, so `16-13-09` truncates to `16` — capturing it would imply sub-day precision
+    the comparison does not have. Date granularity is honest. Residual risk: two releases on the same
+    calendar day would compare equal; minio has never done that and cannot now (R3).
+  - Verified against `modules/versioning/regex` in renovate@44's dist: it requires at least one of
+    major/minor/patch, and all three are present.
+  - **The comment MUST state that the mapping is calendar-derived**: a January release reports
+    `major` because the year advanced, not because anything broke (FR-004, research R2). Record that
+    `loose` was measured and cannot parse these tags at all.
+  - **Declare the exceptions in `renovate.json`** alongside the versioning rule: `minio/minio` and
+    `minio/mc` remain `[floating tag]` in the report by design (research R4 — the classifier cannot
+    order a `RELEASE.` tag, and widening it to quieten the output is the move the spec forbids). This
+    declaration is the list T005 counts against; without it, T005 asserts a count against nothing.
   - **Verify GREEN**: `node --test scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Expected GREEN**: 0 failures.
 
@@ -114,9 +137,12 @@ Delivers value even if Phases 4–5 never land.
   - **Spec reference**: SC-002, FR-002
   - Use the quickstart recipe (`auth.docker.io` token → `HEAD /v2/<repo>/manifests/<tag>`); note
     `hub.docker.com` is unreachable here.
-  - **Verify GREEN**: all 8 post-change digests equal the T001 baseline.
-  - **Expected GREEN**: 8/8 identical. **Any mismatch stops the feature** — it means a content change
-    was smuggled in and the "notational only" claim is false.
+  - **Verify GREEN**: for each of the 8, the **new tag's manifest digest** (via the quickstart
+    `HEAD /v2/<repo>/manifests/<tag>` recipe) equals the digest recorded in T001.
+  - **Expected GREEN**: 8/8 identical. Note the digests *in the compose files* are unchanged by
+    construction — only tags change — so diffing the files proves nothing; the claim under test is
+    that the new tag points at the image already running. **Any mismatch stops the feature** — it
+    means a content change was smuggled in and the "notational only" claim is false.
 
 **Checkpoint**: US1 is independently shippable here.
 

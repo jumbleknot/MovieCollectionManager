@@ -23,8 +23,14 @@ incidents (items #194, #204, #225, and the vault allowlist key in PR #289).
 | Property | Required value |
 |---|---|
 | group for all eight | `docker base images` (unchanged — they are not stranded into per-image PRs) |
-| `openpolicyagent/opa` and `openpolicyagent/opa` `-debug` | same group **and** same proposed version |
-| a reference in `compose.yaml` and its twin in `compose.prod.yaml` | move in one proposal |
+| `openpolicyagent/opa` (`compose.yaml:228`) and `-debug` (`compose.prod.yaml:254`) | same group, same `allowedVersions`, neither excluded — **the only genuine pairing risk**: two different tags, two files, one dependency name |
+| curl, otel-lgtm, minio, mc, unleash across both observability files | structurally safe: an IDENTICAL ref in both locations means Renovate sees ONE dependency and rewrites both by construction. Asserted once as a control, not five times |
+
+> **Why not "same proposed version".** The guard resolves *configuration* — `ruleMatches` and the
+> `resolved*` helpers — and performs no version lookup, because that is Renovate's network step.
+> Asserting equal proposed versions there is impossible, and a test that appeared to do it would be
+> asserting its own fixture. The configuration property is what is assertable; version equality is
+> confirmed by inspecting the generated pull request.
 
 ## C3 — Tags that must never be proposed
 
@@ -35,7 +41,8 @@ For `openpolicyagent/opa`: any tag matching `-dev`, `-rootless`, or a pre-releas
 
 | Property | Required value |
 |---|---|
-| `minio/minio`, `minio/mc` versioning | `regex:` with named groups over `RELEASE.<ISO-date>` |
+| `minio/minio`, `minio/mc` versioning | `regex:^RELEASE\.(?<major>\d{4})-(?<minor>\d{2})-(?<patch>\d{2})T\d{2}-\d{2}-\d{2}Z$` |
+| the trailing `Z$` anchor | required — excludes the `-cpuv1` variants published in the same namespace |
 | ordering | newer date sorts higher |
 | classification | present but **calendar-derived**; the config MUST say so (FR-004) |
 | floating-tag report | both remain **declared exceptions** (research R4) |

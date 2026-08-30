@@ -159,8 +159,10 @@ confirm it reaches a settled state without an override.
 - **SC-003**: For every image whose upstream uses a semantic versioning scheme, a simulated major
   update is classified as a major and separated from routine updates; a simulated patch is classified
   as a patch.
-- **SC-004**: For every image referenced more than once, a simulated update moves all of its
-  references in one proposal; no reference is left behind.
+- **SC-004**: The one image family referenced under two different tags in two files moves both
+  references in a single proposal. Families referenced under an identical tag in more than one file
+  are structurally incapable of splitting — one dependency, several locations — and are verified once
+  as a control rather than counted as separate risks.
 - **SC-005**: Every suppression entry for these images is either version-keyed, or carries a recorded
   reason it cannot be.
 - **SC-006**: The verification report's floating count matches the number of declared exceptions
