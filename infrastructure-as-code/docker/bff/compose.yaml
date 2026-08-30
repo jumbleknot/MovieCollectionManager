@@ -84,7 +84,7 @@ services:
   # Gives the prod container a real HTTPS edge so Secure cookies (NODE_ENV=production)
   # flow without weakening, and adds HSTS + enforces TLS 1.3. Profile: bff-prod.
   mcm-bff-tls-proxy:
-    image: caddy:2.11.4-alpine
+    image: caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
     container_name: mcm-bff-tls-proxy
     profiles: [bff-secure]   # feature 039 Workstream B: profile lives here, not re-declared in the stack
     restart: unless-stopped

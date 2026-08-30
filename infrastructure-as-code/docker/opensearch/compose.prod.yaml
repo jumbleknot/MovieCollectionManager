@@ -19,7 +19,7 @@
 name: prod-audit
 services:
   agent-audit-opensearch:
-    image: opensearchproject/opensearch:2
+    image: opensearchproject/opensearch:2@sha256:8690b204fe914c60ca76d451ac73bc0481e034d32d3779944c8caca56a2b003f
     container_name: agent-audit-opensearch
     restart: always
     # #PROD no published port — reachable only over the isolated agent-audit-network.
@@ -63,7 +63,7 @@ services:
   agent-audit-init:
     # #PROD reuse the opensearch image (ships BOTH bash + curl) — init-audit-user.sh is #!/usr/bin/env
     # bash, so the bash-less curlimages/curl (Alpine) can NOT run it.
-    image: opensearchproject/opensearch:2
+    image: opensearchproject/opensearch:2@sha256:8690b204fe914c60ca76d451ac73bc0481e034d32d3779944c8caca56a2b003f
     container_name: agent-audit-init
     restart: always
     # #PROD run the one-shot init as root: the opensearch image runs as uid 1000, and the bind mount

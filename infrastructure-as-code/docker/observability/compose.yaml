@@ -165,7 +165,7 @@ services:
     logging: *obs-logging
 
   langfuse-minio:
-    image: minio/minio
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: langfuse-minio
     profiles: [observability]
     restart: unless-stopped
@@ -188,7 +188,7 @@ services:
   # One-shot: create the `langfuse` bucket (LangFuse v3 does NOT auto-create it; without it
   # ingestion fails with "Failed to upload JSON to S3"). langfuse-web/worker wait for this.
   langfuse-minio-init:
-    image: minio/mc
+    image: minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     container_name: langfuse-minio-init
     profiles: [observability]
     depends_on:
@@ -205,7 +205,7 @@ services:
 
   # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
   otel-lgtm:
-    image: grafana/otel-lgtm:latest
+    image: grafana/otel-lgtm:latest@sha256:d6b20e35890ef2f91d13944805939acdaf1e5d3ffbf9f9aed08586312826c815
     container_name: otel-lgtm
     profiles: [observability]
     restart: unless-stopped
@@ -225,7 +225,7 @@ services:
 
   # ── Open Policy Agent — agent authorization decisions (token-exchange + UI-action, R16) ──────
   opa-service:
-    image: openpolicyagent/opa:latest
+    image: openpolicyagent/opa:latest@sha256:39daf255ae7f25d81103f03a0c18308a50b7b5bb67907bed6166f70e24a970ff
     container_name: opa-service
     profiles: [observability]
     restart: unless-stopped
@@ -246,7 +246,7 @@ services:
 
   # ── Unleash — agent feature flags / kill-switch (config-gated layer, R16) ───────────────────
   unleash-service:
-    image: unleashorg/unleash-server:latest
+    image: unleashorg/unleash-server:latest@sha256:16f3ffb914880e7d0f23629a0c1b77aebea3aa619b0305f76eb50b3fb75998a9
     container_name: unleash-service
     profiles: [observability]
     restart: unless-stopped
@@ -290,7 +290,7 @@ services:
     logging: *obs-logging
 
   unleash-seed:
-    image: curlimages/curl:latest
+    image: curlimages/curl:latest@sha256:7c12af72ceb38b7432ab85e1a265cff6ae58e06f95539d539b654f2cfa64bb13
     container_name: unleash-seed
     profiles: [observability]
     depends_on:

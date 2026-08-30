@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM rust:alpine3.21 AS build
+FROM rust:alpine3.21@sha256:be16a9d9cccef227ee15132389e0744e354dbedca527b0a048a1671853e3f354 AS build
 
 # Install build dependencies (perl + make needed to compile vendored OpenSSL from source)
 RUN apk add --no-cache musl-dev perl make
@@ -23,7 +23,7 @@ RUN touch backend/mc-service/src/main.rs backend/mc-service/src/lib.rs && \
     cargo build --release --manifest-path backend/mc-service/Cargo.toml
 
 # Stage 2: Runtime
-FROM alpine:3.21 AS runtime
+FROM alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS runtime
 
 # Install runtime dependencies (no openssl needed — binary is statically linked via vendored)
 RUN apk add --no-cache ca-certificates tzdata
