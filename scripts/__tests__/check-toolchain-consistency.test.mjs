@@ -74,7 +74,9 @@ test('(d) every real pin shape in this repo is recognised', () => {
     ['FROM node:24.14.1-alpine3.23 AS builder', 'node', '24.14.1'],
     ['FROM node:24-bookworm', 'node', '24'],
     ['RUN corepack enable && corepack prepare pnpm@11.17.0 --activate', 'pnpm', '11.17.0'],
-    ['        with: { version: 10.33.0 }', 'pnpm', '10.33.0'],
+    // Item #307: an action-setup `version:` is a pnpm pin only when the enclosing step IS
+    // pnpm/action-setup. The `uses:` line is part of the fixture because it is part of the claim.
+    ['      - uses: pnpm/action-setup@abc\n        with: { version: 10.33.0 }', 'pnpm', '10.33.0'],
   ];
   for (const [line, kind, value] of cases) {
     const pins = collectPins(line, 'f');
@@ -82,6 +84,18 @@ test('(d) every real pin shape in this repo is recognised', () => {
     assert.equal(pins[0].kind, kind, line);
     assert.equal(pins[0].value, value, line);
   }
+});
+
+test('(d3) a `version:` input belonging to ANOTHER action is not read as a pnpm pin', () => {
+  // Item #307. This matcher read any bare `version:` key, which held only while pnpm/action-setup
+  // was the one action here taking one. Pinning uv gave `astral-sh/setup-uv` a `version:` at five
+  // sites, and the gate reported five pnpm pins of 0.12.7 — loud, and wrong, on a premise that had
+  // silently expired. A gate that fails for the wrong reason is not a stricter gate.
+  assert.deepEqual(collectPins("      - uses: astral-sh/setup-uv@abc\n        with:\n          version: '0.12.7'", 'f'), []);
+  // ...and the pnpm one still IS read, so the narrowing did not simply switch the check off.
+  const pnpm = collectPins('      - uses: pnpm/action-setup@abc\n        with: { version: 10.33.0 }', 'f');
+  assert.equal(pnpm.length, 1);
+  assert.equal(pnpm[0].kind, 'pnpm');
 });
 
 test('(d2) a COMMENT mentioning a pin is not treated as one', () => {

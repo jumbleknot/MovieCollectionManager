@@ -248,7 +248,7 @@ RUN mkdir -p \
 # at build time (pre-firewall). rust-analyzer is added as a rustup component; expose its proxy on
 # PATH via a symlink into CARGO_HOME/bin so `rust-analyzer --version` resolves directly.
 RUN curl -fsSL https://sh.rustup.rs \
-      | sh -s -- -y --profile minimal --default-toolchain stable \
+      | sh -s -- -y --profile minimal --default-toolchain 1.98.0 \
     && rustup component add rustfmt clippy rust-analyzer \
     && rustc --version && cargo --version \
     && ln -sf "$(rustup which rust-analyzer)" "${CARGO_HOME}/bin/rust-analyzer" \
@@ -260,7 +260,7 @@ RUN curl -fsSL https://sh.rustup.rs \
 # crate's published Cargo.lock for reproducibility. Set covers features 033/034/035 + tarpaulin
 # coverage (constitution). This is the bulk of the SC-011 one-time build cost.
 RUN cargo install --locked \
-      cargo-audit \
+      cargo-audit@0.22.2 \
       cargo-deny \
       cargo-outdated \
       cargo-machete \
@@ -274,7 +274,7 @@ RUN cargo install --locked \
 # --- US1 (T012): uv (astral) + Specify CLI (SDD toolchain) [coder] ------------------------
 # uv installs to ~/.local/bin (already on PATH). Specify (GitHub Spec Kit) via `uv tool install`
 # exposes the `specify` command. Both fetched at build time (pre-firewall).
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+RUN curl -LsSf https://astral.sh/uv/0.12.7/install.sh | sh \
     && uv --version \
     && uv tool install --from git+https://github.com/github/spec-kit.git specify-cli \
     && specify --help >/dev/null 2>&1 || echo "toolchain.Dockerfile: 'specify' installed (help probe non-zero is tolerated at build time)"

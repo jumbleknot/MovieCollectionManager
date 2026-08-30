@@ -100,10 +100,24 @@ export function collectPins(text, file) {
   // constructed — a caller passing a platform path must not be able to smuggle a backslash into a
   // report (see posixLocation).
   const location = posixLocation(file);
+  // WHICH ACTION the current `with:` block belongs to. Item #307 made this necessary: the pnpm
+  // matcher below read ANY bare `version:` key, which was true only while `pnpm/action-setup` was
+  // the sole action here taking one. `astral-sh/setup-uv` also takes `version:`, and pinning uv
+  // (five sites) made the gate report five pnpm pins of `0.12.7` — a gate failing on a premise that
+  // had quietly stopped being true, which is worse than not checking, because it is loud and wrong.
+  // Narrowing it to the enclosing step is strictly stronger: it now asserts a RELATION (this
+  // version belongs to pnpm/action-setup) rather than a coincidence of key names.
+  let currentUses = null;
   lines.forEach((line, i) => {
     const at = { file: location, line: i + 1 };
     // Skip comment lines so prose describing a past pin (there is plenty) is never read as a pin.
     if (/^\s*#/.test(line)) return;
+
+    // A new YAML list item is a new step, so the previous step's action no longer governs. Reset
+    // BEFORE reading this line's own `uses:`, because `- uses: …` is both at once.
+    if (/^\s*-\s/.test(line)) currentUses = null;
+    const u = line.match(/\buses:\s*([^\s#]+)/);
+    if (u) currentUses = u[1];
 
     let m = line.match(/node-version:\s*'?"?([\w.*/-]+)'?"?/);
     if (m) pins.push({ ...at, kind: 'node', value: m[1], how: 'node-version' });
@@ -114,9 +128,14 @@ export function collectPins(text, file) {
     m = line.match(/corepack\s+prepare\s+pnpm@([\w.-]+)/);
     if (m) pins.push({ ...at, kind: 'pnpm', value: m[1], how: 'corepack prepare' });
 
-    // `pnpm/action-setup` version, written inline as `with: { version: X }` or on its own line.
+    // `pnpm/action-setup` version, written inline as `with: { version: X }` or on its own line —
+    // and ONLY when the enclosing step is actually pnpm/action-setup (see currentUses above).
+    // A `version:` under any other action is that action's, and a `version:` under no action at all
+    // (a Dockerfile, say) is not an action-setup pin by definition. The pnpm sources that matter are
+    // still covered without it: `packageManager` is the single source, and `corepack prepare pnpm@X`
+    // above catches the Dockerfile pair that item #225 is about.
     m = line.match(/^\s*(?:with:\s*\{\s*)?version:\s*'?"?(\d[\w.-]*)'?"?/);
-    if (m && /version:/.test(line) && !/node-version/.test(line)) {
+    if (m && !/node-version/.test(line) && /(^|\/)pnpm\/action-setup/.test(currentUses ?? '')) {
       pins.push({ ...at, kind: 'pnpm', value: m[1], how: 'action-setup version' });
     }
   });
@@ -521,8 +540,13 @@ function selftest() {
   t('FROM node: parsed, suffix stripped', df.length === 1 && df[0].value === '24.14.1');
   const cp = collectPins('RUN corepack enable && corepack prepare pnpm@11.17.0 --activate', 'Dockerfile');
   t('corepack pnpm pin parsed', cp.length === 1 && cp[0].kind === 'pnpm' && cp[0].value === '11.17.0');
-  const as = collectPins('        with: { version: 10.33.0 }', 'x.yml');
+  const as = collectPins('      - uses: pnpm/action-setup@abc\n        with: { version: 10.33.0 }', 'x.yml');
   t('action-setup version parsed', as.length === 1 && as[0].kind === 'pnpm' && as[0].value === '10.33.0');
+  // Item #307: the SAME key under a different action is not a pnpm pin. Without this the gate
+  // reported uv's five pinned sites as five disagreeing pnpm versions.
+  const uv = collectPins("      - uses: astral-sh/setup-uv@abc\n        with:\n          version: '0.12.7'", 'x.yml');
+  t("another action's version: input is not read as a pnpm pin", uv.length === 0);
+  t('a version: with no enclosing action is not a pnpm pin', collectPins('        with: { version: 10.33.0 }', 'x.yml').length === 0);
   t('a COMMENT naming a pin is ignored', collectPins('      # pin `version: 10.33.0` explicitly, which…', 'x.yml').length === 0);
 
   // The Playwright pair (item #204). The case that matters is the MISMATCH: everything else here

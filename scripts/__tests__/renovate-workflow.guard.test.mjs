@@ -1762,3 +1762,379 @@ test('the claim that nothing in CI runs the validator is gone from renovate.json
       '  for a check is the shape this repository has been bitten by repeatedly (#194, #204, #290).',
   );
 });
+
+// ── Item #307: merge-gating and lockfile-generating toolchains must not float or rot ────────────
+//
+// Item #303 fixed ONE instance of this class (Trivy) and named the principle: a floating reference
+// means no version, no version means no classification and no reproducibility — and a pin with
+// nothing maintaining it trades a floating reference for a rotting one. The 2026-08-30 sweep found
+// the same class live in four more toolchains, every one of which either GATES A MERGE or
+// GENERATES the lockfiles Renovate merges weekly. These assert the resolved state of each.
+
+const APP_CI = resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml');
+const CD_DEPLOY = resolve(REPO_ROOT, '.forgejo/workflows/cd-deploy.yml');
+const TOOLCHAIN_DOCKERFILE = resolve(REPO_ROOT, '.devcontainer/toolchain.Dockerfile');
+const RUST_TOOLCHAIN = resolve(REPO_ROOT, 'rust-toolchain.toml');
+
+const readIf = (p) => {
+  try {
+    return readFileSync(p, 'utf8');
+  } catch {
+    return null;
+  }
+};
+const appCiText = readFileSync(APP_CI, 'utf8');
+const guardrailsText = readFileSync(GUARDRAILS, 'utf8');
+const renovateText = readFileSync(WORKFLOW, 'utf8');
+const toolchainDockerfile = readFileSync(TOOLCHAIN_DOCKERFILE, 'utf8');
+
+const customManagers = config.customManagers ?? [];
+const managerPatterns = (m) => m.managerFilePatterns ?? m.fileMatch ?? [];
+const managerCovers = (m, file) => managerPatterns(m).some((p) => new RegExp(p.replace(/^\/|\/$/g, '')).test(file));
+const managerFor = (depName) => customManagers.filter((m) => (m.depNameTemplate ?? '') === depName);
+/** Does the manager's regex actually capture a currentValue in this text? A manager whose
+ *  matchString misses is indistinguishable from no manager at all — how #194 survived review. */
+const capturesIn = (m, text) =>
+  (m.matchStrings ?? []).map((ms) => new RegExp(ms, 'm').exec(text)?.groups?.currentValue).find(Boolean) ?? null;
+
+// ── Rust ────────────────────────────────────────────────────────────────────────────────────────
+
+test('a rust-toolchain.toml pins an EXACT Rust version, so no unchosen compiler arrives', () => {
+  const text = readIf(RUST_TOOLCHAIN);
+  assert.ok(
+    text,
+    'there is no rust-toolchain.toml. Rust releases every ~6 weeks and new clippy lints red\n' +
+      '  existing code, so `rustup … stable` means a compiler nobody chose arrives unannounced in\n' +
+      '  `mc-service-checks` and `guardrails / sast` on some unrelated PR — the #160 shape.',
+  );
+  const channel = /^\s*channel\s*=\s*"([^"]+)"/m.exec(text)?.[1];
+  assert.match(
+    String(channel),
+    /^\d+\.\d+\.\d+$/,
+    `rust-toolchain.toml's channel is '${channel}', not an exact version. "stable" in a toolchain\n` +
+      '  file is the same floating reference with an extra file in front of it.',
+  );
+  // app-ci's mc-service-checks needs clippy and the repo formats with rustfmt; declaring them here
+  // is what lets the `--component clippy` literal come out of the workflow.
+  const components = /components\s*=\s*\[([^\]]*)\]/.exec(text)?.[1] ?? '';
+  for (const c of ['clippy', 'rustfmt']) {
+    assert.match(components, new RegExp(`"${c}"`), `rust-toolchain.toml does not declare the ${c} component`);
+  }
+});
+
+const RUSTUP_WORKFLOWS = [
+  ['.forgejo/workflows/guardrails.yml', guardrailsText],
+  ['.forgejo/workflows/app-ci.yml', appCiText],
+  ['.forgejo/workflows/renovate.yml', renovateText],
+];
+
+for (const [file, text] of RUSTUP_WORKFLOWS) {
+  test(`${file}'s rustup install defers to rust-toolchain.toml rather than taking stable`, () => {
+    const line = text.split('\n').find((l) => l.includes('sh.rustup.rs'));
+    assert.ok(line, `${file} no longer installs Rust by this recipe — update the guard rather than deleting it.`);
+    assert.match(
+      line,
+      /--default-toolchain\s+none\b/,
+      `${file} installs a toolchain at rustup-init time instead of leaving it to rust-toolchain.toml.\n` +
+        `    ${line.trim()}\n` +
+        '  With `--default-toolchain none` the first cargo invocation inside the repo resolves the\n' +
+        '  pinned channel (and its components) from the file, so the file is the single source.',
+    );
+    assert.doesNotMatch(line, /\bstable\b/, `${file}'s rustup install still names a floating channel`);
+  });
+}
+
+test('the devcontainer bakes the SAME Rust the workflows resolve, so local clippy is CI clippy', () => {
+  const pinned = /^\s*channel\s*=\s*"([^"]+)"/m.exec(readIf(RUST_TOOLCHAIN) ?? '')?.[1] ?? null;
+  const line = toolchainDockerfile.split('\n').find((l) => l.includes('--default-toolchain'));
+  assert.ok(line, 'the toolchain image no longer installs Rust by this recipe');
+  assert.doesNotMatch(
+    line,
+    /--default-toolchain\s+stable\b/,
+    'the toolchain image bakes `stable`, so the image and CI drift apart silently — and a baked\n' +
+      '  image is the one place where "whatever was newest on build day" persists for months.',
+  );
+  const baked = /--default-toolchain\s+(\S+)/.exec(line)?.[1];
+  assert.ok(pinned, 'rust-toolchain.toml pins nothing, so "the devcontainer agrees" would compare nothing to nothing');
+  assert.equal(baked, pinned, `the devcontainer bakes Rust ${baked} while rust-toolchain.toml pins ${pinned}`);
+});
+
+test('Renovate tracks the Rust pin in BOTH files, as one dependency in one branch', () => {
+  // rust-toolchain.toml needs NO customManager: renovate@44 ships a built-in `rust-toolchain`
+  // manager (managerFilePatterns /(^|/)rust-toolchain(\.toml)?$/) emitting depName `rust` on the
+  // `rust-version` datasource. A custom manager over the same file would DOUBLE-MANAGE it — two
+  // depNames for one package, two branches, both editing the same line — which is exactly why
+  // renovate.json declines to add one over pnpm-workspace.yaml.
+  const overToolchainFile = customManagers.filter((m) => managerCovers(m, 'rust-toolchain.toml'));
+  assert.deepEqual(
+    overToolchainFile.map((m) => m.depNameTemplate),
+    [],
+    'a customManager covers rust-toolchain.toml, which renovate@44 already extracts with its\n' +
+      '  built-in `rust-toolchain` manager — that is double-management, not belt and braces.',
+  );
+
+  // The devcontainer half DOES need one: no built-in manager reads a Dockerfile RUN line.
+  const rust = managerFor('rust');
+  assert.equal(rust.length, 1, 'expected exactly one customManager tracking the devcontainer Rust pin');
+  assert.equal(
+    rust[0].datasourceTemplate,
+    'rust-version',
+    'the devcontainer pin must use the SAME datasource the built-in manager emits (`rust-version`),\n' +
+      "  or it is a different dependency that happens to share a name — and the two halves then\n" +
+      '  never meet in one branch.',
+  );
+  assert.ok(managerCovers(rust[0], '.devcontainer/toolchain.Dockerfile'), 'the Rust customManager does not cover the toolchain Dockerfile');
+  assert.ok(capturesIn(rust[0], toolchainDockerfile), "the Rust customManager's matchStrings capture no currentValue in the toolchain Dockerfile");
+});
+
+const rustDep = (manager) => ({
+  manager,
+  datasource: 'rust-version',
+  depName: 'rust',
+  packageName: 'rust',
+  packageFile: manager === 'rust-toolchain' ? 'rust-toolchain.toml' : '.devcontainer/toolchain.Dockerfile',
+  updateType: 'minor',
+});
+
+test('the rust toolchain rule covers BOTH managers and is ordered LAST of the rules that group it', () => {
+  const halves = ['rust-toolchain', 'custom.regex'].map(rustDep);
+  const groups = halves.map((d) => resolvedGroupName(d));
+  assert.equal(
+    new Set(groups).size,
+    1,
+    'the two halves of the Rust pin resolve to DIFFERENT groups, so they land on different\n' +
+      `  branches and one half rots: ${JSON.stringify(groups)}. Extraction is not grouping (#194, #204, #225).`,
+  );
+  assert.ok(groups[0], 'the Rust pin resolves to no group at all, so nothing holds the two files together');
+
+  // Name the failure mode rather than leaving it to "the groups differ": the LAST rule that groups
+  // the pin must match BOTH managers, on every update track. A rule matching one manager, or one
+  // track, groups half of it and strands the rest — nx (#141/#193) twice, Playwright (#204), pnpm
+  // (#225). LATER packageRules override earlier ones, so only the last one decides.
+  const rustRules = packageRules.filter((r) => ruleMatches(r, rustDep('rust-toolchain')) && r.groupName !== undefined);
+  assert.ok(rustRules.length > 0, 'no packageRule assigns the Rust pin a groupName at all');
+  const last = rustRules[rustRules.length - 1];
+  assert.ok(
+    Array.isArray(last.matchManagers) && last.matchManagers.includes('rust-toolchain') && last.matchManagers.includes('custom.regex'),
+    'the LAST rule to group the Rust pin is\n' +
+      `  ${JSON.stringify({ matchManagers: last.matchManagers, matchPackageNames: last.matchPackageNames, groupName: last.groupName })}\n` +
+      '  which does not match BOTH managers — the built-in `rust-toolchain` one and `custom.regex`.',
+  );
+  assert.equal(last.matchUpdateTypes, undefined, 'the Rust grouping rule restricts matchUpdateTypes, so at least one update track half-bumps');
+});
+
+test('the rust toolchain rule does NOT swallow the mc-service base image — the control', () => {
+  // backend/mc-service/Dockerfile's `rust:alpine3.21` is depName `rust` on the DOCKER datasource.
+  // It is an ACCEPTED DIVERGENCE (item #307, criterion 1): docker versioning cannot parse
+  // `alpine3.21`, so Renovate can only churn its digest, and re-tagging it is a change under
+  // `backend/`, which is SDD-gated. What must not happen is the toolchain rule claiming it and
+  // proposing a Rust *release* number as a *docker tag*.
+  const image = { manager: 'dockerfile', datasource: 'docker', depName: 'rust', packageName: 'rust', packageFile: 'backend/mc-service/Dockerfile', updateType: 'minor' };
+  assert.notEqual(
+    resolvedGroupName(image),
+    resolvedGroupName(rustDep('rust-toolchain')),
+    'the rust toolchain group has swallowed the `rust` DOCKER image, which is a different\n' +
+      '  dependency with a different version grammar.',
+  );
+});
+
+// ── semgrep ─────────────────────────────────────────────────────────────────────────────────────
+
+const SAST_SCAN = resolve(REPO_ROOT, 'scripts/sast-scan.mjs');
+const sastScanText = readFileSync(SAST_SCAN, 'utf8');
+
+test('Renovate tracks the semgrep pin, so the scanner that blocks a merge does not rot', () => {
+  const pin = /SEMGREP_PIN\s*=\s*'([\d.]+)'/.exec(sastScanText)?.[1];
+  assert.match(String(pin), /^\d+\.\d+\.\d+$/, `SEMGREP_PIN is '${pin}', not an exact version`);
+
+  const semgrep = managerFor('semgrep');
+  assert.equal(
+    semgrep.length,
+    1,
+    'semgrep is PINNED but extracted by nothing — a rotting pin. Tool-version drift here has the\n' +
+      '  cost #303 measured for Trivy: local and CI scans of identical inputs stop being comparable,\n' +
+      '  and a scanner update can change findings on a PR that changed nothing.',
+  );
+  assert.equal(semgrep[0].datasourceTemplate, 'pypi', 'semgrep is installed with `uvx semgrep@<pin>`, so it comes from PyPI');
+  assert.ok(managerCovers(semgrep[0], 'scripts/sast-scan.mjs'), 'the semgrep customManager does not cover scripts/sast-scan.mjs');
+  assert.equal(capturesIn(semgrep[0], sastScanText), pin, "the semgrep customManager's matchStrings do not capture SEMGREP_PIN");
+});
+
+// ── cargo-audit ─────────────────────────────────────────────────────────────────────────────────
+
+// The two spellings this repository uses: `cargo-audit@X` (the devcontainer's `cargo install` list)
+// and `cargo-audit … --version X` (the workflow, where `--locked` sits between the two).
+const cargoAuditVersionIn = (text) => /cargo-audit(?:@|[^\n]*?--version\s+)(\d+\.\d+\.\d+)/.exec(text)?.[1] ?? null;
+
+test('cargo-audit is version-pinned wherever it is installed, and both sites agree', () => {
+  // `cargo"? install` — the workflow invokes it as `"$HOME/.cargo/bin/cargo" install`, so the
+  // quote sits between the binary and the subcommand.
+  const ci = /cargo"?\s+install[^\n]*cargo-audit[^\n]*/.exec(guardrailsText)?.[0] ?? '';
+  assert.ok(ci, 'guardrails no longer installs cargo-audit by this recipe');
+  assert.match(
+    ci,
+    /--version\s+\d+\.\d+\.\d+|cargo-audit@\d+\.\d+\.\d+/,
+    'guardrails installs cargo-audit at whatever version is newest that run:\n' +
+      `    ${ci.trim()}\n` +
+      '  `--locked` locks the crate\'s DEPENDENCIES, not the crate\'s own version. This is the tool\n' +
+      '  that decides whether a Rust advisory blocks the merge.',
+  );
+
+  const ciVersion = cargoAuditVersionIn(ci);
+  const devLine = /cargo-audit@?\S*/.exec(toolchainDockerfile)?.[0] ?? '';
+  const devVersion = cargoAuditVersionIn(devLine);
+  assert.ok(devVersion, `the devcontainer installs cargo-audit unpinned ('${devLine.trim()}'), so a local scan and the CI scan can disagree`);
+  assert.equal(ciVersion, devVersion, `CI installs cargo-audit ${ciVersion} while the devcontainer bakes ${devVersion}`);
+});
+
+test('Renovate tracks the cargo-audit pin in both files', () => {
+  const ca = managerFor('cargo-audit');
+  assert.equal(ca.length, 1, 'expected exactly one customManager tracking cargo-audit');
+  assert.equal(ca[0].datasourceTemplate, 'crate', 'cargo-audit is installed with `cargo install`, so it comes from crates.io');
+  for (const [file, text] of [
+    ['.forgejo/workflows/guardrails.yml', guardrailsText],
+    ['.devcontainer/toolchain.Dockerfile', toolchainDockerfile],
+  ]) {
+    assert.ok(managerCovers(ca[0], file), `the cargo-audit customManager does not cover ${file}, so that pin would rot while the other moved`);
+    assert.ok(capturesIn(ca[0], text), `the cargo-audit customManager's matchStrings capture no currentValue in ${file}`);
+  }
+});
+
+// ── uv ──────────────────────────────────────────────────────────────────────────────────────────
+//
+// uv has the widest blast radius of the four: it is pre-1.0, it moves fast, and it is the generator
+// for the `uv.lock` files the weekly lockFileMaintenance channel merges. A generator-version change
+// can alter lockfile output in the one workflow whose output merges weekly.
+
+const UV_FILES = [
+  ['.forgejo/workflows/guardrails.yml', guardrailsText],
+  ['.forgejo/workflows/app-ci.yml', appCiText],
+  ['.forgejo/workflows/cd-deploy.yml', readFileSync(CD_DEPLOY, 'utf8')],
+  ['.forgejo/workflows/renovate.yml', renovateText],
+  ['.devcontainer/toolchain.Dockerfile', toolchainDockerfile],
+];
+
+/** Every uv version this repository asks for, from either install shape, with where it came from. */
+function uvVersionRefs() {
+  const refs = [];
+  for (const [file, text] of UV_FILES) {
+    for (const m of text.matchAll(/astral\.sh\/uv\/([^/\s]+)\/install\.sh/g)) refs.push({ file, how: 'install script URL', version: m[1] });
+    // Line-window scan rather than one big regex: a `[\s\S]*?` across a YAML step happily runs into
+    // the NEXT step and reports its keys as this one's, which is how a guard reads green while the
+    // thing it names is absent.
+    const lines = text.split('\n');
+    lines.forEach((line, i) => {
+      if (!/uses:\s*astral-sh\/setup-uv@/.test(line)) return;
+      const indent = line.search(/\S/);
+      let version = null;
+      for (let j = i + 1; j < lines.length; j += 1) {
+        const l = lines[j];
+        if (l.trim() === '') continue;
+        const ind = l.search(/\S/);
+        if (ind < indent || (ind <= indent && /^\s*-\s/.test(l))) break; // out of this step
+        const v = /^\s*version:\s*['"]?([^'"\s#]+)/.exec(l);
+        if (v) {
+          version = v[1];
+          break;
+        }
+      }
+      refs.push({ file, how: 'setup-uv input', version });
+    });
+  }
+  return refs;
+}
+
+test('no unversioned uv installer is fetched and piped to sh — the #303 Trivy shape', () => {
+  for (const [file, text] of UV_FILES) {
+    assert.ok(
+      !/astral\.sh\/uv\/install\.sh/.test(text),
+      `${file} pipes the MOVING uv install script into sh. Whatever is on that URL at run time\n` +
+        '  executes on the runner, and the tool it installs generates the uv.lock files Renovate\n' +
+        '  merges weekly. Byte-for-byte the shape item #303 removed for Trivy.',
+    );
+  }
+});
+
+test('every astral-sh/setup-uv step names a version rather than resolving latest', () => {
+  for (const [file, text] of UV_FILES) {
+    const uses = (text.match(/uses:\s*astral-sh\/setup-uv@/g) ?? []).length;
+    if (!uses) continue;
+    const versioned = uvVersionRefs().filter((r) => r.file === file && r.how === 'setup-uv input' && r.version);
+    assert.equal(
+      versioned.length,
+      uses,
+      `${file} has ${uses} astral-sh/setup-uv step(s) but ${versioned.length} with a \`version:\` input.\n` +
+        '  The ACTION is digest-pinned; the uv it installs is not — it resolves latest at run time.',
+    );
+  }
+});
+
+test('every uv reference in the repository resolves to the SAME version', () => {
+  const refs = uvVersionRefs();
+  assert.ok(refs.length >= 8, `expected uv to be pinned at every site — found only ${refs.length} references`);
+  for (const r of refs) assert.ok(r.version, `${r.file} has an unpinned uv ${r.how}`);
+  const versions = [...new Set(refs.map((r) => r.version))];
+  assert.equal(
+    versions.length,
+    1,
+    'uv versions disagree across the repository:\n' +
+      refs.map((r) => `    ${r.file} · ${r.how} → ${r.version}`).join('\n') +
+      '\n  uv is the single source of truth decided by item #307: one version string, one Renovate\n' +
+      '  customManager, one group. Disagreement here is the pnpm half-bump (#225) in a new place.',
+  );
+  assert.match(versions[0], /^\d+\.\d+\.\d+$/, `uv is pinned to '${versions[0]}', which is not an exact version`);
+});
+
+test('Renovate tracks the uv pin at every site, as one dependency', () => {
+  const uv = managerFor('astral-sh/uv');
+  assert.equal(uv.length, 1, 'expected exactly one customManager tracking astral-sh/uv');
+  assert.equal(uv[0].datasourceTemplate, 'github-releases', 'uv releases are GitHub releases');
+  for (const [file, text] of UV_FILES) {
+    assert.ok(managerCovers(uv[0], file), `the uv customManager does not cover ${file}, so that pin would rot while the others moved`);
+    assert.ok(capturesIn(uv[0], text), `the uv customManager's matchStrings capture no currentValue in ${file}`);
+  }
+});
+
+const uvDep = (manager, depName = 'astral-sh/uv', datasource = 'github-releases') => ({
+  manager,
+  datasource,
+  depName,
+  packageName: depName,
+  packageFile: '.forgejo/workflows/guardrails.yml',
+  updateType: 'minor',
+});
+
+test('the uv rule groups the custom manager with the docker image refs item #308 will add', () => {
+  // Item #307 DECIDES uv's single source of truth and #308 consumes it. The image refs
+  // (`ghcr.io/astral-sh/uv:<version>`) are seen by the built-in DOCKER manager — a different
+  // manager AND a different datasource — so `docker base images` would claim them and strand the
+  // custom-manager half. The group is wired here so #308 is a re-tag, not a re-think.
+  const custom = resolvedGroupName(uvDep('custom.regex'));
+  const image = resolvedGroupName(uvDep('dockerfile', 'ghcr.io/astral-sh/uv', 'docker'));
+  assert.ok(custom, 'the uv custom-manager half resolves to no group at all');
+
+  // Same naming as the Rust and nx rules: the LAST rule to group uv must reach both halves on every
+  // track. Here that is expressed through matchPackageNames rather than matchManagers, because the
+  // two halves carry DIFFERENT depNames (`astral-sh/uv` vs `ghcr.io/astral-sh/uv`).
+  const uvRules = packageRules.filter((r) => ruleMatches(r, uvDep('custom.regex')) && r.groupName !== undefined);
+  const lastUv = uvRules[uvRules.length - 1];
+  assert.ok(lastUv, 'no packageRule assigns uv a groupName at all');
+  assert.equal(lastUv.matchUpdateTypes, undefined, 'the uv grouping rule restricts matchUpdateTypes, so at least one update track half-bumps');
+  assert.ok(
+    (lastUv.matchPackageNames ?? []).length >= 2,
+    'the LAST rule to group uv names only one packageName, so it cannot reach both the custom-manager\n' +
+      `  half and the docker half: ${JSON.stringify(lastUv.matchPackageNames)}`,
+  );
+
+  assert.equal(
+    custom,
+    image,
+    `the uv halves resolve to different groups (${custom} vs ${image}), so a uv bump would arrive as\n` +
+      '  two PRs editing the same tool — the nx (#141/#193), Playwright (#204) and pnpm (#225) shape.',
+  );
+});
+
+test('the uv rule does NOT swallow other docker base images — the control', () => {
+  const other = { manager: 'dockerfile', datasource: 'docker', depName: 'python', packageName: 'python', packageFile: 'agents/movie-assistant/Dockerfile', updateType: 'minor' };
+  assert.notEqual(resolvedGroupName(other), resolvedGroupName(uvDep('custom.regex')), 'the uv group has swallowed an unrelated docker image');
+});

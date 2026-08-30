@@ -474,9 +474,91 @@ Recorded from the 2026-08-30 latent-issue audit so the next reader knows each wa
 
 The audit's *actionable* findings are items **#307** (floating/rotting merge-gating toolchains:
 Rust, semgrep, cargo-audit, uv), **#308** (the #297 class in app Dockerfiles), and **#309**
-(`renovate-config-validator` runs nowhere in CI) — **#309 is now closed**, see below.
+(`renovate-config-validator` runs nowhere in CI). **#307 and #309 are now closed** — see §8 and §9.
 
-## 8. The config validator — what it catches that the guard test cannot (item #309)
+Two residuals were *added* by #307 and are recorded here rather than left to be rediscovered:
+
+- **`curl https://sh.rustup.rs | sh` remains an unversioned script piped to sh**, in three workflows
+  and the toolchain image. This is item #307's criterion 5 met for uv and **not** met for rustup,
+  deliberately. What that script installs is `rustup` (a bootstrapper), and the thing that decides
+  which compiler runs — the toolchain — is now pinned by `rust-toolchain.toml`, so a change in
+  rustup cannot change the compiler. The pinnable alternatives both cost more than they buy: the
+  archive **binary** (`static.rust-lang.org/rustup/archive/<v>/x86_64-unknown-linux-gnu/rustup-init`)
+  hard-codes the architecture, which would break a non-amd64 devcontainer build; the archive
+  **script** path could not be verified from the dev container at all, because
+  `static.rust-lang.org` is not on its egress allowlist — and shipping an unverified URL into four
+  install sites is the trade this repository declines. Revisit if rustup itself is ever implicated.
+- **`backend/mc-service/Dockerfile` still builds `FROM rust:alpine3.21@sha256:…`** — a version-LESS
+  tag, so Renovate can only churn its digest and can never propose a classified update. Re-tagging
+  it is a change under `backend/`, which is SDD-gated, so it is an accepted divergence recorded in
+  `rust-toolchain.toml` and in the `rust toolchain` packageRule (item #307, criterion 1). A guard
+  test asserts the toolchain group does **not** claim it — the failure that would matter is
+  Renovate proposing a Rust *release* number as a *docker tag*.
+
+## 8. Pinned toolchains and where each pin lives (item #307)
+
+Item #303's principle, restated because #307 applied it four more times: **a floating reference
+means no version, and no version means no classification and no reproducibility; a pin with nothing
+maintaining it trades a floating reference for a rotting one.** So every pin below is (a) exact,
+(b) the same at every site, and (c) tracked by something that will move it.
+
+| tool | the pin lives in | sites | how Renovate sees it | grouped? |
+| --- | --- | --- | --- | --- |
+| **Rust** | `rust-toolchain.toml` (`channel`) | that file + the devcontainer's baked `--default-toolchain` | built-in **`rust-toolchain`** manager (depName `rust`, datasource `rust-version`) + a customManager for the devcontainer half | **yes** — `rust toolchain` |
+| **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | one | customManager, `pypi` | no — one manager, one depName |
+| **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image (`cargo-audit@X`) | two | customManager, `crate` | no — one manager, one depName |
+| **uv** | the version string, at every site | 3 install-script URLs + 5 `setup-uv` inputs | customManager, `github-releases` | **yes** — `uv pin` |
+
+> ⚠️ **Grouping is needed when a SECOND manager sees the other half — it is not a ritual for every
+> custom manager.** The Trivy manager (§ item #303) covers two files with one depName and has no
+> group, correctly: one dependency, one branch. nx (#141/#193), Playwright (#204) and pnpm (#225)
+> each needed a group because the *built-in npm manager* claimed one half. Rust needs one because
+> the built-in `rust-toolchain` manager claims one half; uv needs one because item #308's image
+> refs will be claimed by the built-in **docker** manager under a *different depName and a
+> different datasource*.
+
+### Rust: the toolchain file is the single source, and rustup is told to defer to it
+
+All three workflows install rustup with **`--default-toolchain none`**. The first `cargo` call
+inside the repository then resolves the channel *and its components* from `rust-toolchain.toml` —
+which is why `--component clippy` is no longer written in `app-ci.yml`. There is no `stable` literal
+left in any workflow, and the guard test fails if one returns.
+
+`rust-toolchain.toml` needs **no customManager**: renovate@44 ships a built-in `rust-toolchain`
+manager (`managerFilePatterns` `/(^|/)rust-toolchain(\.toml)?$/`). Adding one would double-manage
+the file — two depNames for one package, two branches, both editing the same line — the exact
+reasoning `renovate.json` gives for *not* adding a regex manager over `pnpm-workspace.yaml`. The
+devcontainer half does need one, because no built-in manager reads a Dockerfile `RUN` line; it emits
+the **same** depName and datasource, which is what makes the two halves one dependency rather than
+two that share a name.
+
+### uv: the DECISION about its single source of truth (item #307 decides, #308 consumes)
+
+**uv's single source of truth is ONE VERSION STRING, repeated at every site, held together by one
+Renovate customManager plus the `uv pin` packageRule, and asserted equal across every site by
+`renovate-workflow.guard.test.mjs`.**
+
+It is deliberately **not** a file that every site reads. `astral-sh/setup-uv`'s `version:` input is
+an Actions expression and cannot read a repository file, so a file would leave the five action sites
+unpinned — the half-measure that produces exactly the drift being fixed. The nx / Playwright / pnpm
+pins are the precedent for the shape: one string, many sites, one guard.
+
+Two mechanical consequences worth knowing before editing a uv site:
+
+- the install-script URL carries the version in its **path** — `https://astral.sh/uv/<version>/install.sh`
+  — which also stops fetching the moving script (`astral.sh/uv/install.sh` was byte-for-byte the
+  #303 Trivy shape). Verified: the versioned URL redirects to that release's own `uv-installer.sh`
+  asset, which exists per release;
+- each `setup-uv` input carries a **`# uv-version` marker**. Without it the manager's matchString
+  would be a bare `version:` key and would claim any other `version:` input added to those workflows
+  later.
+
+**Item #308 consumes this decision**: the eight `ghcr.io/astral-sh/uv:latest@sha256:…` refs re-tag to
+`ghcr.io/astral-sh/uv:<this version>`, and the `uv pin` rule already names that docker packageName —
+so #308 is a re-tag, not a re-think, and the guard is wrong-and-loud rather than silently absent if
+the re-tag ever arrives without it.
+
+## 9. The config validator — what it catches that the guard test cannot (item #309)
 
 Everything in §5 and every assertion in `renovate-workflow.guard.test.mjs` is **enumerative**: it
 names a hazard that has already fired. The **unknown-key** class fires nothing. A major renaming a
@@ -518,7 +600,8 @@ comment).
 ## Related
 
 - `renovate.json` — grouping, version locks, cooldowns, and the reasoning for each
-- `.forgejo/workflows/guardrails.yml` — the `renovate-config` job (§8), the required config validator
+- `.forgejo/workflows/guardrails.yml` — the `renovate-config` job (§9), the required config validator
+- `rust-toolchain.toml` — the Rust pin (§8), read by renovate@44's built-in `rust-toolchain` manager
 - `.forgejo/workflows/renovate.yml` — schedule, toolchains, dispatch inputs
 - `scripts/__tests__/renovate-workflow.guard.test.mjs` — the assertions that keep the above true
 - `scripts/renovate-health.mjs` / item **#311** — the weekly health digest: channel liveness, stale
