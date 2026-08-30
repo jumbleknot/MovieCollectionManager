@@ -35,6 +35,34 @@ const BUILT_IMAGE_NAMES = ['mcm-bff', 'mc-service', 'agent-gateway', 'movie-mcp'
 class ScanError extends Error {}
 
 /**
+ * Does an image ref carry a tag that can DRIFT (`:latest`, a non-version tag, or no tag at all)?
+ *
+ * THE PARSE IS THE WHOLE POINT — item #297. This was `ref.split(':').pop()`, which is correct only
+ * until a ref carries a digest. `docker:pinDigests` rewrote every ref to `tag@sha256:...`, so that
+ * expression started returning the DIGEST HEX and the flag collapsed to "does this image's digest
+ * begin with a digit" — a coin flip per image.
+ *
+ * Measured on `main` the moment PR #289 landed: of the eight `latest`-tagged infra images, the four
+ * whose digests begin with a LETTER were reported floating and the four beginning with a DIGIT were
+ * reported version-pinned. A `:latest` image reported as pinned is the exact inverse of what this
+ * flag exists to say.
+ *
+ * Three things the ref grammar requires, each of which the old one-liner got wrong:
+ *   - strip `@<digest>` FIRST — everything after `@` is never part of the tag;
+ *   - a colon is only a tag separator when it comes after the last `/`, otherwise `host:5000/repo`
+ *     parses its registry PORT as the tag;
+ *   - `v1.9.6` is a version. mailpit publishes exactly that form, so a heuristic anchored on `^\d`
+ *     would report item #297's own migration as still-floating.
+ */
+export function isFloatingTag(ref) {
+  const withoutDigest = String(ref).split('@')[0];
+  const lastColon = withoutDigest.lastIndexOf(':');
+  const lastSlash = withoutDigest.lastIndexOf('/');
+  const tag = lastColon > lastSlash ? withoutDigest.slice(lastColon + 1) : 'latest';
+  return tag === 'latest' || !/^v?\d/.test(tag);
+}
+
+/**
  * PURE. Given [{ path, content }] compose/stack files, return the deduped third-party image refs:
  *   [{ ref, locations: [{ path, line }], floatingTag }]
  * Excludes our built images (jumbleknot/* or a bare built-image name) and ${..}-interpolated refs.
@@ -52,8 +80,7 @@ export function enumerateImages(files) {
       if (ref.includes('jumbleknot/')) continue; // our built images (cd-deploy owns them)
       const bareName = ref.split('/').pop().split(':')[0];
       if (BUILT_IMAGE_NAMES.includes(bareName)) continue; // built image referenced by local tag
-      const tag = ref.includes(':') ? ref.split(':').pop() : 'latest';
-      const floatingTag = tag === 'latest' || !/^\d/.test(tag); // heuristic: non-versioned tag can drift
+      const floatingTag = isFloatingTag(ref);
       const loc = { path, line: i + 1 };
       if (byRef.has(ref)) byRef.get(ref).locations.push(loc);
       else byRef.set(ref, { ref, locations: [loc], floatingTag });

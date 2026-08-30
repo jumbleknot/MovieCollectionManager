@@ -108,3 +108,54 @@ test('buildProposedAllowlist emits only blocking findings as valid, gate-matchab
   // The proposed `image` is an escaped regex that matches the real ref.
   assert.ok(new RegExp(parsed[0].image).test('quay.io/keycloak/keycloak:26.5.5'));
 });
+
+// ---------------------------------------------------------------------------------------------
+// THE BUG (2026-08-30, item #297). `docker:pinDigests` rewrote every ref to `tag@sha256:...`, and
+// the tag parser was `ref.split(':').pop()` — which on a digest-pinned ref returns the DIGEST HEX,
+// not the tag. `floatingTag` then reduced to "does this image's digest happen to start with a
+// digit", a coin flip per image.
+//
+// Measured on main immediately after PR #289 landed: of the eight `latest`-tagged infra images,
+// the four whose digests begin with a letter (mailpit c969…, otel-lgtm d6b2…, minio/mc a7fe…,
+// opa:latest-debug f6aa…) were reported FLOATING, and the four beginning with a digit
+// (opa:latest 39da…, minio/minio 14ce…, unleash 16f3…, curl 7c12…) were reported version-pinned.
+// A `latest` image reported as pinned is the exact opposite of what this flag exists to say, and
+// item #297's acceptance criterion is written against this output.
+
+test('(fd) THE BUG: a digest-pinned :latest ref is still FLOATING — the digest is not the tag', () => {
+  const files = [{ path: 'c.yaml', content: [
+    '    image: axllent/mailpit:latest@sha256:c96991d9bef73594c246d89ca81411d4e916f03e76a7d2d72fa2ab5dd3c9ce24',
+    '    image: openpolicyagent/opa:latest@sha256:39daf255ae7f25d81103f03a0c18308a50b7b5bb67907bed6166f70e24a970ff',
+    '    image: unleashorg/unleash-server:latest@sha256:16f3ffb914880e7d0f23629a0c1b77aebea3aa619b0305f76eb50b3fb75998a9',
+  ].join('\n') }];
+  for (const img of enumerateImages(files)) {
+    assert.equal(img.floatingTag, true, `${img.ref} is :latest but was reported as version-pinned`);
+  }
+});
+
+test('(fd2) a digest-pinned VERSION ref is not floating — the fix must not flag everything', () => {
+  const files = [{ path: 'c.yaml', content: [
+    '    image: caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648',
+    '    image: hashicorp/vault:1.18@sha256:750bb37c1638fa194ab37053a81618c61bb0491ddec6fccac87c07a8e6cd8166',
+  ].join('\n') }];
+  for (const img of enumerateImages(files)) {
+    assert.equal(img.floatingTag, false, `${img.ref} is version-pinned but was reported floating`);
+  }
+});
+
+test('(fd3) a v-prefixed semver tag is a VERSION, not a floating tag', () => {
+  // Directly load-bearing for item #297: mailpit publishes `v1.9.x`, so the migration this flag is
+  // meant to verify would otherwise land and still be reported as floating.
+  const files = [{ path: 'c.yaml', content: '    image: axllent/mailpit:v1.9.9@sha256:c96991d9bef7' }];
+  assert.equal(enumerateImages(files)[0].floatingTag, false);
+});
+
+test('(fd4) a digest-only ref with no tag is floating, and a registry PORT is not a tag', () => {
+  const files = [{ path: 'c.yaml', content: [
+    '    image: minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727',
+    '    image: registry.example.com:5000/some/app',
+  ].join('\n') }];
+  const imgs = enumerateImages(files);
+  assert.equal(imgs.find((i) => i.ref.startsWith('minio/mc')).floatingTag, true, 'no tag == latest == floating');
+  assert.equal(imgs.find((i) => i.ref.includes(':5000')).floatingTag, true, 'a registry port was parsed as the tag');
+});
