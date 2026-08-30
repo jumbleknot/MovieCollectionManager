@@ -68,3 +68,51 @@ node scripts/check-toolchain-consistency.mjs
 - 8 digests unchanged
 - every C1 classification assertion resolving to a real update type, none to `digest`
 - `infra-image-scan / infra-image-scan` green in CI on the pull request
+
+---
+
+## Observation (T014, US3): does `renovate/stability-days` settle once these are version-pinned?
+
+**Status as of 2026-08-30: window OPEN, not yet observable. No PR number to record yet.**
+
+This is US3's acceptance scenario and the evidence backlog item **#298** is waiting on. It is
+upstream-timed and deliberately carries no RED/GREEN cycle: forcing it would falsify it.
+
+### Why it cannot be recorded yet
+
+The observation needs a Renovate proposal **for one of the eight formerly-floating images**, and one
+cannot exist until these pins are on `main`. The open PRs on 2026-08-30 were checked and neither
+qualifies:
+
+| PR | branch | why it does not answer the question |
+|---|---|---|
+| #288 | `renovate/lock-file-maintenance-cargo-deps` | lockfile-refresh channel, no docker image involved; empty, awaiting autoclose |
+| #263 | `renovate/js-patchminor` | npm channel; parked on its own release-age cooldown until 2026-08-31 17:58Z |
+
+### What to record, on the next `docker base images` PR after this merges
+
+The mechanism under test (item #297 harm 2, item #298's "why it recurs"): a frequently-rebuilt
+`latest` image made Renovate re-pin to a new digest on each config regeneration, **resetting the
+3-day `minimumReleaseAge` clock**, so `renovate/stability-days` sat pending indefinitely. Measured on
+PR #289: the nightly run re-posted `pending — Updates have not met minimum release age requirement`
+at 2026-08-30T03:05:16Z — a live evaluation, not a stale status. A version tag should change that,
+because a release is a discrete event rather than a rolling rebuild.
+
+Record, against the PR number:
+
+1. Whether `renovate/stability-days` reaches **success on its own**, without the PR being merged past
+   it — the thing no one has yet observed happening on this repository at all.
+2. How long it took from branch creation, versus the configured 3 days.
+3. Whether a nightly regeneration **reset** the clock: compare the check's `started_at` across
+   consecutive nightly runs on the same branch. A reset shows as the timestamp advancing while the
+   proposed version stays put.
+4. Whether the eight formerly-floating images were in that PR at all (they ride `docker base images`;
+   if none of them moved, the run says nothing about this question).
+
+> **Do not close #298 on the strength of this.** #298 asks what policy should govern *merging past* a
+> pending cooldown; this observation only supplies one input — whether the control can now be
+> satisfied for this group. A single green `stability-days` does not decide the policy, and the item
+> is explicitly open and undecided.
+
+> **Never hand-close a Renovate PR to move this along.** Closing marks the update *rejected*, and
+> Renovate will not re-propose it.

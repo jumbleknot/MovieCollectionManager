@@ -75,6 +75,61 @@ have". Keep the cache volume — the DB download dominates the runtime of a sing
 This is the recipe that diagnosed PR #289 when the job published **no failure digest** despite its
 digest step being `if: always()`.
 
+## Version pins, and the two `[floating tag]` lines that are correct (feature 063 / item #297)
+
+Every third-party infra image is referenced by a **version tag plus a digest** (`repo:tag@sha256:…`).
+The digest comes from `docker:pinDigests` and gives reproducibility; the **tag** is what gives an
+update a *type*. Without it Renovate files every change as `updateType: digest`, and two things break:
+a rebuild that crosses a major is indistinguishable from a security patch at review time, and an
+allowlist entry keyed to a floating ref can never be discharged (see below).
+
+Eight references were floating until feature 063 and are now pinned. Each was pinned to the version
+tag whose manifest digest **already equalled** the digest in the compose file, so the change was
+notational — CI ran the same images afterwards that it ran before:
+
+| reference | pinned to |
+|---|---|
+| `axllent/mailpit` | `v1.31.0` |
+| `curlimages/curl` | `8.21.0` |
+| `grafana/otel-lgtm` | `0.32.0` |
+| `openpolicyagent/opa` | `1.20.1` and `1.20.1-debug` |
+| `unleashorg/unleash-server` | `8.1.0` |
+| `minio/minio` | `RELEASE.2025-09-07T16-13-09Z` |
+| `minio/mc` | `RELEASE.2025-08-13T08-35-41Z` |
+
+### The 2025 minio dates are not neglect
+
+MinIO **stopped publishing community releases after 2025-09**. Those two tags are the newest each
+repository offers — re-verified against `registry-1.docker.io` on 2026-08-30 (495 and 300
+`RELEASE.…Z` tags respectively). The floating tag had not been tracking anything for about a year, so
+pinning cost no currency at all. **Do not "fix" these pins forward; there is nothing ahead of them.**
+
+### `minio/minio` and `minio/mc` still report `[floating tag]`, deliberately
+
+`node scripts/infra-image-scan.mjs --list` reports a floating count of **exactly 2**, and both are
+these. `isFloatingTag` calls a tag floating when it does not begin with an optional `v` and a digit;
+`RELEASE.2025-…` does not, so a pinned minio ref is still flagged.
+
+That is the classifier being right. Its job is to be suspicious of tags it **cannot order**, and a
+`RELEASE.<date>` tag genuinely is one — ordering it needs the `regex` versioning scheme declared for
+it in `renovate.json`, which the scanner does not read. Widening `isFloatingTag` to recognise the
+shape would make the report read clean while teaching a general-purpose classifier to vouch for an
+ordering it does not have, and would couple it to one vendor's tag convention. So the two are
+**declared exceptions** instead: the `matchPackageNames` of the date-tagged versioning rule in
+`renovate.json` *is* the declared list, and `infra-image-scan.test.mjs` asserts the floating set
+equals it exactly.
+
+**A floating count of 0 is therefore a FAILURE, not a success** — it would mean the classifier had
+been widened to hide the exceptions rather than declare them. So is a count above 2.
+
+### The minio update types are calendar arithmetic, not semantics
+
+The regex versioning maps year→major, month→minor, day→patch. A January release will report **major**
+because the year advanced, not because anything broke. Order these correctly; do not read the label
+as a risk signal the way you would for `opa` or `unleash`. (`loose` was preferred and cannot parse
+these tags at all — measured against renovate@44's own dist, its `_parse` returns null for anything
+beginning `RELEASE.`, which is invisible rather than unordered.)
+
 ## The gate
 
 `blocking = FIXABLE Critical` (a `FixedVersion` exists upstream). Unfixable Critical and all Medium/Low are **report-only warnings** — a bump can't clear an unfixable CVE, so it must not wedge the gate (same intent as `cd-deploy`'s `--ignore-unfixed`). The gate fails on any blocking finding not covered by a **live** (non-expired) allowlist entry.
@@ -92,6 +147,28 @@ The allowlist **is** the accepted baseline — suppression is gate-only; finding
 ```
 
 All four of `image`/`id`/`justification`/`addedBy` are required; a blank field or invalid regex is a gate error.
+
+### Key a suppression to a VERSION, so an upgrade can discharge it
+
+`image` is matched as an **unanchored** regex against the full scanned reference. That one property
+decides whether a suppression can ever end:
+
+- `hashicorp/vault:1\.18` still matches `hashicorp/vault:1.18@sha256:…` — appending a digest does
+  **not** break a key — but stops matching `1.21`. When PR #289 bumped vault, five Criticals
+  surfaced: a dischargeable key doing its job, loudly.
+- `minio/minio` (bare repository name) matched **every tag of that image that will ever exist**. It
+  could not stop matching, so it suppressed the advisory it was written for *and every future one in
+  the same image*, silently and permanently.
+
+The second shape is not an accepted risk with a review date, it is a permanent hole. Feature 063
+re-keyed the three such entries (`grafana/otel-lgtm`, `minio/minio`, `minio/mc`) to their pinned
+versions, and `infra-image-scan.test.mjs` now asserts both directions for them: each key still
+matches the reference in the compose files today, **and** stops matching a later version.
+
+**Re-keying is required whenever a pinned tag changes**, not optional tidy-up. An entry keyed to the
+old tag matches nothing after the bump, the finding it covered becomes un-allowlisted, and the gate
+blocks — while reporting the entry only as an `UNMATCHED ENTRIES` line, which reads like housekeeping
+rather than like the cause. Check that line before assuming a new CVE appeared.
 
 ### Seeding the baseline (first landing — on CI)
 

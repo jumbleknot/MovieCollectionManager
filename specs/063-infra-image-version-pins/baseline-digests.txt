@@ -1,0 +1,54 @@
+# Pre-change digest baseline — feature 063-infra-image-version-pins (item #297)
+# Captured 2026-08-30 at T001, BEFORE any compose file was edited.
+#
+# WHY THIS FILE EXISTS. SC-002 claims the migration is content-neutral: the version tag that replaces
+# each floating reference resolves to the image already running. After the edit that claim is
+# unfalsifiable from the diff alone — the `@sha256:` digests are unchanged BY CONSTRUCTION (only the
+# tag text moves), so diffing the compose files proves nothing at all. The falsifiable claim is that
+# the NEW TAG's manifest digest, fetched from the live registry, equals the digest recorded here.
+# T010 does that fetch and appends its result below.
+#
+# Extracted mechanically from the three compose files rather than transcribed, so a typo here cannot
+# manufacture a false match at T010.
+#
+# Columns: repository | current tag | pinned digest | location(s)
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+axllent/mailpit           | latest                 | sha256:c96991d9bef73594c246d89ca81411d4e916f03e76a7d2d72fa2ab5dd3c9ce24 | infrastructure-as-code/docker/keycloak/compose.yaml:88
+curlimages/curl           | latest                 | sha256:7c12af72ceb38b7432ab85e1a265cff6ae58e06f95539d539b654f2cfa64bb13 | infrastructure-as-code/docker/observability/compose.yaml:293, infrastructure-as-code/docker/observability/compose.prod.yaml:320
+grafana/otel-lgtm         | latest                 | sha256:d6b20e35890ef2f91d13944805939acdaf1e5d3ffbf9f9aed08586312826c815 | infrastructure-as-code/docker/observability/compose.yaml:208, infrastructure-as-code/docker/observability/compose.prod.yaml:225
+minio/mc                  | (none — implies latest)| sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727 | infrastructure-as-code/docker/observability/compose.yaml:191, infrastructure-as-code/docker/observability/compose.prod.yaml:200
+minio/minio               | (none — implies latest)| sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e | infrastructure-as-code/docker/observability/compose.yaml:168, infrastructure-as-code/docker/observability/compose.prod.yaml:175
+openpolicyagent/opa       | latest                 | sha256:39daf255ae7f25d81103f03a0c18308a50b7b5bb67907bed6166f70e24a970ff | infrastructure-as-code/docker/observability/compose.yaml:228
+openpolicyagent/opa       | latest-debug           | sha256:f6aa14fd47f8863bbd3726675e36b946ad20bd63a34c10fcf8c35884832491f3 | infrastructure-as-code/docker/observability/compose.prod.yaml:254
+unleashorg/unleash-server | latest                 | sha256:16f3ffb914880e7d0f23629a0c1b77aebea3aa619b0305f76eb50b3fb75998a9 | infrastructure-as-code/docker/observability/compose.yaml:249, infrastructure-as-code/docker/observability/compose.prod.yaml:278
+
+# 8 rows — matching the 8 references `node scripts/infra-image-scan.mjs --list` reports as
+# `[floating tag]` on this branch's parent commit.
+
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+# T010 — POST-CHANGE VERIFICATION (SC-002), run 2026-08-30 against the live registry.
+#
+# Method: token from auth.docker.io, then `HEAD /v2/<repo>/manifests/<new-tag>` on
+# registry-1.docker.io, reading `Docker-Content-Digest`. (hub.docker.com is not in this environment's
+# egress policy; the registry v2 API is.) Accept header offers both the docker manifest-list and the
+# OCI image-index media types, or a multi-arch repository answers with a per-arch digest instead.
+#
+# RESULT: 8 matched, 0 mismatched. Every version tag resolves to the digest that was already pinned,
+# so the substitution is notational — CI runs the same images it ran before.
+#
+#   axllent/mailpit:v1.31.0                          MATCH sha256:c96991d9…
+#   curlimages/curl:8.21.0                           MATCH sha256:7c12af72…
+#   grafana/otel-lgtm:0.32.0                         MATCH sha256:d6b20e35…
+#   minio/mc:RELEASE.2025-08-13T08-35-41Z            MATCH sha256:a7fe349e…
+#   minio/minio:RELEASE.2025-09-07T16-13-09Z         MATCH sha256:14cea493…
+#   openpolicyagent/opa:1.20.1                       MATCH sha256:39daf255…
+#   openpolicyagent/opa:1.20.1-debug                 MATCH sha256:f6aa14fd…
+#   unleashorg/unleash-server:8.1.0                  MATCH sha256:16f3ffb9…
+#
+# RESEARCH R3 RE-CONFIRMED THE SAME DAY. Both minio pins are still the NEWEST `RELEASE.<date>` tag
+# upstream publishes — minio/minio 495 such tags, newest RELEASE.2025-09-07T16-13-09Z; minio/mc 300,
+# newest RELEASE.2025-08-13T08-35-41Z. (Those counts are lower than research R3's 1145/471 because
+# this pass counted only the strict `…Z` shape, excluding the `-cpuv1` and other variants that the
+# versioning regex's trailing `Z$` anchor deliberately excludes.) The 2025 dates are upstream's
+# publishing history, not a stale pin here.
