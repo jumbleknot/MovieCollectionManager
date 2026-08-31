@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Dev container on Docker Sandbox microVM (primary environment)
-description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure, and the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart).
+description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure (resolve the digest from the registry via manifests/<tag>, not the run summary or packages API), and the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart).
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-08-27T22:00:00+00:00
+timestamp: 2026-08-31T11:01:00+00:00
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -145,13 +145,47 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 
   **The procedure, in full — and it runs in the VM shell, not the container.** A container cannot rebuild itself; `devcontainer up` must run from `ssh mcm.sbx`, and it destroys the container you may be working in. Everything below is one VM-shell session, because step 3's `set -a` only holds there.
 
-  ```bash
-  NEW=<the 64-hex digest from the build's run summary>          # NOT the tag — pin by digest
-  REG="$FORGE_REGISTRY_HOST:3000"
+  > This is the **image-change** variant, which is why steps 0-3 exist. For the far more common `devcontainer.json`-only change, use §2's *Recreating the DEV CONTAINER* — same step 4, no re-pin. Step 3's `set -a` is required either way.
 
-  # 1. pull, and CONFIRM the image carries the change BEFORE it becomes your environment
-  docker pull $REG/<ns>/mcm-devcontainer@sha256:$NEW
-  docker run --rm --entrypoint bash $REG/<ns>/mcm-devcontainer@sha256:$NEW -lc 'id -u coder; pwsh --version'
+  > 🔴 **The digest does NOT come from the run summary — that route is dead on this forge.** This block said "from the build's run summary" until 2026-08-31, and item #268 is the measurement that it cannot work: there is no log endpoint, no summary endpoint, and `/actions/runs/{id}/jobs` is `404`. The workflow really does write the pinned ref to `$GITHUB_STEP_SUMMARY`, and nothing on this build can read it back. Ask the **registry** instead — that is authoritative anyway, because it is what `docker pull` resolves.
+
+  ```bash
+  # 0. RESOLVE the digest from the registry. Run this from INSIDE the dev container (it is what has
+  #    MCM_FORGE_TOKEN) and do it FIRST — step 4 destroys that container, so resolving afterwards
+  #    means resolving from a shell that cannot. `$SHA` is the full 40-hex commit the run built.
+  ACCEPT='application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json'
+  curl -sS -o /dev/null -w '%header{docker-content-digest}\n' \
+    -u "$OWNER:$MCM_FORGE_TOKEN" -H "Accept: $ACCEPT" \
+    "$FORGE/v2/$OWNER/mcm-devcontainer/manifests/$SHA"
+  ```
+
+  > ⚠️ **Do NOT take the digest from the packages API** (`/api/v1/packages/$OWNER?type=container&…`). Its newest row for a build is the **provenance attestation** — the `unknown/unknown` entry in the OCI index — not the image, and pinning it fails at pull time. Measured 2026-08-31 on the `6a27312c` build: the packages list led with `sha256:78de8866…` (attestation) while the tag actually resolved to `sha256:7a0192db…` (the index). The `manifests/<tag>` request above returns the index under **every** `Accept` header, which is why it is the one to trust.
+  >
+  > ✅ **Verify the image carries the change before pulling 13 GB**, by walking index → amd64 manifest → config blob and reading the build history — the same technique [ci-diagnostics](ci-diagnostics.md) uses to prove what is in a published image:
+  >
+  > ```bash
+  > jq -r '.history[].created_by' cfg.json | grep -aoE 'default-toolchain [^ ]+|cargo-audit@[0-9.]+'
+  > ```
+
+  ```bash
+  NEW=<the 64-hex digest resolved above>                        # NOT the tag — pin by digest
+
+  # 1a. Build the ref FROM THE PIN YOU ALREADY HAVE. Do not assemble it from $FORGE_REGISTRY_HOST:
+  #     that variable lives in ~/.mcm-sandbox-env, which nothing has sourced yet at this point in the
+  #     sequence, so a fresh VM shell has it EMPTY and `docker pull` fails with the misleading
+  #     `invalid reference format` (measured 2026-08-31). Deriving it cannot get the host or the
+  #     namespace wrong.
+  OLD=$(grep -m1 '^MCM_DEVCONTAINER_IMAGE=' ~/.mcm-sandbox-env | cut -d= -f2- | tr -d "\"'")
+  case "$OLD" in
+    *@sha256:*) REF="${OLD%@*}@sha256:$NEW"; echo "new ref: $REF" ;;
+    *) echo "STOP — the current pin is not digest-pinned ($OLD); do not guess the ref" ;;
+  esac
+
+  # 1b. pull, and CONFIRM the image carries the change BEFORE it becomes your environment.
+  #     Check the tools THIS refresh was for, not a fixed list — `pwsh --version` proves only that
+  #     you pulled some image.
+  docker pull "$REF"
+  docker run --rm --entrypoint bash "$REF" -lc 'id -u coder; rustc --version; uv --version'
 
   # 2. edit the pin. MCM_DEVCONTAINER_IMAGE lives in ~/.mcm-sandbox-env (NOT ~/.bashrc). The file is
   #    KEY='value' — quoted, and with NO `export` keyword. Substitute only the digest.
