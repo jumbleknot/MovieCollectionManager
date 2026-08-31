@@ -6,6 +6,14 @@ The forge API exposes **no log, artifact, or per-run-jobs endpoint** — measure
 confirms the absence is by design in this build. So this inverts the direction: **CI pushes a curated
 digest into a channel the API can already read**, and `scripts/ci-status.mjs` reads it back.
 
+**There is also no RE-RUN endpoint** — measured 2026-08-31, all three plausible shapes answer `404`:
+`actions/runs/{id}/rerun`, `actions/tasks/{id}/rerun`, `actions/runs/{id}/rerun-failed-jobs`. Nothing
+can re-run a job in place, and there is no way to re-run *one* failed job at all. Re-triggering means
+producing a **new head sha** — `git commit --amend --no-edit` (same tree, new committer timestamp) plus
+a force-push re-fires the whole `pull_request` run. Budget for the full suite, not for the one job that
+failed, and read the digest first: on this runner a re-run costs ~35 minutes of capacity-1 time, so it
+is worth spending only when the evidence says the failure is not about your diff.
+
 > **No forge host literal, token, or SSH target belongs in this file** (topology-scrub rule). Every
 > command below resolves the host from the `origin` remote at runtime.
 
@@ -49,6 +57,14 @@ have believed it ran. The forge says `"Has been skipped"` and `"Has been cancell
 | `waiting` | `pending` | queued behind the single runner | Fails **safe** — an unnecessary wait |
 | `superseded` | **`failure`** | run cancelled by a newer push | Fails **LOUD** — announces a broken build that isn't |
 | advisory | `failure` on a non-required context | `dast`, `prod-apk`, `trigger-cd` | Either a false "blocked", or a silently dropped regression |
+| `cd-dispatch / trigger-cd` | `success` or `failure`, with the reason as the description | **not a CI result** — the deploy gate's own answer | Reading it as a check; it is the *only* place a declined deploy is visible |
+
+**`cd-dispatch / trigger-cd` is published by the deploy gate, not by a job.** `trigger-cd` is advisory,
+so before item #230 a run that declined to dispatch and a run that deployed looked identical from
+outside — which is how a merged commit went undeployed for a day. `scripts/cd-dispatch-gate.mjs` now
+states its decision on the commit: `superseded — <sha> is the tip …` and `nothing deployable changed
+since the last deploy` are `success` (correct non-deploys); a guardrails failure, an unfinished
+guardrails run, or no guardrails at all are `failure` and also red the job.
 
 **The superseded trap is the dangerous one.** On a real cancelled commit, **13 of 16 contexts read
 `status: "failure"`** for a commit that was never broken. The tell: *every job dies together on a
@@ -479,6 +495,26 @@ VS Code's Dev Containers **credential-helper proxy** forwards the credential ove
 > push the branch (which needs no API token) and open the PR in the web UI. **Never** fall back to
 > AGit — a PR you cannot get CI signal from is worse than one you opened by hand.
 
+### No checks appeared AT ALL — read the commit MESSAGE before anything else
+
+`ci-status` says *"no checks have reported for this commit yet"*, `?head_sha=<sha>` returns **0 runs**,
+and `/actions/tasks` shows nothing for the branch. That is not a slow runner and not a broken workflow
+file — nothing was ever queued.
+
+**The forge scans the whole commit message for a CI-skip marker, and skips every workflow when it finds
+one.** `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`. It applies to `push`,
+`pull_request` and `pull_request_sync` alike, and it reads the **entire** message, not the subject line
+— so a marker quoted in a body paragraph, inside a bullet, or in a code fence silently disables CI for
+that commit. Measured 2026-08-31 on PR #322: a commit whose body *described* cd-deploy's `[skip ci]`
+promotion commit produced zero runs on both the push and the pull request.
+
+The tell that separates it from a dead runner: `/actions/tasks?limit=40` still shows recent tasks for
+*other* branches. A dead runner starves everything; a skip marker starves exactly one commit.
+
+The fix is to reword the message — `git commit --amend`, then force-push — never to disable the
+feature. Quote the marker as `` `skip`-`ci` `` or name it in prose ("a skip-ci marker") when a commit
+needs to talk about one.
+
 ### Deleting the branch on merge — the repo default does NOT cover an API merge
 
 `default_delete_branch_after_merge: true` (enabled 2026-08-29, item #290) is the default for the
@@ -610,7 +646,10 @@ and `ci-status failure --sha` therefore show only the `guardrails` / `app-ci` co
 - **Dispatch it directly to DEPLOY** when app-e2e flaked but the code is already green on its PR:
   `POST /actions/workflows/cd-deploy.yml/dispatches` `{"ref":"main","inputs":{"deploy":"true"}}`
   (the `git credential fill` token works). `app-ci`'s `trigger-cd` blocks on a *failed* app-e2e, so a
-  flake stops the auto-deploy; a direct dispatch bypasses the gate. Success ⇒ a `chore(cd): promote …
+  flake stops the auto-deploy; a direct dispatch bypasses the gate. Since item #230 the gate also
+  declines for two *correct* reasons — the commit is no longer the tip of `main`, or nothing
+  deployable changed since the last deploy — so read the `cd-dispatch / trigger-cd` status before
+  concluding a deploy was lost; a direct dispatch is the escape hatch when it genuinely was. Success ⇒ a `chore(cd): promote …
   [skip ci]` commit pins the new `*_DIGEST` in `infrastructure-as-code/docker/*/.env.deploy`, and with
   `deploy=true` the health probe already passed (no rollback-revert commit on `main`).
 

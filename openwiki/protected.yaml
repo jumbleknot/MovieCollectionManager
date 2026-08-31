@@ -227,6 +227,16 @@ passages:
     # `--all-targets` without `-D warnings` (which compiles the tests and reports the breakage as a
     # warning on a green job). Pinned executably by
     # scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs.
-    fingerprint: "sha256:6fb48bd3c0e0fe021c6e16aa4a9ed5af78f2dcec69b39b6ac3329eccaa120208"
+    #
+    # Re-fingerprinted 2026-08-31 (item #230), in the same change as the text and the fix. The
+    # section's own advice — "reach for ci-status.mjs instead of reading raw check statuses" — was
+    # being violated by `trigger-cd`, the job that gates production deploys, and it cost a deploy:
+    # a cancelled guardrails run read as a break, and the config-only merge that cancelled it was
+    # path-filtered out of app-ci so it offered no replacement trigger. Both halves are recorded,
+    # along with the two facts that make the fix's shape non-obvious — cd-deploy builds the TIP
+    # (the dispatch sends {"ref":"main"}), and a [skip ci] commit can be the tip while running
+    # nothing. Pinned executably by scripts/__tests__/cd-dispatch-gate.test.mjs and
+    # scripts/__tests__/app-ci-trigger-cd.guard.test.mjs.
+    fingerprint: "sha256:e4e364d182690668d915cd94faadb15b161d743194c47653efa27d84e1ca91c2"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"

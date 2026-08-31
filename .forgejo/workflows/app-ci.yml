@@ -24,40 +24,29 @@ on:
         default: anthropic
   # push only on main (merges) — feature branches are gated via `pull_request`, so a branch push with an
   # open PR no longer runs app-ci twice. A main push also drives trigger-cd → cd-deploy.
+  #
+  # NO `paths:` filter, since item #230 (2026-08-31). It used to carry one, with the explicit rationale
+  # "`push:` (main) keeps its paths filter — a docs/config merge to main should NOT trigger cd-deploy".
+  # That was the right goal answered in the wrong place, and it cost a production deploy.
+  #
+  # MEASURED 2026-08-22: PR #217 (app dependency changes) merged and app-ci went green. PR #228 merged
+  # seconds later and CANCELLED #217's still-running guardrails — a cancelled run reports its contexts
+  # as `failure`, so all five `guardrails / *` statuses on #217 read failure for a commit that was never
+  # broken, and trigger-cd refused to dispatch. #228 was config-only, so THIS FILTER kept app-ci off its
+  # merge entirely: no app-ci contexts, therefore no trigger-cd job, therefore no replacement trigger.
+  # #217's changes reached `main` and were never deployed, and nothing said so.
+  #
+  # "The newer commit carries the deploy" is only true if the newer commit RUNS. So app-ci now runs on
+  # every push to main, and the question this filter was really asking — is there anything to deploy —
+  # is answered by DEPLOYABLE_PATHS in scripts/cd-dispatch-gate.mjs, evaluated over the range since the
+  # last deploy rather than over one commit's diff. A docs/config merge still does not deploy; it now
+  # declines VISIBLY (a `cd-dispatch / trigger-cd` commit status) instead of by never existing.
+  #
+  # The cost is bounded and accepted: a docs/config merge to main now runs the light `affected` +
+  # `mc-service-checks` jobs. The ~23-min `app-e2e` and `dast` are still gated by the `changes` job,
+  # exactly as on a pull request. Pinned by scripts/__tests__/app-ci-trigger-cd.guard.test.mjs.
   push:
     branches: [main]
-    paths:
-      - 'frontend/**'
-      - 'agents/**'
-      - 'mcp-servers/**'
-      - 'backend/**'
-      - 'packages/**'                     # @mcm/design-system — was ungated (a DS-only PR bypassed app-ci)
-      - 'infrastructure-as-code/**'
-      - '.forgejo/workflows/app-ci.yml'
-      # Cargo.lock is DELIBERATELY not mirrored into the `changes` job's `app` filter below, unlike the
-      # two pnpm files (feature 058 / item #186, whose third acceptance criterion allows a difference the
-      # file records). The 057 FR-013 argument — "only the E2E tier catches a bad floor" — is specific to
-      # JS transitives, where breakage is a build-time failure `nx test` passes over. Rust is not in that
-      # position: `mc-service-checks` runs clippy and the unit tier on EVERY pull request and both COMPILE
-      # the crate, so a bad Cargo floor already reds a tier that runs. Adding it to `app` would buy an
-      # extra ~23-min E2E for a class already covered.
-      #
-      # THAT SENTENCE WAS FALSE UNTIL ITEM #229 (2026-08-31) and is load-bearing, so read it precisely:
-      # the gate compiles the crate, and until #229 it did NOT compile the crate's TEST targets — clippy
-      # ran without `--all-targets` and `cargo test` with `--lib`. On a Cargo-only PR nothing in CI built
-      # `backend/mc-service/tests/**`, because `app-e2e` (the only job that does) is path-gated away by
-      # this very exclusion. Measured on PR #216 at c6defc2e, 2026-08-23: every required context green,
-      # `app-e2e` `skipped (path-gated -> satisfied)`, on a reqwest 0.12->0.13 bump whose earlier
-      # revision had broken all three integration test binaries — caught then only because it also
-      # carried unrelated JS lockfile changes from a `main` merge. The mc-service `lint` target now
-      # passes `--all-targets`, which compiles lib, bins and tests without running anything and without a
-      # database, so the sentence above is true by construction rather than by hope. It is what keeps
-      # this exclusion honest: pinned by scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs,
-      # because a never-attempted compile and a clean one look identical from a green tick.
-      - 'Cargo.lock'                      # a lockfile bump changes transitive deps → rebuild the affected images
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'             # feature 058: the override map is the security-floor lever; it moves
-                                          #   with the lockfile, so the two filters must agree about both
   # NO `paths:` filter — app-ci runs on EVERY PR (branch-protection Option 2, 2026-07-07). Rationale:
   # branch protection requires the `app-ci*` checks, but a path-filtered app-ci left non-app PRs (docs,
   # config, lockfiles) with ZERO `app-ci/*` status → the required glob was unmet → unmergeable without an
@@ -84,7 +73,8 @@ on:
   # PAIRED with a branch-protection change: required checks must list the app-ci jobs EXCEPT `trigger-cd`
   # (a push-only job that leaves an orphaned `pending` on PRs) — see
   # docs/proposals/homelab-setup/branch-protection-required-checks-cleanup.md. Do the BP change FIRST.
-  # `push:` (main) keeps its paths filter — a docs/config merge to main should NOT trigger cd-deploy.
+  # `push:` (main) no longer has a paths filter either (item #230, above): whether a merge deploys is
+  # decided by scripts/cd-dispatch-gate.mjs, not by whether the workflow ran at all.
   pull_request:
 
 concurrency:
@@ -98,6 +88,26 @@ env:
   NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
 
 jobs:
+  # Cargo.lock is DELIBERATELY absent from the `changes` job's `app` filter below, unlike the
+  # two pnpm files (feature 058 / item #186, whose third acceptance criterion allows a difference the
+  # file records). The 057 FR-013 argument — "only the E2E tier catches a bad floor" — is specific to
+  # JS transitives, where breakage is a build-time failure `nx test` passes over. Rust is not in that
+  # position: `mc-service-checks` runs clippy and the unit tier on EVERY pull request and both COMPILE
+  # the crate, so a bad Cargo floor already reds a tier that runs. Adding it to `app` would buy an
+  # extra ~23-min E2E for a class already covered.
+  #
+  # THAT SENTENCE WAS FALSE UNTIL ITEM #229 (2026-08-31) and is load-bearing, so read it precisely:
+  # the gate compiles the crate, and until #229 it did NOT compile the crate's TEST targets — clippy
+  # ran without `--all-targets` and `cargo test` with `--lib`. On a Cargo-only PR nothing in CI built
+  # `backend/mc-service/tests/**`, because `app-e2e` (the only job that does) is path-gated away by
+  # this very exclusion. Measured on PR #216 at c6defc2e, 2026-08-23: every required context green,
+  # `app-e2e` `skipped (path-gated -> satisfied)`, on a reqwest 0.12->0.13 bump whose earlier
+  # revision had broken all three integration test binaries — caught then only because it also
+  # carried unrelated JS lockfile changes from a `main` merge. The mc-service `lint` target now
+  # passes `--all-targets`, which compiles lib, bins and tests without running anything and without a
+  # database, so the sentence above is true by construction rather than by hope. It is what keeps
+  # this exclusion honest: pinned by scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs,
+  # because a never-attempted compile and a clean one look identical from a green tick.
   # ── Change detection (CI efficiency, 2026-07-03) ──────────────────────────────────────────────
   # The expensive app-e2e suite (~23 min: APK + emulator + web Playwright) used to run on EVERY app-ci
   # trigger — including infrastructure-as-code/komodo/*.toml and compose-comment changes that can't
@@ -1330,10 +1340,6 @@ jobs:
   # no push trigger, so this is the ONLY automatic deploy path. Runs only on a push to main (a merge);
   # skipped on PRs/other branches (so opening/merging a PR doesn't deploy from the PR head).
   trigger-cd:
-    # ci-log-step-exempt: its two steps run BEFORE any checkout (the repo is fetched only for the
-    # digest step that follows), so scripts/ci-log-step.sh does not exist on disk yet. Instrumenting
-    # would mean moving the checkout ahead of the deploy dispatch — a behaviour change to the job that
-    # gates production deploys, which is not worth it for a curl whose failure is already a hard error.
     needs: [affected, mc-service-checks, app-e2e, dast]
     # `always()` so this still evaluates when app-e2e was SKIPPED (path-gated for a config-only change);
     # then gate explicitly: deploy on green main only when affected + mc-service-checks succeeded and
@@ -1348,65 +1354,64 @@ jobs:
           && (needs.dast.result == 'success' || needs.dast.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
+      # FIRST, not last (item #230). The decision below is a repository script, and it diffs against the
+      # last deploy's promotion commit — so the checkout AND its full history are prerequisites of the
+      # decision, not diagnostics collected afterwards. `fetch-depth: 0` because a shallow clone cannot
+      # resolve that base, which would silently disable the redundant-deploy skip on every run.
+      #
+      # This step used to run LAST and carry `continue-on-error: true`, correctly: it existed only for
+      # the digest script, it ran after the dispatch had already fired, and a transient checkout failure
+      # would otherwise have reported "deploy trigger failed" for a deploy that actually went out. That
+      # reasoning inverts once the gate depends on it — nothing may decide whether to deploy without the
+      # code that decides — so the guard is gone and a failed checkout now fails the job, before any
+      # dispatch. Moving it here is also what retires the job's ci-log-step exemption: the exemption's
+      # stated reason was that instrumenting would mean moving the checkout ahead of the dispatch.
+      - name: Checkout (the gate script, and history back to the last deploy)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
       # Defense-in-depth: app-ci is green by construction (this job `needs:` its jobs), but cd-deploy is
       # meant to gate on guardrails too. guardrails is a separate, fast workflow that has long since
       # reported by the time app-e2e (a `needs` of this job) finishes — so a SINGLE status read confirms
-      # it (no polling loop, no wall clock). node-parsed (not grep) so it's robust to JSON shape.
-      - name: Confirm guardrails is green on this commit
+      # it (no polling loop, no wall clock).
+      #
+      # The read used to be an inline `node -e` comparing raw statuses to "success". A CANCELLED run
+      # reports its contexts as `failure`, so that form read a superseded-but-unbroken commit as broken
+      # and skipped its deploy — item #230. The decision now lives in scripts/cd-dispatch-gate.mjs,
+      # which reuses ci-status.mjs's classification (superseded vs failed vs path-gated-skipped) instead
+      # of re-deriving it, decides on the TIP rather than on this commit, and publishes a
+      # `cd-dispatch / trigger-cd` commit status so a decision NOT to deploy is visible.
+      - name: Decide whether to dispatch cd-deploy
+        id: gate
         env:
           GH_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           GH_API_URL: ${{ github.api_url }}
           GH_REPO: ${{ github.repository }}
           GH_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          api="${GH_API_URL}/repos/${GH_REPO}/commits/${GH_SHA}/statuses?limit=100"
-          curl -fsSL -H "Authorization: token ${GH_TOKEN}" "$api" > statuses.json
-          node -e '
-            const a = JSON.parse(require("fs").readFileSync("statuses.json","utf8"));
-            const latest = {};                       // statuses come newest-first → first seen per context wins
-            for (const s of a) if (!(s.context in latest)) latest[s.context] = s.status;
-            const g = Object.entries(latest).filter(([c]) => c.startsWith("guardrails"));
-            if (!g.length) { console.error("::error::no guardrails status reported on this commit"); process.exit(1); }
-            const bad = g.filter(([, st]) => st !== "success");
-            if (bad.length) { console.error("::error::guardrails not green: " + JSON.stringify(bad)); process.exit(1); }
-            console.log("guardrails green: " + g.map(([c]) => c).join(", "));
-          '
+          GH_BRANCH: main
+        run: bash scripts/ci-log-step.sh trigger-cd-gate node scripts/cd-dispatch-gate.mjs
+
+      # `{"ref":"main"}`, NOT this sha — cd-deploy builds whatever the tip is. That is exactly why the
+      # gate refuses to dispatch from a superseded commit: doing so would deploy a tree whose CI this
+      # job never looked at.
       - name: Dispatch cd-deploy (deploy=true) — CI is green on main
+        if: ${{ steps.gate.outputs.dispatch == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           GH_API_URL: ${{ github.api_url }}
           GH_REPO: ${{ github.repository }}
           GH_SHA: ${{ github.sha }}
         run: |
-          set -euo pipefail
+          bash scripts/ci-log-step.sh trigger-cd-dispatch bash -e /dev/stdin <<'CI_LOG_STEP'
+          set -uo pipefail
           curl -fsSL -X POST \
             -H "Authorization: token ${GH_TOKEN}" \
             -H 'Content-Type: application/json' \
             "${GH_API_URL}/repos/${GH_REPO}/actions/workflows/cd-deploy.yml/dispatches" \
             -d '{"ref":"main","inputs":{"deploy":"true"}}'
           echo "dispatched cd-deploy (deploy=true) on main @ ${GH_SHA}"
-      # trigger-cd does no checkout of its own (it only reads statuses and dispatches cd-deploy),
-      # but the failure-digest step below runs a script from the repo, so fetch it here. Shallow and
-      # last-minute: this job's real work is already done by this point.
-      - name: Checkout (for the failure-digest script only)
-        if: always()
-        # MUST NOT be able to fail this job. It runs AFTER the cd-deploy dispatch has already fired,
-        # so without this guard a transient checkout failure would turn a job that successfully
-        # triggered the deploy RED — reporting "deploy trigger failed" when the deploy actually went
-        # out. Same reasoning as FR-009 for the digest step itself: diagnostics must never
-        # manufacture a failure signal.
-        continue-on-error: true
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 1
-      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
-      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
-      # already read (a PR comment, or a commit status on push).
-      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
-      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
-      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
-      # failure for a commit that was never broken (FR-001a).
+          CI_LOG_STEP
       - name: Publish failure digest
         if: always()
         continue-on-error: true
