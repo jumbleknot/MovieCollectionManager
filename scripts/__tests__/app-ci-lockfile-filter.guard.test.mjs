@@ -36,6 +36,8 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
 
+import { DEPLOYABLE_PATHS } from '../cd-dispatch-gate.mjs';
+
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const WORKFLOW = resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml');
 
@@ -59,11 +61,6 @@ function filterSets() {
   return parsed;
 }
 
-/** `on:` is a plain string key under the YAML 1.2 core schema the `yaml` package uses by default. */
-function pushPaths() {
-  return workflow?.on?.push?.paths ?? [];
-}
-
 test('the change filters parse, and both filter sets are non-empty', () => {
   // Runs first and deliberately asserts something trivial: every other test in this file reads these
   // two sets, and a test that silently reads an empty set reports success while checking nothing.
@@ -76,7 +73,10 @@ test('the change filters parse, and both filter sets are non-empty', () => {
     Array.isArray(filters.mobile) && filters.mobile.length > 0,
     'the `mobile` filter is missing or empty — the subset and exclusion assertions would pass vacuously',
   );
-  assert.ok(pushPaths().length > 0, 'the push paths filter is missing or empty');
+  assert.ok(
+    DEPLOYABLE_PATHS.length > 0,
+    'DEPLOYABLE_PATHS is empty — the merge-side assertion below would pass vacuously',
+  );
 });
 
 test('a lockfile / workspace-manifest change selects the app filter that gates app-e2e', () => {
@@ -129,20 +129,29 @@ test('the mobile filter is a strict subset of the app filter', () => {
   );
 });
 
-test('the pull-request filter and the push paths filter agree about dependency files', () => {
-  // FR-005. Item #186's third acceptance criterion: the two filters must either agree about
-  // lockfiles or the file must record why they deliberately differ.
+test('the pull-request filter and the merge-side deploy set agree about dependency files', () => {
+  // FR-005. Item #186's third acceptance criterion: the pull-request filter and the merge-side view
+  // must either agree about lockfiles or the file must record why they deliberately differ.
   //
-  // Cargo.lock is the recorded deliberate difference and is NOT asserted here: mc-service-checks
-  // runs clippy and the unit tier on every pull request and both COMPILE the crate, so a bad Cargo
-  // floor already fails a tier that runs. The 057 FR-013 argument is specific to JS transitives.
-  const paths = pushPaths();
+  // THE MERGE SIDE MOVED (item #230, 2026-08-31). This assertion used to read app-ci's
+  // `push: paths:` filter, which no longer exists: it starved a config-only merge of a trigger-cd
+  // entirely, so an app commit that merge superseded was never deployed by anything. app-ci now runs
+  // on every push to main and the deployable-path question is answered by DEPLOYABLE_PATHS in
+  // scripts/cd-dispatch-gate.mjs. The premise changed, so the assertion is re-pointed at the new home
+  // rather than deleted — a lockfile bump must still rebuild the affected images on merge, and that
+  // is now a decision the deploy gate makes.
+  //
+  // Cargo.lock is the recorded deliberate difference against the `app` filter and is NOT asserted
+  // here: mc-service-checks runs clippy and the unit tier on every pull request and both COMPILE the
+  // crate (with --all-targets since item #229), so a bad Cargo floor already fails a tier that runs.
+  // The 057 FR-013 argument is specific to JS transitives.
   for (const file of DEPENDENCY_FILES) {
     assert.ok(
-      paths.includes(file),
-      `the push paths filter does not select ${file}, so the pull-request filter and the push ` +
-        'filter disagree about whether a dependency change is app-affecting. A merge to main would ' +
-        'not rebuild the affected images for a change the pull request did test.',
+      DEPLOYABLE_PATHS.includes(file),
+      `DEPLOYABLE_PATHS does not include ${file}, so the pull-request filter and the deploy gate ` +
+        'disagree about whether a dependency change is app-affecting. A merge changing only that ' +
+        'file would be declined as "nothing to deploy" and the rebuilt images would never reach ' +
+        'production — for a change the pull request did test.',
     );
   }
 });

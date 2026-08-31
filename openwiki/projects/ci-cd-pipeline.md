@@ -96,7 +96,10 @@ flowchart LR
   behavior; a docs/config-only PR still gets an `app-ci` status (satisfying branch protection) but
   skips the ~23-minute E2E suite. This exists because branch protection requires the `app-ci*` glob,
   and a path-filtered trigger left non-app PRs with *no* status at all — an unmergeable PR requiring
-  an admin override, hit repeatedly before the filter was removed from the PR trigger.
+  an admin override, hit repeatedly before the filter was removed from the PR trigger. **The `push:`
+  (main) trigger lost its filter too, on 2026-08-31 (item #230)**, for the deploy-side version of the
+  same problem: a config-only merge ran no `app-ci`, so it produced no `trigger-cd` and could not
+  carry the deploy for an app commit it had just superseded.
 - **A LOCKFILE PR is no longer in that skipped class, and the two filters used to disagree about it.**
   `pnpm-lock.yaml` sat in the `push:` paths filter — *"a lockfile bump changes transitive deps"* — and
   was absent from the `changes` job's `app` filter that gates `app-e2e` on a **pull request**. So the
@@ -104,7 +107,9 @@ flowchart LR
   and PR #187, and PR #185's only evidence that its two raised floors did not break the app was a
   *local* run someone remembered to do. That is the one tier that can catch a bad floor — these are
   JS-toolchain transitives, so breakage surfaces at **build** time and `nx test` passes straight over
-  it. Both pnpm files are now in both filters (feature 058, item #186), and the accepted cost is the
+  it. Both pnpm files are now in the `app` filter (feature 058, item #186) — and, since item #230
+  retired the `push:` filter, in `DEPLOYABLE_PATHS` in `scripts/cd-dispatch-gate.mjs`, which is where
+  the merge-side "does this need a deploy" question moved. The accepted cost is the
   web+integration half only: `mobile` deliberately does not select them, so a dependency PR does not
   pay for the ~35-minute emulator half. **`Cargo.lock` is excluded from the `app` filter, and the
   reason recorded here for that was FALSE until item #229** — it read "`mc-service-checks` compiles the
@@ -194,10 +199,29 @@ flowchart LR
   dispatches `cd-deploy(deploy=true)` once green on `main`. This replaced an earlier design where a
   separate `ci-gate` job polled commit statuses with an 80-minute wall clock and could time out while
   `app-e2e` sat queued on the single capacity-1 runner — ordering is now a dependency edge, not a poll.
+  The dispatch sends `{"ref":"main"}`, so **`cd-deploy` builds the tip, not the sha whose CI passed** —
+  which is why `trigger-cd` dispatches only when its own commit is still the *effective* tip of `main`
+  (`scripts/cd-dispatch-gate.mjs`, item #230). "Effective" excludes `[skip ci]` commits: cd-deploy's own
+  digest-promotion commit is pushed with one and becomes the tip while running no workflow at all.
 - **A skipped required check settles to `success`; a cancelled run reports its contexts as `failure`
   even though nothing was actually broken.** Treating a cancelled/superseded run as a real failure (or
   the reverse) has caused real merge confusion; `node scripts/ci-status.mjs` is the self-serve tool
   that derives the correct interpretation — reach for it instead of reading raw check statuses.
+- **That trap bit the deploy trigger itself, and cost a production deploy — in both halves at once.**
+  Measured 2026-08-22: PR #217 (app dependency changes) merged and `app-ci` went green; PR #228 merged
+  seconds later and **cancelled** #217's still-running guardrails, whose five contexts then read
+  `failure`. `trigger-cd`'s inline `st !== "success"` read that as a break and refused to dispatch —
+  in a job whose own `if:` block one line earlier already distinguished `success` from `skipped` for
+  `app-e2e`. And #228 was config-only, so the `push:` paths filter kept `app-ci` off that merge
+  entirely: no `app-ci` contexts, no `trigger-cd` job, no replacement trigger. #217's changes reached
+  `main` and were never deployed, and **nothing said so**, because `trigger-cd` is advisory — a run
+  that declined and a run that deployed were indistinguishable from outside. Closed by item #230: the
+  decision moved into `scripts/cd-dispatch-gate.mjs` (reusing this bundle's own advice — `ci-status.mjs`'s
+  classification — rather than re-deriving it), the tip decides so a superseded commit reports
+  `skipped` and hands off instead of failing, `app-ci` runs on every push to `main` so the newer commit
+  can actually carry the deploy, and every decision is published as a `cd-dispatch / trigger-cd` commit
+  status. Pinned by `scripts/__tests__/cd-dispatch-gate.test.mjs` and
+  `scripts/__tests__/app-ci-trigger-cd.guard.test.mjs`.
 - **Agent and MCP images are rebuilt from the checkout on every CI run, never reused from cache** — a
   cached stale image previously let an `agents/**` or `mcp-servers/**` change go untested against its
   own code.
