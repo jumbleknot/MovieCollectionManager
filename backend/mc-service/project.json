@@ -31,11 +31,14 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo clippy --manifest-path backend/mc-service/Cargo.toml -p mc-service -- -D warnings",
+        "command": "cargo clippy --manifest-path backend/mc-service/Cargo.toml -p mc-service --all-targets -- -D warnings",
         "cwd": "{workspaceRoot}"
       },
       "cache": true,
-      "inputs": ["default"]
+      "inputs": ["default"],
+      "metadata": {
+        "description": "clippy over mc-service with warnings denied. `--all-targets` IS LOAD-BEARING AND IS NOT A TIDY-UP (item #229): without it clippy checks the lib and bins only, and since `test:unit` runs `--lib`, NOTHING in the fast `app-ci / mc-service-checks` gate compiles backend/mc-service/tests/**. That gate went green on PR #216 (reqwest 0.12 -> 0.13) while all three integration test binaries failed to compile, because `RequestBuilder::form` became feature-gated and the ROPC helper calls it; `app-e2e` reported it ~35 minutes later as an opaque step name, and on a Cargo-only PR — Cargo.lock is deliberately outside the `changes` job's `app` filter — app-e2e does not run at all. `--all-targets` compiles lib, bins and tests WITHOUT running them and WITHOUT a database, so it belongs in the fast job by construction. It does not replace `test:integration`, which still runs those tests against a replica-set Mongo in app-e2e. Pinned by scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs. The flag must stay BEFORE the bare `--`: everything after it is passed to the lint driver, which does not accept it."
+      }
     },
     "serve": {
       "executor": "@monodon/rust:run",

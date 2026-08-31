@@ -107,17 +107,25 @@ flowchart LR
   it. Both pnpm files are now in both filters (feature 058, item #186), and the accepted cost is the
   web+integration half only: `mobile` deliberately does not select them, so a dependency PR does not
   pay for the ~35-minute emulator half. **`Cargo.lock` is excluded from the `app` filter, and the
-  reason recorded here for that was FALSE** — it read "`mc-service-checks` compiles the crate on every
-  PR, so a bad Cargo floor already reds a tier that runs". It compiles the crate; it does not compile
-  the crate's TEST targets — `clippy` runs without `--all-targets` and `cargo test` runs with `--lib`.
-  So on a Cargo-only pull request nothing in CI builds `tests/integration/*.rs`, and `app-e2e` — the
-  only job that does — is path-gated away. Measured 2026-08-23 on PR #216: every required context
-  green with `app-e2e` `skipped (path-gated → satisfied)`, on a change whose earlier revision had
-  broken all three integration test binaries. That earlier revision was caught only because it also
-  carried unrelated JS lockfile changes from a `main` merge, which put it back inside the `app`
-  filter — **caught by coincidence, not by design**. Item #229 tracks the fix (`--all-targets`, which
-  is cheap and needs no database); until it lands, a Cargo-only PR is verified by whoever runs
-  `cargo test --no-run` locally, and by nothing else.
+  reason recorded here for that was FALSE until item #229** — it read "`mc-service-checks` compiles the
+  crate on every PR, so a bad Cargo floor already reds a tier that runs". It compiled the crate; it did
+  not compile the crate's TEST targets — `clippy` ran without `--all-targets` and `cargo test` with
+  `--lib`. So on a Cargo-only pull request nothing in CI built `tests/integration/*.rs`, and `app-e2e`
+  — the only job that does — is path-gated away by that very exclusion. Measured 2026-08-23 on PR #216:
+  every required context green with `app-e2e` `skipped (path-gated → satisfied)`, on a change whose
+  earlier revision had broken all three integration test binaries. That earlier revision was caught
+  only because it also carried unrelated JS lockfile changes from a `main` merge, which put it back
+  inside the `app` filter — **caught by coincidence, not by design**. Fixed 2026-08-31 (item #229) by
+  adding `--all-targets` to the mc-service `lint` target: clippy then compiles lib, bins **and** tests
+  without running anything and without a database, so it belongs in the fast job by construction. The
+  sentence is now true — but only while the flag is there, so it is pinned by
+  `scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs` rather than by a comment. Two traps in
+  that flag: it must sit **before** the bare `--` (everything after it goes to the lint driver, which
+  does not accept it), and `--all-targets` without `-D warnings` would compile the test sources and
+  then report their findings as warnings — a green job that has seen the breakage and said nothing.
+  Expect a one-off cost when adding it anywhere else: test code that has never been linted has
+  findings (five here — an `unnecessary_map_or`, three `unnecessary_unwrap`, one
+  `bool_assert_comparison`), and `-D warnings` makes them failures.
 - **A filter entry that is in `mobile` but not in `app` can never fire.** `mobile` gates only *steps
   inside* `app-e2e`, and `app-e2e` itself runs only when `app` matched — so a path in the subset but
   not the superset sets `mobile=true`, `app=false`, and the whole job skips. `mobile`'s own comment
