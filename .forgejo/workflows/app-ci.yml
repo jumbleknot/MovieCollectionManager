@@ -208,6 +208,10 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
+          # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
+          # installs is whatever is newest at run time — and uv is the generator for the uv.lock
+          # files the weekly lockFileMaintenance channel merges. One version across every site.
+          version: '0.12.7' # uv-version
           # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
           # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
           # RENOVATE_GITHUB_COM_TOKEN is the repo's read-only github.com PAT (also used by renovate.yml).
@@ -260,7 +264,9 @@ jobs:
       - name: Install Rust (stable + clippy)
         run: |
           bash scripts/ci-log-step.sh mc-service-checks-install-rust bash -e /dev/stdin <<'CI_LOG_STEP'
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component clippy
+          # `--default-toolchain none` + rust-toolchain.toml (item #307): the channel AND its
+          # components both come from that file, which is why clippy is no longer named here.
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -404,6 +410,10 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
+          # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
+          # installs is whatever is newest at run time — and uv is the generator for the uv.lock
+          # files the weekly lockFileMaintenance channel merges. One version across every site.
+          version: '0.12.7' # uv-version
           # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
           # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
           # RENOVATE_GITHUB_COM_TOKEN is the repo's read-only github.com PAT (also used by renovate.yml).
@@ -1147,6 +1157,10 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
+          # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
+          # installs is whatever is newest at run time — and uv is the generator for the uv.lock
+          # files the weekly lockFileMaintenance channel merges. One version across every site.
+          version: '0.12.7' # uv-version
           github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
 
       - name: Install dependencies

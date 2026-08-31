@@ -1,0 +1,34 @@
+# The Rust toolchain this repository is built and gated with — item #307.
+#
+# WHY THIS FILE EXISTS. Until 2026-08-30 there was none, and all four rustup installs took
+# `stable`. Rust ships every ~6 weeks and new clippy lints red previously-clean code, so a compiler
+# nobody chose would arrive unannounced in `app-ci / mc-service-checks` and `guardrails / sast` on
+# some unrelated pull request. That is the #160 shape exactly — a runtime nobody selected, changing
+# under a job that then fails on every run — and item #303's principle applies: a floating
+# reference means no version, and no version means no classification and no reproducibility.
+#
+# HOW IT TAKES EFFECT. rustup reads this file automatically for any cargo/rustc invocation inside
+# the repository, so the three CI workflows install rustup with `--default-toolchain none` and let
+# the first cargo call resolve the channel and its components from here. There is deliberately no
+# `stable` literal left in any workflow; `renovate-workflow.guard.test.mjs` asserts that.
+#
+# WHO KEEPS IT CURRENT. renovate@44 ships a BUILT-IN `rust-toolchain` manager
+# (managerFilePatterns `/(^|/)rust-toolchain(\.toml)?$/`) which extracts this as depName `rust` on
+# the `rust-version` datasource — so this file needs no customManager, and adding one would
+# double-manage it. The devcontainer image bakes the same version and IS covered by a customManager
+# emitting the same depName+datasource, with a `rust toolchain` packageRule holding the two halves
+# in one branch. Extraction is not grouping (#194, #204, #225).
+#
+# ACCEPTED DIVERGENCE: `backend/mc-service/Dockerfile` builds `FROM rust:alpine3.21@sha256:…`.
+# `alpine3.21` is a version-LESS tag, so Renovate can only churn its digest and never propose a
+# classified update. Re-tagging it to a versioned form is a change under `backend/`, which is
+# SDD-gated, so it is recorded here rather than done silently — item #307, criterion 1.
+#
+# 1.98.0 is not a new choice: it is what `rustup … stable` resolved to on the day this landed
+# (published 2026-08-20), so pinning it changed nothing about what CI ran. Proven, not new.
+[toolchain]
+channel = "1.98.0"
+profile = "minimal"
+# clippy is what `app-ci / mc-service-checks` runs; declaring it here is what let the
+# `--component clippy` literal come out of that workflow. rustfmt is the constitution's formatter.
+components = ["clippy", "rustfmt"]

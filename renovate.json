@@ -274,6 +274,105 @@
       "matchStrings": ["corepack\\s+prepare\\s+pnpm@(?<currentValue>[\\d.]+)"],
       "depNameTemplate": "pnpm",
       "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Item #307 — the DEVCONTAINER half of the Rust pin. rust-toolchain.toml itself needs no",
+        "manager: renovate@44 ships a BUILT-IN `rust-toolchain` manager (managerFilePatterns",
+        "`/(^|/)rust-toolchain(\\.toml)?$/`) emitting depName `rust` on the `rust-version` datasource,",
+        "and a second manager over the same file would double-manage it — two depNames for one",
+        "package, two branches, both editing the same line, which is precisely why this config",
+        "declines to add a regex manager over pnpm-workspace.yaml.",
+        "The devcontainer image bakes its own copy because it is built BEFORE the repository exists,",
+        "so it cannot read the toolchain file. Same depName AND same datasource on purpose: that is",
+        "what makes the two halves ONE dependency rather than two that happen to share a name. The",
+        "`rust toolchain` packageRule below is what actually keeps them in one branch —",
+        "EXTRACTION IS NOT GROUPING (#194, #204, #225)."
+      ],
+      "managerFilePatterns": ["/^\\.devcontainer/toolchain\\.Dockerfile$/"],
+      "matchStrings": ["--default-toolchain\\s+(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "rust",
+      "datasourceTemplate": "rust-version"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Item #307 — semgrep. `SEMGREP_PIN` was already pinned and extracted by NOTHING (confirmed",
+        "against a local Renovate extract: zero semgrep depNames), which is a ROTTING pin: item",
+        "#303's principle is that a pin with nothing maintaining it merely trades a floating",
+        "reference for a stale one. It is installed as `uvx semgrep@<pin>`, hence PyPI.",
+        "One file, one manager, one depName — so no grouping rule is needed here. Grouping is",
+        "required when a SECOND manager sees the other half (nx, Playwright, pnpm, uv below); it is",
+        "not a ritual to perform on every custom manager. The Trivy manager above is the precedent:",
+        "two files, one depName, no group, one branch."
+      ],
+      "managerFilePatterns": ["/^scripts/sast-scan\\.mjs$/"],
+      "matchStrings": ["SEMGREP_PIN\\s*=\\s*'(?<currentValue>[\\d.]+)'"],
+      "depNameTemplate": "semgrep",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Item #307 — cargo-audit, the tool that decides whether a Rust advisory blocks the merge.",
+        "It was installed as `cargo install cargo-audit --locked`, i.e. LATEST every run: `--locked`",
+        "locks the crate's DEPENDENCIES, not the crate's own version. The devcontainer installed it",
+        "unpinned too, so a local scan and the CI scan of identical inputs could disagree — the cost",
+        "item #303 measured for Trivy.",
+        "Two files, two spellings (`--version X` in the workflow, `cargo-audit@X` in the image), one",
+        "depName on the crates.io datasource — so one dependency in one branch, no grouping rule."
+      ],
+      "managerFilePatterns": [
+        "/^\\.forgejo/workflows/guardrails\\.yml$/",
+        "/^\\.devcontainer/toolchain\\.Dockerfile$/"
+      ],
+      "matchStrings": [
+        "cargo-audit\\s+--locked\\s+--version\\s+(?<currentValue>[\\d.]+)",
+        "cargo-audit@(?<currentValue>[\\d.]+)"
+      ],
+      "depNameTemplate": "cargo-audit",
+      "datasourceTemplate": "crate"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Item #307 — uv, and THE DECISION ABOUT ITS SINGLE SOURCE OF TRUTH, which item #308 consumes.",
+        "uv had three install shapes and none was pinned: two `curl astral.sh/uv/install.sh | sh` in",
+        "guardrails, one in the devcontainer image (a MOVING script piped to sh — byte-for-byte the",
+        "shape #303 removed for Trivy), and five `astral-sh/setup-uv` steps whose ACTION was",
+        "digest-pinned while the uv it installs resolved latest at run time. uv is pre-1.0, moves",
+        "fast, and is the GENERATOR for the uv.lock files the weekly lockFileMaintenance channel",
+        "merges — a generator-version change can alter lockfile output in the one workflow whose",
+        "output merges weekly.",
+        "THE DECISION: uv's single source of truth is ONE VERSION STRING, repeated at every site,",
+        "held together by this ONE customManager plus the `uv pin` packageRule below, and asserted",
+        "equal across every site by renovate-workflow.guard.test.mjs. It is deliberately NOT a file",
+        "that every site reads: `astral-sh/setup-uv`'s `version:` input is an Actions expression and",
+        "cannot read a repository file, so a file would leave the five action sites unpinned — the",
+        "half-measure that produces exactly the drift this fixes. The nx/Playwright/pnpm pins are the",
+        "precedent for the shape (one string, many sites, one guard).",
+        "ITEM #308 CONSUMES THIS: the eight `ghcr.io/astral-sh/uv:latest@sha256:…` image refs re-tag",
+        "to `ghcr.io/astral-sh/uv:<this version>`, which the BUILT-IN docker manager sees under a",
+        "different depName and a different datasource. That is why `uv pin` below matches both — the",
+        "group is wired now so #308 is a re-tag rather than a re-think.",
+        "The `# uv-version` marker on the action inputs is load-bearing: without it the matchString",
+        "would be a bare `version:` key and would claim any other `version:` input added to those",
+        "workflows later."
+      ],
+      "managerFilePatterns": [
+        "/^\\.forgejo/workflows/guardrails\\.yml$/",
+        "/^\\.forgejo/workflows/app-ci\\.yml$/",
+        "/^\\.forgejo/workflows/cd-deploy\\.yml$/",
+        "/^\\.forgejo/workflows/renovate\\.yml$/",
+        "/^\\.devcontainer/toolchain\\.Dockerfile$/"
+      ],
+      "matchStrings": [
+        "astral\\.sh/uv/(?<currentValue>[\\d.]+)/install\\.sh",
+        "version:\\s*'(?<currentValue>[\\d.]+)'\\s*#\\s*uv-version"
+      ],
+      "depNameTemplate": "astral-sh/uv",
+      "datasourceTemplate": "github-releases"
     }
   ],
   "packageRules": [
@@ -699,6 +798,43 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["minio/minio", "minio/mc"],
       "versioning": "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T\\d{2}-\\d{2}-\\d{2}Z$"
+    },
+    {
+      "description": [
+        "Item #307 — hold the two halves of the Rust pin in ONE branch. rust-toolchain.toml is read",
+        "by the built-in `rust-toolchain` manager and the devcontainer's baked copy by the custom",
+        "manager above; both emit depName `rust` on the `rust-version` datasource. Without this rule",
+        "nothing states that they belong together, and this repository has paid three times for",
+        "assuming extraction implies grouping (nx #141/#193, Playwright #204, pnpm #225).",
+        "matchDatasources is what keeps this OFF backend/mc-service/Dockerfile's `rust:alpine3.21`,",
+        "which is depName `rust` on the DOCKER datasource — a different dependency with a different",
+        "version grammar, and an ACCEPTED DIVERGENCE (item #307 criterion 1): `alpine3.21` carries no",
+        "version, so Renovate can only churn its digest, and re-tagging it is a change under",
+        "`backend/`, which is SDD-gated. Recorded rather than done silently.",
+        "Ordered last, because a LATER packageRule overrides an earlier one."
+      ],
+      "matchManagers": ["rust-toolchain", "custom.regex"],
+      "matchDatasources": ["rust-version"],
+      "matchPackageNames": ["rust"],
+      "groupName": "rust toolchain",
+      "automerge": false
+    },
+    {
+      "description": [
+        "Item #307/#308 — hold EVERY uv reference in one branch. The custom manager above sees the",
+        "install-script URLs and the setup-uv inputs as `astral-sh/uv` on github-releases; item",
+        "#308's re-tagged image refs are seen by the BUILT-IN docker manager as",
+        "`ghcr.io/astral-sh/uv` on the docker datasource. Different manager AND different datasource,",
+        "so `docker base images` (above) would claim the image half and strand the rest.",
+        "The docker packageName is matched HERE, before #308 lands, so that item is a re-tag rather",
+        "than a re-think — and so this rule is wrong-and-loud rather than silently absent if the",
+        "re-tag ever arrives without it.",
+        "Ordered last, after `docker base images` and after the broad js rules, because a LATER",
+        "packageRule overrides an earlier one."
+      ],
+      "matchPackageNames": ["astral-sh/uv", "/^ghcr\\.io/astral-sh/uv$/"],
+      "groupName": "uv pin",
+      "automerge": false
     }
   ],
   "ignorePaths": [

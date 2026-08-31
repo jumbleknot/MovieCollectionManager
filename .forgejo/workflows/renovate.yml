@@ -115,7 +115,9 @@ jobs:
       - name: Install Rust (cargo, for Cargo.lock maintenance)
         run: |
           bash scripts/ci-log-step.sh renovate-install-rust bash -e /dev/stdin <<'CI_LOG_STEP'
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          # `--default-toolchain none` + rust-toolchain.toml (item #307): the toolchain that
+          # regenerates Cargo.lock every Friday is a chosen version, not `stable` on the day.
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
       # uv, for the pep621 lockFileMaintenance channel — item #218. WITHOUT THIS THE CHANNEL IS NOT
@@ -139,6 +141,10 @@ jobs:
       - name: Set up uv (for pep621 / uv.lock maintenance)
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
+          # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
+          # installs is whatever is newest at run time — and uv is the generator for the uv.lock
+          # files the weekly lockFileMaintenance channel merges. One version across every site.
+          version: '0.12.7' # uv-version
           # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
           # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
           # Same pin and same reasoning as app-ci.yml and cd-deploy.yml.
