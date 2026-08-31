@@ -2006,7 +2006,15 @@ test('Renovate tracks the cargo-audit pin in both files', () => {
 // for the `uv.lock` files the weekly lockFileMaintenance channel merges. A generator-version change
 // can alter lockfile output in the one workflow whose output merges weekly.
 
+const APP_DOCKERFILES = [
+  'agents/movie-assistant/Dockerfile',
+  'mcp-servers/movie-mcp/Dockerfile',
+  'mcp-servers/spreadsheet-mcp/Dockerfile',
+  'mcp-servers/web-api-mcp/Dockerfile',
+];
+
 const UV_FILES = [
+  ...APP_DOCKERFILES.map((f) => [f, readFileSync(resolve(REPO_ROOT, f), 'utf8')]),
   ['.forgejo/workflows/guardrails.yml', guardrailsText],
   ['.forgejo/workflows/app-ci.yml', appCiText],
   ['.forgejo/workflows/cd-deploy.yml', readFileSync(CD_DEPLOY, 'utf8')],
@@ -2019,6 +2027,8 @@ function uvVersionRefs() {
   const refs = [];
   for (const [file, text] of UV_FILES) {
     for (const m of text.matchAll(/astral\.sh\/uv\/([^/\s]+)\/install\.sh/g)) refs.push({ file, how: 'install script URL', version: m[1] });
+    // Item #308: the image refs are a third shape of the same pin, and must carry the same version.
+    for (const m of text.matchAll(/ghcr\.io\/astral-sh\/uv:([^@\s]+)/g)) refs.push({ file, how: 'image tag', version: m[1] });
     // Line-window scan rather than one big regex: a `[\s\S]*?` across a YAML step happily runs into
     // the NEXT step and reports its keys as this one's, which is how a guard reads green while the
     // thing it names is absent.
@@ -2089,9 +2099,22 @@ test('Renovate tracks the uv pin at every site, as one dependency', () => {
   const uv = managerFor('astral-sh/uv');
   assert.equal(uv.length, 1, 'expected exactly one customManager tracking astral-sh/uv');
   assert.equal(uv[0].datasourceTemplate, 'github-releases', 'uv releases are GitHub releases');
-  for (const [file, text] of UV_FILES) {
+
+  // The sites no BUILT-IN manager reads: install-script URLs and Actions inputs.
+  for (const [file, text] of UV_FILES.filter(([f]) => !APP_DOCKERFILES.includes(f))) {
     assert.ok(managerCovers(uv[0], file), `the uv customManager does not cover ${file}, so that pin would rot while the others moved`);
     assert.ok(capturesIn(uv[0], text), `the uv customManager's matchStrings capture no currentValue in ${file}`);
+  }
+
+  // ...and NOT the app Dockerfiles, which the built-in `dockerfile` manager already reads (item
+  // #308). Covering them here would double-manage the image refs — two depNames for one tool, two
+  // branches, both editing the same line. The `uv pin` packageRule is what joins the two managers;
+  // a second extractor is not.
+  for (const file of APP_DOCKERFILES) {
+    assert.ok(
+      !managerCovers(uv[0], file),
+      `the uv customManager also covers ${file}, which the built-in dockerfile manager already extracts`,
+    );
   }
 });
 
@@ -2137,4 +2160,75 @@ test('the uv rule groups the custom manager with the docker image refs item #308
 test('the uv rule does NOT swallow other docker base images — the control', () => {
   const other = { manager: 'dockerfile', datasource: 'docker', depName: 'python', packageName: 'python', packageFile: 'agents/movie-assistant/Dockerfile', updateType: 'minor' };
   assert.notEqual(resolvedGroupName(other), resolvedGroupName(uvDep('custom.regex')), 'the uv group has swallowed an unrelated docker image');
+});
+
+// ── Item #308: the #297 floating-reference class in the APP Dockerfiles ─────────────────────────
+
+test('no app Dockerfile references a :latest image', () => {
+  // A digest-pinned `:latest` is reproducible but UNCLASSIFIABLE: every update arrives as an opaque
+  // digest churn in `docker base images`, which is the state feature 063 / item #297 removed for
+  // the infra images. `latest` is not a version, so its updates cannot be patch/minor/major.
+  for (const file of APP_DOCKERFILES.concat(['backend/mc-service/Dockerfile', 'frontend/mcm-app/Dockerfile'])) {
+    const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
+    for (const [i, line] of text.split('\n').entries()) {
+      if (line.trimStart().startsWith('#')) continue; // prose, including build/run examples
+      assert.ok(
+        !/(^|\s|=)[\w./-]+:latest(@sha256:[0-9a-f]+)?/.test(line),
+        `${file}:${i + 1} references a :latest image —\n    ${line.trim()}\n` +
+          '  Pin a version tag so its updates are classified (item #308).',
+      );
+    }
+  }
+});
+
+test('every FROM and COPY --from in an app Dockerfile is digest-pinned', () => {
+  // `python:3.13-slim` carried NO digest at all: the build resolved whatever 3.13.x-slim was
+  // current at build time — unreproducible AND unclassified. `docker:pinDigests` was in `extends`
+  // the whole time and could never act on it; see the `docker digest pins` rule in renovate.json
+  // for the measured mechanism.
+  for (const file of APP_DOCKERFILES) {
+    const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
+    for (const [i, line] of text.split('\n').entries()) {
+      if (line.trimStart().startsWith('#')) continue;
+      const m = /^\s*(?:FROM|COPY\s+--from=)\s*([^\s]+)/.exec(line);
+      if (!m || !m[1].includes(':')) continue; // a bare stage name (`--from=build`) is not an image
+      assert.match(
+        m[1],
+        /@sha256:[0-9a-f]{64}$/,
+        `${file}:${i + 1} names an image with no digest —\n    ${line.trim()}\n` +
+          '  The build then resolves whatever that tag points at on build day.',
+      );
+    }
+  }
+});
+
+test('a pinDigest update gets its OWN branch, or it collides with a version update and is dropped', () => {
+  // MEASURED (see the rule's own description): with every docker update on one branch,
+  // branchify.js de-duplicates on `${packageFile}:${depName}:${currentValue}` and DROPS the second
+  // newValue — so `python:3.13-slim`'s pin lost to `3.14-slim` on every run, logged at INFO and
+  // reported nowhere. Eight collisions became zero once pinDigest had its own group.
+  const pin = { manager: 'dockerfile', datasource: 'docker', depName: 'python', packageName: 'python', packageFile: 'agents/movie-assistant/Dockerfile', updateType: 'pinDigest' };
+  const version = { ...pin, updateType: 'minor' };
+  assert.notEqual(
+    resolvedGroupName(pin),
+    resolvedGroupName(version),
+    'a pinDigest update shares a branch with the same dep\'s version update, so the pin is silently\n' +
+      '  discarded every run — `docker:pinDigests` present in `extends` and doing nothing.',
+  );
+
+  // A digest REFRESH of an already-pinned image must still ride the normal group: separating it too
+  // would split routine digest churn out of `docker base images` for no reason.
+  assert.equal(
+    resolvedGroupName({ ...pin, updateType: 'digest' }),
+    'docker base images',
+    'the pinDigest split has caught ordinary digest refreshes as well — scope it by updateType',
+  );
+});
+
+test('the uv image refs ride the `uv pin` group, not `docker base images`', () => {
+  // The re-tag is what makes this bite: `ghcr.io/astral-sh/uv` is now a real version the docker
+  // manager can classify, so `docker base images` would claim it and a uv bump would arrive as two
+  // PRs editing the same tool. Item #307 wired the group; this asserts the re-tag landed inside it.
+  const image = { manager: 'dockerfile', datasource: 'docker', depName: 'ghcr.io/astral-sh/uv', packageName: 'ghcr.io/astral-sh/uv', packageFile: 'agents/movie-assistant/Dockerfile', updateType: 'minor' };
+  assert.equal(resolvedGroupName(image), 'uv pin', `the uv image refs resolve to ${resolvedGroupName(image)}`);
 });

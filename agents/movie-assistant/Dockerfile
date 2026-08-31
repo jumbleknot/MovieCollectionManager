@@ -1,8 +1,8 @@
 # Agent Gateway (langgraph-api) image for the MCM conversational assistant.
 # Build context is the repo root (constitution: build from root with -f).
 # Multi-stage: install deps with uv, then run the langgraph-api server hosting the graph.
-FROM python:3.13-slim AS build
-COPY --from=ghcr.io/astral-sh/uv:latest@sha256:95f2aa1fe59274951cfe9b0cbc7972e879ff1004bc8945d130a32eb0dbd85945 /uv /usr/local/bin/uv
+FROM python:3.13-slim@sha256:7ce4b6dfe35e55397b7cda544f8a13f191b7ae28dc5aad71fe664dbc9bc2623f AS build
+COPY --from=ghcr.io/astral-sh/uv:0.12.7@sha256:95f2aa1fe59274951cfe9b0cbc7972e879ff1004bc8945d130a32eb0dbd85945 /uv /usr/local/bin/uv
 # A C/C++ toolchain is required: nemoguardrails pulls `annoy`, which has no cp313 wheel
 # and compiles from source (needs g++). build-essential lives only in this build stage;
 # the runtime stage gets just the compiled .venv.
@@ -15,7 +15,7 @@ RUN uv sync --frozen --no-dev
 COPY agents/movie-assistant/src ./src
 COPY agents/movie-assistant/langgraph.json ./
 
-FROM python:3.13-slim AS runtime
+FROM python:3.13-slim@sha256:7ce4b6dfe35e55397b7cda544f8a13f191b7ae28dc5aad71fe664dbc9bc2623f AS runtime
 # Non-root user (defense-in-depth; feature 034). The .venv on PATH and the source
 # are read-only at runtime — uvicorn binds a port and reads code, no writable state.
 RUN groupadd --system app && useradd --system --gid app --no-create-home app
