@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, and the silent failure modes that produce absence instead of errors.
+description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors, and the two-place config validator that catches the unknown-key class the guard test cannot.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
 timestamp: 2026-08-30T17:08:17.796Z
@@ -193,3 +193,4 @@ rather than rediscovering it as a suspected defect.
   marks only that one label rejected, which is the intent here).
 - **`npx --yes renovate@44` is major-pinned and Renovate cannot see it** — documented in
   `renovate.yml` as a deliberate residual with its own bump procedure.
+- **`renovate-config-validator` catches the unknown-key class that the guard test cannot — but only with both `--strict --no-global` flags.** Measured 2026-08-30 against this repo's own `renovate.json` on renovate@44.52.0: without `--no-global` the file is validated as a *global self-hosted* config (not the repo config Renovate actually reads), and without `--strict` a renamed key is a warning not a failure — exit 0 on precisely the class the check exists to catch. Since item #309 the validator runs in two places, both on renovate@44: (1) `guardrails/renovate-config` in `.forgejo/workflows/guardrails.yml` — required, unconditional, catches an edit to `renovate.json` before it merges; (2) a step in `renovate.yml` before `Run Renovate` — catches a key deprecated by a minor bump between Friday windows when nothing in the repo changed. It is deliberately NOT path-gated: a cold run measured 27 s; a path filter buys seconds and costs the guarantee that a green board means the validator ran. The guard test (`renovate-workflow.guard.test.mjs`) asserts the job carries no `if:` and no `needs:`, and that all three `renovate@44` references agree. The validator does not replace the guard test — the guard test catches a key Renovate knows but ignores depending on where it is written (the `prPriority`-inside-`lockFileMaintenance` case).
