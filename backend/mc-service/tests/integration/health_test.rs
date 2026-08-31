@@ -199,7 +199,7 @@ async fn metrics_returns_200_with_prometheus_format() {
                 || trimmed
                     .chars()
                     .next()
-                    .map_or(false, |c| c.is_alphabetic() || c == '_'),
+                    .is_some_and(|c| c.is_alphabetic() || c == '_'),
             "Non-conforming Prometheus text exposition line: '{trimmed}'"
         );
     }

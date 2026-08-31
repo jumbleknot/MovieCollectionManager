@@ -218,6 +218,15 @@ passages:
     # `app` paths filter on the grounds that mc-service-checks compiles the crate on every PR. It does
     # not compile the crate's TEST targets, so on a Cargo-only PR nothing in CI builds them and
     # app-e2e is path-gated away. Item #229 tracks the fix.
-    fingerprint: "sha256:42e1ac79819dd295ae8c50076407ecf4bea13bb882c2f779c4feca588ef4ee1f"
+    #
+    # Re-fingerprinted 2026-08-31 (item #229), in the same change as the text and the fix. The
+    # sentence corrected above is now TRUE: the mc-service `lint` target passes `--all-targets`, so
+    # clippy compiles lib, bins and tests on every PR without running them and without a database.
+    # The passage records what makes it true, and the two ways it silently stops being true — the
+    # flag placed after the bare `--` (where it is a lint argument, not a cargo one), and
+    # `--all-targets` without `-D warnings` (which compiles the tests and reports the breakage as a
+    # warning on a green job). Pinned executably by
+    # scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs.
+    fingerprint: "sha256:6fb48bd3c0e0fe021c6e16aa4a9ed5af78f2dcec69b39b6ac3329eccaa120208"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"

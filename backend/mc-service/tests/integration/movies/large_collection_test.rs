@@ -334,8 +334,7 @@ async fn filter_content_type_movie() {
         .expect("filter by Movie failed");
 
     let total = result.items.len()
-        + if result.next_cursor.is_some() {
-            let cursor = result.next_cursor.unwrap();
+        + if let Some(cursor) = result.next_cursor {
             movie_repo
                 .list(
                     &coll_id,
@@ -824,8 +823,7 @@ async fn filter_owned_true() {
         .expect("filter owned=true failed");
 
     let total = result.items.len()
-        + if result.next_cursor.is_some() {
-            let cursor = result.next_cursor.unwrap();
+        + if let Some(cursor) = result.next_cursor {
             movie_repo
                 .list(
                     &coll_id,
@@ -916,8 +914,7 @@ async fn filter_ripped_false() {
         .expect("filter ripped=false failed");
 
     let total = result.items.len()
-        + if result.next_cursor.is_some() {
-            let cursor = result.next_cursor.unwrap();
+        + if let Some(cursor) = result.next_cursor {
             movie_repo
                 .list(
                     &coll_id,

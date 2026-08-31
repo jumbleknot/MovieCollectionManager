@@ -41,6 +41,19 @@ on:
       # position: `mc-service-checks` runs clippy and the unit tier on EVERY pull request and both COMPILE
       # the crate, so a bad Cargo floor already reds a tier that runs. Adding it to `app` would buy an
       # extra ~23-min E2E for a class already covered.
+      #
+      # THAT SENTENCE WAS FALSE UNTIL ITEM #229 (2026-08-31) and is load-bearing, so read it precisely:
+      # the gate compiles the crate, and until #229 it did NOT compile the crate's TEST targets — clippy
+      # ran without `--all-targets` and `cargo test` with `--lib`. On a Cargo-only PR nothing in CI built
+      # `backend/mc-service/tests/**`, because `app-e2e` (the only job that does) is path-gated away by
+      # this very exclusion. Measured on PR #216 at c6defc2e, 2026-08-23: every required context green,
+      # `app-e2e` `skipped (path-gated -> satisfied)`, on a reqwest 0.12->0.13 bump whose earlier
+      # revision had broken all three integration test binaries — caught then only because it also
+      # carried unrelated JS lockfile changes from a `main` merge. The mc-service `lint` target now
+      # passes `--all-targets`, which compiles lib, bins and tests without running anything and without a
+      # database, so the sentence above is true by construction rather than by hope. It is what keeps
+      # this exclusion honest: pinned by scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs,
+      # because a never-attempted compile and a clean one look identical from a green tick.
       - 'Cargo.lock'                      # a lockfile bump changes transitive deps → rebuild the affected images
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'             # feature 058: the override map is the security-floor lever; it moves
@@ -249,9 +262,12 @@ jobs:
         run: node scripts/ci-failure-digest.mjs
 
   # ── mc-service Rust checks (clippy + unit tests) ──────────────────────────────────────────────
-  # Runs in the container runner. clippy (-D warnings) + `cargo test --lib` (unit only — the
-  # integration tests need a replica-set Mongo and are NOT run here). Routed through Nx
-  # (constitution). This is Rust coverage the old GitHub CI did not have.
+  # Runs in the container runner. clippy (-D warnings, --all-targets) + `cargo test --lib` (unit only —
+  # the integration tests need a replica-set Mongo and are NOT RUN here, but since item #229 they are
+  # COMPILED here: `--all-targets` builds lib, bins and tests without executing anything and without a
+  # database, so a change that breaks only backend/mc-service/tests/** reds THIS job in minutes instead
+  # of app-e2e ~35 minutes later — or, on a Cargo-only PR that path-gates app-e2e away, nothing at all).
+  # Routed through Nx (constitution). This is Rust coverage the old GitHub CI did not have.
   mc-service-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -275,7 +291,10 @@ jobs:
         with: { node-version: 24.19.0, cache: pnpm }
       - name: Install dependencies
         run: bash scripts/ci-log-step.sh mc-service-install pnpm install --frozen-lockfile
-      - name: clippy (deny warnings)
+      # `--all-targets` lives in the Nx target, not here — see backend/mc-service/project.json and
+      # scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs (item #229). Without it this step
+      # is green on a crate whose every integration test binary fails to compile (measured, PR #216).
+      - name: clippy (deny warnings, all targets — compiles tests/** too)
         run: bash scripts/ci-log-step.sh mc-service-clippy pnpm nx lint mc-service
       - name: Unit tests (--lib; no Mongo)
         run: bash scripts/ci-log-step.sh mc-service-unit pnpm nx test:unit mc-service

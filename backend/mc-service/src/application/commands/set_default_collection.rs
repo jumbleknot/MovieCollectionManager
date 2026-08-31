@@ -149,7 +149,7 @@ mod tests {
         let handler = SetDefaultCollectionHandler::new(Arc::new(repo));
         let result = handler.handle(make_cmd()).await;
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().is_default, true);
+        assert!(result.unwrap().is_default);
         let calls = call_order.lock().unwrap();
         assert_eq!(*calls, vec!["clear", "set"]);
     }
