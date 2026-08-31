@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors, and the two-place config validator that catches the unknown-key class the guard test cannot.
+description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest collision that logs at INFO and produces no PR), the pinned-toolchain table and the Rust devcontainer rebuild gotcha, and the two-place config validator that catches the unknown-key class the guard test cannot.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-08-30T17:08:17.796Z
+timestamp: 2026-09-01T00:00:00.000Z
 ---
 
 # Renovate dependency bot
@@ -98,6 +98,22 @@ Nothing auto-merges. Every group carries `automerge: false`.
   the broad rules. This has been paid for three times: nx (PRs #141 and #193), the Playwright image
   tag (#204), and the pnpm/Dockerfile pins (#225). `renovate-workflow.guard.test.mjs` asserts the
   *resolved* group for each pair.
+- **A pinDigest that collides with a version update on the same branch is DROPPED, silently.**
+  `docker:pinDigests` sat in `renovate.json`'s `extends` and did nothing for `python:3.13-slim` for
+  as long as it had been there — not deferred, discarded every run. Measured 2026-08-30 (item #308):
+  Renovate logged `INFO: Ignoring upgrade collision` eight times, once per reference, and the pin
+  never appeared on the dashboard or in Repository Problems. The mechanism
+  (`workers/repository/updates/branchify.js`): upgrades are de-duplicated per branch on
+  `` `${packageFile}:${depName}:${currentValue}` ``; a second update for the same key with a
+  different `newValue` is dropped outright. `matchDatasources: ["docker"] → groupName: "docker base
+  images"` puts every docker update on one branch, so `3.13-slim → 3.14-slim` (version) and
+  `3.13-slim → 3.13-slim@sha256:…` (pinDigest) collide and the pin loses. The tell: images that
+  already carry no parseable version (`rust:alpine3.21`, `uv:latest`) receive digests in the same
+  PR — they have no competing version update to collide with. **The fix is a separate
+  `docker digest pins` packageRule scoped to `matchUpdateTypes: ["pinDigest"]`, ordered after `docker
+  base images`** — a separate rule is a separate branch, a separate branch is a separate key
+  namespace. Verified: re-running the lookup with the rule present took the collision count from eight
+  to zero (item #308). The guard test asserts both halves.
 - **`@copilotkit/*` ships breaking API changes in minor bumps.** It is grouped separately behind
   `dependencyDashboardApproval`, like the `cargo 0.x` rule. One breaking member makes a whole
   batched PR unmergeable and unsplittable — and Renovate regenerates it weekly, so routine bumps
@@ -174,6 +190,64 @@ A tick is a one-character edit. Read the body immediately before writing, assert
 appears exactly once and is untenanted, and assert the resulting body differs by exactly the number
 of characters you intended.
 
+## Pinned toolchains (item #307)
+
+Item #303's principle restated: a floating reference means no version, no classification, and no
+reproducibility; a pin with nothing maintaining it trades a floating reference for a rotting one.
+Every pin below is exact, the same at every site, and tracked by something that will move it.
+
+| tool | the pin lives in | how Renovate sees it | grouped? |
+| --- | --- | --- | --- |
+| **Rust** | `rust-toolchain.toml` (`channel`) + devcontainer `--default-toolchain` arg | built-in `rust-toolchain` manager + a customManager for the devcontainer half (same depName and datasource — one dependency, not two) | **yes** — `rust toolchain` |
+| **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | customManager, `pypi` | no |
+| **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image (`cargo-audit@X`) | customManager, `crate` | no |
+| **uv** | one version string repeated at every site (3 install-script URLs + 5 `setup-uv` inputs + 4 image tags) | customManager (`github-releases`) for script/action shapes; built-in docker manager for image tags | **yes** — `uv pin` |
+
+**Grouping rule**: a group is needed when a *second* manager sees the other half of the same
+dependency. Trivy covers two files with one depName and has no group — one dependency, one branch.
+Rust and uv each need one because the built-in manager claims a half under a different depName.
+
+### Rust: the devcontainer must be rebuilt after a toolchain bump
+
+All three workflows install rustup with `--default-toolchain none`. The first `cargo` call inside
+the repository resolves the channel and its components from `rust-toolchain.toml`.
+
+> ⛔ **A Rust bump needs the devcontainer image REBUILT before local `cargo` works again — and
+> until it is, `cargo`/`rustc`/`nx test mc-service` FAIL in the dev container.** This is inherent
+> to pinning an exact version, not to which version was chosen. Measured 2026-08-30, immediately
+> after adding the file:
+>
+> ```
+> $ rustup show active-toolchain
+> info: syncing channel updates for 1.98.0-x86_64-unknown-linux-gnu
+> error: could not download … https://static.rust-lang.org/dist/channel-rust-1.98.0.toml.sha256
+>        dns error: No address associated with hostname
+> ```
+>
+> Two facts combine. **rustup keys toolchains by NAME**: the image installs one called
+> `stable-x86_64-unknown-linux-gnu`, and a file naming `1.98.0` asks for a *different* toolchain —
+> so rustup tries to fetch it even when the bytes on disk are the same compiler. And
+> **`static.rust-lang.org` is not on the dev container's egress allowlist**, so that fetch cannot
+> succeed.
+>
+> The fix is automatic: the Renovate `rust toolchain` PR moves `rust-toolchain.toml` **and**
+> `.devcontainer/toolchain.Dockerfile` together — that is what the grouping rule is for — and
+> `devcontainer-image.yml` is path-triggered on `.devcontainer/toolchain.Dockerfile`, so merging
+> one rebuilds the image with a toolchain named `1.98.0`, which the file then resolves locally with
+> no download at all. **The only manual step is pulling the rebuilt image.** CI is unaffected
+> throughout: it installs rustup fresh with `--default-toolchain none` on a runner with open egress.
+
+### uv: one version string, many sites
+
+uv's single source of truth is **one version string, repeated at every site**, held together by one
+Renovate customManager plus the `uv pin` packageRule, and asserted equal across every site by
+`renovate-workflow.guard.test.mjs`. It is deliberately not a file that every site reads — `astral-sh/setup-uv`'s
+`version:` input is an Actions expression and cannot read a repository file, so a file would leave
+the five action sites unpinned. The install-script URL carries the version in its path
+(`https://astral.sh/uv/<version>/install.sh`), which also stops fetching the moving script. Each
+`setup-uv` input carries a `# uv-version` marker so the manager's matchString does not claim any
+other `version:` key added to those workflows later.
+
 ## Accepted residuals (decided, not overlooked)
 
 Recorded from the 2026-08-30 latent-issue audit so the next reader knows each was seen and decided,
@@ -193,4 +267,18 @@ rather than rediscovering it as a suspected defect.
   marks only that one label rejected, which is the intent here).
 - **`npx --yes renovate@44` is major-pinned and Renovate cannot see it** — documented in
   `renovate.yml` as a deliberate residual with its own bump procedure.
+- **`curl https://sh.rustup.rs | sh` remains an unversioned script piped to sh**, in three workflows
+  and the toolchain image. This is item #307's criterion 5 met for uv and **not** met for rustup,
+  deliberately. What that script installs is `rustup` (a bootstrapper), and the thing that decides
+  which compiler runs — the toolchain — is now pinned by `rust-toolchain.toml`, so a change in
+  rustup cannot change the compiler. The pinnable alternatives both cost more than they buy: the
+  archive binary hard-codes the architecture (breaks a non-amd64 devcontainer build); the archive
+  script path could not be verified from the dev container (`static.rust-lang.org` is not on the
+  egress allowlist). Revisit only if rustup itself is ever implicated.
+- **`backend/mc-service/Dockerfile` still builds `FROM rust:alpine3.21@sha256:…`** — a version-less
+  tag, so Renovate can only churn its digest and can never propose a classified update. Re-tagging
+  it is a change under `backend/`, which is SDD-gated, so it is an accepted divergence recorded in
+  `rust-toolchain.toml` and in the `rust toolchain` packageRule (item #307, criterion 1). A guard
+  test asserts the toolchain group does **not** claim it — the failure that would matter is Renovate
+  proposing a Rust release number as a docker tag.
 - **`renovate-config-validator` catches the unknown-key class that the guard test cannot — but only with both `--strict --no-global` flags.** Measured 2026-08-30 against this repo's own `renovate.json` on renovate@44.52.0: without `--no-global` the file is validated as a *global self-hosted* config (not the repo config Renovate actually reads), and without `--strict` a renamed key is a warning not a failure — exit 0 on precisely the class the check exists to catch. Since item #309 the validator runs in two places, both on renovate@44: (1) `guardrails/renovate-config` in `.forgejo/workflows/guardrails.yml` — required, unconditional, catches an edit to `renovate.json` before it merges; (2) a step in `renovate.yml` before `Run Renovate` — catches a key deprecated by a minor bump between Friday windows when nothing in the repo changed. It is deliberately NOT path-gated: a cold run measured 27 s; a path filter buys seconds and costs the guarantee that a green board means the validator ran. The guard test (`renovate-workflow.guard.test.mjs`) asserts the job carries no `if:` and no `needs:`, and that all three `renovate@44` references agree. The validator does not replace the guard test — the guard test catches a key Renovate knows but ignores depending on where it is written (the `prPriority`-inside-`lockFileMaintenance` case).
