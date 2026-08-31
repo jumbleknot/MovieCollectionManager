@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-08-30T01:15:39+00:00
+timestamp: 2026-08-31T17:33:17+00:00
 ---
 
 # CI self-serve diagnostics
@@ -23,6 +23,13 @@ runtime rather than any literal configured value.
   nothing was actually broken — the tell is that unrelated jobs die together on a change that
   couldn't have affected them all, confirmed by the literal "Has been cancelled" description or the
   owning run's `cancelled` status.
+- **There is no re-run endpoint — measured 2026-08-31.** All three plausible shapes answer `404`:
+  `actions/runs/{id}/rerun`, `actions/tasks/{id}/rerun`, `actions/runs/{id}/rerun-failed-jobs`.
+  Nothing can re-run a job in place, and there is no way to re-run *one* failed job at all.
+  Re-triggering means producing a **new head sha** — `git commit --amend --no-edit` (same tree, new
+  committer timestamp) plus a force-push re-fires the whole `pull_request` run. Budget for the full
+  suite, not for the one job that failed; on this runner a re-run costs ~35 minutes of capacity-1
+  time, so it is worth spending only when the evidence says the failure is not about your diff.
 - **"Every job died together" has a SECOND cause: a broken `pnpm install`.** A supply-chain policy
   rejecting a fresh transitive produces the identical board shape — every job that installs
   dependencies goes red, with no relationship to the diff. Measured 2026-08-28 on PR #263:
@@ -47,6 +54,15 @@ runtime rather than any literal configured value.
 - **The "superseded" trap is the dangerous direction: it fails loud, announcing a broken build that
   isn't.** The other misreport (skipped) fails safe. Both were measured against real API responses,
   not inferred from documentation.
+- **`cd-dispatch / trigger-cd` is NOT a CI result — it is the deploy gate's own answer, and it is
+  the ONLY place a declined deploy is visible.** Before item #230, a run that declined to dispatch
+  and a run that deployed looked identical from outside — both were advisory, both silent. A commit
+  went undeployed for a day because of this (measured 2026-08-22: PR #217's changes reached `main`
+  and were never deployed; the advisory job gave no signal). `scripts/cd-dispatch-gate.mjs` now
+  publishes its decision as a `cd-dispatch / trigger-cd` commit status: `superseded — <sha> is the
+  tip …` and `nothing deployable changed since the last deploy` are `success` (correct non-deploys);
+  a guardrails failure, an unfinished run, or no guardrails at all are `failure` and also red the
+  job. **Read this status before concluding a deploy was lost.**
 - **The required-check list is fetched live from branch protection, never hand-maintained.** It
   previously drifted (a hardcoded array missed a check added by a later feature) and let the tool
   report "mergeable" for a PR the forge then rejected outright — over-reporting mergeable is the
@@ -173,6 +189,17 @@ runtime rather than any literal configured value.
   from `GITHUB_RUN_ID` (repository-wide counter), not `run_number` (per-workflow counter). Fetching
   `<run_number>--<job>` returns 404, which looks like "no bundle published". List package versions
   (`GET /api/v1/packages/{owner}?type=generic&limit=10`) and take the newest for the job.
+- **Zero checks on a new commit? Read the commit MESSAGE before anything else.** The forge scans
+  the **entire** commit message for a CI-skip marker and skips every workflow when it finds one:
+  `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`. It applies to `push`,
+  `pull_request`, and `pull_request_sync` alike, and it reads the whole message — so a marker
+  quoted in a body paragraph, inside a bullet, or in a code fence silently disables CI for that
+  commit. Measured 2026-08-31 on PR #322: a commit whose body *described* cd-deploy's `[skip ci]`
+  promotion commit produced zero runs on both the push and the pull request. The tell that separates
+  this from a dead runner: `/actions/tasks?limit=40` still shows recent tasks for *other* branches
+  (a dead runner starves everything; a skip marker starves exactly one commit). Fix: reword the
+  message with `git commit --amend`, then force-push. Quote the marker as `` `skip`-`ci` `` or name
+  it in prose when a commit needs to discuss one — never disable the feature.
 
 Full exit-code table, the exact API endpoints and payload measurements, the required-check
 fetch/fallback logic, the PR creation recipe, and the evidence-bundle hardening details:
