@@ -586,8 +586,12 @@ which is the authority; this section only covers what is dev-container-specific.
 > setx MCM_DEVCONTAINER_IMAGE "$env:FORGE_REGISTRY_HOST/<ns>/mcm-devcontainer@sha256:<digest>"
 > ```
 >
-> Take the digest from the `devcontainer-image` workflow run summary (it prints the full pinned
-> ref), fully quit and reopen VS Code (`setx` only affects **new** processes), then rebuild. Offline
+> **Resolve the digest from the REGISTRY, not from the run summary** — the workflow writes the
+> pinned ref to `$GITHUB_STEP_SUMMARY` and this forge cannot read it back (item #268: no log
+> endpoint, no summary endpoint, `/actions/runs/{id}/jobs` is `404`). The recipe, and the
+> attestation-digest trap that makes the packages API the wrong source, are in
+> [devcontainer-sandbox.md §7d](devcontainer-sandbox.md). Then fully quit and reopen VS Code
+> (`setx` only affects **new** processes), and rebuild. Offline
 > alternative: `node scripts/build-devcontainer-image.mjs` with `MCM_DEVCONTAINER_IMAGE` unset — but
 > that recompiles the cargo-utility set (the SC-011 one-time cost). Full seam:
 > [the two-Dockerfile image seam](#the-two-dockerfile-image-seam-and-the-forge-host-stays-out-of-git).
@@ -959,9 +963,12 @@ git** (topology-scrub; same rule as `FORGE_REGISTRY_HOST`).
 > what the runner will use: `devcontainer read-configuration --workspace-folder .` →
 > `.configuration.build.args.BASE_IMAGE` must be non-empty.
 
-**Fast path (forge image):** trigger the `devcontainer-image` workflow (`workflow_dispatch`), copy
-the published `…/mcm-devcontainer@sha256:<digest>` from the run summary into your gitignored
-`MCM_DEVCONTAINER_IMAGE`, then rebuild the container → a `docker pull`, not a compile.
+**Fast path (forge image):** trigger the `devcontainer-image` workflow (`workflow_dispatch`), put
+the published `…/mcm-devcontainer@sha256:<digest>` into your gitignored `MCM_DEVCONTAINER_IMAGE`,
+then rebuild the container → a `docker pull`, not a compile. **Get that digest from the registry,
+not from the run summary** — the workflow writes it to `$GITHUB_STEP_SUMMARY` and this forge exposes
+no way to read it back (item #268). The `manifests/<sha>` recipe, and why the packages API returns
+the wrong digest, are in [devcontainer-sandbox.md §7d](devcontainer-sandbox.md).
 
 **Offline fallback:** `pnpm nx build-devcontainer-image infrastructure-as-code` (or `node
 scripts/build-devcontainer-image.mjs`) builds `mcm-devcontainer` locally. Leave
