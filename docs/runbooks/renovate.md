@@ -429,6 +429,54 @@ in place), the Playwright image tag (#204), and the pnpm/Dockerfile pins (#225).
 `renovate-workflow.guard.test.mjs` asserts the *resolved* group for each pair, because a rule that
 merely mentions the package passes a weaker check.
 
+### A pinDigest that collides with a version update on the same branch is DROPPED, silently
+
+`docker:pinDigests` sits in `renovate.json`'s `extends`, and for `python:3.13-slim` it did nothing
+at all for as long as it had been there. Not deferred — **discarded, every run.**
+
+Measured 2026-08-30 (item #308) with `RENOVATE_PLATFORM=local RENOVATE_DRY_RUN=lookup` over the four
+app Dockerfiles. Renovate logged this **eight times**, once per reference:
+
+```
+INFO: Ignoring upgrade collision (branch=renovate/docker-base-images)
+      depName=python currentValue=3.13-slim previousNewValue=3.14-slim thisNewValue=3.13-slim
+```
+
+**The mechanism**, from renovate@44.52.0's own dist (`workers/repository/updates/branchify.js`,
+`branchifyUpgrades`) — upgrades are de-duplicated **per branch** on
+`` `${packageFile}:${depName}:${currentValue}` ``, and a second update for that key with a different
+`newValue` is dropped outright:
+
+```js
+const upgradeKey = `${packageFile}:${depName}:${currentValue}`;
+const previousNewValue = seenUpdates[upgradeKey];
+if (previousNewValue && previousNewValue !== newValue) {
+  logger.info({ … }, 'Ignoring upgrade collision');
+  return false;                       // ← the pin is gone
+}
+```
+
+`matchDatasources: ["docker"] → groupName: "docker base images"` puts *every* docker update on one
+branch, so `3.13-slim → 3.14-slim` (version) and `3.13-slim → 3.13-slim@sha256:…` (pinDigest)
+collide there and the **pin** loses.
+
+> ⚠️ **The asymmetry was the tell, and it is worth recognising directly.** The 2026-08-30 docker PR
+> added digests to `rust:alpine3.21` and `ghcr.io/astral-sh/uv:latest` **in the same files** while
+> leaving `python:3.13-slim` bare. That looks like a budget deferral and is not: `alpine3.21` and
+> `latest` carry no parseable version, so neither has a competing version update to collide with.
+> A deferred update comes back; this one could not, ever.
+
+It logs at **INFO**, never reaches the Dependency Dashboard, and produces no Repository Problem — so
+it is this section's own theme once more: a setting that is present, doing nothing, reporting
+nothing.
+
+**The fix is a separate branch, not a hand-pin**: a `docker digest pins` packageRule scoped to
+`matchUpdateTypes: ["pinDigest"]`, ordered after `docker base images`. A separate branch is a
+separate `upgradeKey` namespace. **Verified rather than assumed** — re-running the identical lookup
+with the rule present took the collision count from **eight to zero**. It is scoped by updateType so
+a digest *refresh* of an already-pinned image (updateType `digest`) still rides the normal group;
+only the *initial* pin is separated, and the guard test asserts both halves of that.
+
 ### A version number that does not advertise a breaking change
 
 `@copilotkit/*` ships breaking API changes in **minor** bumps. It is grouped separately behind
@@ -474,7 +522,8 @@ Recorded from the 2026-08-30 latent-issue audit so the next reader knows each wa
 
 The audit's *actionable* findings are items **#307** (floating/rotting merge-gating toolchains:
 Rust, semgrep, cargo-audit, uv), **#308** (the #297 class in app Dockerfiles), and **#309**
-(`renovate-config-validator` runs nowhere in CI). **#307 and #309 are now closed** — see §8 and §9.
+(`renovate-config-validator` runs nowhere in CI). **All three are now closed** — see §5 (the
+pinDigest collision #308 turned up), §8 and §9.
 
 Two residuals were *added* by #307 and are recorded here rather than left to be rediscovered:
 
@@ -507,7 +556,7 @@ maintaining it trades a floating reference for a rotting one.** So every pin bel
 | **Rust** | `rust-toolchain.toml` (`channel`) | that file + the devcontainer's baked `--default-toolchain` | built-in **`rust-toolchain`** manager (depName `rust`, datasource `rust-version`) + a customManager for the devcontainer half | **yes** — `rust toolchain` |
 | **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | one | customManager, `pypi` | no — one manager, one depName |
 | **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image (`cargo-audit@X`) | two | customManager, `crate` | no — one manager, one depName |
-| **uv** | the version string, at every site | 3 install-script URLs + 5 `setup-uv` inputs | customManager, `github-releases` | **yes** — `uv pin` |
+| **uv** | the version string, at every site | 3 install-script URLs + 5 `setup-uv` inputs + **4 image tags** (#308) | customManager (`github-releases`) for the first two shapes; the built-in **docker** manager for the image tags | **yes** — `uv pin`, which is what joins the two managers |
 
 > ⚠️ **Grouping is needed when a SECOND manager sees the other half — it is not a ritual for every
 > custom manager.** The Trivy manager (§ item #303) covers two files with one depName and has no
@@ -580,10 +629,15 @@ Two mechanical consequences worth knowing before editing a uv site:
   would be a bare `version:` key and would claim any other `version:` input added to those workflows
   later.
 
-**Item #308 consumes this decision**: the eight `ghcr.io/astral-sh/uv:latest@sha256:…` refs re-tag to
-`ghcr.io/astral-sh/uv:<this version>`, and the `uv pin` rule already names that docker packageName —
-so #308 is a re-tag, not a re-think, and the guard is wrong-and-loud rather than silently absent if
-the re-tag ever arrives without it.
+**Item #308 consumed this decision** (done): the **four** `ghcr.io/astral-sh/uv:latest@sha256:…`
+refs — the item said eight; there are four, one per Dockerfile, and it is the *python* refs that
+number eight — re-tagged to `ghcr.io/astral-sh/uv:0.12.7@sha256:…`. The `uv pin` rule already named
+that docker packageName, so it was a re-tag rather than a re-think.
+
+> ✅ **The re-tag was byte-identical.** `ghcr.io/astral-sh/uv:0.12.7` resolves to
+> `sha256:95f2aa1f…` — the *same digest* the `:latest` refs already carried. Nothing about the built
+> image changed; only whether Renovate can classify its updates. It also independently corroborates
+> 0.12.7 as the current `latest`, which is why #307 chose it.
 
 ## 9. The config validator — what it catches that the guard test cannot (item #309)
 

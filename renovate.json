@@ -835,6 +835,39 @@
       "matchPackageNames": ["astral-sh/uv", "/^ghcr\\.io/astral-sh/uv$/"],
       "groupName": "uv pin",
       "automerge": false
+    },
+    {
+      "description": [
+        "Item #308 — give pinDigest its OWN branch, or the initial pin of a tag that also has a",
+        "version update is discarded on every run, for ever, and reports nothing.",
+        "MEASURED 2026-08-30 with `RENOVATE_PLATFORM=local RENOVATE_DRY_RUN=lookup` over the four app",
+        "Dockerfiles. Renovate logged, EIGHT times — once per `python:3.13-slim` reference:",
+        "  INFO: Ignoring upgrade collision (branch=renovate/docker-base-images)",
+        "        depName=python currentValue=3.13-slim previousNewValue=3.14-slim thisNewValue=3.13-slim",
+        "THE MECHANISM, from renovate@44.52.0's own dist (workers/repository/updates/branchify.js,",
+        "branchifyUpgrades): upgrades are de-duplicated PER BRANCH on the key",
+        "`${packageFile}:${depName}:${currentValue}`, and a second update for that key with a",
+        "different newValue is DROPPED — `logger.info(..., 'Ignoring upgrade collision'); return false`.",
+        "The `docker base images` rule above puts every docker update on ONE branch, so the version",
+        "update (3.13-slim -> 3.14-slim) and the pinDigest update (3.13-slim -> 3.13-slim@sha256:...)",
+        "collide there and the PIN loses.",
+        "That is exactly why the 2026-08-30 docker PR added digests to `rust:alpine3.21` and",
+        "`ghcr.io/astral-sh/uv:latest` while leaving `python:3.13-slim` bare IN THE SAME FILES: neither",
+        "of those tags carries a parseable version, so neither has a competing version update to",
+        "collide with. The asymmetry was the tell, and it was not a budget deferral — a deferred",
+        "update comes back, and this one could not.",
+        "It is INFO, not WARN, and it never reaches the Dependency Dashboard, so this is the §5",
+        "'absence reads as health' shape once more: `docker:pinDigests` was in `extends`, doing",
+        "nothing for this dep, reporting nothing.",
+        "VERIFIED, not assumed: re-running the same lookup with this rule present took the collision",
+        "count from EIGHT to ZERO. A separate branch means a separate upgradeKey namespace.",
+        "Ordered last so it wins over `docker base images`; scoped by updateType, so a digest REFRESH",
+        "of an already-pinned image (updateType `digest`) still rides the normal group — only the",
+        "INITIAL pin is separated."
+      ],
+      "matchUpdateTypes": ["pinDigest"],
+      "groupName": "docker digest pins",
+      "automerge": false
     }
   ],
   "ignorePaths": [
