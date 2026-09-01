@@ -385,3 +385,65 @@ test('a LOCAL full-suite run still gets a verdict — no model log is not the sa
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ─── item #325 — a provider non-2xx is invisible on every surface that answers "why did this fail" ─
+//
+// Measured 2026-08-31 (app-e2e run 2450, PR #322): the Anthropic account ran out of credit, the
+// Messages API answered HTTP 400 (`invalid_request_error`, "credit balance is too low") — not 402,
+// not 429 — and the gateway logged nothing at ERROR. Two tests then timed out waiting for a UI
+// affordance and the run reported as a UI failure. The only trace was an INFO-level httpx line for a
+// third-party call. The diagnosis took an hour and went down two wrong paths first.
+//
+// The tally already reads the gateway log, so the count belongs on the line the digest publishes.
+const httpx = (code, text) =>
+  `INFO     HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 ${code} ${text}"`;
+const agentPosts = (n) =>
+  Array.from({ length: n }, () => 'INFO: POST /agent/movie-assistant HTTP/1.1 200 OK').join('\n');
+const COUNTS_100 = '[e2e-gate] failed=0 flaky=0 passed=100\n';
+const verdictLine = (stdout) =>
+  stdout.split('\n').filter((l) => /^\[e2e-turns\].*\bverdict=/.test(l)).pop() ?? '';
+
+test('(#325a) a clean run reports provider_non2xx=0 — measured zero, stated explicitly', needsBash, () => {
+  const gatewayLog = [agentPosts(90), httpx(200, 'OK'), httpx(200, 'OK')].join('\n');
+  const r = runTally({ gatewayLog, countsLog: COUNTS_100 });
+  assert.match(verdictLine(r.stdout), /provider_non2xx=0\b/,
+    `the verdict line does not carry a provider count: ${verdictLine(r.stdout)}`);
+});
+
+test('(#325b) an out-of-credit run is COUNTED and the status code is named', needsBash, () => {
+  const gatewayLog = [agentPosts(90), httpx(200, 'OK'), httpx(400, 'Bad Request'), httpx(400, 'Bad Request')].join('\n');
+  const r = runTally({ gatewayLog, countsLog: COUNTS_100 });
+  assert.match(verdictLine(r.stdout), /provider_non2xx=2\b/);
+  assert.match(r.stdout, /\b400\b/, 'the status code is not reported, so the class cannot be told apart');
+});
+
+test('(#325c) 400 (credit/quota — operator action) reads differently from 429 (retry)', needsBash, () => {
+  const credit = runTally({
+    gatewayLog: [agentPosts(90), httpx(400, 'Bad Request')].join('\n'),
+    countsLog: COUNTS_100,
+  }).stdout;
+  const rate = runTally({
+    gatewayLog: [agentPosts(90), httpx(429, 'Too Many Requests')].join('\n'),
+    countsLog: COUNTS_100,
+  }).stdout;
+  assert.match(credit, /credit|quota|balance/i, 'a 400 does not point at operator action');
+  assert.match(rate, /rate limit|retry/i, 'a 429 does not read as retryable');
+  assert.notEqual(
+    credit.replace(/\d{3}/g, ''), rate.replace(/\d{3}/g, ''),
+    'the two classes produce identical prose — they cannot be told apart',
+  );
+});
+
+test('(#325d) an unreadable gateway log reports UNAVAILABLE, never a confident zero', needsBash, () => {
+  // This file's own principle 2: "not measured" and "measured zero" are opposite conclusions.
+  const r = runTally({ gatewayLog: null, countsLog: COUNTS_100 });
+  const line = verdictLine(r.stdout);
+  assert.match(line, /provider_non2xx=unavailable/,
+    `an unmeasurable provider count was reported as a number: ${line}`);
+});
+
+test('(#325e) the tally still always exits 0 — counting must never redden a job', needsBash, () => {
+  for (const gatewayLog of [agentPosts(90), [agentPosts(90), httpx(400, 'Bad Request')].join('\n')]) {
+    assert.equal(runTally({ gatewayLog, countsLog: COUNTS_100 }).status, 0);
+  }
+});

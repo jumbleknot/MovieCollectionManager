@@ -71,12 +71,32 @@ fi
 # Rendering an unreadable log as `collapsed` would be a confident verdict drawn from no data — the
 # exact shape of error this feature exists to stop.
 emit_indeterminate() {
-  echo "$MARKER gateway_posts=unavailable tests_executed=unavailable posts_per_100_tests=unavailable verdict=indeterminate"
+  echo "$MARKER gateway_posts=unavailable tests_executed=unavailable posts_per_100_tests=unavailable provider_non2xx=unavailable verdict=indeterminate"
   echo "$MARKER reason: $1"
   exit 0
 }
 
 [ -n "$unavailable_reason" ] && emit_indeterminate "$unavailable_reason"
+
+# Say WHICH class of provider failure, because the remedies are opposite: a 400 invalid_request is
+# credit/quota and needs an operator; 429 is a rate limit and 529 is overload, both of which retry.
+# Today all three are invisible and all three present as an app failure (item #325).
+report_provider_failures() {
+  [ "${provider_non2xx:-0}" -gt 0 ] 2>/dev/null || return 0
+  echo "$MARKER PROVIDER NON-2xx: ${provider_non2xx} call(s) — ${provider_breakdown}"
+  printf '%s\n' "$provider_codes" | grep '^[^2][0-9][0-9]$' | sort -u | while read -r code; do
+    case "$code" in
+      400) echo "$MARKER   400 invalid_request — usually an exhausted CREDIT BALANCE or quota."
+           echo "$MARKER        OPERATOR ACTION, not a code change: top the account up, then re-run." ;;
+      401|403) echo "$MARKER   $code — the model credential was rejected. Check the per-surface secret." ;;
+      429) echo "$MARKER   429 — rate limit. Retryable; not an operator action and not an app defect." ;;
+      529) echo "$MARKER   529 — provider overloaded. Retryable, upstream, nothing to fix here." ;;
+      *)   echo "$MARKER   $code — unclassified provider status; read the gateway log." ;;
+    esac
+  done
+  echo "$MARKER A failing test here may be a PROVIDER outage wearing a UI timeout's clothes — an"
+  echo "$MARKER unanswered stream surfaces as 'waiting for [data-testid=...]'. Rule the provider out first."
+}
 
 # `grep -c` returns 1 on "no matches" and 2 on a real error; both are normalised to 0 here rather
 # than propagated. The source-availability question was already settled above, so a zero at this
@@ -85,6 +105,24 @@ gateway_posts=$(printf '%s\n' "$gateway_log" | grep -c "$AGENT_POST_PATTERN") ||
 case "$gateway_posts" in
   ''|*[!0-9]*) gateway_posts=0 ;;
 esac
+
+# PROVIDER STATUS CODES (item #325). The gateway calls the model provider over HTTP and httpx logs
+# every call at INFO with its status. Nothing else surfaces those: on app-e2e run 2450 the account was
+# out of credit, the API answered 400 twice, the gateway logged NOTHING at ERROR, and two tests failed
+# as UI timeouts. Every surface designed to answer "why did this fail" — the digest, the health block,
+# this tally and the contention tally — was silent about the provider, so the only trace was an INFO
+# line for a third-party call. The diagnosis took an hour and went down two wrong paths first.
+#
+# Counted here because this script already holds the gateway log, and its verdict line is the one the
+# failure digest republishes (ci-failure-digest.mjs, readRunHealth).
+provider_codes=$(printf '%s\n' "$gateway_log" | sed -nE 's/.*"HTTP\/[0-9.]+ ([0-9]{3}).*/\1/p')
+provider_non2xx=$(printf '%s\n' "$provider_codes" | grep -c '^[^2][0-9][0-9]$') || provider_non2xx=0
+case "$provider_non2xx" in
+  ''|*[!0-9]*) provider_non2xx=0 ;;
+esac
+# "2x400 1x429" — the CLASS is the actionable part; the bare count is not.
+provider_breakdown=$(printf '%s\n' "$provider_codes" | grep '^[^2][0-9][0-9]$' | sort | uniq -c | awk '{printf "%sx%s ", $1, $2}')
+provider_breakdown="${provider_breakdown% }"
 
 # The denominator comes from the `E2E result gate` step, which runs immediately before this one. That
 # ordering is load-bearing in both directions and is asserted in the test file: before the gate there
@@ -161,7 +199,8 @@ posts_per_100=$(( gateway_posts * 100 / tests_executed ))
 # one selection) also has no model counts file, and abstaining there would throw away the verdict in
 # the one place a developer reads it directly.
 if [ "${E2E_TURN_TIER:-}" = "gate" ]; then
-  echo "$MARKER gateway_posts=${gateway_posts} tests_executed=${tests_executed} posts_per_100_tests=${posts_per_100} verdict=indeterminate"
+  echo "$MARKER gateway_posts=${gateway_posts} tests_executed=${tests_executed} posts_per_100_tests=${posts_per_100} provider_non2xx=${provider_non2xx} verdict=indeterminate"
+  report_provider_failures
   echo "$MARKER reason: gate tier only (the model tier did not run — normal on a pull request). The"
   echo "$MARKER healthy floor of ${HEALTHY_FLOOR_PER_100} was calibrated on the FULL suite, where the"
   echo "$MARKER model-decision tests drive most turns; a healthy gate-only run reads far lower. Judging"
@@ -176,7 +215,8 @@ else
   verdict=collapsed
 fi
 
-echo "$MARKER gateway_posts=${gateway_posts} tests_executed=${tests_executed} posts_per_100_tests=${posts_per_100} verdict=${verdict}"
+echo "$MARKER gateway_posts=${gateway_posts} tests_executed=${tests_executed} posts_per_100_tests=${posts_per_100} provider_non2xx=${provider_non2xx} verdict=${verdict}"
+report_provider_failures
 
 # ZERO turns is a different finding from FEW turns, and pointing it at the client would be wrong.
 # MEASURED 2026-08-12: `movie-assistant-gateway` reported `status=running restarts=0` while /health
