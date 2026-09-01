@@ -226,3 +226,92 @@ test('(probe4) on THIS host the suite does not skip — a skip here would be a f
   // above must actually execute. If this ever starts skipping, the skip count is the tell.
   assert.equal(needsBash.skip, false, `the ci-log-step suite skipped on a host with bash: ${needsBash.skip}`);
 });
+
+// ─── item #326 — a job killed at `timeout-minutes` publishes NO digest ───────────────────────────
+//
+// `always()` does not survive a job kill: when the runner enforces `timeout-minutes` the digest step
+// never runs, so the ONE failure class with no other evidence trail (a hang) produces none. Measured
+// on PR #322, app-e2e task 8317: 75.1 min against a 75 min ceiling and a ~29 min healthy baseline,
+// and `ci-status failure` reported "no bundle exists … the job may have died before the digest step
+// ran".
+//
+// The fix is to make the hang fail the STEP rather than the JOB, below the ceiling — so the job
+// stays alive, the marker is written, and the digest runs and can name what was hanging.
+function runWithTimeout(args, seconds, { runId = 'test-run', job = 'test-job' } = {}) {
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const r = spawnSync('bash', [SCRIPT, ...args], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      CI_STEP_LOG_ROOT: root,
+      GITHUB_RUN_ID: runId,
+      GITHUB_JOB: job,
+      CI_STEP_TIMEOUT_SECONDS: String(seconds),
+    },
+  });
+  const dir = join(root, runId, job);
+  const read = (f) => (existsSync(join(dir, f)) ? readFileSync(join(dir, f), 'utf8').trim() : null);
+  return { code: r.status, dir, failedStep: read('_failed-step'), reason: read('_failed-step-reason') };
+}
+
+test('(#326a) a HANGING step is killed at its own timeout and reports a non-zero exit', needsBash, () => {
+  const r = runWithTimeout(['hanging-step', 'sleep', '30'], 1);
+  assert.notEqual(r.code, 0, 'a step that hung past its timeout reported success');
+  assert.ok(r.code === 124 || r.code === 137, `expected a timeout exit (124/137), got ${r.code}`);
+});
+
+test('(#326b) the hung step is NAMED, so the digest does not say "_not reported_"', needsBash, () => {
+  const r = runWithTimeout(['hanging-step', 'sleep', '30'], 1);
+  assert.equal(r.failedStep, 'hanging-step');
+});
+
+test('(#326c) a TIMEOUT is distinguishable from an ordinary failure', needsBash, () => {
+  // Criterion 2: the reader must not hunt for an assertion that never happened.
+  const timedOut = runWithTimeout(['hanging-step', 'sleep', '30'], 1);
+  assert.match(timedOut.reason ?? '', /timeout/i, 'a timeout was not recorded as such');
+  assert.match(timedOut.reason ?? '', /after 1s\b/, 'the reason does not name the limit that was hit');
+
+  const ordinary = runWithTimeout(['failing-step', 'false'], 30);
+  assert.equal(ordinary.failedStep, 'failing-step');
+  assert.equal(ordinary.reason, null, 'an ordinary failure was mislabelled as a timeout');
+});
+
+test('(#326d) an unset CI_STEP_TIMEOUT_SECONDS leaves behaviour exactly as before', needsBash, () => {
+  const ok = run(['plain-step', 'echo', 'hello']);
+  assert.equal(ok.code, 0);
+  const bad = run(['plain-step', 'false']);
+  assert.notEqual(bad.code, 0, 'pipefail semantics regressed');
+});
+
+test('(#326e) a step that finishes INSIDE its timeout is untouched', needsBash, () => {
+  const r = runWithTimeout(['quick-step', 'echo', 'done'], 30);
+  assert.equal(r.code, 0);
+  assert.equal(r.failedStep, null);
+  assert.equal(r.reason, null);
+});
+
+// The per-step ceiling is only useful while it stays BELOW the job ceiling. Raising it past the job
+// timeout would restore the exact defect (a hung step killing the job before the digest step runs)
+// while looking like the fix is still in place — so the arithmetic is pinned, not left to review.
+const APP_CI = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.forgejo', 'workflows', 'app-ci.yml');
+
+test('(#326j) app-e2e sets a per-step ceiling, and it is comfortably below the job ceiling', () => {
+  const yaml = readFileSync(APP_CI, 'utf8');
+  const step = yaml.match(/CI_STEP_TIMEOUT_SECONDS:\s*'?(\d+)'?/);
+  assert.ok(step, 'app-e2e no longer sets CI_STEP_TIMEOUT_SECONDS — a hang would kill the job again');
+  const stepSeconds = Number(step[1]);
+
+  // The app-e2e job ceiling: the `timeout-minutes` nearest above the app-e2e job declaration.
+  const jobIdx = yaml.indexOf('\n  app-e2e:');
+  assert.ok(jobIdx > 0, 'app-e2e job not found — this guard is reading the wrong file');
+  const jobCeiling = yaml.slice(jobIdx).match(/timeout-minutes:\s*(\d+)/);
+  assert.ok(jobCeiling, 'app-e2e has no timeout-minutes');
+  const jobSeconds = Number(jobCeiling[1]) * 60;
+
+  assert.ok(stepSeconds < jobSeconds,
+    `the step ceiling (${stepSeconds}s) is not below the job ceiling (${jobSeconds}s)`);
+  // Room for the preceding bring-up, teardown, and the digest step itself.
+  assert.ok(jobSeconds - stepSeconds >= 15 * 60,
+    `only ${(jobSeconds - stepSeconds) / 60} min separates the two ceilings — a hung step would ` +
+    'still reach the job ceiling before the digest could publish');
+});

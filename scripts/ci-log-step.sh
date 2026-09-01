@@ -47,7 +47,30 @@ find "$root" -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
 # `set -e` is dropped from here so a failing command does not abort before the marker is written and
 # the real exit code is re-raised. pipefail is preserved (see below) — that is the load-bearing part.
 set +e
-"$@" 2>&1 | tee -a "$dir/${name}.log"
+# OPTIONAL PER-STEP CEILING (item #326). `always()` does NOT survive a job kill: when the runner
+# enforces the job's `timeout-minutes`, the digest step never runs, so a HANG — the one failure
+# class with no other evidence trail — produces no digest at all. Measured on PR #322, app-e2e task
+# 8317: 75.1 min against a 75 min ceiling, and `ci-status failure` could only say "the job may have
+# died before the digest step ran".
+#
+# Enforcing the ceiling HERE, below the job's, converts that hang from a job kill into a STEP
+# failure: the job survives, the marker below is written, and the digest runs and can name what was
+# hanging. Opt-in per call site via CI_STEP_TIMEOUT_SECONDS.
+timeout_seconds="${CI_STEP_TIMEOUT_SECONDS:-}"
+if [ -n "$timeout_seconds" ] && ! command -v timeout >/dev/null 2>&1; then
+  # Never silently drop the protection — an absent guard that reports nothing is this repository's
+  # most expensive failure shape. Warn into the step log, which the digest publishes.
+  echo "[ci-log-step] WARNING: CI_STEP_TIMEOUT_SECONDS=$timeout_seconds requested but \`timeout\` is not on PATH — running UNBOUNDED." >&2
+  timeout_seconds=""
+fi
+
+if [ -n "$timeout_seconds" ]; then
+  # TERM first so the command can flush; SIGKILL only if it ignores that. 124 = timed out (TERM),
+  # 137 = 128+9, killed after --kill-after.
+  timeout --signal=TERM --kill-after=30s "$timeout_seconds" "$@" 2>&1 | tee -a "$dir/${name}.log"
+else
+  "$@" 2>&1 | tee -a "$dir/${name}.log"
+fi
 # PIPESTATUS is only valid IMMEDIATELY after the pipe — any command in between (even an assignment)
 # clobbers it, and `set -u` then trips on the missing index. Capture the whole array in one go.
 pipe_status=("${PIPESTATUS[@]}")
@@ -59,6 +82,13 @@ tee_rc="${pipe_status[1]:-0}"
 # the one that actually broke the build. Best-effort; never allowed to change the outcome.
 if [ "$cmd_rc" -ne 0 ] && [ ! -s "$dir/_failed-step" ]; then
   printf '%s\n' "$name" > "$dir/_failed-step" 2>/dev/null || true
+  # A TIMEOUT is not an ordinary failure and must not read like one: there is no assertion to go
+  # looking for, and the log tail ends mid-work rather than at an error. Recorded separately so the
+  # digest can say so (item #326, criterion 2).
+  if [ -n "$timeout_seconds" ] && { [ "$cmd_rc" -eq 124 ] || [ "$cmd_rc" -eq 137 ]; }; then
+    printf 'timeout after %ss (step ceiling, not the job ceiling)\n' "$timeout_seconds" \
+      > "$dir/_failed-step-reason" 2>/dev/null || true
+  fi
 fi
 
 # Exit with the COMMAND's status when it failed (pipefail semantics: the command's failure is what

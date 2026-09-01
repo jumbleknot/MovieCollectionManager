@@ -342,6 +342,22 @@ jobs:
     runs-on: kvm
     timeout-minutes: 75
     env:
+      # PER-STEP CEILING, BELOW THE JOB'S (item #326). `always()` does not survive a job kill: when
+      # the runner enforces `timeout-minutes: 75` above, the "Publish failure digest" step never
+      # runs, so a HANG — the one failure class with no other evidence trail — yields no digest at
+      # all. Measured on PR #322, task 8317: 75.1 min against that 75 min ceiling, versus a ~29 min
+      # healthy baseline, and `ci-status failure` could say only "the job may have died before the
+      # digest step ran".
+      #
+      # ci-log-step.sh enforces this per wrapped step, so a hang fails the STEP instead: the job
+      # survives, the step is named in `_failed-step`, and the digest runs and reports it as a
+      # TIMEOUT rather than as an assertion failure that never happened.
+      #
+      # THE ARITHMETIC MATTERS. 2700 s = 45 min sits above the slowest legitimate step (`web-e2e`,
+      # measured at 28 m 40 s) and far enough below the 75 min job ceiling to leave room for the
+      # preceding bring-up plus teardown and the digest itself. Raising it past ~60 min would put a
+      # hung step back into job-kill territory and silently restore the defect.
+      CI_STEP_TIMEOUT_SECONDS: '2700'
       # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
       DOCKER_HOST: unix:///run/user/1001/docker.sock
       # EXPO_PUBLIC_* are inlined into the JS bundle at build time. Keycloak pins its issuer to

@@ -128,7 +128,14 @@ export function buildDigest(context, { excerpts = [], health = [], absent = [], 
   const rows = [
     ['Commit', `\`${safe(context.sha).slice(0, 8)}\``],
     context.pr ? ['PR', `#${context.pr}`] : null,
-    ['Failing step', safe(context.step) || '_not reported_'],
+    [
+      'Failing step',
+      context.step
+        // A hang and an assertion failure look identical from the log tail alone, so the timeout is
+        // stated rather than left to be inferred from a truncated excerpt (item #326).
+        ? `${safe(context.step)}${context.stepReason ? ` — ⏱ ${safe(context.stepReason)}` : ''}`
+        : '_not reported_',
+    ],
     // Item #173. On a red `app-e2e` the first question is "is this the ~1-in-7 collapse, or is it my
     // change?" — and until this row existed the answer lived only in a job log the forge API cannot
     // serve. A `collapsed` verdict means the client stopped SENDING turns and the failures say
@@ -656,6 +663,23 @@ export function readFailingStep(env = process.env, home = env.HOME ?? '') {
   }
 }
 
+/**
+ * Why the first wrapped step failed, when that reason is not visible in its log (item #326).
+ *
+ * A TIMEOUT is the case this exists for. Its log tail ends mid-work rather than at an error, so it
+ * reads exactly like an ordinary failure whose assertion scrolled off — and the reader goes hunting
+ * for a failure that never happened. `ci-log-step.sh` records it explicitly when it enforces a
+ * step ceiling; absent marker means an ordinary failure, and nothing is inferred.
+ */
+export function readFailingStepReason(env = process.env, home = env.HOME ?? '') {
+  const marker = join(stepLogDir(env, home), '_failed-step-reason');
+  try {
+    return existsSync(marker) ? (readFileSync(marker, 'utf8').trim() || null) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd(), env = process.env } = {}) {
   const excerpts = [];
   const health = [];
@@ -842,6 +866,7 @@ export function readJobContext(env = process.env) {
     workflow: env.GITHUB_WORKFLOW ?? 'unknown-workflow',
     job: env.GITHUB_JOB ?? 'unknown-job',
     step: env.CI_DIGEST_FAILING_STEP || readFailingStep(env) || '',
+    stepReason: readFailingStepReason(env),
     runHealth: readRunHealth(env),
     sha: env.GITHUB_SHA ?? '',
     runId: env.GITHUB_RUN_ID ?? '',

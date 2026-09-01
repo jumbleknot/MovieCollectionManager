@@ -1252,3 +1252,94 @@ test('(hh3) a job that never ran the tally gets no run-health row at all', () =>
   const d = buildDigest({ ...ctx({ step: 'x' }), runHealth: health }, { excerpts: [] });
   assert.equal(/Run health/.test(d.markdown), false, 'a job with no measurement was given a verdict');
 });
+
+// ─── item #326 — a TIMEOUT must not read like an ordinary failure ────────────────────────────────
+import { readFailingStepReason as readStepReason326 } from '../ci-failure-digest.mjs';
+
+test('(#326f) the digest marks a timed-out step as a TIMEOUT, naming the limit', () => {
+  const md = buildDigest({
+    workflow: 'app-ci', job: 'app-e2e', step: 'web-e2e',
+    stepReason: 'timeout after 2700s (step ceiling, not the job ceiling)',
+    sha: 'a'.repeat(40), pr: 322, runId: 8317,
+  });
+  const markdown = md.markdown ?? md;
+  assert.match(markdown, /\*\*Failing step\*\*/);
+  assert.match(markdown, /web-e2e/);
+  assert.match(markdown, /timeout after 2700s/,
+    'the reader cannot tell a hang from an assertion failure');
+});
+
+test('(#326g) an ordinary failure keeps its plain step row — no timeout wording', () => {
+  const md = buildDigest({
+    workflow: 'app-ci', job: 'app-e2e', step: 'web-e2e',
+    sha: 'a'.repeat(40), pr: 322, runId: 8317,
+  });
+  const markdown = md.markdown ?? md;
+  assert.match(markdown, /web-e2e/);
+  assert.doesNotMatch(markdown, /timeout/i, 'an ordinary failure was labelled a timeout');
+});
+
+test('(#326h) the reason is read from the marker ci-log-step.sh writes', () => {
+  const root = mkdtempSync(join(tmpdir(), 'digest-timeout-'));
+  const dir = join(root, 'RUN', 'JOB');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, '_failed-step-reason'), 'timeout after 60s (step ceiling, not the job ceiling)\n');
+  const env = { CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'RUN', GITHUB_JOB: 'JOB' };
+  assert.match(readStepReason326(env), /timeout after 60s/);
+});
+
+test('(#326i) no marker means no reason — absence is not invented', () => {
+  const root = mkdtempSync(join(tmpdir(), 'digest-timeout-'));
+  mkdirSync(join(root, 'RUN', 'JOB'), { recursive: true });
+  const env = { CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'RUN', GITHUB_JOB: 'JOB' };
+  assert.equal(readStepReason326(env), null);
+});
+
+// Item #326, criterion 1 — end to end, by deliberately hanging a real step and reading what the
+// digest would publish. Not reasoned about: ci-log-step.sh is actually spawned, actually hangs, and
+// is actually killed by its own ceiling.
+import { spawnSync as spawn326 } from 'node:child_process';
+import { resolve as resolve326, dirname as dirname326 } from 'node:path';
+import { fileURLToPath as fileURL326 } from 'node:url';
+import {
+  collectEvidence as collect326,
+  readFailingStep as readStep326,
+} from '../ci-failure-digest.mjs';
+
+test('(#326k) a hung step yields a digest that NAMES it, marks it a TIMEOUT, and carries its log tail', () => {
+  const root = mkdtempSync(join(tmpdir(), 'digest-e2e-'));
+  const env = {
+    ...process.env,
+    CI_STEP_LOG_ROOT: root,
+    GITHUB_RUN_ID: 'RUN326',
+    GITHUB_JOB: 'app-e2e',
+    CI_STEP_TIMEOUT_SECONDS: '1',
+  };
+  const script = resolve326(dirname326(fileURL326(import.meta.url)), '..', 'ci-log-step.sh');
+  const r = spawn326(
+    'bash',
+    [script, 'web-e2e', 'bash', '-c', 'echo "Running 177 tests"; echo "spec: assistant-add.spec.ts"; sleep 30'],
+    { encoding: 'utf8', env },
+  );
+  assert.notEqual(r.status, 0, 'the hung step was not killed');
+
+  const evidence = collect326({ env, home: root, cwd: process.cwd() });
+  const built = buildDigest(
+    {
+      workflow: 'app-ci',
+      job: 'app-e2e',
+      step: readStep326(env),
+      stepReason: readStepReason326(env),
+      sha: 'b'.repeat(40),
+      pr: 322,
+      runId: 8317,
+    },
+    evidence,
+  );
+  const md = built.markdown ?? built;
+
+  assert.match(md, /web-e2e/, 'the digest does not name the hung step');
+  assert.match(md, /timeout after 1s/, 'the digest does not mark it as a timeout');
+  assert.match(md, /Running 177 tests|assistant-add\.spec\.ts/,
+    'the digest carries no log tail for the hung step — the evidence a hang otherwise loses');
+});
