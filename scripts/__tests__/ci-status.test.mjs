@@ -359,10 +359,25 @@ test('(ww4) the collapse is per EVENT-SUFFIXED context — push and pull_request
     statusAt('success', '2026-08-11T10:30:00Z', 'guardrails / naming (pull_request)'),
   ];
   const pr = computeMergeVerdict(all, { requiredGlobs: ['guardrails*'], event: 'pull_request' });
-  assert.equal(pr.mergeable, true, "the push context's failure leaked into the pull_request verdict");
-
   const push = computeMergeVerdict(all, { requiredGlobs: ['guardrails*'], event: 'push' });
+
+  // The COLLAPSE keeps them apart — each view holds exactly its own context, with its own state.
+  // That is what this case exists to guard, and it is asserted directly rather than inferred from
+  // the verdict.
+  assert.deepEqual(pr.all.map((c) => c.context), ['guardrails / naming (pull_request)']);
+  assert.deepEqual(pr.all.map((c) => c.state), ['passed'],
+    "the push context's failure was merged into the pull_request context");
+  assert.deepEqual(push.all.map((c) => c.context), ['guardrails / naming (push)']);
   assert.equal(push.blocking.length, 1, "the pull_request success masked the push context's failure");
+
+  // CORRECTED 2026-09-01 (item #281). This case used to assert `pr.mergeable === true` — that a
+  // failing push context leaves the commit mergeable in the PR view. That assertion WAS the bug:
+  // every branch-protection glob ends in `*`, so `guardrails*` matches both event-suffixed
+  // contexts and the forge refuses the merge with 405. The tool said mergeable three times over a
+  // commit that was not (PR #276, PR #263). The collapse is per-context; the VERDICT is
+  // whole-commit, and must see the failure from either view.
+  assert.equal(pr.mergeable, false, 'a failing required push context must block the PR view too');
+  assert.deepEqual(pr.gate.blocking.map((c) => c.context), ['guardrails / naming (push)']);
 });
 
 test('(ww5) statuses sharing a created_at collapse deterministically — later entry wins', () => {
@@ -1018,4 +1033,214 @@ test('(z4) `not-needed` is not reported as a fault at all', async () => {
     [{ job: 'naming', outcome: 'not-needed', detail: null, summary: 'no digest was needed' }],
   ).join('\n');
   assert.doesNotMatch(lines, /ran and FAILED/i, '`not-needed` was rendered as a broken digest');
+});
+
+// ─── item #281 — the verdict must evaluate what BRANCH PROTECTION evaluates ──────────────────────
+//
+// Measured three times (PR #276 2026-08-29, two dependency PRs the same day, PR #263 2026-09-01):
+// `status`/`watch` reported "mergeable" and the merge API answered 405. Branch-protection globs all
+// end in `*`, so `infra-image-scan / infra-image-scan*` matches BOTH event-suffixed contexts, while
+// the tool pre-filtered to one event and never saw the failing one.
+//
+// The event filter is NOT the bug and must stay: it exists so a superseded commit does not read as
+// failed (test (u)). The bug is that it also narrowed the VERDICT. `--event` narrows a VIEW.
+import { computeMergeVerdict as verdict281, exitCodeForVerdict as exit281 } from '../ci-status.mjs';
+
+const MIXED_EVENT_STATUSES = [
+  { context: 'app-ci / app-e2e (pull_request)', status: 'success', description: 'Successful in 1s', created_at: '2026-09-01T00:00:01Z' },
+  { context: 'infra-image-scan / infra-image-scan (pull_request)', status: 'success', description: 'Successful in 2s', created_at: '2026-09-01T00:00:02Z' },
+  { context: 'infra-image-scan / infra-image-scan (push)', status: 'failure', description: 'Failing after 2m38s', created_at: '2026-09-01T00:00:03Z' },
+];
+const MIXED_GLOBS = ['app-ci / app-e2e*', 'infra-image-scan / infra-image-scan*'];
+
+test('(#281a) a failing PUSH context makes the commit NOT mergeable, even in the pull_request view', () => {
+  const v = verdict281(MIXED_EVENT_STATUSES, { event: 'pull_request', requiredGlobs: MIXED_GLOBS });
+  assert.equal(v.mergeable, false,
+    'reported mergeable while a required push-event context had failed — this is the 405');
+});
+
+test('(#281b) the exit code is 1 (a required context FAILED), not 3 (waiting)', () => {
+  const v = verdict281(MIXED_EVENT_STATUSES, { event: 'pull_request', requiredGlobs: MIXED_GLOBS });
+  assert.equal(exit281(v), 1, 'a `ci-status && merge` wrapper would have merged on this exit code');
+});
+
+test('(#281c) the gate names the off-view context, so the reader is not left guessing', () => {
+  const v = verdict281(MIXED_EVENT_STATUSES, { event: 'pull_request', requiredGlobs: MIXED_GLOBS });
+  const contexts = v.gate.blocking.map((c) => c.context);
+  assert.deepEqual(contexts, ['infra-image-scan / infra-image-scan (push)']);
+});
+
+test('(#281d) the VIEW still honours --event — the fix must not collapse the two events', () => {
+  const v = verdict281(MIXED_EVENT_STATUSES, { event: 'pull_request', requiredGlobs: MIXED_GLOBS });
+  assert.equal(v.event, 'pull_request');
+  assert.equal(v.all.every((c) => !c.context.includes('(push)')), true,
+    'the pull_request view leaked a push context');
+});
+
+test('(#281e) REGRESSION GUARD — a superseded commit is still not reported as failed', () => {
+  // This is the case the event filter was added for (test (u), measured 2026-07-19). Evaluating
+  // every event must NOT resurrect it: cancelled classifies as `superseded`, never `failed`, so the
+  // gate stays clean. If this ever goes red, the gate is counting cancelled contexts as failures.
+  const v = verdict281(statusesOf('status-cancelled.json'), { event: 'push' });
+  assert.equal(v.gate.blocking.length, 0, 'a cancelled context leaked into the gate as a failure');
+  assert.equal(exit281(v), 3, 'a superseded commit must read as "no verdict yet", not as failed');
+});
+
+test('(#281f) a genuine single-event failure is unchanged', () => {
+  const v = verdict281(statusesOf('status-genuine-failure.json'), { event: 'pull_request' });
+  assert.equal(v.mergeable, false);
+  assert.equal(exit281(v), 1);
+});
+
+import { describeOffViewGating } from '../ci-status.mjs';
+
+test('(#281g) the off-view blocker is NAMED, with its event — the line that was missing', () => {
+  const v = verdict281(MIXED_EVENT_STATUSES, { event: 'pull_request', requiredGlobs: MIXED_GLOBS });
+  const lines = describeOffViewGating(v).join('\n');
+  assert.match(lines, /ALSO GATING/);
+  assert.match(lines, /infra-image-scan \/ infra-image-scan \(push\)/,
+    'the blocking context was not named');
+  assert.match(lines, /405/, 'the reader is not told why the merge will be refused');
+});
+
+test('(#281h) a commit whose events agree prints NO extra section — no noise on the happy path', () => {
+  const green = [
+    { context: 'app-ci / app-e2e (pull_request)', status: 'success', description: 'ok', created_at: '2026-09-01T00:00:01Z' },
+    { context: 'app-ci / app-e2e (push)', status: 'success', description: 'ok', created_at: '2026-09-01T00:00:02Z' },
+  ];
+  const v = verdict281(green, { event: 'pull_request', requiredGlobs: ['app-ci / app-e2e*'] });
+  assert.equal(v.mergeable, true);
+  assert.deepEqual(describeOffViewGating(v), []);
+});
+
+test('(#281i) a context already visible in the view is not repeated in the extra section', () => {
+  const v = verdict281(statusesOf('status-genuine-failure.json'), { event: 'pull_request' });
+  assert.deepEqual(describeOffViewGating(v), [],
+    'the failing context is in the table already; naming it twice is noise');
+});
+
+// ─── items #324 and #226 — the two commands that answer about the wrong commit ───────────────────
+import { cmdWatch, resolveSha } from '../ci-status.mjs';
+
+const FAKE_CONN = { base: 'http://forge.invalid/api/v1', owner: 'o', repo: 'r', token: 't' };
+const SHA_A = 'a018d1f1ff3e796c7feb7b68ae50aed293bc6070';
+const SHA_B = '43167af8df54b517703131e25ab0779144cbf72e';
+
+/** Serve the three endpoints loadVerdict reads, with a scripted sequence of status payloads. */
+function stubForge({ statusSequence = [[]], run = null } = {}) {
+  const realFetch = globalThis.fetch;
+  const calls = { status: 0, run: 0 };
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    const json = (o) => ({ ok: true, status: 200, text: async () => JSON.stringify(o) });
+    if (u.includes('/branch_protections')) return json([]);
+    if (/\/actions\/runs\/\d+/.test(u)) { calls.run += 1; return json(run ?? {}); }
+    if (u.includes('/actions/runs?')) return json({ workflow_runs: [] });
+    if (u.endsWith('/status')) {
+      const i = Math.min(calls.status, statusSequence.length - 1);
+      calls.status += 1;
+      return json({ statuses: statusSequence[i] });
+    }
+    throw new Error(`unexpected fetch: ${u}`);
+  };
+  return { calls, restore: () => { globalThis.fetch = realFetch; } };
+}
+
+const quiet = async (fn) => {
+  const real = console.log;
+  console.log = () => {};
+  try { return await fn(); } finally { console.log = real; }
+};
+
+const GREEN_STATUS = [{
+  context: 'guardrails / naming (push)', status: 'success',
+  description: 'Successful in 1s', created_at: '2026-09-01T00:00:01Z',
+}];
+
+test('(#324a) watch KEEPS POLLING when nothing has reported yet — it must not return instantly', async () => {
+  // Measured 2026-08-31: `watch --pr 322 --timeout 5400` returned in ~2s with exit 3, the same code
+  // it uses for "waited 90 minutes and CI is still queued". The caller cannot tell those apart, and
+  // CLAUDE.md tells agents to branch on this exit code.
+  const { calls, restore } = stubForge({ statusSequence: [[], [], GREEN_STATUS] });
+  try {
+    const code = await quiet(() =>
+      cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 60, intervalSeconds: 0 }));
+    assert.ok(calls.status >= 3, `polled ${calls.status}x — it returned before anything reported`);
+    assert.equal(code, 0, 'the eventual green verdict was not returned');
+  } finally { restore(); }
+});
+
+test('(#324b) the timeout path still returns 3 and is still reached', async () => {
+  const { calls, restore } = stubForge({ statusSequence: [[]] });
+  try {
+    const code = await quiet(() =>
+      cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 0, intervalSeconds: 0 }));
+    assert.equal(code, 3, 'a genuine timeout must stay exit 3 — starvation is not failure');
+    assert.ok(calls.status >= 1);
+  } finally { restore(); }
+});
+
+test('(#324c) a settled commit still returns IMMEDIATELY — the fix must not poll every green', async () => {
+  const { calls, restore } = stubForge({ statusSequence: [GREEN_STATUS] });
+  try {
+    const code = await quiet(() =>
+      cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 60, intervalSeconds: 0 }));
+    assert.equal(code, 0);
+    assert.equal(calls.status, 1, 'a green verdict was polled more than once');
+  } finally { restore(); }
+});
+
+test('(#226a) `--run N` resolves the RUN\'s commit, not local HEAD', async () => {
+  // `target.run` was parsed and then read by nothing at all: the usage line advertises the flag and
+  // two error messages tell you to pass it. With no --sha/--pr/--branch, resolveSha fell through to
+  // `git rev-parse HEAD`, so `failure --run 2477` reported on the working copy and said
+  // "No failed jobs on this commit."
+  const { calls, restore } = stubForge({ run: { id: 2477, commit_sha: SHA_B } });
+  try {
+    const resolved = await resolveSha({ run: '2477' }, FAKE_CONN);
+    assert.equal(resolved.sha, SHA_B, 'resolved to the wrong commit (local HEAD?)');
+    assert.equal(calls.run, 1, 'the run endpoint was never consulted');
+  } finally { restore(); }
+});
+
+test('(#226b) an explicit --sha or --pr still wins over --run', async () => {
+  const { calls, restore } = stubForge({ run: { id: 2477, commit_sha: SHA_B } });
+  try {
+    const resolved = await resolveSha({ sha: SHA_A, run: '2477' }, FAKE_CONN);
+    assert.equal(resolved.sha, SHA_A);
+    assert.equal(calls.run, 0, '--run should not be fetched when an explicit sha was given');
+  } finally { restore(); }
+});
+
+import { failuresToExplain } from '../ci-status.mjs';
+
+test('(#226c) `failure` sees a push-event failure even though the view infers pull_request', () => {
+  // The bug that made (#226a) look unfixed: resolveSha found the right commit, then cmdFailure
+  // read verdict.blocking (the pull_request VIEW, all green) and said "No failed jobs on this
+  // commit" about a commit whose push-event sweep had failed.
+  const v = verdict281(MIXED_EVENT_STATUSES, { requiredGlobs: MIXED_GLOBS });
+  assert.deepEqual(
+    failuresToExplain(v).map((c) => c.context),
+    ['infra-image-scan / infra-image-scan (push)'],
+  );
+});
+
+test('(#226d) a commit with nothing failing yields nothing to explain', () => {
+  const v = verdict281(statusesOf('status-all-green.json'), { event: 'push' });
+  assert.deepEqual(failuresToExplain(v), []);
+});
+
+import { describePending } from '../ci-status.mjs';
+
+test('(#281j) a job waiting on BOTH events is disambiguated, not printed twice identically', () => {
+  const waiting = [
+    { job: 'infra-image-scan / infra-image-scan', context: 'infra-image-scan / infra-image-scan (push)' },
+    { job: 'infra-image-scan / infra-image-scan', context: 'infra-image-scan / infra-image-scan (pull_request)' },
+    { job: 'guardrails / sast', context: 'guardrails / sast (pull_request)' },
+  ];
+  assert.deepEqual(describePending(waiting), [
+    'infra-image-scan / infra-image-scan (push)',
+    'infra-image-scan / infra-image-scan (pull_request)',
+    'guardrails / sast',
+  ]);
 });
