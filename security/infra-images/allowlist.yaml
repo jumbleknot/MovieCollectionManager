@@ -108,3 +108,68 @@
 # push-event context as well as the pull_request one. So an infra CVE with no relation to a PR's diff
 # can make that PR unmergeable, and `ci-status --pr N` will still report it mergeable because it reads
 # pull_request contexts only. Use `--event push` when a merge is refused but the PR view looks green.
+
+# ── NEW advisory on unchanged pinned images, triaged 2026-09-01 (item #329) ───────────────────────
+# CVE-2026-56854 — golang.org/x/crypto below 0.55.0 (fix published 2026-08-11). ONE advisory, 28
+# blocking findings, nine pulled images. Every entry below is that single CVE; none of these images
+# is one we build.
+#
+# WHY ENTRIES AND NOT A BUMP — the rule this file states for itself ("an entry would only be right if
+# no fix existed"), checked per image against upstream release dates on 2026-09-01:
+#   caddy 2.11.4-alpine ......... v2.11.4 is latest (2026-06-03) — predates the fix, no newer tag
+#   openpolicyagent/opa 1.20.1 .. v1.20.1 is latest (2026-08-28) — postdates the fix yet still ships
+#                                 x/crypto 0.54.0, so upstream has not picked it up
+#   grafana/otel-lgtm 0.32.0 .... v0.32.0 is latest (2026-08-28) — same
+#   minio/mc .................... already on the latest RELEASE tag
+#   minio/minio ................. a newer tag exists (RELEASE.2025-10-15) but STILL predates the fix
+#   hashicorp/vault 1.18 ........ deliberately pinned (feature 036); already carries three entries
+#   mongodb-community-server .... deliberately pinned on 8.0.8 (feature 036)
+# Remediation for all of the above is an UPSTREAM REBUILD against x/crypto 0.55.0, which is already
+# happening: axllent/mailpit:v1.31.0 reports x/crypto v0.55.0 in its own warnings.
+#
+# Our six BUILT images are Node/Python/Rust/Alpine — no Go — so cd-deploy's Trivy gate is unaffected.
+#
+# EXPIRY 2026-10-01 is deliberate: these are time-boxed to force re-triage, not accepted permanently.
+# The 14-day warning window starts reporting them 2026-09-17. Per item #303, DELETE each entry when
+# its image is remediated rather than letting the date pass — an entry that matches nothing keeps
+# failing under UNMATCHED ENTRIES instead of ageing out quietly.
+- image: 'caddy:2\.11\.4-alpine'
+  id: 'CVE-2026-56854'
+  justification: 'New advisory (x/crypto <0.55.0, fix 2026-08-11) on an image we pull. Already on the newest upstream tag v2.11.4, published 2026-06-03 — it predates the fix, so no bump can clear this. Remediation is an upstream rebuild. Internal-only (reverse proxy). Time-boxed; delete on rebuild.'
+  addedBy: 'item-329'
+  expiry: '2026-10-01'
+- image: 'grafana/otel-lgtm:0\.32\.0'
+  id: 'CVE-2026-56854'
+  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. Already on the newest upstream tag v0.32.0 (2026-08-28); it postdates the fix but still bundles x/crypto 0.52-0.54, so upstream has not picked the fix up and no bump exists to make. Internal-only (observability stack). Time-boxed; delete on rebuild.'
+  addedBy: 'item-329'
+  expiry: '2026-10-01'
+- image: 'hashicorp/vault:1\.18'
+  id: 'CVE-2026-56854'
+  justification: 'New advisory (x/crypto <0.55.0) on the deliberately-pinned 1.18 (feature 036 found no fully-clean upstream tag; three sibling entries above record that reasoning). Internal-only and dormant. Re-triage with the rest of the vault entries when a clean tag ships.'
+  addedBy: 'item-329'
+  expiry: '2026-10-01'
+- image: 'minio/mc:RELEASE\.2025-08-13T08-35-41Z'
+  id: 'CVE-2026-56854'
+  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. Already on the newest upstream RELEASE tag, which predates the fix — no bump can clear it. Internal-only. Time-boxed; delete on rebuild.'
+  addedBy: 'item-329'
+  expiry: '2026-10-01'
+- image: 'minio/minio:RELEASE\.2025-09-07T16-13-09Z'
+  id: 'CVE-2026-56854'
+  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. A newer tag exists (RELEASE.2025-10-15) but it still predates the 2026-08-11 fix, so bumping would NOT clear this Critical. Internal-only. Time-boxed; delete on rebuild.'
+  addedBy: 'item-329'
+  expiry: '2026-10-01'
+- image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
+  id: 'CVE-2026-56854'
+  justification: 'New advisory (x/crypto <0.55.0) on the deliberately-pinned 8.0.8 (feature 036 verified 8.0.26 neither clears the sibling stdlib Critical nor comes up healthy on the CI rootless runner). Internal-only data tier. Re-triage with the sibling CVE-2025-68121 entries.'
+  addedBy: 'item-329'
+  expiry: '2026-10-01'
+- image: 'ollama/ollama:0\.32\.1'
+  id: 'CVE-2026-56854'
+  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. UNLIKE the others a newer tag (v0.33.2, 2026-08-27) POSTDATES the fix and may already carry x/crypto 0.55.0 — this could NOT be verified here (Trivy is absent from the dev container per feature 035, and Docker Hub is not on its egress allowlist), and bumping the pin is an infrastructure-as-code change and therefore SDD-gated. Recorded rather than silently suppressed: item #329 carries the check, and the entry is to be DELETED not renewed if 0.33.2 clears it. Dev/test-only model provider (see model-provider-scoping).'
+  addedBy: 'item-329'
+  expiry: '2026-10-01'
+- image: 'openpolicyagent/opa:1\.20\.1'
+  id: 'CVE-2026-56854'
+  justification: 'New advisory (x/crypto <0.55.0) on an image we pull; one entry deliberately covers both the 1.20.1 and 1.20.1-debug refs, which are the same build. Already on the newest upstream tag v1.20.1 (2026-08-28); it postdates the fix but still ships x/crypto 0.54.0, so no bump exists to make. Internal-only (policy sidecar). Time-boxed; delete on rebuild.'
+  addedBy: 'item-329'
+  expiry: '2026-10-01'
