@@ -129,9 +129,36 @@ can disagree**:
 guardrails / secret-scan     push=success   pull_request=failure
 ```
 
-A required-context glob like `guardrails*` matches **both**. A roll-up that ignores the event reports
-failure for a commit whose push run was entirely green. `ci-status` selects the event matching the
-query — `pull_request` contexts for a PR, `push` for a branch or bare commit.
+A required-context glob like `guardrails*` matches **both**. That cuts two ways, and the tool has now
+been wrong in each direction:
+
+- **Ignoring the event over-reports failure.** A roll-up that lumps the two together reports failure
+  for a commit whose push run was entirely green (measured 2026-07-19, on a superseded commit).
+- **Selecting one event over-reports SUCCESS**, which is the dangerous direction. `ci-status` used to
+  filter the whole verdict to one event, so a required job that failed on `push` while its
+  `pull_request` twin was path-gated to a 2 s skip produced `VERDICT mergeable` and exit 0 — and
+  `POST /pulls/{n}/merge` answered **405**. Four occurrences: PRs #276, #302 and #263, plus two
+  dependency PRs blocked the same day as #276.
+
+**Since item #281 the two concerns are separated.** The **verdict** is whole-commit — it evaluates
+every context the globs match, exactly as branch protection does. The **view** is still one event,
+chosen by `--pr`/`--event`, so the check table stays readable. When a context gates the merge but
+is not in the view, it is named explicitly rather than left to be inferred:
+
+```text
+ALSO GATING (other events — every branch-protection glob ends in `*`, so it matches these too)
+  ✗ infra-image-scan / infra-image-scan (push)  failed
+  ↳ absent from the table above because the view is scoped to one event, while branch
+    protection evaluates the whole commit. THIS is what makes a merge 405 on a green PR.
+```
+
+Selecting one event is safe for the verdict only because superseding is handled a layer earlier:
+`classifyCheckState` maps a cancelled context to `superseded`, never `failed`, so the 2026-07-19 case
+cannot come back through the whole-commit gate. `--selftest` pins the over-reporting direction.
+
+> `--event push` used to be the documented workaround for a refused merge on a green-looking PR. It
+> is no longer needed for that — the default verdict already sees it. The flag remains for choosing
+> which event's table you want to read.
 
 ### Where the REQUIRED set comes from (do not hand-maintain it)
 

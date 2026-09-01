@@ -933,16 +933,20 @@ export function failuresToExplain(verdict) {
   return pool.filter((c) => c.state === 'failed');
 }
 
-async function cmdFailure(target, conn) {
+export async function cmdFailure(target, conn) {
   const { verdict, sha, pr } = await loadVerdict(target, conn);
   const failed = failuresToExplain(verdict);
 
   if (!failed.length) {
+    // Name the commit. "No failed jobs on this commit" is indistinguishable from "you asked about
+    // the wrong commit", which is exactly how item #226 stayed invisible: `--run` silently
+    // resolved local HEAD and the reassuring message was about the working copy.
+    const where = `${sha.slice(0, 8)}${pr ? ` (PR #${pr})` : ''}`;
     if (verdict.superseded.length) {
-      emit('No failure to explain — this run was cancelled by a newer push (superseded, not broken).');
+      emit(`No failure to explain on ${where} — this run was cancelled by a newer push (superseded, not broken).`);
       return EXIT.OK;
     }
-    emit('No failed jobs on this commit.');
+    emit(`No failed jobs on ${where} — checked every event's contexts.`);
     return EXIT.OK;
   }
 
@@ -1146,11 +1150,26 @@ function selftest() {
   if (!redactForPublication(probeHost).includes('<forge>')) failures.push('host not redacted');
   try { assertFullSha('c2c3c29'); failures.push('an abbreviated sha was accepted'); } catch { /* expected */ }
 
+  // Item #281, four measured occurrences (PRs #276, #302, #263 and two more the same day): a
+  // required context failing on an event the VIEW filters out must still block the verdict, because
+  // branch protection's globs match it. Over-reporting mergeable is the dangerous direction — a
+  // `ci-status && merge` wrapper acts on it — so it belongs in the selftest, not only in the suite.
+  const offView = [
+    { context: 'guardrails / naming (pull_request)', status: 'success', description: 'Successful in 1s', created_at: '2026-09-01T00:00:01Z' },
+    { context: 'guardrails / naming (push)', status: 'failure', description: 'Failing after 1m', created_at: '2026-09-01T00:00:02Z' },
+  ];
+  const offViewVerdict = computeMergeVerdict(offView, { requiredGlobs: ['guardrails*'], event: 'pull_request' });
+  if (offViewVerdict.mergeable) failures.push('a failing push-event context did not block the verdict (item #281)');
+  if (exitCodeForVerdict(offViewVerdict) !== 1) failures.push('exit code ignored the off-view failure (item #281)');
+  if (!describeOffViewGating(offViewVerdict).join('\n').includes('(push)')) {
+    failures.push('the off-view blocker was not named in the report (item #281)');
+  }
+
   if (failures.length) {
     console.error('✗ [ci-status --selftest] FAILED:\n  - ' + failures.join('\n  - '));
     process.exit(1);
   }
-  console.log('✓ [ci-status --selftest] traps classified, host redacted, short sha rejected.');
+  console.log('✓ [ci-status --selftest] traps classified, host redacted, short sha rejected, off-view gating caught.');
 }
 
 const USAGE = `Usage:
