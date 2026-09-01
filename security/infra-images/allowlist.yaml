@@ -106,8 +106,13 @@
 # because Renovate pushed a branch and the non-PR full sweep ran there, which then BLOCKED two unrelated
 # dependency PRs: branch protection requires `infra-image-scan / infra-image-scan*`, a glob matching the
 # push-event context as well as the pull_request one. So an infra CVE with no relation to a PR's diff
-# can make that PR unmergeable, and `ci-status --pr N` will still report it mergeable because it reads
-# pull_request contexts only. Use `--event push` when a merge is refused but the PR view looks green.
+# can make that PR unmergeable.
+#
+# FIXED 2026-09-01 (item #281): `ci-status` used to report such a PR mergeable, because it read
+# pull_request contexts only, and the advice here was to re-run it with `--event push`. That
+# workaround is no longer needed — the verdict now evaluates every event (branch protection's globs
+# all end in `*`, so they match the push-suffixed context too) and the report names the off-view
+# context under ALSO GATING. `--event` still narrows the view when you want one.
 
 # ── NEW advisory on unchanged pinned images, triaged 2026-09-01 (item #329) ───────────────────────
 # CVE-2026-56854 — golang.org/x/crypto below 0.55.0 (fix published 2026-08-11). ONE advisory, 28

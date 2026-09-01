@@ -396,23 +396,43 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
   const chosenEvent = event ?? inferEvent(statuses);
   const patterns = requiredGlobs.map(globToRegExp);
 
-  const checks = collapseToNewestPerContext(selectEventContexts(statuses, chosenEvent))
-    .filter((s) => !SELF_PUBLISHED_CONTEXT.test(parseContext(s.context).job))
-    .map((s) => {
-    const { job } = parseContext(s.context);
-    const run = findRunForContext(s.context, runs);
-    return {
-      context: s.context,
-      job,
-      description: s.description ?? '',
-      state: classifyCheckState(s, run),
-      // Carried so `failure --full` can derive the bundle version without the operator passing
-      // --run by hand. Matched via the context's OWN event, since the same job appears once per
-      // event and the two can be different runs.
-      runId: run?.id ?? null,
-      required: patterns.some((re) => re.test(job)),
-    };
-  });
+  const toChecks = (list) =>
+    collapseToNewestPerContext(list)
+      .filter((s) => !SELF_PUBLISHED_CONTEXT.test(parseContext(s.context).job))
+      .map((s) => {
+        const { job } = parseContext(s.context);
+        const run = findRunForContext(s.context, runs);
+        return {
+          context: s.context,
+          job,
+          description: s.description ?? '',
+          state: classifyCheckState(s, run),
+          // Carried so `failure --full` can derive the bundle version without the operator passing
+          // --run by hand. Matched via the context's OWN event, since the same job appears once per
+          // event and the two can be different runs.
+          runId: run?.id ?? null,
+          required: patterns.some((re) => re.test(job)),
+        };
+      });
+
+  // The VIEW: one event, as the operator asked for it (or as inferEvent chose).
+  const checks = toChecks(selectEventContexts(statuses, chosenEvent));
+
+  // THE GATE: every event, because that is what branch protection evaluates (item #281).
+  //
+  // Required contexts are matched by GLOB and every glob ends in `*`, so
+  // `infra-image-scan / infra-image-scan*` matches the push-suffixed context as well as the
+  // pull_request one. Deciding `mergeable` from the event-filtered view therefore reported a green
+  // that the merge API refused with 405 — measured on PR #276 (2026-08-29) and again on PR #263
+  // (2026-09-01), both times with the same tell: a PR-event job path-gated to a 2s skip beside a
+  // push-event job that ran the real work and failed.
+  //
+  // This does NOT undo the event-suffix rule that `selectEventContexts` exists for. That rule
+  // protects against a SUPERSEDED commit reading as failed, and superseding is handled a layer
+  // earlier: `classifyCheckState` maps a cancelled context to `superseded`, never `failed`, so a
+  // cancelled context cannot enter `gate.blocking`. Verified on the status-cancelled fixture, which
+  // has 13 superseded contexts and zero failures under a whole-commit evaluation.
+  const gateChecks = toChecks(statuses);
 
   const required = checks.filter((c) => c.required);
   const blocking = required.filter((c) => c.state === 'failed');
@@ -420,13 +440,22 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
   const superseded = checks.filter((c) => c.state === 'superseded');
   const advisory = checks.filter((c) => !c.required && c.state === 'failed');
 
+  const gateRequired = gateChecks.filter((c) => c.required);
+  const gate = {
+    all: gateChecks,
+    required: gateRequired,
+    blocking: gateRequired.filter((c) => c.state === 'failed'),
+    waiting: gateRequired.filter((c) => c.state === 'waiting'),
+  };
+
   // A required context that produced no status at all does not hold the verdict hostage — a
   // zero-match glob is treated as satisfied, mirroring branch protection. But that reasoning is
   // PER GLOB. If NOTHING has reported yet, `[].every()` is vacuously true and an unreported commit
   // renders as green — which also made `watch` return immediately instead of waiting. Absent
   // results are "not yet known", never "satisfied".
-  const noResults = checks.length === 0;
-  const mergeable = !noResults && required.every((c) => c.state === 'passed' || c.state === 'skipped');
+  // Both derived from the GATE, not the view — the question "may I merge" is not event-scoped.
+  const noResults = gateChecks.length === 0;
+  const mergeable = !noResults && gateRequired.every((c) => c.state === 'passed' || c.state === 'skipped');
 
   return {
     mergeable,
@@ -437,6 +466,7 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
     superseded,
     required,
     all: checks,
+    gate,
     event: chosenEvent,
   };
 }
@@ -449,9 +479,14 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
  * cancelled and never actually passed.
  */
 export function exitCodeForVerdict(verdict) {
-  if (verdict.blocking.length) return 1;
+  // Read the GATE, not the view (item #281). A required context can fail on an event the current
+  // view filters out, and the merge API refuses on it — so deciding from `verdict.blocking` alone
+  // returned 3 ("still waiting") or even 0 for a commit that had genuinely failed.
+  const blocking = verdict.gate?.blocking ?? verdict.blocking;
+  const waiting = verdict.gate?.waiting ?? verdict.waiting;
+  if (blocking.length) return 1;
   // Superseded and not-yet-reported are both "no verdict yet" — the same answer as waiting.
-  if (verdict.waiting.length || verdict.noResults || !verdict.mergeable) return 3;
+  if (waiting.length || verdict.noResults || !verdict.mergeable) return 3;
   return 0;
 }
 
@@ -657,7 +692,7 @@ async function fetchCached(pathAndQuery, conn, cacheName) {
 /** The branch whose protection gates this target. A PR is gated by its BASE, not its head. */
 const DEFAULT_PROTECTED_BRANCH = 'main';
 
-async function resolveSha({ sha, pr, branch }, conn) {
+export async function resolveSha({ sha, pr, run, branch }, conn) {
   if (sha) return { sha: assertFullSha(sha), pr: null, base: DEFAULT_PROTECTED_BRANCH, headRef: null, prState: null };
   if (pr) {
     const { data } = await fetchCached(`/repos/${conn.owner}/${conn.repo}/pulls/${pr}`, conn, `pull-${pr}`);
@@ -672,6 +707,23 @@ async function resolveSha({ sha, pr, branch }, conn) {
       prState: data.state ?? null,
     };
   }
+  // A run id identifies a commit; resolving it is the difference between reporting on that run and
+  // reporting on whatever the working copy happens to be checked out at (item #226). `--run` was
+  // parsed and then read by NOTHING — the usage line advertises it and two error messages tell you
+  // to pass it, while `failure --run 2477` silently answered about local HEAD.
+  if (run) {
+    const { data } = await fetchCached(
+      `/repos/${conn.owner}/${conn.repo}/actions/runs/${run}`, conn, `run-${run}`,
+    );
+    return {
+      sha: assertFullSha(data.commit_sha),
+      pr: null,
+      base: DEFAULT_PROTECTED_BRANCH,
+      headRef: null,
+      prState: null,
+    };
+  }
+
   const ref = branch ?? 'HEAD';
   return {
     sha: execFileSync('git', ['rev-parse', ref], { encoding: 'utf8' }).trim(),
@@ -728,6 +780,48 @@ const ANNOTATION = {
 /** Every emitted line goes through redaction, so the forge host is `<forge>` by construction. */
 const emit = (line) => console.log(stripControlChars(redactForPublication(line)));
 
+/**
+ * Name the required contexts that gate the merge but are NOT in the current view (item #281).
+ *
+ * The view is one event; branch protection evaluates the whole commit. When those disagree the tool
+ * used to print a clean green table above a verdict the forge would refuse, with nothing on screen
+ * connecting the two — so the reader looked for the fault in the change. Three occurrences, and the
+ * only documented remedy lived in a comment at the bottom of an unrelated YAML file.
+ *
+ * Pure, so the wording is testable without capturing stdout.
+ */
+/**
+ * Label the still-waiting checks for the progress line.
+ *
+ * Since the gate spans events (item #281), the SAME job can be waiting twice — once per event — and
+ * printing `c.job` rendered it as a duplicated name with nothing to tell the two apart. The event
+ * suffix is added only where it disambiguates, so the ordinary single-event case stays terse.
+ */
+export function describePending(waiting) {
+  const seen = new Map();
+  for (const c of waiting) seen.set(c.job, (seen.get(c.job) ?? 0) + 1);
+  return waiting.map((c) =>
+    seen.get(c.job) > 1 ? `${c.job} (${parseContext(c.context).event})` : c.job,
+  );
+}
+
+export function describeOffViewGating(verdict) {
+  const inView = new Set((verdict.all ?? []).map((c) => c.context));
+  const offView = (verdict.gate?.all ?? []).filter(
+    (c) => c.required && !inView.has(c.context) && (c.state === 'failed' || c.state === 'waiting'),
+  );
+  if (!offView.length) return [];
+  return [
+    '',
+    'ALSO GATING (other events — every branch-protection glob ends in `*`, so it matches these too)',
+    ...offView.map(
+      (c) => `  ${SYMBOL[c.state]} ${c.job} (${parseContext(c.context).event})  ${c.state}`,
+    ),
+    '  ↳ absent from the table above because the view is scoped to one event, while branch',
+    '    protection evaluates the whole commit. THIS is what makes a merge 405 on a green PR.',
+  ];
+}
+
 function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState }) {
   const width = Math.max(...verdict.all.map((c) => c.job.length), 20);
   emit('');
@@ -765,6 +859,8 @@ function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, p
     }
   }
 
+  for (const line of describeOffViewGating(verdict)) emit(line);
+
   emit('');
   emit(`VERDICT  ${verdictLine(verdict)}`);
   emit(`         raw payload cached: ${cachePaths.join(', ')}`);
@@ -772,12 +868,15 @@ function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, p
 }
 
 function verdictLine(v) {
+  // Gate, not view (item #281) — otherwise the summary line contradicts the exit code.
+  const blocking = v.gate?.blocking ?? v.blocking;
+  const waiting = v.gate?.waiting ?? v.waiting;
   if (v.noResults) return 'no checks have reported for this commit yet — not "green", just not known yet.';
-  if (v.superseded.length && !v.blocking.length && !v.waiting.length) {
+  if (v.superseded.length && !blocking.length && !waiting.length) {
     return `superseded — this run was cancelled by a newer push (${v.superseded.length} context(s)). Not a failure — but not a pass either; the newer run decides.`;
   }
-  if (v.blocking.length) return `NOT mergeable — ${v.blocking.length} required context(s) failed`;
-  if (v.waiting.length) return `not yet mergeable — ${v.waiting.length} required context(s) still waiting`;
+  if (blocking.length) return `NOT mergeable — ${blocking.length} required context(s) failed`;
+  if (waiting.length) return `not yet mergeable — ${waiting.length} required context(s) still waiting`;
   const advisory = v.advisory.length ? `; ${v.advisory.length} advisory failure(s) — not blocking` : '';
   return `mergeable — all required contexts satisfied${advisory}`;
 }
@@ -820,9 +919,23 @@ async function cmdStatus(target, conn) {
   return exitCodeForVerdict(verdict);
 }
 
+/**
+ * Every check worth explaining, across EVERY event (items #281/#226).
+ *
+ * Derived from the gate rather than the view for the same reason the verdict is: `inferEvent`
+ * prefers `pull_request`, so `failure --run <id>` on a push-event failure resolved the right
+ * commit and then reported "No failed jobs on this commit" — the command that exists to explain a
+ * failure, declining to see it. Non-required failures are included too: they are advisory for
+ * MERGING, but they are still the thing the operator asked about.
+ */
+export function failuresToExplain(verdict) {
+  const pool = verdict.gate?.all ?? verdict.all ?? [];
+  return pool.filter((c) => c.state === 'failed');
+}
+
 async function cmdFailure(target, conn) {
   const { verdict, sha, pr } = await loadVerdict(target, conn);
-  const failed = [...verdict.blocking, ...verdict.advisory];
+  const failed = failuresToExplain(verdict);
 
   if (!failed.length) {
     if (verdict.superseded.length) {
@@ -840,11 +953,14 @@ async function cmdFailure(target, conn) {
     emit(`${failed.length} failed job(s) on a non-PR commit — reading each digest from its bundle:`);
     for (const c of failed) {
       const jobName = c.job.split('/').pop().trim();
-      if (!c.runId) {
+      // `--run` is the documented escape hatch when the context could not be matched to a run; it
+      // is now actually consulted here rather than merely suggested (item #226).
+      const runId = c.runId ?? target.run ?? null;
+      if (!runId) {
         emit(`  ✗ ${c.job} — ${c.description} (no run id; pass --run <id> to fetch its bundle)`);
         continue;
       }
-      const bundle = await fetchBundle(conn, c.runId, jobName);
+      const bundle = await fetchBundle(conn, runId, jobName);
       if (!bundle) {
         emit(`  ✗ ${c.job} — ${c.description} (no bundle; the job may have died before the digest step ran)`);
         continue;
@@ -983,11 +1099,20 @@ async function fetchBundle(conn, runId, job) {
   return { version, dir: root, meta: manifest.meta ?? {} };
 }
 
-async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
+export async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
   const deadline = Date.now() + timeoutSeconds * 1000;
   for (;;) {
     const { verdict, sha, pr, cachePaths, requiredGlobs, headRef, prState } = await loadVerdict(target, conn);
-    if (!verdict.waiting.length) {
+    // "Nothing has reported yet" is NOT a verdict, and it also has an empty `waiting` — so the old
+    // condition was satisfied on the first iteration and `watch` returned in ~2s with exit 3, the
+    // same code it returns after a genuine 90-minute starvation (item #324). `computeMergeVerdict`
+    // already carried `noResults` for exactly this reason and `exitCodeForVerdict` already treated
+    // the two alike; the loop was the one place that did not.
+    //
+    // Gate, not view, for the same reason as everywhere else (item #281): a required context still
+    // pending on another event means the merge is not yet decidable.
+    const stillWaiting = (verdict.gate?.waiting ?? verdict.waiting).length > 0 || verdict.noResults;
+    if (!stillWaiting) {
       renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
       return exitCodeForVerdict(verdict);
     }
@@ -998,7 +1123,12 @@ async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
       emit(`still waiting after ${timeoutSeconds}s — runner starvation, not failure (exit ${EXIT.WAITING}).`);
       return EXIT.WAITING;
     }
-    emit(`waiting on ${verdict.waiting.map((c) => c.job).join(', ')} — re-checking in ${intervalSeconds}s`);
+    const pending = describePending(verdict.gate?.waiting ?? verdict.waiting);
+    emit(
+      pending.length
+        ? `waiting on ${pending.join(', ')} — re-checking in ${intervalSeconds}s`
+        : `no checks have reported yet — re-checking in ${intervalSeconds}s`,
+    );
     await new Promise((r) => setTimeout(r, intervalSeconds * 1000));
   }
 }
@@ -1024,10 +1154,13 @@ function selftest() {
 }
 
 const USAGE = `Usage:
-  node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name>] [--event push|pull_request]
-  node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch …] [--timeout <seconds>]
-  node scripts/ci-status.mjs failure [--sha … | --pr … | --branch …] [--job <name>] [--run <id>] [--full]
+  node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name> | --run <id>] [--event push|pull_request]
+  node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch … | --run <id>] [--timeout <seconds>]
+  node scripts/ci-status.mjs failure [--sha … | --pr … | --branch … | --run <id>] [--job <name>] [--full]
   node scripts/ci-status.mjs --selftest
+
+--run <id> selects the commit that run was for. --event narrows the VIEW only: the verdict always
+evaluates every event, because branch protection does (its globs end in \`*\`).
 
 Exit: 0 mergeable · 1 required context failed · 2 bad args/auth · 3 still waiting (NOT a failure).`;
 
