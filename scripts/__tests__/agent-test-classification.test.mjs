@@ -155,3 +155,132 @@ test('app-ci runs BOTH tiers, and only the gate can fail the job', () => {
   assert.match(yaml.slice(stepStart, at), /continue-on-error:\s*true/,
     'the model tier can fail app-e2e — the gate would still be hostage to model drift');
 });
+
+/**
+ * Locators whose text is written by the MODEL, not by the app. Asserting on their content is
+ * asserting on wording the model is free to vary.
+ */
+const MODEL_OUTPUT_LOCATOR = /assistant-msg-assistant/;
+const TEXT_ASSERTION = /\.(toContainText|toHaveText|toMatch)\s*\(/;
+
+/** Test bodies, sliced from one `test(` declaration to the next. Crude on purpose, like the rest. */
+function testBodies(text) {
+  const lines = text.split('\n');
+  const starts = [];
+  lines.forEach((l, i) => { if (/^\s*test\s*\(/.test(l)) starts.push(i); });
+  return starts.map((start, n) => ({
+    line: start + 1,
+    head: lines.slice(start, start + 3).join('\n'),
+    body: lines.slice(start, n + 1 < starts.length ? starts[n + 1] : lines.length),
+  }));
+}
+
+/**
+ * Prose assertions on model output, inside `@gate` tests.
+ *
+ * The DISCRIMINATOR IS THE LOCATOR, not the string. `toContainText('Pirates')` against an approval
+ * card is asserting what the app rendered; the same call against `assistant-msg-assistant` is
+ * asserting how the model phrased itself. A string heuristic cannot tell those apart and would
+ * either miss real cases or ban legitimate ones.
+ */
+export function findProseAssertions(text, file = '<memory>') {
+  const found = [];
+  for (const { line, head, body } of testBodies(text)) {
+    if (!head.includes(GATE_TAG)) continue;
+    // A locator bound to a name first, then asserted on, is the same violation wearing a variable.
+    const aliases = new Set();
+    for (const l of body) {
+      const m = l.match(/(?:const|let)\s+(\w+)\s*=.*assistant-msg-assistant/);
+      if (m) aliases.add(m[1]);
+    }
+    body.forEach((l, k) => {
+      const direct = MODEL_OUTPUT_LOCATOR.test(l) && TEXT_ASSERTION.test(l);
+      const aliased = TEXT_ASSERTION.test(l)
+        && [...aliases].some((a) => new RegExp(`expect\\(\\s*${a}\\b`).test(l));
+      if (direct || aliased) found.push(`${file}:${line + k} (test at line ${line})`);
+    });
+  }
+  return found;
+}
+
+export function proseAssertionsInGateTests() {
+  return agentSpecFiles().flatMap((file) =>
+    findProseAssertions(readFileSync(join(E2E_DIR, file), 'utf8'), file));
+}
+
+test('no @gate test asserts on the MODEL\'s wording', () => {
+  // Item #323. `assistant-add-ambiguous.spec.ts` required the word "matches"; the model answered
+  // with a raw JSON blob and the tier that BLOCKS A MERGE went red on a run where nothing was
+  // broken. The locator polled 283 times against a present, stable element — it was never waiting
+  // for the app, it was waiting for a particular sentence.
+  //
+  // A tier split only holds if the classification is right, so this is enforced rather than
+  // reviewed: `@gate` may assert on a testid, a route, or DOM/DB state — never on prose. Anything
+  // that genuinely needs the model's wording belongs in `@model-decision`, which does not gate.
+  const found = proseAssertionsInGateTests();
+  assert.deepEqual(
+    found,
+    [],
+    `${found.length} @gate assertion(s) read the model's own words. Assert on a stable affordance `
+      + `(a testid, a route, DB state) or move the test to ${MODEL_TAG}. `
+      + 'See openwiki/invariants/testing-tiers.md.\n  ' + found.join('\n  '),
+  );
+});
+
+// The detector is only worth having if it still fires. A guard that has quietly stopped matching
+// reads exactly like a codebase with no violations — this repository's most expensive failure shape
+// — so the detector is exercised against samples rather than trusted because the real files pass.
+const GATE_HEAD = "test('x', { tag: '@gate' }, async ({ page }) => {";
+const MODEL_HEAD = "test('x', { tag: '@model-decision' }, async ({ page }) => {";
+
+test('(#323-meta) the detector CATCHES a direct prose assertion in a @gate test', () => {
+  const sample = [
+    GATE_HEAD,
+    `  await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText('matches');`,
+    '});',
+  ].join('\n');
+  assert.equal(findProseAssertions(sample).length, 1, 'the exact shape from item #323 was not caught');
+});
+
+test('(#323-meta) it catches the ALIASED form too — a violation wearing a variable', () => {
+  const sample = [
+    GATE_HEAD,
+    `  const lastMsg = page.locator('[data-testid="assistant-msg-assistant"]').last();`,
+    `  await expect(lastMsg).toContainText('Avatar');`,
+    '});',
+  ].join('\n');
+  assert.equal(findProseAssertions(sample).length, 1, 'binding the locator to a name evaded the check');
+});
+
+test('(#323-meta) it does NOT flag the same assertion in a @model-decision test', () => {
+  const sample = [
+    MODEL_HEAD,
+    `  await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText('matches');`,
+    '});',
+  ].join('\n');
+  assert.deepEqual(findProseAssertions(sample), [],
+    'the model tier exists precisely to hold these — flagging them there would delete the tier');
+});
+
+test('(#323-meta) it does NOT flag text assertions on APP-rendered affordances', () => {
+  // The discriminator is the LOCATOR. An approval card's contents are rendered by the app from
+  // data, so asserting them is asserting on behaviour, not on phrasing.
+  const sample = [
+    GATE_HEAD,
+    `  await expect(page.locator('[data-testid="approval-request"]')).toContainText('Pirates');`,
+    `  await expect(page.locator('[data-testid="collection-name"]')).toHaveText('My Films');`,
+    '});',
+  ].join('\n');
+  assert.deepEqual(findProseAssertions(sample), []);
+});
+
+test('(#323-meta) the replacements actually used are not themselves violations', () => {
+  const sample = [
+    GATE_HEAD,
+    `  const repliesBefore = await page.locator('[data-testid="assistant-msg-assistant"]').count();`,
+    `  await expect.poll(() => page.locator('[data-testid="assistant-msg-assistant"]').count()).toBeGreaterThan(repliesBefore);`,
+    '});',
+  ].join('\n');
+  assert.deepEqual(findProseAssertions(sample), [],
+    'counting replies is model-invariant — banning it would leave no way to wait for a turn');
+});

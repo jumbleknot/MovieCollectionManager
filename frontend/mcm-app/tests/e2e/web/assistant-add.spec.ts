@@ -113,10 +113,14 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
 
     // Approve → the create-if-missing collection + the movie are applied.
     await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      'Done',
-      { timeout: DONE_TIMEOUT },
-    );
+    // Wait for the WRITE, not for the model's confirmation wording (item #323). "Done" is the
+    // assistant's phrasing and it is free to vary; the collection appearing is the EFFECT this test
+    // exists to prove, and it is exactly what the assertions below go on to read.
+    await expect
+      .poll(async () => (await findCollection(request, collectionName)) !== undefined, {
+        timeout: DONE_TIMEOUT,
+      })
+      .toBe(true);
 
     const collection = await findCollection(request, collectionName);
     expect(collection).toBeDefined();

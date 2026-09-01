@@ -108,6 +108,37 @@ been lucky, nor demoted for having been unlucky.
 Splitting a test is expected; guessing is not. Where a model-decision test is the ONLY coverage of a
 wiring path, the wiring assertion stays in the gate — split out, not moved wholesale.
 
+### The rule is ENFORCED, because stating it was not enough
+
+The table above already said that "which words the model chose" must not block a merge. It was still
+violated three times, and one of those violations reddened the gate on a run where nothing was
+broken: `assistant-add-ambiguous.spec.ts` required the assistant's reply to contain the word
+"matches", the model answered with a raw JSON blob instead, and the locator polled **283 times**
+against a present, stable element. It was never waiting for the app — only for a particular
+sentence (item #323).
+
+`scripts/__tests__/agent-test-classification.test.mjs` now fails the build on a prose assertion
+inside a `@gate` test.
+
+**The discriminator is the LOCATOR, not the string.** `toContainText('Pirates')` against an
+approval card asserts what the app rendered from data; the identical call against
+`assistant-msg-assistant` asserts how the model phrased itself. No string heuristic can separate
+those, and one that tried would either miss real cases or ban legitimate ones. Aliasing the locator
+to a variable first is the same violation and is caught too.
+
+> ⚠️ **The trap is that a prose assertion is usually doing DOUBLE DUTY — asserting *and* waiting.**
+> All three violations sat immediately before the assertions that actually mattered (no proposal was
+> built; the collection now exists), and deleting the prose line outright would have made those pass
+> vacuously, before the assistant had even replied. Each needs a model-invariant *wait* in its place:
+>
+> - **waiting for a reply** → count `assistant-msg-assistant` before the turn and poll for the
+>   count to increase. The model must answer something; it need not answer anything in particular.
+> - **waiting for a write** → poll the API for the effect (`findCollection(...) !== undefined`)
+>   rather than for the model's confirmation wording. "Done" is phrasing and is free to vary; the
+>   row appearing is the behaviour the test exists to prove.
+>
+> Both are what the test meant all along, which is why neither weakens it.
+
 ### What this costs, said plainly
 
 The gate stops proving that the assistant makes the **right decision**. It proves only that the
