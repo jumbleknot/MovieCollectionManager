@@ -1120,7 +1120,7 @@ test('(#281i) a context already visible in the view is not repeated in the extra
 });
 
 // ─── items #324 and #226 — the two commands that answer about the wrong commit ───────────────────
-import { cmdWatch, resolveSha } from '../ci-status.mjs';
+import { cmdWatch, cmdFailure, resolveSha } from '../ci-status.mjs';
 
 const FAKE_CONN = { base: 'http://forge.invalid/api/v1', owner: 'o', repo: 'r', token: 't' };
 const SHA_A = 'a018d1f1ff3e796c7feb7b68ae50aed293bc6070';
@@ -1243,4 +1243,38 @@ test('(#281j) a job waiting on BOTH events is disambiguated, not printed twice i
     'infra-image-scan / infra-image-scan (pull_request)',
     'guardrails / sast',
   ]);
+});
+
+test('(#226e) the "nothing failed" message NAMES the commit it examined', async () => {
+  // Criterion 4 of item #226: "No failed jobs on this commit." is indistinguishable from "you asked
+  // about the wrong commit" — which is how the inert --run stayed invisible for so long.
+  const { restore } = stubForge({ statusSequence: [GREEN_STATUS] });
+  const real = console.log;
+  const lines = [];
+  console.log = (l) => lines.push(String(l));
+  let code;
+  try {
+    code = await cmdFailure({ sha: SHA_A }, FAKE_CONN);
+  } finally {
+    console.log = real;
+    restore();
+  }
+  assert.equal(code, 0);
+  const out = lines.join('\n');
+  assert.match(out, /No failed jobs on a018d1f1/, `the commit was not named: ${out}`);
+});
+
+test('(#226f) --run reaches the same message, naming the RUN\'s commit rather than local HEAD', async () => {
+  const { restore } = stubForge({ statusSequence: [GREEN_STATUS], run: { id: 2477, commit_sha: SHA_B } });
+  const real = console.log;
+  const lines = [];
+  console.log = (l) => lines.push(String(l));
+  try {
+    await cmdFailure({ run: '2477' }, FAKE_CONN);
+  } finally {
+    console.log = real;
+    restore();
+  }
+  assert.match(lines.join('\n'), /No failed jobs on 43167af8/,
+    'reported on something other than the run\'s own commit');
 });
