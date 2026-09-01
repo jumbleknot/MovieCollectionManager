@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-08-31T17:33:17+00:00
+timestamp: 2026-09-01T14:18:13+00:00
 ---
 
 # CI self-serve diagnostics
@@ -68,10 +68,17 @@ runtime rather than any literal configured value.
   report "mergeable" for a PR the forge then rejected outright — over-reporting mergeable is the
   dangerous direction here, because a wrapper that chains a status check into an actual merge call
   will attempt a merge that cannot succeed.
-- **A context string carries an event suffix, and the same job can disagree between events** (e.g.
-  green on `push`, red on `pull_request`) — a required-check glob that ignores the event can report
-  failure for a commit whose relevant run was entirely green. The tool selects the event matching the
-  query type.
+- **A context string carries an event suffix, and getting the event wrong goes wrong in both
+  directions.** Ignoring the event over-reports failure (a green push run blocks a PR that was fine).
+  Selecting *one* event over-reports **success** — the dangerous direction: a required job that
+  failed on `push` while its `pull_request` twin was path-gated to a 2 s skip produced `VERDICT
+  mergeable` and exit 0, then `POST /pulls/{n}/merge` answered **405**. Four occurrences: PRs #276,
+  #302, #263, and two dependency PRs. **Since item #281 the two concerns are separated**: the
+  *verdict* is whole-commit (evaluates every context the globs match, exactly as branch protection
+  does); the *view* is one event. When a required context is gated but absent from the view, the
+  tool calls it out explicitly in an `ALSO GATING` block — that block is what makes a "green PR"
+  405. `--event push` is no longer needed as a merge workaround; use `--selftest` to pin the
+  over-reporting direction in tests.
 - **Query shape is a correctness rule here, not a performance tweak.** Filtering by the full commit
   SHA is server-side honored and returns a small payload; several other filter parameters are
   silently ignored by the API and fall back to a payload roughly 800x larger — using the wrong query
