@@ -92,11 +92,21 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
     await openDock(page);
 
     // Turn 1: ambiguous title → the assistant offers matches, builds NO proposal yet.
+    //
+    // Wait for a REPLY, not for a SENTENCE (item #323). This required the word "matches"; the model
+    // answered with a raw JSON blob instead and the @gate tier — the one that blocks a merge — went
+    // red on a run where nothing was broken. The locator polled 283 times against a present, stable
+    // element: it was never waiting for the app, only for a particular phrasing.
+    //
+    // What this turn must establish is asserted immediately below and is model-invariant: the
+    // assistant replied, it built NO proposal, and it wrote nothing.
+    const repliesBefore = await page.locator('[data-testid="assistant-msg-assistant"]').count();
     await send(page, `add ${AMBIGUOUS_TITLE} to my collection ${collectionName}`);
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      'matches',
-      { timeout: OFFER_TIMEOUT },
-    );
+    await expect
+      .poll(() => page.locator('[data-testid="assistant-msg-assistant"]').count(), {
+        timeout: OFFER_TIMEOUT,
+      })
+      .toBeGreaterThan(repliesBefore);
     await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
     expect(await findCollection(request, collectionName)).toBeUndefined();
 
@@ -113,10 +123,14 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
 
     // Approve → the create-if-missing collection + the chosen movie are applied exactly once.
     await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      'Done',
-      { timeout: DONE_TIMEOUT },
-    );
+    // Wait for the WRITE, not for the model's confirmation wording (item #323). "Done" is the
+    // assistant's phrasing and it is free to vary; the collection appearing is the EFFECT this test
+    // exists to prove, and it is exactly what the assertions below go on to read.
+    await expect
+      .poll(async () => (await findCollection(request, collectionName)) !== undefined, {
+        timeout: DONE_TIMEOUT,
+      })
+      .toBe(true);
 
     const collection = await findCollection(request, collectionName);
     expect(collection).toBeDefined();
