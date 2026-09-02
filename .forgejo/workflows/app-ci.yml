@@ -353,10 +353,25 @@ jobs:
       # survives, the step is named in `_failed-step`, and the digest runs and reports it as a
       # TIMEOUT rather than as an assertion failure that never happened.
       #
-      # THE ARITHMETIC MATTERS. 2700 s = 45 min sits above the slowest legitimate step (`web-e2e`,
-      # measured at 28 m 40 s) and far enough below the 75 min job ceiling to leave room for the
-      # preceding bring-up plus teardown and the digest itself. Raising it past ~60 min would put a
-      # hung step back into job-kill territory and silently restore the defect.
+      # THE VALUE IS PROVISIONAL, AND ITS ORIGINAL JUSTIFICATION WAS WRONG (corrected 2026-09-02).
+      # This comment used to read "sits above the slowest legitimate step (`web-e2e`, measured at
+      # 28 m 40 s)". That conflated two different measurements: 28 m 40 s is an app-e2e **JOB**
+      # duration; `web-e2e` as a **STEP** takes ~5.2 min (run 2453's bundle, "156 passed (5.2m)").
+      # So the ceiling was calibrated against a number describing something else, and 2700 s is
+      # roughly 5x looser than the evidence supports.
+      #
+      # It is nonetheless left at 2700 s for now, deliberately. The mechanism is validated — on
+      # 2026-09-02 it fired on a hung `maestro-agent-flows` and the digest named it,
+      # "⏱ timeout after 2700s", which is exactly the evidence a job kill used to destroy. But
+      # tightening it needs per-step durations this repository does not yet collect: run 2530 on
+      # `main` took 41 min and PASSED, so maestro plausibly uses ~25 min legitimately when flows
+      # retry, and a 1500 s ceiling could fail runs that would have succeeded. Trading a slow true
+      # failure for a fast false one is the worse direction.
+      #
+      # What the bound must satisfy, and all it currently guarantees: a hung step must fail while
+      # enough of the 75 min job ceiling remains for teardown and the digest step to publish.
+      # Raising it past ~60 min puts a hung step back into job-kill territory and silently restores
+      # the defect. Per-step calibration is item #338.
       CI_STEP_TIMEOUT_SECONDS: '2700'
       # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
       DOCKER_HOST: unix:///run/user/1001/docker.sock
