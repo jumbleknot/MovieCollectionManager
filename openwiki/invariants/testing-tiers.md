@@ -139,6 +139,43 @@ to a variable first is the same violation and is caught too.
 >
 > Both are what the test meant all along, which is why neither weakens it.
 
+### A stable testid is NOT sufficient — the BRANCH matters too
+
+Asserting on a testid instead of prose is necessary and **not sufficient**. Measured over 30
+single-worker runs on one unchanged tree (item #323, criterion 3):
+
+```
+28/30  agent-import-disambiguate  — selection-options never appeared (150 s timeout, x2)
+29/30  agent-import               — import-preview never appeared (x1)
+30/30  the other nine @gate tests
+```
+
+`selection-options` is a perfectly stable testid; the app renders it reliably. What varies is
+**whether the model took the branch that produces it** — it appears only when the agent chooses to
+offer a selection rather than resolving directly. A `@gate` test waiting for it is waiting on a
+decision, which is this page's own definition of the model tier.
+
+`agent-test-classification.test.mjs` fails the build on a **new** such assertion. The rule is
+**narrow by design**: app-rendered affordances like `import-preview` or `movie-detail-title` remain
+exactly what the gate should assert, and a meta-test pins that they stay assertable.
+
+> ⚠️ **RE-TIERING DOES NOT FIX THIS, and the attempt was withdrawn — item #337.** Moving the three
+> offending `@gate` web tests into `@model-decision` looks obviously right and is not:
+>
+> - Two of the three have **equivalent MOBILE flows asserting the same `selection-options`**, inside
+>   the same **required** `app-e2e` job — and the mobile suite has **no tier split**, so
+>   `@model-decision` does not exist there. Re-tiering the web half moves the nondeterminism to a
+>   **flakier** surface: `ci-mobile-agent-flows.sh` retries each flow **3x** with 150 s waits, against
+>   Playwright's single attempt. Measured 2026-09-02: `maestro-agent-flows` burned **45 minutes** on
+>   exactly this before its step ceiling (item #326) killed it and named it.
+> - The third, `agent-import-disambiguate`, has **no** mobile equivalent, so re-tiering it removes
+>   pre-merge coverage of "the write lands in the collection the user picked".
+>
+> So the three existing waits are **grandfathered in an explicit allowlist**, not accepted. The list
+> is asserted EXACT — fix one and leave it listed and the guard fails — so it can only shrink. The
+> real fix has to work for maestro flows too, which is what makes item #337 a design task rather
+> than a relabelling.
+
 ### What this costs, said plainly
 
 The gate stops proving that the assistant makes the **right decision**. It proves only that the
