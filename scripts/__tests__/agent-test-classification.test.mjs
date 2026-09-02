@@ -284,3 +284,99 @@ test('(#323-meta) the replacements actually used are not themselves violations',
   assert.deepEqual(findProseAssertions(sample), [],
     'counting replies is model-invariant — banning it would leave no way to wait for a turn');
 });
+
+/**
+ * Locators that exist ONLY when the model took a particular branch.
+ *
+ * `selection-options` is rendered by the `render_selection` component, which the agent emits only
+ * when it decides to offer a choice rather than resolving directly. The testid is perfectly stable —
+ * which is exactly why the prose rule above does not catch it. What varies is not the model's
+ * WORDING but WHICH BRANCH it took, and a `@gate` test that waits for this is waiting on a decision.
+ */
+const MODEL_BRANCH_LOCATOR = /selection-options/;
+
+export function branchAssertionsInGateTests(text, file = '<memory>') {
+  const found = [];
+  for (const { line, head, body } of testBodies(text)) {
+    if (!head.includes(GATE_TAG)) continue;
+    body.forEach((l, k) => {
+      if (/^\s*(\/\/|\*)/.test(l)) return;           // a comment mentioning it is not an assertion
+      if (MODEL_BRANCH_LOCATOR.test(l)) found.push(`${file}:${line + k} (test at line ${line})`);
+    });
+  }
+  return found;
+}
+
+/**
+ * The `selection-options` waits that already existed in `@gate` when this guard was written.
+ *
+ * GRANDFATHERED, NOT ACCEPTED — item #337. Re-tiering them was attempted and WITHDRAWN: the
+ * equivalent MOBILE flows assert the same thing inside the same required `app-e2e` job, and the
+ * mobile suite has no tier split, so moving the web tests would have relocated the nondeterminism to
+ * a flakier surface (maestro retries each flow 3x with 150 s waits) while costing pre-merge
+ * coverage. Measured 2026-09-02: `maestro-agent-flows` burned 45 minutes on exactly this.
+ *
+ * The list is asserted EXACT, so it can only shrink: fix one and leave it here and the guard fails,
+ * which is item #303's UNMATCHED-ENTRIES lesson applied to a code allowlist.
+ */
+const KNOWN_BRANCH_WAITS = [
+  'agent-card-navigate.spec.ts',
+  'agent-import-disambiguate.spec.ts',
+  'agent-navigate-collection.spec.ts',
+];
+
+test('no NEW @gate test waits for the model to take a BRANCH', () => {
+  // Item #323 criterion 3, measured over 30 single-worker runs on one unchanged tree: this class
+  // produced the only affordance-never-appeared failures — `selection-options` timing out at 150 s
+  // because the model resolved directly instead of offering a choice.
+  //
+  // The rule is NARROWER than "no testids in @gate": app-rendered affordances are exactly what the
+  // gate should assert. It bans waiting on an element whose EXISTENCE is the model's choice.
+  const offenders = readdirSync(E2E_DIR).filter((f) => AGENT_SPEC.test(f)).sort()
+    .flatMap((f) => branchAssertionsInGateTests(readFileSync(join(E2E_DIR, f), 'utf8'), f));
+  const unexpected = offenders.filter((o) => !KNOWN_BRANCH_WAITS.some((k) => o.startsWith(k)));
+  assert.deepEqual(
+    unexpected,
+    [],
+    `${unexpected.length} NEW @gate assertion(s) wait for a model BRANCH (\`selection-options\` renders `
+      + 'only when the model chooses to offer a selection). Assert on something the app renders '
+      + `regardless of which branch was taken, or use ${MODEL_TAG}. See item #337.\n  `
+      + unexpected.join('\n  '),
+  );
+});
+
+test('the grandfathered list is EXACT — it can only shrink', () => {
+  // A stale entry is not harmless: it silently re-permits the class for a file that no longer needs
+  // the exemption. Same failure shape as an allowlist entry that matches nothing (item #303).
+  const offenders = readdirSync(E2E_DIR).filter((f) => AGENT_SPEC.test(f)).sort()
+    .flatMap((f) => branchAssertionsInGateTests(readFileSync(join(E2E_DIR, f), 'utf8'), f));
+  const stale = KNOWN_BRANCH_WAITS.filter((k) => !offenders.some((o) => o.startsWith(k)));
+  assert.deepEqual(
+    stale,
+    [],
+    `${stale.length} grandfathered entr(ies) no longer match anything — delete them from `
+      + `KNOWN_BRANCH_WAITS and close out that part of item #337:\n  ` + stale.join('\n  '),
+  );
+});
+
+test('(#323-meta) the branch detector catches a @gate selection wait, and spares @model-decision', () => {
+  const gate = [GATE_HEAD, `  await expect(page.locator('[data-testid="selection-options"]')).toBeVisible();`, '});'].join('\n');
+  const model = [MODEL_HEAD, `  await expect(page.locator('[data-testid="selection-options"]')).toBeVisible();`, '});'].join('\n');
+  assert.equal(branchAssertionsInGateTests(gate).length, 1, 'a @gate branch wait was not caught');
+  assert.deepEqual(branchAssertionsInGateTests(model), [], 'the model tier exists to hold these');
+});
+
+test('(#323-meta) a COMMENT naming the locator is not an assertion', () => {
+  // The reclassified tests each explain themselves in a comment that names the locator; a detector
+  // that flagged prose would fail on its own documentation and get deleted.
+  const sample = [GATE_HEAD, `  // selection-options renders only when the model offers a choice`, '});'].join('\n');
+  assert.deepEqual(branchAssertionsInGateTests(sample), []);
+});
+
+test('(#323-meta) app-rendered affordances stay assertable in @gate', () => {
+  const sample = [GATE_HEAD,
+    `  await expect(page.locator('[data-testid="import-preview"]')).toBeVisible();`,
+    `  await expect(page.locator('[data-testid="movie-detail-title"]')).toContainText('X');`, '});'].join('\n');
+  assert.deepEqual(branchAssertionsInGateTests(sample), [],
+    'the gate must keep asserting what the app renders — this rule is narrow by design');
+});
