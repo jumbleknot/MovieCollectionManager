@@ -14,6 +14,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
+import { awaitTurn, beginTurn, branchNotOffered, offeredSelection } from './setup/assistant-turn';
 
 const PROMPT_TIMEOUT = 150_000;
 const PREVIEW_TIMEOUT = 150_000;
@@ -82,10 +83,30 @@ test.describe('Assistant import disambiguation (feature 014, US4 / T056)', () =>
       page.waitForEvent('filechooser'),
       page.click('[data-testid="request-import-file-choose"]'),
     ]);
+    // Read the reply count BEFORE the upload. Choosing the file uploads it and then sends the
+    // import turn, and the wait below is "one more reply than there were" — not "at least one",
+    // which the assistant's earlier "choose a file" reply would already satisfy.
+    const beforeImportTurn = await beginTurn(page);
     await chooser.setFiles({ name: `unmatched-${Date.now()}.csv`, mimeType: 'text/csv', buffer: Buffer.from(csv) });
 
-    const options = page.locator('[data-testid="selection-options"]');
-    await expect(options).toBeVisible({ timeout: PROMPT_TIMEOUT });
+    // ── Wait for the TURN, then look at what it produced (064 US3, item #337) ─────────────────
+    //
+    // This used to wait 150 s for `selection-options` directly, and failed BOTH attempts on CI run
+    // 2541 — blocking a comment-only pull request (#339). It was read for three sessions as the
+    // model declining to disambiguate. It was not: the client's own `if (agent.isRunning) return`
+    // dropped the import turn after the upload had already staged the file server-side, so no turn
+    // ever reached the gateway and the element could not appear. Separating the two waits is what
+    // makes those two failures tell themselves apart.
+    await awaitTurn(page, beforeImportTurn, PROMPT_TIMEOUT);
+
+    // The disambiguation itself is NOT a model decision. `resolve_tab_collection`
+    // (nodes/import_collection.py) asks whenever the tab name has 0 or >1 exact case-folded
+    // collection matches, and a tab named `unmatched-<epoch>` can only ever be 0. So once the turn
+    // is routed to `import`, the buttons are guaranteed by pure code — which is why this stays in
+    // the gate. What can still vary is the supervisor's classification, and that is what the
+    // failure message below sends the reader to read.
+    const options = await offeredSelection(page);
+    if (!options) throw new Error(branchNotOffered('a collection choice for the unmatched tab'));
     // Nothing written while disambiguating.
     expect(await movieTitles(request, collectionId)).toEqual(new Set());
 

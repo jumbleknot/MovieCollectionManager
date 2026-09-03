@@ -22,6 +22,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
+import { awaitTurn, beginTurn, branchNotOffered, offeredSelection } from './setup/assistant-turn';
 
 const ACTION_TIMEOUT = 180_000;
 const OFFER_TIMEOUT = 180_000;
@@ -78,13 +79,25 @@ test.describe('Assistant navigate-to-collection (040 US1 / Item 4)', () => {
 
     await gotoHome(page);
     await openDock(page);
+    const before = await beginTurn(page);
     await send(page, `take me to my ${prefix} collection`);
 
-    // The navigator's `_clarify` offers one bare stage-anchored button per collection via
-    // `render_selection` → the `selection-options` component (NOT the curator's
-    // `disambiguation-options`, which renders `render_disambiguation` for movie candidates).
-    const options = page.locator('[data-testid="selection-options"]').last();
-    await expect(options).toBeVisible({ timeout: OFFER_TIMEOUT });
+    // ── Wait for the TURN, then look at what it produced (064 US3, item #337) ─────────────────
+    //
+    // Separating the two waits separates two failures that used to be indistinguishable: a turn
+    // that never arrived (the client's own `isRunning` guard dropped the send — fixed in this
+    // feature) and a turn that was routed to a different node (a model decision). The old single
+    // 150 s wait on `selection-options` reported both as "element(s) not found".
+    await awaitTurn(page, before, OFFER_TIMEOUT);
+
+    // The ask itself is NOT a model branch: `_resolve_collection` (nodes/navigator.py) returns a
+    // target only when EXACTLY ONE collection name matches, and two `${prefix}`-named collections
+    // are seeded above — so the navigator cannot resolve this and must offer. Its `_clarify` emits
+    // one bare stage-anchored button per collection via `render_selection` → the
+    // `selection-options` component (NOT the curator's `disambiguation-options`, which renders
+    // `render_disambiguation` for movie candidates).
+    const options = await offeredSelection(page);
+    if (!options) throw new Error(branchNotOffered(`a collection choice for "${prefix}"`));
     // No movie-search misfire: we are still on /home (the dock hasn't navigated anywhere yet).
     await expect(page).toHaveURL(new RegExp('/home(?:[/?#]|$)'));
 

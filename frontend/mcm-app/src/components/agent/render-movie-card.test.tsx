@@ -27,14 +27,19 @@ jest.mock('@copilotkit/react-native', () => ({
 const addMessage = jest.fn();
 const runAgent = jest.fn();
 
+// ⚠️ STABLE DOUBLES — see use-assistant.test.tsx. The card's actions now go through
+// `useAssistantRun`, whose flush effect is keyed on the agent object's identity plus its mutable
+// `isRunning`; a fresh object per render would repair the queued-send bug for free (feature 053).
+const agentState = { isRunning: false, addMessage };
+const copilotkitState = { runAgent, getAgent: () => agentState };
+
 beforeEach(() => {
   mockPush.mockClear();
   addMessage.mockClear();
   runAgent.mockClear();
-  (copilot.useAgent as unknown as jest.Mock).mockReturnValue({
-    agent: { isRunning: false, addMessage },
-  });
-  (copilot.useCopilotKit as unknown as jest.Mock).mockReturnValue({ copilotkit: { runAgent } });
+  agentState.isRunning = false;
+  (copilot.useAgent as unknown as jest.Mock).mockReturnValue({ agent: agentState });
+  (copilot.useCopilotKit as unknown as jest.Mock).mockReturnValue({ copilotkit: copilotkitState });
 });
 
 const FULL_PROPS = {
@@ -223,6 +228,44 @@ describe('RenderMovieCard', () => {
     );
     fireEvent.press(getByTestId('render-movie-card-add'));
     fireEvent.press(getByTestId('render-movie-card-cancel'));
+    expect(addMessage).toHaveBeenCalledTimes(1);
+    expect(String(addMessage.mock.calls[0][0].content)).toContain('add Blade Runner');
+  });
+
+  // Item #337 / 064 US1 — the third component that held its own agent handle and returned on
+  // `isRunning`, dropping the action silently.
+  it('delivers a card action taken mid-answer, once the run finishes', () => {
+    agentState.isRunning = true;
+    const props = { ...FULL_PROPS, url: 'https://www.themoviedb.org/movie/78', addable: true };
+    const { getByTestId, rerender } = render(<RenderMovieCard {...props} />);
+
+    fireEvent.press(getByTestId('render-movie-card-add'));
+    expect(addMessage).not.toHaveBeenCalled(); // queued, not sent
+
+    agentState.isRunning = false;
+    rerender(<RenderMovieCard {...props} />);
+
+    expect(addMessage).toHaveBeenCalledTimes(1);
+    expect(String(addMessage.mock.calls[0][0].content)).toContain('add Blade Runner');
+  });
+
+  // FR-004. The `actioned` latch must close at ENQUEUE, not at send: with a queue between the tap
+  // and the request, a latch that waited for delivery would leave a window in which a second tap
+  // enqueues a second action — turning one card into two writes.
+  it('latches at enqueue, so a second tap during the queued window adds nothing', () => {
+    agentState.isRunning = true;
+    const props = {
+      ...FULL_PROPS, url: 'https://www.themoviedb.org/movie/78', addable: true, cancelable: true,
+    };
+    const { getByTestId, rerender } = render(<RenderMovieCard {...props} />);
+
+    fireEvent.press(getByTestId('render-movie-card-add'));
+    fireEvent.press(getByTestId('render-movie-card-add'));
+    fireEvent.press(getByTestId('render-movie-card-cancel'));
+
+    agentState.isRunning = false;
+    rerender(<RenderMovieCard {...props} />);
+
     expect(addMessage).toHaveBeenCalledTimes(1);
     expect(String(addMessage.mock.calls[0][0].content)).toContain('add Blade Runner');
   });

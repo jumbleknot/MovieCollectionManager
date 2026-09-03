@@ -16,6 +16,7 @@ never via checkpointed state (SC-004).
 `build_graph(...)` keeps importing LLM-free: the default classifier is invoked only at runtime.
 """
 
+import logging
 import os
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
@@ -37,6 +38,8 @@ from src.nodes.supervisor import (
     route_for_intent,
 )
 from src.proposals import EnrichedMovieCandidate, Proposal
+
+logger = logging.getLogger(__name__)
 
 
 class GraphState(MessagesState):
@@ -278,7 +281,28 @@ def _supervisor_node(
         raw_cfg = configurable.get("agent_config")
         agent_config = dict(raw_cfg) if isinstance(raw_cfg, Mapping) else None
         with agent_config_scope(agent_config):
-            return _classify(state)
+            result = _classify(state)
+        # 064 US2 (item #337). ONE site, wrapping every `_classify` return — the eighteen return
+        # points below include six that never see the classifier at all (kill switch, cancel,
+        # breaker, noop, degraded, and each stage override), and a per-return line would have
+        # drifted out of date the first time one was added.
+        #
+        # `record_turn(intent)` is an OTel counter, so before this the routing decision reached no
+        # log. A failing `app-e2e` bundle therefore could not tell "the supervisor routed this
+        # elsewhere" from "the node took the other branch" from "no turn ever arrived" — and the
+        # third was the true answer for the `selection-options` failures that blocked #336 and #339
+        # while being read as the first.
+        #
+        # Intent, node and thread id ONLY. The member's words are never a routing fact, and a log
+        # line is the easiest place to leak them (FR-007).
+        intent = str(result.get("intent") or "unknown")
+        logger.info(
+            "turn routed: intent=%s node=%s thread=%s",
+            intent,
+            route_for_intent(intent),
+            str(configurable.get("thread_id") or "-"),
+        )
+        return result
 
     def _classify(state: GraphState) -> dict[str, Any]:
         # Kill switch (T061/FR-019/SC-009): short-circuit BEFORE any classify / tool work, so a

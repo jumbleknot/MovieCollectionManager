@@ -14,10 +14,10 @@ import { Image, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } fr
 import { useTheme } from '@tamagui/core';
 import { Button } from '@mcm/design-system';
 import { useRouter } from 'expo-router';
-import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
+import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
-import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
+import { useAssistantRun } from '@/hooks/use-assistant';
 
 /** AG-UI tool name — must match the curator's emitted tool call (generative_ui_tools.py). */
 export const RENDER_MOVIE_CARD_TOOL = 'render_movie_card';
@@ -112,8 +112,9 @@ export function RenderMovieCard({
   const router = useRouter();
   const theme = useTheme();
   const styles = makeStyles(theme);
-  const { copilotkit } = useCopilotKit();
-  const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
+  // The SHARED send path (use-assistant.tsx). Holding a local agent handle and returning on
+  // `isRunning` dropped the action silently — the third such site, item #337.
+  const { run } = useAssistantRun();
   // 013 US3: an in-collection card (both ids present) deep-links to the movie's detail screen;
   // a look-up-only TMDB preview (ids null) renders as a plain, non-interactive card.
   const canNavigate = Boolean(movieId && collectionId);
@@ -125,27 +126,24 @@ export function RenderMovieCard({
   // was shown; cancelling ends the workflow, it does not erase history.
   const [actioned, setActioned] = useState(false);
 
+  // FR-004: the latch closes at ENQUEUE, not at send. `run()` may queue behind an in-flight turn,
+  // and a latch that waited for delivery would leave a window in which a second tap enqueues a
+  // second action — one card, two writes.
   const addToCollection = useCallback(() => {
-    if (actioned || !agent || (agent.isRunning ?? false)) return;
+    if (actioned) return;
     setActioned(true);
-    agent.addMessage({
-      id: `u-${Date.now()}`,
-      role: 'user',
-      content: addMovieText(title, year, addCollectionName),
-    });
-    void copilotkit.runAgent({ agent });
-  }, [actioned, agent, copilotkit, title, year, addCollectionName]);
+    run(addMovieText(title, year, addCollectionName));
+  }, [actioned, run, title, year, addCollectionName]);
 
   // 047 US5: cancelling posts the CANONICAL exit value through the same send path as Add, and
   // performs no write. Note `setActioned(true)` fires here, BEFORE the agent has replied — which
   // is why "the Add button is disabled" is worthless as evidence that the cancel worked, and why
   // the E2E now asserts what the assistant actually said (050 / item #149).
   const cancelSearch = useCallback(() => {
-    if (actioned || !agent || (agent.isRunning ?? false)) return;
+    if (actioned) return;
     setActioned(true);
-    agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: SEARCH_CANCEL_TEXT });
-    void copilotkit.runAgent({ agent });
-  }, [actioned, agent, copilotkit]);
+    run(SEARCH_CANCEL_TEXT);
+  }, [actioned, run]);
 
   const body = (
     <>

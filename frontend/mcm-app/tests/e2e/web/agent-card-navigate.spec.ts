@@ -27,6 +27,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
+import { awaitTurn, beginTurn, branchNotOffered, offeredSelection } from './setup/assistant-turn';
 
 const CARD_TIMEOUT = 180_000;
 const NAV_TIMEOUT = 60_000;
@@ -93,16 +94,28 @@ test.describe('Assistant clickable movie card (013 US3)', () => {
 
     await gotoHome(page);
     await openDock(page);
+    const before = await beginTurn(page);
     await send(page, `do I have ${UNIQUE_TITLE} in my ${name} collection`);
 
-    // The search node offers the single owned match as a result button (013 "New Scope 1") —
-    // never auto-navigated, never a bare card.
-    const options = page.locator('[data-testid="selection-options"]').last();
-    await expect(options).toBeVisible({ timeout: CARD_TIMEOUT });
+    // ── Wait for the TURN, then look at what it produced (064 US3, item #337) ─────────────────
+    //
+    // This used to wait 150 s for `selection-options` directly. Splitting the wait separates two
+    // failures that used to look identical and are not: "no turn arrived" (the client dropped the
+    // send — the defect this feature fixes) from "the turn was routed somewhere else" (a model
+    // decision). The old single wait reported both as "element(s) not found".
+    await awaitTurn(page, before, CARD_TIMEOUT);
+
+    // The offer itself is NOT a model branch: `_run_owned` (nodes/search.py) emits
+    // `render_selection` on BOTH of its branches — one match and no matches alike — so there is no
+    // resolve-directly path once the turn reaches the search node. What varies is only whether the
+    // supervisor classified this utterance as `search`, which the message below names.
+    const options = await offeredSelection(page);
+    if (!options) throw new Error(branchNotOffered(`a result button for "${UNIQUE_TITLE}"`));
+    // Never auto-navigated (013 "New Scope 1": even a single match is offered, never opened).
     await expect(page).not.toHaveURL(/\/movies\//);
 
     // Tapping the result button deep-links to the exact movie's detail screen.
-    await page.locator('[data-testid="selection-option-pick-0"]').last().click();
+    await options.locator('[data-testid="selection-option-pick-0"]').last().click();
     await page.waitForURL(new RegExp(`/collections/${collectionId}/movies/${movieId}`), {
       timeout: NAV_TIMEOUT,
     });
