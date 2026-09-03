@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-01T14:18:13+00:00
+timestamp: 2026-09-02T23:32:14+00:00
 ---
 
 # CI self-serve diagnostics
@@ -45,12 +45,31 @@ runtime rather than any literal configured value.
   actually differ by. Measured on PR #262: three-dot said "three version moves remain unique to this
   PR"; two-dot showed merging it would have downgraded crates, and Renovate autoclosed it minutes
   later.
-- **`--run N --full` resolves the wrong commit — use `--pr N --job <name>` or `--sha`.** The command
-  every digest footer prints (`failure --run 2147 --full`) answered "No failed jobs on this commit"
-  on a run that had definitively failed (item #226, reconfirmed 2026-08-28). The wrong answer is a
-  **confident negative**, not an error — "No failed jobs on this commit" reads as "CI is fine". Use
-  `--sha $(git rev-parse <ref>)` or `--pr N`. An abbreviated sha is refused outright; a short sha
+- **`--run N` — FIXED 2026-09-01 (item #226), and worth knowing what it used to do.** `--run N`
+  now resolves the run's own commit and fetches its bundle. It previously did **nothing at all**: the
+  flag was parsed and read by no code path, so `resolveSha` fell through to `git rev-parse HEAD` and
+  the tool answered about your working copy. **The old failure mode is the one to remember, because
+  the class recurs.** It answered "No failed jobs on this commit" — a *confident negative*, not an
+  error — which reads as "CI is fine" mid-triage. The empty-result message now names the commit it
+  examined (`No failed jobs on 99892b0e — checked every event's contexts`) precisely so a wrong
+  target is visible in the answer itself. `watch --branch main` still has the original shape — it
+  reports on whatever `main` resolves to locally, which can be several merges stale. **Prefer `--pr
+  N` or `--sha $(git rev-parse <ref>)`.** An abbreviated sha is refused outright; a short sha
   returns zero runs and reads as "no CI ran".
+- **`app-e2e` is SKIPPED on most pull requests — the board hides its true failure rate.** `app-e2e`
+  is path-gated on `changes.outputs.app`. A PR touching only `scripts/`, `docs/` or `openwiki/`
+  renders it `skipped → satisfied` and the board goes green **without the E2E suite ever running**.
+  Measured 2026-09-02: of eleven recent `app-ci` runs that looked like a clean green streak, only
+  three had actually executed `app-e2e`; the rest were path-gated skips. Two readings of the same
+  board therefore both look true — "a long history of green CI" and "roughly a quarter of runs that
+  run the suite fail" — and a PR that *does* touch an app path then looks like it introduced a
+  regression when it merely exercised something the streak never did. **Before concluding a change
+  destabilised CI, isolate runs that actually RAN the job.** The API description distinguishes them:
+  `success :: Has been skipped` (did NOT run; proves nothing about the suite), `success ::
+  Successful in 28m40s` (ran), `failure :: Failing after 12m43s` (ran and failed). **An all-history
+  failure percentage is NOT evidence about recent stability** — it spans months including
+  known-broken periods and does not isolate the failure class in question. Use the right data, not
+  merely more of it.
 - **The "superseded" trap is the dangerous direction: it fails loud, announcing a broken build that
   isn't.** The other misreport (skipped) fails safe. Both were measured against real API responses,
   not inferred from documentation.
