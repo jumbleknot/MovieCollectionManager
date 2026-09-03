@@ -17,18 +17,23 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import logging
 import os
-from collections.abc import Mapping
+from collections.abc import AsyncGenerator, Mapping
 from typing import Any
 
+from ag_ui.core import EventType, RunErrorEvent
 from copilotkit import LangGraphAGUIAgent
 
+from src.provider_errors import log_provider_error
 from src.runtime_context import (
     get_agent_config,
     get_import_file,
     get_subject_token,
     get_ui_snapshot,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def subject_user_id(token: str) -> str:
@@ -150,3 +155,53 @@ class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
         inject_agent_config(config, get_agent_config())
         inject_observability(config, os.environ)
         return await super().prepare_stream(input=input, agent_state=agent_state, config=config)
+
+    async def run(self, input: Any) -> AsyncGenerator[Any]:  # noqa: A002
+        """Turn an escaping exception into a TERMINAL `RUN_ERROR`, never an aborted socket (065).
+
+        `ag_ui_langgraph`'s `_handle_stream_events` re-raises a hard exception "for the existing
+        run-level error handling". There is no run-level error handling: `endpoint.py` hands the
+        generator to a `StreamingResponse` whose 200 and headers are already flushed, so the
+        exception has nowhere to go and the connection is aborted MID-CHUNK with no terminal
+        event. Measured 2026-09-03 against the real app: 4 SSE lines, then
+        `RemoteProtocolError: peer closed connection without sending complete message body`. A
+        client waiting on a terminal event — not on the socket — then waits for its full timeout.
+        That is item #325's hang, and it is why an out-of-credit account cost 150 s per test while
+        every observable pointed at the UI.
+
+        THIS IS THE RIGHT SEAM, for three reasons:
+
+        * It is the ONE place every node's failure must pass through. Wrapping the domain nodes
+          individually would need a `try` on each node and on every node added later — and the one
+          that gets forgotten is the one that hangs.
+        * It is repository code, not a library patch (FR-007). `endpoint.py` clones the agent per
+          request via `type(self)(...)`, so the override survives the clone exactly as
+          `prepare_stream` already does.
+        * `except Exception` — deliberately NOT `BaseException`. `CancelledError` and
+          `GeneratorExit` inherit from `BaseException`, and yielding into a cancelled generator
+          raises `RuntimeError: async generator ignored GeneratorExit`. A disconnecting client
+          must unwind silently (FR-008). This is the same rule the library applies at its own
+          `except Exception` boundary.
+
+        The message carries the provider FACTS and the exception class only — never `str(exc)`.
+        This one crosses the network to a client, and a provider echoes request content in some
+        error messages (FR-010).
+        """
+        try:
+            # `LangGraphAGUIAgent.run` carries no annotations, which mypy --strict reports as an
+            # untyped call. The same reason `add_langgraph_fastapi_endpoint` is imported under
+            # `type: ignore[import-untyped]` in gateway.py — the library ships no type information.
+            async for event in super().run(input):  # type: ignore[no-untyped-call]
+                yield event
+        except Exception as exc:  # noqa: BLE001 — the terminal event is the whole point
+            described = log_provider_error(logger, exc, frame="stream")
+            yield RunErrorEvent(
+                type=EventType.RUN_ERROR,
+                message=(
+                    f"provider call failed: status={described.status or 'unknown'} "
+                    f"type={described.type or 'unknown'} exc={type(exc).__name__}"
+                    if described.kind == "provider_http"
+                    else f"agent run failed: {type(exc).__name__}"
+                ),
+                code=described.kind,
+            )

@@ -38,6 +38,7 @@ from src.nodes.supervisor import (
     route_for_intent,
 )
 from src.proposals import EnrichedMovieCandidate, Proposal
+from src.provider_errors import log_provider_error
 
 logger = logging.getLogger(__name__)
 
@@ -359,7 +360,19 @@ def _supervisor_node(
 
         try:
             intent = classifier(messages)
-        except Exception:  # noqa: BLE001 — any provider/model failure degrades gracefully
+        except Exception as exc:  # noqa: BLE001 — any provider/model failure degrades gracefully
+            # 065 / item #325. This handler is CORRECT — a provider outage must become a
+            # "couldn't complete" reply, not a crash — but until now it made an INFRASTRUCTURE
+            # failure indistinguishable from a product outcome. Measured on 2026-08-31 (app-e2e
+            # run 2450): an out-of-credit 400 degraded here and the run reported a 200,
+            # `RUN_FINISHED` and ZERO ERROR lines, so two tests each burned a full 150 s UI
+            # timeout waiting for an affordance a degraded reply never renders — and every
+            # observable pointed at the app.
+            #
+            # The line is ADDITIVE: intent, add-state reset and breaker signal below are
+            # unchanged, and the 064 `turn routed: intent=degraded` line still follows it.
+            # Facts only (status, type, frame, exception class) — never the member's words.
+            log_provider_error(logger, exc, frame="classifier")
             if circuit is not None:
                 circuit.record(False)
             record_turn_failure()  # OTel metric (no-op until configured) — T030b

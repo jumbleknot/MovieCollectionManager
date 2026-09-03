@@ -17,6 +17,7 @@ existing app" half of SC-009 is proven by the SC-005 additive-only E2E regressio
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import pytest
@@ -380,3 +381,89 @@ async def test_navigate_unresolvable_target_offers_choices_without_naming_a_phan
     assert "couldn't find" not in reply.lower(), (
         f"nothing was named, so nothing was 'not found': {reply!r}"
     )
+
+
+# ── 065 / item #325: the degradation must NAME what it is degrading from ───────────────────────
+#
+# Graceful degradation is correct product behaviour and stays exactly as it is. What was wrong at
+# app-e2e run 2450 is that it made an INFRASTRUCTURE failure indistinguishable from a product
+# outcome: an out-of-credit 400 produced a "couldn't complete" reply, a 200, `RUN_FINISHED`, and
+# ZERO log lines naming the provider — so two tests each burned a full 150 s UI timeout and the run
+# reported as a UI failure. These assertions pin the log line, and pin that nothing else moved.
+
+
+def _credit_exhausted_400() -> Exception:
+    """The exact refusal an exhausted Anthropic credit balance returns (measured 2026-08-31)."""
+    import anthropic
+    import httpx
+
+    message = "Your credit balance is too low to access the Anthropic API."
+    body = {"type": "error", "error": {"type": "invalid_request_error", "message": message}}
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    return anthropic.BadRequestError(
+        message, response=httpx.Response(400, request=request, json=body), body=body
+    )
+
+
+async def test_classifier_provider_400_is_logged_at_error_naming_status_and_type(caplog) -> None:
+    """FR-001/FR-002 — item #325 criterion 1, at the frame that actually swallowed run 2450."""
+
+    def classifier(_messages: Any) -> str:
+        raise _credit_exhausted_400()
+
+    graph = build_graph(classifier=classifier, checkpointer=MemorySaver())
+    with caplog.at_level(logging.ERROR):
+        await graph.ainvoke({"messages": [("user", "import my movies")]}, _cfg("deg-400-log"))
+
+    errors = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert len(errors) == 1, [r.getMessage() for r in errors]
+    message = errors[0].getMessage()
+    assert "400" in message
+    assert "invalid_request_error" in message
+    # The frame is what tells this swallow apart from one at the stream boundary.
+    assert "classifier" in message
+
+
+async def test_the_provider_400_log_line_leaks_no_member_text(caplog) -> None:
+    """FR-004. The turn's text is a routing input, never a routing fact — and the error path has
+    no exemption from the never-log list."""
+
+    def classifier(_messages: Any) -> str:
+        raise _credit_exhausted_400()
+
+    graph = build_graph(classifier=classifier, checkpointer=MemorySaver())
+    with caplog.at_level(logging.ERROR):
+        await graph.ainvoke(
+            {"messages": [("user", "add Nosferatu to my Horror collection")]}, _cfg("deg-400-leak")
+        )
+
+    logged = " ".join(r.getMessage() for r in caplog.records)
+    assert "Nosferatu" not in logged
+    assert "Horror" not in logged
+
+
+async def test_logging_the_400_changes_nothing_about_the_degradation(caplog) -> None:
+    """FR-005 — a guarantee that nothing moved, asserted rather than assumed.
+
+    Same reply, same cleared add state, same circuit-breaker failure signal as before the line
+    existed. A graceful-degradation path whose behaviour changed would be a different feature.
+    """
+    from src.circuit_breaker import ErrorRateBreaker
+
+    def classifier(_messages: Any) -> str:
+        raise _credit_exhausted_400()
+
+    # min_samples=1 so ONE failing turn is enough to open the breaker — that is what makes
+    # "the failure signal still arrives" observable through the public API rather than by
+    # reaching into the breaker's internals.
+    circuit = ErrorRateBreaker(threshold=0.5, window=20, cooldown_s=30, min_samples=1)
+    graph = build_graph(classifier=classifier, checkpointer=MemorySaver(), circuit=circuit)
+    with caplog.at_level(logging.ERROR):
+        result = await graph.ainvoke(
+            {"messages": [("user", "add The Matrix to Sci-Fi")]}, _cfg("deg-400-unchanged")
+        )
+
+    assert "couldn't complete" in str(result["messages"][-1].content).lower()
+    assert result.get("pending_proposal") is None  # still never a silent / partial write
+    assert result.get("candidate") is None
+    assert circuit.state == "open", "the breaker must still receive the failure signal"
