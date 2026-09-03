@@ -13,10 +13,10 @@
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '@mcm/design-system';
-import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
+import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
-import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
+import { useAssistantRun } from '@/hooks/use-assistant';
 
 /** AG-UI tool name — must match the curator's emitted tool call (generative_ui_tools.py). */
 export const RENDER_DISAMBIGUATION_TOOL = 'render_disambiguation';
@@ -40,22 +40,21 @@ export function disambiguatorText(o: DisambiguationOption): string {
 }
 
 export function DisambiguationOptions({ options }: DisambiguationOptionsProps) {
-  const { copilotkit } = useCopilotKit();
-  const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
+  // The SHARED send path (use-assistant.tsx), like the dock input and `selection-options`. Holding a
+  // local agent handle and returning on `isRunning` DROPPED the pick — and a tap lands mid-answer
+  // precisely because the buttons render while the reply below them is still streaming (item #337).
+  const { run } = useAssistantRun();
   const [showAll, setShowAll] = useState(false);
 
-  const isRunning = agent?.isRunning ?? false;
   const visible = showAll ? options : options.slice(0, DISAMBIG_VISIBLE_LIMIT);
   const hiddenCount = options.length - DISAMBIG_VISIBLE_LIMIT;
 
   const pick = useCallback(
     (o: DisambiguationOption) => {
-      if (!agent || isRunning) return;
-      // Same send path as the dock input — post the canonical text, then run the agent.
-      agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: disambiguatorText(o) });
-      void copilotkit.runAgent({ agent });
+      // Post the canonical text the member could have typed; the curator resolves it in pure code.
+      run(disambiguatorText(o));
     },
-    [agent, isRunning, copilotkit],
+    [run],
   );
 
   return (

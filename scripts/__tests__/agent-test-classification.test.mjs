@@ -308,22 +308,27 @@ export function branchAssertionsInGateTests(text, file = '<memory>') {
 }
 
 /**
- * The `selection-options` waits that already existed in `@gate` when this guard was written.
+ * The `selection-options` waits that existed in `@gate` when this guard was written.
  *
- * GRANDFATHERED, NOT ACCEPTED — item #337. Re-tiering them was attempted and WITHDRAWN: the
- * equivalent MOBILE flows assert the same thing inside the same required `app-e2e` job, and the
+ * **EMPTY as of feature 064 — all three are gone, and the list may never grow again.**
+ *
+ * They were grandfathered rather than accepted because re-tiering them was attempted and WITHDRAWN:
+ * the equivalent MOBILE flows assert the same thing inside the same required `app-e2e` job, and the
  * mobile suite has no tier split, so moving the web tests would have relocated the nondeterminism to
  * a flakier surface (maestro retries each flow 3x with 150 s waits) while costing pre-merge
  * coverage. Measured 2026-09-02: `maestro-agent-flows` burned 45 minutes on exactly this.
  *
- * The list is asserted EXACT, so it can only shrink: fix one and leave it here and the guard fails,
- * which is item #303's UNMATCHED-ENTRIES lesson applied to a code allowlist.
+ * What actually retired them was NOT a relabelling. Investigating before designing found that the
+ * branch is decided by PURE CODE in all three cases — `resolve_tab_collection`, `_resolve_collection`,
+ * and a `_run_owned` that emits `render_selection` on both of its branches — and that the turn was
+ * being dropped in the CLIENT before it ever reached the gateway, by three components that had never
+ * been moved onto the queue features 053/054 added. See `agent-send-path.test.mjs` and item #337.
+ *
+ * The list is asserted EXACT, so it can only shrink: leave a fixed file listed here and the guard
+ * fails. That is item #303's UNMATCHED-ENTRIES lesson applied to a code allowlist, and it is what
+ * forced this list to zero rather than letting a stale entry silently re-permit the class.
  */
-const KNOWN_BRANCH_WAITS = [
-  'agent-card-navigate.spec.ts',
-  'agent-import-disambiguate.spec.ts',
-  'agent-navigate-collection.spec.ts',
-];
+const KNOWN_BRANCH_WAITS = [];
 
 test('no NEW @gate test waits for the model to take a BRANCH', () => {
   // Item #323 criterion 3, measured over 30 single-worker runs on one unchanged tree: this class
@@ -379,4 +384,67 @@ test('(#323-meta) app-rendered affordances stay assertable in @gate', () => {
     `  await expect(page.locator('[data-testid="movie-detail-title"]')).toContainText('X');`, '});'].join('\n');
   assert.deepEqual(branchAssertionsInGateTests(sample), [],
     'the gate must keep asserting what the app renders — this rule is narrow by design');
+});
+
+/**
+ * The branch wait moved into a HELPER, so the rule has to follow it there.
+ *
+ * `setup/assistant-turn.ts` gives `@gate` specs a model-invariant way to wait for a turn
+ * (`awaitTurn` — the reply count rises) and a way to look at what that turn produced
+ * (`offeredSelection` — a SHORT grace window, then null). Used together they are exactly the
+ * supported shape item #337 asked for.
+ *
+ * Used apart, `offeredSelection` is the old defect with a new name: a spec that reaches for it
+ * without first waiting for the turn is back to spending its budget discovering that a branch was
+ * not taken, and its red says "not offered" when the truth may be "never answered". The two failures
+ * are different — one is a model decision, the other was a dropped client send that blocked two
+ * pull requests — and keeping them distinguishable is the whole point of the split.
+ */
+const TURN_WAIT = /\b(awaitTurn|sendAndAwaitTurn)\s*\(/;
+const BRANCH_LOOK = /\bofferedSelection\s*\(/;
+
+export function unwaitedBranchLooks(text, file = '<memory>') {
+  const found = [];
+  for (const { line, head, body } of testBodies(text)) {
+    if (!head.includes(GATE_TAG)) continue;
+    let waited = false;
+    body.forEach((l, k) => {
+      if (/^\s*(\/\/|\*)/.test(l)) return;
+      if (TURN_WAIT.test(l)) waited = true;
+      else if (BRANCH_LOOK.test(l) && !waited) found.push(`${file}:${line + k} (test at line ${line})`);
+    });
+  }
+  return found;
+}
+
+test('a @gate test never looks for a branch before waiting for the turn', () => {
+  const offenders = agentSpecFiles()
+    .flatMap((f) => unwaitedBranchLooks(readFileSync(join(E2E_DIR, f), 'utf8'), f));
+  assert.deepEqual(
+    offenders,
+    [],
+    `${offenders.length} @gate test(s) call offeredSelection() without an awaitTurn() first. `
+      + 'Wait for the turn, THEN look at what it produced — otherwise "the branch was not offered" '
+      + 'and "the assistant never answered" are the same red again, which is how item #337 was '
+      + 'misdiagnosed for three sessions. See tests/e2e/web/setup/assistant-turn.ts.\n  '
+      + offenders.join('\n  '),
+  );
+});
+
+test('(#337-meta) the ordering detector catches a look with no wait, and spares a correct one', () => {
+  const bad = [GATE_HEAD, '  const options = await offeredSelection(page);', '});'].join('\n');
+  const good = [
+    GATE_HEAD,
+    '  await awaitTurn(page, before);',
+    '  const options = await offeredSelection(page);',
+    '});',
+  ].join('\n');
+  assert.equal(unwaitedBranchLooks(bad).length, 1, 'an unwaited branch look was not caught');
+  assert.deepEqual(unwaitedBranchLooks(good), [], 'the supported shape must not be flagged');
+});
+
+test('(#337-meta) the ordering rule does not apply to @model-decision', () => {
+  const sample = [MODEL_HEAD, '  const options = await offeredSelection(page);', '});'].join('\n');
+  assert.deepEqual(unwaitedBranchLooks(sample), [],
+    'the model tier exists to hold branch-dependent assertions — flagging them there deletes it');
 });

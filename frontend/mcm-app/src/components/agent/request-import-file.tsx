@@ -15,10 +15,10 @@ import React, { useCallback, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Button } from '@mcm/design-system';
-import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
+import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
-import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
+import { useAssistantRun } from '@/hooks/use-assistant';
 import { useSpreadsheetImport } from '@/hooks/use-spreadsheet-import';
 import { pickSpreadsheetFile } from '@/utils/pick-file';
 
@@ -31,8 +31,11 @@ const IMPORT_PROMPT = 'import my movies from this spreadsheet';
 
 export function RequestImportFile({ prompt }: { prompt?: string }) {
   const styles = makeStyles(useTheme());
-  const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
-  const { copilotkit } = useCopilotKit();
+  // The SHARED send path (use-assistant.tsx). This component used to hold its own agent handle and
+  // `return` when the agent was busy — which stranded the upload: the BFF has already stashed a
+  // single-use `{handle, filename}` for this user by then, and the import node only ever sees it if a
+  // turn arrives to consume it. `run()` queues instead and flushes when the run completes (item #337).
+  const { run } = useAssistantRun();
   const { status, error, uploadFile } = useSpreadsheetImport();
   const [cancelled, setCancelled] = useState(false);
 
@@ -40,10 +43,9 @@ export function RequestImportFile({ prompt }: { prompt?: string }) {
     const file = await pickSpreadsheetFile();
     if (!file) return;
     const ok = await uploadFile(file);
-    if (!ok || !agent || agent.isRunning) return;
-    agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: IMPORT_PROMPT });
-    await copilotkit.runAgent({ agent });
-  }, [uploadFile, agent, copilotkit]);
+    if (!ok) return; // nothing was staged — there is no turn to send
+    run(IMPORT_PROMPT);
+  }, [uploadFile, run]);
 
   // Web-first parity exception — no file browse/upload surface on native.
   if (Platform.OS !== 'web') return null;

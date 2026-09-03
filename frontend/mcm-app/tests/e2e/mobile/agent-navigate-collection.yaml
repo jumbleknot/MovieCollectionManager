@@ -44,11 +44,22 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "assistant-dock-send"
 
+# WAIT FOR THE TURN, NOT FOR A BRANCH (064 US3, item #337).
+- runFlow: "_await-turn.yaml"
+
 # The navigator offers a bare stage-anchored button per collection (kind `collection` → a PICK).
+#
+# This is NOT a model branch: `_resolve_collection` (nodes/navigator.py) returns a target only when
+# EXACTLY ONE collection name appears in the text, and "take me to my E2E collection" contains
+# neither "e2e browse" nor "e2e mutation" — so the navigator provably cannot resolve it and must
+# offer. Once the turn has been answered, the buttons are already rendered or they never will be, so
+# the wait is SHORT. That is the whole mobile win here: the old 150 s wait, retried 3x, is what let
+# `maestro-agent-flows` burn 45 minutes before item #326's step ceiling killed it (measured
+# 2026-09-02). The same failure now costs seconds and says which node answered.
 - extendedWaitUntil:
     visible:
       id: "selection-options"
-    timeout: 150000
+    timeout: 15000
 
 # The picks sit above the trailing controls and the dock auto-scrolls to the bottom — scroll the
 # target into view (direction UP) before tapping (same pattern as agent-search / agent-navigate-movie).

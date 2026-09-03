@@ -42,17 +42,14 @@ appId: com.grumpyrobot.mcmapp
 - pressKey: Back
 - tapOn:
     id: "assistant-dock-send"
-- extendedWaitUntil:
-    visible:
-      id: "disambiguation-options"
-    timeout: 150000
-# The container alone is NOT proof — it renders even with zero buttons, so asserting only on it let
-# a broken pick masquerade as an "empty dock panel" (#539). Assert a real button exists, mirroring
-# the web spec's `disambig-option-0` check.
-- assertVisible:
-    id: "disambig-option-0"
-- assertNotVisible:
-    id: "approval-request"
+# WAIT FOR THE TURN, NOT FOR A BRANCH (064 US3, item #337).
+#
+# `disambiguation-options` renders only when the curator found the title AMBIGUOUS — that is a
+# genuine model decision (it depends on what TMDB returned and how the curator scored it), unlike
+# the navigator/search/import cases where the branch is pure code. The mobile suite has no tier
+# split, so it cannot be retired to `@model-decision`; what it can do is stop spending 150 s x 3
+# retries discovering that the other branch was taken.
+- runFlow: "_await-turn.yaml"
 
 # Tap the NON-FIRST candidate BY POSITION (testID), never by name.
 #
@@ -82,8 +79,8 @@ appId: com.grumpyrobot.mcmapp
 # candidates for an ambiguous title, but occasionally resolves to a single one. On 2026-07-22 it
 # offered ONE candidate and a hard `assertVisible: disambig-option-1` failed 3/3. Prefer the
 # non-first candidate when it exists (the stronger US4-AC2 check), else fall back to the first —
-# the render→select→resolve path is exercised either way. (disambig-option-0 was already asserted
-# above, so at least one candidate is guaranteed present here.)
+# the render→select→resolve path is exercised either way. (`disambig-option-0` is asserted at the
+# top of the same block, so at least one candidate is guaranteed present by the time these run.)
 # ★ ORDER IS LOAD-BEARING — the FALLBACK block must come first.
 #
 # Maestro re-evaluates each `when:` at the moment that block is reached, NOT up front, so two
@@ -104,33 +101,85 @@ appId: com.grumpyrobot.mcmapp
 # is still false (it never existed), so the primary is correctly skipped. Reverse the order and the
 # race returns. The web mirror avoids this differently — it captures the choice ONCE
 # (`pickTarget`, agent-disambiguation.spec.ts) — which Maestro has no equivalent for.
+# The turn's TEXT streams BEFORE its TOOL CALL, so a `when: visible` guard evaluated the instant the
+# bubble appears races the affordance render — the same trap `_login-helper.yaml` documents ("the
+# instant `when visible` check used to race the load and SKIP credential entry"). MEASURED on CI run
+# 2570: the fallback fired because neither element was on screen yet, and the flow then failed
+# waiting for a card the other branch was never going to render.
+#
+# `optional: true` is the repo's idiom for this: wait up to the timeout, and fall THROUGH rather than
+# fail when the element never comes — which is exactly the semantics a branch check needs.
+- extendedWaitUntil:
+    visible:
+      id: "disambiguation-options"
+    timeout: 30000
+    optional: true
+
+# ── Continue into whatever the turn produced ───────────────────────────────────────────────────
+#
+# ★ ORDER IS LOAD-BEARING, AT BOTH LEVELS — the FALLBACK block comes FIRST. See the long note above:
+# Maestro re-evaluates each `when:` when the block is REACHED, so the primary block's tap can
+# satisfy the fallback's guard and fire it too. The outer pair guards on
+# `disambiguation-options` (which the inner tap collapses), so the same rule applies to it.
+#
+# The outer fallback is item #337's acceptance criterion 3: the curator resolving the title DIRECTLY
+# is a legitimate answer, not a defect, and this flow must not fail on it. Both branches end at the
+# same assertion — a rendered card with a real title — which is what T037 exists to prove.
 - runFlow:
     when:
       notVisible:
-        id: "disambig-option-1"
+        id: "disambiguation-options"
     commands:
-      - tapOn:
-          id: "disambig-option-0"
+      # Resolved directly: one candidate was confident enough to skip the offer. The
+      # render-a-card path is still proven end-to-end; the non-first-candidate check (US4-AC2)
+      # simply has no candidates to exercise on this run, and the web mirror carries it.
+      - extendedWaitUntil:
+          visible:
+            id: "render-movie-card"
+          timeout: 15000
 - runFlow:
     when:
       visible:
-        id: "disambig-option-1"
+        id: "disambiguation-options"
     commands:
-      - tapOn:
-          id: "disambig-option-1"
+      # The container alone is NOT proof — it renders even with zero buttons, so asserting only on
+      # it let a broken pick masquerade as an "empty dock panel" (#539). Assert a real button
+      # exists, mirroring the web spec's `disambig-option-0` check.
+      - assertVisible:
+          id: "disambig-option-0"
+      - assertNotVisible:
+          id: "approval-request"
+      - runFlow:
+          when:
+            notVisible:
+              id: "disambig-option-1"
+          commands:
+            - tapOn:
+                id: "disambig-option-0"
+      - runFlow:
+          when:
+            visible:
+              id: "disambig-option-1"
+          commands:
+            - tapOn:
+                id: "disambig-option-1"
+      # The curator resolves the tapped pick — a second turn. Deliberately NOT `_await-turn.yaml`:
+      # that helper asserts "an assistant reply exists", which is already true from turn 1, and
+      # Maestro cannot count to two. The card is the affordance this second turn produces and the
+      # end state both outer branches reach, so waiting for it directly is both correct and the
+      # thing the test is actually about. A full turn budget, since a live turn is being awaited.
+      - extendedWaitUntil:
+          visible:
+            id: "render-movie-card"
+          timeout: 150000
+      # The options collapse once resolved — proof the tap drove the resolution rather than the
+      # card happening to appear.
+      - assertNotVisible:
+          id: "disambiguation-options"
 
-# The curator resolves the tapped pick and renders that film's card.
-- extendedWaitUntil:
-    visible:
-      id: "render-movie-card"
-    timeout: 150000
 # A card with a real title — not an empty shell. Which film it is depends on live TMDB ranking, so
 # it is deliberately not asserted here (see the note above); the web mirror covers that.
 - assertVisible:
     id: "render-movie-card-title"
-# The options collapse once resolved — proof the tap drove the resolution rather than the card
-# happening to appear.
-- assertNotVisible:
-    id: "disambiguation-options"
 - assertNotVisible:
     id: "approval-request"

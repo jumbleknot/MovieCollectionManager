@@ -33,6 +33,14 @@ const uploadFile = jest.fn();
 const reset = jest.fn();
 const originalOS = Platform.OS;
 
+// ⚠️ STABLE DOUBLES — the same discipline as use-assistant.test.tsx, and for the same reason.
+// The component now sends through `useAssistantRun`, whose flush effect is keyed on the agent
+// object's identity plus its mutable `isRunning`. A double that returns a fresh object per render
+// invalidates the memoised callbacks and re-runs the flush for free, repairing the bug the
+// mid-answer test exists to catch (measured on feature 053).
+const agentState = { isRunning: false, addMessage };
+const copilotkitState = { runAgent, getAgent: () => agentState };
+
 function setImportState(over: Partial<ReturnType<typeof importHook.useSpreadsheetImport>> = {}) {
   mockedUseImport.mockReturnValue({
     status: 'idle', filename: null, error: null, uploadFile, reset, ...over,
@@ -45,8 +53,9 @@ beforeEach(() => {
   runAgent.mockClear().mockResolvedValue(undefined);
   uploadFile.mockReset();
   mockedPick.mockReset();
-  mockedUseAgent.mockReturnValue({ agent: { isRunning: false, addMessage } });
-  mockedUseCopilotKit.mockReturnValue({ copilotkit: { runAgent } });
+  agentState.isRunning = false;
+  mockedUseAgent.mockReturnValue({ agent: agentState });
+  mockedUseCopilotKit.mockReturnValue({ copilotkit: copilotkitState });
   setImportState();
 });
 
@@ -83,6 +92,40 @@ describe('RequestImportFile', () => {
       ),
     );
     expect(runAgent).toHaveBeenCalledWith({ agent: expect.anything() });
+  });
+
+  // Item #337 / 064 US1. THE UPLOAD HAS ALREADY CHANGED SERVER STATE by the time this decision is
+  // taken: the BFF has stashed a single-use `{handle, filename}` for this user, and the import node
+  // only ever sees it if a turn arrives to consume it. Returning early because the assistant happened
+  // to be mid-answer therefore does not "skip a send" — it STRANDS the upload, and the member is left
+  // looking at a silent dock.
+  //
+  // Measured on CI run 2541 (`agent-import-disambiguate`, both attempts): a `/agent/run` was already
+  // in flight at 49.183, the upload completed at 49.241, and the client-evidence ring — marked
+  // `complete — nothing dropped` — records NO run POST afterwards. The spec then waited 150 s for a
+  // `selection-options` element that could not appear, and the failure was read for three sessions as
+  // "the model chose not to disambiguate".
+  it('delivers the import turn when the upload completes mid-answer, once the run finishes', async () => {
+    mockedPick.mockResolvedValue(FILE);
+    uploadFile.mockResolvedValue(true);
+    agentState.isRunning = true;
+    const { getByTestId, rerender } = render(<RequestImportFile />);
+
+    fireEvent.press(getByTestId('request-import-file-choose'));
+    await waitFor(() => expect(uploadFile).toHaveBeenCalledWith(FILE));
+    expect(addMessage).not.toHaveBeenCalled(); // queued, not sent — correct so far
+
+    // The in-flight run completes. The agent object keeps its identity; only the mutable property
+    // flips — exactly the transition the queue's effect is keyed on.
+    agentState.isRunning = false;
+    rerender(<RequestImportFile />);
+
+    await waitFor(() =>
+      expect(addMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'user', content: expect.stringMatching(/import/i) }),
+      ),
+    );
+    expect(runAgent).toHaveBeenCalledTimes(1);
   });
 
   it('does not send a turn when the upload fails', async () => {

@@ -1,0 +1,67 @@
+appId: com.grumpyrobot.mcmapp
+---
+# Helper: wait for the assistant to ANSWER this turn — without asserting which branch it took.
+# The mobile mirror of tests/e2e/web/setup/assistant-turn.ts (064 US3, item #337).
+#
+# ## Why this file exists at all
+#
+# `openwiki/invariants/testing-tiers.md` says an assertion may gate a merge only if the same code
+# and the same prompt cannot produce a different verdict on a re-run. Waiting for
+# `selection-options` / `disambiguation-options` breaks that: those elements render only when the
+# turn was routed to a node that offers a choice. The testid is perfectly stable — what varies is
+# WHICH BRANCH was taken.
+#
+# The web suite could retire such a wait to `@model-decision`. The mobile suite has NO tier split,
+# so that escape does not exist here — which is precisely what made item #337 a design task rather
+# than a relabelling. What it CAN do is stop spending 150 s x 3 retries discovering that the other
+# branch was taken: `ci-mobile-agent-flows.sh` retries each flow 3x, so one unluckily-branched turn
+# cost ~7.5 minutes and, on 2026-09-02, let `maestro-agent-flows` burn 45 minutes before item #326's
+# step ceiling killed it.
+#
+# ## Why it waits on `assistant-msg-assistant`, and not on a counter
+#
+# The first attempt at this rendered a COUNT into the tree (`assistant-turn-<n>`) so both runners
+# could read the same number — Playwright can count locators, Maestro cannot count anything.
+# MEASURED on CI run 2566: Android never exposed it. The marker was a 1 px, `opacity: 0` View, and
+# an alpha-0 node is not `visibleToUser`, so `assertVisible` failed 3/3 attempts on a marker that
+# was present in the React tree the whole time.
+#
+# `assistant-msg-assistant` is the element the dock already renders for every assistant text reply,
+# and three mobile flows (`assistant-add.yaml`, `assistant-config-enable*.yaml`) already wait on it
+# successfully — so it is proven on this surface rather than assumed.
+#
+# ⚠️ THIS DOES NOT MEAN THE TURN IS FINISHED. An earlier version of this comment argued that the
+# bubble and its affordance land together, because every answering node emits text and tool call on
+# ONE AIMessage (`curator._reply`, `search._selection`, `_clarify`, `_ask`). That is true of the
+# NODE and false of the WIRE: AG-UI streams TEXT_MESSAGE_CONTENT first and the tool call after, so
+# the bubble appears while the turn is still in flight. MEASURED on CI run 2570 — a branch guard
+# read immediately after this helper saw neither branch's element and took the wrong path.
+#
+# So a caller that branches on what the turn produced must WAIT for that affordance first, with
+# `extendedWaitUntil … optional: true` (the `_login-helper.yaml` idiom), not a bare `when: visible`.
+#
+# ## What it can and cannot express
+#
+# It asserts **an assistant reply exists**, not "the count rose". Callers here open with
+# `launchApp: clearState: true` and an empty dock, so for the FIRST turn of a flow the two are the
+# same thing. There is deliberately no support for a second turn: Maestro cannot count, and a flow
+# that needs to wait for a LATER turn should wait for the affordance that turn produces (which both
+# branches reach) rather than pretending to count. `agent-disambiguation.yaml` does exactly that.
+#
+# ## Usage
+#
+#   - runFlow: "_await-turn.yaml"
+#
+# 150 s matches the web helper's TURN_TIMEOUT: a cold gateway graph build plus a multi-tool turn
+# against a live provider. What is being waited for is different from the old branch waits, though —
+# a reply that MUST arrive, rather than a branch that may not be taken. So a timeout here is a real
+# failure (no answer at all), not a coin flip.
+#
+# When it times out, read the gateway's `turn routed: intent=… node=… thread=…` line (064 US2). No
+# line for the turn means no turn arrived — the dropped-client-send defect item #337 found. A line
+# with an unexpected `intent=` means the supervisor classified the utterance differently.
+
+- extendedWaitUntil:
+    visible:
+      id: "assistant-msg-assistant"
+    timeout: 150000

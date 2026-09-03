@@ -150,31 +150,74 @@ single-worker runs on one unchanged tree (item #323, criterion 3):
 30/30  the other nine @gate tests
 ```
 
-`selection-options` is a perfectly stable testid; the app renders it reliably. What varies is
-**whether the model took the branch that produces it** — it appears only when the agent chooses to
-offer a selection rather than resolving directly. A `@gate` test waiting for it is waiting on a
-decision, which is this page's own definition of the model tier.
+`selection-options` is a perfectly stable testid; the app renders it reliably. The obvious reading —
+that the model chose not to offer a selection — was **wrong**, and item #337 records the investigation
+that settled it. Two things were true instead, and both matter more than the tagging question:
 
-`agent-test-classification.test.mjs` fails the build on a **new** such assertion. The rule is
-**narrow by design**: app-rendered affordances like `import-preview` or `movie-detail-title` remain
-exactly what the gate should assert, and a meta-test pins that they stay assertable.
+**1. The branch is decided by PURE CODE, in all three cases.**
 
-> ⚠️ **RE-TIERING DOES NOT FIX THIS, and the attempt was withdrawn — item #337.** Moving the three
-> offending `@gate` web tests into `@model-decision` looks obviously right and is not:
->
-> - Two of the three have **equivalent MOBILE flows asserting the same `selection-options`**, inside
->   the same **required** `app-e2e` job — and the mobile suite has **no tier split**, so
->   `@model-decision` does not exist there. Re-tiering the web half moves the nondeterminism to a
->   **flakier** surface: `ci-mobile-agent-flows.sh` retries each flow **3x** with 150 s waits, against
->   Playwright's single attempt. Measured 2026-09-02: `maestro-agent-flows` burned **45 minutes** on
->   exactly this before its step ceiling (item #326) killed it and named it.
-> - The third, `agent-import-disambiguate`, has **no** mobile equivalent, so re-tiering it removes
->   pre-merge coverage of "the write lands in the collection the user picked".
->
-> So the three existing waits are **grandfathered in an explicit allowlist**, not accepted. The list
-> is asserted EXACT — fix one and leave it listed and the guard fails — so it can only shrink. The
-> real fix has to work for maestro flows too, which is what makes item #337 a design task rather
-> than a relabelling.
+| flow | what decides whether `selection-options` renders |
+| --- | --- |
+| `agent-import-disambiguate` | `resolve_tab_collection` — asks whenever the tab name has **0 or >1** exact case-folded collection matches. A tab named `unmatched-<epoch>` can only ever be 0. |
+| `agent-navigate-collection` | `_resolve_collection` — returns a target only when `len(matches) == 1`. Two `<prefix>`-matching collections force the ask. |
+| `agent-card-navigate` | `_run_owned` — emits `render_selection` on **both** branches, matches and no-matches alike. There is no resolve-directly path at all. |
+
+The only model input in these three flows is the **supervisor's intent classification** — which node
+answers, not what that node then renders.
+
+**2. The turn was being dropped in the CLIENT, before it was ever sent.** Features 053/054 fixed
+exactly this once: a message sent while the assistant was still answering was silently lost, and the
+fix was a queue in `useAssistantRun`. That fix reached **two of five send paths**.
+`request-import-file.tsx`, `disambiguation-options.tsx` and `render-movie-card.tsx` each kept their
+own agent handle and returned early on `isRunning`. The first of those dropped the import turn
+*after* the upload had already staged a single-use file handle server-side — so the file was stranded
+and no turn ever arrived to consume it. Run 2541's client evidence shows it exactly: a run in flight
+at `49.183`, the upload completing at `49.241`, and no run POST afterwards in a ring marked
+`complete — nothing dropped`.
+
+> ⚠️ **A DROPPED TURN AND A DIFFERENT BRANCH LOOKED IDENTICAL, AND THAT IS WHAT COST THREE SESSIONS.**
+> Both presented as `selection-options` timing out after 150 s. Nothing in the bundle separated them,
+> because `record_turn(intent)` is an OTel counter and the classified intent reached **no log** —
+> so "the supervisor routed this elsewhere", "the node took its other branch" and "no turn arrived"
+> were one indistinguishable red. Feature 064 logs one
+> `turn routed: intent=… node=… thread=…` line per turn, from a single site wrapping every
+> `_classify` return, so absence of a line now means absence of a turn.
+
+### The supported way to wait for a turn
+
+Feature 064 added the primitive item #337 asked for, on both surfaces:
+
+- **web** — `tests/e2e/web/setup/assistant-turn.ts`: `beginTurn` reads the current
+  `assistant-msg-assistant` count, `awaitTurn` waits for it to rise, and `offeredSelection` then
+  looks at what the turn produced within a **bounded** grace window (30 s — the tool call streams AFTER
+  the text, so a guard read the instant the bubble appears races the render);
+- **mobile** — `tests/e2e/mobile/_await-turn.yaml` waits for an `assistant-msg-assistant` bubble to
+  EXIST. Maestro cannot count elements, so the mobile statement is deliberately weaker than the web
+  one; its callers open with `clearState` and an empty dock, so for a flow's first turn the two
+  coincide, and a flow needing a later turn waits for the affordance that turn produces.
+
+> ⚠️ **A TEST AFFORDANCE THE RUNNER CANNOT SEE IS WORSE THAN NONE.** The first attempt rendered the
+> count into the app as a 1 px, `opacity: 0` `assistant-turn-<n>` View so both runners could read one
+> number. MEASURED on CI run 2566: Android never exposed it — an alpha-0 node is not `visibleToUser`
+> — and `agent-card-navigate.yaml` failed 3/3 against a marker that was in the React tree the whole
+> time, costing a full `maestro-agent-flows` cycle to discover. `assistant-msg-assistant` was already
+> waited on by `assistant-add.yaml` and `assistant-config-enable*.yaml`, i.e. **proven on that
+> surface rather than assumed** — and using it adds no test-only surface to the product. Prefer an
+> affordance some flow already asserts on to one you reason should work.
+
+Wait for the turn, **then** look at the branch. A test that reaches for the branch first is back to
+spending its whole budget discovering that the branch was not taken — and
+`agent-test-classification.test.mjs` now fails on that ordering inside a `@gate` test.
+
+The mobile win is concrete: `ci-mobile-agent-flows.sh` retries each flow 3x with 150 s waits, so one
+unluckily-branched turn cost ~7.5 minutes and, on 2026-09-02, let `maestro-agent-flows` burn **45
+minutes** before item #326's step ceiling killed it. After the split, the branch wait is seconds and
+`agent-disambiguation.yaml` no longer fails at all when the curator resolves directly — it asserts
+the rendered card, which both branches reach.
+
+`KNOWN_BRANCH_WAITS` is now **empty**. It is still asserted EXACT, so it can only shrink, and
+`agent-send-path.test.mjs` fails the build if any component outside `useAssistantRun` drives the
+agent or guards a send on `isRunning` — the invariant that decayed silently between 054 and #337.
 
 ### What this costs, said plainly
 

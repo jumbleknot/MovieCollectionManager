@@ -474,3 +474,63 @@ def test_graph_compiles_with_expected_nodes():
     node_names = set(graph.get_graph().nodes)
     for expected in ("supervisor", "curator", "organizer", "decline", "clarify"):
         assert expected in node_names, node_names
+
+
+# ── 064 US2 (item #337): the routing decision is written down ──────────────────────────────────
+#
+# `record_turn(intent)` is an OTel counter, so the classified intent reached NO log. A failing
+# app-e2e bundle could not distinguish "the supervisor routed this elsewhere" from "the node took
+# the other branch" from "the turn never arrived at all" — and for three sessions the
+# `selection-options` failure class was read as the middle one when the evidence points at the
+# third. The line below is what makes the next occurrence a five-minute read.
+
+
+def test_every_turn_logs_its_classified_intent_and_node(caplog):
+    import logging
+
+    with caplog.at_level(logging.INFO, logger="src.graph"):
+        build_graph(classifier=lambda _m: "organize").invoke(
+            {"messages": [HumanMessage(content="move Alien to Sci-Fi")]},
+            {"configurable": {"thread_id": "log-1"}},
+        )
+
+    routed = [r for r in caplog.records if "intent=" in r.getMessage()]
+    assert len(routed) == 1, (
+        f"expected exactly one routing line, got {[r.getMessage() for r in routed]}"
+    )
+    assert "intent=organize" in routed[0].getMessage()
+    assert "node=organizer" in routed[0].getMessage()
+    assert "thread=log-1" in routed[0].getMessage()
+
+
+def test_a_non_classifying_outcome_is_logged_too_so_absence_means_no_turn(caplog):
+    # FR-006. If only the classified path logged, a missing line would be ambiguous with a missing
+    # turn — which is exactly the ambiguity this feature exists to remove. A tool round-trip ends as
+    # `noop` and must say so.
+    import logging
+
+    with caplog.at_level(logging.INFO, logger="src.graph"):
+        build_graph(classifier=lambda _m: "add").invoke(
+            {"messages": [AIMessage(content="a tool round-trip, not a new request")]},
+            {"configurable": {"thread_id": "log-2"}},
+        )
+
+    routed = [r for r in caplog.records if "intent=" in r.getMessage()]
+    assert len(routed) == 1
+    assert "intent=noop" in routed[0].getMessage()
+
+
+def test_the_routing_line_carries_no_user_text(caplog):
+    # FR-007 / openwiki/invariants/logging-and-audit.md. The member's words are never a routing
+    # fact, and a log line is the easiest place to leak them.
+    import logging
+
+    secret = "take me to my Embarrassing Films collection"
+    with caplog.at_level(logging.INFO, logger="src.graph"):
+        build_graph(classifier=lambda _m: "navigate").invoke(
+            {"messages": [HumanMessage(content=secret)]},
+            {"configurable": {"thread_id": "log-3"}},
+        )
+
+    for record in caplog.records:
+        assert "Embarrassing" not in record.getMessage()
