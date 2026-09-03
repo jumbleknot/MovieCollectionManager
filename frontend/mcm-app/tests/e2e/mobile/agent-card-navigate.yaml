@@ -53,10 +53,7 @@ appId: com.grumpyrobot.mcmapp
 # different failures: the assistant never answered (a dropped client send — the defect 064 fixes),
 # and the assistant answered via a different node. On a surface that retries each flow 3x, the first
 # of those costs 7.5 minutes before it says anything useful.
-- runFlow:
-    file: "_await-turn.yaml"
-    env:
-      TURN: "1"
+- runFlow: "_await-turn.yaml"
 
 # ── Continue into whatever the turn produced ───────────────────────────────────────────────────
 #

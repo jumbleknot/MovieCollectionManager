@@ -50,28 +50,22 @@ The line is what makes the next occurrence of this class a five-minute read inst
 
 ### 3. One way to wait for a turn, on both surfaces (FR-008, FR-009)
 
-The dock has **no affordance that says a turn finished** — there is no busy indicator and no reply
-counter in the tree. Playwright can count `assistant-msg-assistant` nodes; Maestro cannot count
-anything. So the app grows one small marker:
+- **web** — `setup/assistant-turn.ts` exports `beginTurn(page)` (reads the current
+  `assistant-msg-assistant` count) and `awaitTurn(page, token)` (waits for it to rise). Counting
+  replies is the model-invariant wait item #323 established; this makes it a shared helper rather
+  than three copies.
+- **mobile** — `_await-turn.yaml` waits for an `assistant-msg-assistant` bubble to exist. Maestro
+  has no functions, so a sub-flow is the only way to express a shared step, and it **cannot count
+  elements** — so the mobile statement is weaker than the web one by construction. Callers open with
+  `clearState` and an empty dock, so for a flow's first turn the two coincide; a flow needing a later
+  turn waits for the affordance that turn produces instead.
 
-```tsx
-<View
-  testID={`assistant-turn-${assistantReplies}`}
-  accessible
-  accessibilityLabel={`Assistant replies: ${assistantReplies}`}
-  style={styles.turnMarker}
-/>
-```
-
-A one-pixel row under the message list whose testID carries the count. It is one mechanism that both
-runners can read:
-
-- **web** — `setup/assistant-turn.ts` exports `beginTurn(page)` (reads the current count) and
-  `awaitTurn(page, token)` (waits for `assistant-turn-<n+1>`). Reply-count-rise is the
-  model-invariant wait item #323 established; this makes it a shared helper rather than three copies.
-- **mobile** — `_await-turn.yaml` takes the expected count as a parameter and does one
-  `extendedWaitUntil: visible: id: "assistant-turn-${N}"`. Maestro has no functions, so a sub-flow
-  is the only way to express a shared step.
+**REVISED after CI run 2566.** The first design rendered the count into the app as a 1 px
+`opacity: 0` `assistant-turn-<n>` marker so both runners could read one number. Android never
+exposed it — an alpha-0 node is not `visibleToUser` — and `agent-card-navigate.yaml` failed 3/3 on a
+marker that was in the React tree the whole time. `assistant-msg-assistant` is already waited on by
+`assistant-add.yaml` and `assistant-config-enable*.yaml`, so it is **proven on that surface rather
+than assumed**, and it adds no test-only surface to the product.
 
 ### 4. Branch-adaptive continuations (FR-010, FR-011)
 
@@ -110,7 +104,7 @@ they exist and it is why the list can safely go to zero.
 | `frontend/mcm-app/src/components/agent/request-import-file.tsx` | route through `useAssistantRun` |
 | `frontend/mcm-app/src/components/agent/disambiguation-options.tsx` | route through `useAssistantRun` |
 | `frontend/mcm-app/src/components/agent/render-movie-card.tsx` | route through `useAssistantRun`; latch at enqueue |
-| `frontend/mcm-app/src/components/agent/assistant-dock.tsx` | the `assistant-turn-<n>` marker |
+| `frontend/mcm-app/src/components/agent/assistant-dock.tsx` | **unchanged** — the marker was withdrawn after CI run 2566 (see §3) |
 | `agents/movie-assistant/src/graph.py` | the classified-intent INFO line |
 | `frontend/mcm-app/tests/e2e/web/setup/assistant-turn.ts` | **new** — `beginTurn` / `awaitTurn` |
 | `frontend/mcm-app/tests/e2e/mobile/_await-turn.yaml` | **new** — the shared wait sub-flow |

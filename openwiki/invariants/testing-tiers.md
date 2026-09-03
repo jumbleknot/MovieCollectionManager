@@ -187,12 +187,22 @@ at `49.183`, the upload completing at `49.241`, and no run POST afterwards in a 
 
 Feature 064 added the primitive item #337 asked for, on both surfaces:
 
-- the dock renders `assistant-turn-<n>`, carrying the count of assistant replies;
-- **web** — `tests/e2e/web/setup/assistant-turn.ts`: `beginTurn` reads the count, `awaitTurn` waits
-  for it to rise, `offeredSelection` then looks at what the turn produced within a **short** grace
-  window;
-- **mobile** — `tests/e2e/mobile/_await-turn.yaml`, because Maestro cannot count elements and the
-  mobile suite has no tier split. The count has to live in the tree for both runners to read it.
+- **web** — `tests/e2e/web/setup/assistant-turn.ts`: `beginTurn` reads the current
+  `assistant-msg-assistant` count, `awaitTurn` waits for it to rise, and `offeredSelection` then
+  looks at what the turn produced within a **short** grace window;
+- **mobile** — `tests/e2e/mobile/_await-turn.yaml` waits for an `assistant-msg-assistant` bubble to
+  EXIST. Maestro cannot count elements, so the mobile statement is deliberately weaker than the web
+  one; its callers open with `clearState` and an empty dock, so for a flow's first turn the two
+  coincide, and a flow needing a later turn waits for the affordance that turn produces.
+
+> ⚠️ **A TEST AFFORDANCE THE RUNNER CANNOT SEE IS WORSE THAN NONE.** The first attempt rendered the
+> count into the app as a 1 px, `opacity: 0` `assistant-turn-<n>` View so both runners could read one
+> number. MEASURED on CI run 2566: Android never exposed it — an alpha-0 node is not `visibleToUser`
+> — and `agent-card-navigate.yaml` failed 3/3 against a marker that was in the React tree the whole
+> time, costing a full `maestro-agent-flows` cycle to discover. `assistant-msg-assistant` was already
+> waited on by `assistant-add.yaml` and `assistant-config-enable*.yaml`, i.e. **proven on that
+> surface rather than assumed** — and using it adds no test-only surface to the product. Prefer an
+> affordance some flow already asserts on to one you reason should work.
 
 Wait for the turn, **then** look at the branch. A test that reaches for the branch first is back to
 spending its whole budget discovering that the branch was not taken — and

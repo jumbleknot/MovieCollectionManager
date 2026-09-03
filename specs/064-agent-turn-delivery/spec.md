@@ -148,7 +148,9 @@ branch wait may enter `@gate`, and a stale entry still fails.
 - **FR-007** The intent line MUST NOT contain user-authored text.
 - **FR-008** A shared web helper MUST express "wait until the assistant has answered this turn",
   implemented as the reply-count rise that item #323 established.
-- **FR-009** A reusable Maestro sub-flow MUST express the same wait for the mobile suite.
+- **FR-009** A reusable Maestro sub-flow MUST express the same wait for the mobile suite, using an
+  affordance already proven to be exposed on Android. It may be WEAKER than the web helper (existence
+  rather than a count — Maestro cannot count), and must say so.
 - **FR-010** The three `@gate` web specs MUST assert their end state on a path that does not require
   the selection branch to have been taken, while still asserting the branch's behaviour when it is.
 - **FR-011** The three mobile flows MUST do the same.

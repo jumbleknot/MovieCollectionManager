@@ -49,10 +49,7 @@ appId: com.grumpyrobot.mcmapp
 # the navigator/search/import cases where the branch is pure code. The mobile suite has no tier
 # split, so it cannot be retired to `@model-decision`; what it can do is stop spending 150 s x 3
 # retries discovering that the other branch was taken.
-- runFlow:
-    file: "_await-turn.yaml"
-    env:
-      TURN: "1"
+- runFlow: "_await-turn.yaml"
 
 # Tap the NON-FIRST candidate BY POSITION (testID), never by name.
 #
@@ -152,15 +149,15 @@ appId: com.grumpyrobot.mcmapp
           commands:
             - tapOn:
                 id: "disambig-option-1"
-      # The curator resolves the tapped pick — a second turn — and renders that film's card.
-      - runFlow:
-          file: "_await-turn.yaml"
-          env:
-            TURN: "2"
+      # The curator resolves the tapped pick — a second turn. Deliberately NOT `_await-turn.yaml`:
+      # that helper asserts "an assistant reply exists", which is already true from turn 1, and
+      # Maestro cannot count to two. The card is the affordance this second turn produces and the
+      # end state both outer branches reach, so waiting for it directly is both correct and the
+      # thing the test is actually about. A full turn budget, since a live turn is being awaited.
       - extendedWaitUntil:
           visible:
             id: "render-movie-card"
-          timeout: 15000
+          timeout: 150000
       # The options collapse once resolved — proof the tap drove the resolution rather than the
       # card happening to appear.
       - assertNotVisible:

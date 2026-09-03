@@ -11,51 +11,50 @@ appId: com.grumpyrobot.mcmapp
 # turn was routed to a node that offers a choice. The testid is perfectly stable — what varies is
 # WHICH BRANCH was taken.
 #
-# The web suite could have retired such waits to `@model-decision`. The mobile suite has NO tier
-# split, so that escape does not exist here — which is precisely what made item #337 a design task
-# rather than a relabelling. And the cost of getting it wrong is worse on this surface:
-# `ci-mobile-agent-flows.sh` retries each flow 3x with 150 s waits, so ONE unluckily-branched turn
-# costs ~7.5 minutes. Measured 2026-09-02: `maestro-agent-flows` burned 45 minutes on exactly this
-# before item #326's step ceiling killed it and named it.
+# The web suite could retire such a wait to `@model-decision`. The mobile suite has NO tier split,
+# so that escape does not exist here — which is precisely what made item #337 a design task rather
+# than a relabelling. What it CAN do is stop spending 150 s x 3 retries discovering that the other
+# branch was taken: `ci-mobile-agent-flows.sh` retries each flow 3x, so one unluckily-branched turn
+# cost ~7.5 minutes and, on 2026-09-02, let `maestro-agent-flows` burn 45 minutes before item #326's
+# step ceiling killed it.
 #
-# ## Why the count comes from the app
+# ## Why it waits on `assistant-msg-assistant`, and not on a counter
 #
-# Maestro cannot count elements, so the count is rendered INTO the tree: the dock emits
-# `assistant-turn-<n>`, where n is the number of assistant replies on screen (assistant-dock.tsx).
-# Playwright reads the same marker as a locator. One mechanism, two runners — if each surface
-# invented its own, they would drift into waiting for different things.
+# The first attempt at this rendered a COUNT into the tree (`assistant-turn-<n>`) so both runners
+# could read the same number — Playwright can count locators, Maestro cannot count anything.
+# MEASURED on CI run 2566: Android never exposed it. The marker was a 1 px, `opacity: 0` View, and
+# an alpha-0 node is not `visibleToUser`, so `assertVisible` failed 3/3 attempts on a marker that
+# was present in the React tree the whole time.
+#
+# `assistant-msg-assistant` is the element the dock already renders for every assistant text reply,
+# and three mobile flows (`assistant-add.yaml`, `assistant-config-enable*.yaml`) already wait on it
+# successfully — so it is proven on this surface rather than assumed. Every gateway node that
+# answers emits its text and its tool call on ONE AIMessage (`curator._reply`, `search._selection`,
+# the navigator's `_clarify`, the import node's `_ask`), so the bubble cannot appear before the
+# affordance beside it.
+#
+# ## What it can and cannot express
+#
+# It asserts **an assistant reply exists**, not "the count rose". Callers here open with
+# `launchApp: clearState: true` and an empty dock, so for the FIRST turn of a flow the two are the
+# same thing. There is deliberately no support for a second turn: Maestro cannot count, and a flow
+# that needs to wait for a LATER turn should wait for the affordance that turn produces (which both
+# branches reach) rather than pretending to count. `agent-disambiguation.yaml` does exactly that.
 #
 # ## Usage
 #
-#   - runFlow:
-#       file: "_await-turn.yaml"
-#       env:
-#         TURN: "1"        # the number of assistant replies expected AFTER this turn
-#
-# Flows start from `launchApp: clearState: true`, so the dock opens with zero replies and TURN is
-# simply how many turns have been sent. Count sent turns, not screen elements.
+#   - runFlow: "_await-turn.yaml"
 #
 # 150 s matches the web helper's TURN_TIMEOUT: a cold gateway graph build plus a multi-tool turn
 # against a live provider. What is being waited for is different from the old branch waits, though —
 # a reply that MUST arrive, rather than a branch that may not be taken. So a timeout here is a real
 # failure (no answer at all), not a coin flip.
 #
-# When this times out, read the gateway's `turn routed: intent=… node=… thread=…` line (064 US2).
-# No line for the turn means no turn arrived — the dropped-client-send defect item #337 found. A
-# line with an unexpected `intent=` means the supervisor classified the utterance differently.
-
-# ## Why a branch check straight after this is not racing the render
-#
-# A caller typically does `runFlow: _await-turn.yaml` and then immediately asks whether
-# `selection-options` / `disambiguation-options` is visible. That looks like it could read the
-# tree in a gap between the text bubble mounting and the tool-call row mounting — but there is no
-# such gap. Both come from ONE `buildDockItems(agent.messages)` array rendered by ONE FlatList in
-# one commit, and the marker's count is computed from that same array (assistant-dock.tsx). The
-# gateway nodes emit the text and the tool call on a SINGLE AIMessage — `curator._reply`,
-# `search._selection`, the navigator's `_clarify`, the import node's `_ask` — so the marker cannot
-# rise before the affordance exists.
+# When it times out, read the gateway's `turn routed: intent=… node=… thread=…` line (064 US2). No
+# line for the turn means no turn arrived — the dropped-client-send defect item #337 found. A line
+# with an unexpected `intent=` means the supervisor classified the utterance differently.
 
 - extendedWaitUntil:
     visible:
-      id: "assistant-turn-${TURN}"
+      id: "assistant-msg-assistant"
     timeout: 150000

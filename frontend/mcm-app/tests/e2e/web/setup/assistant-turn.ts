@@ -14,18 +14,19 @@
  * it need not answer anything in particular, and it need not route the request to the node you had
  * in mind.
  *
- * ## Why the count comes from the app, not from a locator count here
+ * ## The mobile mirror is WEAKER, on purpose
  *
- * The mobile suite has no tier split, so `@model-decision` does not exist there — which is what made
- * item #337 a design task rather than a relabelling. Maestro cannot count elements, so the count has
- * to be in the tree for BOTH runners to read: the dock renders `assistant-turn-<n>`
- * (`assistant-dock.tsx`), Playwright resolves it as a locator and Maestro as an `id:`. The mobile
- * mirror of this file is `tests/e2e/mobile/_await-turn.yaml`.
+ * `tests/e2e/mobile/_await-turn.yaml` is the same idea for Maestro, which **cannot count elements**
+ * — and the mobile suite has no tier split, which is what made item #337 a design task rather than a
+ * relabelling. So it asserts only that an `assistant-msg-assistant` bubble EXISTS. Its callers open
+ * with `clearState` and an empty dock, so for a flow's first turn that is the same statement this
+ * file makes; for a later turn it is not, and those flows wait for the affordance the turn produces
+ * instead of pretending to count.
  *
- * The marker counts exactly the `assistant-msg-assistant` nodes on screen — a tool-call-only message
- * renders a card or a button row, not a bubble, and is not an answer. `assistant-dock-turn-marker.test.tsx`
- * pins that the two measures agree; if they drifted, the web helper and the mobile sub-flow would be
- * waiting for different things.
+ * An earlier attempt rendered the count into the app (`assistant-turn-<n>`) so both runners could
+ * read one number. MEASURED on CI run 2566: Android never exposed it — a 1 px `opacity: 0` View is
+ * not `visibleToUser`, so it failed 3/3 while being present in the React tree throughout. Counting
+ * here and existence there is the honest split, and it costs the app no test-only surface.
  */
 import { expect, type Locator, type Page } from '@playwright/test';
 

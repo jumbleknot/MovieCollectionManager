@@ -160,13 +160,6 @@ function AssistantPanel() {
   const rawMessages = (agent?.messages ?? []) as ChatMessage[];
   const items = buildDockItems(rawMessages, renderToolRegistry);
   const isRunning = agent?.isRunning ?? false;
-  // 064 US3 (item #337): how many times the assistant has ANSWERED. Counted off the same items the
-  // list renders, so it is exactly the number of `assistant-msg-assistant` nodes on screen — the
-  // two measures must agree, or the web helper and the Maestro sub-flow would be waiting for
-  // different things.
-  const assistantReplies = items.filter(
-    (i) => i.kind === 'text' && i.role === 'assistant',
-  ).length;
 
   // Bump the shared data revision when a run that applied an approved write transitions
   // running → idle, so the collection/movie/home lists re-fetch the now-changed server state.
@@ -223,18 +216,6 @@ function AssistantPanel() {
         }
       />
       {approvalElement}
-      {/* 064 US3 (item #337) — the turn marker. A `@gate` spec and a Maestro flow can both wait for
-          "the assistant answered this turn" without naming the branch it took: Playwright resolves
-          `assistant-turn-<n>` as a locator, Maestro as an `id:`. Maestro cannot count elements and
-          the mobile suite has no tier split, so the count has to live in the tree rather than in a
-          test helper. One pixel tall and accessible — Android needs real bounds and a label to
-          expose a node, and an invisible marker is one the runner cannot see. */}
-      <View
-        testID={`assistant-turn-${assistantReplies}`}
-        accessible
-        accessibilityLabel={`Assistant replies: ${assistantReplies}`}
-        style={styles.turnMarker}
-      />
       {/* FR-014a: ONE surface that updates in place. It renders nothing once the gateway clears
           the counters at the end of the run, so the report replaces it (FR-014b). */}
       <ImportProgress
@@ -279,7 +260,6 @@ const makeStyles = (theme: Theme) => ({
   toggleText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' as const },
   panel: { width: 320, height: 420, marginTop: 8, backgroundColor: theme.surface1?.val, borderRadius: 12, borderWidth: 1, borderColor: theme.outlineVariant?.val, padding: 8 },
   message: { paddingVertical: 6, paddingHorizontal: 2 },
-  turnMarker: { height: 1, width: '100%' as const, opacity: 0 },
   inputRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
   input: { flex: 1, borderWidth: 1, borderColor: theme.outline?.val, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: theme.onSurface?.val, backgroundColor: theme.surfaceVariant?.val, fontFamily: 'Inter' },
 });

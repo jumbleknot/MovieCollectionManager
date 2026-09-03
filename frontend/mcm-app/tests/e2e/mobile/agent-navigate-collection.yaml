@@ -45,10 +45,7 @@ appId: com.grumpyrobot.mcmapp
     id: "assistant-dock-send"
 
 # WAIT FOR THE TURN, NOT FOR A BRANCH (064 US3, item #337).
-- runFlow:
-    file: "_await-turn.yaml"
-    env:
-      TURN: "1"
+- runFlow: "_await-turn.yaml"
 
 # The navigator offers a bare stage-anchored button per collection (kind `collection` → a PICK).
 #

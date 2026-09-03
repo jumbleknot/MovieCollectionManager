@@ -33,11 +33,15 @@ already-shipping code, so RED is a real failing assertion — never a compile er
 
 ## Phase 3 — the shared wait (US3, FR-008, FR-009)
 
-- **T010** [RED] `components/agent/unit-tests/assistant-dock.test.tsx`: the dock renders
-  `assistant-turn-<n>` where n is the assistant-reply count, and the value rises with each reply.
-- **T011** [GREEN] `assistant-dock.tsx` renders the marker row.
-- **T012** `tests/e2e/web/setup/assistant-turn.ts` — `beginTurn(page)` / `awaitTurn(page, token)`.
-- **T013** `tests/e2e/mobile/_await-turn.yaml` — the parameterised sub-flow.
+- **T010–T011** ~~an `assistant-turn-<n>` marker in the dock~~ — **WITHDRAWN after CI run 2566.**
+  Android never exposed the 1 px `opacity: 0` View (an alpha-0 node is not `visibleToUser`), so
+  `agent-card-navigate.yaml` failed 3/3 against a marker present in the React tree throughout. The
+  dock is unchanged and the product gains no test-only surface.
+- **T012** `tests/e2e/web/setup/assistant-turn.ts` — `beginTurn(page)` / `awaitTurn(page, token)`,
+  counting `assistant-msg-assistant`.
+- **T013** `tests/e2e/mobile/_await-turn.yaml` — waits for an `assistant-msg-assistant` bubble.
+  Proven on Android by `assistant-add.yaml` and `assistant-config-enable*.yaml`, which already do
+  it. Weaker than the web helper (existence, not a count) and documented as such.
 
 ## Phase 4 — adaptive continuations (FR-010, FR-011)
 
