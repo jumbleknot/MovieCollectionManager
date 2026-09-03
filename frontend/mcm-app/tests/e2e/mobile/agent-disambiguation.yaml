@@ -101,6 +101,20 @@ appId: com.grumpyrobot.mcmapp
 # is still false (it never existed), so the primary is correctly skipped. Reverse the order and the
 # race returns. The web mirror avoids this differently — it captures the choice ONCE
 # (`pickTarget`, agent-disambiguation.spec.ts) — which Maestro has no equivalent for.
+# The turn's TEXT streams BEFORE its TOOL CALL, so a `when: visible` guard evaluated the instant the
+# bubble appears races the affordance render — the same trap `_login-helper.yaml` documents ("the
+# instant `when visible` check used to race the load and SKIP credential entry"). MEASURED on CI run
+# 2570: the fallback fired because neither element was on screen yet, and the flow then failed
+# waiting for a card the other branch was never going to render.
+#
+# `optional: true` is the repo's idiom for this: wait up to the timeout, and fall THROUGH rather than
+# fail when the element never comes — which is exactly the semantics a branch check needs.
+- extendedWaitUntil:
+    visible:
+      id: "disambiguation-options"
+    timeout: 30000
+    optional: true
+
 # ── Continue into whatever the turn produced ───────────────────────────────────────────────────
 #
 # ★ ORDER IS LOAD-BEARING, AT BOTH LEVELS — the FALLBACK block comes FIRST. See the long note above:

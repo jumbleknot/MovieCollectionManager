@@ -189,7 +189,8 @@ Feature 064 added the primitive item #337 asked for, on both surfaces:
 
 - **web** — `tests/e2e/web/setup/assistant-turn.ts`: `beginTurn` reads the current
   `assistant-msg-assistant` count, `awaitTurn` waits for it to rise, and `offeredSelection` then
-  looks at what the turn produced within a **short** grace window;
+  looks at what the turn produced within a **bounded** grace window (30 s — the tool call streams AFTER
+  the text, so a guard read the instant the bubble appears races the render);
 - **mobile** — `tests/e2e/mobile/_await-turn.yaml` waits for an `assistant-msg-assistant` bubble to
   EXIST. Maestro cannot count elements, so the mobile statement is deliberately weaker than the web
   one; its callers open with `clearState` and an empty dock, so for a flow's first turn the two

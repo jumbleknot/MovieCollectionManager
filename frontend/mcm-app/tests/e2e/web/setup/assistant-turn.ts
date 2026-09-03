@@ -89,13 +89,28 @@ export async function sendAndAwaitTurn(page: Page, text: string, timeout = TURN_
 }
 
 /**
+ * How long to let a turn's TOOL CALL land after its text has.
+ *
+ * ⚠️ A RISEN REPLY COUNT DOES NOT MEAN THE TURN IS FINISHED. The node emits text and tool call on one
+ * `AIMessage`, but AG-UI streams `TEXT_MESSAGE_CONTENT` first and the tool call after — so the bubble
+ * is on screen while the turn is still in flight. This was measured the expensive way on CI run 2570,
+ * where the mobile mirror branched on a guard read in that gap and took the wrong path; the first
+ * version of this file made the same assumption with a 5 s grace, which is the likeliest reading of
+ * the two `flaky` web entries on run 2566 that were filed here as "did not offer".
+ *
+ * Bounded, not generous-by-default: 30 s is far longer than the render takes even under a
+ * ten-worker run, and still an order of magnitude below the 150 s branch waits this replaces. The
+ * point was never a shorter timeout — it was not spending the WHOLE budget discovering a branch was
+ * not taken.
+ */
+export const OFFER_GRACE = 30_000;
+
+/**
  * The selection buttons this turn offered, or `null` if it offered none.
  *
- * Call this only AFTER `awaitTurn`. The turn is already complete, so a short grace window is enough
- * for the tool-call render to land — a long one would just be the old branch wait wearing a new
- * name, spending 150 s to discover that a branch was not taken.
+ * Call this only AFTER `awaitTurn`.
  */
-export async function offeredSelection(page: Page, grace = 5_000): Promise<Locator | null> {
+export async function offeredSelection(page: Page, grace = OFFER_GRACE): Promise<Locator | null> {
   const options = page.locator('[data-testid="selection-options"]').last();
   try {
     await options.waitFor({ state: 'visible', timeout: grace });
@@ -115,11 +130,14 @@ export async function offeredSelection(page: Page, grace = 5_000): Promise<Locat
  */
 export function branchNotOffered(what: string): string {
   return (
-    `the assistant answered this turn, but did not offer ${what}.\n`
+    `the assistant answered this turn, but did not offer ${what} within ${OFFER_GRACE} ms.\n`
     + 'The turn ARRIVED (the reply count rose), so this is not the dropped-send defect of item #337. '
-    + 'Read the gateway line `turn routed: intent=… node=… thread=…` for the turn at this timestamp: '
-    + 'a different `intent=` means the supervisor classified the utterance differently, which is a '
-    + 'model decision and belongs in @model-decision; the expected intent means the node took its '
-    + 'other branch, which is pure code and is a real defect.'
+    + 'Read the gateway line `turn routed: intent=… node=… thread=…` for the turn at this timestamp '
+    + 'before concluding anything — there are three distinct causes and they look identical here:\n'
+    + '  1. a different `intent=` — the supervisor classified the utterance differently. A model '
+    + 'decision; belongs in @model-decision, not in the gate.\n'
+    + '  2. the expected `intent=` — the node took its other branch. That branch is PURE CODE in all '
+    + 'three of these flows, so this is a real defect, not drift.\n'
+    + '  3. no line at all — no turn reached the gateway, i.e. the client dropped the send.'
   );
 }

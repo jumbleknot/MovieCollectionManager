@@ -28,10 +28,17 @@ appId: com.grumpyrobot.mcmapp
 #
 # `assistant-msg-assistant` is the element the dock already renders for every assistant text reply,
 # and three mobile flows (`assistant-add.yaml`, `assistant-config-enable*.yaml`) already wait on it
-# successfully — so it is proven on this surface rather than assumed. Every gateway node that
-# answers emits its text and its tool call on ONE AIMessage (`curator._reply`, `search._selection`,
-# the navigator's `_clarify`, the import node's `_ask`), so the bubble cannot appear before the
-# affordance beside it.
+# successfully — so it is proven on this surface rather than assumed.
+#
+# ⚠️ THIS DOES NOT MEAN THE TURN IS FINISHED. An earlier version of this comment argued that the
+# bubble and its affordance land together, because every answering node emits text and tool call on
+# ONE AIMessage (`curator._reply`, `search._selection`, `_clarify`, `_ask`). That is true of the
+# NODE and false of the WIRE: AG-UI streams TEXT_MESSAGE_CONTENT first and the tool call after, so
+# the bubble appears while the turn is still in flight. MEASURED on CI run 2570 — a branch guard
+# read immediately after this helper saw neither branch's element and took the wrong path.
+#
+# So a caller that branches on what the turn produced must WAIT for that affordance first, with
+# `extendedWaitUntil … optional: true` (the `_login-helper.yaml` idiom), not a bare `when: visible`.
 #
 # ## What it can and cannot express
 #

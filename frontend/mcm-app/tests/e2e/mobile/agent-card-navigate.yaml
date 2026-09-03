@@ -55,6 +55,20 @@ appId: com.grumpyrobot.mcmapp
 # of those costs 7.5 minutes before it says anything useful.
 - runFlow: "_await-turn.yaml"
 
+# The turn's TEXT streams BEFORE its TOOL CALL, so a `when: visible` guard evaluated the instant the
+# bubble appears races the affordance render — the same trap `_login-helper.yaml` documents ("the
+# instant `when visible` check used to race the load and SKIP credential entry"). MEASURED on CI run
+# 2570: the fallback fired because neither element was on screen yet, and the flow then failed
+# waiting for a card the other branch was never going to render.
+#
+# `optional: true` is the repo's idiom for this: wait up to the timeout, and fall THROUGH rather than
+# fail when the element never comes — which is exactly the semantics a branch check needs.
+- extendedWaitUntil:
+    visible:
+      id: "selection-options"
+    timeout: 30000
+    optional: true
+
 # ── Continue into whatever the turn produced ───────────────────────────────────────────────────
 #
 # ★ ORDER IS LOAD-BEARING — the FALLBACK block comes FIRST, for the reason agent-disambiguation.yaml
