@@ -12,6 +12,8 @@ from __future__ import annotations
 import base64
 import json
 
+import pytest
+
 from src.agui_identity import (
     inject_import_file,
     inject_subject_identity,
@@ -108,3 +110,100 @@ def test_inject_import_file_noop_when_handle_blank() -> None:
     config: dict[str, object] = {"configurable": {}}
     inject_import_file(config, {"handle": "  ", "filename": "x.csv"})
     assert "file_handle" not in config["configurable"]  # type: ignore[operator]
+
+
+# ── 065 / item #325: the terminal-error override, at the unit level ────────────────────────────
+#
+# The end-to-end guarantee (a caller gets RUN_ERROR and the stream closes) is pinned over real HTTP
+# in tests/integration/test_gateway_provider_error.py. What is pinned HERE is the one property that
+# test cannot show: that a CANCELLED run is not converted, because yielding into a cancelled
+# generator raises `RuntimeError: async generator ignored GeneratorExit` — a new failure mode
+# introduced by the fix for the old one.
+
+
+async def _drain(agent, input_obj=None) -> list:
+    return [event async for event in agent.run(input_obj)]
+
+
+def _agent_over(stream_body):
+    """An IdentityAwareAGUIAgent whose `super().run()` is replaced by `stream_body`.
+
+    Patching the BASE class's `run` is what puts the override under test rather than around it.
+    """
+    import src.agui_identity as agui_identity
+
+    class _Stub(agui_identity.IdentityAwareAGUIAgent):
+        pass
+
+    agent = _Stub.__new__(_Stub)  # no LangGraphAGUIAgent construction — the override is the SUT
+    base = agui_identity.LangGraphAGUIAgent
+    original = base.run
+    base.run = stream_body
+    return agent, base, original
+
+
+async def test_a_cancelled_run_is_not_converted_into_a_run_error() -> None:
+    """FR-008. `except Exception` deliberately excludes `CancelledError`/`GeneratorExit`."""
+    import asyncio
+
+    async def cancelled(self, input):  # noqa: A002, ARG001
+        raise asyncio.CancelledError()
+        yield  # pragma: no cover - makes this an async generator
+
+    agent, base, original = _agent_over(cancelled)
+    try:
+        with pytest.raises(asyncio.CancelledError):
+            await _drain(agent)
+    finally:
+        base.run = original
+
+
+async def test_a_provider_failure_is_converted_into_exactly_one_terminal_run_error() -> None:
+    """FR-006/FR-010 — one terminal event, carrying the provider facts and no member text."""
+    import anthropic
+    import httpx
+    from ag_ui.core import EventType
+
+    leaked = "rejected: add Nosferatu to my Horror collection"
+
+    async def failing(self, input):  # noqa: A002, ARG001
+        body = {"type": "error", "error": {"type": "invalid_request_error", "message": leaked}}
+        request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+        raise anthropic.BadRequestError(
+            leaked, response=httpx.Response(400, request=request, json=body), body=body
+        )
+        yield  # pragma: no cover - makes this an async generator
+
+    agent, base, original = _agent_over(failing)
+    try:
+        events = await _drain(agent)
+    finally:
+        base.run = original
+
+    assert len(events) == 1
+    assert events[0].type == EventType.RUN_ERROR
+    assert "400" in events[0].message
+    assert "invalid_request_error" in events[0].message
+    assert "Nosferatu" not in events[0].message
+    assert "Horror" not in events[0].message
+
+
+async def test_events_already_streamed_before_the_failure_are_preserved() -> None:
+    """The terminal event is APPENDED — a partial reply the member already saw is not discarded."""
+    from ag_ui.core import EventType
+
+    async def partial(self, input):  # noqa: A002, ARG001
+        yield "first"
+        yield "second"
+        raise ValueError("boom")
+
+    agent, base, original = _agent_over(partial)
+    try:
+        events = await _drain(agent)
+    finally:
+        base.run = original
+
+    assert events[:2] == ["first", "second"]
+    assert events[2].type == EventType.RUN_ERROR
+    # FR-003 — a bug of ours is not dressed up as a provider status.
+    assert events[2].code == "unexpected"
