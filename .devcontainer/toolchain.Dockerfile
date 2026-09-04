@@ -274,7 +274,7 @@ RUN cargo install --locked \
 # --- US1 (T012): uv (astral) + Specify CLI (SDD toolchain) [coder] ------------------------
 # uv installs to ~/.local/bin (already on PATH). Specify (GitHub Spec Kit) via `uv tool install`
 # exposes the `specify` command. Both fetched at build time (pre-firewall).
-RUN curl -LsSf https://astral.sh/uv/0.12.7/install.sh | sh \
+RUN curl -LsSf https://astral.sh/uv/0.12.9/install.sh | sh \
     && uv --version \
     && uv tool install --from git+https://github.com/github/spec-kit.git specify-cli \
     && specify --help >/dev/null 2>&1 || echo "toolchain.Dockerfile: 'specify' installed (help probe non-zero is tolerated at build time)"
