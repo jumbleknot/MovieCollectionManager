@@ -2157,6 +2157,46 @@ test('the uv rule groups the custom manager with the docker image refs item #308
   );
 });
 
+// PR #347 (2026-09-04) — the uv group half-bumped WITH the grouping rule in place. The github-releases
+// half moved to 0.12.8; the four `ghcr.io/astral-sh/uv` image refs stayed at 0.12.7. Mechanism, from
+// renovate@44.62.0's own dist: `minimumReleaseAgeBehaviour` defaults to `timestamp-required`, the
+// docker datasource has release timestamps ONLY for Docker Hub (`tag_last_pushed`), so a ghcr.io
+// release is `pendingChecks` for ever under a cooldown — and `generateBranchConfig` (updates/generate.js)
+// REMOVES pending upgrades from a branch that has any non-pending ones ("Branch is not pending,
+// removing pending upgrades"). One clock for both halves is the only state in which "one version
+// string, many sites" can hold, and the only clock ghcr.io can keep is none.
+function resolvedMinimumReleaseAge(dep) {
+  let value;
+  for (const rule of packageRules) {
+    if (!ruleMatches(rule, dep)) continue;
+    if (Object.hasOwn(rule, 'minimumReleaseAge')) value = rule.minimumReleaseAge;
+  }
+  return value;
+}
+
+test('both uv halves resolve to NO release-age cooldown — the one clock ghcr.io can keep (PR #347)', () => {
+  const custom = resolvedMinimumReleaseAge(uvDep('custom.regex'));
+  const image = resolvedMinimumReleaseAge(uvDep('dockerfile', 'ghcr.io/astral-sh/uv', 'docker'));
+  for (const [half, value] of [
+    ['custom-manager (github-releases)', custom],
+    ['docker image (ghcr.io)', image],
+  ]) {
+    assert.equal(
+      value,
+      null,
+      `the uv ${half} half resolves minimumReleaseAge to ${JSON.stringify(value)}, not null.\n` +
+        '  With a cooldown, the ghcr.io half has no releaseTimestamp to age against and Renovate 44\n' +
+        '  (minimumReleaseAgeBehaviour=timestamp-required) marks it pending for ever, then drops it from\n' +
+        '  the group branch — PR #347 moved eight sites and left the four image tags behind.',
+    );
+  }
+  // The grouping rule and the cooldown rule must be the SAME rule: a later rule that re-groups uv
+  // without restating the cooldown would inherit the 3-day catch-all and re-open the half-bump.
+  const uvRules = packageRules.filter((r) => ruleMatches(r, uvDep('custom.regex')) && r.groupName !== undefined);
+  const lastUv = uvRules[uvRules.length - 1];
+  assert.ok(Object.hasOwn(lastUv, 'minimumReleaseAge'), 'the rule that groups uv does not itself set minimumReleaseAge');
+});
+
 test('the uv rule does NOT swallow other docker base images — the control', () => {
   const other = { manager: 'dockerfile', datasource: 'docker', depName: 'python', packageName: 'python', packageFile: 'agents/movie-assistant/Dockerfile', updateType: 'minor' };
   assert.notEqual(resolvedGroupName(other), resolvedGroupName(uvDep('custom.regex')), 'the uv group has swallowed an unrelated docker image');
