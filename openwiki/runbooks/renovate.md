@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest collision that logs at INFO and produces no PR), the pinned-toolchain table and the Rust devcontainer rebuild gotcha, and the two-place config validator that catches the unknown-key class the guard test cannot.
+description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest collision that logs at INFO and produces no PR, and the timestamp-absent ghcr.io/quay.io tags that are pending forever under a cooldown and drop silently from a mixed group), the pinned-toolchain table and the Rust devcontainer rebuild gotcha, and the two-place config validator that catches the unknown-key class the guard test cannot.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-09-01T00:00:00.000Z
+timestamp: 2026-09-04T00:00:00.000Z
 ---
 
 # Renovate dependency bot
@@ -114,6 +114,7 @@ Nothing auto-merges. Every group carries `automerge: false`.
   base images`** — a separate rule is a separate branch, a separate branch is a separate key
   namespace. Verified: re-running the lookup with the rule present took the collision count from eight
   to zero (item #308). The guard test asserts both halves.
+- **A ghcr.io or quay.io tag that has no `releaseTimestamp` is pending FOREVER under any cooldown — and if it shares a group with a non-pending update, it is dropped silently.** Measured 2026-09-04 on PR #347 (`renovate/uv-pin`): the eight github-releases uv sites moved to 0.12.8 and the four `ghcr.io/astral-sh/uv` image tags stayed at 0.12.7 — a half-bump with the group rule in place and correct. The mechanism: `minimumReleaseAgeBehaviour` defaults to `timestamp-required` (added to Renovate 2025-10). The docker datasource only supplies `releaseTimestamp` for Docker Hub (`tag_last_pushed`); every ghcr.io and quay.io tag, and every `pinDigest`, arrives without one. So any cooldown makes those tags permanently pending. In a mixed group, `generate.js` removes pending upgrades when *any* upgrade in the group is not pending (`"Branch is not pending, removing pending upgrades"`) — the non-pending half ships; the pending half is discarded, at DEBUG, on every run. **The fix for the `uv pin` group: set `minimumReleaseAge: null` on the rule that groups both halves.** The guard test asserts both halves resolve to no cooldown. The trade — uv bumps skip the 3-day cooldown — is recorded on the rule. **Known residuals not yet fixed (items #349, #350):** `quay.io/keycloak/keycloak` rides `docker base images` beside Docker Hub images and its updates are dropped by the same mechanism whenever the rest of the group is ready; `docker digest pins` (item #308) is all `pinDigest`, all timestamp-less, so it sits under Pending Status Checks permanently and the initial pins can only land from a dashboard tick.
 - **`@copilotkit/*` ships breaking API changes in minor bumps.** It is grouped separately behind
   `dependencyDashboardApproval`, like the `cargo 0.x` rule. One breaking member makes a whole
   batched PR unmergeable and unsplittable — and Renovate regenerates it weekly, so routine bumps
