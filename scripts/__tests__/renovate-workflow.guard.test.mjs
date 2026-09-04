@@ -274,6 +274,8 @@ function ruleMatches(rule, dep) {
     'matchCurrentVersion',
     'dependencyDashboardApproval',
     'allowedVersions',
+    // Item #349. Per-registry timestamp behaviour; see the `timestamp-optional` rule in renovate.json.
+    'minimumReleaseAgeBehaviour',
     // Feature 063 / item #297. Added here FIRST and on its own, because this set is deliberately
     // fail-closed: the moment `versioning` appears in renovate.json, every one of the 43 assertions
     // in this file throws on the unknown key rather than on its own subject. Teaching the model the
@@ -2256,13 +2258,94 @@ test('a pinDigest update gets its OWN branch, or it collides with a version upda
       '  discarded every run — `docker:pinDigests` present in `extends` and doing nothing.',
   );
 
-  // A digest REFRESH of an already-pinned image must still ride the normal group: separating it too
-  // would split routine digest churn out of `docker base images` for no reason.
+  // Item #350 REVERSED the original control here. This assertion used to demand that a digest
+  // REFRESH stay on `docker base images`, on the reasoning that separating it would split routine
+  // churn out for no reason. Then `python:3.13-slim` got its pin (feature 063), its weekly refresh
+  // became a `digest` update, and it collided with the still-pending `3.14-slim` version update on
+  // the same key — the same `Ignoring upgrade collision`, eight times per run, and the digest never
+  // refreshed. A refresh is the one docker update that ALWAYS shares its key with any version update
+  // of the same image, so it needs its own namespace as much as the initial pin does.
   assert.equal(
     resolvedGroupName({ ...pin, updateType: 'digest' }),
-    'docker base images',
-    'the pinDigest split has caught ordinary digest refreshes as well — scope it by updateType',
+    resolvedGroupName(pin),
+    'a digest REFRESH rides a different branch from the initial pin, so once an image is pinned its\n' +
+      '  refresh collides with any version update of the same image and is dropped (item #350).',
   );
+  assert.notEqual(
+    resolvedGroupName({ ...pin, updateType: 'digest' }),
+    resolvedGroupName(version),
+    'a digest refresh shares a branch with the same dep\'s version update — the #350 collision.',
+  );
+});
+
+// Item #349. The docker datasource has a releaseTimestamp ONLY for Docker Hub (`tag_last_pushed`);
+// renovate@44's `minimumReleaseAgeBehaviour` defaults to `timestamp-required`, so under the 3-day
+// cooldown every ghcr.io / quay.io tag and digest is `pendingChecks` FOR EVER, and generate.js drops it
+// from any group that also holds a ready upgrade. Measured 2026-09-04: keycloak (quay.io) silently
+// stranded in `docker base images`; the uv image half stranded in `uv pin` (PR #347). Waiting on a
+// timestamp a registry can never supply is not a cooldown, so those registries run timestamp-optional.
+function resolvedRuleValue(dep, key) {
+  let value;
+  for (const rule of packageRules) {
+    if (!ruleMatches(rule, dep)) continue;
+    if (Object.hasOwn(rule, key)) value = rule[key];
+  }
+  return value;
+}
+
+const composeDep = (depName, updateType = 'patch') => ({
+  manager: 'docker-compose',
+  datasource: 'docker',
+  depName,
+  packageName: depName,
+  packageFile: 'infrastructure-as-code/docker/keycloak/compose.yaml',
+  updateType,
+});
+
+test('registries that never carry a release timestamp run timestamp-optional (item #349)', () => {
+  const keycloak = composeDep('quay.io/keycloak/keycloak');
+  const uvImage = { ...composeDep('ghcr.io/astral-sh/uv'), manager: 'dockerfile', packageFile: 'agents/movie-assistant/Dockerfile' };
+  for (const dep of [keycloak, { ...keycloak, updateType: 'pinDigest' }, { ...keycloak, updateType: 'digest' }, uvImage]) {
+    assert.equal(
+      resolvedRuleValue(dep, 'minimumReleaseAgeBehaviour'),
+      'timestamp-optional',
+      `${dep.depName} (${dep.updateType}) resolves minimumReleaseAgeBehaviour to ` +
+        `${JSON.stringify(resolvedRuleValue(dep, 'minimumReleaseAgeBehaviour'))}. Its registry never supplies a\n` +
+        '  releaseTimestamp, so under timestamp-required it is pending for ever and silently dropped from\n' +
+        '  any mixed group — keycloak in `docker base images`, the uv image in `uv pin` (PR #347).',
+    );
+  }
+});
+
+test('Docker Hub images KEEP timestamp-required — their cooldown is real (item #349 control)', () => {
+  // Docker Hub tags and digests carry `tag_last_pushed`, so the 3-day cooldown there is temporal and
+  // must stay; widening timestamp-optional to all of docker would silently disable feature 034's
+  // control for the images it actually works on.
+  for (const depName of ['postgres', 'node', 'quay-lookalike/keycloak']) {
+    assert.equal(
+      resolvedRuleValue(composeDep(depName), 'minimumReleaseAgeBehaviour'),
+      undefined,
+      `${depName} resolves minimumReleaseAgeBehaviour to a rule value; only ghcr.io/ and quay.io/ should`,
+    );
+  }
+});
+
+test('the timestamp-optional WARN is remapped below WARN, or it lands in Repository Problems weekly', () => {
+  // Under timestamp-optional Renovate logs ONCE per run at WARN. WARNs are what the Dependency
+  // Dashboard's "Repository Problems" section is built from, and renovate-health.mjs reads that
+  // section as the channel-death signal (item #311). A permanent, expected warning there would
+  // either be tuned out — the failure mode §5 of the runbook exists to prevent — or fire the health
+  // digest every week. Renovate 44.46.7's notes point at logLevelRemap for exactly this message.
+  const message =
+    'Some release(s) did not have a releaseTimestamp, but as we\'re running with ' +
+    'minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information';
+  const remaps = config.logLevelRemap ?? [];
+  const hit = remaps.find((r) => {
+    const m = /^\/(.*)\/([a-z]*)$/.exec(r.matchMessage ?? '');
+    return m ? new RegExp(m[1], m[2]).test(message) : r.matchMessage === message;
+  });
+  assert.ok(hit, 'no logLevelRemap entry matches the timestamp-optional warning');
+  assert.ok(['info', 'debug', 'trace'].includes(hit.newLogLevel), `the remap sends it to ${hit.newLogLevel}, still WARN-or-worse`);
 });
 
 test('the uv image refs ride the `uv pin` group, not `docker base images`', () => {

@@ -480,6 +480,16 @@ with the rule present took the collision count from **eight to zero**. It is sco
 a digest *refresh* of an already-pinned image (updateType `digest`) still rides the normal group;
 only the *initial* pin is separated, and the guard test asserts both halves of that.
 
+> ⚠️ **SUPERSEDED 2026-09-04 (item #350): the rule now claims `["pinDigest", "digest"]`, and the
+> guard's control was reversed.** The scoping above held only while the image was unpinned. Once
+> `python:3.13-slim` carried a digest (feature 063), its weekly refresh became an updateType `digest`
+> and collided with the same `3.14-slim` version update on the same key — eight times per run,
+> measured with the identical lookup, while the version update it lost to sat pending. So the
+> python digest **never refreshed**: the #303 class reopened for python, reported nowhere. A refresh
+> is the one docker update that *always* shares its key with any version update of the same image,
+> so it needs its own namespace as much as the initial pin does. Verified the #308 way: collision
+> count for python 8 → 0 with the widened rule.
+
 ### A release with no timestamp is pending FOR EVER — and a mixed group drops it silently
 
 Measured 2026-09-04 on PR #347 (`renovate/uv-pin`), with the `uv pin` group rule in place and correct:
@@ -521,11 +531,26 @@ uv bumps skip feature 034's cooldown — is recorded on the rule itself.
   `docker base images` (the #308 collision, updateType `digest` this time — that rule only separates
   `pinDigest`), logged eight times per run at INFO and dropped.
 
-The candidate remedy for the first two is a packageRule on `matchDatasources: ["docker"]` for the
-non-Docker-Hub registries setting `minimumReleaseAgeBehaviour: "timestamp-optional"` (Renovate then
-WARNs once per run; the 44.46.7 notes point at `logLevelRemap`); for the third, widening `docker
-digest pins` to `["pinDigest", "digest"]`. Neither is done — items **#349** (timestamp-optional for
-non-Docker-Hub registries and pinDigest) and **#350** (the digest collision), filed from this measurement. This is also why the item #298 observation in §4 cannot yet be read as "the structural
+**DECIDED 2026-09-04 (items #349, #350), both in `renovate.json`:**
+
+- **Registries that cannot supply a timestamp do not wait for one.** A packageRule on
+  `matchDatasources: ["docker"]` for `ghcr.io/` and `quay.io/` sets
+  `minimumReleaseAgeBehaviour: "timestamp-optional"` — a release *with* a timestamp is still aged,
+  one *without* proceeds. **Docker Hub deliberately stays `timestamp-required`**: its tags and digests
+  carry `tag_last_pushed`, so the cooldown there is temporal and real; widening the rule to all of
+  docker would silently disable feature 034's control for the images it actually works on. Add a
+  registry to the rule only after checking the datasource still cannot time-stamp it. The guard test
+  asserts both halves. Renovate WARNs once per run under this setting, and WARNs are what
+  **Repository Problems** (and the item #311 health digest) are built from, so a top-level
+  `logLevelRemap` demotes that one message to `info` — a *different* WARN still surfaces.
+- **`docker digest pins` claims `digest` as well as `pinDigest`** — see the SUPERSEDED note under the
+  collision entry above.
+
+Verified with the local lookup before and after: python collisions 8 → 0; `quay.io/keycloak/keycloak`
+no longer appears among the releases marked pending for want of a timestamp. What the local run
+*cannot* show is the Docker Hub half — `hub.docker.com` is not on the dev container's egress
+allowlist, so locally every Docker Hub tag also lacks a timestamp and reads as pending; only in CI
+does that half behave as designed. Read a local "all docker pending" accordingly. This is also why the item #298 observation in §4 cannot yet be read as "the structural
 case is gone": it moved from tag churn to timestamp availability.
 
 ### A version number that does not advertise a breaking change
