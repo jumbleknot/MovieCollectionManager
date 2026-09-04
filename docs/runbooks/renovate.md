@@ -312,6 +312,9 @@ way, CANCEL the runs rather than closing the PR — that frees the runner withou
 > schedule **with no branch on `origin` at all**, which is independent evidence that the dashboard
 > listing comes from Renovate's update computation rather than from branch existence. If it does not
 > reappear, this correction is wrong and the blanket rule should be restored without the exception.
+>
+> ✅ **CONFIRMED 2026-09-04.** The window run created PR #344 from `renovate/lock-file-maintenance-cargo-deps`
+> (merged the same day). The channel was unharmed; the exception stands.
 
 ### Merging past `renovate/stability-days` — the rule (item #298)
 
@@ -476,6 +479,54 @@ separate `upgradeKey` namespace. **Verified rather than assumed** — re-running
 with the rule present took the collision count from **eight to zero**. It is scoped by updateType so
 a digest *refresh* of an already-pinned image (updateType `digest`) still rides the normal group;
 only the *initial* pin is separated, and the guard test asserts both halves of that.
+
+### A release with no timestamp is pending FOR EVER — and a mixed group drops it silently
+
+Measured 2026-09-04 on PR #347 (`renovate/uv-pin`), with the `uv pin` group rule in place and correct:
+the eight github-releases sites moved to 0.12.8 and the four `ghcr.io/astral-sh/uv` image tags stayed
+at 0.12.7. The guard test went red, as designed — a half-bump with the grouping rule present, which
+§5's "extraction is not grouping" entry does not explain.
+
+**The mechanism**, from renovate@44.62.0's own dist and a local `RENOVATE_PLATFORM=local
+RENOVATE_DRY_RUN=lookup LOG_LEVEL=debug` over the dockerfile and regex managers:
+
+1. `minimumReleaseAgeBehaviour` defaults to **`timestamp-required`** (`config/options`, added
+   2025-10 as PR renovatebot/renovate#38363). `util/minimum-release-age.js`: a cooldown is set, the
+   release has no `releaseTimestamp` → `isPending: true`.
+2. The **docker datasource has timestamps only for Docker Hub** (`tag_last_pushed`; the datasource's
+   own `releaseTimestampNote` says so). Every ghcr.io and quay.io tag, and every `pinDigest`, is
+   therefore pending under any cooldown — not for 3 days, **for ever**. The log line is
+   `Marking N release(s) as pending, as they do not have a releaseTimestamp and we're running with
+   minimumReleaseAgeBehaviour=timestamp-required`, at DEBUG.
+3. `updates/generate.js` `generateBranchConfig`: **if any upgrade in a branch is not pending, the
+   pending ones are REMOVED** (`Branch is not pending, removing pending upgrades`). A group that mixes
+   a Docker Hub or github-releases half with a ghcr.io/quay.io half ships the first and silently
+   strands the second, every run. If *every* upgrade is pending the branch goes to **Pending Status
+   Checks** on the dashboard instead — which is where `docker digest pins` now sits, permanently.
+
+So the two uv halves could never agree under a cooldown: github-releases picks the newest release
+past 3 days, ghcr.io can never pass 3 days. **Decided 2026-09-04: the `uv pin` rule sets
+`minimumReleaseAge: null`**, on the same rule that groups both halves (a later re-grouping would
+inherit the catch-all), and the guard test asserts both halves resolve to no cooldown. The trade —
+uv bumps skip feature 034's cooldown — is recorded on the rule itself.
+
+**Not fixed by that decision, and worth knowing before reading the dashboard as healthy:**
+
+- `quay.io/keycloak/keycloak` rides `docker base images` beside Docker Hub images, so its updates
+  are dropped by step 3 whenever the rest of the group is ready. A keycloak security release is
+  never proposed, and nothing reports it.
+- `docker digest pins` (item #308) is all `pinDigest`, all timestamp-less, so it is pending for ever
+  and the initial pins can only land from a dashboard tick.
+- python's `digest` refresh collides with its `3.13-slim → 3.14-slim` version update on
+  `docker base images` (the #308 collision, updateType `digest` this time — that rule only separates
+  `pinDigest`), logged eight times per run at INFO and dropped.
+
+The candidate remedy for the first two is a packageRule on `matchDatasources: ["docker"]` for the
+non-Docker-Hub registries setting `minimumReleaseAgeBehaviour: "timestamp-optional"` (Renovate then
+WARNs once per run; the 44.46.7 notes point at `logLevelRemap`); for the third, widening `docker
+digest pins` to `["pinDigest", "digest"]`. Neither is done — items **#349** (timestamp-optional for
+non-Docker-Hub registries and pinDigest) and **#350** (the digest collision), filed from this measurement. This is also why the item #298 observation in §4 cannot yet be read as "the structural
+case is gone": it moved from tag churn to timestamp availability.
 
 ### A version number that does not advertise a breaking change
 
