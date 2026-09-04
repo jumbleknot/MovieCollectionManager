@@ -1,31 +1,31 @@
 {
-  "coveredCommit": "cfd68b9e248b01764e9ce22b28a7e11c81f8f4b4",
-  "coveredAt": "2026-09-04T20:41:22.978Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "b460c60f80d4942f89f801d7ca2bcf96e005a49c",
+  "coveredAt": "2026-09-04T22:14:37.290Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 341,
-    "headCommit": "859f2d29ff1d0b70de41340ab695aeefd58b731b",
-    "markerBefore": "9f91c6c2de5455108da272169609c738c181b32a",
+    "number": 352,
+    "headCommit": "f2970b46ee1d010655b1c2dc1797d98c90b59b68",
+    "markerBefore": "b460c60f80d4942f89f801d7ca2bcf96e005a49c",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "ci-diagnostics.md"
+          "renovate.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/renovate.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-03T00:13:05.308Z"
+    "updatedAt": "2026-09-04T22:14:37.629Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 1,
+    "elapsedSeconds": 112,
     "stoppedAtBudget": false
   }
 }
