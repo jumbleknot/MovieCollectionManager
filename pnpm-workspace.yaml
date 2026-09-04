@@ -23,6 +23,15 @@ allowBuilds:
   detox: false # denied pre-bump (ignored build under pnpm 10)
   dtrace-provider: false # denied pre-bump
   esbuild: false # denied pre-bump; the prebuilt binary is used, no local compile needed
+  # ADDED 2026-09-04 (PR #345, the Friday lockfile refresh). jest-haste-map 30.4.1 -> 30.5.1 added
+  # @parcel/watcher as a dependency, and this file had never decided on it, so pnpm 11 failed the
+  # install on SIX required contexts at once (affected, mc-service-checks, naming, okf, agent-gates,
+  # sast) — the item #271 breadth tell, with a NEW cause: not release age, an undecided build script.
+  # Its `install` script (scripts/build-from-source.js) is a NO-OP unless npm_config_build_from_source
+  # is 'true'; the native binding comes from the prebuilt @parcel/watcher-<platform> optional packages.
+  # Denied, same posture as esbuild above. VERIFIED: `pnpm install --frozen-lockfile` on PR #345's
+  # lockfile went from ERR_PNPM_IGNORED_BUILDS to exit 0 with this line and nothing else changed.
+  '@parcel/watcher': false
   msgpackr-extract: false # denied pre-bump
   # react-native-enriched-markdown@1.0.1 ADDED a postinstall that 0.6.0 did not have, which is why a
   # lockfile refresh turned this into a hard install failure rather than a silent skip. The script
