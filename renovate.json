@@ -880,13 +880,65 @@
         "nothing for this dep, reporting nothing.",
         "VERIFIED, not assumed: re-running the same lookup with this rule present took the collision",
         "count from EIGHT to ZERO. A separate branch means a separate upgradeKey namespace.",
-        "Ordered last so it wins over `docker base images`; scoped by updateType, so a digest REFRESH",
-        "of an already-pinned image (updateType `digest`) still rides the normal group — only the",
-        "INITIAL pin is separated."
+        "Ordered last so it wins over `docker base images`.",
+        "WIDENED TO `digest` 2026-09-04 (item #350). This rule originally separated ONLY the initial pin",
+        "and let a digest REFRESH of an already-pinned image ride `docker base images`, reasoning that",
+        "splitting routine churn out was pointless. Then `python:3.13-slim` got its pin (feature 063), its",
+        "weekly refresh became an updateType `digest`, and the SAME collision came back: the refresh",
+        "(3.13-slim -> 3.13-slim@<new digest>) and the version update (3.13-slim -> 3.14-slim) share the",
+        "`${packageFile}:${depName}:${currentValue}` key, and the refresh lost — EIGHT times per run,",
+        "measured with the same local lookup, while the version update it lost to sat pending. Net",
+        "effect: the python base image digest NEVER refreshed, which is the #303 class (advisories a",
+        "refresh would clear) reopened for python. A refresh is the one docker update that ALWAYS shares",
+        "its key with any version update of the same image, so it needs its own namespace exactly as the",
+        "initial pin does. The guard test's control was reversed to assert this."
       ],
-      "matchUpdateTypes": ["pinDigest"],
+      "matchUpdateTypes": ["pinDigest", "digest"],
       "groupName": "docker digest pins",
       "automerge": false
+    },
+    {
+      "description": [
+        "Item #349 — registries that NEVER supply a release timestamp do not wait for one.",
+        "renovate@44's `minimumReleaseAgeBehaviour` defaults to `timestamp-required`: with the 3-day",
+        "`minimumReleaseAge` above, a release with no `releaseTimestamp` is `pendingChecks` — not for",
+        "three days, FOR EVER (util/minimum-release-age.js). The docker datasource has a timestamp ONLY",
+        "for Docker Hub (`tag_last_pushed`; its own releaseTimestampNote says so), so every ghcr.io and",
+        "quay.io tag, digest and pinDigest is permanently pending. And updates/generate.js",
+        "`generateBranchConfig` REMOVES pending upgrades from a branch that holds any ready one",
+        "('Branch is not pending, removing pending upgrades'). MEASURED 2026-09-04: `quay.io/keycloak/",
+        "keycloak` 26.7.2 -> 26.7.3 dropped from `docker base images` every run — a keycloak security",
+        "release would never be proposed, and the dashboard still listed it under Detected Dependencies,",
+        "which reads as 'queued'; and the uv image half dropped from `uv pin` (PR #347, fixed on that",
+        "rule by removing its cooldown). Waiting on a timestamp a registry cannot supply is not a",
+        "cooldown, it is a stall, so these registries run `timestamp-optional`: a release WITH a",
+        "timestamp is still aged, one WITHOUT proceeds — the behaviour this config was written against.",
+        "DELIBERATELY NOT `matchDatasources: docker` ALONE. Docker Hub tags and digests DO carry",
+        "`tag_last_pushed`, so the cooldown there is temporal and real (feature 034's control); widening",
+        "this to all of docker would silently disable it for the images it actually works on. The guard",
+        "test asserts both halves: ghcr.io/quay.io resolve to timestamp-optional (patch, digest and",
+        "pinDigest alike), Docker Hub images resolve to nothing. Add a registry here only after checking",
+        "the datasource still cannot time-stamp it. The once-per-run WARN this setting emits is remapped",
+        "to info by the top-level `logLevelRemap` — see the note there."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["/^ghcr\\.io//", "/^quay\\.io//"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    }
+  ],
+  "logLevelRemap": [
+    {
+      "description": [
+        "Item #349. Under `minimumReleaseAgeBehaviour: timestamp-optional` Renovate logs ONCE per run,",
+        "at WARN, that some releases had no timestamp. WARNs are what the Dependency Dashboard's",
+        "'Repository Problems' section is built from, and renovate-health.mjs (item #311) reads that",
+        "section as the channel-death signal. A permanent, EXPECTED warning there is either tuned out —",
+        "the failure mode docs/runbooks/renovate.md §5 exists to prevent — or fires the health digest",
+        "every week. Renovate 44.46.7's release notes point at this option for exactly this message.",
+        "The pattern matches the message, not the whole class: a different WARN still surfaces."
+      ],
+      "matchMessage": "/did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional/",
+      "newLogLevel": "info"
     }
   ],
   "ignorePaths": [
