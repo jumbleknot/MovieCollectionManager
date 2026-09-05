@@ -1133,6 +1133,49 @@ test('the vault hold does NOT leak onto other docker images — the control', ()
   }
 });
 
+// python's MINOR is a TOOLCHAIN decision, not a base-image sweep — decided 2026-09-05 on PR #362.
+// The first `docker base images` PR after the timestamp fixes moved all eight `FROM python:3.13-slim`
+// lines (agent gateway + three MCP servers, build and runtime stages) to 3.14-slim. Renovate was within
+// bounds — every pyproject says `requires-python >=3.13` — but `.python-version` stayed 3.13 and the four
+// uv.lock files were resolved on 3.13, so production would have run a different interpreter than the
+// one the code is developed and locked against. The move happens deliberately, with `.python-version`
+// and a re-lock, under a spec (backlog item filed the same day); until then the image is held at the
+// pinned minor. `allowedVersions` rather than `enabled: false`, exactly as for vault: the weekly digest
+// REFRESH of 3.13-slim is wanted (that is the security patch stream), only the minor move is blocked.
+// RAISE THE CEILING when `.python-version` moves — the two must agree, and this guard is the reminder.
+const pythonImage = (updateType, packageFile = 'agents/movie-assistant/Dockerfile') => ({
+  manager: 'dockerfile', datasource: 'docker', depName: 'python', packageName: 'python', packageFile, updateType,
+});
+
+test('the python base image is held at the pinned minor on every update track', () => {
+  const pinned = readFileSync(resolve(REPO_ROOT, 'agents/movie-assistant/.python-version'), 'utf8').trim();
+  const m = /^(\d+)\.(\d+)$/.exec(pinned);
+  assert.ok(m, `.python-version is '${pinned}', not a MAJOR.MINOR pin`);
+  const ceiling = `<${m[1]}.${Number(m[2]) + 1}`;
+  for (const updateType of ['patch', 'minor', 'major']) {
+    assert.equal(
+      resolvedAllowedVersions(pythonImage(updateType)),
+      ceiling,
+      `python image ${updateType} resolves allowedVersions ${JSON.stringify(resolvedAllowedVersions(pythonImage(updateType)))}, ` +
+        `expected '${ceiling}' from .python-version=${pinned}.\n` +
+        '  Without it a base-image sweep chooses the interpreter minor for four services while the\n' +
+        '  toolchain pin and the uv.lock files stay behind (PR #362, 2026-09-05).',
+    );
+  }
+});
+
+test('the python hold does NOT leak onto other docker images — the control', () => {
+  for (const depName of ['node', 'postgres', 'redis', 'ghcr.io/astral-sh/uv']) {
+    const dep = { ...pythonImage('minor'), depName, packageName: depName };
+    assert.equal(resolvedAllowedVersions(dep), null, `${depName} picked up python's version hold`);
+  }
+});
+
+test('python still rides the `docker base images` group, so its digest refresh is not stranded', () => {
+  assert.equal(resolvedGroupName(pythonImage('minor')), 'docker base images');
+  assert.equal(resolvedGroupName(pythonImage('digest')), 'docker digest pins');
+});
+
 test('vault still rides the `docker base images` group, so a digest refresh is not stranded', () => {
   // The hold blocks a VERSION move, not the image. If this ever resolves to null, vault has fallen
   // out of the grouped PR and its digest pin would drift alone.

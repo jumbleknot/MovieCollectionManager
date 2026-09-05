@@ -690,6 +690,29 @@
     },
     {
       "description": [
+        "python's MINOR is a TOOLCHAIN decision, not a base-image sweep — decided 2026-09-05 on PR #362,",
+        "the first `docker base images` PR after items #349/#350/#358 let Docker Hub updates through.",
+        "It moved all EIGHT `FROM python:3.13-slim` lines (agent gateway + three MCP servers, build and",
+        "runtime stages) to 3.14-slim. Renovate was within bounds — every pyproject says",
+        "`requires-python >=3.13` — but `agents/movie-assistant/.python-version` stayed 3.13 and the four",
+        "uv.lock files were resolved on 3.13, so production would have run a different interpreter than",
+        "the code is developed and locked against. The images built and app-e2e PASSED on 3.14, so this",
+        "is not a break; it is drift, and the repository's rule for toolchains (uv, Rust, pnpm, nx) is one",
+        "version chosen deliberately and held equal at every site.",
+        "HELD at the pinned minor with `allowedVersions`, the vault pattern, NOT `enabled: false`: the",
+        "weekly digest REFRESH of 3.13-slim is the security patch stream and must keep flowing (it rides",
+        "`docker digest pins`); only the minor move is blocked. The guard test derives the ceiling from",
+        "`.python-version` (`<major.(minor+1)`) and fails when they disagree — so RAISE THIS when the",
+        "pin moves, and move the pin under a spec that also re-locks (backlog item #366 makes the",
+        "three sites one dependency, the uv/rust shape). Docker versioning falls back to npm-range",
+        "syntax for `<3.14` exactly as for vault's `<1.19` (logged: 'Falling back to npm semver syntax')."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["python"],
+      "allowedVersions": "<3.14"
+    },
+    {
+      "description": [
         "pnpm MOVES AS ONE UNIT \u2014 item #225, the same requirement as the nx and Playwright rules above and",
               "for the same reason. pnpm's version lives in package.json's `packageManager` (built-in `npm`",
               "manager) and in frontend/mcm-app/Dockerfile's corepack pins (the customManagers entry above, whose",
