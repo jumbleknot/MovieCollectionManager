@@ -8,7 +8,7 @@ FROM node:24.14.1-alpine3.23 AS builder
 RUN apk add --no-cache gcompat
 
 # Enable corepack so pnpm is available without a separate install step
-RUN corepack enable && corepack prepare pnpm@11.22.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.25.0 --activate
 
 WORKDIR /app
 
@@ -69,7 +69,7 @@ FROM node:24.14.1-alpine3.23 AS deps
 # glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
 
-RUN corepack enable && corepack prepare pnpm@11.22.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.25.0 --activate
 
 WORKDIR /app
 

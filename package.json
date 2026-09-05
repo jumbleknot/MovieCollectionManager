@@ -2,7 +2,7 @@
   "name": "@mcm/workspace",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@11.22.0",
+  "packageManager": "pnpm@11.25.0",
   "//engines": "The repo's Node FLOOR, enforced across every workflow/Dockerfile pin by scripts/check-toolchain-consistency.mjs. It mirrors the pinned pnpm's own engines (pnpm 11 requires >=22.13) — RAISE IT whenever packageManager moves to a manager with a higher floor, or the gate will keep passing pins that manager refuses to run on.",
   "engines": {
     "node": ">=22.13"
