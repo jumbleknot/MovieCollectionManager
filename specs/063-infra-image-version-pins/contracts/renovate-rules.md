@@ -18,6 +18,13 @@ incidents (items #194, #204, #225, and the vault allowlist key in PR #289).
 | `unleashorg/unleash-server` `8.1.0` → `9.0.0` | `major` |
 | any of the above, floating | **must not occur** — no reference may resolve as `digest`-only |
 
+> **The rows are worked examples, recorded at pin time; the guard evaluates the tag in use.** Corrected
+> 2026-09-05 (PR #362): the first guard asserted each row's literal `from` tag was present in the compose
+> files, so the first legitimate Renovate bump of any of the six (curl 8.21.0 → 8.22.0) turned
+> `guardrails / naming` red — a guard failing because the thing it protects moved. It now reads the live
+> tag, synthesises the row's bump from it (patch/minor/major, prefix and suffix preserved) and asserts the
+> classification. The examples above stay as the record of what was true when the pins landed.
+
 ## C2 — Grouping and paired movement
 
 | Property | Required value |
