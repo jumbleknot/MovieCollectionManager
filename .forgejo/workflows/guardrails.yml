@@ -264,7 +264,7 @@ jobs:
       - name: Install uv
         run: |
           bash scripts/ci-log-step.sh agent-gates-install-uv bash -e /dev/stdin <<'CI_LOG_STEP'
-          curl -LsSf https://astral.sh/uv/0.12.9/install.sh | sh
+          curl -LsSf https://astral.sh/uv/0.12.10/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
       - name: Install JS dependencies
@@ -333,7 +333,7 @@ jobs:
       - name: Install uv (Semgrep via uvx + pip-audit)
         run: |
           bash scripts/ci-log-step.sh sast-install-uv bash -e /dev/stdin <<'CI_LOG_STEP'
-          curl -LsSf https://astral.sh/uv/0.12.9/install.sh | sh
+          curl -LsSf https://astral.sh/uv/0.12.10/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
       - name: Install Rust + cargo-audit

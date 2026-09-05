@@ -144,7 +144,7 @@ jobs:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock
           # files the weekly lockFileMaintenance channel merges. One version across every site.
-          version: '0.12.9' # uv-version
+          version: '0.12.10' # uv-version
           # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
           # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
           # Same pin and same reasoning as app-ci.yml and cd-deploy.yml.

@@ -2,7 +2,7 @@
 # Build context is the repo root (constitution: build from root with -f).
 # Multi-stage: install deps with uv, then run the langgraph-api server hosting the graph.
 FROM python:3.13-slim@sha256:7ce4b6dfe35e55397b7cda544f8a13f191b7ae28dc5aad71fe664dbc9bc2623f AS build
-COPY --from=ghcr.io/astral-sh/uv:0.12.9@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.10@sha256:2bb3ebca0a796a155094a27773d290c4b074572e6107f171d88d086682fd2500 /uv /usr/local/bin/uv
 # A C/C++ toolchain is required: nemoguardrails pulls `annoy`, which has no cp313 wheel
 # and compiles from source (needs g++). build-essential lives only in this build stage;
 # the runtime stage gets just the compiled .venv.
