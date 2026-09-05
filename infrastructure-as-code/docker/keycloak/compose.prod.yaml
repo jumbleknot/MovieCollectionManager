@@ -9,7 +9,7 @@
 name: prod-auth
 services:
   keycloak-store-postgres:
-    image: postgres:18.3-alpine3.23
+    image: postgres:18.3-alpine3.23@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
     container_name: keycloak-store-postgres
     restart: always
     # #PROD no published port — DB stays internal to the Docker networks only
@@ -39,7 +39,7 @@ services:
     depends_on:
       keycloak-store-postgres:
         condition: service_healthy
-    image: quay.io/keycloak/keycloak:26.7.2
+    image: quay.io/keycloak/keycloak:26.7.2@sha256:9d1f1b2b7261ff53c66cb1092dfcdc34a5fb77e81f9e6a6e75b8b6a795de8067
     container_name: keycloak-service
     restart: always
     ports:

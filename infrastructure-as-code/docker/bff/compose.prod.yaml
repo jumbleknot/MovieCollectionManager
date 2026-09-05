@@ -110,7 +110,7 @@ services:
       start_period: 15s
 
   mcm-bff-cache-redis:
-    image: redis:8.6.2-alpine3.23
+    image: redis:8.6.2-alpine3.23@sha256:c5e375abb885e6b2021c0377879e4890bf76f9065b8922ffc113f2b226b9fc17
     container_name: mcm-bff-cache-redis
     restart: always
     # #PROD no published port — internal to mcm-bff-network only.

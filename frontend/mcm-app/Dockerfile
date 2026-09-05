@@ -2,7 +2,7 @@
 # Installs all deps and runs expo export to produce the server bundle.
 # Build context must be the monorepo root:
 #   docker build -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .
-FROM node:24.14.1-alpine3.23 AS builder
+FROM node:24.14.1-alpine3.23@sha256:8510330d3eb72c804231a834b1a8ebb55cb3796c3e4431297a24d246b8add4d5 AS builder
 
 # glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
@@ -64,7 +64,7 @@ RUN npx expo export --platform web
 # It also keeps this layer keyed on the manifests and lockfile alone, so editing
 # app source does not re-run the 1.2 GB deploy — which matters because the build
 # cache competes for the same constrained disk as the images (item #246).
-FROM node:24.14.1-alpine3.23 AS deps
+FROM node:24.14.1-alpine3.23@sha256:8510330d3eb72c804231a834b1a8ebb55cb3796c3e4431297a24d246b8add4d5 AS deps
 
 # glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
@@ -95,7 +95,7 @@ RUN pnpm install --frozen-lockfile && \
 # ── Stage 3: Production runtime ───────────────────────────────────────────────
 # Receives artifacts only. No package manager runs here and none is needed —
 # the runtime is `node server.js`.
-FROM node:24.14.1-alpine3.23 AS runner
+FROM node:24.14.1-alpine3.23@sha256:8510330d3eb72c804231a834b1a8ebb55cb3796c3e4431297a24d246b8add4d5 AS runner
 
 # Three things in one layer, all of which must precede the COPYs below:
 #   • gcompat — glibc compatibility for native Node modules (ioredis, etc.).

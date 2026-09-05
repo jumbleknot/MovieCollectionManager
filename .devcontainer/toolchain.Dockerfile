@@ -20,7 +20,7 @@
 # baked set. Inherits feature 037's base (apt deps, watchman, corepack + Claude Code CLI, non-root
 # `coder`, DinD-config dir) so the 037 verify scripts (host/engine isolation, SC-008) still pass.
 
-FROM node:24-bookworm
+FROM node:24-bookworm@sha256:be23f54a88d34e8824c741b19b91064094f92c1c97b194144bfc8b50d67258e2
 
 # --- 037 base: apt deps + firewall/network tooling ---------------------------------------
 # iptables/ipset/dnsutils/iproute2 are consumed by init-firewall.sh; jq by the verify scripts
