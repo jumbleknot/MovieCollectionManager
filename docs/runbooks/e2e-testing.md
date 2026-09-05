@@ -284,6 +284,31 @@ with `dependencies: ['chromium']`, so `bff-prod-lifecycle` + `admin-registration
 execute while the main project has ANY failure. They reported "3 did not run" in every measured run
 for months, and only ran for the first time on 2026-08-10.
 
+## A datastore that survives between runs fails the NEXT run, not this one (2026-09-05)
+
+The `kvm` runner is persistent. `app-ci.yml`'s "Reset stateful CI data" step exists so each run starts
+clean, and it removed four data volumes — but not `mcm-bff-cache-redis-data`, which the setup step
+created once and nothing ever deleted. PR #362's app-e2e ran redis **8.10.1** and wrote an RDB v15 dump
+into it; the next app-e2e on **8.6.2** (PR #360, then `main` itself on the #361 merge, run 2735) died
+at bring-up:
+
+```
+1:M ... # Can't handle RDB format version 15
+1:M ... # Fatal error loading the DB, check server logs. Exiting.
+dependency failed to start: container mcm-bff-cache-redis is unhealthy
+```
+
+Nothing in either failing commit touched redis. **The failing run was poisoned by the previous run's
+container**, and `main` went red on a docs-and-uv merge. Two things follow:
+
+- **Read the datastore's own log before blaming the change.** "unhealthy at bring-up" with the
+  container `Restarting (1)` is the signature; the bundle's `mcm-bff-cache-redis.log` names the cause.
+- **A version moving in EITHER direction between consecutive runs trips this** — an older-version PR
+  after a newer-version PR is the common case on a Renovate day, and it plausibly contributed to the
+  intermittent collapses in item #173. Fixed 2026-09-05 by adding the volume to both reset steps;
+  `app-ci-stateful-reset.guard.test.mjs` asserts every volume the setup step creates is one the reset
+  step removes, so the next new volume cannot reopen this.
+
 ## The instrument traps that cost the most (2026-08-12)
 
 Every one of these produced a confident, wrong answer, and every one was checkable in seconds.
