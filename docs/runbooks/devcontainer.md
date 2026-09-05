@@ -397,7 +397,8 @@ Then `pnpm nx docker-build mcm-app` → `up-mcm --profile app --profile bff-nons
 pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Docker**:
 
 - The image registries must be allowlisted: Docker Hub (`registry-1.docker.io`, `auth.docker.io`,
-  `index.docker.io`) **and its blob CDN hosts** (`production.cloudflare.docker.com`,
+  `index.docker.io`, plus `hub.docker.com` — not a pull host but the tag-list API Renovate's docker
+  datasource reads `tag_last_pushed` from, its only release timestamp; added 2026-09-05) **and its blob CDN hosts** (`production.cloudflare.docker.com`,
   **`production.cloudfront.docker.com`**), `ghcr.io` (+ `pkg-containers.githubusercontent.com`),
   and — for forge images — `FORGE_REGISTRY_HOST`. These are in `init-firewall.sh`.
   > **Load-bearing gotcha (validated 2026-07-11):** Docker Hub serves image *auth* from

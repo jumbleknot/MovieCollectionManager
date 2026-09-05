@@ -547,10 +547,12 @@ uv bumps skip feature 034's cooldown — is recorded on the rule itself.
   collision entry above.
 
 Verified with the local lookup before and after: python collisions 8 → 0; `quay.io/keycloak/keycloak`
-no longer appears among the releases marked pending for want of a timestamp. What the local run
-*cannot* show is the Docker Hub half — `hub.docker.com` is not on the dev container's egress
-allowlist, so locally every Docker Hub tag also lacks a timestamp and reads as pending; only in CI
-does that half behave as designed. Read a local "all docker pending" accordingly. This is also why the item #298 observation in §4 cannot yet be read as "the structural
+no longer appears among the releases marked pending for want of a timestamp. Those two runs could
+*not* show the Docker Hub half: `hub.docker.com` was not on the dev container's egress allowlist
+then, so locally every Docker Hub tag also lacked a timestamp and read as pending. **Allowlisted
+2026-09-05** (`.devcontainer/egress-allowlist.json`; on the sandbox platform the operator must also
+apply the host-side rule, see devcontainer-sandbox.md §4) — a local lookup now sees `tag_last_pushed`
+and the Docker Hub half can be observed here rather than inferred from CI. This is also why the item #298 observation in §4 cannot yet be read as "the structural
 case is gone": it moved from tag churn to timestamp availability.
 
 ### A version number that does not advertise a breaking change
