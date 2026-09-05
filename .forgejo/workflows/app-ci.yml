@@ -496,8 +496,14 @@ jobs:
             mcm-bff-service-nonsecure mcm-bff-cache-redis mcm-bff-store-mongo \
             movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
             movie-assistant-mcp-spreadsheet movie-assistant-store-postgres 2>/dev/null || true
+          # mcm-bff-cache-redis-data ADDED 2026-09-05. It was created by the setup step below and never
+          # removed here, so it outlived every run: PR #362's redis 8.10.1 wrote an RDB v15 dump into it,
+          # and the next runs on redis 8.6.2 (PR #360, then main itself, run 2735) died at bring-up with
+          # "Can't handle RDB format version 15" — a red main on a commit that never touched redis. It is
+          # a session cache; setup recreates it. app-ci-stateful-reset.guard.test.mjs asserts every
+          # volume setup creates is listed here.
           docker volume rm keycloak-store-postgres-data mc-service-store-mongo-data \
-            mcm-bff-store-mongo-data movie-assistant-store-postgres-data 2>/dev/null || true
+            mcm-bff-store-mongo-data movie-assistant-store-postgres-data mcm-bff-cache-redis-data 2>/dev/null || true
           CI_LOG_STEP
 
       - name: First-time docker setup (networks + volumes)
@@ -1235,8 +1241,14 @@ jobs:
             mcm-bff-service-nonsecure mcm-bff-cache-redis mcm-bff-store-mongo \
             movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
             movie-assistant-mcp-spreadsheet movie-assistant-store-postgres 2>/dev/null || true
+          # mcm-bff-cache-redis-data ADDED 2026-09-05. It was created by the setup step below and never
+          # removed here, so it outlived every run: PR #362's redis 8.10.1 wrote an RDB v15 dump into it,
+          # and the next runs on redis 8.6.2 (PR #360, then main itself, run 2735) died at bring-up with
+          # "Can't handle RDB format version 15" — a red main on a commit that never touched redis. It is
+          # a session cache; setup recreates it. app-ci-stateful-reset.guard.test.mjs asserts every
+          # volume setup creates is listed here.
           docker volume rm keycloak-store-postgres-data mc-service-store-mongo-data \
-            mcm-bff-store-mongo-data movie-assistant-store-postgres-data 2>/dev/null || true
+            mcm-bff-store-mongo-data movie-assistant-store-postgres-data mcm-bff-cache-redis-data 2>/dev/null || true
           CI_LOG_STEP
 
       - name: First-time docker setup (networks + volumes)
