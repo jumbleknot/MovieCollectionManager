@@ -1554,6 +1554,29 @@ test('Renovate tracks the Trivy pin, so pinning does not simply mean going stale
   }
 });
 
+// ── Docker Hub's tag API is capped at TEN pages, and one 403 costs every timestamp ─────────────
+
+test('the Run Renovate step caps Docker Hub tag paging at 10 pages, or every Docker Hub update is pending for ever', () => {
+  // MEASURED 2026-09-05 from inside the dev container once hub.docker.com was allowlisted (PR #355):
+  // Docker Hub's anonymous /v2/repositories/<repo>/tags API answers 200 for pages 1-10 (page_size 100)
+  // and **403 from page 11** — a 1000-tag cap. `library/node` has 9080 tags. Renovate's default
+  // `dockerMaxPages` is 20, so on a cold cache (every CI run) it requests page 11, gets 403, and
+  // `_getDockerHubTags` returns null — the WHOLE timestamped result for that image is discarded and
+  // the datasource falls back to the registry tag list, which carries no timestamps. Under renovate@44's
+  // `minimumReleaseAgeBehaviour=timestamp-required` default that makes every Docker Hub tag and digest
+  // `pendingChecks` for ever — the reason `docker base images` and `docker digest pins` sat permanently
+  // in Pending Status Checks while looking like a 3-day cooldown. With RENOVATE_DOCKER_MAX_PAGES=10 and a
+  // fresh cache the same lookup logged zero "no releaseTimestamp" markings and pending became temporal.
+  // `dockerMaxPages` is globalOnly, so it cannot live in renovate.json — the env var on this step is
+  // the only place it can be set, and this is what keeps it from being tidied away.
+  const run = steps.find((s) => typeof s?.run === 'string' && /npx --yes renovate@\d+\s*$/.test(s.run.trim()));
+  assert.ok(run, 'renovate.yml has no `npx --yes renovate@<major>` step to carry the env');
+  const raw = String(run.env?.RENOVATE_DOCKER_MAX_PAGES ?? '');
+  assert.match(raw, /^\d+$/, `RENOVATE_DOCKER_MAX_PAGES is ${JSON.stringify(raw)} on the Run Renovate step — unset means Renovate's default of 20, which walks into Docker Hub's page-11 403`);
+  const pages = Number(raw);
+  assert.ok(pages >= 1 && pages <= 10, `RENOVATE_DOCKER_MAX_PAGES=${pages}: Docker Hub returns 403 from page 11, so anything above 10 discards every timestamp; anything below 1 fetches nothing`);
+});
+
 // ── Item #268: a dispatched run's mode must be READABLE, from proven parts only ─────────────────
 
 test('a dispatched run publishes its RESOLVED mode as a commit status before Renovate runs', () => {

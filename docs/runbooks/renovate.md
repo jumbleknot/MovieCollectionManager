@@ -551,8 +551,31 @@ no longer appears among the releases marked pending for want of a timestamp. Tho
 *not* show the Docker Hub half: `hub.docker.com` was not on the dev container's egress allowlist
 then, so locally every Docker Hub tag also lacked a timestamp and read as pending. **Allowlisted
 2026-09-05** (`.devcontainer/egress-allowlist.json`; on the sandbox platform the operator must also
-apply the host-side rule, see devcontainer-sandbox.md §4) — a local lookup now sees `tag_last_pushed`
-and the Docker Hub half can be observed here rather than inferred from CI. This is also why the item #298 observation in §4 cannot yet be read as "the structural
+apply the host-side rule, see devcontainer-sandbox.md §4) — and observing it found the REAL Docker
+Hub cause, which is not a cooldown at all:
+
+> ⚠️ **Docker Hub's anonymous tag API returns 403 from page 11, and one 403 costs every timestamp.**
+> `/v2/repositories/<repo>/tags?page_size=100` answers 200 for pages 1–10 and **403 Forbidden** from
+> page 11 (measured 2026-09-05; `page_size=1000` is silently capped to 100). `library/node` has 9080
+> tags. Renovate's default `dockerMaxPages` is **20**, so on a cold cache — every CI run — it asks for
+> page 11, gets the 403, and `_getDockerHubTags` returns `null`: the *whole* timestamped result for
+> that image is discarded and the registry tag list, which has no timestamps, is used instead. Under
+> `timestamp-required` that is pending for ever, for node, python, postgres, redis, mongodb, opa,
+> clickhouse, langfuse and minio alike — the permanent "Pending Status Checks" on `docker base images`
+> and `docker digest pins`, which read exactly like a 3-day cooldown that never elapsed.
+>
+> **Fixed 2026-09-05: `RENOVATE_DOCKER_MAX_PAGES: '10'` on the Run Renovate step** (`dockerMaxPages`
+> is globalOnly, so it cannot live in `renovate.json`); the guard test asserts ≤ 10. Ten newest-first
+> pages reached back to 2025-11 for node, so every live candidate has a timestamp. Verified: the same
+> lookup then logged **zero** "no releaseTimestamp" markings, and the pending members were exactly the
+> ones pushed inside the last three days (curl 8.22.0, otel-lgtm 0.32.1, mongodb 8.3.8, opa 1.20.2) —
+> temporal, as designed. A candidate older than the 1000 newest tags would still lack a timestamp; the
+> `Marking N release(s) as pending … timestamp-required` DEBUG line is how that would show.
+>
+> **Reproduction trap, paid for once:** Renovate keeps a 30-minute package cache at
+> `/tmp/renovate/cache`. A local lookup made right after a failed Docker Hub fetch served that failure
+> from cache and made *no* Hub requests at all — the run looked identical to the broken one and would
+> have "disproved" the fix. Point `RENOVATE_CACHE_DIR` at a fresh directory for any re-measurement. This is also why the item #298 observation in §4 cannot yet be read as "the structural
 case is gone": it moved from tag churn to timestamp availability.
 
 ### A version number that does not advertise a breaking change

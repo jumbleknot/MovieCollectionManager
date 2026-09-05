@@ -201,6 +201,22 @@ jobs:
           RENOVATE_GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
           # RENOVATE_DRY_RUN comes from the JOB env above — one assignment, two consumers (item #268).
           LOG_LEVEL: info
+          # Docker Hub's anonymous tag API (/v2/repositories/<repo>/tags, page_size 100) answers 403
+          # FROM PAGE 11 — a 1000-tag cap, measured 2026-09-05 from the dev container the day
+          # hub.docker.com was allowlisted. Renovate's default `dockerMaxPages` is 20; `library/node`
+          # has 9080 tags; so on a cold cache (every run here) Renovate asks for page 11, gets 403, and
+          # `_getDockerHubTags` returns null — the WHOLE timestamped result for that image is thrown
+          # away and the registry tag list, which has no timestamps, is used instead. Under
+          # renovate@44's `minimumReleaseAgeBehaviour=timestamp-required` default that marks every
+          # Docker Hub tag and digest pending FOR EVER, which is why `docker base images` and
+          # `docker digest pins` sat permanently in Pending Status Checks looking like a 3-day
+          # cooldown. Ten pages of newest-first tags reached back to 2025-11 for node, so every live
+          # candidate carries a timestamp; with this set, the same lookup logged zero
+          # "no releaseTimestamp" markings and pending became temporal (curl 8.22.0 and opa 1.20.2,
+          # both pushed inside the last three days). `dockerMaxPages` is globalOnly — it cannot live
+          # in renovate.json — so this env var is the only place; renovate-workflow.guard.test.mjs
+          # asserts it stays at or below 10. docs/runbooks/renovate.md §5 has the measurement.
+          RENOVATE_DOCKER_MAX_PAGES: '10'
         # npx pulls the renovate package into the node runner. PINNED to a major (2026-08-08): it was
         # `npx --yes renovate`, i.e. always-latest, so a Renovate major could land in CI unannounced
         # and change config semantics under us. That is not hypothetical — v41 renamed customManagers'
