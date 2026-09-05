@@ -1248,31 +1248,59 @@ function allowedVersionsPermits(allowed, tag) {
   throw new Error(`allowedVersions '${allowed}' is not a regex form — extend allowedVersionsPermits().`);
 }
 
-// Contract C1, row for row (specs/063-infra-image-version-pins/contracts/renovate-rules.md).
-// `from` is asserted to be the tag REALLY in the compose files before it is used.
+// Contract C1 (specs/063-infra-image-version-pins/contracts/renovate-rules.md). The table's rows are
+// WORKED EXAMPLES recorded at pin time; the property they illustrate is that a bump of each image
+// classifies as patch/minor/major rather than as an opaque digest. The guard therefore evaluates the
+// tag REALLY in the compose files today and synthesises the bump from it.
+//
+// CORRECTED 2026-09-05 (PR #362). The first version of this guard asserted the row's literal `from`
+// tag was present in the compose files ("contract C1 says curlimages/curl is on 8.21.0"). That made
+// the FIRST legitimate Renovate bump of any of the six images — curl 8.21.0 -> 8.22.0, the first
+// `docker base images` PR after the timestamp fixes — red on `guardrails / naming`, and would have
+// done so on every future bump for ever: a guard failing because the thing it protects moved, which
+// is the shape CLAUDE.md says to fix at the cause, never delete. The classification property was and
+// is intact; only the anchor was wrong.
 const C1_ROWS = [
-  { repository: 'axllent/mailpit', from: 'v1.31.0', to: 'v2.0.0', expected: 'major' },
-  { repository: 'axllent/mailpit', from: 'v1.31.0', to: 'v1.32.0', expected: 'minor' },
-  { repository: 'curlimages/curl', from: '8.21.0', to: '8.21.1', expected: 'patch' },
-  { repository: 'grafana/otel-lgtm', from: '0.32.0', to: '0.33.0', expected: 'minor' },
-  { repository: 'openpolicyagent/opa', from: '1.20.1', to: '2.0.0', expected: 'major' },
-  { repository: 'unleashorg/unleash-server', from: '8.1.0', to: '9.0.0', expected: 'major' },
+  { repository: 'axllent/mailpit', bump: 'major', example: 'v1.31.0 -> v2.0.0' },
+  { repository: 'axllent/mailpit', bump: 'minor', example: 'v1.31.0 -> v1.32.0' },
+  { repository: 'curlimages/curl', bump: 'patch', example: '8.21.0 -> 8.21.1' },
+  { repository: 'grafana/otel-lgtm', bump: 'minor', example: '0.32.0 -> 0.33.0' },
+  { repository: 'openpolicyagent/opa', bump: 'major', example: '1.20.1 -> 2.0.0' },
+  { repository: 'unleashorg/unleash-server', bump: 'major', example: '8.1.0 -> 9.0.0' },
 ];
 
-for (const { repository, from, to, expected } of C1_ROWS) {
-  test(`${repository} ${from} -> ${to} resolves to update type '${expected}', not an opaque digest`, () => {
-    assert.ok(
-      tagsFor(repository).includes(from),
-      `contract C1 says ${repository} is on ${from}, but the compose files carry ` +
-        `${JSON.stringify(tagsFor(repository))}.\n` +
-        '  A floating tag has no version to classify, so every change to this image arrives as\n' +
-        '  `updateType: digest` and a major rebuild is indistinguishable from a security patch.',
-    );
-    assert.equal(
-      updateType(from, to, resolvedVersioning(dockerDep(repository, expected))),
-      expected,
-      `${repository} ${from} -> ${to} did not classify as ${expected}.`,
-    );
+/** Synthesise the tag Renovate would propose for a `bump` of `tag`, keeping its prefix and suffix. */
+function bumpTag(tag, bump, versioning) {
+  const v = parseTag(tag, versioning);
+  if (!v) return null;
+  const next =
+    bump === 'major' ? { major: v.major + 1, minor: 0, patch: 0 }
+    : bump === 'minor' ? { major: v.major, minor: v.minor + 1, patch: 0 }
+    : { major: v.major, minor: v.minor, patch: v.patch + 1 };
+  // Replace the first x.y.z run in the tag so `v1.31.0` keeps its `v` and `1.20.1-debug` its `-debug`.
+  return tag.replace(/\d+\.\d+\.\d+/, `${next.major}.${next.minor}.${next.patch}`);
+}
+
+for (const { repository, bump, example } of C1_ROWS) {
+  test(`${repository}: a ${bump} bump of the tag in use resolves to update type '${bump}', not an opaque digest (C1 example ${example})`, () => {
+    const tags = [...new Set(tagsFor(repository))];
+    assert.ok(tags.length > 0, `${repository} is no longer referenced by any compose file — contract C1 names it`);
+    for (const from of tags) {
+      const versioning = resolvedVersioning(dockerDep(repository, bump));
+      assert.notEqual(
+        parseTag(from, versioning),
+        null,
+        `${repository}:${from} carries no orderable version under ${versioning}.\n` +
+          '  A floating tag has no version to classify, so every change to this image arrives as\n' +
+          '  `updateType: digest` and a major rebuild is indistinguishable from a security patch.',
+      );
+      const to = bumpTag(from, bump, versioning);
+      assert.equal(
+        updateType(from, to, versioning),
+        bump,
+        `${repository} ${from} -> ${to} did not classify as ${bump}.`,
+      );
+    }
   });
 }
 
