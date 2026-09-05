@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, and the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional), the pinned-toolchain table and the Rust devcontainer rebuild gotcha, and the two-place config validator that catches the unknown-key class the guard test cannot.
+description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional, and the Docker Hub page-11 403 that discards all timestamps fixed by capping dockerMaxPages at 10), the pinned-toolchain table and the Rust devcontainer rebuild gotcha, and the two-place config validator that catches the unknown-key class the guard test cannot.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-09-05T00:35:24.000Z
+timestamp: 2026-09-05T01:39:12.000Z
 ---
 
 # Renovate dependency bot
@@ -143,6 +143,26 @@ Nothing auto-merges. Every group carries `automerge: false`.
   2026-09-05** (`.devcontainer/egress-allowlist.json`; on the sandbox platform the operator must
   also apply the host-side rule — see `devcontainer-sandbox.md` §4): a local lookup now sees
   `tag_last_pushed` and the Docker Hub half can be observed locally rather than inferred from CI.
+- **Docker Hub's anonymous tag API returns 403 from page 11, and one 403 discards every timestamp.**
+  `/v2/repositories/<repo>/tags?page_size=100` answers 200 for pages 1–10 and **403 Forbidden** from
+  page 11 (measured 2026-09-05; `page_size=1000` is silently capped to 100). `library/node` has 9080
+  tags. Renovate's default `dockerMaxPages` is 20, so on a cold cache — every CI run — it asks for
+  page 11, gets the 403, and `_getDockerHubTags` returns `null`: the entire timestamped result for
+  that image is discarded and the registry tag list, which has no timestamps, is used instead. Under
+  `timestamp-required` that is pending for ever, for node, python, postgres, redis, mongodb, opa,
+  clickhouse, langfuse, and minio alike — the permanent "Pending Status Checks" on `docker base
+  images` and `docker digest pins`, which read exactly like a 3-day cooldown that never elapsed.
+
+  **Fixed 2026-09-05: `RENOVATE_DOCKER_MAX_PAGES: '10'` on the Run Renovate step** (`dockerMaxPages`
+  is `globalOnly`, so it cannot live in `renovate.json`); the guard test asserts ≤ 10. Ten
+  newest-first pages reached back to 2025-11 for node, so every live candidate has a timestamp.
+  Verified: the same lookup then logged zero "no releaseTimestamp" markings, and the pending members
+  were exactly the ones pushed inside the last three days — temporal, as designed.
+
+  ⚠️ **Reproduction trap**: Renovate keeps a 30-minute package cache at `/tmp/renovate/cache`. A
+  local lookup made right after a failed Docker Hub fetch served the failure from cache and made no
+  Hub requests — the run looked identical to the broken one. Point `RENOVATE_CACHE_DIR` at a fresh
+  directory for any re-measurement.
 - **`@copilotkit/*` ships breaking API changes in minor bumps.** It is grouped separately behind
   `dependencyDashboardApproval`, like the `cargo 0.x` rule. One breaking member makes a whole
   batched PR unmergeable and unsplittable — and Renovate regenerates it weekly, so routine bumps
