@@ -96,6 +96,12 @@
       "cdnRotating": true
     },
     {
+      "domain": "hub.docker.com",
+      "group": "registry",
+      "reason": "Docker Hub tag-list API (/v2/repositories/<repo>/tags) — NOT a pull host; manifests and blobs come from registry-1 / index / the two CDN hosts above. Renovate's docker datasource reads `tag_last_pushed` from here, and that is the ONLY release timestamp the datasource has (its own releaseTimestampNote: Docker Hub only). With this host blocked, a local `RENOVATE_PLATFORM=local RENOVATE_DRY_RUN=lookup` marks EVERY Docker Hub tag and digest pending under renovate@44's timestamp-required default, so the Docker Hub half of the release-age control could only be observed in CI — the blind spot recorded 2026-09-04 on items #349/#350 and in docs/runbooks/renovate.md §5. Added 2026-09-05; measured the same day: node:24.20.0-alpine3.23 reports tag_last_pushed 2026-08-27, i.e. not pending. Under the sandbox platform the host-side rule was applied by the operator (`sbx policy allow network hub.docker.com --sandbox mcm`) — a committed entry alone does not reach a running sandbox.",
+      "cdnRotating": true
+    },
+    {
       "domain": "production.cloudflare.docker.com",
       "group": "registry",
       "reason": "Docker Hub blob-layer CDN (Cloudflare-fronted). Allowlisting these two STABLE blob hostnames — rather than widening to whole CDN provider ranges — was the actual fix for the failing pull in feature 037 and is sufficient in the common case. FIREWALL_ALLOW_CDN_RANGES=1 remains the opt-in broad fallback for repeated stale-IP failures.",
