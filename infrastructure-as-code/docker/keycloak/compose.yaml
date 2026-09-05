@@ -2,7 +2,7 @@ name: localdev-auth
 
 services:
   keycloak-store-postgres:
-    image: postgres:18.3-alpine3.23
+    image: postgres:18.6-alpine3.23@sha256:697c180dbf244d3ce4a8f4cbc0156cde840af055c1bf8b76aebe422a4822086f
     container_name: keycloak-store-postgres
     restart: unless-stopped
     ports:
@@ -33,7 +33,7 @@ services:
     depends_on:
       keycloak-store-postgres:
         condition: service_healthy
-    image: quay.io/keycloak/keycloak:26.7.2
+    image: quay.io/keycloak/keycloak:26.7.3@sha256:ff4257d0d64efbe99ed1ddfaf07765cc3c36dc7518bf8324d41961327f441c54
     container_name: keycloak-service
     restart: unless-stopped
     ports:
