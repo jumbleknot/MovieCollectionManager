@@ -1,31 +1,31 @@
 {
-  "coveredCommit": "c6e0fa19c3fe43c1693a40c77484815f5dc19483",
-  "coveredAt": "2026-09-05T16:04:42.103Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "ccd996ee434047f5cc01a429f6a1dc7052702d85",
+  "coveredAt": "2026-09-05T17:30:24.477Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 359,
-    "headCommit": "f9470620312e77b8d2bfe2e9ff85a423f0b7eb8d",
-    "markerBefore": "ca6b03eb1a2c2d151b1103bb4aa63857232ace24",
+    "number": 365,
+    "headCommit": "758e268ebf0c0213de821f5307078006d2822131",
+    "markerBefore": "ccd996ee434047f5cc01a429f6a1dc7052702d85",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "renovate.md"
+          "e2e-testing.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/renovate.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/e2e-testing.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-05T05:11:07.875Z"
+    "updatedAt": "2026-09-05T17:30:24.848Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 1,
+    "elapsedSeconds": 84,
     "stoppedAtBudget": false
   }
 }
