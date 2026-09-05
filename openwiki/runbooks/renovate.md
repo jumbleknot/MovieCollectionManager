@@ -4,7 +4,7 @@ title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, and the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional), the pinned-toolchain table and the Rust devcontainer rebuild gotcha, and the two-place config validator that catches the unknown-key class the guard test cannot.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-09-04T23:46:42.000Z
+timestamp: 2026-09-05T00:35:24.000Z
 ---
 
 # Renovate dependency bot
@@ -139,9 +139,10 @@ Nothing auto-merges. Every group carries `automerge: false`.
 
   Residuals that remain after #349/#350: `docker digest pins` (all `pinDigest`/`digest`, all
   timestamp-less even after the widened scoping) still sits under Pending Status Checks permanently
-  — the initial pins can only land from a dashboard tick. Local dry-run lookups show every Docker
-  Hub tag as pending too, because `hub.docker.com` is not on the dev container's egress allowlist;
-  only CI can verify the Docker Hub half behaves as designed.
+  — the initial pins can only land from a dashboard tick. **`hub.docker.com` was allowlisted
+  2026-09-05** (`.devcontainer/egress-allowlist.json`; on the sandbox platform the operator must
+  also apply the host-side rule — see `devcontainer-sandbox.md` §4): a local lookup now sees
+  `tag_last_pushed` and the Docker Hub half can be observed locally rather than inferred from CI.
 - **`@copilotkit/*` ships breaking API changes in minor bumps.** It is grouped separately behind
   `dependencyDashboardApproval`, like the `cargo 0.x` rule. One breaking member makes a whole
   batched PR unmergeable and unsplittable — and Renovate regenerates it weekly, so routine bumps
