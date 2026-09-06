@@ -16,6 +16,8 @@ import { useTheme } from '@tamagui/core';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
+import { ToolCallPending } from '@/components/agent/tool-call-pending';
+
 /** AG-UI tool name — must match the approval gate's emitted tool call (generative_ui_tools.py). */
 export const RENDER_IMPORT_REPORT_TOOL = 'render_import_report';
 
@@ -101,13 +103,18 @@ export function useRenderImportReportTool(): void {
     description:
       'Display a collapsible report of spreadsheet-import rows that were skipped or failed, with the reason for each. Does not modify anything.',
     parameters: renderImportReportParameters,
-    render: ({ args }) => (
-      <RenderImportReport
-        imported={args.imported ?? 0}
-        skipped={args.skipped ?? []}
-        failed={args.failed ?? []}
-      />
-    ),
+    // 066/#265: the `?? 0 / ?? []` fallbacks that made this compile under 1.70's partial args also
+    // rendered a still-streaming report as "nothing was skipped and nothing failed" — an empty
+    // report is a MEANINGFUL claim about an import, so it must not be manufactured from absent
+    // fields. Gate on the schema instead.
+    render: ({ args }) => {
+      const parsed = renderImportReportParameters.safeParse(args);
+      return parsed.success ? (
+        <RenderImportReport {...parsed.data} />
+      ) : (
+        <ToolCallPending label="Preparing the import report…" />
+      );
+    },
   });
 }
 

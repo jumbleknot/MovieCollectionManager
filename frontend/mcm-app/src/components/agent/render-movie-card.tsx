@@ -17,6 +17,8 @@ import { useRouter } from 'expo-router';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
+import { ToolCallPending } from '@/components/agent/tool-call-pending';
+
 import { useAssistantRun } from '@/hooks/use-assistant';
 
 /** AG-UI tool name — must match the curator's emitted tool call (generative_ui_tools.py). */
@@ -283,7 +285,16 @@ export function useRenderMovieCardTool(): void {
     description:
       'Display a read-only movie metadata preview card (title, year, poster, genres, overview). Does not add or modify anything.',
     parameters: renderMovieCardParameters,
-    render: ({ args }) => <RenderMovieCard {...args} />,
+    // 066/#265: 1.70 streams arguments, so `args` may be missing required fields. Gate on the
+    // SAME schema the model is given — never on `status`, which is pinned at `inProgress` here.
+    render: ({ args }) => {
+      const parsed = renderMovieCardParameters.safeParse(args);
+      return parsed.success ? (
+        <RenderMovieCard {...parsed.data} />
+      ) : (
+        <ToolCallPending label="Loading that movie…" />
+      );
+    },
   });
 }
 

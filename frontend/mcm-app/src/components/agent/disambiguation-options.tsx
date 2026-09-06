@@ -16,6 +16,8 @@ import { Button } from '@mcm/design-system';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
+import { ToolCallPending } from '@/components/agent/tool-call-pending';
+
 import { useAssistantRun } from '@/hooks/use-assistant';
 
 /** AG-UI tool name — must match the curator's emitted tool call (generative_ui_tools.py). */
@@ -107,7 +109,16 @@ export function useRenderDisambiguationTool(): void {
     description:
       'Display selectable buttons for the candidate movie matches when a look-up is ambiguous. Tapping one chooses that match.',
     parameters: renderDisambiguationParameters,
-    render: ({ args }) => <DisambiguationOptions {...args} />,
+    // 066/#265: 1.70 streams arguments, so `args` may be missing required fields. Gate on the
+    // SAME schema the model is given — never on `status`, which is pinned at `inProgress` here.
+    render: ({ args }) => {
+      const parsed = renderDisambiguationParameters.safeParse(args);
+      return parsed.success ? (
+        <DisambiguationOptions {...parsed.data} />
+      ) : (
+        <ToolCallPending label="Finding the matches…" />
+      );
+    },
   });
 }
 

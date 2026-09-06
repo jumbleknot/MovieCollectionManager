@@ -17,6 +17,8 @@ import { useTheme } from '@tamagui/core';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
+import { ToolCallPending } from '@/components/agent/tool-call-pending';
+
 /** AG-UI tool name — must match the organizer's emitted tool call (generative_ui_tools.py). */
 export const RENDER_COLLECTION_SUMMARY_TOOL = 'render_collection_summary';
 
@@ -76,7 +78,16 @@ export function useRenderCollectionSummaryTool(): void {
     description:
       'Display a read-only summary of a movie collection (name, movie count, your role). Does not modify anything.',
     parameters: renderCollectionSummaryParameters,
-    render: ({ args }) => <RenderCollectionSummary {...args} />,
+    // 066/#265: 1.70 streams arguments, so `args` may be missing required fields. Gate on the
+    // SAME schema the model is given — never on `status`, which is pinned at `inProgress` here.
+    render: ({ args }) => {
+      const parsed = renderCollectionSummaryParameters.safeParse(args);
+      return parsed.success ? (
+        <RenderCollectionSummary {...parsed.data} />
+      ) : (
+        <ToolCallPending label="Loading that collection…" />
+      );
+    },
   });
 }
 
