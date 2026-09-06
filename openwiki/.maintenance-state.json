@@ -1,31 +1,32 @@
 {
-  "coveredCommit": "9acc11d341fc7b1b78962c22d640d49d71b6bafc",
-  "coveredAt": "2026-09-06T08:29:36.802Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "ae8c66a4c22308a7c0c9ffe5c371c0878330f349",
+  "coveredAt": "2026-09-06T12:29:50.859Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 368,
-    "headCommit": "66d1d3759d2984d6ee0e65fdc38b55be998fea30",
-    "markerBefore": "98d4caa93e6e264e26a314dc7cc101ba8edcd965",
+    "number": 374,
+    "headCommit": "f72438d9978358067acb5c7672576a499bf00b47",
+    "markerBefore": "ae8c66a4c22308a7c0c9ffe5c371c0878330f349",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "renovate.md"
+          "ci-diagnostics.md",
+          "e2e-testing.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/renovate.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/e2e-testing.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-06T00:08:33.776Z"
+    "updatedAt": "2026-09-06T12:29:51.235Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 2,
+    "elapsedSeconds": 141,
     "stoppedAtBudget": false
   }
 }
