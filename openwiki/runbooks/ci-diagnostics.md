@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-06T12:00:00+00:00
+timestamp: 2026-09-06T20:42:00+00:00
 ---
 
 # CI self-serve diagnostics
@@ -198,6 +198,23 @@ runtime rather than any literal configured value.
   Fixed: `--job` now accepts either form, and a filter that excludes every digest names what IS
   available instead of claiming absence. The habit is the durable protection: **if absence is reported
   under a `--job` filter, drop the filter and look again before concluding no digest was published.**
+- **`maestro debug output — not present` in a bundle does NOT mean the capture did not happen — it
+  may mean the packer dropped a directory (item #241).** The packer originally read
+  `~/mcm-ci-last-failure` with a flat `readdirSync` filtered to `*.log`, `_ps.txt` and
+  `*.health.json`, so a **directory** matched nothing and was silently dropped. Feature 062's device
+  diagnostics land in `container-logs/_mobile-diagnostics/<flow>-attempt<n>/` — exactly such a
+  directory. Measured on run **2049**: the runner held the whole Maestro tree; the retrieved bundle
+  held 69 files and none came from it; diagnosing the failure needed `ssh ci@homelab` — the
+  out-of-band step the bundle exists to remove. Fixed: the walk is now recursive (depth 6, 400
+  entries). Nested files are admitted by format (`.log .txt .json .ya?ml .md .xml .html`); the flat
+  rules are unchanged so a `*.health.json` is not collected twice. Screenshots travel as base64
+  manifest entries (3 files / 1 MB each / 2 MB total, `❌`-marked captures first) and `--full`
+  decodes them to real PNGs. Step output, `_ps.txt` and device evidence are allocated first from a
+  **priority reserve of half the 5 MB cap**; `logcat-full.log` is ranked *below* ordinary container
+  logs. Every absence is stated in the digest itself, not only in `meta`: cap-dropped sources, files
+  over per-file ceilings, unsupported formats, and reader-side entries past the 500-entry ceiling.
+  The device-capture line is now **three-way**: carried / captured on the runner but not folded into
+  `container-logs` / genuinely not present.
 - **A session merging through the API must pass `delete_branch_after_merge: true` every time — the
   repo setting does not cover API merges.** `default_delete_branch_after_merge: true` (enabled
   2026-08-29) is the default for the **web UI merge button only**. An API merge omitting the flag
