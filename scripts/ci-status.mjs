@@ -83,27 +83,38 @@ export function parseBundleGz(gz) {
   }
   const manifest = JSON.parse(json);
   if (Array.isArray(manifest.files) && manifest.files.length > MAX_BUNDLE_FILES) {
+    // SAY how many were dropped. The slice used to be silent, so an over-cap bundle read exactly
+    // like a complete one — the same class of defect as item #241's dropped directory, on the
+    // reader's side of the wire.
+    const dropped = manifest.files.length - MAX_BUNDLE_FILES;
     manifest.files = manifest.files.slice(0, MAX_BUNDLE_FILES);
+    manifest.meta = { ...(manifest.meta ?? {}), readerDroppedEntries: dropped };
   }
   return manifest;
 }
 
 /** Write bundle entries, skipping any that are unsafe (traversal) OR malformed (non-string text).
+ *  A `base64` entry carries BINARY evidence — a Maestro failure screenshot (item #241) — and is
+ *  decoded on the way out: written verbatim it would be a .png that opens as nothing, which a
+ *  reader cannot tell apart from evidence that was never collected.
  *  @returns {string[]} the relative paths actually written. */
 export function safeBundleWrite(root, files) {
   mkdirSync(root, { recursive: true });
   const written = [];
   for (const f of files ?? []) {
     let dest;
+    let content;
     try {
       dest = safeBundleEntryPath(root, f.path);
-      if (typeof f.text !== 'string') throw new CiStatusError(`entry ${JSON.stringify(f.path)} has no string content`);
+      if (typeof f.base64 === 'string') content = Buffer.from(f.base64, 'base64');
+      else if (typeof f.text === 'string') content = f.text;
+      else throw new CiStatusError(`entry ${JSON.stringify(f.path)} has no string content`);
     } catch {
       continue; // one hostile/garbled entry must not deny the rest of the evidence
     }
     try {
       mkdirSync(dirname(dest), { recursive: true });
-      writeFileSync(dest, f.text);
+      writeFileSync(dest, content);
       written.push(f.path);
     } catch {
       // A path collision (file where a dir is needed, ENOTDIR) or FS error: skip, keep going.
@@ -1031,6 +1042,7 @@ export async function cmdFailure(target, conn) {
       if (bundle.meta.truncated) {
         emit(`   ⚠️ truncated at the ${bundle.meta.cap} byte cap: ${(bundle.meta.truncatedSources ?? []).join(', ')}`);
       }
+      emitBundleDrops(bundle.meta);
       if ((bundle.meta.absent ?? []).length) emit(`   not collected: ${bundle.meta.absent.join('; ')}`);
     }
   }
@@ -1101,6 +1113,18 @@ async function fetchBundle(conn, runId, job) {
   // clobbered by it (and vice versa) — that would be silent evidence loss.
   writeFileSync(resolve(root, '_bundle-meta.json'), JSON.stringify(manifest.meta ?? {}, null, 2));
   return { version, dir: root, meta: manifest.meta ?? {} };
+}
+
+/** Name what the bundle does NOT contain: sources the writer's cap dropped whole, and entries this
+ *  reader refused. Both are absences a reader would otherwise read as "the capture never ran". */
+function emitBundleDrops(meta = {}) {
+  for (const d of meta.droppedSources ?? []) {
+    const bytes = Number(d?.bytes);
+    emit(`   ⚠️ dropped at the writer's cap: ${d?.path ?? d}${Number.isFinite(bytes) ? ` (${bytes} bytes)` : ''}${d?.reason ? ` — ${d.reason}` : ''}`);
+  }
+  if (meta.readerDroppedEntries) {
+    emit(`   ⚠️ ${meta.readerDroppedEntries} bundle entr${meta.readerDroppedEntries === 1 ? 'y was' : 'ies were'} past this reader's ${MAX_BUNDLE_FILES}-entry ceiling and were not extracted.`);
+  }
 }
 
 export async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {

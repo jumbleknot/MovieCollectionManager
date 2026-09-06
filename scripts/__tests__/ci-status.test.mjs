@@ -754,6 +754,36 @@ test('(kk) a malformed manifest entry is skipped, not fatal to the whole --full'
   assert.equal(written.includes('bad.log'), false, 'the malformed entry was written anyway');
 });
 
+// --- Item #241: the bundle now carries BINARY evidence (Maestro failure screenshots) -----------
+
+test('(kk2) a base64 bundle entry is written as BYTES, not as its base64 text', () => {
+  // A screenshot round-trips only if the reader decodes it. Writing the base64 string verbatim
+  // produces a .png that opens as nothing, which is indistinguishable to a reader from the evidence
+  // never having been collected — the exact failure mode item #241 exists to end.
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+  const dir = mkdtempSync(join(tmpdir(), 'ci-bundle-bin-'));
+  const written = safeBundleWrite(dir, [{ path: 'logs/shot.png', base64: png.toString('base64') }]);
+  assert.deepEqual(written, ['logs/shot.png']);
+  assert.deepEqual(readFileSync(join(dir, 'logs/shot.png')), png, 'the screenshot did not survive the write');
+});
+
+test('(kk3) an entry with neither text nor base64 is skipped, not written as "undefined"', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ci-bundle-bin-'));
+  const written = safeBundleWrite(dir, [{ path: 'a.log' }, { path: 'b.log', text: 'ok' }]);
+  assert.deepEqual(written, ['b.log']);
+});
+
+test('(kk4) a manifest with more entries than the reader accepts SAYS it truncated the list', () => {
+  // The slice was silent, so a bundle over the entry cap read as a complete bundle.
+  const files = Array.from({ length: 600 }, (_, i) => ({ path: `logs/${i}.log`, text: 'x' }));
+  const parsed = parseBundleGz(gzipSync(Buffer.from(JSON.stringify({ files, meta: {} }))));
+  assert.equal(parsed.files.length, 500);
+  assert.equal(parsed.meta.readerDroppedEntries, 100, 'the reader dropped 100 entries without a word');
+});
+
 test('(ll) a marker NOT at the start of a comment is not treated as a digest (anti-spoof/anchor)', () => {
   const comments = [
     { id: 1, body: 'nice work! <!-- ci-digest:job=app-e2e -->', user: { login: 'attacker' } },   // mid-body → ignored
