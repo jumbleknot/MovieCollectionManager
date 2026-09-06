@@ -4,7 +4,7 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml.
 tags: [security, sast, sca, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-timestamp: 2026-08-22T21:30:00Z
+timestamp: 2026-09-06T00:00:00Z
 ---
 
 # SAST & SCA static security scanning
@@ -170,6 +170,50 @@ and imported by both gates. A dedicated `--check-expiring` mode runs **weekly** 
   paths normalized to forward slashes so they are portable across the Windows dev host and the Linux
   CI runner. A pattern written with backslashes matches nothing on the runner and passes silently on
   the Windows side — the gate accepts it, but the finding re-blocks in CI.
+
+- **A rule that has gone BLIND produces the same gate output as a remediated one — read `RULES THAT
+  COULD NOT RUN`, not just the finding count.** A Semgrep rule that could not execute is recorded in
+  `errors[]`, never in `results[]`, so it contributes zero findings. Its allowlist entry lands in
+  `UNMATCHED ENTRIES` with wording that implies the code is clean. Measured on `main` 2026-09-06:
+  `gha-curl-pipe-shell` (from `p/owasp-top-ten`) re-parses a step's `run:` block as Bash via
+  `metavariable-pattern` — but nearly every run-step here is wrapped in the ci-log-step heredoc
+  (feature 042), which that sub-parser cannot read. Result: **36 errors, 0 findings**, while six
+  `curl … | sh` lines sat in the workflows unexamined.
+
+  The gate now prints a `RULES THAT COULD NOT RUN` section listing each blinded rule with its error
+  and file counts; any `UNMATCHED` entry whose rule appears there is annotated `↳ this rule could
+  not run`. This is advisory and never moves the exit code — these rules error on every run, and a
+  gate that goes red on a standing condition stops being read. The replacement coverage is
+  `mcm-ci-curl-pipe-shell` (item #224, `security/sast/rules/mcm-ci-curl-pipe-shell.yaml`), a
+  text-level rule using `pattern-regex` / `pattern-not-regex` — no sub-parser, so the heredoc is
+  irrelevant to it. `scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs` fails if anyone
+  "improves" it back into a `metavariable-pattern` form.
+
+- **Accepted `curl | sh` installers are named in the rule, not in `allowlist.yaml`.** An allowlist
+  entry keys on `path:line`: accepting the six existing lines there is either line-pinned (every edit
+  above them re-blocks an unrelated PR) or file-wildcarded (a NEW `curl | sh` in an already-listed
+  workflow is suppressed unexamined). The accepted hosts live in `mcm-ci-curl-pipe-shell`'s
+  `pattern-not-regex` instead; adding an installer means editing that list with a comment explaining
+  why. Currently accepted: `sh.rustup.rs`, `astral.sh/uv/<VERSION>/install.sh` (version-pinned path
+  only — the unversioned form is deliberately excluded), and `get.maestro.mobile.dev` (no versioned
+  endpoint exists; the pin is enforced by `renovate-workflow.guard.test.mjs` instead).
+
+- **Workflow YAML was not a scan target on pull requests until item #224.** `--scope changed` builds
+  an explicit target list for Semgrep; only files matched by `isScanTarget()` make it in. Before
+  item #224, workflow YAML was absent from that list, so a `curl … | sh` added to a workflow on a PR
+  was gated on nothing and first appeared on the post-merge full scan. Both
+  `.forgejo/workflows/*.y[a]ml` and `.github/workflows/*.y[a]ml` are now included. The scope was
+  widened deliberately — not every `.yml` tree-wide, which would drag compose files, Komodo syncs,
+  and the security config tree into a scan against packs written for TS/JS/Python code.
+
+- **`--test-rules` enforces fixtures; without it they were decoration for months.** The four original
+  custom rules shipped with `semgrep --test` fixtures, but `--test-rules` appeared in no workflow, no
+  Nx target, and no script until item #224 — so the `ruleid:`/`ok:` annotations had been decoration
+  in the tier that decides whether a High blocks a merge. `sast-scan.mjs --test-rules` now runs ahead
+  of the scan in the CI `sast` job. It also fails on a rule with **no** fixture — `semgrep --test`
+  skips unfixtured rules silently and still prints `N/N ✓`, which is the same false assurance as a
+  blinded rule. A YAML rule's fixture must be named `<rule>.test.yml`; a bare `<rule>.yaml` would be
+  loaded as a second rule by `--config security/sast/rules/`.
 
 See [CI/CD pipeline](/openwiki/projects/ci-cd-pipeline.md) for how the `sast` job sits in the
 `guardrails.yml` workflow, and `security/sast/README.md` for the full config reference and custom
