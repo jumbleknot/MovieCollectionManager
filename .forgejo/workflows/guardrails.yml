@@ -355,6 +355,13 @@ jobs:
         working-directory: agents/movie-assistant
       - name: Gate selftest (prove fail/suppress/expiry paths before the real scan)
         run: bash scripts/ci-log-step.sh sast-gate-selftest node scripts/check-sast-findings.mjs --selftest
+      # The custom rules' own fixtures. They shipped with feature 033 and were run by NOTHING until
+      # item #224 — four rules' `ruleid:`/`ok:` annotations were decoration, in the tier that decides
+      # whether a High blocks a merge. Runs before the scan for the same reason the gate selftest
+      # does: prove the instrument, then use it. Also fails on a rule with no fixture, because
+      # `semgrep --test` skips those silently and still prints "N/N passed".
+      - name: Custom-rule fixtures (semgrep --test — prove the rules still match what they claim)
+        run: bash scripts/ci-log-step.sh sast-rule-fixtures node scripts/sast-scan.mjs --test-rules
       - name: Static scan (Semgrep changed-scope on PRs / full on push; SCA always full)
         env:
           EVENT_NAME: ${{ github.event_name }}

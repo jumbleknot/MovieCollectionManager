@@ -29,7 +29,8 @@ to a non-blocking warning (FR-021). Dependency scope is computed deterministical
 
 ## Custom MCM rules
 
-Project-specific invariants live under [`rules/`](./rules/), each with `semgrep --test` fixtures (FR-019):
+Project-specific invariants live under [`rules/`](./rules/), each with `semgrep --test` fixtures (FR-019)
+run by `node scripts/sast-scan.mjs --test-rules` (wired into the `sast` CI job, ahead of the scan):
 
 | Rule | Severity | Enforces |
 |---|---|---|
@@ -37,6 +38,50 @@ Project-specific invariants live under [`rules/`](./rules/), each with `semgrep 
 | `mcm-no-token-logging` | ERROR → High (block) | no logging of a raw token/JWT/`authorization`/session id/email in server code |
 | `mcm-auth-before-authz` | ERROR → High (block) | a BFF route handler must not reach an upstream call without a preceding `requireAuth`/`requireMcUser` |
 | `mcm-no-jwt-payload-tracing` | ERROR → High (block) | no logging/tracing of a decoded JWT payload on the TS/JS + Python surfaces |
+| `mcm-ci-curl-pipe-shell` | ERROR → High (block) | no `curl … \| sh` in a workflow step from a URL outside that rule's accepted, pinned list |
+
+### A rule that goes BLIND reads exactly like a remediated one
+
+`mcm-ci-curl-pipe-shell` exists because the community rule that covered the same ground had silently
+stopped being able to see this repository. `p/owasp-top-ten` ships
+`yaml.github-actions.security.gha-curl-pipe-shell`, which re-parses a step's `run:` block as Bash via
+`metavariable-pattern` — and nearly every run-step here is wrapped in the ci-log-step heredoc
+(feature 042), which that sub-parser cannot read. It abandons the block instead of matching inside it.
+
+Measured on `main` 2026-09-06 with the pinned `semgrep@1.169.0` and this repo's own `semgrep.yaml`:
+**36 errors, every one attributed to that rule, and 0 findings from it** — while six `curl … | sh`
+lines sat in the workflows unexamined. Its allowlist entry was reported as `UNMATCHED`, whose wording
+offered exactly two explanations, both of which said the code was fine.
+
+Two consequences are now permanent:
+
+- **The replacement is text-level.** `pattern-regex` / `pattern-not-regex`, never
+  `metavariable-pattern`, so no sub-parser is invoked and the heredoc is irrelevant.
+  `scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs` fails if anyone "improves" that back.
+- **The gate now reads the scanner's own errors.** `sast-scan.mjs` groups Semgrep's `errors[]` by
+  rule into `scanners[].blindedRules`, and `check-sast-findings.mjs` prints `RULES THAT COULD NOT
+  RUN` — annotating any `UNMATCHED` entry whose rule is in that list, so the third cause is named
+  rather than left off the list. Advisory: it never moves the exit code.
+
+The accepted installers are named in the **rule**, not in `allowlist.yaml`, because an allowlist entry
+keys on `path:line` — a file wildcard would suppress a *new* `curl | sh` anywhere in that workflow.
+Adding an installer means editing `pattern-not-regex`, and the comment beside it is the decision.
+
+A third consequence, less obvious: `--scope changed` (what CI runs on a **pull request**) hands
+Semgrep an explicit target list, and workflow YAML was not on it — so this rule, and the blinded one
+before it, could only ever fire on the post-merge full scan. `isScanTarget()` now admits
+`.forgejo/workflows/*.y[a]ml` and `.github/workflows/*.y[a]ml`, and nothing else new: widening to
+every `.yml` would drag compose files, Komodo syncs and this config tree into a PR-scoped scan
+against packs written for TS/JS/Python. The only pre-existing YAML findings this exposes on a PR are
+two `gha-workflow-env-secret` hits (WARNING → Medium → non-blocking).
+
+> **The fixtures were run by nothing until item #224.** They shipped with feature 033, and
+> `semgrep --test` appeared in no workflow, no Nx target and no script — four rules' `ruleid:`/`ok:`
+> annotations had been decoration for months, in the tier that decides whether a High blocks a merge.
+> `--test-rules` runs them, and *also* fails on a rule with no fixture: `semgrep --test` skips those
+> silently and still reports `N/N ✓`, which is the same false assurance as a blinded rule. A YAML
+> rule's fixture is named `<rule>.test.yml` — a bare `<rule>.yaml` would be loaded as a rule by
+> `--config security/sast/rules/`.
 
 > `mcm-no-jwt-payload-tracing` covers **TS/JS + Python only**. mc-service (Rust) is out of Semgrep scope,
 > so its no-JWT-logging invariant stays owned by `cargo clippy` + code review (documented gap).

@@ -1,0 +1,71 @@
+# mcm-ci-curl-pipe-shell — item #224. Replaces a community rule that had gone BLIND here.
+#
+# WHY THIS EXISTS. `p/owasp-top-ten` ships
+# `yaml.github-actions.security.gha-curl-pipe-shell`, which re-parses a step's `run:` block as Bash
+# through `metavariable-pattern`. Nearly every run-step in this repository is wrapped in the
+# ci-log-step heredoc (feature 042):
+#
+#   run: |
+#     bash scripts/ci-log-step.sh sast-install-uv bash -e /dev/stdin <<'CI_LOG_STEP'
+#     curl -LsSf https://astral.sh/uv/0.12.10/install.sh | sh
+#     CI_LOG_STEP
+#
+# Semgrep's Bash sub-parser cannot read that form and ABANDONS the block rather than matching inside
+# it. Measured on main 2026-09-06, pinned semgrep@1.169.0 against this repo's own semgrep.yaml:
+# 36 errors, every one attributed to that rule, and 0 findings from it — while six `curl … | sh`
+# lines sat in the workflows unexamined. A blinded rule and a remediated one produce identical gate
+# output, which is why the allowlist entry that covered it read as stale rather than as a hole.
+#
+# THIS RULE IS TEXT-LEVEL ON PURPOSE. `pattern-regex` / `pattern-not-regex` invoke no sub-parser, so
+# the heredoc wrapper is irrelevant to it. Do NOT "improve" this into a `metavariable-pattern` form:
+# that is the exact change that blinded the rule it replaces.
+# scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs fails if anyone does.
+#
+# WHERE THE ACCEPTANCE LIVES — HERE, NOT IN allowlist.yaml. An allowlist entry matches on
+# `path:line`, so accepting the six existing lines there is either line-pinned (every edit above them
+# re-blocks an unrelated pull request) or file-wildcarded (a NEW `curl | sh` in an already-listed
+# workflow is suppressed unexamined — the hole item #224's fourth criterion names). Naming the
+# accepted URLs in `pattern-not-regex` instead means an unknown host, or an UNPINNED version of an
+# accepted one, blocks anywhere. Adding an installer is a deliberate edit to this list, and the
+# comment you write beside it IS the written decision.
+#
+# ACCEPTED INSTALLERS (all fixed, non-attacker-controlled, fetched over TLS):
+#   * sh.rustup.rs — the canonical rustup bootstrap, always invoked with
+#     `--proto '=https' --tlsv1.2` and `--default-toolchain none`, so the toolchain itself comes from
+#     rust-toolchain.toml rather than from whatever the installer defaults to (item #307).
+#   * astral.sh/uv/<x.y.z>/install.sh — VERSION-PINNED PATH ONLY. The unversioned
+#     `astral.sh/uv/install.sh` is deliberately NOT accepted: PR #272 nearly added exactly that line
+#     to renovate.yml, heredoc-wrapped, and the blinded rule would not have objected.
+#   * get.maestro.mobile.dev — the vendor publishes no versioned endpoint, so this URL cannot carry
+#     a version the way the other two do. THE ARTIFACT IS PINNED ANYWAY, by environment: the
+#     installer's own source takes `releases/latest/download/maestro.zip` when $MAESTRO_VERSION is
+#     unset and `releases/download/cli-$MAESTRO_VERSION/` when it is set, so app-ci.yml exports the
+#     pin before the pipe. That pin is outside this rule's reach — a URL regex cannot see it — and is
+#     enforced instead by renovate-workflow.guard.test.mjs, which asserts both the pin and the
+#     customManager that keeps it current. If a versioned endpoint ever ships, move it into this
+#     alternative and the guard becomes redundant.
+rules:
+  - id: mcm-ci-curl-pipe-shell
+    languages: [yaml]
+    severity: ERROR
+    message: >-
+      A CI step pipes `curl` straight into a shell from a URL that is not on the accepted list in
+      security/sast/rules/mcm-ci-curl-pipe-shell.yaml. Whatever that host serves at run time executes
+      with the runner's full credentials. Prefer a pinned action (e.g. astral-sh/setup-uv); if a
+      piped installer is genuinely the only option, pin the version in the URL and add it to that
+      rule's pattern-not-regex with a comment saying why it is accepted.
+    metadata:
+      mcmRequirement: item-224
+      category: security
+      confidence: HIGH
+      references:
+        - https://owasp.org/www-project-top-ten/2021/A08_2021-Software_and_Data_Integrity_Failures
+    paths:
+      include:
+        - .forgejo/workflows/*
+        - .github/workflows/*
+    patterns:
+      # Text-level, single-line by construction: neither half may span a newline, so a hit is always
+      # one `curl … | shell` line and the reported location is that line, not the enclosing `run:`.
+      - pattern-regex: 'curl[^\n|]*\|[^\n]*\b(sh|bash|zsh)\b'
+      - pattern-not-regex: 'curl[^\n|]*https://(sh\.rustup\.rs|astral\.sh/uv/[0-9]+\.[0-9]+\.[0-9]+/install\.sh|get\.maestro\.mobile\.dev)[^\n|]*\|[^\n]*\b(sh|bash|zsh)\b'

@@ -16,7 +16,7 @@
 //   node scripts/sast-scan.mjs [--scope full|changed] [--base <ref>] [--only <scanner,...>] [--out <dir>]
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
@@ -26,6 +26,13 @@ const IS_WIN = process.platform === 'win32';
 const SEMGREP_PIN = '1.169.0';
 const ALL_SCANNERS = ['semgrep', 'cargo-audit', 'pnpm-audit', 'pip-audit'];
 const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs|py)$/i;
+// Workflow definitions are scanned too, but ONLY under the two workflow trees (item #224). The rule
+// `mcm-ci-curl-pipe-shell` is scoped there, and a rule can only fire on a file `--scope changed`
+// actually hands to Semgrep — so without this a pull request ADDING a `curl … | sh` to a workflow is
+// gated on nothing, and the finding first appears on the post-merge full scan. Deliberately not
+// `\.ya?ml$` tree-wide: that would drag compose files, Komodo syncs and this security config tree
+// into a PR-scoped scan against packs written for TS/JS/Python code.
+const WORKFLOW_PATH_RE = /^\.(?:forgejo|github)\/workflows\/[^/]+\.ya?ml$/i;
 
 // ── Shared spawn helper ──────────────────────────────────────────────────────
 // shell:false everywhere (avoids the DEP0190 shell+args warning and its escaping pitfall). Windows
@@ -101,12 +108,57 @@ export function classifyScope(pkgName, runtimeSet) {
   return runtimeSet.has(pkgName) ? 'runtime' : 'dev';
 }
 
+/** Is this repo-relative path (forward slashes) part of the surface Semgrep scans? */
+export function isScanTarget(path) {
+  return CODE_EXT_RE.test(path) || WORKFLOW_PATH_RE.test(path);
+}
+
 /** Fail-fast if a required scanner toolchain is not on PATH (FR-015). */
 export function assertToolchain(cmd, scanner) {
   const probe = IS_WIN ? run('where', [cmd], { shell: false }) : run('sh', ['-c', `command -v ${cmd}`]);
   if (!probe || probe.status !== 0) {
     throw new Error(`[${scanner}] required toolchain "${cmd}" not found on PATH — install it (see docs/runbooks/sast-scanning.md). Refusing to skip a language surface (FR-015).`);
   }
+}
+
+/**
+ * Group Semgrep's own `errors[]` by the rule they were raised against — the BLINDED rules (item #224).
+ *
+ * Semgrep reports a rule it could not RUN in `errors[]`, never in `results[]`. So a rule that has
+ * gone blind contributes exactly zero findings and is, from the gate's input alone, identical to a
+ * rule that found nothing because the code is clean. That is not hypothetical: the community rule
+ * `gha-curl-pipe-shell` re-parses a step's `run:` block as Bash, cannot read the ci-log-step heredoc
+ * this repository wraps nearly every run-step in, and produced 36 errors and 0 findings on main
+ * (measured 2026-09-06) while six `curl … | sh` lines sat in the workflows unexamined. Its allowlist
+ * entry was then reported as UNMATCHED, which reads as "remediated already".
+ *
+ * Carrying the counts into the report is what lets `check-sast-findings.mjs` tell the two apart.
+ *
+ * READ THE MESSAGE, NOT JUST THE FIELD. semgrep 1.169.0 populates the structured `rule_id` on an
+ * `Internal matching error` but NOT on a `PartialParsing` one, where the rule name appears only in
+ * the message prose (`… for metavariable-pattern in rule '<id>' …`). On the run that prompted item
+ * #224 that was 36 errors out of 39: keying on the field alone reports 3, understating the blindness
+ * by an order of magnitude and making a rule that saw nothing at all look like a rounding error.
+ *
+ * An error with neither is a target the scanner could not parse — the scanner's problem with a file,
+ * not a blinded rule — and is deliberately not attributed to one.
+ */
+const RULE_IN_MESSAGE = /\bin rule '([^']+)'/;
+
+export function summarizeBlindedRules(errors) {
+  const byRule = new Map();
+  for (const e of errors ?? []) {
+    const field = typeof e?.rule_id === 'string' && e.rule_id.trim() !== '' ? e.rule_id : null;
+    const ruleId = field ?? RULE_IN_MESSAGE.exec(String(e?.message ?? ''))?.[1] ?? null;
+    if (!ruleId) continue;
+    if (!byRule.has(ruleId)) byRule.set(ruleId, { errorCount: 0, files: new Set() });
+    const agg = byRule.get(ruleId);
+    agg.errorCount += 1;
+    if (typeof e.path === 'string' && e.path !== '') agg.files.add(e.path);
+  }
+  return [...byRule.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([ruleId, agg]) => ({ ruleId, errorCount: agg.errorCount, fileCount: agg.files.size }));
 }
 
 /** Assemble the findings report object (the gate's input contract; validates against findings.schema.json). */
@@ -163,7 +215,7 @@ function runSemgrep({ scope, targets, outDir, map }) {
   if (scope === 'changed' && scanTargets.length === 0) {
     // No changed code files → Semgrep is a no-op (SCA still runs). Emit an empty native report.
     writeReport(nativeOut, JSON.stringify({ results: [], errors: [], skipped: 'no changed code files' }, null, 2));
-    return { native: { results: [], errors: [] }, findings: [] };
+    return { native: { results: [], errors: [] }, findings: [], meta: { blindedRules: [] } };
   }
   args.push(...scanTargets);
 
@@ -176,7 +228,52 @@ function runSemgrep({ scope, targets, outDir, map }) {
     throw new Error(`[semgrep] produced no JSON output (exit ${r.status}) — refusing to report a clean scan.`);
   }
   const native = JSON.parse(readFileSync(nativeOut, 'utf8'));
-  return { native, findings: normalizeSemgrep(native, map) };
+  return { native, findings: normalizeSemgrep(native, map), meta: { blindedRules: summarizeBlindedRules(native.errors) } };
+}
+
+/**
+ * Run the custom rules' own `semgrep --test` fixtures (item #224).
+ *
+ * The fixtures under `security/sast/rules/` shipped with feature 033 and NOTHING EVER RAN THEM —
+ * `semgrep --test` appeared in no workflow, no Nx target and no script, so four rules' `ruleid:` /
+ * `ok:` annotations were decoration for months. A rule that has silently stopped matching is the
+ * whole subject of item #224; unrun fixtures are how it stays undetected.
+ *
+ * It lives HERE rather than in the workflow so the pin has one home: `SEMGREP_PIN` above is what
+ * Renovate's customManager tracks (it targets this file), and a second copy of the version in YAML
+ * is the half-bump shape this repository has been bitten by three times.
+ *
+ * A rule with no fixture is SILENTLY SKIPPED by `semgrep --test` — measured: 4/4 passed while five
+ * rule files existed. `assertEveryRuleHasFixture()` is what turns that into a failure, because
+ * "4/4 ✓" on five rules is exactly the green tick that proves nothing.
+ */
+export function ruleFixturePairs(dir = resolve(REPO_ROOT, 'security/sast/rules')) {
+  const files = readdirSync(dir);
+  const rules = files.filter((f) => /\.ya?ml$/.test(f) && !/\.test\.ya?ml$/.test(f));
+  return rules.map((rule) => {
+    const stem = rule.replace(/\.ya?ml$/, '');
+    // Semgrep pairs a rule with a same-stem file in a language the rule targets — `<stem>.ts` for a
+    // TS rule, `<stem>.test.yml` for a YAML one (a bare `<stem>.yaml` would collide with the rule).
+    const fixtures = files.filter((f) => f !== rule && (f === `${stem}.test.yml` || f === `${stem}.test.yaml` || new RegExp(`^${stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.(ts|tsx|js|jsx|py)$`).test(f)));
+    return { rule, fixtures };
+  });
+}
+
+function testRules() {
+  assertToolchain('uvx', 'semgrep');
+  const unfixtured = ruleFixturePairs().filter((p) => p.fixtures.length === 0);
+  if (unfixtured.length) {
+    console.error(`[semgrep --test] ${unfixtured.length} custom rule(s) have NO fixture, and \`semgrep --test\` skips those silently rather than failing:`);
+    for (const p of unfixtured) console.error(`  ${p.rule}`);
+    console.error('Add a same-stem fixture (`<rule>.ts` / `<rule>.py` for a code rule, `<rule>.test.yml` for a YAML one) with `# ruleid:` and `# ok:` annotations.');
+    process.exit(1);
+  }
+  const r = run('uvx', [`semgrep@${SEMGREP_PIN}`, '--test', '--metrics=off', '--disable-version-check', 'security/sast/rules/'], { stdio: 'inherit' });
+  if (r.status !== 0) {
+    console.error(`[semgrep --test] custom rule fixtures FAILED (exit ${r.status}).`);
+    process.exit(1);
+  }
+  console.log(`✓ semgrep --test passed for all ${ruleFixturePairs().length} custom rule(s), each with a fixture.`);
 }
 
 // ── cargo audit runner (T012) ────────────────────────────────────────────────
@@ -444,7 +541,8 @@ function parseArgs(argv) {
     else if (a === '--only') args.only = argv[++i].split(',').map((s) => s.trim()).filter(Boolean);
     else if (a === '--out') args.out = argv[++i];
     else if (a === '--emit-allowlist') args.emitAllowlist = true;
-    else { console.error(`Unknown argument: ${a}. Usage: sast-scan.mjs [--scope full|changed] [--base <ref>] [--only <scanner,...>] [--emit-allowlist] [--out <dir>]`); process.exit(2); }
+    else if (a === '--test-rules') args.testRules = true;
+    else { console.error(`Unknown argument: ${a}. Usage: sast-scan.mjs [--scope full|changed] [--base <ref>] [--only <scanner,...>] [--emit-allowlist] [--test-rules] [--out <dir>]`); process.exit(2); }
   }
   if (!['full', 'changed'].includes(args.scope)) { console.error(`--scope must be full|changed (got "${args.scope}")`); process.exit(2); }
   if (args.only) {
@@ -467,11 +565,13 @@ function computeChangedTargets(base) {
   const isExcluded = (p) => p.split('/').some((seg) => excluded.has(seg));
   return (r.stdout || '').split(/\r?\n/)
     .map((l) => l.trim())
-    .filter((l) => l && CODE_EXT_RE.test(l) && !isExcluded(l) && existsSync(resolve(REPO_ROOT, l)));
+    .filter((l) => l && isScanTarget(l) && !isExcluded(l) && existsSync(resolve(REPO_ROOT, l)));
 }
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
+  // Prove the custom rules still match what they claim BEFORE spending minutes on a real scan.
+  if (args.testRules) return testRules();
   const outDir = resolve(REPO_ROOT, args.out);
   mkdirSync(outDir, { recursive: true });
   const map = loadSeverityMap();
@@ -495,7 +595,7 @@ function main() {
       const res = runners[name]();
       writeReport(resolve(outDir, `${name}-native.json`), JSON.stringify(res.native ?? {}, null, 2));
       findings.push(...res.findings);
-      scanners.push({ scanner: name, ran: true, findingCount: res.findings.length, error: null });
+      scanners.push({ scanner: name, ran: true, findingCount: res.findings.length, error: null, ...(res.meta ?? {}) });
     } catch (e) {
       // FAIL-FAST (FR-015): record the error in the report, then stop with a non-zero exit.
       scanners.push({ scanner: name, ran: false, findingCount: 0, error: String(e.message) });

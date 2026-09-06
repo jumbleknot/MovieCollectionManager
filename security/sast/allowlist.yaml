@@ -43,11 +43,27 @@
 # dockerfile.security.missing-user — REMEDIATED in feature 034 (US2): all five app-tier images
 # (frontend/mcm-app, agents/movie-assistant, the three mcp-servers) now drop to a non-root USER
 # before CMD, matching backend/mc-service. Entry deleted so a regression re-blocks.
-- scanner: "semgrep"
-  id: "yaml.github-actions.security.gha-curl-pipe-shell.gha-curl-pipe-shell"
-  locationPattern: "\\.forgejo/workflows/.*\\.yml:.*"
-  justification: "Accepted CI bootstrap: pipes the pinned astral.sh uv installer to sh — the same fixed, non-attacker-controlled installer URL already used by the agent-gates guardrails job. Pre-existing at baseline."
-  addedBy: "steve"
+# gha-curl-pipe-shell — entry DELETED 2026-09-06 (item #224), and NOT because it was remediated.
+# Read this before treating any other UNMATCHED entry as stale.
+#
+# The gate reported this entry as "matched nothing this run (remediated already, or the scanner
+# changed identifier namespace)". Both explanations were wrong. The rule was still in the ruleset,
+# still loading, and still running — it was BLIND. It re-parses a step's `run:` block as Bash via
+# `metavariable-pattern`, and nearly every run-step here is wrapped in the ci-log-step heredoc
+# (feature 042), which that sub-parser cannot read; it abandons the block instead of matching inside
+# it. Measured on main 2026-09-06, pinned semgrep@1.169.0 with this repo's own semgrep.yaml: 36
+# errors, all attributed to this one rule, and 0 findings from it — while six `curl … | sh` lines
+# sat in the workflows unexamined. A blinded rule and a remediated one look identical from here.
+#
+# Coverage was RESTORED, not accepted away: security/sast/rules/mcm-ci-curl-pipe-shell.yaml matches
+# the same pattern at the TEXT level, so no sub-parser is involved and the heredoc is irrelevant. The
+# accepted installer URLs are named in that rule rather than suppressed here, because an allowlist
+# entry keys on `path:line` — a wildcard like the one this entry used would suppress a NEW
+# `curl | sh` in any workflow, which is the hole rather than the fix.
+#
+# The gate now derives this for itself: `check-sast-findings.mjs` reads the scanner's own parse/match
+# errors and annotates an UNMATCHED entry whose rule could not run, so the next reader is not offered
+# two explanations when a third applies.
 # run-shell-injection — REMEDIATED in feature 034 (US3): all six flagged workflow run-steps were
 # refactored to pass the interpolated ${{ … }} value through a step `env:` block and reference it as a
 # quoted shell variable (the GitHub-documented mitigation). Zero findings remain; entry deleted.

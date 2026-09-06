@@ -125,7 +125,27 @@ export function evaluate(report, allowlist, now = today()) {
   const scannersWithFindings = new Set(findings.map((f) => f.scanner));
   const unmatched = selectUnmatched(allowlist, matchedKeys, scannersWithFindings);
 
-  return { failures, warnings, suppressed, expiring, expired, unmatched };
+  return { failures, warnings, suppressed, expiring, expired, unmatched, blinded: collectBlinded(report) };
+}
+
+/**
+ * Rules the scanner could not RUN, from the report's own per-scanner metadata (item #224).
+ *
+ * A blinded rule contributes zero findings, so from `findings` alone it is identical to a rule that
+ * found nothing because the code is clean — and the entry that covered it is then reported as
+ * suppressing nothing, which reads as "remediated already". That misreading is the defect: it is not
+ * specific to the one rule that prompted it, it is how EVERY future unmatched entry gets read.
+ *
+ * Absent (an older report, or a `--only` run of another scanner) is nothing to say, not zero.
+ */
+function collectBlinded(report) {
+  const out = [];
+  for (const s of report?.scanners ?? []) {
+    for (const b of s?.blindedRules ?? []) {
+      out.push({ scanner: s.scanner, ruleId: String(b.ruleId), errorCount: Number(b.errorCount) || 0, fileCount: Number(b.fileCount) || 0 });
+    }
+  }
+  return out;
 }
 
 function line(f) {
@@ -133,7 +153,7 @@ function line(f) {
   return `  [${tag}] ${f.severity} ${f.id} — ${f.location}`;
 }
 
-function printAllowlistReview({ expiring, expired, unmatched }, now) {
+function printAllowlistReview({ expiring, expired, unmatched, blinded = [] }, now) {
   if (expiring.length) {
     console.log('EXPIRING SOON (suppressing for now)');
     console.log(formatExpiring(expiring, now));
@@ -142,9 +162,26 @@ function printAllowlistReview({ expiring, expired, unmatched }, now) {
     console.log('EXPIRED (no longer suppressing)');
     for (const e of expired) console.log(formatExpired(e));
   }
+  if (blinded.length) {
+    // ADVISORY, never a failure. These rules error on every run against this codebase — a gate that
+    // went red on a standing condition is a gate nobody reads. What is printed is the count, which
+    // is the evidence: 0 findings beside 36 errors is not a clean scan.
+    console.log('RULES THAT COULD NOT RUN (advisory — does not affect this gate\'s result)');
+    for (const b of blinded) {
+      console.log(`  [${b.scanner}] ${b.ruleId} — ${b.errorCount} scanner error(s) across ${b.fileCount} file(s); it reported NO findings, which is not the same as finding none`);
+    }
+  }
   if (unmatched.length) {
     console.log('UNMATCHED ENTRIES (suppressed nothing this run)');
-    console.log(formatUnmatched(unmatched));
+    // Where a blinded rule EXPLAINS an unmatched entry, say so on that entry's own line. This is the
+    // whole point: the generic wording lists three possible causes, and this names which one it is.
+    const byRule = new Map(blinded.map((b) => [b.ruleId, b]));
+    console.log(formatUnmatched(unmatched, (e) => {
+      const b = byRule.get(e.id);
+      return b
+        ? `↳ this rule could not run: ${b.errorCount} scanner error(s) across ${b.fileCount} file(s). It is BLIND, not remediated — do not delete this entry as stale; restore coverage or record a decision.`
+        : null;
+    }));
   }
 }
 
@@ -316,11 +353,34 @@ function selftest() {
   // ambiguous about which of the two things went wrong.
   if (capture(() => gate(rep([F()]), [], NOW, { checkExpiring: true })).code !== 0) failures.push('(g7) --check-expiring must ignore blocking findings');
 
+  // ── (g8) a rule the scanner could not RUN (item #224) ───────────────────────
+  //
+  // The case the two explanations above got wrong. A blinded rule reports zero findings, so its
+  // allowlist entry lands in (g4)'s UNMATCHED bucket and the reader is told "remediated already".
+  // Measured on this repository: gha-curl-pipe-shell produced 36 parse errors and 0 findings while
+  // the six `curl … | sh` lines it exists to find sat in the workflows. Asserting on OUTPUT, because
+  // the exit code deliberately does not move — an exit-code-only check passes against a gate that
+  // prints nothing.
+  const blindRep = (findings) => ({
+    schemaVersion: 1,
+    generatedAtScope: 'full',
+    scanners: [{ scanner: 'semgrep', ran: true, findingCount: findings.length, error: null, blindedRules: [{ ruleId: 'some-other-rule', errorCount: 36, fileCount: 7 }] }],
+    findings,
+  });
+  // A non-blocking finding: the scanner still produced one (so unmatched detection is live), but
+  // nothing blocks — which is what makes exit 0 evidence that the blinded-rule report is advisory
+  // rather than evidence that no finding happened to fail.
+  const g8 = capture(() => gate(blindRep([F({ severity: 'Medium', blocking: false })]), entry({ id: 'some-other-rule' }), NOW));
+  if (g8.code !== 0) failures.push('(g8) a blinded rule is advisory and must not move the exit code');
+  if (!/RULES THAT COULD NOT RUN/.test(g8.out)) failures.push('(g8) a rule the scanner could not run must be reported');
+  if (!/36 scanner error/.test(g8.out)) failures.push('(g8) the blinded-rule report must name the error count — that count is the evidence');
+  if (!/could not run: 36/.test(g8.out)) failures.push('(g8) the UNMATCHED entry its blindness explains must say so, not offer the generic causes alone');
+
   if (failures.length) {
     console.error('✗ check-sast-findings --selftest FAILED:\n  ' + failures.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ check-sast-findings --selftest passed (fail, allowlist-suppress, dev-warn, clean, blank-justification reject, expiry, warning tier + unmatched + --check-expiring).');
+  console.log('✓ check-sast-findings --selftest passed (fail, allowlist-suppress, dev-warn, clean, blank-justification reject, expiry, warning tier + unmatched + blinded-rule report + --check-expiring).');
   process.exit(0);
 }
 

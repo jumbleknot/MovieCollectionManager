@@ -246,6 +246,30 @@
     {
       "customType": "regex",
       "description": [
+        "Keep the pinned Maestro CLI version current. Item #224.",
+        "WHAT WAS WRONG. The install step piped a fixed URL into bash with MAESTRO_VERSION unset, and",
+        "that installer's own source branches on exactly that variable: unset means",
+        "`releases/latest/download/maestro.zip`, set means `releases/download/cli-$MAESTRO_VERSION/`.",
+        "So the URL was pinned and the ARTIFACT was not — every mobile-agent-flows run installed",
+        "whatever shipped that day, and a Maestro regression would have arrived as a test failure on",
+        "an unrelated branch with nothing in the diff to explain it. Same class as the floating Trivy",
+        "tag above (#303) and the floating uv (#307), differing only in where the version can live:",
+        "the vendor publishes no versioned endpoint, so it is an environment variable, not a URL path.",
+        "WHY extractVersion. This repository's tags are `cli-2.10.0`, not `2.10.0` or `v2.10.0`, so",
+        "without stripping the prefix Renovate compares `2.10.0` against `cli-*` tags, finds nothing",
+        "comparable, and proposes NOTHING — the silent-no-op failure mode that makes a manager",
+        "indistinguishable from no manager. renovate-workflow.guard.test.mjs asserts the matchString",
+        "actually captures the pin in app-ci.yml rather than trusting that it does."
+      ],
+      "managerFilePatterns": ["/^\\.forgejo/workflows/app-ci\\.yml$/"],
+      "matchStrings": ["MAESTRO_VERSION=(?<currentValue>[\\d.]+)"],
+      "depNameTemplate": "mobile-dev-inc/maestro",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^cli-(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": [
         "Keep frontend/mcm-app/Dockerfile's `corepack prepare pnpm@<version>` pins in lockstep with",
               "package.json's `packageManager`. Renovate manages the manifest field and has no visibility of the",
               "Dockerfile, so every bot-authored pnpm bump arrived as a HALF BUMP and failed",

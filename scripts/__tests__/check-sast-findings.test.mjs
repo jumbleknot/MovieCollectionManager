@@ -155,3 +155,75 @@ test('an unparseable report is a gate error (exit 2)', () => {
   const { code } = runGate('{ not json', '[]\n');
   assert.equal(code, 2);
 });
+
+// ── Blinded rules (item #224) ────────────────────────────────────────────────
+//
+// The gate's own diagnostic used to offer exactly two explanations for an allowlist entry that
+// suppressed nothing — remediated, or the scanner changed identifier namespace — and a rule that had
+// gone BLIND reads as the first. Measured on main: `gha-curl-pipe-shell` re-parses a step's `run:`
+// block as Bash, cannot read the ci-log-step heredoc wrapping nearly every run-step here, and
+// produced 36 errors with 0 findings while six `curl … | sh` lines sat in the workflows. The report
+// carried the evidence in the scanner's errors[] the whole time; the gate simply never read it.
+
+const BLIND = (over = {}) => ({
+  schemaVersion: 1,
+  generatedAtScope: 'full',
+  scanners: [
+    {
+      scanner: 'semgrep', ran: true, findingCount: 1, error: null,
+      blindedRules: [{ ruleId: 'yaml.gha.gha-curl-pipe-shell', errorCount: 36, fileCount: 7 }],
+    },
+  ],
+  findings: [finding()],
+  ...over,
+});
+
+const BLIND_ALLOW = `
+- scanner: "semgrep"
+  id: "yaml.gha.gha-curl-pipe-shell"
+  locationPattern: "\\\\.forgejo/workflows/.*"
+  justification: "Accepted CI bootstrap."
+  addedBy: "steve"
+- scanner: "semgrep"
+  id: "mcm-no-token-logging"
+  locationPattern: "src/bff-server/auth\\\\.ts:.*"
+  justification: "False positive."
+  addedBy: "steve"
+`;
+
+test('(h) a rule the scanner could not run is reported, and does not change the exit code', () => {
+  const r = runGate(BLIND(), MATCH_ALLOW);
+  assert.match(r.out, /COULD NOT RUN|BLINDED/i, 'the blinded rule must be surfaced');
+  assert.match(r.out, /gha-curl-pipe-shell/);
+  assert.match(r.out, /36/, 'the error count is the evidence — print it');
+  assert.equal(r.code, 0, 'advisory only: a blinded rule must not move the gate result');
+});
+
+test('(h2) an UNMATCHED entry whose rule could not run is told so, in place of the two wrong causes', () => {
+  const r = runGate(BLIND(), BLIND_ALLOW);
+  assert.match(r.out, /UNMATCHED ENTRIES/);
+  const unmatchedBlock = r.out.slice(r.out.indexOf('UNMATCHED ENTRIES'));
+  assert.match(
+    unmatchedBlock,
+    /gha-curl-pipe-shell[\s\S]*?could not run[\s\S]*?36/,
+    'the entry must carry the rule\'s own error count, not just the generic three-cause wording',
+  );
+});
+
+test('(h3) with no blinded rules the report is silent about them', () => {
+  const clean = BLIND({
+    scanners: [{ scanner: 'semgrep', ran: true, findingCount: 1, error: null, blindedRules: [] }],
+  });
+  const r = runGate(clean, MATCH_ALLOW);
+  assert.doesNotMatch(r.out, /COULD NOT RUN/i);
+  assert.equal(r.code, 0);
+});
+
+test('(h4) a report from before this field existed is handled, not crashed on', () => {
+  // findings.json is written by a separate script and read by this one; a stale report on a runner
+  // (or a --only run of another scanner) simply has no blindedRules. Absence is not zero-knowledge
+  // worth reporting — it is nothing to say.
+  const r = runGate(report([finding()]), MATCH_ALLOW);
+  assert.equal(r.code, 0);
+  assert.doesNotMatch(r.out, /COULD NOT RUN/i);
+});
