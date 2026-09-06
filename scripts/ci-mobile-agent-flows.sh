@@ -108,8 +108,10 @@ run_flow() {
 #
 #   * the Maestro debug directory (view hierarchy + screenshots) is uploaded as a Forgejo Actions
 #     artifact, and this Forgejo build exposes NO artifacts API — `/api/v1/repos/…/actions/runs/
-#     {n}/artifacts` 404s, and the web download needs a browser session cookie. The failure digest
-#     even reports it as "not present", because it looks for a local directory that never exists.
+#     {n}/artifacts` 404s, and the web download needs a browser session cookie. (The failure digest
+#     used to report it as "not present" as well, for a second reason — it packed container-logs/
+#     from a FLAT listing, so this directory was dropped; fixed under item #241, which also made
+#     "captured but not carried" render differently from "not present".)
 #   * `adb logcat` holds the ReactNativeJS exception for a JS render error, and the emulator is
 #     TERMINATED by the android-emulator-runner action before the workflow's collect-logs step
 #     runs — so logcat must be captured HERE, inside the emulator script, or not at all.

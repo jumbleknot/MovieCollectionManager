@@ -1343,3 +1343,214 @@ test('(#326k) a hung step yields a digest that NAMES it, marks it a TIMEOUT, and
   assert.match(md, /Running 177 tests|assistant-add\.spec\.ts/,
     'the digest carries no log tail for the hung step — the evidence a hang otherwise loses');
 });
+
+// ================================================================================================
+// Item #241 — the bundle packed `container-logs/` from a FLAT listing, so a DIRECTORY was dropped.
+//
+// Feature 062's device-side diagnostics land in exactly such a directory
+// (`container-logs/_mobile-diagnostics/<flow>-attempt<n>/…`), so the one channel that can say what
+// the emulator was actually showing never reached the bundle — and the digest then printed
+// `maestro debug output — not present`, which reads as "the capture did not happen" when it did.
+// Measured on run 2049: the runner's copy held the whole Maestro debug tree; the retrieved bundle
+// held 69 files, none of them from it.
+// ================================================================================================
+
+import {
+  listEvidenceTree,
+  describeBundleDrops,
+  MAX_BINARY_BYTES,
+} from '../ci-failure-digest.mjs';
+
+// A real 1x1 PNG. Binary content is the point: it must survive the round trip byte-for-byte, and
+// must never be tail-trimmed — half a PNG is not a smaller PNG, it is a corrupt file.
+const PNG_1PX = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** A runner's `~/mcm-ci-last-failure` exactly as the collect step leaves it after a mobile failure. */
+function mobileFailureHome({ bulkBytes = 2_000, screenshot = PNG_1PX } = {}) {
+  const home = mkdtempSync(join(tmpdir(), 'digest-241-'));
+  const bundle = join(home, 'mcm-ci-last-failure');
+  const attempt = join(bundle, '_mobile-diagnostics', 'assistant-config-gating-attempt1');
+  mkdirSync(join(attempt, 'maestro'), { recursive: true });
+  writeFileSync(join(bundle, '_ps.txt'), 'NAMES  STATUS\nmc-service  Up\n');
+  writeFileSync(join(bundle, 'mc-service.log'), 'c'.repeat(bulkBytes));
+  writeFileSync(join(bundle, 'mc-service.health.json'), JSON.stringify({ Status: 'unhealthy', Log: [{ Output: 'nope' }] }));
+  writeFileSync(join(attempt, 'logcat-react.log'), 'ReactNativeJS: TypeError: undefined is not an object\n');
+  writeFileSync(join(attempt, 'logcat-full.log'), 'l'.repeat(50_000));
+  writeFileSync(join(attempt, 'maestro', 'commands-(assistant-config-gating).json'), '{"hierarchy":"settings-nav off-screen"}');
+  writeFileSync(join(attempt, 'maestro', 'screenshot-(❌)-3-assistant-config-gating.png'), screenshot);
+  return home;
+}
+
+const evidence241 = (home, over = {}) =>
+  collectEvidence({ home, cwd: mkdtempSync(join(tmpdir(), 'cwd-241-')), env: { GITHUB_RUN_ID: 'x' }, ...over });
+
+test('(#241a) a DIRECTORY under container-logs is packed, not silently dropped', () => {
+  const ev = evidence241(mobileFailureHome());
+  const sources = ev.excerpts.map((e) => e.source);
+  assert.ok(
+    sources.some((s) => s.endsWith('_mobile-diagnostics/assistant-config-gating-attempt1/logcat-react.log')),
+    `the device logcat never reached the bundle: ${JSON.stringify(sources)}`,
+  );
+  assert.ok(
+    sources.some((s) => s.includes('/maestro/') && s.endsWith('.json')),
+    'the Maestro view hierarchy never reached the bundle',
+  );
+});
+
+test('(#241b) the flat top-level rules are unchanged — health json is still health, not an excerpt', () => {
+  const ev = evidence241(mobileFailureHome());
+  assert.deepEqual(ev.health.map((h) => h.container), ['mc-service']);
+  assert.equal(
+    ev.excerpts.some((e) => e.source.endsWith('.health.json')),
+    false,
+    'a health file was collected twice — once as health and once as a log',
+  );
+});
+
+test('(#241c) the failure SCREENSHOT survives as bytes, never as trimmed text', () => {
+  const ev = evidence241(mobileFailureHome());
+  const shot = ev.binaries.find((b) => b.source.endsWith('.png'));
+  assert.ok(shot, 'the failure screenshot was not collected');
+  assert.deepEqual(Buffer.from(shot.base64, 'base64'), PNG_1PX, 'the screenshot did not survive byte-for-byte');
+});
+
+test('(#241d) device evidence outranks bulk container logs, and logcat-full ranks BELOW them', () => {
+  const names = [
+    'mc-service.log',
+    '_mcm-stack.log',
+    '_mobile-diagnostics/f-attempt1/logcat-full.log',
+    '_mobile-diagnostics/f-attempt1/logcat-react.log',
+    '_mobile-diagnostics/f-attempt1/maestro/commands-(f).json',
+    '_ps.txt',
+  ];
+  const order = selectSources(names, []).map((s) => s.name);
+  const at = (n) => order.indexOf(n);
+  assert.ok(at('_mobile-diagnostics/f-attempt1/maestro/commands-(f).json') < at('mc-service.log'),
+    'the view hierarchy ranked below an ordinary container log');
+  assert.ok(at('_mobile-diagnostics/f-attempt1/logcat-react.log') < at('_mcm-stack.log'),
+    'the ReactNativeJS logcat ranked below a compose-level log');
+  assert.ok(at('_mobile-diagnostics/f-attempt1/logcat-full.log') > at('mc-service.log'),
+    'the bulk logcat outranked real container logs — it will crowd the digest');
+});
+
+test('(#241e) the 5 MB cap does not evict device evidence to keep a 20 MB container log', () => {
+  const files = [
+    { path: 'logs/mc-service-store-mongo.log', text: 'm'.repeat(20_000_000) },
+    { path: 'logs/_mobile-diagnostics/f-attempt1/maestro/commands-(f).json', text: '{"hierarchy":"x"}', priority: true },
+    { path: 'logs/_mobile-diagnostics/f-attempt1/logcat-react.log', text: 'boom', priority: true },
+    { path: 'logs/_mobile-diagnostics/f-attempt1/maestro/screenshot.png', base64: PNG_1PX.toString('base64'), priority: true },
+  ];
+  const m = buildBundleManifest(files, { cap: BUNDLE_CAP_BYTES });
+  const kept = new Map(m.files.map((f) => [f.path, f]));
+  assert.equal(kept.get('logs/_mobile-diagnostics/f-attempt1/maestro/commands-(f).json').text, '{"hierarchy":"x"}',
+    'the view hierarchy was trimmed or dropped for a bulk log');
+  assert.equal(kept.get('logs/_mobile-diagnostics/f-attempt1/logcat-react.log').text, 'boom');
+  assert.equal(kept.get('logs/_mobile-diagnostics/f-attempt1/maestro/screenshot.png').base64, PNG_1PX.toString('base64'),
+    'the screenshot was evicted by a 20 MB container log');
+  const total = m.files.reduce((n, f) => n + Buffer.byteLength(f.text ?? f.base64 ?? '', 'utf8'), 0);
+  assert.ok(total <= BUNDLE_CAP_BYTES, `the bundle is over its cap: ${total}`);
+});
+
+test('(#241f) a binary too large for its share is dropped WHOLE and NAMED, never half-written', () => {
+  const big = Buffer.alloc(3_000_000, 7).toString('base64');
+  const m = buildBundleManifest(
+    [
+      { path: 'logs/a.log', text: 'a'.repeat(500_000) },
+      { path: 'logs/shot.png', base64: big, priority: true },
+    ],
+    { cap: 1_000_000 },
+  );
+  assert.equal(m.files.some((f) => f.path === 'logs/shot.png'), false, 'a truncated PNG was kept — that is a corrupt file');
+  assert.ok((m.meta.droppedSources ?? []).some((d) => String(d.path ?? d) === 'logs/shot.png'),
+    'a source was dropped for size without being named');
+  const total = m.files.reduce((n, f) => n + Buffer.byteLength(f.text ?? f.base64 ?? '', 'utf8'), 0);
+  assert.ok(total <= 1_000_000, `the bundle is over its cap: ${total}`);
+});
+
+test('(#241g) what the cap dropped is NAMED in the digest, not only in the manifest meta', () => {
+  const m = buildBundleManifest(
+    [
+      { path: 'logs/a.log', text: 'a'.repeat(500_000) },
+      { path: 'logs/shot.png', base64: Buffer.alloc(3_000_000, 7).toString('base64'), priority: true },
+    ],
+    { cap: 1_000_000 },
+  );
+  const lines = describeBundleDrops(m.meta);
+  assert.ok(lines.some((l) => l.includes('logs/shot.png')), `no drop line names the dropped source: ${JSON.stringify(lines)}`);
+  const md = buildDigest(ctx(), { excerpts: [], absent: lines }).markdown;
+  assert.match(md, /shot\.png/, 'the digest published a bundle that had silently lost a source');
+});
+
+test('(#241h) "absent" and "present but not collected" do not render identically', () => {
+  const withCapture = evidence241(mobileFailureHome());
+  assert.equal(
+    withCapture.absent.some((a) => /maestro debug output — not present/.test(a)),
+    false,
+    'the digest still reports the capture as absent while carrying it',
+  );
+
+  // A job that ran no mobile flow at all: the honest answer is still "not present".
+  const bare = collectEvidence({ home: '/nonexistent-home-241', cwd: '/tmp', env: { GITHUB_RUN_ID: 'x' } });
+  assert.ok(
+    bare.absent.some((a) => /maestro debug output/.test(a)),
+    'a job with no capture says nothing about the device channel at all',
+  );
+});
+
+test('(#241i) a screenshot over the per-file ceiling is NAMED at collection, not silently skipped', () => {
+  const home = mobileFailureHome({ screenshot: Buffer.alloc(MAX_BINARY_BYTES + 1024, 9) });
+  const ev = evidence241(home);
+  assert.equal(ev.binaries.length, 0, 'an oversized binary was collected anyway');
+  assert.ok(
+    ev.absent.some((a) => /screenshot-.*\.png/.test(a) || /over the .* ceiling/.test(a)),
+    `an oversized screenshot was dropped without a word: ${JSON.stringify(ev.absent)}`,
+  );
+});
+
+test('(#241j) the tree walk is bounded — depth and entry count cannot be driven by the runner', () => {
+  const home = mkdtempSync(join(tmpdir(), 'digest-241-deep-'));
+  const bundle = join(home, 'mcm-ci-last-failure');
+  let dir = bundle;
+  for (let i = 0; i < 30; i++) {
+    dir = join(dir, `d${i}`);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, `x${i}.log`), 'x');
+  }
+  const listed = listEvidenceTree(bundle);
+  assert.ok(listed.length > 0, 'the walk returned nothing at all');
+  assert.ok(listed.every((p) => p.split('/').length <= 12), `the walk descended without a depth bound: ${listed.at(-1)}`);
+});
+
+test('(#241k) a collected file the packer cannot carry is NAMED, not silently ignored', () => {
+  // The whole shape of this item is "evidence existed on the runner and the bundle said nothing
+  // about it". An unrecognised format (a screen recording, an archive) is that same silence unless
+  // the absence is stated — the reader is otherwise left believing the tree held only what arrived.
+  const home = mobileFailureHome();
+  const attempt = join(home, 'mcm-ci-last-failure', '_mobile-diagnostics', 'assistant-config-gating-attempt1');
+  writeFileSync(join(attempt, 'maestro', 'screen-recording.mp4'), 'not really an mp4');
+  const ev = evidence241(home);
+  assert.ok(
+    ev.absent.some((a) => /screen-recording\.mp4/.test(a)),
+    `an uncarryable file vanished without a word: ${JSON.stringify(ev.absent)}`,
+  );
+});
+
+test('(#241l) all-or-nothing holds for a binary on the FAIR-SHARE path too, not just the reserve', () => {
+  // The priority reserve is one of two paths into the allocator. A binary that arrives WITHOUT the
+  // priority flag must still be dropped whole rather than tail-trimmed — a rule that lives in only
+  // one branch is a rule that fails the moment a caller uses the other.
+  const m = buildBundleManifest(
+    [
+      { path: 'logs/a.log', text: 'a'.repeat(400_000) },
+      { path: 'logs/b.log', text: 'b'.repeat(400_000) },
+      { path: 'logs/shot.png', base64: Buffer.alloc(600_000, 7).toString('base64') },
+    ],
+    { cap: 600_000 },
+  );
+  const shot = m.files.find((f) => f.path === 'logs/shot.png');
+  assert.equal(shot, undefined, 'a PNG was trimmed to its share — that file opens as nothing');
+  assert.ok((m.meta.droppedSources ?? []).some((d) => d.path === 'logs/shot.png'), 'the drop was not named');
+});

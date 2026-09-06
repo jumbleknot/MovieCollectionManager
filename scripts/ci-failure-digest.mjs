@@ -555,25 +555,127 @@ export async function publishDigest({ context, digest }, api) {
  * movie-assistant-* log — precisely the services that were unhealthy. It also never collected
  * `_ps.txt`, the one table showing which containers exited.
  *
- * Now: collect everything, ordered so the most diagnostic sources win the fair-share allocation —
- * the container status table, then unhealthy containers, then compose-level logs, then the rest.
+ * Now: collect everything, ordered so the most diagnostic sources win the size allocation — the
+ * failing step's own output, the container status table, the device-side evidence (item #241), then
+ * unhealthy containers, compose-level logs, the rest, and the bulk device dumps last.
+ *
+ * Accepts NESTED paths, relative to the bundle directory: `container-logs/` holds a directory of
+ * device diagnostics, and a listing that could not name a nested file could not carry one either.
  */
 export function selectSources(names, unhealthyContainers = []) {
-  const rank = (n) => {
-    // Step output FIRST. What the failing step actually printed — the assertion, the stack trace,
-    // the pytest summary — outranks any container log. Three consecutive app-e2e failures were
-    // undiagnosable from a digest precisely because nothing collected it (T041).
-    if (n.startsWith('step:')) return 0;
-    if (n === '_ps.txt') return 1;
-    const base = n.replace(/\.log$/, '');
-    if (unhealthyContainers.includes(base)) return 2;
-    if (n.startsWith('_')) return 3;
-    return 4;
-  };
   return names
-    .filter((n) => n.endsWith('.log') || n === '_ps.txt')
-    .map((name) => ({ name, rank: rank(name) }))
+    .filter(isTextEvidence)
+    .map((name) => ({ name, rank: rankSource(name, unhealthyContainers) }))
     .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+}
+
+/** The ranks a source's PRIORITY is derived from: step output, the status table, device evidence. */
+export const PRIORITY_RANK_CEILING = 2;
+
+function rankSource(n, unhealthyContainers) {
+  // Step output FIRST. What the failing step actually printed — the assertion, the stack trace,
+  // the pytest summary — outranks any container log. Three consecutive app-e2e failures were
+  // undiagnosable from a digest precisely because nothing collected it (T041).
+  if (n.startsWith('step:')) return 0;
+  if (n === '_ps.txt') return 1;
+  // Device-side evidence (item #241). The Maestro view hierarchy and the ReactNativeJS logcat are
+  // small and are the ONLY channels that say what the emulator was showing, so they rank above
+  // every container log. `logcat-full.log` is the exception: it is the bulk dump, and ranking it
+  // high would push real evidence out of the digest's three shown sources.
+  if (isNested(n)) return isBulkDeviceEvidence(n) ? 6 : 2;
+  const base = n.replace(/\.log$/, '');
+  if (unhealthyContainers.includes(base)) return 3;
+  if (n.startsWith('_')) return 4;
+  return 5;
+}
+
+const isNested = (p) => p.includes('/') && !p.startsWith('step:');
+const basename = (p) => p.split('/').pop() ?? '';
+
+/** The bulk device dumps: real evidence, but megabytes of it, so they rank below container logs. */
+const isBulkDeviceEvidence = (p) => /^logcat-full\.log$/i.test(basename(p));
+
+/** Text sources the bundle carries. Nested files (item #241) admit the formats Maestro writes —
+ *  the view hierarchy and command list are JSON, not `.log` — while the FLAT rules are unchanged:
+ *  widening them would collect every `*.health.json` twice, once as health and once as a log. */
+const NESTED_TEXT_EVIDENCE = /\.(log|txt|json|ya?ml|md|xml|html)$/i;
+
+export function isTextEvidence(p) {
+  const base = basename(p);
+  if (isNested(p)) return NESTED_TEXT_EVIDENCE.test(base) && !base.endsWith('.health.json');
+  return p.endsWith('.log') || p === '_ps.txt';
+}
+
+/** Binary evidence — screenshots. Carried base64-encoded, and NEVER trimmed: half a PNG is not a
+ *  smaller screenshot, it is a corrupt file. */
+const BINARY_EVIDENCE = /\.(png|jpe?g|webp|gif)$/i;
+
+export const isBinaryEvidence = (p) => BINARY_EVIDENCE.test(basename(p));
+
+/**
+ * Order the screenshots by how likely each is to be THE failure.
+ *
+ * Maestro marks the failing step's capture with `❌` in the filename; everything else is a
+ * before/after frame of a step that passed. Ties break on the path so the choice is deterministic
+ * — a diagnostic that picks a different file on each run cannot be reasoned about.
+ */
+export function selectBinaries(names) {
+  return names
+    .filter(isBinaryEvidence)
+    .map((name) => ({ name, rank: /❌|failed|failure/i.test(name) ? 0 : 1 }))
+    .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+}
+
+/** Per-file ceiling for a binary. An emulator screenshot measures 100-500 KB; anything far larger
+ *  is not a screenshot, and it would crowd out the text evidence it exists to explain. */
+export const MAX_BINARY_BYTES = 1024 * 1024;
+
+/** How many screenshots are worth carrying, and their combined ceiling. Three attempts of a flow
+ *  produce three captures; the bundle's whole point is that it stays retrievable over a 135 KB/s
+ *  link, so the budget is stated here rather than discovered at the cap. */
+export const MAX_BINARY_FILES = 3;
+export const BINARY_BUDGET_BYTES = 2 * 1024 * 1024;
+
+/** Bounds on the recursive walk. The tree is written by CI, but a runaway directory (a crash-loop
+ *  writing per-attempt captures, say) must not turn collection into an unbounded traversal. */
+export const MAX_TREE_DEPTH = 6;
+export const MAX_TREE_ENTRIES = 400;
+
+/**
+ * List the evidence tree under `dir` as paths RELATIVE to it, depth-first and bounded.
+ *
+ * ITEM #241. The previous listing was a single non-recursive `readdirSync`, so a DIRECTORY under
+ * `container-logs/` matched none of the filename filters and was dropped without a word. Feature
+ * 062's device diagnostics land in exactly such a directory, so the Maestro view hierarchy, the
+ * failure screenshots and the emulator logcat never reached the bundle — while the digest reported
+ * `maestro debug output — not present`, which reads as "the capture did not happen". Measured on
+ * run 2049: the runner held the whole tree; the retrieved bundle held 69 files, none from it.
+ *
+ * SYMLINKS ARE NOT FOLLOWED. `readdirSync(withFileTypes)` reports the link itself, and a link into
+ * the runner's filesystem would pull arbitrary files into a published bundle.
+ *
+ * Never throws — collection must not fail a job (FR-009).
+ */
+export function listEvidenceTree(dir, { maxDepth = MAX_TREE_DEPTH, maxEntries = MAX_TREE_ENTRIES } = {}) {
+  const out = [];
+  const walk = (abs, rel, depth) => {
+    if (depth > maxDepth || out.length >= maxEntries) return;
+    let entries = [];
+    try {
+      entries = readdirSync(abs, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      if (out.length >= maxEntries) return;
+      if (e.isSymbolicLink()) continue;
+      const childRel = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) walk(join(abs, e.name), childRel, depth + 1);
+      else if (e.isFile()) out.push(childRel);
+    }
+  };
+  walk(dir, '', 1);
+  return out;
 }
 
 /** Read a file if it exists, else null. Never throws — collection must not fail a job. */
@@ -682,6 +784,7 @@ export function readFailingStepReason(env = process.env, home = env.HOME ?? '') 
 
 export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd(), env = process.env } = {}) {
   const excerpts = [];
+  const binaries = [];
   const health = [];
   const absent = [];
 
@@ -709,13 +812,16 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
 
   const bundleDir = join(home, 'mcm-ci-last-failure');
   if (existsSync(bundleDir)) {
+    // RECURSIVE (item #241). A flat listing dropped every directory silently.
     let entries = [];
     try {
-      entries = readdirSync(bundleDir);
+      entries = listEvidenceTree(bundleDir);
     } catch {
       absent.push('the failure bundle directory could not be read');
     }
-    for (const name of entries.filter((n) => n.endsWith('.health.json'))) {
+    // Health files are read from the FLAT level only — that is where the collect step writes them,
+    // and admitting them from the tree as well would collect each one twice.
+    for (const name of entries.filter((n) => !n.includes('/') && n.endsWith('.health.json'))) {
       const raw = readIfPresent(join(bundleDir, name));
       if (!raw) continue;
       try {
@@ -730,10 +836,15 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
       }
     }
     const unhealthy = health.filter((h) => h.status !== 'healthy').map((h) => h.container);
-    for (const { name } of selectSources(entries, unhealthy)) {
+    for (const { name, rank } of selectSources(entries, unhealthy)) {
       const text = readIfPresent(join(bundleDir, name));
-      if (text) excerpts.push({ source: name, text });
+      // PRIORITY is carried through to the bundle's size allocation: the step output, the status
+      // table and the device evidence must survive a 20 MB container log, which max-min fairness
+      // alone does not guarantee once a source is larger than its share.
+      if (text) excerpts.push({ source: name, text, priority: rank <= PRIORITY_RANK_CEILING });
     }
+    binaries.push(...collectBinaries(bundleDir, entries, absent));
+    absent.push(...describeUncarriedEntries(entries));
     if (!entries.length) absent.push('the failure bundle directory was empty');
   } else {
     absent.push(
@@ -742,15 +853,100 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
     );
   }
 
-  for (const [label, rel] of [
-    ['playwright report', 'frontend/mcm-app/playwright-report/index.html'],
-    ['maestro debug output', 'maestro-debug'],
-  ]) {
-    if (!existsSync(join(cwd, rel))) absent.push(`${label} — not present`);
+  if (!existsSync(join(cwd, 'frontend/mcm-app/playwright-report/index.html'))) {
+    absent.push('playwright report — not present');
   }
+  absent.push(...describeDeviceCapture([...excerpts.map((e) => e.source), ...binaries.map((b) => b.source)], home));
 
-  if (!excerpts.length && !health.length) absent.push('no log output was captured for this job');
-  return { excerpts, health, absent };
+  if (!excerpts.length && !health.length && !binaries.length) {
+    absent.push('no log output was captured for this job');
+  }
+  return { excerpts, binaries, health, absent };
+}
+
+/** How many uncarriable files are named individually before the line summarises the rest. */
+const MAX_NAMED_UNCARRIED = 3;
+
+/**
+ * Name the collected files this packer carries NEITHER as text NOR as an image (item #241).
+ *
+ * A screen recording or an archive under `container-logs/` matches no filter, and the version of
+ * this collector that shipped simply skipped such a file — which is the defect this item is about,
+ * expressed in one more place. Stating the absence costs a line and removes the reader's false
+ * belief that the tree held only what arrived.
+ */
+export function describeUncarriedEntries(entries) {
+  const uncarried = entries.filter((n) => !isTextEvidence(n) && !isBinaryEvidence(n) && !n.endsWith('.health.json'));
+  if (!uncarried.length) return [];
+  const named = uncarried.slice(0, MAX_NAMED_UNCARRIED).map((n) => `\`${n}\``).join(', ');
+  const more = uncarried.length > MAX_NAMED_UNCARRIED ? `, and ${uncarried.length - MAX_NAMED_UNCARRIED} more` : '';
+  return [`${named}${more} — collected on the runner but not carried in this bundle (unsupported format)`];
+}
+
+/** The directory the collect step folds feature 062's device diagnostics into. */
+const DEVICE_DIAGNOSTICS_DIR = '_mobile-diagnostics';
+
+const isDeviceEvidence = (p) => String(p).split('/')[0] === DEVICE_DIAGNOSTICS_DIR;
+
+/**
+ * Say which of the THREE device-capture states this job is in (item #241, criterion 4).
+ *
+ * The previous check looked for a `maestro-debug` directory in the workspace — a name that is the
+ * ARTIFACT's, never a path on disk — so it reported `maestro debug output — not present` on every
+ * run, including the ones that captured a full debug tree. "The capture did not happen" and "the
+ * capture happened and this bundle could not carry it" demand opposite next steps from a reader,
+ * so they must not render identically.
+ */
+export function describeDeviceCapture(collectedPaths, home) {
+  if (collectedPaths.some(isDeviceEvidence)) return []; // carried — the sources speak for themselves
+  if (existsSync(join(home, '.maestro', 'tests'))) {
+    return [
+      'maestro debug output — CAPTURED on the runner (~/.maestro/tests) but not folded into ' +
+        `container-logs/${DEVICE_DIAGNOSTICS_DIR}; see scripts/ci-mobile-agent-flows.sh`,
+    ];
+  }
+  return ['maestro debug output — not present (no mobile flow captured device diagnostics on this job)'];
+}
+
+/**
+ * Read the screenshots, within a stated budget, and NAME whatever the budget excludes.
+ *
+ * Binary evidence is all-or-nothing by nature, so every exclusion is a decision a reader has to be
+ * able to see. Silence here would reproduce item #241 one layer down: evidence that exists on the
+ * runner and cannot be accounted for from the bundle.
+ */
+function collectBinaries(dir, entries, absent) {
+  const out = [];
+  let budget = BINARY_BUDGET_BYTES;
+  for (const { name } of selectBinaries(entries)) {
+    if (out.length >= MAX_BINARY_FILES) {
+      absent.push(`\`${name}\` — not collected (past the ${MAX_BINARY_FILES}-screenshot budget)`);
+      continue;
+    }
+    let bytes = 0;
+    try {
+      const st = statSync(join(dir, name));
+      if (!st.isFile()) continue;
+      bytes = st.size;
+    } catch {
+      continue;
+    }
+    if (bytes > MAX_BINARY_BYTES) {
+      absent.push(`\`${name}\` — not collected (${bytes} bytes, over the ${MAX_BINARY_BYTES}-byte per-file ceiling)`);
+      continue;
+    }
+    if (bytes > budget) {
+      absent.push(`\`${name}\` — not collected (${bytes} bytes, over the remaining screenshot budget)`);
+      continue;
+    }
+    try {
+      out.push({ source: name, base64: readFileSync(join(dir, name)).toString('base64'), bytes, priority: true });
+      budget -= bytes;
+    } catch {
+      /* an unreadable capture is not worth failing a job over */
+    }
+  }
+  return out;
 }
 
 // --- Evidence bundle (US3) --------------------------------------------------------------------------
@@ -802,9 +998,48 @@ export function allocateFairly(sizes, cap) {
 export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = [], context = {}, digestMarkdown = null } = {}) {
   // digest.md first: for a non-PR failure the bundle is the ONLY place the digest exists, so it must
   // survive the size cap. It is small, and the cap trims the largest source first.
-  const kept = [...(digestMarkdown ? [{ path: 'digest.md', text: String(digestMarkdown) }] : []), ...files].map((f) => ({ ...f }));
+  const kept = [...(digestMarkdown ? [{ path: 'digest.md', text: String(digestMarkdown), priority: true }] : []), ...files]
+    .map((f) => ({ ...f }));
   const truncatedSources = [];
-  const size = (f) => Buffer.byteLength(f.text, 'utf8');
+  const droppedSources = [];
+
+  // A PRIORITY RESERVE, then MAX-MIN FAIR for the rest (item #241).
+  //
+  // Fair allocation alone answers the question "who gets trimmed" with "the greedy ones", which is
+  // right for container logs of comparable value. It is wrong once the bundle carries the device
+  // evidence: a 20 MB mongo log and a 300 KB screenshot are not competing on equal terms, and the
+  // screenshot loses when its size exceeds an equal share. So the sources ranked most diagnostic —
+  // the failing step's output, the container status table, the Maestro hierarchy and the emulator
+  // logcat — are allocated FIRST out of a bounded reserve, and the remainder is shared fairly.
+  //
+  // The reserve is bounded at half the cap precisely so this cannot become the inverse bug: a
+  // pathological priority source must not be able to evict every container log.
+  const priority = kept.filter((f) => f.priority);
+  const rest = kept.filter((f) => !f.priority);
+  const digestBytes = priority.filter((f) => f.path === 'digest.md').reduce((n, f) => n + entryBytes(f), 0);
+  const reserve = Math.min(
+    cap,
+    Math.max(digestBytes, Math.min(priority.reduce((n, f) => n + entryBytes(f), 0), Math.floor(cap * PRIORITY_RESERVE_FRACTION))),
+  );
+
+  const survivors = [];
+  let reserveLeft = reserve;
+  for (const f of priority) {
+    const bytes = entryBytes(f);
+    if (bytes <= reserveLeft) {
+      survivors.push(f);
+      reserveLeft -= bytes;
+    } else if (isBinaryEntry(f) || reserveLeft <= 0) {
+      // ALL-OR-NOTHING for a binary: tail-trimming a PNG yields a file that opens as nothing at
+      // all, which is worse than its stated absence.
+      droppedSources.push({ path: f.path, bytes, reason: isBinaryEntry(f) ? 'binary source cannot be trimmed to fit' : 'no budget left at the cap' });
+    } else {
+      f.text = tailBytes(f.text, reserveLeft);
+      truncatedSources.push(f.path);
+      survivors.push(f);
+      reserveLeft = 0;
+    }
+  }
 
   // MAX-MIN FAIR allocation. The previous version trimmed the largest source by half each pass,
   // which terminated but was not fair: `min(size - excess, size/2)` goes negative once the excess
@@ -815,25 +1050,62 @@ export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = []
   // Max-min fair: every source is guaranteed an equal share; anything under its share keeps ALL of
   // its content and donates the remainder to the greedy ones. A small log is never sacrificed for a
   // large one.
-  const shares = allocateFairly(kept.map(size), cap);
-  kept.forEach((f, i) => {
-    if (size(f) > shares[i]) {
-      f.text = tailBytes(f.text, shares[i]); // keep the TAIL — failures surface last
-      if (!truncatedSources.includes(f.path)) truncatedSources.push(f.path);
+  const remaining = Math.max(0, cap - survivors.reduce((n, f) => n + entryBytes(f), 0));
+  const shares = allocateFairly(rest.map(entryBytes), remaining);
+  rest.forEach((f, i) => {
+    const bytes = entryBytes(f);
+    if (bytes <= shares[i]) {
+      survivors.push(f);
+      return;
     }
+    if (isBinaryEntry(f) || shares[i] <= 0) {
+      droppedSources.push({ path: f.path, bytes, reason: isBinaryEntry(f) ? 'binary source cannot be trimmed to fit' : 'no share left at the cap' });
+      return;
+    }
+    f.text = tailBytes(f.text, shares[i]); // keep the TAIL — failures surface last
+    if (!truncatedSources.includes(f.path)) truncatedSources.push(f.path);
+    survivors.push(f);
   });
 
   return {
-    files: kept,
+    files: survivors,
     meta: {
       ...context,
       truncated: truncatedSources.length > 0,
       truncatedSources,
+      // What the cap removed ENTIRELY. `truncated` says a source is shorter than it was; this says
+      // a source is not here at all, and the two must not be reported as one thing.
+      droppedSources,
       absent: absent.map((a) => redactExcerpt(String(a)).text),
       cap,
       collector: 'ci-failure-digest',
     },
   };
+}
+
+/** Share of the cap allocated to the most diagnostic sources before fair-sharing the rest. */
+export const PRIORITY_RESERVE_FRACTION = 0.5;
+
+const isBinaryEntry = (f) => typeof f.base64 === 'string';
+
+/** What an entry costs the cap — for a binary, the base64 text that actually lands in the manifest. */
+const entryBytes = (f) => Buffer.byteLength(isBinaryEntry(f) ? f.base64 : (f.text ?? ''), 'utf8');
+
+/**
+ * Render the cap's drops as digest lines (item #241, criterion 3).
+ *
+ * A bundle that quietly contains less than it says it does is the defect this whole item is about,
+ * one layer up: the digest is what a reader sees first, so a source the cap removed has to be
+ * named THERE, not only in a manifest field that is read after the bundle is already retrieved.
+ */
+export function describeBundleDrops(meta = {}) {
+  return (meta.droppedSources ?? []).map((d) => {
+    const path = String(d.path ?? d);
+    const bytes = Number(d.bytes);
+    const size = Number.isFinite(bytes) ? ` (${bytes.toLocaleString('en-US')} bytes)` : '';
+    return `\`${path}\`${size} — dropped from the evidence bundle at the ${meta.cap ?? BUNDLE_CAP_BYTES}-byte cap` +
+      (d.reason ? `: ${d.reason}` : '');
+  });
 }
 
 /**
@@ -1046,6 +1318,12 @@ async function run() {
     return;
   }
 
+  // Plan the bundle before rendering the digest, so a source the cap will drop is NAMED in the
+  // digest itself (item #241). The digest is embedded in the bundle it describes, so this ordering
+  // is the only one in which it can describe the bundle honestly; adding it back costs a few
+  // hundred bytes out of the priority reserve, which is allocated first and never trimmed.
+  evidence.absent.push(...describeBundleDrops(buildBundleManifest(bundleFiles(evidence)).meta));
+
   const digest = buildDigest(context, evidence);
 
   const credential = selectCredential();
@@ -1207,12 +1485,22 @@ async function publishCounts({ context, evidence, gate, emitOutcome }) {
   );
 }
 
+/**
+ * The bundle's file list, in one place because it is built TWICE: once to plan what the cap will
+ * drop (so the digest can name it) and once to upload. Two divergent copies of this list would put
+ * the digest's "dropped" claim out of step with what the bundle actually carries.
+ */
+export function bundleFiles(evidence) {
+  return [
+    ...(evidence.excerpts ?? []).map((e) => ({ path: `logs/${e.source}`, text: e.text, priority: Boolean(e.priority) })),
+    ...(evidence.binaries ?? []).map((b) => ({ path: `logs/${b.source}`, base64: b.base64, priority: true })),
+    ...(evidence.health ?? []).map((h) => ({ path: `health/${h.container}.json`, text: JSON.stringify(h, null, 2) })),
+  ];
+}
+
 /** Upload the full evidence as one gzipped manifest, size-capped and self-describing. */
 async function publishBundle(api, version, evidence, context, publishResult = null, digestMarkdown = null) {
-  const files = [
-    ...evidence.excerpts.map((e) => ({ path: `logs/${e.source}`, text: e.text })),
-    ...evidence.health.map((h) => ({ path: `health/${h.container}.json`, text: JSON.stringify(h, null, 2) })),
-  ];
+  const files = bundleFiles(evidence);
   const manifest = buildBundleManifest(files, {
     digestMarkdown: digestMarkdown ?? null,
     absent: evidence.absent,
@@ -1230,8 +1518,10 @@ async function publishBundle(api, version, evidence, context, publishResult = nu
       digestOutcome: context.digestOutcome ?? null,
     },
   });
-  // Redact the bundle too — it is as publishable as the digest (FR-005).
-  for (const f of manifest.files) f.text = redactExcerpt(f.text).text;
+  // Redact the bundle too — it is as publishable as the digest (FR-005). A base64 screenshot has
+  // no `text` to scan: it carries pixels, the redactor's rules are line-oriented, and running them
+  // over a megabyte of base64 would cost real time to find nothing.
+  for (const f of manifest.files) if (typeof f.text === 'string') f.text = redactExcerpt(f.text).text;
   const payload = gzipSync(Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
   await api.uploadBundle(version, 'bundle.json.gz', payload);
   console.log(`[ci-failure-digest] bundle uploaded: ${version} (${payload.length} bytes gzipped)`);

@@ -719,6 +719,34 @@ node scripts/ci-status.mjs failure --pr 82 --full
   If failures stop entirely, expired bundles linger until the next failure publishes.
 - `--full` writes the bundle to the scratchpad **and prints the path, not the contents**.
 
+### It packs `container-logs/` RECURSIVELY, and what it cannot carry it NAMES (item #241)
+
+The packer originally read `~/mcm-ci-last-failure` with one flat `readdirSync` filtered to `*.log`,
+`_ps.txt` and `*.health.json`, so a **directory** matched nothing and was dropped without a word.
+Feature 062's device diagnostics land in exactly such a directory
+(`container-logs/_mobile-diagnostics/<flow>-attempt<n>/`), so the Maestro view hierarchy, the failure
+screenshots and the emulator logcat never reached the bundle — while the digest printed
+`maestro debug output — not present`, which reads as *the capture did not happen*. Measured on run
+**2049**: the runner held the whole tree; the retrieved bundle held 69 files, none of them from it,
+and diagnosing it needed `ssh ci@homelab` — the out-of-band step this bundle exists to remove.
+
+- **Nested files are admitted by format** (`.log .txt .json .ya?ml .md .xml .html`), because Maestro
+  writes the hierarchy and command list as JSON, not `.log`. The **flat** rules are unchanged on
+  purpose: widening them would collect every `*.health.json` twice, once as health and once as a log.
+- **Screenshots travel base64** as `{path, base64}` manifest entries, up to **3 files / 1 MB each /
+  2 MB total**, `❌`-marked captures first. `ci-status … --full` decodes them, so the extracted
+  directory holds real PNGs. They are **never trimmed** — half a PNG is a corrupt file, not a smaller
+  screenshot, so a binary that will not fit is dropped whole.
+- **Ranking beat the cap, not luck.** Max-min fairness alone loses a 300 KB screenshot to a 20 MB
+  mongo log the moment the screenshot exceeds an equal share. Step output, `_ps.txt` and the device
+  evidence are therefore allocated first out of a **priority reserve of half the cap**; the rest is
+  fair-shared. `logcat-full.log` is deliberately ranked *below* ordinary container logs — it is bulk.
+- **Every absence is stated**, in the digest and not only in the manifest: sources the cap dropped
+  whole (`meta.droppedSources`, rendered into the digest's *Not collected* list), captures over the
+  per-file/budget ceilings, files in an unsupported format, and — reader-side — entries past
+  `ci-status`'s 500-entry ceiling. The device-capture line is now **three-way**: carried / captured
+  on the runner but not folded into `container-logs` / genuinely not present.
+
 ---
 
 ## `cd-deploy` is a special case
