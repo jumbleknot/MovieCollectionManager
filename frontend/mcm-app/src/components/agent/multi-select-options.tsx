@@ -28,6 +28,8 @@ import { Button } from '@mcm/design-system';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
+import { ToolCallPending } from '@/components/agent/tool-call-pending';
+
 import { useAssistantRun } from '@/hooks/use-assistant';
 
 /** AG-UI tool name — must match the organizer's emitted tool call (generative_ui_tools.py). */
@@ -165,7 +167,16 @@ export function useRenderMultiSelectTool(): void {
     description:
       'Display a multi-select toggle list with a confirm action — e.g. which media formats a movie is owned on, or at which qualities it is ripped. Several options can be turned on before confirming.',
     parameters: renderMultiSelectParameters,
-    render: ({ args }) => <MultiSelectOptions {...args} />,
+    // 066/#265: 1.70 streams arguments, so `args` may be missing required fields. Gate on the
+    // SAME schema the model is given — never on `status`, which is pinned at `inProgress` here.
+    render: ({ args }) => {
+      const parsed = renderMultiSelectParameters.safeParse(args);
+      return parsed.success ? (
+        <MultiSelectOptions {...parsed.data} />
+      ) : (
+        <ToolCallPending label="Preparing the options…" />
+      );
+    },
   });
 }
 

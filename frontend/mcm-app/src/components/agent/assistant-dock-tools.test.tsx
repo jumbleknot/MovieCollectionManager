@@ -99,21 +99,95 @@ describe('AssistantDock generative UI', () => {
   // UNIQUE item ids (FlatList keys) — a duplicate key throws a React error that, on Android,
   // raises a LogBox RedBox overlaying the dock and hiding the post-approval "Done".
   it('produces unique item keys when a tool-call id repeats across messages', () => {
-    const registry = new Map([
-      ['render_movie_card', () => <Text>card</Text>],
-    ]) as unknown as Parameters<typeof buildDockItems>[1];
+    // 066/#265: the second argument is CopilotKit 1.70's `useRenderToolCall()` return value —
+    // a render FUNCTION — where it used to be a registry Map.
+    const renderToolCall = (() => <Text>card</Text>) as unknown as Parameters<
+      typeof buildDockItems
+    >[1];
     const tc = {
       id: 'rmc-tmdb:220289',
-      type: 'function',
+      type: 'function' as const,
       function: { name: 'render_movie_card', arguments: '{}' },
     };
     const messages = [
       { id: 'a1', role: 'assistant', content: 'preview', toolCalls: [tc] },
       { id: 'a1', role: 'assistant', content: 'preview', toolCalls: [tc] }, // duplicate after resume
     ];
-    const ids = buildDockItems(messages, registry).map((it) => it.id);
+    const ids = buildDockItems(messages, renderToolCall).map((it) => it.id);
     expect(ids.length).toBe(4); // 2 text + 2 tool
     expect(new Set(ids).size).toBe(ids.length); // all unique
+  });
+
+  // 066/#265 (FR-003, FR-008): CopilotKit 1.70 STREAMS a tool call's arguments, so `render` runs
+  // before they are complete. A card must not be drawn from absent fields — the schema each tool
+  // already declares to the model is the completeness gate, and the incomplete state is a defined
+  // component rather than a half-drawn card.
+  //
+  // Note what CANNOT be asserted here: `status`. Measured 2026-09-06 against
+  // @copilotkit/react-native@1.70.1, it is `inProgress` even for complete arguments (the library
+  // derives Complete from a `toolMessage` and Executing from `executingToolCallIds`, and MCM's
+  // render-only tools produce neither). A `status`-based gate would make every card below a
+  // permanent placeholder. See specs/066-copilotkit-170-migration/spec.md.
+  it('shows the pending state, not a card, while render_movie_card args are still streaming', () => {
+    mockAgentWithToolCall({ name: 'render_movie_card', arguments: '{}' });
+    const { getByTestId, queryByTestId } = render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(getByTestId('assistant-dock-toggle'));
+
+    expect(getByTestId('tool-call-pending')).toBeTruthy();
+    expect(queryByTestId('render-movie-card')).toBeNull();
+  });
+
+  // A partially-written argument object — the model has emitted the title but not yet the rest —
+  // is still incomplete. This is the case a `status` gate or a spread-and-cast would both get
+  // wrong: the object parses, so it looks like data.
+  it('shows the pending state when only SOME render_movie_card fields have arrived', () => {
+    mockAgentWithToolCall({
+      name: 'render_movie_card',
+      arguments: JSON.stringify({ title: 'Blade Runner' }),
+    });
+    const { getByTestId, queryByTestId } = render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(getByTestId('assistant-dock-toggle'));
+
+    expect(getByTestId('tool-call-pending')).toBeTruthy();
+    expect(queryByTestId('render-movie-card')).toBeNull();
+  });
+
+  it('shows the card and NO pending state once the args are complete', () => {
+    mockAgentWithToolCall();
+    const { getByTestId, queryByTestId } = render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(getByTestId('assistant-dock-toggle'));
+
+    expect(getByTestId('render-movie-card')).toBeTruthy();
+    expect(queryByTestId('tool-call-pending')).toBeNull();
+  });
+
+  // 066/#265 (FR-006): a UI-action tool renders an EFFECT — UiActionEffect performs its
+  // router.push on mount — so an incomplete one must render NOTHING, not a placeholder that would
+  // still mount and still fire. Before the gate this navigated to `/collections/undefined`.
+  it('renders no navigation effect at all while navigate_to_collection args are incomplete', () => {
+    mockAgentWithToolCall({ name: 'navigate_to_collection', arguments: '{}' });
+    const { getByTestId, queryByTestId } = render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(getByTestId('assistant-dock-toggle'));
+
+    expect(queryByTestId('assistant-ui-action-navigate')).toBeNull();
+    // Not even the shared pending card — mounting anything here is what fires the effect.
+    expect(queryByTestId('tool-call-pending')).toBeNull();
   });
 
   // 047 US4 (T082): the ownership toggle lists must be registered in the dock, or the organizer's

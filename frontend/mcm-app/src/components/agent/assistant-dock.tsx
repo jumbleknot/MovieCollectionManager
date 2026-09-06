@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { AssistantAvatar, Button, ChatBubble } from '@mcm/design-system';
-import { useAgent, useRenderToolRegistry } from '@copilotkit/react-native';
+import { useAgent, useRenderToolCall, type ToolCall } from '@copilotkit/react-native';
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import { ImportProgress } from '@/components/agent/import-progress';
@@ -26,7 +26,9 @@ import { useRenderImportReportTool } from '@/components/agent/render-import-repo
 import { ASSISTANT_AGENT_ID, useAssistantRun } from '@/hooks/use-assistant';
 import { useBumpAssistantData } from '@/hooks/use-assistant-data-sync';
 
-type ToolCall = { id: string; type: string; function: { name: string; arguments: string } };
+// `ToolCall` is CopilotKit's own (re-exported from @ag-ui/client). It was a local structural copy
+// until 066/#265: `useRenderToolCall` takes the real type, whose `type` is the literal 'function',
+// and a local alias widening that to `string` is what would otherwise force a cast here.
 type ChatMessage = { id?: string; role: string; content?: string; toolCalls?: ToolCall[] };
 
 // A flat, renderable view-model: text bubbles AND inline generative-UI tool cards, in order.
@@ -58,13 +60,30 @@ export function AssistantDock() {
 }
 
 /**
+ * Renders one tool call through CopilotKit's registered renderers, or null when no renderer is
+ * registered for its name. This is `useRenderToolCall()`'s return value.
+ *
+ * 066/#265: 1.70 removed `useRenderToolRegistry` — the React Native package no longer keeps a
+ * registry of its own; renderers register into react-core's canonical `copilotkit.renderToolCalls`
+ * and are read back through this function. It owns the argument parsing (partial-JSON tolerant,
+ * because arguments STREAM) and the props union that used to be built here by hand.
+ */
+type RenderToolCall = ReturnType<typeof useRenderToolCall>;
+
+/**
  * Flatten agent messages into ordered renderable items: text bubbles plus any inline
  * generative-UI tool calls whose tool name is registered (e.g. `render_movie_card`). Unknown
- * tool calls and unparseable args are skipped — never crash the chat.
+ * tool calls render nothing and are skipped — never crash the chat.
+ *
+ * 066/#265: this no longer parses `tc.function.arguments` itself, and no longer asserts
+ * `status: 'complete'`. Both were the old registry's contract; `renderToolCall` does the parsing
+ * (tolerating a half-written JSON body mid-stream) and each registered renderer decides for itself
+ * whether the arguments are complete enough to draw — see `tool-call-pending.tsx` for why that
+ * decision cannot be made from `status`.
  */
 export function buildDockItems(
   messages: ChatMessage[],
-  registry: ReadonlyMap<string, (props: { args: Record<string, unknown>; status: 'complete' }) => React.ReactElement | null>,
+  renderToolCall: RenderToolCall,
 ): DockItem[] {
   const items: DockItem[] = [];
   messages.forEach((m, i) => {
@@ -78,15 +97,7 @@ export function buildDockItems(
     }
     if (m.role === 'assistant' && Array.isArray(m.toolCalls)) {
       for (const tc of m.toolCalls) {
-        const renderFn = registry.get(tc.function.name);
-        if (!renderFn) continue;
-        let args: Record<string, unknown>;
-        try {
-          args = JSON.parse(tc.function.arguments || '{}');
-        } catch {
-          continue;
-        }
-        const element = renderFn({ args, status: 'complete' });
+        const element = renderToolCall({ toolCall: tc });
         if (element) items.push({ kind: 'tool', id: `${i}:${tc.id}`, element });
       }
     }
@@ -147,7 +158,7 @@ function AssistantPanel() {
   useRequestImportFileTool();
   // 014 enhancement 3: the post-import "what wasn't imported" report card (skipped + failed rows).
   useRenderImportReportTool();
-  const renderToolRegistry = useRenderToolRegistry();
+  const renderToolCall = useRenderToolCall();
   // T072: when an APPROVED write-apply run finishes, refresh any on-screen list. The approval
   // callback marks a pending write; the run-completion watcher below fires the bump once the
   // resumed run goes idle (a read/query turn never approves, so it never bumps).
@@ -158,7 +169,7 @@ function AssistantPanel() {
   });
 
   const rawMessages = (agent?.messages ?? []) as ChatMessage[];
-  const items = buildDockItems(rawMessages, renderToolRegistry);
+  const items = buildDockItems(rawMessages, renderToolCall);
   const isRunning = agent?.isRunning ?? false;
 
   // Bump the shared data revision when a run that applied an approved write transitions

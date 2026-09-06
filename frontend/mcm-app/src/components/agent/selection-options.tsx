@@ -21,6 +21,8 @@ import { Button } from '@mcm/design-system';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
+import { ToolCallPending } from '@/components/agent/tool-call-pending';
+
 import { useAssistantRun } from '@/hooks/use-assistant';
 
 /** AG-UI tool name — must match the search node's emitted tool call (generative_ui_tools.py). */
@@ -119,7 +121,16 @@ export function useRenderSelectionTool(): void {
     description:
       'Display selectable buttons for the movie-search workflow — search scope, collections, results, or controls. Tapping one advances the search.',
     parameters: renderSelectionParameters,
-    render: ({ args }) => <SelectionOptions {...args} />,
+    // 066/#265: 1.70 streams arguments, so `args` may be missing required fields. Gate on the
+    // SAME schema the model is given — never on `status`, which is pinned at `inProgress` here.
+    render: ({ args }) => {
+      const parsed = renderSelectionParameters.safeParse(args);
+      return parsed.success ? (
+        <SelectionOptions {...parsed.data} />
+      ) : (
+        <ToolCallPending label="Preparing the options…" />
+      );
+    },
   });
 }
 

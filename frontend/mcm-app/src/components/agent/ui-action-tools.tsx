@@ -239,66 +239,92 @@ function prefillPath(collectionId: string, movie: unknown): string {
  * Register the three allowlisted UI-action tools with CopilotKit. Mount once inside the dock
  * (alongside the generative-UI render tools).
  */
+// 066/#265: CopilotKit 1.70 streams a tool call's arguments, so a `render` runs before they are
+// complete. These four sites render EFFECTS, not cards — `UiActionEffect` performs its `router.push`
+// on mount — so an incomplete call must render NOTHING, not a pending placeholder that would still
+// mount and still fire. Each gates on its own schema and returns null until the args validate;
+// without it, `navigate_to_collection` pushed `/collections/undefined` and `download_export` asked
+// the BFF for a handle spelled `"undefined"` (its `String(args.handle)` made that a compile-clean
+// bug). `status` is deliberately not consulted: it is pinned at `inProgress` here — see
+// specs/066-copilotkit-170-migration/spec.md.
 export function useUiActionTools(): void {
   useRenderTool<{ collectionId: string }>({
     name: NAVIGATE_TO_COLLECTION_TOOL,
     description: 'Navigate the user to one of their collection screens.',
     parameters: navigateToCollectionParameters,
-    render: ({ args }) => (
-      <UiActionEffect
-        actionKey={uiActionKey(NAVIGATE_TO_COLLECTION_TOOL, args)}
-        type="navigate"
-        target="collection"
-        label="Opening that collection…"
-        perform={() => router.push(`/collections/${args.collectionId}` as RoutePush)}
-      />
-    ),
+    render: ({ args }) => {
+      const parsed = navigateToCollectionParameters.safeParse(args);
+      if (!parsed.success) return null;
+      return (
+        <UiActionEffect
+          actionKey={uiActionKey(NAVIGATE_TO_COLLECTION_TOOL, parsed.data)}
+          type="navigate"
+          target="collection"
+          label="Opening that collection…"
+          perform={() => router.push(`/collections/${parsed.data.collectionId}` as RoutePush)}
+        />
+      );
+    },
   });
 
   useRenderTool<{ collectionId: string; movieId: string }>({
     name: NAVIGATE_TO_MOVIE_TOOL,
     description: "Navigate the user to a movie's detail screen.",
     parameters: navigateToMovieParameters,
-    render: ({ args }) => (
-      <UiActionEffect
-        actionKey={uiActionKey(NAVIGATE_TO_MOVIE_TOOL, args)}
-        type="navigate"
-        target="movie-detail"
-        label="Opening that movie…"
-        perform={() =>
-          router.push(
-            `/collections/${args.collectionId}/movies/${args.movieId}` as RoutePush,
-          )
-        }
-      />
-    ),
+    render: ({ args }) => {
+      const parsed = navigateToMovieParameters.safeParse(args);
+      if (!parsed.success) return null;
+      return (
+        <UiActionEffect
+          actionKey={uiActionKey(NAVIGATE_TO_MOVIE_TOOL, parsed.data)}
+          type="navigate"
+          target="movie-detail"
+          label="Opening that movie…"
+          perform={() =>
+            router.push(
+              `/collections/${parsed.data.collectionId}/movies/${parsed.data.movieId}` as RoutePush,
+            )
+          }
+        />
+      );
+    },
   });
 
   useRenderTool<{ collectionId: string; movie?: unknown }>({
     name: PREFILL_ADD_MOVIE_TOOL,
     description: 'Open the add-movie form on a collection, pre-filled (the user still confirms).',
     parameters: prefillAddMovieParameters,
-    render: ({ args }) => (
-      <UiActionEffect
-        actionKey={uiActionKey(PREFILL_ADD_MOVIE_TOOL, args)}
-        type="prefill"
-        target="add-movie"
-        label="Opening the add-movie form…"
-        perform={() => router.push(prefillPath(args.collectionId, args.movie) as RoutePush)}
-      />
-    ),
+    render: ({ args }) => {
+      const parsed = prefillAddMovieParameters.safeParse(args);
+      if (!parsed.success) return null;
+      return (
+        <UiActionEffect
+          actionKey={uiActionKey(PREFILL_ADD_MOVIE_TOOL, parsed.data)}
+          type="prefill"
+          target="add-movie"
+          label="Opening the add-movie form…"
+          perform={() =>
+            router.push(prefillPath(parsed.data.collectionId, parsed.data.movie) as RoutePush)
+          }
+        />
+      );
+    },
   });
 
   useRenderTool<{ handle: string; filename?: string }>({
     name: DOWNLOAD_EXPORT_TOOL,
     description: "Download the user's exported collections spreadsheet.",
     parameters: downloadExportParameters,
-    render: ({ args }) => (
-      <DownloadExportEffect
-        actionKey={uiActionKey(DOWNLOAD_EXPORT_TOOL, args)}
-        handle={String(args.handle)}
-        filename={typeof args.filename === 'string' ? args.filename : ''}
-      />
-    ),
+    render: ({ args }) => {
+      const parsed = downloadExportParameters.safeParse(args);
+      if (!parsed.success) return null;
+      return (
+        <DownloadExportEffect
+          actionKey={uiActionKey(DOWNLOAD_EXPORT_TOOL, parsed.data)}
+          handle={parsed.data.handle}
+          filename={parsed.data.filename ?? ''}
+        />
+      );
+    },
   });
 }
