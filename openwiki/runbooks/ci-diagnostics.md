@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-02T23:32:14+00:00
+timestamp: 2026-09-06T12:00:00+00:00
 ---
 
 # CI self-serve diagnostics
@@ -105,6 +105,9 @@ runtime rather than any literal configured value.
 - **Exit code `3` (still waiting when `watch` timed out) is deliberately distinct from exit `1` (a
   required context failed).** There is a single CI runner in this homelab, so a saturated queue is
   expected and must never be conflated with an actual build failure.
+- **A pipe throws the exit code away — including exit 3 and exit 1.** `ci-status … watch | tail -30` reports **`tail`'s** status, so both arrive as `0`. Measured 2026-09-06: a watch that printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as `WATCH_EXIT=0`. Redirect and read the file instead: `node scripts/ci-status.mjs watch --pr 372 --timeout 5100 > /tmp/watch.log 2>&1; echo "EXIT=$?"`. `set -o pipefail` also works, but is not on by default. The general form of this trap — that `cmd | tail` reports `tail`'s status for any tool — is enumerated in [E2E testing](/openwiki/runbooks/e2e-testing.md) § instrument traps.
+- **Exit `3` twice running is usually SERIALIZATION, not a dead runner.** A merge commit fires `app-e2e` on `main`, and with capacity 1 that run takes the runner ahead of every open PR. Measured 2026-09-06: PR #370's `app-e2e` waited on `main`'s post-merge run from PR #369, then PR #372's waited on `main`'s from PR #370. Distinguish the two: a `running` row for your own branch means wait; recent rows for *other* branches with nothing for yours means starvation. Use `GET /actions/tasks?limit=14` and read `status` not `conclusion` — `conclusion` is `null` even for successful tasks in this listing.
+- **`/actions/runs/{id}/jobs` does not exist in this Forgejo build** (measured 2026-09-06 — it answers with a non-JSON body, so a naive `| jq` dies on a parse error rather than a 404). There is no per-job listing; `actions/tasks` is the only queue view.
 - **Do NOT open a PR with an AGit push (`HEAD:refs/for/main`).** AGit creates a PR with no backing
   branch — its `head.ref` is `refs/pull/<n>/head`. Forgejo treats a non-branch head as untrusted
   and runs it **without Actions secrets**: every `${{ secrets.* }}` arrives as the empty string.
