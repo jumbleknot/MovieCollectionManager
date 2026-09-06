@@ -171,7 +171,16 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "process/pull-request-batching.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:b7d9cfb7cd152092f80376b0a67d7771a3837885f09fb93efddbc43bbfaef91a"
+    # Re-fingerprinted 2026-09-06, in the same change as the text, per the gate's instruction.
+    # One clause was FALSE and is removed rather than left to mislead: "every merge invalidates the
+    # others' base, forcing an Update-branch and a full re-run". Measured on `main`'s branch
+    # protection that day, `block_on_outdated_branch` is **false**, so a sibling PR whose contexts
+    # already passed stays mergeable after another merges — the re-run is a deliberate choice about
+    # testing the combined change, not a forge requirement. The 2026-07-26 O(N²) measurement is
+    # kept; only the mechanism attributed to it was wrong. Added in its place: the cost a merge DOES
+    # impose unconditionally — the merge commit's own `app-e2e` on `main` takes the single runner
+    # ahead of every open PR (measured twice the same day, PR #369 → #370 and #370 → #372).
+    fingerprint: "sha256:0dca5fb18d4b4fc52ab297e4fedfa52c834953366d12e0b42b6063cb5986774b"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/test-authoring-conventions.md"

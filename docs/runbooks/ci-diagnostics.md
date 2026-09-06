@@ -42,6 +42,42 @@ node scripts/ci-status.mjs failure --pr 82 --full      # + fetch the full eviden
 Exit `3` is deliberately distinct from `1`. There is one `kvm` runner; a poller that exits non-zero
 on `pending` reports a saturated queue as a broken build.
 
+> ⚠️ **A pipe throws the exit code away — including this one.** `ci-status … watch | tail -30` reports
+> **`tail`'s** status, so exit `3` and exit `1` both arrive as `0`. Measured 2026-09-06: a watch that
+> printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as
+> `WATCH_EXIT=0`, because the code came from the pipe. This is the same shape as the
+> `node --test <file> --test-name-pattern` trap in CLAUDE.md — the natural-looking invocation quietly
+> reports success. Redirect and read the file instead:
+>
+> ```bash
+> node scripts/ci-status.mjs watch --pr 372 --timeout 5100 > /tmp/watch.log 2>&1; echo "EXIT=$?"
+> ```
+>
+> `set -o pipefail` also works, but it is not on by default in these sessions and a `tail` that
+> succeeds is not what you are asking about anyway. This is not a CI-specific trap — the general
+> form, and why `grep` is worse than `tail`, is in
+> [e2e-testing.md § The instrument traps that cost the most](e2e-testing.md).
+
+**Exit `3` twice running is usually SERIALIZATION, not a dead runner — and merging is what causes
+it.** A merge commit fires `app-e2e` on `main`, and with capacity 1 that run takes the runner ahead
+of every open PR. Measured 2026-09-06: PR #370's `app-e2e` waited on `main`'s post-merge run from
+PR #369, then PR #372's waited on `main`'s from PR #370. Both watches expired against a healthy
+queue. Distinguish the two before re-triggering anything — a `running` row for your own branch means
+wait, while recent rows for *other* branches with nothing for yours means starvation:
+
+```bash
+curl -s -H "Authorization: token $MCM_FORGE_TOKEN" \
+  "$FORGE/api/v1/repos/jumbleknot/mcm/actions/tasks?limit=14" \
+  | jq -r '(.workflow_runs // .)[] | "\(.status)|\(.name)|\(.head_branch)|\(.run_started_at)"'
+```
+
+Note `conclusion` is `null` even for successful tasks in this listing — read `status`, not
+`conclusion`, or every green job reads as unfinished.
+
+**`/actions/runs/{id}/jobs` does not exist in this build** (measured 2026-09-06 — it answers with a
+non-JSON body, so a naive `| jq` dies on a parse error rather than a 404). There is no per-job
+listing to drill into; `actions/tasks` above is the only queue view.
+
 ---
 
 ## The four states that are reported wrong
