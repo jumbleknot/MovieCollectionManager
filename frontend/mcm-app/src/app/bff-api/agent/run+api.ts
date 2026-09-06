@@ -26,7 +26,6 @@ import {
   CopilotRuntime,
   ExperimentalEmptyAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
-  type AgentsConfig,
 } from '@copilotkit/runtime';
 
 import { requireAuth, extractRawToken } from '@/bff-server/auth';
@@ -227,16 +226,22 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     // model + TMDB calls use the user's own keys. Only present for a billable run that resolved a
     // runnable config above; never set for the /info handshake. Decrypted, in-memory, per-run only.
     const runtime = new CopilotRuntime({
-      // The gateway `HttpAgent` comes from the app's `@ag-ui/client` (0.0.57), but
-      // `@copilotkit/runtime@1.59.5` bundles its own copy (0.0.53), so their `AbstractAgent` types
-      // are nominally distinct even though structurally identical — hence a compile-only cast
-      // (TS2322) on the whole map to copilotkit's own `AgentsConfig`. Runtime-safe: the HttpAgent IS
-      // an AbstractAgent (the agent E2E exercises this exact path).
+      // This map used to carry `as unknown as AgentsConfig` (item #371). The reason was real: the
+      // gateway `HttpAgent` came from the app's `@ag-ui/client` while `@copilotkit/runtime@1.59.5`
+      // bundled an OLDER copy (0.0.53), so their `AbstractAgent` types were nominally distinct
+      // though structurally identical, and the assignment was a TS2322.
       //
-      // Do NOT "fix" this by deduping @ag-ui/client to 0.0.57 via pnpm.overrides: it makes tsc pass
-      // WITHOUT the cast but BREAKS copilotkit's runtime — forcing its bundled 0.0.53 to 0.0.57 killed
-      // the streamed-reply path and app-e2e's assistant.spec failed 2/2 (PR #100, 2026-07-22). This
-      // cast is the correct long-term state until copilotkit itself ships a newer @ag-ui/client.
+      // Since feature 066 both sides are `@ag-ui/client@0.0.59` — `@copilotkit/runtime@1.70.1`
+      // depends on exactly the version this app pins — so there is one `AbstractAgent` type and the
+      // cast has nothing left to bridge. Verified by removing it: `tsc --noEmit` is clean.
+      //
+      // The warning that came with the old cast still stands, and is the reason this is written out
+      // rather than deleted: do NOT force the versions together with `pnpm.overrides` if they ever
+      // diverge again. That makes tsc pass WITHOUT a cast but BREAKS copilotkit's runtime — forcing
+      // its bundled 0.0.53 to 0.0.57 killed the streamed-reply path and app-e2e's assistant.spec
+      // failed 2/2 (PR #100, 2026-07-22). Convergence upstream is what made the cast removable; a
+      // dedupe is not the same thing and is not a substitute. If a future bump reintroduces the
+      // mismatch, restore the cast — do not override the version.
       agents: {
         movie_assistant: createMovieAssistantAgent({
           subjectToken,
@@ -244,7 +249,7 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
           importFile,
           agentConfig: runConfig ?? undefined,
         }),
-      } as unknown as AgentsConfig,
+      },
     });
 
     const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
