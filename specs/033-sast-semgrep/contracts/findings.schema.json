@@ -23,7 +23,21 @@
           "scanner": { "enum": ["semgrep", "cargo-audit", "pnpm-audit", "pip-audit"] },
           "ran": { "type": "boolean" },
           "findingCount": { "type": "integer", "minimum": 0 },
-          "error": { "type": ["string", "null"], "description": "Non-null iff the scanner failed fast (missing toolchain / unreachable advisory data)." }
+          "error": { "type": ["string", "null"], "description": "Non-null iff the scanner failed fast (missing toolchain / unreachable advisory data)." },
+          "blindedRules": {
+            "type": "array",
+            "description": "Semgrep only (item #224). Rules the scanner could not RUN, grouped from its own errors[]. A blinded rule contributes zero findings and is otherwise indistinguishable from a rule that found nothing, so the gate reads this to tell 'remediated' from 'could not see the code'.",
+            "items": {
+              "type": "object",
+              "required": ["ruleId", "errorCount", "fileCount"],
+              "additionalProperties": false,
+              "properties": {
+                "ruleId": { "type": "string", "minLength": 1 },
+                "errorCount": { "type": "integer", "minimum": 1 },
+                "fileCount": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
         }
       }
     },

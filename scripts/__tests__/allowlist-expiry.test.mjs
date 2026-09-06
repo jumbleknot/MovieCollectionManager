@@ -94,6 +94,38 @@ test('formatUnmatched names the entry, who added it, and that it matched nothing
   assert.match(out, /matched nothing|suppressed nothing/i);
 });
 
+// The wording carries a THIRD explanation (item #224). The line used to offer exactly two —
+// "remediated already, or the scanner changed identifier namespace" — and a rule that had gone
+// BLIND read as the first of them: `gha-curl-pipe-shell` produced 36 parse errors and 0 findings on
+// this repository while the code it was written to find sat in six workflow files. Two explanations
+// stated as exhaustive is how every future unmatched entry gets misread the same way.
+test('formatUnmatched does not present its explanations as exhaustive', () => {
+  const out = formatUnmatched([{ id: 'GHSA-yyyy', addedBy: 'steve', scanner: 'pip-audit' }]);
+  assert.match(out, /could not run|blind|unable to run/i,
+    'the possibility that the rule could not RUN must be offered alongside remediation and namespace change');
+});
+
+// Shape-agnostic on purpose: this module knows nothing about Semgrep. The SAST gate supplies the
+// per-entry detail (which rule, how many errors) because it is the side holding the scan report.
+test('formatUnmatched appends a caller-supplied annotation to the entry that has one', () => {
+  const entries = [
+    { key: 'a', id: 'rule.blind', addedBy: 'steve', scanner: 'semgrep' },
+    { key: 'b', id: 'GHSA-yyyy', addedBy: 'steve', scanner: 'pip-audit' },
+  ];
+  const out = formatUnmatched(entries, (e) => (e.id === 'rule.blind' ? 'BLINDED: 36 errors' : null));
+  const lines = out.split('\n');
+  assert.equal(lines.length, 3, 'the annotated entry contributes a second line; the other does not');
+  assert.match(lines[0], /rule\.blind/);
+  assert.match(lines[1], /BLINDED: 36 errors/);
+  assert.match(lines[2], /GHSA-yyyy/);
+  assert.doesNotMatch(lines[2], /BLINDED/);
+});
+
+test('formatUnmatched is unchanged when no annotator is supplied (the infra-image gate\'s call)', () => {
+  const entries = [{ key: 'a', id: 'GHSA-yyyy', addedBy: 'steve', scanner: 'pnpm-audit' }];
+  assert.equal(formatUnmatched(entries), formatUnmatched(entries, () => null));
+});
+
 // --- unmatched selection: the clarification-Q2 guard ---------------------------------------------
 
 const ENTRY = (over) => ({ key: 'k1', id: 'GHSA-yyyy', addedBy: 'steve', expiry: undefined, scanner: 'pnpm-audit', ...over });

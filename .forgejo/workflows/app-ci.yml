@@ -999,6 +999,18 @@ jobs:
         if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') }}
         run: |
           bash scripts/ci-log-step.sh app-e2e-install-maestro bash -e /dev/stdin <<'CI_LOG_STEP'
+          # PINNED (item #224, the uv/Trivy shape of item #307/#303). The installer URL is fixed but
+          # what it INSTALLS was not: its own source reads
+          #   if [ -z "$MAESTRO_VERSION" ]; then .../releases/latest/download/maestro.zip
+          #   else                              .../releases/download/cli-$MAESTRO_VERSION/maestro.zip
+          # so with the variable unset every run silently took whatever was newest that day, in the
+          # runner for the mobile agent flows. Unlike uv and Trivy the version cannot live in the URL
+          # — the vendor publishes no versioned endpoint — so it is passed by environment instead.
+          # Renovate keeps it current (customManagers in renovate.json, datasource github-releases,
+          # extractVersion strips the `cli-` tag prefix); renovate-workflow.guard.test.mjs asserts
+          # both the pin and the manager that maintains it are still here.
+          MAESTRO_VERSION=2.10.0
+          export MAESTRO_VERSION
           curl -Ls https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP

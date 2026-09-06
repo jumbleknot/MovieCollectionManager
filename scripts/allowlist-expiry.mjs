@@ -118,9 +118,32 @@ export function formatExpired(entry) {
   return `  ${label(entry)}  this finding was suppressed until ${entry.expiry} by an entry added by ${entry.addedBy}`;
 }
 
-/** `UNMATCHED ENTRIES` body — id, addedBy, and that it suppressed nothing this run (FR-023). */
-export function formatUnmatched(entries) {
+/**
+ * `UNMATCHED ENTRIES` body — id, addedBy, and that it suppressed nothing this run (FR-023).
+ *
+ * THE WORDING NAMES THREE CAUSES, NOT TWO (item #224). It used to offer exactly two — remediated,
+ * or the scanner changed identifier namespace — and a rule that had gone BLIND read as the first of
+ * them. Measured on this repository: the community rule `gha-curl-pipe-shell` re-parses a step's
+ * `run:` block as Bash, could not read the ci-log-step heredoc that wraps nearly every run-step
+ * here, and so produced 36 errors and 0 findings while the six `curl … | sh` lines it was written to
+ * find sat in the workflows unexamined. Its entry was reported as suppressing nothing, and the two
+ * explanations on offer both said "the code is fine now". Two causes stated as exhaustive is how
+ * every future unmatched entry gets misread the same way.
+ *
+ * `annotate` is optional and this module stays SHAPE-AGNOSTIC: it knows nothing about any scanner.
+ * A gate that holds the scan report (the SAST one does; the infra-image one has no equivalent) can
+ * pass a function returning a per-entry detail line — which rule could not run, and how badly — and
+ * gets it appended to that entry alone. Returning null, or passing nothing, leaves the line as it was.
+ *
+ * @param {Array<{id: string, addedBy: string}>} entries normalized entries
+ * @param {(entry: object) => (string|null|undefined)} [annotate] optional per-entry detail
+ */
+export function formatUnmatched(entries, annotate) {
   return entries
-    .map((e) => `  ${label(e)}  addedBy: ${e.addedBy} — matched nothing this run (remediated already, or the scanner changed identifier namespace)`)
+    .map((e) => {
+      const base = `  ${label(e)}  addedBy: ${e.addedBy} — matched nothing this run (remediated already, the scanner changed identifier namespace, or the rule could not run and so found nothing)`;
+      const extra = annotate ? annotate(e) : null;
+      return extra ? `${base}\n      ${extra}` : base;
+    })
     .join('\n');
 }

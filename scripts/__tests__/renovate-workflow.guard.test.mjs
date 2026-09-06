@@ -2449,3 +2449,43 @@ test('the uv image refs ride the `uv pin` group, not `docker base images`', () =
   const image = { manager: 'dockerfile', datasource: 'docker', depName: 'ghcr.io/astral-sh/uv', packageName: 'ghcr.io/astral-sh/uv', packageFile: 'agents/movie-assistant/Dockerfile', updateType: 'minor' };
   assert.equal(resolvedGroupName(image), 'uv pin', `the uv image refs resolve to ${resolvedGroupName(image)}`);
 });
+
+// ── Maestro CLI pin (item #224) ──────────────────────────────────────────────
+//
+// The install step pipes a FIXED url into bash, which reads as pinned. Its own source branches on
+// $MAESTRO_VERSION: unset takes `releases/latest/download/maestro.zip`, set takes
+// `releases/download/cli-$MAESTRO_VERSION/`. So the URL was pinned and the ARTIFACT was not, and
+// every mobile-agent-flows run installed whatever shipped that day. Same class as the floating Trivy
+// tag (#303) and the floating uv (#307).
+//
+// Both halves are asserted, because either alone is worthless: a pin no manager tracks goes stale,
+// and a manager whose regex misses is indistinguishable from no manager — the failure that let the
+// nx half-bump through twice.
+
+test('the Maestro install is pinned to a version rather than resolving latest at run time', () => {
+  const appCi = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml'), 'utf8');
+  const install = /curl\s+-Ls\s+https:\/\/get\.maestro\.mobile\.dev\s*\|\s*bash/.exec(appCi);
+  assert.ok(install, 'expected the Maestro installer invocation in app-ci.yml');
+  const pins = [...appCi.matchAll(/MAESTRO_VERSION=([\d.]+)/g)];
+  assert.equal(pins.length, 1, 'expected exactly one MAESTRO_VERSION pin');
+  // The pin must be EXPORTED and must precede the pipe, or the installer never sees it and falls
+  // back to `latest` while the diff still shows a version number — a pin that reads as one and is not.
+  const pinAt = appCi.indexOf('MAESTRO_VERSION=');
+  assert.ok(appCi.includes('export MAESTRO_VERSION'), 'MAESTRO_VERSION must be exported to the installer');
+  assert.ok(pinAt < install.index, 'the pin must be set BEFORE the installer runs');
+});
+
+test('a customManager keeps the Maestro pin current, and its regex actually captures it', () => {
+  const manager = (config.customManagers ?? []).find((m) => m.depNameTemplate === 'mobile-dev-inc/maestro');
+  assert.ok(manager, 'expected a customManagers entry for mobile-dev-inc/maestro');
+  assert.equal(manager.datasourceTemplate, 'github-releases');
+  // The repository tags releases `cli-2.10.0`. Without stripping that prefix Renovate has nothing
+  // comparable to the bare version in the workflow and proposes NOTHING — silently.
+  assert.ok(manager.extractVersionTemplate, 'the cli- tag prefix must be stripped or the manager no-ops');
+  assert.match('cli-2.10.0', new RegExp(manager.extractVersionTemplate));
+
+  const appCi = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml'), 'utf8');
+  const found = manager.matchStrings.flatMap((str) => [...appCi.matchAll(new RegExp(str, 'g'))]);
+  assert.equal(found.length, 1, 'the manager matchString must capture the pin that is actually in the file');
+  assert.match(found[0].groups.currentValue, /^\d+\.\d+\.\d+$/);
+});
