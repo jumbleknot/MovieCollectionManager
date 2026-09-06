@@ -20,8 +20,7 @@ for why `app-e2e` (the integration tier) is the expensive gate this rule is prot
 ## Gotchas
 
 **How many PRs? Split only when a failure would be AMBIGUOUS.** There is one `kvm` runner and
-`app-e2e` is ~35 min, so every extra PR costs a runner slot — *and* every merge invalidates the
-others' base, forcing an Update-branch and a full re-run. A stack of N PRs therefore trends toward
+`app-e2e` is ~35 min, so every extra PR costs a runner slot, and a stack of N PRs trends toward
 O(N²) `app-e2e` runs (measured 2026-07-26: four small fixes cost six-plus runs, ~4 h of runner
 time). So batching is the default. The test is not "are these changes related?" but:
 
@@ -34,6 +33,30 @@ the pnpm PR failed on the *same flow* is what proved the race was not caused by 
 full suite when neither could have been confused for the other. Run
 `pnpm nx preflight infrastructure-as-code` before pushing either way — it catches the
 offline-knowable failures without spending a runner slot at all.
+
+**The second `app-e2e` after a merge is a CHOICE, not something the forge forces — and the runner
+cost is O(N) regardless.** This passage used to say a merge "invalidates the others' base, forcing
+an Update-branch and a full re-run". Measured 2026-09-06 on `main`'s branch protection:
+
+```bash
+curl -s -H "Authorization: token $TOKEN" "$FORGE/api/v1/repos/jumbleknot/mcm/branch_protections" \
+  | jq '.[] | {branch_name, block_on_outdated_branch}'
+# → "block_on_outdated_branch": false
+```
+
+So a sibling PR whose own contexts already passed stays mergeable after another PR merges: nothing
+is *forced*. Re-running it is still often right — an outdated branch's `app-e2e` never exercised the
+two changes together — but that is a judgement about what you want tested, and it should be made
+deliberately rather than paid because the forge appeared to demand it. Whether the setting was
+`false` on 2026-07-26 is unknown; that session's ~4 h measurement stands either way.
+
+What a merge *does* cost unconditionally is one runner slot: the merge commit triggers `app-e2e` on
+`main`, which occupies the single runner ahead of every open PR. Measured twice on 2026-09-06 —
+after PR #369 merged, `main`'s own `app-e2e` ran ahead of PR #370's, and after #370 merged it ran
+ahead of #372's. Both times a `ci-status watch` expired against a queue, not a stall. Budget for
+that when sequencing merges; see
+[CI self-serve diagnostics](/openwiki/runbooks/ci-diagnostics.md) for reading a starved queue
+correctly.
 
 ## Splitting a feature moves the attribution baseline — `main` stops being the control
 
