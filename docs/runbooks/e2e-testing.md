@@ -350,6 +350,29 @@ Every one of these produced a confident, wrong answer, and every one was checkab
 - **A missing script reads as an unusable shell.** `shell-probe`'s `test -r` was false for both, so
   writing a test before its script skipped 12 cases while blaming WSL — on Linux, with a working bash.
   A skip reads as a pass; fixed in item #178.
+- **A PIPE discards the exit code — `cmd | tail` reports `tail`'s status, which is almost always 0.**
+  Measured 2026-09-06, twice in one session: `pnpm nx affected … | tail -40` printed `EXIT=0` while
+  nx's own output said `Failed tasks: mcm-app:typecheck`, and `ci-status … watch | tail -30` printed
+  `WATCH_EXIT=0` for a watch whose text said `still waiting after 5100s … (exit 3)`.
+
+  It is the **weakest** member of this list and is listed anyway, because of where it stops being
+  weak. Both times above, the true answer was printed directly over the false one, so reading the
+  output caught it in seconds — unlike `--test-name-pattern`, which leaves no contrary evidence
+  anywhere. The danger is when the status drives **control flow** instead of being read: `cmd | tail
+  && <next step>`, an `until` guard, or any wrapper keying off `$?`. That is the same failure the
+  `ci-status status && merge` warning describes in
+  [ci-diagnostics.md](ci-diagnostics.md) — a merge called on a verdict that was never true — reached
+  by a different route.
+
+  ```bash
+  cmd | tail -40; echo "EXIT=$?"          # ❌ tail's status; a red run reads as green
+  cmd > /tmp/out.log 2>&1; echo "EXIT=$?" # ✅ redirect, then read the file
+  set -o pipefail                          # ✅ where the shell is yours to configure
+  ```
+
+  Applies to every runner, not just CI — `nx`, `jest`, `cargo`, `pytest` all lose their status the
+  same way. `grep` is worse than `tail`: it exits **1** when it matches nothing, so a filtered check
+  can invent a failure as readily as it hides one.
 
 ## Two tiers: what blocks a merge, and what merely runs (2026-08-12)
 

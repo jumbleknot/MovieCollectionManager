@@ -54,7 +54,9 @@ on `pending` reports a saturated queue as a broken build.
 > ```
 >
 > `set -o pipefail` also works, but it is not on by default in these sessions and a `tail` that
-> succeeds is not what you are asking about anyway.
+> succeeds is not what you are asking about anyway. This is not a CI-specific trap — the general
+> form, and why `grep` is worse than `tail`, is in
+> [e2e-testing.md § The instrument traps that cost the most](e2e-testing.md).
 
 **Exit `3` twice running is usually SERIALIZATION, not a dead runner — and merging is what causes
 it.** A merge commit fires `app-e2e` on `main`, and with capacity 1 that run takes the runner ahead
