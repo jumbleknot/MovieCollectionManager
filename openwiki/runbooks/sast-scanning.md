@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-timestamp: 2026-08-22T21:30:00Z
+timestamp: 2026-09-06T14:25:53Z
 ---
 
 # SAST & SCA static scanning
@@ -137,6 +137,29 @@ container images rather than first-party code or first-party dependency graphs.
   paths normalized to forward slashes so they are portable across the Windows dev host and the Linux
   CI runner. A pattern written with backslashes matches nothing on the runner and passes silently on
   the Windows side — the gate accepts it, but the finding re-blocks in CI.
+- **A rule that has gone BLIND produces the same output as a remediated one — check the error count,
+  not the finding count.** A Semgrep rule it could not RUN is reported in the native output's
+  `errors[]`, never in `results[]`, so it contributes zero findings and its allowlist entry lands in
+  `UNMATCHED ENTRIES` reading as "remediated already". Measured on `main` 2026-09-06:
+  `gha-curl-pipe-shell` (from `p/owasp-top-ten`) re-parses a step's `run:` block as Bash, cannot read
+  the ci-log-step heredoc that wraps nearly every run-step here, and produced **36 errors and 0
+  findings** while six `curl … | sh` lines sat in the workflows. The gate now names this itself:
+  `RULES THAT COULD NOT RUN` lists each rule with its error and file counts, and any `UNMATCHED`
+  entry it explains is annotated `↳ this rule could not run`. Both are advisory and never move the
+  exit code — these rules error on every run, and a gate that goes red on a standing condition stops
+  being read. Coverage for that pattern is restored by the text-level custom rule
+  `mcm-ci-curl-pipe-shell`; its accepted, pinned installer URLs live in the rule, not the allowlist.
+- **On a pull request, only the CHANGED targets are scanned — a rule cannot fire on a file that was
+  never handed to Semgrep.** `--scope changed` (the PR path) builds an explicit target list, so the
+  extension filter in `isScanTarget()`, not the rule's own `paths:`, decides what a PR is gated on.
+  Workflow YAML was absent from that list until item #224, which meant a `curl … | sh` added to a
+  workflow was gated on nothing and first appeared on the post-merge full scan. Both workflow trees
+  are now included; everything else non-code stays out deliberately.
+- **`node scripts/sast-scan.mjs --test-rules` proves the custom rules before you trust a scan.** It
+  runs `semgrep --test` over `security/sast/rules/` and fails if any rule lacks a fixture — that
+  second check matters because `semgrep --test` SKIPS an unfixtured rule and still prints `N/N ✓`
+  (measured: `4/4 ✓ All tests passed` with five rule files present). The Semgrep pin lives only in
+  `sast-scan.mjs`, so the workflow step carries no second copy to drift.
 
 Full scanner matrix, local invocation, the CI gate steps, the triage/allowlist workflow, and the
 step-by-step "gate went red on an untouched dep" playbook: `docs/runbooks/sast-scanning.md`.
