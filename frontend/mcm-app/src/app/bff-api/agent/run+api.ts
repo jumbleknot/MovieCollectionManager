@@ -134,6 +134,13 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     // resolved for a billable run. Threaded to the gateway in US2 (T032); never persisted.
     let runConfig: ResolvedRunConfig | null = null;
 
+    // Item #284: whether THIS request actually runs the graph. Hoisted out of the `enforceLimits`
+    // block below because the per-run bridges (UI snapshot, single-use import file) are resolved
+    // after it and must key off the same signal — a CopilotKit handshake POST runs no graph, so it
+    // must not consume a pending upload. Stays false for the /info GET, whose empty body would
+    // otherwise classify as billable under `isBillableAgentRun`'s default-deny.
+    let billable = false;
+
     // Per-user request rate limit + cross-user thread guard + per-user/session cost ceiling (T027,
     // FR-020a / SC-011). Applied for an actual POST, not the runtime /info GET probe. A breach
     // throws RateLimitError → 429 with a friendly message and no run is started (no action). The
@@ -151,7 +158,7 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       // run no model and cost nothing — cost-gating them would lock a user who is over the ceiling
       // out of even opening the dock (a cryptic runtime_info_fetch_failed) and burn budget on every
       // dock mount. The rate limit and the cross-user thread guard still apply to EVERY POST.
-      const billable = isBillableAgentRun(bodyText);
+      billable = isBillableAgentRun(bodyText);
 
       // FR-002 gate (US1): a billable LLM run requires a runnable per-user config (enabled +
       // the chosen provider's credential + a TMDB key). Resolve it BEFORE any rate-limit/cost
@@ -203,12 +210,19 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     }
 
     const subjectToken = await resolveSubjectToken(headers);
-    // US3/R15: bridge the cached sanitized UI snapshot to the gateway (POST turns only — the
-    // /info GET handshake runs no graph). Resolves "this"/current-screen references.
-    const uiSnapshot = enforceLimits ? await resolveUiSnapshot(user.id) : undefined;
-    // 014 US2: bridge a pending uploaded spreadsheet (POST turns only) so an `import` turn
+    // US3/R15: bridge the cached sanitized UI snapshot to the gateway (billable turns only — a
+    // handshake read runs no graph). Resolves "this"/current-screen references.
+    const uiSnapshot = billable ? await resolveUiSnapshot(user.id) : undefined;
+    // 014 US2: bridge a pending uploaded spreadsheet (billable turns only) so an `import` turn
     // reaches the gateway with its file handle. Single-use — consumed here.
-    const importFile = enforceLimits ? await resolveImportFile(user.id) : undefined;
+    //
+    // Item #284: gated on `billable`, NOT on `enforceLimits`. Every POST sets `enforceLimits`,
+    // including the CopilotKit handshake reads (`availableAgents` — issued on dock OPEN —
+    // `loadAgentState`, `hello`). Under the old condition any handshake landing between the upload
+    // and the import turn silently ATE the single-use handle, and the import turn then reached the
+    // gateway with nothing: the assistant answered as though no spreadsheet had been uploaded, with
+    // no error anywhere. Both bridges share the one condition so they cannot drift apart again.
+    const importFile = billable ? await resolveImportFile(user.id) : undefined;
     // US2 (T032): pass the per-run resolved credentials to the gateway as X-Agent-Config so the
     // model + TMDB calls use the user's own keys. Only present for a billable run that resolved a
     // runnable config above; never set for the /info handshake. Decrypted, in-memory, per-run only.

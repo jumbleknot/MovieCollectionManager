@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional, and the Docker Hub page-11 403 that discards all timestamps fixed by capping dockerMaxPages at 10), the pinned-toolchain table and the Rust devcontainer rebuild gotcha, and the two-place config validator that catches the unknown-key class the guard test cannot.
+description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional, and the Docker Hub page-11 403 that discards all timestamps fixed by capping dockerMaxPages at 10), the pinned-toolchain table (Rust, semgrep, cargo-audit, python image minor held by allowedVersions to .python-version, uv), the Rust devcontainer rebuild gotcha, the python minor-hold decided on PR #362 (item #366 unifies the pin), and the two-place config validator that catches the unknown-key class the guard test cannot.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-09-05T01:39:12.000Z
+timestamp: 2026-09-05T17:30:24.000Z
 ---
 
 # Renovate dependency bot
@@ -163,6 +163,14 @@ Nothing auto-merges. Every group carries `automerge: false`.
   local lookup made right after a failed Docker Hub fetch served the failure from cache and made no
   Hub requests — the run looked identical to the broken one. Point `RENOVATE_CACHE_DIR` at a fresh
   directory for any re-measurement.
+- **The python base image minor is held by `allowedVersions`, not by grouping — raise the ceiling
+  only with the pin.** `agents/movie-assistant/.python-version` (currently `3.13`) is the single
+  source of truth for the minor. The docker `allowedVersions: "<3.14"` rule blocks Renovate from
+  proposing `3.14-slim` until the ceiling is widened. PR #362 found this the hard way: an image sweep
+  moved eight `FROM python:3.13-slim` lines to 3.14 while the `.python-version` pin and four
+  `uv.lock` files stayed on 3.13. Raising the ceiling is a spec-gated operation (item #366 will
+  unify the three unrelated dependencies — pyenv, docker, pep621 — into one). Digest refreshes of
+  the current `3.13-slim` tag still flow normally through `docker digest pins`.
 - **`@copilotkit/*` ships breaking API changes in minor bumps.** It is grouped separately behind
   `dependencyDashboardApproval`, like the `cargo 0.x` rule. One breaking member makes a whole
   batched PR unmergeable and unsplittable — and Renovate regenerates it weekly, so routine bumps
@@ -250,6 +258,7 @@ Every pin below is exact, the same at every site, and tracked by something that 
 | **Rust** | `rust-toolchain.toml` (`channel`) + devcontainer `--default-toolchain` arg | built-in `rust-toolchain` manager + a customManager for the devcontainer half (same depName and datasource — one dependency, not two) | **yes** — `rust toolchain` |
 | **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | customManager, `pypi` | no |
 | **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image (`cargo-audit@X`) | customManager, `crate` | no |
+| **python** (image minor) | `agents/movie-assistant/.python-version` (`3.13`) — the eight `FROM python:3.13-slim` image refs are held to that minor by a docker `allowedVersions: "<3.14"` rule (decided 2026-09-05, PR #362, which had moved those refs to 3.14 while the pin and four `uv.lock` files stayed on 3.13) | pyenv manager for the `.python-version` pin; docker manager for the image refs; pep621 for the lockfiles — **three unrelated dependencies today**; the guard derives the ceiling from the pin and fails when they disagree. Digest refreshes of `3.13-slim` still flow through `docker digest pins`. | **no — item #366** (item #366 will unify them) |
 | **uv** | one version string repeated at every site (3 install-script URLs + 5 `setup-uv` inputs + 4 image tags) | customManager (`github-releases`) for script/action shapes; built-in docker manager for image tags | **yes** — `uv pin` |
 
 **Grouping rule**: a group is needed when a *second* manager sees the other half of the same
