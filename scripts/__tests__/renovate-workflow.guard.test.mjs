@@ -1143,25 +1143,168 @@ test('the vault hold does NOT leak onto other docker images — the control', ()
 // pinned minor. `allowedVersions` rather than `enabled: false`, exactly as for vault: the weekly digest
 // REFRESH of 3.13-slim is wanted (that is the security patch stream), only the minor move is blocked.
 // RAISE THE CEILING when `.python-version` moves — the two must agree, and this guard is the reminder.
-const pythonImage = (updateType, packageFile = 'agents/movie-assistant/Dockerfile') => ({
-  manager: 'dockerfile', datasource: 'docker', depName: 'python', packageName: 'python', packageFile, updateType,
+// T004 (feature 067) — the SAME dependency is seen by three managers, so every assertion below has to
+// be runnable for each of them rather than for `dockerfile` alone. `pyenv` reads `.python-version` and
+// `dockerfile` reads the eight `FROM` lines; both emit depName `python` on the DOCKER datasource
+// (renovate@44 `modules/manager/pyenv/extract.js`), which is what makes them one dependency and is why
+// a rule keyed on datasource+packageName reaches both. `docker-compose` has no python site today and is
+// modelled so that adding one cannot silently fall back into the routine base-image sweep.
+const pythonDep = (manager, updateType, packageFile = 'agents/movie-assistant/Dockerfile') => ({
+  manager, datasource: 'docker', depName: 'python', packageName: 'python', packageFile, updateType,
 });
+const pythonImage = (updateType, packageFile = 'agents/movie-assistant/Dockerfile') =>
+  pythonDep('dockerfile', updateType, packageFile);
+const pythonPin = (updateType) => pythonDep('pyenv', updateType, 'agents/movie-assistant/.python-version');
 
 test('the python base image is held at the pinned minor on every update track', () => {
   const pinned = readFileSync(resolve(REPO_ROOT, 'agents/movie-assistant/.python-version'), 'utf8').trim();
   const m = /^(\d+)\.(\d+)$/.exec(pinned);
   assert.ok(m, `.python-version is '${pinned}', not a MAJOR.MINOR pin`);
   const ceiling = `<${m[1]}.${Number(m[2]) + 1}`;
+  // Feature 067: run this for the pyenv PIN as well as the dockerfile images. The ceiling exists to
+  // keep the two equal, so proving it reaches the images while saying nothing about the pin's own site
+  // would leave exactly half the invariant unguarded — and the pin is the half that decides.
   for (const updateType of ['patch', 'minor', 'major']) {
-    assert.equal(
-      resolvedAllowedVersions(pythonImage(updateType)),
-      ceiling,
-      `python image ${updateType} resolves allowedVersions ${JSON.stringify(resolvedAllowedVersions(pythonImage(updateType)))}, ` +
-        `expected '${ceiling}' from .python-version=${pinned}.\n` +
-        '  Without it a base-image sweep chooses the interpreter minor for four services while the\n' +
-        '  toolchain pin and the uv.lock files stay behind (PR #362, 2026-09-05).',
+    for (const [label, dep] of [['pin', pythonPin(updateType)], ['image', pythonImage(updateType)]]) {
+      assert.equal(
+        resolvedAllowedVersions(dep),
+        ceiling,
+        `python ${label} ${updateType} resolves allowedVersions ${JSON.stringify(resolvedAllowedVersions(dep))}, ` +
+          `expected '${ceiling}' from .python-version=${pinned}.\n` +
+          '  Without it a base-image sweep chooses the interpreter minor for four services while the\n' +
+          '  toolchain pin and the uv.lock files stay behind (PR #362, 2026-09-05).',
+      );
+    }
+  }
+});
+
+// Feature 067. Two assertions in OPPOSITE directions, and both are needed.
+//
+// The CONTROL: the interpreter group must not widen past the interpreter. A rule keyed on
+// datasource+packageName is one careless edit away from claiming every docker image, and the symptom
+// would be silent — unrelated images quietly rerouted out of the sweep a reviewer expects them in.
+//
+// The COVERAGE: `docker-compose` has NO python site in this repository today (nothing under
+// infrastructure-as-code/ references the python image). It is asserted precisely BECAUSE no lookup can
+// exercise it: a python image added to a compose file later must join the interpreter group rather than
+// fall back into `docker base images`. This is also the reason the rule carries no `matchManagers` —
+// narrowing it to pyenv+dockerfile would pass every assertion here except this one.
+// Feature 067 — the fourth python site, and a DELIBERATE divergence recorded rather than done silently
+// (the shape renovate.json already uses for backend/mc-service/Dockerfile's `rust:alpine3.21`).
+//
+// Each of the four pyproject.toml files declares `requires-python = ">=3.13"`, which renovate's pep621
+// manager extracts as depName `python` on the PYTHON-VERSION datasource — same name as the interpreter,
+// different dependency. It is a FLOOR, not a pin: `>=3.13` already admits 3.14, so it needs no change
+// when the interpreter moves, and joining it to the toolchain group would convert a compatibility
+// statement into a deployment decision.
+//
+// It is excluded today by the datasource difference alone — which is exactly why it is asserted here.
+// An exclusion that holds by coincidence is one edit to `matchDatasources` away from not holding, and
+// nothing would report it. Backlog item #366 named three python sites; this is the fourth it missed.
+// Feature 067, FR-006/FR-011 — the assertion rule resolution CANNOT provide.
+//
+// A configured ceiling constrains what the BOT proposes and is completely silent about a hand edit —
+// and a hand edit is exactly how the deferred 3.13 -> 3.14 move would otherwise have been made. So
+// this reads the real files: the eight `FROM python:` tags must name the same minor as the pin, and
+// they must all carry ONE digest. Modelled on 'the devcontainer bakes the SAME Rust the workflows
+// resolve' above, which exists for the identical reason.
+const PYTHON_IMAGE_DOCKERFILES = [
+  'agents/movie-assistant/Dockerfile',
+  'mcp-servers/movie-mcp/Dockerfile',
+  'mcp-servers/spreadsheet-mcp/Dockerfile',
+  'mcp-servers/web-api-mcp/Dockerfile',
+];
+
+/** Every `FROM python:<tag>@<digest>` in the four service images, with the file it came from. */
+function pythonImageRefs() {
+  const refs = [];
+  for (const file of PYTHON_IMAGE_DOCKERFILES) {
+    const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
+    for (const m of text.matchAll(/^FROM\s+python:(\S+?)(?:@(sha256:[a-f0-9]{64}))?\s/gm)) {
+      refs.push({ file, tag: m[1], digest: m[2] ?? null });
+    }
+  }
+  return refs;
+}
+
+test('every python image tag agrees with the pin in .python-version', () => {
+  const pinned = readFileSync(resolve(REPO_ROOT, 'agents/movie-assistant/.python-version'), 'utf8').trim();
+  const refs = pythonImageRefs();
+  // The count is asserted first: a regex that silently matched nothing would make every assertion
+  // below vacuously true, which is the failure mode this whole test exists to catch.
+  assert.equal(
+    refs.length,
+    8,
+    `found ${refs.length} python image references across ${PYTHON_IMAGE_DOCKERFILES.length} Dockerfiles, expected 8.\n` +
+      '  Either a service was added/removed (update this list) or the pattern stopped matching.',
+  );
+  const disagreeing = refs.filter((r) => !r.tag.startsWith(`${pinned}-`));
+  assert.deepEqual(
+    disagreeing.map((r) => `${r.file}: python:${r.tag}`),
+    [],
+    `.python-version pins ${pinned} but these image references name a different minor.\n` +
+      '  Development and production would run different interpreters — the drift PR #362 introduced\n' +
+      '  (2026-09-05) and item #366 exists to make impossible.',
+  );
+});
+
+test('all eight python image references carry ONE identical digest', () => {
+  const refs = pythonImageRefs();
+  const undigested = refs.filter((r) => r.digest === null);
+  assert.deepEqual(
+    undigested.map((r) => `${r.file}: python:${r.tag}`),
+    [],
+    'a python image reference lost its digest pin, so the tag is no longer content-addressed.',
+  );
+  const digests = new Set(refs.map((r) => r.digest));
+  assert.equal(
+    digests.size,
+    1,
+    `the eight python references carry ${digests.size} different digests: ${[...digests].join(', ')}.\n` +
+      '  One tag resolving to several images means the four services do not run the same interpreter\n' +
+      '  build, which no version-level check would ever notice.',
+  );
+});
+
+test('the requires-python FLOOR acquires neither the interpreter group nor its ceiling', () => {
+  const floor = {
+    manager: 'pep621', datasource: 'python-version', depName: 'python', packageName: 'python',
+    packageFile: 'agents/movie-assistant/pyproject.toml', updateType: 'minor',
+  };
+  assert.equal(
+    resolvedAllowedVersions(floor),
+    null,
+    `the requires-python floor picked up ceiling ${JSON.stringify(resolvedAllowedVersions(floor))}.\n` +
+      '  A floor is a range, not a pin; bounding it above would stop declaring what the code supports.',
+  );
+  assert.notEqual(
+    resolvedGroupName(floor),
+    'python toolchain',
+    'the requires-python floor was captured by the interpreter group.\n' +
+      '  It must stay out: moving the interpreter does not change what the services SUPPORT.',
+  );
+});
+
+test('the python toolchain group does NOT widen onto other docker images — the control', () => {
+  for (const depName of ['node', 'postgres', 'redis', 'ghcr.io/astral-sh/uv', 'hashicorp/vault']) {
+    const dep = { ...pythonImage('minor'), depName, packageName: depName };
+    assert.notEqual(
+      resolvedGroupName(dep),
+      'python toolchain',
+      `${depName} was captured by the python toolchain group — the rule has widened past its own dependency.`,
     );
   }
+});
+
+test('a python image in ANY file joins the interpreter group, including a compose file with no site today', () => {
+  const dep = pythonDep('docker-compose', 'minor', 'infrastructure-as-code/docker/hypothetical/compose.yaml');
+  assert.equal(
+    resolvedGroupName(dep),
+    'python toolchain',
+    'a python image seen by the docker-compose manager falls back into `docker base images`.\n' +
+      '  The interpreter group must not be scoped by manager: a python image added to a compose file\n' +
+      '  would then have its minor chosen by a base-image sweep, which is exactly PR #362.',
+  );
 });
 
 test('the python hold does NOT leak onto other docker images — the control', () => {
@@ -1171,9 +1314,58 @@ test('the python hold does NOT leak onto other docker images — the control', (
   }
 });
 
-test('python still rides the `docker base images` group, so its digest refresh is not stranded', () => {
-  assert.equal(resolvedGroupName(pythonImage('minor')), 'docker base images');
+// UPDATED AT THE CAUSE, feature 067 (item #366). This test used to assert that python rode the
+// `docker base images` group. That was the interim state after PR #362 and this feature deliberately
+// reverses it: an interpreter minor decided inside a sweep of unrelated infrastructure images is a
+// decision nobody made. The test is NOT deleted — the half that matters, that a digest refresh is
+// never stranded, is the #350 protection and is kept here and hardened below.
+test('a python VERSION update leaves the base-image sweep for its own group', () => {
+  assert.equal(resolvedGroupName(pythonImage('minor')), 'python toolchain');
   assert.equal(resolvedGroupName(pythonImage('digest')), 'docker digest pins');
+});
+
+// Feature 067 — THE ORDERING GUARD, and the only check that catches it.
+//
+// The `python toolchain` rule must sit AFTER `docker base images` and BEFORE `docker digest pins`.
+// Measured 2026-09-07 across three local `RENOVATE_DRY_RUN=lookup` runs differing only in that rule's
+// position: placed AFTER `docker digest pins`, all eight digest refreshes migrate off
+// `renovate/docker-digest-pins` (branch tally 37 -> 29) onto `renovate/python-toolchain` (9 -> 17),
+// where they share a branch AND the `${packageFile}:${depName}:${currentValue}` de-duplication key
+// with the eight minor updates. That is the condition items #308 and #350 measured as a SILENT drop —
+// the python base image digest then never refreshes, and nothing reports it.
+//
+// A reorder is invisible to renovate-config-validator, to CI, and to a reading of the diff. This test
+// is the whole defence. Do not weaken it to "the rule exists".
+test('a python DIGEST refresh keeps its own branch, whatever the version track is doing', () => {
+  for (const updateType of ['digest', 'pinDigest']) {
+    assert.equal(
+      resolvedGroupName(pythonImage(updateType)),
+      'docker digest pins',
+      `python ${updateType} resolves group ${JSON.stringify(resolvedGroupName(pythonImage(updateType)))}, ` +
+        "expected 'docker digest pins'.\n" +
+        '  If this says `python toolchain`, the toolchain rule has been ordered AFTER the digest-pin\n' +
+        '  rule and the two updates now collide on one branch — the #308/#350 silent drop, which\n' +
+        '  left the python base image digest never refreshing at all.',
+    );
+  }
+});
+
+// The interpreter is ONE dependency across two managers, so a group that reaches only one half is the
+// half-bump this repository has already paid for four times (nx #141/#193, Playwright #204, pnpm #225).
+// Asserting `dockerfile` alone would prove nothing about the pin, which is the site that decides.
+test('the interpreter pin and every python image move in ONE group, on every version track', () => {
+  for (const updateType of ['patch', 'minor', 'major']) {
+    for (const [label, dep] of [['pyenv pin', pythonPin(updateType)], ['dockerfile image', pythonImage(updateType)]]) {
+      assert.equal(
+        resolvedGroupName(dep),
+        'python toolchain',
+        `the ${label} resolves group ${JSON.stringify(resolvedGroupName(dep))} on the ${updateType} track, ` +
+          "expected 'python toolchain'.\n" +
+          '  Without it the interpreter minor for four services arrives inside `docker base images`,\n' +
+          '  alongside node/postgres/mongo — which is how PR #362 chose it (2026-09-05).',
+      );
+    }
+  }
 });
 
 test('vault still rides the `docker base images` group, so a digest refresh is not stranded', () => {
