@@ -4,7 +4,7 @@ title: BFF (Backend-for-Frontend)
 description: The Node.js server-side layer embedded in the mcm-app Expo Router process. Owns session/auth handling, proxies every domain call to mc-service, and forwards agent requests to the Agent Gateway. The only component the browser/mobile client is allowed to talk to.
 resource: frontend/mcm-app/README.md
 tags: [bff, expo-router, auth, proxy, nodejs]
-timestamp: 2026-06-20T21:57:08-04:00
+timestamp: 2026-09-07T00:00:00+00:00
 ---
 
 # BFF (Backend-for-Frontend)
@@ -47,6 +47,22 @@ RFC 9457 problem+json on failure. The client never calls mc-service directly.
   `SameSite=Strict` cookies (access token, refresh token — scoped to the refresh path only — and
   session id); client code never sees a raw JWT. The client Axios instance sends no `Authorization`
   header at all and relies on `withCredentials: true`.
+- **The shipped image carries only 76 of 1513 production packages — and the build gate enforces it.**
+  `pnpm deploy --prod` materializes ~1600 packages because they are genuine `dependencies` of
+  `mcm-app`, but they are dependencies of the web bundle, which Metro already compiled into `dist/`
+  at build time. `scripts/prune-bff-runtime-modules.mjs` walks the pnpm symlink graph from three
+  roots (`express`, `@expo/server`, `openai`) and deletes everything outside that closure, shrinking
+  the image from 1.73 GB to 335 MB (measured 2026-09-07). The 76 packages retained are exactly what
+  a traced full-E2E run plus a route-sweep ever touched. **Do not delete the script or remove it from
+  the Dockerfile deps stage** — removing it silently re-bloats the image without any failing check.
+- **A bare-specifier build failure means a CopilotKit/LangChain upgrade added a lazy provider.**
+  The builder stage also runs `prune-bff-runtime-modules.mjs --check-bundle dist/server` to detect
+  packages the exported bundle names by string (e.g., `@copilotkit/runtime` reaches its adapters via
+  `createRequire(globalThis.__ExpoImportMetaRegistry.url)`) that a closure walk cannot see. If the
+  build goes red with *"the exported server bundle reaches for … bare specifier(s)"*, check whether
+  the new specifier resolves from `/app/runtime` (add it to `DYNAMIC_ROOTS` in the script) or is
+  already unresolvable (record it as `'unresolvable'` in `KNOWN_DYNAMIC_SPECIFIERS`). Do not delete
+  the check — its purpose is to turn a future production 500 into a red build here.
 
 See [Auth chain](/openwiki/invariants/auth-chain.md) for the full login-to-request-validation
 sequence, and [Secrets management](/openwiki/invariants/secrets-management.md) for how the BFF's own
