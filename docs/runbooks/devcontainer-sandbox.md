@@ -341,6 +341,46 @@ docker exec -e DOCKER_HOST=unix:///var/run/docker-host.sock -u coder -w /workspa
 `verify-engine-seam.sh` assertion 3b guards this with a deliberately **slow** (2 s) trivial command.
 A fast probe there would assert nothing.
 
+### 🔴 A `-v` mount SOURCE is resolved by the daemon, on the VM — not in this container
+
+The seam above is about output. This one is about paths, and it bites the moment you run a container
+of your own from in here (a probe, a scanner, Playwright). The `docker` CLI does not open the source
+path; it sends the mount spec to the engine, which resolves it against **its own** filesystem. The
+dev container's paths are not the daemon's paths.
+
+**Only the workspace tree is shared.** `/workspaces/mcm` is genuinely the same directory on both
+sides — verified by writing a canary in here and reading it back from inside a container. The VM has
+its **own** `/tmp` and `/home/coder`, so a path under either is a different directory that merely
+looks right.
+
+**And a missing source is not an error — the daemon CREATES it, as an empty directory.** That single
+fact is why both symptoms below point away from the cause. Measured 2026-09-07 (item #249):
+
+| what you mount | what the container actually gets | how it fails |
+| --- | --- | --- |
+| a session scratch dir under `/tmp/…` | an **empty directory** the daemon just created | `MODULE_NOT_FOUND … requireStack: [ 'internal/preload' ]` — reads as a broken script |
+| `-v /var/run/docker-host.sock:/var/run/docker.sock` | an **empty directory** where a socket belongs | `FATAL … unable to find the specified image "<tag>" … docker error: … Cannot connect to the Docker daemon` — reads as an image that was never built |
+| `-v /var/run/docker.sock:/var/run/docker.sock` | the real socket | works |
+
+The socket line is the counter-intuitive one: this container's own `DOCKER_HOST` is
+`docker-host.sock` (above), so that is the name you reach for — but as a mount **source** it is
+resolved VM-side, where the engine's socket is plain `/var/run/docker.sock`. Mount the wrong one and
+`ls -la /var/run` on the VM afterwards shows a freshly created `docker-host.sock` **directory**
+sitting next to the real `srw-rw---- docker.sock`; those stubs persist and make the next attempt fail
+the same way.
+
+**Probe before you debug the payload** — one command tells you which of the two you are looking at:
+
+```bash
+docker run --rm -v "$SRC":/x:ro alpine:3 stat -c '%F %n' /x   # "directory" for a dir you expected;
+                                                              # "socket" for a socket. Empty dir => not shared.
+docker run --rm -v "$SRC":/x:ro alpine:3 ls -la /x            # empty => the daemon invented this path
+```
+
+**So stage anything a container must read under `/workspaces`**, not in a session scratch directory —
+and remember it lands in the build context of any `docker build .` from the repo root, so delete it
+when you are done (or add it to `.git/info/exclude` while it lives).
+
 ---
 
 ## 6. Networking quirks you will hit
@@ -1037,6 +1077,9 @@ enforcement**, so an upgrade is a security-relevant change, not a routine one. B
 - **`pnpm` is not in the VM** — only in the dev container. VM-level scripts must
   `docker exec … bash -lc`, or fail with `rc=127`.
 - **`docker exec` output vanishes for commands over ~0.5 s** unless `DOCKER_HOST` bypasses socat (§5).
+- **A `docker -v` source resolves on the VM, and a missing one is CREATED as an empty directory** —
+  only `/workspaces` is shared, and the engine socket to mount is `/var/run/docker.sock`, not
+  `docker-host.sock` (§5).
 - **`nc -z` reports OPEN against blocked destinations** (§3).
 - **`sbx template save` holds a lock** and blocks other `sbx` commands, for many minutes on a
   large sandbox.
