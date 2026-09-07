@@ -1001,6 +1001,53 @@ on subsequent opens.
 To force a toolchain refresh after a new image: `rustup update`, or `docker volume rm` the relevant
 cache volume, then reopen.
 
+### ★★ Editing a file under `node_modules/` writes into the pnpm STORE — every copy changes, and `pnpm install` will not undo it
+
+Instrumenting a dependency is a legitimate move and sometimes the only one: item #242's root cause
+was found by adding a single `appendFileSync` to Metro's `deriveAbsolutePathFromContext`, which
+named the offending `require.context` in one build. What makes it dangerous here is not the edit —
+it is **what else the edit touches**.
+
+pnpm's store is content-addressed and `node_modules` entries are **hardlinks into it**, so files
+with identical content share one inode **even across different package versions**. Measured
+2026-09-07 on this container. Three paths that look like three copies:
+
+```bash
+$ stat -c '%i %h %n' node_modules/.pnpm/metro@0.84.{5_supports-color@8.1.1,6_supports-color@7.2.0,6_supports-color@8.1.1}/node_modules/metro/src/lib/contextModule.js
+601279 4 …/metro@0.84.5_supports-color@8.1.1/…/contextModule.js
+601279 4 …/metro@0.84.6_supports-color@7.2.0/…/contextModule.js
+601279 4 …/metro@0.84.6_supports-color@8.1.1/…/contextModule.js
+```
+
+One inode, link count **4**. `contextModule.js` is byte-identical in metro 0.84.5 and 0.84.6, so the
+version in the path is decoration — and the fourth link is the store entry itself
+(`.pnpm-store/v11/files/fc/9a7b…`, whose **name is the hash of the ORIGINAL content**). Note the
+store is the in-workspace `.pnpm-store/` (gitignored), not the `~/.local/share/pnpm/store` volume
+named above, so the blast radius is this workspace rather than the machine.
+
+Two consequences, both of which bit during #242:
+
+- **A per-file backup-then-patch LOOP corrupts its own backups.** Backing up each of the three paths
+  and then patching it yielded a file patched three times, and backups that were progressively
+  dirtier — `bak1` clean, `bak2` one injected line, `bak3` two. "Restore each file from its own
+  backup" therefore *reinstates* the corruption. Only the first backup was ever clean.
+- **The store entry now disagrees with its own content hash**, and nothing re-verifies that on an
+  ordinary `pnpm install` — the corruption outlives a reinstall and is inherited by anything else
+  resolving that content.
+
+So, when you must patch a dependency:
+
+1. `stat -c '%h %i'` it first. A link count > 1 means other paths — and the store — change with it.
+2. **Record the clean `md5sum` before the first write.** That single hash is the only thing that can
+   prove the tree is back, and it is cheap.
+3. Patch **one** path and expect the duplicates to follow. Do not loop over "each copy".
+4. Restore, then verify: the md5 from step 2, **and** `pnpm store status`, which walks the store and
+   answers `Packages in the store are untouched` (exit 0) or names what was modified. That is the
+   independent check — run it before you commit or claim a clean tree.
+
+Recovery when the backups are already dirty (as above): strip the injected lines **by content**
+rather than restoring a file, then confirm against the clean md5 and `pnpm store status`.
+
 ### ★★ Claude Code's global config is `~/.claude.json` — a SIBLING of the volume, not inside it
 
 `mcm-claude` mounts the `~/.claude` **directory**, so it is easy to assume all of Claude Code's
