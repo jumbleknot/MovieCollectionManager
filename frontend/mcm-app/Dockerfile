@@ -51,6 +51,17 @@ ENV EXPO_PUBLIC_KEYCLOAK_URL=$EXPO_PUBLIC_KEYCLOAK_URL
 # Generate the Expo Router server bundle into dist/
 RUN npx expo export --platform web
 
+# Gate on what the bundle reaches for at RUNTIME by bare specifier (item #249). The deps stage below
+# prunes the shipped dependency tree to the closure of what `node server.js` can actually load, and
+# the one thing that closure walk cannot see is a package named only by a string inside a minified
+# bundle — `@copilotkit/runtime` reaches its LangChain/OpenAI adapters through
+# `createRequire(globalThis.__ExpoImportMetaRegistry.url)`. This check re-derives that specifier set
+# from the bundle just exported and FAILS THE BUILD if one appears that the prune script has not
+# accounted for, so a CopilotKit or LangChain upgrade that adds a provider is a red build here
+# rather than a route that 500s the first time a user hits it in production.
+COPY scripts/prune-bff-runtime-modules.mjs /build-scripts/prune-bff-runtime-modules.mjs
+RUN node /build-scripts/prune-bff-runtime-modules.mjs --check-bundle dist/server
+
 # ── Stage 2: Production dependency tree ───────────────────────────────────────
 # Resolves the workspace and materializes a standalone PRODUCTION tree at
 # /app/runtime. This is its own stage rather than part of the runner because the
@@ -89,8 +100,17 @@ COPY packages/design-system/ ./packages/design-system/
 # npm stays intact in THIS stage: the root package.json preinstall runs
 # `npx --yes only-allow pnpm`, so npx must exist for the install to succeed. The
 # CVE removal belongs in the runner, which is the stage that actually ships.
+# Prune the deployed tree to what the runtime can reach (item #249). `--prod` keeps ~1600 packages
+# (~900 MB) because they ARE dependencies of mcm-app — but they are dependencies of the WEB BUNDLE,
+# which Metro already compiled into dist/ in the builder stage. The runtime process is
+# `node server.js`, and a traced run of the full web E2E suite plus a sweep of every route the app
+# serves touched 76 of them, every one inside the closure the script walks from `express`,
+# `@expo/server` and `openai`. It runs HERE, in the stage whose only output is /app/runtime, so the
+# removal is a smaller COPY into the runner rather than a delete layered on top of a fat one.
+COPY scripts/prune-bff-runtime-modules.mjs /build-scripts/prune-bff-runtime-modules.mjs
 RUN pnpm install --frozen-lockfile && \
-    pnpm deploy --filter=mcm-app --prod --legacy /app/runtime
+    pnpm deploy --filter=mcm-app --prod --legacy /app/runtime && \
+    node /build-scripts/prune-bff-runtime-modules.mjs /app/runtime
 
 # ── Stage 3: Production runtime ───────────────────────────────────────────────
 # Receives artifacts only. No package manager runs here and none is needed —
