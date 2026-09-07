@@ -350,7 +350,7 @@ installs from its existing lockfile.
   - **Done when**: every row matches, and `git status --porcelain` shows no stray probe edits —
     several steps in this feature temporarily modify `renovate.json`.
 
-- [ ] T022 Close backlog item #366 against its own acceptance criteria
+- [X] T022 Close backlog item #366 against its own acceptance criteria
   - Verify each of the item's four criteria, then close. Note in the closing comment that criterion 1
     turned out to be **already satisfied by accident** (both halves share a datasource, so they were
     never going to drift) and that the real defect was the *destination* branch — plus that the item
