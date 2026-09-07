@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Dev container on Docker Sandbox microVM (primary environment)
-description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure (resolve the digest from the registry via manifests/<tag>, not the run summary or packages API), and the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart).
+description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, bind-mount source resolution (VM daemon resolves paths, a missing source is silently created empty), networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure (resolve the digest from the registry via manifests/<tag>, not the run summary or packages API), and the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart).
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-09-07T12:08:00+00:00
+timestamp: 2026-09-07T14:30:00+00:00
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -49,6 +49,26 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 - **The allowlist resolves per FQDN, never per apex domain — including MCP endpoints.** A sibling name on an already-allowed domain is a separate entry and is refused without one: `api.expo.dev` answers 200 from the dev container while `mcp.expo.dev` NXDOMAINs. The same front-door-vs-blob-host trap that applies to registries (see source §4) applies to every second hostname a service uses, MCP endpoints included. Both `mcp.expo.dev` and `mcp.context7.com` were absent from the allowlist and are now added (item #253); apply the running-sandbox procedure from source §4 if the environment predates the fix.
 
 - **The socat relay truncates output — exit 0 with no stdout (D-19).** The dev container reaches the VM engine through `docker-outside-of-docker`, fronted by a socat relay (`/var/run/docker.sock`). socat's half-close timeout defaults to 0.5 s; `docker exec` half-closes stdin immediately, so socat tears the relay down mid-response. Fast commands work, so the seam looks healthy under quick probes; only real work fails. Fix already applied in `.devcontainer/sandbox/devcontainer.json`: `"DOCKER_HOST": "unix:///var/run/docker-host.sock"`. If you invoke Docker from a context that does not inherit `containerEnv`, pass it explicitly: `docker exec -e DOCKER_HOST=unix:///var/run/docker-host.sock …`.
+
+- **A `-v` mount SOURCE is resolved by the daemon, on the VM — not in this container (measured 2026-09-07, item #382).** The `docker` CLI does not open the source path; it sends the mount spec to the engine, which resolves it against **its own** filesystem. Only `/workspaces/mcm` is genuinely shared between the dev container and the VM daemon — write a file here and it appears inside a container. The VM has its own `/tmp` and `/home/coder`, so a path under either is a different directory that merely looks right.
+
+  **A missing source is not an error — the daemon CREATES it as an empty directory.** This is why both failure modes below point away from the actual cause:
+
+  | what you mount | what the container actually gets | how it fails |
+  |---|---|---|
+  | a session scratch dir under `/tmp/…` | an empty directory the daemon just created | `MODULE_NOT_FOUND … requireStack: [ 'internal/preload' ]` — reads as a broken script |
+  | `-v /var/run/docker-host.sock:/var/run/docker.sock` | an empty directory where a socket belongs | `Cannot connect to the Docker daemon` — reads as an image that was never built |
+  | `-v /var/run/docker.sock:/var/run/docker.sock` | the real socket | works |
+
+  The socket line is the counter-intuitive one: this container's own `DOCKER_HOST` is `docker-host.sock`, so that is the name you reach for — but as a mount **source** it is resolved VM-side, where the engine's socket is plain `/var/run/docker.sock`. Mount the wrong one and `ls -la /var/run` on the VM afterwards shows a freshly created `docker-host.sock` **directory** sitting next to the real socket; those stubs persist and make the next attempt fail the same way.
+
+  **Probe before you debug the payload:**
+  ```bash
+  docker run --rm -v "$SRC":/x:ro alpine:3 stat -c '%F %n' /x   # "directory" not "socket" => wrong source
+  docker run --rm -v "$SRC":/x:ro alpine:3 ls -la /x            # empty => the daemon invented this path
+  ```
+
+  **Stage anything a container must read under `/workspaces`**, not in a session scratch directory — and delete it (or add to `.git/info/exclude`) when done, since it lands in the build context of any `docker build .` from the repo root.
 
 - **`host.docker.internal` is unreachable from the dev container** — Docker's implicit entry resolves to `fe80::1` (link-local IPv6). Under `--network=host`, a sibling's published port *is* localhost. Use `localhost` instead. The gateway and MCP containers still need `--add-host host.docker.internal:host-gateway` (`172.18.0.1`); that flag is load-bearing — keep it.
 
