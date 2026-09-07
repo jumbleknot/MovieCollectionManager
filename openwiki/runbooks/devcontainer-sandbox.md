@@ -4,7 +4,7 @@ title: Dev container on Docker Sandbox microVM (primary environment)
 description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure (resolve the digest from the registry via manifests/<tag>, not the run summary or packages API), and the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart).
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-08-31T11:01:00+00:00
+timestamp: 2026-09-07T12:08:00+00:00
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -79,7 +79,7 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
     ForEach-Object { "{0,8:N1} GB  {1}" -f ($_.Length/1GB), $_.Name }
   ```
 
-  ⚠️ **Two dev-container images will not fit simultaneously.** The toolchain image is ~14 GB and the derived container another ~13.5 GB. Remove the previous pair before pulling a new toolchain image. Reclaim space without a resize: `docker builder prune -f` (safe, never touches images). **Never `docker image prune -a`** — it evicts the 3.5 GB Playwright image which must then be re-pulled.
+  ⚠️ **Two dev-container images will not fit simultaneously.** The toolchain image is ~14 GB and the derived container another ~13.5 GB. Remove the previous pair before pulling a new toolchain image. Reclaim space without a resize: `docker builder prune -f` (safe, never touches images). **Never `docker image prune -a`** — it evicts the 3.5 GB Playwright image which must then be re-pulled. The `mcm-bff` production image is now **335 MB** (down from 1.73 GB after item #249 — `scripts/prune-bff-runtime-modules.mjs` keeps only the 81-package runtime closure); it is no longer a meaningful disk consumer.
 
 - **Relocating the data root off `C:` breaks SSH until ACLs are fixed.** There is no supported setting for moving the sandbox data root — a junction on `%LOCALAPPDATA%\DockerSandboxes\sandboxes` works, but files on another volume inherit that volume's ACL (grants `Authenticated Users`). Windows OpenSSH refuses a config it considers world-readable, so `ssh mcm.sbx` and `open-sandbox.ps1` fail with `Bad permissions… NT AUTHORITY\Authenticated Users`. Fix with `icacls` on the directory (not the files directly — using `(OI)(CI)` with `/T` on files strips ACEs entirely, leaving files no one can read): `icacls $ssh /inheritance:r /grant:r "$($env:USERNAME):(OI)(CI)F" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"` then `icacls "$ssh\*" /reset`. Re-verify the junction after every `sbx` upgrade — an MSI could recreate the folder.
 
