@@ -85,6 +85,24 @@ suppression), `movie-form` radio selectors (native picker crashes on Android Fab
 press wrappers, the bottom-LEFT assistant-dock toggle, removable list chips, the sparing orange
 (`tertiary`) accents, and the web-table-vs-native-card density split.
 
+## What ships in the BFF image (and what fails the build)
+
+The image carries the exported bundle plus **only the dependency closure `node server.js` can
+reach** — `express`, `@expo/server`, `openai` and what those pull in. Everything else
+`pnpm deploy --prod` materializes is a dependency of the WEB BUNDLE, which Metro has already
+compiled into `dist/`, so it is deleted in the build by
+[`scripts/prune-bff-runtime-modules.mjs`](../../scripts/prune-bff-runtime-modules.mjs).
+
+That script also runs as a **gate** in the builder stage. Expo Router's server output can name a
+package with a bare string rather than an import — `@copilotkit/runtime` reaches its provider
+adapters through `createRequire(globalThis.__ExpoImportMetaRegistry.url)` — and a closure walk
+cannot see a string. So the build re-derives every such specifier from the freshly exported bundle
+and **fails** if one appears that the script does not account for. If a dependency bump turns the
+build red with *"the exported server bundle reaches for … bare specifier(s)"*, that is this gate:
+decide whether the specifier resolves from `/app/runtime` (add it to `DYNAMIC_ROOTS`) or already
+does not (record it as `unresolvable`). Do not delete the check — its whole purpose is to stop a
+pruned package from becoming a 500 on one route in production.
+
 ## Web E2E note (Tamagui on this machine)
 
 Metro's **dev** web bundler OOMs building the app + Tamagui locally, so web E2E

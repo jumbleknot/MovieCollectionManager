@@ -890,6 +890,21 @@ currently attached to a container), which the web-E2E recipe needs and which mus
 | `mcm-bff` image | 5.85 GB | **1.73 GB** |
 | `pnpm nx docker-build mcm-app` in the dev container | failed twice at `exporting layers`, 4.2 GB then 6.9 GB free | **succeeds, 9 m 22 s, export 26.6 s** |
 
+**Item #249 took the same image to 335 MB** (measured 2026-09-07). What #244 shipped was the
+*runtime* tree; almost none of it is reachable AT runtime. `pnpm deploy --prod` materialized 1628
+packages (916 MB) because they are dependencies of `mcm-app` — but they are dependencies of the WEB
+BUNDLE, already compiled into `dist/`. A traced run (a `--require` preload recording every module
+resolution and `fs` read while the full web E2E suite plus a sweep of every route drove the
+container) touched **76** of them. `scripts/prune-bff-runtime-modules.mjs` now keeps only the
+closure of `express`, `@expo/server` and `openai` — **81 packages, 22.9 MB** — and the build fails
+if the exported bundle grows a lazy `require("…")` the script does not account for.
+
+| | after #244 | after #249 |
+| --- | --- | --- |
+| `mcm-bff` image | 1.73 GB | **335 MB** |
+| `/app/runtime/node_modules` | 916 MB, 1628 packages | **22.9 MB, 81 packages** |
+| Trivy `--severity CRITICAL --ignore-unfixed` | exit 0 | exit 0 |
+
 ---
 
 ## 8b. 🔴 A cold recreate needs three things the template does not carry
