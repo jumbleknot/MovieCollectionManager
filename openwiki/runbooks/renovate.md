@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional, and the Docker Hub page-11 403 that discards all timestamps fixed by capping dockerMaxPages at 10), the pinned-toolchain table (Rust, semgrep, cargo-audit, python image minor held by allowedVersions to .python-version, uv), the Rust devcontainer rebuild gotcha, the python minor-hold decided on PR #362 (item #366 unifies the pin), and the two-place config validator that catches the unknown-key class the guard test cannot.
+description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional, and the Docker Hub page-11 403 that discards all timestamps fixed by capping dockerMaxPages at 10), the pinned-toolchain table (Rust, semgrep, cargo-audit, python interpreter minor now on 3.14 unified into the python toolchain group by item #366, uv), the Rust devcontainer rebuild gotcha, the python toolchain group position gotcha (after docker base images, before docker digest pins — wrong order silently breaks digest refreshes), and the two-place config validator that catches the unknown-key class the guard test cannot.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-09-05T17:30:24.000Z
+timestamp: 2026-09-07T00:00:00.000Z
 ---
 
 # Renovate dependency bot
@@ -163,14 +163,15 @@ Nothing auto-merges. Every group carries `automerge: false`.
   local lookup made right after a failed Docker Hub fetch served the failure from cache and made no
   Hub requests — the run looked identical to the broken one. Point `RENOVATE_CACHE_DIR` at a fresh
   directory for any re-measurement.
-- **The python base image minor is held by `allowedVersions`, not by grouping — raise the ceiling
-  only with the pin.** `agents/movie-assistant/.python-version` (currently `3.13`) is the single
-  source of truth for the minor. The docker `allowedVersions: "<3.14"` rule blocks Renovate from
-  proposing `3.14-slim` until the ceiling is widened. PR #362 found this the hard way: an image sweep
+- **The python interpreter minor is now tracked by the `python toolchain` group (item #366) — raise
+  the ceiling only by moving `.python-version`.** `agents/movie-assistant/.python-version` (currently
+  `3.14`) is the single source of truth. The docker `allowedVersions` ceiling is derived from that
+  pin (`<3.15`); the guard fails when they disagree. PR #362 found this the hard way: an image sweep
   moved eight `FROM python:3.13-slim` lines to 3.14 while the `.python-version` pin and four
-  `uv.lock` files stayed on 3.13. Raising the ceiling is a spec-gated operation (item #366 will
-  unify the three unrelated dependencies — pyenv, docker, pep621 — into one). Digest refreshes of
-  the current `3.13-slim` tag still flow normally through `docker digest pins`.
+  `uv.lock` files stayed on 3.13. Item #366 unified the pin and the eight image refs into the
+  `python toolchain` group so future raises travel together. The `requires-python` floors
+  (`>=3.13`) are deliberately outside the group — they are compatibility ranges, not deployment
+  pins. Digest refreshes of the current tag still flow through `docker digest pins`.
 - **`@copilotkit/*` ships breaking API changes in minor bumps.** It is grouped separately behind
   `dependencyDashboardApproval`, like the `cargo 0.x` rule. One breaking member makes a whole
   batched PR unmergeable and unsplittable — and Renovate regenerates it weekly, so routine bumps
@@ -258,12 +259,16 @@ Every pin below is exact, the same at every site, and tracked by something that 
 | **Rust** | `rust-toolchain.toml` (`channel`) + devcontainer `--default-toolchain` arg | built-in `rust-toolchain` manager + a customManager for the devcontainer half (same depName and datasource — one dependency, not two) | **yes** — `rust toolchain` |
 | **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | customManager, `pypi` | no |
 | **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image (`cargo-audit@X`) | customManager, `crate` | no |
-| **python** (image minor) | `agents/movie-assistant/.python-version` (`3.13`) — the eight `FROM python:3.13-slim` image refs are held to that minor by a docker `allowedVersions: "<3.14"` rule (decided 2026-09-05, PR #362, which had moved those refs to 3.14 while the pin and four `uv.lock` files stayed on 3.13) | pyenv manager for the `.python-version` pin; docker manager for the image refs; pep621 for the lockfiles — **three unrelated dependencies today**; the guard derives the ceiling from the pin and fails when they disagree. Digest refreshes of `3.13-slim` still flow through `docker digest pins`. | **no — item #366** (item #366 will unify them) |
+| **python** (the interpreter minor) | `agents/movie-assistant/.python-version` (3.14) — the images are held to it by a docker `allowedVersions` ceiling derived from that pin (`<3.15`) | **1 pin + 8 image refs + 4 `requires-python` floors + 4 lockfiles** — pyenv and docker emit the **same depName AND the same datasource**, so `docker base images` used to claim the whole thing (and did, on PR #362); pep621 floors ride the *python-version* datasource and are **out** of the group; locks ride `lockFileMaintenance`; the guard derives the ceiling from the pin and fails when they disagree | **yes** — `python toolchain` (feature 067, item #366) |
 | **uv** | one version string repeated at every site (3 install-script URLs + 5 `setup-uv` inputs + 4 image tags) | customManager (`github-releases`) for script/action shapes; built-in docker manager for image tags | **yes** — `uv pin` |
 
 **Grouping rule**: a group is needed when a *second* manager sees the other half of the same
 dependency. Trivy covers two files with one depName and has no group — one dependency, one branch.
 Rust and uv each need one because the built-in manager claims a half under a different depName.
+**Python's reason is different**: pyenv and docker emit the same depName *and* datasource, so `docker
+base images` claimed both halves already — but it put them in the wrong PR (PR #362 sent the
+interpreter minor into an infra-images title). The `python toolchain` group fixes the *destination*,
+not the drift.
 
 ### Rust: the devcontainer must be rebuilt after a toolchain bump
 
@@ -294,6 +299,35 @@ the repository resolves the channel and its components from `rust-toolchain.toml
 > one rebuilds the image with a toolchain named `1.98.0`, which the file then resolves locally with
 > no download at all. **The only manual step is pulling the rebuilt image.** CI is unaffected
 > throughout: it installs rustup fresh with `--default-toolchain none` on a runner with open egress.
+
+### python toolchain: rule position is load-bearing
+
+> ⛔ **The `python toolchain` rule's POSITION in `packageRules` is load-bearing.** It must sit **after**
+> `docker base images` and **before** `docker digest pins`. Measured 2026-09-07 across three local
+> `RENOVATE_DRY_RUN=lookup` runs differing only in that rule: placed *after* `docker digest pins`, all
+> eight digest refreshes migrate off `renovate/docker-digest-pins` (branch tally 37 → 29) onto
+> `renovate/python-toolchain` (9 → 17), sharing a branch and the
+> `${packageFile}:${depName}:${currentValue}` key with the eight minor updates — the #308/#350 silent
+> drop, which left the python base image digest never refreshing at all. The rule's neighbours say
+> "ordered last", meaning last among the *grouping* rules; both also precede `docker digest pins`.
+> `renovate-workflow.guard.test.mjs` asserts the digest track still resolves to `docker digest pins`,
+> so a reorder reddens the gate rather than going quiet — nothing else would catch it.
+
+**The `requires-python` floors are deliberately NOT in the group.** `>=3.13` is a range, not a pin,
+and it already admits 3.14: it states what the code *supports*, and joining it to the group would
+turn that into a deployment decision. It is excluded by the datasource difference alone, which is
+exactly why the guard asserts the exclusion — a rule that excludes something by accident is one edit
+to `matchDatasources` away from not excluding it.
+
+**Does an interpreter minor need the four `uv.lock` files regenerated? No — and no check needs
+adding.** A uv lock is universal across its `requires-python` range, and that range already admits
+the new minor, so the existing lock resolves unchanged. The check that fails if the interpreter and
+the locks ever disagree already runs: `uv sync --frozen --no-dev` inside all four image builds via
+`scripts/agent-stack.mjs` under `pnpm nx up-agents-prod` in `app-ci`. Verified 2026-09-07 on the
+3.13 → 3.14 move: all four images built cleanly. Do not check this with `docker build -q` — it
+suppresses output and leaves exit 0 as the only evidence, unable to distinguish "uv resolved N
+packages" from "a cached layer replayed". Use `--progress=plain`, and `--no-cache` when layers are
+warm.
 
 ### uv: one version string, many sites
 
