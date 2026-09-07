@@ -24,7 +24,7 @@ must be fixed before implementation begins.
 
 ## Phase 1: Setup
 
-- [ ] T001 Provision renovate 44 and capture the pre-change lookup baseline into `/tmp/.../baseline-lookup.log` (scratchpad, not the repo)
+- [X] T001 Provision renovate 44 and capture the pre-change lookup baseline into `/tmp/.../baseline-lookup.log` (scratchpad, not the repo)
   - **Spec reference**: enabling work for SC-006; contract C4, C5
   - Install `renovate@44` into a scratch directory, then from the repo root run
     `RENOVATE_PLATFORM=local RENOVATE_DRY_RUN=lookup LOG_LEVEL=debug node <scratch>/node_modules/renovate/dist/renovate.js`.
@@ -35,7 +35,7 @@ must be fixed before implementation begins.
   - **Done when**: the tally is recorded and shows `renovate/docker-digest-pins` carrying the eight
     python digest updates, and **no** `renovate/python-toolchain` branch.
 
-- [ ] T002 [P] Re-resolve the current `python:3.14-slim` manifest digest
+- [X] T002 [P] Re-resolve the current `python:3.14-slim` manifest digest
   - **Spec reference**: FR-011; research R7
   - Query the registry for the multi-arch index digest of `library/python:3.14-slim`. **Do not copy
     the digest from `research.md`** — `3.14-slim` is a moving tag and will have been rebuilt since
@@ -45,7 +45,7 @@ must be fixed before implementation begins.
     3.14 digest cannot be trusted either.
   - **Done when**: one digest is recorded, and the 3.13 cross-check agrees with T001's log.
 
-- [ ] T003 [P] Record the baseline guard-test count
+- [X] T003 [P] Record the baseline guard-test count
   - **Spec reference**: enabling work
   - `node --test scripts/__tests__/renovate-workflow.guard.test.mjs` and record `pass`/`fail`/`skip`.
   - **Done when**: counts recorded. A suite that later passes with the *same* count has not gained
@@ -58,7 +58,7 @@ must be fixed before implementation begins.
 
 **⚠️ Blocks every test task in Phases 3-6.**
 
-- [ ] T004 Parameterise the python dependency helper by manager in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [X] T004 Parameterise the python dependency helper by manager in `scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Spec reference**: enabling work for FR-001, FR-004; contract C1
   - The existing `pythonImage(updateType, packageFile)` helper hard-codes `manager: 'dockerfile'`.
     Every assertion in this feature must run for `pyenv` too, and one for `docker-compose`. Add a
@@ -83,7 +83,7 @@ and confirm both give `python toolchain`, while an unrelated image still gives `
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] Assert the pin and the image references share one group, on every version track, and update the existing group test AT THE CAUSE, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [X] T005 [P] [US1] Assert the pin and the image references share one group, on every version track, and update the existing group test AT THE CAUSE, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Scenarios covered**: US1-AC1; FR-001, FR-002, **FR-014**; INV-4; SC-002; contract C1 (rows 1-6)
   - Assert `resolvedGroupName` is `python toolchain` for **both** `pyenv` and `dockerfile`, for
     `patch`, `minor` and `major`. Assert both managers, not one — the whole point is that they move
@@ -105,7 +105,7 @@ and confirm both give `python toolchain`, while an unrelated image still gives `
     of the existing test failing for the same reason — that failure is the proof the rewrite is wired
     to the real config rather than to a stale expectation.
 
-- [ ] T006 [P] [US1] Assert an unrelated image is untouched, and that a future compose reference joins the group, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [X] T006 [P] [US1] Assert an unrelated image is untouched, and that a future compose reference joins the group, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Scenarios covered**: US1-AC2; FR-009; contract C1 (row 9), C3
   - Two assertions, opposite directions. **Control**: `node`, `postgres`, `redis`,
     `ghcr.io/astral-sh/uv` and `hashicorp/vault` must NOT resolve to `python toolchain` — this is what
@@ -119,7 +119,7 @@ and confirm both give `python toolchain`, while an unrelated image still gives `
   - **NATURAL RED**: the compose assertion fails (`docker base images`). The controls pass already —
     that is correct and expected; a control's job is to keep passing.
 
-- [ ] T007 [US1] Assert the language-version floor acquires neither the group nor the ceiling, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [X] T007 [US1] Assert the language-version floor acquires neither the group nor the ceiling, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Scenarios covered**: US1-AC3; FR-007; contract C2
   - Assert a dep `{manager: 'pep621', datasource: 'python-version', depName: 'python'}` resolves to
     `allowedVersions` `null` and to a group that is **not** `python toolchain`.
@@ -143,7 +143,7 @@ and confirm both give `python toolchain`, while an unrelated image still gives `
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Add the `python toolchain` rule to `renovate.json`, after `uv pin` and before `docker digest pins`
+- [X] T008 [US1] Add the `python toolchain` rule to `renovate.json`, after `uv pin` and before `docker digest pins`
   - **Scenarios covered**: US1-AC1, US1-AC2; FR-001, FR-002, FR-008
   - `{"matchDatasources": ["docker"], "matchPackageNames": ["python"], "groupName": "python toolchain", "automerge": false}`.
     **No `matchManagers`** — deliberately the same match set as the ceiling rule, so the group and the
@@ -163,7 +163,7 @@ and confirm both give `python toolchain`, while an unrelated image still gives `
     unchanged. The rewritten half of the pre-existing group test (T005) must be **green** here — if
     it is still red, T005's rewrite was not applied and this task is not done.
 
-- [ ] T009 [US1] Validate the config and confirm the resolution against the real bot
+- [X] T009 [US1] Validate the config and confirm the resolution against the real bot
   - **Scenarios covered**: SC-001; contract C4, C5
   - `npx --yes --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json`.
     **Both flags are load-bearing** — without `--no-global` the file is validated as a global
@@ -189,7 +189,7 @@ installs from its existing lockfile.
 > **Task order here is deliberate.** T010 moves the pin *alone*, which drives the existing ceiling
 > assertion RED — a natural RED for INV-2 that needs no inducement. Do not collapse T010 and T011.
 
-- [ ] T010 [US2] Raise the pin in `agents/movie-assistant/.python-version` from `3.13` to `3.14`
+- [X] T010 [US2] Raise the pin in `agents/movie-assistant/.python-version` from `3.13` to `3.14`
   - **Scenarios covered**: US2-AC1; FR-010; INV-2
   - **Verify RED**: `node --test --test-name-pattern 'pinned minor' scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **NATURAL RED**: the existing ceiling assertion derives `<3.15` from the pin and finds `<3.14`.
@@ -197,7 +197,7 @@ installs from its existing lockfile.
     [data-model.md](./data-model.md) describes; there is no edit order that avoids it, which is what
     stops a half-move merging.
 
-- [ ] T011 [US2] Raise `allowedVersions` from `<3.14` to `<3.15` in `renovate.json` and rewrite its description
+- [X] T011 [US2] Raise `allowedVersions` from `<3.14` to `<3.15` in `renovate.json` and rewrite its description
   - **Scenarios covered**: US2-AC1; FR-004; contract C1
   - The current description forward-references this feature as future work ("raise this under a spec
     that also re-locks … makes the three sites one dependency"). Rewrite it to describe the grouping
@@ -205,7 +205,7 @@ installs from its existing lockfile.
     moves only together with the pin.
   - **Verify GREEN**: `node --test --test-name-pattern 'pinned minor' scripts/__tests__/renovate-workflow.guard.test.mjs`
 
-- [ ] T012 [P] [US2] Retag all eight `FROM python:` lines to `3.14-slim@<T002 digest>`
+- [X] T012 [P] [US2] Retag all eight `FROM python:` lines to `3.14-slim@<T002 digest>`
   - **Scenarios covered**: US2-AC1; FR-010, FR-011; INV-1, INV-3
   - `agents/movie-assistant/Dockerfile` (build + runtime), `mcp-servers/movie-mcp/Dockerfile`,
     `mcp-servers/spreadsheet-mcp/Dockerfile`, `mcp-servers/web-api-mcp/Dockerfile` (build + runtime
@@ -219,7 +219,7 @@ installs from its existing lockfile.
     `.python-version` and `renovate.json`, so a bare `git diff --stat` will not show 8 and reads as a
     failure.
 
-- [ ] T013 [US2] Build all four images on 3.14 and confirm each installs from its existing lockfile
+- [X] T013 [US2] Build all four images on 3.14 and confirm each installs from its existing lockfile
   - **Scenarios covered**: US2-AC2, US2-AC3; FR-012; INV-8; SC-005
   - `pnpm nx up-agents-prod` builds all four (`scripts/agent-stack.mjs` lines 54-57).
     `uv sync --frozen --no-dev` is the assertion: uv defines `--frozen` as *do not update the
@@ -232,7 +232,7 @@ installs from its existing lockfile.
   - **Done when**: all four build, **and** each build's output shows uv reporting a package count
     (e.g. `Installed 44 packages`). A build with no such line has not proved anything.
 
-- [ ] T014 [US2] Confirm no lockfile moved
+- [X] T014 [US2] Confirm no lockfile moved
   - **Scenarios covered**: FR-012; SC-005
   - **Done when**: `git status --porcelain '**/uv.lock'` is empty, and the four `requires-python`
     values are still `>=3.13` (FR-007 — the floor is not part of this move).
@@ -247,7 +247,7 @@ installs from its existing lockfile.
 
 **Independent Test**: change one image tag, run the guards, see them fail and name the file.
 
-- [ ] T015 [US3] Assert every `FROM python:` tag equals `.python-version`, by reading both off disk, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [X] T015 [US3] Assert every `FROM python:` tag equals `.python-version`, by reading both off disk, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Scenarios covered**: US3-AC1, US3-AC2; FR-006, **FR-011**; INV-1, **INV-3**; SC-003, SC-004
   - Rule resolution cannot provide this — a configured ceiling constrains what the *bot* proposes and
     is silent about a hand edit. Read the four Dockerfiles, extract every `FROM python:X.Y-slim` tag,
@@ -271,7 +271,7 @@ installs from its existing lockfile.
     both inducements at once cannot distinguish an assertion that checks tags from one that checks
     both.
 
-- [ ] T016 [US3] Extend the ceiling assertion to the `pyenv` manager in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [X] T016 [US3] Extend the ceiling assertion to the `pyenv` manager in `scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Scenarios covered**: US3-AC3; FR-004, FR-005; INV-2; contract C1 (rows 1-3)
   - The existing assertion models `dockerfile` only. Run the same derivation for `pyenv`, so the
     ceiling is proved to reach the pin's own site and not merely the images.
@@ -291,7 +291,7 @@ installs from its existing lockfile.
 **Independent Test**: resolve the digest track for a python image reference and confirm it gives
 `docker digest pins`.
 
-- [ ] T017 [US4] Assert the `digest` and `pinDigest` tracks still resolve to `docker digest pins`, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [X] T017 [US4] Assert the `digest` and `pinDigest` tracks still resolve to `docker digest pins`, in `scripts/__tests__/renovate-workflow.guard.test.mjs`
   - **Scenarios covered**: US4-AC1, US4-AC2; FR-003; INV-5; contract C1 (rows 7-8), C4
   - **T005 already rewrote that test's version half** (FR-014). This task hardens what remains: keep
     its `digest` assertion, add the `pinDigest` track beside it, and — the part that did not exist
@@ -305,7 +305,7 @@ installs from its existing lockfile.
     the feature** — it is the only check that catches the rule being reordered, and reordering is
     invisible to the validator, to CI, and to a reading of the diff.
 
-- [ ] T018 [US4] Confirm against the real bot that the digest updates are still separated
+- [X] T018 [US4] Confirm against the real bot that the digest updates are still separated
   - **Scenarios covered**: SC-006; contract C4, C5
   - Re-run the lookup and compare the branch tally with T001's baseline: `renovate/docker-digest-pins`
     must still carry the eight python digest updates.
@@ -318,7 +318,7 @@ installs from its existing lockfile.
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T019 Rewrite the python row of the pinned-toolchains table in `docs/runbooks/renovate.md` §8
+- [X] T019 Rewrite the python row of the pinned-toolchains table in `docs/runbooks/renovate.md` §8
   - **Scenarios covered**: FR-013; SC-007
   - The row currently reads `grouped? **no — item #366**` and "three unrelated dependencies today".
     It becomes **yes — `python toolchain`**, with the site count corrected to 1 pin + 8 image refs +
@@ -336,7 +336,7 @@ installs from its existing lockfile.
   - **Done when**: the row states the group, the four site kinds, the re-lock answer and the named
     check; §8's note carries python's reason and the ordering constraint.
 
-- [ ] T020 Run the test tiers this diff touches
+- [X] T020 Run the test tiers this diff touches
   - **Scenarios covered**: final validation
   - Derive from the diff, not from memory: `renovate.json` and `scripts/__tests__/` →
     `node --test scripts/__tests__/*.test.mjs` (`guardrails / naming`) and the config validator
@@ -344,7 +344,7 @@ installs from its existing lockfile.
     and agent tiers in `app-ci`; `docs/` → no test tier.
   - **Done when**: all pass, with the **skip** count checked, not just the absence of red.
 
-- [ ] T021 Walk [quickstart.md](./quickstart.md) end to end
+- [X] T021 Walk [quickstart.md](./quickstart.md) end to end
   - **Scenarios covered**: SC-001 … SC-007
   - Confirm the "What done looks like" table matches reality on all six rows.
   - **Done when**: every row matches, and `git status --porcelain` shows no stray probe edits —

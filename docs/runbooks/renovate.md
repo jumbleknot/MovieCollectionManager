@@ -657,8 +657,52 @@ maintaining it trades a floating reference for a rotting one.** So every pin bel
 | **Rust** | `rust-toolchain.toml` (`channel`) | that file + the devcontainer's baked `--default-toolchain` | built-in **`rust-toolchain`** manager (depName `rust`, datasource `rust-version`) + a customManager for the devcontainer half | **yes** — `rust toolchain` |
 | **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | one | customManager, `pypi` | no — one manager, one depName |
 | **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image (`cargo-audit@X`) | two | customManager, `crate` | no — one manager, one depName |
-| **python** (image minor) | `agents/movie-assistant/.python-version` (3.13) — the images are HELD to it by a docker `allowedVersions: "<3.14"` rule (decided 2026-09-05 on PR #362, which had moved eight `FROM python:3.13-slim` lines to 3.14 while the pin and four uv.lock files stayed on 3.13) | 1 pin + 8 image refs + 4 lockfiles | pyenv manager for the pin, docker for the images, pep621 for the locks — **three unrelated dependencies today**; the guard derives the ceiling from the pin and fails when they disagree. Digest refreshes of 3.13-slim still flow (`docker digest pins`). Raise the ceiling only with the pin, under a spec that re-locks — item **#366** makes them one dependency | **no — item #366** |
+| **python** (the interpreter minor) | `agents/movie-assistant/.python-version` (3.14) — the images are held to it by a docker `allowedVersions` ceiling derived from that pin (`<3.15`) | **1 pin + 8 image refs + 4 `requires-python` floors + 4 lockfiles** | pyenv for the pin and docker for the images — **the same depName AND the same datasource**, so a rule keyed on datasource+packageName reaches both; pep621 sees the floors on the *python-version* datasource, deliberately out (see below); the locks ride `lockFileMaintenance` | **yes** — `python toolchain` (feature 067, item #366) |
 | **uv** | the version string, at every site | 3 install-script URLs + 5 `setup-uv` inputs + **4 image tags** (#308) | customManager (`github-releases`) for the first two shapes; the built-in **docker** manager for the image tags | **yes** — `uv pin`, which is what joins the two managers |
+
+### python: the group fixes the DESTINATION, and the re-lock question is answered (item #366)
+
+Python is the one entry in the table above whose halves were **never going to drift apart**. Renovate's
+built-in pyenv manager emits depName `python` on the **docker** datasource — the same pair the
+dockerfile manager emits — so `docker base images` already claimed the pin and the eight image refs
+together. The defect was *where* they moved: raising the ceiling would have sent the interpreter for
+four production services into a pull request titled after unrelated infrastructure images. That is
+PR #362 (2026-09-05). So python's reason for needing a group is a **new one**, not the "a second
+manager claims a half" reason every other row has: here a *routine group* claimed the whole thing.
+
+> ⛔ **The `python toolchain` rule's POSITION in `packageRules` is load-bearing.** It must sit **after**
+> `docker base images` and **before** `docker digest pins`. Measured 2026-09-07 across three local
+> `RENOVATE_DRY_RUN=lookup` runs differing only in that rule: placed *after* `docker digest pins`, all
+> eight digest refreshes migrate off `renovate/docker-digest-pins` (branch tally 37 → 29) onto
+> `renovate/python-toolchain` (9 → 17), sharing a branch and the
+> `${packageFile}:${depName}:${currentValue}` key with the eight minor updates — the #308/#350 silent
+> drop, which left the python base image digest never refreshing at all. The rule's neighbours say
+> "ordered last", meaning last among the *grouping* rules; both also precede `docker digest pins`.
+> `renovate-workflow.guard.test.mjs` asserts the digest track still resolves to `docker digest pins`,
+> so a reorder reddens the gate rather than going quiet — nothing else would catch it.
+
+**The `requires-python` floors are deliberately NOT in the group.** `>=3.13` is a range, not a pin, and
+it already admits 3.14: it states what the code *supports*, and joining it to the group would turn that
+into a deployment decision. It is excluded by the datasource difference alone, which is exactly why the
+guard asserts the exclusion — a rule that excludes something by accident is one edit to
+`matchDatasources` away from not excluding it.
+
+**Does an interpreter minor need the four `uv.lock` files regenerated? No — and no check needs adding.**
+A uv lock is universal across its `requires-python` range, and that range already admits the new minor,
+so the existing lock resolves unchanged. (Renovate would produce no lockfile update for such a move in
+any case: it re-locks only manifests it has itself edited, and this move edits none.) **The check that
+fails if the interpreter and the locks ever disagree already runs**: `uv sync --frozen --no-dev` inside
+all four image builds — `--frozen` means *do not update the lockfile; error if it is out of date* — via
+`scripts/agent-stack.mjs` (which names all four Dockerfiles) under `pnpm nx up-agents-prod` in `app-ci`.
+Verified 2026-09-07 on the 3.13 → 3.14 move: all four images built, `Installed 44/44/47/169 packages`.
+
+> ⚠️ **Do not check this with `docker build -q`.** It suppresses the output and leaves exit 0 as the
+> only evidence, which cannot distinguish "uv resolved N packages" from "a cached layer replayed".
+> Use `--progress=plain`, and `--no-cache` when the layers are warm.
+
+Wheel availability on a new interpreter is a live concern, not a theoretical one:
+`agents/movie-assistant/Dockerfile` installs `build-essential` precisely because `annoy` (via
+nemoguardrails) ships no matching wheel and compiles from source. That build stage is what proves it.
 
 > ⚠️ **Grouping is needed when a SECOND manager sees the other half — it is not a ritual for every
 > custom manager.** The Trivy manager (§ item #303) covers two files with one depName and has no
