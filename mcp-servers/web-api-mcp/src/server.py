@@ -180,7 +180,11 @@ def build_app() -> Any:
 
     _silence_credential_logging()  # must precede any TMDB call — see the docstring above
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    return TmdbKeyMiddleware(mcp.streamable_http_app())
+    return TmdbKeyMiddleware(mcp.streamable_http_app(
+        stateless_http=True,
+        json_response=True,
+        transport_security=_TRANSPORT_SECURITY,
+    ))
 
 
 def main() -> None:

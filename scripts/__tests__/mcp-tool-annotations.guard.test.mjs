@@ -93,3 +93,61 @@ test('feature 068: a bare `dict` return IS caught (the silent-loss case)', () =>
   const src = '@mcp.tool()\nasync def bad() -> dict:\n    """doc."""\n';
   assert.deepEqual(imprecise(toolReturnAnnotations(src)), [{ name: 'bad', annotation: 'dict' }]);
 });
+
+// ── Transport configuration must reach streamable_http_app() on EVERY server ────────────────────
+//
+// Contract: specs/068-mcp-2x-migration/contracts/mcp-tool-result.md §4 (INV-10, INV-11).
+//
+// mcp 2.x moved `stateless_http`, `json_response` and `transport_security` off the constructor and
+// onto `streamable_http_app()`. Miss them on one server and the SDK's auto-enable branch fires:
+//
+//     if transport_security is None and host in ("127.0.0.1", "localhost", "::1"):
+//         transport_security = TransportSecuritySettings(...)   # DNS-rebinding protection ON
+//
+// ...which 421-rejects a Docker service-name Host and breaks every containerized gateway->MCP call.
+//
+// This guard exists because that is EXACTLY what happened: web-api-mcp wraps its app in
+// `TmdbKeyMiddleware(...)` — a third wrapper the migration's edit did not match — so it kept a bare
+// `streamable_http_app()` while the other two were converted. Nothing caught it: the unit tiers
+// never call build_app(), and the integration suites drive the server in-memory via Client(mcp),
+// which never goes through the HTTP app at all. It surfaced only in CI, as
+// `gateway -> web-api-mcp returned 421`.
+
+export function streamableHttpAppCalls(source) {
+  const out = [];
+  const re = /\bmcp\.streamable_http_app\s*\(/g;
+  let m;
+  while ((m = re.exec(source)) !== null) {
+    let i = re.lastIndex - 1;
+    let depth = 0;
+    for (; i < source.length; i += 1) {
+      if (source[i] === '(') depth += 1;
+      else if (source[i] === ')') { depth -= 1; if (depth === 0) { i += 1; break; } }
+    }
+    out.push(source.slice(m.index, i));
+  }
+  return out;
+}
+
+test('feature 068: every server passes the transport config to streamable_http_app (INV-10/INV-11)', () => {
+  for (const server of MCP_SERVERS) {
+    const src = readFileSync(resolve(REPO_ROOT, `mcp-servers/${server}/src/server.py`), 'utf8');
+    const calls = streamableHttpAppCalls(src);
+    assert.equal(calls.length, 1, `${server}: expected exactly one streamable_http_app() call, found ${calls.length}`);
+    const [call] = calls;
+    for (const kwarg of ['transport_security', 'stateless_http', 'json_response']) {
+      assert.ok(
+        call.includes(kwarg),
+        `${server}: streamable_http_app() does not pass \`${kwarg}\`. On mcp 2.x these are app ` +
+        `parameters, not constructor kwargs — omitting transport_security auto-enables ` +
+        `DNS-rebinding protection, which 421-rejects the Docker service-name Host the gateway uses.`,
+      );
+    }
+  }
+});
+
+test('feature 068: the call parser survives a middleware-wrapped app (the case that was missed)', () => {
+  const wrapped = 'def build_app():\n    return TmdbKeyMiddleware(mcp.streamable_http_app(\n        stateless_http=True,\n    ))\n';
+  const [call] = streamableHttpAppCalls(wrapped);
+  assert.ok(call.includes('stateless_http'));
+});
