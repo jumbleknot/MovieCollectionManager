@@ -122,6 +122,10 @@ async def test_server_unreachable_collection_is_tool_error_not_exception(
     # mc-service's 404 (DAC parity) surfaces as a structured MCP tool error (FR-018).
     assert result.is_error
 
+    # No status sentinel is asserted here on purpose: the READ tools let httpx.HTTPStatusError
+    # propagate raw, so `mc-service-status:<code>` was never produced on this path on 1.x either.
+    # The sentinel belongs to the WRITE tools — see the boundary test at the end of this module.
+
 
 # ── Structured-content semantics across the 1.x -> 2.x boundary (feature 068) ──────────────────
 # Contract: specs/068-mcp-2x-migration/contracts/mcp-tool-result.md INV-1/INV-2.
@@ -166,3 +170,42 @@ async def test_server_sequence_tool_is_wrapped_under_result(
     assert isinstance(result.structured_content, dict)
     assert set(result.structured_content) == {"result"}
     assert isinstance(result.structured_content["result"], list)
+
+
+@pytest.mark.asyncio
+async def test_write_error_sentinel_survives_the_mcp_boundary(
+    mc_token: str, temp_collection: str
+) -> None:
+    """A write tool's `mc-service-status:<code>` must reach the caller THROUGH the MCP boundary.
+
+    Feature 068. Nothing asserted this before, and its absence is what let a real regression ship:
+    every existing check either asserted only `is_error`, or called the tool function directly and
+    never crossed the boundary at all.
+
+    mcp 2.x withholds the message of any exception it treats as a CRASH (`UnexpectedToolError` ->
+    a bare "Error executing tool <name>"), preserving it only for a deliberately raised `ToolError`.
+    `McServiceToolError` was a plain RuntimeError, so it fell on the crash side and the sentinel was
+    dropped. The gateway classifies outcomes from that sentinel — 409 -> skipped_duplicate,
+    5xx -> retry, 400/422 -> field-level reason — so all three degraded to a generic failure while
+    this suite stayed green.
+    """
+    title = f"MCP Boundary Dup {id(object())}"
+    set_request_token(mc_token)
+    async with Client(mcp) as session:
+        body = _movie_body(title)
+        first = await session.call_tool(
+            "add_movie",
+            {"collectionId": temp_collection, "movie": body, "idempotencyKey": "k-b-1"},
+        )
+        assert not first.is_error, _payload(first)
+        second = await session.call_tool(
+            "add_movie",
+            {"collectionId": temp_collection, "movie": body, "idempotencyKey": "k-b-2"},
+        )
+
+    assert second.is_error
+    text = " ".join(c.text for c in second.content if getattr(c, "type", None) == "text")
+    assert "mc-service-status:" in text, (
+        f"the status sentinel did not survive the MCP boundary: {text!r} — the gateway cannot "
+        f"classify 409/5xx/422 outcomes without it."
+    )

@@ -18,17 +18,27 @@ from __future__ import annotations
 from typing import Any
 
 import httpx
+from mcp.server.mcpserver.exceptions import ToolError
 
 _API = "/api/v1"
 
 
-class McServiceToolError(RuntimeError):
+class McServiceToolError(ToolError):
     """An mc-service HTTP error surfaced as an MCP tool error, carrying the upstream status.
 
     Raised at the server layer (T024a) so the gateway's `invoke_tool` can classify the outcome
     (e.g. 409 -> skipped_duplicate, 5xx -> retry) from the MCP error text via the stable
     `mc-service-status:<code>` sentinel — without parsing mc-service's body. No token or PII is
     included (SC-004 / FR-022): only the status code travels.
+
+    Subclasses the SDK's `ToolError` (feature 068), and that base is load-bearing rather than
+    decorative. mcp 2.x draws a line 1.x did not: an exception raised DELIBERATELY by a tool keeps
+    its message, while anything else is treated as a crash and its text is withheld from the model
+    (`UnexpectedToolError` -> a bare "Error executing tool <name>"). That is a real improvement — it
+    stops internal exception text leaking to an LLM — but as a plain RuntimeError this class fell on
+    the wrong side of it and the sentinel was silently dropped, degrading every downstream
+    classification. The message is already curated for exactly this purpose: a status code, plus a
+    fixed validation `detail` for 400/422 only.
     """
 
     def __init__(self, status_code: int, detail: str = "") -> None:
