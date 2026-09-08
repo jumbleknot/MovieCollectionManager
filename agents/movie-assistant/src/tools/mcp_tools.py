@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
+import httpx2
 
 from src.audit_sink import emit_audit
 from src.guardrails.output_validators import guard_tool_output
@@ -264,10 +265,15 @@ def _is_transient_exc(exc: BaseException) -> bool:
     The MCP streamable-HTTP client runs inside an anyio task group, so a connect failure
     surfaces as an ExceptionGroup wrapping the real httpx/OS error — unwrap it. A non-transport
     error (a bug) is NOT transient and propagates.
+
+    BOTH client libraries are listed on purpose. mcp 2.x moved the MCP transport onto httpx2, whose
+    exceptions are a SEPARATE hierarchy — `httpx2.ConnectError` is NOT an `httpx.ConnectError`. The
+    gateway still speaks httpx(1) elsewhere (e.g. tools/opa.py), so dropping either base would make
+    one caller's connect failure look like a bug and skip the retry/dead-letter path entirely.
     """
     if isinstance(exc, BaseExceptionGroup):
         return any(_is_transient_exc(inner) for inner in exc.exceptions)
-    return isinstance(exc, (httpx.TransportError, OSError))
+    return isinstance(exc, (httpx.TransportError, httpx2.TransportError, OSError))
 
 
 # Injected dependencies (kept as types so `invoke_tool` is pure + unit-testable).
@@ -299,16 +305,19 @@ def tmdb_key_scope(key: str | None) -> Iterator[None]:
         _call_tmdb_key.reset(token)
 
 
-class DownscopedTokenAuth(httpx.Auth):
-    """httpx auth that injects the per-call credentials (from ContextVars) as request headers.
+class DownscopedTokenAuth(httpx2.Auth):
+    """httpx2 auth that injects the per-call credentials (from ContextVars) as request headers.
 
     Set synchronously just before the call in the same coroutine, so `auth_flow` (same task)
     observes it. The downscoped token (movie-mcp) rides as `Authorization: Bearer`; the per-run
     TMDB key (web-api-mcp, 018 US2) rides as `X-TMDB-Key`. Each is omitted when its ContextVar is
     unset, so a web-api-mcp call carries no Bearer and a movie-mcp call carries no TMDB key.
+
+    Injected per REQUEST, never as a client default header: mcp 2.x has the caller supply the HTTP
+    client, and a credential baked into that client's defaults would outlive its call (INV-9).
     """
 
-    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response]:
+    def auth_flow(self, request: httpx2.Request) -> Generator[httpx2.Request, httpx2.Response]:
         token = _call_token.get()
         if token:
             request.headers["Authorization"] = f"Bearer {token}"
@@ -320,10 +329,10 @@ class DownscopedTokenAuth(httpx.Auth):
 
 def _to_call_result(result: Any) -> McpCallResult:
     text = " ".join(c.text for c in result.content if getattr(c, "type", None) == "text")
-    data = result.structuredContent
+    data = result.structured_content
     if isinstance(data, dict) and set(data) == {"result"}:
         data = data["result"]
-    return McpCallResult(is_error=bool(result.isError), data=data, text=text)
+    return McpCallResult(is_error=bool(result.is_error), data=data, text=text)
 
 
 async def call_mcp_tool(
@@ -335,26 +344,33 @@ async def call_mcp_tool(
     live in the curator/organizer integration tests (a running movie-mcp/web-api-mcp).
     """
     from mcp import ClientSession
-    from mcp.client.streamable_http import streamablehttp_client
+    from mcp.client.streamable_http import streamable_http_client
 
     reset = _call_token.set(token)
     try:
-        client = streamablehttp_client(server_url, auth=DownscopedTokenAuth())
-        async with client as (read, write, _):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
-                result = await session.call_tool(tool_name, arguments)
+        # mcp 2.x dropped `auth=` from the transport: the CALLER builds and owns the HTTP client the
+        # credentials ride on. So this `async with` is load-bearing — it releases the client on the
+        # failure path too, which on 1.x the transport did for us (contract INV-8). A leaked client
+        # keeps a credential-bearing auth object alive.
+        async with httpx2.AsyncClient(auth=DownscopedTokenAuth()) as http_client:
+            # 2.x yields a 2-tuple of streams; 1.x yielded (read, write, get_session_id).
+            async with streamable_http_client(server_url, http_client=http_client) as (read, write):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    result = await session.call_tool(tool_name, arguments)
         return _to_call_result(result)
     finally:
         _call_token.reset(reset)
 
 
 async def list_mcp_tools(server_url: str) -> list[Any]:
-    """List a server's tools (name/description/inputSchema) — used to build agent tool sets."""
+    """List a server's tools (name/description/input_schema) — used to build agent tool sets."""
     from mcp import ClientSession
-    from mcp.client.streamable_http import streamablehttp_client
+    from mcp.client.streamable_http import streamable_http_client
 
-    async with streamablehttp_client(server_url) as (read, write, _):
+    # No credential here — tool discovery is unauthenticated, so no client is constructed and the
+    # transport keeps ownership of its own.
+    async with streamable_http_client(server_url) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             listed = await session.list_tools()

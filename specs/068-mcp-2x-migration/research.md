@@ -124,6 +124,8 @@ bisected during review, this says it safely can be.
 
 ## R5 — The migration surface is five changes, not the two #310 records
 
+> **Superseded in part: it is SIX.** The sixth was found during implementation — see R5a below.
+
 Measured against a real `mcp` 2.2.0 install. Item #310 lists the first and third.
 
 1. **`FastMCP` → `MCPServer`.** `mcp.server.fastmcp` still exists as a shim that raises with the
@@ -154,6 +156,38 @@ code in the feature that carries a credential, hence the constitution gate in `p
 private module. The **public** `mcp.client.Client(server)` accepts an `MCPServer` directly and was
 run end-to-end against a real server here: `list_tools` and `call_tool` both work. FR-017 takes the
 public path.
+
+---
+
+## R5a — A SIXTH breakage, found during implementation: the exception namespace
+
+**R5's list of five was incomplete.** This one was found by the integration tier, not by reading, and
+it is the only defect the migration actually introduced.
+
+`mcp` 2.x moves the MCP transport onto `httpx2`, and **httpx2's exceptions are a separate class
+hierarchy**: `httpx2.ConnectError` is not an `httpx.ConnectError`, and `httpx2.TransportError` is not
+an `httpx.TransportError`. The gateway's `_is_transient_exc()` tested only the httpx(1) base:
+
+```python
+return isinstance(exc, (httpx.TransportError, OSError))   # before
+```
+
+After the migration a connect failure to an MCP server stopped being classified transient, so the
+retry and dead-letter paths were **skipped entirely** and the raw error propagated out of the graph.
+A movie-mcp outage would have surfaced as an unhandled exception rather than a dead-lettered write.
+
+**Both bases are now listed**, because the gateway still speaks httpx(1) elsewhere (`tools/opa.py`
+has its own client) — dropping either would make one caller's connect failure look like a bug.
+
+**Why nothing cheaper caught it.** No unit test can: it needs a genuinely unreachable server. It
+surfaced as `test_write_resilience_dead_letters_when_movie_mcp_unreachable`, the test that exists for
+exactly that scenario. Four unit regression tests were added afterwards, once the shape was known.
+
+**The near-miss worth remembering.** It arrived inside a batch of 42 failures that were *all*
+`ConnectError`, and 37 of those genuinely were "the MCP servers are not running". Attributing the
+batch to the environment would have shipped the defect. What separated them was reading the test
+*names*, not the error text — and then proving the residual failures against `main` rather than
+assuming. A shared error signature is not a shared cause.
 
 ---
 

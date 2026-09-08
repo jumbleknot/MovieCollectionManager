@@ -16,7 +16,7 @@ import os
 from typing import Any
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 
 from src import tools
@@ -29,12 +29,22 @@ MC_SERVICE_URL = os.environ.get("MC_SERVICE_URL", "http://localhost:3001")
 # the default localhost host and its `allowed_hosts` then 421-rejects a Docker service-name Host
 # (e.g. `movie-mcp:8000`), breaking containerized gateway→MCP calls. This server is reachable only
 # on the private backend network with the Agent Gateway as the sole caller, so disable it.
-mcp = FastMCP(
-    "movie-mcp",
-    stateless_http=True,
-    json_response=True,
-    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
-)
+mcp = MCPServer("movie-mcp")
+
+# DNS-rebinding protection stays DISABLED (see above). These three were MCPServer() constructor
+# kwargs on mcp 1.x (FastMCP); on 2.x they are `streamable_http_app()` parameters, so build_app()
+# passes them explicitly below.
+#
+# `host` is deliberately NOT passed. It is NOT a bind address — that stays MC_MCP_HOST in main().
+# In the SDK it is only the trigger for an auto-enable branch:
+#
+#     if transport_security is None and host in ("127.0.0.1", "localhost", "::1"):
+#         transport_security = TransportSecuritySettings(...)   # DNS-rebinding protection ON
+#
+# We pass `transport_security` explicitly, so that branch never runs and `host` is never read.
+# Passing a value would imply a binding effect it does not have.
+_TRANSPORT_SECURITY = TransportSecuritySettings(enable_dns_rebinding_protection=False)
+
 
 
 # ── Read tools (curator + organizer allowlist) ───────────────────────────────
@@ -160,7 +170,11 @@ async def delete_movie(
 def build_app() -> Any:
     """Streamable-HTTP ASGI app wrapped with the per-request token-capture middleware."""
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    return TokenCaptureMiddleware(mcp.streamable_http_app())
+    return TokenCaptureMiddleware(mcp.streamable_http_app(
+        stateless_http=True,
+        json_response=True,
+        transport_security=_TRANSPORT_SECURITY,
+    ))
 
 
 def main() -> None:

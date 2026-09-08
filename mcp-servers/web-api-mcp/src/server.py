@@ -17,7 +17,7 @@ from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 
 from src import tools
@@ -26,12 +26,22 @@ from src import tools
 # the default localhost host and its `allowed_hosts` then 421-rejects a Docker service-name Host
 # (e.g. `web-api-mcp:8000`), breaking containerized gateway→MCP calls. This server is reachable
 # only on a private Docker network with the Agent Gateway as the sole caller, so disable it.
-mcp = FastMCP(
-    "web-api-mcp",
-    stateless_http=True,
-    json_response=True,
-    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
-)
+mcp = MCPServer("web-api-mcp")
+
+# DNS-rebinding protection stays DISABLED (see above). These three were MCPServer() constructor
+# kwargs on mcp 1.x (FastMCP); on 2.x they are `streamable_http_app()` parameters, so build_app()
+# passes them explicitly below.
+#
+# `host` is deliberately NOT passed. It is NOT a bind address — that stays MC_MCP_HOST in main().
+# In the SDK it is only the trigger for an auto-enable branch:
+#
+#     if transport_security is None and host in ("127.0.0.1", "localhost", "::1"):
+#         transport_security = TransportSecuritySettings(...)   # DNS-rebinding protection ON
+#
+# We pass `transport_security` explicitly, so that branch never runs and `host` is never read.
+# Passing a value would imply a binding effect it does not have.
+_TRANSPORT_SECURITY = TransportSecuritySettings(enable_dns_rebinding_protection=False)
+
 
 
 # Per-request TMDB key: the user's own v3 key, supplied by the gateway as the `X-TMDB-Key` header
