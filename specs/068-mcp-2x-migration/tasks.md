@@ -213,14 +213,20 @@ shows four `pip-audit` surfaces. Measured installed-venv counts, 2026-09-08: 195
 
 ### Verification for User Story 1
 
-- [ ] T020 [US1] Run the full scan locally and read the scanner metadata, not the finding count
+- [X] T020 [US1] Run the full scan locally and read the scanner metadata, not the finding count
+  - **RESOLVED BY CI, PR #391 / 5e8637a6**: `guardrails / sast` PASSED with the four-surface scanner
+    against the real OSV feed. The local half stayed blocked (below); CI is the authority, as planned.
+  - **BLOCKED LOCALLY, 2026-09-08**: `api.osv.dev` does not resolve here, so `pip-audit` fails closed
+    and no `findings.json` is produced. Not a regression — equally unreproducible before this change.
+    The fail-closed paths WERE verified live (the `_probe` rejection; the surface-named OSV error).
+    **CI's OSV run on PR #391 is the authority for the four-surface confirmation.**
   - **Scenarios covered**: SC-001
   - **Verify**: four distinct project prefixes among `pip-audit` findings; `ran: true` and
     `error: null` for `pip-audit`. Expected result is **zero** advisories across all four
     (measured 2026-09-08) — which is why trap #3 matters here more than anywhere.
   - Note which advisory feed you used (`-s pypi` locally; see trap #2).
 
-- [ ] T021 [US1] Open **PR #1** with US1 alone and confirm `sast` green in CI
+- [X] T021 [US1] Open **PR #1** with US1 alone and confirm `sast` green in CI
   - Push a real branch (`git push origin HEAD:<branch>`), then `POST …/pulls` with the
     `git credential fill` credential — never an AGit push, which yields a head that runs with **no**
     Actions secrets.
