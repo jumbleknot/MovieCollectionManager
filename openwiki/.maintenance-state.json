@@ -1,31 +1,42 @@
 {
-  "coveredCommit": "96fa99dc3f67dcd9435e5e37ea3fabc3fbf4ab5f",
-  "coveredAt": "2026-09-08T05:09:29.615Z",
+  "coveredCommit": "681e41f897521cbc7a93b95e81fc7db1a9f1701a",
+  "coveredAt": "2026-09-08T20:23:05.329Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 390,
-    "headCommit": "d189431693b5cf8f4a6b70f613af1841d3fbeb13",
-    "markerBefore": "96fa99dc3f67dcd9435e5e37ea3fabc3fbf4ab5f",
+    "number": 392,
+    "headCommit": "0d8b0c8358aa1b61e31dbe142bda5f1c93458fe3",
+    "markerBefore": "681e41f897521cbc7a93b95e81fc7db1a9f1701a",
     "slices": [
       {
-        "area": "runbooks",
+        "area": "projects",
         "pages": [
-          "ci-diagnostics.md"
+          "sast.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/sast-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "sast-scanning.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/sast-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-08T05:09:29.989Z"
+    "updatedAt": "2026-09-08T20:23:05.684Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 93,
+    "pagesWritten": 2,
+    "elapsedSeconds": 233,
     "stoppedAtBudget": false
   }
 }
