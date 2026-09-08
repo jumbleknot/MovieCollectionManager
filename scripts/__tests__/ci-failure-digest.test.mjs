@@ -1554,3 +1554,127 @@ test('(#241l) all-or-nothing holds for a binary on the FAIR-SHARE path too, not 
   assert.equal(shot, undefined, 'a PNG was trimmed to its share — that file opens as nothing');
   assert.ok((m.meta.droppedSources ?? []).some((d) => d.path === 'logs/shot.png'), 'the drop was not named');
 });
+
+// ================================================================================================
+// item #338 — the durations sample reaches a channel the API can read
+// ================================================================================================
+//
+// ci-log-step.sh now records a duration per wrapped step on every run. That file is worth nothing
+// on the runner: this forge exposes no job logs and no artifact endpoint, so a sample that never
+// leaves the box is exactly as unanswerable as the one that was never taken — which is how the
+// 2700 s ceiling came to be calibrated against the wrong measurement in the first place.
+//
+// It rides the bundle that already publishes: the digest bundle on ANY job's failure, and the
+// counts bundle on a green app-e2e. It is a SEPARATE file in the version, not a member of
+// bundle.json.gz — aggregating 25 runs must cost 25 tiny reads, not 25 bundle downloads over a
+// ~135 KB/s link where a failure bundle reaches 5 MB.
+
+import {
+  readStepDurations,
+  publishBundle as publishBundle338,
+  DURATIONS_FILE,
+} from '../ci-failure-digest.mjs';
+
+function durationsHome(rows = {}) {
+  const root = mkdtempSync(join(tmpdir(), 'digest-338-'));
+  for (const [job, text] of Object.entries(rows)) {
+    mkdirSync(join(root, '2600', job), { recursive: true });
+    writeFileSync(join(root, '2600', job, '_step-durations.tsv'), text);
+  }
+  return root;
+}
+
+test('(#338f) readStepDurations returns null when no step in this job was wrapped', () => {
+  assert.equal(readStepDurations({ GITHUB_RUN_ID: 'nope', HOME: '/nonexistent' }), null);
+});
+
+test('(#338g) readStepDurations reads THIS job\'s file, with no run-scoped fallback', () => {
+  // The same defect as item #180, in a new artifact: app-e2e and dast share $HOME on this runner,
+  // so a fallback would blend dast's samples into app-e2e's distribution — and a ceiling calibrated
+  // against another job's steps is worse than an uncalibrated one, because it looks measured.
+  const root = durationsHome({
+    'app-e2e': '# step\tseconds\texit\tceiling\nweb-e2e\t312\t0\t2700\n',
+    dast: '# step\tseconds\texit\tceiling\ndast-zap-scan\t900\t0\t\n',
+  });
+  const inJob = (job) => ({ CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '2600', GITHUB_JOB: job });
+  assert.match(readStepDurations(inJob('app-e2e')), /^web-e2e\t312\t0\t2700$/m);
+  assert.doesNotMatch(readStepDurations(inJob('app-e2e')), /dast-zap-scan/);
+  assert.equal(
+    readStepDurations({ CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '2600', GITHUB_JOB: 'affected' }),
+    null,
+    'a job with no file of its own adopted a sibling job\'s samples',
+  );
+});
+
+/** A recording stand-in for the forge package API — every upload the bundle publisher performs. */
+function recordingApi() {
+  const uploads = [];
+  return { uploads, uploadBundle: async (version, filename, buffer) => { uploads.push({ version, filename, buffer }); } };
+}
+
+const ctx338 = { workflow: 'app-ci', job: 'app-e2e', step: '', sha: 'abc', pr: null, runId: '2600' };
+
+test('(#338h) the durations file is uploaded ALONGSIDE the bundle, not inside it', () => {
+  // Inside bundle.json.gz it would cost a whole bundle download per sampled run. A failure bundle
+  // reaches the 5 MB cap, which is ~40 s each on the measured link — 25 runs of that is not a
+  // command anyone runs twice, so the calibration would go un-done exactly as it did before.
+  const api = recordingApi();
+  const root = durationsHome({ 'app-e2e': '# step\tseconds\texit\tceiling\nweb-e2e\t312\t0\t2700\n' });
+  const env = { CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '2600', GITHUB_JOB: 'app-e2e' };
+
+  return publishBundle338(api, bundleVersion('2600', 'app-e2e'), { excerpts: [], health: [], absent: [] }, ctx338, null, null, env)
+    .then(() => {
+      const names = api.uploads.map((u) => u.filename);
+      assert.ok(names.includes('bundle.json.gz'), 'the bundle itself stopped being uploaded');
+      assert.ok(names.includes(DURATIONS_FILE), `no durations file was uploaded: ${JSON.stringify(names)}`);
+      const durations = api.uploads.find((u) => u.filename === DURATIONS_FILE);
+      assert.equal(durations.version, '2600--app-e2e', 'the durations file landed on a different version');
+      assert.match(durations.buffer.toString('utf8'), /^web-e2e\t312\t0\t2700$/m);
+    });
+});
+
+test('(#338i) a job that wrapped no step uploads no durations file at all', () => {
+  const api = recordingApi();
+  const env = { CI_STEP_LOG_ROOT: '/nonexistent-338', GITHUB_RUN_ID: '2600', GITHUB_JOB: 'affected' };
+  return publishBundle338(api, bundleVersion('2600', 'affected'), { excerpts: [], health: [], absent: [] }, ctx338, null, null, env)
+    .then(() => {
+      assert.deepEqual(api.uploads.map((u) => u.filename), ['bundle.json.gz']);
+    });
+});
+
+test('(#338j) a FAILED durations upload never fails the digest — the bundle still publishes', () => {
+  // FR-009 reaches this file too. A measurement that can turn a job red is a measurement that gets
+  // deleted the first time it misfires.
+  const uploads = [];
+  const api = {
+    uploads,
+    uploadBundle: async (version, filename, buffer) => {
+      if (filename === DURATIONS_FILE) throw new Error('forge returned 507 for PUT /packages');
+      uploads.push({ version, filename, buffer });
+    },
+  };
+  const root = durationsHome({ 'app-e2e': '# step\tseconds\texit\tceiling\nweb-e2e\t312\t0\t2700\n' });
+  const env = { CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '2600', GITHUB_JOB: 'app-e2e' };
+  return publishBundle338(api, bundleVersion('2600', 'app-e2e'), { excerpts: [], health: [], absent: [] }, ctx338, null, null, env)
+    .then(() => {
+      assert.deepEqual(uploads.map((u) => u.filename), ['bundle.json.gz'], 'the bundle was lost with the durations file');
+    });
+});
+
+test('(#338k) durations do NOT become a counts source — a green non-app-e2e job still uploads nothing', async () => {
+  // The counts channel is self-limiting BY CONSTRUCTION (item #167): only app-e2e produces the
+  // step logs it carries, so every other green job finds nothing and publishes nothing. Making
+  // durations a counts source would turn that into ~20 package versions per run — and would remove
+  // the property rather than the allowlist that was deliberately never written.
+  const { selectCountsSources, collectEvidence: collect338 } = await digestModule();
+  const root = durationsHome({ affected: '# step\tseconds\texit\tceiling\naffected-nx\t95\t0\t\n' });
+  writeFileSync(join(root, '2600', 'affected', 'affected-nx.log'), 'nx ran and passed\n');
+  const ev = collect338({ home: '/nonexistent', cwd: '/tmp', env: { CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: '2600', GITHUB_JOB: 'affected' } });
+
+  assert.equal(
+    ev.excerpts.some((e) => /step-durations/.test(e.source)),
+    false,
+    'the durations file was collected as a step excerpt — it would be published as log output',
+  );
+  assert.deepEqual(selectCountsSources(ev.excerpts), [], 'a green non-app-e2e job now has something to publish');
+});

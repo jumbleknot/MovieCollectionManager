@@ -782,6 +782,28 @@ export function readFailingStepReason(env = process.env, home = env.HOME ?? '') 
   }
 }
 
+/**
+ * The per-step duration samples ci-log-step.sh recorded for THIS job (item #338), or null.
+ *
+ * Returned as the raw TSV rather than parsed: the file is published verbatim, and every reader of
+ * it — `ci-status durations`, or a human who retrieved the version by hand — parses the same four
+ * columns. A parse here would be a second definition of the format, in the one place that never
+ * needs it.
+ *
+ * Scoped to this job like every other marker, and for the same measured reason (item #180):
+ * app-e2e and dast share $HOME on this runner, and blending their samples would calibrate one
+ * job's ceilings against the other's steps.
+ */
+export function readStepDurations(env = process.env, home = env.HOME ?? '') {
+  const file = join(stepLogDir(env, home), '_step-durations.tsv');
+  try {
+    if (!existsSync(file)) return null;
+    return readFileSync(file, 'utf8').trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd(), env = process.env } = {}) {
   const excerpts = [];
   const binaries = [];
@@ -958,6 +980,19 @@ export const BUNDLE_CAP_BYTES = 5 * 1024 * 1024;
 export const RETENTION_DAYS = 30;
 
 export const BUNDLE_PACKAGE = 'ci-failures';
+
+/**
+ * The per-step durations file, uploaded as its OWN file in the bundle's version (item #338).
+ *
+ * Deliberately not a member of bundle.json.gz. Calibrating a ceiling means reading this file across
+ * ~25 runs, and a failure bundle reaches the 5 MB cap — ~40 s each on the measured ~135 KB/s link.
+ * A calibration that costs a quarter of an hour of downloads is one that does not get done, which
+ * is the situation this whole item exists to end. As its own file it is a few hundred bytes.
+ *
+ * Uncompressed and tab-separated on purpose: it is read by `ci-status durations`, and by a human
+ * with `curl` when that is faster than asking.
+ */
+export const DURATIONS_FILE = 'step-durations.tsv';
 
 /**
  * Bundle identity: per run AND job.
@@ -1499,7 +1534,7 @@ export function bundleFiles(evidence) {
 }
 
 /** Upload the full evidence as one gzipped manifest, size-capped and self-describing. */
-async function publishBundle(api, version, evidence, context, publishResult = null, digestMarkdown = null) {
+export async function publishBundle(api, version, evidence, context, publishResult = null, digestMarkdown = null, env = process.env) {
   const files = bundleFiles(evidence);
   const manifest = buildBundleManifest(files, {
     digestMarkdown: digestMarkdown ?? null,
@@ -1525,6 +1560,25 @@ async function publishBundle(api, version, evidence, context, publishResult = nu
   const payload = gzipSync(Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
   await api.uploadBundle(version, 'bundle.json.gz', payload);
   console.log(`[ci-failure-digest] bundle uploaded: ${version} (${payload.length} bytes gzipped)`);
+
+  // The durations sample (item #338), as a separate file in the same version. AFTER the bundle and
+  // in its own try/catch: this is a measurement, and FR-009's rule that the digest may never change
+  // a job's outcome applies at least as strongly to something that only pays off weeks later. A
+  // durations upload that took the bundle down with it would be a diagnostics feature deleting
+  // diagnostics.
+  //
+  // Redacted like everything else that leaves the runner (FR-005). The rows hold step names and
+  // integers, so there is nothing here to find — which is exactly the argument that gets a
+  // fail-closed redactor skipped once and then skipped where it mattered.
+  const durations = readStepDurations(env, env.HOME ?? '');
+  if (!durations) return;
+  try {
+    const body = Buffer.from(`${redactForPublication(durations)}\n`, 'utf8');
+    await api.uploadBundle(version, DURATIONS_FILE, body);
+    console.log(`[ci-failure-digest] step durations uploaded: ${version}/${DURATIONS_FILE} (${body.length} bytes)`);
+  } catch (err) {
+    console.error(`[ci-failure-digest] step durations NOT uploaded — ${redactForPublication(String(err?.message ?? err))}`);
+  }
 }
 
 /** Delete bundle versions past the retention window. Never throws at the caller's expense. */

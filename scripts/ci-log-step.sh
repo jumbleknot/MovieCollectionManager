@@ -64,6 +64,10 @@ if [ -n "$timeout_seconds" ] && ! command -v timeout >/dev/null 2>&1; then
   timeout_seconds=""
 fi
 
+# Wall-clock start, for the duration row written below (item #338). `SECONDS` is a bash builtin
+# and integer-valued, which is the right resolution for ceilings expressed in minutes.
+step_started_at="$SECONDS"
+
 if [ -n "$timeout_seconds" ]; then
   # TERM first so the command can flush; SIGKILL only if it ignores that. 124 = timed out (TERM),
   # 137 = 128+9, killed after --kill-after.
@@ -76,6 +80,34 @@ fi
 pipe_status=("${PIPESTATUS[@]}")
 cmd_rc="${pipe_status[0]}"
 tee_rc="${pipe_status[1]:-0}"
+
+# PER-STEP DURATION, ON EVERY RUN (item #338). The 2700 s ceiling above was calibrated against an
+# app-e2e JOB duration misread as a `web-e2e` STEP duration, and could not be corrected because
+# nothing recorded how long a step actually takes: the digest publishes only on failure, and this
+# forge exposes no job logs, so "how long does this step normally take" was unanswerable from the
+# API. This row is the sample that answers it, and it is written whatever the outcome — a
+# distribution built only from failures describes the failures, not the step.
+#
+# Written AFTER `pipe_status` is captured: any command in between clobbers PIPESTATUS.
+#
+# One row per INVOCATION, appended, not one per name: a step wrapped twice (app-ci.yml wraps
+# `mc-service-checks-install-native-build-deps` twice) is two samples, because the ceiling applies
+# to each invocation separately.
+#
+# The exit code and the ceiling are both recorded so a reader can tell an OBSERVED duration from a
+# CENSORED one. A step killed at its ceiling lasted exactly the ceiling; averaging that in would
+# calibrate the next ceiling against its own kills and ratchet downward for ever.
+#
+# Best-effort throughout, like `_failed-step` below: measurement must never be able to fail a build.
+step_duration=$(( SECONDS - step_started_at ))
+durations_file="$dir/_step-durations.tsv"
+if [ ! -e "$durations_file" ]; then
+  # A header, so the file is self-describing when it is read out of a published bundle rather than
+  # from the runner it was written on.
+  printf '# step\tseconds\texit\tceiling\n' 2>/dev/null > "$durations_file" || true
+fi
+printf '%s\t%s\t%s\t%s\n' "$name" "$step_duration" "$cmd_rc" "$timeout_seconds" \
+  2>/dev/null >> "$durations_file" || true
 
 # Record which step failed, so the digest can name it instead of "_not reported_" (T046). Only the
 # first failing wrapped step is recorded — `set -e` in the job stops at the first failure, so that is
