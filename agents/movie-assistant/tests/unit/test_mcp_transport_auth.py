@@ -139,7 +139,7 @@ async def test_the_auth_object_is_attached_to_the_client_not_to_shared_defaults(
 # dead-letter paths were skipped and the raw error propagated out of the graph.
 #
 # Nothing in the unit tier caught this: it needs a real unreachable server. It surfaced as
-# test_write_resilience_dead_letters_when_movie_mcp_unreachable, which is exactly why that tier runs.
+# test_write_resilience_dead_letters_when_movie_mcp_unreachable — which is why that tier exists.
 
 
 def test_an_httpx2_connect_failure_is_still_classified_transient() -> None:
