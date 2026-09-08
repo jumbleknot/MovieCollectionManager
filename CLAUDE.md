@@ -140,7 +140,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/067-python-toolchain-grouping/plan.md`
+`specs/068-mcp-2x-migration/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->
