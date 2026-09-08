@@ -75,20 +75,16 @@
 # full scan confirms zero blocking SCA findings remain (undici's residual hits are now dev-scope on
 # the 7.x copy — non-blocking, tracked under P4). See docs/proposals/sast-sca-hardening-backlog.md.
 
-# ── SCA: not-exploitable runtime advisory (post-034, expiring) ───────────────────────────────────
-# click PYSEC-2026-2132 is a command injection in click.edit() (it shells out to $EDITOR). The agent
-# and MCP servers NEVER call click.edit() — click is a transitive-only dependency (no `import click`
-# anywhere under agents/ or mcp-servers/), pulled by CLI/server tooling. It is pinned at 8.2.0 by a
-# deep transitive cap that currently blocks the click>=8.3.3 fix (bumping typer/uvicorn did not free
-# it). Accepted as not-exploitable with an expiry so it re-blocks if the cap frees (bump then) or the
-# risk profile changes. pillow's advisories (PYSEC-2026-2253..2257) were REMEDIATED (→12.3.0), not
-# allowlisted — this is the one advisory that cannot be bumped today.
-- scanner: "pip-audit"
-  id: "PYSEC-2026-2132"
-  locationPattern: "click@.*"
-  justification: "Not exploitable: the vuln is in click.edit() (spawns $EDITOR), never called by the agent/MCP runtime; click is transitive-only (no import in our source) and pinned at 8.2.0 by a transitive cap blocking the click>=8.3.3 fix. Re-evaluate at expiry or when the cap frees."
-  addedBy: "steve"
-  expiry: "2026-10-12"
+# ── SCA: click PYSEC-2026-2132 — RETIRED 2026-09-08 (feature 068), not renewed ──────────────────
+# The entry accepted this as not-exploitable because click was "pinned at 8.2.0 by a deep transitive
+# cap blocking the click>=8.3.3 fix". That premise no longer holds: the cap freed, and click now
+# resolves to 8.5.0 in ALL FOUR Python lockfiles, which PyPI reports clean of PYSEC-2026-2132. The
+# entry therefore suppressed nothing.
+#
+# DELETED rather than re-anchored to the new project-qualified location format. A dead entry is not
+# harmless — it would have absorbed a genuine click regression, silently, until its 2026-10-12
+# expiry. Deleting it means a regression re-blocks. This is the same reasoning as the feature-034
+# remediations above.
 
 # ── SCA: newly-published advisory WAVE, time-boxed acceptance (2026-08-03) ───────────────────────
 #
@@ -114,8 +110,13 @@
 #     3.14.3 and cryptography to 50.0.0 (a MAJOR bump). cryptography sits in the RFC 8693
 #     token-exchange path, so it was verified against real Keycloak rather than nudged: the
 #     token-reexchange and authz-parity integration tests pass on 50.0.0. Only
-#     agents/movie-assistant needed it — pip-audit audits that venv alone (sast-scan.mjs), so the
+#     agents/movie-assistant needed it — at the time, pip-audit audited that venv alone, so the
 #     mcp-servers' own locks were deliberately left untouched.
+#
+#     NO LONGER TRUE as of feature 068 (2026-09-08): pip-audit now audits ALL FOUR Python surfaces
+#     (agents/movie-assistant plus the three mcp-servers), and a finding's location names the surface
+#     it came from — so a suppression can, and normally should, be anchored to one project. See
+#     PYTHON_SURFACES in scripts/sast-scan.mjs.
 #
 #     They re-blocked EARLY, before their 2026-08-31 expiry, for a reason worth knowing: the
 #     entries were keyed on CVE ids and pip-audit began reporting the same advisories under their

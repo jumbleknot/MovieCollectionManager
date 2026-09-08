@@ -46,12 +46,13 @@ right.
 |---|---|---|
 | `^mcp-servers/web-api-mcp:click@.*` | that project only | **correct form** |
 | `click@.*` | *unanchored* — still matches all four projects | accepted, but see the guard |
-| `^click@.*` | nothing at all | **caught by FR-005's guard** |
+| `^click@.*` | nothing at all | **caught by FR-005's static check** — names no known surface |
 
-The guard required by FR-005 is what makes the third row loud. An entry that matches no finding in a
-completed scan fails a test naming the entry, so the historical failure mode recorded in
-[allowlist.yaml](../../../security/sast/allowlist.yaml) — an entry that "does not expire, it just
-quietly matches nothing" — cannot recur silently.
+The static check required by FR-005 is what makes the third row loud: the pattern names no surface
+in the list, so the gate fails naming it — without needing the scan to produce a finding first. The
+historical failure mode recorded in [allowlist.yaml](../../../security/sast/allowlist.yaml) — an
+entry that "does not expire, it just quietly matches nothing" — is caught at the shape level here and
+at the runtime level by feature 057's weekly check.
 
 Anchoring is not *enforced* by schema, because a deliberately cross-project suppression is
 occasionally legitimate (one advisory, same package, accepted identically everywhere). It must be
@@ -63,8 +64,12 @@ written as a deliberate unanchored pattern and justified as such.
   `^(agents|mcp-servers)/[a-z0-9-]+:[^:]+@[^:]+$`.
 - **INV-2**: Two findings for the same advisory and package in different projects have **different**
   `location` values, and are therefore separately suppressible.
-- **INV-3**: A suppression entry with `scanner: pip-audit` whose `locationPattern` matches zero
-  findings in a completed scan fails the guard test.
+- **INV-3**: A suppression entry with `scanner: pip-audit` whose `locationPattern` names no surface
+  in the surface list fails the gate, naming the entry. Checked **statically** against the entry's
+  own text, not against a run's findings — so it holds when the scan reports zero, which is the
+  normal state. (Runtime "matched nothing this run" detection is `selectUnmatched` in
+  `scripts/allowlist-expiry.mjs`, from feature 057: report-only, separate schedule, and suppressed
+  when the scanner produced no findings. The two are complementary, not alternatives.)
 - **INV-4**: The `location` format of `semgrep`, `cargo-audit` and `pnpm-audit` findings is
   unchanged.
 

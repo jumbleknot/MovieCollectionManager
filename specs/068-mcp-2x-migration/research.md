@@ -137,7 +137,7 @@ Measured against a real `mcp` 2.2.0 install. Item #310 lists the first and third
    Credentials now ride on a caller-owned client. Also `TransportStreams` is a **2-tuple**, so
    `async with client as (read, write, _)` becomes `as (read, write)`.
 4. **camelCase → snake_case on the wire types.** `isError`→`is_error`,
-   `structuredContent`→`structured_content`, `inputSchema`→`input_schema`. **14 call sites**, located
+   `structuredContent`→`structured_content`, `inputSchema`→`input_schema`. **15 call sites**, located
    by search: [mcp_tools.py:323,326](../../agents/movie-assistant/src/tools/mcp_tools.py#L323) and
    both server integration suites. Absent from #310's description entirely.
 5. **`mcp.shared.memory.create_connected_server_and_client_session` is gone.** That module now

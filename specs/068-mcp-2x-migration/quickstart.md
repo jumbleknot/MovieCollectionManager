@@ -60,10 +60,13 @@ node --test scripts/__tests__/sast-scan.guard.test.mjs
 > to run one test. Node's flags go **before** the path, or use `--test` with a glob. This turns a
 > Verify RED into a false green.
 
-The two new guards must be **seen to fail** before the code they constrain is written:
+The new guards must be **seen to fail** before the code they constrain is written:
 
 1. an unqualified `location` fails the format assertion
-2. a suppression entry matching zero findings fails, naming the entry
+2. a `pip-audit` suppression entry naming an unknown surface fails, naming the entry (a **static**
+   shape check — runtime "matched nothing this run" is feature 057's `selectUnmatched`, which is
+   report-only and suppressed when the scanner found nothing)
+3. a Python project on disk that is absent from the surface list fails the scan
 
 ### Local vs CI
 
@@ -137,7 +140,7 @@ positive case passes even if the transport started defaulting a stale credential
 grep -rn "isError\|structuredContent\|inputSchema" --include=*.py agents/ mcp-servers/ | grep -v "/.venv/"
 ```
 
-Expected after Phase 2: **no matches**. There are 14 today (SC-005).
+Expected after Phase 2: **no matches**. There are 15 today (SC-005).
 
 ### Every tool annotation is still precise
 

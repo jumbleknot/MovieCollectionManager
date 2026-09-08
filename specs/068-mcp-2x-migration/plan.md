@@ -55,7 +55,7 @@ green on `main` (SC-007).
 
 **Scale/Scope**: Phase 1 — 1 scanner function generalized, 1 finding field changed, 1 suppression
 entry retired, 1 guard test file, 3 CI steps, 2 docs. Phase 2 — 4 `pyproject.toml` + 4 `uv.lock`,
-3 server modules, 1 gateway transport module, 14 renamed field reads across 3 test/source files,
+3 server modules, 1 gateway transport module, 15 renamed field reads across 3 test/source files,
 2 integration-test harnesses, 1 new annotation guard.
 
 ## Constitution Check

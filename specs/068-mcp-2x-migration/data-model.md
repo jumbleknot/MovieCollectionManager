@@ -77,7 +77,7 @@ names change from camelCase to snake_case; **semantics do not**. Mappings pass t
 sequences are wrapped under `result`, and a tool's declared return annotation is load-bearing — a
 bare `dict` silently yields no structured payload on 2.x.
 
-Full table, the 14 call sites, and the annotation rule:
+Full table, the 15 call sites, and the annotation rule:
 [contracts/mcp-tool-result.md](./contracts/mcp-tool-result.md) §1–2.
 
 ---

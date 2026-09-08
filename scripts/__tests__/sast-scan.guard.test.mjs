@@ -299,3 +299,84 @@ test('a fixture file is never mistaken for a rule file', () => {
   assert.ok(yamlRule, 'the YAML rule must be enumerated');
   assert.deepEqual(yamlRule.fixtures, ['mcm-ci-curl-pipe-shell.test.yml']);
 });
+
+// ── Feature 068 / US1: pip-audit covers four Python surfaces ─────────────────
+//
+// Until now `pip-audit` scanned agents/movie-assistant alone, so a finding's location
+// (`pkg@version`) was unambiguous. With four surfaces it is not: one suppression written
+// against `click@.*` would silently cover the gateway AND all three MCP servers.
+//
+// Two complementary protections live here. The location half (FR-003/FR-004) makes findings
+// separately addressable. The entry-shape half (FR-005) is STATIC on purpose: runtime
+// "this entry matched nothing" detection already exists as selectUnmatched() in
+// allowlist-expiry.mjs (feature 057), but it is report-only, runs under --check-expiring in a
+// different workflow, and is deliberately suppressed when its scanner produced no findings.
+// pip-audit's healthy state here is zero findings, so that suppression is active exactly when
+// everything is fine — which is why a malformed entry has to be catchable from its own text.
+
+import {
+  PYTHON_SURFACES,
+  normalizePipAudit,
+  assertKnownPythonSurfaces,
+  assertPipAuditAllowlistShape,
+} from '../sast-scan.mjs';
+
+const pipNative = (name, version, id = 'PYSEC-2099-0001') => ({
+  dependencies: [{ name, version, vulns: [{ id, aliases: [`CVE-2099-${id.slice(-4)}`], fix_versions: [] }] }],
+});
+
+test('feature 068: a pip-audit finding location is project-qualified', () => {
+  const [f] = normalizePipAudit(pipNative('click', '8.5.0'), null, null, MAP, 'mcp-servers/web-api-mcp');
+  assert.equal(f.location, 'mcp-servers/web-api-mcp:click@8.5.0');
+  assert.match(f.location, /^(agents|mcp-servers)\/[a-z0-9-]+:[^:]+@[^:]+$/); // contract INV-1
+});
+
+test('feature 068: the same advisory in two projects yields separately suppressible findings', () => {
+  const [a] = normalizePipAudit(pipNative('click', '8.5.0'), null, null, MAP, 'agents/movie-assistant');
+  const [b] = normalizePipAudit(pipNative('click', '8.5.0'), null, null, MAP, 'mcp-servers/movie-mcp');
+  assert.notEqual(a.location, b.location); // contract INV-2
+
+  // A pattern anchored to one surface must not reach the other — the whole point of qualifying.
+  const anchored = new RegExp('^agents/movie-assistant:click@.*');
+  assert.ok(anchored.test(a.location));
+  assert.ok(!anchored.test(b.location));
+});
+
+test('feature 068: every surface derives its OWN runtime set, so scope is never borrowed', () => {
+  // `uvicorn` is runtime in a server but absent from a different project's graph. Classifying with
+  // the wrong project's set is how a server's dev-only package would be called runtime (FR-002).
+  const serverRuntime = new Set(['uvicorn', 'mcp']);
+  const gatewayRuntime = new Set(['langgraph', 'mcp']);
+  assert.equal(classifyScope('uvicorn', serverRuntime), 'runtime');
+  assert.equal(classifyScope('uvicorn', gatewayRuntime), 'dev');
+});
+
+test('feature 068: a Python project on disk but absent from the surface list FAILS, naming it', () => {
+  const onDisk = [...PYTHON_SURFACES.map((s) => s.project), 'mcp-servers/_probe'];
+  assert.throws(() => assertKnownPythonSurfaces(onDisk), /_probe/);
+  assert.doesNotThrow(() => assertKnownPythonSurfaces(PYTHON_SURFACES.map((s) => s.project)));
+});
+
+test('feature 068: a pip-audit suppression naming an UNKNOWN SURFACE fails, naming the entry', () => {
+  const entry = (locationPattern) => ({ scanner: 'pip-audit', id: 'PYSEC-2099-0001', locationPattern });
+
+  // Names a surface that does not exist — can never match, detectable without any finding.
+  assert.throws(() => assertPipAuditAllowlistShape([entry('^mcp-servers/ghost-mcp:click@.*')]), /ghost-mcp/);
+  // Pre-068 unqualified form: anchored at a package name, so it can never match a qualified location.
+  assert.throws(() => assertPipAuditAllowlistShape([entry('^click@.*')]), /click/);
+
+  // Correctly anchored to a real surface.
+  assert.doesNotThrow(() => assertPipAuditAllowlistShape([entry('^mcp-servers/web-api-mcp:click@.*')]));
+  // A deliberate cross-surface entry stays legitimate (one advisory accepted identically everywhere).
+  assert.doesNotThrow(() => assertPipAuditAllowlistShape([entry('click@.*')]));
+  // Other scanners are not subject to this shape rule.
+  assert.doesNotThrow(() =>
+    assertPipAuditAllowlistShape([{ scanner: 'cargo-audit', id: 'RUSTSEC-1', locationPattern: '^foo@.*' }]));
+});
+
+test('feature 068 CONTROL: other scanners keep the bare package@version location format', () => {
+  // If this fails, the change leaked beyond pip-audit (contract INV-4).
+  for (const loc of ['foo@1.2.3', 'brace-expansion@2.0.1']) {
+    assert.doesNotMatch(loc, /^(agents|mcp-servers)\//);
+  }
+});

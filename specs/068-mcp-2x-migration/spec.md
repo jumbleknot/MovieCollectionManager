@@ -47,11 +47,15 @@ its report shows four `pip-audit` surfaces with package counts summing to roughl
 3. **Given** a suppression entry written for one project, **When** the scan runs, **Then** it
    suppresses that project's finding only, and a second project's finding for the same advisory
    still blocks.
-4. **Given** a suppression entry whose target pattern does not match any finding, **When** the
-   guard test runs, **Then** the test fails, naming the entry — a suppression that matches nothing
-   is a defect, not a silent no-op.
+4. **Given** a suppression entry for the Python scanner whose target pattern names no surface the
+   scan covers, **When** the gate runs, **Then** it fails, naming the entry — a suppression that
+   *can never* match is a defect, and unlike a suppression that merely *did not* match this run, it
+   is detectable without waiting for the scan to produce a finding.
 5. **Given** the security scan completes, **When** a maintainer reads the runbook's scanner table,
    **Then** the documented surface for the Python scanner matches what actually ran.
+6. **Given** a Python project directory exists in the repository but is absent from the set of
+   surfaces the scan covers, **When** the scan runs, **Then** it **fails**, naming that directory —
+   a project the scanner does not know about is never silently omitted.
 
 ---
 
@@ -125,8 +129,9 @@ class of risk. The constitution's Identity Propagation rule is non-negotiable he
 - **The security scan's advisory source is unreachable.** The scan already fails closed when
   advisory data cannot be fetched; extending it to four surfaces must not turn a fetch failure into
   a silent partial scan of three.
-- **A future project is added under the MCP server directory.** The scan must either pick it up or
-  fail, never skip it silently.
+- **A future project is added under the MCP server directory.** The scan must fail, naming it,
+  rather than skip it silently — see FR-021 and US1 scenario 6. This is the feature's own thesis
+  turned on itself: a static list of four surfaces has no opinion about a fifth.
 
 ## Requirements *(mandatory)*
 
@@ -141,8 +146,15 @@ class of risk. The constitution's Identity Propagation rule is non-negotiable he
 - **FR-003**: Every Python advisory finding MUST identify the project it came from, in a form the
   suppression mechanism can target.
 - **FR-004**: A suppression entry MUST apply only to the project it names.
-- **FR-005**: A suppression entry that matches no finding MUST fail a test that runs in the gate,
-  naming the entry.
+- **FR-005**: Every Python-scanner suppression entry MUST be checked **statically** against the set
+  of surfaces the scan covers: its target pattern MUST either anchor to one known surface, or carry
+  an explicit declaration that it deliberately spans surfaces. An entry naming an unknown surface
+  MUST fail the gate, naming the entry.
+  - This is the merge-gate half, and it is deliberately **finding-independent**. Runtime detection of
+    an entry that matched nothing *this run* already exists elsewhere in the repository, but it is
+    report-only, runs on a separate schedule, and is suppressed when its scanner produced no
+    findings — which is the Python scanner's normal healthy state here. A check that only fires when
+    something is already wrong cannot catch a malformed entry.
 - **FR-006**: The existing suppression for the click advisory MUST be removed rather than migrated —
   the package now resolves to a version the advisory does not affect, in all four projects, so the
   entry suppresses nothing.
@@ -153,6 +165,11 @@ class of risk. The constitution's Identity Propagation rule is non-negotiable he
 - **FR-009**: The scanning runbook's documented surface for the Python scanner, and the suppression
   file's comment asserting the MCP servers are deliberately unscanned, MUST be corrected to match
   reality.
+- **FR-021**: The set of Python surfaces the scan covers MUST be validated against the Python
+  project directories actually present in the repository. A project present on disk but absent from
+  that set MUST fail the scan, naming it. Neither silent omission nor silent auto-inclusion is
+  acceptable: omission rebuilds the blind spot this feature exists to close, and auto-inclusion puts
+  an unreviewed dependency graph into a merge gate without anyone deciding to.
 
 #### Phase 2 — SDK migration (ships second, after Phase 1 is green on `main`)
 
@@ -210,6 +227,8 @@ class of risk. The constitution's Identity Propagation rule is non-negotiable he
   tier and the merge-gating end-to-end tier pass at the same pass rate as on `main`.
 - **SC-007**: Both phases land as two pull requests, so a failing security gate on the second is
   unambiguously attributable to the migration.
+- **SC-008**: Adding a new Python project directory without registering it as a scanned surface
+  fails the security gate, demonstrated by test rather than asserted.
 
 ## Assumptions
 

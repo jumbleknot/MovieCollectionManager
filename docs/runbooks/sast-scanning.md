@@ -10,13 +10,25 @@ blocking `sast` CI gate. Config tree: [security/sast/](../../security/sast/).
 | SAST | Semgrep (OSS) | TS/JS tree (BFF + frontend) + Python agent layer | `uvx semgrep@<pin> scan` |
 | SCA | cargo audit | Rust deps (root `Cargo.lock`) | `cargo audit --json` |
 | SCA | pnpm audit | JS deps (root `pnpm-lock.yaml`) | `pnpm audit --json` (+ `--prod` for scope) |
-| SCA | pip-audit | Python deps (`agents/movie-assistant`) | audits the **installed venv** (see gotcha) |
+| SCA | pip-audit | Python deps — **all four** surfaces: `agents/movie-assistant`, `mcp-servers/{movie-mcp,spreadsheet-mcp,web-api-mcp}` | audits each **installed venv** (see gotcha) |
 
 ## Run it locally
 
 Prereqs (no app stack needed — this is a static scan): Node ≥ 20, `uv`/`uvx`, a Rust toolchain with
-`cargo-audit` (`cargo install cargo-audit --locked`), pnpm, and a **synced agent venv**
-(`uv sync` in `agents/movie-assistant` — pip-audit audits the installed env).
+`cargo-audit` (`cargo install cargo-audit --locked`), pnpm, and **all four Python venvs synced**
+(`uv sync` in `agents/movie-assistant` and in each `mcp-servers/*` — pip-audit audits the installed
+env, per surface). An unsynced surface **fails** the scan; it is never silently skipped.
+
+> **Adding a Python project?** Register it in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`) and add a
+> `uv sync` step to the `sast` job. A project directory carrying a `uv.lock` that is not a registered
+> surface fails the scan by design (feature 068) — neither silently unscanned, nor silently
+> auto-included with a runtime/dev classification nobody reviewed.
+
+Since feature 068 a Python finding's location is **project-qualified** —
+`mcp-servers/web-api-mcp:click@8.5.0`, not `click@8.5.0` — so an allowlist `locationPattern` can, and
+normally should, be anchored to one surface (`^mcp-servers/web-api-mcp:click@.*`). An entry anchored
+to a surface that does not exist fails the scan: it could never match. Drop the leading `^` only when
+you deliberately mean the suppression to span every Python surface.
 
 ```bash
 pnpm nx sast infrastructure-as-code        # or: node scripts/sast-scan.mjs --scope full

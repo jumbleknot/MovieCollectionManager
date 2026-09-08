@@ -31,7 +31,7 @@ correct and must not be "simplified" during the migration.
 status, not a transport-level exception.
 
 **INV-4**: No call site anywhere under `agents/` or `mcp-servers/` reads a 1.x field name after the
-migration. There are **14** such reads today; the count after is zero.
+migration. There are **15** such reads today; the count after is zero.
 
 ---
 
