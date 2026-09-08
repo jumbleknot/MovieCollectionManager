@@ -350,9 +350,21 @@ jobs:
           CI_LOG_STEP
       - name: Install JS dependencies
         run: bash scripts/ci-log-step.sh sast-install-js-dependencies pnpm install --frozen-lockfile
+      # pip-audit audits the INSTALLED venv, not a requirements file, so every surface it covers must
+      # be synced first. Feature 068 took that from one surface to four: an unsynced surface FAILS the
+      # scan (assertKnownPythonSurfaces / auditOnePythonSurface), it is never silently skipped.
       - name: Sync the Python agent env (pip-audit audits the installed venv, not a requirements file)
         run: bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" sast-sync-python-agent-env uv sync --frozen
         working-directory: agents/movie-assistant
+      - name: Sync movie-mcp's env (pip-audit surface 2 of 4)
+        run: bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" sast-sync-python-movie-mcp-env uv sync --frozen
+        working-directory: mcp-servers/movie-mcp
+      - name: Sync spreadsheet-mcp's env (pip-audit surface 3 of 4)
+        run: bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" sast-sync-python-spreadsheet-mcp-env uv sync --frozen
+        working-directory: mcp-servers/spreadsheet-mcp
+      - name: Sync web-api-mcp's env (pip-audit surface 4 of 4)
+        run: bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" sast-sync-python-web-api-mcp-env uv sync --frozen
+        working-directory: mcp-servers/web-api-mcp
       - name: Gate selftest (prove fail/suppress/expiry paths before the real scan)
         run: bash scripts/ci-log-step.sh sast-gate-selftest node scripts/check-sast-findings.mjs --selftest
       # The custom rules' own fixtures. They shipped with feature 033 and were run by NOTHING until

@@ -345,6 +345,27 @@ function selftest() {
   if (/UNMATCHED ENTRIES/.test(g5.out)) failures.push('(g5) an entry whose scanner produced NO findings must not be reported unmatched');
   if (capture(() => gate(rep([F()]), g5allow, NOW, { checkExpiring: true })).code !== 0) failures.push('(g5) --check-expiring must exit 0 when the only unmatched entry belongs to a scanner with no findings');
 
+  // (g7) FEATURE 068 — a project-qualified pip-audit suppression suppresses ONE surface only.
+  // Before 068 a pip-audit location was `pkg@version`, so `click@.*` covered every Python project at
+  // once. Now that locations carry their surface, an entry anchored to one must leave the others
+  // blocking — otherwise qualifying the location bought nothing.
+  const pipF = (location) => ({
+    scanner: 'pip-audit', kind: 'sca', id: 'PYSEC-2026-0002', title: 'CVE-2026-0002',
+    location, ecosystem: 'pypi', nativeSeverity: 'unscored', severity: 'High', scope: 'runtime',
+    blocking: true, fixAvailable: null,
+  });
+  const g7allow = entry({
+    scanner: 'pip-audit', id: 'PYSEC-2026-0002',
+    locationPattern: '^agents/movie-assistant:click@.*',
+  });
+  const g7 = capture(() => gate(
+    rep([pipF('agents/movie-assistant:click@8.5.0'), pipF('mcp-servers/web-api-mcp:click@8.5.0')]),
+    g7allow, NOW,
+  ));
+  if (g7.code !== 1) failures.push('(g7) a suppression anchored to one surface must leave another surface BLOCKING');
+  if (!/mcp-servers\/web-api-mcp:click/.test(g7.out)) failures.push('(g7) the still-blocking finding must name the surface it came from');
+  if (/agents\/movie-assistant:click@8\.5\.0\s*$/m.test(g7.out.split('Blocking')[0] || '')) failures.push('(g7) the suppressed surface must not be reported blocking');
+
   // (g6) everything active and matched — the quiet case the window was chosen to maximise.
   if (capture(() => gate(rep([F()]), al, NOW, { checkExpiring: true })).code !== 0) failures.push('(g6) --check-expiring must exit 0 when every entry is active and matched');
 
@@ -380,7 +401,7 @@ function selftest() {
     console.error('✗ check-sast-findings --selftest FAILED:\n  ' + failures.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ check-sast-findings --selftest passed (fail, allowlist-suppress, dev-warn, clean, blank-justification reject, expiry, warning tier + unmatched + blinded-rule report + --check-expiring).');
+  console.log('✓ check-sast-findings --selftest passed (fail, allowlist-suppress, dev-warn, clean, blank-justification reject, expiry, warning tier + unmatched + blinded-rule report + --check-expiring + per-surface pip-audit suppression).');
   process.exit(0);
 }
 

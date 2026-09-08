@@ -409,7 +409,83 @@ function parseReqNames(text) {
   return set.size ? set : null;
 }
 
-function normalizePipAudit(native, agentSet, runtimeSet, map) {
+/**
+ * The Python surfaces this scanner covers (feature 068 / FR-001).
+ *
+ * Was one hardcoded directory. Each surface derives its OWN dependency and runtime sets, because
+ * classifying a server's package against the gateway's graph would call a dev-only package runtime
+ * (FR-002) — or drop it entirely, since agentSet filters unknown names.
+ */
+export const PYTHON_SURFACES = [
+  { project: 'agents/movie-assistant', dir: 'agents/movie-assistant' },
+  { project: 'mcp-servers/movie-mcp', dir: 'mcp-servers/movie-mcp' },
+  { project: 'mcp-servers/spreadsheet-mcp', dir: 'mcp-servers/spreadsheet-mcp' },
+  { project: 'mcp-servers/web-api-mcp', dir: 'mcp-servers/web-api-mcp' },
+];
+
+/** Every Python project on disk, identified by carrying its own lockfile. */
+export function discoverPythonProjects(root = REPO_ROOT) {
+  const found = [];
+  for (const parent of ['agents', 'mcp-servers']) {
+    const base = resolve(root, parent);
+    if (!existsSync(base)) continue;
+    for (const name of readdirSync(base)) {
+      if (existsSync(resolve(base, name, 'uv.lock'))) found.push(`${parent}/${name}`);
+    }
+  }
+  return found.sort();
+}
+
+/**
+ * A Python project present on disk but absent from PYTHON_SURFACES FAILS the scan (FR-021).
+ *
+ * Silent omission would rebuild — one directory over — exactly the blind spot this feature closed.
+ * Silent auto-inclusion is not the fix either: it would put an unreviewed dependency graph into a
+ * merge gate with a runtime/dev classification nobody has looked at. Fail, and let a human add it.
+ */
+export function assertKnownPythonSurfaces(onDisk = discoverPythonProjects()) {
+  const known = new Set(PYTHON_SURFACES.map((s) => s.project));
+  const missing = onDisk.filter((p) => !known.has(p));
+  if (missing.length) {
+    throw new Error(
+      `[pip-audit] ${missing.length} Python project(s) on disk are not registered as scan surfaces: ` +
+      `${missing.join(', ')}. Add them to PYTHON_SURFACES in scripts/sast-scan.mjs (and a \`uv sync\` ` +
+      `step to the sast job) so their dependencies are audited — do not leave them unscanned.`,
+    );
+  }
+}
+
+/**
+ * Static shape check on pip-audit suppressions (FR-005) — deliberately finding-independent.
+ *
+ * Runtime "this entry matched nothing" detection already exists (selectUnmatched in
+ * allowlist-expiry.mjs, feature 057), but it is report-only, runs under --check-expiring in a
+ * different workflow, and is suppressed when its scanner produced no findings. pip-audit's healthy
+ * state is zero findings, so that suppression is active precisely when nothing is wrong. An entry
+ * anchored to a surface that does not exist can never match, and that is provable from its own text.
+ *
+ * An UNANCHORED pattern stays legal: one advisory accepted identically across every surface is a
+ * legitimate, deliberate choice.
+ */
+export function assertPipAuditAllowlistShape(entries = []) {
+  const known = new Set(PYTHON_SURFACES.map((s) => s.project));
+  for (const e of entries) {
+    if (e?.scanner !== 'pip-audit') continue;
+    const pattern = String(e.locationPattern ?? '');
+    if (!pattern.startsWith('^')) continue; // deliberate cross-surface entry
+    const surface = pattern.slice(1).split(':')[0];
+    if (!known.has(surface)) {
+      throw new Error(
+        `[pip-audit] allowlist entry ${e.id} has locationPattern "${pattern}", which is anchored to ` +
+        `"${surface}" — not one of the scanned surfaces (${[...known].join(', ')}). It can never ` +
+        `match, so it suppresses nothing. Anchor it to a real surface, or drop the leading "^" if ` +
+        `it is meant to apply across all of them.`,
+      );
+    }
+  }
+}
+
+export function normalizePipAudit(native, agentSet, runtimeSet, map, project) {
   const out = [];
   for (const dep of native.dependencies ?? []) {
     const name = normPyName(dep.name);
@@ -422,7 +498,9 @@ function normalizePipAudit(native, agentSet, runtimeSet, map) {
       const scope = classifyScope(name, runtimeSet);
       out.push({
         scanner: 'pip-audit', kind: 'sca', id: String(vuln.id),
-        title: String((vuln.aliases || [])[0] || vuln.id), location: `${dep.name}@${dep.version}`,
+        title: String((vuln.aliases || [])[0] || vuln.id),
+        // FR-003: project-qualified so a suppression can name ONE surface (contract INV-1/INV-2).
+        location: `${project}:${dep.name}@${dep.version}`,
         ecosystem: 'pypi', nativeSeverity: 'unscored', severity, scope,
         blocking: deriveBlocking({ kind: 'sca', severity, scope }),
         fixAvailable: (vuln.fix_versions || [])[0] ?? null,
@@ -432,28 +510,56 @@ function normalizePipAudit(native, agentSet, runtimeSet, map) {
   return out;
 }
 
-function runPipAudit({ map }) {
-  assertToolchain('uv', 'pip-audit');
-  const agentDir = resolve(REPO_ROOT, 'agents/movie-assistant');
-  const agentSet = parseReqNames(uvExport(agentDir, []));               // full agent dep graph (names)
-  const runtimeSet = parseReqNames(uvExport(agentDir, ['--no-dev']));   // runtime subset (names)
+function auditOnePythonSurface({ project, dir }, map) {
+  const surfaceDir = resolve(REPO_ROOT, dir);
+  const agentSet = parseReqNames(uvExport(surfaceDir, []));             // this surface's full graph
+  const runtimeSet = parseReqNames(uvExport(surfaceDir, ['--no-dev'])); // its OWN runtime subset (FR-002)
 
   // Audit the INSTALLED venv, NOT a requirements file: pip-audit's `-r` mode resolves the file in an
   // ephemeral venv (downloads every dep — hangs for many minutes on the full lockfile). Auditing the
   // already-synced env queries OSV for the installed distributions directly (~1 min, no download).
-  // pip-audit is injected via `uv run --with`; its own deps are filtered out in normalizePipAudit via
-  // agentSet. Prereq: the agent venv is synced (`uv sync` in agents/movie-assistant).
-  const r = run('uv', ['run', '--no-sync', '--with', 'pip-audit', 'pip-audit', '--format', 'json', '-s', 'osv', '--progress-spinner', 'off'], { cwd: agentDir });
+  // pip-audit is injected via `uv run --with`; its own deps are filtered out via agentSet.
+  // Prereq: this surface's venv is synced (`uv sync` in its directory).
+  const r = run('uv', ['run', '--no-sync', '--with', 'pip-audit', 'pip-audit', '--format', 'json', '-s', 'osv', '--progress-spinner', 'off'], { cwd: surfaceDir });
   if (r.status !== 0 && r.status !== 1) {
-    throw new Error(`[pip-audit] failed (exit ${r.status}) — OSV unreachable, or the agent venv is not synced (run \`uv sync\` in agents/movie-assistant): ${(r.stderr || '').slice(-500)}`);
+    throw new Error(`[pip-audit] ${project} failed (exit ${r.status}) — OSV unreachable, or the venv is not synced (run \`uv sync\` in ${dir}): ${(r.stderr || '').slice(-500)}`);
   }
   let native;
   try {
     native = JSON.parse(r.stdout);
   } catch {
-    throw new Error(`[pip-audit] non-JSON output: ${(r.stderr || r.stdout || '').slice(-300)}`);
+    throw new Error(`[pip-audit] ${project} produced non-JSON output: ${(r.stderr || r.stdout || '').slice(-300)}`);
   }
-  return { native, findings: normalizePipAudit(native, agentSet, runtimeSet, map) };
+  return { native, findings: normalizePipAudit(native, agentSet, runtimeSet, map, project) };
+}
+
+function runPipAudit({ map }) {
+  assertToolchain('uv', 'pip-audit');
+  // FR-021 — before scanning anything, refuse to run if a Python project on disk is unregistered.
+  // Ordered first on purpose: a partial scan that silently omits a project is the failure mode this
+  // whole feature exists to prevent, so it must not be reachable.
+  assertKnownPythonSurfaces();
+  // FR-005 — a suppression anchored to a non-existent surface can never match; catch it statically
+  // rather than waiting for a run that happens to produce a finding.
+  assertPipAuditAllowlistShape(loadAllowlistEntriesForShapeCheck());
+
+  const natives = {};
+  const findings = [];
+  for (const surface of PYTHON_SURFACES) {
+    // Any surface failing fails the WHOLE scan (FR-008). Three-of-four is never reported as success.
+    const out = auditOnePythonSurface(surface, map);
+    natives[surface.project] = out.native;
+    findings.push(...out.findings);
+  }
+  return { native: natives, findings };
+}
+
+/** The allowlist as raw YAML entries, for the static shape check only (the gate owns real parsing). */
+function loadAllowlistEntriesForShapeCheck() {
+  const path = resolve(REPO_ROOT, 'security/sast/allowlist.yaml');
+  if (!existsSync(path)) return [];
+  const parsed = parseYaml(readFileSync(path, 'utf8'));
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 // ── SARIF + summary (T015) ───────────────────────────────────────────────────
