@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-timestamp: 2026-09-06T14:25:53Z
+timestamp: 2026-09-08T00:00:00Z
 ---
 
 # SAST & SCA static scanning
@@ -18,10 +18,24 @@ container images rather than first-party code or first-party dependency graphs.
 
 ## Gotchas
 
-- **pip-audit audits the installed venv, not a requirements file.** Resolving a requirements file in
-  an ephemeral venv downloads the whole dependency graph and can hang for 11+ minutes on yanked
-  versions. The orchestrator instead audits the already-synced agent venv directly — CI must `uv sync`
-  the agent layer first, and a developer's venv must be synced for a local run to be meaningful.
+- **pip-audit audits the INSTALLED venv, not a requirements file — and now audits all four Python
+  surfaces.** Since feature 068 pip-audit runs against `agents/movie-assistant`, `mcp-servers/movie-mcp`,
+  `mcp-servers/spreadsheet-mcp`, and `mcp-servers/web-api-mcp` — each with its **own** dep graph and
+  runtime classification. `uv sync` all four before a local run; an unsynced surface **fails** the
+  scan, it is never silently skipped. CI provisions all four venvs. `pip-audit -r <requirements>` resolves
+  an ephemeral venv (hangs >11 min, chokes on yanked versions) — do not use that form.
+- **pip-audit findings are project-qualified; allowlist `locationPattern`s should be surface-anchored.**
+  Since feature 068 each finding's location names its surface: `mcp-servers/web-api-mcp:click@8.5.0`,
+  not `click@8.5.0`. An allowlist entry should normally be anchored:
+  `^mcp-servers/web-api-mcp:click@.*`. Two static checks enforce this at scan time, before any findings
+  are compared: (1) `assertKnownPythonSurfaces` fails the scan if a Python project directory carrying a
+  `uv.lock` is not registered in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`) — adding a project without
+  registering it produces a hard error, not a silent omission; (2) `assertPipAuditAllowlistShape` fails
+  the scan if an anchored `locationPattern` (leading `^`) names a surface that does not exist in
+  `PYTHON_SURFACES` — a dead anchor can never match and would silently suppress a real regression once
+  one was written. Drop the leading `^` only when you deliberately mean the suppression to span every
+  Python surface. **Adding a new Python project?** Register it in `PYTHON_SURFACES` and add a `uv sync`
+  step to the `sast` CI job.
 - **Keyless and fail-closed.** All advisory data (Semgrep registry, RustSec, npm advisories, OSV) is
   fetched anonymously at scan time; if any fetch fails, that scanner fails the job rather than
   reporting a false clean. No secret is ever required — see
