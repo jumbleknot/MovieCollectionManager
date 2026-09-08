@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
+description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, and the durations subcommand for calibrating per-step ceilings.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-06T20:42:00+00:00
+timestamp: 2026-09-08T02:11:11+00:00
 ---
 
 # CI self-serve diagnostics
@@ -125,6 +125,21 @@ runtime rather than any literal configured value.
   `merged: true` can co-exist with a `head.sha` that is newer than `main` — the PR page reads as
   though it shipped those commits, but `main` does not contain them. Use
   `git merge-base --is-ancestor <sha> origin/main` to verify, not the API `merged` flag.
+- **`durations` — per-step timing exists now, but three traps prevent a naive reading from being
+  useful.** `ci-log-step.sh` writes one row per wrapped step into `_step-durations.tsv` (step ·
+  seconds · exit · ceiling) on **every** run — success or failure — so a distribution can be built
+  from normal completions, not just from failures. The digest uploads it as `step-durations.tsv`, a
+  **separate file** in the bundle version (not inside `bundle.json.gz`), so reading 25 runs for a
+  calibration costs a few KB rather than 25 full bundle downloads. `ci-status.mjs durations
+  [--job] [--runs]` aggregates the distribution and names the runs it drew from. The three traps:
+  (1) **Killed steps are CENSORED, not observed, and are excluded from every percentile** — a step
+  killed at its ceiling lasted exactly the ceiling; folding it in makes each ceiling a function of
+  the previous one, ratcheting tighter on every kill. (2) **The sample only fills forward from the
+  first run after item #338** — bundles published before that have no durations file and are skipped
+  silently; `runs sampled` in the output is the honest count. (3) **Do not tighten the ceiling
+  (currently 2700 s) from a thin sample** — run 2530 on `main` took 41 min and passed, so a step
+  plausibly uses ~25 min legitimately; trading a slow true failure for a fast false one on a
+  capacity-1 runner (each re-run ~35–40 min) is the worse direction.
 - **Container-executor step logs are read in-job, before teardown — they do not need host
   persistence.** The wrong mental model ("`$HOME/mcm-ci-step-logs/` disappears when the container
   dies → containerized jobs are undiagnosable") is tempting and false. `Publish failure digest` is
