@@ -29,7 +29,7 @@ import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
 import { redactForPublication } from './ci-digest-redact.mjs';
-import { bundleVersion, BUNDLE_PACKAGE } from './ci-failure-digest.mjs';
+import { bundleVersion, BUNDLE_PACKAGE, DURATIONS_FILE } from './ci-failure-digest.mjs';
 import { gunzipSync } from 'node:zlib';
 
 /** Endpoint-family → the token scope it requires. Used to turn a bare 401/403 into a remedy. */
@@ -522,6 +522,14 @@ export function parseTargetArgs(argv) {
     else if (flag === '--job') target.job = valueOf(flag, i++);
     else if (flag === '--run') target.run = valueOf(flag, i++);
     else if (flag === '--full') target.full = true;
+    else if (flag === '--runs') {
+      // How many runs `durations` samples. Distinct from `--run`, which selects ONE run's commit.
+      const raw = valueOf(flag, i++);
+      target.runs = Number(raw);
+      if (!Number.isInteger(target.runs) || target.runs <= 0) {
+        throw new CiStatusError(`--runs must be a positive whole number of runs, got ${JSON.stringify(raw)}`);
+      }
+    }
     else if (flag === '--event') {
       target.event = valueOf(flag, i++);
       if (!['push', 'pull_request'].includes(target.event)) {
@@ -892,6 +900,146 @@ function verdictLine(v) {
   return `mergeable — all required contexts satisfied${advisory}`;
 }
 
+// --- Per-step durations (item #338) ---------------------------------------------------------------
+//
+// `app-e2e`'s 2700 s per-step ceiling was calibrated against an app-e2e JOB duration (~29 min) that
+// was misread as a `web-e2e` STEP duration (~5.2 min), leaving it roughly 5x looser than any
+// evidence supported. It could not be corrected, because nothing recorded how long a step takes:
+// the digest publishes only on failure and this forge exposes no job logs, so the question was
+// unanswerable from the API and the original figure was chosen by eye.
+//
+// `ci-log-step.sh` now writes a row per wrapped step on every run and the digest publishes the file
+// beside each bundle. This reads them back as a distribution.
+
+/** How many runs a `durations` call samples unless told otherwise. */
+export const DEFAULT_DURATION_RUNS = 25;
+
+/** Exit codes `timeout` reports when it kills a step: 124 on TERM, 128+9 after `--kill-after`. */
+const CENSORING_EXITS = new Set([124, 137]);
+
+/**
+ * Parse the published TSV into rows, dropping anything unreadable.
+ *
+ * Lenient on purpose. These files are written by whatever version of the writer was on the runner
+ * days ago, and one malformed row must cost that row rather than the sample. Nothing may parse to
+ * NaN: NaN sorts unpredictably and would corrupt every figure derived from it without ever
+ * announcing itself.
+ */
+export function parseDurationRows(tsv) {
+  const rows = [];
+  for (const line of String(tsv ?? '').split('\n')) {
+    if (!line.trim() || line.startsWith('#')) continue;
+    const [step, seconds, exit, ceiling] = line.split('\t');
+    if (!step) continue;
+    const s = Number(seconds);
+    const e = Number(exit);
+    if (!Number.isFinite(s) || !Number.isFinite(e)) continue;
+    const c = ceiling === undefined || ceiling.trim() === '' ? null : Number(ceiling);
+    rows.push({ step, seconds: s, exit: e, ceiling: Number.isFinite(c) ? c : null });
+  }
+  return rows;
+}
+
+/** Nearest-rank percentile over an ASCENDING array. */
+function percentile(sorted, p) {
+  if (!sorted.length) return null;
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1))];
+}
+
+/**
+ * Collapse rows into one summary per step, ordered by p95 descending.
+ *
+ * CENSORED SAMPLES ARE EXCLUDED FROM EVERY FIGURE, and counted separately.
+ *
+ * A step killed at its ceiling lasted exactly the ceiling. That is an observation of the ceiling,
+ * not of the step, and folding it in makes each ceiling a function of the previous one — a ratchet
+ * that tightens on every kill until the ceiling starts failing runs that would have passed. Item
+ * #338 states the direction plainly: trading a slow true failure for a fast false one is the worse
+ * one. This is the arithmetic that would do it quietly.
+ *
+ * An ordinary FAILURE is not censored. A step that failed an assertion at 300 s really did take
+ * 300 s, and discarding every non-zero exit would throw away most of the sample on exactly the job
+ * that fails most often — which is the job being measured.
+ */
+export function summarizeDurations(rows) {
+  const byStep = new Map();
+  for (const r of rows) {
+    if (!byStep.has(r.step)) byStep.set(r.step, { step: r.step, observed: [], censored: 0, ceiling: null });
+    const g = byStep.get(r.step);
+    if (r.ceiling !== null) g.ceiling = r.ceiling;
+    if (CENSORING_EXITS.has(r.exit)) g.censored += 1;
+    else g.observed.push(r.seconds);
+  }
+  return [...byStep.values()]
+    .map((g) => {
+      const sorted = [...g.observed].sort((a, b) => a - b);
+      return {
+        step: g.step,
+        n: sorted.length,
+        censored: g.censored,
+        ceiling: g.ceiling,
+        min: sorted.length ? sorted[0] : null,
+        p50: percentile(sorted, 0.5),
+        p95: percentile(sorted, 0.95),
+        max: sorted.length ? sorted[sorted.length - 1] : null,
+      };
+    })
+    .sort((a, b) => (b.p95 ?? -1) - (a.p95 ?? -1) || a.step.localeCompare(b.step));
+}
+
+/**
+ * The bundle versions to sample: this JOB's, newest run first, capped.
+ *
+ * Versions are `<numeric run id>--<job slug>` and every job publishes into ONE package, so matching
+ * on the run id alone would blend `app-e2e` and `dast` into a single distribution — the same
+ * cross-job mixing item #180 fixed on the writer side.
+ */
+export function selectDurationVersions(versions, { job, runs = DEFAULT_DURATION_RUNS } = {}) {
+  return versions
+    .map((v) => ({ v, m: /^(\d+)--(.+)$/.exec(String(v.version ?? '')) }))
+    .filter(({ m }) => m && m[2] === job)
+    .sort((a, b) => Number(b.m[1]) - Number(a.m[1]))
+    .slice(0, Math.max(1, runs))
+    .map(({ v }) => v);
+}
+
+const asMinutes = (sec) => (sec === null ? '—' : `${String(sec).padStart(5)}s (${(sec / 60).toFixed(1)}m)`);
+
+/**
+ * Render the distribution, NAMING the runs it was drawn from.
+ *
+ * Criterion 3 of item #338 — "no figure appears without saying what it measured" — enforced where
+ * the figures are produced rather than in a comment beside them. The defect being corrected was a
+ * number whose stated basis was wrong, and a basis recorded only in prose is one that drifts.
+ */
+export function renderDurations(summary, { job, runIds = [] } = {}) {
+  const lines = [
+    `Per-step durations — job \`${job}\`, ${runIds.length} run(s) sampled.`,
+    `Runs: ${runIds.length ? runIds.join(', ') : '(none — no published sample carries durations yet)'}`,
+    '',
+  ];
+  if (!summary.length) {
+    lines.push('No duration rows were found. Bundles published before item #338 carry none, so a');
+    lines.push('sample only accumulates from the first run that recorded them.');
+    return lines.join('\n');
+  }
+  const width = Math.max(...summary.map((s) => s.step.length), 4);
+  lines.push(`${'step'.padEnd(width)}    n  cens          min          p50          p95          max  ceiling`);
+  for (const s of summary) {
+    lines.push(
+      `${s.step.padEnd(width)} ${String(s.n).padStart(4)} ${String(s.censored).padStart(5)}  ` +
+      `${asMinutes(s.min).padStart(11)}  ${asMinutes(s.p50).padStart(11)}  ` +
+      `${asMinutes(s.p95).padStart(11)}  ${asMinutes(s.max).padStart(11)}  ` +
+      `${s.ceiling === null ? '—' : `${s.ceiling}s`}`,
+    );
+  }
+  lines.push('');
+  lines.push('`cens` counts samples where the step was KILLED at its ceiling. Those lasted exactly the');
+  lines.push('ceiling, so they are excluded from every figure above — folding them in would calibrate');
+  lines.push('the next ceiling against the last one and ratchet it downward on every kill.');
+  return lines.join('\n');
+}
+
 // --- Subcommands ----------------------------------------------------------------------------------
 
 /** Exit codes: 0 mergeable · 1 required failure · 2 bad args/auth · 3 still waiting at timeout. */
@@ -1115,6 +1263,73 @@ async function fetchBundle(conn, runId, job) {
   return { version, dir: root, meta: manifest.meta ?? {} };
 }
 
+/**
+ * List every version of the bundle package.
+ *
+ * PAGINATED, for the same measured reason the writer's copy is: Forgejo defaults to page 1 at 30
+ * items and orders packages by NAME, not age. An unpaginated call therefore stops seeing versions
+ * once more than 30 exist — and would quietly sample whichever 30 sorted first, which for
+ * `<run id>--<job>` versions is neither the newest nor a random selection.
+ */
+async function listBundleVersions(conn) {
+  const out = [];
+  for (let page = 1; page <= 100; page++) {
+    const url = `${conn.base}/packages/${conn.owner}?type=generic&q=${BUNDLE_PACKAGE}&page=${page}&limit=50`;
+    const res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
+    if (res.status === 404) break;
+    if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
+    if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} listing ${BUNDLE_PACKAGE} versions`);
+    const batch = await res.json();
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    out.push(...batch.filter((x) => x.name === BUNDLE_PACKAGE));
+    if (batch.length < 50) break;
+  }
+  return out;
+}
+
+/**
+ * Report the per-step duration distribution for a job (item #338).
+ *
+ * Each version's durations file is a few hundred bytes, so sampling 25 runs costs a few KB — the
+ * reason the writer publishes it BESIDE the bundle rather than inside it. Fetching 25 bundles to
+ * read 25 tiny tables would cost ~15 minutes on the measured link, and a calibration that expensive
+ * is one that does not happen.
+ *
+ * A version with no durations file is skipped without comment: every bundle published before this
+ * existed is one, and they are the majority until the sample fills.
+ */
+async function cmdDurations(target, conn) {
+  const job = target.job ?? 'app-e2e';
+  const runs = target.runs ?? DEFAULT_DURATION_RUNS;
+  const packagesRoot = conn.base.replace(/\/api\/v1$/, '/api/packages');
+
+  const selected = selectDurationVersions(await listBundleVersions(conn), { job, runs });
+  if (!selected.length) {
+    emit(`No \`${BUNDLE_PACKAGE}\` versions exist for job \`${job}\`.`);
+    emit('Nothing has been published for it inside the 30-day bundle retention window.');
+    return EXIT.OK;
+  }
+  emit(`sampling ${selected.length} run(s) of \`${job}\` — ${DURATIONS_FILE} is a few hundred bytes each…`);
+
+  const rows = [];
+  const runIds = [];
+  for (const v of selected) {
+    const url = `${packagesRoot}/${conn.owner}/generic/${BUNDLE_PACKAGE}/${v.version}/${DURATIONS_FILE}`;
+    const res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
+    if (res.status === 404) continue; // published before item #338, or the step wrote nothing
+    if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
+    if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} fetching ${v.version}/${DURATIONS_FILE}`);
+    const parsed = parseDurationRows(await res.text());
+    if (!parsed.length) continue;
+    rows.push(...parsed);
+    runIds.push(String(v.version).split('--')[0]);
+  }
+
+  emit('');
+  emit(renderDurations(summarizeDurations(rows), { job, runIds }));
+  return EXIT.OK;
+}
+
 /** Name what the bundle does NOT contain: sources the writer's cap dropped whole, and entries this
  *  reader refused. Both are absences a reader would otherwise read as "the capture never ran". */
 function emitBundleDrops(meta = {}) {
@@ -1200,6 +1415,7 @@ const USAGE = `Usage:
   node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name> | --run <id>] [--event push|pull_request]
   node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch … | --run <id>] [--timeout <seconds>]
   node scripts/ci-status.mjs failure [--sha … | --pr … | --branch … | --run <id>] [--job <name>] [--full]
+  node scripts/ci-status.mjs durations [--job <name>] [--runs <n>]
   node scripts/ci-status.mjs --selftest
 
 --run <id> selects the commit that run was for. --event narrows the VIEW only: the verdict always
@@ -1225,6 +1441,9 @@ async function main(argv) {
   if (command === 'status') return cmdStatus(target, conn);
   if (command === 'watch') return cmdWatch(target, conn, { timeoutSeconds, intervalSeconds });
   if (command === 'failure') return cmdFailure(target, conn);
+  // Per-step wall-clock durations across recent runs (item #338). Defaults to app-e2e — the job
+  // whose per-step ceiling this exists to calibrate — over the last 25 published runs.
+  if (command === 'durations') return cmdDurations(target, conn);
   console.error(`Unknown command: ${command}\n\n${USAGE}`);
   return EXIT.USAGE;
 }

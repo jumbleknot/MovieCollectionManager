@@ -1308,3 +1308,138 @@ test('(#226f) --run reaches the same message, naming the RUN\'s commit rather th
   assert.match(lines.join('\n'), /No failed jobs on 43167af8/,
     'reported on something other than the run\'s own commit');
 });
+
+// ================================================================================================
+// item #338 — reading the per-step duration distribution back
+// ================================================================================================
+//
+// ci-log-step.sh records a duration row per wrapped step on every run, and the digest publishes the
+// file alongside each bundle. This is the half that makes the sample usable: without an aggregator
+// the answer to "how long does this step normally take" is still a manual trawl through package
+// versions, which is the cost that left the 2700 s ceiling calibrated against the wrong number.
+
+import {
+  parseDurationRows,
+  summarizeDurations,
+  selectDurationVersions,
+  renderDurations,
+} from '../ci-status.mjs';
+
+test('(#338l) the four columns are parsed, and the header and blank lines are not rows', () => {
+  const rows = parseDurationRows('# step\tseconds\texit\tceiling\nweb-e2e\t312\t0\t2700\n\nmaestro\t1450\t0\t2700\n');
+  assert.deepEqual(rows, [
+    { step: 'web-e2e', seconds: 312, exit: 0, ceiling: 2700 },
+    { step: 'maestro', seconds: 1450, exit: 0, ceiling: 2700 },
+  ]);
+});
+
+test('(#338m) a malformed row is DROPPED, not parsed into a NaN that poisons the percentiles', () => {
+  // A published file is written by a runner, days ago, by a version of the writer that may not be
+  // this one. One unreadable row must cost that row, not the whole sample — and never a NaN, which
+  // sorts unpredictably and would silently corrupt every figure derived from it.
+  const rows = parseDurationRows('web-e2e\t312\t0\t2700\ntruncated-mid-writ\nbad\tNaN\t0\t\n');
+  assert.deepEqual(rows, [{ step: 'web-e2e', seconds: 312, exit: 0, ceiling: 2700 }]);
+});
+
+test('(#338n) a step with no ceiling parses as an unbounded sample, not as a zero one', () => {
+  assert.deepEqual(parseDurationRows('affected-nx\t95\t0\t\n'), [
+    { step: 'affected-nx', seconds: 95, exit: 0, ceiling: null },
+  ]);
+});
+
+test('(#338o) percentiles are computed per step, over the observed samples', () => {
+  const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ step: 'web-e2e', seconds: n * 60, exit: 0, ceiling: 2700 }));
+  const [s] = summarizeDurations(rows);
+  assert.equal(s.step, 'web-e2e');
+  assert.equal(s.n, 10);
+  assert.equal(s.min, 60);
+  assert.equal(s.max, 600);
+  assert.equal(s.p50, 300);   // nearest-rank on 10 samples: index ceil(0.5*10)-1 = 4 → 300
+  assert.equal(s.p95, 600);   // index ceil(0.95*10)-1 = 9 → 600
+});
+
+test('(#338p) a CENSORED sample is excluded from the percentiles and counted separately', () => {
+  // THE rule this reader exists to hold. A step killed at its ceiling lasted exactly the ceiling —
+  // that is not an observation of how long it takes, it is an observation of the ceiling. Averaging
+  // it in makes the next ceiling a function of the last one, which ratchets downward for ever and
+  // turns every ceiling into a self-fulfilling prophecy. Item #338 says trading a slow true failure
+  // for a fast false one is the worse direction; this is the arithmetic that would do it silently.
+  const rows = [
+    { step: 'maestro-agent-flows', seconds: 600, exit: 0, ceiling: 2700 },
+    { step: 'maestro-agent-flows', seconds: 900, exit: 0, ceiling: 2700 },
+    { step: 'maestro-agent-flows', seconds: 2700, exit: 124, ceiling: 2700 },
+    { step: 'maestro-agent-flows', seconds: 2700, exit: 137, ceiling: 2700 },
+  ];
+  const [s] = summarizeDurations(rows);
+  assert.equal(s.n, 2, 'a killed step was counted as an observed duration');
+  assert.equal(s.censored, 2);
+  assert.equal(s.max, 900, 'the ceiling leaked into the observed maximum');
+});
+
+test('(#338q) an ordinary FAILURE is still an observation — only a kill is censored', () => {
+  // A step that failed an assertion at 300 s really did take 300 s. Excluding every non-zero exit
+  // would throw away most of the sample on the job that fails most, which is the job being measured.
+  const [s] = summarizeDurations([
+    { step: 'web-e2e', seconds: 300, exit: 1, ceiling: 2700 },
+    { step: 'web-e2e', seconds: 320, exit: 0, ceiling: 2700 },
+  ]);
+  assert.equal(s.n, 2);
+  assert.equal(s.censored, 0);
+});
+
+test('(#338r) a step observed ONLY through kills reports n=0 rather than an invented figure', () => {
+  const [s] = summarizeDurations([{ step: 'hung', seconds: 2700, exit: 124, ceiling: 2700 }]);
+  assert.equal(s.n, 0);
+  assert.equal(s.censored, 1);
+  assert.equal(s.p95, null, 'a percentile was reported from zero observations');
+});
+
+test('(#338s) steps are ordered by p95 descending — the ceiling question is about the slowest', () => {
+  const summary = summarizeDurations([
+    { step: 'quick', seconds: 10, exit: 0, ceiling: null },
+    { step: 'slow', seconds: 1000, exit: 0, ceiling: null },
+    { step: 'middling', seconds: 100, exit: 0, ceiling: null },
+  ]);
+  assert.deepEqual(summary.map((s) => s.step), ['slow', 'middling', 'quick']);
+});
+
+test('(#338t) only THIS job\'s versions are sampled, newest first, capped at --runs', () => {
+  // Versions are `<runId>--<job>`. app-e2e and dast publish into the same package, so a prefix
+  // match on the run id alone would mix two jobs' steps into one distribution.
+  const versions = [
+    { version: '2600--app-e2e' }, { version: '2599--dast' }, { version: '2598--app-e2e' },
+    { version: '2597--app-e2e' }, { version: '2596--affected' },
+  ];
+  assert.deepEqual(
+    selectDurationVersions(versions, { job: 'app-e2e', runs: 2 }).map((v) => v.version),
+    ['2600--app-e2e', '2598--app-e2e'],
+  );
+});
+
+test('(#338u) the render names the sample, so no figure appears without saying what it measured', () => {
+  // Criterion 3 of item #338, enforced at the source of the numbers rather than in a comment that
+  // can drift away from them: the original defect was a figure whose stated basis was wrong.
+  const out = renderDurations(
+    summarizeDurations([{ step: 'web-e2e', seconds: 312, exit: 0, ceiling: 2700 }]),
+    { job: 'app-e2e', runIds: ['2600', '2598'] },
+  );
+  assert.match(out, /app-e2e/);
+  assert.match(out, /web-e2e/);
+  assert.match(out, /2600/, 'the runs the sample came from are not named');
+  assert.match(out, /2598/);
+});
+
+test('(#338v) --runs is parsed and validated — a bad value is refused, not silently defaulted', () => {
+  // A silently-defaulted sample size is the shape of defect this whole item is about: a figure
+  // whose basis is not what the reader believes it to be.
+  assert.equal(parseTargetArgs(['durations', '--runs', '10']).target.runs, 10);
+  assert.equal(parseTargetArgs(['durations']).target.runs, undefined);
+  assert.throws(() => parseTargetArgs(['durations', '--runs', 'lots']), /--runs/);
+  assert.throws(() => parseTargetArgs(['durations', '--runs', '0']), /--runs/);
+});
+
+test('(#338w) the CLI advertises the durations command, so the capability is discoverable', () => {
+  // The measurement exists to be USED, weeks later, by a reader who does not know it was added.
+  const r = runScript(['bogus-command']);
+  assert.match(r.stderr, /ci-status\.mjs durations/);
+});

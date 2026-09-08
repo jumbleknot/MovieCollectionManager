@@ -28,6 +28,7 @@ node scripts/ci-status.mjs status --pr 82              # a pull request
 node scripts/ci-status.mjs watch --pr 82               # poll until settled
 node scripts/ci-status.mjs failure --pr 82             # why did it fail?
 node scripts/ci-status.mjs failure --pr 82 --full      # + fetch the full evidence bundle
+node scripts/ci-status.mjs durations                   # how long does each app-e2e step take?
 ```
 
 **Exit codes** — the `3` is the one that matters:
@@ -746,6 +747,53 @@ and diagnosing it needed `ssh ci@homelab` — the out-of-band step this bundle e
   per-file/budget ceilings, files in an unsupported format, and — reader-side — entries past
   `ci-status`'s 500-entry ceiling. The device-capture line is now **three-way**: carried / captured
   on the runner but not folded into `container-logs` / genuinely not present.
+
+---
+
+## Per-step durations — how long a step *normally* takes (item #338)
+
+```bash
+node scripts/ci-status.mjs durations                          # app-e2e, last 25 published runs
+node scripts/ci-status.mjs durations --job dast --runs 10
+```
+
+**What it answers, and why it did not exist before.** `app-e2e` runs every wrapped step under a
+per-step ceiling (`CI_STEP_TIMEOUT_SECONDS`, item #326) so a hang fails the STEP and still publishes
+a digest, instead of killing the JOB and destroying the evidence. That mechanism is validated in
+production. Its **value** was not: 2700 s was calibrated against an app-e2e **job** duration
+(~29 min) misread as a `web-e2e` **step** duration (~5.2 min), leaving it roughly 5x looser than the
+evidence supported — measured cost on 2026-09-02, a hung step burning the full 45 min remaining on a
+capacity-1 runner. It could not be corrected, because **nothing recorded how long a step takes**:
+the digest publishes only on failure, and this forge exposes no job logs.
+
+**The sample.** `ci-log-step.sh` now writes one row per wrapped step per invocation into
+`_step-durations.tsv` — `step · seconds · exit · ceiling` — on **every** run, success or failure. A
+distribution built only from failures describes the failures, not the step. The digest uploads it as
+**`step-durations.tsv`, a separate file in the bundle's version**, not inside `bundle.json.gz`: a
+failure bundle reaches the 5 MB cap, and reading 25 of those to extract 25 tiny tables is a
+calibration nobody performs twice.
+
+Three things worth knowing before you trust a figure it prints:
+
+- **A killed step is CENSORED, not observed, and is excluded from every percentile** — it is
+  reported in its own `cens` column. A step killed at its ceiling lasted exactly the ceiling, so
+  folding it in makes each ceiling a function of the previous one: a ratchet that tightens on every
+  kill until the ceiling fails runs that would have passed. An ordinary *failure* is not censored —
+  a step that failed an assertion at 300 s really did take 300 s.
+- **The sample is what the retention window holds.** Bundles expire after 30 days, and every bundle
+  published before item #338 carries no durations file at all — those versions are skipped silently,
+  so the sample fills forward from the first run that recorded one. `runs sampled` in the output is
+  the honest count; it is not the number requested.
+- **Coverage is asymmetric by design.** `app-e2e` publishes on every run, green (counts bundle) and
+  red (digest bundle). Every other job publishes only on failure, because the counts channel is
+  self-limiting to `app-e2e` by construction and making durations a counts source would turn ~1
+  package version per run into ~20.
+
+**The ceiling is still 2700 s and still uncalibrated.** Do not tighten it from a thin sample: run
+2530 on `main` took 41 min and PASSED, so `maestro-agent-flows` plausibly uses ~25 min legitimately
+when its nine flows retry, and trading a slow true failure for a fast false one on a capacity-1
+runner — where each re-run costs ~35-40 min — is the worse direction. Per-step ceilings replace the
+single job-wide value once the distribution supports them.
 
 ---
 

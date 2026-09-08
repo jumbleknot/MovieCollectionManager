@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, existsSync, readdirSync, writeFileSync, chmodSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, existsSync, readdirSync, writeFileSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -53,7 +53,9 @@ test('(b) the output is mirrored to the log AND still reaches stdout', needsBash
   // Mirrored, not diverted: the run log a human reads in the web UI must be unchanged.
   const r = run(['demo', 'bash', '-c', 'echo hello-from-step']);
   assert.match(r.stdout, /hello-from-step/, 'output no longer reaches the job log');
-  assert.deepEqual(r.logs, ['demo.log']);
+  // `_`-prefixed bookkeeping (`_failed-step`, `_step-durations.tsv`) shares the directory; what this
+  // guard pins is that the STEP LOG is there and named after the step.
+  assert.deepEqual(r.logs.filter((f) => !f.startsWith('_')), ['demo.log']);
   assert.match(readFileSync(join(r.dir, 'demo.log'), 'utf8'), /hello-from-step/);
 });
 
@@ -145,8 +147,18 @@ test('(g5) two jobs in ONE run do not see each other\'s step logs', needsBash, (
   spawnSync('bash', [SCRIPT, 'dast-zap', 'bash', '-c', 'echo zap'], { encoding: 'utf8', env: inJob('dast') });
   spawnSync('bash', [SCRIPT, 'web-e2e', 'bash', '-c', 'echo playwright'], { encoding: 'utf8', env: inJob('app-e2e') });
 
-  assert.deepEqual(readdirSync(join(root, 'run-shared2', 'app-e2e')), ['web-e2e.log']);
-  assert.deepEqual(readdirSync(join(root, 'run-shared2', 'dast')), ['dast-zap.log']);
+  const stepLogs = (job) => readdirSync(join(root, 'run-shared2', job)).filter((f) => !f.startsWith('_'));
+  assert.deepEqual(stepLogs('app-e2e'), ['web-e2e.log']);
+  assert.deepEqual(stepLogs('dast'), ['dast-zap.log']);
+
+  // The durations file is scoped the same way, and must be — the two jobs share $HOME on this
+  // runner, so a run-scoped file would blend `dast`'s samples into `app-e2e`'s distribution and
+  // silently calibrate app-e2e's ceilings against another job's steps (item #180's defect, in a
+  // new artifact).
+  const durations = (job) => readFileSync(join(root, 'run-shared2', job, '_step-durations.tsv'), 'utf8');
+  assert.match(durations('app-e2e'), /^web-e2e\t/m);
+  assert.doesNotMatch(durations('app-e2e'), /^dast-zap\t/m);
+  assert.doesNotMatch(durations('dast'), /^web-e2e\t/m);
 });
 
 // --- (probe) the capability probe must answer the question being ASKED (feature 051 US5) ---------
@@ -314,4 +326,98 @@ test('(#326j) app-e2e sets a per-step ceiling, and it is comfortably below the j
   assert.ok(jobSeconds - stepSeconds >= 15 * 60,
     `only ${(jobSeconds - stepSeconds) / 60} min separates the two ceilings — a hung step would ` +
     'still reach the job ceiling before the digest could publish');
+});
+
+// ─── item #338 — per-step durations, recorded on EVERY run ───────────────────────────────────────
+//
+// The 2700 s ceiling above was calibrated against an app-e2e JOB duration misread as a `web-e2e`
+// STEP duration, and could not be corrected because nothing in this repository records how long a
+// step actually takes. The failure digest publishes only on failure, and the forge exposes no job
+// logs — so "how long does this step normally take" was unanswerable from the API.
+//
+// These rows are the sample that answers it. They must be written whatever the step's outcome:
+// a distribution built only from failures describes the failures, not the step.
+
+function durationRows(dir) {
+  const file = join(dir, '_step-durations.tsv');
+  if (!existsSync(file)) return null;
+  return readFileSync(file, 'utf8')
+    .split('\n')
+    .filter((l) => l.trim() && !l.startsWith('#'))
+    .map((l) => {
+      const [name, seconds, exit, ceiling] = l.split('\t');
+      return { name, seconds, exit, ceiling };
+    });
+}
+
+test('(#338a) a PASSING step records a duration row — a green run is the sample that matters', needsBash, () => {
+  const r = run(['quick-step', 'echo', 'hello']);
+  assert.equal(r.code, 0);
+  const rows = durationRows(r.dir);
+  assert.ok(rows, 'no _step-durations.tsv was written — a green run left no sample');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].name, 'quick-step');
+  assert.match(rows[0].seconds, /^\d+$/, `seconds is not a number: ${rows[0].seconds}`);
+  assert.equal(rows[0].exit, '0');
+});
+
+test('(#338b) a FAILING step records one too — the row is not conditional on success', needsBash, () => {
+  const r = run(['broken-step', 'bash', '-c', 'exit 7']);
+  assert.equal(r.code, 7, 'the wrapper stopped reporting the command exit code');
+  const rows = durationRows(r.dir);
+  assert.ok(rows, 'a failing step recorded no duration');
+  assert.equal(rows[0].name, 'broken-step');
+  assert.equal(rows[0].exit, '7');
+});
+
+test('(#338c) a TIMED-OUT step records its ceiling, so a censored sample is identifiable', needsBash, () => {
+  // The duration of a killed step EQUALS its ceiling — it is right-censored, not observed. An
+  // aggregator that averages it in calibrates the ceiling against its own kills, which ratchets
+  // downward for ever. The exit code and the ceiling are both recorded so the reader can exclude it.
+  const r = runWithTimeout(['hanging-step', 'sleep', '30'], 1);
+  const rows = durationRows(r.dir);
+  assert.ok(rows, 'a timed-out step recorded no duration');
+  assert.equal(rows[0].name, 'hanging-step');
+  assert.ok(rows[0].exit === '124' || rows[0].exit === '137', `expected a timeout exit, got ${rows[0].exit}`);
+  assert.equal(rows[0].ceiling, '1', 'the ceiling the sample was censored at is not recorded');
+});
+
+test('(#338d) each INVOCATION is its own row — a name wrapped twice yields two samples', needsBash, () => {
+  // `mc-service-checks-install-native-build-deps` is wrapped twice in app-ci.yml, and the ceiling
+  // applies per invocation — so collapsing them onto one name would understate the real duration.
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'test-run', GITHUB_JOB: 'test-job' };
+  for (const msg of ['first', 'second']) {
+    spawnSync('bash', [SCRIPT, 'repeated-step', 'echo', msg], { encoding: 'utf8', env });
+  }
+  const rows = durationRows(join(root, 'test-run', 'test-job'));
+  assert.equal(rows.length, 2, 'a repeated step did not append a second sample');
+  assert.deepEqual(rows.map((x) => x.name), ['repeated-step', 'repeated-step']);
+});
+
+test('(#338e) an unwritable durations file NEVER changes the step outcome', needsBash, () => {
+  // FR-009's discipline, applied here: measurement must not be able to fail a build. The whole
+  // point of recording on every run is that it is cheap and invisible.
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const dir = join(root, 'test-run', 'test-job');
+  mkdirSync(dir, { recursive: true });
+  mkdirSync(join(dir, '_step-durations.tsv')); // a directory where the file must go: append fails
+  const r = spawnSync('bash', [SCRIPT, 'quick-step', 'echo', 'hello'], {
+    encoding: 'utf8',
+    env: { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'test-run', GITHUB_JOB: 'test-job' },
+  });
+  assert.equal(r.status, 0, 'a failed duration write turned a passing step red');
+});
+
+test('(#338x) the uncalibrated ceiling points at the command that measures it', () => {
+  // The 2700 s value stays until a distribution exists (item #338 is explicit that tightening it
+  // without one trades a slow true failure for a fast false one). What must NOT stay is the
+  // situation that produced it: a figure sitting beside no way to check it. The pointer is pinned
+  // here because a comment is the one part of this mechanism nothing else would notice going stale.
+  const yaml = readFileSync(APP_CI, 'utf8');
+  const idx = yaml.indexOf('CI_STEP_TIMEOUT_SECONDS');
+  assert.ok(idx > 0, 'app-e2e no longer sets a per-step ceiling');
+  const comment = yaml.slice(Math.max(0, idx - 4000), idx);
+  assert.match(comment, /ci-status\.mjs durations/,
+    'the ceiling no longer names the command that measures it — the next reader calibrates by eye again');
 });
