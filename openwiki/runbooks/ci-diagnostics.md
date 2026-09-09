@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, and the durations subcommand for calibrating per-step ceilings.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-09T00:00:00Z
+timestamp: 2026-09-09T16:00:00Z
 ---
 
 # CI self-serve diagnostics
@@ -73,6 +73,21 @@ runtime rather than any literal configured value.
 - **The "superseded" trap is the dangerous direction: it fails loud, announcing a broken build that
   isn't.** The other misreport (skipped) fails safe. Both were measured against real API responses,
   not inferred from documentation.
+- **`ci-status.mjs` must stay dependency-free — `trigger-cd` runs it with no `node_modules`.**
+  `app-ci / trigger-cd` runs `scripts/cd-dispatch-gate.mjs`, which imports `ci-status.mjs` to reuse
+  its check classification. That job runs node directly with no `pnpm install` step, so every module
+  reachable from the gate may import node builtins and repo-local files, and nothing else. Measured
+  2026-09-09, on the merge of PR #400: item #396's needs-graph was implemented with
+  `import { parse } from 'yaml'` — a devDependency, so every local test passed — and `trigger-cd`
+  then died on `main` with `ERR_MODULE_NOT_FOUND`. The reason this matters: `trigger-cd` is
+  *advisory*, so the PR merged green, `main` stayed green, no required context moved — and the CD
+  dispatch simply did not happen. A real break that blocks nothing and announces itself nowhere is only
+  found by someone reading the advisory row on purpose. The fix is to keep the graph dependency-free;
+  the `needs:` extraction is hand-rolled for exactly this reason. Two tests hold the line: one walks
+  the import graph from `cd-dispatch-gate.mjs` and fails on any bare specifier; one cross-checks the
+  hand parser against the real `yaml` package over every workflow in `.forgejo/workflows/`. Reproduce
+  the CI condition locally: copy `scripts/*.mjs` somewhere with no `node_modules` anywhere up the
+  tree, then `node -e "import('./cd-dispatch-gate.mjs')"`.
 - **A skip annotation is NOT safe to read as "path-gated — this diff doesn't apply" (item #396).**
   `ci-status` used to label every skip `(path-gated → satisfied)`. On PR #393 (2026-09-08) that was
   wrong on both counts: the commit touched `agents/**` and `mcp-servers/**`, which are in app-ci's
