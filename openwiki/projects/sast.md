@@ -4,7 +4,7 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml.
 tags: [security, sast, sca, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-timestamp: 2026-09-06T00:00:00Z
+timestamp: 2026-09-08T00:00:00Z
 ---
 
 # SAST & SCA static security scanning
@@ -19,7 +19,7 @@ normalized report; one `sast` gate in [CI/CD pipeline](/openwiki/projects/ci-cd-
 | SAST | **Semgrep** (OSS) | TS/JS tree (BFF + frontend) + Python agent layer |
 | SCA | **cargo audit** | Rust deps (`Cargo.lock`) |
 | SCA | **pnpm audit** | JS deps (`pnpm-lock.yaml`) |
-| SCA | **pip-audit** | Python deps (`agents/movie-assistant`) |
+| SCA | **pip-audit** | Python deps — **all four** surfaces: `agents/movie-assistant`, `mcp-servers/{movie-mcp,spreadsheet-mcp,web-api-mcp}` |
 
 Rust *code* is outside Semgrep's scope — clippy (`pnpm nx lint mc-service`) owns Rust patterns;
 cargo-audit covers only Rust *deps*. Config tree: `security/sast/`; full operator procedures in
@@ -103,10 +103,25 @@ and imported by both gates. A dedicated `--check-expiring` mode runs **weekly** 
   (then gone). **Check the finding COUNT, not just the exit code** — a 0-finding report and a
   0-blocking-finding report both print green.
 
-- **pip-audit audits the INSTALLED venv, not a requirements file.** The orchestrator runs pip-audit
-  against the synced venv (`uv sync` in `agents/movie-assistant` first). CI provisions this; a
-  developer must do it locally. `pip-audit -r <requirements>` downloads an ephemeral venv (hangs
-  >11 min, chokes on yanked versions) — do not use that form.
+- **pip-audit audits the INSTALLED venv, not a requirements file — and now audits all four Python
+  surfaces.** Since feature 068 pip-audit runs against `agents/movie-assistant`, `mcp-servers/movie-mcp`,
+  `mcp-servers/spreadsheet-mcp`, and `mcp-servers/web-api-mcp` — each with its **own** dep graph and
+  runtime classification. `uv sync` all four before a local run; an unsynced surface **fails** the
+  scan, it is never silently skipped. CI provisions all four venvs. `pip-audit -r <requirements>` resolves
+  an ephemeral venv (hangs >11 min, chokes on yanked versions) — do not use that form.
+
+- **pip-audit findings are project-qualified; allowlist `locationPattern`s should be surface-anchored.**
+  Since feature 068 each finding's location names its surface: `mcp-servers/web-api-mcp:click@8.5.0`,
+  not `click@8.5.0`. An allowlist entry should normally be anchored:
+  `^mcp-servers/web-api-mcp:click@.*`. Two static checks enforce this at scan time, before any findings
+  are compared: (1) `assertKnownPythonSurfaces` fails the scan if a Python project directory carrying a
+  `uv.lock` is not registered in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`) — adding a project without
+  registering it produces a hard error, not a silent omission; (2) `assertPipAuditAllowlistShape` fails
+  the scan if an anchored `locationPattern` (leading `^`) names a surface that does not exist in
+  `PYTHON_SURFACES` — a dead anchor can never match and would silently suppress a real regression once
+  one was written. Drop the leading `^` only when you deliberately mean the suppression to span every
+  Python surface. **Adding a new Python project?** Register it in `PYTHON_SURFACES` and add a `uv sync`
+  step to the `sast` CI job.
 
 - **Unmatched allowlist entries are reported but do not move the exit code.** An entry that matches
   nothing this run is listed under `UNMATCHED ENTRIES`. The trap: pip-audit switched from CVE ids to
