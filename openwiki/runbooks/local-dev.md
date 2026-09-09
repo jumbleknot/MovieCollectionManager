@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Local dev infrastructure & environment variables
-description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — and the load-bearing ordering, credential-rotation, and missing-.env.local gotchas that break a fresh box or test run if skipped.
+description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — and the load-bearing ordering, credential-rotation, missing-.env.local, and stale-credential gotchas that break a fresh box or test run if skipped.
 resource: docs/runbooks/local-dev.md
 tags: [docker-compose, local-dev, secrets, keycloak, runbook]
-timestamp: 2026-08-07T00:00:00Z
+timestamp: 2026-09-09T00:00:00Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -43,6 +43,20 @@ per-machine stack credentials and seed the dev Keycloak realm before any stack i
   concluding an environment cannot run the integration suite, run `node scripts/gen-dev-env.mjs`;
   it now creates the file when absent and reports `CREATED .env.local (was absent)`. The suite
   goes from errors to pass. See the full detect/resolve table below.
+- **A projected credential can be STALE, not merely absent (item #395).** The same 401 symptom
+  — `ROPC token request failed (401): {"error":"unauthorized_client"}` — appears when
+  `frontend/mcm-app/.env.e2e.local` *exists* and carries a plausible 64-char secret, but the
+  realm was re-seeded from a different `auth.env` or a client secret was regenerated in the admin
+  console. `gen-dev-env.mjs` now verifies each projected credential against the realm
+  (`client_credentials` for `mcm-bff-service`, ROPC for `mcm-bff-test`) **before writing**; it
+  exits 2 and writes nothing when the realm rejects a credential (`REFUSING TO WRITE: the realm
+  … rejects credential(s)`). **Resolution: fix at the realm, not by patching env files.** Patching
+  one client from the realm's value leaves `realm-secret == BFF-secret` broken for every other
+  client. Full re-seed: `docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit` →
+  `docker volume rm keycloak-store-postgres-data && docker volume create keycloak-store-postgres-data`
+  → `node scripts/gen-dev-secrets.mjs && node scripts/gen-dev-env.mjs` → `pnpm nx up-auth
+  infrastructure-as-code` → re-run `node scripts/gen-dev-env.mjs` (must end `VERIFIED against the
+  realm`). `MCM_SKIP_REALM_VERIFY=1` bypasses the check — escape hatch only, not a fix.
 
 ## Credential-skip diagnosis (feature 048)
 

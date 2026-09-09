@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, and the durations subcommand for calibrating per-step ceilings.
+description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, and the durations subcommand for calibrating per-step ceilings.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-08T02:11:11+00:00
+timestamp: 2026-09-09T00:00:00Z
 ---
 
 # CI self-serve diagnostics
@@ -18,11 +18,11 @@ runtime rather than any literal configured value.
 ## Gotchas
 
 - **Two of the five reported check states are misreported by the raw API and must be derived, not
-  trusted literally.** A path-gated-out job reads `success` with description "Has been skipped"
-  (fine); a cancelled-by-newer-push run reads `failure` on **every** job it touched, even though
-  nothing was actually broken — the tell is that unrelated jobs die together on a change that
-  couldn't have affected them all, confirmed by the literal "Has been cancelled" description or the
-  owning run's `cancelled` status.
+  trusted literally.** A skipped job reads `success` with description "Has been skipped" — but the
+  payload does not say *why* it was skipped (see item #396 below); a cancelled-by-newer-push run
+  reads `failure` on **every** job it touched, even though nothing was actually broken — the tell is
+  that unrelated jobs die together on a change that couldn't have affected them all, confirmed by the
+  literal "Has been cancelled" description or the owning run's `cancelled` status.
 - **There is no re-run endpoint — measured 2026-08-31.** All three plausible shapes answer `404`:
   `actions/runs/{id}/rerun`, `actions/tasks/{id}/rerun`, `actions/runs/{id}/rerun-failed-jobs`.
   Nothing can re-run a job in place, and there is no way to re-run *one* failed job at all.
@@ -73,6 +73,18 @@ runtime rather than any literal configured value.
 - **The "superseded" trap is the dangerous direction: it fails loud, announcing a broken build that
   isn't.** The other misreport (skipped) fails safe. Both were measured against real API responses,
   not inferred from documentation.
+- **A skip annotation is NOT safe to read as "path-gated — this diff doesn't apply" (item #396).**
+  `ci-status` used to label every skip `(path-gated → satisfied)`. On PR #393 (2026-09-08) that was
+  wrong on both counts: the commit touched `agents/**` and `mcp-servers/**`, which are in app-ci's
+  `changes` filter; `app-e2e` was skipped because `affected`, which it `needs:`, failed on one E501.
+  Fixing the lint let `app-e2e` run, and it caught a real defect (gateway → web-api-mcp returned
+  421). Had the label been believed, the conclusion would have been "the agent layer does not trigger
+  E2E at all" — false, and the end of the investigation. The tool now prints one of three annotations
+  based on the `needs:` edges in `.forgejo/workflows/*.yml`: `(path-gated → satisfied)` when every
+  upstream `needs:` passed; `(NOT run — needs: X, which did not pass)` when a declared dependency
+  failed or was cancelled; `(skipped — cause not determined: …)` when the workflow cannot be read or
+  the dependency has not yet reported. A dependency-skipped required context still counts as satisfied
+  for the verdict — the merge is blocked by the failed dependency itself.
 - **`cd-dispatch / trigger-cd` is NOT a CI result — it is the deploy gate's own answer, and it is
   the ONLY place a declined deploy is visible.** Before item #230, a run that declined to dispatch
   and a run that deployed looked identical from outside — both were advisory, both silent. A commit
