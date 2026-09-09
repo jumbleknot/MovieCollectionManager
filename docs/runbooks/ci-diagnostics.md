@@ -132,6 +132,35 @@ change that could not have affected them all.* It is detected two independent wa
 description is literally `"Has been cancelled"`, and the owning run's `status` is `cancelled`. Either
 alone suffices, so a UI wording change cannot silently turn it back into `failed`.
 
+### `ci-status.mjs` must stay dependency-free — `trigger-cd` runs it with no `node_modules`
+
+`app-ci / trigger-cd` runs `scripts/cd-dispatch-gate.mjs`, which imports `ci-status.mjs` to reuse its
+check classification rather than re-deriving it. That job checks out the repo and runs node
+**directly**: there is no `pnpm install` step. So every module reachable from the gate may import
+node builtins and repo-local files, and nothing else.
+
+Measured 2026-09-09, on the merge of PR #400. Item #396's needs-graph was implemented with
+`import { parse } from 'yaml'` — a devDependency, so every local test passed — and `trigger-cd` then
+died on `main`:
+
+```text
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'yaml' imported from …/scripts/ci-status.mjs
+```
+
+**The reason this is worth a runbook entry rather than a memory:** `trigger-cd` is *advisory*. The PR
+merged green, `main` stayed green, no required context moved — and the CD dispatch simply did not
+happen. A real break that blocks nothing and announces itself nowhere is only found by someone
+reading the advisory row on purpose.
+
+The fix is not to add an install step to `trigger-cd`; it is to keep the graph dependency-free. The
+`needs:` extraction is hand-rolled for exactly this reason, and two tests hold the line: one walks the
+import graph from `cd-dispatch-gate.mjs` and fails on any bare specifier, and one cross-checks the
+hand parser against the real `yaml` package over every workflow in `.forgejo/workflows/` — so
+"small enough to hand-roll" stays measured rather than assumed.
+
+Reproduce the CI condition locally by copying `scripts/*.mjs` somewhere with no `node_modules`
+anywhere up the tree, then `node -e "import('./cd-dispatch-gate.mjs')"`.
+
 ### "Every job died together" has a SECOND cause — the install step
 
 The superseded tell above (*every job dies on a change that could not have affected them all*) is not
