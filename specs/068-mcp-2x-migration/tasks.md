@@ -489,7 +489,9 @@ Propagation rule is non-negotiable.
     - **#396** (p3, bug) — `ci-status.mjs` labels a dependency-skipped job `path-gated`, asserting a
       cause it cannot know; it misdirected the diagnosis of PR #393 once.
 
-- [ ] T050 Close backlog item **#310** — only after verifying its acceptance criteria are met
+- [X] T050 Close backlog item **#310** — only after verifying its acceptance criteria are met
+  - **DONE 2026-09-09.** All four criteria verified against `main` (`40329306`) rather than against
+    the branch, and the evidence recorded as a closing comment on the item before closing it.
   - Its four criteria: all four projects import and run on 2.x; bounds at `>=2,<3` with lockfiles
     regenerated; the full agent tier passes (golden + `@gate`); an SDD set exists. Closure is an
     explicit act after verification, not a consequence of a merged PR.
