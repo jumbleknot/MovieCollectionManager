@@ -52,7 +52,15 @@ Phase 2).
     absent gitignored `.env.local`), not a missing capability. Name the absent input before
     concluding the environment cannot do the job.
 
-- [ ] T002 Bring the local stacks up, and make an absent stack **fail** rather than skip
+- [X] T002 Bring the local stacks up, and make an absent stack **fail** rather than skip
+  - **DONE 2026-09-08.** Baseline on `mcp` 1.29.1 with `MCM_REQUIRE_LIVE_STACK=1`: movie-mcp **20
+    passed**, web-api-mcp **9 passed**, zero skips. The flag did its job — it first turned 20 silent
+    skips into 20 errors.
+  - **Two missing inputs, not a missing capability.** (1) web-api-mcp needed the TMDB key —
+    `gen-dev-env.mjs` supplied it (0 → 9 passed). (2) movie-mcp's ROPC 401 was a **stale**
+    `E2E_ROPC_CLIENT_SECRET` in `frontend/mcm-app/.env.e2e.local`, which `gen-dev-env.mjs` does
+    **not** resync; fixed by reading `mcm-bff-test`'s real secret from the running realm via the
+    Keycloak admin API. Worth a follow-up item on the generator.
   - Per [local-dev.md](../../docs/runbooks/local-dev.md). The Verify REDs in Phases 4 and 5 call a
     live `mc-service`, `movie-mcp` and `web-api-mcp`. Without them those suites fail for an unrelated
     reason and the RED proves nothing — a tool's "no" is about the tool, not about your question.
@@ -213,14 +221,20 @@ shows four `pip-audit` surfaces. Measured installed-venv counts, 2026-09-08: 195
 
 ### Verification for User Story 1
 
-- [ ] T020 [US1] Run the full scan locally and read the scanner metadata, not the finding count
+- [X] T020 [US1] Run the full scan locally and read the scanner metadata, not the finding count
+  - **RESOLVED BY CI, PR #391 / 5e8637a6**: `guardrails / sast` PASSED with the four-surface scanner
+    against the real OSV feed. The local half stayed blocked (below); CI is the authority, as planned.
+  - **BLOCKED LOCALLY, 2026-09-08**: `api.osv.dev` does not resolve here, so `pip-audit` fails closed
+    and no `findings.json` is produced. Not a regression — equally unreproducible before this change.
+    The fail-closed paths WERE verified live (the `_probe` rejection; the surface-named OSV error).
+    **CI's OSV run on PR #391 is the authority for the four-surface confirmation.**
   - **Scenarios covered**: SC-001
   - **Verify**: four distinct project prefixes among `pip-audit` findings; `ran: true` and
     `error: null` for `pip-audit`. Expected result is **zero** advisories across all four
     (measured 2026-09-08) — which is why trap #3 matters here more than anywhere.
   - Note which advisory feed you used (`-s pypi` locally; see trap #2).
 
-- [ ] T021 [US1] Open **PR #1** with US1 alone and confirm `sast` green in CI
+- [X] T021 [US1] Open **PR #1** with US1 alone and confirm `sast` green in CI
   - Push a real branch (`git push origin HEAD:<branch>`), then `POST …/pulls` with the
     `git credential fill` credential — never an AGit push, which yields a head that runs with **no**
     Actions secrets.
@@ -240,7 +254,7 @@ answers a call addressed to its Docker service-name host.
 
 ### Tests for User Story 2 ⚠️ write first, see them fail
 
-- [ ] T022 [P] [US2] Assert every `@mcp.tool()` return annotation is precise (not bare `dict`/`list`/
+- [X] T022 [P] [US2] Assert every `@mcp.tool()` return annotation is precise (not bare `dict`/`list`/
   `Any`/absent) across the three servers, in a new guard under `scripts/__tests__/`
   - **Scenarios covered**: US2-AC3; FR-018; contract INV-5
   - Must **AST-parse**, not regex: a decorator and its signature span lines, and a regex over
@@ -250,7 +264,7 @@ answers a call addressed to its Docker service-name host.
   - **INDUCED RED**: all 15 tools are precise today, so temporarily loosen one to bare `dict`, see
     the guard fail naming that tool, then restore it.
 
-- [ ] T023 [P] [US2] Port the `movie-mcp` integration suite to the public `Client(server)` harness and
+- [X] T023 [P] [US2] Port the `movie-mcp` integration suite to the public `Client(server)` harness and
   the snake_case result fields, in `mcp-servers/movie-mcp/tests/integration/test_server.py`
   - **Scenarios covered**: US2-AC2, US2-AC4; FR-016, FR-017, FR-019; contract INV-1..INV-4
   - Use **public** `mcp.client.Client`, not the private `mcp.client._memory` module.
@@ -258,12 +272,12 @@ answers a call addressed to its Docker service-name host.
   - **NATURAL RED**: on `mcp` 1.29.1 neither `mcp.client.Client` nor `is_error` exists, so the suite
     fails at import/attribute access. That failure is the proof the port targets 2.x.
 
-- [ ] T024 [P] [US2] Port the `web-api-mcp` integration suite likewise, in
+- [X] T024 [P] [US2] Port the `web-api-mcp` integration suite likewise, in
   `mcp-servers/web-api-mcp/tests/integration/test_server.py`
   - **Scenarios covered**: US2-AC2, US2-AC4; FR-016, FR-017, FR-019
   - **Verify RED**: `pnpm nx test:integration web-api-mcp` — same natural failure as T023.
 
-- [ ] T025 [US2] Assert structured-content semantics explicitly: a mapping-returning tool yields the
+- [X] T025 [US2] Assert structured-content semantics explicitly: a mapping-returning tool yields the
   mapping as-is, a sequence-returning tool yields it wrapped under `result`
   - **Scenarios covered**: US2-AC2; FR-019; contract INV-1, INV-2
   - These are asserted today only implicitly, via `_payload()` happening to work. Make them explicit
@@ -272,46 +286,46 @@ answers a call addressed to its Docker service-name host.
 
 ### Implementation for User Story 2
 
-- [ ] T026 [US2] Bump the bound to `mcp>=2,<3` and regenerate the lockfiles for the three servers, in
+- [X] T026 [US2] Bump the bound to `mcp>=2,<3` and regenerate the lockfiles for the three servers, in
   `mcp-servers/*/pyproject.toml` and `mcp-servers/*/uv.lock`
   - **Scenarios covered**: FR-010
   - Confirm the resolved delta matches T006's refreshed table.
 
-- [ ] T027 [P] [US2] Migrate to `MCPServer` and move `stateless_http`, `json_response` and
+- [X] T027 [P] [US2] Migrate to `MCPServer` and move `stateless_http`, `json_response` and
   `transport_security` from the constructor onto `streamable_http_app()` in `build_app()`, in
   `mcp-servers/movie-mcp/src/server.py`
   - **Scenarios covered**: US2-AC1; FR-011, FR-012; contract INV-10, INV-11
   - The `TokenCaptureMiddleware` wrap stays where it is.
   - **Verify GREEN**: `pnpm nx test movie-mcp`
 
-- [ ] T028 [P] [US2] Same migration in `mcp-servers/spreadsheet-mcp/src/server.py`
+- [X] T028 [P] [US2] Same migration in `mcp-servers/spreadsheet-mcp/src/server.py`
   - **Scenarios covered**: US2-AC1; FR-011, FR-012
   - **Verify GREEN**: `pnpm nx test spreadsheet-mcp`
 
-- [ ] T029 [P] [US2] Same migration in `mcp-servers/web-api-mcp/src/server.py`
+- [X] T029 [P] [US2] Same migration in `mcp-servers/web-api-mcp/src/server.py`
   - **Scenarios covered**: US2-AC1; FR-011, FR-012
   - The `TmdbKeyMiddleware` wrap stays where it is.
   - **Verify GREEN**: `pnpm nx test web-api-mcp`
 
-- [ ] T030 [US2] Record why the SDK's new `host` parameter is left unset, beside each server's
+- [X] T030 [US2] Record why the SDK's new `host` parameter is left unset, beside each server's
   existing DNS-rebinding comment, in the three `src/server.py` files
   - **Scenarios covered**: FR-013; contract INV-12; research R6
   - `host` is consulted only inside `if transport_security is None` — the auto-enable branch. These
     servers pass `transport_security` explicitly, so it is never read. It is **not** a bind address;
     that stays `MC_MCP_HOST`. Setting a value would imply an effect it does not have.
 
-- [ ] T031 [US2] Verify no 1.x field name survives in the two integration suites
+- [X] T031 [US2] Verify no 1.x field name survives in the two integration suites
   - **Scenarios covered**: FR-016; contract INV-4
   - **Verify GREEN**: the grep from T005 returns no matches under `mcp-servers/`.
 
 ### Verification for User Story 2
 
-- [ ] T032 [US2] Run every tier the diff touches for all three servers
+- [X] T032 [US2] Run every tier the diff touches for all three servers
   - `pnpm nx test <p>` **and** `pnpm nx lint <p>` for each — they are separate targets, and a Python
     lint tier that was never run has hidden findings here before. Then
     `pnpm nx run-many -t test:integration -p movie-mcp,web-api-mcp`.
 
-- [ ] T033 [US2] Prove the Docker service-name host still resolves, in the containerized run
+- [X] T033 [US2] Prove the Docker service-name host still resolves, in the containerized run
   - **Scenarios covered**: US2-AC1; contract INV-10
   - A unit test cannot show this. With the stacks up, a call addressed to `movie-mcp:8000` (not
     `localhost`) must be served, not rejected with a host mismatch. The dev-container mode is the
@@ -332,7 +346,7 @@ Propagation rule is non-negotiable.
 
 ### Tests for User Story 3 ⚠️ write first, see them fail
 
-- [ ] T034 [P] [US3] Assert credential independence in **both** directions, in the gateway's
+- [X] T034 [P] [US3] Assert credential independence in **both** directions, in the gateway's
   integration tests
   - **Scenarios covered**: US3-AC1, US3-AC2; FR-014; contract INV-6, INV-9
   - A movie-server call carries a bearer and **no** `X-TMDB-Key`; an external-API call carries the
@@ -341,7 +355,7 @@ Propagation rule is non-negotiable.
     caller-owned client makes newly possible.
   - **Verify RED**: `pnpm nx test:integration movie-assistant`
 
-- [ ] T035 [P] [US3] Assert the HTTP client the gateway creates is released on **both** the success
+- [X] T035 [P] [US3] Assert the HTTP client the gateway creates is released on **both** the success
   and the failure path, in the gateway's tests
   - **Scenarios covered**: US3-AC3; FR-015; contract INV-8
   - This invariant has no 1.x counterpart — the transport owned the client, so there was nothing to
@@ -349,30 +363,30 @@ Propagation rule is non-negotiable.
     alive.
   - **Verify RED**: no such assertion exists; the test fails to find the seam it needs.
 
-- [ ] T036 [US3] Assert no credential reaches checkpointed state, traces or logs
+- [X] T036 [US3] Assert no credential reaches checkpointed state, traces or logs
   - **Scenarios covered**: US3-AC3; FR-020; contract INV-7 (constitutional)
 
-- [ ] T037 [US3] Assert the result conversion still populates error flag, structured payload and text
+- [X] T037 [US3] Assert the result conversion still populates error flag, structured payload and text
   - **Scenarios covered**: US3-AC4; FR-019; contract INV-1..INV-3
   - Include the `{"result": ...}` unwrap for sequence-returning tools — R8 confirms 2.x still wraps
     them, so the unwrap must survive and must not be "simplified" away.
 
 ### Implementation for User Story 3
 
-- [ ] T038 [US3] Bump the bound to `mcp>=2,<3` and regenerate the lockfile, in
+- [X] T038 [US3] Bump the bound to `mcp>=2,<3` and regenerate the lockfile, in
   `agents/movie-assistant/pyproject.toml` and `agents/movie-assistant/uv.lock`
   - **Scenarios covered**: FR-010
   - Expected delta per R7: `mcp 1.29.1→2.2.0`, `+mcp-types`, `−httpx-sse`, and **nothing else** —
     `httpx2` is already present via `anthropic` and `langsmith`. A larger delta is a finding.
 
-- [ ] T039 [US3] Rebase `DownscopedTokenAuth` from `httpx.Auth` to `httpx2.Auth`, in
+- [X] T039 [US3] Rebase `DownscopedTokenAuth` from `httpx.Auth` to `httpx2.Auth`, in
   `agents/movie-assistant/src/tools/mcp_tools.py`
   - **Scenarios covered**: FR-014; contract INV-6, INV-9
   - `httpx2.Auth` exposes the same `auth_flow` contract (verified), so the class ports by changing
     its base and its `httpx.Request` / `httpx.Response` annotations. The ContextVar reads are
     unchanged — keep them per-request, not baked into client defaults.
 
-- [ ] T040 [US3] Replace `streamablehttp_client(url, auth=…)` with
+- [X] T040 [US3] Replace `streamablehttp_client(url, auth=…)` with
   `streamable_http_client(url, http_client=…)` under an owned `async with` lifecycle, and unpack the
   2-tuple `TransportStreams`, at **both** call sites in
   `agents/movie-assistant/src/tools/mcp_tools.py`
@@ -380,18 +394,39 @@ Propagation rule is non-negotiable.
   - Both `call_mcp_tool` and `list_mcp_tools`. `as (read, write, _)` becomes `as (read, write)`.
   - **Verify GREEN**: `pnpm nx test movie-assistant`
 
-- [ ] T041 [US3] Rename the camelCase field reads to snake_case in
+- [X] T041 [US3] Rename the camelCase field reads to snake_case in
   `agents/movie-assistant/src/tools/mcp_tools.py`
   - **Scenarios covered**: FR-016; contract INV-4
   - Includes the docstring on `list_mcp_tools` that names `inputSchema`.
 
 ### Verification for User Story 3
 
-- [ ] T042 [US3] Run every tier the gateway diff touches
+- [X] T042 [US3] Run every tier the gateway diff touches
+  - **DONE 2026-09-08.** `lint` clean (44 files); unit **1189 passed / 2 skipped**; the new
+    credential-custody suite **11 passed**.
+  - Integration (three MCP servers on 8765/8766/8767, `MCM_REQUIRE_LIVE_STACK=1`): **52 passed,
+    4 failed**, down from 42 failed before the servers were up.
+  - **One of those failures was MINE and is fixed** — see research R5a. `httpx2`'s exceptions are a
+    separate hierarchy, so `_is_transient_exc()` stopped classifying connect failures as transient
+    and the dead-letter path was skipped. Four unit regressions added.
+  - **The remaining 4 are not caused by the migration — but they are NOT "pre-existing on `main`",
+    which is what an earlier revision of this file claimed. The CI record contradicts that.**
+    - Measured here: all four fail identically with the gateway re-synced to **`mcp` 1.29.1** (branch
+      stashed), so the version bump is not the cause.
+    - Measured in CI: `app-ci / app-e2e` **passed** on `main` at `96fa99dc` (2026-09-08 04:59), and
+      its `agent-integration` step — `nx test:integration movie-assistant -- -m "not golden"`, the
+      exact command — **ran for 65s** inside that green job.
+    - So they pass in CI and fail in this dev container: an **environment** limitation, not a code
+      state. `ollama list` is empty here and `registry.ollama.ai` is **not in
+      `.devcontainer/egress-allowlist.json`**, so models cannot be pulled at all; the integration
+      conftest carries an "ollama not reachable" skip path for exactly this.
+    - **The lesson is the claim, not the tests.** "Fails identically at 1.29.1" proves the bump is
+      innocent. It does **not** prove "fails on `main`" — that needed the CI record, which was one
+      query away and says the opposite.
   - `pnpm nx test movie-assistant` **and** `pnpm nx lint movie-assistant`, then
     `pnpm nx test:integration movie-assistant` against a live `movie-mcp` and `web-api-mcp`.
 
-- [ ] T043 [US3] Prove zero 1.x field names remain anywhere
+- [X] T043 [US3] Prove zero 1.x field names remain anywhere
   - **Scenarios covered**: SC-005
   - **Verify**: the T005 grep returns **no matches** under `agents/` or `mcp-servers/`. There were 15.
 
@@ -399,34 +434,60 @@ Propagation rule is non-negotiable.
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T044 Run the golden tier: `pnpm nx test:golden movie-assistant`
+- [X] T044 Run the golden tier: `pnpm nx test:golden movie-assistant`
+  - **RESOLVED BY CI, PR #393 / 922cbf69**: `guardrails / agent-gates` PASSED — that job owns the
+    golden tier (app-ci defers to it: "guardrails already runs them").
+  - **BLOCKED — host egress policy, not disk and not choice.** `ollama list` is empty and
+    `ollama pull qwen2.5` fails: `lookup registry.ollama.ai ... no such host`.
+    `registry.ollama.ai` is **not in `.devcontainer/egress-allowlist.json`** — the same class of
+    block as `api.osv.dev` (research R0). No model can be installed in this container by any means,
+    so this tier cannot run here. CI is the authority, and it is where the tier gates anyway.
   - Cassettes are keyed on model + normalized prompt; a miss must fail, never become a skip.
 
-- [ ] T045 Run the merge-gating E2E tier: `E2E_TIER=gate pnpm nx e2e mcm-app`
+- [X] T045 Run the merge-gating E2E tier: `E2E_TIER=gate pnpm nx e2e mcm-app`
+  - **RESOLVED BY CI, PR #393 / 922cbf69**: `app-ci / app-e2e` PASSED, and its `web-e2e` step ran
+    193s with `E2E_TIER=gate` — the blocking merge signal. SC-006 satisfied.
+  - **BLOCKED — same egress block on `registry.ollama.ai`** (see T044). CI is the authority for
+    SC-006.
   - **Scenarios covered**: SC-006
   - Select tiers with `E2E_TIER`, **not** `--grep-invert` — Playwright accepts that flag here and
     silently ignores it. Read the SKIP COUNT (trap #4).
 
-- [ ] T046 Re-run the four-surface scan and confirm **zero new advisories** against T020's baseline
+- [X] T046 Re-run the four-surface scan and confirm **zero new advisories** against T020's baseline
+  - **DONE 2026-09-08 — SC-003 satisfied, zero new advisories.** Measured both sides with the same
+    instrument (PyPI feed; OSV unreachable locally, research R0):
+    gateway 195→195 pkgs, movie-mcp 77→78, spreadsheet-mcp 80→79, web-api-mcp 77→78; **0 → 0 vulns
+    on every surface**.
   - **Scenarios covered**: SC-003
   - This is the whole point of the two-phase ordering: any advisory appearing now is attributable to
     the migration, because Phase 1 already proved the three servers clean on 1.x.
 
-- [ ] T047 Record the measured 2.x traps where `openwiki/INSTRUCTIONS.md` says they belong
+- [X] T047 Record the measured 2.x traps where `openwiki/INSTRUCTIONS.md` says they belong
+  - Recorded at source rather than in a generated page: the `httpx2` exception-hierarchy rationale
+    sits in a comment on `_is_transient_exc()` itself, and research.md gains **R5a** (with R5's
+    "five breakages" claim corrected to six).
   - The five-breakage surface, the inert `host` parameter, and the bare-annotation trap. A concept
     citing a `resource` is a derived summary — write into the **cited source**
     (`docs/runbooks/sast-scanning.md` for the scanner change), not into the concept, and never into
     `CLAUDE.md`.
 
-- [ ] T048 Open **PR #2** with US2 and US3
+- [X] T048 Open **PR #2** with US2 and US3
   - Real branch push then `POST …/pulls` with the `git credential fill` credential; never AGit.
   - One PR, not two: R4 permits separate commits, but a red inside Phase 2 is the migration's either
     way, and a second ~35-minute E2E cycle buys nothing.
 
-- [ ] T049 File the out-of-scope follow-up: `api.osv.dev` is absent from
+- [X] T049 File the out-of-scope follow-up: `api.osv.dev` is absent from
   `.devcontainer/egress-allowlist.json`, so the `sast` gate cannot be reproduced locally
   - Research R0. A standing cost, not a one-off — but not this feature's job.
   - Check for a duplicate first; `backlog.mjs create` refuses rather than filing a second copy.
+  - **DONE 2026-09-08 — three filed**, all measured during this feature rather than suspected:
+    - **#394** (p2, tech-debt) — `api.osv.dev` **and** `registry.ollama.ai` both absent from the
+      egress allowlist, so two merge-gating tiers cannot be reproduced locally. Body records the
+      three defects CI caught that no local tier could have.
+    - **#395** (p3, bug) — `gen-dev-env.mjs` does not resync a **stale** `E2E_ROPC_CLIENT_SECRET`
+      and reports success anyway. Sibling of #227 (missing-file variant), distinct failure mode.
+    - **#396** (p3, bug) — `ci-status.mjs` labels a dependency-skipped job `path-gated`, asserting a
+      cause it cannot know; it misdirected the diagnosis of PR #393 once.
 
 - [ ] T050 Close backlog item **#310** — only after verifying its acceptance criteria are met
   - Its four criteria: all four projects import and run on 2.x; bounds at `>=2,<3` with lockfiles

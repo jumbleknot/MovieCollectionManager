@@ -1,7 +1,7 @@
 """Unit tests for movie-mcp's mc-service error mapping (T024a).
 
 The write tool handlers (server.py) catch mc-service's httpx 4xx/5xx and re-raise a
-status-bearing `McServiceToolError`. FastMCP stringifies it into the MCP tool error text, so
+status-bearing `McServiceToolError`. MCPServer stringifies it into the MCP tool error text, so
 the gateway's `invoke_tool` can classify the outcome (e.g. 409 -> skipped_duplicate) from the
 stable `mc-service-status:<code>` sentinel — without parsing mc-service's body (no token/PII).
 """

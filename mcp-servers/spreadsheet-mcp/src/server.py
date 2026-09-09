@@ -16,18 +16,28 @@ import json
 import os
 from typing import Any, cast
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 
 from src import builder, parser, store
 from src.observability import configure_otel, tool_span
 
-mcp = FastMCP(
-    "spreadsheet-mcp",
-    stateless_http=True,
-    json_response=True,
-    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
-)
+mcp = MCPServer("spreadsheet-mcp")
+
+# DNS-rebinding protection stays DISABLED (see above). These three were MCPServer() constructor
+# kwargs on mcp 1.x (FastMCP); on 2.x they are `streamable_http_app()` parameters, so build_app()
+# passes them explicitly below.
+#
+# `host` is deliberately NOT passed. It is NOT a bind address — that stays MC_MCP_HOST in main().
+# In the SDK it is only the trigger for an auto-enable branch:
+#
+#     if transport_security is None and host in ("127.0.0.1", "localhost", "::1"):
+#         transport_security = TransportSecuritySettings(...)   # DNS-rebinding protection ON
+#
+# We pass `transport_security` explicitly, so that branch never runs and `host` is never read.
+# Passing a value would imply a binding effect it does not have.
+_TRANSPORT_SECURITY = TransportSecuritySettings(enable_dns_rebinding_protection=False)
+
 
 
 @mcp.tool()
@@ -88,7 +98,11 @@ async def fetch_parsed(parsedHandle: str) -> dict[str, Any]:  # noqa: N803 (MCP 
 def build_app() -> Any:
     """Streamable-HTTP ASGI app (no token-capture middleware — this server takes no JWT)."""
     configure_otel()  # OTel infra tracing — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    return mcp.streamable_http_app()
+    return mcp.streamable_http_app(
+        stateless_http=True,
+        json_response=True,
+        transport_security=_TRANSPORT_SECURITY,
+    )
 
 
 def main() -> None:
