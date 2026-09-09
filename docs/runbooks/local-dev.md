@@ -187,6 +187,64 @@ Unleash), `--profile audit` (OpenSearch) and OPA are not brought up by `app-e2e`
 are expected and allow-listed. A healthy local run of the agent integration suite is **51 passed,
 11 skipped, 0 failed**.
 
+## A projected credential can be STALE, not merely absent (item #395)
+
+**Symptom.** The same credential wording as the section above — a 401 on the ROPC token request, or
+`ROPC token request failed (401): {"error":"unauthorized_client"}` — but
+`frontend/mcm-app/.env.e2e.local` **exists** and carries a plausible 64-char secret, and
+`node scripts/gen-dev-env.mjs` reports success.
+
+**Why the section above does not apply.** Its heuristic — *"a credential-driven skip is almost always
+a missing FILE"* — sends you looking for something absent. Here nothing is absent. Measured
+2026-09-08: `mcp-servers/movie-mcp`'s integration suite skipped every test (20 **errors** under
+`MCM_REQUIRE_LIVE_STACK=1`) while every file was in place. `gen-dev-env.mjs` projects the secrets out
+of `stacks/auth.env` and, before item #395, never asked the realm — so a realm re-seeded from a
+different `auth.env`, or a client secret regenerated in the admin console, was invisible, and the
+run's own success line asserted the opposite:
+
+```
+… — realm-secret == BFF-secret == E2E-cred from stacks/auth.env.
+```
+
+**Detect.** `gen-dev-env.mjs` now asks the realm for a token with each projected credential —
+`client_credentials` for `mcm-bff-service`, ROPC for `mcm-bff-test` — **before it writes anything**,
+and reports one of four outcomes. Read the outcome, not the fact that it ran:
+
+| Ending | Meaning | Files | Exit |
+|---|---|---|---|
+| `VERIFIED against the realm at …` | both grants returned a token; the equality is **checked**, not asserted | written | 0 |
+| `NOT verified: … ECONNREFUSED` (or HTTP 404/5xx) | the realm is not up or not seeded — nothing is claimed either way | written | 0 |
+| `NOT verified (MCM_SKIP_REALM_VERIFY is set)` | you turned the check off; unset it | written | 0 |
+| `REFUSING TO WRITE: the realm … rejects credential(s)` | **this section** — the refused credential is named, and so are the ones that passed | **untouched** | **2** |
+
+**The ordering is the fix, not a detail.** Measured on the operator's box 2026-09-09: `auth.env`'s
+`E2E_ROPC_CLIENT_SECRET` was the **stale** side, while a hand-corrected `.env.e2e.local` held the
+value the realm actually accepts (`mcm-bff-service` passed in the same run — the drift was one
+client, not all of them). A generator that wrote first and checked afterwards would have destroyed
+the only working credential on the machine before announcing the problem. Nothing is written unless
+every checkable credential authenticates.
+
+**Resolve.** `stacks/auth.env` is the source of truth — it is what seeds the realm — so the drift is
+fixed at the **realm**, not by copying the realm's secret back into the env files. Patching one
+client that way repairs the suite in front of you and leaves `realm-secret == BFF-secret` broken for
+every other client. Full re-seed (the same recovery as the stale-password case above):
+
+```bash
+docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit
+docker volume rm keycloak-store-postgres-data && docker volume create keycloak-store-postgres-data
+node scripts/gen-dev-secrets.mjs && node scripts/gen-dev-env.mjs
+pnpm nx up-auth infrastructure-as-code
+node scripts/gen-dev-env.mjs   # must now end `VERIFIED against the realm`
+```
+
+`MCM_SKIP_REALM_VERIFY=1` projects anyway, knowing the files will carry credentials the realm
+refuses. It is the escape hatch for an unusual realm, not a fix — and the run says so in its own
+output rather than quietly reverting to the old claim.
+
+**Confirm.** `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration movie-mcp` — expect **0 skipped on
+credentials**. A skip here still reads as a pass without that flag; that is what turned this into 20
+silent skips for as long as it lasted.
+
 ## Service rename — update your local `.env` (feature 020)
 
 Feature 020 unifies every service's `container_name` AND compose **service key** to one convention-conformant id (the Docker-internal DNS name). The committed compose/scripts/`.env*.example` already use the new names, but **gitignored `.env` files are per-environment** — each machine (and prod/Komodo) must apply this mapping by hand once. After editing, recreate the affected containers (`docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile … up -d --force-recreate`; `node scripts/agent-stack.mjs` for the agent stack). The BFF reads `.env.docker` via `env_file` at container **create**, so a recreate is enough — no image rebuild.

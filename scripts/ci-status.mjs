@@ -22,11 +22,13 @@
 // Authoritative tests: scripts/__tests__/ci-status.test.mjs (CI-enforced by the guardrails/naming
 // `node --test scripts/__tests__/*.test.mjs` step, feature 041).
 
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
+
+import { parse as parseYaml } from 'yaml';
 
 import { redactForPublication } from './ci-digest-redact.mjs';
 import { bundleVersion, BUNDLE_PACKAGE, DURATIONS_FILE } from './ci-failure-digest.mjs';
@@ -196,6 +198,7 @@ export function cacheRawPayload(dir, name, text) {
 //
 //   skipped     A path-gated job settles to `success` with description "Skipped". Counting it as
 //               pending makes a green PR look blocked forever. Fails SAFE (an unnecessary wait).
+//               The payload says a job was skipped; it never says WHY (see classifySkipCause).
 //   superseded  A cancelled run's contexts report status="failure" for a commit that was never
 //               broken — measured 13/16 on a real superseded commit. Fails LOUD (it announces a
 //               broken build that isn't), so it is the worse of the two. The tell: every job dies
@@ -248,6 +251,118 @@ export function classifyCheckState(status, run = null) {
   if (status.status === 'pending') return 'waiting';
   if (status.status === 'success') return SKIPPED_DESCRIPTION.test(description.trim()) ? 'skipped' : 'passed';
   return 'failed';
+}
+
+// --- Why a job was SKIPPED (item #396) -----------------------------------------------------------
+//
+// `(path-gated -> satisfied)` used to be printed for every skipped context. That states a CAUSE the
+// commit-status payload does not carry, and it is only sometimes the right one: a job is skipped
+// just as readily because a job it `needs:` failed.
+//
+// Measured on PR #393 (2026-09-08). Commit 88ee3ea7 touched `agents/**` and `mcp-servers/**`, and
+// `app-ci / app-e2e` was rendered `skipped (path-gated -> satisfied)` — i.e. "this diff does not
+// warrant E2E". Both halves were false: those globs ARE in app-ci's `changes` filter, and app-e2e
+// `needs: [affected, changes]` while `affected` had failed on one E501. Fixing the lint let app-e2e
+// run, and it caught a real defect (gateway -> web-api-mcp returned 421). A label that asserts the
+// wrong cause is worse than no label, because it terminates the investigation.
+//
+// The forge exposes no per-run-jobs endpoint (see the file header), so the dependency edges are read
+// from the workflow YAML in THIS CHECKOUT. That source can legitimately be unavailable — a different
+// cwd, a commit whose workflow set differs — and where it is, the label says the cause is not
+// determined rather than picking one. Nothing here changes the VERDICT: a dependency-skipped context
+// still counts as satisfied exactly as before, and the merge is blocked by the failed dependency
+// itself, which is the truthful reason.
+
+const WORKFLOWS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.forgejo', 'workflows');
+
+/**
+ * Extract `job -> needs[]` from one workflow document, keyed the way a commit CONTEXT names a job
+ * (`app-ci / app-e2e`) so the result can be looked up straight from a check.
+ *
+ * A job with no `needs:` maps to `[]` — an EMPTY list, distinct from an absent key. That difference
+ * is the whole point: `[]` proves the job can only have been skipped by its own gate, while a
+ * missing key means this graph knows nothing about it.
+ */
+export function parseWorkflowNeeds(yamlText, workflow) {
+  const out = new Map();
+  const jobs = parseYaml(yamlText)?.jobs;
+  if (!jobs || typeof jobs !== 'object') return out;
+  for (const [name, def] of Object.entries(jobs)) {
+    const raw = def?.needs;
+    const deps = raw == null ? [] : Array.isArray(raw) ? raw : [raw];
+    out.set(`${workflow} / ${name}`, deps.map((d) => `${workflow} / ${String(d)}`));
+  }
+  return out;
+}
+
+/**
+ * Read every workflow in `dir` into one graph.
+ *
+ * `workflows` names the files that actually PARSED. A workflow absent from that set contributes no
+ * edges and its jobs are reported as undetermined — never as path-gated. Unreadable and malformed
+ * are both non-fatal: this is a labelling aid, and it must not take the whole tool down.
+ */
+export function loadNeedsGraph(dir = WORKFLOWS_DIR) {
+  const needs = new Map();
+  const workflows = new Set();
+  let files;
+  try {
+    files = readdirSync(dir).filter((f) => /\.ya?ml$/.test(f));
+  } catch {
+    return { needs, workflows };
+  }
+  for (const file of files) {
+    const workflow = file.replace(/\.ya?ml$/, '');
+    try {
+      for (const [job, deps] of parseWorkflowNeeds(readFileSync(join(dir, file), 'utf8'), workflow)) {
+        needs.set(job, deps);
+      }
+      workflows.add(workflow);
+    } catch {
+      // A workflow this build cannot parse yields no edges — undetermined, which is honest.
+    }
+  }
+  return { needs, workflows };
+}
+
+/** Parsed once per process: the same nine files answer every check on every commit. */
+let cachedNeedsGraph = null;
+export function defaultNeedsGraph() {
+  cachedNeedsGraph ??= loadNeedsGraph();
+  return cachedNeedsGraph;
+}
+
+/**
+ * Decide WHY a skipped check was skipped.
+ *
+ * @returns {{cause: 'gate'|'dependency'|'undetermined', failed: string[]}}
+ *
+ * `dependency` is claimed only on two pieces of evidence together: the workflow declares the edge,
+ * AND the dependency's own status in THIS commit says it did not pass. Anything less is
+ * `undetermined`. A dependency that was itself skipped is not a separate cause — Actions propagates
+ * a skip down the graph, so the root cause is still a gate.
+ */
+export function classifySkipCause(check, checks, graph) {
+  const undetermined = { cause: 'undetermined', failed: [] };
+  const workflow = String(check.job).split('/')[0].trim();
+  if (!graph?.workflows?.has(workflow)) return undetermined;
+  const deps = graph.needs.get(check.job);
+  if (!deps) return undetermined; // the workflow parsed, but this job is not in it (renamed, or older)
+  if (!deps.length) return { cause: 'gate', failed: [] };
+
+  const { event } = parseContext(check.context);
+  const sameEvent = new Map(
+    checks.filter((c) => parseContext(c.context).event === event).map((c) => [c.job, c]),
+  );
+  const failed = [];
+  let unknown = false;
+  for (const dep of deps) {
+    const reported = sameEvent.get(dep);
+    if (!reported || reported.state === 'waiting') unknown = true;
+    else if (reported.state === 'failed' || reported.state === 'superseded') failed.push(dep);
+  }
+  if (failed.length) return { cause: 'dependency', failed };
+  return unknown ? undetermined : { cause: 'gate', failed: [] };
 }
 
 // --- Merge verdict ------------------------------------------------------------------------------
@@ -403,7 +518,10 @@ function inferEvent(statuses) {
  * @returns {{mergeable: boolean, blocking: object[], waiting: object[], advisory: object[],
  *            superseded: object[], required: object[], all: object[]}}
  */
-export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT_GLOBS, event, runs = [] } = {}) {
+export function computeMergeVerdict(
+  statuses,
+  { requiredGlobs = REQUIRED_CONTEXT_GLOBS, event, runs = [], needsGraph = defaultNeedsGraph() } = {},
+) {
   const chosenEvent = event ?? inferEvent(statuses);
   const patterns = requiredGlobs.map(globToRegExp);
 
@@ -444,6 +562,12 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
   // cancelled context cannot enter `gate.blocking`. Verified on the status-cancelled fixture, which
   // has 13 superseded contexts and zero failures under a whole-commit evaluation.
   const gateChecks = toChecks(statuses);
+
+  // Why each skip happened (item #396). Answered against the GATE, so a dependency reported only on
+  // the other event is still seen; `classifySkipCause` re-narrows to the check's own event itself.
+  for (const c of [...checks, ...gateChecks]) {
+    if (c.state === 'skipped') c.skip = classifySkipCause(c, gateChecks, needsGraph);
+  }
 
   const required = checks.filter((c) => c.required);
   const blocking = required.filter((c) => c.state === 'failed');
@@ -791,10 +915,27 @@ export function detachedHeadWarning(headRef, { prState } = {}) {
 
 const SYMBOL = { passed: '✓', failed: '✗', skipped: '○', waiting: '⏳', superseded: '➖' };
 const ANNOTATION = {
-  skipped: '(path-gated → satisfied)',
   waiting: '(queued or running)',
   superseded: '(newer push — not a failure)',
 };
+
+/**
+ * The trailing note on a check's row.
+ *
+ * A skip is the only state whose annotation is DERIVED rather than fixed, because the payload does
+ * not say why it happened (item #396). The three outcomes are deliberately different sentences: one
+ * closes the question, one redirects it at the dependency, and one admits it is open.
+ */
+export function annotateCheck(check) {
+  if (check?.state !== 'skipped') return ANNOTATION[check?.state] ?? '';
+  const skip = check.skip ?? { cause: 'undetermined', failed: [] };
+  if (skip.cause === 'gate') return '(path-gated → satisfied)';
+  if (skip.cause === 'dependency') {
+    const names = skip.failed.map((job) => job.split('/').pop().trim()).join(', ');
+    return `(NOT run — needs: ${names}, which did not pass)`;
+  }
+  return '(skipped — cause not determined: no needs: graph for this workflow)';
+}
 
 /** Every emitted line goes through redaction, so the forge host is `<forge>` by construction. */
 const emit = (line) => console.log(stripControlChars(redactForPublication(line)));
@@ -865,7 +1006,7 @@ function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, p
         : `REQUIRED  (from ${requiredGlobs?.note ?? 'branch protection'})`,
     );
     for (const c of required) {
-      emit(`  ${SYMBOL[c.state]} ${c.job.padEnd(width)}  ${c.state.padEnd(10)} ${ANNOTATION[c.state] ?? ''}`.trimEnd());
+      emit(`  ${SYMBOL[c.state]} ${c.job.padEnd(width)}  ${c.state.padEnd(10)} ${annotateCheck(c)}`.trimEnd());
     }
   }
 
@@ -874,7 +1015,7 @@ function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, p
     emit('');
     emit('ADVISORY (non-blocking)');
     for (const c of nonRequired) {
-      emit(`  ${SYMBOL[c.state]} ${c.job.padEnd(width)}  ${c.state.padEnd(10)} ${ANNOTATION[c.state] ?? ''}`.trimEnd());
+      emit(`  ${SYMBOL[c.state]} ${c.job.padEnd(width)}  ${c.state.padEnd(10)} ${annotateCheck(c)}`.trimEnd());
     }
   }
 

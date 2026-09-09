@@ -90,11 +90,34 @@ have believed it ran. The forge says `"Has been skipped"` and `"Has been cancell
 
 | State | What the API says | What it means | Failure mode if you get it wrong |
 |---|---|---|---|
-| `skipped` | `success`, description `"Has been skipped"` | path-gated out → **satisfied** | Fails **safe** — a green PR looks blocked forever |
+| `skipped` | `success`, description `"Has been skipped"` | did not run — **why** is not in the payload (see below) | Fails **safe** as a state; the *cause* label fails LOUD (item #396) |
 | `waiting` | `pending` | queued behind the single runner | Fails **safe** — an unnecessary wait |
 | `superseded` | **`failure`** | run cancelled by a newer push | Fails **LOUD** — announces a broken build that isn't |
 | advisory | `failure` on a non-required context | `dast`, `prod-apk`, `trigger-cd` | Either a false "blocked", or a silently dropped regression |
 | `cd-dispatch / trigger-cd` | `success` or `failure`, with the reason as the description | **not a CI result** — the deploy gate's own answer | Reading it as a check; it is the *only* place a declined deploy is visible |
+
+### A skip does not say why it was skipped (item #396)
+
+The payload carries the state, never the cause. `ci-status` used to annotate every skip
+`(path-gated → satisfied)`, which reads as *"this diff does not warrant that job"* — and on PR #393
+(2026-09-08) that was wrong on both counts. The commit touched `agents/**` and `mcp-servers/**`,
+which **are** in app-ci's `changes` filter; `app-e2e` had been skipped because `affected`, which it
+`needs:`, failed on one E501. Fixing the lint let `app-e2e` run, and it caught a real defect
+(gateway → web-api-mcp returned 421). Had the label been believed, the conclusion would have been
+"the agent layer does not trigger E2E at all" — false, alarming, and the end of the investigation.
+
+The forge exposes no per-run-jobs endpoint, so the tool reads the `needs:` edges out of
+`.forgejo/workflows/*.yml` in the current checkout and prints one of three sentences:
+
+| Annotation | What it took to say it |
+|---|---|
+| `(path-gated → satisfied)` | the workflow parsed **and** every `needs:` of that job passed or was itself skipped — the job's own `if:`/path filter is the only remaining cause |
+| `(NOT run — needs: X, which did not pass)` | the workflow declares the edge **and** `X`'s status on this same commit and event says it failed or was cancelled |
+| `(skipped — cause not determined: …)` | the workflow could not be read or parsed, the job is not in it, or a dependency has not reported — the tool does not guess |
+
+Only the label changed. A dependency-skipped required context still counts as satisfied for the
+verdict, exactly as before: the merge is blocked by the **failed dependency itself**, which is the
+truthful reason.
 
 **`cd-dispatch / trigger-cd` is published by the deploy gate, not by a job.** `trigger-cd` is advisory,
 so before item #230 a run that declined to dispatch and a run that deployed looked identical from
