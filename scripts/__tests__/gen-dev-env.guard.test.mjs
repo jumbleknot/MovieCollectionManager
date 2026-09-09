@@ -16,7 +16,7 @@
 // stacks/auth.env (gitignored, absent in CI) or the developer's real env files.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, copyFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, dirname } from 'node:path';
@@ -46,14 +46,19 @@ function miniRepo() {
   return root;
 }
 
-function runGenerator(root) {
+function runGenerator(root, extraEnv = {}) {
   return execFileSync(process.execPath, [resolve(root, 'scripts/gen-dev-env.mjs')], {
     encoding: 'utf8',
-    env: { ...process.env, TMDB_API_KEY: 'tmdb-fixture' },
+    // The realm check is OFF by default here: these cases are about the files, they must stay
+    // offline, and a developer box with the auth stack actually up would otherwise 401 on the
+    // synthetic fixture secrets and fail every one of them. Item #395's own cases turn it back on
+    // against a stub realm on loopback.
+    env: { ...process.env, TMDB_API_KEY: 'tmdb-fixture', MCM_SKIP_REALM_VERIFY: '1', ...extraEnv },
   });
 }
 
 const ENV_LOCAL = (root) => resolve(root, 'frontend/mcm-app/.env.local');
+const E2E_LOCAL = (root) => resolve(root, 'frontend/mcm-app/.env.e2e.local');
 
 test('US6-AC1: an ABSENT .env.local is created, not silently skipped', () => {
   const root = miniRepo();
@@ -144,6 +149,156 @@ test('US6: an EXISTING .env.local keeps its developer-customised keys (no regres
       /^KEYCLOAK_CLIENT_SECRET=kc-client-secret-fixture$/m,
       'a stale client secret must be rewritten to the realm value',
     );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ─── item #395 — a STALE credential must be detected, not reported as synced ─────────────────────
+//
+// Sibling of the case above, and the harder one. That defect was "the generator does not WRITE a
+// file it should"; this one is "it writes the file, prints
+//
+//     realm-secret == BFF-secret == E2E-cred from stacks/auth.env
+//
+// and the secret is stale". Measured 2026-09-08: `mcp-servers/movie-mcp`'s integration suite skipped
+// every test on `ROPC token request failed (401): unauthorized_client` — 20 errors under
+// MCM_REQUIRE_LIVE_STACK=1 — while `.env.e2e.local` EXISTED and carried a 64-char secret. The
+// generator projects from `stacks/auth.env` and never asks the realm, so any drift (a re-seed, a
+// regenerated client secret) is invisible and that success line actively asserts the opposite.
+//
+// The repo's own heuristic — "a credential-driven skip is almost always a missing FILE" — sends the
+// reader hunting an absent file, which is exactly the case this one is not.
+import { createServer } from 'node:http';
+
+/**
+ * A stub Keycloak that answers only the token endpoint, on loopback. Keeps these cases keyless and
+ * offline while still exercising the real HTTP path the generator uses.
+ *
+ * `answer(params)` returns `[status, body]` for one token request.
+ */
+async function stubRealm(answer) {
+  const requests = [];
+  const server = createServer((req, res) => {
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      const params = new URLSearchParams(body);
+      requests.push({ url: req.url, params: Object.fromEntries(params) });
+      const [status, payload] = answer(params);
+      res.writeHead(status, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(payload));
+    });
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  return {
+    url: `http://127.0.0.1:${server.address().port}`,
+    requests,
+    close: () => new Promise((r) => server.close(r)),
+  };
+}
+
+/**
+ * Run the generator against a stub realm, returning stdout+stderr and the exit code.
+ *
+ * ASYNC on purpose: `spawnSync` blocks this process's event loop, so the stub server — which lives
+ * here — would never accept the connection and every case would fail on an 8s timeout instead of on
+ * the answer it was written to test.
+ */
+function runAgainstRealm(root, url) {
+  const child = spawn(process.execPath, [resolve(root, 'scripts/gen-dev-env.mjs')], {
+    env: { ...process.env, TMDB_API_KEY: 'tmdb-fixture', MCM_SKIP_REALM_VERIFY: '', KEYCLOAK_PUBLIC_URL: url },
+  });
+  let out = '';
+  child.stdout.setEncoding('utf8').on('data', (c) => (out += c));
+  child.stderr.setEncoding('utf8').on('data', (c) => (out += c));
+  return new Promise((r) => child.on('close', (code) => r({ code, out })));
+}
+
+test('#395: a STALE ROPC client secret is detected and FAILS LOUDLY — the file being present is not proof', async () => {
+  const realm = await stubRealm(() => [401, { error: 'unauthorized_client', error_description: 'Invalid client or Invalid client credentials' }]);
+  const root = miniRepo();
+  try {
+    // A file already holding the value that WORKS — the state measured on the operator's box on
+    // 2026-09-09, where auth.env was the stale side and a hand-corrected .env.e2e.local was not.
+    writeFileSync(E2E_LOCAL(root), 'E2E_ROPC_CLIENT_SECRET=the-value-the-realm-accepts\n', 'utf8');
+    const { code, out } = await runAgainstRealm(root, realm.url);
+    assert.equal(
+      readFileSync(E2E_LOCAL(root), 'utf8'),
+      'E2E_ROPC_CLIENT_SECRET=the-value-the-realm-accepts\n',
+      'the generator overwrote a WORKING credential with the stale one before complaining about it — ' +
+        'that turns a diagnosis into an outage, and is why the check runs before the writes',
+    );
+    assert.equal(existsSync(ENV_LOCAL(root)), false, 'nothing may be written on the refusal path');
+    assert.notEqual(code, 0, `a realm that rejects the projected credential must not exit 0; got:\n${out}`);
+    assert.match(out, /E2E_ROPC_CLIENT_SECRET|mcm-bff-test/, `the failure must name what is stale; got:\n${out}`);
+    assert.match(out, /unauthorized_client/, 'the realm\'s own answer must be quoted, not paraphrased away');
+    assert.doesNotMatch(
+      out,
+      /realm-secret == BFF-secret == E2E-cred/,
+      'the success claim must not be printed alongside a realm that refuses the credential',
+    );
+    // The remedy must be a command, not "check your setup".
+    assert.match(out, /gen-dev-secrets|up-auth|re-?import|re-?seed/i, `no actionable remedy in:\n${out}`);
+    // No secret value may reach the output, on any path.
+    assert.doesNotMatch(out, /e2e-ropc-secret-fixture|kc-service-secret-fixture/, 'a secret VALUE was printed');
+  } finally {
+    await realm.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#395: a realm that ACCEPTS both grants lets the run claim the equality — and says it was checked', async () => {
+  const realm = await stubRealm(() => [200, { access_token: 'stub', expires_in: 60 }]);
+  const root = miniRepo();
+  try {
+    const { code, out } = await runAgainstRealm(root, realm.url);
+    assert.equal(code, 0, `a realm that accepts the credentials must exit 0; got:\n${out}`);
+    assert.match(out, /verified/i, `the run must say the claim was checked; got:\n${out}`);
+    assert.ok(existsSync(ENV_LOCAL(root)), 'a verified run must still do the projection it exists for');
+    // Both halves of "realm-secret == BFF-secret == E2E-cred" are exercised: the BFF service
+    // account (client_credentials) and the E2E ROPC client (password).
+    const grants = realm.requests.map((r) => r.params.grant_type).sort();
+    assert.deepEqual(grants, ['client_credentials', 'password']);
+    const clients = realm.requests.map((r) => r.params.client_id).sort();
+    assert.deepEqual(clients, ['mcm-bff-service', 'mcm-bff-test']);
+  } finally {
+    await realm.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#395: an UNREACHABLE realm is not a failure — but the equality is then NOT claimed', async () => {
+  // The generator legitimately runs before `up-auth`. Absence of a realm must not fail the run; it
+  // must only stop the run asserting something it did not check.
+  const root = miniRepo();
+  try {
+    // A port that was bound and then released: nothing listens, so the connect is REFUSED. (Not a
+    // low port such as 1 — undici blocks those before it dials, which is a different error.)
+    const closed = await stubRealm(() => [200, {}]);
+    await closed.close();
+    const { code, out } = await runAgainstRealm(root, closed.url);
+    assert.equal(code, 0, `an absent realm must not fail the projection; got:\n${out}`);
+    assert.doesNotMatch(
+      out,
+      /realm-secret == BFF-secret == E2E-cred/,
+      'the unverified run still asserted the equality — this is the #395 defect verbatim',
+    );
+    assert.match(out, /not verified/i, `the run must say the check did not happen; got:\n${out}`);
+    // `fetch` buries the real cause one level down; reporting err.name gives a bare `TypeError`,
+    // which tells the reader nothing about why the realm could not be reached.
+    assert.match(out, /ECONNREFUSED/, `the reason must be the real connect error; got:\n${out}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#395: skipping the check is ANNOUNCED — an env var must not silently restore the old claim', async () => {
+  const root = miniRepo();
+  try {
+    const out = runGenerator(root);
+    assert.doesNotMatch(out, /realm-secret == BFF-secret == E2E-cred/);
+    assert.match(out, /MCM_SKIP_REALM_VERIFY/, `the skip must name itself; got:\n${out}`);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

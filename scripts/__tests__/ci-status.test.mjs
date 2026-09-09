@@ -1443,3 +1443,76 @@ test('(#338w) the CLI advertises the durations command, so the capability is dis
   const r = runScript(['bogus-command']);
   assert.match(r.stderr, /ci-status\.mjs durations/);
 });
+
+// ─── item #396 — a skipped job's LABEL must not assert a cause the payload cannot support ────────
+//
+// `○ app-ci / app-e2e  skipped  (path-gated → satisfied)` was printed for every skip. It reads as
+// "this diff does not warrant E2E". Measured on PR #393 (2026-09-08) that was wrong twice over:
+// `agents/**` and `mcp-servers/**` ARE in app-ci's `changes` filter, and `app-e2e` had been skipped
+// because `affected` — which it `needs:` — failed on one E501. Believing the label would have ended
+// the investigation at "the agent layer never triggers E2E", which is false and alarming; fixing
+// the lint let app-e2e run and it caught a real 421.
+//
+// The forge exposes no per-run-jobs endpoint, so the edges come from the workflow YAML in this
+// checkout. Where they cannot be read, the label must SAY SO rather than pick one.
+import {
+  computeMergeVerdict as verdict396,
+  annotateCheck,
+  parseWorkflowNeeds,
+  loadNeedsGraph,
+} from '../ci-status.mjs';
+
+const WORKFLOWS_DIR = resolve(HERE, '../../.forgejo/workflows');
+const annotationFor = (v, job) => annotateCheck(v.all.find((c) => c.job === job));
+
+test('(#396a) a job skipped because a `needs:` dependency FAILED is not labelled path-gated', () => {
+  const v = verdict396(fixture('status-skip-dependency.json').statuses, { event: 'pull_request' });
+  const label = annotationFor(v, 'app-ci / app-e2e');
+  assert.doesNotMatch(
+    label,
+    /path-gated/,
+    'app-e2e was a casualty of `affected` failing, not of its own path filter — this is the label ' +
+      'that ended the PR #393 investigation at a false conclusion',
+  );
+  assert.match(label, /needs/i, `the label must name the mechanism; got: ${label}`);
+  assert.match(label, /affected/, `the label must name the dependency that did not pass; got: ${label}`);
+});
+
+test('(#396b) a genuine path-gated skip KEEPS the path-gated label — the wording is not simply retired', () => {
+  const v = verdict396(fixture('status-skipped.json').statuses, { event: 'pull_request' });
+  assert.match(annotationFor(v, 'app-ci / app-e2e'), /path-gated → satisfied/);
+});
+
+test('(#396c) with no needs graph the label says the cause is UNDETERMINED, it does not guess', () => {
+  const v = verdict396(fixture('status-skip-dependency.json').statuses, {
+    event: 'pull_request',
+    needsGraph: { needs: new Map(), workflows: new Set() },
+  });
+  const label = annotationFor(v, 'app-ci / app-e2e');
+  assert.doesNotMatch(label, /path-gated/, 'an unreadable graph must not fall back to asserting a cause');
+  assert.match(label, /not determined/i, `got: ${label}`);
+});
+
+test('(#396d) the verdict still counts a dependency-skipped required context as NOT satisfied', () => {
+  // Only the label was wrong. The commit is not mergeable because `affected` itself failed, and
+  // that must stay true — a relabelling that quietly turned this green would be far worse.
+  const v = verdict396(fixture('status-skip-dependency.json').statuses, { event: 'pull_request' });
+  assert.equal(v.mergeable, false);
+  assert.equal(exitCodeForVerdict(v), 1);
+});
+
+test('(#396e) the dependency edges are read from the REAL workflow, so the graph cannot drift', () => {
+  const { needs, workflows } = loadNeedsGraph(WORKFLOWS_DIR);
+  assert.ok(workflows.has('app-ci'), 'app-ci.yml must be among the parsed workflows');
+  assert.deepEqual(needs.get('app-ci / app-e2e'), ['app-ci / affected', 'app-ci / changes']);
+  assert.deepEqual(needs.get('app-ci / changes'), [], 'a job with no `needs:` has no edges, not undefined');
+});
+
+test('(#396f) a scalar `needs:` is an edge too, and an unparseable workflow contributes none', () => {
+  const scalar = parseWorkflowNeeds('jobs:\n  a: {}\n  b:\n    needs: a\n', 'wf');
+  assert.deepEqual(scalar.get('wf / b'), ['wf / a']);
+  assert.deepEqual(loadNeedsGraph(resolve(tmpdir(), 'ci-status-no-such-workflows-dir')), {
+    needs: new Map(),
+    workflows: new Set(),
+  });
+});
