@@ -285,7 +285,29 @@ Confirm from inside the container rather than inferring from the diff — a requ
 curl -sS -o /dev/null -w '%{http_code}\n' https://<domain>/
 ```
 
-### The trap that has now bitten five times: front door ≠ blob host
+### Which tier each host unblocks
+
+An absent destination does not merely fail a command — it retires a **merge-gating tier** to
+CI-only by accident, and the retirement is silent because the tier still *appears* to run (a skip
+reads as a pass, and a fail-closed scanner reports `NOT RUN`). These are the entries whose absence
+has actually done that:
+
+| Host | Tier it unblocks | Symptom when absent |
+| --- | --- | --- |
+| `semgrep.dev` | `guardrails / sast` — Semgrep code SAST | `sast-scan.mjs` exit ≥ 2, "registry unreachable" (item #222) |
+| **`api.osv.dev`** | `guardrails / sast` — **pip-audit**, the Python SCA half | `pip-audit: NOT RUN — httpx ConnectError ... Failed to resolve 'api.osv.dev'` (item #394) |
+| **`registry.ollama.ai`** + its R2 blob host (**both**, see the next table) | `nx test:golden movie-assistant`, the agent half of `E2E_TIER=gate`, and `nx up-agents-prod` | `ollama pull` → `lookup registry.ollama.ai ... no such host`; `ollama list` stays empty and the model precheck aborts (item #394) |
+| `api.themoviedb.org` | `nx test:integration web-api-mcp` — the certification lookup | live TMDB assertions unreachable from the dev-container shell (feature 059) |
+
+⚠️ **A degraded environment and a real defect are indistinguishable.** With no model present,
+an agent tier fails for a reason that looks exactly like a code fault. Feature 068 misdiagnosed two
+of its three real defects as "environmental" on precisely this ambiguity — and the three defects
+(`httpx2`'s separate exception hierarchy, a bare `streamable_http_app()` re-enabling DNS-rebinding
+protection, and a `McServiceToolError` that mcp 2.x refused to relay) were all caught only by CI,
+because no locally-runnable tier existed to catch them. That is the cost this table exists to
+prevent, and the reason a missing host is triaged as a **blocked gate**, not an inconvenience.
+
+### The trap that has now bitten six times: front door ≠ blob host
 
 A service's API host and its download/CDN host are different names, and allowlisting the first
 yields a fetch that authenticates and then dies:
@@ -297,10 +319,18 @@ yields a fetch that authenticates and then dies:
 | Quay | `quay.io` | `cdn0N.quay.io` |
 | MCR | `mcr.microsoft.com` | `*.data.mcr.microsoft.com` |
 | GitHub releases | `github.com` | **`release-assets.githubusercontent.com`** |
+| Ollama models | `registry.ollama.ai` | **`dd20bb891979d25aebc8bec07b2b3bbc.r2.cloudflarestorage.com`** |
 
-The last one also shows a second failure mode: `objects.githubusercontent.com` was **correct when
-written** and silently stopped covering release downloads when GitHub migrated. A previously-valid
+GitHub releases also shows a second failure mode: `objects.githubusercontent.com` was **correct when
+written** and silently stopped covering release downloads when GitHub migrated — a previously-valid
 entry can go stale without anything changing on our side.
+
+The Ollama row shows a third wrinkle, and the reason it is pinned rather than wildcarded: the blob
+host is a **Cloudflare R2 bucket whose subdomain is the vendor's account id**, constant across pulls
+while the path and the SigV4 query are per-request. `*.r2.cloudflarestorage.com` would have worked
+and would have opened every R2 bucket of every account to this VM. A layer failure after a clean
+manifest therefore means a **changed account id**, not a stale ipset — read the new name out of the
+error and add it.
 
 > **When a fetch fails with a DNS error, follow the REDIRECT CHAIN before adding the host named in
 > the error.** The message names the host you asked for, not the host that was blocked:
