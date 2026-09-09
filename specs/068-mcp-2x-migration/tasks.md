@@ -434,7 +434,9 @@ Propagation rule is non-negotiable.
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [~] T044 Run the golden tier: `pnpm nx test:golden movie-assistant`
+- [X] T044 Run the golden tier: `pnpm nx test:golden movie-assistant`
+  - **RESOLVED BY CI, PR #393 / 922cbf69**: `guardrails / agent-gates` PASSED — that job owns the
+    golden tier (app-ci defers to it: "guardrails already runs them").
   - **BLOCKED — host egress policy, not disk and not choice.** `ollama list` is empty and
     `ollama pull qwen2.5` fails: `lookup registry.ollama.ai ... no such host`.
     `registry.ollama.ai` is **not in `.devcontainer/egress-allowlist.json`** — the same class of
@@ -442,7 +444,9 @@ Propagation rule is non-negotiable.
     so this tier cannot run here. CI is the authority, and it is where the tier gates anyway.
   - Cassettes are keyed on model + normalized prompt; a miss must fail, never become a skip.
 
-- [~] T045 Run the merge-gating E2E tier: `E2E_TIER=gate pnpm nx e2e mcm-app`
+- [X] T045 Run the merge-gating E2E tier: `E2E_TIER=gate pnpm nx e2e mcm-app`
+  - **RESOLVED BY CI, PR #393 / 922cbf69**: `app-ci / app-e2e` PASSED, and its `web-e2e` step ran
+    193s with `E2E_TIER=gate` — the blocking merge signal. SC-006 satisfied.
   - **BLOCKED — same egress block on `registry.ollama.ai`** (see T044). CI is the authority for
     SC-006.
   - **Scenarios covered**: SC-006
@@ -467,15 +471,23 @@ Propagation rule is non-negotiable.
     (`docs/runbooks/sast-scanning.md` for the scanner change), not into the concept, and never into
     `CLAUDE.md`.
 
-- [ ] T048 Open **PR #2** with US2 and US3
+- [X] T048 Open **PR #2** with US2 and US3
   - Real branch push then `POST …/pulls` with the `git credential fill` credential; never AGit.
   - One PR, not two: R4 permits separate commits, but a red inside Phase 2 is the migration's either
     way, and a second ~35-minute E2E cycle buys nothing.
 
-- [ ] T049 File the out-of-scope follow-up: `api.osv.dev` is absent from
+- [X] T049 File the out-of-scope follow-up: `api.osv.dev` is absent from
   `.devcontainer/egress-allowlist.json`, so the `sast` gate cannot be reproduced locally
   - Research R0. A standing cost, not a one-off — but not this feature's job.
   - Check for a duplicate first; `backlog.mjs create` refuses rather than filing a second copy.
+  - **DONE 2026-09-08 — three filed**, all measured during this feature rather than suspected:
+    - **#394** (p2, tech-debt) — `api.osv.dev` **and** `registry.ollama.ai` both absent from the
+      egress allowlist, so two merge-gating tiers cannot be reproduced locally. Body records the
+      three defects CI caught that no local tier could have.
+    - **#395** (p3, bug) — `gen-dev-env.mjs` does not resync a **stale** `E2E_ROPC_CLIENT_SECRET`
+      and reports success anyway. Sibling of #227 (missing-file variant), distinct failure mode.
+    - **#396** (p3, bug) — `ci-status.mjs` labels a dependency-skipped job `path-gated`, asserting a
+      cause it cannot know; it misdirected the diagnosis of PR #393 once.
 
 - [ ] T050 Close backlog item **#310** — only after verifying its acceptance criteria are met
   - Its four criteria: all four projects import and run on 2.x; bounds at `>=2,<3` with lockfiles
