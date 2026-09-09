@@ -28,8 +28,6 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
-import { parse as parseYaml } from 'yaml';
-
 import { redactForPublication } from './ci-digest-redact.mjs';
 import { bundleVersion, BUNDLE_PACKAGE, DURATIONS_FILE } from './ci-failure-digest.mjs';
 import { gunzipSync } from 'node:zlib';
@@ -282,15 +280,70 @@ const WORKFLOWS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.f
  * A job with no `needs:` maps to `[]` — an EMPTY list, distinct from an absent key. That difference
  * is the whole point: `[]` proves the job can only have been skipped by its own gate, while a
  * missing key means this graph knows nothing about it.
+ *
+ * HAND-ROLLED rather than handed to the `yaml` package, and that is not a preference. `trigger-cd`
+ * runs `cd-dispatch-gate.mjs`, which imports this module, in a job that checks out the repo and runs
+ * node directly — it never installs node_modules. A `yaml` import here therefore passes every local
+ * test (it is a devDependency) and then dies on `main` with ERR_MODULE_NOT_FOUND, advisory and
+ * unannounced. Measured on the merge of PR #400, 2026-09-09. The whole reachable import graph stays
+ * node-builtins-and-local-files only, and a test enforces it.
+ *
+ * Reading only two shapes keeps it honest: a top-level `jobs:` mapping, and each job's `needs:` at
+ * one fixed depth. Anything it cannot read contributes no edge, which downgrades a label to
+ * "undetermined" — never to a wrong cause. A test cross-checks it against the real `yaml` parser
+ * over every workflow in the repository, so "small enough to hand-roll" is measured, not asserted.
  */
 export function parseWorkflowNeeds(yamlText, workflow) {
   const out = new Map();
-  const jobs = parseYaml(yamlText)?.jobs;
-  if (!jobs || typeof jobs !== 'object') return out;
-  for (const [name, def] of Object.entries(jobs)) {
-    const raw = def?.needs;
-    const deps = raw == null ? [] : Array.isArray(raw) ? raw : [raw];
-    out.set(`${workflow} / ${name}`, deps.map((d) => `${workflow} / ${String(d)}`));
+  const lines = String(yamlText ?? '').split(/\r?\n/);
+  // A trailing comment cannot appear inside these values (identifiers and flow lists), so splitting
+  // on whitespace-then-# is sufficient here and needs no quote tracking.
+  const uncomment = (v) => v.split(/\s+#/)[0].trim();
+  const unquote = (v) => v.replace(/^['"]|['"]$/g, '').trim();
+
+  let i = lines.findIndex((l) => /^jobs:\s*(#.*)?$/.test(l));
+  if (i < 0) return out;
+
+  let job = null;
+  for (i += 1; i < lines.length; i++) {
+    const line = lines[i];
+    // Blank and column-0 comment lines are legal INSIDE the jobs block, so they must be skipped
+    // before the "back to a top-level key" test — otherwise one comment ends the scan early and
+    // every job below it silently vanishes from the graph.
+    if (!line.trim() || /^\s*#/.test(line)) continue;
+    if (/^\S/.test(line)) break; // a new top-level key: `jobs:` is over
+
+    const header = /^ {2}([A-Za-z0-9_.-]+):\s*(#.*)?$/.exec(line);
+    if (header) {
+      job = `${workflow} / ${header[1]}`;
+      out.set(job, []);
+      continue;
+    }
+    if (!job) continue;
+
+    // Exactly four spaces — a job's own key. Nothing nested deeper (a step's `if:` naming
+    // `needs.changes.outputs.app`, say) can be mistaken for the declaration.
+    const decl = /^ {4}needs:\s*(.*)$/.exec(line);
+    if (!decl) continue;
+    const rest = uncomment(decl[1]);
+
+    if (rest.startsWith('[')) {
+      const inner = rest.slice(1, rest.lastIndexOf(']') === -1 ? undefined : rest.lastIndexOf(']'));
+      const deps = inner.split(',').map((d) => unquote(uncomment(d))).filter(Boolean);
+      out.set(job, deps.map((d) => `${workflow} / ${d}`));
+    } else if (rest) {
+      out.set(job, [`${workflow} / ${unquote(rest)}`]);
+    } else {
+      // Block sequence on the following lines.
+      const deps = [];
+      while (i + 1 < lines.length) {
+        const item = /^ {6}-\s*(.+?)\s*$/.exec(lines[i + 1]);
+        if (!item) break;
+        deps.push(`${workflow} / ${unquote(uncomment(item[1]))}`);
+        i += 1;
+      }
+      out.set(job, deps);
+    }
   }
   return out;
 }

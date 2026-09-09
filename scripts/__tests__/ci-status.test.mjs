@@ -1461,6 +1461,7 @@ import {
   parseWorkflowNeeds,
   loadNeedsGraph,
 } from '../ci-status.mjs';
+import { parse as parseYamlOracle } from 'yaml';
 
 const WORKFLOWS_DIR = resolve(HERE, '../../.forgejo/workflows');
 const annotationFor = (v, job) => annotateCheck(v.all.find((c) => c.job === job));
@@ -1515,4 +1516,78 @@ test('(#396f) a scalar `needs:` is an edge too, and an unparseable workflow cont
     needs: new Map(),
     workflows: new Set(),
   });
+});
+
+// ─── the CD gate's import graph must stay DEPENDENCY-FREE ────────────────────────────────────────
+//
+// `app-ci / trigger-cd` runs `scripts/cd-dispatch-gate.mjs`, which imports `ci-status.mjs` to reuse
+// its check classification. That job checks out the repo and runs node directly — it never installs
+// node_modules. So every module reachable from the gate may import node builtins and repo-local
+// files, and NOTHING else.
+//
+// Measured 2026-09-09 (the merge of PR #400): adding `import { parse } from 'yaml'` to ci-status.mjs
+// for item #396's needs-graph passed every local test — `yaml` is a devDependency and present here —
+// and then killed trigger-cd on `main` with
+//
+//     Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'yaml' imported from …/scripts/ci-status.mjs
+//
+// trigger-cd is ADVISORY, so the merge was not blocked and the board stayed green; the CD dispatch
+// simply did not happen. That combination — a real break that blocks nothing and is announced
+// nowhere — is why this is a test and not a comment.
+import { readdirSync as readdirSyncGuard } from 'node:fs';
+
+test('(dep-free) nothing reachable from cd-dispatch-gate.mjs imports a third-party package', () => {
+  const SCRIPTS = resolve(HERE, '..');
+  const seen = new Set();
+  const offenders = [];
+
+  const visit = (file) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    const source = readFileSync(file, 'utf8');
+    // Static `import … from '<spec>'` and bare `import '<spec>'`; the gate has no dynamic imports.
+    for (const m of source.matchAll(/^\s*import\s+(?:[^'"]*?\sfrom\s+)?['"]([^'"]+)['"]/gm)) {
+      const spec = m[1];
+      if (spec.startsWith('node:')) continue;
+      if (!spec.startsWith('.')) {
+        offenders.push(`${file.slice(SCRIPTS.length + 1)} imports '${spec}'`);
+        continue;
+      }
+      visit(resolve(dirname(file), spec));
+    }
+  };
+  visit(resolve(SCRIPTS, 'cd-dispatch-gate.mjs'));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    'trigger-cd runs these with NO node_modules, so a bare specifier is ERR_MODULE_NOT_FOUND on ' +
+      `main — and it fails ADVISORY, so nothing blocks and nobody is told:\n  ${offenders.join('\n  ')}`,
+  );
+  assert.ok(seen.size >= 3, 'the walk must actually reach ci-status.mjs and its local imports');
+});
+
+test('(dep-free) the hand-rolled needs parser agrees with the `yaml` package on EVERY workflow', () => {
+  // The parser exists only because ci-status.mjs cannot depend on `yaml`. Tests can — they run in
+  // guardrails/naming, after an install — so the real parser is the oracle, checked file by file.
+  // Without this, "small enough to hand-roll" is an assertion nobody ever tested.
+  const dir = resolve(HERE, '../../.forgejo/workflows');
+  const files = readdirSyncGuard(dir).filter((f) => /\.ya?ml$/.test(f));
+  assert.ok(files.length >= 5, 'expected the real workflow set');
+
+  for (const file of files) {
+    const workflow = file.replace(/\.ya?ml$/, '');
+    const text = readFileSync(join(dir, file), 'utf8');
+    const expected = {};
+    for (const [name, def] of Object.entries(parseYamlOracle(text)?.jobs ?? {})) {
+      const raw = def?.needs;
+      const deps = raw == null ? [] : Array.isArray(raw) ? raw : [raw];
+      expected[`${workflow} / ${name}`] = deps.map((d) => `${workflow} / ${String(d)}`);
+    }
+    assert.deepEqual(
+      Object.fromEntries(parseWorkflowNeeds(text, workflow)),
+      expected,
+      `the hand parser disagrees with \`yaml\` on ${file}`,
+    );
+  }
 });
