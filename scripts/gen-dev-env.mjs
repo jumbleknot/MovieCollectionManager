@@ -125,8 +125,13 @@ const AGENT_CONFIG_ENC_KEY =
 //
 // `auth.env` stays the SOURCE OF TRUTH — it is what seeds the realm, and projecting the realm's
 // values back into the env files would repair one client while quietly leaving the invariant broken
-// for the rest. So this verifies and refuses; it does not resync. A realm that refuses these
-// credentials was seeded from a DIFFERENT auth.env, and the fix belongs at the realm.
+// for the rest. So this verifies and refuses; it does not resync — the fix belongs at the realm.
+//
+// It reports per credential rather than as a verdict on the realm, because the scale of the drift is
+// what picks the remedy and it is easy to over-read. Measured 2026-09-09: five of six client secrets
+// matched auth.env and only `mcm-bff-test` had been regenerated, so the tempting summary "the realm
+// was seeded from a different auth.env" was wrong, and the wipe-and-re-seed it implies would have
+// destroyed the Keycloak database to correct a single field.
 
 /** One `POST /protocol/openid-connect/token`, reduced to what the diagnosis needs. */
 async function tokenRequest(body) {
@@ -234,7 +239,16 @@ if (verification.status === 'stale') {
       '  different auth.env, or that client secret was regenerated after the import.\n' +
       '\n  stacks/auth.env is the source of truth (it is what seeds the realm), so fix the REALM —\n' +
       '  copying the realm\'s secret back into an env file repairs one suite and leaves\n' +
-      '  realm-secret == BFF-secret broken everywhere else:\n' +
+      '  realm-secret == BFF-secret broken everywhere else.\n' +
+      '\n  How MUCH of the realm to fix depends on how much drifted, so measure before you act — the\n' +
+      '  ✓/✗ list above is the first half of that answer. Measured 2026-09-09: FIVE of six client\n' +
+      '  secrets matched and one had been regenerated, so "the realm was seeded from a different\n' +
+      '  auth.env" was the wrong reading and a volume wipe would have destroyed the Keycloak\n' +
+      '  database to correct one field. Compare every client (see the audit snippet in the runbook),\n' +
+      '  then:\n' +
+      '    - a FEW clients drifted -> set those clients\' secrets to auth.env\'s values via the admin\n' +
+      '      API; the realm converges on the source of truth and nothing else is touched.\n' +
+      '    - MOST or ALL drifted -> the realm really was seeded from a different auth.env; re-seed:\n' +
       '      docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit\n' +
       '      docker volume rm keycloak-store-postgres-data && docker volume create keycloak-store-postgres-data\n' +
       '      node scripts/gen-dev-secrets.mjs && node scripts/gen-dev-env.mjs\n' +

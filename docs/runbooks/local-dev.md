@@ -224,10 +224,53 @@ client, not all of them). A generator that wrote first and checked afterwards wo
 the only working credential on the machine before announcing the problem. Nothing is written unless
 every checkable credential authenticates.
 
-**Resolve.** `stacks/auth.env` is the source of truth — it is what seeds the realm — so the drift is
-fixed at the **realm**, not by copying the realm's secret back into the env files. Patching one
-client that way repairs the suite in front of you and leaves `realm-secret == BFF-secret` broken for
-every other client. Full re-seed (the same recovery as the stale-password case above):
+**Resolve — measure the drift before choosing the remedy.** `stacks/auth.env` is the source of truth
+(it is what seeds the realm), so the fix belongs at the **realm**, never by copying the realm's secret
+back into an env file: that repairs the suite in front of you and leaves `realm-secret == BFF-secret`
+broken for every other client. But *how much* of the realm to fix depends on how much actually
+drifted, and that is easy to over-read.
+
+Measured 2026-09-09 on this repository: **five of six** client secrets matched `auth.env` and only
+`mcm-bff-test` had been regenerated. "The realm was seeded from a different `auth.env`" was therefore
+the wrong reading, and the wipe below would have destroyed the whole Keycloak database — users,
+sessions, any hand-made realm state — to correct one field.
+
+Compare every client first (prints no secret values):
+
+```bash
+node --input-type=module -e '
+import { readFileSync } from "node:fs";
+const env = (p) => Object.fromEntries(readFileSync(p, "utf8").split(/\r?\n/)
+  .filter((l) => /^[A-Za-z_]\w*=/.test(l.trim()))
+  .map((l) => { const i = l.indexOf("="); return [l.slice(0, i).trim(), l.slice(i + 1)]; }));
+const auth = env("infrastructure-as-code/docker/stacks/auth.env");
+const KC = "http://localhost:8099", REALM = "grumpyrobot";
+const MAP = { "movie-collection-manager": "KEYCLOAK_CLIENT_SECRET",
+  "mcm-bff-service": "KEYCLOAK_SERVICE_CLIENT_SECRET",
+  "agent-subject-token": "AGENT_SUBJECT_TOKEN_CLIENT_SECRET",
+  "agent-gateway": "AGENT_GATEWAY_CLIENT_SECRET",
+  "mc-service": "MC_SERVICE_CLIENT_SECRET",
+  "mcm-bff-test": "E2E_ROPC_CLIENT_SECRET" };
+const tok = await (await fetch(`${KC}/realms/master/protocol/openid-connect/token`, { method: "POST",
+  headers: { "content-type": "application/x-www-form-urlencoded" },
+  body: new URLSearchParams({ grant_type: "password", client_id: "admin-cli", username: "admin",
+    password: auth.KC_BOOTSTRAP_ADMIN_PASSWORD }).toString() })).json();
+const H = { authorization: `Bearer ${tok.access_token}`, "content-type": "application/json" };
+for (const [clientId, key] of Object.entries(MAP)) {
+  const [c] = await (await fetch(`${KC}/admin/realms/${REALM}/clients?clientId=${clientId}`, { headers: H })).json();
+  const cur = await (await fetch(`${KC}/admin/realms/${REALM}/clients/${c.id}/client-secret`, { headers: H })).json();
+  console.log(`  ${cur.value === auth[key] ? "\u2713" : "\u2717"}  ${clientId.padEnd(26)} ${key}`);
+}'
+```
+
+**A few clients drifted** — converge those clients onto `auth.env` and touch nothing else. For each,
+`PUT /admin/realms/grumpyrobot/clients/{id}` with the client representation and `secret` set to
+`auth.env`'s value, then re-run the audit (expect all `✓`) and `node scripts/gen-dev-env.mjs` (expect
+`VERIFIED against the realm`). Note the ordering: the moment the realm secret changes, a hand-patched
+`.env.e2e.local` becomes the stale one, so the generator run belongs immediately after.
+
+**Most or all drifted** — the realm really was seeded from a different `auth.env`. Re-seed (the same
+recovery as the stale-password case above):
 
 ```bash
 docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit
