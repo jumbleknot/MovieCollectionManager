@@ -19,6 +19,36 @@ The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). 
 - **On-change PR/push check** — `.forgejo/workflows/infra-image-scan.yml` also triggers when `infrastructure-as-code/**`, the scanner scripts, or `security/infra-images/**` change, for fast feedback on a newly-introduced vulnerable image.
 - **Keyless** (public images, Trivy fetches advisory data with no account — no `${{ secrets }}`) and **fail-closed** (a Trivy/pull/parse failure fails the job — never a clean report on failure).
 
+### A green `infra-image-scan` usually proves nothing — check the DURATION
+
+The required context `infra-image-scan / infra-image-scan` posts `success` on **every** PR, including
+the ones where Trivy never ran. That is deliberate (feature 039 Gap 3: a job-level `if:` skip posts no
+status at all, and the required pattern then blocks the PR for ever) — but it means the green tick
+answers "did this PR touch an infra path", not "are these images clean".
+
+The tell is the **run duration**: a real sweep takes **~2m30s-3m** (about 8 minutes wall-clock on a PR
+including queueing); a skipped one takes **10-14 s**.
+
+```bash
+# Which recent runs actually swept? Anything ~14 s scanned nothing.
+node -e 'fetch("…/api/v1/repos/jumbleknot/mcm/actions/runs?page=1&limit=50",{headers:{Authorization:"token "+process.env.MCM_FORGE_TOKEN}}).then(r=>r.json()).then(j=>j.workflow_runs.filter(r=>String(r.workflow_id).includes("infra")).forEach(r=>console.log(r.id,r.prettyref,((new Date(r.stopped)-new Date(r.started))/1000)+"s")))'
+```
+
+This is the mechanism behind a whole class of silent staleness. Measured 2026-09-10: two advisories
+landed in Trivy's DB on 2026-09-09 and blocked 11 findings on images `main` already carried, yet
+**nine consecutive `infra-image-scan` runs reported `success`** over the following day — every one of
+them 10-14 s. The last real sweep had been PR #362's. The weekly cron is the safety net, but it fires
+once a week and attributes the failure to whatever branch it lands on.
+
+Two consequences worth internalising:
+
+- **A PR's green infra-image tick can be a stale green.** PR #360 was fully green from a 2026-09-08
+  sweep and stayed "mergeable" for two days *after* the images it pins went dirty. Regenerate or
+  rebase such a branch and the next real sweep reds it, for reasons that predate its diff.
+- **To force a real sweep, touch an infra path.** Editing `security/infra-images/allowlist.yaml` is
+  itself enough — which is why an allowlist change is self-confirming, per the note in the
+  allowlist's own header.
+
 ## Local use (where Trivy is available)
 
 Trivy is **not** on the Windows dev box — the authoritative scan is the Linux/CI job. On a Linux/WSL/macOS host with Trivy + Docker:
@@ -169,6 +199,59 @@ matches the reference in the compose files today, **and** stops matching a later
 old tag matches nothing after the bump, the finding it covered becomes un-allowlisted, and the gate
 blocks — while reporting the entry only as an `UNMATCHED ENTRIES` line, which reads like housekeeping
 rather than like the cause. Check that line before assuming a new CVE appeared.
+
+### A version-keyed entry cannot be re-keyed on `main` and in the bump PR at once
+
+The rule above has a corollary that is easy to walk into, and it cost PR #362 ten findings on
+2026-09-09. A version-keyed entry names **one** version, but during a bump two are live: `main` still
+references the old tag, the Renovate branch references the new one. Whichever single version the key
+names, **the other side blocks** — key it to the old one and the bump PR is red; key it to the new one
+and `main` is red, including every unrelated PR, because `infra-image-scan / infra-image-scan*` is
+required by a glob that matches the push-event context too.
+
+The two obvious escapes are both wrong. Landing the re-key inside the Renovate branch does not
+survive: Renovate force-pushes the branch when it regenerates, and with `rebaseWhen: conflicted` a
+hand commit is either clobbered or blocks the regeneration. Widening the key to `0\.32\..*` re-creates
+the permanent hole the section above exists to prevent.
+
+What works is an **enumeration spanning the transition**, narrowed on merge:
+
+```yaml
+- image: 'grafana/otel-lgtm:0\.32\.[01]'   # 0.32.0 on main, 0.32.1 in PR #362
+- image: 'postgres:18\.[36]-alpine3\.23'   # 18.3 on main, 18.6 in PR #362
+```
+
+Both sides go green, and the entry is still discharged by an upgrade (`0.33.0` stops matching), which
+is the property `scripts/__tests__/infra-image-scan.test.mjs` asserts. Write the narrowing into the
+justification — an enumeration left to grow one version at a time becomes the wildcard by instalments.
+
+Do this only when the bump is **not** the remediation. Where the new version actually clears the
+advisory, the entry is deleted rather than widened, and it is deleted *when the bump lands* — opa
+1.20.2 clears CVE-2026-56854, so its entry stays keyed to `1\.20\.1` and is removed with PR #362.
+
+### Triaging an advisory you cannot scan
+
+Trivy is absent from the dev container, so an image that CI scanned dirty can rarely be re-checked
+here, and a *sibling* version is often the one you actually need a verdict on: the scan covers what
+the Renovate branch references, while `main` runs the version before it.
+
+Read the version from the **build definition of the release**, not from the image. Keycloak
+26.7.2-vs-26.7.3 (netty, CVE-2026-75595) resolved in one request: netty is not declared in Keycloak's
+own POM — Quarkus pins it — and both release tags' root `pom.xml` declare `<quarkus.version>3.33.3.1`,
+so the two carry the same netty and the un-scanned 26.7.2 is affected identically.
+
+Two constraints on that move, both measured 2026-09-10:
+
+- **Maven Central is not on the egress allowlist** (`repo1.maven.org` and `search.maven.org` both fail
+  to connect, curl exit 000 — not a 403). `raw.githubusercontent.com` **is** reachable, so read the
+  release tag's POM from the project's own repository instead.
+- Say which it was. This is an inference from the build definition, **not** a scan of the image, and
+  the justification must record that distinction — the whole class of wrong turns this repository
+  keeps paying for is a description standing in for a measurement.
+
+Prefer the direction that fails safe. An allowlist key covering a ref that turns out clean suppresses
+nothing extra (it still counts as matched via the version that *did* produce the finding); a key that
+omits an affected ref blocks the board.
 
 ### Seeding the baseline (first landing — on CI)
 
