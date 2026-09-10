@@ -750,6 +750,57 @@
     },
     {
       "description": [
+        "opensearchproject/opensearch IS HELD BELOW 3, and langfuse below 4, pending item #407. Both are",
+        "the vault/python pattern in a third shape: a STATEFUL major whose only argument for moving is a",
+        "CVE, which is the argument least able to carry a data migration.",
+        "WHY THE HOLD EXISTS AT ALL. Item #406 (2026-09-10) allowlisted CVE-2026-75595 (io.netty",
+        "netty-handler < 4.1.137.Final) on `opensearchproject/opensearch:2` and CVE-2026-75604 /",
+        "GHSA-2xp9-vwfh-vxw4 (Next.js 16.2.11) on `langfuse/langfuse:3` + `-worker:3`. For all three the",
+        "floating tag ALREADY resolves to the newest build of its major, so the only remediation upstream",
+        "offers is the next major. OpenSearch 3 would in fact discharge TWO suppressions \u2014 that one plus",
+        "the seed CVE-2025-14813 (bcprov-jdk15to18 1.79) carried since feature 035. That is a genuinely",
+        "attractive argument, and it is exactly why the move must not be made by a scheduled sweep.",
+        "WHAT THE MOVE ACTUALLY COSTS. OpenSearch 2 -> 3 is an index-compatibility step; Langfuse 3 -> 4",
+        "ships database migrations. Both run in the local Compose stacks AND the production Komodo",
+        "ResourceSync stacks, so a tag move is an `infrastructure-as-code/` change and SDD-gated: item",
+        "#407 carries `status/needs-spec` for precisely this.",
+        "THE TRIGGER THIS PRE-EMPTS, measured 2026-09-10: `renovate/major-docker-base-images` sat in",
+        "Awaiting Schedule holding opensearch alongside clickhouse, postgres, redis and",
+        "docker-in-docker majors, with only ONE renovate PR open against a prConcurrentLimit of 5. The",
+        "next Friday window would have created a FIVE-major pull request, three of them stateful \u2014 the",
+        "shape openwiki/process/pull-request-batching.md says to split because a red is ambiguous \u2014 with",
+        "a security argument attached to one of them. langfuse 4 was absent from that group only because",
+        "it published 2026-09-09 and sat inside the 3-day minimumReleaseAge; its cooldown lapses",
+        "2026-09-12, so holding opensearch alone would have deferred the same problem by one week.",
+        "`allowedVersions` rather than `enabled: false`, the vault and python pattern: a digest refresh",
+        "and any 2.x / 3.x patch is still wanted \u2014 that is the security patch stream for the images we",
+        "actually run \u2014 and only the major move is blocked. Both also stay in `docker base images`.",
+        "THE COST, STATED PLAINLY: this keeps a fixable Critical suppressed rather than remediated, on",
+        "three internal-only images. That is a deliberate choice and not a silent one \u2014 the allowlist",
+        "entries are time-boxed to 2026-10-01, which is the date by which item #407 must have decided",
+        "either way. RAISE OR REMOVE THIS RULE ONLY THROUGH THAT SPEC, and delete the matching allowlist",
+        "entries in the same change so the suppression cannot outlive its reason."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["opensearchproject/opensearch"],
+      "allowedVersions": "<3"
+    },
+    {
+      "description": [
+        "The langfuse half of the item #407 hold above \u2014 see that rule for the whole reasoning. Separate",
+        "rule rather than one `matchPackageNames` list because the two ceilings are different values and",
+        "will be discharged by different specs at different times; sharing a rule would force them to",
+        "move together for no reason other than that they were written on the same day.",
+        "BOTH images, deliberately: `langfuse/langfuse` and `langfuse/langfuse-worker` are one deployment",
+        "and share a database, so a major on one without the other is a broken stack rather than a",
+        "half-bump that merely looks untidy."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["langfuse/langfuse", "langfuse/langfuse-worker"],
+      "allowedVersions": "<4"
+    },
+    {
+      "description": [
         "pnpm MOVES AS ONE UNIT \u2014 item #225, the same requirement as the nx and Playwright rules above and",
               "for the same reason. pnpm's version lives in package.json's `packageManager` (built-in `npm`",
               "manager) and in frontend/mcm-app/Dockerfile's corepack pins (the customManagers entry above, whose",

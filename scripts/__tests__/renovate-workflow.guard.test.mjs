@@ -1123,12 +1123,78 @@ test('hashicorp/vault is held below 1.19 on every update track', () => {
   }
 });
 
+// UPDATED AT THE CAUSE, item #407 (2026-09-10). This control used to name
+// `opensearchproject/opensearch` among the images with no ceiling. That image now has one of its own
+// (`<3`), so the assertion had to change — but NOT by deleting it, and not by weakening it to "has
+// some ceiling". The property being controlled is that VAULT's hold has not widened past vault, so
+// opensearch is replaced by images that genuinely carry no ceiling, and the images that now do carry
+// one are asserted to carry the RIGHT one in their own tests below. A control that quietly drops the
+// case that broke it stops being a control.
 test('the vault hold does NOT leak onto other docker images — the control', () => {
-  for (const depName of ['postgres', 'redis', 'quay.io/keycloak/keycloak', 'opensearchproject/opensearch']) {
+  for (const depName of ['postgres', 'redis', 'quay.io/keycloak/keycloak', 'grafana/otel-lgtm', 'caddy']) {
     assert.equal(
       resolvedAllowedVersions({ manager: 'docker-compose', datasource: 'docker', depName, updateType: 'minor' }),
       null,
       `${depName} picked up vault's version hold — the rule has widened past its own image.`,
+    );
+  }
+});
+
+// opensearch and langfuse are HELD pending item #407 — a stateful major whose only argument for
+// moving is a CVE. The ceiling is asserted on the RESOLVED value, per the rule this file states for
+// itself: in every half-bump this repository has paid for, a mechanism existed that looked sufficient
+// and was silently overridden by a later, broader packageRule.
+const heldImage = (depName, updateType) => ({
+  manager: 'docker-compose', datasource: 'docker', depName, updateType,
+});
+
+test('(407) opensearch is held below 3 and langfuse below 4, on every update track', () => {
+  for (const updateType of ['patch', 'minor', 'major']) {
+    assert.equal(
+      resolvedAllowedVersions(heldImage('opensearchproject/opensearch', updateType)),
+      '<3',
+      `opensearch ${updateType} is not held at <3 — OpenSearch 2->3 is an index-compatibility step and\n` +
+        '  must be decided by item #407, not proposed by a scheduled base-image sweep.',
+    );
+    for (const depName of ['langfuse/langfuse', 'langfuse/langfuse-worker']) {
+      assert.equal(
+        resolvedAllowedVersions(heldImage(depName, updateType)),
+        '<4',
+        `${depName} ${updateType} is not held at <4 — Langfuse 3->4 ships database migrations.`,
+      );
+    }
+  }
+});
+
+test('(407) the hold blocks the MAJOR but still admits patches and digest refreshes', () => {
+  // The whole reason this is `allowedVersions` and not `enabled: false`: the within-major patch
+  // stream IS the security patch stream for the images actually running, and blocking it would
+  // trade one suppressed Critical for an unpatchable image.
+  const os = resolvedAllowedVersions(heldImage('opensearchproject/opensearch', 'minor'));
+  assert.ok(allowedVersionsPermits(os, '2.19.7'), 'the opensearch hold rejects a 2.x patch — it must not.');
+  assert.ok(!allowedVersionsPermits(os, '3.0.0'), 'the opensearch hold PERMITS 3.0.0 — the major is what it exists to block.');
+  const lf = resolvedAllowedVersions(heldImage('langfuse/langfuse', 'minor'));
+  assert.ok(allowedVersionsPermits(lf, '3.9.9'), 'the langfuse hold rejects a 3.x patch — it must not.');
+  assert.ok(!allowedVersionsPermits(lf, '4.0.0'), 'the langfuse hold PERMITS 4.0.0 — the major is what it exists to block.');
+});
+
+test('(407) both halves of langfuse carry the SAME ceiling — they share a database', () => {
+  assert.equal(
+    resolvedAllowedVersions(heldImage('langfuse/langfuse', 'major')),
+    resolvedAllowedVersions(heldImage('langfuse/langfuse-worker', 'major')),
+    'the langfuse server and worker resolve to DIFFERENT ceilings. They are one deployment sharing one\n' +
+      '  database, so a major on one without the other is a broken stack, not an untidy half-bump.',
+  );
+});
+
+test('(407) the opensearch/langfuse holds do NOT leak onto other docker images — the control', () => {
+  for (const depName of ['postgres', 'redis', 'clickhouse/clickhouse-server', 'quay.io/keycloak/keycloak', 'grafana/otel-lgtm']) {
+    assert.equal(
+      resolvedAllowedVersions(heldImage(depName, 'major')),
+      null,
+      `${depName} picked up the item #407 hold — the rule has widened past its own images.\n` +
+        '  clickhouse is in this list on purpose: it rides the same `docker base images (major)` group\n' +
+        '  that prompted the hold, so a rule keyed to the group rather than the image would catch it here.',
     );
   }
 });
@@ -1480,8 +1546,53 @@ function allowedVersionsPermits(allowed, tag) {
   if (allowed.startsWith('/') && allowed.lastIndexOf('/') > 0) {
     return new RegExp(allowed.slice(1, allowed.lastIndexOf('/'))).test(tag);
   }
-  throw new Error(`allowedVersions '${allowed}' is not a regex form — extend allowedVersionsPermits().`);
+  // The `<X[.Y[.Z]]` upper bound — the OTHER form renovate.json actually uses (`hashicorp/vault`
+  // `<1.19`, `python` `<3.15`, and the item #407 holds `<3` / `<4`). Renovate's docker versioning
+  // falls back to npm semver syntax for these and logs it ("Falling back to npm semver syntax"), so
+  // the bound is zero-extended: `<3` means `< 3.0.0`, which admits every 2.x and rejects 3.0.0.
+  //
+  // Added 2026-09-10. Until then this function threw on the npm form, so the vault and python
+  // ceilings had only ever been asserted by string equality — nothing checked what they PERMIT.
+  // Deliberately still narrow: only a single `<` bound is understood, and anything else keeps
+  // throwing rather than silently guessing. A helper that quietly returns true for a form it does
+  // not model is a false green in the guard, which is the failure this file exists to prevent.
+  const bound = /^<\s*(\d+)(?:\.(\d+))?(?:\.(\d+))?$/.exec(allowed);
+  if (bound) {
+    const target = [bound[1], bound[2] ?? '0', bound[3] ?? '0'].map(Number);
+    const parsed = /^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?/.exec(String(tag));
+    if (!parsed) return false; // an unorderable tag is not admitted by an ordered bound
+    const actual = [parsed[1], parsed[2] ?? '0', parsed[3] ?? '0'].map(Number);
+    for (let i = 0; i < 3; i += 1) {
+      if (actual[i] !== target[i]) return actual[i] < target[i];
+    }
+    return false; // exactly equal to an exclusive upper bound
+  }
+  throw new Error(`allowedVersions '${allowed}' is not a regex or '<' form — extend allowedVersionsPermits().`);
 }
+
+// The instrument, before the assertions that lean on it. The `<` branch above was written for the
+// item #407 holds and immediately re-used to judge vault and python, so a bug in it would read as
+// "the holds are correct" across four rules at once.
+test('allowedVersionsPermits models the `<` bound it was just taught — the instrument check', () => {
+  const cases = [
+    ['<3', '2.19.6', true], ['<3', '2.19.7', true], ['<3', '3.0.0', false], ['<3', '3.1.0', false],
+    ['<4', '3.9.9', true], ['<4', '4.0.0', false],
+    ['<1.19', '1.18.5', true], ['<1.19', '1.19.0', false], ['<1.19', '1.21.4', false],
+    ['<3.15', '3.14.2', true], ['<3.15', '3.15.0', false],
+    ['<3', 'v2.9.0', true], // a leading `v` is tolerated, as mailpit's tags carry one
+  ];
+  for (const [allowed, tag, expected] of cases) {
+    assert.equal(
+      allowedVersionsPermits(allowed, tag), expected,
+      `allowedVersionsPermits(${JSON.stringify(allowed)}, ${JSON.stringify(tag)}) should be ${expected}`,
+    );
+  }
+  assert.throws(
+    () => allowedVersionsPermits('>=2 <3', '2.1.0'),
+    /extend allowedVersionsPermits/,
+    'a compound range must THROW rather than be guessed at — a wrong true here is a false green.',
+  );
+});
 
 // Contract C1 (specs/063-infra-image-version-pins/contracts/renovate-rules.md). The table's rows are
 // WORKED EXAMPLES recorded at pin time; the property they illustrate is that a bump of each image
