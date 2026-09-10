@@ -170,6 +170,59 @@ old tag matches nothing after the bump, the finding it covered becomes un-allowl
 blocks — while reporting the entry only as an `UNMATCHED ENTRIES` line, which reads like housekeeping
 rather than like the cause. Check that line before assuming a new CVE appeared.
 
+### A version-keyed entry cannot be re-keyed on `main` and in the bump PR at once
+
+The rule above has a corollary that is easy to walk into, and it cost PR #362 ten findings on
+2026-09-09. A version-keyed entry names **one** version, but during a bump two are live: `main` still
+references the old tag, the Renovate branch references the new one. Whichever single version the key
+names, **the other side blocks** — key it to the old one and the bump PR is red; key it to the new one
+and `main` is red, including every unrelated PR, because `infra-image-scan / infra-image-scan*` is
+required by a glob that matches the push-event context too.
+
+The two obvious escapes are both wrong. Landing the re-key inside the Renovate branch does not
+survive: Renovate force-pushes the branch when it regenerates, and with `rebaseWhen: conflicted` a
+hand commit is either clobbered or blocks the regeneration. Widening the key to `0\.32\..*` re-creates
+the permanent hole the section above exists to prevent.
+
+What works is an **enumeration spanning the transition**, narrowed on merge:
+
+```yaml
+- image: 'grafana/otel-lgtm:0\.32\.[01]'   # 0.32.0 on main, 0.32.1 in PR #362
+- image: 'postgres:18\.[36]-alpine3\.23'   # 18.3 on main, 18.6 in PR #362
+```
+
+Both sides go green, and the entry is still discharged by an upgrade (`0.33.0` stops matching), which
+is the property `scripts/__tests__/infra-image-scan.test.mjs` asserts. Write the narrowing into the
+justification — an enumeration left to grow one version at a time becomes the wildcard by instalments.
+
+Do this only when the bump is **not** the remediation. Where the new version actually clears the
+advisory, the entry is deleted rather than widened, and it is deleted *when the bump lands* — opa
+1.20.2 clears CVE-2026-56854, so its entry stays keyed to `1\.20\.1` and is removed with PR #362.
+
+### Triaging an advisory you cannot scan
+
+Trivy is absent from the dev container, so an image that CI scanned dirty can rarely be re-checked
+here, and a *sibling* version is often the one you actually need a verdict on: the scan covers what
+the Renovate branch references, while `main` runs the version before it.
+
+Read the version from the **build definition of the release**, not from the image. Keycloak
+26.7.2-vs-26.7.3 (netty, CVE-2026-75595) resolved in one request: netty is not declared in Keycloak's
+own POM — Quarkus pins it — and both release tags' root `pom.xml` declare `<quarkus.version>3.33.3.1`,
+so the two carry the same netty and the un-scanned 26.7.2 is affected identically.
+
+Two constraints on that move, both measured 2026-09-10:
+
+- **Maven Central is not on the egress allowlist** (`repo1.maven.org` and `search.maven.org` both fail
+  to connect, curl exit 000 — not a 403). `raw.githubusercontent.com` **is** reachable, so read the
+  release tag's POM from the project's own repository instead.
+- Say which it was. This is an inference from the build definition, **not** a scan of the image, and
+  the justification must record that distinction — the whole class of wrong turns this repository
+  keeps paying for is a description standing in for a measurement.
+
+Prefer the direction that fails safe. An allowlist key covering a ref that turns out clean suppresses
+nothing extra (it still counts as matched via the version that *did* produce the finding); a key that
+omits an affected ref blocks the board.
+
 ### Seeding the baseline (first landing — on CI)
 
 Trivy isn't local, so seed from the **first Linux/CI scan** (feature-033 platform lesson):

@@ -85,9 +85,9 @@
   id: 'CVE-2025-14813'
   justification: 'Baseline (035): fixable Critical in org.bouncycastle:bcprov-jdk15to18 (1.79→1.84). Verified NOT cleared by the latest 2.x (2.19.6): the image STILL bundles bcprov-jdk15to18-1.79.jar alongside the newer bcprov-jdk18on-1.84.jar (Trivy, feature 036). `opensearch:2` already floats to 2.19.6, so pinning does not help — blocked until upstream drops the old jar. Internal-only (audit stack).'
   addedBy: 'seed'
-- image: 'postgres:18\.3-alpine3\.23'
+- image: 'postgres:18\.[36]-alpine3\.23'
   id: 'CVE-2025-68121'
-  justification: 'Baseline (035): fixable Critical in Go stdlib. Kept on 18.3 — feature 036 verified the newest 18.4-alpine3.24 STILL bundles a pre-fix Go 1.24.6 binary (< fix 1.24.13; Trivy), so a bump does NOT clear this Critical (report-only-High reduction only). Reverted with the mongo bump to keep the data-tier on its long-stable pins. Internal-only.'
+  justification: 'Baseline (035): fixable Critical in Go stdlib. Kept on 18.3 — feature 036 verified the newest 18.4-alpine3.24 STILL bundles a pre-fix Go 1.24.6 binary (< fix 1.24.13; Trivy), so a bump does NOT clear this Critical (report-only-High reduction only). Reverted with the mongo bump to keep the data-tier on its long-stable pins. Internal-only. RE-KEYED 2026-09-10 to span 18.3 (referenced on `main`) and 18.6 (referenced on PR #362) — see the otel-lgtm entry below for why a single-version key blocks one side or the other. The bump is still no remediation: PR #362 measured 18.6-alpine3.23 carrying the SAME pre-fix stdlib v1.24.6, and 18.7-alpine3.23 does not exist upstream (registry checked 2026-09-10). NARROW to 18.6 alone once #362 lands.'
   addedBy: 'seed'
 - image: 'postgres:16-alpine'
   id: 'CVE-2025-68121'
@@ -143,9 +143,9 @@
   justification: 'New advisory (x/crypto <0.55.0, fix 2026-08-11) on an image we pull. Already on the newest upstream tag v2.11.4, published 2026-06-03 — it predates the fix, so no bump can clear this. Remediation is an upstream rebuild. Internal-only (reverse proxy). Time-boxed; delete on rebuild.'
   addedBy: 'item-329'
   expiry: '2026-10-01'
-- image: 'grafana/otel-lgtm:0\.32\.0'
+- image: 'grafana/otel-lgtm:0\.32\.[01]'
   id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. Already on the newest upstream tag v0.32.0 (2026-08-28); it postdates the fix but still bundles x/crypto 0.52-0.54, so upstream has not picked the fix up and no bump exists to make. Internal-only (observability stack). Time-boxed; delete on rebuild.'
+  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. 0.32.1 (2026-09-04) is now the newest upstream tag and IS `latest`; PR #362 measured it still bundling x/crypto 0.52-0.54, so the bump does not clear this and there is no further bump to make (no 0.33.x exists — registry checked 2026-09-10). RE-KEYED 2026-09-10 from 0.32.0 to a two-version ENUMERATION because `main` references 0.32.0 while PR #362 moves it to 0.32.1: keyed to either one alone, the other side blocks (at 0.32.0 the bump PR goes red on 10 findings; at 0.32.1 `main` does). Deliberately an enumeration and NOT a `0\.32\..*` wildcard — it must still be dischargeable by an upgrade (0.33.0 stops matching), which is the property scripts/__tests__/infra-image-scan.test.mjs asserts. NARROW to 0.32.1 alone once #362 lands. Internal-only (observability stack). Time-boxed; delete on rebuild.'
   addedBy: 'item-329'
   expiry: '2026-10-01'
 - image: 'hashicorp/vault:1\.18'
@@ -175,6 +175,53 @@
   expiry: '2026-10-01'
 - image: 'openpolicyagent/opa:1\.20\.1'
   id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on an image we pull; one entry deliberately covers both the 1.20.1 and 1.20.1-debug refs, which are the same build. Already on the newest upstream tag v1.20.1 (2026-08-28); it postdates the fix but still ships x/crypto 0.54.0, so no bump exists to make. Internal-only (policy sidecar). Time-boxed; delete on rebuild.'
+  justification: 'New advisory (x/crypto <0.55.0) on an image we pull; one entry deliberately covers both the 1.20.1 and 1.20.1-debug refs, which are the same build. Already on the newest upstream tag v1.20.1 (2026-08-28); it postdates the fix but still ships x/crypto 0.54.0, so no bump exists to make. Internal-only (policy sidecar). Time-boxed; delete on rebuild. NOT re-keyed for PR #362 the way otel-lgtm and postgres above were: opa 1.20.2 CLEARS this — PR #362 scanned it and produced no blocking finding for opa at all — so the bump IS the remediation here. DELETE this entry when #362 lands, or it becomes an UNMATCHED entry that reddens the weekly allowlist-expiry run (item #303).'
   addedBy: 'item-329'
+  expiry: '2026-10-01'
+
+# ── NEW advisories on unchanged images, triaged 2026-09-10 (item #406) ────────────────────────────
+# TWO advisories, 11 blocking findings, four pulled images — every one of them on an image reference
+# `main` ALREADY carries, so these block `main` itself and every infra-touching PR, unrelated to any
+# diff. Found on PR #362's sweep (run 2962, 2026-09-09); the previous full sweep, PR #360's on
+# 2026-09-08, was clean, so both advisories entered Trivy's DB between those two dates. Nothing has
+# re-swept since — every infra-image-scan run after 2026-09-09 03:53 lasted 10-14 s, i.e. Trivy was
+# skipped on a non-infra PR — so the Friday 07:00 UTC weekly cron is where `main` would have gone red.
+#
+# WHY ENTRIES AND NOT A BUMP — the rule this file states for itself ("an entry would only be right if
+# no fix existed"), checked per image against upstream on 2026-09-10:
+#   opensearchproject/opensearch:2 .. `:2` already floats to 2.19.6 (2026-07-15) and resolves to the
+#                                     exact digest pinned here; there is no newer 2.x. The remediation
+#                                     upstream offers is OpenSearch 3 — a MAJOR, already proposed
+#                                     separately under `docker base images (major)`, and a deliberate
+#                                     decision rather than a CVE reflex.
+#   quay.io/keycloak/keycloak ....... 26.7.3 (2026-08-31) is the newest release and IS `latest`, and
+#                                     it is the version that scanned dirty. See the entry for how
+#                                     26.7.2 was established to be equally affected.
+#   langfuse/langfuse:3 + -worker:3 .. `:3` already floats to the newest 3.x build (2026-09-02). A `:4`
+#                                     tag exists (2026-09-09) but that is a MAJOR with data migrations,
+#                                     likewise already proposed separately.
+# Remediation for all four is an upstream rebuild, or a major upgrade taken deliberately.
+#
+# EXPIRY 2026-10-01 matches the item-329 block above so the whole set re-triages in one sitting rather
+# than dribbling. Per item #303, DELETE each entry when its image is remediated rather than letting the
+# date pass — an entry that matches nothing keeps failing under UNMATCHED ENTRIES instead of ageing out.
+- image: 'opensearchproject/opensearch:2@sha256:8690b204fe914c60ca76d451ac73bc0481e034d32d3779944c8caca56a2b003f'
+  id: 'CVE-2026-75595'
+  justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final / 4.2.17.Final) on an image we pull; 6 findings, the image bundling both 4.1.130 and 4.1.135. `opensearch:2` floats to 2.19.6, which resolves to exactly the digest this key names, so pinning does not help and no newer 2.x exists (registry checked 2026-09-10) — remediation is an upstream rebuild or the separately-proposed OpenSearch 3 major. KEYED TO THE DIGEST, not to `opensearch:2`, deliberately: per feature 063 / item #297 a key of `opensearch:2` matches every 2.x that will ever exist and so could never be discharged by an upgrade. This one stops matching the moment the pin moves. Internal-only (audit stack). Time-boxed; delete on rebuild.'
+  addedBy: 'item-406'
+  expiry: '2026-10-01'
+- image: 'quay\.io/keycloak/keycloak:26\.7\.[23]'
+  id: 'CVE-2026-75595'
+  justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final) on an image we pull. Measured on 26.7.3 (netty 4.1.136.Final) by PR #362''s sweep; 26.7.3 is the newest upstream release and IS `latest` (quay checked 2026-09-10), so no bump clears it. The key ALSO covers 26.7.2, which is what `main` references and which was NOT itself scanned — Trivy is absent from this dev container (feature 035) so it could not be, and the netty version is not declared in Keycloak''s own pom. Established instead from the version that pins it: 26.7.2 and 26.7.3 both build against quarkus.version 3.33.3.1 (both release tags'' root pom.xml, read 2026-09-10), so they carry the same netty and 26.7.2 is affected identically. That is an inference from the build definition, NOT a scan of 26.7.2 — but it fails safe either way, because an entry covering a ref that turns out clean still matches via the 26.7.3 finding and suppresses nothing extra. Internal-only (identity provider). Time-boxed; delete on rebuild.'
+  addedBy: 'item-406'
+  expiry: '2026-10-01'
+- image: 'langfuse/langfuse:3'
+  id: '(CVE-2026-75604|GHSA-2xp9-vwfh-vxw4)'
+  justification: 'New advisory (Next.js 16.2.11, fixed in 15.5.24 / 16.3.3) on an image we pull. ONE advisory carried under two identifiers, which Trivy reports as two findings — hence the id alternation; the `id` field is documented as a regex, and one entry per ADVISORY is the honest unit. `:3` already floats to the newest 3.x build (2026-09-02), so there is no 3.x bump to make; the `:4` tag (2026-09-09) is a MAJOR with data migrations, proposed separately under `docker base images (major)`. Internal-only (observability stack, dev + prod LLM tracing). Time-boxed; delete on rebuild.'
+  addedBy: 'item-406'
+  expiry: '2026-10-01'
+- image: 'langfuse/langfuse-worker:3'
+  id: '(CVE-2026-75604|GHSA-2xp9-vwfh-vxw4)'
+  justification: 'The sibling of the entry above — same advisory, same Next.js 16.2.11, same floating `:3` tag rebuilt 2026-09-02, same remediation. Two entries rather than one `langfuse/langfuse(-worker)?:3` key so that each image discharges on its own rebuild: the two images are versioned together today but nothing here guarantees they always will be, and a key spanning both would go on suppressing for one while the other was remediated. Internal-only (observability stack). Time-boxed; delete on rebuild.'
+  addedBy: 'item-406'
   expiry: '2026-10-01'

@@ -1601,7 +1601,37 @@ test('the minio date-tagged family orders by calendar, and its update type says 
 // than on the presence of a rule: in every one of those four, a mechanism existed that looked
 // sufficient and was silently overridden by a later, broader rule.
 
-const OPA_TAGS = ['1.20.1', '1.20.1-debug'];
+// The pair as the COMPOSE FILES declare it — DERIVED, not written down. This constant used to read
+// `['1.20.1', '1.20.1-debug']`, which made every opa bump a guard failure by construction: PR #362
+// (1.20.1 → 1.20.2) reddened `guardrails / naming` on precisely the change this guard exists to
+// BLESS. A guard that fails because the thing it protects moved correctly teaches the reader to
+// edit the guard, which is how the next real half-bump gets waved through.
+//
+// What is load-bearing is the PAIRING — two refs, one plain and one `-debug`, on the SAME version —
+// not which version that happens to be today. So the version is read from the tree and the pairing
+// is asserted below. Divergence, a disappeared half, or a third variant still fail, as they must.
+const OPA_TAGS = [...new Set(tagsFor('openpolicyagent/opa'))].sort();
+
+test('openpolicyagent/opa is referenced as exactly one plain + one -debug ref on the SAME version', () => {
+  assert.equal(
+    OPA_TAGS.length,
+    2,
+    `openpolicyagent/opa resolves to ${OPA_TAGS.length} distinct tag(s) (${JSON.stringify(OPA_TAGS)}), not the ` +
+      'plain + -debug pair. Either a ref was dropped, or a third variant was introduced that the ceiling ' +
+      'below was never written for.',
+  );
+  const plain = OPA_TAGS.filter((t) => !t.endsWith('-debug'));
+  const debug = OPA_TAGS.filter((t) => t.endsWith('-debug'));
+  assert.equal(plain.length, 1, `expected exactly one non-debug opa ref, got ${JSON.stringify(plain)}`);
+  assert.equal(debug.length, 1, `expected exactly one -debug opa ref, got ${JSON.stringify(debug)}`);
+  assert.equal(
+    debug[0],
+    `${plain[0]}-debug`,
+    `the two opa refs are HALF-BUMPED: ${JSON.stringify(plain[0])} and ${JSON.stringify(debug[0])} are different ` +
+      'versions. They are one dependency name to Renovate, so this can only have come from a hand edit — and ' +
+      'the two are the same build, so running them at different versions is the defect C2 exists to stop.',
+  );
+});
 
 test('both openpolicyagent/opa refs resolve to the same group and the same version ceiling', () => {
   for (const updateTypeTrack of ['patch', 'minor', 'major']) {
@@ -1643,8 +1673,15 @@ test('openpolicyagent/opa may only be proposed the plain and -debug variants it 
     assert.ok(!allowedVersionsPermits(allowed, tag), `opa ceiling PERMITS '${tag}', which nothing here runs (FR-006 / contract C3).`);
   }
 
-  // Both refs are really present, in the two files, with the two tags — the pairing this is about.
-  assert.deepEqual(tagsFor('openpolicyagent/opa').sort(), [...OPA_TAGS].sort());
+  // Both refs are really present, in the two files — the pairing itself is asserted by the
+  // dedicated test above (it cannot be re-asserted here: OPA_TAGS is now DERIVED from these same
+  // refs, so comparing the two would be a tautology that passes on an empty tree).
+  assert.equal(
+    tagsFor('openpolicyagent/opa').length,
+    2,
+    'openpolicyagent/opa is no longer referenced exactly twice across the infra compose files — a ceiling ' +
+      'guarding refs that are not there proves nothing.',
+  );
 });
 
 test('the opa ceiling does NOT leak onto other docker images — the control', () => {
