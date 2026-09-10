@@ -19,6 +19,36 @@ The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). 
 - **On-change PR/push check** — `.forgejo/workflows/infra-image-scan.yml` also triggers when `infrastructure-as-code/**`, the scanner scripts, or `security/infra-images/**` change, for fast feedback on a newly-introduced vulnerable image.
 - **Keyless** (public images, Trivy fetches advisory data with no account — no `${{ secrets }}`) and **fail-closed** (a Trivy/pull/parse failure fails the job — never a clean report on failure).
 
+### A green `infra-image-scan` usually proves nothing — check the DURATION
+
+The required context `infra-image-scan / infra-image-scan` posts `success` on **every** PR, including
+the ones where Trivy never ran. That is deliberate (feature 039 Gap 3: a job-level `if:` skip posts no
+status at all, and the required pattern then blocks the PR for ever) — but it means the green tick
+answers "did this PR touch an infra path", not "are these images clean".
+
+The tell is the **run duration**: a real sweep takes **~2m30s-3m** (about 8 minutes wall-clock on a PR
+including queueing); a skipped one takes **10-14 s**.
+
+```bash
+# Which recent runs actually swept? Anything ~14 s scanned nothing.
+node -e 'fetch("…/api/v1/repos/jumbleknot/mcm/actions/runs?page=1&limit=50",{headers:{Authorization:"token "+process.env.MCM_FORGE_TOKEN}}).then(r=>r.json()).then(j=>j.workflow_runs.filter(r=>String(r.workflow_id).includes("infra")).forEach(r=>console.log(r.id,r.prettyref,((new Date(r.stopped)-new Date(r.started))/1000)+"s")))'
+```
+
+This is the mechanism behind a whole class of silent staleness. Measured 2026-09-10: two advisories
+landed in Trivy's DB on 2026-09-09 and blocked 11 findings on images `main` already carried, yet
+**nine consecutive `infra-image-scan` runs reported `success`** over the following day — every one of
+them 10-14 s. The last real sweep had been PR #362's. The weekly cron is the safety net, but it fires
+once a week and attributes the failure to whatever branch it lands on.
+
+Two consequences worth internalising:
+
+- **A PR's green infra-image tick can be a stale green.** PR #360 was fully green from a 2026-09-08
+  sweep and stayed "mergeable" for two days *after* the images it pins went dirty. Regenerate or
+  rebase such a branch and the next real sweep reds it, for reasons that predate its diff.
+- **To force a real sweep, touch an infra path.** Editing `security/infra-images/allowlist.yaml` is
+  itself enough — which is why an allowlist change is self-confirming, per the note in the
+  allowlist's own header.
+
 ## Local use (where Trivy is available)
 
 Trivy is **not** on the Windows dev box — the authoritative scan is the Linux/CI job. On a Linux/WSL/macOS host with Trivy + Docker:
