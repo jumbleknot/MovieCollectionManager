@@ -205,7 +205,7 @@ services:
 
   # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
   otel-lgtm:
-    image: grafana/otel-lgtm:0.32.0@sha256:d6b20e35890ef2f91d13944805939acdaf1e5d3ffbf9f9aed08586312826c815
+    image: grafana/otel-lgtm:0.32.1@sha256:7fd8eaad6bb64897ad5f644c8e15ee67c3204c97168f4bdba122adbf8f60e3c4
     container_name: otel-lgtm
     profiles: [observability]
     restart: unless-stopped
@@ -225,7 +225,7 @@ services:
 
   # ── Open Policy Agent — agent authorization decisions (token-exchange + UI-action, R16) ──────
   opa-service:
-    image: openpolicyagent/opa:1.20.1@sha256:39daf255ae7f25d81103f03a0c18308a50b7b5bb67907bed6166f70e24a970ff
+    image: openpolicyagent/opa:1.20.2@sha256:7b15f9d96345dfa639322ad97f65a0b38260f95efcdd7f5c24e284228708f06c
     container_name: opa-service
     profiles: [observability]
     restart: unless-stopped
@@ -290,7 +290,7 @@ services:
     logging: *obs-logging
 
   unleash-seed:
-    image: curlimages/curl:8.21.0@sha256:7c12af72ceb38b7432ab85e1a265cff6ae58e06f95539d539b654f2cfa64bb13
+    image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
     container_name: unleash-seed
     profiles: [observability]
     depends_on:
