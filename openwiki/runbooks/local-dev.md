@@ -4,7 +4,7 @@ title: Local dev infrastructure & environment variables
 description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — and the load-bearing ordering, credential-rotation, missing-.env.local, and stale-credential gotchas that break a fresh box or test run if skipped.
 resource: docs/runbooks/local-dev.md
 tags: [docker-compose, local-dev, secrets, keycloak, runbook]
-timestamp: 2026-09-09T00:00:00Z
+timestamp: 2026-09-10T00:00:00Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -50,9 +50,18 @@ per-machine stack credentials and seed the dev Keycloak realm before any stack i
   console. `gen-dev-env.mjs` now verifies each projected credential against the realm
   (`client_credentials` for `mcm-bff-service`, ROPC for `mcm-bff-test`) **before writing**; it
   exits 2 and writes nothing when the realm rejects a credential (`REFUSING TO WRITE: the realm
-  … rejects credential(s)`). **Resolution: fix at the realm, not by patching env files.** Patching
-  one client from the realm's value leaves `realm-secret == BFF-secret` broken for every other
-  client. Full re-seed: `docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit` →
+  … rejects credential(s)`). **Resolution: fix at the realm, not by patching env files — but
+  measure the drift before choosing the remedy.** Patching one client from the realm's value
+  leaves `realm-secret == BFF-secret` broken for every other client. However, a full re-seed
+  (wipe) is not always the right call: measured 2026-09-10, five of six clients matched
+  `auth.env` exactly and only one had drifted — acting on "the realm was seeded from a different
+  `auth.env`" would have destroyed the entire Keycloak database to correct one field. Run the
+  client audit first (see `docs/runbooks/local-dev.md`, "A projected credential can be STALE"
+  section for the copy-paste snippet that prints one ✓/✗ per client with no secret values):
+  **a few clients drifted** → PUT those clients' `secret` to `auth.env`'s value via the admin
+  API, then immediately re-run `node scripts/gen-dev-env.mjs` (must end `VERIFIED against the
+  realm`); **most or all drifted** → the realm really was seeded from a different `auth.env` —
+  full re-seed: `docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit` →
   `docker volume rm keycloak-store-postgres-data && docker volume create keycloak-store-postgres-data`
   → `node scripts/gen-dev-secrets.mjs && node scripts/gen-dev-env.mjs` → `pnpm nx up-auth
   infrastructure-as-code` → re-run `node scripts/gen-dev-env.mjs` (must end `VERIFIED against the
