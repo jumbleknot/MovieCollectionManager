@@ -1,7 +1,7 @@
 {
-  "coveredCommit": "e1553b7ad21d3dd0f9957461274d8c10dad18ca9",
-  "coveredAt": "2026-09-10T11:06:31.454Z",
-  "lastOutcome": "completed",
+  "coveredCommit": "0607c7e945d24a23d0c1025d259942ae754f1d41",
+  "coveredAt": "2026-09-10T19:32:14.597Z",
+  "lastOutcome": "nothing-to-do",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
@@ -24,8 +24,8 @@
     "updatedAt": "2026-09-10T11:06:31.812Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 88,
+    "pagesWritten": 0,
+    "elapsedSeconds": 0,
     "stoppedAtBudget": false
   }
 }
