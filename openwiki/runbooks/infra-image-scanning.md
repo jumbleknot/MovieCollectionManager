@@ -4,7 +4,7 @@ title: Infra-image CVE scanning
 description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code) — the coverage gap left by SAST/SCA and the built-image scanner, gated on fixable Critical findings only.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
-timestamp: 2026-09-10T00:00:00+00:00
+timestamp: 2026-09-10T20:26:08+00:00
 ---
 
 # Infra-image CVE scanning
@@ -77,13 +77,21 @@ currency alone cannot.
   posts `success` on every PR, including ones where Trivy never ran. That is deliberate (feature 039
   Gap 3: a job-level `if:` skip posts no status at all, and the required pattern then blocks the PR
   forever) — but it means the green tick answers "did this PR touch an infra path", not "are these
-  images clean". The tell is the **run duration**: a real sweep takes **~2m30s–3m** (about 8 minutes
-  wall-clock on a PR including queueing); a skipped one takes **10–14 s**. Measured 2026-09-10: two
-  advisories landed in Trivy's DB on 2026-09-09 and blocked 11 findings on images `main` already
-  carried, yet **nine consecutive `infra-image-scan` runs reported `success`** — every one of them
-  10–14 s. A PR's green tick can be a stale green; PR #360 was fully green from a 2026-09-08 sweep and
-  stayed "mergeable" for two days after the images it pins went dirty. To force a real sweep, touch an
-  infra path — editing `security/infra-images/allowlist.yaml` is itself enough.
+  images clean". The tell is the **job duration**, and it must be read from the **commit status
+  description** — the `Successful in …` string the forge writes for the `infra-image-scan /
+  infra-image-scan` context: a real sweep reads `Successful in 2m30s`–`3m`; a skipped run reads
+  `Successful in 2s`–`14s`. **Do NOT compute this from `/actions/runs` as `stopped - started`.** Those
+  timestamps are workflow-level and include inter-job queueing, which on this capacity-1 runner dwarfs
+  the signal. Measured 2026-09-10: PR #409 (docs-only, Trivy skipped) read **534 s** by that
+  arithmetic while its job status said `Successful in 2s`; PR #410 (a real sweep) read 2339 s against
+  a true `2m43s`. A "> 60 s ⇒ real sweep" rule built on it calls a skipped run a real one — a false
+  green in the very check written to detect false greens. The 10–14 s figure for a skipped run only
+  holds when the runner is idle; the job duration holds always. Measured 2026-09-10: two advisories
+  landed in Trivy's DB on 2026-09-09 and blocked 11 findings on images `main` already carried, yet
+  **nine consecutive `infra-image-scan` runs reported `success`** — every one of them reporting a
+  2–14 s job duration. A PR's green tick can be a stale green; PR #360 was fully green from a
+  2026-09-08 sweep and stayed "mergeable" for two days after the images it pins went dirty. To force a
+  real sweep, touch an infra path — editing `security/infra-images/allowlist.yaml` is itself enough.
 - **A version-keyed allowlist entry cannot be re-keyed on `main` and in the bump PR at once.** A
   version-keyed entry names one version, but during a bump two are live: `main` still references the
   old tag, the Renovate branch references the new one. Whichever single version the key names, the
