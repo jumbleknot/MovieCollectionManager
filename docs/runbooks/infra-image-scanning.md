@@ -26,19 +26,34 @@ the ones where Trivy never ran. That is deliberate (feature 039 Gap 3: a job-lev
 status at all, and the required pattern then blocks the PR for ever) — but it means the green tick
 answers "did this PR touch an infra path", not "are these images clean".
 
-The tell is the **run duration**: a real sweep takes **~2m30s-3m** (about 8 minutes wall-clock on a PR
-including queueing); a skipped one takes **10-14 s**.
+The tell is the **job duration**, and it must be read from the **commit status description** — the
+`Successful in …` string the forge writes for the `infra-image-scan / infra-image-scan` context:
+
+| | status description | what it means |
+|---|---|---|
+| real sweep | `Successful in 2m30s`-`3m` | Trivy pulled and scanned every image |
+| Trivy skipped | `Successful in 2s`-`14s` | the PR touched no infra path; the tick means nothing |
 
 ```bash
-# Which recent runs actually swept? Anything ~14 s scanned nothing.
-node -e 'fetch("…/api/v1/repos/jumbleknot/mcm/actions/runs?page=1&limit=50",{headers:{Authorization:"token "+process.env.MCM_FORGE_TOKEN}}).then(r=>r.json()).then(j=>j.workflow_runs.filter(r=>String(r.workflow_id).includes("infra")).forEach(r=>console.log(r.id,r.prettyref,((new Date(r.stopped)-new Date(r.started))/1000)+"s")))'
+# Did THIS sha actually sweep? Read the job's own duration, per event.
+API=…/api/v1/repos/jumbleknot/mcm
+curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" "$API/commits/<sha>/statuses?page=1&limit=100" \
+  | jq -r '.[] | select(.context|test("infra-image-scan / infra-image-scan")) | "\(.context)  \(.description)"'
 ```
+
+> ⚠️ **Do NOT compute this from `/actions/runs` as `stopped - started`.** Those timestamps are
+> **workflow-level** and include inter-job queueing, which on this capacity-1 runner dwarfs the signal.
+> Measured 2026-09-10 on one busy afternoon: PR #409 (docs-only, **Trivy skipped**) read **534 s** by
+> that arithmetic while its job status said `Successful in 2s`; PR #410 (a **real** sweep) read 2339 s
+> against a true `2m43s`. A "> 60 s ⇒ real sweep" rule built on it calls a skipped run a real one —
+> a false green in the very check written to detect false greens. The 10-14 s figure quoted for a
+> skipped run only holds when the runner is idle; the job duration holds always.
 
 This is the mechanism behind a whole class of silent staleness. Measured 2026-09-10: two advisories
 landed in Trivy's DB on 2026-09-09 and blocked 11 findings on images `main` already carried, yet
 **nine consecutive `infra-image-scan` runs reported `success`** over the following day — every one of
-them 10-14 s. The last real sweep had been PR #362's. The weekly cron is the safety net, but it fires
-once a week and attributes the failure to whatever branch it lands on.
+them reporting a 2-14 s job duration. The last real sweep had been PR #362's. The weekly cron is the
+safety net, but it fires once a week and attributes the failure to whatever branch it lands on.
 
 Two consequences worth internalising:
 

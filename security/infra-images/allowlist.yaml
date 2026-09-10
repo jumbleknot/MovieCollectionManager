@@ -85,9 +85,9 @@
   id: 'CVE-2025-14813'
   justification: 'Baseline (035): fixable Critical in org.bouncycastle:bcprov-jdk15to18 (1.79→1.84). Verified NOT cleared by the latest 2.x (2.19.6): the image STILL bundles bcprov-jdk15to18-1.79.jar alongside the newer bcprov-jdk18on-1.84.jar (Trivy, feature 036). `opensearch:2` already floats to 2.19.6, so pinning does not help — blocked until upstream drops the old jar. Internal-only (audit stack).'
   addedBy: 'seed'
-- image: 'postgres:18\.[36]-alpine3\.23'
+- image: 'postgres:18\.6-alpine3\.23'
   id: 'CVE-2025-68121'
-  justification: 'Baseline (035): fixable Critical in Go stdlib. Kept on 18.3 — feature 036 verified the newest 18.4-alpine3.24 STILL bundles a pre-fix Go 1.24.6 binary (< fix 1.24.13; Trivy), so a bump does NOT clear this Critical (report-only-High reduction only). Reverted with the mongo bump to keep the data-tier on its long-stable pins. Internal-only. RE-KEYED 2026-09-10 to span 18.3 (referenced on `main`) and 18.6 (referenced on PR #362) — see the otel-lgtm entry below for why a single-version key blocks one side or the other. The bump is still no remediation: PR #362 measured 18.6-alpine3.23 carrying the SAME pre-fix stdlib v1.24.6, and 18.7-alpine3.23 does not exist upstream (registry checked 2026-09-10). NARROW to 18.6 alone once #362 lands.'
+  justification: 'Baseline (035): fixable Critical in Go stdlib. Now on 18.6 (PR #362), which is NOT a remediation — that PR measured 18.6-alpine3.23 carrying the SAME pre-fix stdlib v1.24.6 that 18.3 did, and 18.7-alpine3.23 does not exist upstream (registry checked 2026-09-10); feature 036 had separately verified 18.4-alpine3.24 was no better. Internal-only. NARROWED 2026-09-10 (item #406) from the transitional `18\.[36]` span, now that #362 has landed and 18.3 is no longer referenced — see the otel-lgtm entry below for why the span existed for exactly one merge.'
   addedBy: 'seed'
 - image: 'postgres:16-alpine'
   id: 'CVE-2025-68121'
@@ -143,9 +143,9 @@
   justification: 'New advisory (x/crypto <0.55.0, fix 2026-08-11) on an image we pull. Already on the newest upstream tag v2.11.4, published 2026-06-03 — it predates the fix, so no bump can clear this. Remediation is an upstream rebuild. Internal-only (reverse proxy). Time-boxed; delete on rebuild.'
   addedBy: 'item-329'
   expiry: '2026-10-01'
-- image: 'grafana/otel-lgtm:0\.32\.[01]'
+- image: 'grafana/otel-lgtm:0\.32\.1'
   id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. 0.32.1 (2026-09-04) is now the newest upstream tag and IS `latest`; PR #362 measured it still bundling x/crypto 0.52-0.54, so the bump does not clear this and there is no further bump to make (no 0.33.x exists — registry checked 2026-09-10). RE-KEYED 2026-09-10 from 0.32.0 to a two-version ENUMERATION because `main` references 0.32.0 while PR #362 moves it to 0.32.1: keyed to either one alone, the other side blocks (at 0.32.0 the bump PR goes red on 10 findings; at 0.32.1 `main` does). Deliberately an enumeration and NOT a `0\.32\..*` wildcard — it must still be dischargeable by an upgrade (0.33.0 stops matching), which is the property scripts/__tests__/infra-image-scan.test.mjs asserts. NARROW to 0.32.1 alone once #362 lands. Internal-only (observability stack). Time-boxed; delete on rebuild.'
+  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. 0.32.1 (2026-09-04) is the newest upstream tag and IS `latest`; PR #362 measured it still bundling x/crypto 0.52-0.54, so the bump did not clear this and there is no further bump to make (no 0.33.x exists — registry checked 2026-09-10). NARROWED 2026-09-10 (item #406) from the transitional `0\.32\.[01]` span back to a single version, now that #362 has landed and 0.32.0 is no longer referenced anywhere. The span existed only to let `main` and the bump PR be green at the same time — a version-keyed entry names one version while a bump has two live — and narrowing it on merge is what stops an enumeration becoming a wildcard by instalments. Internal-only (observability stack). Time-boxed; delete on rebuild.'
   addedBy: 'item-329'
   expiry: '2026-10-01'
 - image: 'hashicorp/vault:1\.18'
@@ -173,11 +173,13 @@
   justification: 'New advisory (x/crypto <0.55.0) on an image we pull. UNLIKE the others a newer tag (v0.33.2, 2026-08-27) POSTDATES the fix and may already carry x/crypto 0.55.0 — this could NOT be verified here (Trivy is absent from the dev container per feature 035, and Docker Hub is not on its egress allowlist), and bumping the pin is an infrastructure-as-code change and therefore SDD-gated. Recorded rather than silently suppressed: item #329 carries the check, and the entry is to be DELETED not renewed if 0.33.2 clears it. Dev/test-only model provider (see model-provider-scoping).'
   addedBy: 'item-329'
   expiry: '2026-10-01'
-- image: 'openpolicyagent/opa:1\.20\.1'
-  id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on an image we pull; one entry deliberately covers both the 1.20.1 and 1.20.1-debug refs, which are the same build. Already on the newest upstream tag v1.20.1 (2026-08-28); it postdates the fix but still ships x/crypto 0.54.0, so no bump exists to make. Internal-only (policy sidecar). Time-boxed; delete on rebuild. NOT re-keyed for PR #362 the way otel-lgtm and postgres above were: opa 1.20.2 CLEARS this — PR #362 scanned it and produced no blocking finding for opa at all — so the bump IS the remediation here. DELETE this entry when #362 lands, or it becomes an UNMATCHED entry that reddens the weekly allowlist-expiry run (item #303).'
-  addedBy: 'item-329'
-  expiry: '2026-10-01'
+# openpolicyagent/opa CVE-2026-56854 (x/crypto <0.55.0): entry REMOVED 2026-09-10 (item #406) —
+# the bump WAS the remediation. PR #362 moved both refs to 1.20.2/1.20.2-debug and its sweep (run
+# 3027) produced no blocking opa finding at all, so upstream picked the fix up between 1.20.1 and
+# 1.20.2. Deleted rather than left to expire on 2026-10-01, per item #303: an entry that matches
+# nothing does not age out quietly, it fails under UNMATCHED ENTRIES and reddens the weekly
+# allowlist-expiry run. Deleting is also the direction that restores blocking — if the advisory
+# returns on a later opa, it re-blocks.
 
 # ── NEW advisories on unchanged images, triaged 2026-09-10 (item #406) ────────────────────────────
 # TWO advisories, 11 blocking findings, four pulled images — every one of them on an image reference
