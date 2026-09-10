@@ -1,31 +1,31 @@
 {
-  "coveredCommit": "24b92404b5870d965c2de586339ddd37217f6bf6",
-  "coveredAt": "2026-09-10T09:54:43.798Z",
+  "coveredCommit": "e1553b7ad21d3dd0f9957461274d8c10dad18ca9",
+  "coveredAt": "2026-09-10T11:06:31.454Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 405,
-    "headCommit": "9cf32a72b5b072eaecb4141b8a7612424bf32fe2",
-    "markerBefore": "24b92404b5870d965c2de586339ddd37217f6bf6",
+    "number": 409,
+    "headCommit": "74161d05a5ca1253e44eda4729463523b07041b6",
+    "markerBefore": "e1553b7ad21d3dd0f9957461274d8c10dad18ca9",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "local-dev.md"
+          "infra-image-scanning.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/local-dev.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/local-dev.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/infra-image-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/infra-image-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-10T09:54:44.163Z"
+    "updatedAt": "2026-09-10T11:06:31.812Z"
   },
   "lastRunBudget": {
     "pagesWritten": 1,
-    "elapsedSeconds": 121,
+    "elapsedSeconds": 88,
     "stoppedAtBudget": false
   }
 }
