@@ -21,7 +21,7 @@ name: observability
 services:
   # ── LangFuse v3 ───────────────────────────────────────────────────────────────────────────
   langfuse-web:
-    image: langfuse/langfuse:3
+    image: langfuse/langfuse:3@sha256:a27fe525f52984fa6d36fd34e8b8c6e5ae4af43f34134cafc833b467fa9580ae
     container_name: langfuse-web
     profiles: [observability]
     restart: unless-stopped
@@ -83,7 +83,7 @@ services:
         max-file: "3"
 
   langfuse-worker:
-    image: langfuse/langfuse-worker:3
+    image: langfuse/langfuse-worker:3@sha256:93207bd67d2e789ea55fa3d47eeba065dd6b1869187127ab24201784c52b96bc
     container_name: langfuse-worker
     profiles: [observability]
     restart: unless-stopped
@@ -104,7 +104,7 @@ services:
     logging: *obs-logging
 
   langfuse-postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
     container_name: langfuse-postgres
     profiles: [observability]
     restart: unless-stopped
@@ -150,7 +150,7 @@ services:
     logging: *obs-logging
 
   langfuse-redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
     container_name: langfuse-redis
     profiles: [observability]
     restart: unless-stopped
@@ -270,7 +270,7 @@ services:
     logging: *obs-logging
 
   unleash-postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
     container_name: unleash-postgres
     profiles: [observability]
     restart: unless-stopped
