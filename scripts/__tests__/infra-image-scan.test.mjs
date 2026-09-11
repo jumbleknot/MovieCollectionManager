@@ -140,6 +140,39 @@ test('(069) an UNRESOLVED registry host is reported, never silently skipped', ()
   );
 });
 
+test('(069) a cd-deploy image is NOT reported unresolved — the false-alarm control', () => {
+  // cd-deploy's refs interpolate the host too, but would be excluded regardless: a second `${…}`
+  // remains and the name is in BUILT_IMAGE_NAMES. Reporting them as "unscanned" would be a false
+  // alarm, and a warning that cries wolf is one nobody reads — the same outcome as no warning at all,
+  // reached differently. Only refs where the HOST is the single obstacle may be reported.
+  const files = [{
+    path: 'bff/compose.prod.yaml',
+    content: '    image: "${REGISTRY_HOST:?set in bff/.env.prod}/jumbleknot/mcm-bff@${MCM_BFF_DIGEST}"',
+  }];
+  assert.deepEqual(enumerateImages(files, {}), []);
+  assert.deepEqual(
+    enumerateImages.unresolved, [],
+    'a cd-deploy image was reported as unresolved. It is excluded for two other reasons anyway, so\n'
+      + '  flagging it trains the reader to ignore this warning.',
+  );
+});
+
+test('(069) the guarded ${VAR:?…} form resolves — a compose guard contains SPACES', () => {
+  // The image-line parser captured `[^"'#\s]+`, which stopped at the first space and truncated
+  // `${REGISTRY_HOST:?set in stacks/observability.env}` to `${REGISTRY_HOST:?set`. Harmless while
+  // every interpolated ref was skipped outright; it silently defeated resolution the moment feature
+  // 069 needed to resolve one, and presented as "the substitution does nothing" rather than a parse
+  // error. Every REGISTRY_HOST reference in this repository carries such a guard.
+  const files = [{
+    path: 'observability/compose.yaml',
+    content: '    image: ${REGISTRY_HOST:?set in stacks/observability.env}/jumbleknot/minio:2025.09.07-161309@sha256:'
+      + '0000000000000000000000000000000000000000000000000000000000000000',
+  }];
+  const imgs = enumerateImages(files, { REGISTRY_HOST: 'registry.example.test' });
+  assert.equal(imgs.length, 1, 'the guarded ${VAR:?…} form was not resolved — check the image-line parser');
+  assert.match(imgs[0].ref, /^registry\.example\.test\/jumbleknot\/minio:2025\.09\.07-161309@sha256:/);
+});
+
 test('(069) a cd-deploy image with an interpolated DIGEST stays excluded — the control', () => {
   // Substituting the host must not drag cd-deploy's images in: the remaining ${…DIGEST} keeps them
   // out, and so does BUILT_IMAGE_NAMES. Two independent reasons, deliberately.

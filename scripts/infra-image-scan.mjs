@@ -71,7 +71,13 @@ export function enumerateImages(files, env = process.env) {
   const byRef = new Map();
   // Locations skipped ONLY because REGISTRY_HOST was absent. Reported by the caller — see below.
   enumerateImages.unresolved = [];
-  const imageLine = /^\s*image:\s*["']?([^"'#\s]+)["']?/;
+  // `${...}` is ONE unit even when it contains spaces. A compose guard reads
+  // `${REGISTRY_HOST:?set in stacks/observability.env}` — the convention every REGISTRY_HOST
+  // reference here follows — and the previous `[^"'#\s]+` stopped at the first space, truncating the
+  // ref to `${REGISTRY_HOST:?set`. That never mattered while every interpolated ref was skipped
+  // outright; it started mattering the moment feature 069 needed to RESOLVE one, and it presented as
+  // "the resolution silently does nothing" rather than as a parse error.
+  const imageLine = /^\s*image:\s*["']?((?:\$\{[^}]*\}|[^"'#\s])+)["']?/;
   for (const { path, content } of files) {
     const lines = content.split(/\r?\n/);
     for (let i = 0; i < lines.length; i++) {
@@ -87,14 +93,29 @@ export function enumerateImages(files, env = process.env) {
       //
       // The host is only unknowable WITHOUT the variable. Where it is set — CI, where this scan
       // actually pulls — the ref is concretely pullable and must be enumerated.
-      if (ref.includes('${REGISTRY_HOST}')) {
+      //
+      // Matched with a REGEX, not a literal `${REGISTRY_HOST}`. Compose guards the variable as
+      // `${REGISTRY_HOST:?set in stacks/observability.env}` — the convention every other
+      // REGISTRY_HOST reference in this repository follows — so a literal match silently stops
+      // resolving the moment a ref is brought into line with that convention, which is exactly what
+      // happened during feature 069's own implementation.
+      const HOST_VAR = /\$\{REGISTRY_HOST(?::[?-][^}]*)?\}/g;
+      if (HOST_VAR.test(ref)) {
+        HOST_VAR.lastIndex = 0;
         if (env.REGISTRY_HOST) {
-          ref = ref.replaceAll('${REGISTRY_HOST}', env.REGISTRY_HOST);
+          ref = ref.replace(HOST_VAR, env.REGISTRY_HOST);
         } else {
-          // Genuinely not pullable here. Record it so a local run cannot be mistaken for full
-          // coverage: a scan that quietly covers less than the tree and still reports success is
-          // this repository's most-repeated failure shape.
-          enumerateImages.unresolved.push(`${path}:${i + 1}`);
+          // Not pullable here — but only report it if resolving the host is the ONLY thing standing
+          // between us and scanning it. cd-deploy's own refs also interpolate the host
+          // (`${REGISTRY_HOST}/jumbleknot/mcm-bff@${MCM_BFF_DIGEST}`) and would be excluded anyway,
+          // twice over: a second `${…}` remains, and the name is in BUILT_IMAGE_NAMES. Reporting
+          // those as "unscanned" would be a false alarm, and a warning that cries wolf is one nobody
+          // reads — which is the same failure as no warning at all, arrived at differently.
+          const probe = ref.replace(HOST_VAR, 'placeholder.invalid');
+          const probeBare = probe.split('/').pop().split(':')[0];
+          if (!probe.includes('${') && !BUILT_IMAGE_NAMES.includes(probeBare)) {
+            enumerateImages.unresolved.push(`${path}:${i + 1}`);
+          }
         }
       }
       if (ref.includes('${')) continue; // env-var interpolated — not concretely pullable
@@ -241,6 +262,37 @@ function main() {
   } catch (e) {
     console.error(`✗ enumeration failed: ${e.message}`);
     process.exit(2);
+  }
+
+  // AN IMAGE SKIPPED FOR A MISSING VARIABLE MUST BE LOUD — feature 069 (item #420).
+  //
+  // Our own images are referenced as `${REGISTRY_HOST}/jumbleknot/…` because check-topology-scrub
+  // forbids the real forge host in a committed file. Without REGISTRY_HOST such a ref is not
+  // pullable, so enumerateImages skips it — and a sweep that skipped an image while reporting success
+  // is indistinguishable from one that scanned it and found nothing. That is the most repeated
+  // failure shape in this repository, and it is what this feature's scanner-partition work exists to
+  // prevent; leaving the skip unreported would have reintroduced it one layer down.
+  //
+  // A warning on --list (enumeration is useful locally without a registry host), but FATAL on a real
+  // scan, where "passed" would otherwise be a claim about images nobody looked at.
+  if (enumerateImages.unresolved.length > 0) {
+    const where = enumerateImages.unresolved.join(', ');
+    const n = enumerateImages.unresolved.length;
+    if (listOnly) {
+      console.warn(
+        `⚠ ${n} image ref(s) skipped — REGISTRY_HOST is not set: ${where}\n`
+        + '  These are images this project builds and publishes to its own registry. Set REGISTRY_HOST\n'
+        + '  to enumerate them; a scan without it does NOT cover them.',
+      );
+    } else {
+      console.error(
+        `✗ REGISTRY_HOST is not set, so ${n} image ref(s) cannot be resolved and would go UNSCANNED:\n`
+        + `  ${where}\n`
+        + '  Refusing to report on a partial image set — a sweep that silently covers less than the\n'
+        + '  tree and still passes is worse than one that fails loudly. Set REGISTRY_HOST and re-run.',
+      );
+      process.exit(2);
+    }
   }
 
   if (listOnly) {

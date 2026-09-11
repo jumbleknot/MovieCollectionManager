@@ -108,6 +108,14 @@ jobs:
       # True when Trivy must actually run: an infra image ref changed on a PR/push, OR this is the
       # weekly cron / a push (any non-pull_request event runs the full sweep, un-path-gated).
       RUN_SCAN: ${{ needs.changes.outputs.infra == 'true' || github.event_name != 'pull_request' }}
+      # Needed since feature 069 (item #420). The observability stack now pulls `jumbleknot/minio` —
+      # an image this project builds from source, because MinIO deleted its published images — and
+      # check-topology-scrub forbids the real forge host in a committed file, so compose can only
+      # reference it as `${REGISTRY_HOST}/…`. Without this value the scanner cannot resolve the ref,
+      # and the sweep would pass having never looked at our own image: a green that is a claim about
+      # images nobody scanned. infra-image-scan.mjs now EXITS 2 rather than skipping quietly, so a
+      # missing value fails the job instead of silently shrinking what it covers.
+      REGISTRY_HOST: ${{ vars.REGISTRY }}
     steps:
       - name: Checkout
         if: ${{ env.RUN_SCAN == 'true' }}
