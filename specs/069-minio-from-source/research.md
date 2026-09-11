@@ -194,16 +194,30 @@ blanket-exclusion hole open).
 
 ## R8 — What build cadence?
 
-**Decision**: Dispatch, plus Dockerfile/version change, plus a weekly cron.
+**Decision**: Dispatch, plus Dockerfile/version change, plus a weekly cron — but the two automatic
+triggers do **different jobs**, and conflating them is a mistake this section previously made.
 
-**Rationale**: Upstream no longer publishes, so nothing external will ever tell us to rebuild. The
-weekly rebuild is the mechanism by which a Go stdlib or Alpine patch reaches the image without waiting
-for a MinIO release — which, given the last release was eleven months ago, could otherwise be never.
-This mirrors `devcontainer-image.yml`, which already builds an image on exactly this trigger set.
+**Corrected during `/speckit-analyze`.** An earlier draft claimed "the weekly rebuild is the mechanism
+by which a Go stdlib or Alpine patch reaches the image". That is **false given our own design**: §R3
+and §R4 pin the builder and runtime images *by digest*. A rebuild with no input change therefore has
+identical inputs and produces an equivalent image. A cron cannot pull in a patch that nothing has
+pointed us at.
 
-**Alternatives considered**: On-change only (rejected — the change that matters most, a base-image CVE
-fix, changes nothing in this repository). Daily (rejected — a capacity-1 runner, and no upstream signal
-changes that fast).
+The two mechanisms, stated correctly:
+
+| Trigger | What it actually achieves |
+|---|---|
+| **On change** (Dockerfile / pinned args) | The real patch path. A base or toolchain CVE reaches the image when **Renovate bumps the pinned digest** — the same mechanism already serving every other Dockerfile in this repository. That bump edits the Dockerfile, which fires this trigger. |
+| **Weekly cron** | A **canary**, not a patch path. It proves the build still works when nothing has changed — upstream source still fetchable, pinned toolchain still compiling this source. Given that upstream deleted its images and could delete its source, discovering a broken build on a quiet Friday rather than mid-incident is the whole value. |
+
+Keeping the cron is right; describing it as the patch path was wrong and would have produced a job
+that ran weekly, changed nothing, and was believed to be applying security updates.
+
+**Alternatives considered**: On-change only (rejected — loses the canary, and the canary is the part
+that protects against an upstream that has already shown it will delete things). Tracking base images
+by tag instead of digest so the cron *does* pull patches (rejected — it trades reproducibility for a
+worse version of what Renovate already does well, and silently changes what a given image contains).
+Daily (rejected — capacity-1 runner; nothing changes that fast).
 
 ---
 

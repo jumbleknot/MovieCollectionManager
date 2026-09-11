@@ -164,8 +164,14 @@ produce a different artifact.
   existing production data volume remains writable.
 - **FR-008**: The stack MUST continue to work with its existing health check and bucket-initialisation
   behaviour unchanged, so the change surface is limited to which image is referenced.
-- **FR-009**: The image MUST be rebuilt on a recurring schedule as well as on change, so that base and
-  toolchain patches reach it without waiting for an upstream release.
+- **FR-009**: The project MUST be able to produce a patched image without waiting for anything upstream
+  to be published. Two distinct mechanisms are required, and they are not interchangeable:
+  - **On change** — when a pinned input moves (a new build toolchain, a new runtime base, a new
+    upstream release), a rebuild MUST be produced. This is the path by which a security patch actually
+    reaches the image.
+  - **On a schedule** — a recurring rebuild MUST run even when no input has changed. Its purpose is to
+    prove the build still works — that upstream source is still fetchable and the pinned inputs still
+    compile — so that a failure is discovered on a quiet day rather than during an incident.
 - **FR-010**: The published image MUST be covered by a vulnerability scanner, and it MUST NOT be
   possible for it to fall outside every scanner's scope.
 - **FR-011**: The scanner's scope rule MUST be expressed so that any future artifact built outside the

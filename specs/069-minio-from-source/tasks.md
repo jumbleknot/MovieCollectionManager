@@ -6,14 +6,22 @@
 Task detail blocks follow `docs/templates/feature-test-tasks-template.md`, mandatory per the
 constitution's TDD Checkpoint Format.
 
+> **Revised after `/speckit-analyze`.** Two findings changed this file:
+> **F1 (critical)** — the first draft repointed compose at a registry digest that would not exist until
+> a later phase, making US1's own acceptance untestable where it was scheduled. Publishing now happens
+> **before** the repoint, which also removed a task (the separate "pin the real digest" step).
+> **F2 (high)** — the first draft asserted a no-change rebuild produces a *different* digest. With both
+> base images digest-pinned that is false, and it would have shipped a weekly job believed to be
+> applying patches while changing nothing. See research §R8, now corrected.
+
 **A note on what TDD means here.** The JavaScript changes (scanner scope, guards) get full RED→GREEN
 treatment. The Dockerfile and workflow have no unit under test — their correctness is behavioural — so
 they are covered by integration-level acceptance with exact expected output. Where a task is a control
 assertion that is legitimately green before and after, it says so rather than pretending to be RED.
 
-**Ordering principle used throughout**: where a guard's premise changes, the **guard is rewritten
-first** so it goes RED against the current tree, and the tree change makes it GREEN. That gives genuine
-RED→GREEN on changes that would otherwise be test-after.
+**Ordering principle**: where a guard's premise changes, the **guard is rewritten first** so it goes
+RED against the current tree, and the tree change makes it GREEN. That converts three would-be
+test-after edits into genuine RED→GREEN cycles.
 
 ---
 
@@ -24,9 +32,10 @@ RED→GREEN on changes that would otherwise be test-after.
 ### T001 — Dockerfile skeleton with pinned inputs
 
 **Type**: New file | **Time**: 15m | **Risk**: None
+**Spec reference**: FR-006 (same versions as in service)
 
-Create `infrastructure-as-code/docker/minio/Dockerfile` containing only the pinned inputs as `ARG`s,
-no build logic yet. Values resolved in [research.md](./research.md) §R3/§R4:
+Create `infrastructure-as-code/docker/minio/Dockerfile` containing only the pinned inputs as `ARG`s, no
+build logic yet. Values resolved in [research.md](./research.md) §R3/§R4:
 
 | ARG | Value |
 |---|---|
@@ -40,7 +49,7 @@ no build logic yet. Values resolved in [research.md](./research.md) §R3/§R4:
 The alpine digest is deliberately the one `backend/mc-service/Dockerfile` already uses — same lineage,
 one thing for Renovate to move.
 
-**Verify**: `test -f infrastructure-as-code/docker/minio/Dockerfile && grep -c '^ARG' …` → 4 or more.
+**Verify**: `grep -c '^ARG' infrastructure-as-code/docker/minio/Dockerfile` → ≥ 4.
 
 ---
 
@@ -56,23 +65,20 @@ Must land before anything `jumbleknot/`-namespaced and non-cd-deploy is publishe
 ### T002 — Assert the scanner partition is complete, not just disjoint
 
 **Type**: Test | **Time**: 30m | **Risk**: Low
+**Spec reference**: FR-010, FR-011 · [contracts/scanner-scope.md](./contracts/scanner-scope.md)
 
-**Spec reference**: [spec.md](./spec.md) FR-010, FR-011 · [contracts/scanner-scope.md](./contracts/scanner-scope.md)
-
-**Scenarios covered**:
-- US2-AC1: a full sweep resolves every referenced image
-- SC-006: every published image is examined by exactly one scanner
+**Scenarios covered**: US2-AC1 · SC-006
 
 **File(s)**: `scripts/__tests__/infra-image-scan.test.mjs`
 
 Add, against **fixtures** rather than the live tree (a live-tree assertion silently stops testing
 anything the day MinIO is the only such image and someone removes it):
 
-1. **The regression case** — a fixture compose referencing `jumbleknot/minio:RELEASE.X@sha256:…`, which
-   is *not* in `BUILT_IMAGE_NAMES`. Assert `enumerateImages` **includes** it.
+1. **The regression case** — a fixture compose referencing `jumbleknot/minio:RELEASE.X@sha256:…`, not in
+   `BUILT_IMAGE_NAMES`. Assert `enumerateImages` **includes** it.
 2. **The control** — a fixture referencing `jumbleknot/mc-service:latest`, which *is* in
-   `BUILT_IMAGE_NAMES`. Assert `enumerateImages` **excludes** it. This one is green before and after,
-   deliberately: it catches over-correction into scanning everything, which would break disjointness.
+   `BUILT_IMAGE_NAMES`. Assert `enumerateImages` **excludes** it. Green before and after, deliberately:
+   it catches over-correction into scanning everything, which would break disjointness.
 
 **Verify RED**:
 ```bash
@@ -81,26 +87,21 @@ node --test scripts/__tests__/infra-image-scan.test.mjs
 **Expected RED**: exactly **1** failing assertion — the regression case, reporting that
 `jumbleknot/minio…` was not enumerated. The control passes.
 
-> If this shows 0 failures the exclusion rule was already correct and this feature's premise is wrong —
-> stop and re-read `contracts/scanner-scope.md` before continuing.
+> 0 failures means the exclusion rule was already correct and this feature's premise is wrong — stop and
+> re-read `contracts/scanner-scope.md`.
 
 ### T003 — Exclude by cd-deploy coverage, not by name
 
 **Type**: Implementation | **Time**: 15m | **Risk**: Medium
+**Spec reference**: FR-010, FR-011
+**Prerequisite**: T002 verified RED.
 
-**Prerequisite**: T002 complete and verified RED.
+Replace `if (ref.includes('jumbleknot/')) continue;` with membership of `BUILT_IMAGE_NAMES` (already
+declared in the same file). The existing comment — "our built images (cd-deploy owns them)" — becomes
+true rather than aspirational.
 
-In `scripts/infra-image-scan.mjs`, replace the blanket prefix test
-
-```js
-if (ref.includes('jumbleknot/')) continue;
-```
-
-with membership of `BUILT_IMAGE_NAMES` (already declared in the same file). The existing comment
-—"our built images (cd-deploy owns them)"— becomes true rather than aspirational.
-
-**Risk is Medium** because this rule gates what gets scanned repo-wide: too loose and images escape,
-too tight and cd-deploy's images get double-scanned and the disjointness test fails.
+**Medium risk**: this gates what gets scanned repo-wide. Too loose and images escape; too tight and
+cd-deploy's images get double-scanned and disjointness fails.
 
 **Verify GREEN**:
 ```bash
@@ -112,17 +113,17 @@ node --test scripts/__tests__/infra-image-scan.test.mjs
 ```bash
 node --test scripts/__tests__/*.test.mjs
 ```
-**Expected**: 0 failures. The disjointness test must still pass — if it now fails, the rule went too
-far the other way.
+**Expected**: 0 failures — the disjointness test must still pass.
 
 ### T004 — Runbook: the scope rule
 
 **Type**: Documentation | **Time**: 15m | **Risk**: None
+**Spec reference**: FR-011
 
-Record in `docs/runbooks/infra-image-scanning.md` why the rule is membership-based, and that the
-comment previously described an intent the code did not implement. No RED/GREEN — documentation.
+Record why the rule is membership-based, and that the comment previously described an intent the code
+did not implement. No RED/GREEN — documentation.
 
-**Verify**: `node scripts/check-openwiki-governance.mjs && node scripts/check-openwiki-okf.mjs` → both pass.
+**Verify**: `node scripts/check-openwiki-governance.mjs && node scripts/check-openwiki-okf.mjs`
 
 ---
 
@@ -131,123 +132,163 @@ comment previously described an intent the code did not implement. No RED/GREEN 
 **Goal**: replace the deleted images with one we build, without changing anything else about the stack.
 
 **Independent test**: on a host with no cached MinIO image, the observability stack starts and every
-service reaches healthy. Delivers the repair on its own, with or without Phases 4–6.
+service reaches healthy.
+
+> **Publishing is inside this story, not after it.** US1's acceptance is "starts from a cold cache",
+> which is only meaningful against a real registry image. That is F1's correction.
 
 - [ ] T005 [US1] Implement the multi-stage build in `infrastructure-as-code/docker/minio/Dockerfile`
-- [ ] T006 [US1] Build locally and verify the image contract (C1–C5) per [quickstart.md](./quickstart.md) §1–2
-- [ ] T007 [P] [US1] Rewrite the floating-tag premise in `scripts/__tests__/infra-image-scan.test.mjs`
-- [ ] T008 [US1] Repoint the four image refs in `infrastructure-as-code/docker/observability/compose.yaml` and `compose.prod.yaml`
-- [ ] T009 [P] [US1] Update the discharge guard's image list in `scripts/__tests__/infra-image-scan.test.mjs`
-- [ ] T010 [US1] Delete the four MinIO entries from `security/infra-images/allowlist.yaml`
-- [ ] T011 [US1] Verify the live volume's ownership against the real volume
-- [ ] T012 [US1] Bring the stack up and prove Langfuse ingestion end to end per [quickstart.md](./quickstart.md) §3–6
+- [ ] T006 [US1] Build locally and verify the image contract C1–C5 per [quickstart.md](./quickstart.md) §1–2
+- [ ] T007 [US1] Add the build workflow `.forgejo/workflows/minio-image.yml`, including its failure digest
+- [ ] T008 [US1] Publish the image and capture its digest
+- [ ] T009 [P] [US1] Rewrite the floating-tag premise in `scripts/__tests__/infra-image-scan.test.mjs`
+- [ ] T010 [US1] Repoint the four image refs in `infrastructure-as-code/docker/observability/compose.yaml` and `compose.prod.yaml`
+- [ ] T011 [US1] Update the discharge guard's image list in `scripts/__tests__/infra-image-scan.test.mjs`
+- [ ] T012 [US1] Delete the four MinIO entries from `security/infra-images/allowlist.yaml`
+- [ ] T013 [US1] Verify the live volume's ownership against the real volume
+- [ ] T014 [US1] Bring the stack up and prove Langfuse ingestion end to end per [quickstart.md](./quickstart.md) §3–6
 
 ### T005 — The multi-stage build
 
 **Type**: Implementation | **Time**: 1h | **Risk**: Medium
-
-**Spec reference**: FR-001 … FR-005, FR-007 · [contracts/image-contract.md](./contracts/image-contract.md)
+**Spec reference**: FR-001, FR-002, FR-003, FR-004, FR-005, FR-007
+**Scenarios covered**: US4-AC1
 
 Builder stage: fetch each source at its `*_RELEASE` tag, **assert `HEAD` equals the pinned `*_COMMIT`
-and fail the build on mismatch** (FR-003, US4-AC2), then build with
+and fail the build on mismatch** (FR-003), then build with
 `CGO_ENABLED=0 GOTOOLCHAIN=local go build -tags kqueue -trimpath --ldflags "<generated stamp>"`.
-Preserve the upstream ldflags stamp — see research §R2 for why a missing stamp is silent.
+Preserve the upstream ldflags stamp — research §R2 explains why losing it is silent. `GOTOOLCHAIN=local`
+satisfies FR-004 by suppressing the toolchain download the `toolchain` directives would trigger.
 
-Runtime stage: alpine, copy both binaries to `/usr/bin/`, `ENTRYPOINT ["minio"]`, **no `USER`
-directive** (root, matching upstream — contract C5), no `CMD` (compose supplies it — contract C4).
+Runtime stage: alpine, copy both binaries to `/usr/bin/` (FR-002), `ENTRYPOINT ["minio"]`, **no `USER`
+directive** (root, contract C5 / FR-007), no `CMD` (compose supplies it, contract C4).
 
-**Verify GREEN** is T006; this task's own check is that the build completes.
+**Verify GREEN** is T006.
 
 ### T006 — Image contract acceptance
 
 **Type**: Integration acceptance | **Time**: 20m | **Risk**: Low
+**Spec reference**: FR-002, FR-005 · contracts C1, C2, **C3**, C4, C5
+**Scenarios covered**: US4-AC1
 
-**Scenarios covered**: US4-AC1 (provenance), and contracts C1–C5.
-
-**Verify**:
 ```bash
 docker build -t mcm-minio:local infrastructure-as-code/docker/minio/
 docker run --rm --entrypoint sh mcm-minio:local -c 'minio --version && mc --version && id -u'
 ```
-**Expected**: `minio` reports `RELEASE.2025-09-07T16-13-09Z`; `mc` reports
-`RELEASE.2025-08-13T08-35-41Z`; `id -u` reports `0`.
+**Expected**: `minio` reports `RELEASE.2025-09-07T16-13-09Z` (C3); `mc` reports
+`RELEASE.2025-08-13T08-35-41Z` (C3); `id -u` reports `0` (C5); the command runs at all (C2); both
+binaries resolve on `PATH` (C1).
 
-> A version of `DEVELOPMENT` or empty means the ldflags stamp was lost. The binaries still work and the
-> build still exits 0 — this assertion is the only thing that catches it.
+> `DEVELOPMENT` or an empty version means the ldflags stamp was lost. The binaries work and the build
+> exits 0 — this assertion is the only thing that catches it.
 
-### T007 — Rewrite the floating-tag guard to the new premise
+### T007 — The build workflow
+
+**Type**: New file | **Time**: 1h | **Risk**: Medium
+**Spec reference**: FR-001, FR-009
+
+Model on `.forgejo/workflows/devcontainer-image.yml`: `workflow_dispatch` + `push` filtered to
+`infrastructure-as-code/docker/minio/**` + `schedule` weekly. Host-free registry coordinates from
+Forgejo vars (`REGISTRY`, `NS`, `REGISTRY_USER`) and `secrets.REGISTRY_TOKEN` — never a git literal.
+
+**Comment the two triggers' distinct purposes** (research §R8): the push trigger is the patch path,
+fired by Renovate bumping a pinned digest; the cron is a canary proving the build still works. Writing
+this down is the fix for F2 — without it the next reader re-derives the wrong model.
+
+**Must include a failure-digest step.** `check-ci-digest-coverage.mjs` asserts every job in every
+workflow publishes a guarded digest; a tenth workflow without one reddens `guardrails / naming`.
+
+**Verify RED** (add the workflow *without* the digest step first — a genuine RED):
+```bash
+node scripts/check-ci-digest-coverage.mjs
+```
+**Expected RED**: 1 failure naming the new workflow's job as uncovered.
+
+**Verify GREEN** (after adding the digest step):
+```bash
+node scripts/check-ci-digest-coverage.mjs && node scripts/check-topology-scrub.mjs && node scripts/check-no-inline-secrets.mjs
+```
+**Expected GREEN**: all pass; coverage gate reports **10** workflows.
+
+### T008 — Publish
+
+**Type**: Operational | **Time**: 30m (build time) | **Risk**: Low
+**Spec reference**: FR-001
+
+Dispatch the workflow; capture the published `@sha256:` digest.
+
+**Expected**: the image is listed in the forge registry under `${NS}/minio` with the release tag, and
+the digest is recorded for T010.
+
+### T009 — Rewrite the floating-tag guard to the new premise
 
 **Type**: Test refactor | **Time**: 30m | **Risk**: Medium
-
 **Spec reference**: FR-014 · [contracts/scanner-scope.md](./contracts/scanner-scope.md) "Consequence"
+**Scenarios covered**: SC-006
 
-**Scenarios covered**: SC-006, and the invariant that the classifier is never widened to hide an
-exception.
-
-The guard currently asserts the floating-tag exception set equals exactly the two MinIO refs, and the
-runbook states *"a floating count of 0 is a FAILURE, not a success"*. This change empties the set
+The guard asserts the floating-tag exception set equals exactly the two MinIO refs, and the runbook
+states *"a floating count of 0 is a FAILURE, not a success"*. This change empties the set
 **legitimately** — by removing the images, not by weakening `isFloatingTag`. Rewrite it to assert the
-set equals the **declared** exception list whatever that list contains, so an empty declared list and
-an empty observed set agree, while a widened classifier still fails.
+set equals the **declared** exception list whatever that list contains, so an empty declared list and an
+empty observed set agree, while a widened classifier still fails.
 
-**Do not delete or relax this guard.** Per CLAUDE.md, a guard that fails because you changed what it
-protects gets updated at the cause.
+**Do not delete or relax this guard** — per CLAUDE.md, update at the cause.
 
-**Verify RED** (run **before** T008, against the tree that still references MinIO):
+**Verify RED** (before T010, against the tree that still references MinIO):
 ```bash
 node --test scripts/__tests__/infra-image-scan.test.mjs
 ```
-**Expected RED**: 1 failure — the declared list is now empty while the tree still yields two floating
-refs.
+**Expected RED**: 1 failure — the declared list is empty while the tree still yields two floating refs.
 
-### T008 — Repoint the four image references
+### T010 — Repoint the four image references
 
 **Type**: Implementation | **Time**: 20m | **Risk**: Medium
-
-**Prerequisite**: T007 verified RED, T006 passed.
+**Spec reference**: FR-008 · contract C6
+**Prerequisite**: T008 published (real digest available), T009 verified RED.
 
 Four references — `langfuse-minio` and `langfuse-minio-init`, in `compose.yaml` and `compose.prod.yaml`
-— become `${REGISTRY_HOST}/jumbleknot/minio:RELEASE.2025-09-07T16-13-09Z@sha256:…`.
+— become `${REGISTRY_HOST}/jumbleknot/minio:RELEASE.2025-09-07T16-13-09Z@sha256:<T008's digest>`. Use
+the **real** digest; there is no placeholder step.
 
-**Change nothing else.** Health check stays `CMD-SHELL "mc ready local || exit 1"`; the init entrypoint
-stays the `/bin/sh -c "mc alias set … && mc mb …"` chain; prod's ready-marker logic is untouched. If
-either needs editing, the image violates contract C1 or C2 — fix the image, not the stack.
+**Change nothing else** (FR-008). Health check stays `CMD-SHELL "mc ready local || exit 1"`; the init
+entrypoint stays the `/bin/sh -c "mc alias set … && mc mb …"` chain; prod's ready-marker logic is
+untouched. If either needs editing, the image violates contract C1 or C2 — fix the image, not the stack.
 
 **Verify GREEN**:
 ```bash
-node --test scripts/__tests__/infra-image-scan.test.mjs
+node --test scripts/__tests__/infra-image-scan.test.mjs && node scripts/check-resource-naming.mjs --section=all
 ```
-**Expected GREEN**: 0 failures — the declared exception list and the observed floating set are both
-empty.
+**Expected GREEN**: 0 failures; declared exception list and observed floating set both empty; no
+reference to this image lacking `@sha256:`.
 
-### T009 — Update the discharge guard's image list
+### T011 — Update the discharge guard's image list
 
 **Type**: Test refactor | **Time**: 20m | **Risk**: Low
+**Spec reference**: FR-014
 
 The `(063) every allowlist entry for a formerly-floating image can be discharged by an upgrade` test
-carries a `NEXT` map naming `minio/minio` and `minio/mc`, and asserts each is still referenced under
-`infrastructure-as-code/**` ("is this list stale?"). After T008 they are not. Remove those two entries
-from the map, leaving `grafana/otel-lgtm`.
+carries a `NEXT` map naming `minio/minio` and `minio/mc`, asserting each is still referenced under
+`infrastructure-as-code/**`. After T010 they are not. Remove those two, leaving `grafana/otel-lgtm`.
 
-**Verify RED** (after T008, before T010):
+**Verify RED** (after T010, before T012):
 ```bash
 node --test scripts/__tests__/infra-image-scan.test.mjs
 ```
-**Expected RED**: 2 failures — `minio/minio is not referenced in infrastructure-as-code/** any more` and
+**Expected RED**: 2 failures — `minio/minio is not referenced in infrastructure-as-code/** any more`, and
 the same for `minio/mc`.
 
-### T010 — Delete the four MinIO allowlist entries
+### T012 — Delete the four MinIO allowlist entries
 
 **Type**: Implementation | **Time**: 15m | **Risk**: Low
+**Spec reference**: **FR-012** · **SC-007**
+**Prerequisite**: T011 verified RED.
 
-**Prerequisite**: T009 verified RED.
-
-Delete from `security/infra-images/allowlist.yaml`: `minio/mc` × `CVE-2025-68121`, `minio/mc` ×
-`CVE-2026-33186`, `minio/minio` × `CVE-2025-68121`, `minio/minio` × `CVE-2026-33186`. Leave a comment
-recording why, in the style of the file's other removals.
+Delete `minio/mc` × `CVE-2025-68121`, `minio/mc` × `CVE-2026-33186`, `minio/minio` × `CVE-2025-68121`,
+`minio/minio` × `CVE-2026-33186`. Leave a comment recording why, in the style of the file's other
+removals.
 
 **Do not pre-emptively add entries for the new image.** Whether the from-source build still carries
-`CVE-2025-68121` is what the first real sweep answers — and research §R3 predicts a newer Go clears it.
+`CVE-2025-68121` is what the first real sweep answers — research §R3 predicts a newer Go clears it.
 Writing a suppression now could hide a success.
 
 **Verify GREEN**:
@@ -256,12 +297,12 @@ node --test scripts/__tests__/*.test.mjs && node scripts/check-infra-image-findi
 ```
 **Expected GREEN**: 0 failures; selftest passes.
 
-### T011 — Verify the live volume's ownership
+### T013 — Verify the live volume's ownership
 
 **Type**: Verification | **Time**: 10m | **Risk**: **High if skipped**
+**Spec reference**: FR-007 · contract C5
 
-**Spec reference**: the one unresolved assumption in [spec.md](./spec.md) Assumptions, carried through
-plan.md Risks and research §R5.
+The one inferred fact in the whole design (spec Assumptions, plan Risks, research §R5).
 
 ```bash
 docker run --rm -v langfuse-minio-data:/data alpine:3.24 stat -c '%u:%g %n' /data
@@ -269,16 +310,15 @@ docker run --rm -v langfuse-minio-data:/data alpine:3.24 stat -c '%u:%g %n' /dat
 **Expected**: `0:0 /data`.
 
 **If not `0:0`**: STOP before any production rollout. Contract C5's premise is wrong for this host and
-the rollout needs an ownership step this change deliberately excludes. Record the observed value on
-item #420.
+the rollout needs an ownership step this change deliberately excludes. Record the value on item #420.
 
-### T012 — Stack acceptance: Langfuse ingestion end to end
+### T014 — Stack acceptance: Langfuse ingestion end to end
 
 **Type**: Integration acceptance | **Time**: 45m | **Risk**: Medium
+**Spec reference**: FR-002, FR-006, FR-008
+**Scenarios covered**: US1-AC1, US1-AC2, US1-AC3, US1-AC4 · SC-001, SC-002, SC-003
 
-**Scenarios covered**: US1-AC1 … US1-AC4, SC-001, SC-002, SC-003.
-
-Follow [quickstart.md](./quickstart.md) §3–6.
+Follow [quickstart.md](./quickstart.md) §3–6, against the **published** image via the repointed compose.
 
 **Expected**: `langfuse-minio` reaches `healthy`; `langfuse-minio-init` exits 0 logging
 `langfuse bucket ready`; a recorded trace produces **no** `Failed to upload JSON to S3`; and — run
@@ -290,160 +330,105 @@ against a volume already written by the current image — the pre-existing objec
 
 ## Phase 4: User Story 2 — the change gate stops being blocked (P1)
 
-**Goal**: publish the image so the sweep can resolve it, and prove the sweep is real.
+**Goal**: prove the sweep resolves every image and is real.
 
-**Independent test**: a full sweep completes with a findings verdict rather than a fetch failure.
+- [ ] T015 [US2] Verify a **real** CI sweep and confirm the blocked pull request proceeds, per [quickstart.md](./quickstart.md) §9
 
-- [ ] T013 [US2] Add the build workflow `.forgejo/workflows/minio-image.yml`, including its failure digest
-- [ ] T014 [US2] Publish the image to the forge registry and capture its digest
-- [ ] T015 [US2] Pin the published digest in both compose files
-- [ ] T016 [US2] Verify a **real** CI sweep per [quickstart.md](./quickstart.md) §9
-
-### T013 — The build workflow
-
-**Type**: New file | **Time**: 1h | **Risk**: Medium
-
-**Spec reference**: FR-001, FR-009.
-
-Model on `.forgejo/workflows/devcontainer-image.yml`: `workflow_dispatch` + `push` filtered to
-`infrastructure-as-code/docker/minio/**` + `schedule` weekly. Host-free registry coordinates from
-Forgejo vars (`REGISTRY`, `NS`, `REGISTRY_USER`) and `secrets.REGISTRY_TOKEN` — never a git literal
-(topology-scrub and inline-secret gates both enforce this).
-
-**Must include a failure-digest step.** `check-ci-digest-coverage.mjs` asserts *every job in every
-workflow* publishes a guarded digest; a tenth workflow without one reddens `guardrails / naming`. Add
-the digest step, or a justified `# ci-digest-exempt: <reason>` — the former, since this job can fail in
-ways worth diagnosing.
-
-**Verify RED** (add the workflow *without* the digest step first — this is a genuine RED):
-```bash
-node scripts/check-ci-digest-coverage.mjs
-```
-**Expected RED**: 1 failure naming the new workflow's job as uncovered.
-
-**Verify GREEN** (after adding the digest step):
-```bash
-node scripts/check-ci-digest-coverage.mjs && node scripts/check-topology-scrub.mjs && node scripts/check-no-inline-secrets.mjs
-```
-**Expected GREEN**: all pass; the coverage gate reports 10 workflows.
-
-### T014 — Publish
-
-**Type**: Operational | **Time**: 30m (build time) | **Risk**: Low
-
-Dispatch the workflow; capture the published `@sha256:` digest from its output.
-
-**Expected**: the image is listed in the forge registry under `${NS}/minio` with the release tag.
-
-### T015 — Pin the published digest
-
-**Type**: Implementation | **Time**: 10m | **Risk**: Low
-
-Replace the placeholder digest from T008 with the real one in both compose files (contract C6).
-
-**Verify GREEN**:
-```bash
-node scripts/check-resource-naming.mjs --section=all && node --test scripts/__tests__/*.test.mjs
-```
-**Expected**: 0 failures, and no reference to this image anywhere lacking `@sha256:`.
-
-### T016 — Prove the sweep was real
+### T015 — Prove the sweep was real
 
 **Type**: Verification | **Time**: 15m | **Risk**: Low
+**Spec reference**: FR-010
+**Scenarios covered**: US2-AC1, US2-AC2 · SC-004, SC-005
 
-**Scenarios covered**: US2-AC1, US2-AC2, SC-004, SC-005.
-
-Per [quickstart.md](./quickstart.md) §9, read the **job duration from the commit status description**.
+Read the **job duration from the commit status description**.
 
 **Expected**: `infra-image-scan / infra-image-scan` reports `Successful in 2m30s`–`3m`.
 
 > `Successful in 2s`–`14s` means Trivy never ran and the green proves nothing. Never compute this from
-> `/actions/runs` timestamps — those are workflow-level and include queueing.
+> `/actions/runs` timestamps — workflow-level and inflated by queueing.
 
-Also confirm PR #415 is no longer blocked by an unfetchable image (SC-005).
+Also confirm `node scripts/infra-image-scan.mjs --list | grep -i minio` lists `jumbleknot/minio`
+(quickstart §8) and that PR #415 is no longer blocked by an unfetchable image (SC-005).
 
 ---
 
 ## Phase 5: User Story 3 — security updates become possible (P2)
 
-**Goal**: prove a rebuild can be produced without an upstream release.
+- [ ] T016 [US3] Prove the canary rebuild works and produces an equivalent image
+- [ ] T017 [US3] Record the observed findings for the from-source image
 
-**Independent test**: trigger a rebuild with no version change; a new digest is produced.
-
-- [ ] T017 [US3] Trigger a no-change rebuild and confirm a new digest
-- [ ] T018 [US3] Record the observed findings for the from-source image
-
-### T017 — No-change rebuild
+### T016 — Canary rebuild
 
 **Type**: Verification | **Time**: 30m | **Risk**: Low
+**Spec reference**: FR-009
+**Scenarios covered**: US3-AC1 · SC-008
 
-**Scenarios covered**: US3-AC1, SC-008.
+Dispatch the workflow with **no** input change.
 
-Dispatch the workflow with no source-version change.
+**Expected**: the build **succeeds**. Because both base images are digest-pinned, the result should be
+an *equivalent* image — an identical or near-identical digest is the **correct** outcome and evidence of
+reproducibility, **not** a failure.
 
-**Expected**: a build succeeds and publishes a **different** digest from T014 — the base and toolchain
-layers moved. An identical digest means the build is not picking up base updates and the weekly cron is
-doing nothing.
+> The earlier draft of this task asserted the opposite. A rebuild with identical pinned inputs cannot
+> pick up a base patch; that arrives when Renovate bumps the pinned digest, which fires the push
+> trigger instead. What this task proves is that the build still works — the canary property.
 
-### T018 — Record what the from-source image actually carries
+**Also verify the patch path exists**: `renovate.json`'s docker rules cover the new Dockerfile's `FROM`
+lines, so a base digest bump is proposed. Confirm in T018's validator run.
+
+### T017 — Record what the from-source image actually carries
 
 **Type**: Verification | **Time**: 20m | **Risk**: Low
+**Spec reference**: FR-009
+**Scenarios covered**: US3-AC2 · SC-009
 
-**Scenarios covered**: US3-AC2, SC-009.
-
-From the first real sweep (T016), record the findings for `jumbleknot/minio`.
+From the first real sweep (T015), record the findings for `jumbleknot/minio`.
 
 **Expected**: `CVE-2025-68121` (Go stdlib) is **absent** — research §R3 predicts the newer toolchain
-clears it. If it is present, the builder pin is too old; if a *different* Critical appears, triage it
-on its merits and add a justified allowlist entry then — not before.
+clears it. If present, the builder pin is too old. If a *different* Critical appears, triage it on its
+merits and add a justified allowlist entry then — not before.
 
 ---
 
 ## Phase 6: User Story 4 — provenance (P3)
 
-**Goal**: a moved upstream tag fails the build rather than silently changing the artifact.
+- [ ] T018 [US4] Prove the commit assertion fails the build on a mismatch
 
-- [ ] T019 [US4] Prove the commit assertion fails the build on a mismatch
-
-### T019 — Commit-pin negative test
+### T018 — Commit-pin negative test
 
 **Type**: Test | **Time**: 20m | **Risk**: Low
+**Spec reference**: FR-003
+**Scenarios covered**: US4-AC2
 
-**Scenarios covered**: US4-AC2.
-
-Build with a deliberately wrong `MINIO_COMMIT`.
-
-**Verify RED-equivalent** (the failure IS the expected behaviour):
 ```bash
 docker build --build-arg MINIO_COMMIT=0000000000000000000000000000000000000000 \
   -t mcm-minio:badpin infrastructure-as-code/docker/minio/
 ```
-**Expected**: the build **fails** with a clear mismatch message. A successful build here means the
-assertion is not wired up and FR-003 is unmet.
+**Expected**: the build **fails** with a clear mismatch message. A successful build means the assertion
+is not wired up and FR-003 is unmet.
 
 ---
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T020 [P] Migrate MinIO version tracking in `renovate.json` to a `github-releases` customManager
-- [ ] T021 [P] Update the Renovate guard in `scripts/__tests__/renovate-workflow.guard.test.mjs`
-- [ ] T022 [P] Update `docs/runbooks/infra-image-scanning.md` for the emptied exception set
-- [ ] T023 [P] File the non-root follow-up and close the loop on item #420
-- [ ] T024 Full gate sweep before opening the pull request
+- [ ] T019 [P] Migrate MinIO version tracking in `renovate.json` to a `github-releases` customManager
+- [ ] T020 [P] Update the Renovate guard in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [ ] T021 [P] Update `docs/runbooks/infra-image-scanning.md` for the emptied exception set
+- [ ] T022 [P] File the non-root follow-up and close the loop on item #420
+- [ ] T023 Full gate sweep before opening the pull request
 
-### T020 — Renovate tracking follows the source
+### T019 — Renovate tracking follows the source
 
 **Type**: Implementation | **Time**: 45m | **Risk**: Medium
-
-**Spec reference**: FR-013.
+**Spec reference**: FR-013
 
 Remove `minio/minio` and `minio/mc` from the docker-datasource date-tag `versioning` rule; add a
 `customManagers` regex over the Dockerfile's `*_RELEASE` / `*_COMMIT` ARGs using the `github-releases`
-datasource, **preserving the date versioning** — without it `RELEASE.2025-10-15…` is not recognised as
-newer than `RELEASE.2025-09-07…` and the security bump this feature exists to enable is never proposed.
+datasource, **preserving date versioning** — without it `RELEASE.2025-10-15…` is not recognised as newer
+than `RELEASE.2025-09-07…` and the security bump this feature enables is never proposed.
 
-The tag and commit args MUST move together (data-model E2). A rule that moves one is the half-bump
-shape this repository has paid for four times.
+Tag and commit args MUST move together (data-model E2) — a rule that moves one is the half-bump shape
+this repository has paid for four times.
 
 **Verify GREEN**:
 ```bash
@@ -452,43 +437,41 @@ node --test scripts/__tests__/renovate-workflow.guard.test.mjs
 ```
 **Expected**: validator passes; 0 test failures.
 
-### T021 — Renovate guard follows
+### T020 — Renovate guard follows
 
 **Type**: Test refactor | **Time**: 30m | **Risk**: Low
+**Spec reference**: FR-014
 
-Whatever in `renovate-workflow.guard.test.mjs` asserts MinIO's date-tag rule membership now asserts the
-new premise. Update at the cause; do not delete.
+Whatever asserts MinIO's date-tag rule membership now asserts the new premise. Update at the cause.
 
-**Verify RED** (before T020 lands, or by reverting it locally):
+**Verify RED** (before T019 lands, or by reverting it locally):
 ```bash
 node --test scripts/__tests__/renovate-workflow.guard.test.mjs
 ```
 **Expected RED**: failure naming the MinIO date-tag rule.
 
-### T022 — Runbook: the emptied exception set
+### T021 — Runbook: the emptied exception set
 
 **Type**: Documentation | **Time**: 20m | **Risk**: None
+**Spec reference**: FR-014
 
-`docs/runbooks/infra-image-scanning.md` states *"a floating count of 0 is a FAILURE, not a success"*.
-That is now wrong as written. Restate it: **0 is correct when it results from removing the images; 0 is
-a failure when it results from widening the classifier.** A runbook contradicting the codebase is worse
-than either alone.
-
-Also update the feature-063 pin table, which lists the two MinIO refs as pinned exceptions.
+The runbook states *"a floating count of 0 is a FAILURE, not a success"*. Now wrong as written.
+Restate: **0 is correct when it results from removing the images; 0 is a failure when it results from
+widening the classifier.** A runbook contradicting the codebase is worse than either alone. Also update
+the feature-063 pin table, which lists the two MinIO refs.
 
 **Verify**: `node scripts/check-openwiki-governance.mjs && node scripts/check-openwiki-okf.mjs`
 
-### T023 — Follow-ups
+### T022 — Follow-ups
 
 **Type**: Documentation | **Time**: 20m | **Risk**: None
+**Spec reference**: **FR-015**
 
-**Spec reference**: FR-015.
+File the non-root migration as its own backlog item — the one-time volume `chown`, the `USER` directive,
+and contract C5's renegotiation — with T013's observed ownership recorded. Comment the outcome on item
+#420 and close it when the sweep is green.
 
-File the non-root migration as its own backlog item — the one-time volume `chown`, the `USER`
-directive, and contract C5's renegotiation — with T011's observed ownership recorded. Comment the
-outcome on item #420 and close it when the sweep is green.
-
-### T024 — Full gate sweep
+### T023 — Full gate sweep
 
 **Type**: Verification | **Time**: 20m | **Risk**: None
 
@@ -508,44 +491,77 @@ node scripts/secret-scan.mjs
 
 ```
 Phase 1 (T001)
-  └─> Phase 2 (T002 → T003 → T004)        [BLOCKING — the scanner partition]
-        └─> Phase 3 / US1 (T005 → T006 → T007 → T008 → T009 → T010 → T011 → T012)
-              └─> Phase 4 / US2 (T013 → T014 → T015 → T016)
-                    ├─> Phase 5 / US3 (T017, T018)
-                    └─> Phase 6 / US4 (T019)
-                          └─> Phase 7 (T020 → T021, T022, T023, T024)
+  └─> Phase 2 (T002 → T003 → T004)              [BLOCKING — the scanner partition]
+        └─> Phase 3 / US1
+              T005 → T006 → T007 → T008 → T009 → T010 → T011 → T012 → T013 → T014
+                                    ^publish before repoint (F1)
+              └─> Phase 4 / US2 (T015)
+                    ├─> Phase 5 / US3 (T016, T017)
+                    └─> Phase 6 / US4 (T018)
+                          └─> Phase 7 (T019 → T020, T021, T022, T023)
 ```
 
-**Hard orderings** (each is a RED that a later task turns GREEN):
+**Hard orderings** (each a RED that a later task turns GREEN):
 
 - T002 before T003 — the exclusion fix must be RED first
-- T007 before T008 — the floating premise must be RED before the refs move
-- T009 before T010 — the discharge guard must be RED before the entries go
-- T013's no-digest state before its digest step
-- **T011 before any production rollout** — not before T012, but absolutely before prod
+- T007's no-digest state before its digest step
+- **T008 before T010** — publish before repointing, or US1's acceptance runs against a digest that does
+  not exist (F1)
+- T009 before T010 — the floating premise must be RED before the refs move
+- T011 before T012 — the discharge guard must be RED before the entries go
+- T020 before T019 — the Renovate guard must be RED before the rule changes
+- **T013 before any production rollout** — not before T014, but absolutely before prod
 
-**Story independence**: US1 delivers the repair alone. US2 requires US1's compose refs to exist. US3
-and US4 are independent of each other and both require US2's published image.
+**Story independence**: US1 is self-contained *including publishing*, and delivers the repair alone.
+US2, US3 and US4 all verify properties of what US1 produced, so they follow it; US3 and US4 are
+independent of each other.
 
 ## Parallel opportunities
 
 - T002 and T004 (different files)
-- T007 and T009 touch the **same file** — despite both being `[P]`-eligible by story, run them
-  sequentially in the stated order, because their RED states are distinguishable only in sequence
-- T020, T021, T022, T023 (different files)
+- T009 and T011 touch the **same file** — run sequentially in the stated order despite the `[P]`
+  eligibility, because their RED states are distinguishable only in sequence
+- T019, T020, T021, T022 (different files)
 
 ## Implementation strategy
 
-**MVP = Phase 1 + Phase 2 + Phase 3 (US1).** That repairs the latent production failure and leaves the
-stack startable. Phase 4 makes the gate green and is required before merge, since `infra-image-scan` is
-a required context.
+**MVP = Phase 1 + Phase 2 + Phase 3.** That repairs the latent production failure and leaves the stack
+startable from a cold cache. Phase 4 is required before merge, since `infra-image-scan` is a required
+context.
 
-**Suggested pull-request shape**: one PR. The changes are mutually dependent — the compose refs need
-the published image, the guards need the compose refs, the allowlist needs the guards — so splitting
-them produces intermediate states that are red for uninteresting reasons. This matches
-`openwiki/process/pull-request-batching.md`: batch by default, split only when a red would be ambiguous.
-Here a red would be *less* ambiguous batched.
+**Pull-request shape**: one PR. The changes are mutually dependent — compose needs the published image,
+the guards need compose, the allowlist needs the guards — so splitting produces intermediate states red
+for uninteresting reasons. Per `openwiki/process/pull-request-batching.md`: batch by default, split only
+when a red would be ambiguous. Here a red is *less* ambiguous batched.
 
 ## Task count
 
-**24 tasks** — Setup 1, Foundational 3, US1 8, US2 4, US3 2, US4 1, Polish 5.
+**23 tasks** — Setup 1, Foundational 3, US1 10, US2 1, US3 2, US4 1, Polish 5.
+
+## Requirement coverage
+
+| Requirement | Tasks |
+|---|---|
+| FR-001 | T005, T007, T008 |
+| FR-002 | T005, T006, T014 |
+| FR-003 | T005, T018 |
+| FR-004 | T005 |
+| FR-005 | T005, T006 |
+| FR-006 | T001, T014 |
+| FR-007 | T005, T013 |
+| FR-008 | T010, T014 |
+| FR-009 | T007, T016, T017 |
+| FR-010 | T002, T003, T015 |
+| FR-011 | T002, T003, T004 |
+| FR-012 | T012 |
+| FR-013 | T019 |
+| FR-014 | T009, T011, T020, T021 |
+| FR-015 | T022 |
+| SC-001, SC-002, SC-003 | T014 |
+| SC-004, SC-005 | T015 |
+| SC-006 | T002, T009 |
+| SC-007 | T012 |
+| SC-008 | T016 |
+| SC-009 | T017 |
+
+All 15 FRs and all 9 SCs have at least one task, by explicit ID.
