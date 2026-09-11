@@ -26,9 +26,14 @@
 #
 # NOTE for whoever bumps these: both tags are ANNOTATED. `git rev-parse <tag>` yields the tag object,
 # not the commit; dereference with `<tag>^{commit}` or the commit pinned below will never match.
-ARG MINIO_RELEASE=RELEASE.2025-09-07T16-13-09Z
+#
+# NAMED `*_TAG`, NOT `*_RELEASE`, deliberately. Upstream's buildscripts/gen-ldflags.go reads env vars
+# literally called MINIO_RELEASE and MC_RELEASE — but they hold the release PREFIX ("RELEASE"), not the
+# tag. An ARG of the same name would shadow them and silently reintroduce the DEVELOPMENT.GOGET bug
+# fixed below. Keep these names distinct from upstream's.
+ARG MINIO_TAG=RELEASE.2025-09-07T16-13-09Z
 ARG MINIO_COMMIT=07c3a429bfed433e49018cb0f78a52145d4bedeb
-ARG MC_RELEASE=RELEASE.2025-08-13T08-35-41Z
+ARG MC_TAG=RELEASE.2025-08-13T08-35-41Z
 ARG MC_COMMIT=7394ce0dd2a80935aded936b09fa12cbb3cb8096
 
 # ── Builder ───────────────────────────────────────────────────────────────────────────────────────
@@ -48,9 +53,9 @@ RUN apk add --no-cache git
 # is the decision this whole file exists to take back.
 ENV GOTOOLCHAIN=local CGO_ENABLED=0 GOOS=linux
 
-ARG MINIO_RELEASE
+ARG MINIO_TAG
 ARG MINIO_COMMIT
-ARG MC_RELEASE
+ARG MC_TAG
 ARG MC_COMMIT
 
 WORKDIR /src
@@ -58,40 +63,67 @@ WORKDIR /src
 # Each source is fetched at its tag and then VERIFIED against the pinned commit. A moved tag fails the
 # build loudly instead of silently producing a different binary under the same version string.
 RUN set -eux; \
-    git clone --depth 1 --branch "${MINIO_RELEASE}" https://github.com/minio/minio.git minio; \
+    git clone --depth 1 --branch "${MINIO_TAG}" https://github.com/minio/minio.git minio; \
     cd minio; \
     actual="$(git rev-parse HEAD)"; \
     if [ "${actual}" != "${MINIO_COMMIT}" ]; then \
-      echo "FATAL: minio ${MINIO_RELEASE} resolves to ${actual}, expected ${MINIO_COMMIT}." >&2; \
+      echo "FATAL: minio ${MINIO_TAG} resolves to ${actual}, expected ${MINIO_COMMIT}." >&2; \
       echo "The upstream tag has MOVED. Do not bypass this — establish why before re-pinning." >&2; \
       exit 1; \
     fi
 
 RUN set -eux; \
-    git clone --depth 1 --branch "${MC_RELEASE}" https://github.com/minio/mc.git mc; \
+    git clone --depth 1 --branch "${MC_TAG}" https://github.com/minio/mc.git mc; \
     cd mc; \
     actual="$(git rev-parse HEAD)"; \
     if [ "${actual}" != "${MC_COMMIT}" ]; then \
-      echo "FATAL: mc ${MC_RELEASE} resolves to ${actual}, expected ${MC_COMMIT}." >&2; \
+      echo "FATAL: mc ${MC_TAG} resolves to ${actual}, expected ${MC_COMMIT}." >&2; \
       echo "The upstream tag has MOVED. Do not bypass this — establish why before re-pinning." >&2; \
       exit 1; \
     fi
 
-# Build flags mirror upstream's Makefile `build` target exactly: -trimpath for reproducibility,
-# -tags kqueue as upstream does, and the GENERATED ldflags version stamp. The stamp is not cosmetic —
-# it sets what the binary reports as its own version, and a build that omits it still produces working
-# binaries, so nothing fails until someone asks what is deployed. Contract C3 asserts it.
+# ── The version stamp, and why it is asserted rather than assumed ─────────────────────────────────
+# Build flags mirror upstream's Makefile: -trimpath, -tags kqueue, and the GENERATED ldflags stamp.
+#
+# gen-ldflags.go is fussier than it looks, and getting it wrong is SILENT. It takes the release
+# TIMESTAMP as argv[1] — parsed with the layout "2006-01-02T15-04-05Z" — not the RELEASE.* tag, and it
+# takes the release PREFIX from the MINIO_RELEASE / MC_RELEASE env vars, defaulting to "DEVELOPMENT".
+# On an unparseable argument it PANICS; a panic goes to stderr, so `$(...)` captures empty stdout,
+# `--ldflags ""` is a perfectly valid empty flag, and the build SUCCEEDS with no stamp at all.
+#
+# That is not hypothetical — it is what run 3113 did on the first CI build of this file, producing a
+# working binary reporting `minio version DEVELOPMENT.GOGET`. The post-build contract check caught it
+# (contract C3), but by then the image existed. So the stamp is now captured into a variable and
+# asserted non-empty HERE, at the point of failure, before it can reach an artifact.
+#
+# `${MINIO_TAG#RELEASE.}` strips the prefix, leaving the timestamp the parser wants.
 RUN set -eux; \
     cd /src/minio; \
-    go build -tags kqueue -trimpath \
-      --ldflags "$(go run buildscripts/gen-ldflags.go "${MINIO_RELEASE}")" \
-      -o /out/minio
+    ldflags="$(MINIO_RELEASE=RELEASE go run buildscripts/gen-ldflags.go "${MINIO_TAG#RELEASE.}")"; \
+    if [ -z "${ldflags}" ]; then \
+      echo "FATAL: gen-ldflags produced nothing for ${MINIO_TAG} — the version stamp would be lost." >&2; \
+      echo "It panics on an unparseable version and panics go to stderr, so an empty capture is the" >&2; \
+      echo "symptom. Expected argv[1] as a timestamp like 2025-09-07T16-13-09Z." >&2; \
+      exit 1; \
+    fi; \
+    go build -tags kqueue -trimpath --ldflags "${ldflags}" -o /out/minio
 
 RUN set -eux; \
     cd /src/mc; \
-    go build -tags kqueue -trimpath \
-      --ldflags "$(go run buildscripts/gen-ldflags.go "${MC_RELEASE}")" \
-      -o /out/mc
+    ldflags="$(MC_RELEASE=RELEASE go run buildscripts/gen-ldflags.go "${MC_TAG#RELEASE.}")"; \
+    if [ -z "${ldflags}" ]; then \
+      echo "FATAL: gen-ldflags produced nothing for ${MC_TAG} — the version stamp would be lost." >&2; \
+      exit 1; \
+    fi; \
+    go build -tags kqueue -trimpath --ldflags "${ldflags}" -o /out/mc
+
+# Assert the stamp took, in the BUILDER, before anything is copied into the runtime image. The
+# post-build check in the workflow is the backstop; this is the tripwire.
+RUN set -eux; \
+    /out/minio --version | grep -q "${MINIO_TAG}" \
+      || { echo "FATAL: minio reports '$(/out/minio --version)', expected ${MINIO_TAG}" >&2; exit 1; }; \
+    /out/mc --version | grep -q "${MC_TAG}" \
+      || { echo "FATAL: mc reports '$(/out/mc --version)', expected ${MC_TAG}" >&2; exit 1; }
 
 # ── Runtime ───────────────────────────────────────────────────────────────────────────────────────
 # Same lineage AND the same digest as backend/mc-service, so Renovate moves one thing.

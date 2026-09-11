@@ -83,8 +83,8 @@ jobs:
           bash scripts/ci-log-step.sh minio-image-build bash -e /dev/stdin <<'CI_LOG_STEP'
           : "${REGISTRY:?set the REGISTRY Forgejo var}" "${NS:?set the NS Forgejo var}"
           DOCKERFILE=infrastructure-as-code/docker/minio/Dockerfile
-          RELEASE="$(awk -F= '/^ARG MINIO_RELEASE=/{print $2}' "$DOCKERFILE")"
-          : "${RELEASE:?could not read MINIO_RELEASE from $DOCKERFILE}"
+          RELEASE="$(awk -F= '/^ARG MINIO_TAG=/{print $2}' "$DOCKERFILE")"
+          : "${RELEASE:?could not read MINIO_TAG from $DOCKERFILE}"
           TAG="${REGISTRY}/${NS}/minio:${RELEASE}"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           docker build -f "$DOCKERFILE" -t "$TAG" "$(dirname "$DOCKERFILE")"
@@ -98,8 +98,8 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh minio-image-verify-contract bash -e /dev/stdin <<'CI_LOG_STEP'
           DOCKERFILE=infrastructure-as-code/docker/minio/Dockerfile
-          WANT_MINIO="$(awk -F= '/^ARG MINIO_RELEASE=/{print $2}' "$DOCKERFILE")"
-          WANT_MC="$(awk -F= '/^ARG MC_RELEASE=/{print $2}' "$DOCKERFILE")"
+          WANT_MINIO="$(awk -F= '/^ARG MINIO_TAG=/{print $2}' "$DOCKERFILE")"
+          WANT_MC="$(awk -F= '/^ARG MC_TAG=/{print $2}' "$DOCKERFILE")"
           got_minio="$(docker run --rm --entrypoint minio "$TAG" --version)"
           got_mc="$(docker run --rm --entrypoint mc "$TAG" --version)"
           got_uid="$(docker run --rm --entrypoint id "$TAG" -u)"
