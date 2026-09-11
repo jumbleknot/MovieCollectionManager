@@ -27,7 +27,7 @@ test-after edits into genuine RED→GREEN cycles.
 
 ## Phase 1: Setup
 
-- [ ] T001 Create the image directory and Dockerfile skeleton with pinned build args in `infrastructure-as-code/docker/minio/Dockerfile`
+- [X] T001 Create the image directory and Dockerfile skeleton with pinned build args in `infrastructure-as-code/docker/minio/Dockerfile`
 
 ### T001 — Dockerfile skeleton with pinned inputs
 
@@ -58,9 +58,9 @@ one thing for Renovate to move.
 **Blocking.** Fixes a latent hole that would let this feature's own artifact be published unexamined.
 Must land before anything `jumbleknot/`-namespaced and non-cd-deploy is published.
 
-- [ ] T002 [P] Add scanner-scope assertions to `scripts/__tests__/infra-image-scan.test.mjs`
-- [ ] T003 Tighten the exclusion rule in `scripts/infra-image-scan.mjs`
-- [ ] T004 [P] Record the corrected scope rule in `docs/runbooks/infra-image-scanning.md`
+- [X] T002 [P] Add scanner-scope assertions to `scripts/__tests__/infra-image-scan.test.mjs`
+- [X] T003 Tighten the exclusion rule in `scripts/infra-image-scan.mjs`
+- [X] T004 [P] Record the corrected scope rule in `docs/runbooks/infra-image-scanning.md`
 
 ### T002 — Assert the scanner partition is complete, not just disjoint
 

@@ -58,6 +58,55 @@ test('enumerateImages handles quotes and registry-prefixed refs', () => {
   assert.deepEqual(refs, ['mongodb/mongodb-community-server:8.0.8-ubi9', 'quay.io/keycloak/keycloak:26.5.5']);
 });
 
+// ---------------------------------------------------------------------------------------------
+// The partition must be COMPLETE, not merely disjoint — feature 069 (item #420),
+// specs/069-minio-from-source/contracts/scanner-scope.md.
+//
+// Two scanners cover this repository's images: cd-deploy's Trivy step covers the images cd-deploy
+// builds, and this scan covers everything else referenced under infrastructure-as-code/**.
+// Disjointness ("nothing in both") was already asserted below. COMPLETENESS ("nothing in neither")
+// was not, and the exclusion rule quietly violated it.
+//
+// The rule used to read `if (ref.includes('jumbleknot/')) continue;` with the comment "our built
+// images (cd-deploy owns them)". The comment states the right property; the prefix test implements a
+// different one — "anything named like ours" rather than "anything cd-deploy already scans". Those
+// coincided only while every jumbleknot/* image happened to be a cd-deploy image. `jumbleknot/minio`
+// is built by us and NOT by cd-deploy, so under the old rule it was excluded here, absent there, and
+// published examined by nothing — with no error anywhere and a truthful, meaningless zero-finding
+// report.
+//
+// Asserted against FIXTURES rather than the live tree on purpose: a live-tree assertion stops testing
+// anything the day minio is the only such image and someone removes it.
+test('(069) a jumbleknot/ image NOT built by cd-deploy IS enumerated — completeness', () => {
+  const files = [{
+    path: 'observability/compose.yaml',
+    content: '    image: jumbleknot/minio:RELEASE.2025-09-07T16-13-09Z@sha256:'
+      + '0000000000000000000000000000000000000000000000000000000000000000',
+  }];
+  const refs = enumerateImages(files).map((i) => i.ref);
+  assert.equal(
+    refs.length, 1,
+    'a jumbleknot/-namespaced image that cd-deploy does NOT build was excluded from this scan.\n'
+      + '  cd-deploy does not scan it either — so it would be published examined by NEITHER scanner,\n'
+      + '  silently. Exclude by membership of BUILT_IMAGE_NAMES, not by the "jumbleknot/" prefix.',
+  );
+  assert.match(refs[0], /^jumbleknot\/minio:/);
+});
+
+test('(069) a genuine cd-deploy built image is still excluded — the control', () => {
+  // Green before and after the rule change, deliberately. It catches over-correction into scanning
+  // everything, which would satisfy completeness while breaking the disjointness test below.
+  const files = [{
+    path: 'bff/compose.yaml',
+    content: '    image: jumbleknot/mc-service:latest\n    image: jumbleknot/mcm-bff:latest',
+  }];
+  assert.deepEqual(
+    enumerateImages(files), [],
+    'a cd-deploy built image leaked into this scan — it would then be scanned twice, by two gates with '
+      + 'two different allowlists.',
+  );
+});
+
 test('enumerated set is disjoint from the six cd-deploy built images (SC-002 / T018)', () => {
   const built = ['mcm-bff', 'mc-service', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp'];
   const files = [{ path: 'a.yaml', content: built.map((n) => `    image: ${n}:latest`).join('\n') + '\n    image: redis:7-alpine' }];

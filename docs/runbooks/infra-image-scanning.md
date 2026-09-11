@@ -19,6 +19,39 @@ The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). 
 - **On-change PR/push check** — `.forgejo/workflows/infra-image-scan.yml` also triggers when `infrastructure-as-code/**`, the scanner scripts, or `security/infra-images/**` change, for fast feedback on a newly-introduced vulnerable image.
 - **Keyless** (public images, Trivy fetches advisory data with no account — no `${{ secrets }}`) and **fail-closed** (a Trivy/pull/parse failure fails the job — never a clean report on failure).
 
+### Which scanner owns an image — by coverage, not by namespace
+
+Two scanners, deliberately disjoint: `cd-deploy`'s Trivy step covers the images cd-deploy **builds**;
+this scan covers everything else referenced under `infrastructure-as-code/**`. The invariant is that
+every image is examined by **exactly one** of them — not zero, not two.
+
+Disjointness was always asserted. **Completeness was not**, and the exclusion rule quietly broke it.
+Until feature 069 it read:
+
+```js
+if (ref.includes('jumbleknot/')) continue;   // our built images (cd-deploy owns them)
+```
+
+The comment names the right property. The code implements a different one — *"anything named like
+ours"* rather than *"anything cd-deploy already scans"*. The two coincided only while every
+`jumbleknot/*` image happened to be a cd-deploy image.
+
+Feature 069 broke that coincidence: `jumbleknot/minio` is built by us and **not** by cd-deploy. Under
+the old rule it was excluded here and absent there — published and examined by neither gate, with no
+error anywhere and a zero-finding report that was truthful and meaningless.
+
+The rule is now membership of `BUILT_IMAGE_NAMES`. The `bareName` extraction already handled both
+shapes (`jumbleknot/mc-service:latest` → `mc-service`, excluded; `jumbleknot/minio:REL@sha256:…` →
+`minio`, enumerated), so the fix was to **delete** the prefix line rather than add to it.
+
+**This generalises.** Any future image built outside cd-deploy — a mirrored third-party image, another
+from-source build — is now covered automatically. That is the point: the fix was to the rule, not to
+the MinIO case.
+
+Guarded by `scripts/__tests__/infra-image-scan.test.mjs`, which asserts the completeness case against
+a **fixture** rather than the live tree. A live-tree assertion would stop testing anything the day
+MinIO is the only such image and someone removes it.
+
 ### A green `infra-image-scan` usually proves nothing — check the DURATION
 
 The required context `infra-image-scan / infra-image-scan` posts `success` on **every** PR, including

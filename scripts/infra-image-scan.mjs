@@ -77,9 +77,20 @@ export function enumerateImages(files) {
       if (!m) continue;
       const ref = m[1];
       if (ref.includes('${')) continue; // env-var interpolated — not concretely pullable
-      if (ref.includes('jumbleknot/')) continue; // our built images (cd-deploy owns them)
+      // Exclude what cd-deploy ALREADY SCANS — by membership, not by namespace. This line used to
+      // read `if (ref.includes('jumbleknot/')) continue;` with the comment "our built images
+      // (cd-deploy owns them)". The comment named the right property; the prefix test implemented a
+      // different one, and the two coincided only while every jumbleknot/* image happened to be a
+      // cd-deploy image. Feature 069 broke that coincidence: `jumbleknot/minio` is built by us and
+      // NOT by cd-deploy, so the prefix rule excluded it here while nothing covered it there — an
+      // image published and examined by neither gate, reporting a truthful and meaningless zero.
+      //
+      // The bareName extraction below already handles both shapes: `jumbleknot/mc-service:latest`
+      // yields `mc-service` (excluded, cd-deploy's) and `jumbleknot/minio:REL@sha256:…` yields
+      // `minio` (enumerated, ours). So the correct fix was to DELETE the prefix line, not add to it.
+      // See specs/069-minio-from-source/contracts/scanner-scope.md for the invariant and its guards.
       const bareName = ref.split('/').pop().split(':')[0];
-      if (BUILT_IMAGE_NAMES.includes(bareName)) continue; // built image referenced by local tag
+      if (BUILT_IMAGE_NAMES.includes(bareName)) continue; // cd-deploy scans it; we must not
       const floatingTag = isFloatingTag(ref);
       const loc = { path, line: i + 1 };
       if (byRef.has(ref)) byRef.get(ref).locations.push(loc);
