@@ -365,13 +365,23 @@ Also confirm `node scripts/infra-image-scan.mjs --list | grep -i minio` lists `j
 
 Dispatch the workflow with **no** input change.
 
-**Expected**: the build **succeeds**. Because both base images are digest-pinned, the result should be
-an *equivalent* image — an identical or near-identical digest is the **correct** outcome and evidence of
-reproducibility, **not** a failure.
+**Expected**: the build **succeeds**. That is the whole assertion — the canary property.
 
-> The earlier draft of this task asserted the opposite. A rebuild with identical pinned inputs cannot
-> pick up a base patch; that arrives when Renovate bumps the pinned digest, which fires the push
-> trigger instead. What this task proves is that the build still works — the canary property.
+**Do NOT assert anything about the digest.** This task has now had its expectation wrong twice, in
+opposite directions, and the second time was settled by measurement rather than argument:
+
+| draft | claimed | outcome |
+|---|---|---|
+| first | a rebuild yields a **different** digest, proving patches were picked up | wrong — base images are digest-pinned |
+| second | a rebuild yields an **identical** digest, proving reproducibility | **also wrong** — runs 3115 and 3117 built identical source and produced `sha256:7038b9e9…` and `sha256:1e981fa1…` |
+
+The cause is in our own Dockerfile: `apk add --no-cache ca-certificates` and `apk add --no-cache git`
+resolve against Alpine's live package index at build time. The image is **not bit-reproducible**, and
+the weekly cron therefore does pick up Alpine package updates — a real but narrow patch path, distinct
+from base-image and Go-toolchain patches, which are digest-pinned and arrive via Renovate.
+
+Research §R8 carries the per-input table. If bit-reproducibility is ever wanted, the apk installs need
+pinning too — a separate decision with its own maintenance cost, not part of this feature.
 
 **Also verify the patch path exists**: `renovate.json`'s docker rules cover the new Dockerfile's `FROM`
 lines, so a base digest bump is proposed. Confirm in T018's validator run.

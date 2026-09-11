@@ -19,18 +19,22 @@
 #                              file and fires this trigger. Both base images are digest-pinned, so
 #                              this is the only way a base patch arrives.
 #
-#   schedule (weekly)          A CANARY, NOT a patch path. With inputs pinned by digest, a rebuild
-#                              with nothing changed produces an EQUIVALENT image — that is the point
-#                              of pinning, and an unchanged digest here is success, not failure. What
-#                              the cron proves is that the build still WORKS: upstream source still
-#                              fetchable, pinned toolchain still compiling this source. Given that
-#                              upstream has already deleted its images and could delete its source,
-#                              finding a broken build on a quiet Friday rather than mid-incident is
-#                              the whole value.
+#   schedule (weekly)          MOSTLY a canary, plus ONE narrow patch path. It proves the build still
+#                              WORKS — upstream source still fetchable, pinned toolchain still
+#                              compiling this source — which matters because upstream has already
+#                              deleted its images and could delete its source. It ALSO picks up
+#                              Alpine package updates, because `apk add ca-certificates` resolves
+#                              against the live index at build time. It does NOT pick up base-image
+#                              or Go-toolchain patches; those are digest-pinned and arrive above.
 #
-# An earlier draft of this feature described the cron as the patch path. It is not, and believing so
-# would have left a weekly job that changed nothing while being trusted to apply security updates.
-# specs/069-minio-from-source/research.md §R8 records the correction.
+# THE DIGEST CHANGES BETWEEN IDENTICAL BUILDS. Measured, not assumed: runs 3115 and 3117 built the
+# same source and produced sha256:7038b9e9… and sha256:1e981fa1…. The apk installs float, so this
+# image is NOT bit-reproducible. A changed digest on a scheduled run is therefore expected and is not
+# evidence of anything having moved upstream.
+#
+# This comment has been wrong twice — first calling the cron the patch path, then calling the rebuild
+# reproducible. Two real digests settled it. specs/069-minio-from-source/research.md §R8 has both
+# corrections and the per-input table.
 name: minio-image
 
 on:
@@ -154,9 +158,12 @@ jobs:
             echo "\${REGISTRY_HOST}/\${NS}/minio:$(echo "$TAG" | sed 's/.*://')@$DIGEST"
             echo '```'
             echo ""
-            echo "An UNCHANGED digest on a scheduled run is the CORRECT outcome — inputs are pinned,"
-            echo "so a no-change rebuild is meant to be reproducible. See the trigger note at the top"
-            echo "of .forgejo/workflows/minio-image.yml."
+            echo "A CHANGED digest on a scheduled run is expected: the apk installs resolve against"
+            echo "Alpine's live index, so this image is not bit-reproducible. It does NOT mean anything"
+            echo "moved upstream. See the trigger note at the top of .forgejo/workflows/minio-image.yml."
+            echo ""
+            echo "If you are updating the compose refs, use the digest printed above — not a remembered"
+            echo "one. Two builds of identical source produced different digests (runs 3115, 3117)."
           } >> "$GITHUB_STEP_SUMMARY"
           CI_LOG_STEP
 

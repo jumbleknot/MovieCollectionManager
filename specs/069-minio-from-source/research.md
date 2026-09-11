@@ -203,15 +203,36 @@ and §R4 pin the builder and runtime images *by digest*. A rebuild with no input
 identical inputs and produces an equivalent image. A cron cannot pull in a patch that nothing has
 pointed us at.
 
-The two mechanisms, stated correctly:
+**Corrected a SECOND time, 2026-09-11, by measurement.** The `/speckit-analyze` correction above was
+also wrong — less wrong, but wrong. It asserted a no-change rebuild "produces an equivalent image".
+Two consecutive CI builds of identical source produced **different digests**:
 
-| Trigger | What it actually achieves |
-|---|---|
-| **On change** (Dockerfile / pinned args) | The real patch path. A base or toolchain CVE reaches the image when **Renovate bumps the pinned digest** — the same mechanism already serving every other Dockerfile in this repository. That bump edits the Dockerfile, which fires this trigger. |
-| **Weekly cron** | A **canary**, not a patch path. It proves the build still works when nothing has changed — upstream source still fetchable, pinned toolchain still compiling this source. Given that upstream deleted its images and could delete its source, discovering a broken build on a quiet Friday rather than mid-incident is the whole value. |
+```
+run 3115  sha256:7038b9e9…
+run 3117  sha256:1e981fa1…     identical inputs, different image
+```
 
-Keeping the cron is right; describing it as the patch path was wrong and would have produced a job
-that ran weekly, changed nothing, and was believed to be applying security updates.
+The cause is in this Dockerfile, not in Docker: `apk add --no-cache ca-certificates` (runtime) and
+`apk add --no-cache git` (builder) resolve against Alpine's **live** package index at build time. The
+base images are digest-pinned; the packages installed *into* them are not.
+
+So the build is **not bit-reproducible**, and the honest split is narrower than the first claim and
+broader than the second:
+
+| Input | Pinned? | Reaches the image via |
+|---|---|---|
+| Base images (golang, alpine) | digest-pinned | **Renovate digest bump** → push trigger |
+| Go toolchain | inside the pinned builder | **Renovate digest bump** → push trigger |
+| Go modules | go.mod / go.sum at the pinned commit | upstream source bump |
+| **apk packages** (`ca-certificates`, `git`) | **NOT pinned — float** | **the weekly cron** |
+
+The cron therefore *does* have a patch path, but a narrow one: Alpine package updates only. It is
+still mostly a canary, and calling it "the" patch path for Go-stdlib or base-image CVEs remains wrong.
+
+**Recorded because the reasoning was wrong twice.** Both errors were confident and both were about the
+same question. What settled it was comparing two real digests — not argument. If bit-reproducibility
+is ever actually wanted, the apk installs must be version-pinned too, and that is a separate decision
+with its own maintenance cost; it is not the current design and this document should not imply it is.
 
 **Alternatives considered**: On-change only (rejected — loses the canary, and the canary is the part
 that protects against an upstream that has already shown it will delete things). Tracking base images

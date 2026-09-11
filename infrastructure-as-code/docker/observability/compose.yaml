@@ -165,7 +165,7 @@ services:
     logging: *obs-logging
 
   langfuse-minio:
-    image: ${REGISTRY_HOST}/jumbleknot/minio:2025.09.07-161309@sha256:7038b9e91b5a9123932e30f332bb5afcc44eeabf2b0a2f9e158d1b26cab94da7
+    image: ${REGISTRY_HOST}/jumbleknot/minio:2025.09.07-161309@sha256:1e981fa1da7b42495c380e1d3d4a854119d158e9df10502b0b6993c9dfbe3e51
     container_name: langfuse-minio
     profiles: [observability]
     restart: unless-stopped
@@ -188,7 +188,7 @@ services:
   # One-shot: create the `langfuse` bucket (LangFuse v3 does NOT auto-create it; without it
   # ingestion fails with "Failed to upload JSON to S3"). langfuse-web/worker wait for this.
   langfuse-minio-init:
-    image: ${REGISTRY_HOST}/jumbleknot/minio:2025.09.07-161309@sha256:7038b9e91b5a9123932e30f332bb5afcc44eeabf2b0a2f9e158d1b26cab94da7
+    image: ${REGISTRY_HOST}/jumbleknot/minio:2025.09.07-161309@sha256:1e981fa1da7b42495c380e1d3d4a854119d158e9df10502b0b6993c9dfbe3e51
     container_name: langfuse-minio-init
     profiles: [observability]
     depends_on:
