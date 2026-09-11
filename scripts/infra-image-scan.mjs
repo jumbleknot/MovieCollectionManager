@@ -67,15 +67,36 @@ export function isFloatingTag(ref) {
  *   [{ ref, locations: [{ path, line }], floatingTag }]
  * Excludes our built images (jumbleknot/* or a bare built-image name) and ${..}-interpolated refs.
  */
-export function enumerateImages(files) {
+export function enumerateImages(files, env = process.env) {
   const byRef = new Map();
+  // Locations skipped ONLY because REGISTRY_HOST was absent. Reported by the caller — see below.
+  enumerateImages.unresolved = [];
   const imageLine = /^\s*image:\s*["']?([^"'#\s]+)["']?/;
   for (const { path, content } of files) {
     const lines = content.split(/\r?\n/);
     for (let i = 0; i < lines.length; i++) {
       const m = imageLine.exec(lines[i]);
       if (!m) continue;
-      const ref = m[1];
+      let ref = m[1];
+      // THE REGISTRY HOST IS INTERPOLATED, AND THAT MUST NOT HIDE AN IMAGE FROM THIS SCAN.
+      // check-topology-scrub.mjs forbids the real forge host in committed files, so an image we
+      // publish ourselves can only be written `${REGISTRY_HOST}/jumbleknot/…`. The blanket `${` skip
+      // below would then exclude it — and since cd-deploy does not build it either, it would be
+      // published scanned by nothing. That is the same hole feature 069 closed in the exclusion rule,
+      // arriving by a different door (found while repointing the compose refs, not by the guard).
+      //
+      // The host is only unknowable WITHOUT the variable. Where it is set — CI, where this scan
+      // actually pulls — the ref is concretely pullable and must be enumerated.
+      if (ref.includes('${REGISTRY_HOST}')) {
+        if (env.REGISTRY_HOST) {
+          ref = ref.replaceAll('${REGISTRY_HOST}', env.REGISTRY_HOST);
+        } else {
+          // Genuinely not pullable here. Record it so a local run cannot be mistaken for full
+          // coverage: a scan that quietly covers less than the tree and still reports success is
+          // this repository's most-repeated failure shape.
+          enumerateImages.unresolved.push(`${path}:${i + 1}`);
+        }
+      }
       if (ref.includes('${')) continue; // env-var interpolated — not concretely pullable
       // Exclude what cd-deploy ALREADY SCANS — by membership, not by namespace. This line used to
       // read `if (ref.includes('jumbleknot/')) continue;` with the comment "our built images

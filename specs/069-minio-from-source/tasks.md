@@ -141,10 +141,10 @@ service reaches healthy.
 - [ ] T006 [US1] Build locally and verify the image contract C1–C5 per [quickstart.md](./quickstart.md) §1–2
 - [X] T007 [US1] Add the build workflow `.forgejo/workflows/minio-image.yml`, including its failure digest
 - [ ] T008 [US1] Publish the image and capture its digest
-- [ ] T009 [P] [US1] Rewrite the floating-tag premise in `scripts/__tests__/infra-image-scan.test.mjs`
-- [ ] T010 [US1] Repoint the four image refs in `infrastructure-as-code/docker/observability/compose.yaml` and `compose.prod.yaml`
-- [ ] T011 [US1] Update the discharge guard's image list in `scripts/__tests__/infra-image-scan.test.mjs`
-- [ ] T012 [US1] Delete the four MinIO entries from `security/infra-images/allowlist.yaml`
+- [X] T009 [P] [US1] Rewrite the floating-tag premise in `scripts/__tests__/infra-image-scan.test.mjs`
+- [X] T010 [US1] Repoint the four image refs in `infrastructure-as-code/docker/observability/compose.yaml` and `compose.prod.yaml`
+- [X] T011 [US1] Update the discharge guard's image list in `scripts/__tests__/infra-image-scan.test.mjs`
+- [X] T012 [US1] Delete the four MinIO entries from `security/infra-images/allowlist.yaml`
 - [ ] T013 [US1] Verify the live volume's ownership against the real volume
 - [ ] T014 [US1] Bring the stack up and prove Langfuse ingestion end to end per [quickstart.md](./quickstart.md) §3–6
 
@@ -411,8 +411,8 @@ is not wired up and FR-003 is unmet.
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T019 [P] Migrate MinIO version tracking in `renovate.json` to a `github-releases` customManager
-- [ ] T020 [P] Update the Renovate guard in `scripts/__tests__/renovate-workflow.guard.test.mjs`
+- [X] T019 [P] Migrate MinIO version tracking in `renovate.json` to a `github-releases` customManager
+- [X] T020 [P] Update the Renovate guard in `scripts/__tests__/renovate-workflow.guard.test.mjs`
 - [ ] T021 [P] Update `docs/runbooks/infra-image-scanning.md` for the emptied exception set
 - [ ] T022 [P] File the non-root follow-up and close the loop on item #420
 - [ ] T023 Full gate sweep before opening the pull request

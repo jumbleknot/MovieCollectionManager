@@ -61,22 +61,6 @@
   id: 'CVE-2026-33186'
   justification: 'Baseline (035): fixable Critical in google.golang.org/grpc. Verified NOT cleared by a bump to 1.21.4 (still ships grpc v1.75.1 < fix 1.79.3; Trivy, feature 036) — no clean upstream tag yet; internal-only + dormant.'
   addedBy: 'seed'
-- image: 'minio/mc:RELEASE\.2025-08-13T08-35-41Z'
-  id: 'CVE-2025-68121'
-  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3). RE-KEYED 2026-08-30 from the bare repository name to the pinned release (feature 063 / item #297): the bare key matched EVERY tag of this image that will ever exist, so it could never be discharged — it suppressed this advisory and every future one in the same image, silently and permanently. Keyed to the release, it stops matching the moment the pin moves. NOTE on "awaiting Renovate base-image bump": MinIO stopped publishing community releases after 2025-09, so RELEASE.2025-08-13T08-35-41Z IS the newest mc tag upstream offers and there is no bump to await today — verified against registry-1.docker.io on 2026-08-30. The key discharges automatically if MinIO resumes publishing.'
-  addedBy: 'seed'
-- image: 'minio/mc:RELEASE\.2025-08-13T08-35-41Z'
-  id: 'CVE-2026-33186'
-  justification: 'Baseline (035): pre-existing fixable Critical in google.golang.org/grpc (v1.71.0→1.79.3). RE-KEYED 2026-08-30 to the pinned release (feature 063 / item #297) so the suppression can be discharged by an upgrade; the bare repository key matched every tag for ever. No newer mc release exists upstream today (MinIO stopped publishing after 2025-09, verified 2026-08-30).'
-  addedBy: 'seed'
-- image: 'minio/minio:RELEASE\.2025-09-07T16-13-09Z'
-  id: 'CVE-2025-68121'
-  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3). RE-KEYED 2026-08-30 from the bare repository name to the pinned release (feature 063 / item #297) — see the minio/mc entries for the reasoning; the bare key could never be discharged by an upgrade. MinIO stopped publishing community releases after 2025-09, so RELEASE.2025-09-07T16-13-09Z IS the newest minio tag upstream offers (verified 2026-08-30); there is no bump to await today, and the key discharges automatically if MinIO resumes.'
-  addedBy: 'seed'
-- image: 'minio/minio:RELEASE\.2025-09-07T16-13-09Z'
-  id: 'CVE-2026-33186'
-  justification: 'Baseline (035): pre-existing fixable Critical in google.golang.org/grpc (v1.71.0→1.79.3). RE-KEYED 2026-08-30 to the pinned release (feature 063 / item #297) so the suppression can be discharged by an upgrade; the bare repository key matched every tag for ever. No newer minio release exists upstream today (MinIO stopped publishing after 2025-09, verified 2026-08-30).'
-  addedBy: 'seed'
 - image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): fixable Critical in Go stdlib. Kept on 8.0.8 — feature 036 tried 8.0.26 but it (a) still bundles a pre-fix Go 1.25.5 binary (< fix 1.25.7; Trivy-verified) so it does NOT clear this Critical, and (b) came up UNHEALTHY on the CI rootless runner, breaking bring-up. No net benefit → stay on the long-stable 8.0.8. Internal-only; re-triage when a Go≥1.25.7 mongo image ships.'
@@ -153,16 +137,6 @@
   justification: 'New advisory (x/crypto <0.55.0) on the deliberately-pinned 1.18 (feature 036 found no fully-clean upstream tag; three sibling entries above record that reasoning). Internal-only and dormant. Re-triage with the rest of the vault entries when a clean tag ships.'
   addedBy: 'item-329'
   expiry: '2026-10-01'
-- image: 'minio/mc:RELEASE\.2025-08-13T08-35-41Z'
-  id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. Already on the newest upstream RELEASE tag, which predates the fix — no bump can clear it. Internal-only. Time-boxed; delete on rebuild.'
-  addedBy: 'item-329'
-  expiry: '2026-10-01'
-- image: 'minio/minio:RELEASE\.2025-09-07T16-13-09Z'
-  id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. A newer tag exists (RELEASE.2025-10-15) but it still predates the 2026-08-11 fix, so bumping would NOT clear this Critical. Internal-only. Time-boxed; delete on rebuild.'
-  addedBy: 'item-329'
-  expiry: '2026-10-01'
 - image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
   id: 'CVE-2026-56854'
   justification: 'New advisory (x/crypto <0.55.0) on the deliberately-pinned 8.0.8 (feature 036 verified 8.0.26 neither clears the sibling stdlib Critical nor comes up healthy on the CI rootless runner). Internal-only data tier. Re-triage with the sibling CVE-2025-68121 entries.'
@@ -180,6 +154,25 @@
 # nothing does not age out quietly, it fails under UNMATCHED ENTRIES and reddens the weekly
 # allowlist-expiry run. Deleting is also the direction that restores blocking — if the advisory
 # returns on a later opa, it re-blocks.
+
+# ── minio/minio and minio/mc: ALL SIX ENTRIES REMOVED 2026-09-11 (feature 069, item #420) ─────────
+# Four seed entries (CVE-2025-68121 and CVE-2026-33186 on each image) and two item-329 entries
+# (CVE-2026-56854 on each) are gone, because the images they key on left the pulled set entirely.
+#
+# MinIO deleted both repositories from Docker Hub on 2026-09-11 and had already moved the community
+# edition to source-only distribution in October 2025, so no registry receives updates any more. We
+# now build our own image from source (infrastructure-as-code/docker/minio/Dockerfile) and reference
+# it as ${REGISTRY_HOST}/jumbleknot/minio. These keys can never match again.
+#
+# NOT RE-KEYED TO THE NEW IMAGE, DELIBERATELY. Whether the from-source build still carries these
+# advisories is an empirical question the first real sweep answers — and it plausibly does not:
+# CVE-2025-68121 is a Go STDLIB finding that exists because upstream shipped an old toolchain, and we
+# now choose our own (golang:1.25-alpine). Writing a suppression before observing the finding would
+# suppress something never seen, and would hide exactly the improvement this feature was built for.
+# If a Critical does appear on our image, triage it then, on its merits, with evidence attached.
+#
+# Deletion rather than expiry, per item #303: an entry matching nothing does not age out quietly — it
+# fails under UNMATCHED ENTRIES and reddens the weekly allowlist-expiry run.
 
 # ── NEW advisories on unchanged images, triaged 2026-09-10 (item #406) ────────────────────────────
 # TWO advisories, 11 blocking findings, four pulled images — every one of them on an image reference
