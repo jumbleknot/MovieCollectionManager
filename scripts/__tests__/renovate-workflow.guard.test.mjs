@@ -1860,7 +1860,11 @@ test('(069) our own MinIO image is referenced identically in dev and prod', () =
   ];
   const refs = files.flatMap((f) => readFileSync(resolve(REPO_ROOT, f), 'utf8')
     .split(/\r?\n/)
-    .map((l) => /^\s*image:\s*\$\{REGISTRY_HOST\}\/jumbleknot\/minio:([^@\s]+)@/.exec(l))
+    // `\$\{REGISTRY_HOST[^}]*\}` tolerates the `:?set in …` guard the refs carry. Every other
+    // REGISTRY_HOST reference in this repository is guarded, so an unguarded one would be the
+    // anomaly — matching only the bare form made this test fail the moment the refs were brought
+    // into line with that convention.
+    .map((l) => /^\s*image:\s*\$\{REGISTRY_HOST[^}]*\}\/jumbleknot\/minio:([^@\s]+)@/.exec(l))
     .filter(Boolean)
     .map((m) => m[1]));
   const tags = new Set(refs);

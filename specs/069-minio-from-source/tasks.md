@@ -138,15 +138,15 @@ service reaches healthy.
 > which is only meaningful against a real registry image. That is F1's correction.
 
 - [X] T005 [US1] Implement the multi-stage build in `infrastructure-as-code/docker/minio/Dockerfile`
-- [ ] T006 [US1] Build locally and verify the image contract C1–C5 per [quickstart.md](./quickstart.md) §1–2
+- [X] T006 [US1] Build locally and verify the image contract C1–C5 per [quickstart.md](./quickstart.md) §1–2
 - [X] T007 [US1] Add the build workflow `.forgejo/workflows/minio-image.yml`, including its failure digest
-- [ ] T008 [US1] Publish the image and capture its digest
+- [X] T008 [US1] Publish the image and capture its digest
 - [X] T009 [P] [US1] Rewrite the floating-tag premise in `scripts/__tests__/infra-image-scan.test.mjs`
 - [X] T010 [US1] Repoint the four image refs in `infrastructure-as-code/docker/observability/compose.yaml` and `compose.prod.yaml`
 - [X] T011 [US1] Update the discharge guard's image list in `scripts/__tests__/infra-image-scan.test.mjs`
 - [X] T012 [US1] Delete the four MinIO entries from `security/infra-images/allowlist.yaml`
 - [ ] T013 [US1] Verify the live volume's ownership against the real volume
-- [ ] T014 [US1] Bring the stack up and prove Langfuse ingestion end to end per [quickstart.md](./quickstart.md) §3–6
+- [X] T014 [US1] Bring the stack up and prove Langfuse ingestion end to end per [quickstart.md](./quickstart.md) §3–6
 
 ### T005 — The multi-stage build
 
@@ -402,7 +402,7 @@ merits and add a justified allowlist entry then — not before.
 
 ## Phase 6: User Story 4 — provenance (P3)
 
-- [ ] T018 [US4] Prove the commit assertion fails the build on a mismatch
+- [X] T018 [US4] Prove the commit assertion fails the build on a mismatch
 
 ### T018 — Commit-pin negative test
 

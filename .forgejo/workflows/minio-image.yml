@@ -41,8 +41,16 @@ on:
   workflow_dispatch:
   push:
     paths:
+      # THE DOCKERFILE ONLY — this workflow file is deliberately NOT in its own filter.
+      #
+      # It was, and that produced a feedback loop worth avoiding: editing a COMMENT here rebuilt the
+      # image (run 3119), and because the build is not bit-reproducible (see the note below), the new
+      # image got a new digest, which invalidated the digest the compose files pin. A documentation fix
+      # silently broke the stack's image references.
+      #
+      # A change to this workflow does not change what the image CONTAINS. Where it genuinely would —
+      # different build args or flags — dispatch it by hand; that is what workflow_dispatch is for.
       - 'infrastructure-as-code/docker/minio/Dockerfile'
-      - '.forgejo/workflows/minio-image.yml'
   schedule:
     # Friday 05:00 UTC — an hour before devcontainer-image's weekly, so the two heavy builds do not
     # contend on the capacity-1 runner. Cron is UTC-only and does not observe DST (drifts ±1h across
