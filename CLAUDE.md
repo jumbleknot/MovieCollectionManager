@@ -140,7 +140,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/068-mcp-2x-migration/plan.md`
+`specs/069-minio-from-source/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->
