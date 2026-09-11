@@ -1,0 +1,169 @@
+# MinIO image publish (feature 069, item #420). Builds `minio` + `mc` FROM SOURCE and pushes the
+# result (tag + immutable @sha256: digest) to the forge registry as `minio`.
+#
+# WHY WE BUILD THIS AT ALL. MinIO deleted minio/minio and minio/mc from Docker Hub on 2026-09-11 and
+# moved the community edition to source-only distribution in October 2025, so no registry receives
+# updates any more — the newest SOURCE tag (RELEASE.2025-10-15T17-29-55Z, "Security/CVE") reached none
+# of them. Switching registry relocates the problem; building from source ends it.
+#
+# DISJOINT from cd-deploy, like devcontainer-image: it builds no app image and no prod artifact, never
+# deploys, never touches Komodo, and carries no app secret. Unlike devcontainer-image, the image it
+# publishes IS scanned — `scripts/infra-image-scan.mjs` enumerates it, because feature 069 changed that
+# scanner's exclusion from the `jumbleknot/` prefix to cd-deploy's actual built set. See
+# specs/069-minio-from-source/contracts/scanner-scope.md.
+#
+# ── THE TWO AUTOMATIC TRIGGERS DO DIFFERENT JOBS. Do not collapse them. ───────────────────────────
+#
+#   push (Dockerfile changed)  THE PATCH PATH. A Go-toolchain or Alpine CVE reaches this image when
+#                              RENOVATE BUMPS THE PINNED DIGEST in the Dockerfile, which edits the
+#                              file and fires this trigger. Both base images are digest-pinned, so
+#                              this is the only way a base patch arrives.
+#
+#   schedule (weekly)          A CANARY, NOT a patch path. With inputs pinned by digest, a rebuild
+#                              with nothing changed produces an EQUIVALENT image — that is the point
+#                              of pinning, and an unchanged digest here is success, not failure. What
+#                              the cron proves is that the build still WORKS: upstream source still
+#                              fetchable, pinned toolchain still compiling this source. Given that
+#                              upstream has already deleted its images and could delete its source,
+#                              finding a broken build on a quiet Friday rather than mid-incident is
+#                              the whole value.
+#
+# An earlier draft of this feature described the cron as the patch path. It is not, and believing so
+# would have left a weekly job that changed nothing while being trusted to apply security updates.
+# specs/069-minio-from-source/research.md §R8 records the correction.
+name: minio-image
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'infrastructure-as-code/docker/minio/Dockerfile'
+      - '.forgejo/workflows/minio-image.yml'
+  schedule:
+    # Friday 05:00 UTC — an hour before devcontainer-image's weekly, so the two heavy builds do not
+    # contend on the capacity-1 runner. Cron is UTC-only and does not observe DST (drifts ±1h across
+    # the boundary — same caveat as infra-image-scan and devcontainer-image).
+    - cron: '0 5 * * 5'
+
+concurrency:
+  group: minio-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-publish:
+    # kvm runner — the same Docker-capable self-hosted runner cd-deploy and devcontainer-image use.
+    runs-on: kvm
+    timeout-minutes: 60
+    env:
+      # Reach the ci user's rootless Docker daemon (same as cd-deploy).
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
+      # Host-free registry coordinates (Forgejo Actions vars — never a git literal, topology-scrub).
+      REGISTRY: ${{ vars.REGISTRY }}
+      NS: ${{ vars.NS }}
+      REGISTRY_USER: ${{ vars.REGISTRY_USER }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Docker CLI (talk to the runner's daemon socket)
+        run: |
+          bash scripts/ci-log-step.sh minio-image-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "::error::docker CLI not found on the runner"; exit 1
+          fi
+          docker version >/dev/null || { echo "::error::cannot reach the Docker daemon at $DOCKER_HOST"; exit 1; }
+          CI_LOG_STEP
+
+      # The Dockerfile reads its own pinned release tag, so the published TAG is derived from the
+      # source rather than from the commit — an image tagged with a git sha would tell a reader
+      # nothing about which MinIO it contains, and the compose refs are what people read.
+      - name: Build MinIO from source
+        # The `:?` var guard is INSIDE the wrapper (item #177 variant 4): above it, an unset REGISTRY
+        # fails the step before the wrapper runs — no capture, no marker, and a digest naming nothing.
+        run: |
+          bash scripts/ci-log-step.sh minio-image-build bash -e /dev/stdin <<'CI_LOG_STEP'
+          : "${REGISTRY:?set the REGISTRY Forgejo var}" "${NS:?set the NS Forgejo var}"
+          DOCKERFILE=infrastructure-as-code/docker/minio/Dockerfile
+          RELEASE="$(awk -F= '/^ARG MINIO_RELEASE=/{print $2}' "$DOCKERFILE")"
+          : "${RELEASE:?could not read MINIO_RELEASE from $DOCKERFILE}"
+          TAG="${REGISTRY}/${NS}/minio:${RELEASE}"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          docker build -f "$DOCKERFILE" -t "$TAG" "$(dirname "$DOCKERFILE")"
+          CI_LOG_STEP
+
+      # Contract acceptance BEFORE publishing. specs/069-minio-from-source/contracts/image-contract.md
+      # C1 (both binaries), C2 (a shell exists), C3 (honest version), C5 (runs as root). C3 is the one
+      # that needs asserting: a lost ldflags stamp still produces working binaries and a zero exit, so
+      # nothing else would catch it — the image would just misreport what it is, for ever.
+      - name: Verify the image contract
+        run: |
+          bash scripts/ci-log-step.sh minio-image-verify-contract bash -e /dev/stdin <<'CI_LOG_STEP'
+          DOCKERFILE=infrastructure-as-code/docker/minio/Dockerfile
+          WANT_MINIO="$(awk -F= '/^ARG MINIO_RELEASE=/{print $2}' "$DOCKERFILE")"
+          WANT_MC="$(awk -F= '/^ARG MC_RELEASE=/{print $2}' "$DOCKERFILE")"
+          got_minio="$(docker run --rm --entrypoint minio "$TAG" --version)"
+          got_mc="$(docker run --rm --entrypoint mc "$TAG" --version)"
+          got_uid="$(docker run --rm --entrypoint id "$TAG" -u)"
+          echo "minio --version: $got_minio"
+          echo "mc --version   : $got_mc"
+          echo "uid            : $got_uid"
+          case "$got_minio" in *"$WANT_MINIO"*) ;; *)
+            echo "::error::C3 violated — minio reports '$got_minio', expected to contain '$WANT_MINIO'."
+            echo "::error::The ldflags version stamp was lost. The binary works; it lies about itself."
+            exit 1 ;;
+          esac
+          case "$got_mc" in *"$WANT_MC"*) ;; *)
+            echo "::error::C3 violated — mc reports '$got_mc', expected to contain '$WANT_MC'."
+            exit 1 ;;
+          esac
+          [ "$got_uid" = "0" ] || {
+            echo "::error::C5 violated — image runs as uid $got_uid, not root."
+            echo "::error::The live langfuse-minio-data volume is root-owned; a non-root uid cannot write to it."
+            exit 1; }
+          CI_LOG_STEP
+
+      - name: Push (tag + digest) and surface the digest
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          bash scripts/ci-log-step.sh minio-image-push bash -e /dev/stdin <<'CI_LOG_STEP'
+          : "${REGISTRY_USER:?set the REGISTRY_USER Forgejo var}"
+          echo "$REGISTRY_TOKEN" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
+          docker push "$TAG"
+          DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d'@' -f2)"
+          echo "Published MinIO image:"
+          echo "  tag    : $TAG"
+          echo "  digest : $DIGEST"
+          {
+            echo "## MinIO image published"
+            echo ""
+            echo "Pin this in the observability compose files (both dev and prod):"
+            echo ""
+            echo '```'
+            echo "\${REGISTRY_HOST}/\${NS}/minio:$(echo "$TAG" | sed 's/.*://')@$DIGEST"
+            echo '```'
+            echo ""
+            echo "An UNCHANGED digest on a scheduled run is the CORRECT outcome — inputs are pinned,"
+            echo "so a no-change rebuild is meant to be reproducible. See the trigger note at the top"
+            echo "of .forgejo/workflows/minio-image.yml."
+          } >> "$GITHUB_STEP_SUMMARY"
+          CI_LOG_STEP
+
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009 of feature 042). `job.status`
+      # carries `cancelled` for a superseded run, which the script suppresses rather than publishing as
+      # a failure for a commit that was never broken.
+      #
+      # This job needs it more than most: it is the only place a build failure would surface, and the
+      # two most likely failures — upstream source withdrawn, or a moved tag tripping the commit
+      # assertion — are exactly the ones a reader must be able to diagnose without shell access.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs

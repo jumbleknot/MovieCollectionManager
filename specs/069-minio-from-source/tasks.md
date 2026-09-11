@@ -137,9 +137,9 @@ service reaches healthy.
 > **Publishing is inside this story, not after it.** US1's acceptance is "starts from a cold cache",
 > which is only meaningful against a real registry image. That is F1's correction.
 
-- [ ] T005 [US1] Implement the multi-stage build in `infrastructure-as-code/docker/minio/Dockerfile`
+- [X] T005 [US1] Implement the multi-stage build in `infrastructure-as-code/docker/minio/Dockerfile`
 - [ ] T006 [US1] Build locally and verify the image contract C1–C5 per [quickstart.md](./quickstart.md) §1–2
-- [ ] T007 [US1] Add the build workflow `.forgejo/workflows/minio-image.yml`, including its failure digest
+- [X] T007 [US1] Add the build workflow `.forgejo/workflows/minio-image.yml`, including its failure digest
 - [ ] T008 [US1] Publish the image and capture its digest
 - [ ] T009 [P] [US1] Rewrite the floating-tag premise in `scripts/__tests__/infra-image-scan.test.mjs`
 - [ ] T010 [US1] Repoint the four image refs in `infrastructure-as-code/docker/observability/compose.yaml` and `compose.prod.yaml`
