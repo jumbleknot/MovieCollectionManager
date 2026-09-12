@@ -234,6 +234,35 @@ same question. What settled it was comparing two real digests — not argument. 
 is ever actually wanted, the apk installs must be version-pinned too, and that is a separate decision
 with its own maintenance cost; it is not the current design and this document should not imply it is.
 
+### R8a — non-reproducibility has a second consequence, and it is the dangerous one
+
+**Measured 2026-09-12.** Rebuilding and re-pushing the same release tag left the *previous* digest
+returning **404** — not superseded, **gone**:
+
+```
+compose pinned  sha256:d876e7b3…   ->  HTTP 404, docker pull: "not found"
+registry now    sha256:469c132a…
+```
+
+This registry drops a manifest as soon as no tag references it. Combine that with a build that is not
+bit-reproducible and the weekly canary becomes actively harmful: every Friday it would mint a new
+digest, re-point the release tag, orphan the old manifest, and **break every compose reference pinned
+to it — dev and production alike**. A job whose entire purpose is to prove the build still works would
+have been breaking the stack on a schedule.
+
+The fix is the pattern this repository already uses and which I failed to copy: `cd-deploy` and
+`devcontainer-image` tag by `GITHUB_SHA`, so their tags never collide and no manifest is ever orphaned.
+Tagging by the *upstream release* — stable across rebuilds by construction — was the mistake.
+
+Each build now pushes **two** tags: the moving release tag (`2025.09.07-161309`), which is what a human
+reads, and an immutable per-run tag (`…-r<run id>`), which keeps that exact manifest referenced for
+ever. A digest pinned in compose therefore stays pullable, and updating it becomes a deliberate act
+rather than a weekly breakage.
+
+**The general lesson, worth more than the fix:** "the digest changed" and "the old digest stopped
+existing" are different failures with the same symptom, and only the second one breaks things that
+were already deployed. I noticed the first three times before checking for the second.
+
 **Alternatives considered**: On-change only (rejected — loses the canary, and the canary is the part
 that protects against an upstream that has already shown it will delete things). Tracking base images
 by tag instead of digest so the cron *does* pull patches (rejected — it trades reproducibility for a

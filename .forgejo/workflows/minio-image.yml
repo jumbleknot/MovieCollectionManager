@@ -109,9 +109,25 @@ jobs:
             *) echo "::error::tag transform produced '$IMAGE_TAG' from '$RELEASE' — an unorderable tag"
                echo "::error::would reintroduce a floating-tag exception. Fix the transform."; exit 1 ;;
           esac
+          # EVERY BUILD ALSO GETS AN IMMUTABLE TAG, and that is load-bearing rather than tidy.
+          #
+          # This registry DROPS a manifest the moment nothing tags it. Measured 2026-09-12: rebuilding
+          # and re-pushing `:2025.09.07-161309` left the previous digest returning 404 — not merely
+          # superseded, GONE, so every compose ref pinned to it stopped resolving. With the release
+          # tag alone, the weekly canary cron would therefore have broken the observability stack in
+          # dev AND prod every Friday: the build is not bit-reproducible (the apk installs float), so
+          # a rebuild always mints a new digest and always orphans the old one.
+          #
+          # A per-run tag keeps each manifest referenced forever, so a digest pinned in compose stays
+          # pullable and updating it becomes a deliberate act rather than a weekly breakage. This is
+          # the pattern cd-deploy and devcontainer-image already use (they tag by GITHUB_SHA); tagging
+          # by the upstream release alone was the mistake, because that is stable across rebuilds.
+          BUILD_TAG="${IMAGE_TAG}-r${GITHUB_RUN_ID:?GITHUB_RUN_ID is unset — the immutable tag would collide}"
           TAG="${REGISTRY}/${NS}/minio:${IMAGE_TAG}"
+          BUILD_REF="${REGISTRY}/${NS}/minio:${BUILD_TAG}"
+          echo "BUILD_REF=$BUILD_REF" >> "$GITHUB_ENV"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
-          docker build -f "$DOCKERFILE" -t "$TAG" "$(dirname "$DOCKERFILE")"
+          docker build -f "$DOCKERFILE" -t "$TAG" -t "$BUILD_REF" "$(dirname "$DOCKERFILE")"
           CI_LOG_STEP
 
       # Contract acceptance BEFORE publishing. specs/069-minio-from-source/contracts/image-contract.md
@@ -210,11 +226,16 @@ jobs:
           bash scripts/ci-log-step.sh minio-image-push bash -e /dev/stdin <<'CI_LOG_STEP'
           : "${REGISTRY_USER:?set the REGISTRY_USER Forgejo var}"
           echo "$REGISTRY_TOKEN" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
+          # BOTH tags. The moving release tag is what a human reads; the per-run tag is what keeps
+          # this manifest alive after the next rebuild re-points the release tag (see the note in the
+          # build step — an untagged manifest is dropped by this registry and a pinned digest 404s).
           docker push "$TAG"
+          docker push "$BUILD_REF"
           DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d'@' -f2)"
           echo "Published MinIO image:"
-          echo "  tag    : $TAG"
-          echo "  digest : $DIGEST"
+          echo "  moving tag   : $TAG"
+          echo "  immutable tag: $BUILD_REF"
+          echo "  digest       : $DIGEST"
           {
             echo "## MinIO image published"
             echo ""
@@ -230,6 +251,10 @@ jobs:
             echo ""
             echo "If you are updating the compose refs, use the digest printed above — not a remembered"
             echo "one. Two builds of identical source produced different digests (runs 3115, 3117)."
+            echo ""
+            echo "You do NOT have to update them on every rebuild: the per-run tag keeps each manifest"
+            echo "alive, so a previously-pinned digest stays pullable. That was not true before"
+            echo "2026-09-12 — the release tag alone left orphaned manifests, which this registry drops."
           } >> "$GITHUB_STEP_SUMMARY"
           CI_LOG_STEP
 
