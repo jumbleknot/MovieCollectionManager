@@ -145,6 +145,53 @@ jobs:
             exit 1; }
           CI_LOG_STEP
 
+      # SCAN BEFORE PUBLISHING — the image is scanned by its BUILDER, exactly as cd-deploy scans the
+      # six images it builds. That is the repository's existing partition, and this feature initially
+      # got it wrong: it routed this image to infra-image-scan instead, which then could not pull it.
+      # infra-image-scan is KEYLESS by design ("no ${{ secrets }}"), and this image lives in a private
+      # registry — so covering it there would have meant giving the keyless scanner credentials, and
+      # scanning only AFTER publishing. Scanning here needs no new credential at all (the image is
+      # already in the local daemon, just built) and gates the push instead of auditing it afterwards.
+      #
+      # Criteria mirror the infra gate's: --severity CRITICAL --ignore-unfixed. Fixable Criticals block;
+      # fixable Highs and unfixable findings are report-only, the same CRITICAL-only policy cd-deploy
+      # and infra-image-scan both use. A divergence here would mean two standards for "blocking".
+      - name: Install Trivy
+        run: |
+          bash scripts/ci-log-step.sh minio-image-install-trivy bash -e /dev/stdin <<'CI_LOG_STEP'
+          mkdir -p "$HOME/.local/bin"
+          # PINNED, and kept current by Renovate — same reasoning as item #303: an unpinned scanner is
+          # a floating reference inside the tool that decides whether a Critical blocks a publish.
+          TRIVY_VERSION=v0.74.0
+          curl -fsSL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_VERSION}/contrib/install.sh" \
+            | sh -s -- -b "$HOME/.local/bin" "${TRIVY_VERSION}"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/trivy" --version
+          CI_LOG_STEP
+
+      - name: Scan the built image (fixable Criticals block the publish)
+        run: |
+          bash scripts/ci-log-step.sh minio-image-scan bash -e /dev/stdin <<'CI_LOG_STEP'
+          # ghcr DB mirrors: Trivy's default mirror.gcr.io is not reachable from this network, and the
+          # JAVA db is a SEPARATE download with its own default — omitting --java-db-repository makes a
+          # scan fail deep in analysis rather than at config time. Recorded in
+          # docs/runbooks/infra-image-scanning.md; the same flags the local recipe there uses.
+          trivy image --quiet --scanners vuln \
+            --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+            --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
+            --severity CRITICAL --ignore-unfixed \
+            --exit-code 1 \
+            "$TAG" || {
+              echo "::error::Fixable CRITICAL finding(s) in the built MinIO image — refusing to publish."
+              echo "::error::This image is built from source, so the fix is usually a NEWER INPUT, not a"
+              echo "::error::suppression: bump the golang builder digest (Go stdlib findings), the alpine"
+              echo "::error::runtime digest (apk findings), or the pinned MinIO release. Reach for an"
+              echo "::error::allowlist entry only when no newer input clears it."
+              exit 1
+            }
+          echo "✓ no fixable Critical findings — safe to publish"
+          CI_LOG_STEP
+
       - name: Push (tag + digest) and surface the digest
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}

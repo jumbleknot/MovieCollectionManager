@@ -62,25 +62,27 @@ test('enumerateImages handles quotes and registry-prefixed refs', () => {
 // The partition must be COMPLETE, not merely disjoint — feature 069 (item #420),
 // specs/069-minio-from-source/contracts/scanner-scope.md.
 //
-// Two scanners cover this repository's images: cd-deploy's Trivy step covers the images cd-deploy
-// builds, and this scan covers everything else referenced under infrastructure-as-code/**.
-// Disjointness ("nothing in both") was already asserted below. COMPLETENESS ("nothing in neither")
-// was not, and the exclusion rule quietly violated it.
+// The rule is "every image is scanned by WHOEVER BUILDS IT, and everything else is scanned here" —
+// and the invariant is that each image is covered by EXACTLY ONE scanner. Disjointness ("nothing in
+// both") was already asserted below. COMPLETENESS ("nothing in neither") was not, and the exclusion
+// rule quietly violated it.
 //
 // The rule used to read `if (ref.includes('jumbleknot/')) continue;` with the comment "our built
 // images (cd-deploy owns them)". The comment states the right property; the prefix test implements a
-// different one — "anything named like ours" rather than "anything cd-deploy already scans". Those
-// coincided only while every jumbleknot/* image happened to be a cd-deploy image. `jumbleknot/minio`
-// is built by us and NOT by cd-deploy, so under the old rule it was excluded here, absent there, and
-// published examined by nothing — with no error anywhere and a truthful, meaningless zero-finding
-// report.
+// different one — "anything named like ours" rather than "anything already scanned elsewhere". Those
+// coincided only while every jumbleknot/* image happened to be a cd-deploy image, and feature 069
+// broke that coincidence by adding an image built by a DIFFERENT workflow.
 //
-// Asserted against FIXTURES rather than the live tree on purpose: a live-tree assertion stops testing
-// anything the day minio is the only such image and someone removes it.
+// The fixture is a HYPOTHETICAL image on purpose. It was `jumbleknot/minio` while that was the live
+// example — and then minio joined the exclusion set (it is scanned by its own builder), and these
+// tests failed for a reason that had nothing to do with the property being tested. A fixture naming a
+// real image stops testing the property the moment that image's classification changes; a
+// hypothetical keeps asserting "a jumbleknot/ image nobody else scans must be enumerated here"
+// forever, which is the actual invariant.
 test('(069) a jumbleknot/ image NOT built by cd-deploy IS enumerated — completeness', () => {
   const files = [{
     path: 'observability/compose.yaml',
-    content: '    image: jumbleknot/minio:2025.09.07-161309@sha256:'
+    content: '    image: jumbleknot/future-widget:1.2.3@sha256:'
       + '0000000000000000000000000000000000000000000000000000000000000000',
   }];
   const refs = enumerateImages(files).map((i) => i.ref);
@@ -90,7 +92,7 @@ test('(069) a jumbleknot/ image NOT built by cd-deploy IS enumerated — complet
       + '  cd-deploy does not scan it either — so it would be published examined by NEITHER scanner,\n'
       + '  silently. Exclude by membership of BUILT_IMAGE_NAMES, not by the "jumbleknot/" prefix.',
   );
-  assert.match(refs[0], /^jumbleknot\/minio:/);
+  assert.match(refs[0], /^jumbleknot\/future-widget:/);
 });
 
 // The registry host is INTERPOLATED in compose and must still be scanned — feature 069.
@@ -108,7 +110,7 @@ test('(069) a jumbleknot/ image NOT built by cd-deploy IS enumerated — complet
 test('(069) ${REGISTRY_HOST} is resolved when set, so our own images are scanned', () => {
   const files = [{
     path: 'observability/compose.yaml',
-    content: '    image: ${REGISTRY_HOST}/jumbleknot/minio:2025.09.07-161309@sha256:'
+    content: '    image: ${REGISTRY_HOST}/jumbleknot/future-widget:1.2.3@sha256:'
       + '0000000000000000000000000000000000000000000000000000000000000000',
   }];
   const imgs = enumerateImages(files, { REGISTRY_HOST: 'registry.example.test' });
@@ -118,7 +120,7 @@ test('(069) ${REGISTRY_HOST} is resolved when set, so our own images are scanned
       + '  compose cannot hold the literal host (topology-scrub), so if the scanner cannot resolve it,\n'
       + '  nothing scans the image at all.',
   );
-  assert.equal(imgs[0].ref, 'registry.example.test/jumbleknot/minio:2025.09.07-161309@sha256:'
+  assert.equal(imgs[0].ref, 'registry.example.test/jumbleknot/future-widget:1.2.3@sha256:'
     + '0000000000000000000000000000000000000000000000000000000000000000');
   assert.equal(imgs[0].floatingTag, false, 'a version+digest ref must not be classified as floating');
 });
@@ -126,7 +128,7 @@ test('(069) ${REGISTRY_HOST} is resolved when set, so our own images are scanned
 test('(069) an UNRESOLVED registry host is reported, never silently skipped', () => {
   const files = [{
     path: 'observability/compose.yaml',
-    content: '    image: ${REGISTRY_HOST}/jumbleknot/minio:2025.09.07-161309@sha256:'
+    content: '    image: ${REGISTRY_HOST}/jumbleknot/future-widget:1.2.3@sha256:'
       + '0000000000000000000000000000000000000000000000000000000000000000',
   }];
   // No REGISTRY_HOST: the ref genuinely cannot be pulled, so it is not enumerated — but the caller
@@ -165,12 +167,12 @@ test('(069) the guarded ${VAR:?…} form resolves — a compose guard contains S
   // error. Every REGISTRY_HOST reference in this repository carries such a guard.
   const files = [{
     path: 'observability/compose.yaml',
-    content: '    image: ${REGISTRY_HOST:?set in stacks/observability.env}/jumbleknot/minio:2025.09.07-161309@sha256:'
+    content: '    image: ${REGISTRY_HOST:?set in stacks/observability.env}/jumbleknot/future-widget:1.2.3@sha256:'
       + '0000000000000000000000000000000000000000000000000000000000000000',
   }];
   const imgs = enumerateImages(files, { REGISTRY_HOST: 'registry.example.test' });
   assert.equal(imgs.length, 1, 'the guarded ${VAR:?…} form was not resolved — check the image-line parser');
-  assert.match(imgs[0].ref, /^registry\.example\.test\/jumbleknot\/minio:2025\.09\.07-161309@sha256:/);
+  assert.match(imgs[0].ref, /^registry\.example\.test\/jumbleknot\/future-widget:1\.2\.3@sha256:/);
 });
 
 test('(069) a cd-deploy image with an interpolated DIGEST stays excluded — the control', () => {

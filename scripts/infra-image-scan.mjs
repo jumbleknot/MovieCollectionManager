@@ -29,8 +29,21 @@ const INFRA_GLOB = 'infrastructure-as-code/**/*.{yaml,yml}';
 const REPORT_DIR = resolve(REPO_ROOT, 'security/infra-images/reports');
 const SEVERITY_MAP_PATH = resolve(REPO_ROOT, 'security/infra-images/severity-map.yaml');
 
-// Our own built images (owned by cd-deploy's Trivy step, FR-009) — never scanned here.
-const BUILT_IMAGE_NAMES = ['mcm-bff', 'mc-service', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp'];
+// IMAGES THIS PROJECT BUILDS, EACH SCANNED BY ITS OWN BUILDER — never scanned here.
+//
+// The rule is "scanned by whoever builds it", not "named like ours" and not "built by cd-deploy".
+// Six are cd-deploy's (FR-009). `minio` was added by feature 069 (item #420) and is built and scanned
+// by .forgejo/workflows/minio-image.yml, which gates its own publish on a fixable Critical.
+//
+// Why not scan `minio` here, which was this feature's first design: infra-image-scan is KEYLESS by
+// design — its header states it references no `${{ secrets }}` — and that image lives in a private
+// registry, so Trivy here cannot pull it (measured: run 3121, "unable to find the specified image").
+// Covering it here would have meant handing credentials to the keyless scanner AND scanning only
+// after publication. Its builder already holds the image locally and gates the push instead.
+//
+// The invariant is unchanged and is what matters: every image is scanned by EXACTLY ONE scanner.
+// See specs/069-minio-from-source/contracts/scanner-scope.md.
+const BUILT_IMAGE_NAMES = ['mcm-bff', 'mc-service', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp', 'minio'];
 
 class ScanError extends Error {}
 

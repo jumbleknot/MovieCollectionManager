@@ -10,15 +10,28 @@
 > Every container image this project **publishes or pulls** is examined by **exactly one** scanner.
 > Not zero. Not two.
 
-Two scanners exist, with deliberately disjoint scopes:
+The organising rule is **an image is scanned by whoever builds it; everything else is scanned by
+`infra-image-scan`**:
 
 | Scanner | Scope | Gate |
 |---|---|---|
-| `cd-deploy`'s Trivy step | the images cd-deploy itself builds | blocks promotion |
+| `cd-deploy`'s Trivy step | the six images cd-deploy builds | blocks promotion |
+| `minio-image`'s Trivy step | `jumbleknot/minio`, which it builds | **blocks the publish** |
 | `infra-image-scan` | every other image referenced in `infrastructure-as-code/**` | blocks the merge |
 
 Disjointness is already asserted by a unit test. **Completeness was not**, and that is the gap this
 feature closes.
+
+> **Corrected during implementation.** This feature first routed `jumbleknot/minio` to
+> `infra-image-scan`. That failed in CI (run 3121: *"unable to find the specified image"*) for a reason
+> the design should have anticipated — `infra-image-scan` is **keyless by design**, its own header
+> stating it references no `${{ secrets }}`, and the image lives in a **private** registry. Covering it
+> there would have meant handing credentials to the keyless scanner *and* scanning only after
+> publication.
+>
+> Its builder already holds the freshly-built image in the local daemon and is already authenticated,
+> so scanning there needs no new credential and gates the push rather than auditing it afterwards.
+> That is also what cd-deploy has always done — the precedent was in the architecture the whole time.
 
 ---
 

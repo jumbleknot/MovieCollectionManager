@@ -21,9 +21,16 @@ The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). 
 
 ### Which scanner owns an image — by coverage, not by namespace
 
-Two scanners, deliberately disjoint: `cd-deploy`'s Trivy step covers the images cd-deploy **builds**;
-this scan covers everything else referenced under `infrastructure-as-code/**`. The invariant is that
-every image is examined by **exactly one** of them — not zero, not two.
+**An image is scanned by whoever builds it; everything else is scanned here.** `cd-deploy`'s Trivy
+step covers its six; `minio-image`'s covers `jumbleknot/minio` and gates its publish; this scan covers
+everything else referenced under `infrastructure-as-code/**`. The invariant is that every image is
+examined by **exactly one** of them — not zero, not two.
+
+**Why a builder scans its own image rather than sending it here.** This scan is *keyless* by design —
+no `${{ secrets }}` — and our images live in a **private** registry, so Trivy here cannot pull them.
+Feature 069 tried it and CI proved the point (run 3121: `unable to find the specified image`). A
+builder already holds the image locally and is already authenticated, so it needs no new credential
+and blocks the **publish** instead of auditing after the fact.
 
 Disjointness was always asserted. **Completeness was not**, and the exclusion rule quietly broke it.
 Until feature 069 it read:
