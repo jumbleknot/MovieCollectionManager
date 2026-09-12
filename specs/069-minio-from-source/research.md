@@ -259,6 +259,19 @@ reads, and an immutable per-run tag (`…-r<run id>`), which keeps that exact ma
 ever. A digest pinned in compose therefore stays pullable, and updating it becomes a deliberate act
 rather than a weekly breakage.
 
+**Verified, not reasoned.** The argument — run IDs are unique, so `…-r3127` can never be re-pushed, so
+its manifest stays referenced — is sound, and this feature has repeatedly shown that sound arguments
+lose to measurements. So it was tested directly:
+
+```
+run 3127  publishes  4dcaddaa…   tagged 2025.09.07-161309 AND 2025.09.07-161309-r3127
+run 3128  rebuilds:  release tag moves to 9d2af9ab…
+          then:      GET manifests/sha256:4dcaddaa…  ->  HTTP 200   (previously: 404)
+```
+
+The pinned digest survives a subsequent rebuild. Compose references no longer break when the canary
+runs.
+
 **The general lesson, worth more than the fix:** "the digest changed" and "the old digest stopped
 existing" are different failures with the same symptom, and only the second one breaks things that
 were already deployed. I noticed the first three times before checking for the second.

@@ -425,7 +425,7 @@ is not wired up and FR-003 is unmet.
 - [X] T020 [P] Update the Renovate guard in `scripts/__tests__/renovate-workflow.guard.test.mjs`
 - [X] T021 [P] Update `docs/runbooks/infra-image-scanning.md` for the emptied exception set
 - [X] T022 [P] File the non-root follow-up and close the loop on item #420
-- [ ] T023 Full gate sweep before opening the pull request
+- [X] T023 Full gate sweep before opening the pull request
 
 ### T019 — Renovate tracking follows the source
 
