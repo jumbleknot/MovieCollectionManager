@@ -4,7 +4,7 @@ title: Prod control tower (observability / audit / dormant Vault)
 description: Promotes the env-gated observability, audit-sink, and Vault stacks to production as three independently up/down-able Komodo ResourceSync stacks, wired into the BFF and agent gateway via consumer env only — no app code change.
 resource: docs/runbooks/prod-control-tower.md
 tags: [production, observability, audit, vault, komodo, runbook]
-timestamp: 2026-07-07T06:53:28-04:00
+timestamp: 2026-09-12T00:00:00Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -41,6 +41,33 @@ tailnet-reachable operator UIs.
 - **A capacity check was done before enabling observability**, because the LangFuse/ClickHouse stack is
   the heaviest addition on the shared host — re-run a capacity check before any future footprint
   increase rather than assuming headroom persists.
+
+## MinIO data-volume migration (uid 1000, feature 070)
+
+The `langfuse-minio` image was built as root until feature 070. Migrating to non-root requires a
+one-time `chown -R 1000:1000` on the data volume, done in the deploy window. Full procedure:
+`docs/runbooks/prod-control-tower.md` (§ "One-time: migrate the MinIO data volume to uid 1000").
+
+Three gotchas, all measured for real:
+
+- **An early chown does NOT stay valid.** Root bypasses DAC checks, so the running root image keeps
+  working on a `1000:1000` volume — but every object it writes afterwards is created **root-owned
+  again**. Measured: `find /data ! -user 1000` went from `0` straight back to `2` after a single new
+  object. So the chown must be the last thing before the non-root image starts, with nothing
+  root-owned running in between. It is cheap and fast; it is not durable while root is writing.
+- **Stop by container name, not via compose.** The prod stacks are Komodo-managed: Komodo clones the
+  repo and runs compose from its own stack directory with env injected from Komodo Variables, so a
+  hand-run `docker compose` from `$HOME` fails with "no configuration file provided" and unresolved
+  `${LANGFUSE_*}` interpolation errors. Use `docker stop langfuse-minio` — the `container_name` is
+  set explicitly and makes this equivalent without either problem.
+- **The real gate is the digest-pin update, not the PR merge.** Both compose files pin `langfuse-minio`
+  by digest. Merging the non-root image PR publishes a new digest but changes nothing live until the
+  pins are updated in a separate commit. Do not perform the chown and then redeploy the old pinned
+  image — the root process immediately resumes and undoes the migration. The sequence is only durable
+  when step 5 (`docker redeploy prod-observability` via Komodo) starts the non-root image.
+
+Verify with `find /data ! -user 1000 | wc -l` — must print `0`. Do not use `stat /data`; the
+top-level directory can show `1000:1000` while children are still root-owned.
 
 Full stack/compose/file table, Komodo Variable seeding list, deploy order per phase, and the complete
 prod-only failure-symptom table: `docs/runbooks/prod-control-tower.md`.
