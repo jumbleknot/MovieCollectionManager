@@ -284,6 +284,38 @@ cannot come back through the whole-commit gate. `--selftest` pins the over-repor
 > is no longer needed for that — the default verdict already sees it. The flag remains for choosing
 > which event's table you want to read.
 
+### A scheduled run reports `event: push` — the trigger is in a DIFFERENT field (item #418)
+
+`GET /actions/runs` returns **two** event fields per run, and they disagree on every cron run:
+
+| field | value on a weekly cron run | what it actually is |
+|---|---|---|
+| `trigger_event` | `schedule` | what fired the run |
+| `event` | `push` | the class of the **synthesized payload** |
+
+Measured 2026-09-12 across **all 68** scheduled runs since 2026-07-31: `trigger_event` is `schedule`
+for every one, `event` is `push` for every one. There is no counter-example, and the `ScheduleID`
+(non-zero only on a cron run) agrees with `trigger_event` throughout — it **is** present in the
+listing, not only on the run-detail endpoint.
+
+**`github.event_name` inside the job follows `trigger_event`.** A step gated
+`if: github.event_name == 'schedule'` DOES run on the weekly cron. Item #418 read `event`, saw
+`push`, and concluded the repository's only allowlist-expiry check had never once executed; the step
+had in fact been running weekly since the Friday after it was added, and had gone red for three
+consecutive weeks. Nothing was broken. **Do not "fix" a `== 'schedule'` gate from the `event` field.**
+
+`ci-status.mjs` filters `--event` on `event`, not `trigger_event`, and that is **correct for its
+purpose**: the commit-status context suffix (`… (push)`) is derived from the same `event` field, so a
+cron run's statuses really do land in the `push` view. The two fields answer different questions —
+`event` is "which context bucket", `trigger_event` is "what fired it".
+
+To list scheduled runs, filter on `ScheduleID !== 0` or `trigger_event === 'schedule'`:
+
+```js
+const runs = (await api(`/repos/${owner}/${repo}/actions/runs?page=1&limit=50`)).workflow_runs;
+runs.filter((r) => r.ScheduleID).map((r) => [r.id, r.created, r.workflow_id, r.trigger_event]);
+```
+
 ### Where the REQUIRED set comes from (do not hand-maintain it)
 
 The required globs are read **live** from `GET /repos/{owner}/{repo}/branch_protections` for the

@@ -105,6 +105,34 @@ Two consequences worth internalising:
   itself enough — which is why an allowlist change is self-confirming, per the note in the
   allowlist's own header.
 
+### Did the weekly ALLOWLIST-EXPIRY step run? Read its status, not its absence (item #418)
+
+The expiry check over both allowlists is the only thing that ever reports an expired, expiring or
+unmatched suppression, and it runs on the **weekly cron only** (`if: github.event_name == 'schedule'`)
+— it must never run on a PR, or a dated entry would block every pull request a fortnight later.
+
+That gate is invisible from the job's tick, and for three weeks it was believed to have never fired
+(see item #418, resolved). Since then the job publishes the measurement directly:
+
+```bash
+API=…/api/v1/repos/jumbleknot/mcm
+curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" "$API/commits/<sha>/statuses?page=1&limit=100" \
+  | jq -r '.[] | select(.context == "infra-image-scan/expiry") | .description'
+# event_name=schedule expiry_step=success   <- the cron ran it
+# event_name=push     expiry_step=skipped   <- a push-triggered sweep; correctly skipped
+# event_name=<unset>  expiry_step=<unset>   <- the runner returned no value: a real fault, investigate
+```
+
+Both halves are **raw measurements** interpolated from the run context, never a restatement of what
+the `if:` is believed to do. The status is always `success` and never gates anything — it is a record,
+and a red status on `main`'s tip is not something an observability step has standing to raise. It is
+posted on every non-`pull_request` run; if the POST itself fails, the status is simply **absent**,
+which is its own tell rather than a job failure for a bookkeeping call.
+
+> The `event_name` value here is also the standing answer to a forge trap that has cost a session
+> once already: `/actions/runs` reports `event: push` for a cron run, and only `trigger_event` says
+> `schedule`. See "A scheduled run reports `event: push`" in `docs/runbooks/ci-diagnostics.md`.
+
 ## Local use (where Trivy is available)
 
 Trivy is **not** on the Windows dev box — the authoritative scan is the Linux/CI job. On a Linux/WSL/macOS host with Trivy + Docker:
