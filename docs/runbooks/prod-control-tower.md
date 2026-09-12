@@ -100,9 +100,16 @@ Production (the volume is **compose-prefixed** — see the traps below):
 #    (a different/older project on the same host) and NOT the unprefixed name.
 docker volume ls | grep -i minio
 
-# 2. Stop the service — required, not tidiness: a running root image keeps
-#    creating root-owned objects, which silently undoes step 3.
-docker compose --profile observability stop langfuse-minio
+# 2. Stop the service — BY CONTAINER NAME, not via compose. This host's stacks are
+#    Komodo-managed: it clones the repo and runs compose from its own stack directory
+#    with env injected from Komodo Variables, so a hand-run `docker compose` here fails
+#    with "no configuration file provided" from $HOME, and with unset ${LANGFUSE_*}
+#    interpolation errors from the stack directory. `container_name: langfuse-minio`
+#    makes this equivalent and avoids both.
+#
+#    Stopping is required, not tidiness: a running root image keeps creating root-owned
+#    objects, which silently undoes step 3.
+docker stop langfuse-minio
 
 # 3. Migrate.
 docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
@@ -111,13 +118,26 @@ docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 chown -R 
 docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 \
   sh -c 'find /data ! -user 1000 | wc -l'
 
-# 5. Bring the stack up on the new digest. Nothing root-owned between 3 and 5.
+# 5. Bring the stack up ON THE NEW DIGEST, via Komodo (redeploy prod-observability).
+#    Nothing root-owned may run between 3 and 5.
 ```
 
-Dev, separately (check the real prefixed name on that host first):
+**There is no point doing steps 2-4 before the new image is pinned.** If step 5 is
+`docker start langfuse-minio` on the *old* image, the root process immediately resumes creating
+root-owned objects and the migration is undone. The sequence is only durable when step 5 deploys the
+non-root image, which requires: PR merged -> `minio-image` publishes a new digest -> both compose files
+re-pinned -> Komodo redeploys.
+
+**Keep the window short.** Prod services carry `restart: always`. An explicit `docker stop` holds until
+you start it — *unless the Docker daemon restarts in between*, which would bring MinIO back up as root
+and re-pollute the volume.
+
+Dev, separately — check the real prefixed name on that host first, and stop the container the same way:
 
 ```sh
-docker run --rm -v mcm_langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
+docker volume ls | grep -i minio
+docker stop langfuse-minio
+docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 chown -R 1000:1000 /data
 ```
 
 **The verification is the `find` count, and it must be `0`.** Do not use `stat /data`.

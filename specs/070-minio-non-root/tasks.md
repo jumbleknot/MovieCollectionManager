@@ -95,16 +95,18 @@ entries not owned by the target uid rather than stat-ing `/data`.
 
 ### T011 ⏳ Migrate the **dev** volume
 ```sh
-docker compose --profile observability stop langfuse-minio
-docker run --rm -v mcm_langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
-docker run --rm -v mcm_langfuse-minio-data:/data alpine:3.24 sh -c 'find /data ! -user 1000 | wc -l'
+docker volume ls | grep -i minio          # the dev volume is prefixed too — confirm it
+docker stop langfuse-minio
+docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 chown -R 1000:1000 /data
+docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 sh -c 'find /data ! -user 1000 | wc -l'
 ```
 Confirm the count is `0`. Check the dev volume's real (compose-prefixed) name first — see trap 1 in I4.
 
 ### T012 ⏳ Migrate the **production** volume — the merge gate
 ```sh
 docker volume ls | grep -i minio          # confirm the name BEFORE touching anything
-docker compose --profile observability stop langfuse-minio
+docker stop langfuse-minio                # BY NAME — the prod stacks are Komodo-managed, so a
+                                          # hand-run `docker compose` finds no config file
 docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
 docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 sh -c 'find /data ! -user 1000 | wc -l'
 ```
