@@ -26,6 +26,7 @@ import {
   WARNING_WINDOW_DAYS, classifyExpiry, selectUnmatched, formatExpiring, formatExpired, formatUnmatched,
 } from './allowlist-expiry.mjs';
 import { selectAdvice, formatAdvice } from './override-lever.mjs';
+import { isScanTarget } from './sast-scan.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_REPORT = resolve(REPO_ROOT, 'security/sast/reports/findings.json');
@@ -125,7 +126,50 @@ export function evaluate(report, allowlist, now = today()) {
   const scannersWithFindings = new Set(findings.map((f) => f.scanner));
   const unmatched = selectUnmatched(allowlist, matchedKeys, scannersWithFindings);
 
-  return { failures, warnings, suppressed, expiring, expired, unmatched, blinded: collectBlinded(report) };
+  return {
+    failures, warnings, suppressed, expiring, expired, unmatched,
+    blinded: collectBlinded(report),
+    asymmetric: selectAsymmetric(report, [...failures, ...suppressed]),
+  };
+}
+
+/**
+ * Blocking SAST findings sitting on a file class `--scope changed` never hands Semgrep (items #224,
+ * #426) — the STANDING form of an enumeration that had twice been only a snapshot.
+ *
+ * BOTH OF THOSE ITEMS WERE THE SAME DEFECT, FOUND THE SAME WAY: a rule fired on the post-merge full
+ * scan against a file the pull request's changed-scope run never handed it, so the PR that introduced
+ * the problem was gated on nothing and `main` went red after the merge. Workflow YAML (#224) and
+ * Dockerfiles (#426) were each closed reactively, one class at a time, and each time the comment said
+ * the durable fix was to enumerate the whole surface. A comment is not an enumeration that runs.
+ *
+ * IT COUNTS SUPPRESSED FINDINGS, NOT JUST FAILURES, and that is the entire point. An un-allowlisted
+ * blocking finding already fails the gate loudly — nobody needs help noticing it. The minio Dockerfile
+ * case was an ACCEPTED risk with an allowlist entry, so the gate was green and the asymmetry was
+ * invisible precisely because everything looked fine.
+ *
+ * TWO EXCLUSIONS, both because the check would otherwise be meaningless rather than merely noisy:
+ *
+ *   - `kind: 'sca'` — cargo-audit, pnpm-audit and pip-audit ignore `--scope` entirely and always run
+ *     over the whole lockfile set, so an SCA finding cannot be scope-asymmetric. Judging a lockfile by
+ *     a Semgrep target filter would report a defect that does not exist.
+ *   - `generatedAtScope === 'changed'` — every file in such a run was, by definition, a scan target.
+ *
+ * The scope field is REQUIRED. A missing field must not be able to switch this guard off silently, the
+ * way a missing file class switched off the thing it guards.
+ */
+function selectAsymmetric(report, blockingFindings) {
+  const scope = report?.generatedAtScope;
+  if (scope !== 'full' && scope !== 'changed') {
+    throw new GateError(`report has no usable \`generatedAtScope\` (got ${JSON.stringify(scope)}) — regenerate it with scripts/sast-scan.mjs. The gate-scope symmetry check (items #224/#426) cannot be evaluated without knowing which scope produced this report, and silently skipping it is the failure mode it exists to prevent.`);
+  }
+  if (scope !== 'full') return [];
+  return blockingFindings.filter((f) => f.kind !== 'sca' && !isScanTarget(pathOf(f.location)));
+}
+
+/** `src/a.ts:12` → `src/a.ts`. Trailing `:<line>` only; a path may itself contain digits. */
+function pathOf(location) {
+  return String(location ?? '').replace(/:\d+$/, '');
 }
 
 /**
@@ -254,12 +298,44 @@ export function gate(report, allowlist, now = today(), { checkExpiring = false, 
   printAllowlistReview(result, now);
   // Likewise advisory (feature 058, FR-018): it names the remedy, it does not decide the result.
   printOverrideLevers(report?.findings ?? [], overrides);
+  printAsymmetry(result.asymmetric);
   if (result.failures.length) {
     console.error(`✗ SAST gate FAILED: ${result.failures.length} un-allowlisted blocking (High/Critical runtime) finding(s). Fix them or add a justified allowlist entry (security/sast/allowlist.yaml).`);
     return 1;
   }
+  if (result.asymmetric.length) {
+    console.error(`✗ SAST gate FAILED: ${result.asymmetric.length} blocking finding(s) on a file class a pull request cannot see. This gate blocks on push and proves nothing on a PR — see GATE-SCOPE ASYMMETRY above.`);
+    return 1;
+  }
   console.log('✓ SAST gate passed (no un-allowlisted blocking findings).');
   return 0;
+}
+
+/**
+ * `GATE-SCOPE ASYMMETRY` — a blocking finding on a file a pull request's scan never receives.
+ *
+ * Deliberately its own section and its own exit path rather than being folded into the ordinary
+ * failure: the two say different things and need different fixes. The ordinary failure says "this
+ * code is wrong". This says "this gate is lying about what it protects" — the finding may be entirely
+ * accepted and correctly allowlisted, and the defect is still real, because the NEXT one on the same
+ * class will merge unnoticed too.
+ *
+ * The remedy is named explicitly, because it is not the one a reader reaches for first: the fix is to
+ * widen the changed-scope target filter, NOT to add an allowlist entry (an allowlist entry is what
+ * concealed item #426 for a merge cycle).
+ */
+function printAsymmetry(asymmetric) {
+  if (!asymmetric?.length) return;
+  console.log('GATE-SCOPE ASYMMETRY (blocking on push, invisible on a pull request)');
+  for (const f of asymmetric) {
+    console.log(`  [${f.scanner}] ${f.severity} ${f.id} — ${f.location}${f.allowlist ? `  (allowlisted by ${f.allowlist.addedBy})` : ''}`);
+  }
+  console.log('  These files are NOT handed to Semgrep by `--scope changed`, so the pull request that');
+  console.log('  introduces the next one of these is gated on nothing and `main` goes red after the merge.');
+  console.log('  That is items #224 (workflow YAML) and #426 (Dockerfiles), twice, and this is the guard');
+  console.log('  that stops a third. FIX: add the file class to the changed-scope filter in');
+  console.log('  scripts/sast-scan.mjs (CODE_EXT_RE / WORKFLOW_PATH_RE / DOCKERFILE_PATH_RE) so a PR');
+  console.log('  is gated on it too. An allowlist entry does NOT fix this — that is what hid #426.');
 }
 
 // ── Self-test (repo `--selftest`-then-scan convention) ───────────────────────
@@ -397,11 +473,60 @@ function selftest() {
   if (!/36 scanner error/.test(g8.out)) failures.push('(g8) the blinded-rule report must name the error count — that count is the evidence');
   if (!/could not run: 36/.test(g8.out)) failures.push('(g8) the UNMATCHED entry its blindness explains must say so, not offer the generic causes alone');
 
+  // ── (g9) GATE-SCOPE SYMMETRY — the standing guard for items #224 / #426 ────────────────────────
+  //
+  // Both of those items were the same defect, found the same way: a blocking finding appeared on a
+  // file class `--scope changed` never hands Semgrep, so the PR that introduced it was gated on
+  // nothing and `main` went red after the merge. Each was closed reactively, one class at a time
+  // (workflow YAML, then Dockerfiles), and the enumeration that would have caught the next one was
+  // never standing — it was a snapshot in a comment.
+  //
+  // This is that enumeration made executable. On a FULL-scope report, a blocking SAST finding whose
+  // file a pull request cannot see is a gate-integrity defect, and it fails.
+  //
+  // IT MUST COUNT SUPPRESSED FINDINGS TOO. That is the whole point: an un-allowlisted one already
+  // fails the gate loudly. The minio Dockerfile case was ACCEPTED and allowlisted, so the gate went
+  // green and the asymmetry stayed invisible — which is exactly when nobody looks.
+  const asym = (over = {}) => F({ kind: 'sast', scanner: 'semgrep', location: 'infrastructure-as-code/docker/x/Dockerfile:1', ...over });
+
+  // (g9a) un-allowlisted, on an invisible class → fails, and says WHY beyond the ordinary failure.
+  const g9a = capture(() => gate(rep([asym({ location: 'renovate.json:12' })]), [], NOW));
+  if (g9a.code !== 1) failures.push('(g9a) a blocking finding on a PR-invisible file class must fail the gate');
+  if (!/GATE-SCOPE ASYMMETRY/.test(g9a.out)) failures.push('(g9a) the asymmetry must be reported distinctly, not folded into the ordinary failure');
+
+  // (g9b) the case that matters: ALLOWLISTED, so the ordinary gate is green — and it must still fail.
+  const g9ballow = entry({ id: 'mcm-no-token-logging', locationPattern: 'renovate\\\\.json:.*' });
+  const g9b = capture(() => gate(rep([asym({ location: 'renovate.json:12' })]), g9ballow, NOW));
+  if (g9b.code !== 1) failures.push('(g9b) an ALLOWLISTED blocking finding on a PR-invisible class must STILL fail — that is the case that hid item #426');
+  if (!/GATE-SCOPE ASYMMETRY/.test(g9b.out)) failures.push('(g9b) the allowlisted asymmetry must be named');
+
+  // (g9c) a blocking finding on a VISIBLE class is untouched.
+  if (capture(() => gate(rep([asym({ location: 'frontend/mcm-app/src/a.ts:1' })]), [], NOW)).out.match(/GATE-SCOPE ASYMMETRY/)) failures.push('(g9c) a finding on a scanned class must not be reported as asymmetric');
+
+  // (g9d) Dockerfiles are visible now (item #426), so they must NOT trip this.
+  if (capture(() => gate(rep([asym()]), [], NOW)).out.match(/GATE-SCOPE ASYMMETRY/)) failures.push('(g9d) a Dockerfile is in the changed-scope filter since item #426 and must not be reported asymmetric');
+
+  // (g9e) SCA is scope-INDEPENDENT — cargo/pnpm/pip audit run in full regardless of --scope, so their
+  // findings can never be asymmetric and must not be judged by a Semgrep target filter.
+  const g9e = capture(() => gate(rep([F({ kind: 'sca', scanner: 'pnpm-audit', location: 'pnpm-lock.yaml:0', scope: 'runtime' })]), [], NOW));
+  if (/GATE-SCOPE ASYMMETRY/.test(g9e.out)) failures.push('(g9e) an SCA finding must never be reported asymmetric — SCA ignores --scope entirely');
+
+  // (g9f) CHANGED-scope reports are vacuous here: every file scanned was, by definition, a target.
+  const changedRep = { schemaVersion: 1, generatedAtScope: 'changed', scanners: [], findings: [asym({ location: 'renovate.json:12' })] };
+  if (/GATE-SCOPE ASYMMETRY/.test(capture(() => gate(changedRep, [], NOW)).out)) failures.push('(g9f) the asymmetry check is meaningless under changed scope and must not run there');
+
+  // (g9g) a report with no/unknown generatedAtScope is a HARD ERROR, never a silent skip. A missing
+  // field must not be able to switch this guard off the way it switched off the thing it guards.
+  try {
+    evaluate({ schemaVersion: 1, scanners: [], findings: [asym()] }, [], NOW);
+    failures.push('(g9g) a report without generatedAtScope must be rejected, not silently unguarded');
+  } catch (e) { if (!(e instanceof GateError)) failures.push('(g9g) a report without generatedAtScope must throw GateError'); }
+
   if (failures.length) {
     console.error('✗ check-sast-findings --selftest FAILED:\n  ' + failures.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ check-sast-findings --selftest passed (fail, allowlist-suppress, dev-warn, clean, blank-justification reject, expiry, warning tier + unmatched + blinded-rule report + --check-expiring + per-surface pip-audit suppression).');
+  console.log('✓ check-sast-findings --selftest passed (fail, allowlist-suppress, dev-warn, clean, blank-justification reject, expiry, warning tier + unmatched + blinded-rule report + --check-expiring + per-surface pip-audit suppression + gate-scope asymmetry).');
   process.exit(0);
 }
 
