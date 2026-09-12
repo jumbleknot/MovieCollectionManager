@@ -86,10 +86,12 @@ entries not owned by the target uid rather than stat-ing `/data`.
 
 ## Phase 4 — The operator step (outside CI)
 
-> **The chown is non-disruptive and may be done at any time, ahead of everything else.** Root bypasses
-> DAC permission checks, so the currently-running **root** image keeps working normally on a volume
-> owned by `1000:1000`. Measured: clean restart, `mc ready local` ready, a new write succeeded, zero
-> storage errors. There is no need for a tightly-coupled maintenance window.
+> **The chown must be done with the service STOPPED, as the last step before the non-root image starts.**
+> Root bypasses DAC checks, so the running root image keeps working on a `1000:1000` volume (clean
+> restart, `mc ready local` ready, new write OK, zero storage errors) — the chown is not disruptive. But
+> it does **not persist**: every object the root process writes afterwards is created root-owned again.
+> Measured — `find /data ! -user 1000` went from `0` back to `2` after ONE new object. An early chown is
+> harmless and buys nothing.
 
 ### T011 ⏳ Migrate the **dev** volume
 ```sh
@@ -101,11 +103,13 @@ Confirm the count is `0`. Check the dev volume's real (compose-prefixed) name fi
 
 ### T012 ⏳ Migrate the **production** volume — the merge gate
 ```sh
+docker volume ls | grep -i minio          # confirm the name BEFORE touching anything
 docker compose --profile observability stop langfuse-minio
 docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
 docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 sh -c 'find /data ! -user 1000 | wc -l'
 ```
-Must report `0`. **Nothing root-owned may run against the volume after this** (trap 2 in I4).
+Must report `0`. **Nothing root-owned may run against the volume between this and bringing the stack up
+on the new digest** — including the root MinIO itself, which is why step 2 stops it (trap 2 in I4).
 
 There is also a `minio_minio-data` volume on that host from another/older project. Confirm which stack
 owns it before touching anything named `minio*`.

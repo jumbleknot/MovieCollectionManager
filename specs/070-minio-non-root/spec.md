@@ -139,23 +139,26 @@ currently `sha256:4dcaddaac0ab6815…`, which is the root image. Merging trigger
 push to `main`, which builds and publishes a *new* digest — but nothing consumes it until the compose
 pins are updated in a separate commit. **The deploy gate is the digest-pin update, not the merge.**
 
-**2. The chown is non-disruptive and can be done first, independently.** Root bypasses DAC permission
-checks, so the *currently running root image* keeps working normally on a volume owned by `1000:1000`.
-Measured: after `chown -R 1000:1000`, the root image restarted clean, `mc ready local` reported ready,
-a new write succeeded, and there were **zero** storage errors.
+**2. The chown is non-disruptive, but it does NOT persist — so it belongs in the deploy window.** Root
+bypasses DAC checks, so the currently-running root image keeps working on a `1000:1000` volume (clean
+restart, `mc ready local` ready, new write OK, zero storage errors). **But every object it writes
+afterwards is created root-owned again**: measured, `find /data ! -user 1000` went from `0` straight back
+to `2` after a single new object. Doing the chown early is harmless and buys nothing; it must be the last
+step before the non-root image starts, with the service stopped and nothing root-owned in between.
 
-So the safe order is:
+So the order is:
 
 ```
-  chown the volume  ──▶  merge  ──▶  minio-image publishes a NEW digest
-  (non-disruptive,       (nothing        │
-   any time)              deploys)       ▼
-                                    update the compose digest pins  ──▶  deploy
-                                    ▲
-                          THIS is the step that must not precede the chown
+  merge  ──▶  minio-image publishes a NEW digest  ──▶  update the compose digest pins
+  (nothing                                                        │
+   deploys)                                                       ▼
+                                    DEPLOY WINDOW: stop  ──▶  chown -R 1000:1000
+                                                   ──▶  verify `find … ! -user 1000` == 0
+                                                   ──▶  up on the new digest
 ```
 
-The chown being safe to do early is what removes the need for a tightly-coupled maintenance window.
+FR-009's "verify against pre-existing objects" and this ordering are the two things that make the
+migration safe; neither is sufficient alone.
 
 ## Success criteria
 

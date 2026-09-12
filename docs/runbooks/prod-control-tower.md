@@ -74,14 +74,16 @@ overlapped CI — see [prod-reboot-resilience.md](prod-reboot-resilience.md) + `
 
 ## One-time: migrate the MinIO data volume to uid 1000 (feature 070, item #421)
 
-**Do this first — it is safe to do at any time, and nothing else should be sequenced tightly around it.**
+**Do this in the deploy window, with the service STOPPED — not ahead of time.**
 Contract: `specs/070-minio-non-root/contracts/runtime-identity.md`.
 
 Two things that are easy to get backwards, both measured:
 
-- **The chown is non-disruptive.** Root bypasses DAC permission checks, so the *currently running root
-  image* keeps working normally on a volume owned by `1000:1000` — clean restart, `mc ready local`
-  ready, new writes fine, zero storage errors. You do not need a maintenance window for the chown.
+- **An early chown does NOT stay valid.** Root bypasses DAC checks, so the running root image keeps
+  working on a `1000:1000` volume — but every object it writes afterwards is created **root-owned
+  again**. Measured: `find /data ! -user 1000` went from `0` straight back to `2` after a single new
+  object. So the chown must be the last thing before the non-root image starts, with nothing root-owned
+  running in between. It is cheap and fast; it is not durable while root is writing.
 - **Merging the non-root image does not deploy it.** Both compose files pin by **digest**, so the new
   image `minio-image` publishes on the push to `main` is consumed by nothing until those pins are
   updated in a separate commit. **The real gate is the digest-pin update**, which must not precede this
@@ -91,12 +93,25 @@ The image ran as **root** until feature 070, so the data volume is root-owned. A
 write to it; the failure is `unable to rename (/data/.minio.sys/tmp -> …) file access denied` on
 startup.
 
-Production (the volume is **compose-prefixed** — see the trap below):
+Production (the volume is **compose-prefixed** — see the traps below):
 
 ```sh
+# 1. Confirm the volume. `observability-langfuse-minio-data`, NOT `minio_minio-data`
+#    (a different/older project on the same host) and NOT the unprefixed name.
+docker volume ls | grep -i minio
+
+# 2. Stop the service — required, not tidiness: a running root image keeps
+#    creating root-owned objects, which silently undoes step 3.
 docker compose --profile observability stop langfuse-minio
+
+# 3. Migrate.
 docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
-docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 sh -c 'find /data ! -user 1000 | wc -l'
+
+# 4. Verify — MUST print 0.
+docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 \
+  sh -c 'find /data ! -user 1000 | wc -l'
+
+# 5. Bring the stack up on the new digest. Nothing root-owned between 3 and 5.
 ```
 
 Dev, separately (check the real prefixed name on that host first):

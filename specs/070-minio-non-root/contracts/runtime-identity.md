@@ -87,11 +87,18 @@ with the service stopped.
 **Why it is a contract**: it is the only step that cannot be done by CI, and doing it in the wrong order
 produces a failed production deploy against real data rather than a clean error.
 
-**It is non-disruptive, so it should be done EARLY rather than in a window.** Root bypasses DAC
-permission checks, so the currently-running root image keeps working on a `1000:1000` volume — measured:
-clean restart, `mc ready local` ready, new write OK, zero storage errors. And because both compose files
-pin the image by digest (C6), merging the non-root image deploys nothing; the step that must not precede
-this migration is the **digest-pin update**, not the merge.
+**It must be done with the service STOPPED, as the last step before the non-root image starts.** Two
+measured facts, in tension, and the second is the operative one:
+
+- Root bypasses DAC checks, so the running root image *keeps working* on a `1000:1000` volume — clean
+  restart, `mc ready local` ready, new write OK, zero storage errors. The chown is not disruptive.
+- But **it does not persist**: every object the root process writes afterwards is created root-owned
+  again. Measured — `find /data ! -user 1000` went from `0` back to `2` after a single new object
+  (`/data/langfuse/new.txt` and its `xl.meta`). Doing the chown early is harmless but buys nothing.
+
+Because both compose files pin the image by digest (C6), merging the non-root image deploys nothing. The
+step that must not precede this migration is the **digest-pin update**, not the merge — but the
+migration itself belongs inside the deploy window, not ahead of it.
 
 **Two traps, both hit during this work and both recorded so they are not re-learned:**
 
