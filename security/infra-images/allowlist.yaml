@@ -174,6 +174,42 @@
 # Deletion rather than expiry, per item #303: an entry matching nothing does not age out quietly — it
 # fails under UNMATCHED ENTRIES and reddens the weekly allowlist-expiry run.
 
+# ── OUR OWN from-source MinIO image, triaged 2026-09-11 (feature 069, item #420) ──────────────────
+# Written only AFTER observing the finding, never before. The entries for the deleted upstream images
+# were deliberately not re-keyed to this one, because whether a from-source build carries the same
+# advisories is an empirical question — and the answer turned out to be "one of them, not both".
+#
+# WHAT THE FIRST SCAN OF OUR IMAGE ACTUALLY FOUND (minio-image run 3123):
+#
+#   CVE-2025-68121  Go stdlib     — ABSENT. Present on the upstream image, and on postgres, mongodb
+#                                   and vault, because those ship an old Go. We choose our builder
+#                                   (golang:1.25-alpine), so this one is a build input, not a
+#                                   suppression. This is the feature's central claim, confirmed.
+#   CVE-2026-33186  grpc v1.72.0  — PRESENT, and not fixable by anything under our control.
+#
+# WHY AN ENTRY AND NOT A BUMP, checked rather than assumed (2026-09-11):
+#   minio RELEASE.2025-09-07T16-13-09Z  go.mod pins google.golang.org/grpc v1.72.0 (indirect)
+#   minio RELEASE.2025-10-15T17-29-55Z  go.mod pins google.golang.org/grpc v1.72.0 (indirect)  <- newest
+#   mc    RELEASE.2025-08-13T08-35-41Z  go.mod pins google.golang.org/grpc v1.71.0 (indirect)
+#   fix requires >= 1.79.3
+# So even the newest upstream release — the one titled "Security/CVE" — does not clear it. It is an
+# INDIRECT dependency of upstream's module graph; choosing our Go toolchain cannot move it.
+#
+# CONSIDERED AND REJECTED: forcing it with `go mod edit -replace google.golang.org/grpc@v1.79.3`. That
+# rewrites upstream's dependency graph on our own initiative, eight minor versions forward, on a
+# service holding production object data — a much larger change than the advisory warrants, and one
+# needing its own verification. Revisit if the advisory's exploitability against MinIO's actual use of
+# grpc is established, or if upstream bumps it.
+#
+# Same advisory the deleted upstream images carried as seed entries, so this is continuity of an
+# existing accepted risk, not a new one. Internal-only (Langfuse object store, not internet-facing).
+# Time-boxed; DELETE when a MinIO release ships grpc >= 1.79.3 rather than renewing the date.
+- image: 'jumbleknot/minio:'
+  id: 'CVE-2026-33186'
+  justification: 'Our from-source MinIO image (feature 069, item #420). google.golang.org/grpc v1.72.0 (fix 1.79.3) is an INDIRECT dependency pinned in upstream MinIO''s own go.mod, so our choice of Go toolchain cannot move it — verified 2026-09-11 that the newest upstream release RELEASE.2025-10-15T17-29-55Z pins v1.72.0 too, so no bump clears it. Rejected forcing it with a go.mod replace: rewriting upstream''s dependency graph eight minor versions forward, unilaterally, on a service holding production object data is a larger change than the advisory warrants. The deleted upstream images carried a seed entry for this same advisory, so this continues an accepted risk rather than adding one. Internal-only. Keyed to the repository prefix WITHOUT the registry host, because the host is topology-sensitive and injected at runtime — the matcher is an unanchored regex, so this matches `<forge>/jumbleknot/minio:<tag>@<digest>`. Time-boxed; delete when a MinIO release ships grpc >= 1.79.3.'
+  addedBy: 'item-420'
+  expiry: '2026-12-01'
+
 # ── NEW advisories on unchanged images, triaged 2026-09-10 (item #406) ────────────────────────────
 # TWO advisories, 11 blocking findings, four pulled images — every one of them on an image reference
 # `main` ALREADY carries, so these block `main` itself and every infra-touching PR, unrelated to any

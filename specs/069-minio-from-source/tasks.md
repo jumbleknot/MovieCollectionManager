@@ -332,7 +332,7 @@ against a volume already written by the current image — the pre-existing objec
 
 **Goal**: prove the sweep resolves every image and is real.
 
-- [ ] T015 [US2] Verify a **real** CI sweep and confirm the blocked pull request proceeds, per [quickstart.md](./quickstart.md) §9
+- [X] T015 [US2] Verify a **real** CI sweep and confirm the blocked pull request proceeds, per [quickstart.md](./quickstart.md) §9
 
 ### T015 — Prove the sweep was real
 
@@ -354,8 +354,8 @@ Also confirm `node scripts/infra-image-scan.mjs --list | grep -i minio` lists `j
 
 ## Phase 5: User Story 3 — security updates become possible (P2)
 
-- [ ] T016 [US3] Prove the canary rebuild works and produces an equivalent image
-- [ ] T017 [US3] Record the observed findings for the from-source image
+- [X] T016 [US3] Prove the canary rebuild works and produces an equivalent image
+- [X] T017 [US3] Record the observed findings for the from-source image
 
 ### T016 — Canary rebuild
 
@@ -423,8 +423,8 @@ is not wired up and FR-003 is unmet.
 
 - [X] T019 [P] Migrate MinIO version tracking in `renovate.json` to a `github-releases` customManager
 - [X] T020 [P] Update the Renovate guard in `scripts/__tests__/renovate-workflow.guard.test.mjs`
-- [ ] T021 [P] Update `docs/runbooks/infra-image-scanning.md` for the emptied exception set
-- [ ] T022 [P] File the non-root follow-up and close the loop on item #420
+- [X] T021 [P] Update `docs/runbooks/infra-image-scanning.md` for the emptied exception set
+- [X] T022 [P] File the non-root follow-up and close the loop on item #420
 - [ ] T023 Full gate sweep before opening the pull request
 
 ### T019 — Renovate tracking follows the source

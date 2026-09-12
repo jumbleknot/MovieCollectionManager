@@ -8,8 +8,9 @@ Keyless, config-as-code vulnerability scanning of the **third-party server image
 |---|---|---|
 | SAST/SCA (033) | at-rest source + **our** deps | Semgrep + cargo/pnpm/pip-audit over first-party code + our dependency graphs |
 | DAST (031) | running app HTTP | OWASP ZAP against the live BFF / mc-service / gateway |
-| `cd-deploy` Trivy (023) | **our built images** | the 6 `jumbleknot/*` images we build + push |
-| **Infra-image scan (035)** | **pulled third-party images** | Keycloak, Postgres, Redis, Mongo, Vault, OpenSearch, ClickHouse, LangFuse, Grafana, OPA, Unleash, MinIO, Caddy, Mailpit — everything in `infrastructure-as-code/**` **except** the 6 built images and `${..}`-interpolated refs |
+| `cd-deploy` Trivy (023) | **our built app images** | the 6 `jumbleknot/*` images cd-deploy builds + pushes |
+| `minio-image` Trivy (069) | **our built infra image** | `jumbleknot/minio`, built from source; gates its own publish |
+| **Infra-image scan (035)** | **pulled third-party images** | Keycloak, Postgres, Redis, Mongo, Vault, OpenSearch, ClickHouse, LangFuse, Grafana, OPA, Unleash, Caddy, Mailpit — everything in `infrastructure-as-code/**` **except** images scanned by their own builder and `${..}`-interpolated refs. **MinIO left this set in feature 069**: upstream deleted it, so we build and scan it ourselves |
 
 The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). Renovate keeps base images *current*; this scan detects a **published CVE against an already-pinned image**, which currency alone misses.
 
@@ -43,17 +44,17 @@ The comment names the right property. The code implements a different one — *"
 ours"* rather than *"anything cd-deploy already scans"*. The two coincided only while every
 `jumbleknot/*` image happened to be a cd-deploy image.
 
-Feature 069 broke that coincidence: `jumbleknot/minio` is built by us and **not** by cd-deploy. Under
-the old rule it was excluded here and absent there — published and examined by neither gate, with no
-error anywhere and a zero-finding report that was truthful and meaningless.
+Feature 069 broke that coincidence by adding an image built by a **different workflow**. Under the old
+rule it was excluded here and absent from cd-deploy's set — published and examined by neither gate,
+with no error anywhere and a zero-finding report that was truthful and meaningless.
 
-The rule is now membership of `BUILT_IMAGE_NAMES`. The `bareName` extraction already handled both
-shapes (`jumbleknot/mc-service:latest` → `mc-service`, excluded; `jumbleknot/minio:REL@sha256:…` →
-`minio`, enumerated), so the fix was to **delete** the prefix line rather than add to it.
+The rule is now membership of `BUILT_IMAGE_NAMES`, which means *images scanned by their own builder*
+rather than *images cd-deploy builds*. The `bareName` extraction already handled both shapes, so the
+fix was to **delete** the prefix line rather than add to it.
 
-**This generalises.** Any future image built outside cd-deploy — a mirrored third-party image, another
-from-source build — is now covered automatically. That is the point: the fix was to the rule, not to
-the MinIO case.
+**This generalises.** Any future image built outside cd-deploy is covered by the same question — does
+its builder scan it? If yes it belongs in `BUILT_IMAGE_NAMES`; if no it must be enumerated here. The
+fix was to the rule, not to the MinIO case.
 
 Guarded by `scripts/__tests__/infra-image-scan.test.mjs`, which asserts the completeness case against
 a **fixture** rather than the live tree. A live-tree assertion would stop testing anything the day
@@ -179,33 +180,38 @@ notational — CI ran the same images afterwards that it ran before:
 | `grafana/otel-lgtm` | `0.32.0` |
 | `openpolicyagent/opa` | `1.20.1` and `1.20.1-debug` |
 | `unleashorg/unleash-server` | `8.1.0` |
-| `minio/minio` | `RELEASE.2025-09-07T16-13-09Z` |
-| `minio/mc` | `RELEASE.2025-08-13T08-35-41Z` |
+| ~~`minio/minio`~~ | *no longer pulled — see below* |
+| ~~`minio/mc`~~ | *no longer pulled — see below* |
 
-### The 2025 minio dates are not neglect
+### MinIO is no longer pulled at all — feature 069 (item #420)
 
-MinIO **stopped publishing community releases after 2025-09**. Those two tags are the newest each
-repository offers — re-verified against `registry-1.docker.io` on 2026-08-30 (495 and 300
-`RELEASE.…Z` tags respectively). The floating tag had not been tracking anything for about a year, so
-pinning cost no currency at all. **Do not "fix" these pins forward; there is nothing ahead of them.**
+**Superseding the two sections that stood here.** They explained why `minio/minio` and `minio/mc` were
+pinned to 2025 dates (MinIO stopped publishing community releases after 2025-09) and why both still
+reported `[floating tag]` by design.
 
-### `minio/minio` and `minio/mc` still report `[floating tag]`, deliberately
+On **2026-09-11** MinIO deleted both repositories from Docker Hub — they return `404` while the org
+keeps its other 20 repos — having already moved the community edition to source-only distribution in
+October 2025. The copies on quay.io are frozen at the same point, so switching registry only relocates
+the problem; the proof is that the newest **source** tag, `RELEASE.2025-10-15T17-29-55Z` (titled
+"Security/CVE"), reached no registry at all.
 
-`node scripts/infra-image-scan.mjs --list` reports a floating count of **exactly 2**, and both are
-these. `isFloatingTag` calls a tag floating when it does not begin with an optional `v` and a digit;
-`RELEASE.2025-…` does not, so a pinned minio ref is still flagged.
+This project now **builds MinIO from source** — `infrastructure-as-code/docker/minio/Dockerfile`,
+published by `.forgejo/workflows/minio-image.yml`, which scans it and gates its own publish. Three
+consequences for this document:
 
-That is the classifier being right. Its job is to be suspicious of tags it **cannot order**, and a
-`RELEASE.<date>` tag genuinely is one — ordering it needs the `regex` versioning scheme declared for
-it in `renovate.json`, which the scanner does not read. Widening `isFloatingTag` to recognise the
-shape would make the report read clean while teaching a general-purpose classifier to vouch for an
-ordering it does not have, and would couple it to one vendor's tag convention. So the two are
-**declared exceptions** instead: the `matchPackageNames` of the date-tagged versioning rule in
-`renovate.json` *is* the declared list, and `infra-image-scan.test.mjs` asserts the floating set
-equals it exactly.
+- **Neither image is a pulled dependency any more**, so neither appears in this scan's set.
+- **The floating-tag exception set is now EMPTY**, and that is correct. The old rule here —
+  *"a floating count of 0 is a FAILURE"* — was written to stop someone widening `isFloatingTag` to
+  hide the exceptions. It still guards that, but it must now distinguish two situations that produce
+  the same count: **0 because the unorderable references were removed** (correct), versus **0 because
+  the classifier was widened to stop noticing them** (the failure). The guard asserts set equality
+  against the declared list, which holds at zero; `(fd1)`-`(fd4)` assert the classifier's behaviour
+  directly and do not depend on the count at all.
+- **Our own image is deliberately tagged `2025.09.07-161309`, not `RELEASE.2025-09-07T16-13-09Z`.** We
+  control this artifact, and an orderable tag needs no exception; mirroring upstream's unorderable
+  format would have imported a problem we do not have to have.
 
-**A floating count of 0 is therefore a FAILURE, not a success** — it would mean the classifier had
-been widened to hide the exceptions rather than declare them. So is a count above 2.
+Full reasoning, measured rather than asserted: `specs/069-minio-from-source/research.md`.
 
 ### The minio update types are calendar arithmetic, not semantics
 

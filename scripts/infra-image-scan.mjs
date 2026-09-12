@@ -265,13 +265,33 @@ function main() {
   const argv = process.argv.slice(2);
   const listOnly = argv.includes('--list');
   const emitAllowlist = argv.includes('--emit-allowlist');
-  for (const a of argv) {
+
+  // `--image <ref>` — scan exactly ONE image instead of enumerating the tree.
+  //
+  // Added by feature 069 (item #420) so that an image scanned by its own BUILDER goes through this
+  // same pipeline: the same Trivy invocation, the same severity map, the same
+  // security/infra-images/allowlist.yaml, and therefore the same weekly expiry check.
+  //
+  // The alternative was a bare `trivy --exit-code 1` in the build workflow, which is what this
+  // feature first shipped. It works right up to the moment a finding needs accepting — and then the
+  // acceptance has nowhere to live except a second suppression mechanism (a .trivyignore) that the
+  // expiry check does not read and nobody thinks to look in. One allowlist, one policy, one place to
+  // look. A finding suppressed where nothing reviews it is how a permanent suppression is born.
+  const imageFlagAt = argv.indexOf('--image');
+  const singleImage = imageFlagAt >= 0 ? argv[imageFlagAt + 1] : null;
+  if (imageFlagAt >= 0 && !singleImage) { console.error('--image requires a ref'); process.exit(2); }
+
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--image') { i++; continue; }            // its value is not a flag
     if (!['--list', '--emit-allowlist'].includes(a)) { console.error(`Unknown argument: ${a}`); process.exit(2); }
   }
 
   let images;
   try {
-    images = enumerateImages(readInfraFiles());
+    images = singleImage
+      ? [{ ref: singleImage, locations: [{ path: '(--image)', line: 0 }], floatingTag: isFloatingTag(singleImage) }]
+      : enumerateImages(readInfraFiles());
   } catch (e) {
     console.error(`✗ enumeration failed: ${e.message}`);
     process.exit(2);
@@ -288,7 +308,7 @@ function main() {
   //
   // A warning on --list (enumeration is useful locally without a registry host), but FATAL on a real
   // scan, where "passed" would otherwise be a claim about images nobody looked at.
-  if (enumerateImages.unresolved.length > 0) {
+  if (!singleImage && enumerateImages.unresolved.length > 0) {
     const where = enumerateImages.unresolved.join(', ');
     const n = enumerateImages.unresolved.length;
     if (listOnly) {

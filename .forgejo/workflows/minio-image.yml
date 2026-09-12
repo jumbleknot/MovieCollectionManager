@@ -172,24 +172,20 @@ jobs:
       - name: Scan the built image (fixable Criticals block the publish)
         run: |
           bash scripts/ci-log-step.sh minio-image-scan bash -e /dev/stdin <<'CI_LOG_STEP'
-          # ghcr DB mirrors: Trivy's default mirror.gcr.io is not reachable from this network, and the
-          # JAVA db is a SEPARATE download with its own default — omitting --java-db-repository makes a
-          # scan fail deep in analysis rather than at config time. Recorded in
-          # docs/runbooks/infra-image-scanning.md; the same flags the local recipe there uses.
-          trivy image --quiet --scanners vuln \
-            --db-repository ghcr.io/aquasecurity/trivy-db:2 \
-            --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
-            --severity CRITICAL --ignore-unfixed \
-            --exit-code 1 \
-            "$TAG" || {
-              echo "::error::Fixable CRITICAL finding(s) in the built MinIO image — refusing to publish."
-              echo "::error::This image is built from source, so the fix is usually a NEWER INPUT, not a"
-              echo "::error::suppression: bump the golang builder digest (Go stdlib findings), the alpine"
-              echo "::error::runtime digest (apk findings), or the pinned MinIO release. Reach for an"
-              echo "::error::allowlist entry only when no newer input clears it."
-              exit 1
-            }
-          echo "✓ no fixable Critical findings — safe to publish"
+          # Goes through the SHARED pipeline — same Trivy invocation, same severity map, and above all
+          # the same security/infra-images/allowlist.yaml — rather than a bare `trivy --exit-code 1`.
+          #
+          # The bare form is what this step first shipped, and it works right up to the moment a
+          # finding has to be ACCEPTED. Then the acceptance has nowhere to live but a second
+          # suppression mechanism the weekly expiry check does not read and nobody thinks to look in.
+          # One allowlist, one policy, one place to look — and one review cycle that can expire it.
+          #
+          # Proven necessary on this step's very first run (3123): the from-source image cleared
+          # CVE-2025-68121 (the Go stdlib finding — that is the toolchain choice paying off) but
+          # carries CVE-2026-33186 in google.golang.org/grpc, pinned at v1.72.0 in MinIO's own go.mod.
+          # No upstream release fixes it: RELEASE.2025-10-15 pins v1.72.0 too, against a 1.79.3 fix.
+          node scripts/infra-image-scan.mjs --image "$TAG"
+          node scripts/check-infra-image-findings.mjs
           CI_LOG_STEP
 
       - name: Push (tag + digest) and surface the digest
