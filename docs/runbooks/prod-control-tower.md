@@ -72,6 +72,97 @@ Operator UIs (R10): only `langfuse-web` (`:19030`) + Grafana (`:19002`) — reac
 so they can't collide with the CI runner's LangFuse/Grafana on the shared host (the old `:3030`/`:3002`
 overlapped CI — see [prod-reboot-resilience.md](prod-reboot-resilience.md) + `check-prod-ci-port-collision.mjs`).
 
+## One-time: migrate the MinIO data volume to uid 1000 (feature 070, item #421)
+
+**Do this in the deploy window, with the service STOPPED — not ahead of time.**
+Contract: `specs/070-minio-non-root/contracts/runtime-identity.md`.
+
+Two things that are easy to get backwards, both measured:
+
+- **An early chown does NOT stay valid.** Root bypasses DAC checks, so the running root image keeps
+  working on a `1000:1000` volume — but every object it writes afterwards is created **root-owned
+  again**. Measured: `find /data ! -user 1000` went from `0` straight back to `2` after a single new
+  object. So the chown must be the last thing before the non-root image starts, with nothing root-owned
+  running in between. It is cheap and fast; it is not durable while root is writing.
+- **Merging the non-root image does not deploy it.** Both compose files pin by **digest**, so the new
+  image `minio-image` publishes on the push to `main` is consumed by nothing until those pins are
+  updated in a separate commit. **The real gate is the digest-pin update**, which must not precede this
+  chown.
+
+The image ran as **root** until feature 070, so the data volume is root-owned. A non-root uid cannot
+write to it; the failure is `unable to rename (/data/.minio.sys/tmp -> …) file access denied` on
+startup.
+
+Production (the volume is **compose-prefixed** — see the traps below):
+
+```sh
+# 1. Confirm the volume. `observability-langfuse-minio-data`, NOT `minio_minio-data`
+#    (a different/older project on the same host) and NOT the unprefixed name.
+docker volume ls | grep -i minio
+
+# 2. Stop the service — BY CONTAINER NAME, not via compose. This host's stacks are
+#    Komodo-managed: it clones the repo and runs compose from its own stack directory
+#    with env injected from Komodo Variables, so a hand-run `docker compose` here fails
+#    with "no configuration file provided" from $HOME, and with unset ${LANGFUSE_*}
+#    interpolation errors from the stack directory. `container_name: langfuse-minio`
+#    makes this equivalent and avoids both.
+#
+#    Stopping is required, not tidiness: a running root image keeps creating root-owned
+#    objects, which silently undoes step 3.
+docker stop langfuse-minio
+
+# 3. Migrate.
+docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
+
+# 4. Verify — MUST print 0.
+docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 \
+  sh -c 'find /data ! -user 1000 | wc -l'
+
+# 5. Bring the stack up ON THE NEW DIGEST, via Komodo (redeploy prod-observability).
+#    Nothing root-owned may run between 3 and 5.
+```
+
+**There is no point doing steps 2-4 before the new image is pinned.** If step 5 is
+`docker start langfuse-minio` on the *old* image, the root process immediately resumes creating
+root-owned objects and the migration is undone. The sequence is only durable when step 5 deploys the
+non-root image, which requires: PR merged -> `minio-image` publishes a new digest -> both compose files
+re-pinned -> Komodo redeploys.
+
+**Keep the window short.** Prod services carry `restart: always`. An explicit `docker stop` holds until
+you start it — *unless the Docker daemon restarts in between*, which would bring MinIO back up as root
+and re-pollute the volume.
+
+Dev, separately — check the real prefixed name on that host first, and stop the container the same way:
+
+```sh
+docker volume ls | grep -i minio
+docker stop langfuse-minio
+docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 chown -R 1000:1000 /data
+```
+
+**The verification is the `find` count, and it must be `0`.** Do not use `stat /data`.
+
+### Three traps, all of them hit for real
+
+1. **`docker run -v <name>:/data` CREATES the volume when it does not exist**, and a fresh volume is
+   `0:0`. Feature 069's first attempt at measuring production used the unprefixed
+   `langfuse-minio-data`; Docker created it and reported `0:0`, which read as a successful measurement
+   of the real thing. Ownership alone cannot tell a volume Docker just made from the production one —
+   **ownership plus contents can**. The real name is `observability-langfuse-minio-data`.
+2. **Nothing root-owned may run against the volume after the chown.** Observed while verifying feature
+   070: a root container started after the migration recreated `/data/.minio.sys/tmp` and
+   `tmp/.trash` as `0:0`, and the next non-root start failed identically to an unmigrated volume. The
+   top-level directory still reported `1000:1000` throughout, so a `stat /data` would have called it
+   migrated. Hence the `find … ! -user 1000` count rather than a top-level check.
+3. **There is also a `minio_minio-data` volume on the prod host** from another/older project. Confirm
+   which stack owns it before touching anything named `minio*`.
+
+### After the deploy
+
+`langfuse-minio` healthy, `langfuse-web` and `langfuse-worker` up, and a trace visible in the LangFuse
+UI that was written *after* the deploy — a stack that starts proves the permissions, a new trace proves
+the write path.
+
 ## Capacity check (T013) — result (2026-07-03)
 
 Prod host (`prod@homelab`, ~57 GiB usable): **48 GiB RAM available**, actual container RSS ~2.2 GiB (app

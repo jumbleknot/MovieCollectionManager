@@ -140,11 +140,40 @@ RUN apk add --no-cache ca-certificates
 COPY --from=build /out/minio /usr/bin/minio
 COPY --from=build /out/mc /usr/bin/mc
 
-# NO `USER` directive — the image runs as root, matching the upstream image it replaces, whose
-# published config carries no User. This is load-bearing, not an oversight: the live
-# `langfuse-minio-data` volume was created by that root process, and a non-root uid could not write to
-# it. Moving to non-root is a deliberate follow-up requiring a one-time volume chown; it is a CHANGE TO
-# CONTRACT C5, not an innocuous Dockerfile edit.
+# ── Runtime identity: uid 1000, explicitly (feature 070, item #421) ───────────────────────────────
+#
+# This image used to run as ROOT, matching the upstream image it replaced. That was contract C5 of
+# feature 069 — recorded as a contract precisely so that changing it would be a deliberate
+# renegotiation rather than an innocuous-looking edit. Feature 070 is that renegotiation; C5 now states
+# this identity, and the one-time volume chown that had to accompany it has been done.
+#
+# THE NUMBER IS THE CONTRACT, NOT MERELY "NON-ROOT". A data volume is chowned to a NUMBER; the kernel
+# never sees the name. So the uid is written as an explicit integer rather than allocated by adduser's
+# system counter. The idiom the six sibling first-party images use (`adduser -S <name>`) resolves to
+# uid 100 / gid 101 on alpine:3.24 — measured — which is a counter-allocated value that can move if the
+# base image later adds a system account. Those six are stateless and nothing is keyed to their number.
+# This one holds production object data: a drifted uid would fail exactly like an unmigrated volume, on
+# a rebuild that changed nothing anyone would think to look at.
+#
+# 1000 specifically: the conventional first non-system uid, what MinIO's own non-root guidance uses,
+# and outside the range `adduser -S` allocates from, so a future base-image system account cannot
+# collide with it.
+#
+# THE HOME DIRECTORY IS LOAD-BEARING, NOT HYGIENE. `mc` writes its config to $HOME/.mc on first use.
+# Without a home a non-root process gets HOME=/, which is root-owned and mode 755, and `mc` dies with
+# `Unable to save new mc config. mkdir /.mc: permission denied`. That breaks TWO things in both
+# observability stacks: the `langfuse-minio` healthcheck (`mc ready local`) — which langfuse-web and
+# langfuse-worker both gate their startup on via `condition: service_healthy`, so the whole stack stays
+# down — and the `langfuse-minio-init` one-shot that creates the `langfuse` bucket LangFuse v3 will not
+# create for itself. Measured: OK as root, exit 1 as uid 1000 without this, OK as uid 1000 with it.
+# The visible symptom of omitting it is "minio unhealthy", which does not point at its cause.
+#
+# `-D` creates the home directory owned by the user; `-H` would not. Verified end-to-end against a
+# volume carrying pre-existing objects, not a fresh one — a fresh volume passes whatever uid you pick.
+RUN addgroup -g 1000 minio && adduser -u 1000 -G minio -h /home/minio -D minio
+ENV HOME=/home/minio
+USER 1000:1000
+
 #
 # NO `CMD` — compose supplies `["server", "/data", "--console-address", ":9001"]`, and duplicating it
 # here would split one decision across two files. Upstream's docker-entrypoint.sh is deliberately not

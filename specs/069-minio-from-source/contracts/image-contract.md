@@ -76,19 +76,36 @@ change shape.
 
 ---
 
-## C5 — Runtime identity is root (uid 0)
+## C5 — Runtime identity is uid 1000, gid 1000
 
-Matching the replaced image, whose published config carries no `User`.
+**RENEGOTIATED 2026-09-12 by feature 070 (item #421).** This clause previously read *"Runtime identity
+is root (uid 0)"*, and said of itself:
 
-**Why it is a contract**: the live `langfuse-minio-data` volume is root-owned. An image running as any
-other uid cannot write to it, and that failure surfaces on a production redeploy against real data.
+> **Explicitly a temporary clause.** It is recorded here so that moving to non-root is a *contract
+> change* — one that must be accompanied by a volume ownership migration — rather than an
+> innocuous-looking Dockerfile edit.
 
-**Explicitly a temporary clause.** It is recorded here so that moving to non-root is a *contract
-change* — one that must be accompanied by a volume ownership migration — rather than an innocuous-looking
-Dockerfile edit.
+That is what happened. The clause is **discharged, not deleted**: the temporary state it described has
+ended, and the record of why it existed is kept above so the next reader can see that the identity was
+chosen twice, deliberately, rather than drifting.
 
-**Verification**: `docker run --rm <image> id -u` reports `0`, and the container writes to a
-root-owned bind mount.
+**The migration that accompanied it**: a one-time `chown -R 1000:1000` of the data volume, performed
+with the service stopped, for dev and production separately. The production volume
+(`observability-langfuse-minio-data`) was measured root-owned and holding real Langfuse data by feature
+069's T013 before any of this was written, so the migration was known-necessary rather than precautionary.
+
+**Why the NUMBER is contracted, not merely "non-root"**: a volume is chowned to a number, never to a
+name. An identity allocated by `adduser`'s system counter — uid 100 on `alpine:3.24`, measured — can
+move when the base image adds a system account, and a moved uid fails exactly like an unmigrated volume,
+on a rebuild that changed nothing visible.
+
+**A second clause came with it**: the image must provide a writable `HOME` for that user, because `mc`
+writes its config to `$HOME/.mc` and is used by both the `langfuse-minio` healthcheck and the bucket-init
+one-shot. See `specs/070-minio-non-root/contracts/runtime-identity.md` clause I2 for the measurement.
+
+**Verification**: `docker run --rm --entrypoint id <image> -u` reports `1000`, asserted in
+`.forgejo/workflows/minio-image.yml` before publish; and the container reads and writes a volume
+chowned to `1000:1000` that carries pre-existing objects.
 
 ---
 
