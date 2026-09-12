@@ -1,31 +1,44 @@
 {
-  "coveredCommit": "3d9be8a81178f4b148f70b6b4d0e4b3518eff69f",
-  "coveredAt": "2026-09-12T16:29:24.410Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "e292b993d235b5bc4c9f533c3aa31e6107cc4764",
+  "coveredAt": "2026-09-12T20:11:28.921Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 431,
-    "headCommit": "e0083ee4d238d085f39088c543fb797569e56444",
-    "markerBefore": "3782a8cda1c2b0b849de2d5cfb72e2f254a56c43",
+    "number": 435,
+    "headCommit": "18b84a845983041e383962142aca43b39cebcdc5",
+    "markerBefore": "e292b993d235b5bc4c9f533c3aa31e6107cc4764",
     "slices": [
+      {
+        "area": "decisions",
+        "pages": [
+          "adr-0002-stateful-major-upgrades.md"
+        ],
+        "kind": "create",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "new source, not yet covered: docs/decisions/ADR-0002-stateful-major-upgrades.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/decisions/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/decisions/adr-0002-stateful-major-upgrades.md. The openwiki/decisions/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/decisions/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
       {
         "area": "runbooks",
         "pages": [
-          "prod-control-tower.md"
+          "ci-diagnostics.md",
+          "infra-image-scanning.md",
+          "renovate.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/prod-control-tower.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/renovate.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/infra-image-scanning.md; openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-12T13:36:14.356Z"
+    "updatedAt": "2026-09-12T20:11:29.245Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 4,
+    "elapsedSeconds": 327,
     "stoppedAtBudget": false
   }
 }
