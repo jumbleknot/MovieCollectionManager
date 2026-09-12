@@ -264,6 +264,43 @@ test('YAML outside the workflow trees stays out of the changed set', () => {
   ]) assert.equal(isScanTarget(p), false, p);
 });
 
+// ── Dockerfiles (item #426) ──────────────────────────────────────────────────
+//
+// The same shape as item #224, one file class later. A Dockerfile has NO EXTENSION, so it matched
+// neither of the two patterns above and `--scope changed` handed Semgrep none of them. Observed, not
+// reasoned: PR #422 added infrastructure-as-code/docker/minio/Dockerfile, its `guardrails / sast` was
+// a real 3m30s run that PASSED, and the post-merge full scan on main (run 3144, commit 78ebc703) then
+// failed on `dockerfile.security.missing-user-entrypoint` at line 153. `main` stayed red until PR #425
+// landed the accepted-risk entry.
+//
+// MEASURED BEFORE WIDENING (2026-09-12), because item #224's comment warns against doing this
+// carelessly. Running the five configured packs over all eight first-party Dockerfiles produced
+// exactly ONE finding — the already-accepted minio one — and zero Medium/Low. So this class gates
+// without adding noise, which is the thing that had to be checked rather than assumed.
+
+test('a changed Dockerfile is scanned, so a PR adding a USER-less one is gated before merge', () => {
+  for (const p of [
+    'infrastructure-as-code/docker/minio/Dockerfile',
+    'backend/mc-service/Dockerfile',
+    '.devcontainer/Dockerfile',
+    // Suffixed and prefixed variants are real in this repo and in the wild.
+    '.devcontainer/toolchain.Dockerfile',
+    'frontend/mcm-app/Dockerfile.prod',
+    'Dockerfile',
+  ]) assert.equal(isScanTarget(p), true, p);
+});
+
+test('the Dockerfile pattern does not drag in neighbours that merely mention the name', () => {
+  // `.dockerignore` is not a Dockerfile and no dockerfile.* rule can parse it; a docs page about
+  // Dockerfiles is prose. Widening to a substring match would pull both in.
+  for (const p of [
+    '.dockerignore',
+    'frontend/mcm-app/.dockerignore',
+    'docs/runbooks/dockerfile-conventions.md',
+    'infrastructure-as-code/docker/minio/README.md',
+  ]) assert.equal(isScanTarget(p), false, p);
+});
+
 // ── Custom-rule fixtures (item #224) ─────────────────────────────────────────
 //
 // The fixtures under security/sast/rules/ shipped with feature 033 and NOTHING RAN THEM: at the time

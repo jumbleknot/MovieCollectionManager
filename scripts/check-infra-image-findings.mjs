@@ -135,7 +135,26 @@ export function evaluate(report, allowlist, now = today()) {
   const matchedKeys = new Set();
   for (const f of findings) for (const e of allowlist) if (matchesFinding(e, f)) matchedKeys.add(e.key);
   const scannersWithFindings = findings.length ? new Set([SCANNER]) : new Set();
-  const unmatched = selectUnmatched(allowlist, matchedKeys, scannersWithFindings);
+
+  // WHICH ENTRIES THIS RUN IS ENTITLED TO JUDGE (item #423). Two jobs consult this one allowlist —
+  // the sweep, which scans every pulled third-party image, and `minio-image`, which scans exactly one
+  // via --image — and both label their findings with the same literal SCANNER. So the scanner guard
+  // above cannot separate them, and each used to report the other's live entries as suppressing
+  // nothing: 16 false lines on a single-image run, every one of them arguing to delete an entry that
+  // is actively suppressing a finding on some other image.
+  //
+  // `generatedForImages` is the run's scanned set — already written by infra-image-scan.mjs, so this
+  // needs no new plumbing. An entry whose image regex matches none of it is out of scope: silent.
+  //
+  // REQUIRED, NOT OPTIONAL. Defaulting a missing field to "everything is in scope" would restore the
+  // old behaviour silently, on a gate that still exits 0 — the exact failure mode this check exists
+  // to avoid. A producer that stops writing the field fails here instead.
+  const scanned = report?.generatedForImages;
+  if (!Array.isArray(scanned)) {
+    throw new GateError('report has no `generatedForImages` array — regenerate it with scripts/infra-image-scan.mjs. Unmatched-entry detection is scoped to the images this run actually scanned (item #423), and cannot be computed without it.');
+  }
+  const scopedAllowlist = allowlist.map((e) => ({ ...e, inScope: scanned.some((img) => e.imageRe.test(img)) }));
+  const unmatched = selectUnmatched(scopedAllowlist, matchedKeys, scannersWithFindings);
 
   return { failures, warnings, suppressed, expiring, expired, unmatched };
 }
@@ -234,7 +253,10 @@ function selftest() {
   const failures = [];
   // Fixable Critical → blocking (mirrors normalizeTrivy). The gate trusts the report's `blocking` flag.
   const F = (over) => ({ image: 'quay.io/keycloak/keycloak:26.5.5', location: ['a.yaml:1'], id: 'CVE-2026-1000', pkg: 'libfoo', installed: '1.0', fixedVersion: '1.1', severity: 'Critical', fixAvailable: true, blocking: true, ...over });
-  const rep = (findings) => ({ schemaVersion: 1, findings });
+  // `generatedForImages` is the run's scanned set, written by infra-image-scan.mjs (item #423). It is
+  // REQUIRED, so the selftest supplies it exactly as a real report does — a fixture that omits a
+  // required field tests a shape the gate will never see.
+  const rep = (findings, images = ['quay.io/keycloak/keycloak:26.5.5']) => ({ schemaVersion: 1, generatedForImages: images, findings });
   const allow = (yaml) => loadAllowlistFromString(yaml);
 
   // (a) un-allowlisted fixable Critical → 1
@@ -302,6 +324,36 @@ function selftest() {
 
   // --check-expiring does not evaluate blocking findings — that is the normal run's job.
   if (capture(() => gate(rep([F()]), [], NOW, { checkExpiring: true })).code !== 0) failures.push('(g7) --check-expiring must ignore blocking findings');
+
+  // ── (g8/g9) scope: the item #423 guard ──────────────────────────────────────────────────────────
+  //
+  // Two jobs consult this one allowlist — the sweep (every pulled image) and the `minio-image`
+  // builder (one image, via --image) — and every entry carries the same literal scanner `trivy`. So
+  // the (g5) scanner guard cannot tell the two runs apart, and before this each flagged the other's
+  // LIVE entries as suppressing nothing. Reproduced on `main`: a single-image run against the real
+  // allowlist produced 16 such lines, every one of them for an image the builder never scans.
+  //
+  // The entry below targets an image absent from this run's scanned set. It is neither matched nor
+  // unmatched: it is out of scope, and the run has nothing to say about it.
+  const g8allow = entry({ image: 'docker\\\\.io/library/redis:.*', id: 'CVE-2026-1000' });
+  const g8 = capture(() => gate(rep([F()]), g8allow, NOW));
+  if (/UNMATCHED ENTRIES/.test(g8.out)) failures.push('(g8) an entry whose image this run did not scan must be silent, not unmatched');
+  if (capture(() => gate(rep([F()]), g8allow, NOW, { checkExpiring: true })).code !== 0) failures.push('(g8) --check-expiring must exit 0 on an out-of-scope entry');
+
+  // And the half that must NOT be traded away: the same entry, on a run that DID scan its image, is
+  // still reported and still fails --check-expiring. FR-023 survives the fix (g4 is the sibling case
+  // on the default scanned set; this one proves the scoping is computed, not hardcoded).
+  const g9 = capture(() => gate(rep([F()], ['quay.io/keycloak/keycloak:26.5.5', 'docker.io/library/redis:8.2']), g8allow, NOW));
+  if (!/UNMATCHED ENTRIES/.test(g9.out)) failures.push('(g9) a stale entry for an image the run DID scan must still be reported');
+  if (capture(() => gate(rep([F()], ['quay.io/keycloak/keycloak:26.5.5', 'docker.io/library/redis:8.2']), g8allow, NOW, { checkExpiring: true })).code !== 1) failures.push('(g9) --check-expiring must still exit 1 on a genuinely stale in-scope entry');
+
+  // (g10) A report without `generatedForImages` is a HARD ERROR, never a fallback to "all in scope".
+  // A silent fallback would reintroduce item #423 the moment a producer stopped writing the field,
+  // and would do it invisibly — the gate would go back to over-reporting and still exit 0.
+  try {
+    evaluate({ schemaVersion: 1, findings: [F()] }, g8allow, NOW);
+    failures.push('(g10) a report without generatedForImages must be rejected, not treated as all-in-scope');
+  } catch (e) { if (!(e instanceof GateError)) failures.push('(g10) a report without generatedForImages must throw GateError'); }
 
   if (failures.length) {
     console.error('✗ check-infra-image-findings --selftest FAILED:\n  ' + failures.join('\n  '));
