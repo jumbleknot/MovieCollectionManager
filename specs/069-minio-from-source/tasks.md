@@ -145,7 +145,7 @@ service reaches healthy.
 - [X] T010 [US1] Repoint the four image refs in `infrastructure-as-code/docker/observability/compose.yaml` and `compose.prod.yaml`
 - [X] T011 [US1] Update the discharge guard's image list in `scripts/__tests__/infra-image-scan.test.mjs`
 - [X] T012 [US1] Delete the four MinIO entries from `security/infra-images/allowlist.yaml`
-- [ ] T013 [US1] Verify the live volume's ownership against the real volume
+- [X] T013 [US1] Verify the live volume's ownership against the real volume
 - [X] T014 [US1] Bring the stack up and prove Langfuse ingestion end to end per [quickstart.md](./quickstart.md) §3–6
 
 ### T005 — The multi-stage build
@@ -305,9 +305,29 @@ node --test scripts/__tests__/*.test.mjs && node scripts/check-infra-image-findi
 The one inferred fact in the whole design (spec Assumptions, plan Risks, research §R5).
 
 ```bash
-docker run --rm -v langfuse-minio-data:/data alpine:3.24 stat -c '%u:%g %n' /data
+docker volume ls | grep -i minio        # find the REAL name first — compose prefixes it
+docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 \
+  sh -c 'stat -c "%u:%g %n" /data; ls -la /data'
 ```
-**Expected**: `0:0 /data`.
+**Expected**: `0:0 /data`, **and a non-empty `/data`**.
+
+**MEASURED on the production host 2026-09-12 — C5's premise holds:**
+
+```
+0:0 /data
+drwxr-xr-x  .minio.sys   Aug 30 15:52
+drwxr-xr-x  langfuse     Jul  4 13:54
+```
+
+> **The `ls` is not decoration.** `docker run -v <name>:/data` CREATES the volume if it does not
+> exist, and a fresh volume is `0:0` — so ownership alone cannot distinguish "the production volume is
+> root-owned" from "nothing by that name existed and you measured an empty one Docker just made".
+>
+> That is not hypothetical: the first attempt used the unprefixed `langfuse-minio-data`, which did not
+> exist, and Docker duly created it and reported `0:0`. The real volume is
+> `observability-langfuse-minio-data` — compose prefixes with the project name. The stray was removed.
+> Ownership plus real contents is the measurement; ownership alone is a command reporting its own
+> side effect.
 
 **If not `0:0`**: STOP before any production rollout. Contract C5's premise is wrong for this host and
 the rollout needs an ownership step this change deliberately excludes. Record the value on item #420.
