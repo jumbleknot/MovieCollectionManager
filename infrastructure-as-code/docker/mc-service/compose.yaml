@@ -2,7 +2,7 @@ name: mc-service
 
 services:
   mc-service-store-mongo:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    image: mongodb/mongodb-community-server:8.0.8-ubi9@sha256:784dd73b701c3fb846876394c8137a9b42c35791ed1c8a931d8efa2cb0c8dd81
     container_name: mc-service-store-mongo
     restart: unless-stopped
     # --replSet rs0: enables single-member replica set required for multi-document transactions.
@@ -44,7 +44,7 @@ services:
   # Idempotent: if rs0 is already initiated it exits cleanly.
   # mc-service waits for this to complete before starting.
   mc-service-store-mongo-rs-init:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    image: mongodb/mongodb-community-server:8.0.8-ubi9@sha256:784dd73b701c3fb846876394c8137a9b42c35791ed1c8a931d8efa2cb0c8dd81
     container_name: mc-service-store-mongo-rs-init
     restart: "no"
     depends_on:

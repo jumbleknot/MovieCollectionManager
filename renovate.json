@@ -399,6 +399,30 @@
       "datasourceTemplate": "github-releases"
     }
   ],
+  "docker-compose": {
+    "description": [
+      "Item #412 \u2014 SEE THE FILE, or nothing is ever proposed for it. renovate@44's docker-compose manager",
+      "defaults to `/(^|/)(?:docker-)?compose[^/]*\\.ya?ml$/`: the BASENAME must START with `compose` or",
+      "`docker-compose`. This repository also names compose files `<thing>.compose.yaml`, and every one of",
+      "those was invisible to every manager. MEASURED 2026-09-12: a debug lookup that mentioned clickhouse",
+      "and mongodb forty-odd times each mentioned `ollama` ZERO times, and `dev-ollama.compose.yaml`",
+      "appeared nowhere in 7,842 lines of log.",
+      "That is the \u00a75 'absence reads as health' shape again: a manager matching no files reports exactly",
+      "what a manager with no work reports, so `ollama/ollama:0.32.1` sat un-pinned with `docker:pinDigests`",
+      "in `extends` the entire time. Four `stacks/*.compose.yaml` aggregators were invisible for the same",
+      "reason; they carry no `image:` TODAY, which is the wrong thing to rely on.",
+      "The pattern below is a strict SUPERSET of renovate's default \u2014 it drops only the anchor requiring the",
+      "basename to begin with `compose` \u2014 so nothing that matched before stops matching.",
+      "Fixed HERE rather than by renaming the files: a rename moves the trap to the next file someone names",
+      "naturally. infra-image-scan.test.mjs asserts every image-bearing compose file in the tree matches.",
+      "BLAST RADIUS, checked rather than assumed: widening it newly matches exactly two files outside",
+      "infrastructure-as-code/, both under docs/proposals/homelab-setup/ \u2014 historical PROPOSAL documents",
+      "carrying five image refs, some deliberately stale (postgres:18.3-alpine3.23, redis:8.6.2-alpine3.23).",
+      "Renovate rewriting a record of what was proposed at the time is worse than the gap this closes, so",
+      "`docs/proposals/**` is added to ignorePaths alongside this \u2014 the two changes are one change."
+    ],
+    "managerFilePatterns": ["/(^|/)[^/]*compose[^/]*\\.ya?ml$/"]
+  },
   "packageRules": [
     {
       "description": [
@@ -1082,6 +1106,46 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/^ghcr\\.io//", "/^quay\\.io//"],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": [
+        "Item #412 \u2014 A DIGEST-CLASS UPDATE IS AGED AGAINST A TIMESTAMP IT OFTEN CANNOT HAVE, and under",
+        "the default that means it is proposed NEVER rather than late.",
+        "MEASURED 2026-09-12, `RENOVATE_PLATFORM=local RENOVATE_DRY_RUN=lookup` with CI's own",
+        "`RENOVATE_DOCKER_MAX_PAGES=10` and a fresh cache. Exactly three deps logged",
+        "'<type> update of <dep> has no releaseTimestamp to age against':",
+        "  clickhouse/clickhouse-server pinDigest | mongodb/mongodb-community-server pinDigest | rust digest",
+        "THE MECHANISM, from renovate@44's own dist. workers/repository/process/lookup/index.js",
+        "(applyMinimumReleaseAgeToDigestUpdate) ages a pinDigest/digest update against",
+        "`newestMatchingVersionTimestamp` \u2014 the timestamp of the newest release matching the CURRENT value,",
+        "taken from the VERSION lookup \u2014 NOT against the tag's own `tag_last_pushed`. When that is undefined,",
+        "util/minimum-release-age.js returns `isPending: minimumReleaseAgeBehaviour === 'timestamp-required'`,",
+        "and nothing ever makes a missing timestamp appear. updates/generate.js then removes the pending",
+        "upgrade from a branch holding a ready one. Permanent, silent, and logged only at DEBUG.",
+        "TWO WAYS TO REACH THE SAME UNDEFINED, both live here:",
+        "  * the tag is outside the newest-1000-tag window `dockerMaxPages: 10` allows, so the version",
+        "    lookup has no release for it at all. `mongodb/mongodb-community-server` has 125,788 tags and",
+        "    `clickhouse/clickhouse-server` 2,483; their pinned tags (8.0.8-ubi9, 24.3) are long past page 10.",
+        "    Raising the cap is NOT the fix \u2014 Docker Hub 403s from page 11 anonymously, which is why item",
+        "    #349 set it to 10; and 1,258 pages is not a cap, it is a crawl.",
+        "  * the tag is not a VERSIONED release, so no version matches it \u2014 `rust:alpine3.21`, whose tag DOES",
+        "    carry a fresh `tag_last_pushed` (2026-09-09, page 1) and was stalled regardless. That one is",
+        "    ALREADY pinned, so what was stalled is its digest REFRESH: the item #303 class (advisories a",
+        "    refresh would clear) reopened for the mc-service build image, found only by this lookup.",
+        "WHY EXEMPTING IS RIGHT AND NOT A WEAKENING. A supply-chain cooldown soaks NEW content before we",
+        "adopt it. A pinDigest adopts no new content \u2014 it records the digest of the tag we ALREADY pull, so",
+        "there is nothing to soak, and the alternative on offer is not 'wait 3 days' but 'never'.",
+        "`timestamp-optional` keeps the cooldown wherever a timestamp EXISTS (util/minimum-release-age.js",
+        "ages it normally) and only declines to stall on one that cannot be obtained.",
+        "SCOPED TO pinDigest + digest ON PURPOSE \u2014 the narrow half of the per-registry rule above. Docker",
+        "Hub VERSION updates keep `timestamp-required`, because there the timestamp is real and the cooldown",
+        "is feature 034's control working as designed; widening this to all of docker is exactly what that",
+        "rule warns against. renovate-workflow.guard.test.mjs asserts both halves.",
+        "Ordered last so it wins over the per-registry rule for these two update types."
+      ],
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["pinDigest", "digest"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     }
   ],
   "logLevelRemap": [
@@ -1103,6 +1167,7 @@
     "**/node_modules/**",
     "**/.venv/**",
     "**/android/**",
-    "**/ios/**"
+    "**/ios/**",
+    "docs/proposals/**"
   ]
 }

@@ -130,7 +130,7 @@ services:
     logging: *obs-logging
 
   langfuse-clickhouse:
-    image: clickhouse/clickhouse-server:24.3
+    image: clickhouse/clickhouse-server:24.3@sha256:85b97f63dcfff47790d26bb5d5801637aaddb2b93e5e9aee27a686c2fb2b9916
     container_name: langfuse-clickhouse
     restart: always
     # #PROD hard memory cap (R5) — ClickHouse is the biggest RAM consumer; 24.3 is cgroup-aware, so a

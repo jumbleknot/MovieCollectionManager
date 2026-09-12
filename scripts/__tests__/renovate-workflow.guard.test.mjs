@@ -2811,15 +2811,48 @@ test('registries that never carry a release timestamp run timestamp-optional (it
 });
 
 test('Docker Hub images KEEP timestamp-required — their cooldown is real (item #349 control)', () => {
-  // Docker Hub tags and digests carry `tag_last_pushed`, so the 3-day cooldown there is temporal and
-  // must stay; widening timestamp-optional to all of docker would silently disable feature 034's
-  // control for the images it actually works on.
+  // NARROWED AT THE CAUSE — item #412. This control used to say "Docker Hub tags AND DIGESTS carry
+  // `tag_last_pushed`, so the cooldown there is temporal". The first half is true and is what this
+  // test still protects. The second half was false, and measurably so: renovate ages a digest-class
+  // update against `newestMatchingVersionTimestamp` from the VERSION lookup, never against the tag's
+  // own `tag_last_pushed`, so three Docker Hub deps were `pendingChecks` for ever (see the sibling
+  // test below). The rule that fixes them is scoped to pinDigest/digest precisely so that THIS
+  // assertion keeps holding — the guard was updated where its premise was wrong, not relaxed.
+  //
+  // `composeDep` defaults to updateType `patch`, i.e. a VERSION update. That is the subject here.
   for (const depName of ['postgres', 'node', 'quay-lookalike/keycloak']) {
-    assert.equal(
-      resolvedRuleValue(composeDep(depName), 'minimumReleaseAgeBehaviour'),
-      undefined,
-      `${depName} resolves minimumReleaseAgeBehaviour to a rule value; only ghcr.io/ and quay.io/ should`,
-    );
+    for (const updateType of ['patch', 'minor', 'major']) {
+      assert.equal(
+        resolvedRuleValue(composeDep(depName, updateType), 'minimumReleaseAgeBehaviour'),
+        undefined,
+        `${depName} (${updateType}) resolves minimumReleaseAgeBehaviour to a rule value; a Docker Hub ` +
+          'VERSION update must keep the real, temporal 3-day cooldown (feature 034)',
+      );
+    }
+  }
+});
+
+test('a digest-class docker update is NOT stalled on a timestamp it cannot have (item #412)', () => {
+  // The fault this pins is silent and permanent, which is why it survived for months with
+  // `docker:pinDigests` in `extends`: no timestamp + the DEFAULT `timestamp-required` makes
+  // `isPending` true for ever (util/minimum-release-age.js — nothing makes a missing timestamp
+  // appear), and generateBranchConfig then drops the pending upgrade from a branch that holds a
+  // ready one. Measured 2026-09-12 with CI's own RENOVATE_DOCKER_MAX_PAGES=10: clickhouse and
+  // mongodb pinDigest, and `rust` digest — the last already pinned, so what was stalled was its
+  // digest REFRESH, the item #303 class reopened.
+  //
+  // Docker Hub is the interesting case and the reason this is asserted separately from the ghcr.io /
+  // quay.io rule: those registries never time-stamp ANYTHING, whereas Docker Hub time-stamps version
+  // releases and not these.
+  for (const depName of ['clickhouse/clickhouse-server', 'mongodb/mongodb-community-server', 'rust', 'node']) {
+    for (const updateType of ['pinDigest', 'digest']) {
+      assert.equal(
+        resolvedRuleValue(composeDep(depName, updateType), 'minimumReleaseAgeBehaviour'),
+        'timestamp-optional',
+        `${depName} (${updateType}) does not resolve to timestamp-optional, so a digest update with no ` +
+          'obtainable timestamp is pendingChecks for ever and is proposed NEVER, reporting nothing',
+      );
+    }
   }
 });
 
