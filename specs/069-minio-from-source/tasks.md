@@ -179,6 +179,23 @@ docker run --rm --entrypoint sh mcm-minio:local -c 'minio --version && mc --vers
 `RELEASE.2025-08-13T08-35-41Z` (C3); `id -u` reports `0` (C5); the command runs at all (C2); both
 binaries resolve on `PATH` (C1).
 
+**MEASURED LOCALLY 2026-09-12** — this task was first marked done on CI evidence, because the dev
+container could not reach the Go module hosts. That was a reasonable substitution but not the task as
+written; once `proxy.golang.org`, `sum.golang.org` and `storage.googleapis.com` were allowlisted it was
+done properly:
+
+```
+minio version RELEASE.2025-09-07T16-13-09Z (commit-id=07c3a429bfed…)
+Runtime: go1.25.14 linux/amd64
+mc    version RELEASE.2025-08-13T08-35-41Z (commit-id=7394ce0dd2a…)
+Runtime: go1.25.14 linux/amd64
+uid: 0
+```
+
+The `Runtime:` line is the bonus: upstream's release of this source declares `toolchain go1.24.2`, and
+ours runs go1.25.14 from the same commits — the toolchain substitution is observable in the artifact,
+not just intended.
+
 > `DEVELOPMENT` or an empty version means the ldflags stamp was lost. The binaries work and the build
 > exits 0 — this assertion is the only thing that catches it.
 

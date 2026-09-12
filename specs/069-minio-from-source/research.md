@@ -1,6 +1,6 @@
 # Phase 0 Research: MinIO built from source
 
-All items below were measured on 2026-09-11, not assumed. Where a fact could not be established from
+All items below were measured on 2026-09-11 (some updated 2026-09-12), not assumed. Where a fact could not be established from
 here, it is marked as an open verification carried into implementation rather than guessed.
 
 ---
@@ -73,6 +73,21 @@ sits un-dischargeable in the allowlist against `postgres`, `mongodb`, `vault` *a
 precisely because those images were built with an old Go. Building ourselves converts that from an
 allowlist entry into a build input.
 
+**Confirmed in the binary, 2026-09-12.** The substitution is not merely intended, it is observable —
+the binaries report the toolchain they were built with:
+
+```
+minio version RELEASE.2025-09-07T16-13-09Z (commit-id=07c3a429bfed…)
+Runtime: go1.25.14 linux/amd64
+mc    version RELEASE.2025-08-13T08-35-41Z (commit-id=7394ce0dd2a…)
+Runtime: go1.25.14 linux/amd64
+```
+
+Upstream's own release of this source declares `toolchain go1.24.2`. Ours runs `go1.25.14`, from the
+same pinned commits. That single line is the whole mechanism behind the stdlib Critical's absence, and
+it is worth preferring to a scan result: it says *why* the finding is gone rather than only *that* it
+is.
+
 `golang:1.25-alpine` (pushed 2026-08-19) is materially newer than `golang:1.24-alpine` (2026-02-08).
 Pin it by digest.
 
@@ -130,9 +145,24 @@ unattributable.
 This is a knowing step sideways from "production-ready", accepted for one change and recorded in the
 spec (FR-015) rather than left implicit.
 
-**Open verification carried into implementation**: the volume's ownership is *inferred* from the
-image's published configuration, not *observed* on the running host. A task must confirm it against the
-real volume before the production rollout.
+**Open verification carried into implementation — now CLOSED, 2026-09-12.** The ownership was inferred
+from the image's published configuration; it has since been observed on the production host:
+
+```
+$ docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 \
+    sh -c 'stat -c "%u:%g %n" /data; ls -la /data'
+0:0 /data
+drwxr-xr-x  .minio.sys   Aug 30 15:52
+drwxr-xr-x  langfuse     Jul  4 13:54
+```
+
+Root-owned, with real data. C5's premise holds.
+
+**The first attempt was a false positive and the trap generalises.** It used the unprefixed
+`langfuse-minio-data`; compose prefixes volume names with the project. `docker run -v <name>:/data`
+**creates** the volume when absent, and a fresh volume is `0:0` — so ownership alone cannot tell "the
+production volume is root-owned" from "Docker just made you an empty one". Ownership **plus contents**
+is the measurement; ownership alone is a command reporting its own side effect.
 
 **Alternatives considered**: Non-root plus a one-time `chown` in this change (rejected — couples a
 data-ownership migration to a packaging change on a stateful service). Non-root with an init container
