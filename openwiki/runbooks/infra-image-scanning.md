@@ -1,27 +1,44 @@
 ---
 type: Runbook
 title: Infra-image CVE scanning
-description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code) — the coverage gap left by SAST/SCA and the built-image scanner, gated on fixable Critical findings only.
+description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code, but NOT MinIO which is now built from source and scanned by its own builder) — the coverage gap left by SAST/SCA and the built-image scanners, gated on fixable Critical findings only.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
-timestamp: 2026-09-10T20:26:08+00:00
+timestamp: 2026-09-11T00:00:00+00:00
 ---
 
 # Infra-image CVE scanning
 
 Trivy scans every third-party image the project pulls but does not build — everything under
-`infrastructure-as-code/**` except the project's own built images and any `${..}`-interpolated
+`infrastructure-as-code/**` except images scanned by their own builder and any `${..}`-interpolated
 reference. It is deliberately disjoint (enforced by a unit test) from the `cd-deploy` scan of the
-project's own built images, and from [SAST/SCA scanning](/openwiki/runbooks/sast-scanning.md), which
+project's own built app images and from the `minio-image` workflow which builds MinIO from source and
+scans it before publishing. It is also disjoint from [SAST/SCA scanning](/openwiki/runbooks/sast-scanning.md), which
 covers first-party source and first-party dependency graphs, not pulled base images. Renovate keeps
 base images current; this scan catches a freshly published CVE against an already-pinned image, which
 currency alone cannot.
+
+**MinIO (`minio/minio`, `minio/mc`) left this set in feature 069.** Upstream deleted both Docker Hub
+repositories on 2026-09-11 (having moved to source-only distribution in October 2025). This project
+now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`), published by
+`.forgejo/workflows/minio-image.yml`, which scans it and gates its own publish.
 
 ## Gotchas
 
 - **Not path-gated on the authoritative run.** A weekly full sweep is the scan of record precisely
   because a new advisory can land against an image nobody changed — an on-change check on
   infrastructure edits exists only for fast feedback, not as the source of truth.
+- **Scanner partition rule: by coverage, not by namespace.** An image is scanned by whoever *builds*
+  it; everything else belongs here. `cd-deploy` owns its six app images; `minio-image` owns
+  `jumbleknot/minio`. The exclusion rule used to be `if (ref.includes('jumbleknot/')) continue` —
+  matching "anything named like ours" rather than "anything already scanned by a builder". Feature 069
+  broke that coincidence by adding a `jumbleknot/*` image built outside cd-deploy; under the old rule
+  it was excluded here and absent from cd-deploy's set — published and examined by neither gate, zero
+  findings, no error. The rule is now membership of `BUILT_IMAGE_NAMES`. Any future image built outside
+  cd-deploy must be added to `BUILT_IMAGE_NAMES` or explicitly enumerated here — the invariant is
+  exactly one scanner per image, not zero and not two. Completeness is asserted against a fixture in
+  `scripts/__tests__/infra-image-scan.test.mjs` (a live-tree assertion would stop testing anything
+  the day MinIO is the only such image and someone removes it).
 - **Only a fixable Critical blocks the gate.** An unfixable Critical (no upstream patched version yet)
   is a report-only warning, since a version bump can't clear it and it must not wedge the gate
   indefinitely.
@@ -62,17 +79,20 @@ currency alone cannot.
   written for *and every future one in the same image*, silently and permanently. Always key suppressions
   to a version: `minio/minio:RELEASE\.2025-09-07` matches the pinned reference but stops matching the
   next bump.
-- **`minio/minio` and `minio/mc` always report `[floating tag]` — that is correct, not a bug.** The
-  `isFloatingTag` classifier calls a tag floating when it does not begin with an optional `v` and a
-  digit; `RELEASE.2025-…` does not, so pinned minio refs still appear as floating. A floating count of
-  **exactly 2** is the passing state. **A count of 0 is a failure** — it means the classifier was
-  widened to hide the exceptions rather than declare them. A count above 2 is also a failure.
-  `infra-image-scan.test.mjs` asserts the floating set equals exactly the minio pair.
+- **The floating-tag exception set is now EMPTY — that is correct, not a regression.** `minio/minio`
+  and `minio/mc` are no longer pulled, so they are no longer exceptions. The old rule ("a floating
+  count of 0 is a FAILURE") still guards against widening `isFloatingTag` to hide exceptions, but the
+  guard now works by asserting **set equality against the declared list** (which is empty), not by
+  asserting a count of 2. Tests `(fd1)`–`(fd4)` assert the classifier's behaviour directly and do not
+  depend on the count. A count of 0 with an empty declared list is passing; a count of 0 where the
+  declared list is non-empty is the failure.
 - **MinIO's date-based update types are calendar arithmetic, not semantic versioning.** The regex
   versioning scheme maps year→major, month→minor, day→patch. A January release reports **major** because
   the year advanced, not because anything broke. Do not read the label as a risk signal the way you
   would for `opa` or `unleash`. (`loose` versioning cannot parse `RELEASE.…` tags at all — its `_parse`
-  returns null, making them unordered rather than merely mislabelled.)
+  returns null, making them unordered rather than merely mislabelled.) Note: the project's own built
+  MinIO image uses an orderable tag format (`2025.09.07-161309`) and needs no versioning exception;
+  this rule still applies when reasoning about upstream MinIO releases in other contexts.
 - **A green `infra-image-scan` tick usually proves nothing — check the duration.** The required context
   posts `success` on every PR, including ones where Trivy never ran. That is deliberate (feature 039
   Gap 3: a job-level `if:` skip posts no status at all, and the required pattern then blocks the PR
