@@ -29,8 +29,21 @@ const INFRA_GLOB = 'infrastructure-as-code/**/*.{yaml,yml}';
 const REPORT_DIR = resolve(REPO_ROOT, 'security/infra-images/reports');
 const SEVERITY_MAP_PATH = resolve(REPO_ROOT, 'security/infra-images/severity-map.yaml');
 
-// Our own built images (owned by cd-deploy's Trivy step, FR-009) — never scanned here.
-const BUILT_IMAGE_NAMES = ['mcm-bff', 'mc-service', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp'];
+// IMAGES THIS PROJECT BUILDS, EACH SCANNED BY ITS OWN BUILDER — never scanned here.
+//
+// The rule is "scanned by whoever builds it", not "named like ours" and not "built by cd-deploy".
+// Six are cd-deploy's (FR-009). `minio` was added by feature 069 (item #420) and is built and scanned
+// by .forgejo/workflows/minio-image.yml, which gates its own publish on a fixable Critical.
+//
+// Why not scan `minio` here, which was this feature's first design: infra-image-scan is KEYLESS by
+// design — its header states it references no `${{ secrets }}` — and that image lives in a private
+// registry, so Trivy here cannot pull it (measured: run 3121, "unable to find the specified image").
+// Covering it here would have meant handing credentials to the keyless scanner AND scanning only
+// after publication. Its builder already holds the image locally and gates the push instead.
+//
+// The invariant is unchanged and is what matters: every image is scanned by EXACTLY ONE scanner.
+// See specs/069-minio-from-source/contracts/scanner-scope.md.
+const BUILT_IMAGE_NAMES = ['mcm-bff', 'mc-service', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp', 'minio'];
 
 class ScanError extends Error {}
 
@@ -67,19 +80,72 @@ export function isFloatingTag(ref) {
  *   [{ ref, locations: [{ path, line }], floatingTag }]
  * Excludes our built images (jumbleknot/* or a bare built-image name) and ${..}-interpolated refs.
  */
-export function enumerateImages(files) {
+export function enumerateImages(files, env = process.env) {
   const byRef = new Map();
-  const imageLine = /^\s*image:\s*["']?([^"'#\s]+)["']?/;
+  // Locations skipped ONLY because REGISTRY_HOST was absent. Reported by the caller — see below.
+  enumerateImages.unresolved = [];
+  // `${...}` is ONE unit even when it contains spaces. A compose guard reads
+  // `${REGISTRY_HOST:?set in stacks/observability.env}` — the convention every REGISTRY_HOST
+  // reference here follows — and the previous `[^"'#\s]+` stopped at the first space, truncating the
+  // ref to `${REGISTRY_HOST:?set`. That never mattered while every interpolated ref was skipped
+  // outright; it started mattering the moment feature 069 needed to RESOLVE one, and it presented as
+  // "the resolution silently does nothing" rather than as a parse error.
+  const imageLine = /^\s*image:\s*["']?((?:\$\{[^}]*\}|[^"'#\s])+)["']?/;
   for (const { path, content } of files) {
     const lines = content.split(/\r?\n/);
     for (let i = 0; i < lines.length; i++) {
       const m = imageLine.exec(lines[i]);
       if (!m) continue;
-      const ref = m[1];
+      let ref = m[1];
+      // THE REGISTRY HOST IS INTERPOLATED, AND THAT MUST NOT HIDE AN IMAGE FROM THIS SCAN.
+      // check-topology-scrub.mjs forbids the real forge host in committed files, so an image we
+      // publish ourselves can only be written `${REGISTRY_HOST}/jumbleknot/…`. The blanket `${` skip
+      // below would then exclude it — and since cd-deploy does not build it either, it would be
+      // published scanned by nothing. That is the same hole feature 069 closed in the exclusion rule,
+      // arriving by a different door (found while repointing the compose refs, not by the guard).
+      //
+      // The host is only unknowable WITHOUT the variable. Where it is set — CI, where this scan
+      // actually pulls — the ref is concretely pullable and must be enumerated.
+      //
+      // Matched with a REGEX, not a literal `${REGISTRY_HOST}`. Compose guards the variable as
+      // `${REGISTRY_HOST:?set in stacks/observability.env}` — the convention every other
+      // REGISTRY_HOST reference in this repository follows — so a literal match silently stops
+      // resolving the moment a ref is brought into line with that convention, which is exactly what
+      // happened during feature 069's own implementation.
+      const HOST_VAR = /\$\{REGISTRY_HOST(?::[?-][^}]*)?\}/g;
+      if (HOST_VAR.test(ref)) {
+        HOST_VAR.lastIndex = 0;
+        if (env.REGISTRY_HOST) {
+          ref = ref.replace(HOST_VAR, env.REGISTRY_HOST);
+        } else {
+          // Not pullable here — but only report it if resolving the host is the ONLY thing standing
+          // between us and scanning it. cd-deploy's own refs also interpolate the host
+          // (`${REGISTRY_HOST}/jumbleknot/mcm-bff@${MCM_BFF_DIGEST}`) and would be excluded anyway,
+          // twice over: a second `${…}` remains, and the name is in BUILT_IMAGE_NAMES. Reporting
+          // those as "unscanned" would be a false alarm, and a warning that cries wolf is one nobody
+          // reads — which is the same failure as no warning at all, arrived at differently.
+          const probe = ref.replace(HOST_VAR, 'placeholder.invalid');
+          const probeBare = probe.split('/').pop().split(':')[0];
+          if (!probe.includes('${') && !BUILT_IMAGE_NAMES.includes(probeBare)) {
+            enumerateImages.unresolved.push(`${path}:${i + 1}`);
+          }
+        }
+      }
       if (ref.includes('${')) continue; // env-var interpolated — not concretely pullable
-      if (ref.includes('jumbleknot/')) continue; // our built images (cd-deploy owns them)
+      // Exclude what cd-deploy ALREADY SCANS — by membership, not by namespace. This line used to
+      // read `if (ref.includes('jumbleknot/')) continue;` with the comment "our built images
+      // (cd-deploy owns them)". The comment named the right property; the prefix test implemented a
+      // different one, and the two coincided only while every jumbleknot/* image happened to be a
+      // cd-deploy image. Feature 069 broke that coincidence: `jumbleknot/minio` is built by us and
+      // NOT by cd-deploy, so the prefix rule excluded it here while nothing covered it there — an
+      // image published and examined by neither gate, reporting a truthful and meaningless zero.
+      //
+      // The bareName extraction below already handles both shapes: `jumbleknot/mc-service:latest`
+      // yields `mc-service` (excluded, cd-deploy's) and `jumbleknot/minio:REL@sha256:…` yields
+      // `minio` (enumerated, ours). So the correct fix was to DELETE the prefix line, not add to it.
+      // See specs/069-minio-from-source/contracts/scanner-scope.md for the invariant and its guards.
       const bareName = ref.split('/').pop().split(':')[0];
-      if (BUILT_IMAGE_NAMES.includes(bareName)) continue; // built image referenced by local tag
+      if (BUILT_IMAGE_NAMES.includes(bareName)) continue; // cd-deploy scans it; we must not
       const floatingTag = isFloatingTag(ref);
       const loc = { path, line: i + 1 };
       if (byRef.has(ref)) byRef.get(ref).locations.push(loc);
@@ -199,16 +265,67 @@ function main() {
   const argv = process.argv.slice(2);
   const listOnly = argv.includes('--list');
   const emitAllowlist = argv.includes('--emit-allowlist');
-  for (const a of argv) {
+
+  // `--image <ref>` — scan exactly ONE image instead of enumerating the tree.
+  //
+  // Added by feature 069 (item #420) so that an image scanned by its own BUILDER goes through this
+  // same pipeline: the same Trivy invocation, the same severity map, the same
+  // security/infra-images/allowlist.yaml, and therefore the same weekly expiry check.
+  //
+  // The alternative was a bare `trivy --exit-code 1` in the build workflow, which is what this
+  // feature first shipped. It works right up to the moment a finding needs accepting — and then the
+  // acceptance has nowhere to live except a second suppression mechanism (a .trivyignore) that the
+  // expiry check does not read and nobody thinks to look in. One allowlist, one policy, one place to
+  // look. A finding suppressed where nothing reviews it is how a permanent suppression is born.
+  const imageFlagAt = argv.indexOf('--image');
+  const singleImage = imageFlagAt >= 0 ? argv[imageFlagAt + 1] : null;
+  if (imageFlagAt >= 0 && !singleImage) { console.error('--image requires a ref'); process.exit(2); }
+
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--image') { i++; continue; }            // its value is not a flag
     if (!['--list', '--emit-allowlist'].includes(a)) { console.error(`Unknown argument: ${a}`); process.exit(2); }
   }
 
   let images;
   try {
-    images = enumerateImages(readInfraFiles());
+    images = singleImage
+      ? [{ ref: singleImage, locations: [{ path: '(--image)', line: 0 }], floatingTag: isFloatingTag(singleImage) }]
+      : enumerateImages(readInfraFiles());
   } catch (e) {
     console.error(`✗ enumeration failed: ${e.message}`);
     process.exit(2);
+  }
+
+  // AN IMAGE SKIPPED FOR A MISSING VARIABLE MUST BE LOUD — feature 069 (item #420).
+  //
+  // Our own images are referenced as `${REGISTRY_HOST}/jumbleknot/…` because check-topology-scrub
+  // forbids the real forge host in a committed file. Without REGISTRY_HOST such a ref is not
+  // pullable, so enumerateImages skips it — and a sweep that skipped an image while reporting success
+  // is indistinguishable from one that scanned it and found nothing. That is the most repeated
+  // failure shape in this repository, and it is what this feature's scanner-partition work exists to
+  // prevent; leaving the skip unreported would have reintroduced it one layer down.
+  //
+  // A warning on --list (enumeration is useful locally without a registry host), but FATAL on a real
+  // scan, where "passed" would otherwise be a claim about images nobody looked at.
+  if (!singleImage && enumerateImages.unresolved.length > 0) {
+    const where = enumerateImages.unresolved.join(', ');
+    const n = enumerateImages.unresolved.length;
+    if (listOnly) {
+      console.warn(
+        `⚠ ${n} image ref(s) skipped — REGISTRY_HOST is not set: ${where}\n`
+        + '  These are images this project builds and publishes to its own registry. Set REGISTRY_HOST\n'
+        + '  to enumerate them; a scan without it does NOT cover them.',
+      );
+    } else {
+      console.error(
+        `✗ REGISTRY_HOST is not set, so ${n} image ref(s) cannot be resolved and would go UNSCANNED:\n`
+        + `  ${where}\n`
+        + '  Refusing to report on a partial image set — a sweep that silently covers less than the\n'
+        + '  tree and still passes is worse than one that fails loudly. Set REGISTRY_HOST and re-run.',
+      );
+      process.exit(2);
+    }
   }
 
   if (listOnly) {

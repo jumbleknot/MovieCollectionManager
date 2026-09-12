@@ -39,7 +39,6 @@
       "reason": "Claude Code service endpoint — the most-referenced host in the CLI binary (455 occurrences vs 110 for platform.claude.com and 81 for api.anthropic.com). Required alongside platform.claude.com for the subscription-authenticated session. Discovered by extracting hostnames from the compiled binary itself (`grep -aoE '[a-z0-9][a-z0-9.-]*\\.(anthropic|claude)\\.(com|ai)' claude.exe | sort | uniq -c`) rather than by guessing and re-testing — a technique worth reusing whenever a closed-source tool is blocked by the policy.",
       "cdnRotating": false
     },
-
     {
       "domain": "github.com",
       "group": "source",
@@ -76,7 +75,6 @@
       "reason": "Raw file fetches from GitHub — installer scripts and pinned single-file resources fetched by tooling at runtime.",
       "cdnRotating": false
     },
-
     {
       "domain": "registry-1.docker.io",
       "group": "registry",
@@ -179,7 +177,6 @@
       "reason": "Ollama BLOB host — the Cloudflare R2 bucket every model LAYER is actually downloaded from, paired with registry.ollama.ai above. item #394. registry.ollama.ai serves the manifest and then hands back a PRE-SIGNED URL on this name; allowlisting the front door alone yields a pull that resolves the manifest and then dies on the first layer — measured 2026-09-09: `max retries exceeded: Get \"https://dd20bb891979d25aebc8bec07b2b3bbc.r2.cloudflarestorage.com/ollama/docker/registry/v2/blobs/sha256/...?X-Amz-Algorithm=...\" dial tcp: lookup ... no such host`. THE HOSTNAME IS NOT RANDOM: `dd20bb891979d25aebc8bec07b2b3bbc` is Ollama's R2 ACCOUNT ID, constant across pulls; only the path and the AWS-SigV4 query are per-request. That is why the exact FQDN is pinned here rather than `*.r2.cloudflarestorage.com` — the wildcard would open every Cloudflare R2 bucket of every account on the internet to this VM, which is a vastly wider surface than one vendor's model store. IF THE PULL EVER FAILS AGAIN ON A LAYER after the manifest resolves, read the account id out of the error and add the new name; do not widen to the wildcard. cdnRotating is false: R2 is CDN-fronted but the NAME is stable, and nothing here has been measured to fail on a stale A record — a layer failure is a changed account id, not an ipset refresh.",
       "cdnRotating": false
     },
-
     {
       "domain": "registry.npmjs.org",
       "group": "packages",
@@ -221,6 +218,24 @@
       "group": "packages",
       "reason": "Astral installer host — the uv installer script. Needed only when uv itself is (re)installed at runtime rather than consumed from the baked image.",
       "cdnRotating": false
+    },
+    {
+      "domain": "proxy.golang.org",
+      "group": "packages",
+      "reason": "Go module proxy — the default GOPROXY. Added by feature 069 (item #420), which builds MinIO and mc FROM SOURCE because upstream deleted its published images and moved to source-only distribution. This is the first Go build in the repository, which is why no Go destination existed before: the packages group covered npm, crates, pypi, alpine and debian only. Without it, 'go build' fails with 'dial tcp: lookup proxy.golang.org: no such host' AFTER a successful git clone — which reads like a Dockerfile fault rather than a missing allowlist entry. The tell is the same one Maven Central gave on 2026-09-10: curl exits 000 (cannot connect) from the dev container itself, not 403.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "sum.golang.org",
+      "group": "packages",
+      "reason": "Go checksum database. Required alongside proxy.golang.org: the Go toolchain verifies every module against it, and the alternative is GOFLAGS=-mod=mod with GONOSUMCHECK/GONOSUMDB — disabling supply-chain verification inside a feature whose entire justification is supply-chain durability. Allowlist the checksum DB; do not switch the check off.",
+      "cdnRotating": true
+    },
+    {
+      "domain": "storage.googleapis.com",
+      "group": "packages",
+      "reason": "Where proxy.golang.org actually SERVES module zips — it returns signed URLs on this host, so allowlisting the proxy alone gets you as far as module RESOLUTION and no further. Added 2026-09-12 by feature 069 after the first local build with the proxy allowed still failed: metadata resolved, every .zip download then hit \"lookup storage.googleapis.com: no such host\". Broad, and deliberately chosen anyway: the bucket is a path rather than a subdomain, so no narrower name exists. The alternative, GOPROXY=direct, is BROADER in practice — it fetches each module from wherever its source lives (go.googlesource.com for golang.org/x/*, plus any other VCS host a dependency uses), whereas the default proxy funnels every module through exactly two hosts. Checksum verification via sum.golang.org is unaffected either way.",
+      "cdnRotating": true
     },
     {
       "domain": "dl-cdn.alpinelinux.org",
@@ -267,7 +282,7 @@
     {
       "domain": "mcp.expo.dev",
       "group": "agent",
-      "reason": "Expo's REMOTE MCP SERVER, reached over HTTP by the `expo` Claude Code plugin's MCP client. Without it the plugin fails at startup with `getaddrinfo ENOTFOUND mcp.expo.dev` and the session reports the server as unavailable \u2014 measured 2026-08-27 (item #253). This is the front-door-vs-second-host trap this file documents for registries, now on the MCP path: api.expo.dev IS allowlisted and answers 200 from the dev container, and it does NOT cover this name. The allowlist resolves per FQDN, not per apex domain. Grouped `agent` rather than `packages` alongside api.expo.dev because the consumer is the coding assistant's own tooling, like api.anthropic.com / code.claude.com, not the build or test path \u2014 nothing in CI touches it. NOTE the failure signature: a blocked host NXDOMAINs here rather than being refused at the route, so `curl` reports rc=6 and writes http_code 000. The 000 is curl's placeholder for a request never made, not evidence of a route-layer block.",
+      "reason": "Expo's REMOTE MCP SERVER, reached over HTTP by the `expo` Claude Code plugin's MCP client. Without it the plugin fails at startup with `getaddrinfo ENOTFOUND mcp.expo.dev` and the session reports the server as unavailable — measured 2026-08-27 (item #253). This is the front-door-vs-second-host trap this file documents for registries, now on the MCP path: api.expo.dev IS allowlisted and answers 200 from the dev container, and it does NOT cover this name. The allowlist resolves per FQDN, not per apex domain. Grouped `agent` rather than `packages` alongside api.expo.dev because the consumer is the coding assistant's own tooling, like api.anthropic.com / code.claude.com, not the build or test path — nothing in CI touches it. NOTE the failure signature: a blocked host NXDOMAINs here rather than being refused at the route, so `curl` reports rc=6 and writes http_code 000. The 000 is curl's placeholder for a request never made, not evidence of a route-layer block.",
       "cdnRotating": false
     },
     {
@@ -279,13 +294,13 @@
     {
       "domain": "mcp.context7.com",
       "group": "agent",
-      "reason": "Context7's REMOTE MCP SERVER (operated by Upstash), reached over HTTP by the `context7` Claude Code plugin at https://mcp.context7.com/mcp. Without it the plugin fails at session start with `getaddrinfo ENOTFOUND mcp.context7.com` \u2014 same root cause and same day as mcp.expo.dev above, item #253. ADDED AS A DELIBERATE DECISION, not as a like-for-like fix, because this is the first entry that sends OUR PROMPT TEXT to a third party rather than fetching from one. What crosses the boundary is bounded and worth stating exactly: the plugin exposes two tools, `resolve-library-id` (a library search string) and `query-docs` (a library identifier plus the question being asked), so the payload is a public library name and a natural-language question. Repository source is NOT sent, and no credential is involved \u2014 CONTEXT7_API_KEY is unset here, so the connection is anonymous. The question text can still describe what is being built, which is the actual exposure and the reason this entry says so rather than reading like the Expo one. NOT a telemetry endpoint, so the $mustNeverAppearHere inversion does not apply: this host is REQUESTED BY US on demand and returns documentation, where the barred entries receive unsolicited analytics. Grouped `agent` with mcp.expo.dev and the Claude Code hosts \u2014 assistant tooling, not the build or test path; nothing in CI touches it. Only the `mcp.` name is listed: the bare context7.com apex is NOT needed and stays blocked. If requests later fail after a clean resolve, follow the redirect chain before adding a second host \u2014 that is the front-door-vs-second-host class this file documents, not a stale entry.",
+      "reason": "Context7's REMOTE MCP SERVER (operated by Upstash), reached over HTTP by the `context7` Claude Code plugin at https://mcp.context7.com/mcp. Without it the plugin fails at session start with `getaddrinfo ENOTFOUND mcp.context7.com` — same root cause and same day as mcp.expo.dev above, item #253. ADDED AS A DELIBERATE DECISION, not as a like-for-like fix, because this is the first entry that sends OUR PROMPT TEXT to a third party rather than fetching from one. What crosses the boundary is bounded and worth stating exactly: the plugin exposes two tools, `resolve-library-id` (a library search string) and `query-docs` (a library identifier plus the question being asked), so the payload is a public library name and a natural-language question. Repository source is NOT sent, and no credential is involved — CONTEXT7_API_KEY is unset here, so the connection is anonymous. The question text can still describe what is being built, which is the actual exposure and the reason this entry says so rather than reading like the Expo one. NOT a telemetry endpoint, so the $mustNeverAppearHere inversion does not apply: this host is REQUESTED BY US on demand and returns documentation, where the barred entries receive unsolicited analytics. Grouped `agent` with mcp.expo.dev and the Claude Code hosts — assistant tooling, not the build or test path; nothing in CI touches it. Only the `mcp.` name is listed: the bare context7.com apex is NOT needed and stays blocked. If requests later fail after a clean resolve, follow the redirect chain before adding a second host — that is the front-door-vs-second-host class this file documents, not a stale entry.",
       "cdnRotating": false
     },
     {
       "domain": "semgrep.dev",
       "group": "packages",
-      "reason": "Semgrep rule REGISTRY. item #222. security/sast/semgrep.yaml names five community packs (p/typescript, p/react, p/nodejs, p/python, p/owasp-top-ten) which scripts/sast-scan.mjs expands into --config p/... flags, and Semgrep resolves those names from this host AT SCAN TIME \u2014 so the packs are a runtime fetch, not something the toolchain image can bake. Without this entry `nx sast` cannot run in the dev container at all: measured 2026-08-22, `curl https://semgrep.dev/` answers `(6) Could not resolve host`, and sast-scan.mjs reports it as its exit>=2 'registry unreachable' case. That made a MERGE-BLOCKING gate CI-only by accident rather than by decision \u2014 the failure was only ever seen after a push. NOTE what this does NOT authorise: the scanner runs with --metrics=off --disable-version-check, so Semgrep telemetry stays off BY CONFIGURATION, never by the absence of this rule (see $mustNeverAppearHere); no SEMGREP_APP_TOKEN is involved, the packs are served anonymously; and p/secrets remains deliberately absent from the config (FR-006 \u2014 the secret-scan gate owns credential detection). cdnRotating is false because nothing here has been MEASURED to rotate \u2014 if pack fetches start timing out after a clean resolve, that is the staleness class and this flag is what should change.",
+      "reason": "Semgrep rule REGISTRY. item #222. security/sast/semgrep.yaml names five community packs (p/typescript, p/react, p/nodejs, p/python, p/owasp-top-ten) which scripts/sast-scan.mjs expands into --config p/... flags, and Semgrep resolves those names from this host AT SCAN TIME — so the packs are a runtime fetch, not something the toolchain image can bake. Without this entry `nx sast` cannot run in the dev container at all: measured 2026-08-22, `curl https://semgrep.dev/` answers `(6) Could not resolve host`, and sast-scan.mjs reports it as its exit>=2 'registry unreachable' case. That made a MERGE-BLOCKING gate CI-only by accident rather than by decision — the failure was only ever seen after a push. NOTE what this does NOT authorise: the scanner runs with --metrics=off --disable-version-check, so Semgrep telemetry stays off BY CONFIGURATION, never by the absence of this rule (see $mustNeverAppearHere); no SEMGREP_APP_TOKEN is involved, the packs are served anonymously; and p/secrets remains deliberately absent from the config (FR-006 — the secret-scan gate owns credential detection). cdnRotating is false because nothing here has been MEASURED to rotate — if pack fetches start timing out after a clean resolve, that is the staleness class and this flag is what should change.",
       "cdnRotating": false
     },
     {
@@ -294,7 +309,6 @@
       "reason": "OSV advisory FEED — the vulnerability database `pip-audit` queries, and therefore the Python half of the merge-blocking `guardrails / sast` gate. item #394. `scripts/sast-scan.mjs` runs pip-audit as `uv run --with pip-audit pip-audit --format json -s osv`, and that `-s osv` resolves to https://api.osv.dev/v1/query AT SCAN TIME — a runtime fetch no toolchain image can bake, exactly like semgrep.dev's rule packs above. Without this entry the scanner FAILS CLOSED, which is correct and also means the gate cannot be run here at all: measured 2026-09-08, `node scripts/sast-scan.mjs --only pip-audit` reports `pip-audit: NOT RUN — httpx ConnectError: ... Failed to resolve 'api.osv.dev' ([Errno -5] No address associated with hostname)`. The workaround feature 068 used, `-s pypi`, is a DIFFERENT feed whose equivalence to OSV is asserted rather than guaranteed — it was validated for sensitivity before being trusted, which is work this entry removes the need for. Same shape as semgrep.dev (item #222): a merge-blocking gate that became CI-only by accident rather than by decision, its failures only ever visible after a push. This is a QUERY host, not a telemetry one — pip-audit sends the package names and versions it is auditing and receives advisories, so the $mustNeverAppearHere inversion does not apply. No credential is involved; OSV is served anonymously. cdnRotating is false because nothing here has been MEASURED to rotate.",
       "cdnRotating": false
     },
-
     {
       "domain": "api.themoviedb.org",
       "group": "app",

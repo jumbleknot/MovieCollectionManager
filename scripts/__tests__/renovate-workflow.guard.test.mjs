@@ -1654,9 +1654,12 @@ test('no formerly-floating infra image resolves to a digest-only update type', (
   // The C1 table's last row, applied to every reference rather than to the six it names — this is
   // the one that also covers minio, whose tags need the declared regex versioning to be orderable
   // at all. `-debug` is included: a variant left floating is still a reference nobody can classify.
+  // minio/mc and minio/minio left this list with feature 069 — they are no longer pulled at all, so
+  // the loop below would silently iterate over nothing for them. A stale name here is not harmless:
+  // it reads as coverage while testing an image that does not exist.
   const FORMERLY_FLOATING = [
     'axllent/mailpit', 'curlimages/curl', 'grafana/otel-lgtm',
-    'minio/mc', 'minio/minio', 'openpolicyagent/opa', 'unleashorg/unleash-server',
+    'openpolicyagent/opa', 'unleashorg/unleash-server',
   ];
   for (const ref of composeRefs.filter((r) => FORMERLY_FLOATING.includes(r.repository))) {
     const versioning = resolvedVersioning(dockerDep(ref.repository));
@@ -1674,8 +1677,18 @@ test('the minio date-tagged family orders by calendar, and its update type says 
   // Contract C4. The mapping is year->major, month->minor, day->patch, so a January release reports
   // `major` because the YEAR ADVANCED, not because anything broke (FR-004, research R2). Asserted
   // rather than merely commented, so the calendar semantics cannot quietly become semver ones.
+  //
+  // DATASOURCE MOVED, feature 069 (item #420). This resolved against the DOCKER datasource while
+  // MinIO published images we pulled. It no longer does — MinIO deleted both repositories from Docker
+  // Hub and distributes source only, so we build our own image and Renovate tracks the SOURCE release
+  // through a customManager on the Dockerfile's build args. The date-tag shape and the calendar
+  // semantics are unchanged; only where Renovate reads them from has moved. The property was worth
+  // keeping, so the test was updated at the cause rather than deleted with the images.
+  const sourceDep = (depName, updateType = 'minor') => ({
+    manager: 'custom.regex', datasource: 'github-releases', depName, updateType,
+  });
   for (const repository of ['minio/minio', 'minio/mc']) {
-    const versioning = resolvedVersioning(dockerDep(repository));
+    const versioning = resolvedVersioning(sourceDep(repository));
     assert.ok(
       versioning !== null && versioning.startsWith('regex:'),
       `${repository} has no regex versioning, so its RELEASE.<date> tags are unparseable — ` +
@@ -1806,12 +1819,16 @@ test('the opa ceiling does NOT leak onto other docker images — the control', (
   }
 });
 
-test('the five identically-referenced images are one dependency with two locations — the control', () => {
-  // Not five risks. Each of these carries the SAME ref string in compose.yaml and compose.prod.yaml,
+test('the identically-referenced images are one dependency with two locations — the control', () => {
+  // Not several risks. Each of these carries the SAME ref string in compose.yaml and compose.prod.yaml,
   // so Renovate rewrites both locations in one go and no configuration is needed to pair them.
   // Asserted so that if someone ever makes local and prod diverge, the claim above stops being true
   // loudly rather than silently.
-  for (const repository of ['curlimages/curl', 'grafana/otel-lgtm', 'minio/minio', 'minio/mc', 'unleashorg/unleash-server']) {
+  //
+  // minio/minio and minio/mc left this list with feature 069 — MinIO deleted them and we build our
+  // own. Their replacement is asserted separately below, because it is not a third-party dependency
+  // and Renovate does not group it.
+  for (const repository of ['curlimages/curl', 'grafana/otel-lgtm', 'unleashorg/unleash-server']) {
     const tags = new Set(tagsFor(repository));
     assert.equal(
       tags.size,
@@ -1822,6 +1839,48 @@ test('the five identically-referenced images are one dependency with two locatio
     assert.equal(tagsFor(repository).length, 2, `${repository} is expected in both observability files`);
     assert.equal(resolvedGroupName(dockerDep(repository)), 'docker base images');
   }
+});
+
+test('(069) our own MinIO image is referenced identically in dev and prod', () => {
+  // The same structural-pairing property as the control above, for the image this repository builds.
+  // It matters more here, not less: a divergence would run a DIFFERENT MinIO build against the dev
+  // and production object stores, and both references are edited by hand rather than by Renovate's
+  // docker manager — the host is interpolated, so Renovate does not manage these lines at all.
+  //
+  // Read from the files DIRECTLY rather than through `tagsFor`. That helper — like the scanner's
+  // enumerateImages before feature 069 fixed it, and like `infraComposeRefs` still — drops any ref
+  // containing `${`, so our own image is invisible to it. That exclusion is correct for its purpose
+  // (reasoning about Renovate-managed third-party deps, which ours is not), so this test does its own
+  // parsing instead of widening a shared helper to serve a case it was not built for.
+  //
+  // Third place the same exclusion has bitten this feature. Recorded so the next one is expected.
+  const files = [
+    'infrastructure-as-code/docker/observability/compose.yaml',
+    'infrastructure-as-code/docker/observability/compose.prod.yaml',
+  ];
+  const refs = files.flatMap((f) => readFileSync(resolve(REPO_ROOT, f), 'utf8')
+    .split(/\r?\n/)
+    // `\$\{REGISTRY_HOST[^}]*\}` tolerates the `:?set in …` guard the refs carry. Every other
+    // REGISTRY_HOST reference in this repository is guarded, so an unguarded one would be the
+    // anomaly — matching only the bare form made this test fail the moment the refs were brought
+    // into line with that convention.
+    .map((l) => /^\s*image:\s*\$\{REGISTRY_HOST[^}]*\}\/jumbleknot\/minio:([^@\s]+)@/.exec(l))
+    .filter(Boolean)
+    .map((m) => m[1]));
+  const tags = new Set(refs);
+  assert.equal(
+    tags.size, 1,
+    `our MinIO image carries different tags across the observability files (${JSON.stringify([...tags])}).\n` +
+      '  dev and prod would run different builds against different object stores.',
+  );
+  assert.equal(refs.length, 4, 'our MinIO image is expected twice in each observability file (server + init)');
+  assert.match(
+    [...tags][0], /^\d/,
+    'our MinIO image tag does not begin with a digit, so infra-image-scan classifies it as FLOATING\n' +
+      '  and it would need a declared exception. We control this tag — keep it orderable. Feature 069\n' +
+      '  chose 2025.09.07-161309 over upstream\'s unorderable RELEASE.2025-09-07T16-13-09Z for exactly\n' +
+      '  this reason.',
+  );
 });
 
 test('all eight formerly-floating references stay in the `docker base images` group', () => {
