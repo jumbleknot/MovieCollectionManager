@@ -163,3 +163,46 @@ test('an expiring entry can also be unmatched — the two properties are orthogo
   assert.equal(classifyExpiry(entry.expiry, TODAY), 'expiring');
   assert.equal(selectUnmatched([entry], new Set(), new Set(['pnpm-audit'])).length, 1);
 });
+
+// --- scope: the item #423 guard -------------------------------------------------------------------
+//
+// Scanner identity stopped being able to separate two runs the moment a SECOND job started consulting
+// the same allowlist. Feature 069 made `minio-image` scan exactly one image against the whole
+// infra-image allowlist, while the sweep scans every pulled image against the same file — and every
+// entry in it carries the same literal scanner `trivy`. So each job reported the other's LIVE entries
+// as "suppressed nothing this run" (16 of them, measured), which is the precise opposite of what
+// UNMATCHED is for: it argues for deleting entries that are actively suppressing findings elsewhere.
+//
+// `inScope` is the caller's answer to "was this entry's target even looked at this run". The module
+// stays SHAPE-AGNOSTIC — it does not know what an image is, and the infra gate computes the flag from
+// its own image regexes against the report's `generatedForImages`.
+
+test('(12) an out-of-scope entry is neither matched nor unmatched — it is silent', () => {
+  // The reproduction from item #423: a single-image run must not flag the fifteen entries belonging
+  // to images it never pulled, even though its scanner did produce findings.
+  const out = selectUnmatched([ENTRY({ inScope: false })], new Set(), new Set(['pnpm-audit']));
+  assert.deepEqual(out, []);
+});
+
+test('(13) an in-scope entry that suppressed nothing is STILL reported — FR-023 survives', () => {
+  // The behaviour this check was built for is not traded away to fix the scoping: a genuinely stale
+  // entry for an image the run DID scan must still surface.
+  const out = selectUnmatched([ENTRY({ inScope: true })], new Set(), new Set(['pnpm-audit']));
+  assert.equal(out.length, 1);
+  assert.equal(out[0].id, 'GHSA-yyyy');
+});
+
+test('(14) an entry with no inScope flag is in scope — the SAST gate is unchanged', () => {
+  // check-sast-findings.mjs has one allowlist and one consumer, so it supplies no flag. Defaulting
+  // absent to IN scope keeps that gate byte-identical; only an explicit `false` suppresses.
+  assert.equal(selectUnmatched([ENTRY()], new Set(), new Set(['pnpm-audit'])).length, 1);
+  assert.equal(selectUnmatched([ENTRY({ inScope: undefined })], new Set(), new Set(['pnpm-audit'])).length, 1);
+});
+
+test('(15) scope and scanner-activity are independent guards — either one alone silences', () => {
+  // Both conditions must hold to report. Asserted together so a later edit cannot collapse them into
+  // one and keep the suite green.
+  assert.deepEqual(selectUnmatched([ENTRY({ inScope: false })], new Set(), new Set()), []);
+  assert.deepEqual(selectUnmatched([ENTRY({ inScope: true })], new Set(), new Set()), []);
+  assert.deepEqual(selectUnmatched([ENTRY({ inScope: false })], new Set(['k1']), new Set(['pnpm-audit'])), []);
+});

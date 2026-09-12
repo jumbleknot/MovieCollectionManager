@@ -15,7 +15,7 @@ export function daysUntil(expiry, today);
 export function formatExpiring(entries);
 export function formatExpired(entry);
 export function formatUnmatched(entries);
-export function selectUnmatched(entries, matchedIds, scannersWithFindings);
+export function selectUnmatched(entries, matchedKeys, scannersWithFindings);
 ```
 
 ### `WARNING_WINDOW_DAYS`
@@ -42,12 +42,38 @@ Only `'expired'` stops suppression, preserving today's behaviour exactly
 Whole days from `today` to `expiry`; negative once past. Both arguments ISO `YYYY-MM-DD`. Computed on
 UTC date boundaries — no local timezone, so a runner's TZ cannot shift a classification.
 
-### `selectUnmatched(entries, matchedIds, scannersWithFindings) → entries[]`
+### `selectUnmatched(entries, matchedKeys, scannersWithFindings) → entries[]`
 
-Returns entries that suppressed nothing **and** whose scanner produced at least one finding this run.
+Returns entries that suppressed nothing, **whose scanner produced at least one finding this run**,
+and **whose target this run actually scanned**.
 
 An entry whose scanner appears nowhere in `scannersWithFindings` is **never** returned — the guard
 from clarification Q2. A skipped, failed or clean scanner must not flag its whole entry set.
+
+An entry carrying `inScope: false` is **never** returned either (item #423). Scanner identity stopped
+being able to separate two runs when feature 069 gave the infra-image allowlist a **second** consumer:
+the sweep scans every pulled third-party image, `minio-image` scans exactly one via `--image`, and
+every entry in that file carries the same literal scanner `trivy`. Each therefore reported the other's
+**live** entries as suppressing nothing — 16 false lines, measured on a single-image run against the
+real allowlist. That inverts the message's purpose: UNMATCHED means "this entry is stale, delete it",
+and acting on those would have deleted entries actively suppressing findings on other images.
+
+An entry whose target was not in the run's scanned set is neither matched nor unmatched — it is **out
+of scope, and silent**. Silence rather than a third report category: a run that did not look at
+something has nothing to say about it.
+
+`inScope` is **absent-means-true**, so a gate with a single consumer supplies nothing and is
+unchanged; only an explicit `false` silences. The module stays shape-agnostic — it does not know what
+an image is. Each gate computes the flag from its own targeting:
+
+| Gate | `inScope` computed from |
+| --- | --- |
+| `check-infra-image-findings.mjs` | the entry's `image` regex against the report's `generatedForImages` |
+| `check-sast-findings.mjs` | not supplied — one allowlist, one consumer |
+
+The infra gate **requires** `generatedForImages` and raises `GateError` when it is absent. Defaulting
+a missing field to "everything is in scope" would restore the old behaviour silently, on a gate that
+still exits 0.
 
 ### Formatters
 

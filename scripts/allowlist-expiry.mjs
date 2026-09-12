@@ -79,19 +79,45 @@ export function classifyExpiry(expiry, today) {
 }
 
 /**
- * Entries that suppressed nothing this run AND whose scanner produced at least one finding.
+ * Entries that suppressed nothing this run, whose scanner produced at least one finding, AND whose
+ * target this run actually looked at.
  *
- * The second condition is the whole point (clarification Q2). Without it, a scanner that was
- * skipped, failed, or came back genuinely clean would flag every one of its entries, and the weekly
- * check would go red claiming stale allowlist hygiene when the real fault is a scan that never ran —
- * misattributing a failure that belongs to the scanning job.
+ * THE SCANNER CONDITION (clarification Q2). Without it, a scanner that was skipped, failed, or came
+ * back genuinely clean would flag every one of its entries, and the weekly check would go red
+ * claiming stale allowlist hygiene when the real fault is a scan that never ran — misattributing a
+ * failure that belongs to the scanning job.
  *
- * @param {Array<{key: string, scanner: string}>} entries normalized entries
+ * THE SCOPE CONDITION (item #423). Scanner identity stopped being sufficient the moment a SECOND job
+ * began consulting the same allowlist. Feature 069 gave the infra-image allowlist two consumers: the
+ * sweep, which scans every pulled third-party image, and the `minio-image` builder, which scans
+ * exactly one image via `--image`. Every entry in that file carries the same literal scanner
+ * (`trivy`), so the scanner guard cannot separate the two runs — and each reported the OTHER's live
+ * entries as suppressing nothing. Measured on `main`: a single-image run produced 16 such lines.
+ *
+ * That is not merely noise, it is the wrong instruction. UNMATCHED exists to say "this entry is
+ * stale, delete it"; acting on those 16 would have deleted entries actively suppressing findings on
+ * other images, and it buried the one genuinely stale entry the check was built to surface (FR-023)
+ * among sixteen false ones.
+ *
+ * An entry whose target was not in this run's scanned set is therefore neither matched nor
+ * unmatched — it is OUT OF SCOPE, and must be silent. Silence, not a third report category: a run
+ * that did not look at something has nothing to say about it.
+ *
+ * THE MODULE STAYS SHAPE-AGNOSTIC. It does not know what an image is, or a file path. `inScope` is
+ * the caller's answer to "was this entry's target looked at this run", computed from whatever
+ * targeting the caller's allowlist actually uses. ABSENT MEANS IN SCOPE, so a gate with a single
+ * consumer (check-sast-findings.mjs) supplies nothing and is unchanged; only an explicit `false`
+ * silences. The default is deliberately the safe direction — an unset flag over-reports, which is
+ * visible, rather than under-reporting, which is not.
+ *
+ * @param {Array<{key: string, scanner: string, inScope?: boolean}>} entries normalized entries
  * @param {Set<string>} matchedKeys identities of entries that suppressed >= 1 finding
  * @param {Set<string>} scannersWithFindings scanners that produced >= 1 finding in this run
  */
 export function selectUnmatched(entries, matchedKeys, scannersWithFindings) {
-  return entries.filter((e) => !matchedKeys.has(e.key) && scannersWithFindings.has(e.scanner));
+  return entries.filter(
+    (e) => !matchedKeys.has(e.key) && scannersWithFindings.has(e.scanner) && e.inScope !== false,
+  );
 }
 
 const label = (e) => e.id;
