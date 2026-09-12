@@ -33,6 +33,54 @@ const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs|py)$/i;
 // `\.ya?ml$` tree-wide: that would drag compose files, Komodo syncs and this security config tree
 // into a PR-scoped scan against packs written for TS/JS/Python code.
 const WORKFLOW_PATH_RE = /^\.(?:forgejo|github)\/workflows\/[^/]+\.ya?ml$/i;
+// Dockerfiles, for the same reason and by the same measurement (item #426). A Dockerfile has NO
+// EXTENSION, so it matched neither pattern above and a pull request ADDING one was gated on nothing —
+// observed, not reasoned: PR #422 added infrastructure-as-code/docker/minio/Dockerfile, its
+// `guardrails / sast` was a real 3m30s run that PASSED, and the post-merge full scan on main then
+// failed on `dockerfile.security.missing-user-entrypoint`. main stayed red until PR #425 landed the
+// accepted-risk entry. A genuinely unwanted finding would have merged just as silently.
+//
+// BOTH HALVES WERE MEASURED FIRST (2026-09-12), because the warning above says not to widen blindly:
+//   1. The rule fires under the packs ALREADY configured — `dockerfile.*` arrives with the existing
+//      five, so this needed no new --config. Handing Semgrep the file was the whole gap.
+//   2. Noise is nil. The five packs over all eight first-party Dockerfiles produced exactly ONE
+//      finding (the already-accepted minio one) and zero Medium/Low, so this class gates without a
+//      warning tax.
+//
+// Matches `Dockerfile`, `Dockerfile.prod`, `toolchain.Dockerfile` — the three spellings present here
+// and the conventional ones elsewhere. NOT a substring match: `.dockerignore` is a different format
+// no dockerfile.* rule can parse, and a prose page about Dockerfiles is prose.
+const DOCKERFILE_PATH_RE = /(?:^|\/)(?:[^/]+\.)?Dockerfile(?:\.[^/]+)?$/i;
+
+// ── THE ENUMERATION (item #426, measured 2026-09-12) ─────────────────────────────────────────────
+//
+// #224 closed workflow YAML, #426 closed Dockerfiles, and each found its class only after that class
+// had already reddened `main`. Closing them one at a time, reactively, is the pattern worth breaking —
+// so the whole surface was enumerated once rather than waiting for the third instance.
+//
+// METHOD: run a `--scope full` scan (what a push gates on), then test every finding's path against
+// `isScanTarget` (what a pull request can see). The criterion is the `blocking` flag, NOT raw
+// severity: a Medium finding is report-only at BOTH scopes, so it cannot create a push-vs-PR gating
+// asymmetry however invisible it is on a PR.
+//
+//   class                       PR scope     findings   blocking
+//   Dockerfile (no extension)   visible *          2          2    * this change; was INVISIBLE
+//   .ts                         visible           20         17
+//   .py                         visible            1          0
+//   .yml (workflow trees)       visible            2          0
+//   .json (renovate.json)       INVISIBLE         19          0    renovate-missing-minimum-release-age
+//   .yaml (pnpm-workspace)      INVISIBLE          3          0    pnpm-* supply-chain advisories
+//
+// RESULT: after this change, ZERO blocking findings sit on a file class a pull request cannot see.
+// The two remaining invisible classes are RECORDED, NOT CLOSED, and the reason is measured rather
+// than assumed — every finding on both is Medium, so it is report-only on a push too. Adding them to
+// the changed set would import 22 warnings onto every PR that touches them and gate nothing, which is
+// the careless widening the note above warns against.
+//
+// THE RESIDUAL IS A SNAPSHOT, AND IS NAMED: this holds for the rules configured today. A pack update
+// that raises `renovate-missing-minimum-release-age` (or any pnpm-workspace rule) to ERROR would
+// reopen the gap silently — the finding would block on `main` and be invisible on the PR that caused
+// it, exactly the #224/#426 shape a third time. Re-run the method above when the pack set changes.
 
 // ── Shared spawn helper ──────────────────────────────────────────────────────
 // shell:false everywhere (avoids the DEP0190 shell+args warning and its escaping pitfall). Windows
@@ -110,7 +158,7 @@ export function classifyScope(pkgName, runtimeSet) {
 
 /** Is this repo-relative path (forward slashes) part of the surface Semgrep scans? */
 export function isScanTarget(path) {
-  return CODE_EXT_RE.test(path) || WORKFLOW_PATH_RE.test(path);
+  return CODE_EXT_RE.test(path) || WORKFLOW_PATH_RE.test(path) || DOCKERFILE_PATH_RE.test(path);
 }
 
 /** Fail-fast if a required scanner toolchain is not on PATH (FR-015). */
