@@ -72,6 +72,53 @@ Operator UIs (R10): only `langfuse-web` (`:19030`) + Grafana (`:19002`) — reac
 so they can't collide with the CI runner's LangFuse/Grafana on the shared host (the old `:3030`/`:3002`
 overlapped CI — see [prod-reboot-resilience.md](prod-reboot-resilience.md) + `check-prod-ci-port-collision.mjs`).
 
+## One-time: migrate the MinIO data volume to uid 1000 (feature 070, item #421)
+
+**Do this BEFORE merging the non-root MinIO image, not after.** Merging first arms a deploy that fails
+on first write against real Langfuse trace data. Contract:
+`specs/070-minio-non-root/contracts/runtime-identity.md`.
+
+The image ran as **root** until feature 070, so the data volume is root-owned. A non-root uid cannot
+write to it; the failure is `unable to rename (/data/.minio.sys/tmp -> …) file access denied` on
+startup.
+
+Production (the volume is **compose-prefixed** — see the trap below):
+
+```sh
+docker compose --profile observability stop langfuse-minio
+docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
+docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 sh -c 'find /data ! -user 1000 | wc -l'
+```
+
+Dev, separately (check the real prefixed name on that host first):
+
+```sh
+docker run --rm -v mcm_langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
+```
+
+**The verification is the `find` count, and it must be `0`.** Do not use `stat /data`.
+
+### Three traps, all of them hit for real
+
+1. **`docker run -v <name>:/data` CREATES the volume when it does not exist**, and a fresh volume is
+   `0:0`. Feature 069's first attempt at measuring production used the unprefixed
+   `langfuse-minio-data`; Docker created it and reported `0:0`, which read as a successful measurement
+   of the real thing. Ownership alone cannot tell a volume Docker just made from the production one —
+   **ownership plus contents can**. The real name is `observability-langfuse-minio-data`.
+2. **Nothing root-owned may run against the volume after the chown.** Observed while verifying feature
+   070: a root container started after the migration recreated `/data/.minio.sys/tmp` and
+   `tmp/.trash` as `0:0`, and the next non-root start failed identically to an unmigrated volume. The
+   top-level directory still reported `1000:1000` throughout, so a `stat /data` would have called it
+   migrated. Hence the `find … ! -user 1000` count rather than a top-level check.
+3. **There is also a `minio_minio-data` volume on the prod host** from another/older project. Confirm
+   which stack owns it before touching anything named `minio*`.
+
+### After the deploy
+
+`langfuse-minio` healthy, `langfuse-web` and `langfuse-worker` up, and a trace visible in the LangFuse
+UI that was written *after* the deploy — a stack that starts proves the permissions, a new trace proves
+the write path.
+
 ## Capacity check (T013) — result (2026-07-03)
 
 Prod host (`prod@homelab`, ~57 GiB usable): **48 GiB RAM available**, actual container RSS ~2.2 GiB (app

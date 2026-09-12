@@ -154,24 +154,3 @@
 # means a regression re-blocks. If metro ever reintroduces image-size, the findings return
 # un-suppressed, which is the intent.
 
-# ── SAST: MinIO built-from-source image runs as root (feature 069, item #420) ────────────────────
-# ACCEPTED RISK, not a false positive. The rule is correct: infrastructure-as-code/docker/minio/
-# Dockerfile declares ENTRYPOINT ["minio"] with no USER, so the server runs as root.
-#
-# That is deliberate and load-bearing. The image replaces upstream minio/minio, which also ran as
-# root (measured from the upstream config blob: User unset). The live `langfuse-minio-data` volume
-# was created by that root process and is root-owned, so a non-root uid cannot write to it — the
-# container would come up and fail on first write. Adding USER here is a change to image contract
-# C5 (specs/069-minio-from-source/contracts/image-contract.md), not an innocuous Dockerfile edit.
-#
-# Moving to non-root is tracked as item #421 and needs a one-time volume chown sequenced with a
-# stack restart. The expiry below is what forces that decision to be revisited rather than inherited.
-#
-# Every other first-party Dockerfile in this repo declares USER; this entry is deliberately pinned to
-# the one path so a future USER-less Dockerfile still blocks.
-- scanner: "semgrep"
-  id: "dockerfile.security.missing-user-entrypoint.missing-user-entrypoint"
-  locationPattern: "infrastructure-as-code/docker/minio/Dockerfile:.*"
-  justification: "Accepted risk, tracked as item #421: the image replaces upstream minio/minio which also ran as root, and the existing root-owned langfuse-minio-data volume cannot be written by a non-root uid. Adding USER is a change to image contract C5 requiring a one-time volume chown, not a Dockerfile edit."
-  addedBy: "item-420"
-  expiry: "2026-12-01"

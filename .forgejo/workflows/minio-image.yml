@@ -131,8 +131,8 @@ jobs:
           CI_LOG_STEP
 
       # Contract acceptance BEFORE publishing. specs/069-minio-from-source/contracts/image-contract.md
-      # C1 (both binaries), C2 (a shell exists), C3 (honest version), C5 (runs as root). C3 is the one
-      # that needs asserting: a lost ldflags stamp still produces working binaries and a zero exit, so
+      # C1 (both binaries), C2 (a shell exists), C3 (honest version), C5 (runs as uid 1000). C3 is the
+      # one that needs asserting: a lost ldflags stamp still produces working binaries and a zero exit, so
       # nothing else would catch it — the image would just misreport what it is, for ever.
       - name: Verify the image contract
         run: |
@@ -155,9 +155,15 @@ jobs:
             echo "::error::C3 violated — mc reports '$got_mc', expected to contain '$WANT_MC'."
             exit 1 ;;
           esac
-          [ "$got_uid" = "0" ] || {
-            echo "::error::C5 violated — image runs as uid $got_uid, not root."
-            echo "::error::The live langfuse-minio-data volume is root-owned; a non-root uid cannot write to it."
+          # C5 was renegotiated by feature 070 (item #421): this asserted uid 0 until 2026-09-12, and
+          # it FAILED on the change that introduced non-root — which is the guard working. It is
+          # updated at the cause rather than deleted, so it still fails if the identity regresses to
+          # root OR drifts to some other uid. The NUMBER is the contract: the data volume is chowned to
+          # a number, and an identity allocated by adduser's system counter can move on a rebuild.
+          [ "$got_uid" = "1000" ] || {
+            echo "::error::C5 violated — image runs as uid $got_uid, expected 1000."
+            echo "::error::The langfuse-minio data volumes were chowned to 1000:1000 by feature 070."
+            echo "::error::Any other uid cannot write to them, and that lands on a production redeploy."
             exit 1; }
           CI_LOG_STEP
 
