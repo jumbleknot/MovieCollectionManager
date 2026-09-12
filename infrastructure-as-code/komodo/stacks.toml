@@ -153,6 +153,7 @@ run_directory = "infrastructure-as-code/docker/observability"
 file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"
 environment = """
+REGISTRY_HOST=[[REGISTRY_HOST]]
 LANGFUSE_SALT=[[LANGFUSE_SALT]]
 LANGFUSE_ENCRYPTION_KEY=[[LANGFUSE_ENCRYPTION_KEY]]
 LANGFUSE_NEXTAUTH_SECRET=[[LANGFUSE_NEXTAUTH_SECRET]]

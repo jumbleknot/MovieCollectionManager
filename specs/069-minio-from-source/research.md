@@ -321,3 +321,41 @@ Daily (rejected — capacity-1 runner; nothing changes that fast).
   strictly better position than today. Not engineered around.
 - **Maintenance transfers to us.** Noticing and responding to MinIO vulnerabilities becomes the
   project's job. The weekly rebuild is the mechanism; the commitment is real and ongoing.
+
+---
+
+## R9 — The seventh measurement, found in production after the feature shipped
+
+**Symptom.** The `prod-observability` Komodo deploy failed at `docker compose config`:
+
+```
+error while interpolating services.langfuse-minio.image:
+  required variable REGISTRY_HOST is missing a value: set in observability/.env.prod
+```
+
+**Cause.** This feature repointed observability's MinIO refs from the public `minio/minio` to
+`${REGISTRY_HOST}/jumbleknot/minio`. That made observability the **fourth** consumer of
+`REGISTRY_HOST` — but `infrastructure-as-code/komodo/stacks.toml` declared it only for the other
+three (`prod-mc-service`, `prod-mcm-bff`, `prod-movie-assistant`). Komodo writes each stack's
+`environment` block into its `env_file_path`, so a variable absent there is absent at interpolation
+time and the `:?` guard fires.
+
+**Why every gate missed it.** The compose files are valid YAML, the image exists and is pullable, and
+the *local* stack works because `stacks/observability.env` supplies `REGISTRY_HOST` for the dev
+compose. The coupling is only observable on a real Komodo deploy, which no CI job performs.
+
+**The miss was in the spec, not the execution.** The brainstorm's "COUPLED CHANGES THAT MUST ALL MOVE
+TOGETHER" list named the four compose refs, the allowlist, `renovate.json`, the scanner and its
+tests. It never traced `${REGISTRY_HOST}` through to the file that declares each stack's required
+inputs, and the analyze pass did not catch the omission either. Adding a `${VAR:?}` to a prod compose
+**is** a change to that stack's required inputs; `stacks.toml` is the only place those are declared.
+
+**Fix at the cause.** One line restores the deploy, but the durable part is
+`scripts/__tests__/komodo-stack-env.guard.test.mjs`, which asserts that every `${VAR:?…}` in a prod
+compose is supplied by that stack's `environment` block or its `additional_env_files`. It is scoped
+to the required form only — `${VAR}` and `${VAR:-default}` are permitted to be absent by definition.
+It carries its own instrument check, because a guard that passes by parsing nothing is the exact
+failure mode the rest of this document is about.
+
+**The general lesson.** Changing a literal into a variable moves a dependency from the file you are
+editing into a file you are not. The edit looks local and is not.
