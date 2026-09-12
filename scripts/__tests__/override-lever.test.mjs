@@ -193,6 +193,12 @@ test('17. the gate prints advice for non-blocking findings and STILL exits 0', (
   const report = join(dir, 'findings.json');
   const allowlist = join(dir, 'allowlist.yaml');
   writeFileSync(report, JSON.stringify({
+    // `generatedAtScope` is written by buildFindingsReport on every real run and is REQUIRED by the
+    // gate-scope symmetry check (items #224/#426). A fixture that omits it tests a report shape the
+    // producer never emits — and the check exists precisely because a missing input must not be able
+    // to silently switch a guard off.
+    schemaVersion: 1,
+    generatedAtScope: 'full',
     findings: [
       { scanner: 'pnpm-audit', kind: 'sca', id: 'GHSA-nb', title: 'non-blocking, advice-eligible',
         location: 'hono@4.12.29', ecosystem: 'npm', nativeSeverity: 'medium', severity: 'Medium',
