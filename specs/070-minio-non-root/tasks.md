@@ -86,6 +86,11 @@ entries not owned by the target uid rather than stat-ing `/data`.
 
 ## Phase 4 — The operator step (outside CI)
 
+> **The chown is non-disruptive and may be done at any time, ahead of everything else.** Root bypasses
+> DAC permission checks, so the currently-running **root** image keeps working normally on a volume
+> owned by `1000:1000`. Measured: clean restart, `mc ready local` ready, a new write succeeded, zero
+> storage errors. There is no need for a tightly-coupled maintenance window.
+
 ### T011 ⏳ Migrate the **dev** volume
 ```sh
 docker compose --profile observability stop langfuse-minio
@@ -105,9 +110,13 @@ Must report `0`. **Nothing root-owned may run against the volume after this** (t
 There is also a `minio_minio-data` volume on that host from another/older project. Confirm which stack
 owns it before touching anything named `minio*`.
 
-### T013 ⏳ Merge, then deploy
-Merge only after T012 reports `0`. Merging first arms a deploy that fails on first write against real
-Langfuse trace data.
+### T013 ⏳ Merge, then update the digest pins, then deploy
+Merging does **not** deploy: both compose files pin the image by digest (contract C6), so the new image
+published by `minio-image` on the push to `main` is consumed by nothing until the pins are updated.
+
+The real gate is the **digest-pin update**, which must not precede T012. Take the digest from the
+`minio-image` run's step summary — not a remembered one; two builds of identical source produced
+different digests (runs 3115, 3117). Update **both** `compose.yaml` and `compose.prod.yaml`.
 
 ### T014 ⏳ Post-deploy confirmation
 `langfuse-minio` healthy, `langfuse-web` and `langfuse-worker` up, and a trace visible in the LangFuse

@@ -128,13 +128,34 @@ across every future rebuild.
 - Dropping further capabilities, adding a read-only root filesystem, or a seccomp profile. Worth doing,
   separately, once identity is proven.
 
-## The operator dependency, stated plainly
+## The operator dependency, stated precisely
 
 The production `chown` is an **operator action on the production host**, outside CI and outside the
-coding environment. **This feature's pull request must not merge before it has been done**, because
-merging arms a deploy that would fail on first write against real Langfuse data.
+coding environment. Two measured facts make the sequencing far less fragile than it first appears, and
+both are recorded here because the obvious framing — *"merging arms a broken deploy"* — is **wrong**:
 
-The ordering is: migrate the volume → confirm → merge. Not the reverse.
+**1. Merging does not deploy anything.** Both compose files pin the image by **digest** (contract C6),
+currently `sha256:4dcaddaac0ab6815…`, which is the root image. Merging triggers `minio-image` on the
+push to `main`, which builds and publishes a *new* digest — but nothing consumes it until the compose
+pins are updated in a separate commit. **The deploy gate is the digest-pin update, not the merge.**
+
+**2. The chown is non-disruptive and can be done first, independently.** Root bypasses DAC permission
+checks, so the *currently running root image* keeps working normally on a volume owned by `1000:1000`.
+Measured: after `chown -R 1000:1000`, the root image restarted clean, `mc ready local` reported ready,
+a new write succeeded, and there were **zero** storage errors.
+
+So the safe order is:
+
+```
+  chown the volume  ──▶  merge  ──▶  minio-image publishes a NEW digest
+  (non-disruptive,       (nothing        │
+   any time)              deploys)       ▼
+                                    update the compose digest pins  ──▶  deploy
+                                    ▲
+                          THIS is the step that must not precede the chown
+```
+
+The chown being safe to do early is what removes the need for a tightly-coupled maintenance window.
 
 ## Success criteria
 

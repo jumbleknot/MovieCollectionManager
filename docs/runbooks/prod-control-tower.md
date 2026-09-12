@@ -74,9 +74,18 @@ overlapped CI — see [prod-reboot-resilience.md](prod-reboot-resilience.md) + `
 
 ## One-time: migrate the MinIO data volume to uid 1000 (feature 070, item #421)
 
-**Do this BEFORE merging the non-root MinIO image, not after.** Merging first arms a deploy that fails
-on first write against real Langfuse trace data. Contract:
-`specs/070-minio-non-root/contracts/runtime-identity.md`.
+**Do this first — it is safe to do at any time, and nothing else should be sequenced tightly around it.**
+Contract: `specs/070-minio-non-root/contracts/runtime-identity.md`.
+
+Two things that are easy to get backwards, both measured:
+
+- **The chown is non-disruptive.** Root bypasses DAC permission checks, so the *currently running root
+  image* keeps working normally on a volume owned by `1000:1000` — clean restart, `mc ready local`
+  ready, new writes fine, zero storage errors. You do not need a maintenance window for the chown.
+- **Merging the non-root image does not deploy it.** Both compose files pin by **digest**, so the new
+  image `minio-image` publishes on the push to `main` is consumed by nothing until those pins are
+  updated in a separate commit. **The real gate is the digest-pin update**, which must not precede this
+  chown.
 
 The image ran as **root** until feature 070, so the data volume is root-owned. A non-root uid cannot
 write to it; the failure is `unable to rename (/data/.minio.sys/tmp -> …) file access denied` on

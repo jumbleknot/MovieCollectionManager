@@ -28,12 +28,20 @@ would ship a change that is known-broken. Measured evidence is in the spec and i
 
 ## Sequencing, which is the part that matters
 
+**The obvious framing is wrong, and measurement corrected it.** Merging does *not* arm a broken deploy:
+both compose files pin the image by digest (contract C6), so nothing consumes the newly-published image
+until those pins are updated in a separate commit. And the chown is *non-disruptive* — root bypasses DAC
+checks, so the currently-running root image keeps working on a `1000:1000` volume (measured: clean
+restart, `mc ready local` ready, new write OK, zero storage errors).
+
 ```
-  build + verify locally  ──▶  open PR  ──▶  [OPERATOR: chown prod volume]  ──▶  merge  ──▶  deploy
-                                                         ▲
-                                          the gate: merging before this arms a
-                                          deploy that fails on first write
-                                          against real Langfuse trace data
+  [OPERATOR: chown prod volume]  ──▶  merge  ──▶  minio-image publishes a NEW digest
+   non-disruptive; the running          nothing          │
+   root image is unaffected             deploys          ▼
+                                               update compose digest pins  ──▶  deploy
+                                               ▲
+                                     THE REAL GATE — this step, not the merge,
+                                     is what must not precede the chown
 ```
 
 CI's `minio-image` job builds and asserts the contract on the PR, so the image is proven before the
