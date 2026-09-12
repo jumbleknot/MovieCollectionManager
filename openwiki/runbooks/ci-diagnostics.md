@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, and the durations subcommand for calibrating per-step ceilings.
+description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand for calibrating per-step ceilings, and the event-vs-trigger_event field split that makes a scheduled run look like a push.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-09T16:00:00Z
+timestamp: 2026-09-12T17:11:00Z
 ---
 
 # CI self-serve diagnostics
@@ -288,6 +288,37 @@ runtime rather than any literal configured value.
   (a dead runner starves everything; a skip marker starves exactly one commit). Fix: reword the
   message with `git commit --amend`, then force-push. Quote the marker as `` `skip`-`ci` `` or name
   it in prose when a commit needs to discuss one — never disable the feature.
+
+- **A scheduled run reports `event: push` — the trigger is in a DIFFERENT field (item #418).**
+  `GET /actions/runs` returns **two** event fields per run, and they disagree on every cron run:
+
+  | field | value on a weekly cron run | what it actually is |
+  |---|---|---|
+  | `trigger_event` | `schedule` | what fired the run |
+  | `event` | `push` | the class of the **synthesized payload** |
+
+  Measured 2026-09-12 across **all 68** scheduled runs since 2026-07-31: `trigger_event` is `schedule`
+  for every one, `event` is `push` for every one. There is no counter-example, and the `ScheduleID`
+  (non-zero only on a cron run) agrees with `trigger_event` throughout — it **is** present in the
+  listing, not only on the run-detail endpoint.
+
+  **`github.event_name` inside the job follows `trigger_event`.** A step gated
+  `if: github.event_name == 'schedule'` DOES run on the weekly cron. Item #418 read `event`, saw
+  `push`, and concluded the repository's only allowlist-expiry check had never once executed; the step
+  had in fact been running weekly since the Friday after it was added, and had gone red for three
+  consecutive weeks. Nothing was broken. **Do not "fix" a `== 'schedule'` gate from the `event` field.**
+
+  `ci-status.mjs` filters `--event` on `event`, not `trigger_event`, and that is **correct for its
+  purpose**: the commit-status context suffix (`… (push)`) is derived from the same `event` field, so a
+  cron run's statuses really do land in the `push` view. The two fields answer different questions —
+  `event` is "which context bucket", `trigger_event` is "what fired it".
+
+  To list scheduled runs, filter on `ScheduleID !== 0` or `trigger_event === 'schedule'`:
+
+  ```js
+  const runs = (await api(`/repos/${owner}/${repo}/actions/runs?page=1&limit=50`)).workflow_runs;
+  runs.filter((r) => r.ScheduleID).map((r) => [r.id, r.created, r.workflow_id, r.trigger_event]);
+  ```
 
 Full exit-code table, the exact API endpoints and payload measurements, the required-check
 fetch/fallback logic, the PR creation recipe, and the evidence-bundle hardening details:

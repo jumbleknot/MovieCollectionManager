@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Infra-image CVE scanning
-description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code, but NOT MinIO which is now built from source and scanned by its own builder) — the coverage gap left by SAST/SCA and the built-image scanners, gated on fixable Critical findings only.
+description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code, but NOT MinIO which is now built from source and scanned by its own builder) — the coverage gap left by SAST/SCA and the built-image scanners, gated on fixable Critical findings only, and how to verify the weekly allowlist-expiry step actually ran.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
-timestamp: 2026-09-11T00:00:00+00:00
+timestamp: 2026-09-12T17:11:00Z
 ---
 
 # Infra-image CVE scanning
@@ -133,6 +133,34 @@ now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`),
   image** — the class of wrong turns this repository keeps paying for is a description standing in for
   a measurement. Prefer the direction that fails safe: a key covering a ref that turns out clean
   suppresses nothing extra; a key that omits an affected ref blocks the board.
+
+- **Did the weekly allowlist-expiry step run? Read its status, not its absence (item #418).** The
+  expiry check over both allowlists is the only thing that ever reports an expired, expiring or
+  unmatched suppression, and it runs on the **weekly cron only** (`if: github.event_name == 'schedule'`)
+  — it must never run on a PR, or a dated entry would block every pull request a fortnight later.
+
+  That gate is invisible from the job's tick, and for three weeks it was believed to have never fired
+  (see item #418, resolved). Since then the job publishes the measurement directly:
+
+  ```bash
+  API=…/api/v1/repos/jumbleknot/mcm
+  curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" "$API/commits/<sha>/statuses?page=1&limit=100" \
+    | jq -r '.[] | select(.context == "infra-image-scan/expiry") | .description'
+  # event_name=schedule expiry_step=success   <- the cron ran it
+  # event_name=push     expiry_step=skipped   <- a push-triggered sweep; correctly skipped
+  # event_name=<unset>  expiry_step=<unset>   <- the runner returned no value: a real fault, investigate
+  ```
+
+  Both halves are **raw measurements** interpolated from the run context, never a restatement of what
+  the `if:` is believed to do. The status is always `success` and never gates anything — it is a
+  record, and a red status on `main`'s tip is not something an observability step has standing to raise.
+  It is posted on every non-`pull_request` run; if the POST itself fails, the status is simply
+  **absent**, which is its own tell rather than a job failure for a bookkeeping call.
+
+  > The `event_name` value here is also the standing answer to a forge trap that has cost a session
+  > once already: `/actions/runs` reports `event: push` for a cron run, and only `trigger_event` says
+  > `schedule`. See [CI self-serve diagnostics](ci-diagnostics.md) § "A scheduled run reports `event:
+  > push`".
 
 Full scanner-vs-scanner coverage table, allowlist entry shape, baseline-seeding steps, and remediation
 ownership: `docs/runbooks/infra-image-scanning.md`.

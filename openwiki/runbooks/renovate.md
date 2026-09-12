@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional, and the Docker Hub page-11 403 that discards all timestamps fixed by capping dockerMaxPages at 10), the pinned-toolchain table (Rust, semgrep, cargo-audit, python interpreter minor now on 3.14 unified into the python toolchain group by item #366, uv), the Rust devcontainer rebuild gotcha, the python toolchain group position gotcha (after docker base images, before docker digest pins — wrong order silently breaks digest refreshes), and the two-place config validator that catches the unknown-key class the guard test cannot.
+description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional, the Docker Hub page-11 403 that discards all timestamps fixed by capping dockerMaxPages at 10, the DIGEST-class timestamp trap that kept clickhouse/mongodb/rust unpinned until item #412, and the compose-file basename rule that made dev-ollama.compose.yaml invisible to every manager), the pinned-toolchain table (Rust, semgrep, cargo-audit, python interpreter minor now on 3.14 unified into the python toolchain group by item #366, uv), the Rust devcontainer rebuild gotcha, the python toolchain group position gotcha (after docker base images, before docker digest pins — wrong order silently breaks digest refreshes), and the two-place config validator that catches the unknown-key class the guard test cannot.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-09-07T00:00:00.000Z
+timestamp: 2026-09-12T17:22:00Z
 ---
 
 # Renovate dependency bot
@@ -163,6 +163,70 @@ Nothing auto-merges. Every group carries `automerge: false`.
   local lookup made right after a failed Docker Hub fetch served the failure from cache and made no
   Hub requests — the run looked identical to the broken one. Point `RENOVATE_CACHE_DIR` at a fresh
   directory for any re-measurement.
+- **A DIGEST-class update is aged against a timestamp it often cannot have (item #412).** For
+  `pinDigest` and `digest` updates renovate does **not** age against the tag's own `tag_last_pushed`
+  at all. It ages against **`newestMatchingVersionTimestamp`** — the timestamp of the newest release
+  matching the *current* value, taken from the **version** lookup
+  (`workers/repository/process/lookup/index.js`, `applyMinimumReleaseAgeToDigestUpdate`).
+
+  Two unrelated situations produce the same `undefined`, and both were live here until 2026-09-12:
+
+  | ref | why there is no timestamp |
+  |---|---|
+  | `mongodb/mongodb-community-server:8.0.8-ubi9` (125,788 tags) | the pinned tag is far outside the newest-1000-tag window `dockerMaxPages: 10` allows, so the version lookup has no release for it |
+  | `clickhouse/clickhouse-server:24.3` (2,483 tags) | same |
+  | `rust:alpine3.21` | the tag is not a *versioned* release, so no version matches it — even though the tag itself has a fresh `tag_last_pushed` (page 1) |
+
+  Under the default `timestamp-required` that is `isPending: true` **for ever**, and
+  `generateBranchConfig` then drops the pending upgrade from a branch holding a ready one. Logged at
+  **DEBUG** only. Net effect: `clickhouse` and `mongodb` were never digest-pinned at all, and `rust` —
+  already pinned — never had its digest **refreshed**, which is the item #303 class (advisories a
+  refresh would clear) silently reopened.
+
+  Raising `dockerMaxPages` is **not** the fix: Docker Hub 403s from page 11 anonymously (item #349),
+  and 1,258 pages is not a cap. The fix is a rule scoped to `pinDigest` + `digest` on the docker
+  datasource running `timestamp-optional`. That is not a weakening — a pinDigest adopts **no new
+  content**, it records the digest of the tag we already pull, so there is nothing for a supply-chain
+  cooldown to soak, and the alternative on offer is not "wait 3 days" but "never". Docker Hub
+  **version** updates keep `timestamp-required`, where the timestamp is real;
+  `renovate-workflow.guard.test.mjs` asserts both halves so neither can drift into the other.
+
+  Diagnose it with the local lookup, and read the RESOLVED BEHAVIOUR, not the message:
+
+  ```bash
+  RENOVATE_PLATFORM=local RENOVATE_DRY_RUN=lookup LOG_LEVEL=debug RENOVATE_DOCKER_MAX_PAGES=10 \
+  RENOVATE_CACHE_DIR=$(mktemp -d) RENOVATE_ENABLED_MANAGERS=docker-compose,dockerfile \
+  npx --yes renovate@44 2>&1 | grep -A 4 'no releaseTimestamp to age against'
+  ```
+
+  > ⚠️ **Do not count the `no releaseTimestamp to age against` lines.** That debug line is emitted
+  > under **both** behaviours — it says a timestamp was absent, not that anything stalled. Counting it
+  > reads the fix as a regression: the count here went 3 → 6 *because the fix also made a previously
+  > invisible file visible*. The signal is the `minimumReleaseAgeBehaviour` field in the object logged
+  > beside it — `timestamp-required` stalls for ever, `timestamp-optional` proceeds.
+
+- **A manager that matches no FILES is indistinguishable from one with no work (item #412).**
+  `docker:pinDigests` was in `extends` the whole time `ollama/ollama:0.32.1` sat un-pinned, because
+  the file it lives in was never **extracted**. renovate@44's docker-compose manager defaults to
+  `/(^|/)(?:docker-)?compose[^/]*\.ya?ml$/` — the **basename must start** with `compose` or
+  `docker-compose`. This repository also names compose files `<thing>.compose.yaml`, and all five such
+  files were invisible to every manager: a debug run mentioning clickhouse and mongodb forty-odd times
+  each mentioned `ollama` **zero** times in 7,842 lines.
+
+  This is §5's own shape once more — nothing failed, nothing warned, and the absence read as health.
+  The cheapest check is a grep of a debug run for an image you *know* is referenced; if the count is
+  zero, the question is not "why no update" but "is the file even seen":
+
+  ```bash
+  grep -c 'dev-ollama' renovate.log   # 0 = the manager never looked at it
+  ```
+
+  Fixed in `renovate.json` under the top-level `docker-compose` key, **not** by renaming the files —
+  a rename moves the trap to the next file someone names naturally. Widening what Renovate *sees* also
+  widens what it *rewrites*, so check the blast radius: here it newly matched two `docs/proposals/**`
+  documents carrying deliberately stale refs, which is why `docs/proposals/**` joined `ignorePaths` in
+  the same change. `infra-image-scan.test.mjs` asserts both halves.
+
 - **The python interpreter minor is now tracked by the `python toolchain` group (item #366) — raise
   the ceiling only by moving `.python-version`.** `agents/movie-assistant/.python-version` (currently
   `3.14`) is the single source of truth. The docker `allowedVersions` ceiling is derived from that
