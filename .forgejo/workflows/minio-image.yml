@@ -156,6 +156,21 @@ jobs:
       # Criteria mirror the infra gate's: --severity CRITICAL --ignore-unfixed. Fixable Criticals block;
       # fixable Highs and unfixable findings are report-only, the same CRITICAL-only policy cd-deploy
       # and infra-image-scan both use. A divergence here would mean two standards for "blocking".
+      # The scan goes through scripts/infra-image-scan.mjs, which imports `yaml` — so this job needs a
+      # Node toolchain and the workspace deps, exactly as infra-image-scan.yml does. Omitted on the
+      # first attempt, and the failure was ERR_MODULE_NOT_FOUND on the kvm runner's default Node 20
+      # (run 3125) — which reads like a code fault rather than a missing setup step.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Install JS dependencies (the scanner + gate use the `yaml` package)
+        run: bash scripts/ci-log-step.sh minio-image-install-js-dependencies pnpm install --frozen-lockfile
+
       - name: Install Trivy
         run: |
           bash scripts/ci-log-step.sh minio-image-install-trivy bash -e /dev/stdin <<'CI_LOG_STEP'
