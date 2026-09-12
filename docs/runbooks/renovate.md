@@ -578,6 +578,73 @@ Hub cause, which is not a cooldown at all:
 > have "disproved" the fix. Point `RENOVATE_CACHE_DIR` at a fresh directory for any re-measurement. This is also why the item #298 observation in §4 cannot yet be read as "the structural
 case is gone": it moved from tag churn to timestamp availability.
 
+### A DIGEST-class update is aged against a timestamp it often cannot have (item #412)
+
+The section above is about a release with no timestamp. This is its sharper edge: for `pinDigest` and
+`digest` updates renovate does **not** age against the tag's own `tag_last_pushed` at all. It ages
+against **`newestMatchingVersionTimestamp`** — the timestamp of the newest release matching the
+*current* value, taken from the **version** lookup
+(`workers/repository/process/lookup/index.js`, `applyMinimumReleaseAgeToDigestUpdate`).
+
+Two unrelated situations produce the same `undefined`, and both were live here until 2026-09-12:
+
+| ref | why there is no timestamp |
+|---|---|
+| `mongodb/mongodb-community-server:8.0.8-ubi9` (125,788 tags) | the pinned tag is far outside the newest-1000-tag window `dockerMaxPages: 10` allows, so the version lookup has no release for it |
+| `clickhouse/clickhouse-server:24.3` (2,483 tags) | same |
+| `rust:alpine3.21` | the tag is not a *versioned* release, so no version matches it — even though the tag itself has a fresh `tag_last_pushed` (page 1) |
+
+Under the default `timestamp-required` that is `isPending: true` **for ever**, and
+`generateBranchConfig` then drops the pending upgrade from a branch holding a ready one. Logged at
+**DEBUG** only. Net effect: `clickhouse` and `mongodb` were never digest-pinned at all, and `rust` —
+already pinned — never had its digest **refreshed**, which is the item #303 class (advisories a
+refresh would clear) silently reopened.
+
+Raising `dockerMaxPages` is **not** the fix: Docker Hub 403s from page 11 anonymously (item #349), and
+1,258 pages is not a cap. The fix is a rule scoped to `pinDigest` + `digest` on the docker datasource
+running `timestamp-optional`. That is not a weakening — a pinDigest adopts **no new content**, it
+records the digest of the tag we already pull, so there is nothing for a supply-chain cooldown to soak,
+and the alternative on offer is not "wait 3 days" but "never". Docker Hub **version** updates keep
+`timestamp-required`, where the timestamp is real; `renovate-workflow.guard.test.mjs` asserts both
+halves so neither can drift into the other.
+
+Diagnose it with the local lookup, and read the RESOLVED BEHAVIOUR, not the message:
+
+```bash
+RENOVATE_PLATFORM=local RENOVATE_DRY_RUN=lookup LOG_LEVEL=debug RENOVATE_DOCKER_MAX_PAGES=10 \
+RENOVATE_CACHE_DIR=$(mktemp -d) RENOVATE_ENABLED_MANAGERS=docker-compose,dockerfile \
+npx --yes renovate@44 2>&1 | grep -A 4 'no releaseTimestamp to age against'
+```
+
+> ⚠️ **Do not count the `no releaseTimestamp to age against` lines.** That debug line is emitted under
+> **both** behaviours — it says a timestamp was absent, not that anything stalled. Counting it reads
+> the fix as a regression: the count here went 3 → 6 *because the fix also made a previously invisible
+> file visible*. The signal is the `minimumReleaseAgeBehaviour` field in the object logged beside it —
+> `timestamp-required` stalls for ever, `timestamp-optional` proceeds.
+
+### A manager that matches no FILES is indistinguishable from one with no work (item #412)
+
+`docker:pinDigests` was in `extends` the whole time `ollama/ollama:0.32.1` sat un-pinned, because the
+file it lives in was never **extracted**. renovate@44's docker-compose manager defaults to
+`/(^|/)(?:docker-)?compose[^/]*\.ya?ml$/` — the **basename must start** with `compose` or
+`docker-compose`. This repository also names compose files `<thing>.compose.yaml`, and all five such
+files were invisible to every manager: a debug run mentioning clickhouse and mongodb forty-odd times
+each mentioned `ollama` **zero** times in 7,842 lines.
+
+This is §5's own shape once more — nothing failed, nothing warned, and the absence read as health.
+The cheapest check is a grep of a debug run for an image you *know* is referenced; if the count is
+zero, the question is not "why no update" but "is the file even seen":
+
+```bash
+grep -c 'dev-ollama' renovate.log   # 0 = the manager never looked at it
+```
+
+Fixed in `renovate.json` under the top-level `docker-compose` key, **not** by renaming the files — a
+rename moves the trap to the next file someone names naturally. Widening what Renovate *sees* also
+widens what it *rewrites*, so check the blast radius: here it newly matched two `docs/proposals/**`
+documents carrying deliberately stale refs, which is why `docs/proposals/**` joined `ignorePaths` in
+the same change. `infra-image-scan.test.mjs` asserts both halves.
+
 ### A version number that does not advertise a breaking change
 
 `@copilotkit/*` ships breaking API changes in **minor** bumps. It is grouped separately behind

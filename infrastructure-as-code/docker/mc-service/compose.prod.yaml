@@ -22,7 +22,7 @@
 name: prod-mc-service
 services:
   mc-service-store-mongo:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    image: mongodb/mongodb-community-server:8.0.8-ubi9@sha256:784dd73b701c3fb846876394c8137a9b42c35791ed1c8a931d8efa2cb0c8dd81
     container_name: mc-service-store-mongo
     restart: always
     # --replSet rs0: single-member replica set required for multi-document transactions (cascade delete).

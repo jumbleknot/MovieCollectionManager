@@ -483,3 +483,109 @@ test('(063) every allowlist entry for a formerly-floating image can be discharge
 
   assert.ok(checked > 0, 'no allowlist entries were examined — the repository names above are stale, so this test asserts nothing.');
 });
+
+// ---------------------------------------------------------------------------------------------
+// THE DIGEST-PIN COUNT — item #412, the sibling of the declared-exception count above.
+//
+// Feature 063 / item #297 established the rule: a third-party infra image is referenced by VERSION
+// TAG **plus DIGEST**. The tag gives an update a TYPE; the digest gives reproducibility, and — the
+// part that actually bites — it is what lets an allowlist entry be keyed to immutable content.
+// item #406's two `langfuse/*:3` suppressions are keyed to a floating major and rely on a time-box
+// instead, precisely because those refs were not digest-pinned.
+//
+// The test above asserts the TAG half. Nothing asserted the DIGEST half, and three references sat
+// un-pinned for months while `docker:pinDigests` was in `extends` the whole time, reporting nothing
+// — the §5 'absence reads as health' shape for the third time in this config (cf. items #308, #349).
+//
+// TWO INDEPENDENT CAUSES, both measured 2026-09-12 and both fixed in renovate.json:
+//
+//   1. `ollama/ollama:0.32.1` was NEVER EXTRACTED. Renovate's docker-compose manager ships
+//      `managerFilePatterns: ["/(^|/)(?:docker-)?compose[^/]*\\.ya?ml$/"]` — the basename must START
+//      with `compose` or `docker-compose`. `dev-ollama.compose.yaml` does not, so the file was
+//      invisible to every manager. It appeared ZERO times in a debug run that mentioned the other
+//      two forty-odd times each. Four `stacks/*.compose.yaml` files were invisible for the same
+//      reason; they are pure `include:` aggregators with no image refs, so they cost nothing — yet.
+//
+//   2. `clickhouse/clickhouse-server:24.3` and `mongodb/mongodb-community-server:8.0.8-ubi9` were
+//      extracted, produced a pinDigest update, and had it marked `pendingChecks` FOR EVER.
+//      renovate@44 ages a digest-class update against `newestMatchingVersionTimestamp` — the
+//      timestamp of the newest release matching the CURRENT value, from the version lookup — not
+//      against the tag's own `tag_last_pushed`. Both tags fall outside the newest-1000-tag window
+//      that `RENOVATE_DOCKER_MAX_PAGES=10` allows (mongodb has 125,788 tags; clickhouse 2,483, and
+//      Docker Hub 403s from page 11 anyway, so the cap cannot simply be raised — item #349). No
+//      timestamp + the default `timestamp-required` = `isPending: true`, permanently
+//      (util/minimum-release-age.js), and `generateBranchConfig` then drops the pending upgrade from
+//      a branch holding a ready one.
+//
+// Which is why this assertion is about the TREE, not about renovate.json: the two causes had nothing
+// in common except their invisible result, and a third cause would be caught here whatever it is.
+
+test('(412) every third-party infra image reference is digest-pinned — no undeclared exceptions', () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  const files = globSync('infrastructure-as-code/**/*.{yaml,yml}', { cwd: repoRoot }).map((p) => ({
+    path: p,
+    content: readFileSync(resolve(repoRoot, p), 'utf8'),
+  }));
+
+  // REGISTRY_HOST is supplied so our own `${REGISTRY_HOST}/jumbleknot/*` refs RESOLVE and are then
+  // excluded as built images, rather than being skipped as un-interpolated and counted by neither
+  // side. Same reasoning as the scanner's own handling — feature 069.
+  const images = enumerateImages(files, { ...process.env, REGISTRY_HOST: 'registry.invalid:5000' });
+  const undigested = images.filter((i) => !i.ref.includes('@sha256:'));
+
+  assert.deepEqual(
+    undigested.map((i) => i.ref).sort(),
+    [],
+    'Third-party infra image reference(s) carry no digest (item #297 / item #412).\n' +
+      undigested
+        .map((i) => `  ${i.ref}\n${i.locations.map((l) => `      ${l.path}:${l.line}`).join('\n')}`)
+        .join('\n') +
+      '\n  Pin it as `<repo>:<tag>@sha256:<digest>`. If it genuinely cannot be pinned, that is a\n' +
+      '  DECLARED exception: say why here and in renovate.json, the way the date-tagged minio\n' +
+      '  entries were declared — never by deleting this assertion.',
+  );
+});
+
+test('(412) every compose file carrying an image ref is VISIBLE to Renovate', () => {
+  // Cause 1 above, asserted at the mechanism rather than at its symptom. The symptom — one
+  // un-pinned ollama ref — is caught by the test above, but only AFTER someone pins it by hand.
+  // This catches the file that nothing will ever propose an update for, which is the durable fault:
+  // a manager that matches nothing fails silently and looks exactly like a manager with no work.
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  const config = JSON.parse(readFileSync(resolve(repoRoot, 'renovate.json'), 'utf8'));
+
+  // renovate@44's docker-compose default, restated so a config that declares NOTHING is still
+  // measured against the real pattern rather than trivially passing.
+  const DEFAULT = ['/(^|/)(?:docker-)?compose[^/]*\\.ya?ml$/'];
+  const patterns = (config['docker-compose']?.managerFilePatterns ?? DEFAULT).map((p) => {
+    const m = /^\/(.*)\/([a-z]*)$/.exec(p);
+    assert.ok(m, `managerFilePatterns entry ${JSON.stringify(p)} is not the /regex/ form this guard models`);
+    return new RegExp(m[1], m[2]);
+  });
+
+  const invisible = globSync('infrastructure-as-code/**/*.{yaml,yml}', { cwd: repoRoot })
+    .filter((p) => /^\s*image:/m.test(readFileSync(resolve(repoRoot, p), 'utf8')))
+    .filter((p) => !patterns.some((re) => re.test(p)));
+
+  assert.deepEqual(
+    invisible.sort(),
+    [],
+    'Compose file(s) declare an `image:` but match no docker-compose managerFilePattern, so ' +
+      'Renovate never extracts them and will never propose a digest pin or a version bump:\n' +
+      invisible.map((p) => `  ${p}`).join('\n') +
+      '\n  Fix in renovate.json `docker-compose.managerFilePatterns` — NOT by renaming the file, ' +
+      'which moves the trap rather than removing it.',
+  );
+
+  // THE OTHER DIRECTION, and the reason the pattern above is not simply `.*`. Widening what Renovate
+  // SEES also widens what it REWRITES. `docs/proposals/**` holds historical proposal documents whose
+  // compose snippets carry deliberately stale image refs — they record what was proposed at the time,
+  // and a bot bumping them corrupts the record rather than maintaining anything. Measured: the
+  // widened pattern newly matches exactly two files there. They are excluded via ignorePaths, and
+  // that exclusion is half of this fix rather than an afterthought, so it is pinned here.
+  assert.ok(
+    (config.ignorePaths ?? []).includes('docs/proposals/**'),
+    'renovate.json no longer ignores docs/proposals/**, so the widened docker-compose pattern lets ' +
+      'Renovate propose bumps to historical proposal documents',
+  );
+});

@@ -200,13 +200,74 @@ jobs:
       # (zero unmatched) rather than an error, and the script says so in the log.
       #
       # Failure needs no new plumbing: this job already publishes a digest on failure (below).
+      #
       # Prediction, recorded so it is falsifiable: green on 2026-08-14 and 08-21, first RED on
       # Friday 2026-08-28 naming the image-size pair (expiry 2026-09-07).
+      #
+      # OUTCOME, settled 2026-09-12 (item #418). FALSIFIED IN TIMING, CONFIRMED IN MECHANISM. The
+      # step ran, and went RED one Friday EARLIER than predicted and for the sibling reason: not the
+      # 14-day expiry window but the UNMATCHED tier — five suppressions that had stopped matching
+      # anything. Measured run history, weekly cron only:
+      #
+      #     07-31 green · 08-07 green · 08-14 RED · 08-21 RED · 08-28 RED · 09-04 green · 09-11 green
+      #
+      # 08-13 is when this step was added (a0f62e18); the next three Fridays are red; f7fea0f6
+      # (08-30) deleted the five stale entries and green resumes. That commit names the same three
+      # dates as the expiry check's own red streak. `--check-expiring` has exactly ONE call site —
+      # this step — and an unmatched entry fails in no other mode, so the `if:` evaluated TRUE.
+      #
+      # THE TRAP THAT MADE THIS LOOK BROKEN, recorded because it will be read again: the runs API
+      # reports `event` = "push" on every scheduled run. It is NOT the trigger. The same payload
+      # carries `trigger_event` = "schedule", and `github.event_name` follows THAT. Measured over
+      # all 68 scheduled runs since 2026-07-31: trigger_event "schedule" for every one, event
+      # "push" for every one. Do not "fix" the expression below from the `event` field.
       - name: Allowlist expiry check — both allowlists (weekly schedule only, never on a pull request)
+        id: expiry
         if: ${{ github.event_name == 'schedule' }}
         run: |
           bash scripts/ci-log-step.sh allowlist-expiry-check node scripts/check-sast-findings.mjs --check-expiring
           bash scripts/ci-log-step.sh allowlist-expiry-check node scripts/check-infra-image-findings.mjs --check-expiring
+
+      # Item #418 — the residual allowlist-expiry-wiring.guard.test.mjs names but cannot close: that
+      # guard pins the `if:` EXPRESSION, never the runner's EVALUATION of it. This step is the
+      # missing measurement. It records, per run and readable without logs, what `github.event_name`
+      # ACTUALLY was and whether the step above ACTUALLY ran — so the next person to ask does not
+      # have to reconstruct it from three weeks of run conclusions and a commit message, which is
+      # what item #418 cost.
+      #
+      # Both values are carried through RAW. The status states a measurement; it never restates a
+      # belief about one. Read it back with:
+      #   GET /repos/{owner}/{repo}/commits/{sha}/status  → context `infra-image-scan/expiry`
+      # Same channel and same shape as `renovate/mode` (item #268), for the same reason: this forge
+      # exposes no log endpoint and `/actions/runs/{id}/jobs` is 404, so a step that ran and a step
+      # that skipped are otherwise indistinguishable after the fact.
+      #
+      # NOT gated on `event_name == 'schedule'`: a recorder gated on the expression it measures
+      # records nothing on precisely the run you need the record for. `always()` so a failed sweep
+      # still leaves the record — that is when it matters most. Off pull requests, where a status
+      # per PR would be noise and the cron is what is under measurement.
+      #
+      # `state` is always `success` and the finding lives in the description, deliberately: this is
+      # observability, never a gate, and a red status on main's tip is a signal this step has no
+      # standing to raise. `continue-on-error` for the same reason — plus, if the POST itself fails,
+      # the ABSENCE of the status is its own tell rather than a job failure for a bookkeeping call.
+      - name: 'Publish expiry-step execution (item #418)'
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MEASURED_EVENT_NAME: ${{ github.event_name }}
+          MEASURED_EXPIRY_OUTCOME: ${{ steps.expiry.outcome }}
+        run: |
+          bash scripts/ci-log-step.sh infra-image-scan-publish-expiry-execution bash -e /dev/stdin <<'CI_LOG_STEP'
+          # `<unset>` is a real answer, not a formatting fallback: it says the runner returned no
+          # value for that context, which is a different fault from returning the wrong one.
+          desc="event_name=${MEASURED_EVENT_NAME:-<unset>} expiry_step=${MEASURED_EXPIRY_OUTCOME:-<unset>}"
+          echo "measured: $desc"
+          curl -fsS -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' \
+            "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -d "{\"context\":\"infra-image-scan/expiry\",\"state\":\"success\",\"description\":\"$desc\"}" >/dev/null
+          CI_LOG_STEP
 
       - name: Upload scan report (findings.json + summary + proposed allowlist + raw Trivy)
         if: ${{ env.RUN_SCAN == 'true' && always() }}

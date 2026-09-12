@@ -130,7 +130,7 @@ services:
       retries: 3
 
   mcm-bff-store-mongo:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    image: mongodb/mongodb-community-server:8.0.8-ubi9@sha256:784dd73b701c3fb846876394c8137a9b42c35791ed1c8a931d8efa2cb0c8dd81
     container_name: mcm-bff-store-mongo
     restart: always
     # feature 026 (Workstream A): SCRAM auth on the standalone BFF store. Standalone (no --replSet) → NO

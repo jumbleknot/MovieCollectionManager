@@ -154,7 +154,7 @@ jobs:
       # on main's tip every night would be pure noise. Read it back with
       #   GET /repos/{owner}/{repo}/commits/{sha}/status   → context `renovate/mode`.
       # Posted BEFORE Renovate runs so a LIVE dispatch can be distinguished (and abandoned) early.
-      - name: Publish dispatch mode (item #268)
+      - name: 'Publish dispatch mode (item #268)'
         if: github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -182,7 +182,7 @@ jobs:
       # then resolves from the same ~/.npm/_npx cache inside this container rather than pulling
       # again — so the cost is the validation itself, not a second download. The flags are the
       # measured ones; see the `renovate-config` job in guardrails.yml for what each one holds up.
-      - name: Validate renovate.json before acting on it (item #309)
+      - name: 'Validate renovate.json before acting on it (item #309)'
         run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
       - name: Run Renovate
         env:
