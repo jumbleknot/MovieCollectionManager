@@ -172,7 +172,7 @@ services:
     logging: *obs-logging
 
   langfuse-minio:
-    image: ${REGISTRY_HOST:?set in observability/.env.prod}/jumbleknot/minio:2025.09.07-161309@sha256:d876e7b38b1a08cc752501a931db7bc44f342e10e5f828c08a06a1dc3f998e66
+    image: ${REGISTRY_HOST:?set in observability/.env.prod}/jumbleknot/minio:2025.09.07-161309@sha256:4dcaddaac0ab6815b83996d5a77442b199b4ae34ea007c31c14263d5abfb3b1a
     container_name: langfuse-minio
     restart: always
     command: ["server", "/data", "--console-address", ":9001"]
@@ -197,7 +197,7 @@ services:
   # langfuse-worker can depend on `service_healthy` (below) instead of `service_completed_successfully`
   # (which a never-exiting container would never satisfy).
   langfuse-minio-init:
-    image: ${REGISTRY_HOST:?set in observability/.env.prod}/jumbleknot/minio:2025.09.07-161309@sha256:d876e7b38b1a08cc752501a931db7bc44f342e10e5f828c08a06a1dc3f998e66
+    image: ${REGISTRY_HOST:?set in observability/.env.prod}/jumbleknot/minio:2025.09.07-161309@sha256:4dcaddaac0ab6815b83996d5a77442b199b4ae34ea007c31c14263d5abfb3b1a
     container_name: langfuse-minio-init
     restart: always
     depends_on:
