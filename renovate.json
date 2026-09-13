@@ -803,11 +803,26 @@
         "three internal-only images. That is a deliberate choice and not a silent one \u2014 the allowlist",
         "entries are time-boxed to 2026-10-01, which is the date by which item #407 must have decided",
         "either way. RAISE OR REMOVE THIS RULE ONLY THROUGH THAT SPEC, and delete the matching allowlist",
-        "entries in the same change so the suppression cannot outlive its reason."
+        "entries in the same change so the suppression cannot outlive its reason.",
+          "OUTCOME 2026-09-13 \u2014 CEILING LIFTED by feature 071 / item #439, and the prediction above was HALF right.",
+          "The Phase 0 gate scanned opensearch:3 and measured: CVE-2025-14813 (bcprov-jdk15to18 1.79) is GONE \u2014 3.x",
+          "ships bc-fips-*.jar and the old provider jar is absent, so the seed suppression carried since feature 035",
+          "is discharged and its entry deleted. But CVE-2026-75595 (netty) is PRESENT ON 3.x TOO, 6 findings, the",
+          "same count as on 2.x: netty-handler 4.2.16.Final in lib (fix 4.2.17.Final) and 4.1.133.Final bundled",
+          "inside security-analytics-commons-1.0.0.jar (fix 4.1.137.Final). So the text above claiming the major",
+          "would discharge TWO suppressions was wrong; it discharged one. The entry is re-keyed to the 3.x digest,",
+          "not deleted.",
+          "The data question was reopened by that halving and answered differently: ADR-0002 \u00a74a preserves the 5,276",
+          "audit events via snapshot/restore rather than discarding them, so the ceiling is lifted on an upgrade that",
+          "loses nothing.",
+          "WHAT REPLACES THE CEILING, per the packageRule 20 precedent: `allowedVersions` said never, and the real",
+          "requirement was always not-by-accident. The next opensearch MAJOR now needs an explicit dashboard tick.",
+          "Minors and patches stay automatic \u2014 that is the security patch stream for the running image."
       ],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["opensearchproject/opensearch"],
-      "allowedVersions": "<3"
+        "matchUpdateTypes": ["major"],
+        "dependencyDashboardApproval": true
     },
     {
       "description": [

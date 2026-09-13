@@ -1162,16 +1162,30 @@ const heldImage = (depName, updateType) => ({
   manager: 'docker-compose', datasource: 'docker', depName, updateType,
 });
 
-test('(407) opensearch is STILL held below 3, on every update track', () => {
+test('(071) the opensearch hold is DISCHARGED — replaced by approval, not by nothing', () => {
+  // Both holds are now lifted, and both were REPLACED rather than removed. A hold deliberately
+  // discharged and a hold someone deleted are indistinguishable from the absence of `allowedVersions`,
+  // so the successor gate is what gets asserted.
   for (const updateType of ['patch', 'minor', 'major']) {
     assert.equal(
       resolvedAllowedVersions(heldImage('opensearchproject/opensearch', updateType)),
-      '<3',
-      `opensearch ${updateType} is not held at <3 — OpenSearch 2->3 is an index-compatibility step, and\n` +
-        '  its gate cleared only ONE of its two advisories, so the call is still open (item #439).\n' +
-        '  It must be decided, not proposed by a scheduled base-image sweep.',
+      null,
+      `opensearch ${updateType} still carries a version ceiling — feature 071 moved the image to 3.x, so a ` +
+        'ceiling below 3 now blocks the version that is actually deployed.',
     );
   }
+  assert.equal(
+    resolvedRuleValue(heldImage('opensearchproject/opensearch', 'major'), 'dependencyDashboardApproval'),
+    true,
+    'an opensearch MAJOR no longer requires dashboard approval. ADR-0002 exists because a stateful major ' +
+      'landing in a Friday window with a CVE argument attached is how a data migration gets waved through.',
+  );
+  assert.equal(
+    resolvedRuleValue(heldImage('opensearchproject/opensearch', 'patch'), 'dependencyDashboardApproval'),
+    undefined,
+    'an opensearch PATCH requires dashboard approval — the within-major patch stream IS the security patch ' +
+      'stream for the running image and must stay automatic.',
+  );
 });
 
 test('(072) the langfuse hold is DISCHARGED — replaced by approval, not by nothing', () => {
@@ -1206,11 +1220,16 @@ test('(407) the hold blocks the MAJOR but still admits patches and digest refres
   // The whole reason this is `allowedVersions` and not `enabled: false`: the within-major patch
   // stream IS the security patch stream for the images actually running, and blocking it would
   // trade one suppressed Critical for an unpatchable image.
-  const os = resolvedAllowedVersions(heldImage('opensearchproject/opensearch', 'minor'));
-  assert.ok(allowedVersionsPermits(os, '2.19.7'), 'the opensearch hold rejects a 2.x patch — it must not.');
-  assert.ok(!allowedVersionsPermits(os, '3.0.0'), 'the opensearch hold PERMITS 3.0.0 — the major is what it exists to block.');
-  // The langfuse half of this assertion is gone deliberately: its hold was discharged by feature 072
-  // and is asserted in the (072) test above. Only opensearch is still held.
+  // BOTH halves are gone now: langfuse was discharged by feature 072 and opensearch by feature 071, and
+  // each is asserted in its own test above. What remains worth pinning is that NO ceiling survives on the
+  // two images that are now deployed past it — a stale `<3` or `<4` would block the running version.
+  for (const depName of ['opensearchproject/opensearch', 'langfuse/langfuse', 'langfuse/langfuse-worker']) {
+    assert.equal(
+      resolvedAllowedVersions(heldImage(depName, 'minor')),
+      null,
+      `${depName} still carries a ceiling, which would now block the version actually deployed`,
+    );
+  }
 });
 
 test('(407) both halves of langfuse still resolve IDENTICALLY — they share a database', () => {

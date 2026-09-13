@@ -221,3 +221,41 @@ document** — unambiguous.
 
 This is cheaper and better than the new test T007 originally called for: the verification runs where the
 role is provisioned, so it cannot drift from it.
+
+---
+
+# Deploy A — done on prod (2026-09-13)
+
+```
+A4  path.repo: ["/mnt/snapshots"]            static setting took effect after the restart
+A5  mcm-agent-audit/_count = 5276            unchanged from the earlier reading
+A7  snapshot pre-os3: state SUCCESS          indices ["mcm-agent-audit"], global state excluded,
+                                             shards 1/1, 0 failures, source version 2.19.6
+```
+
+**5,276 is the number Deploy B must reproduce exactly** (FR-015 / SC-007).
+
+# Deploy B — written, and three tasks moved INTO it
+
+Deploy B is not just the image swap. Three Phase-4 tasks had to move forward, because CI blocks otherwise:
+
+- **T023 (re-key netty)** — the entry is keyed to the **2.x digest**. The moment compose points at 3.x it
+  matches nothing, leaving **6 fixable CRITICALs un-allowlisted**, and `infra-image-scan` fails the PR. It
+  must be re-keyed in the *same commit* as the image move, not afterwards.
+- **T022 (delete bcprov)** — same mechanism, opposite conclusion: keyed to `opensearchproject/opensearch:2`,
+  it stops matching and would be reported UNMATCHED. It is **deleted** because 3.x genuinely discharged it.
+- **T024/T025 (lift the ceiling)** — FR-005 requires it in the same change, and the guard asserting `<3`
+  would red against a tree that deploys 3.x.
+
+The asymmetry is the point: **one entry deleted, one re-keyed.** Deleting netty would un-suppress a live
+advisory; leaving it on the 2.x key would report it unmatched. Both wrong, in opposite directions.
+
+Also corrected while writing Deploy B:
+
+- The planned volume name `agent-audit-opensearch-data-v3` **fails the naming gate** (`…-data` suffix is
+  the grammar). Renamed to **`agent-audit-opensearch-v3-data`**, which needs no relaxation.
+- `compose.prod.yaml` pins the OpenSearch image **twice** — `agent-audit-init` uses it as a client to run
+  the provisioning script. Both moved; a `count == 1` assumption would have left the init container on 2.x.
+- **A gap in Deploy A as merged**: dev compose referenced the `-snapshots` volume as `external`, and no
+  setup doc told anyone to create it. A fresh dev audit bring-up would have failed. `local-dev.md`, both
+  compose headers and the prod prerequisite list now name it (and say to chown it).
