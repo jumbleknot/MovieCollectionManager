@@ -91,32 +91,68 @@ That ClickHouse 25.12 initialises cleanly from empty is the single most load-bea
 spec ("Assumptions": *ClickHouse 25.12 accepts an empty data directory*), and it is now measured rather
 than assumed. Postgres staying healthy on **16** is FR-005's premise holding.
 
-## What was NOT verified, and why — READ BEFORE CUTOVER
+## Phase 1–2 completed against the REAL dev stack — 2026-09-13 (option 1)
 
-**Langfuse 4's own migrations, the `LANGFUSE_INIT_*` re-seed (T009) and a real trace (T010) are UNVERIFIED
-locally.**
+The throwaway could not start MinIO (a uid artifact on a correctly-`chown`ed volume), so T008–T010 were
+re-run against the real dev stack: the langfuse services only were removed, the **Postgres and ClickHouse
+volumes deleted**, and the stack brought back up on `:4` / `25.12`.
 
-The throwaway's MinIO would not start, so `langfuse-web` and `langfuse-worker` never came up. The cause is
-an artifact of the throwaway, **not** of Langfuse 4:
+`unleash-service`, `unleash-postgres`, `opa-service`, `otel-lgtm` and the agent gateway stayed up
+throughout — FR-005's isolation demonstrated live, not merely asserted by the guard.
+
+> **The MinIO volume was deliberately NOT recreated** (a deviation from T008). A fresh MinIO volume failed
+> to initialise even when `chown`ed to `1000:1000`, so recreating it risked not getting the dev stack back.
+> It holds blobs, not schema, and is irrelevant to whether Langfuse 4's migrations run. Recorded rather
+> than quietly skipped.
+
+### T008 — PASS
+
+48 ClickHouse migrations applied cleanly against an empty **ClickHouse 25.12**, then
+`▲ Next.js 16.3.3 / ✓ Ready`. All six services healthy. Postgres stayed on **16** and Unleash was untouched.
+
+### T009 — PASS
 
 ```
-Error: unable to create (/data/.minio.sys/tmp) file access denied
-FATAL Unable to initialize backend: file access denied
+/api/public/health                         -> 200
+/api/public/projects  (seeded PK/SK)       -> [{"id":"movie-assistant","name":"movie-assistant"}]
 ```
 
-That is the exact signature feature 070 / item #421 documented for a non-root MinIO against a root-owned
-volume — except here the fresh volume **was** `chown`ed to `1000:1000`, matching the container's own user,
-and the denial persisted. That points at uid mapping in the dev container's Docker sandbox rather than at
-anything in this change. Chasing it further would have been a side quest into a *different* feature's
-territory, on a disk with 3.8 GB free.
+The ten `LANGFUSE_INIT_*` keys re-seed org / project / user / API keys with **no operator UI step**. This
+spec’s cheapest-path assumption is now measured.
 
-**The honest consequence:** T009 and T010 remain **open**, and the risks they cover are real —
+### T010 — PASS on the write path, and it found a BREAKING CHANGE
 
-- Langfuse 4 ships **database migrations**; nothing here has watched them run.
-- The ten `LANGFUSE_INIT_*` keys re-seeding a fresh 4.x instance with **no operator UI step** is the
-  property the whole migration's cheapness rests on, and it is still an assumption.
-- Whether the gateway's existing credentials authenticate against 4.x is untested.
+Ingestion works, but **only over OTLP**, and the legacy read API is gone:
 
-**Do not treat the prod cutover (T013) as low-risk on the strength of this document.** Run T008–T010
-against the real dev stack first — which does mean recreating its volumes, and is exactly what ADR-0002 §4
-ratifies as acceptable for dev.
+| Path | Result |
+|---|---|
+| `POST /api/public/otel/v1/traces` (langfuse SDK **4.15.1**, the version the gateway ships) | **200** |
+| ClickHouse `events_core` / `events_full` | **3 rows each** — the data landed |
+| `GET /api/public/v2/observations` | **200, 3 rows** — readable |
+| `POST /api/public/ingestion` (legacy v3) | **rejected** — `events_only` mode, "these events were not stored" |
+| `GET /api/public/traces` | **404 — the route no longer exists** |
+
+## THE FINDING THAT INVALIDATES PART OF THIS SPEC
+
+`plan.md` states **"No application code changes."** That is **FALSE**, and this is why the local run
+mattered:
+
+- `agents/movie-assistant/tests/integration/test_observability_sc008.py` polls the **traces** API
+  ("Poll the LangFuse API until the session's traces are ingested") and asserts each turn's cost and
+  latency. That endpoint now **404s**. SC-008's guarantee — per-turn cost/latency visible — has to be
+  re-read from `/api/public/v2/observations`.
+- Anything still using the legacy `/api/public/ingestion` path silently stops being stored. The gateway is
+  **not** affected: it ships langfuse SDK **4.15.1**, which ingests over OTLP and returned 200.
+  `src/observability.py`'s docstring still says "the **v3** langchain `CallbackHandler`" — stale prose,
+  not a stale dependency, but it will mislead the next reader.
+
+Upstream names a bridge — `LANGFUSE_MIGRATION_V4_WRITE_MODE=dual` on web **and** worker — which restores
+legacy ingestion. It does **not** bring back `GET /api/public/traces`, so it does not rescue the SC-008
+read path.
+
+**Consequence: this feature cannot land as specified.** Its scope now includes a change under `agents/`,
+which is SDD-gated, and the decision of whether to widen this spec or split the test migration into its own
+feature has not been taken.
+
+**Do not merge PR #440 on the strength of the green gate above.** The prod cutover would leave SC-008's
+integration test asserting against a 404.

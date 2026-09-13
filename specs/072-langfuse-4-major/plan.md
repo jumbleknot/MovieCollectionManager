@@ -8,8 +8,12 @@
 `infrastructure-as-code/docker/observability/compose{,.prod}.yaml`; the Komodo `prod-observability` stack;
 `renovate.json` packageRule 20; `security/infra-images/allowlist.yaml`.
 
-**No application code changes.** The agent gateway reaches Langfuse over its existing OTLP/SDK interface
-with credentials from `LANGFUSE_INIT_PROJECT_*`; nothing under `agents/` or `mcp-servers/` moves.
+**~~No application code changes.~~ FALSIFIED 2026-09-13 — see [research.md](./research.md).** The gateway's
+*ingestion* is unaffected (it ships langfuse SDK 4.15.1 and writes over OTLP — measured 200), but Langfuse 4
+**removes `GET /api/public/traces` (404)**, and
+`agents/movie-assistant/tests/integration/test_observability_sc008.py` reads exactly that endpoint to assert
+per-turn cost and latency. This feature therefore DOES touch `agents/`, which is SDD-gated, and whether to
+widen this spec or split the test migration into its own feature is an open decision.
 
 ## Approach
 

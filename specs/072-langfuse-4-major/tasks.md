@@ -48,17 +48,31 @@
 - [X] **T007** [US2] Move all three images in `compose.yaml` to tag + digest: `langfuse/langfuse:4`,
   `langfuse/langfuse-worker:4`, `clickhouse/clickhouse-server:25.12` (FR-004). Leave `postgres` and `redis`
   untouched.
-- [~] **T008** [US2] PARTIAL — see research.md "Phase 1–2". ClickHouse 25.12 / Postgres 16 / Redis 7 verified healthy on fresh volumes in an isolated throwaway; langfuse-web/worker did NOT start there (throwaway MinIO uid artifact), so Langfuse 4 migrations are unwatched. Recreate the `langfuse-postgres`, `langfuse-clickhouse` and MinIO volumes, bring the
+- [X] **T008** [US2] DONE against the real dev stack (option 1): 48 ClickHouse migrations applied cleanly on empty ClickHouse 25.12, all services healthy. MinIO volume deliberately NOT recreated — deviation recorded in research.md. Recreate the `langfuse-postgres`, `langfuse-clickhouse` and MinIO volumes, bring the
   stack up, and confirm every service reaches healthy and Langfuse's migrations complete.
-- [ ] **T009** [US2] Assert the ten `LANGFUSE_INIT_*` keys re-seeded org / project / user / API keys with
+- [X] **T009** [US2] Assert the ten `LANGFUSE_INIT_*` keys re-seeded org / project / user / API keys with
   **no operator UI step** (US-2 #2). The entire cheapness of this migration rests on this being true, so it
   is asserted rather than assumed.
-- [ ] **T010** [US2] Drive a **real agent turn** and confirm the trace appears in Langfuse 4 — this proves
+- [X] **T010** [US2] Drive a **real agent turn** and confirm the trace appears in Langfuse 4 — this proves
   the gateway's existing credentials still authenticate against 4.x.
 - [X] **T011** [P] [US2] Confirm `postgres` is still **16** and `unleash-postgres` is untouched — T005's
   guard passing, plus Unleash still serving its flags.
 
 ---
+
+> ## ⛔ BLOCKED AFTER T010 — the spec's scope was wrong
+>
+> T010 passed on the write path **and found a breaking change**: Langfuse 4 **removes
+> `GET /api/public/traces` (404)**, and `agents/movie-assistant/tests/integration/test_observability_sc008.py`
+> polls exactly that endpoint to assert per-turn cost and latency. The legacy `POST /api/public/ingestion`
+> path is also rejected in the default `events_only` mode.
+>
+> The gateway's own ingestion is FINE — it ships langfuse SDK 4.15.1 and writes over OTLP (measured 200,
+> data readable at `/api/public/v2/observations`, rows present in ClickHouse `events_core`/`events_full`).
+>
+> So `plan.md`'s "No application code changes" is false: this feature now touches `agents/`, which is
+> SDD-gated. **Phases 3–4 must not start until that is decided** — widen this spec, or split the SC-008
+> test migration into its own feature.
 
 ## Phase 3: Production cutover (US-3)
 
