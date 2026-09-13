@@ -110,7 +110,7 @@
 
 ## Phase 4: Rollback drill, then the ceiling and the deletions (US-3, US-4)
 
-- [ ] **T015** [US3] **Perform** the rollback once (FR-010): revert all three prod digests, recreate the
+- [X] **T015** [US3] DONE 2026-09-13 — performed in DEV (venue residual recorded in research.md). **Perform** the rollback once (FR-010): revert all three prod digests, recreate the
   volumes, confirm a healthy 3.x / 24.3 stack accepting traces. The data not returning is the ratified
   outcome, not a failure. Then roll forward.
 - [X] **T016** [US4] **Delete** both `langfuse/*` entries from `security/infra-images/allowlist.yaml`
