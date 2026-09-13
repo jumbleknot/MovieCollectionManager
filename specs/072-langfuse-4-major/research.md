@@ -288,3 +288,39 @@ What is unproven is therefore narrow — that Komodo reconciles a reverted commi
 a forward one — and it is the same code path it just executed. Closing item #433 on a dev-venue drill is a
 judgement, not an oversight; a prod drill would cost two further outages on a healthy stack whose data has
 already been discarded.
+
+---
+
+# T014 / SC-002 — a real prod turn, verified (2026-09-13)
+
+The agent was used in production and the trace was read back through the **v2 observations** API — the same
+path the migrated SC-008 test uses.
+
+**Structure** (`limit=5`, newest first): `LangGraph` (root) → `supervisor` → child chains, plus a `search`
+span on a sibling trace. The root carries `userId` and `sessionId`, so **per-user attribution survived the
+major**.
+
+**The priced generations** (`type=GENERATION`, `fields=…,model`):
+
+| field | value |
+|---|---|
+| `name` / `model` | `ChatAnthropic` / `claude-haiku-4-5` |
+| `usageDetails` | `input 1702, output 4, total 1706` |
+| `costDetails.total` / `totalCost` | **0.001722** (and 0.001719 on the second) |
+| `latency` / `timeToFirstToken` | 0.601 s / 0.563 s |
+| `usagePricingTierName` | `Standard` |
+
+SC-002 is satisfied: the gateway's turns reach Langfuse 4, are priced, and carry latency — in production.
+
+## A property worth knowing before reusing `_fetch_turns`
+
+**Cost lives on the GENERATION, not on the root observation.** In the prod trace the root is a `CHAIN`
+(`LangGraph`) with `totalCost: null`; the cost is on the `ChatAnthropic` GENERATION child.
+
+SC-008's `_fetch_turns` filters `is_root_observation=True` and reads `total_cost` — and that is **correct
+for SC-008**, because that test calls `model.invoke` directly, so its root observation *is* the generation.
+It would return `None` costs if pointed at **gateway** traces, where a LangGraph chain wraps the model call.
+
+So the helper is right for its own test and is **not** a general-purpose "cost per turn" reader. Anything
+that wants per-turn cost from gateway traces must either sum the GENERATION children or query
+`type=GENERATION` directly, as the T014 verification above did.
