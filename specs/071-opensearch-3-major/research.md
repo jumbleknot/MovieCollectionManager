@@ -385,3 +385,45 @@ OpenSearch images (~3 GB each extracted). The `df` call itself timed out at 120 
 The residual is therefore an argument rather than a measurement: a 2.x node starting on a volume a 3.x node
 never opened. The only shared resource is the snapshot volume, which 3.x only **read**. Strong, but FR-009
 asks for the measurement, so this is recorded as open rather than waved through.
+
+---
+
+# T021 — the rollback drill, performed in dev (2026-09-13)
+
+Ran the **whole cycle**, not just the rollback, so the rollback was exercised against a cluster that had
+actually been through the upgrade — on the same image digests as prod.
+
+| Step | Result |
+|---|---|
+| 2.x on `agent-audit-opensearch-data`, seed 250 docs | `BEFORE = 250` |
+| Register repo + snapshot (Deploy A) | `state SUCCESS`, shards 1/1, failed 0 |
+| 3.x on a **new empty** volume, restore (Deploy B) | shards 1/1 failed 0 — **250/250** |
+| **ROLLBACK: 2.x on the ORIGINAL volume** | **250/250 intact** |
+| Version check after rollback | server self-reports **`2.19.6`** |
+
+The last row matters: the version comes from the **server**, not a container label, so "we are really back
+on 2.x" is measured rather than inferred — the same discriminator the Langfuse drill used with
+`/api/public/traces` 200↔404.
+
+**The prod rollback claim is now measured, not argued.** A 2.x node opens the original data volume that a
+3.x node never touched, and every document is there.
+
+## Two instrument notes from the drill
+
+**My readiness probe was wrong.** I polled `curl … /_cluster/health` for *exit code 0*, and it passed while
+the body read `OpenSearch Security not initialized.` — the security plugin was still bootstrapping on the
+fresh volume. Checking the exit code instead of the content, in a session that has repeatedly punished
+exactly that. The probe now greps for `"status"` in the body.
+
+**The cluster is permanently YELLOW, and always was.** After the rollback health showed `yellow` /
+`unassigned_shards: 2`, which looked like damage. It is not:
+
+```
+yellow  mcm-agent-audit               250  pri 1  rep 1
+yellow  security-auditlog-2026.09.13    5  pri 1  rep 1
+```
+
+`rep=1` on a **single-node** cluster can never be assigned. The earlier `green` reading was taken *before*
+the index existed, so it was never evidence of anything. **Prod is almost certainly the same**, and the
+compose healthcheck only checks that `_cluster/health` responds, not what it says — so nothing is masked
+today, but a genuine yellow would be indistinguishable from this permanent one.

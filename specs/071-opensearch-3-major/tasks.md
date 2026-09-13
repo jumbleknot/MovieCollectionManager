@@ -86,7 +86,7 @@ dependency).
 
 ## Phase 4: The rollback drill, then the suppressions
 
-- [ ] **T021** [US3] **Perform** the rollback once (FR-009): point the compose back at 2.x **and the original
+- [X] **T021** DONE 2026-09-13 — performed in dev, full 2.x -> snapshot -> 3.x restore -> rollback cycle; 250/250 intact and the server self-reported 2.19.6. [US3] **Perform** the rollback once (FR-009): point the compose back at 2.x **and the original
   data volume**, deploy, confirm the 5,276 documents are still there. Unlike the Langfuse drill this is
   **non-destructive** — the original volume was never touched — so it is a true rehearsal. Then roll forward.
 - [X] **T022** [US4] DONE — deleted. **MOVED INTO DEPLOY B, not Phase 4**: once compose points at 3.x this entry matches nothing and is reported UNMATCHED. **Delete** the seed `CVE-2025-14813` (bcprov) entry — discharged by 3.x.
