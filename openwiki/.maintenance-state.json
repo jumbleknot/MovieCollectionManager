@@ -1,14 +1,25 @@
 {
-  "coveredCommit": "6111921bcafa733170471909bf63c0dcc3209d13",
-  "coveredAt": "2026-09-13T16:59:40.161Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "aeb4cf8a85a875fe82dd8d3dbe46f585f9afd3be",
+  "coveredAt": "2026-09-13T17:59:18.594Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 441,
-    "headCommit": "def5115056cb9645378c62f7965a9083564e16df",
-    "markerBefore": "a771eef110578037f5822b62cb1dcbbb2c994975",
+    "number": 444,
+    "headCommit": "16fca4e6a10e75dec279d58400cbd43fb2eff056",
+    "markerBefore": "aeb4cf8a85a875fe82dd8d3dbe46f585f9afd3be",
     "slices": [
+      {
+        "area": "decisions",
+        "pages": [
+          "adr-0002-stateful-major-upgrades.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/decisions/ADR-0002-stateful-major-upgrades.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/decisions/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/decisions/adr-0002-stateful-major-upgrades.md. The openwiki/decisions/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/decisions/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
       {
         "area": "runbooks",
         "pages": [
@@ -21,11 +32,11 @@
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-13T15:13:36.932Z"
+    "updatedAt": "2026-09-13T17:59:18.909Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 2,
+    "elapsedSeconds": 200,
     "stoppedAtBudget": false
   }
 }
