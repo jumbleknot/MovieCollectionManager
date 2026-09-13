@@ -297,3 +297,41 @@ rather than an incident, which is the whole reason for keeping the old volume.
 The runbook now stops `agent-audit-init` before the restore, takes the acceptance count **before**
 restarting it (the init container adds one more doc, so afterwards the count is A5 + 1 — correct, but no
 longer comparable), and carries the recovery for anyone who hits it anyway.
+
+## T017 / T020 — verified on OpenSearch 3
+
+`agent-audit-init` re-ran the **updated** provisioning script against 3.x's security plugin:
+
+```
+==> Verifying write   (should be 201)   PASS
+==> Verifying READ    (should be 403)   PASS   <- added by feature 071
+==> Verifying DELETE  (should be 403)   PASS   <- added by feature 071
+==> Verifying search  (should be 403)   PASS
+```
+
+The role format did **not** change across the major — the risk flagged in FR-006 did not materialise. And
+the two checks this feature added are the two that pass here for the first time ever: before 071, an
+append-only sink whose writer could read or delete its own evidence would have provisioned green.
+
+`mcm-agent-audit/_count` = **5277** — the restored 5,276 plus the init-verify write, so the write path works
+on 3.x (T020).
+
+## A CREDENTIAL LEAK, found by eye while reading those logs
+
+The same log output ended with:
+
+```
+  Admin:         admin / <password>
+  Write-only:    agent-audit / <password>
+```
+
+`agent-audit-init` runs this script **in production**, so both live credentials were in `docker logs`,
+Komodo's log view, and anything shipping them. Direct violation of the never-log list.
+
+It was a **dev convenience** that became a production leak when the init container adopted the script, and
+nothing re-examined it at that point. **Item #446** tracks rotation; the echo now names *where* the
+credentials live rather than what they are, and `no-secret-echo.guard.test.mjs` fails any shell script that
+echoes a secret-named variable (mutation-tested; piping into `--password-stdin` is correctly not flagged).
+
+**No gate caught this.** It was found by reading output for an unrelated reason, which is the least
+reliable way to find anything.

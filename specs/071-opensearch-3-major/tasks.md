@@ -71,17 +71,17 @@ dependency).
 
 > The 2.x data volume is **kept, untouched**. 3.x starts on a new empty one. Nothing irreversible happens.
 
-- [ ] **T013** [US3] Point both compose files at the 3.x digest from T001 and at a **new** data volume
+- [X] **T013** DONE. [US3] Point both compose files at the 3.x digest from T001 and at a **new** data volume
   (`agent-audit-opensearch-v3-data`). **Do not remove the 2.x volume** — it is the rollback.
-- [ ] **T014** [US3] Deploy B; the node comes up empty and healthy on 3.x.
-- [ ] **T015** [US3] Register the same repository on 3.x and **restore** `mcm-agent-audit`.
-- [ ] **T016** [US3] **THE ACCEPTANCE CHECK: document count after == the T010 count, exactly.** Not "healthy",
+- [X] **T014** DONE — node up and healthy on 3.x. [US3] Deploy B; the node comes up empty and healthy on 3.x.
+- [X] **T015** DONE — restored after stopping agent-audit-init (see research.md). [US3] Register the same repository on 3.x and **restore** `mcm-agent-audit`.
+- [X] **T016** DONE — **5276, exactly**. [US3] **THE ACCEPTANCE CHECK: document count after == the T010 count, exactly.** Not "healthy",
   not "the index exists" (SC-007 / FR-015).
-- [ ] **T017** [US3] Re-run T007's least-privilege test against 3.x. Reproducing the split is in scope;
+- [X] **T017** DONE — all four assertions PASS on OpenSearch 3 (write 201, read 403, delete 403, search 403); the security-plugin role format did not change. [US3] Re-run T007's least-privilege test against 3.x. Reproducing the split is in scope;
   weakening it to get green is not.
 - [ ] **T018** [P] [US3] Verify the **1 GB heap pin** still binds under OpenSearch 3's newer JDK (FR-007).
 - [ ] **T019** [P] [US3] Verify the `${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?…}` fail-fast still fires.
-- [ ] **T020** [US3] Confirm the gateway's audit **writes** still land on 3.x — a real write, not a health
+- [X] **T020** DONE — count 5277 after the init write, so the write path works on 3.x. [US3] Confirm the gateway's audit **writes** still land on 3.x — a real write, not a health
   check.
 
 ## Phase 4: The rollback drill, then the suppressions
