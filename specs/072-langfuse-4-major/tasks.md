@@ -87,17 +87,21 @@
 
 ---
 
-> ## ⚠️ STILL OPEN BEFORE PHASE 3 — the prod VOLUMES
+> ## ⚠️ PHASE 3 IS AN OPERATOR SEQUENCE, NOT A MERGE
 >
-> Everything verified in Phase 2 was verified on **fresh** volumes. Komodo reconciles the EXISTING stack, so
-> merging alone recreates nothing: prod would run Langfuse 4 against the live 3.x Postgres schema and
-> ClickHouse 25.12 against a **24.3 data directory**. Nothing measured here says that works.
-> T013 needs an operator volume-recreate at cutover, or a deliberate decision to attempt the in-place path.
+> Everything verified in Phase 2 was verified on **fresh** volumes, and Komodo reconciles the EXISTING
+> stack — merging alone recreates nothing. **Decided: recreate the prod volumes at cutover.**
+>
+> The volume work must happen **before** the merge, so it is a planned Langfuse outage. The exact sequence
+> and commands are in
+> [prod-control-tower.md](../../docs/runbooks/prod-control-tower.md) → *"One-time: cut prod over to
+> Langfuse 4 + ClickHouse 25 on RECREATED volumes"*. Do not improvise it here: `docker compose` cannot be
+> hand-run on that host, and `down -v` will not remove these volumes because they are `external: true`.
 
 ## Phase 3: Production cutover (US-3)
 
 - [X] **T012** [US3] Move the same three images in `compose.prod.yaml` (FR-004).
-- [ ] **T013** [US3] Redeploy `prod-observability` onto **recreated** volumes. Per ADR-0002 §4 the existing
+- [ ] **T013** [US3] Redeploy `prod-observability` onto **recreated** volumes — follow the runbook sequence verbatim (stop by container name -> `volume rm` -> `volume create` -> merge -> explicit Komodo redeploy). The volumes are `external: true`, so they must be re-created, not just removed. Per ADR-0002 §4 the existing
   production trace history is discarded at this point.
 - [ ] **T014** [US3] Verify with an **actual trace from a real turn** (SC-002), not container health — a
   healthy Langfuse that rejects the gateway's credentials is exactly what this stack would otherwise hide.

@@ -163,6 +163,103 @@ docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 chown -R 1000:100
 UI that was written *after* the deploy — a stack that starts proves the permissions, a new trace proves
 the write path.
 
+## One-time: cut prod over to Langfuse 4 + ClickHouse 25 on RECREATED volumes (feature 072, item #433)
+
+Langfuse 4 requires ClickHouse 25, and `specs/072-langfuse-4-major/` verifies the pair **on empty volumes**.
+Nothing measured says an in-place ClickHouse 24 -> 25 jump works, so the cutover recreates the data volumes.
+Per ADR-0002 §4 this **discards the production Langfuse trace history**; that is the ratified trade.
+
+### Why the volume work must come BEFORE the merge
+
+Komodo reconciles `prod-observability` from `main`. Merge first and it deploys Langfuse 4 straight onto the
+**existing** 3.x Postgres schema and a **24.3** ClickHouse data directory — exactly the in-place upgrade this
+sequence exists to avoid. So the volumes are recreated while the stack is stopped, and the merge follows.
+
+**That makes steps 1-5 a planned Langfuse OUTAGE.** It is contained: no non-langfuse service in this stack
+`depends_on` langfuse, so otel-lgtm, OPA and Unleash keep running, and the agent gateway's tracing is
+fire-and-forget (turns are unaffected; the traces for the window are simply lost).
+
+### Three things that will catch you out
+
+1. **`docker compose` cannot be hand-run on this host** — same reason as the MinIO migration above. Komodo
+   runs compose from its own stack directory with Variables injected. Use **container names**.
+2. **`docker compose down -v` would not remove these volumes anyway.** They are `external: true`, and
+   compose never removes an external volume. They must be removed *and re-created* by hand — Komodo's
+   deploy fails with a missing-external-volume error if they are absent.
+3. **`restart: always` is held by an explicit `docker stop`** — *unless the daemon restarts*. Keep the
+   window short, and re-check the containers are still stopped just before step 5.
+
+### The MinIO volume is deliberately NOT recreated
+
+`observability-langfuse-minio-data` keeps its data. It holds event/media **blobs, not schema**, so it is
+irrelevant to whether Langfuse 4's migrations run, and it was already `chown`ed to uid 1000 by the migration
+above. A freshly-created MinIO volume failed to initialise in dev *even when correctly `chown`ed*
+(`Unable to initialize backend: file access denied`), so recreating it risks not getting the stack back for
+no benefit. The orphaned blobs are harmless.
+
+`langfuse-redis` has **no volume** — its queue state clears on restart by itself.
+
+```sh
+# ── 0. PRE-FLIGHT (nothing destructive yet) ────────────────────────────────────────────────────────
+docker volume ls | grep -i langfuse          # expect the four `observability-langfuse-*` names
+docker ps --filter name=langfuse --format '{{.Names}}\t{{.Image}}'   # confirm still on :3 / 24.3
+#   PR #440 must be reviewed and ready to merge BEFORE you start — step 5 is inside the outage window.
+
+# ── 1. STOP, by container name ─────────────────────────────────────────────────────────────────────
+docker stop langfuse-web langfuse-worker langfuse-minio-init \
+            langfuse-postgres langfuse-clickhouse langfuse-redis langfuse-minio
+
+# ── 2. REMOVE the three data volumes (external → compose will never do this for you) ───────────────
+docker volume rm observability-langfuse-postgres-data \
+                 observability-langfuse-clickhouse-data \
+                 observability-langfuse-clickhouse-logs
+
+# ── 3. RE-CREATE them immediately — external volumes are not auto-created ──────────────────────────
+docker volume create observability-langfuse-postgres-data
+docker volume create observability-langfuse-clickhouse-data
+docker volume create observability-langfuse-clickhouse-logs
+
+# ── 4. VERIFY: three volumes exist and are EMPTY (each MUST print 0) ───────────────────────────────
+for v in observability-langfuse-postgres-data \
+         observability-langfuse-clickhouse-data \
+         observability-langfuse-clickhouse-logs; do
+  printf '%s -> ' "$v"
+  docker run --rm -v "$v":/d alpine:3.24 sh -c 'ls -A /d | wc -l'
+done
+docker ps --filter name=langfuse --format '{{.Names}}'   # MUST be empty — nothing restarted
+
+# ── 5. MERGE PR #440, then redeploy `prod-observability` in Komodo EXPLICITLY ──────────────────────
+#    Do not wait on a webhook: trigger the redeploy from Komodo so the moment of cutover is yours.
+
+# ── 6. VERIFY the cutover ─────────────────────────────────────────────────────────────────────────
+docker ps --filter name=langfuse --format '{{.Names}}\t{{.Status}}\t{{.Image}}'   # :4 / 25.12, healthy
+docker logs langfuse-web 2>&1 | grep -ciE 'migration'      # >0 — ClickHouse migrations ran
+docker logs langfuse-web 2>&1 | grep -iE 'Ready|init scripts'
+#    Health + the LANGFUSE_INIT_* re-seed, from inside the network (no host port assumptions):
+docker run --rm --network backend-network curlimages/curl:8.11.1 \
+  -sS -o /dev/null -w '%{http_code}\n' http://langfuse-web:3000/api/public/health        # 200
+docker run --rm --network backend-network curlimages/curl:8.11.1 -sS \
+  -u "$LANGFUSE_INIT_PROJECT_PUBLIC_KEY:$LANGFUSE_INIT_PROJECT_SECRET_KEY" \
+  http://langfuse-web:3000/api/public/projects                                            # the project
+```
+
+### Rollback
+
+Revert the merge and redeploy. The volumes stay as they are — **rollback does not restore the old traces**,
+which were discarded at step 2 by design. Langfuse 3 will re-initialise the empty volumes and come up clean.
+
+```sh
+# on a workstation
+git revert --no-edit <merge-sha> && git push origin HEAD:main
+# then redeploy prod-observability in Komodo
+```
+
+### After it is live
+
+`langfuse/langfuse:3` and `-worker:3` suppressions are already deleted by the merge, so the infra-image gate
+re-blocks if the advisory ever returns. Watch the first scheduled `infra-image-scan` afterwards and confirm
+`--check-expiring` reports no UNMATCHED entry.
+
 ## Capacity check (T013) — result (2026-07-03)
 
 Prod host (`prod@homelab`, ~57 GiB usable): **48 GiB RAM available**, actual container RSS ~2.2 GiB (app
