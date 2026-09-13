@@ -360,3 +360,28 @@ with the variable set
 ```
 
 Both directions, so the check distinguishes "fails fast" from "fails always".
+
+## T026 — the post-merge sweep proves the discharge
+
+Run **3324** on `main` (`dd5c11e6`): `success`, `Successful in 2m36s` — the real-sweep band, not a 2-second
+skip. So CI genuinely pulled and scanned **opensearch:3** with the bcprov entry **deleted** and netty
+**re-keyed** to the 3.x digest, and found nothing blocking.
+
+That is the discharge proven by the gate rather than asserted by us — the whole reason the allowlist changes
+had to land in the same commit as the image move.
+
+The `infra-image-scan/expiry` reporter fired alongside (`event_name=push expiry_step=skipped`), correct for
+a push event.
+
+## What remains: T021 only
+
+The rollback drill (FR-009) is **unexercised**. It is now genuinely cheap and non-destructive — the 2.x
+volume was never touched and still holds all 5,276 documents, and 3.x ran entirely on a separate volume — so
+reverting is a compose change and a redeploy with nothing at stake.
+
+It could not be rehearsed in dev: the dev host is at **97% disk / 3.4 GB free** and the drill needs both
+OpenSearch images (~3 GB each extracted). The `df` call itself timed out at 120 s under that pressure.
+
+The residual is therefore an argument rather than a measurement: a 2.x node starting on a volume a 3.x node
+never opened. The only shared resource is the snapshot volume, which 3.x only **read**. Strong, but FR-009
+asks for the measurement, so this is recorded as open rather than waved through.

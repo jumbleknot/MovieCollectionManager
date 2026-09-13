@@ -99,7 +99,7 @@ dependency).
   description to record the outcome, following the packageRule 20 precedent (ceiling → approval gate).
 - [X] **T025** [US4] DONE — both ceiling guards updated at the cause, three mutations each red. Extend `renovate-workflow.guard.test.mjs` for rule 19 the way rule 20 was extended, and
   mutation-test it.
-- [ ] **T026** [US4] Confirm CI ran a **real sweep** (duration from the commit-status description, never
+- [X] **T026** DONE — run 3324 on `main`, `Successful in 2m36s` (real-sweep band), with the bcprov entry deleted and netty re-keyed to the 3.x digest. [US4] Confirm CI ran a **real sweep** (duration from the commit-status description, never
   `stopped - started`) and that `--check-expiring` reports nothing UNMATCHED.
 
 ## Phase 5: The abandon path (only if T004 had said abandon)
