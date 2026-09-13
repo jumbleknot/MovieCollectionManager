@@ -232,6 +232,10 @@ docker volume create observability-langfuse-clickhouse-data
 docker volume create observability-langfuse-clickhouse-logs
 
 # ── 4. VERIFY: three volumes exist and are EMPTY (each MUST print 0) ───────────────────────────────
+#    Pull alpine FIRST. Otherwise the first iteration's pull progress (stderr) prints between the
+#    `printf` label and the count (stdout), so the postgres line reads as if it produced no number at
+#    all. Confusing at the best of times; worse mid-outage, where it looks like the check failed.
+docker pull -q alpine:3.24
 for v in observability-langfuse-postgres-data \
          observability-langfuse-clickhouse-data \
          observability-langfuse-clickhouse-logs; do
