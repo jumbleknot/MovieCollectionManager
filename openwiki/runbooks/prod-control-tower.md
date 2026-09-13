@@ -3,8 +3,8 @@ type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
 description: Promotes the env-gated observability, audit-sink, and Vault stacks to production as three independently up/down-able Komodo ResourceSync stacks, wired into the BFF and agent gateway via consumer env only — no app code change.
 resource: docs/runbooks/prod-control-tower.md
-tags: [production, observability, audit, vault, komodo, runbook]
-timestamp: 2026-09-13T00:00:00Z
+tags: [production, observability, audit, vault, komodo, opensearch, runbook]
+timestamp: 2026-09-14T00:00:00Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -113,6 +113,47 @@ re-blocks if the advisory ever returns).
 
 Full cutover script, verification commands, and rollback procedure: `docs/runbooks/prod-control-tower.md`
 (§ "One-time: cut prod over to Langfuse 4 + ClickHouse 25 on RECREATED volumes").
+
+## OpenSearch 2 → 3 for the audit sink, PRESERVING the history (feature 071)
+
+Unlike the Langfuse cutover, this upgrade **keeps its data**. [ADR-0002 §4a](/openwiki/decisions/adr-0002-stateful-major-upgrades.md)
+reversed the original §4 "recreate volumes" decision once the audit store proved non-empty — **5,276 documents, 326.9 kb** in `mcm-agent-audit`. History moves across by snapshot and restore; the acceptance check is an **exact document count**, not a health check.
+
+> **A zero from a filtered query means "no match", not "no data".** The count was nearly missed because `_cat/indices/mcm-agent-audit-*` returned empty — the pattern needs no trailing wildcard; the real index name is `mcm-agent-audit`. That empty result was one step from justifying the destruction of a security audit trail. Preserved verbatim from ADR-0002 §4a because the error shape recurs.
+
+### Two deploys — the order is not negotiable
+
+`path.repo` is a **static** OpenSearch setting: a node cannot register a filesystem snapshot repository unless it was *started* with that path configured. The live 2.x node had none, so:
+
+```
+DEPLOY A   still on 2.x   add the snapshot volume + path.repo → restart → register repo → SNAPSHOT
+DEPLOY B   the upgrade    3.x on a NEW EMPTY data volume       → restore  → verify exact count
+```
+
+One deploy cannot work: it would mean snapshotting before the repository exists, or replacing the data volume before the snapshot is taken.
+
+### Why this is safe
+
+The 2.x data volume is **never touched**. 3.x starts on a new one, so at every moment there are two independent copies (the original volume and the snapshot). Rollback is non-lossy. Deleting the old volume is a separate, deliberate act afterwards — it is **not** part of this procedure.
+
+### Load-bearing gotchas
+
+- **Create the snapshot volume BEFORE deploying, and chown it to the node's uid.** It is `external: true`, so compose never creates it — a missing external volume aborts the deploy. A fresh volume mounted at `/mnt/snapshots` (a path the image does NOT contain) is root-owned; OpenSearch does not run as root and snapshots fail with a permissions error that does not name the volume. Derive the uid from the running container (`docker exec agent-audit-opensearch id -u`), never assume it.
+- **Re-measure the document count at A5 — 5,276 was a reading, not a constant.** The audit sink is live during Deploy A. Write down the A5 count; that number is what the B5 check must reproduce exactly.
+- **Stop at A8 and confirm `state: SUCCESS` before starting Deploy B.** There is no recovery path if the snapshot is absent when the old volume is replaced.
+- **The new 3.x cluster must re-register the repository.** Repository registrations are cluster state, and Deploy B starts a new cluster on a new data volume. The snapshot *volume* is unchanged, but the cluster does not know about it — register `mcm-audit-repo` again before restoring.
+- **Snapshot only `mcm-agent-audit`, with `include_global_state: false`.** Restoring system indices such as `.opendistro_security` across a major is a conflict risk with no upside (the init script re-provisions the audit writer account on every start).
+- **Re-run the least-privilege provisioning check (B6) after restore.** Feature 071 widened the check to assert `read 403` and `delete 403` in addition to `write 201` — the old check was incomplete and would have passed vacuously on a broken privilege set.
+
+### Rollback
+
+Revert the Deploy B change so the compose points at the **2.x digest and the ORIGINAL data volume**, then redeploy. The 5,276 documents are exactly where they were; nothing was removed from that volume. The snapshot also still exists, so there are two ways back.
+
+### Afterwards
+
+Only once the restore is verified and has been running for a while: delete `agent-audit-opensearch-data` (the 2.x volume) and, optionally, the snapshot. **Neither deletion is part of this procedure.**
+
+Full shell script (Deploy A and Deploy B), the `OS()` helper alias, and all verification commands: `docs/runbooks/prod-control-tower.md` (§ "One-time: OpenSearch 2 -> 3 for the audit sink, PRESERVING the history").
 
 Full stack/compose/file table, Komodo Variable seeding list, deploy order per phase, and the complete
 prod-only failure-symptom table: `docs/runbooks/prod-control-tower.md`.
