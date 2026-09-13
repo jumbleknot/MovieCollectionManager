@@ -12,7 +12,9 @@ name: opensearch
 #
 # Credentials (dev-only, externalized — feature 021):
 #   admin:         OPENSEARCH_INITIAL_ADMIN_PASSWORD in stacks/audit.env (full admin, setup / health checks)
-#   agent-audit:   write-only account (index/bulk on mcm-agent-audit-*; NO read/search/delete) —
+#   agent-audit:   write-only account (index/bulk on BOTH `mcm-agent-audit` and `mcm-agent-audit-*`;
+#                  NO read/search/delete) — the LIVE index is the exact name, no date suffix, so a
+#                  check written against the wildcard alone matches nothing and passes vacuously —
 #                  provisioned at runtime, not a compose env var.
 #
 # Heap is pinned to 1 GB (OPENSEARCH_JAVA_OPTS) — without this OpenSearch defaults to ~4 GB

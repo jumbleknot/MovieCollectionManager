@@ -43,14 +43,14 @@ dependency).
 
 ## Phase 1: Resolve the FR-006 pattern bug, and pin least privilege (US-2)
 
-- [ ] **T005** [US2] **Read the ACTUAL security role** for the write-only `agent-audit` account and record
+- [X] **T005** [US2] DONE — answered from the repo: the role names BOTH `mcm-agent-audit-*` AND `mcm-agent-audit`. **Read the ACTUAL security role** for the write-only `agent-audit` account and record
   its real index pattern. The spec and the compose header both say `mcm-agent-audit-*`; the live index is
   **`mcm-agent-audit`**, and that pattern needs a trailing dash. Writes demonstrably work (5,276 docs), so
   the prose is wrong somewhere. **Nothing may be asserted about the role until this is known** — a test
   written against a pattern that matches nothing passes vacuously.
-- [ ] **T006** [US2] Correct the prose at the cause: `spec.md` FR-006 (done), the compose header, and any
+- [X] **T006** [US2] DONE — three places fixed. Correct the prose at the cause: `spec.md` FR-006 (done), the compose header, and any
   runbook that repeats `mcm-agent-audit-*`.
-- [ ] **T007** [US2] Write the least-privilege test against the **real** pattern: the account can index/bulk,
+- [X] **T007** [US2] DONE — the check already existed in `init-audit-user.sh` (write 201 / search 403) and was INCOMPLETE; read and delete are now asserted too, against the doc just written. Write the least-privilege test against the **real** pattern: the account can index/bulk,
   and is refused read, search and delete. **Verify RED** by pointing it at the admin account. **Verify GREEN
   against 2.x** — it must pass there, or the test is wrong rather than the stack.
 

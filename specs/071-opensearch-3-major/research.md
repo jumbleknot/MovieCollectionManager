@@ -178,3 +178,46 @@ to widen the query and look at everything rather than trust a filter.
    The live index is `mcm-agent-audit`. Either the role pattern differs from the prose or the prose is
    wrong — but a verification written against `mcm-agent-audit-*` would test a pattern that matches nothing
    and pass vacuously. **Resolve before implementing US-2.**
+
+---
+
+# T005–T007 — the FR-006 pattern bug, resolved from the repo (2026-09-13)
+
+## T005 — the role was never wrong; the prose was
+
+`init-audit-user.sh` defines the write-only role as:
+
+```json
+"index_patterns": ["mcm-agent-audit-*", "mcm-agent-audit"],
+```
+
+**Both** patterns — the wildcard and the exact name. That is why writes to `mcm-agent-audit` have always
+worked. No cluster access was needed to establish this; the answer was in the repository.
+
+What was wrong was every piece of **prose** describing it, in three places, each saying only
+`mcm-agent-audit-*`:
+
+- `compose.yaml` header — "index/bulk on mcm-agent-audit-*"
+- `init-audit-user.sh` header — "write/bulk on mcm-agent-audit-*"
+- `init-audit-user.sh` echo — "write-only on mcm-agent-audit-*"
+
+That is the dangerous kind of stale comment: a test written from the prose would have asserted against a
+pattern matching **nothing** and passed vacuously. Corrected at all three (T006).
+
+## T007 — the least-privilege check already existed, and was INCOMPLETE
+
+`init-audit-user.sh` already verified, at provisioning time, that the write-only account:
+
+- **writes** → expects 201 ✅
+- **search** → expects 403 ✅
+
+FR-006 requires read, search **and** delete to be refused. **Read and delete were never checked** — so an
+append-only security sink whose writer could delete its own evidence would have provisioned green.
+
+Both are now asserted, against **the document just written** rather than a random id. That detail is the
+point: a wrongly-permissive role answers **404** for a missing doc, which is indistinguishable from a
+correct denial if the check is merely "not 200". Against a real id, a permissive role returns **200 and the
+document** — unambiguous.
+
+This is cheaper and better than the new test T007 originally called for: the verification runs where the
+role is provisioned, so it cannot drift from it.
