@@ -25,6 +25,11 @@ services:
     # #PROD no published port — reachable only over the isolated agent-audit-network.
     environment:
       - discovery.type=single-node
+      # Snapshot repository root (feature 071 / item #439). A STATIC setting: OpenSearch will not
+      # register a filesystem repository unless the node was STARTED with the path configured — which is
+      # exactly why the snapshot deploy is separate from the upgrade deploy. Passed as a setting-named env
+      # var in the same style as `discovery.type` above.
+      - path.repo=/mnt/snapshots
       # #PROD memory_lock DISABLED (differs from dev): the prod docker daemon has a finite memlock
       # rlimit, so requesting unlimited memlock (ulimits.memlock -1) fails at runc create time
       # ("error setting rlimit type 8: operation not permitted"). mlockall is a nicety, not required
@@ -39,6 +44,9 @@ services:
         hard: 65536
     volumes:
       - agent-audit-opensearch-data:/usr/share/opensearch/data
+      # SEPARATE volume, deliberately: the upgrade replaces the DATA volume, and a repository living
+      # inside it would be destroyed at the exact moment it is the only copy (FR-016).
+      - agent-audit-opensearch-snapshots:/mnt/snapshots
     networks:
       - agent-audit-network
     healthcheck:
@@ -108,6 +116,12 @@ volumes:
   agent-audit-opensearch-data:
     external: true
     name: agent-audit-opensearch-data
+  # Created by hand on the host BEFORE the deploy (external volumes are never auto-created), and
+  # chowned to the node's uid — a fresh volume mounted at a path the image does not contain is
+  # root-owned, and OpenSearch does not run as root. See docs/runbooks/prod-control-tower.md.
+  agent-audit-opensearch-snapshots:
+    external: true
+    name: agent-audit-opensearch-snapshots
 
 networks:
   agent-audit-network:

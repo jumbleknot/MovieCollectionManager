@@ -19,6 +19,12 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VOLUME_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability|vault)-[a-z0-9]+(-[a-z0-9]+)*-data$/;
 // FR-007 relaxed form: multi-volume vendor stacks (LangFuse) may end in -logs under the observability context.
 const VOLUME_OBS_LOGS_RE = /^observability-[a-z0-9]+(-[a-z0-9]+)*-logs$/;
+// Feature 071 / item #439 — the audit sink needs a SNAPSHOT-REPOSITORY volume, and it must NOT live inside
+// the data volume: the OpenSearch 2->3 upgrade replaces the data volume, which would destroy the snapshot at
+// the exact moment it is the only copy. A repository is not "data" in the `-data` sense, so the grammar is
+// extended rather than the volume misnamed. Narrowly scoped — `agent` context, `-snapshots` suffix — the
+// same shape as the `-logs` relaxation above.
+const VOLUME_SNAPSHOTS_RE = /^agent-[a-z0-9]+(-[a-z0-9]+)*-snapshots$/;
 // Feature 020 — container_name == service key == <component>[-<role>-<technology>].
 // Components are the owning subsystems (extend here when a new subsystem is added).
 const IDENTIFIER_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent-audit|opa|unleash|vault)(-[a-z0-9]+)*$/;
@@ -102,8 +108,8 @@ function checkVolumes(file, doc) {
       fail(file, name, `volume '${key}' carries a compose-project-prefixed name (underscore) — not convention-compliant`);
       continue;
     }
-    if (!VOLUME_RE.test(name) && !VOLUME_OBS_LOGS_RE.test(name)) {
-      fail(file, name, `volume '${key}' name does not match <context>-<role>-<engine>-data`);
+    if (!VOLUME_RE.test(name) && !VOLUME_OBS_LOGS_RE.test(name) && !VOLUME_SNAPSHOTS_RE.test(name)) {
+      fail(file, name, `volume '${key}' name does not match <context>-<role>-<engine>-data (or the -logs / -snapshots relaxed forms)`);
       continue;
     }
     if (name.startsWith('mcm-') && !name.startsWith('mcm-bff-')) {

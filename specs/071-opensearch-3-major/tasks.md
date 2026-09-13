@@ -56,7 +56,7 @@ dependency).
 
 ## Phase 2: DEPLOY A — snapshot, still on 2.x
 
-- [ ] **T008** [US3] Add a **separate** snapshot volume (`agent-audit-opensearch-snapshots`) and
+- [X] **T008** [US3] DONE — both compose files carry the snapshot volume + `path.repo`, image still 2.x. Add a **separate** snapshot volume (`agent-audit-opensearch-snapshots`) and
   `path.repo` to `compose.yaml` and `compose.prod.yaml`, image still on **2.x** (FR-016 — inside the data
   volume it would be destroyed by the very step it protects against).
 - [ ] **T009** [US3] Deploy A to prod and **restart** the node — `path.repo` is static, so a running node
