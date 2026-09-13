@@ -101,7 +101,7 @@
 ## Phase 3: Production cutover (US-3)
 
 - [X] **T012** [US3] Move the same three images in `compose.prod.yaml` (FR-004).
-- [ ] **T013** [US3] Redeploy `prod-observability` onto **recreated** volumes — follow the runbook sequence verbatim (stop by container name -> `volume rm` -> `volume create` -> merge -> explicit Komodo redeploy). The volumes are `external: true`, so they must be re-created, not just removed. Per ADR-0002 §4 the existing
+- [X] **T013** [US3] DONE 2026-09-13 — cut over on recreated volumes. Redeploy `prod-observability` onto **recreated** volumes — follow the runbook sequence verbatim (stop by container name -> `volume rm` -> `volume create` -> merge -> explicit Komodo redeploy). The volumes are `external: true`, so they must be re-created, not just removed. Per ADR-0002 §4 the existing
   production trace history is discarded at this point.
 - [ ] **T014** [US3] Verify with an **actual trace from a real turn** (SC-002), not container health — a
   healthy Langfuse that rejects the gateway's credentials is exactly what this stack would otherwise hide.

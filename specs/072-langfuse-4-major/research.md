@@ -220,3 +220,38 @@ in-place multi-major jump this spec avoids by recreating.
 Everything verified above was verified **on fresh volumes**. Nothing here says an in-place upgrade works.
 T013 therefore needs an operator step at cutover — recreate the prod volumes — or a deliberate decision to
 attempt the in-place path, which would preserve the trace history ADR-0002 §4 was willing to discard.
+
+---
+
+# Production cutover — 2026-09-13 (T012/T013 DONE)
+
+Merged as `a771eef1`; `prod-observability` redeployed onto the recreated volumes.
+
+| Check | Result |
+|---|---|
+| images | `langfuse:4`, `langfuse-worker:4`, `clickhouse-server:25.12` |
+| `postgres` | **`16-alpine`, unmoved** — FR-005 held, `unleash-postgres` untouched |
+| migrations | 900 matching log lines, then `✓ Ready` + `Running init scripts...` |
+| `/api/public/health` | **200** |
+| `LANGFUSE_INIT_*` re-seed | `movie-assistant` under org `MCM` — no operator UI step |
+| allowlist on `main` | **0** langfuse entries (15 total, was 17); the 3 remaining mentions are prose |
+| pre-merge sweep | `Successful in 2m37s` — a REAL sweep, so the 4.x images were actually scanned |
+
+The operator sequence needed **two corrections mid-outage**, both now in
+[prod-control-tower.md](../../docs/runbooks/prod-control-tower.md):
+
+1. **`docker stop` does not release a volume.** `docker volume rm` failed three times with
+   `volume is in use` until the containers were **removed**. The published sequence could not have
+   worked. Step 1b exists because of it. No data was lost — the error landed *before* the irreversible
+   step.
+2. **The emptiness gate mis-read.** The first loop iteration pulled `alpine:3.24`, and the pull progress
+   (stderr) printed between the `printf` label and the count (stdout), so the postgres line looked like it
+   produced no number. It had passed. Now pre-pulled.
+
+## Still open
+
+- **T014** — SC-002 wants an **actual trace from a real turn** in prod. Health + the seeded project prove
+  auth and seeding; they do **not** prove the gateway's turns are landing. Not yet done.
+- **T015** — the rollback drill (FR-010) has **not** been performed. Forward cutover worked; the reverse
+  path is the same mechanism but is unexercised.
+- **T020/T021** — the post-merge sweep on `main` (run 3281) was still queued at the time of writing.
