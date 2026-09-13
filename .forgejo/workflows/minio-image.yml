@@ -143,9 +143,11 @@ jobs:
           got_minio="$(docker run --rm --entrypoint minio "$TAG" --version)"
           got_mc="$(docker run --rm --entrypoint mc "$TAG" --version)"
           got_uid="$(docker run --rm --entrypoint id "$TAG" -u)"
+          got_data="$(docker run --rm --entrypoint sh "$TAG" -c 'stat -c "%u:%g" /data 2>/dev/null || echo MISSING')"
           echo "minio --version: $got_minio"
           echo "mc --version   : $got_mc"
           echo "uid            : $got_uid"
+          echo "/data owner    : $got_data"
           case "$got_minio" in *"$WANT_MINIO"*) ;; *)
             echo "::error::C3 violated — minio reports '$got_minio', expected to contain '$WANT_MINIO'."
             echo "::error::The ldflags version stamp was lost. The binary works; it lies about itself."
@@ -164,6 +166,18 @@ jobs:
             echo "::error::C5 violated — image runs as uid $got_uid, expected 1000."
             echo "::error::The langfuse-minio data volumes were chowned to 1000:1000 by feature 070."
             echo "::error::Any other uid cannot write to them, and that lands on a production redeploy."
+            exit 1; }
+          # I5 — /data must exist in the IMAGE, owned by the runtime uid. Docker seeds a fresh (empty)
+          # named volume from the image directory it is mounted over, ownership included; with no /data
+          # in the image there is nothing to copy from and the new volume is created 0:0, which a uid
+          # 1000 process cannot format. That is the "dev stack is not reproducible from empty" defect,
+          # and its symptom is the SAME "file access denied" as an unmigrated volume. Nothing else here
+          # would catch a regression: every existing volume is already migrated, so the image would look
+          # perfectly healthy everywhere it is currently deployed and fail only on a from-empty bring-up.
+          [ "$got_data" = "1000:1000" ] || {
+            echo "::error::I5 violated — /data in the image is '$got_data', expected 1000:1000."
+            echo "::error::A fresh named volume inherits this ownership. Wrong (or MISSING) means every"
+            echo "::error::from-empty bring-up gets a root-owned volume and MinIO cannot format it."
             exit 1; }
           CI_LOG_STEP
 

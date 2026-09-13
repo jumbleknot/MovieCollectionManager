@@ -172,6 +172,32 @@ COPY --from=build /out/mc /usr/bin/mc
 # volume carrying pre-existing objects, not a fresh one — a fresh volume passes whatever uid you pick.
 RUN addgroup -g 1000 minio && adduser -u 1000 -G minio -h /home/minio -D minio
 ENV HOME=/home/minio
+
+# ── /data must exist IN THE IMAGE, owned by the runtime uid ───────────────────────────────────────
+#
+# This is what makes the stack reproducible from empty, and it is not hygiene either.
+#
+# Docker seeds a FRESH (empty) named volume from the image directory it is mounted over — contents,
+# mode and OWNERSHIP. When the mount point does not exist in the image, there is nothing to copy from
+# and the new volume is created `0:0`. So an image with no `/data` hands a root-owned volume to a
+# process running as uid 1000, and MinIO dies on first format with
+#
+#   unable to rename (/data/.minio.sys/tmp -> /data/.minio.sys/tmp-old/…) file access denied,
+#   drive may be faulty, please investigate
+#
+# — the same error as an unmigrated volume, which is what makes it easy to misread. Measured both
+# ways on 2026-09-13: without this line a fresh `docker volume create` + `up` reports `0:0` and fails;
+# with it the volume is created `1000:1000` and MinIO formats, becomes ready, and serves writes with
+# no chown anywhere.
+#
+# This is the ONLY mechanism that can fix it without putting the uid into compose as well — which
+# clause I3 of specs/070-minio-non-root/contracts/runtime-identity.md forbids, because the identity
+# must be stated in exactly one place. See clause I5 for the measurement.
+#
+# It changes nothing for an EXISTING volume: Docker copies only into an empty one. The one-time
+# migration of the dev and production volumes (clause I4) is still what covers those.
+RUN install -d -o 1000 -g 1000 /data
+
 USER 1000:1000
 
 #
