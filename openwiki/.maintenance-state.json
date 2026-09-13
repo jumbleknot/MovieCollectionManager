@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "aeb4cf8a85a875fe82dd8d3dbe46f585f9afd3be",
-  "coveredAt": "2026-09-13T17:59:18.594Z",
+  "coveredCommit": "dd5c11e6d3bd238e4ad0d7cfb55d8b3c690f8210",
+  "coveredAt": "2026-09-13T19:58:01.870Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 444,
-    "headCommit": "16fca4e6a10e75dec279d58400cbd43fb2eff056",
+    "headCommit": "ddb72f47fb06a1ff66223b8ef771d3ef65e4a0d9",
     "markerBefore": "aeb4cf8a85a875fe82dd8d3dbe46f585f9afd3be",
     "slices": [
       {
@@ -30,13 +30,25 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/prod-control-tower.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "local-dev.md",
+          "prod-control-tower.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/local-dev.md; source changed: docs/runbooks/prod-control-tower.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/local-dev.md; openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-13T17:59:18.909Z"
+    "updatedAt": "2026-09-13T19:58:02.219Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 2,
-    "elapsedSeconds": 200,
+    "pagesWritten": 1,
+    "elapsedSeconds": 133,
     "stoppedAtBudget": false
   }
 }
