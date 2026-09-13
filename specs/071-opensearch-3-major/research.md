@@ -108,3 +108,116 @@ own US-1 exists to stop. Verifying it means starting 2.x on a seeded volume, sto
 the same volume, and reading the index back.
 
 Until this is decided, **no compose file, renovate rule or allowlist entry moves** (FR-003).
+
+---
+
+# Can the audit data be preserved? — researched 2026-09-13
+
+The T004 verdict left one question open: OpenSearch 3 is Lucene 10, so *maybe* it reads 2.x (Lucene 9)
+indices in place, which would drop the cost of this upgrade to roughly zero. **Upstream does not support
+that path for this deployment.**
+
+From OpenSearch 3.0.0's release notes, **Breaking Changes**:
+
+> Upgrade to Lucene 10.1.0 — PR #16366
+
+From the upstream migrate-or-upgrade guide, the only two documented paths:
+
+| Method | Applicable here? |
+|---|---|
+| **Rolling upgrade** — "Supports only adjacent major versions" (2→3 qualifies), but "**Reindexing may be required**" | **No.** The audit sink is `discovery.type=single-node`. You cannot roll one node. |
+| **Snapshot and restore** — "Requires downtime… Requires provisioning a new cluster… Manual reindexing may be required" | Possible, but needs a snapshot **repository** the audit stack does not have, plus a restore, plus possible reindexing. |
+
+**Nowhere does upstream state that a 3.x node will open a 2.x data directory in place.** That is precisely
+what a volume-preserving upgrade would need, and it is not a documented path — so "keep the volume and
+start 3.x on it" is an unsupported guess, not a cheap option.
+
+Consequence: preserving the audit history is a **feature in its own right** (configure a snapshot
+repository → snapshot → restore → verify → possibly reindex), not a task inside this one. The cheap options
+remain the two ADR-0002 already named: recreate the volume and lose the history, or stay on 2.x.
+
+This does not decide T004 — it removes the third option that looked like it might make the decision easy.
+
+---
+
+# The audit store is NOT empty — 5,276 documents (measured 2026-09-13)
+
+A near-miss worth recording in full, because the wrong answer was about to justify destroying data.
+
+`_cat/indices/mcm-agent-audit-*` returned **only a header row**, which reads as "the store is empty, so
+discarding it costs nothing". It was a **pattern error**: `mcm-agent-audit-*` requires a trailing dash, and
+the real index is **`mcm-agent-audit`** — no date suffix. Listing *every* index found it immediately:
+
+```
+index                docs.count  store.size
+mcm-agent-audit            5276     326.9kb
+security-auditlog-*          50     ~380kb    (OpenSearch security plugin's own audit log)
+top_queries-*                87     ~330kb    (query-insights plugin)
+```
+
+**A zero from a filtered query means "no match", which is not the same as "no data".** The same shape as
+item #418 (reading `event` instead of `trigger_event`) and the Langfuse sparse-fieldset trap in feature 072
+(`total_cost: null` because the field was not requested). Third time this session; the cure each time was
+to widen the query and look at everything rather than trust a filter.
+
+## Consequences
+
+1. **ADR-0002 §4's ratification deserves re-examination for the OpenSearch half.** "Neither production
+   dataset is preserved" was ratified before anyone knew what the audit store contained. It contains 5,276
+   security-audit events. That is not nothing, and the benefit on the other side of the trade has since
+   halved (only bcprov is discharged; netty is not).
+
+2. **Snapshot/restore is far more tractable than assumed.** The earlier assessment — "preserving is a
+   feature in its own right" — assumed an unknown, possibly large dataset. At **326.9 kb / 5,276 docs** the
+   restore is verifiable by exact document count, and "manual reindexing may be required for full feature
+   compatibility" is a low risk for an append-only index with simple mappings. The work is configuring a
+   snapshot repository (`path.repo` + a mounted volume + a restart), not moving data at scale.
+
+3. **FR-006 names a pattern that does not match the real index.** The spec requires the write-only
+   `agent-audit` account to retain index/bulk on `mcm-agent-audit-*`, and the compose header says the same.
+   The live index is `mcm-agent-audit`. Either the role pattern differs from the prose or the prose is
+   wrong — but a verification written against `mcm-agent-audit-*` would test a pattern that matches nothing
+   and pass vacuously. **Resolve before implementing US-2.**
+
+---
+
+# T005–T007 — the FR-006 pattern bug, resolved from the repo (2026-09-13)
+
+## T005 — the role was never wrong; the prose was
+
+`init-audit-user.sh` defines the write-only role as:
+
+```json
+"index_patterns": ["mcm-agent-audit-*", "mcm-agent-audit"],
+```
+
+**Both** patterns — the wildcard and the exact name. That is why writes to `mcm-agent-audit` have always
+worked. No cluster access was needed to establish this; the answer was in the repository.
+
+What was wrong was every piece of **prose** describing it, in three places, each saying only
+`mcm-agent-audit-*`:
+
+- `compose.yaml` header — "index/bulk on mcm-agent-audit-*"
+- `init-audit-user.sh` header — "write/bulk on mcm-agent-audit-*"
+- `init-audit-user.sh` echo — "write-only on mcm-agent-audit-*"
+
+That is the dangerous kind of stale comment: a test written from the prose would have asserted against a
+pattern matching **nothing** and passed vacuously. Corrected at all three (T006).
+
+## T007 — the least-privilege check already existed, and was INCOMPLETE
+
+`init-audit-user.sh` already verified, at provisioning time, that the write-only account:
+
+- **writes** → expects 201 ✅
+- **search** → expects 403 ✅
+
+FR-006 requires read, search **and** delete to be refused. **Read and delete were never checked** — so an
+append-only security sink whose writer could delete its own evidence would have provisioned green.
+
+Both are now asserted, against **the document just written** rather than a random id. That detail is the
+point: a wrongly-permissive role answers **404** for a missing doc, which is indistinguishable from a
+correct denial if the check is merely "not 200". Against a real id, a permissive role returns **200 and the
+document** — unambiguous.
+
+This is cheaper and better than the new test T007 originally called for: the verification runs where the
+role is provisioned, so it cannot drift from it.

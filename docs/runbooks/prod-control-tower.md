@@ -276,6 +276,116 @@ git revert --no-edit <merge-sha> && git push origin HEAD:main
 re-blocks if the advisory ever returns. Watch the first scheduled `infra-image-scan` afterwards and confirm
 `--check-expiring` reports no UNMATCHED entry.
 
+## One-time: OpenSearch 2 -> 3 for the audit sink, PRESERVING the history (feature 071, item #439)
+
+Unlike the Langfuse cutover, this one **keeps its data**. [ADR-0002 §4a](../decisions/ADR-0002-stateful-major-upgrades.md)
+reversed §4 for OpenSearch once the store turned out to hold **5,276 audit events**. The history moves across
+by **snapshot and restore**, and the acceptance check is an **exact document count**, not a health check.
+
+### Two deploys, and the order is not negotiable
+
+`path.repo` is a **static** OpenSearch setting: a node cannot register a filesystem snapshot repository
+unless it was *started* with that path configured. The live 2.x node has none. So:
+
+```
+DEPLOY A   still on 2.x   add the snapshot volume + path.repo -> restart -> register repo -> SNAPSHOT
+DEPLOY B   the upgrade    3.x on a NEW EMPTY data volume      -> restore -> verify exact count
+```
+
+One deploy cannot work: it would mean snapshotting before the repository exists, or replacing the data
+volume before the snapshot is taken.
+
+### Why this is far safer than the Langfuse cutover
+
+**The 2.x data volume is never touched.** 3.x starts on a new one, so at every moment there are two
+independent copies (the original volume and the snapshot). Rollback is non-lossy. Nothing irreversible
+happens here at all — deleting the old volume is a separate, deliberate act, later, and is **not** part of
+this procedure.
+
+```sh
+# ═══ DEPLOY A — snapshot, still on 2.x ═══════════════════════════════════════════════════════════
+
+# A1. Create the snapshot volume BEFORE deploying. It is `external: true`, so compose will never create
+#     it and the deploy fails on a missing external volume — the same trap as the Langfuse cutover.
+docker volume create agent-audit-opensearch-snapshots
+
+# A2. CHOWN it to the node's uid. A fresh volume mounted at a path the image does NOT contain
+#     (/mnt/snapshots) is created ROOT-owned, and OpenSearch does not run as root — snapshots would fail
+#     with a permissions error that does not name the volume. DERIVE the uid, never assume it.
+OS_UID=$(docker exec agent-audit-opensearch id -u)
+echo "opensearch runs as uid ${OS_UID}"
+docker run --rm -v agent-audit-opensearch-snapshots:/snap alpine:3.24 chown -R "${OS_UID}:${OS_UID}" /snap
+
+# A3. Merge the Deploy A change (snapshot volume + path.repo, image STILL 2.x), then redeploy
+#     `prod-audit` in Komodo. The node MUST restart — path.repo is static.
+
+# A4. Confirm the node came back with the repo path configured.
+ADMIN_PASS=$(docker exec agent-audit-opensearch printenv OPENSEARCH_INITIAL_ADMIN_PASSWORD)
+OS() { docker exec agent-audit-opensearch curl -sk -u "admin:${ADMIN_PASS}" "$@"; }
+OS 'https://localhost:9200/_nodes/settings?filter_path=nodes.*.settings.path' ; echo
+
+# A5. RE-MEASURE the document count. 5,276 was a reading, not a constant — the sink is live, and THIS
+#     number is what the restore must reproduce. Write it down.
+OS 'https://localhost:9200/mcm-agent-audit/_count' ; echo
+
+# A6. Register the repository.
+OS -X PUT 'https://localhost:9200/_snapshot/mcm-audit-repo' \
+   -H 'Content-Type: application/json' \
+   -d '{"type":"fs","settings":{"location":"/mnt/snapshots"}}' ; echo
+
+# A7. Snapshot `mcm-agent-audit` ONLY, and no global state. Restoring system/plugin indices such as
+#     .opendistro_security across a major is a conflict risk with no upside (FR-017).
+OS -X PUT 'https://localhost:9200/_snapshot/mcm-audit-repo/pre-os3?wait_for_completion=true' \
+   -H 'Content-Type: application/json' \
+   -d '{"indices":"mcm-agent-audit","include_global_state":false}' ; echo
+
+# A8. GATE: state must be SUCCESS, and the index list must name mcm-agent-audit.
+OS 'https://localhost:9200/_snapshot/mcm-audit-repo/pre-os3' ; echo
+```
+
+**Stop here and confirm A8 before starting Deploy B.**
+
+```sh
+# ═══ DEPLOY B — the upgrade, onto a NEW volume ═══════════════════════════════════════════════════
+
+# B1. Create the new data volume. The OLD one is NOT touched — it is the rollback.
+docker volume create agent-audit-opensearch-data-v3
+
+# B2. Merge the Deploy B change (image -> 3.x digest, data volume -> …-data-v3) and redeploy in Komodo.
+
+# B3. The node comes up EMPTY on 3.x. Re-register the repository (repository registrations are cluster
+#     state, and this is a new cluster on a new data volume — the snapshot VOLUME is unchanged).
+ADMIN_PASS=$(docker exec agent-audit-opensearch printenv OPENSEARCH_INITIAL_ADMIN_PASSWORD)
+OS() { docker exec agent-audit-opensearch curl -sk -u "admin:${ADMIN_PASS}" "$@"; }
+OS -X PUT 'https://localhost:9200/_snapshot/mcm-audit-repo' \
+   -H 'Content-Type: application/json' \
+   -d '{"type":"fs","settings":{"location":"/mnt/snapshots"}}' ; echo
+
+# B4. Restore.
+OS -X POST 'https://localhost:9200/_snapshot/mcm-audit-repo/pre-os3/_restore?wait_for_completion=true' \
+   -H 'Content-Type: application/json' \
+   -d '{"indices":"mcm-agent-audit","include_global_state":false}' ; echo
+
+# B5. THE ACCEPTANCE CHECK — this number MUST equal A5's, exactly.
+OS 'https://localhost:9200/mcm-agent-audit/_count' ; echo
+
+# B6. Re-run the least-privilege provisioning check (it now asserts write 201, read 403, search 403,
+#     delete 403 — read and delete were added in feature 071).
+bash infrastructure-as-code/docker/opensearch/init-audit-user.sh
+```
+
+### Rollback — non-lossy, unlike the Langfuse one
+
+Revert the Deploy B change so the compose points at the **2.x digest and the ORIGINAL data volume**, then
+redeploy. The 5,276 documents are exactly where they were; nothing was removed from that volume. The
+snapshot also still exists, so there are two ways back.
+
+### Afterwards
+
+Only once the restore is verified and has been running for a while: delete `agent-audit-opensearch-data`
+(the 2.x volume) and, if you want, the snapshot. **Neither deletion is part of this procedure** — leaving a
+stale 327 kb volume behind is far cheaper than an unrecoverable audit trail.
+
 ## Capacity check (T013) — result (2026-07-03)
 
 Prod host (`prod@homelab`, ~57 GiB usable): **48 GiB RAM available**, actual container RSS ~2.2 GiB (app

@@ -8,7 +8,9 @@
 #   bash infrastructure-as-code/docker/opensearch/init-audit-user.sh
 #
 # Credentials created:
-#   Role:    agent-audit  (create_index + write/index + write/bulk on mcm-agent-audit-*)
+#   Role:    agent-audit  (create_index + write/index + write/bulk on `mcm-agent-audit` AND
+#                          `mcm-agent-audit-*` — see the index_patterns below; the LIVE index is the
+#                          EXACT name, so the wildcard alone would not cover it)
 #   User:    agent-audit  (password: $OPENSEARCH_AUDIT_WRITER_PASSWORD — generated, from stacks/audit.env)
 #   Mapping: agent-audit user → agent-audit role
 #
@@ -28,7 +30,7 @@ ADMIN_USER="${OPENSEARCH_ADMIN_USER:-admin}"
 ADMIN_PASS="${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set OPENSEARCH_INITIAL_ADMIN_PASSWORD (run: node scripts/gen-dev-secrets.mjs → stacks/audit.env)}"
 AUDIT_PASS="${OPENSEARCH_AUDIT_WRITER_PASSWORD:?set OPENSEARCH_AUDIT_WRITER_PASSWORD (run: node scripts/gen-dev-secrets.mjs → stacks/audit.env)}"
 
-echo "==> Creating agent-audit role (write-only on mcm-agent-audit-*)..."
+echo "==> Creating agent-audit role (write-only on mcm-agent-audit and mcm-agent-audit-*)..."
 curl -sk -u "${ADMIN_USER}:${ADMIN_PASS}" \
   -X PUT "${OPENSEARCH_URL}/_plugins/_security/api/roles/agent-audit" \
   -H "Content-Type: application/json" \
@@ -62,15 +64,44 @@ curl -sk -u "${ADMIN_USER}:${ADMIN_PASS}" \
   -d '{"users": ["agent-audit"]}' | tee /dev/stderr | grep -qE '"CREATED"|"OK"'
 echo ""
 echo "==> Verifying write (should be 201)..."
+WRITE_BODY="$(mktemp)"
 HTTP_CODE=$(curl -sk -u "agent-audit:${AUDIT_PASS}" \
   -X POST "${OPENSEARCH_URL}/mcm-agent-audit/_doc" \
   -H "Content-Type: application/json" \
   -d '{"action":"init-verify","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' \
-  -w "%{http_code}" -o /dev/null)
+  -w "%{http_code}" -o "${WRITE_BODY}")
 if [ "${HTTP_CODE}" = "201" ]; then
   echo "  PASS: write returned 201"
 else
   echo "  FAIL: write returned ${HTTP_CODE}" && exit 1
+fi
+
+# The id of the doc just written. READ and DELETE are probed against a doc that DEMONSTRABLY EXISTS,
+# because a random id would prove nothing: a wrongly-permissive role answers 404 for a missing doc,
+# which is indistinguishable from a correct denial if you only check "not 200". With a real id, a
+# permissive role returns 200 and the document — unambiguous.
+DOC_ID=$(sed -n 's/.*"_id":"\([^"]*\)".*/\1/p' "${WRITE_BODY}")
+rm -f "${WRITE_BODY}"
+[ -n "${DOC_ID}" ] || { echo "  FAIL: could not parse _id from the write response" && exit 1; }
+
+echo "==> Verifying READ is blocked (should be 403)..."
+HTTP_CODE=$(curl -sk -u "agent-audit:${AUDIT_PASS}" \
+  "${OPENSEARCH_URL}/mcm-agent-audit/_doc/${DOC_ID}" \
+  -w "%{http_code}" -o /dev/null)
+if [ "${HTTP_CODE}" = "403" ]; then
+  echo "  PASS: read returned 403"
+else
+  echo "  FAIL: read returned ${HTTP_CODE} (expected 403) — the write-only account can READ audit events" && exit 1
+fi
+
+echo "==> Verifying DELETE is blocked (should be 403)..."
+HTTP_CODE=$(curl -sk -u "agent-audit:${AUDIT_PASS}" \
+  -X DELETE "${OPENSEARCH_URL}/mcm-agent-audit/_doc/${DOC_ID}" \
+  -w "%{http_code}" -o /dev/null)
+if [ "${HTTP_CODE}" = "403" ]; then
+  echo "  PASS: delete returned 403"
+else
+  echo "  FAIL: delete returned ${HTTP_CODE} (expected 403) — an APPEND-ONLY sink whose writer can delete" && exit 1
 fi
 
 echo "==> Verifying search is blocked (should be 403)..."

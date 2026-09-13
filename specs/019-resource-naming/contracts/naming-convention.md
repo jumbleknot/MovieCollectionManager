@@ -8,7 +8,7 @@ All compose files: root `compose.yaml` + `infrastructure-as-code/docker/**/compo
 
 ## Assertions
 
-1. **Volume names** match `^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability)-[a-z0-9]+(-[a-z0-9]+)*-data$` (a `<context>-<role>-<engine>-data` shape). FR-007 relaxed form: multi-volume vendor stacks under the `observability` context may end in `-logs` (e.g. `observability-langfuse-clickhouse-logs`).
+1. **Volume names** match `^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability)-[a-z0-9]+(-[a-z0-9]+)*-data$` (a `<context>-<role>-<engine>-data` shape). FR-007 relaxed form: multi-volume vendor stacks under the `observability` context may end in `-logs` (e.g. `observability-langfuse-clickhouse-logs`). **Feature 071 / item #439 relaxed form**: a volume holding a **snapshot repository** rather than live data may end in `-snapshots` under the `agent` context (e.g. `agent-audit-opensearch-snapshots`). It is a distinct KIND of volume, not a data volume with an odd name — it must live outside the data volume precisely so that replacing the data volume during a major upgrade cannot destroy the snapshot.
 2. **External network names** match `^([a-z0-9-]+)-network$` and are drawn from the approved set (`backend-network`, `keycloak-network`, `mcm-bff-network`, `movie-assistant-mcp-network`).
 3. **`container_name:`** (Stage B) match `^(keycloak|mc-service|mcm-bff|movie-assistant)(-[a-z0-9]+)*$`.
 4. **No legacy forms**: no name contains a compose-project prefix (`localdev-auth_`, `mc-service_`, `mcm_`) and no bare engine-only volume name (e.g. `redis-data`, `opensearch-data`).

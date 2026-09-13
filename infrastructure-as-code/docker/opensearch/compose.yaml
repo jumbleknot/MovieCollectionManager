@@ -12,7 +12,9 @@ name: opensearch
 #
 # Credentials (dev-only, externalized — feature 021):
 #   admin:         OPENSEARCH_INITIAL_ADMIN_PASSWORD in stacks/audit.env (full admin, setup / health checks)
-#   agent-audit:   write-only account (index/bulk on mcm-agent-audit-*; NO read/search/delete) —
+#   agent-audit:   write-only account (index/bulk on BOTH `mcm-agent-audit` and `mcm-agent-audit-*`;
+#                  NO read/search/delete) — the LIVE index is the exact name, no date suffix, so a
+#                  check written against the wildcard alone matches nothing and passes vacuously —
 #                  provisioned at runtime, not a compose env var.
 #
 # Heap is pinned to 1 GB (OPENSEARCH_JAVA_OPTS) — without this OpenSearch defaults to ~4 GB
@@ -28,6 +30,11 @@ services:
     restart: unless-stopped
     environment:
       - discovery.type=single-node
+      # Snapshot repository root (feature 071 / item #439). A STATIC setting: OpenSearch will not
+      # register a filesystem repository unless the node was STARTED with the path configured — which is
+      # exactly why the snapshot deploy is separate from the upgrade deploy. Passed as a setting-named env
+      # var in the same style as `discovery.type` above.
+      - path.repo=/mnt/snapshots
       - bootstrap.memory_lock=true
       # Hard heap cap (R16): without this OpenSearch defaults to ~4 GB and risks OOM-ing the dev box.
       - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
@@ -41,6 +48,9 @@ services:
         hard: 65536
     volumes:
       - agent-audit-opensearch-data:/usr/share/opensearch/data
+      # SEPARATE volume, deliberately: the upgrade replaces the DATA volume, and a repository living
+      # inside it would be destroyed at the exact moment it is the only copy (FR-016).
+      - agent-audit-opensearch-snapshots:/mnt/snapshots
     ports:
       - "127.0.0.1:9200:9200"
     networks:
@@ -61,6 +71,12 @@ volumes:
   agent-audit-opensearch-data:
     external: true
     name: agent-audit-opensearch-data
+  # Created by hand on the host BEFORE the deploy (external volumes are never auto-created), and
+  # chowned to the node's uid — a fresh volume mounted at a path the image does not contain is
+  # root-owned, and OpenSearch does not run as root. See docs/runbooks/prod-control-tower.md.
+  agent-audit-opensearch-snapshots:
+    external: true
+    name: agent-audit-opensearch-snapshots
 
 networks:
   backend-network:
