@@ -188,6 +188,9 @@ fire-and-forget (turns are unaffected; the traces for the window are simply lost
    deploy fails with a missing-external-volume error if they are absent.
 3. **`restart: always` is held by an explicit `docker stop`** — *unless the daemon restarts*. Keep the
    window short, and re-check the containers are still stopped just before step 5.
+4. **`docker stop` does not release a volume.** A stopped container still holds its mounts, so
+   `docker volume rm` fails with `volume is in use` until the container is **removed**. Hit for real on
+   the 2026-09-13 cutover; step 1b exists because of it.
 
 ### The MinIO volume is deliberately NOT recreated
 
@@ -208,6 +211,15 @@ docker ps --filter name=langfuse --format '{{.Names}}\t{{.Image}}'   # confirm s
 # ── 1. STOP, by container name ─────────────────────────────────────────────────────────────────────
 docker stop langfuse-web langfuse-worker langfuse-minio-init \
             langfuse-postgres langfuse-clickhouse langfuse-redis langfuse-minio
+
+# ── 1b. REMOVE the two containers that HOLD the target volumes ─────────────────────────────────────
+#    STOPPING IS NOT ENOUGH. A stopped container still references its mounts, and Docker refuses to
+#    remove a volume referenced by ANY container, running or not. Measured 2026-09-13 on the real
+#    cutover — step 2 failed three times with:
+#      Error response from daemon: remove observability-langfuse-postgres-data: volume is in use - [d0975dd…]
+#    Safe: Komodo recreates both from compose on redeploy, and it must anyway because their images change.
+#    `langfuse-minio` is deliberately left in place — it holds the volume we are KEEPING.
+docker rm langfuse-postgres langfuse-clickhouse
 
 # ── 2. REMOVE the three data volumes (external → compose will never do this for you) ───────────────
 docker volume rm observability-langfuse-postgres-data \
