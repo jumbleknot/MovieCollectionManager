@@ -1140,29 +1140,65 @@ test('the vault hold does NOT leak onto other docker images — the control', ()
   }
 });
 
-// opensearch and langfuse are HELD pending item #407 — a stateful major whose only argument for
+// opensearch and langfuse were BOTH held pending item #407 — a stateful major whose only argument for
 // moving is a CVE. The ceiling is asserted on the RESOLVED value, per the rule this file states for
 // itself: in every half-bump this repository has paid for, a mechanism existed that looked sufficient
 // and was silently overridden by a later, broader packageRule.
+//
+// UPDATED AT THE CAUSE 2026-09-13 — the two holds no longer have the same shape, and that asymmetry is
+// now the thing worth asserting.
+//
+//   opensearch  STILL HELD at <3. Its Phase 0 gate cleared only ONE of its two advisories: the
+//               bcprov seed-baseline entry is gone on 3.x, the netty one is present on 2.x and 3.x
+//               alike. The call is open — specs/071-opensearch-3-major/research.md.
+//   langfuse    DISCHARGED. Its gate cleared cleanly (`next: 16.3.3`, the fixed version), the images
+//               moved to :4, and both suppressions were deleted in the same change.
+//
+// The langfuse ceiling was not simply removed. `allowedVersions` said never; the real requirement was
+// always "not by accident", so the next langfuse MAJOR now needs a dependency-dashboard tick instead.
+// These tests assert that successor, because a hold replaced by nothing and a hold replaced by an
+// approval gate look identical from the absence of `allowedVersions`.
 const heldImage = (depName, updateType) => ({
   manager: 'docker-compose', datasource: 'docker', depName, updateType,
 });
 
-test('(407) opensearch is held below 3 and langfuse below 4, on every update track', () => {
+test('(407) opensearch is STILL held below 3, on every update track', () => {
   for (const updateType of ['patch', 'minor', 'major']) {
     assert.equal(
       resolvedAllowedVersions(heldImage('opensearchproject/opensearch', updateType)),
       '<3',
-      `opensearch ${updateType} is not held at <3 — OpenSearch 2->3 is an index-compatibility step and\n` +
-        '  must be decided by item #407, not proposed by a scheduled base-image sweep.',
+      `opensearch ${updateType} is not held at <3 — OpenSearch 2->3 is an index-compatibility step, and\n` +
+        '  its gate cleared only ONE of its two advisories, so the call is still open (item #439).\n' +
+        '  It must be decided, not proposed by a scheduled base-image sweep.',
     );
-    for (const depName of ['langfuse/langfuse', 'langfuse/langfuse-worker']) {
+  }
+});
+
+test('(072) the langfuse hold is DISCHARGED — replaced by approval, not by nothing', () => {
+  // Two different states produce no `allowedVersions`: a hold deliberately discharged, and a hold
+  // someone deleted. They must not be indistinguishable, which is why the successor is asserted.
+  for (const depName of ['langfuse/langfuse', 'langfuse/langfuse-worker']) {
+    for (const updateType of ['patch', 'minor', 'major']) {
       assert.equal(
         resolvedAllowedVersions(heldImage(depName, updateType)),
-        '<4',
-        `${depName} ${updateType} is not held at <4 — Langfuse 3->4 ships database migrations.`,
+        null,
+        `${depName} ${updateType} still carries a version ceiling — feature 072 moved the images to :4, ` +
+          'so a ceiling below 4 now blocks the version that is actually deployed.',
       );
     }
+    assert.equal(
+      resolvedRuleValue(heldImage(depName, 'major'), 'dependencyDashboardApproval'),
+      true,
+      `${depName} major no longer requires dashboard approval. ADR-0002 exists because a stateful major ` +
+        'landing in a Friday window with a CVE argument attached is how a data migration gets waved ' +
+        'through; the approval gate is what replaced the ceiling.',
+    );
+    assert.equal(
+      resolvedRuleValue(heldImage(depName, 'patch'), 'dependencyDashboardApproval'),
+      undefined,
+      `${depName} patch requires dashboard approval — the within-major patch stream IS the security ` +
+        'patch stream for the running image and must stay automatic.',
+    );
   }
 });
 
@@ -1173,18 +1209,23 @@ test('(407) the hold blocks the MAJOR but still admits patches and digest refres
   const os = resolvedAllowedVersions(heldImage('opensearchproject/opensearch', 'minor'));
   assert.ok(allowedVersionsPermits(os, '2.19.7'), 'the opensearch hold rejects a 2.x patch — it must not.');
   assert.ok(!allowedVersionsPermits(os, '3.0.0'), 'the opensearch hold PERMITS 3.0.0 — the major is what it exists to block.');
-  const lf = resolvedAllowedVersions(heldImage('langfuse/langfuse', 'minor'));
-  assert.ok(allowedVersionsPermits(lf, '3.9.9'), 'the langfuse hold rejects a 3.x patch — it must not.');
-  assert.ok(!allowedVersionsPermits(lf, '4.0.0'), 'the langfuse hold PERMITS 4.0.0 — the major is what it exists to block.');
+  // The langfuse half of this assertion is gone deliberately: its hold was discharged by feature 072
+  // and is asserted in the (072) test above. Only opensearch is still held.
 });
 
-test('(407) both halves of langfuse carry the SAME ceiling — they share a database', () => {
-  assert.equal(
-    resolvedAllowedVersions(heldImage('langfuse/langfuse', 'major')),
-    resolvedAllowedVersions(heldImage('langfuse/langfuse-worker', 'major')),
-    'the langfuse server and worker resolve to DIFFERENT ceilings. They are one deployment sharing one\n' +
-      '  database, so a major on one without the other is a broken stack, not an untidy half-bump.',
-  );
+test('(407) both halves of langfuse still resolve IDENTICALLY — they share a database', () => {
+  // The ceiling is gone but the PAIRING is not, and it was never about the ceiling: the server and the
+  // worker are one deployment against one database, so a major on one without the other is a broken
+  // stack rather than an untidy half-bump. Asserted on the successor gate as well as the ceiling, so
+  // the two halves cannot drift apart through whichever mechanism is current.
+  for (const key of ['allowedVersions', 'dependencyDashboardApproval']) {
+    assert.equal(
+      resolvedRuleValue(heldImage('langfuse/langfuse', 'major'), key),
+      resolvedRuleValue(heldImage('langfuse/langfuse-worker', 'major'), key),
+      `the langfuse server and worker resolve to DIFFERENT ${key}. They are one deployment sharing one\n` +
+        '  database, so a major on one without the other is a broken stack, not an untidy half-bump.',
+    );
+  }
 });
 
 test('(407) the opensearch/langfuse holds do NOT leak onto other docker images — the control', () => {

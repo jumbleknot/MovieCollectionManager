@@ -8,8 +8,15 @@
 `infrastructure-as-code/docker/observability/compose{,.prod}.yaml`; the Komodo `prod-observability` stack;
 `renovate.json` packageRule 20; `security/infra-images/allowlist.yaml`.
 
-**No application code changes.** The agent gateway reaches Langfuse over its existing OTLP/SDK interface
-with credentials from `LANGFUSE_INIT_PROJECT_*`; nothing under `agents/` or `mcp-servers/` moves.
+**SCOPE WIDENED 2026-09-13 — this feature DOES touch `agents/`.** The original plan said "no application
+code changes"; T010 measured that false. Langfuse 4 **removes `GET /api/public/traces` (404)**, and
+`agents/movie-assistant/tests/integration/test_observability_sc008.py` polls it via
+`client.api.trace.list(session_id=…)` to assert per-turn cost and p95 latency. Left alone, SC-008's
+verification would assert against a dead route — it would not fail loudly, it would stop checking.
+
+The gateway's **ingestion** is untouched and must stay that way (FR-013): it ships langfuse SDK **4.15.1**,
+which writes over OTLP — measured `POST /api/public/otel/v1/traces → 200`, rows present in ClickHouse
+`events_core`/`events_full`, readable at `/api/public/v2/observations`. Only the **read** path moves.
 
 ## Approach
 
@@ -97,6 +104,7 @@ existing gates plus two guards that do not yet exist:
 | **Postgres did not move** | **New guard**: `langfuse-postgres` and `unleash-postgres` reference the *same* digest, and it is a `16-` tag. This is the FR-005 tripwire and the one most likely to be violated by accident, because a single find-and-replace moves both |
 | The ceiling was lifted deliberately | `renovate-workflow.guard.test.mjs` — packageRule 20 either holds `<4` or names a scanned digest |
 | The gateway can still authenticate | A real turn producing a real trace — asserted in the agent E2E tier, not by a container healthcheck |
+| **SC-008 reads an API that exists** | The SC-008 integration test itself, run against 4.x — plus a guard that no source file references `trace.list(` or `/api/public/traces`, so a 404 read path cannot be reintroduced silently |
 
 The Postgres guard is written **RED first against the current tree**: it must fail if either reference moves
 off 16 or if the two stop agreeing, and both mutations are checked before it is trusted.
@@ -114,5 +122,8 @@ off 16 or if the two stop agreeing, and both mutations are checked before it is 
   14-day warning window from the **2026-09-18** sweep, so the weekly check goes red before this feature can
   plausibly land. That red is correct and is item #406's to triage — it is **not** a reason to rush this
   feature, and re-dating there does not weaken the case for the major.
+- **The `dual` write-mode bridge gets set to make something go green.** It restores only legacy
+  *ingestion*, never `GET /api/public/traces`, so it cannot fix the SC-008 read path — it can only hide
+  that the read path was never migrated. FR-013 forbids it.
 - **Someone "corrects" the registry to `docker.langfuse.com`.** FR-006 and the spec's own section exist
   because upstream's compose invites exactly that.

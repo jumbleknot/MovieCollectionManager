@@ -817,11 +817,25 @@
         "move together for no reason other than that they were written on the same day.",
         "BOTH images, deliberately: `langfuse/langfuse` and `langfuse/langfuse-worker` are one deployment",
         "and share a database, so a major on one without the other is a broken stack rather than a",
-        "half-bump that merely looks untidy."
+        "half-bump that merely looks untidy.",
+          "CEILING LIFTED 2026-09-13 by feature 072 / item #433. The hold is DISCHARGED, not abandoned, and the",
+          "text above is kept because it is the record of why it existed. Measured before moving: both `:4` images",
+          "scan CLEAN under the gate\u2019s own criteria (trivy 0.74.0, --severity CRITICAL --ignore-unfixed), and the",
+          "advisory they were held for is gone because it is FIXED \u2014 the bundled package is `next: 16.3.3`,",
+          "exactly the fixed version the allowlist justification named. Both suppressions were deleted in the same",
+          "change, so a regression re-blocks.",
+          "The sibling OpenSearch ceiling (the rule above) is NOT lifted: its gate cleared only ONE of its two",
+          "advisories and the call is open \u2014 see specs/071-opensearch-3-major/research.md.",
+          "WHAT REPLACES THE CEILING, and why the rule is not simply deleted. `allowedVersions` said never. The real",
+          "requirement was always: not by accident. ADR-0002 exists because a major landing in a Friday window with a",
+          "CVE argument attached is how a data migration gets waved through. So the next langfuse MAJOR now requires",
+          "an explicit dependency-dashboard tick instead of being blocked outright. Minors and patches are unaffected,",
+          "and the BOTH-images pairing above still holds: they are one deployment sharing one database."
       ],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["langfuse/langfuse", "langfuse/langfuse-worker"],
-      "allowedVersions": "<4"
+        "matchUpdateTypes": ["major"],
+        "dependencyDashboardApproval": true
     },
     {
       "description": [

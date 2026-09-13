@@ -140,6 +140,37 @@ done** and landed ahead of this feature (see below).
 2. **Given** the entries are deleted, **When** the advisory reappears, **Then** the gate **blocks**.
 3. **Given** the allowlist is edited, **When** CI runs, **Then** a **real** sweep runs, not a 2-second skip.
 
+### US-5 — SC-008's cost/latency evidence survives the major (P1)
+
+**As** the person who has to believe SC-008, **I want** the per-turn cost and p95-latency assertions reading
+an API that still exists **so that** the guarantee is verified rather than assumed.
+
+**Why this priority**: **WIDENED INTO THIS SPEC 2026-09-13, after T010 measured it.** This spec originally
+claimed "no application code changes"; that was false. Langfuse 4 **removes `GET /api/public/traces`
+(404)**, and `agents/movie-assistant/tests/integration/test_observability_sc008.py` polls exactly that
+endpoint via `client.api.trace.list(session_id=…)`. Left alone, SC-008's verification asserts against a
+dead route — the guarantee would not fail loudly, it would stop being checked.
+
+ADR-0002 §6 said a second migration hiding inside the first "may split the spec again rather than widen
+it". This one is widened by decision: it is the *same* upgrade's blast radius, it cannot land separately
+(the test is red the moment the images move), and a red would be unambiguous.
+
+**Independent Test**: run the SC-008 integration test against the Langfuse 4 stack; it must pass for the
+same reasons it passed on 3.x — real cost, real latency, real breach detection.
+
+**Acceptance Scenarios**:
+
+1. **Given** the stack on 4.x, **When** the SC-008 test polls for a session's turns, **Then** it reads
+   `observations.get_many(session_id=…, is_root_observation=True)` — the v4 path — and **not**
+   `trace.list`, which 404s.
+2. **Given** real Claude turns, **When** the turns are read back, **Then** each carries a non-zero
+   `total_cost` and a `latency`, so the budget assertions mean what they meant on 3.x.
+3. **Given** the ingestion path, **When** the gateway emits a turn, **Then** it still arrives — the gateway
+   ships langfuse SDK 4.15.1 and writes over **OTLP**, measured 200, and is *not* affected by the legacy
+   ingestion endpoint's `events_only` rejection.
+4. **Given** someone reintroduces a legacy read, **When** the guard runs, **Then** it fails — a 404 read
+   path must not be able to return silently.
+
 ## Requirements
 
 - **FR-001** The US-1 scan MUST run against **digests**, not the floating `:4` tag, and the digests MUST be
@@ -162,6 +193,16 @@ done** and landed ahead of this feature (see below).
   entry cannot outlive the image it describes.
 - **FR-009** Both `langfuse/*` entries MUST be **deleted**, never re-dated, once 4.x is deployed.
 - **FR-010** The rollback MUST be **performed** once, not merely documented.
+- **FR-012** The SC-008 integration test MUST read turns via `observations.get_many(session_id=…,
+  is_root_observation=True)`. `client.api.trace.list` and `GET /api/public/traces` are **removed** in
+  Langfuse 4 and MUST NOT be used.
+- **FR-013** The gateway's ingestion path MUST NOT be changed. It ships langfuse SDK 4.15.1, which writes
+  over OTLP; the legacy `POST /api/public/ingestion` rejection in `events_only` mode does not affect it.
+  `LANGFUSE_MIGRATION_V4_WRITE_MODE=dual` MUST NOT be set — it is upstream's bridge for clients that cannot
+  be upgraded, it restores only *ingestion*, and it would mask exactly the breakage this feature fixes.
+- **FR-014** `src/observability.py`'s docstring MUST stop describing the handler as "v3". The dependency is
+  already correct (`langfuse>=2.0,<5` resolving to 4.15.1); the prose is what is wrong, and it nearly
+  produced the wrong diagnosis during T010.
 - **FR-011** If the US-1 gate fails, the feature MUST end with the ADR-0002 §6 fallback and MUST NOT leave a
   half-moved stack or a lifted ceiling.
 
@@ -171,6 +212,7 @@ done** and landed ahead of this feature (see below).
 - **Postgres 17 and `unleash-postgres`.** Explicitly excluded by FR-005; it would need its own mandate.
 - **Moving to `docker.langfuse.com`.** FR-006.
 - **The OpenSearch major** — feature 071.
+- **Migrating the gateway's INGESTION** — it is already v4-native (FR-013). Only the READ path moves.
 
 ## Success criteria
 
@@ -179,6 +221,8 @@ done** and landed ahead of this feature (see below).
 - **SC-002** The agent gateway's traces are visible in Langfuse 4 in production, verified by an actual turn.
 - **SC-003** A rollback to 3.x/24.3 has been executed once and returned a healthy stack.
 - **SC-004** `postgres` is still 16 and `unleash-postgres` is byte-identical to before the feature.
+- **SC-006** The SC-008 integration test passes against Langfuse 4, asserting real cost and real
+  latency — not skipped, not weakened.
 - **SC-005** Either packageRule 20's ceiling is lifted, or it carries a re-dated justification naming a
   **scanned digest**.
 
