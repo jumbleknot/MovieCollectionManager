@@ -60,19 +60,39 @@
 
 ---
 
-> ## ⛔ BLOCKED AFTER T010 — the spec's scope was wrong
+## Phase 2b: the read path Langfuse 4 removed (US-5) — WIDENED IN after T010
+
+> T010 passed on the write path **and found this**: Langfuse 4 removes `GET /api/public/traces` (404).
+> `test_observability_sc008.py` polls it, so SC-008 would stop being checked rather than fail loudly. The
+> spec was widened rather than split — the test goes red the moment the images move, so the two cannot land
+> separately and a red is never ambiguous.
+
+- [X] **T025** [US5] Write the guard FIRST: no source file may reference `trace.list(` or
+  `/api/public/traces`. **Verify RED** against the current tree (the SC-008 test still uses it), which is
+  the honest RED — the guard is catching a real defect that exists right now, not a planted one.
+- [X] **T026** [US5] Migrate `_fetch_turns` in
+  `agents/movie-assistant/tests/integration/test_observability_sc008.py` to
+  `client.api.observations.get_many(session_id=…, is_root_observation=True)`, reading `total_cost` and
+  `latency` off each observation. Measured available on 4.15.1 against the live stack: the response carries
+  `total_cost`, `latency`, `session_id`, `trace_id`, `is_root_observation`, so the mapping is 1:1 with the
+  old `tr.total_cost` / `tr.latency`. **T025 must go GREEN.**
+- [X] **T027** [US5] Fix `src/observability.py`'s docstring: it says the handler is "the **v3** langchain
+  `CallbackHandler`" (FR-014). The dependency is already correct — `langfuse>=2.0,<5` resolves to 4.15.1 —
+  so this is stale PROSE, and it is what nearly produced the wrong diagnosis during T010. Do **not** change
+  the ingestion path (FR-013).
+- [X] **T028** [US5] Run the SC-008 integration test against the live 4.x stack with a priced provider and
+  confirm it passes for the same reasons it passed on 3.x: real non-zero cost, real latency, breach path
+  still visible (SC-006). **Requires `MCM_ANTHROPIC_API_KEY`** — a skip here proves nothing, so watch the
+  SKIP COUNT.
+
+---
+
+> ## ⚠️ STILL OPEN BEFORE PHASE 3 — the prod VOLUMES
 >
-> T010 passed on the write path **and found a breaking change**: Langfuse 4 **removes
-> `GET /api/public/traces` (404)**, and `agents/movie-assistant/tests/integration/test_observability_sc008.py`
-> polls exactly that endpoint to assert per-turn cost and latency. The legacy `POST /api/public/ingestion`
-> path is also rejected in the default `events_only` mode.
->
-> The gateway's own ingestion is FINE — it ships langfuse SDK 4.15.1 and writes over OTLP (measured 200,
-> data readable at `/api/public/v2/observations`, rows present in ClickHouse `events_core`/`events_full`).
->
-> So `plan.md`'s "No application code changes" is false: this feature now touches `agents/`, which is
-> SDD-gated. **Phases 3–4 must not start until that is decided** — widen this spec, or split the SC-008
-> test migration into its own feature.
+> Everything verified in Phase 2 was verified on **fresh** volumes. Komodo reconciles the EXISTING stack, so
+> merging alone recreates nothing: prod would run Langfuse 4 against the live 3.x Postgres schema and
+> ClickHouse 25.12 against a **24.3 data directory**. Nothing measured here says that works.
+> T013 needs an operator volume-recreate at cutover, or a deliberate decision to attempt the in-place path.
 
 ## Phase 3: Production cutover (US-3)
 

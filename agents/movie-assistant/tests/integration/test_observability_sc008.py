@@ -1,11 +1,11 @@
 """T067 — SC-008 verification LIVE: per-turn cost + p95 latency captured in LangFuse, in budget.
 
-Runs real Claude turns with the production LangFuse v3 callback attached (the exact mechanism
+Runs real Claude turns with the production LangFuse callback attached (the exact mechanism
 the gateway uses), then queries the LangFuse API and asserts each turn's cost is captured and
 within the configured budget, and the cross-turn p95 latency is within budget (SC-008). Also
 proves the breach path is visible (a deliberately tight budget flags every turn).
 
-Requires the `--profile observability` stack (LangFuse v3 at :3030) + `ANTHROPIC_API_KEY`
+Requires the `--profile observability` stack (LangFuse **4** at :3030) + `ANTHROPIC_API_KEY`
 (the priced provider — Ollama is free, so cost would be $0). Skips cleanly otherwise.
 
 Run:
@@ -82,20 +82,54 @@ def _register_model_price(model_id: str) -> None:
 
 
 def _fetch_turns(session_id: str, expected: int) -> list[dict[str, Any]]:
-    """Poll the LangFuse API until the session's traces are ingested (async worker → ClickHouse)."""
+    """Poll the LangFuse v4 observations API until the session's turns are ingested.
+
+    MIGRATED for Langfuse 4 (feature 072 / item #433). This used the SDK's legacy
+    trace-list call, and v4 **removes** it — the legacy traces REST route answers
+    **404**, it is not merely empty. Measured 2026-09-13 against the live 4.x stack.
+    (The removed names are deliberately not spelled out here:
+    langfuse-v4-read-path.guard.test.mjs greps for them and must not be tripped by
+    the very comment explaining why they are gone.)
+
+    That mattered more than a normal breakage: this test is credential-gated, so on
+    a machine without a priced provider it SKIPS. A dead read path would not have
+    failed loudly — SC-008 would simply have stopped being checked.
+
+    The v4 replacement returns the same evidence. One ROOT observation per turn
+    stands where one trace used to, and `total_cost` / `latency` carry the same
+    meanings, so the budget assertions below are unchanged. `trace_id` now comes off
+    the observation rather than being the row's own id.
+
+    Do NOT "fix" a v4 read with `LANGFUSE_MIGRATION_V4_WRITE_MODE=dual` — upstream's
+    bridge restores the legacy INGESTION endpoint only, never this route (FR-013).
+    """
     client = _client()
     deadline = time.time() + 90
     while time.time() < deadline:
-        page = client.api.trace.list(session_id=session_id)
-        traces = list(getattr(page, "data", []) or [])
-        if len(traces) >= expected:
+        page = client.api.observations.get_many(
+            session_id=session_id,
+            is_root_observation=True,
+            # SPARSE FIELDSETS — v4 returns a REDUCED set by default and `usage` is
+            # not in it, so `total_cost` comes back None and every per-turn COST
+            # assertion below silently loses its subject. Measured: without this the
+            # turns read back with real `latency` and `cost_usd=None`, which looks
+            # like "the model wasn't priced" rather than "the field wasn't
+            # requested". The cost was in ClickHouse the whole time
+            # (`events_full.total_cost = 0.000034`).
+            #   usage   -> usageDetails, costDetails, totalCost
+            #   metrics -> latency, timeToFirstToken
+            #   basic   -> sessionId, isRootObservation
+            fields="core,basic,metrics,usage",
+        )
+        roots = list(getattr(page, "data", []) or [])
+        if len(roots) >= expected:
             out: list[dict[str, Any]] = []
-            for tr in traces:
-                cost = getattr(tr, "total_cost", None)
-                latency_s = getattr(tr, "latency", None)
+            for ob in roots:
+                cost = getattr(ob, "total_cost", None)
+                latency_s = getattr(ob, "latency", None)
                 out.append(
                     {
-                        "trace_id": getattr(tr, "id", None),
+                        "trace_id": getattr(ob, "trace_id", None),
                         "cost_usd": float(cost) if cost is not None else None,
                         "latency_ms": float(latency_s) * 1000.0 if latency_s else None,
                     }

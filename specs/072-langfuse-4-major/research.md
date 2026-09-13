@@ -156,3 +156,67 @@ feature has not been taken.
 
 **Do not merge PR #440 on the strength of the green gate above.** The prod cutover would leave SC-008's
 integration test asserting against a 404.
+
+---
+
+# Phase 2b — the read-path migration, and the trap inside it (2026-09-13)
+
+## T025–T027
+
+A guard was written first (`langfuse-v4-read-path.guard.test.mjs`) and its RED was **honest**: it caught the
+real defect at `test_observability_sc008.py:89`, not a planted one. `_fetch_turns` then moved to
+`observations.get_many(session_id=…, is_root_observation=True)`, and `src/observability.py`'s stale
+"**v3** langchain CallbackHandler" docstring was corrected (FR-014).
+
+## T028 — the first run FAILED, and that is the point
+
+| | |
+|---|---|
+| turns read back | **5** — the v4 read path works |
+| `latency_ms` | **490 / 452 / 774** — real |
+| `cost_usd` | **None on every turn** ❌ |
+
+**v4's observations API uses SPARSE FIELDSETS, and `usage` is not in the default set.** The migration was
+syntactically correct and returned real turns with real latency, while silently dropping the one thing
+SC-008 exists to prove. The cost was in ClickHouse the entire time:
+
+```
+events_full.provided_model_name = claude-haiku-4-5-20251001
+events_full.usage_details       = {input:14, output:4, total:18}
+events_full.total_cost          = 0.000034
+```
+
+The failure mode is nastier than a 404: `cost_usd=None` reads as *"the model wasn't priced"* — a plausible,
+wrong diagnosis pointing at `_register_model_price` — rather than *"the field wasn't requested"*.
+
+Fixed by requesting the fieldsets explicitly:
+
+```python
+fields="core,basic,metrics,usage"   # usage -> totalCost; metrics -> latency; basic -> sessionId
+```
+
+**The guard could not have caught this.** It checks that no *removed* API is referenced, and
+`observations.get_many` satisfies it with or without `fields`. Only running the real test against real
+Claude turns surfaced it — which is what T028 is for, and why SC-008 asserts on cost rather than merely on
+"turns came back".
+
+## T028 — final result: PASS
+
+```
+3 passed, 1 skipped, 114 deselected
+SKIPPED [1] test_observability_sc008.py:211: needs Vault :8200 and VAULT_DEV_ROOT_TOKEN_ID
+```
+
+The skip is an **unrelated, pre-existing Vault test**, not SC-008. SC-008 passed with real non-zero cost and
+real latency against Langfuse 4, so SC-006 holds.
+
+## What is STILL open before PR #440 can merge
+
+**The production volumes.** `plan.md` Phase 2 says "redeploy onto **recreated** volumes", but Komodo
+reconciles the existing stack — merging alone does **not** recreate anything. Prod would start Langfuse 4
+against the live 3.x Postgres schema and ClickHouse 25.12 against a **24.3 data directory**, which is the
+in-place multi-major jump this spec avoids by recreating.
+
+Everything verified above was verified **on fresh volumes**. Nothing here says an in-place upgrade works.
+T013 therefore needs an operator step at cutover — recreate the prod volumes — or a deliberate decision to
+attempt the in-place path, which would preserve the trace history ADR-0002 §4 was willing to discard.

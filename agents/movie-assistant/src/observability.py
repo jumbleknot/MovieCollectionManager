@@ -2,8 +2,9 @@
 
 Two backends, both env-gated so the default dev/test/E2E path is a no-op (SC-005 additive):
 
-- **LangFuse** (LLM traces / per-turn cost / latency): `build_langfuse_handler` returns the v3
-  langchain `CallbackHandler` when `LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY` are set; the
+- **LangFuse** (LLM traces / per-turn cost / latency): `build_langfuse_handler` returns the
+  langchain `CallbackHandler` from the INSTALLED langfuse SDK (`langfuse>=2.0,<5`, resolving to 4.x)
+  when `LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY` are set; the
   gateway attaches it to the run config's callbacks so every turn becomes a trace with token
   cost + latency. Budgets (`AGENT_PER_TURN_COST_BUDGET_USD`, `AGENT_TURN_LATENCY_BUDGET_MS`) are
   attached as trace metadata for visibility; `classify_breach` / `evaluate_turns` flag a breach
@@ -42,11 +43,19 @@ def build_langfuse_handler(
     session_id: str | None = None,
     tags: Sequence[str] | None = None,
 ) -> Any | None:
-    """Build the LangFuse v3 langchain CallbackHandler, or None when unconfigured.
+    """Build the LangFuse langchain CallbackHandler, or None when unconfigured.
 
     Initialises the process-global LangFuse client from env (idempotent) so the handler ingests
     to the configured host. Per-run `user_id`/`session_id`/`tags` are passed through the run
-    config metadata by the caller (the v3 handler reads `langfuse_*` metadata keys).
+    config metadata by the caller (the handler reads `langfuse_*` metadata keys).
+
+    NOT "v3" — corrected by feature 072 (FR-014). The pin `langfuse>=2.0,<5`
+    resolves to **4.15.1**, which ingests over OTLP: measured
+    `POST /api/public/otel/v1/traces -> 200` against Langfuse 4, with the rows
+    readable afterwards. The dependency was always right; only this prose was wrong,
+    and it nearly produced the wrong diagnosis when Langfuse 4's removal of the
+    legacy READ route was being investigated. The ingestion path is deliberately
+    unchanged (FR-013).
     """
     if not langfuse_configured(env):
         return None
