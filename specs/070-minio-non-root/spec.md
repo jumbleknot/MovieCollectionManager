@@ -117,8 +117,30 @@ across every future rebuild.
   is not deleted for being inconvenient.
 - **FR-008**: The one-time volume migration MUST be documented as an operator step, for **dev and
   production separately**, with its verification.
-- **FR-009**: The migration MUST be verified against a volume with **pre-existing objects**. A fresh
-  volume passes whatever uid is chosen, which is what makes this easy to get wrong.
+- **FR-009**: The migration MUST be verified against a volume with **pre-existing objects**. A volume
+  *seeded for the test* passes whatever uid is chosen, which is what makes this easy to get wrong.
+
+  > **CORRECTED 2026-09-13.** This requirement originally read *"A fresh volume passes whatever uid is
+  > chosen"*. That is false for a genuinely fresh Docker **named volume**, and believing it is what let
+  > FR-010's defect through. A named volume created by `docker volume create` or by `compose up` is
+  > `0:0` unless the image supplies a mount point to inherit from — so a fresh volume passes for a root
+  > image and fails for every non-root uid. What is true is the narrower statement above: a volume you
+  > chowned yourself while setting up the test proves nothing about the uid.
+
+- **FR-010**: A **from-empty bring-up MUST work with no operator action** — `docker compose up` with no
+  pre-existing volume must produce a MinIO that formats, becomes healthy and serves writes. The
+  mechanism is that `/data` exists **in the image**, owned by the runtime uid, because Docker seeds a
+  fresh empty named volume from the image directory it is mounted over — ownership included. See
+  `contracts/runtime-identity.md` clause **I5**.
+
+  This is a defect introduced by this feature and not noticed by it: as root the missing `/data` cost
+  nothing, because root formats a `0:0` volume happily. Its symptom is the **same**
+  `file access denied` error as an unmigrated volume, and every deployed volume is already migrated —
+  so it is invisible everywhere except a from-empty bring-up, which is exactly the case nobody runs
+  until they need it.
+
+  The fix must NOT be a chown in compose: that would state the uid in three files instead of one,
+  which clause I3 forbids for the reason it gives.
 
 ## Out of scope
 
@@ -169,3 +191,11 @@ migration safe; neither is sufficient alone.
   compose change.
 - **SC-003**: CI fails if the image's uid is not the contracted value.
 - **SC-004**: Contract C5 records the change and the migration rather than being deleted.
+- **SC-005**: With **no volume and no operator action**, `compose up` yields a healthy MinIO: the volume
+  is created `1000:1000`, MinIO formats it, `mc ready local` reports ready, the `langfuse` bucket is
+  created and a new object is written — with **zero** storage errors.
+- **SC-006**: CI fails if `/data` is absent from the image or not owned by the contracted uid. The
+  from-empty case is not otherwise covered by anything, at any tier.
+- **SC-007**: The fix changes nothing for an **existing** volume — mounting it over a non-empty
+  root-owned volume must still fail exactly as before, so clause I4's migration remains required rather
+  than silently masked.

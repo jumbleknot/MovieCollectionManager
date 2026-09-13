@@ -158,6 +158,27 @@ docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 chown -R 1000:100
 3. **There is also a `minio_minio-data` volume on the prod host** from another/older project. Confirm
    which stack owns it before touching anything named `minio*`.
 
+### A volume that does not exist yet needs none of this
+
+The migration above is for a volume carrying **root-era data**. A volume created empty — by the
+`docker volume create` prerequisite at the top of this runbook, or by `compose up` on a host that has
+never run the stack — needs no chown and no operator step at all.
+
+That is true because the **image** carries `/data` owned by `1000:1000` (contract clause I5), and
+Docker seeds a fresh empty named volume from the image directory it is mounted over, ownership
+included. It was **not** true of the image published as `sha256:629bcee8…`, which has no `/data`: a
+from-empty bring-up on that image creates a `0:0` volume and MinIO fails with the *same*
+`unable to rename … file access denied` as an unmigrated volume — so the error points at a migration
+that was never owed. Fixed 2026-09-13; needs the new digest pinned in both compose files to take
+effect.
+
+**If you see that error on a volume you just created**, do not chown it and do not conclude the
+migration was missed — check the image first:
+
+```sh
+docker run --rm --entrypoint sh <the pinned image> -c 'stat -c "%u:%g" /data'   # must be 1000:1000
+```
+
 ### After the deploy
 
 `langfuse-minio` healthy, `langfuse-web` and `langfuse-worker` up, and a trace visible in the LangFuse

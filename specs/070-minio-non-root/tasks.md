@@ -93,7 +93,7 @@ entries not owned by the target uid rather than stat-ing `/data`.
 > Measured — `find /data ! -user 1000` went from `0` back to `2` after ONE new object. An early chown is
 > harmless and buys nothing.
 
-### T011 ⏳ Migrate the **dev** volume
+### T011 ✅ Migrate the **dev** volume
 ```sh
 docker volume ls | grep -i minio          # the dev volume is prefixed too — confirm it
 docker stop langfuse-minio
@@ -101,6 +101,11 @@ docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 chown -R 1000:100
 docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 sh -c 'find /data ! -user 1000 | wc -l'
 ```
 Confirm the count is `0`. Check the dev volume's real (compose-prefixed) name first — see trap 1 in I4.
+
+**MEASURED 2026-09-13** on `observability-langfuse-minio-data` (the prefixed name): `/data` is
+`1000:1000`, `find /data ! -user 1000` is `0`, and it holds `.minio.sys/` and `langfuse/` — i.e. the
+real volume with its objects, not a fresh one Docker made while measuring. `langfuse-minio` is up and
+healthy, `docker exec langfuse-minio id` → `uid=1000(minio)`. Dev is migrated and running non-root.
 
 ### T012 ⏳ Migrate the **production** volume — the merge gate
 ```sh
@@ -127,3 +132,73 @@ different digests (runs 3115, 3117). Update **both** `compose.yaml` and `compose
 ### T014 ⏳ Post-deploy confirmation
 `langfuse-minio` healthy, `langfuse-web` and `langfuse-worker` up, and a trace visible in the LangFuse
 UI written *after* the deploy.
+
+---
+
+## Phase 5 — The from-empty defect (2026-09-13)
+
+A previous session reported *"the dev MinIO volume would not reinitialise from scratch even when
+correctly chowned — which implies the dev stack is not reproducible from empty"*. Half of that was
+right, and the half that was right is a real defect this feature introduced.
+
+### T015 ✅ Reproduce, and separate the finding from the instrument
+
+**Reproduced**: `docker volume create` + the compose command verbatim, no chown → the volume is `0:0`
+and MinIO fails with `unable to rename (/data/.minio.sys/tmp → …) file access denied`. The dev stack
+is **not** reproducible from empty. Confirmed.
+
+**Did NOT reproduce — "even when correctly chowned"**: a fresh volume chowned `1000:1000` before first
+start formats and serves normally, and so does the volume that had already failed once, after a chown.
+Both reached `The cluster 'local' is ready`.
+
+The likely instrument: MinIO's banner goes to stdout as a **foreground** process, and the natural
+check — `timeout N docker run … | head` — shows nothing and then reports `Terminated`, which reads as
+"it never started". Run detached and read `docker logs` instead. Measured both ways on the same volume
+in the same minute: piped → silence then `Terminated`; detached → full banner, healthy, ready. **A
+container that prints nothing through a pipe is not a container that failed.**
+
+### T016 ✅ Verify RED, then fix at the cause
+
+**RED** (published `sha256:629bcee8…`): `docker run --entrypoint sh <image> -c 'stat /data'` →
+`No such file or directory`; fresh volume `0:0`; MinIO never healthy.
+
+**Fix**: `RUN install -d -o 1000 -g 1000 /data` in the Dockerfile, before `USER` — a property of the
+**image**, so compose stays unchanged and clause I3 holds. Contract clause **I5** records it.
+
+**GREEN**, on a real `docker build` of the edited Dockerfile (not a derived probe image):
+
+```
+minio RELEASE.2025-09-07T16-13-09Z · mc RELEASE.2025-08-13T08-35-41Z · uid 1000 · /data 1000:1000
+fresh volume, NO chown -> created 1000:1000
+state=running restarts=0   access-denied errors: 0
+mc ready local        -> The cluster 'local' is ready
+mc mb …/langfuse      -> Bucket created successfully
+mc cp … a.txt / mc ls -> 3B STANDARD a.txt
+find /data ! -user 1000 -> 0
+```
+
+C1, C2, C3, C5 and I2 all re-asserted on that same build. SC-005 met.
+
+### T017 ✅ Prove it does not mask the I4 migration
+
+Same fixed image against a **non-empty root-owned** volume seeded the way the root era left production:
+volume stayed `0:0`, MinIO failed with the same 3 access-denied errors; `chown -R 1000:1000` then gave
+`state=running`, 0 errors, `The cluster 'local' is ready`. Docker copies into an **empty** volume only,
+so the two paths are independent and I4 is still required for its own case. SC-007 met.
+
+### T018 ✅ Guard it at the cause
+
+`.forgejo/workflows/minio-image.yml` asserts `/data` is `1000:1000` beside the existing uid assertion,
+before publish. Verified both ways: `MISSING` → FAIL on the published image, `1000:1000` → PASS on the
+fixed build. Nothing else covers this — every deployed volume is already migrated, so a regression
+would look healthy everywhere and fail only from empty. SC-006 met.
+
+### T019 ⏳ Publish and repin — the fix is inert until then
+
+Both compose files pin `sha256:629bcee8…`, which **lacks** `/data`. Merging publishes a new digest;
+nothing consumes it until both pins move (contract C6). Take the digest from the `minio-image` run's
+step summary, never a remembered one — two builds of identical source produce different digests
+(069 runs 3115, 3117).
+
+**No volume migration is needed for this one** — it changes only what a *new* volume inherits. The
+running dev and production volumes are already `1000:1000` and are not touched.

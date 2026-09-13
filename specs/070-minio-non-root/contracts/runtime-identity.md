@@ -120,3 +120,45 @@ migration itself belongs inside the deploy window, not ahead of it.
 docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 \
   sh -c 'find /data ! -user 1000 | wc -l'      # must be 0
 ```
+
+---
+
+## I5 — `/data` exists in the image, owned by the runtime uid
+
+**Added 2026-09-13.** The Dockerfile carries `RUN install -d -o 1000 -g 1000 /data` before its `USER`
+directive. Trap 1 of I4 records that a fresh volume is `0:0`; this clause is the consequence that trap
+has for a non-root image, which I4 did not draw.
+
+**Why it is a contract.** Docker seeds a **fresh (empty)** named volume from the image directory it is
+mounted over — contents, mode and **ownership**. With no `/data` in the image there is nothing to copy
+from, and Docker creates the volume `0:0`. As root that cost nothing; at uid 1000 it means every
+from-empty bring-up hands MinIO a volume it cannot format.
+
+**This is the whole "the dev stack is not reproducible from empty" defect**, and three properties make
+it a contract rather than a fix:
+
+- Its symptom is the **same** `unable to rename … file access denied` as an unmigrated volume, so it
+  reads as "the migration was not done" — a diagnosis that is already true elsewhere and therefore
+  convincing.
+- It is **invisible on every deployed stack**. Dev and production are migrated, so MinIO is healthy in
+  both; only a volume that does not exist yet is affected. Nothing routine ever exercises that path.
+- It cannot be fixed in compose. A chown one-shot there would state the uid in three files, which
+  **I3** forbids, and would need adding to both compose files and kept in step with the Dockerfile.
+
+**Measured 2026-09-13**, `docker volume create` then the compose command verbatim, no chown anywhere:
+
+| image | fresh volume created | MinIO |
+| --- | --- | --- |
+| without `/data` (published `sha256:629bcee8…`) | `0:0` | `unable to rename (/data/.minio.sys/tmp → …) file access denied`, never healthy |
+| with `/data` at `1000:1000` | `1000:1000` | formats, `mc ready local` → ready, bucket created, object written, **0** storage errors |
+
+**It does not mask I4.** Docker copies into an **empty** volume only. Re-measured on a non-empty
+root-owned volume seeded the way the root era left production: the volume stayed `0:0`, MinIO failed
+with the same three access-denied errors, and only the `chown -R 1000:1000` of I4 fixed it. The
+from-empty path and the migration path are independent, and each is still required for its own case.
+
+**Verification**: asserted in `.forgejo/workflows/minio-image.yml` alongside the uid, before publish —
+
+```sh
+docker run --rm --entrypoint sh <image> -c 'stat -c "%u:%g" /data'    # must be 1000:1000
+```
