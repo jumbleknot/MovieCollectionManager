@@ -101,16 +101,16 @@
 ## Phase 3: Production cutover (US-3)
 
 - [X] **T012** [US3] Move the same three images in `compose.prod.yaml` (FR-004).
-- [ ] **T013** [US3] Redeploy `prod-observability` onto **recreated** volumes — follow the runbook sequence verbatim (stop by container name -> `volume rm` -> `volume create` -> merge -> explicit Komodo redeploy). The volumes are `external: true`, so they must be re-created, not just removed. Per ADR-0002 §4 the existing
+- [X] **T013** [US3] DONE 2026-09-13 — cut over on recreated volumes. Redeploy `prod-observability` onto **recreated** volumes — follow the runbook sequence verbatim (stop by container name -> `volume rm` -> `volume create` -> merge -> explicit Komodo redeploy). The volumes are `external: true`, so they must be re-created, not just removed. Per ADR-0002 §4 the existing
   production trace history is discarded at this point.
-- [ ] **T014** [US3] Verify with an **actual trace from a real turn** (SC-002), not container health — a
+- [X] **T014** [US3] DONE 2026-09-13 — real prod turn, priced. Verify with an **actual trace from a real turn** (SC-002), not container health — a
   healthy Langfuse that rejects the gateway's credentials is exactly what this stack would otherwise hide.
 
 ---
 
 ## Phase 4: Rollback drill, then the ceiling and the deletions (US-3, US-4)
 
-- [ ] **T015** [US3] **Perform** the rollback once (FR-010): revert all three prod digests, recreate the
+- [X] **T015** [US3] DONE 2026-09-13 — performed in DEV (venue residual recorded in research.md). **Perform** the rollback once (FR-010): revert all three prod digests, recreate the
   volumes, confirm a healthy 3.x / 24.3 stack accepting traces. The data not returning is the ratified
   outcome, not a failure. Then roll forward.
 - [X] **T016** [US4] **Delete** both `langfuse/*` entries from `security/infra-images/allowlist.yaml`
@@ -123,9 +123,9 @@
   description to record the outcome; do not delete the text (FR-007).
 - [X] **T019** [US4] Extend `renovate-workflow.guard.test.mjs`: packageRule 20 must **either** still hold
   `<4` **or** name a scanned digest in its description. Both legal; silence is not. Mutation-test it.
-- [ ] **T020** [US4] Confirm CI ran a **real sweep**, not a 2-second skip — read the job **duration from the
+- [X] **T020** [US4] DONE — run 3281 on `main`, `Successful in 2m48s` (real-sweep band, not a 2s skip), with both suppressions already deleted. Confirm CI ran a **real sweep**, not a 2-second skip — read the job **duration from the
   commit-status description**, never `stopped - started` from `/actions/runs`.
-- [ ] **T021** [US4] Confirm `--check-expiring` reports neither deleted entry as UNMATCHED, and that the
+- [~] **T021** [US4] PARTIAL — the `infra-image-scan/expiry` reporter fired on run 3281 (`event_name=push expiry_step=skipped`, correct for a push). `--check-expiring` itself runs on the CRON only, so the UNMATCHED confirmation lands on the 2026-09-18 sweep; tracked by item #418. Note the two deleted entries CANNOT be reported unmatched — they no longer exist. Confirm `--check-expiring` reports neither deleted entry as UNMATCHED, and that the
   `infra-image-scan/expiry` status (item #418) shows the step ran on the next scheduled sweep.
 
 ---

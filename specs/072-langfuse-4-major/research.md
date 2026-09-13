@@ -220,3 +220,107 @@ in-place multi-major jump this spec avoids by recreating.
 Everything verified above was verified **on fresh volumes**. Nothing here says an in-place upgrade works.
 T013 therefore needs an operator step at cutover — recreate the prod volumes — or a deliberate decision to
 attempt the in-place path, which would preserve the trace history ADR-0002 §4 was willing to discard.
+
+---
+
+# Production cutover — 2026-09-13 (T012/T013 DONE)
+
+Merged as `a771eef1`; `prod-observability` redeployed onto the recreated volumes.
+
+| Check | Result |
+|---|---|
+| images | `langfuse:4`, `langfuse-worker:4`, `clickhouse-server:25.12` |
+| `postgres` | **`16-alpine`, unmoved** — FR-005 held, `unleash-postgres` untouched |
+| migrations | 900 matching log lines, then `✓ Ready` + `Running init scripts...` |
+| `/api/public/health` | **200** |
+| `LANGFUSE_INIT_*` re-seed | `movie-assistant` under org `MCM` — no operator UI step |
+| allowlist on `main` | **0** langfuse entries (15 total, was 17); the 3 remaining mentions are prose |
+| pre-merge sweep | `Successful in 2m37s` — a REAL sweep, so the 4.x images were actually scanned |
+
+The operator sequence needed **two corrections mid-outage**, both now in
+[prod-control-tower.md](../../docs/runbooks/prod-control-tower.md):
+
+1. **`docker stop` does not release a volume.** `docker volume rm` failed three times with
+   `volume is in use` until the containers were **removed**. The published sequence could not have
+   worked. Step 1b exists because of it. No data was lost — the error landed *before* the irreversible
+   step.
+2. **The emptiness gate mis-read.** The first loop iteration pulled `alpine:3.24`, and the pull progress
+   (stderr) printed between the `printf` label and the count (stdout), so the postgres line looked like it
+   produced no number. It had passed. Now pre-pulled.
+
+## Still open
+
+- **T014** — SC-002 wants an **actual trace from a real turn** in prod. Health + the seeded project prove
+  auth and seeding; they do **not** prove the gateway's turns are landing. Not yet done.
+- **T015** — the rollback drill (FR-010) has **not** been performed. Forward cutover worked; the reverse
+  path is the same mechanism but is unexercised.
+- **T020/T021** — the post-merge sweep on `main` (run 3281) was still queued at the time of writing.
+
+---
+
+# T015 — the rollback drill, performed (2026-09-13)
+
+Run in **dev**, mirroring the prod operator sequence step for step (stop → `docker rm` the two
+volume-holders → `volume rm` → `volume create` → deploy), on a dev stack that was itself already cut over
+to 4.x — so it is a rehearsal of the real thing rather than a synthetic one.
+
+| | roll BACK to 3.x / 24.3 | roll FORWARD to 4.x / 25.12 |
+|---|---|---|
+| stack on recreated volumes | all services healthy | all services healthy |
+| `/api/public/health` | **200** | **200** |
+| `LANGFUSE_INIT_*` re-seed | `movie-assistant` present | `movie-assistant` present |
+| `/api/public/traces` | **200** | **404** |
+
+**That last row is the point.** Container image labels only say what was *requested*; the traces route is a
+behavioural discriminator — it exists in v3 and is gone in v4 — so each direction is proven by the server's
+own behaviour rather than by what compose claimed to start. It also re-confirms, independently, the route
+removal that forced the SC-008 read-path migration.
+
+Both corrections made during the production cutover were exercised here and worked:
+`docker rm` before `volume rm`, and the pre-pulled `alpine` keeping the emptiness gate legible.
+
+## The venue residual, stated rather than glossed
+
+This was run in **dev**, using `docker compose` directly. Production rolls back by `git revert` → **Komodo**
+redeploy. That mechanism is proven in the **forward** direction (the 2026-09-13 cutover) but not in reverse.
+
+What is unproven is therefore narrow — that Komodo reconciles a reverted commit the same way it reconciles
+a forward one — and it is the same code path it just executed. Closing item #433 on a dev-venue drill is a
+judgement, not an oversight; a prod drill would cost two further outages on a healthy stack whose data has
+already been discarded.
+
+---
+
+# T014 / SC-002 — a real prod turn, verified (2026-09-13)
+
+The agent was used in production and the trace was read back through the **v2 observations** API — the same
+path the migrated SC-008 test uses.
+
+**Structure** (`limit=5`, newest first): `LangGraph` (root) → `supervisor` → child chains, plus a `search`
+span on a sibling trace. The root carries `userId` and `sessionId`, so **per-user attribution survived the
+major**.
+
+**The priced generations** (`type=GENERATION`, `fields=…,model`):
+
+| field | value |
+|---|---|
+| `name` / `model` | `ChatAnthropic` / `claude-haiku-4-5` |
+| `usageDetails` | `input 1702, output 4, total 1706` |
+| `costDetails.total` / `totalCost` | **0.001722** (and 0.001719 on the second) |
+| `latency` / `timeToFirstToken` | 0.601 s / 0.563 s |
+| `usagePricingTierName` | `Standard` |
+
+SC-002 is satisfied: the gateway's turns reach Langfuse 4, are priced, and carry latency — in production.
+
+## A property worth knowing before reusing `_fetch_turns`
+
+**Cost lives on the GENERATION, not on the root observation.** In the prod trace the root is a `CHAIN`
+(`LangGraph`) with `totalCost: null`; the cost is on the `ChatAnthropic` GENERATION child.
+
+SC-008's `_fetch_turns` filters `is_root_observation=True` and reads `total_cost` — and that is **correct
+for SC-008**, because that test calls `model.invoke` directly, so its root observation *is* the generation.
+It would return `None` costs if pointed at **gateway** traces, where a LangGraph chain wraps the model call.
+
+So the helper is right for its own test and is **not** a general-purpose "cost per turn" reader. Anything
+that wants per-turn cost from gateway traces must either sum the GENERATION children or query
+`type=GENERATION` directly, as the T014 verification above did.
