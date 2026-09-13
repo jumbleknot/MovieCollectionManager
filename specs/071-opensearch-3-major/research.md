@@ -335,3 +335,28 @@ echoes a secret-named variable (mutation-tested; piping into `--password-stdin` 
 
 **No gate caught this.** It was found by reading output for an unrelated reason, which is the least
 reliable way to find anything.
+
+## T018 / T019 — the two settings that no gate would otherwise watch
+
+**T018 — the heap pin survived the JDK change.**
+
+```
+_nodes/jvm -> heap_max_in_bytes: 1073741824   = exactly 1 GiB
+```
+
+FR-007's risk did not materialise. Worth having checked: an unpinned OpenSearch defaults to ~4 GB, and on a
+shared prod host that is a real regression that nothing in CI watches. `ps` is **not present** in the
+OpenSearch 3 image, so the check goes through the `_nodes/jvm` API rather than the process table — the
+first attempt failed on `ps: command not found`, which is a tooling answer, not a heap answer.
+
+**T019 — the fail-fast still fires.** Verified locally rather than on prod, since it is pure compose
+interpolation:
+
+```
+env -u OPENSEARCH_INITIAL_ADMIN_PASSWORD docker compose -f compose.prod.yaml config
+  -> exit 1, "required variable OPENSEARCH_INITIAL_ADMIN_PASSWORD is missing"
+with the variable set
+  -> exit 0
+```
+
+Both directions, so the check distinguishes "fails fast" from "fails always".

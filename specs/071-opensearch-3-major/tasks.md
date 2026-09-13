@@ -79,8 +79,8 @@ dependency).
   not "the index exists" (SC-007 / FR-015).
 - [X] **T017** DONE — all four assertions PASS on OpenSearch 3 (write 201, read 403, delete 403, search 403); the security-plugin role format did not change. [US3] Re-run T007's least-privilege test against 3.x. Reproducing the split is in scope;
   weakening it to get green is not.
-- [ ] **T018** [P] [US3] Verify the **1 GB heap pin** still binds under OpenSearch 3's newer JDK (FR-007).
-- [ ] **T019** [P] [US3] Verify the `${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?…}` fail-fast still fires.
+- [X] **T018** DONE — `heap_max_in_bytes: 1073741824` = exactly 1 GiB; the pin still binds under OpenSearch 3's newer JDK. [P] [US3] Verify the **1 GB heap pin** still binds under OpenSearch 3's newer JDK (FR-007).
+- [X] **T019** DONE — `compose config` with the variable unset exits 1 with "required variable OPENSEARCH_INITIAL_ADMIN_PASSWORD is missing"; with it set, exit 0. [P] [US3] Verify the `${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?…}` fail-fast still fires.
 - [X] **T020** DONE — count 5277 after the init write, so the write path works on 3.x. [US3] Confirm the gateway's audit **writes** still land on 3.x — a real write, not a health
   check.
 
