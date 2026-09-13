@@ -21,7 +21,7 @@ name: observability
 services:
   # ── LangFuse v3 ───────────────────────────────────────────────────────────────────────────
   langfuse-web:
-    image: langfuse/langfuse:3@sha256:a27fe525f52984fa6d36fd34e8b8c6e5ae4af43f34134cafc833b467fa9580ae
+    image: langfuse/langfuse:4@sha256:a5d8d2457702ab7e051bc0788d73871970caebd10aae6635e87cfb736e4067cd
     container_name: langfuse-web
     profiles: [observability]
     restart: unless-stopped
@@ -83,7 +83,7 @@ services:
         max-file: "3"
 
   langfuse-worker:
-    image: langfuse/langfuse-worker:3@sha256:93207bd67d2e789ea55fa3d47eeba065dd6b1869187127ab24201784c52b96bc
+    image: langfuse/langfuse-worker:4@sha256:5e35e625a214dd868bb22adad90fc52e8f83cc856c3750e47f9a922622c207fb
     container_name: langfuse-worker
     profiles: [observability]
     restart: unless-stopped
@@ -124,7 +124,7 @@ services:
     logging: *obs-logging
 
   langfuse-clickhouse:
-    image: clickhouse/clickhouse-server:24.3@sha256:85b97f63dcfff47790d26bb5d5801637aaddb2b93e5e9aee27a686c2fb2b9916
+    image: clickhouse/clickhouse-server:25.12@sha256:8a790dd3468db22b1d4e7b18a176f378ff5ff6053b9c48dd4ea1fa71a24c5ba6
     container_name: langfuse-clickhouse
     profiles: [observability]
     restart: unless-stopped
