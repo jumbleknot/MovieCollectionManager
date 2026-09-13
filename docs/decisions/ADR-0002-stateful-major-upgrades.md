@@ -92,6 +92,33 @@ an index-compatibility step before the major can move.
 
 ---
 
+## 4a. AMENDED 2026-09-13 — the OpenSearch audit store IS preserved
+
+**§4 above stands for Langfuse and is superseded for OpenSearch.** It was ratified without anyone knowing
+what the audit store contained. Measured 2026-09-13: **5,276 documents, 326.9 kb** in `mcm-agent-audit`.
+
+Two things changed the trade:
+
+- **The benefit halved.** The Phase 0 gate cleared CVE-2025-14813 (bcprov) and **not** CVE-2026-75595
+  (netty), which is present on 2.x and 3.x alike — see `specs/071-opensearch-3-major/research.md`.
+- **The cost became knowable, and the mitigation cheap.** The earlier "preserving is a feature in its own
+  right" assessment assumed an unknown, possibly large dataset. At 326.9 kb a snapshot/restore is
+  verifiable by **exact document count**, and upstream lists snapshot-and-restore as a supported *upgrade
+  method* across adjacent majors.
+
+**Decision: OpenSearch 3 is taken with the audit history preserved via snapshot and restore.** The Langfuse
+half already completed under §4 as written and is unaffected.
+
+> The number was nearly not measured at all. `_cat/indices/mcm-agent-audit-*` returned an empty result —
+> the pattern needs a trailing dash and the real index is `mcm-agent-audit` — and that empty result was one
+> step from justifying the destruction of a security audit trail. **A zero from a filtered query means "no
+> match", not "no data".** Recorded here, not just in the spec, because it nearly changed a ratified
+> decision on false evidence.
+
+**Scope of the preservation: `mcm-agent-audit` only.** The `security-auditlog-*` and `top_queries-*`
+indices are plugin-generated telemetry that regenerates, and restoring system indices such as
+`.opendistro_security` across a major is a conflict risk with no upside.
+
 ## 5. What was rejected, and why
 
 **Upgrade only one of the two.** Rejected as a standing position, though it is the *interim* state by

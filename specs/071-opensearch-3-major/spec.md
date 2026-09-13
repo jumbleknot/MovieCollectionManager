@@ -45,20 +45,32 @@ So **US-1 below is a gate, not a task.** No compose file, renovate rule or allow
 passes, and a failing gate ends this feature with a re-date instead — the fallback is written into
 ADR-0002 §6 so that abandoning is a *recorded* outcome rather than a quiet stall.
 
-## What makes this upgrade cheap, and the thing that would make it expensive
+## The audit history is PRESERVED — reversed 2026-09-13
 
-ADR-0002 §4 ratifies that **the production audit store is not preserved across cutover**. The volume is
-recreated; there is no snapshot, no restore, and no index-compatibility migration. Rollback is a digest
-revert plus a volume recreate.
+The original spec rested on ADR-0002 §4: recreate the volume, discard the history, rollback is a revert.
+**That is reversed for OpenSearch by [ADR-0002 §4a](../../docs/decisions/ADR-0002-stateful-major-upgrades.md).**
 
-That single decision is what keeps this feature small, and it has a price that is stated plainly rather than
-left to be discovered: **the existing production agent-audit history is discarded**, and the 90-day retention
-window ([logging-and-audit](../../openwiki/invariants/logging-and-audit.md)) restarts from the cutover date.
+Two measurements did it. The Phase 0 gate cleared **one** of the two advisories, halving the benefit (see
+[research.md](./research.md)); and the audit store turned out to hold **5,276 documents / 326.9 kb**, which
+nobody knew when §4 was ratified.
 
-If that ratification is ever reversed, this spec does not merely gain a task — it changes shape. Preserving
-the store would add a snapshot/restore path, an index-compatibility check (OpenSearch 3 reads indices
-*created* by 2.x, but that is a property to verify against the real indices rather than assume), and a
-rollback that is a tested restore rather than a revert.
+> The count was nearly missed. `_cat/indices/mcm-agent-audit-*` returned nothing — the pattern needs a
+> trailing dash and the live index is **`mcm-agent-audit`** — and that empty result was one step from
+> justifying the destruction of a security audit trail. **A zero from a filtered query means "no match",
+> not "no data".**
+
+So the upgrade now carries the data across by **snapshot and restore**, which upstream lists as a supported
+upgrade *method* between adjacent majors. At 326.9 kb the restore is verifiable by **exact document count**
+— 5,276 in, 5,276 out — which is a far stronger check than "the stack came up".
+
+**Scope: `mcm-agent-audit` only.** `security-auditlog-*` and `top_queries-*` are plugin telemetry that
+regenerates, and restoring system indices like `.opendistro_security` across a major is a conflict risk with
+no upside.
+
+**What an in-place upgrade is NOT.** Upstream documents exactly two paths, and a single-node cluster can use
+only one: a *rolling* upgrade needs more than one node, and nowhere does upstream state that a 3.x node will
+open a 2.x data directory in place. Starting 3.x on the existing volume is an unsupported guess, not a
+shortcut.
 
 ## User scenarios
 
@@ -169,9 +181,20 @@ UNMATCHED entry.
 - **FR-005** `renovate.json` packageRule 19's `allowedVersions: "<3"` MUST be removed in the same change that
   moves the image, and its `description` MUST be rewritten to record the outcome rather than deleted — the
   rule's text is the record of why the ceiling existed.
-- **FR-006** The write-only `agent-audit` account MUST retain index/bulk on `mcm-agent-audit-*` and MUST
-  still be refused read, search and delete. If OpenSearch 3 changes the security-plugin configuration format,
-  reproducing this split is in scope; weakening it to get the stack up is not.
+- **FR-006** The write-only `agent-audit` account MUST retain index/bulk on the **real** audit index and
+  MUST still be refused read, search and delete. If OpenSearch 3 changes the security-plugin configuration
+  format, reproducing this split is in scope; weakening it to get the stack up is not.
+  **CORRECTED 2026-09-13**: this requirement (and the compose header) said `mcm-agent-audit-*`. The live
+  index is **`mcm-agent-audit`** — no date suffix — and `mcm-agent-audit-*` requires the trailing dash, so a
+  verification written against it would match nothing and **pass vacuously**, which is the exact failure the
+  requirement exists to prevent. Determine the role's ACTUAL pattern before asserting anything about it.
+- **FR-015** The audit history MUST be preserved: `mcm-agent-audit`'s document count after the upgrade MUST
+  equal its count before (**5,276** at the time of writing, but re-measured immediately before the snapshot
+  — the sink is live and the number moves).
+- **FR-016** The snapshot repository MUST live on its **own volume**, separate from the OpenSearch data
+  volume, or recreating the data volume destroys the snapshot with it.
+- **FR-017** Only `mcm-agent-audit` is snapshotted and restored. System and plugin indices MUST NOT be
+  restored across the major.
 - **FR-007** The 1 GB heap pin MUST still take effect. If OpenSearch 3 ignores or renames
   `OPENSEARCH_JAVA_OPTS`, the equivalent MUST be set rather than the pin dropped.
 - **FR-008** Both allowlist entries MUST be **deleted**, never re-dated, once 3.x is deployed. An entry
@@ -184,8 +207,9 @@ UNMATCHED entry.
 ## Out of scope
 
 - **Langfuse 3 → 4.** Ratified as a separate spec in ADR-0002 §1. Nothing here lifts packageRule 20.
-- **Preserving the existing audit data.** Ratified against in ADR-0002 §4. Reversing that is an ADR edit
-  first, and it changes this spec's shape rather than adding to it.
+- **Preserving `security-auditlog-*` / `top_queries-*`.** Plugin telemetry; it regenerates (FR-017).
+- **Building a general backup capability.** This is a one-shot snapshot/restore for one index across one
+  upgrade, not a backup feature.
 - **The other two item #406 majors** (`postgres`, `keycloak` entries) — different images, different rules.
 - **Re-keying the `langfuse/*:3` allowlist entries** away from a floating major. That is a real residual
   (item #412 named it), but it belongs to the Langfuse half.
@@ -198,6 +222,8 @@ UNMATCHED entry.
 - **SC-003** The prod audit write path is verified working on 3.x by an actual write from the gateway's
   write-only account, not by a healthcheck alone.
 - **SC-004** A rollback to 2.x has been executed once and returned a healthy stack.
+- **SC-007** `mcm-agent-audit` holds the SAME document count after the upgrade as before it, verified by
+  an exact number rather than by the stack being healthy.
 - **SC-005** Either the ceiling is lifted, or packageRule 19 carries a re-dated justification naming a
   **scanned digest** — never the pre-existing "no newer 2.x exists" reasoning restated.
 
