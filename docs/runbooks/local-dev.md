@@ -17,7 +17,8 @@ docker volume create keycloak-store-postgres-data
 docker volume create mcm-bff-cache-redis-data
 docker volume create mcm-bff-store-mongo-data
 docker volume create movie-assistant-store-postgres-data   # agents
-docker volume create agent-audit-opensearch-data           # audit
+docker volume create agent-audit-opensearch-v3-data     # audit (OpenSearch 3)
+docker volume create agent-audit-opensearch-snapshots   # audit snapshot repo — chown to the node uid before first use
 ```
 
 The Keycloak DB password (`KC_DB_PASSWORD`) is no longer a separate `.env.local` / file-secret

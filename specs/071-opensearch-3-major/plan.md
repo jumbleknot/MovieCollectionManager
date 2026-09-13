@@ -47,7 +47,7 @@ volume is left untouched.**
 ```
 observability/agent-audit-opensearch-data      <- 2.x data. UNTOUCHED. The rollback.
 agent-audit-opensearch-snapshots               <- the snapshot. Its own volume (FR-016).
-agent-audit-opensearch-data-v3                 <- 3.x starts here, empty.
+agent-audit-opensearch-v3-data                  <- 3.x starts here, empty.
 ```
 
 Consequences worth stating, because they invert the risk profile of this feature:

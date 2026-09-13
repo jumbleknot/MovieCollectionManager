@@ -28,14 +28,15 @@ here now bind `0.0.0.0` (rootless-before-tailscaled boot race) and the post-rebo
 ## One-time host prerequisites (prod host)
 
 ```sh
-# 8 external volumes (data survives redeploys)
+# 10 external volumes (data survives redeploys)
 docker volume create observability-langfuse-postgres-data
 docker volume create observability-langfuse-clickhouse-data
 docker volume create observability-langfuse-clickhouse-logs
 docker volume create observability-langfuse-minio-data
 docker volume create observability-otel-lgtm-data
 docker volume create observability-unleash-postgres-data
-docker volume create agent-audit-opensearch-data
+docker volume create agent-audit-opensearch-v3-data
+docker volume create agent-audit-opensearch-snapshots
 docker volume create vault-store-data
 
 # dedicated isolation network for the audit sink (FR-001) — only opensearch + gateway/BFF join it
@@ -349,9 +350,9 @@ OS 'https://localhost:9200/_snapshot/mcm-audit-repo/pre-os3' ; echo
 # ═══ DEPLOY B — the upgrade, onto a NEW volume ═══════════════════════════════════════════════════
 
 # B1. Create the new data volume. The OLD one is NOT touched — it is the rollback.
-docker volume create agent-audit-opensearch-data-v3
+docker volume create agent-audit-opensearch-v3-data
 
-# B2. Merge the Deploy B change (image -> 3.x digest, data volume -> …-data-v3) and redeploy in Komodo.
+# B2. Merge the Deploy B change (image -> 3.x digest, data volume -> agent-audit-opensearch-v3-data) and redeploy in Komodo.
 
 # B3. The node comes up EMPTY on 3.x. Re-register the repository (repository registrations are cluster
 #     state, and this is a new cluster on a new data volume — the snapshot VOLUME is unchanged).

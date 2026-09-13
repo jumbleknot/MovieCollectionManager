@@ -59,20 +59,20 @@ dependency).
 - [X] **T008** [US3] DONE — both compose files carry the snapshot volume + `path.repo`, image still 2.x. Add a **separate** snapshot volume (`agent-audit-opensearch-snapshots`) and
   `path.repo` to `compose.yaml` and `compose.prod.yaml`, image still on **2.x** (FR-016 — inside the data
   volume it would be destroyed by the very step it protects against).
-- [ ] **T009** [US3] Deploy A to prod and **restart** the node — `path.repo` is static, so a running node
+- [X] **T009** DONE — Deploy A ran on prod 2026-09-13; `path.repo: ["/mnt/snapshots"]` confirmed after restart.  [US3] Deploy A to prod and **restart** the node — `path.repo` is static, so a running node
   cannot register a repository it was not started with.
-- [ ] **T010** [US3] **Re-measure** `mcm-agent-audit`'s document count immediately before the snapshot. The
+- [X] **T010** DONE — **5,276** (re-measured at A5, unchanged).  [US3] **Re-measure** `mcm-agent-audit`'s document count immediately before the snapshot. The
   sink is live; 5,276 was a reading, not a constant. This number is the restore's acceptance criterion.
-- [ ] **T011** [US3] Register the repository and snapshot **`mcm-agent-audit` only** (FR-017 — restoring
+- [X] **T011** DONE — repo registered, snapshot `pre-os3` taken of `mcm-agent-audit` with `include_global_state:false`.  [US3] Register the repository and snapshot **`mcm-agent-audit` only** (FR-017 — restoring
   system indices such as `.opendistro_security` across a major is a conflict risk with no upside).
-- [ ] **T012** [US3] Verify the snapshot reports `SUCCESS` and lists the expected index and document count.
+- [X] **T012** DONE — `state: SUCCESS`, shards 1/1, 0 failures, source `version: 2.19.6`.  [US3] Verify the snapshot reports `SUCCESS` and lists the expected index and document count.
 
 ## Phase 3: DEPLOY B — the upgrade, onto a NEW volume
 
 > The 2.x data volume is **kept, untouched**. 3.x starts on a new empty one. Nothing irreversible happens.
 
 - [ ] **T013** [US3] Point both compose files at the 3.x digest from T001 and at a **new** data volume
-  (`agent-audit-opensearch-data-v3`). **Do not remove the 2.x volume** — it is the rollback.
+  (`agent-audit-opensearch-v3-data`). **Do not remove the 2.x volume** — it is the rollback.
 - [ ] **T014** [US3] Deploy B; the node comes up empty and healthy on 3.x.
 - [ ] **T015** [US3] Register the same repository on 3.x and **restore** `mcm-agent-audit`.
 - [ ] **T016** [US3] **THE ACCEPTANCE CHECK: document count after == the T010 count, exactly.** Not "healthy",
@@ -89,15 +89,15 @@ dependency).
 - [ ] **T021** [US3] **Perform** the rollback once (FR-009): point the compose back at 2.x **and the original
   data volume**, deploy, confirm the 5,276 documents are still there. Unlike the Langfuse drill this is
   **non-destructive** — the original volume was never touched — so it is a true rehearsal. Then roll forward.
-- [ ] **T022** [US4] **Delete** the seed `CVE-2025-14813` (bcprov) entry — discharged by 3.x.
-- [ ] **T023** [US4] **RE-KEY, do not delete**, the `CVE-2026-75595` (netty) entry: it is keyed to the **2.x
+- [X] **T022** [US4] DONE — deleted. **MOVED INTO DEPLOY B, not Phase 4**: once compose points at 3.x this entry matches nothing and is reported UNMATCHED. **Delete** the seed `CVE-2025-14813` (bcprov) entry — discharged by 3.x.
+- [X] **T023** [US4] DONE — re-keyed to the 3.x digest. **MOVED INTO DEPLOY B**: leaving it on the 2.x digest key would leave 6 fixable CRITICALs un-allowlisted and the gate would BLOCK the PR. **RE-KEY, do not delete**, the `CVE-2026-75595` (netty) entry: it is keyed to the **2.x
   digest**, which no longer exists in the tree, so it would be reported UNMATCHED and fail
   `--check-expiring`. It must be re-keyed to the **3.x digest** with a justification recording that the gate
   measured netty present on both majors (4.2.16 in lib and 4.1.133 inside `security-analytics-commons`,
   against fixes 4.2.17 / 4.1.137).
-- [ ] **T024** [US4] Remove `allowedVersions: "<3"` from `renovate.json` packageRule 19 and **rewrite** its
+- [X] **T024** [US4] DONE — ceiling → major-approval gate, per the packageRule 20 precedent. Remove `allowedVersions: "<3"` from `renovate.json` packageRule 19 and **rewrite** its
   description to record the outcome, following the packageRule 20 precedent (ceiling → approval gate).
-- [ ] **T025** [US4] Extend `renovate-workflow.guard.test.mjs` for rule 19 the way rule 20 was extended, and
+- [X] **T025** [US4] DONE — both ceiling guards updated at the cause, three mutations each red. Extend `renovate-workflow.guard.test.mjs` for rule 19 the way rule 20 was extended, and
   mutation-test it.
 - [ ] **T026** [US4] Confirm CI ran a **real sweep** (duration from the commit-status description, never
   `stopped - started`) and that `--check-expiring` reports nothing UNMATCHED.

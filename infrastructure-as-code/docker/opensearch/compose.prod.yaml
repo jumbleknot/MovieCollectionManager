@@ -14,12 +14,15 @@
 # the gitignored .env.prod. No inline literal, no ${VAR:-literal} default.
 #
 # First-time host setup (once):
-#   docker volume create agent-audit-opensearch-data
+#   docker volume create agent-audit-opensearch-v3-data
+#   docker volume create agent-audit-opensearch-snapshots
+#   (then CHOWN the snapshot volume to the node's uid — a fresh volume at /mnt/snapshots is
+#    root-owned and OpenSearch does not run as root; see docs/runbooks/prod-control-tower.md)
 #   docker network create agent-audit-network
 name: prod-audit
 services:
   agent-audit-opensearch:
-    image: opensearchproject/opensearch:2@sha256:8690b204fe914c60ca76d451ac73bc0481e034d32d3779944c8caca56a2b003f
+    image: opensearchproject/opensearch:3@sha256:bcc1797519726ceb6d651d4a3e60b7c30da91793914a8dfe75fd441d4f641509
     container_name: agent-audit-opensearch
     restart: always
     # #PROD no published port — reachable only over the isolated agent-audit-network.
@@ -43,7 +46,7 @@ services:
         soft: 65536
         hard: 65536
     volumes:
-      - agent-audit-opensearch-data:/usr/share/opensearch/data
+      - agent-audit-opensearch-v3-data:/usr/share/opensearch/data
       # SEPARATE volume, deliberately: the upgrade replaces the DATA volume, and a repository living
       # inside it would be destroyed at the exact moment it is the only copy (FR-016).
       - agent-audit-opensearch-snapshots:/mnt/snapshots
@@ -71,7 +74,7 @@ services:
   agent-audit-init:
     # #PROD reuse the opensearch image (ships BOTH bash + curl) — init-audit-user.sh is #!/usr/bin/env
     # bash, so the bash-less curlimages/curl (Alpine) can NOT run it.
-    image: opensearchproject/opensearch:2@sha256:8690b204fe914c60ca76d451ac73bc0481e034d32d3779944c8caca56a2b003f
+    image: opensearchproject/opensearch:3@sha256:bcc1797519726ceb6d651d4a3e60b7c30da91793914a8dfe75fd441d4f641509
     container_name: agent-audit-init
     restart: always
     # #PROD run the one-shot init as root: the opensearch image runs as uid 1000, and the bind mount
@@ -113,9 +116,14 @@ services:
         max-file: "3"
 
 volumes:
-  agent-audit-opensearch-data:
+  # Feature 071 / item #439 — a NEW, EMPTY volume for OpenSearch 3. The 2.x volume
+  # (`agent-audit-opensearch-data`) is deliberately NOT reused and NOT deleted: it is the
+  # rollback, and keeping it means two independent copies exist throughout the upgrade.
+  # The history crosses by snapshot/restore, not by sharing a directory — upstream does not
+  # support opening a 2.x data directory with a 3.x node.
+  agent-audit-opensearch-v3-data:
     external: true
-    name: agent-audit-opensearch-data
+    name: agent-audit-opensearch-v3-data
   # Created by hand on the host BEFORE the deploy (external volumes are never auto-created), and
   # chowned to the node's uid — a fresh volume mounted at a path the image does not contain is
   # root-owned, and OpenSearch does not run as root. See docs/runbooks/prod-control-tower.md.
