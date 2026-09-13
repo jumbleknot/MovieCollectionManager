@@ -116,5 +116,19 @@ fi
 
 echo ""
 echo "Done. OpenSearch audit posture verified."
-echo "  Admin:         ${ADMIN_USER} / ${ADMIN_PASS}"
-echo "  Write-only:    agent-audit / ${AUDIT_PASS}"
+# NEVER PRINT THE PASSWORDS. This used to echo both in full, and that is a direct violation of the
+# never-log list in openwiki/invariants/logging-and-audit.md ("Never log, anywhere in the stack: raw
+# tokens, session IDs, passwords ...").
+#
+# It was written when this script was a DEV convenience run by hand, where echoing the generated
+# credentials was harmless and useful. It stopped being either the moment `agent-audit-init` started
+# running it in PRODUCTION: the output goes to container stdout, so both live credentials sat in
+# `docker logs agent-audit-init`, in Komodo's log view, and in anything shipping those logs — for as
+# long as the logs are retained. Found 2026-09-13 while reading the init logs to verify the upgrade.
+#
+# Print WHERE they live, never WHAT they are.
+echo "  Admin user:      ${ADMIN_USER}"
+echo "  Write-only user: agent-audit"
+echo "  Passwords:       OPENSEARCH_INITIAL_ADMIN_PASSWORD / OPENSEARCH_AUDIT_WRITER_PASSWORD"
+echo "                   dev  -> infrastructure-as-code/docker/stacks/audit.env (gitignored)"
+echo "                   prod -> Komodo Variables"

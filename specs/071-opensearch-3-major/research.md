@@ -259,3 +259,171 @@ Also corrected while writing Deploy B:
 - **A gap in Deploy A as merged**: dev compose referenced the `-snapshots` volume as `external`, and no
   setup doc told anyone to create it. A fresh dev audit bring-up would have failed. `local-dev.md`, both
   compose headers and the prod prerequisite list now name it (and say to chown it).
+
+---
+
+# Deploy B — done on prod (2026-09-13). The history survived.
+
+```
+B1  docker volume create agent-audit-opensearch-v3-data      new, empty
+B2  prod-audit redeployed                                    OpenSearch 3 up on the new volume
+B3  repository re-registered                                 acknowledged
+B4  restore                                                  FAILED first time — see below
+B5  mcm-agent-audit/_count = 5276                            EXACTLY A5. shards 1/1, 0 failed.
+```
+
+**FR-015 / SC-007 satisfied: a 2.19.6 snapshot restored cleanly into OpenSearch 3, document-for-document.**
+That was the one genuinely unproven step in the design — upstream lists snapshot/restore as a supported
+upgrade method, but nothing in this repository had ever done it.
+
+## B4 failed first, and the cause was mine
+
+```
+snapshot_restore_exception ... cannot restore index [mcm-agent-audit] because an open index with
+same name already exists in the cluster
+```
+
+**`agent-audit-init` recreated it.** That container runs `init-audit-user.sh` at startup, which POSTs a
+verification document — and the role carries `create_index`, so the stack **self-provisions** the index on
+an empty volume before a restore can land. My Deploy B sequence never accounted for it.
+
+Confirmed rather than assumed before deleting anything: `docs.count = 1`, 4.9 kb — the single init-verify
+doc. Stop the init container → delete → restore → **5276**.
+
+**Nothing was at risk.** Two independent copies of the real data existed throughout: the snapshot, and the
+untouched 2.x volume. That is the design working exactly as intended — the failure was an inconvenience
+rather than an incident, which is the whole reason for keeping the old volume.
+
+The runbook now stops `agent-audit-init` before the restore, takes the acceptance count **before**
+restarting it (the init container adds one more doc, so afterwards the count is A5 + 1 — correct, but no
+longer comparable), and carries the recovery for anyone who hits it anyway.
+
+## T017 / T020 — verified on OpenSearch 3
+
+`agent-audit-init` re-ran the **updated** provisioning script against 3.x's security plugin:
+
+```
+==> Verifying write   (should be 201)   PASS
+==> Verifying READ    (should be 403)   PASS   <- added by feature 071
+==> Verifying DELETE  (should be 403)   PASS   <- added by feature 071
+==> Verifying search  (should be 403)   PASS
+```
+
+The role format did **not** change across the major — the risk flagged in FR-006 did not materialise. And
+the two checks this feature added are the two that pass here for the first time ever: before 071, an
+append-only sink whose writer could read or delete its own evidence would have provisioned green.
+
+`mcm-agent-audit/_count` = **5277** — the restored 5,276 plus the init-verify write, so the write path works
+on 3.x (T020).
+
+## A CREDENTIAL LEAK, found by eye while reading those logs
+
+The same log output ended with:
+
+```
+  Admin:         admin / <password>
+  Write-only:    agent-audit / <password>
+```
+
+`agent-audit-init` runs this script **in production**, so both live credentials were in `docker logs`,
+Komodo's log view, and anything shipping them. Direct violation of the never-log list.
+
+It was a **dev convenience** that became a production leak when the init container adopted the script, and
+nothing re-examined it at that point. **Item #446** tracks rotation; the echo now names *where* the
+credentials live rather than what they are, and `no-secret-echo.guard.test.mjs` fails any shell script that
+echoes a secret-named variable (mutation-tested; piping into `--password-stdin` is correctly not flagged).
+
+**No gate caught this.** It was found by reading output for an unrelated reason, which is the least
+reliable way to find anything.
+
+## T018 / T019 — the two settings that no gate would otherwise watch
+
+**T018 — the heap pin survived the JDK change.**
+
+```
+_nodes/jvm -> heap_max_in_bytes: 1073741824   = exactly 1 GiB
+```
+
+FR-007's risk did not materialise. Worth having checked: an unpinned OpenSearch defaults to ~4 GB, and on a
+shared prod host that is a real regression that nothing in CI watches. `ps` is **not present** in the
+OpenSearch 3 image, so the check goes through the `_nodes/jvm` API rather than the process table — the
+first attempt failed on `ps: command not found`, which is a tooling answer, not a heap answer.
+
+**T019 — the fail-fast still fires.** Verified locally rather than on prod, since it is pure compose
+interpolation:
+
+```
+env -u OPENSEARCH_INITIAL_ADMIN_PASSWORD docker compose -f compose.prod.yaml config
+  -> exit 1, "required variable OPENSEARCH_INITIAL_ADMIN_PASSWORD is missing"
+with the variable set
+  -> exit 0
+```
+
+Both directions, so the check distinguishes "fails fast" from "fails always".
+
+## T026 — the post-merge sweep proves the discharge
+
+Run **3324** on `main` (`dd5c11e6`): `success`, `Successful in 2m36s` — the real-sweep band, not a 2-second
+skip. So CI genuinely pulled and scanned **opensearch:3** with the bcprov entry **deleted** and netty
+**re-keyed** to the 3.x digest, and found nothing blocking.
+
+That is the discharge proven by the gate rather than asserted by us — the whole reason the allowlist changes
+had to land in the same commit as the image move.
+
+The `infra-image-scan/expiry` reporter fired alongside (`event_name=push expiry_step=skipped`), correct for
+a push event.
+
+## What remains: T021 only
+
+The rollback drill (FR-009) is **unexercised**. It is now genuinely cheap and non-destructive — the 2.x
+volume was never touched and still holds all 5,276 documents, and 3.x ran entirely on a separate volume — so
+reverting is a compose change and a redeploy with nothing at stake.
+
+It could not be rehearsed in dev: the dev host is at **97% disk / 3.4 GB free** and the drill needs both
+OpenSearch images (~3 GB each extracted). The `df` call itself timed out at 120 s under that pressure.
+
+The residual is therefore an argument rather than a measurement: a 2.x node starting on a volume a 3.x node
+never opened. The only shared resource is the snapshot volume, which 3.x only **read**. Strong, but FR-009
+asks for the measurement, so this is recorded as open rather than waved through.
+
+---
+
+# T021 — the rollback drill, performed in dev (2026-09-13)
+
+Ran the **whole cycle**, not just the rollback, so the rollback was exercised against a cluster that had
+actually been through the upgrade — on the same image digests as prod.
+
+| Step | Result |
+|---|---|
+| 2.x on `agent-audit-opensearch-data`, seed 250 docs | `BEFORE = 250` |
+| Register repo + snapshot (Deploy A) | `state SUCCESS`, shards 1/1, failed 0 |
+| 3.x on a **new empty** volume, restore (Deploy B) | shards 1/1 failed 0 — **250/250** |
+| **ROLLBACK: 2.x on the ORIGINAL volume** | **250/250 intact** |
+| Version check after rollback | server self-reports **`2.19.6`** |
+
+The last row matters: the version comes from the **server**, not a container label, so "we are really back
+on 2.x" is measured rather than inferred — the same discriminator the Langfuse drill used with
+`/api/public/traces` 200↔404.
+
+**The prod rollback claim is now measured, not argued.** A 2.x node opens the original data volume that a
+3.x node never touched, and every document is there.
+
+## Two instrument notes from the drill
+
+**My readiness probe was wrong.** I polled `curl … /_cluster/health` for *exit code 0*, and it passed while
+the body read `OpenSearch Security not initialized.` — the security plugin was still bootstrapping on the
+fresh volume. Checking the exit code instead of the content, in a session that has repeatedly punished
+exactly that. The probe now greps for `"status"` in the body.
+
+**The cluster is permanently YELLOW, and always was.** After the rollback health showed `yellow` /
+`unassigned_shards: 2`, which looked like damage. It is not:
+
+```
+yellow  mcm-agent-audit               250  pri 1  rep 1
+yellow  security-auditlog-2026.09.13    5  pri 1  rep 1
+```
+
+`rep=1` on a **single-node** cluster can never be assigned. The earlier `green` reading was taken *before*
+the index existed, so it was never evidence of anything. **Prod is almost certainly the same**, and the
+compose healthcheck only checks that `_cluster/health` responds, not what it says — so nothing is masked
+today, but a genuine yellow would be indistinguishable from this permanent one.

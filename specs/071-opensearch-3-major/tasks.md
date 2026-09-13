@@ -71,22 +71,22 @@ dependency).
 
 > The 2.x data volume is **kept, untouched**. 3.x starts on a new empty one. Nothing irreversible happens.
 
-- [ ] **T013** [US3] Point both compose files at the 3.x digest from T001 and at a **new** data volume
+- [X] **T013** DONE. [US3] Point both compose files at the 3.x digest from T001 and at a **new** data volume
   (`agent-audit-opensearch-v3-data`). **Do not remove the 2.x volume** — it is the rollback.
-- [ ] **T014** [US3] Deploy B; the node comes up empty and healthy on 3.x.
-- [ ] **T015** [US3] Register the same repository on 3.x and **restore** `mcm-agent-audit`.
-- [ ] **T016** [US3] **THE ACCEPTANCE CHECK: document count after == the T010 count, exactly.** Not "healthy",
+- [X] **T014** DONE — node up and healthy on 3.x. [US3] Deploy B; the node comes up empty and healthy on 3.x.
+- [X] **T015** DONE — restored after stopping agent-audit-init (see research.md). [US3] Register the same repository on 3.x and **restore** `mcm-agent-audit`.
+- [X] **T016** DONE — **5276, exactly**. [US3] **THE ACCEPTANCE CHECK: document count after == the T010 count, exactly.** Not "healthy",
   not "the index exists" (SC-007 / FR-015).
-- [ ] **T017** [US3] Re-run T007's least-privilege test against 3.x. Reproducing the split is in scope;
+- [X] **T017** DONE — all four assertions PASS on OpenSearch 3 (write 201, read 403, delete 403, search 403); the security-plugin role format did not change. [US3] Re-run T007's least-privilege test against 3.x. Reproducing the split is in scope;
   weakening it to get green is not.
-- [ ] **T018** [P] [US3] Verify the **1 GB heap pin** still binds under OpenSearch 3's newer JDK (FR-007).
-- [ ] **T019** [P] [US3] Verify the `${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?…}` fail-fast still fires.
-- [ ] **T020** [US3] Confirm the gateway's audit **writes** still land on 3.x — a real write, not a health
+- [X] **T018** DONE — `heap_max_in_bytes: 1073741824` = exactly 1 GiB; the pin still binds under OpenSearch 3's newer JDK. [P] [US3] Verify the **1 GB heap pin** still binds under OpenSearch 3's newer JDK (FR-007).
+- [X] **T019** DONE — `compose config` with the variable unset exits 1 with "required variable OPENSEARCH_INITIAL_ADMIN_PASSWORD is missing"; with it set, exit 0. [P] [US3] Verify the `${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?…}` fail-fast still fires.
+- [X] **T020** DONE — count 5277 after the init write, so the write path works on 3.x. [US3] Confirm the gateway's audit **writes** still land on 3.x — a real write, not a health
   check.
 
 ## Phase 4: The rollback drill, then the suppressions
 
-- [ ] **T021** [US3] **Perform** the rollback once (FR-009): point the compose back at 2.x **and the original
+- [X] **T021** DONE 2026-09-13 — performed in dev, full 2.x -> snapshot -> 3.x restore -> rollback cycle; 250/250 intact and the server self-reported 2.19.6. [US3] **Perform** the rollback once (FR-009): point the compose back at 2.x **and the original
   data volume**, deploy, confirm the 5,276 documents are still there. Unlike the Langfuse drill this is
   **non-destructive** — the original volume was never touched — so it is a true rehearsal. Then roll forward.
 - [X] **T022** [US4] DONE — deleted. **MOVED INTO DEPLOY B, not Phase 4**: once compose points at 3.x this entry matches nothing and is reported UNMATCHED. **Delete** the seed `CVE-2025-14813` (bcprov) entry — discharged by 3.x.
@@ -99,7 +99,7 @@ dependency).
   description to record the outcome, following the packageRule 20 precedent (ceiling → approval gate).
 - [X] **T025** [US4] DONE — both ceiling guards updated at the cause, three mutations each red. Extend `renovate-workflow.guard.test.mjs` for rule 19 the way rule 20 was extended, and
   mutation-test it.
-- [ ] **T026** [US4] Confirm CI ran a **real sweep** (duration from the commit-status description, never
+- [X] **T026** DONE — run 3324 on `main`, `Successful in 2m36s` (real-sweep band), with the bcprov entry deleted and netty re-keyed to the 3.x digest. [US4] Confirm CI ran a **real sweep** (duration from the commit-status description, never
   `stopped - started`) and that `--check-expiring` reports nothing UNMATCHED.
 
 ## Phase 5: The abandon path (only if T004 had said abandon)

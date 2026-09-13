@@ -354,8 +354,18 @@ docker volume create agent-audit-opensearch-v3-data
 
 # B2. Merge the Deploy B change (image -> 3.x digest, data volume -> agent-audit-opensearch-v3-data) and redeploy in Komodo.
 
-# B3. The node comes up EMPTY on 3.x. Re-register the repository (repository registrations are cluster
-#     state, and this is a new cluster on a new data volume — the snapshot VOLUME is unchanged).
+# B3. STOP THE INIT CONTAINER FIRST. `agent-audit-init` runs init-audit-user.sh on startup, which POSTs
+#     a verification doc to mcm-agent-audit — and the role carries `create_index`, so the stack
+#     RE-CREATES the index on an empty volume before you can restore into it. Hit for real on the
+#     2026-09-13 cutover; B4 failed with:
+#       snapshot_restore_exception ... cannot restore index [mcm-agent-audit] because an open index
+#       with same name already exists in the cluster
+#     Nothing was lost (the index held exactly ONE init-verify doc, and the real data was in the
+#     snapshot AND on the untouched 2.x volume) — but it is avoidable, so avoid it.
+docker stop agent-audit-init
+
+# B3b. The node comes up EMPTY on 3.x. Re-register the repository (repository registrations are cluster
+#      state, and this is a new cluster on a new data volume — the snapshot VOLUME is unchanged).
 ADMIN_PASS=$(docker exec agent-audit-opensearch printenv OPENSEARCH_INITIAL_ADMIN_PASSWORD)
 OS() { docker exec agent-audit-opensearch curl -sk -u "admin:${ADMIN_PASS}" "$@"; }
 OS -X PUT 'https://localhost:9200/_snapshot/mcm-audit-repo' \
@@ -367,8 +377,20 @@ OS -X POST 'https://localhost:9200/_snapshot/mcm-audit-repo/pre-os3/_restore?wai
    -H 'Content-Type: application/json' \
    -d '{"indices":"mcm-agent-audit","include_global_state":false}' ; echo
 
-# B5. THE ACCEPTANCE CHECK — this number MUST equal A5's, exactly.
+# B5. THE ACCEPTANCE CHECK — this number MUST equal A5's, exactly. Take it BEFORE restarting the init
+#     container: that container adds one more init-verify doc, so afterwards the count is A5 + 1, which
+#     is correct but no longer comparable.
 OS 'https://localhost:9200/mcm-agent-audit/_count' ; echo
+
+# B5b. Now restart the init container.
+docker start agent-audit-init
+
+# B5c. IF B4 STILL FAILS with "an open index with same name already exists": the init container beat you
+#      to it. Confirm the index is trivial (docs.count should be 1 — the init-verify doc), then delete and
+#      restore. Safe: two independent copies of the real data exist (the snapshot, and the 2.x volume).
+#        OS 'https://localhost:9200/_cat/indices/mcm-agent-audit?v&h=index,docs.count,store.size'
+#        OS -X DELETE 'https://localhost:9200/mcm-agent-audit'
+#      then repeat B4. If docs.count is NOT ~1, STOP — something else is writing and this is not that bug.
 
 # B6. Re-run the least-privilege provisioning check (it now asserts write 201, read 403, search 403,
 #     delete 403 — read and delete were added in feature 071).
