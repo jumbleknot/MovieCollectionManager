@@ -259,3 +259,41 @@ Also corrected while writing Deploy B:
 - **A gap in Deploy A as merged**: dev compose referenced the `-snapshots` volume as `external`, and no
   setup doc told anyone to create it. A fresh dev audit bring-up would have failed. `local-dev.md`, both
   compose headers and the prod prerequisite list now name it (and say to chown it).
+
+---
+
+# Deploy B — done on prod (2026-09-13). The history survived.
+
+```
+B1  docker volume create agent-audit-opensearch-v3-data      new, empty
+B2  prod-audit redeployed                                    OpenSearch 3 up on the new volume
+B3  repository re-registered                                 acknowledged
+B4  restore                                                  FAILED first time — see below
+B5  mcm-agent-audit/_count = 5276                            EXACTLY A5. shards 1/1, 0 failed.
+```
+
+**FR-015 / SC-007 satisfied: a 2.19.6 snapshot restored cleanly into OpenSearch 3, document-for-document.**
+That was the one genuinely unproven step in the design — upstream lists snapshot/restore as a supported
+upgrade method, but nothing in this repository had ever done it.
+
+## B4 failed first, and the cause was mine
+
+```
+snapshot_restore_exception ... cannot restore index [mcm-agent-audit] because an open index with
+same name already exists in the cluster
+```
+
+**`agent-audit-init` recreated it.** That container runs `init-audit-user.sh` at startup, which POSTs a
+verification document — and the role carries `create_index`, so the stack **self-provisions** the index on
+an empty volume before a restore can land. My Deploy B sequence never accounted for it.
+
+Confirmed rather than assumed before deleting anything: `docs.count = 1`, 4.9 kb — the single init-verify
+doc. Stop the init container → delete → restore → **5276**.
+
+**Nothing was at risk.** Two independent copies of the real data existed throughout: the snapshot, and the
+untouched 2.x volume. That is the design working exactly as intended — the failure was an inconvenience
+rather than an incident, which is the whole reason for keeping the old volume.
+
+The runbook now stops `agent-audit-init` before the restore, takes the acceptance count **before**
+restarting it (the init container adds one more doc, so afterwards the count is A5 + 1 — correct, but no
+longer comparable), and carries the recovery for anyone who hits it anyway.
