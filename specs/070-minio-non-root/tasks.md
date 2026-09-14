@@ -193,7 +193,7 @@ before publish. Verified both ways: `MISSING` → FAIL on the published image, `
 fixed build. Nothing else covers this — every deployed volume is already migrated, so a regression
 would look healthy everywhere and fail only from empty. SC-006 met.
 
-### T019 ⏳ Publish and repin — the fix is inert until then
+### T019 ✅ Publish and repin — the fix is inert until then
 
 Both compose files pin `sha256:629bcee8…`, which **lacks** `/data`. Merging publishes a new digest;
 nothing consumes it until both pins move (contract C6). Take the digest from the `minio-image` run's
@@ -202,3 +202,22 @@ step summary, never a remembered one — two builds of identical source produce 
 
 **No volume migration is needed for this one** — it changes only what a *new* volume inherits. The
 running dev and production volumes are already `1000:1000` and are not touched.
+
+**DONE 2026-09-14.** Merge `5c701f00` triggered `minio-image` run **3360** (success), which published
+`2025.09.07-161309-r3360` =
+`sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af`. All **four** refs repointed —
+`langfuse-minio` *and* `langfuse-minio-init`, in both `compose.yaml` and `compose.prod.yaml`. They must
+move together: a split would run the server and the bucket-init one-shot on different images.
+
+The digest is **not** the one the branch build produced (`sha256:7fb553b7…`, run 3352). Same source,
+different digest — the apk installs float, exactly as 069 §R8 measured. Taking the remembered branch
+digest would have pinned a real, working, but *different* image.
+
+Acceptance re-run on the digest being pinned, not on a remembered result:
+
+```
+FROM EMPTY, no chown  -> volume 1000:1000, state=running restarts=0, denied=0
+                         mc ready local -> ready · bucket created · a.txt written · not-1000: 0
+EXISTING migrated vol -> state=running, denied=0, mc ready local -> ready
+uid 1000 · /data 1000:1000 · minio RELEASE.2025-09-07T16-13-09Z · mc RELEASE.2025-08-13T08-35-41Z
+```
