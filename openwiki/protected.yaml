@@ -141,7 +141,7 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "invariants/rtk-token-compression.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:0b0eac48840f8ab5fadf67c97f2074b369155889ae2bc6173a902a3e7b4e800c"
+    fingerprint: "sha256:ca09339c699cd222486a0f8297c2b21049cba2d1141dd91f38123b6be8750a49"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/testing-tiers.md"
