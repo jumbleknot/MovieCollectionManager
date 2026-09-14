@@ -651,7 +651,9 @@ function emitProposedAllowlist(findings, outPath) {
     '',
   ];
   for (const f of findings) {
-    const key = `${f.scanner} ${f.id} ${f.location}`;
+    // \u0000 as an escape, never a raw NUL byte: a raw one makes grep treat this whole file as
+    // binary and silently print no matching lines at all (item #448).
+    const key = `${f.scanner}\u0000${f.id}\u0000${f.location}`;
     if (seen.has(key)) continue;
     seen.add(key);
     const flags = `${f.severity}${f.blocking ? '/blocking' : f.scope === 'dev' ? '/dev-scope' : ''}`;
