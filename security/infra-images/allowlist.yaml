@@ -94,10 +94,12 @@
 # all end in `*`, so they match the push-suffixed context too) and the report names the off-view
 # context under ALSO GATING. `--event` still narrows the view when you want one.
 
-# ── NEW advisory on unchanged pinned images, triaged 2026-09-01 (item #329) ───────────────────────
+# ── NEW advisory on unchanged pinned images, triaged 2026-09-01 (item #329) — FULLY DISCHARGED ────
+# HISTORY ONLY: no CVE-2026-56854 entry survives in this file. The reasoning is kept because the
+# removal block below is only readable against it; see that block for what actually discharged it.
+#
 # CVE-2026-56854 — golang.org/x/crypto below 0.55.0 (fix published 2026-08-11). ONE advisory, 28
-# blocking findings, nine pulled images. Every entry below is that single CVE; none of these images
-# is one we build.
+# blocking findings, nine pulled images, none of them an image we build.
 #
 # WHY ENTRIES AND NOT A BUMP — the rule this file states for itself ("an entry would only be right if
 # no fix existed"), checked per image against upstream release dates on 2026-09-01:
@@ -118,31 +120,45 @@
 # The 14-day warning window starts reporting them 2026-09-17. Per item #303, DELETE each entry when
 # its image is remediated rather than letting the date pass — an entry that matches nothing keeps
 # failing under UNMATCHED ENTRIES instead of ageing out quietly.
-- image: 'caddy:2\.11\.4-alpine'
-  id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0, fix 2026-08-11) on an image we pull. Already on the newest upstream tag v2.11.4, published 2026-06-03 — it predates the fix, so no bump can clear this. Remediation is an upstream rebuild. Internal-only (reverse proxy). Time-boxed; delete on rebuild.'
-  addedBy: 'item-329'
-  expiry: '2026-10-01'
-- image: 'grafana/otel-lgtm:0\.32\.1'
-  id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. 0.32.1 (2026-09-04) is the newest upstream tag and IS `latest`; PR #362 measured it still bundling x/crypto 0.52-0.54, so the bump did not clear this and there is no further bump to make (no 0.33.x exists — registry checked 2026-09-10). NARROWED 2026-09-10 (item #406) from the transitional `0\.32\.[01]` span back to a single version, now that #362 has landed and 0.32.0 is no longer referenced anywhere. The span existed only to let `main` and the bump PR be green at the same time — a version-keyed entry names one version while a bump has two live — and narrowing it on merge is what stops an enumeration becoming a wildcard by instalments. Internal-only (observability stack). Time-boxed; delete on rebuild.'
-  addedBy: 'item-329'
-  expiry: '2026-10-01'
-- image: 'hashicorp/vault:1\.18'
-  id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on the deliberately-pinned 1.18 (feature 036 found no fully-clean upstream tag; three sibling entries above record that reasoning). Internal-only and dormant. Re-triage with the rest of the vault entries when a clean tag ships.'
-  addedBy: 'item-329'
-  expiry: '2026-10-01'
-- image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
-  id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on the deliberately-pinned 8.0.8 (feature 036 verified 8.0.26 neither clears the sibling stdlib Critical nor comes up healthy on the CI rootless runner). Internal-only data tier. Re-triage with the sibling CVE-2025-68121 entries.'
-  addedBy: 'item-329'
-  expiry: '2026-10-01'
-- image: 'ollama/ollama:0\.32\.1'
-  id: 'CVE-2026-56854'
-  justification: 'New advisory (x/crypto <0.55.0) on an image we pull. UNLIKE the others a newer tag (v0.33.2, 2026-08-27) POSTDATES the fix and may already carry x/crypto 0.55.0 — this could NOT be verified here (Trivy is absent from the dev container per feature 035, and Docker Hub is not on its egress allowlist), and bumping the pin is an infrastructure-as-code change and therefore SDD-gated. Recorded rather than silently suppressed: item #329 carries the check, and the entry is to be DELETED not renewed if 0.33.2 clears it. Dev/test-only model provider (see model-provider-scoping).'
-  addedBy: 'item-329'
-  expiry: '2026-10-01'
+# ── ALL FIVE REMAINING CVE-2026-56854 ENTRIES REMOVED 2026-09-14 (item #329, re-triage) ───────────
+# caddy:2.11.4-alpine · grafana/otel-lgtm:0.32.1 · hashicorp/vault:1.18 ·
+# mongodb/mongodb-community-server:8.0.8-ubi9 · ollama/ollama:0.32.1 — gone, and NOT for the reason
+# the block above predicted.
+#
+# THE ADVISORY WAS RE-RATED, NOT REMEDIATED. This block was written on 2026-09-01 when Trivy scored
+# CVE-2026-56854 CRITICAL, which is the only tier this gate blocks on. Trivy's DB now scores it
+# HIGH — measured 2026-09-14 against a DB stamped that morning (UpdatedAt 07:14 UTC), full local
+# sweep of all 19 pulled images. Fixable High is a report-only warning here (same Critical-only
+# policy as cd-deploy), so every one of these five suppressed nothing: of the sweep's 21 blocking
+# findings, ZERO are CVE-2026-56854. An entry that suppresses nothing is the thing item #303 exists
+# to delete.
+#
+# SAY PLAINLY WHAT DID NOT HAPPEN: upstream has NOT shipped the fix. caddy:2.11.4-alpine still
+# reports golang.org/x/crypto v0.52.0 against a fix of 0.55.0 — the package is exactly where it was.
+# The accepted risk is unchanged; only its rating moved, and with it the tier that gates on it. The
+# finding stays VISIBLE in reports/findings.json as a warning, which is where a re-rating this
+# direction belongs.
+#
+# WHY DELETE RATHER THAN RENEW. Renewing would time-box a suppression that suppresses nothing, and
+# would have kept all five in the expiry report — measured: at 2026-09-17 the check reports exactly
+# 7 entries EXPIRING, so Friday's 07:00 UTC cron goes red on entries no longer doing any work.
+# Deleting is also the direction that RESTORES blocking: if the score returns to Critical, or if a
+# genuinely Critical x/crypto advisory lands on any of these images, the gate blocks and the entry
+# comes back with fresh evidence. That is the outcome to want.
+#
+# A SEVERITY RE-RATING IS A THIRD WAY AN ENTRY GOES STALE, alongside "upstream rebuilt it" and "the
+# ref left the pulled set". It looks identical to remediation in the gate's output and is NOT one —
+# so check the package version before writing "remediated", as was done here.
+#
+# ollama/ollama, the one open question item #329 carried and could not answer: it asked whether the
+# newer v0.33.2 — which POSTDATES the x/crypto fix — already ships 0.55.0, and said to bump the pin
+# and delete the entry if so. ANSWERED 2026-09-14 by scanning the newest tag, 0.34.0, directly: NO,
+# and the intuition behind the question is backwards. 0.34.0 ships golang.org/x/crypto **v0.43.0**,
+# which is OLDER than the v0.52.0 on our pinned 0.32.1 — it carries CVE-2026-56854 plus nine further
+# High x/crypto advisories that 0.32.1 does not. A publication date AFTER a fix says nothing about
+# whether the image picked the fix up; only reading the shipped version does. Upgrading ollama on
+# CVE grounds would have moved x/crypto backwards, so no bump of this pin is owed and none should be
+# filed on this advisory's account. (0.34.0 has no fixable Critical either, so nothing here blocks.)
 # openpolicyagent/opa CVE-2026-56854 (x/crypto <0.55.0): entry REMOVED 2026-09-10 (item #406) —
 # the bump WAS the remediation. PR #362 moved both refs to 1.20.2/1.20.2-debug and its sweep (run
 # 3027) produced no blocking opa finding at all, so upstream picked the fix up between 1.20.1 and
@@ -206,13 +222,14 @@
   addedBy: 'item-420'
   expiry: '2026-12-01'
 
-# ── NEW advisories on unchanged images, triaged 2026-09-10 (item #406) ────────────────────────────
-# TWO advisories, 11 blocking findings, four pulled images — every one of them on an image reference
-# `main` ALREADY carries, so these block `main` itself and every infra-touching PR, unrelated to any
-# diff. Found on PR #362's sweep (run 2962, 2026-09-09); the previous full sweep, PR #360's on
-# 2026-09-08, was clean, so both advisories entered Trivy's DB between those two dates. Nothing has
-# re-swept since — every infra-image-scan run after 2026-09-09 03:53 lasted 10-14 s, i.e. Trivy was
-# skipped on a non-infra PR — so the Friday 07:00 UTC weekly cron is where `main` would have gone red.
+# ── NEW advisories on unchanged images, triaged 2026-09-10, RE-TRIAGED 2026-09-14 (item #406) ─────
+# As triaged: TWO advisories, 11 blocking findings, four pulled images — every one of them on a
+# reference `main` ALREADY carries, so these block `main` itself and every infra-touching PR,
+# unrelated to any diff. Found on PR #362's sweep (run 2962, 2026-09-09); the previous full sweep,
+# PR #360's on 2026-09-08, was clean, so both advisories entered Trivy's DB between those dates.
+# Nothing had re-swept since — every infra-image-scan run after 2026-09-09 03:53 lasted 10-14 s, i.e.
+# Trivy was skipped on a non-infra PR — so the Friday 07:00 UTC cron is where `main` would have gone
+# red. The sweep recorded below is that re-sweep, run locally rather than waiting for the cron.
 #
 # WHY ENTRIES AND NOT A BUMP — the rule this file states for itself ("an entry would only be right if
 # no fix existed"), checked per image against upstream on 2026-09-10:
@@ -229,16 +246,36 @@
 #                                     likewise already proposed separately.
 # Remediation for all four is an upstream rebuild, or a major upgrade taken deliberately.
 #
-# EXPIRY 2026-10-01 matches the item-329 block above so the whole set re-triages in one sitting rather
-# than dribbling. Per item #303, DELETE each entry when its image is remediated rather than letting the
-# date pass — an entry that matches nothing keeps failing under UNMATCHED ENTRIES instead of ageing out.
+# RE-TRIAGED 2026-09-14 (the sitting the 2026-10-01 expiry was set to force). Full local Trivy sweep,
+# 19 pulled images, DB stamped 07:14 UTC that morning. What changed since 2026-09-10:
+#
+#   langfuse/langfuse:3 + -worker:3 .. GONE. The major landed (item #433) and both refs are now `:4`.
+#                                      CVE-2026-75604 / GHSA-2xp9-vwfh-vxw4 does not appear on either
+#                                      v4 image — 3 and 5 findings respectively, 0 blocking — so the
+#                                      upgrade WAS the remediation and the two entries were deleted
+#                                      rather than re-keyed. Deliberately not re-keyed before being
+#                                      observed: whether a new major carries the same advisory is an
+#                                      empirical question (same rule feature 069 applied to MinIO).
+#   opensearchproject/opensearch .... re-keyed 2.x -> 3.x digest by feature 071 / item #439; the major
+#                                     did NOT discharge it. Still 6 Critical findings. Entry RENEWED.
+#   quay.io/keycloak/keycloak ....... still 1 Critical finding on 26.7.3. Entry RENEWED and its key
+#                                     narrowed to 26.7.3, 26.7.2 having left the repository with #362.
+#
+# So of item #406's four images, two discharged themselves via majors taken for other reasons and two
+# are unchanged. Both survivors were re-measured, not re-dated: an expiry renewed without a fresh scan
+# is the thing the time-box exists to prevent.
+#
+# EXPIRY 2026-12-01 now matches the jumbleknot/minio entry above, so the next re-triage is again one
+# sitting rather than a dribble — the same grouping trick, re-aimed after the 2026-10-01 cohort emptied.
+# Per item #303, DELETE each entry when its image is remediated rather than letting the date pass — an
+# entry that matches nothing keeps failing under UNMATCHED ENTRIES instead of ageing out quietly.
 - image: 'opensearchproject/opensearch:3@sha256:bcc1797519726ceb6d651d4a3e60b7c30da91793914a8dfe75fd441d4f641509'
   id: 'CVE-2026-75595'
-  justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final / 4.2.17.Final) on an image we pull; 6 findings. RE-KEYED 2026-09-13 from the 2.x digest to the 3.x one by feature 071 / item #439, because the OpenSearch 3 upgrade DID NOT discharge it: the Phase 0 gate measured netty present on BOTH majors — netty-handler 4.2.16.Final in lib (fix 4.2.17.Final) plus 4.1.133.Final bundled inside security-analytics-commons-1.0.0.jar (fix 4.1.137.Final). All six CRITICALs on 3.x are this one advisory; 3.x introduces nothing new. Deleting it would un-suppress a live finding and leaving it on the 2.x digest key would report it UNMATCHED, so re-keying is the only correct move. Keyed to the DIGEST, not to `opensearch:3`, so an upstream rebuild discharges it (feature 063 / item #297). Its sibling CVE-2025-14813 (bcprov-jdk15to18 1.79) WAS discharged and its seed entry deleted in the same change — 3.x ships bc-fips-*.jar and the old provider jar is gone. Internal-only (audit stack). Time-boxed; delete on rebuild.'
+  justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final / 4.2.17.Final) on an image we pull; 6 findings. RE-VERIFIED 2026-09-14 by a full local Trivy sweep (aquasec/trivy:0.74.0, DB stamped 07:14 UTC that morning): STILL PRESENT and still CRITICAL, all six findings, on both netty copies feature 071 measured — netty-handler 4.2.16.Final in lib and 4.1.133.Final bundled inside security-analytics-commons-1.0.0.jar. No bump clears it: the pinned digest IS what `3`, `3.8.0` and `latest` all resolve to (Docker Hub checked 2026-09-14, newest 3.x is 3.8.0 of 2026-08-04), so the remediation is an upstream rebuild. RE-KEYED 2026-09-13 from the 2.x digest to the 3.x one by feature 071 / item #439, because the OpenSearch 3 upgrade DID NOT discharge it — netty is present on BOTH majors and 3.x introduces nothing new. Deleting it would un-suppress a live finding and leaving it on the 2.x digest key would report it UNMATCHED, so re-keying was the only correct move. Keyed to the DIGEST, not to `opensearch:3`, so an upstream rebuild discharges it (feature 063 / item #297). Its sibling CVE-2025-14813 (bcprov-jdk15to18 1.79) WAS discharged and its seed entry deleted in the same change — 3.x ships bc-fips-*.jar and the old provider jar is gone. Internal-only (audit stack). Time-boxed; delete on rebuild, do not renew.'
   addedBy: 'item-406'
-  expiry: '2026-10-01'
-- image: 'quay\.io/keycloak/keycloak:26\.7\.[23]'
+  expiry: '2026-12-01'
+- image: 'quay\.io/keycloak/keycloak:26\.7\.3'
   id: 'CVE-2026-75595'
-  justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final) on an image we pull. Measured on 26.7.3 (netty 4.1.136.Final) by PR #362''s sweep; 26.7.3 is the newest upstream release and IS `latest` (quay checked 2026-09-10), so no bump clears it. The key ALSO covers 26.7.2, which is what `main` references and which was NOT itself scanned — Trivy is absent from this dev container (feature 035) so it could not be, and the netty version is not declared in Keycloak''s own pom. Established instead from the version that pins it: 26.7.2 and 26.7.3 both build against quarkus.version 3.33.3.1 (both release tags'' root pom.xml, read 2026-09-10), so they carry the same netty and 26.7.2 is affected identically. That is an inference from the build definition, NOT a scan of 26.7.2 — but it fails safe either way, because an entry covering a ref that turns out clean still matches via the 26.7.3 finding and suppresses nothing extra. Internal-only (identity provider). Time-boxed; delete on rebuild.'
+  justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final / 4.2.17.Final) on an image we pull. RE-VERIFIED 2026-09-14 by a full local Trivy sweep (aquasec/trivy:0.74.0, DB stamped 07:14 UTC that morning): STILL PRESENT and still CRITICAL — netty-handler 4.1.136.Final, one blocking finding. No bump clears it: quay lists 26.7.3 (2026-08-31) as the newest release and it IS `latest` (checked 2026-09-14), so the remediation is an upstream rebuild against 4.1.137.Final. NARROWED 2026-09-14 from the transitional `26\.7\.[23]` span to a single version, now that PR #362 has landed and 26.7.2 is no longer referenced anywhere in infrastructure-as-code/ — same rule already applied to the otel-lgtm and postgres keys, and the reason the span existed for exactly one merge. That narrowing also RETIRES the inference the span carried: 26.7.2 was never scanned (it was established affected from both release tags declaring quarkus.version 3.33.3.1), and it no longer needs to be, because the only ref this key now covers is the one measured directly. Internal-only (identity provider). Time-boxed; delete on rebuild, do not renew.'
   addedBy: 'item-406'
-  expiry: '2026-10-01'
+  expiry: '2026-12-01'
