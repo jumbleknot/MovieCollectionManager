@@ -26,8 +26,12 @@
 # clean (smallstep 0.30.2, grpc 1.81.0, Go 1.26.3, libcrypto3 3.5.7-r0). Entries removed; PR re-scans.
 # otel-lgtm pgx CVE-2026-33815 / CVE-2026-33816: entries REMOVED 2026-07-26. Grafana rebuilt
 # `latest` with pgx/v5 >= 5.9.0, so neither advisory appears on the current image. Deliberately
-# removed WITHOUT a local re-scan: Trivy is not available in the dev container (the DinD daemon was
-# down), and removal is the fail-SAFE direction — if CI's own pull still carries either CVE, the
+# removed WITHOUT a local re-scan: on 2026-07-26 the DinD daemon was down, so nothing could be pulled
+# or scanned here that day. (The wording was "Trivy is not available in the dev container", which read
+# as a permanent property and is NOT one — corrected 2026-09-14, when a full local sweep of all 19
+# pulled images re-triaged both expiring cohorts. Trivy runs here from its own image; see the runbook
+# §"In the dev container". A daemon that is down is a fact about that morning, not a capability.)
+# Removal was still the fail-SAFE direction — if CI's own pull still carries either CVE, the
 # infra-image-scan job on this PR re-blocks the gate and the entries come back with CI evidence
 # attached. That PR-side scan IS the CI-side confirmation the follow-up asked for; `security/
 # infra-images/**` is in the workflow's path filter, so touching this file triggers a full sweep.

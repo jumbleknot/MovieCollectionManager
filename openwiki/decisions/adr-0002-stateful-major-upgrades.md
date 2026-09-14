@@ -39,10 +39,14 @@ migration first keeps a red CI signal attributable to a single cause.
   by the same inference-without-measurement shape in feature 036 (mongodb-community-server:8.0.26
   was newer, still bundled a pre-fix Go binary, cleared nothing).
 
-- **Do not scan from the dev container or the production host.** Trivy is absent from PATH in the
-  dev container, and the production host had only ~8 GB free at 92% disk when this was written.
-  Pulling a multi-GB image to answer a question CI answers for free risks breaking the environment
-  being diagnosed. The §3 gate runs in CI where Trivy lives.
+- **Do not scan from the dev container or the production host.** As recorded: Trivy is absent from
+  PATH in the dev container, and the production host had only ~8 GB free at 92% disk when this was
+  written. Pulling a multi-GB image to answer a question CI answers for free risks breaking the
+  environment being diagnosed. The §3 gate runs in CI where Trivy lives.
+  *Scope note added 2026-09-14:* the PATH observation is true but does not mean the dev container
+  cannot scan — Trivy runs there from its own image, and a full 19-image sweep was run that way for
+  items #406/#329. **Disk headroom, not the missing binary, is the constraint this ADR turns on**, so
+  re-check the headroom rather than citing the binary. The decision itself stands unchanged.
 
 - **Neither production dataset is preserved across cutover — decided explicitly, not defaulted.**
   Both volumes are recreated; rollback is a digest revert plus volume recreate, not a data restore.

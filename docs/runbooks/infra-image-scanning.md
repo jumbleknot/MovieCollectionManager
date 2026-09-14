@@ -189,6 +189,50 @@ have". Keep the cache volume — the DB download dominates the runtime of a sing
 This is the recipe that diagnosed PR #289 when the job published **no failure digest** despite its
 digest step being `if: always()`.
 
+#### The FULL sweep, here, with the real orchestrator (added 2026-09-14)
+
+The single-image command above answers "would the gate block this image". To re-triage an allowlist
+you want the whole thing: `scripts/infra-image-scan.mjs` enumerates every pulled image, scans it,
+and writes `findings.json` — which is what `check-infra-image-findings.mjs` then reads. The
+orchestrator spawns `trivy` **from PATH**, so give it a shim that is the container invocation, with
+both DB mirrors passed as environment rather than flags:
+
+```bash
+mkdir -p /tmp/trivy-shim/bin
+cat > /tmp/trivy-shim/bin/trivy <<'EOF'
+#!/usr/bin/env bash
+exec docker run --rm -v trivy-cache:/root/.cache/trivy \
+  -e TRIVY_DB_REPOSITORY=ghcr.io/aquasecurity/trivy-db:2 \
+  -e TRIVY_JAVA_DB_REPOSITORY=ghcr.io/aquasecurity/trivy-java-db:1 \
+  aquasec/trivy:0.74.0 "$@"
+EOF
+chmod +x /tmp/trivy-shim/bin/trivy
+PATH="/tmp/trivy-shim/bin:$PATH" node scripts/infra-image-scan.mjs
+```
+
+Budget ~20 minutes and a few GB the first time; the 1.5 GB Java DB dominates, and the cache volume
+is what stops you paying for it twice. Then run the gate and the expiry check against the fresh
+report as CI does.
+
+**Check the report you are about to trust.** `security/infra-images/reports/` is gitignored, so a
+working tree can hold a sweep from weeks ago describing images the repository no longer references —
+and a re-triage against that is worthless while looking authoritative. Before believing it:
+
+```bash
+node -e "const r=require('./security/infra-images/reports/findings.json');
+  console.log(r.generatedForImages.join('\n'))"   # do these match the compose files?
+```
+
+Two instrument checks worth making on any result, local or CI:
+
+- **Is the advisory still the severity you triaged it at?** This gate blocks on fixable **Critical**
+  only. An advisory re-rated Critical→High stops blocking without anything upstream changing, and in
+  the gate's output that is indistinguishable from remediation. Read the installed package version
+  before writing "remediated" — `CVE-2026-56854` was re-rated on 2026-09-14 while caddy still
+  shipped the vulnerable `x/crypto v0.52.0`.
+- **Did Trivy actually run?** A CI `infra-image-scan` lasting 10–14 s means the path filter skipped
+  it; a real sweep is minutes. A skipped job still reports success.
+
 ## Version pins, and the two `[floating tag]` lines that are correct (feature 063 / item #297)
 
 Every third-party infra image is referenced by a **version tag plus a digest** (`repo:tag@sha256:…`).
@@ -320,11 +364,32 @@ advisory, the entry is deleted rather than widened, and it is deleted *when the 
 
 ### Triaging an advisory you cannot scan
 
-Trivy is absent from the dev container, so an image that CI scanned dirty can rarely be re-checked
-here, and a *sibling* version is often the one you actually need a verdict on: the scan covers what
-the Renovate branch references, while `main` runs the version before it.
+**Scan it first — this section is the fallback, not the default.** The claim this section used to
+open with ("Trivy is absent from the dev container, so an image can rarely be re-checked here") was
+wrong, and contradicted the recipe two sections above. Trivy runs here from its own image; what is
+absent is the *binary on PATH*, which is not the same thing. Corrected 2026-09-14 after a full local
+sweep of all 19 pulled images re-triaged both expiring cohorts (items #406/#329) — including
+Keycloak 26.7.3, the very image the worked example below had been unable to measure.
 
-Read the version from the **build definition of the release**, not from the image. Keycloak
+That correction matters because the wrong version of this claim propagated: several allowlist
+justifications cited "Trivy is absent from this dev container" as the reason a finding was *inferred*
+rather than measured, and one of those inferences (26.7.2) stood for four days when a scan was
+available the whole time. **An inference is owed only when a measurement is genuinely unavailable**,
+and the bar for "unavailable" is a pull that fails, not a missing binary.
+
+The genuine cases remain, and they are narrower than they look:
+
+- the image is **not pullable** — a private registry the keyless scanner has no credential for
+  (`jumbleknot/minio`, scanned by its own builder instead), or a tag upstream has deleted;
+- **disk headroom** will not take a multi-GB pull. This is the constraint ADR-0002 and feature 071
+  actually recorded, alongside the PATH observation — the host was at 92% with 7.9 GB free. Check
+  before assuming it still binds;
+- you want a verdict on a *sibling* version: the scan covers what the Renovate branch references,
+  while `main` runs the version before it. Note this one is usually **not** a real block — a sibling
+  release tag is normally pullable and can simply be scanned, as 26.7.3 was.
+
+When one of those does apply, read the version from the **build definition of the release**, not from
+the image. Keycloak
 26.7.2-vs-26.7.3 (netty, CVE-2026-75595) resolved in one request: netty is not declared in Keycloak's
 own POM — Quarkus pins it — and both release tags' root `pom.xml` declare `<quarkus.version>3.33.3.1`,
 so the two carry the same netty and the un-scanned 26.7.2 is affected identically.

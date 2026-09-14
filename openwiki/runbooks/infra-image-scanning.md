@@ -51,7 +51,9 @@ now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`),
   a stale entry hides a regression rather than tracking a real accepted risk.
 - **Trivy is not available on every developer machine** (notably not the Windows dev box), so
   enumeration-only checks work everywhere, but the actual scored scan is CI-authoritative — don't treat
-  a local `--list` run as equivalent to a real scan result.
+  a local `--list` run as equivalent to a real scan result. **The Linux dev container is not one of
+  those machines**: Trivy has no binary on PATH there but runs from its own image, and a full sweep of
+  every pulled image is a documented recipe (corrected 2026-09-14, items #406/#329).
 - **Adding this as a required PR check is a manual operator step** — the agent cannot configure branch
   protection itself; the weekly scheduled run is a safety net, not a merge gate, until an operator wires
   the PR-triggered context into branch protection.
@@ -123,8 +125,12 @@ now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`),
   the justification; an enumeration left to grow one version at a time becomes the wildcard by
   instalments. Do this only when the bump is **not** the remediation — where the new version actually
   clears the advisory, delete the entry when the bump lands. Measured cost: PR #362 on 2026-09-09.
-- **Triaging an advisory you cannot scan: read the build definition, not the image.** Trivy is absent
-  from the dev container, so a sibling version is often the one you need a verdict on. Read the version
+- **Triaging an advisory you cannot scan: read the build definition, not the image — but scan first.**
+  This is the fallback, not the default. "Trivy is absent from the dev container" was wrong (corrected
+  2026-09-14): what is absent is the binary on PATH, and it runs from its own image. An inference is
+  owed only when a pull genuinely fails — a private registry, a deleted tag, or no disk headroom — not
+  when a binary is missing. A sibling release tag is usually pullable and should simply be scanned.
+  When an inference really is the only option, read the version
   from the **build definition of the release** — e.g. for Keycloak, check the root `pom.xml` in the
   release tag on GitHub. Two constraints measured 2026-09-10: Maven Central is not on the egress
   allowlist (`repo1.maven.org` and `search.maven.org` both fail, curl exit 000); `raw.githubusercontent.com`
