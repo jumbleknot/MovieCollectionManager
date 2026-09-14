@@ -69,6 +69,26 @@ Three gotchas, all measured for real:
 Verify with `find /data ! -user 1000 | wc -l` — must print `0`. Do not use `stat /data`; the
 top-level directory can show `1000:1000` while children are still root-owned.
 
+### Fresh volumes — the migration is not owed
+
+The migration above is for a volume carrying **root-era data**. A volume created empty — by the
+`docker volume create` prerequisite or by `compose up` on a host that has never run the stack —
+needs no chown and no operator step at all.
+
+That is true because the **image** carries `/data` owned by `1000:1000`, and Docker seeds a fresh
+empty named volume from the image directory it is mounted over, ownership included. It was **not**
+true of the image published as `sha256:629bcee8…`, which has no `/data`: a from-empty bring-up on
+that image creates a `0:0` volume and MinIO fails with the *same* `unable to rename … file access
+denied` as an unmigrated volume — so the error points at a migration that was never owed. Fixed
+2026-09-13; needs the new digest pinned in both compose files to take effect.
+
+**If you see that error on a volume you just created**, do not chown it and do not conclude the
+migration was missed — check the image first:
+
+```sh
+docker run --rm --entrypoint sh <the pinned image> -c 'stat -c "%u:%g" /data'   # must be 1000:1000
+```
+
 ## Langfuse 4 + ClickHouse 25 cutover (feature 072)
 
 Langfuse 4 requires ClickHouse 25, and the pair was only verified on **empty volumes**. Nothing
