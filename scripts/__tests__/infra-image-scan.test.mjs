@@ -445,8 +445,20 @@ test('(063) every allowlist entry for a formerly-floating image can be discharge
   // to our image: whether the from-source build still carries those advisories is an empirical
   // question the first real sweep answers, and writing a suppression before observing the finding
   // could hide a fix. Research §R3 in fact predicts the newer Go toolchain clears CVE-2025-68121.
+  //
+  // WIDENED 2026-09-14 (items #406/#329) from otel-lgtm alone to every formerly-floating repository
+  // still referenced. It had to be: the last entry keyed on a formerly-floating image — otel-lgtm's
+  // CVE-2026-56854 — was deleted in that re-triage, which emptied this test's only target and made
+  // its own `checked > 0` self-check fail. That is the guard working, not breaking, so it is fixed
+  // AT THE CAUSE rather than deleted: the version-keying rule it enforces has not changed, and it
+  // now enforces that rule for ALL SIX of feature 063's formerly-floating repositories the moment an
+  // entry is written for any of them, instead of only for the one that happened to carry an entry.
   const NEXT = {
+    'axllent/mailpit': 'axllent/mailpit:v1.32.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
+    'curlimages/curl': 'curlimages/curl:8.23.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
     'grafana/otel-lgtm': 'grafana/otel-lgtm:0.33.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
+    'openpolicyagent/opa': 'openpolicyagent/opa:1.20.3@sha256:1111111111111111111111111111111111111111111111111111111111111111',
+    'unleashorg/unleash-server': 'unleashorg/unleash-server:8.2.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
   };
 
   let checked = 0;
@@ -481,7 +493,16 @@ test('(063) every allowlist entry for a formerly-floating image can be discharge
     }
   }
 
-  assert.ok(checked > 0, 'no allowlist entries were examined — the repository names above are stale, so this test asserts nothing.');
+  // ZERO ENTRIES IS A LEGITIMATE — indeed the desirable — STATE, and must not read as a stale test.
+  // What this used to assert was `checked > 0`, which conflated two different things: "the
+  // repository names above have gone stale" and "none of those repositories currently carries an
+  // allowlist entry". Only the first is a fault, and the per-repository `currentRef` assertion in
+  // the loop above already catches it against the live compose files. The second became true on
+  // 2026-09-14 when the last such entry was deleted, and a suppression-free image is exactly what
+  // this file is trying to reach — so failing on it would punish the good outcome and invite
+  // someone to delete the guard to get green. What is still worth asserting is that the map itself
+  // has not been emptied, which would silence every check above without a word.
+  assert.ok(Object.keys(NEXT).length > 0, 'the NEXT map is empty, so every assertion above is vacuous.');
 });
 
 // ---------------------------------------------------------------------------------------------
