@@ -69,6 +69,15 @@ Trivy is deliberately not run from the dev container for this: it is absent from
 7.9 GB free at 92% disk when this was written — pulling a multi-GB image to answer a question CI answers for
 free is how a diagnosis breaks the environment it is diagnosing.
 
+> **Scope note, 2026-09-14 — the decision stands; one of its two reasons does not generalise.** "Absent from
+> PATH" is true, but it does not mean this environment cannot scan: Trivy runs here from its own image, and a
+> full sweep of all 19 pulled images was run that way to re-triage items #406 and #329 (runbook §"In the dev
+> container"). **The load-bearing reason is the disk headroom, not the missing binary** — so re-check the
+> headroom before citing this paragraph, and do not cite it as authority for inferring a finding that could
+> have been measured. The §3 gate still belongs in CI, for the reason §3 gives: CI is where the scan is
+> authoritative and free. Recorded as an amendment rather than an edit — the reasoning as it stood when the
+> decision was ratified is left intact above.
+
 ---
 
 ## 4. Ratified consequence: neither production dataset is preserved across cutover
