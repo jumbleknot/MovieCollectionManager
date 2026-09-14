@@ -480,7 +480,30 @@ jobs:
         with: { node-version: 24.19.0, cache: pnpm }
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with: { distribution: temurin, java-version: '17' }
+      # `packages:` is pinned EXPLICITLY, and the value is load-bearing. The action's own default is
+      # `tools platform-tools` (action.yml at this pinned SHA), and `tools` — the LEGACY SDK Tools
+      # package, superseded by cmdline-tools years ago — has been REMOVED from Google's SDK index.
+      # The action installs packages one at a time and `tools` is first, so the step dies before it
+      # ever reaches `platform-tools`:
+      #
+      #   [command].../cmdline-tools/16.0/bin/sdkmanager tools
+      #   Warning: Failed to find package 'tools'
+      #   Error: The process '.../sdkmanager' failed with exit code 1
+      #
+      # Measured cd-deploy run 3409, 2026-09-14. Nothing in this repository changed — `prod-apk` had
+      # succeeded 8 consecutive times, the last 19 h earlier, and the diff over that window touches no
+      # app, Android, Expo or lockfile path. The REMOTE INDEX changed under a pinned action: sdkmanager
+      # fetched it to 100% ("Computing updates") and then reported the package absent. A SHA-pinned
+      # action still reaches the network, so pinning the action does not pin what it installs.
+      #
+      # Fixed by naming the packages rather than by bumping the action, because that removes the
+      # dependency on an upstream default entirely — a newer action that changes its default again
+      # cannot reach us. `platform-tools` is NOT optional here: the emulator half of this job drives
+      # `adb` directly (`adb reverse` 8082/8099), so dropping it would break the job for a second,
+      # unrelated reason. Keep this value in step with cd-deploy's `prod-apk`.
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: 'platform-tools'
       # up-agents-prod (agent-stack.mjs) shells out to `uv` to fetch the gateway client secret from
       # Keycloak — needed on the host PATH (container jobs get it from the astral action; host doesn't).
       - name: Set up uv
