@@ -4,7 +4,7 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml.
 tags: [security, sast, sca, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-timestamp: 2026-09-08T00:00:00Z
+timestamp: 2026-09-15T00:00:00Z
 ---
 
 # SAST & SCA static security scanning
@@ -176,6 +176,32 @@ and imported by both gates. A dedicated `--check-expiring` mode runs **weekly** 
 
 - **`p/secrets` stays off.** `secret-scan.mjs` is the sole owner of credential detection (FR-006).
   Do not double-gate with Semgrep's `p/secrets` ruleset.
+
+- **A red gate labelled `TRANSPORT/SERVICE ERROR` is a scanner outage, not a finding — re-run it.**
+  Three of the four scanners reach a third party over the network: `pip-audit` queries **osv.dev**,
+  `cargo-audit` fetches the **RustSec advisory DB**, and `pnpm audit` queries the **npm registry**
+  advisory endpoint. Any of them can fail for a reason unrelated to this repository. Since item #449
+  `sast-scan.mjs` classifies failures against a narrow `TRANSIENT_SIGNATURES` list (socket errors,
+  HTTP 429/50x, DNS failures, git fetch failures) and re-attempts **3 times with exponential backoff
+  (2 s, 4 s)** before issuing a verdict. What you see when it fires:
+  ```
+  [sast-scan] [pip-audit] transient transport/service failure on attempt 1/3 — retrying in 2000ms.
+              This is NOT a security finding. Cause: …
+  ```
+  and when all attempts are exhausted:
+  ```
+  [pip-audit] TRANSPORT/SERVICE ERROR — … Failed all 3 attempt(s) over 6.0s …
+              Failing closed: a scanner that could not run must never report clean.
+  ```
+  Two properties are deliberate and must not be simplified away:
+  - **Fail-closed is preserved.** After retries are exhausted the job still fails. Item #449 was
+    about not failing on the first blip, never about tolerating a scanner that cannot run.
+  - **The classification is deliberately narrow.** A finding's own title often contains "error" or
+    "timeout"; only signatures that can only originate below the scanner's own logic are listed. An
+    unrecognised failure is treated as real and fails immediately — so a genuine red is not delayed
+    by three identical tracebacks. `scripts/__tests__/sast-scan-retry.guard.test.mjs` pins both
+    directions. See `docs/runbooks/sast-scanning.md` § "When the gate goes red and NO finding was
+    involved" for the full measured incident (run 3328, 2026-09-13) that produced this.
 
 - **No caching yet.** `actions/cache` is not mirrored on the self-hosted runner, so cargo-audit is
   compiled fresh each CI run (~2–3 min). A monthly-keyed cache of `~/.cargo/bin/cargo-audit` and

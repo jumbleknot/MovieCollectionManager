@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand for calibrating per-step ceilings, and the event-vs-trigger_event field split that makes a scheduled run look like a push.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-15T00:00:00Z
+timestamp: 2026-09-15T11:01:00Z
 ---
 
 # CI self-serve diagnostics
@@ -252,11 +252,16 @@ runtime rather than any literal configured value.
   rules are unchanged so a `*.health.json` is not collected twice. Screenshots travel as base64
   manifest entries (3 files / 1 MB each / 2 MB total, `❌`-marked captures first) and `--full`
   decodes them to real PNGs. Step output, `_ps.txt` and device evidence are allocated first from a
-  **priority reserve of half the 5 MB cap**; `logcat-full.log` is ranked *below* ordinary container
-  logs. Every absence is stated in the digest itself, not only in `meta`: cap-dropped sources, files
-  over per-file ceilings, unsupported formats, and reader-side entries past the 500-entry ceiling.
-  The device-capture line is now **three-way**: carried / captured on the runner but not folded into
-  `container-logs` / genuinely not present.
+  **priority reserve of half the 5 MB cap** (now fair-shared within the reserve, not first-come-
+  first-served — the original reserve had the same starvation defect max-min fairness was introduced
+  to fix for the pool below it). Bulk device dumps are ranked *below* ordinary container logs by
+  **size (>512 KB) as well as by name** — the original demotion was by exact basename (`logcat-full.log`),
+  and Maestro 2.10 writes its own bulk logcat as `logs/device-logcat.txt`, which never matched and was
+  therefore ranked as priority evidence (measured on run **3434**, 2026-09-15). Every absence is stated
+  in the digest itself, not only in `meta`: cap-dropped sources, files over per-file ceilings,
+  unsupported formats, and reader-side entries past the 500-entry ceiling. The device-capture line is
+  now **three-way**: carried / captured on the runner but not folded into `container-logs` / genuinely
+  not present.
 - **A session merging through the API must pass `delete_branch_after_merge: true` every time — the
   repo setting does not cover API merges.** `default_delete_branch_after_merge: true` (enabled
   2026-08-29) is the default for the **web UI merge button only**. An API merge omitting the flag
