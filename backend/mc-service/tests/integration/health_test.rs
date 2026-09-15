@@ -256,42 +256,56 @@ async fn metrics_is_public_no_auth_required() {
 /// span" — so the assertions below read the span and the event separately.
 ///
 /// (This test previously carried an `#[ignore]` blaming a global-subscriber
-/// conflict. There is no global subscriber anywhere in src/ or tests/; it was
-/// asserting a flat `message == "request"` line the middleware never emitted.)
+/// conflict. It was also asserting a flat `message == "request"` line the
+/// middleware never emitted — that half was a real fix.
+///
+/// The other half — "there is no global subscriber anywhere in src/ or tests/",
+/// therefore a subscriber conflict was not the problem — was WRONG, and removing
+/// the `#[ignore]` on the strength of it reintroduced a flake that then hid for
+/// months behind `--test-threads=1`. The conflict is not a competing subscriber;
+/// it is `tracing`'s GLOBAL callsite-`Interest` cache being set to `never()` by a
+/// thread that has no subscriber, which suppresses the event on the thread that
+/// does. Measured 2026-09-15 (item #462): 2/3 whole-binary runs failed, 3/3 passed
+/// serially. See `common::log_capture` for the mechanism and the fix.)
 #[tokio::test]
 async fn logging_middleware_emits_structured_json() {
-    use std::sync::{Arc, Mutex};
-    use tracing_subscriber::layer::SubscriberExt;
-
-    // Capture log output using a thread-local writer
-    let log_lines: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
-    let log_lines_clone = Arc::clone(&log_lines);
-
-    // Build a tracing subscriber that writes JSON to our capture buffer
-    let make_writer = move || {
-        let log_lines = Arc::clone(&log_lines_clone);
-        struct CaptureWriter(Arc<Mutex<Vec<String>>>);
-        impl std::io::Write for CaptureWriter {
-            fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-                let s = String::from_utf8_lossy(buf).into_owned();
-                self.0.lock().unwrap().push(s);
-                Ok(buf.len())
+    // A COMPETING THREAD IS PART OF THIS TEST, NOT INCIDENTAL TO IT (item #462).
+    //
+    // It drives the same `logging_middleware` callsite with no subscriber installed — exactly what a
+    // concurrently-running test in this binary does. Against the old `set_default` capture this
+    // reproduced the flake 5 times out of 5, turning a 2-in-3 heisenbug into a deterministic one.
+    // Keeping it means this test now asserts the property that actually matters: capture works
+    // WHILE the rest of the binary is running, which is the only way it is ever really used.
+    let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let stop_for_thread = std::sync::Arc::clone(&stop);
+    let noisy_neighbour = std::thread::spawn(move || {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("noisy-neighbour runtime");
+        rt.block_on(async {
+            while !stop_for_thread.load(std::sync::atomic::Ordering::Relaxed) {
+                let app = axum::Router::new()
+                    .route("/health", axum::routing::get(|| async { "ok" }))
+                    .layer(axum::middleware::from_fn(
+                        mc_service::api::middleware::logging::logging_middleware,
+                    ));
+                let _ = app
+                    .oneshot(
+                        Request::builder()
+                            .uri("/health")
+                            .body(Body::empty())
+                            .unwrap(),
+                    )
+                    .await;
             }
-            fn flush(&mut self) -> std::io::Result<()> {
-                Ok(())
-            }
-        }
-        CaptureWriter(log_lines)
-    };
+        });
+    });
 
-    let subscriber = tracing_subscriber::registry().with(
-        tracing_subscriber::fmt::layer()
-            .json()
-            .with_writer(make_writer),
-    );
-
-    // Drive a single request under this subscriber
-    let _guard = tracing::subscriber::set_default(subscriber);
+    // Capture THIS thread's events through the binary's one global subscriber. Deliberately not
+    // `tracing::subscriber::set_default` — a thread-local dispatcher is precisely what the noisy
+    // neighbour above defeats. See `common::log_capture`.
+    let capture = common::log_capture::capture();
 
     let app = build_test_app().await;
     let _ = app
@@ -305,12 +319,11 @@ async fn logging_middleware_emits_structured_json() {
         .await
         .unwrap();
 
+    stop.store(true, std::sync::atomic::Ordering::Relaxed);
+    noisy_neighbour.join().expect("noisy neighbour panicked");
+
     // Find the request-completion event emitted by logging_middleware.
-    let lines = log_lines.lock().unwrap();
-    let parsed: Vec<Value> = lines
-        .iter()
-        .filter_map(|l| serde_json::from_str::<Value>(l.trim()).ok())
-        .collect();
+    let parsed: Vec<Value> = capture.json();
 
     let request_line = parsed
         .iter()

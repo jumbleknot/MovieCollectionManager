@@ -162,6 +162,23 @@ function main() {
   // Run the integration binaries explicitly so the parsed `test result:` lines are integration-only
   // (`--tests` would also run the crate's inline unit tests, which have their own `test:unit` target).
   for (const b of binaries) cargoArgs.push('--test', b);
+  // SERIAL, AND THE REASON IS NOT RECORDED ANYWHERE — treat that as a liability, not a setting.
+  //
+  // `common/mod.rs` gives every test its own uniquely-named database precisely so the suite CAN run
+  // concurrently ("to prevent interference between concurrent test runs (when `--test-threads > 1`)"),
+  // so this pin is not what provides database isolation. No commit, comment or runbook says what it
+  // is for.
+  //
+  // WHAT IT COSTS (item #462, measured 2026-09-15). CI runs the integration tier ONLY through this
+  // path, so CI has never executed these binaries in parallel — while `pnpm nx test mc-service`, what
+  // a developer actually runs, always does. A defect that only appears under parallelism is therefore
+  // invisible to the gate by construction. `logging_middleware_emits_structured_json` failed 2 runs in
+  // 3 locally and was green in CI for months for exactly this reason.
+  //
+  // Not flipped here: doing so would change what the required gate executes, and it should be a
+  // deliberate change with its own evidence, not a side effect of fixing one test. But if you are
+  // reading this because a test passes in CI and fails on your machine, this line is the first thing
+  // to suspect.
   cargoArgs.push('--', '--test-threads=1', ...passthrough);
 
   console.log('[mc-service-integration-guard] cargo ' + cargoArgs.join(' '));
