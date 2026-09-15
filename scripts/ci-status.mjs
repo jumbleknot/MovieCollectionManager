@@ -569,7 +569,7 @@ function inferEvent(statuses) {
  * Computed over REQUIRED contexts only — "no job failed" is a different, weaker question.
  *
  * @returns {{mergeable: boolean, blocking: object[], waiting: object[], advisory: object[],
- *            superseded: object[], required: object[], all: object[]}}
+ *            advisoryWaiting: object[], superseded: object[], required: object[], all: object[]}}
  */
 export function computeMergeVerdict(
   statuses,
@@ -628,12 +628,26 @@ export function computeMergeVerdict(
   const superseded = checks.filter((c) => c.state === 'superseded');
   const advisory = checks.filter((c) => !c.required && c.state === 'failed');
 
+  // An advisory context that has not reported yet (item #403). It gates nothing — that is what
+  // `advisory` means — but the commit is not SETTLED while it is running, and `watch` used to
+  // answer the narrower question as though it were the wider one: PR #400 merged 11/11 green,
+  // `app-ci / trigger-cd` then failed in 3s on ERR_MODULE_NOT_FOUND, the CD dispatch never
+  // happened, and nothing said so. `trigger-cd` is the ONLY place a declined or failed deploy
+  // becomes visible, so dropping its row is dropping the deploy outcome.
+  const advisoryWaiting = checks.filter((c) => !c.required && c.state === 'waiting');
+
   const gateRequired = gateChecks.filter((c) => c.required);
+  const gateAdvisoryChecks = gateChecks.filter((c) => !c.required);
   const gate = {
     all: gateChecks,
     required: gateRequired,
     blocking: gateRequired.filter((c) => c.state === 'failed'),
     waiting: gateRequired.filter((c) => c.state === 'waiting'),
+    // Whole-commit, for the same reason the required set is (item #281): `trigger-cd` runs on the
+    // PUSH event only, so watching a pull_request view would never see it at all — which is
+    // precisely the context this item exists to stop losing.
+    advisory: gateAdvisoryChecks.filter((c) => c.state === 'failed'),
+    advisoryWaiting: gateAdvisoryChecks.filter((c) => c.state === 'waiting'),
   };
 
   // A required context that produced no status at all does not hold the verdict hostage — a
@@ -651,6 +665,7 @@ export function computeMergeVerdict(
     blocking,
     waiting,
     advisory,
+    advisoryWaiting,
     superseded,
     required,
     all: checks,
@@ -679,6 +694,36 @@ export function exitCodeForVerdict(verdict) {
 }
 
 /**
+ * What is still outstanding on this commit — split into the two questions `watch` has to keep apart
+ * (item #403).
+ *
+ * `required` is "may I merge". `advisory` is "has this commit finished happening". They are NOT the
+ * same question and the difference is not academic: on 2026-09-09, PR #400 merged with 11/11
+ * required contexts green, and the push run's `app-ci / trigger-cd` then failed in 3 seconds with
+ * `ERR_MODULE_NOT_FOUND: Cannot find package 'yaml'`. Nothing blocked, `main` stayed green, and the
+ * CD dispatch simply did not happen. A human found it by opening the run and reading the advisory
+ * row. Verifying the fix, `watch` again returned green while `trigger-cd` was still `pending`, and
+ * confirming it took a hand-rolled polling loop over that one context.
+ *
+ * So `watch` waits for both by default. The exit CODE is still decided by `required` alone —
+ * `exit 0 ⟺ mergeable` is load-bearing for a `ci-status && merge` wrapper — which is why this
+ * returns the two lists rather than one boolean: the caller decides what to WAIT for and what to
+ * RETURN separately.
+ *
+ * Gate, not view, on both counts (item #281). `trigger-cd` reports on the push event only.
+ */
+export function outstandingContexts(verdict, { includeAdvisory = true } = {}) {
+  const required = verdict.gate?.waiting ?? verdict.waiting;
+  // "Nothing has reported yet" has an empty `waiting` and is not a verdict — it is the absence of
+  // one. It belongs on the required side because it blocks the merge question too (item #324).
+  const requiredOutstanding = required.length > 0 || verdict.noResults;
+  const advisory = includeAdvisory
+    ? (verdict.gate?.advisoryWaiting ?? verdict.advisoryWaiting ?? [])
+    : [];
+  return { required, requiredOutstanding, advisory, settled: !requiredOutstanding && advisory.length === 0 };
+}
+
+/**
  * Parse the target/polling arguments, rejecting a flag whose value is missing or malformed.
  * `--pr $PR` with an unset PR used to fall through to the local HEAD and confidently report on a
  * completely different commit.
@@ -686,6 +731,7 @@ export function exitCodeForVerdict(verdict) {
 export function parseTargetArgs(argv) {
   const target = {};
   let timeoutSeconds = 45 * 60;
+  let requiredOnly = false;
   const valueOf = (flag, i) => {
     const v = argv[i + 1];
     if (v === undefined || v.startsWith('--')) throw new CiStatusError(`${flag} requires a value`);
@@ -699,6 +745,9 @@ export function parseTargetArgs(argv) {
     else if (flag === '--job') target.job = valueOf(flag, i++);
     else if (flag === '--run') target.run = valueOf(flag, i++);
     else if (flag === '--full') target.full = true;
+    // Item #403: `watch` waits for advisory contexts by DEFAULT, because "has this commit settled"
+    // is the question it is asked. This narrows it back to the merge question alone.
+    else if (flag === '--required-only') requiredOnly = true;
     else if (flag === '--runs') {
       // How many runs `durations` samples. Distinct from `--run`, which selects ONE run's commit.
       const raw = valueOf(flag, i++);
@@ -721,7 +770,7 @@ export function parseTargetArgs(argv) {
       }
     } else throw new CiStatusError(`Unknown argument: ${flag}`);
   }
-  return { target, timeoutSeconds };
+  return { target, timeoutSeconds, requiredOnly };
 }
 
 // --- Rendering the three-way digest outcome (feature 051 US3, FR-011) ----------------------------
@@ -1035,6 +1084,35 @@ export function describeOffViewGating(verdict) {
   ];
 }
 
+/**
+ * Say an advisory FAILURE out loud (item #403).
+ *
+ * The row was never missing — it sits in the ADVISORY table above, with a `✗`. What is missing is
+ * any reason to read it: the VERDICT line two lines further down says `mergeable`, and `mergeable`
+ * is what gets read. That is how `app-ci / trigger-cd` failed on PR #400's merge commit, took the
+ * CD dispatch with it, and was noticed by nobody until a human opened the run by hand.
+ *
+ * `trigger-cd` earns the emphasis specifically: the runbook calls it "the *only* place a declined
+ * deploy is visible". An advisory failure that blocks nothing and announces nothing is found only
+ * by someone who already thought to look.
+ *
+ * Rendered from the GATE, so a push-event advisory failure is named even while the view is scoped
+ * to `pull_request` — otherwise this reports nothing in exactly the case it was written for.
+ */
+export function describeAdvisoryFailures(verdict) {
+  const failed = verdict.gate?.advisory ?? verdict.advisory ?? [];
+  if (!failed.length) return [];
+  return [
+    '',
+    `⚠️  ADVISORY FAILURE — ${failed.length} non-required context(s) FAILED. Nothing blocked, and`,
+    '    nothing else will report this:',
+    ...failed.map((c) => `      ✗ ${c.job} (${parseContext(c.context).event})  ${c.description}`.trimEnd()),
+    '    ↳ the VERDICT below answers "may I merge", and it is not affected by these. It is also not',
+    '      the same question as "did this commit do what it was supposed to" — a failed `trigger-cd`',
+    '      means the CD dispatch did NOT happen, on a commit that is green everywhere else.',
+  ];
+}
+
 function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState }) {
   const width = Math.max(...verdict.all.map((c) => c.job.length), 20);
   emit('');
@@ -1073,6 +1151,7 @@ function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, p
   }
 
   for (const line of describeOffViewGating(verdict)) emit(line);
+  for (const line of describeAdvisoryFailures(verdict)) emit(line);
 
   emit('');
   emit(`VERDICT  ${verdictLine(verdict)}`);
@@ -1080,7 +1159,8 @@ function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, p
   emit('');
 }
 
-function verdictLine(v) {
+/** Exported so the VERDICT line can be asserted to be UNCHANGED by advisory state (item #403). */
+export function verdictLine(v) {
   // Gate, not view (item #281) — otherwise the summary line contradicts the exit code.
   const blocking = v.gate?.blocking ?? v.blocking;
   const waiting = v.gate?.waiting ?? v.waiting;
@@ -1536,7 +1616,7 @@ function emitBundleDrops(meta = {}) {
   }
 }
 
-export async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
+export async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds, requiredOnly = false }) {
   const deadline = Date.now() + timeoutSeconds * 1000;
   for (;;) {
     const { verdict, sha, pr, cachePaths, requiredGlobs, headRef, prState } = await loadVerdict(target, conn);
@@ -1548,19 +1628,43 @@ export async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }
     //
     // Gate, not view, for the same reason as everywhere else (item #281): a required context still
     // pending on another event means the merge is not yet decidable.
-    const stillWaiting = (verdict.gate?.waiting ?? verdict.waiting).length > 0 || verdict.noResults;
-    if (!stillWaiting) {
+    //
+    // ADVISORY contexts are waited for too, by default (item #403) — `watch` is asked "has this
+    // commit settled", and a running `trigger-cd` means it has not. `--required-only` restores the
+    // narrower behaviour for a caller that genuinely only wants the merge question.
+    const outstanding = outstandingContexts(verdict, { includeAdvisory: !requiredOnly });
+    if (outstanding.settled) {
       renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
       return exitCodeForVerdict(verdict);
     }
     if (Date.now() >= deadline) {
       renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
+      if (!outstanding.requiredOutstanding) {
+        // The required set SETTLED and only an advisory context is still running. Returning
+        // EXIT.WAITING here would break `exit 0 ⟺ mergeable` — the invariant a `ci-status && merge`
+        // wrapper is built on — for a context that gates nothing. So the verdict's own exit code
+        // stands, and the unfinished advisory row is named instead of being dropped.
+        const names = describePending(outstanding.advisory);
+        emit(
+          `advisory context(s) still running after ${timeoutSeconds}s: ${names.join(', ')}. ` +
+            'The required set settled, so the verdict above stands and the exit code is unchanged — ' +
+            'but these have not reported, and an advisory failure is announced nowhere else. ' +
+            're-run `ci-status status` on this commit once they finish.',
+        );
+        return exitCodeForVerdict(verdict);
+      }
       // Exit 3, NOT 1. Under a saturated capacity-1 runner, pending is starvation — a poller that
       // fails on it reports a queue as a broken build.
       emit(`still waiting after ${timeoutSeconds}s — runner starvation, not failure (exit ${EXIT.WAITING}).`);
       return EXIT.WAITING;
     }
-    const pending = describePending(verdict.gate?.waiting ?? verdict.waiting);
+    // Advisory rows are named in the progress line too, and marked as such: without the label a
+    // reader watching `trigger-cd` alone cannot tell whether the merge is blocked or merely
+    // unfinished, and those call for different actions.
+    const pending = [
+      ...describePending(outstanding.required),
+      ...describePending(outstanding.advisory).map((p) => `${p} [advisory]`),
+    ];
     emit(
       pending.length
         ? `waiting on ${pending.join(', ')} — re-checking in ${intervalSeconds}s`
@@ -1607,13 +1711,18 @@ function selftest() {
 
 const USAGE = `Usage:
   node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name> | --run <id>] [--event push|pull_request]
-  node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch … | --run <id>] [--timeout <seconds>]
+  node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch … | --run <id>] [--timeout <seconds>] [--required-only]
   node scripts/ci-status.mjs failure [--sha … | --pr … | --branch … | --run <id>] [--job <name>] [--full]
   node scripts/ci-status.mjs durations [--job <name>] [--runs <n>]
   node scripts/ci-status.mjs --selftest
 
 --run <id> selects the commit that run was for. --event narrows the VIEW only: the verdict always
 evaluates every event, because branch protection does (its globs end in \`*\`).
+
+\`watch\` waits for ADVISORY contexts as well as required ones — \`app-ci / trigger-cd\` is advisory and
+is the only place a declined or failed deploy is visible, so returning before it reports drops the
+deploy outcome. --required-only narrows the wait to the merge question. Neither changes the exit
+code: that is decided by the required set alone, always.
 
 Exit: 0 mergeable · 1 required context failed · 2 bad args/auth · 3 still waiting (NOT a failure).`;
 
@@ -1622,9 +1731,9 @@ async function main(argv) {
   const command = argv[0];
   if (!command || command.startsWith('-')) { console.error(USAGE); return EXIT.USAGE; }
 
-  let target, timeoutSeconds;
+  let target, timeoutSeconds, requiredOnly;
   try {
-    ({ target, timeoutSeconds } = parseTargetArgs(argv));
+    ({ target, timeoutSeconds, requiredOnly } = parseTargetArgs(argv));
   } catch (err) {
     console.error(`✗ ${err.message}\n\n${USAGE}`);
     return EXIT.USAGE;
@@ -1633,7 +1742,7 @@ async function main(argv) {
 
   const conn = { ...forgeEndpoint(), token: requireToken() };
   if (command === 'status') return cmdStatus(target, conn);
-  if (command === 'watch') return cmdWatch(target, conn, { timeoutSeconds, intervalSeconds });
+  if (command === 'watch') return cmdWatch(target, conn, { timeoutSeconds, intervalSeconds, requiredOnly });
   if (command === 'failure') return cmdFailure(target, conn);
   // Per-step wall-clock durations across recent runs (item #338). Defaults to app-e2e — the job
   // whose per-step ceiling this exists to calibrate — over the last 25 published runs.

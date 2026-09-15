@@ -25,7 +25,8 @@ is worth spending only when the evidence says the failure is not about your diff
 node scripts/ci-status.mjs status                      # HEAD — is this commit mergeable?
 node scripts/ci-status.mjs status --sha <full-sha>     # a specific commit (full 40 chars)
 node scripts/ci-status.mjs status --pr 82              # a pull request
-node scripts/ci-status.mjs watch --pr 82               # poll until settled
+node scripts/ci-status.mjs watch --pr 82               # poll until settled (required AND advisory)
+node scripts/ci-status.mjs watch --pr 82 --required-only  # poll only until the MERGE question is answered
 node scripts/ci-status.mjs failure --pr 82             # why did it fail?
 node scripts/ci-status.mjs failure --pr 82 --full      # + fetch the full evidence bundle
 node scripts/ci-status.mjs durations                   # how long does each app-e2e step take?
@@ -42,6 +43,30 @@ node scripts/ci-status.mjs durations                   # how long does each app-
 
 Exit `3` is deliberately distinct from `1`. There is one `kvm` runner; a poller that exits non-zero
 on `pending` reports a saturated queue as a broken build.
+
+**`watch` waits for ADVISORY contexts too, and that is not the same question as the exit code**
+(item #403). `watch` is asked "has this commit settled"; its exit code answers "may I merge". Those
+diverge precisely where it hurts: on 2026-09-09, PR #400 merged with 11/11 required contexts green,
+and the push run's `app-ci / trigger-cd` then failed in 3s with
+`ERR_MODULE_NOT_FOUND: Cannot find package 'yaml'`. Nothing blocked, `main` stayed green, and **the
+CD dispatch simply did not happen** — found only because a human opened the run and read the
+advisory row. Verifying the fix, `watch` again exited 0 while `trigger-cd` was still `pending`, and
+confirming it needed a hand-rolled polling loop over that one context.
+
+`trigger-cd` is advisory and is the *only* place a declined or failed deploy is visible
+([the state table below](#the-four-states-that-are-reported-wrong) says so in its own right), so a
+`watch` that returns before it reports has dropped the deploy outcome. Since item #403:
+
+- `watch` keeps polling while **any** context is still running, advisory included. `--required-only`
+  restores the narrower wait for a caller that genuinely only wants the merge answer.
+- An advisory **failure** gets its own `⚠️ ADVISORY FAILURE` block immediately above the `VERDICT`
+  line, naming each context and saying what the failure cost. The row was always in the table; what
+  was missing was any reason to read it, because `VERDICT mergeable` two lines down is what gets read.
+- **The exit code did not change, in either direction.** `exit 0 ⟺ mergeable` is load-bearing for a
+  `ci-status … && merge` wrapper. In particular, an advisory context that never finishes before the
+  timeout still returns the verdict's own code — it does *not* turn a mergeable commit into exit `3`
+  — and `watch` says which context never reported instead of silently dropping it. A required
+  context pending at the timeout is still exit `3`, unchanged.
 
 > ⚠️ **A pipe throws the exit code away — including this one.** `ci-status … watch | tail -30` reports
 > **`tail`'s** status, so exit `3` and exit `1` both arrive as `0`. Measured 2026-09-06: a watch that
