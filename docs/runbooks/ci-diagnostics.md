@@ -847,10 +847,36 @@ and diagnosing it needed `ssh ci@homelab` — the out-of-band step this bundle e
   2 MB total**, `❌`-marked captures first. `ci-status … --full` decodes them, so the extracted
   directory holds real PNGs. They are **never trimmed** — half a PNG is a corrupt file, not a smaller
   screenshot, so a binary that will not fit is dropped whole.
-- **Ranking beat the cap, not luck.** Max-min fairness alone loses a 300 KB screenshot to a 20 MB
-  mongo log the moment the screenshot exceeds an equal share. Step output, `_ps.txt` and the device
-  evidence are therefore allocated first out of a **priority reserve of half the cap**; the rest is
-  fair-shared. `logcat-full.log` is deliberately ranked *below* ordinary container logs — it is bulk.
+- **Ranking beats the cap — and the first version of it did NOT.** Max-min fairness alone loses a
+  300 KB screenshot to a 20 MB mongo log the moment the screenshot exceeds an equal share. Step
+  output, `_ps.txt` and the device evidence are therefore allocated first out of a **priority reserve
+  of half the cap**; the rest is fair-shared. Bulk device dumps are ranked *below* ordinary container
+  logs, by **size (over 512 KB) as well as by name** — see the correction below for why the name
+  alone was not enough.
+
+> **Correction, measured on run 3434 (2026-09-15).** This bullet used to end "`logcat-full.log` is
+> deliberately ranked *below* ordinary container logs — it is bulk", and the claim that the reserve
+> protected the small sources was measured **on a fixture**, not on a failed flow. On a deliberately
+> red mobile run it did not hold: the 126 KB view hierarchy, the 54 KB failure screenshot and two
+> 337-byte `logcat-react.log`s were **all dropped**, while a `device-logcat.txt` and three
+> `logcat-full.log`s were carried. Two causes, both now fixed:
+>
+> 1. **The demotion was by exact basename.** `logcat-full.log` is the name
+>    `capture_mobile_diagnostics` writes; **Maestro 2.10 writes its own dump as
+>    `logs/device-logcat.txt`** (3.6 MB on attempt 2, 5.9 MB on attempt 3). That name never matched,
+>    so a bulk logcat was ranked as *priority device evidence*. A name list rots at the next rename,
+>    so size is now the test.
+> 2. **The priority reserve was first-come-first-served** — the same defect max-min fairness was
+>    introduced to fix for the pool below it. `selectSources` sorts by rank then path, and
+>    `…/logs/device-logcat.txt` sorts before `…/screen-hierarchy/…`, so the dump reached the reserve
+>    first and the hierarchy got `no budget left at the cap`. The reserve is now fair-shared too,
+>    which protects against the **next** misclassification rather than only this one.
+>
+> The lesson generalises past this bundle: the walk, the naming of drops and the three-way capture
+> message were all correct on the real run — what the fixture could not test was the *interaction*
+> between real file sizes and the allocation order. A fixture whose ordering does not reproduce the
+> ordering that caused the bug tests nothing; the guard for this had to be reordered to the measured
+> sort before it would fail against the buggy code.
 - **Every absence is stated**, in the digest and not only in the manifest: sources the cap dropped
   whole (`meta.droppedSources`, rendered into the digest's *Not collected* list), captures over the
   per-file/budget ceilings, files in an unsupported format, and — reader-side — entries past

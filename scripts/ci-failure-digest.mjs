@@ -562,17 +562,17 @@ export async function publishDigest({ context, digest }, api) {
  * Accepts NESTED paths, relative to the bundle directory: `container-logs/` holds a directory of
  * device diagnostics, and a listing that could not name a nested file could not carry one either.
  */
-export function selectSources(names, unhealthyContainers = []) {
+export function selectSources(names, unhealthyContainers = [], sizeOf = () => 0) {
   return names
     .filter(isTextEvidence)
-    .map((name) => ({ name, rank: rankSource(name, unhealthyContainers) }))
+    .map((name) => ({ name, rank: rankSource(name, unhealthyContainers, sizeOf(name)) }))
     .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
 }
 
 /** The ranks a source's PRIORITY is derived from: step output, the status table, device evidence. */
 export const PRIORITY_RANK_CEILING = 2;
 
-function rankSource(n, unhealthyContainers) {
+function rankSource(n, unhealthyContainers, bytes = 0) {
   // Step output FIRST. What the failing step actually printed — the assertion, the stack trace,
   // the pytest summary — outranks any container log. Three consecutive app-e2e failures were
   // undiagnosable from a digest precisely because nothing collected it (T041).
@@ -582,7 +582,7 @@ function rankSource(n, unhealthyContainers) {
   // small and are the ONLY channels that say what the emulator was showing, so they rank above
   // every container log. `logcat-full.log` is the exception: it is the bulk dump, and ranking it
   // high would push real evidence out of the digest's three shown sources.
-  if (isNested(n)) return isBulkDeviceEvidence(n) ? 6 : 2;
+  if (isNested(n)) return isBulkDeviceEvidence(n, bytes) ? 6 : 2;
   const base = n.replace(/\.log$/, '');
   if (unhealthyContainers.includes(base)) return 3;
   if (n.startsWith('_')) return 4;
@@ -592,8 +592,23 @@ function rankSource(n, unhealthyContainers) {
 const isNested = (p) => p.includes('/') && !p.startsWith('step:');
 const basename = (p) => p.split('/').pop() ?? '';
 
-/** The bulk device dumps: real evidence, but megabytes of it, so they rank below container logs. */
-const isBulkDeviceEvidence = (p) => /^logcat-full\.log$/i.test(basename(p));
+/** Above this, a nested device file is a bulk dump rather than decisive evidence. The two sources
+ *  that actually identify a failure are small — the view hierarchy ~126 KB, a screenshot ~54 KB on
+ *  the measured run — and everything above this threshold is a logcat-shaped stream. */
+export const MAX_PRIORITY_DEVICE_BYTES = 512 * 1024;
+
+/**
+ * The bulk device dumps: real evidence, but megabytes of it, so they rank below container logs.
+ *
+ * Demoted by SIZE as well as by name, because the name test alone is what failed on run 3434. It was
+ * written against `logcat-full.log`, the filename `capture_mobile_diagnostics` writes; Maestro 2.10
+ * writes its OWN dump as `logs/device-logcat.txt` (3.6 MB on attempt 2, 5.9 MB on attempt 3), which
+ * the name test did not match — so it was ranked as priority device evidence and consumed the whole
+ * half-cap reserve, evicting the 126 KB hierarchy and the 54 KB screenshot it was supposed to rank
+ * below. A name list rots at the next rename; size is the property that actually matters.
+ */
+export const isBulkDeviceEvidence = (p, bytes = 0) =>
+  /^logcat-full\.log$/i.test(basename(p)) || bytes > MAX_PRIORITY_DEVICE_BYTES;
 
 /** Text sources the bundle carries. Nested files (item #241) admit the formats Maestro writes —
  *  the view hierarchy and command list are JSON, not `.log` — while the FLAT rules are unchanged:
@@ -858,7 +873,17 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
       }
     }
     const unhealthy = health.filter((h) => h.status !== 'healthy').map((h) => h.container);
-    for (const { name, rank } of selectSources(entries, unhealthy)) {
+    // Sizes matter to the ranking now (a multi-megabyte nested dump is bulk whatever it is called),
+    // so measure rather than guess. A stat that fails is treated as 0 — an unreadable file is about
+    // to be skipped by readIfPresent anyway, and guessing "huge" would demote real evidence.
+    const sizeOf = (name) => {
+      try {
+        return statSync(join(bundleDir, name)).size;
+      } catch {
+        return 0;
+      }
+    };
+    for (const { name, rank } of selectSources(entries, unhealthy, sizeOf)) {
       const text = readIfPresent(join(bundleDir, name));
       // PRIORITY is carried through to the bundle's size allocation: the step output, the status
       // table and the device evidence must survive a 20 MB container log, which max-min fairness
@@ -1057,24 +1082,35 @@ export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = []
     Math.max(digestBytes, Math.min(priority.reduce((n, f) => n + entryBytes(f), 0), Math.floor(cap * PRIORITY_RESERVE_FRACTION))),
   );
 
+  // The reserve is shared MAX-MIN FAIRLY too, not first-come-first-served (item #241, run 3434).
+  //
+  // It used to be a sequential walk that handed each priority source whatever was left. That is the
+  // same defect max-min fairness was introduced to fix for the pool below — one greedy source takes
+  // the budget and every later one gets `no budget left at the cap` — and on run 3434 it fired:
+  // a 3.6 MB `device-logcat.txt` misclassified as priority consumed the whole reserve, so the
+  // 126 KB view hierarchy, the 54 KB failure screenshot and two 337-byte logcats were all dropped
+  // from a REAL failed mobile flow. The misclassification is fixed above; this makes the outcome
+  // robust to the next one, because a small source is now never sacrificed for a large one even
+  // when both are priority.
   const survivors = [];
-  let reserveLeft = reserve;
-  for (const f of priority) {
+  const priorityShares = allocateFairly(priority.map(entryBytes), reserve);
+  priority.forEach((f, i) => {
     const bytes = entryBytes(f);
-    if (bytes <= reserveLeft) {
+    const share = priorityShares[i];
+    if (bytes <= share) {
       survivors.push(f);
-      reserveLeft -= bytes;
-    } else if (isBinaryEntry(f) || reserveLeft <= 0) {
+      return;
+    }
+    if (isBinaryEntry(f) || share <= 0) {
       // ALL-OR-NOTHING for a binary: tail-trimming a PNG yields a file that opens as nothing at
       // all, which is worse than its stated absence.
       droppedSources.push({ path: f.path, bytes, reason: isBinaryEntry(f) ? 'binary source cannot be trimmed to fit' : 'no budget left at the cap' });
-    } else {
-      f.text = tailBytes(f.text, reserveLeft);
-      truncatedSources.push(f.path);
-      survivors.push(f);
-      reserveLeft = 0;
+      return;
     }
-  }
+    f.text = tailBytes(f.text, share);
+    truncatedSources.push(f.path);
+    survivors.push(f);
+  });
 
   // MAX-MIN FAIR allocation. The previous version trimmed the largest source by half each pass,
   // which terminated but was not fair: `min(size - excess, size/2)` goes negative once the excess

@@ -438,6 +438,7 @@ test('(t) a 403 names the scope the endpoint ACTUALLY needs', async () => {
 // ================================================================================================
 
 import { selectSources, allocateFairly, collectEvidence } from '../ci-failure-digest.mjs';
+import { isBulkDeviceEvidence } from '../ci-failure-digest.mjs';
 
 // The 13 files feature-036 actually writes, with the sizes seen on run 992.
 const REAL_ENTRIES = [
@@ -1677,4 +1678,102 @@ test('(#338k) durations do NOT become a counts source — a green non-app-e2e jo
     'the durations file was collected as a step excerpt — it would be published as log output',
   );
   assert.deepEqual(selectCountsSources(ev.excerpts), [], 'a green non-app-e2e job now has something to publish');
+});
+
+// ─── item #241, measured on a REAL failed mobile flow — run 3434 ──────────────────────────────────
+//
+// Item #241's second acceptance criterion is worded against a real failed mobile flow, and until
+// 2026-09-15 the only evidence was a fixture shaped from run 2049. A deliberately-red mobile run was
+// forced to close that gap (PR #461), and it found a defect the fixture could not.
+//
+// MEASURED, run 3434. The recursive walk worked — every nested file was enumerated and every drop was
+// NAMED, so the bundle was diagnosable. But the evidence that matters was evicted:
+//
+//   CARRIED:  .../attempt1/maestro/assistant-config-gating/logs/device-logcat.txt
+//             .../attempt{1,2,3}/logcat-full.log
+//   DROPPED:  .../screen-hierarchy/step-021-…json   (126,649 B) "no budget left at the cap"
+//             .../screenshots/step-021-…png         ( 54,136 B) "binary source cannot be trimmed"
+//             .../attempt{2,3}/logcat-react.log     (    337 B) "no budget left at the cap"
+//
+// CAUSE: `isBulkDeviceEvidence` demotes by the exact basename `logcat-full.log`. Maestro 2.10 writes
+// its OWN bulk dump as `logs/device-logcat.txt` — 3.6 MB on attempt 2, 5.9 MB on attempt 3 — which the
+// name test does not match, so it was ranked as priority device evidence and consumed the entire
+// half-cap reserve before the 126 KB hierarchy and the 54 KB screenshot were reached.
+//
+// So the demotion is now by SIZE as well as by name. A name list is exactly what rotted here: it was
+// written against the filenames one Maestro version happened to produce, and the next one renamed the
+// file. Size is the property that actually matters — the hierarchy and the screenshot are small and
+// decisive; a multi-megabyte logcat is bulk whatever it is called.
+
+// THE ORDER HERE IS LOAD-BEARING AND IS THE MEASURED ONE. `selectSources` sorts by rank and then by
+// path, and within one rank `…/maestro/g/logs/device-logcat.txt` sorts BEFORE
+// `…/maestro/g/screen-hierarchy/…` ("logs/" < "screen-hierarchy/"). That is precisely why the bulk
+// dump reached the reserve first on run 3434 and the hierarchy never did. Listing the small sources
+// first would make a first-come-first-served reserve look correct and test nothing.
+const RUN_3434 = [
+  // the bulk device dumps, at their measured sizes, in the position the real sort gave them
+  { path: 'logs/_mobile-diagnostics/gating-attempt1/maestro/g/logs/device-logcat.txt', text: 'D'.repeat(3_676_659), priority: true },
+  { path: 'logs/_mobile-diagnostics/gating-attempt2/maestro/g/logs/device-logcat.txt', text: 'D'.repeat(3_676_659), priority: true },
+  { path: 'logs/_mobile-diagnostics/gating-attempt3/maestro/g/logs/device-logcat.txt', text: 'D'.repeat(5_911_791), priority: true },
+  // the small, decisive evidence — this is what must survive
+  { path: 'logs/_mobile-diagnostics/gating-attempt1/maestro/g/screen-hierarchy/step-021-assertCondition-probe.json', text: 'H'.repeat(126_649), priority: true },
+  { path: 'logs/_mobile-diagnostics/gating-attempt1/maestro/g/screenshots/step-021-assertCondition-probe.png', base64: 'A'.repeat(54_136), priority: true },
+  { path: 'logs/_mobile-diagnostics/gating-attempt1/logcat-react.log', text: 'R'.repeat(337), priority: true },
+  { path: 'logs/_mobile-diagnostics/gating-attempt2/logcat-react.log', text: 'R'.repeat(337), priority: true },
+  { path: 'logs/_mobile-diagnostics/gating-attempt1/maestro/g/commands.json', text: 'C'.repeat(25_744), priority: true },
+  { path: 'logs/_mobile-diagnostics/gating-attempt1/logcat-full.log', text: 'F'.repeat(4_000_000) },
+  // ordinary container logs, as on the real run
+  { path: 'logs/mc-service-store-mongo.log', text: 'm'.repeat(2_000_000) },
+  { path: 'logs/mcm-bff-service-nonsecure.log', text: 'b'.repeat(500_000) },
+];
+
+test('(#241i) run 3434: the HIERARCHY and the failure SCREENSHOT survive a real mobile failure bundle', () => {
+  const m = buildBundleManifest(RUN_3434, { cap: BUNDLE_CAP_BYTES });
+  const kept = new Map(m.files.map((f) => [f.path, f]));
+
+  const hierarchy = kept.get('logs/_mobile-diagnostics/gating-attempt1/maestro/g/screen-hierarchy/step-021-assertCondition-probe.json');
+  assert.ok(hierarchy, 'the view hierarchy was DROPPED — it is the one channel that says what the device was showing');
+  assert.equal(hierarchy.text.length, 126_649, 'the view hierarchy was truncated; a partial hierarchy does not parse');
+
+  const shot = kept.get('logs/_mobile-diagnostics/gating-attempt1/maestro/g/screenshots/step-021-assertCondition-probe.png');
+  assert.ok(shot, 'the failure screenshot was DROPPED');
+  assert.equal(shot.base64.length, 54_136, 'the screenshot must survive whole or not at all');
+
+  assert.ok(kept.get('logs/_mobile-diagnostics/gating-attempt1/logcat-react.log'), 'the ReactNativeJS logcat was dropped');
+  assert.ok(kept.get('logs/_mobile-diagnostics/gating-attempt2/logcat-react.log'), 'attempt 2 logcat-react was dropped');
+
+  const total = m.files.reduce((n, f) => n + Buffer.byteLength(f.text ?? f.base64 ?? '', 'utf8'), 0);
+  assert.ok(total <= BUNDLE_CAP_BYTES, `the bundle is over its cap: ${total}`);
+});
+
+test('(#241j) a multi-megabyte nested dump is BULK whatever it is called — demotion is by size, not by name', () => {
+  // The name test alone is what failed on run 3434: it was written for `logcat-full.log` and Maestro
+  // shipped `device-logcat.txt`. Pinning the size rule keeps the next rename from repeating it.
+  assert.equal(isBulkDeviceEvidence('_m/f/maestro/g/logs/device-logcat.txt', 3_676_659), true,
+    'the measured run-3434 dump must be treated as bulk');
+  assert.equal(isBulkDeviceEvidence('_m/f/some-future-name.txt', 9_000_000), true,
+    'a multi-megabyte nested dump under any name must be bulk');
+  assert.equal(isBulkDeviceEvidence('_m/f/logcat-full.log', 10), true,
+    'the original name stays demoted regardless of size');
+  // and the small, decisive evidence is NOT bulk
+  assert.equal(isBulkDeviceEvidence('_m/f/maestro/g/screen-hierarchy/step-021.json', 126_649), false,
+    'the view hierarchy must never be demoted — it is the smallest, most decisive source');
+  assert.equal(isBulkDeviceEvidence('_m/f/logcat-react.log', 337), false);
+  assert.equal(isBulkDeviceEvidence('_m/f/maestro/g/commands.json', 25_744), false);
+});
+
+test('(#241k) the bulk dump is still CARRIED when there is room — demoted, not excluded', () => {
+  // Demotion must not become deletion: on a small bundle the dump is real evidence and should ride
+  // along. It simply must not outrank the hierarchy.
+  const m = buildBundleManifest(
+    [
+      { path: 'logs/_mobile-diagnostics/f-a1/maestro/g/screen-hierarchy/s.json', text: 'H'.repeat(1000), priority: true },
+      { path: 'logs/_mobile-diagnostics/f-a1/maestro/g/logs/device-logcat.txt', text: 'D'.repeat(5000) },
+    ],
+    { cap: BUNDLE_CAP_BYTES },
+  );
+  const kept = m.files.map((f) => f.path);
+  assert.ok(kept.includes('logs/_mobile-diagnostics/f-a1/maestro/g/screen-hierarchy/s.json'));
+  assert.ok(kept.includes('logs/_mobile-diagnostics/f-a1/maestro/g/logs/device-logcat.txt'),
+    'the bulk dump was excluded rather than demoted — it is still evidence when there is room');
 });
