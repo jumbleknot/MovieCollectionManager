@@ -208,8 +208,9 @@ export function retryTransient(scanner, fn, opts = {}) {
       if (attempt >= attempts) {
         throw new Error(
           `[${scanner}] TRANSPORT/SERVICE ERROR — the advisory service could not be reached, so this ` +
-            `is NOT a security finding and nothing was detected in this repository. Retried ${attempts} ` +
-            `time(s) over ${(waitedMs / 1000).toFixed(1)}s and it did not recover. Failing closed: a ` +
+            `is NOT a security finding and nothing was detected in this repository. Failed all ` +
+            `${attempts} attempt(s) over ${(waitedMs / 1000).toFixed(1)}s of backoff and did not ` +
+            `recover. Failing closed: a ` +
             `scanner that could not run must never report clean. Last error: ${err.message}`,
         );
       }
