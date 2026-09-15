@@ -4,7 +4,7 @@ title: Infra-image CVE scanning
 description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code, but NOT MinIO which is now built from source and scanned by its own builder) — the coverage gap left by SAST/SCA and the built-image scanners, gated on fixable Critical findings only, and how to verify the weekly allowlist-expiry step actually ran.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
-timestamp: 2026-09-12T17:11:00Z
+timestamp: 2026-09-14T19:24:00Z
 ---
 
 # Infra-image CVE scanning
