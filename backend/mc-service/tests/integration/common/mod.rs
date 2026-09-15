@@ -13,6 +13,9 @@
 /// Real-credential helper (feature 046) — ROPC token minting against Keycloak.
 pub mod auth;
 
+/// `tracing` capture that survives `--test-threads > 1` (item #462).
+pub mod log_capture;
+
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
