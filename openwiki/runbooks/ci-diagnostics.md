@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand for calibrating per-step ceilings, and the event-vs-trigger_event field split that makes a scheduled run look like a push.
+description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand for calibrating per-step ceilings, and the event-vs-trigger_event field split that makes a scheduled run look like a push.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-12T17:11:00Z
+timestamp: 2026-09-15T00:00:00Z
 ---
 
 # CI self-serve diagnostics
