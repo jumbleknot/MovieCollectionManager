@@ -17,7 +17,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, copyFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, copyFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -40,6 +40,7 @@ function miniRepo() {
   mkdirSync(resolve(root, 'scripts'), { recursive: true });
   mkdirSync(resolve(root, 'frontend/mcm-app'), { recursive: true });
   mkdirSync(resolve(root, 'mcp-servers/web-api-mcp'), { recursive: true });
+  mkdirSync(resolve(root, 'backend/mc-service'), { recursive: true });
   mkdirSync(resolve(root, 'infrastructure-as-code/docker/stacks'), { recursive: true });
   copyFileSync(REAL_SCRIPT, resolve(root, 'scripts/gen-dev-env.mjs'));
   writeFileSync(resolve(root, 'infrastructure-as-code/docker/stacks/auth.env'), AUTH_ENV, 'utf8');
@@ -299,6 +300,192 @@ test('#395: skipping the check is ANNOUNCED — an env var must not silently res
     const out = runGenerator(root);
     assert.doesNotMatch(out, /realm-secret == BFF-secret == E2E-cred/);
     assert.match(out, /MCM_SKIP_REALM_VERIFY/, `the skip must name itself; got:\n${out}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ─── item #227 — backend/mc-service/.env.local is documented but nothing writes it ────────────────
+//
+// SAME DEFECT AS US6 ABOVE, ONE DIRECTORY OVER. `gen-dev-env.mjs` provisions the gitignored local env
+// files and its success line reports what it wrote — but it did not write
+// `backend/mc-service/.env.local` and did not say so. That file IS documented, in
+// docs/runbooks/local-dev.md ("Local dev: `backend/mc-service/.env.local` (gitignored)") together with
+// the six variables it needs, and no command created it.
+//
+// MEASURED 2026-08-22. `pnpm nx affected -t lint,test,typecheck` on a branch whose Rust tree was
+// BYTE-IDENTICAL to main reported `mc-service:test` FAILED — 25 passed, 16 failed:
+//
+//   thread '…list_collections_route_is_wired_not_404' panicked at
+//   backend/mc-service/tests/integration/common/mod.rs:95:
+//   Missing test configuration — ensure .env.local exists in backend/mc-service/: Missing("MC_DB_URL")
+//
+// Writing the file from the runbook's documented values took it to 32 passed, 9 failed. The remaining
+// 9 are `http_authz_test::*`, which genuinely need the local replica-set MongoDB — a real
+// infrastructure requirement. So of 16 failures, SEVEN were a missing file and nine were the absent
+// database, and nothing distinguished the two.
+//
+// The practical cost is that local `nx affected` reports a Rust tier as broken on branches that do not
+// touch Rust, which trains the reader to ignore that tier's result — which is how five stale specs hid
+// for three weeks (item #150).
+
+const MC_ENV_LOCAL = (root) => resolve(root, 'backend/mc-service/.env.local');
+
+test('#227: an ABSENT backend/mc-service/.env.local is CREATED, with every documented variable', () => {
+  const root = miniRepo();
+  try {
+    runGenerator(root);
+    assert.ok(existsSync(MC_ENV_LOCAL(root)), 'the generator must write the file it documents');
+    const written = readFileSync(MC_ENV_LOCAL(root), 'utf8');
+    // The six from docs/runbooks/local-dev.md's "mc-service env vars" table. MC_DB_URL is the one
+    // whose absence produced the measured panic.
+    for (const key of [
+      'MC_DB_URL',
+      'KEYCLOAK_URL',
+      'KEYCLOAK_REALM',
+      'KEYCLOAK_CLIENT_ID',
+      'MC_SERVICE_PORT',
+      'RUST_LOG',
+    ]) {
+      assert.match(written, new RegExp(`^${key}=.+$`, 'm'), `${key} must be written with a value`);
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#227: the generated values match what the runbook documents for LOCAL dev', () => {
+  // A file with the wrong values fails exactly like a missing one, so pin the values, not the keys.
+  const root = miniRepo();
+  try {
+    runGenerator(root);
+    const written = readFileSync(MC_ENV_LOCAL(root), 'utf8');
+    assert.match(written, /^MC_DB_URL=mongodb:\/\/localhost:27017\/mc_db$/m);
+    assert.match(written, /^KEYCLOAK_REALM=grumpyrobot$/m);
+    assert.match(written, /^KEYCLOAK_CLIENT_ID=movie-collection-manager$/m);
+    assert.match(written, /^MC_SERVICE_PORT=3001$/m);
+    // The realm as reachable from HERE — the same host-side URL the generator verifies against, not
+    // the container-internal keycloak-service:8080 (which does not resolve outside the Docker net).
+    assert.match(written, /^KEYCLOAK_URL=http:\/\/localhost:8099$/m);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#227: the generator REPORTS writing it — an unreported write is not an accurate success line', () => {
+  const root = miniRepo();
+  try {
+    const out = runGenerator(root);
+    assert.match(
+      out,
+      /backend\/mc-service\/\.env\.local/,
+      `the success line must name the file; got:\n${out}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#227: an EXISTING file keeps the developer knobs — RUST_LOG and unrelated keys are not clobbered', () => {
+  // MC_DB_URL / MC_SERVICE_PORT / RUST_LOG are developer knobs, not realm-derived credentials. A
+  // re-run must not undo a deliberate `RUST_LOG=mc_service=debug` or a pointer at a non-default Mongo.
+  const root = miniRepo();
+  try {
+    writeFileSync(
+      MC_ENV_LOCAL(root),
+      '# hand-written\nRUST_LOG=mc_service=debug,axum=info\nMC_DB_URL=mongodb://elsewhere:27017/mc_db\nMY_OWN_KEY=keep-me\n',
+      'utf8',
+    );
+    runGenerator(root);
+    const written = readFileSync(MC_ENV_LOCAL(root), 'utf8');
+    assert.match(written, /^RUST_LOG=mc_service=debug,axum=info$/m, 'a tuned RUST_LOG must survive');
+    assert.match(written, /^MC_DB_URL=mongodb:\/\/elsewhere:27017\/mc_db$/m, 'a redirected DB must survive');
+    assert.match(written, /^MY_OWN_KEY=keep-me$/m, 'unrelated developer keys must survive');
+    assert.match(written, /^# hand-written$/m, 'comments must survive');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#227: an existing file MISSING MC_DB_URL has it APPENDED — the panic is about the VAR, not the file', () => {
+  // The measured failure is `Missing("MC_DB_URL")`. A file that exists but lacks it fails identically,
+  // so "the file is present" is not the invariant worth holding.
+  const root = miniRepo();
+  try {
+    writeFileSync(MC_ENV_LOCAL(root), 'RUST_LOG=info\n', 'utf8');
+    runGenerator(root);
+    const written = readFileSync(MC_ENV_LOCAL(root), 'utf8');
+    assert.match(written, /^MC_DB_URL=mongodb:\/\/localhost:27017\/mc_db$/m);
+    assert.match(written, /^KEYCLOAK_URL=.+$/m);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ─── The coverage gate: every documented `.env.local` is accounted for ────────────────────────────
+//
+// The point of item #227 is not this one file — it is that the generator's coverage was never pinned,
+// so a documented file nothing writes was invisible. This derives the set from the runbooks rather
+// than from a hand-maintained list, so adding a fifth documented env file to a runbook and forgetting
+// the generator turns THIS red rather than someone's `nx affected` three weeks later.
+
+/**
+ * Paths the generator deliberately does NOT write, each with the reason. An entry here is a claim
+ * that must stay true, not a way to silence the gate — the generator must still NAME the file in its
+ * output, so an operator sees that it was skipped and why.
+ */
+const DOCUMENTED_BUT_NOT_GENERATED = {
+  'agents/movie-assistant/.env.local':
+    'carries the operator\'s own Anthropic credential. CLAUDE.md scopes that key to MCM_ANTHROPIC_API_KEY, ' +
+    'mapped to ANTHROPIC_API_KEY only at the point of use — a generator that minted or projected it ' +
+    'would be a fourth place the key lives. The operator supplies this file by hand.',
+};
+
+test('#227: every `.env.local` the runbooks document is either GENERATED or a reasoned exception', () => {
+  const runbooks = resolve(REPO_ROOT, 'docs/runbooks');
+  const documented = new Set();
+  for (const f of readdirSync(runbooks).filter((n) => n.endsWith('.md'))) {
+    const text = readFileSync(resolve(runbooks, f), 'utf8');
+    for (const m of text.matchAll(/([A-Za-z0-9_][A-Za-z0-9_./-]*\/\.env\.local)\b/g)) {
+      // `.env.local.example` is a different file; the capture above stops at `.env.local`, so
+      // exclude the ones immediately followed by `.example`.
+      if (!/\.example/.test(text.slice(m.index, m.index + m[0].length + 8))) documented.add(m[1]);
+    }
+  }
+  assert.ok(documented.size >= 3, `expected the runbooks to document several env files, found ${documented.size}`);
+
+  const src = readFileSync(REAL_SCRIPT, 'utf8');
+  const unaccounted = [];
+  for (const path of documented) {
+    const generated = src.includes(`'${path}'`) || src.includes(`"${path}"`);
+    if (generated) continue;
+    if (path in DOCUMENTED_BUT_NOT_GENERATED) {
+      assert.ok(
+        DOCUMENTED_BUT_NOT_GENERATED[path].length > 40,
+        `the exception for ${path} must carry a real reason, not a placeholder`,
+      );
+      continue;
+    }
+    unaccounted.push(path);
+  }
+  assert.deepEqual(
+    unaccounted,
+    [],
+    'these .env.local files are documented in docs/runbooks/ but the generator neither writes them ' +
+      'nor declares them an exception — the exact shape of item #227:\n  ' + unaccounted.join('\n  '),
+  );
+});
+
+test('#227: a file the generator deliberately SKIPS is named in its output, not silently absent', () => {
+  // "Accurate about what it did AND did not write." A skipped file that is never mentioned reads
+  // identically to one nobody thought of — which is how this survived from 2026-08-22.
+  const root = miniRepo();
+  try {
+    const out = runGenerator(root);
+    for (const path of Object.keys(DOCUMENTED_BUT_NOT_GENERATED)) {
+      assert.match(out, new RegExp(path.replace(/[.\\/]/g, '\\$&')),
+        `the output must name the deliberately-skipped ${path}; got:\n${out}`);
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

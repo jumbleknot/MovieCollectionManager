@@ -96,6 +96,140 @@ function run(cmd, args, opts = {}) {
   return spawnSync(c, a, { encoding: 'utf8', cwd: REPO_ROOT, maxBuffer: 1 << 28, ...opts, env });
 }
 
+// ── Transient-failure retry for network-dependent scanners (item #449) ───────
+//
+// Three of the four scanners reach a THIRD PARTY over the network on the required `guardrails / sast`
+// gate's critical path: pip-audit queries osv.dev, cargo-audit fetches the RustSec advisory DB, and
+// `pnpm audit` queries the npm registry's advisory endpoint. Any of them can fail for a reason that
+// has nothing to do with this repository's code.
+//
+// MEASURED 2026-09-13, run 3328 (PR #444): `guardrails / sast` — a REQUIRED context — went red on
+//
+//   [pip-audit] agents/movie-assistant produced non-JSON output:
+//     File ".../pip_audit/_service/osv.py", line 79, in query
+//       raise ServiceError from http_error
+//   pip_audit._service.interface.ServiceError
+//
+// The scan had otherwise completed (`scope=changed findings=16 blocking=0`, semgrep 0, cargo-audit 0).
+// No security finding was involved; osv.dev answered 200 minutes later and the identical path passed on
+// PRs #443 and #445 the same day. One blip redded the gate for every PR open at that moment, and the
+// only remedy was a re-run — with `openwiki-maintenance` regenerating its branch on a schedule, an
+// unattended PR fails repeatedly for as long as OSV is having a bad day.
+//
+// FAILING CLOSED ON A SCANNER ERROR IS CORRECT AND IS NOT CHANGED HERE: a scanner that could not run
+// must never report clean, and this repository has been bitten by the opposite. What is added is a
+// bounded retry BEFORE that verdict, and an output that distinguishes "the advisory service was
+// unreachable" from "the scanner ran and found something" — in run 3328 those rendered identically.
+//
+// The classification is deliberately NARROW. A finding's own title routinely contains "error" or
+// "timeout", and matching those would retry real findings three times and then report them anyway.
+// Only signatures that can ONLY come from the transport or the remote service are listed.
+
+/** Transport/service signatures. Each can only originate below the scanner's own logic. */
+const TRANSIENT_SIGNATURES = [
+  // pip-audit / requests / urllib3 (the osv.dev path that redded run 3328)
+  /\bServiceError\b/,
+  /\bConnectionError\b/,
+  /\bReadTimeout\b/, /\bConnectTimeout\b/, /\bRead timed out\b/i,
+  /\bMaxRetryError\b/, /\bMax retries exceeded\b/i,
+  /\bHTTPSConnectionPool\b/, /\bHTTPConnectionPool\b/,
+  // HTTP statuses that are the server saying "not now" rather than "no"
+  /\b(?:HTTP Error )?429\b[^\n]*Too Many Requests|\bToo Many Requests\b/i,
+  /\b(?:HTTP Error )?50[234]\b[^\n]*(?:Bad Gateway|Service Unavailable|Gateway Timeout)/i,
+  /\bBad Gateway\b/i, /\bService Unavailable\b/i, /\bGateway Timeout\b/i,
+  // Node / libc socket + DNS errors (pnpm audit, and anything using fetch)
+  /\bECONNRESET\b/, /\bECONNREFUSED\b/, /\bETIMEDOUT\b/, /\bEAI_AGAIN\b/,
+  /\bENOTFOUND\b/, /\bEHOSTUNREACH\b/, /\bENETUNREACH\b/, /\bEPIPE\b/,
+  /\bsocket hang up\b/i,
+  /\bTemporary failure in name resolution\b/i,
+  // git / cargo-audit fetching the advisory DB
+  /\bCould not resolve host\b/i,
+  /\bfailed to fetch advisory database\b/i,
+  /\bunable to access\b[^\n]*https?:\/\//i,
+  /\bTLS connection\b[^\n]*\b(?:reset|timed out)\b/i,
+];
+
+/**
+ * Is this scanner output a transport/service failure rather than a scanner fault or a finding?
+ *
+ * Returns false for anything unrecognised, on purpose: an unknown failure is treated as REAL and
+ * fails on the first attempt. Retrying an unknown fault would only delay a genuine red by the whole
+ * backoff budget while hiding its cause behind three identical tracebacks.
+ */
+export function isTransientScannerFailure(output) {
+  const text = String(output ?? '');
+  if (!text.trim()) return false;
+  return TRANSIENT_SIGNATURES.some((re) => re.test(text));
+}
+
+/** A failure the retry driver is allowed to re-attempt. Everything else propagates immediately. */
+export class TransientScannerError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'TransientScannerError';
+    this.transient = true;
+  }
+}
+
+/**
+ * Build the error for a failed scanner invocation, classified from what the scanner actually printed.
+ * Use at every network-dependent throw site so the classifier is consulted rather than bypassed.
+ */
+function transientOr(message, output) {
+  return isTransientScannerFailure(output) ? new TransientScannerError(message) : new Error(message);
+}
+
+/** Block the thread without a busy-loop. The scanners are synchronous (spawnSync), so the wait is too. */
+function sleepSync(ms) {
+  if (ms > 0) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * Run `fn`, re-attempting only a TransientScannerError, with deterministic exponential backoff.
+ *
+ * Deterministic rather than jittered: jitter exists to de-synchronize a herd, and there is one CI
+ * runner running one scan — so it would buy nothing and cost testability.
+ *
+ * FAIL-CLOSED IS PRESERVED. When the attempts are exhausted this still throws; item #449 is about not
+ * failing on the FIRST blip, never about tolerating a scanner that cannot run.
+ */
+export function retryTransient(scanner, fn, opts = {}) {
+  const attempts = opts.attempts ?? 3;
+  const baseDelayMs = opts.baseDelayMs ?? 2000;
+  const sleep = opts.sleep ?? sleepSync;
+  const onRetry = opts.onRetry ?? reportScannerRetry;
+  let waitedMs = 0;
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return fn();
+    } catch (err) {
+      // Not transient, or out of attempts on the last try → decide here.
+      if (!err?.transient) throw err;
+      if (attempt >= attempts) {
+        throw new Error(
+          `[${scanner}] TRANSPORT/SERVICE ERROR — the advisory service could not be reached, so this ` +
+            `is NOT a security finding and nothing was detected in this repository. Failed all ` +
+            `${attempts} attempt(s) over ${(waitedMs / 1000).toFixed(1)}s of backoff and did not ` +
+            `recover. Failing closed: a ` +
+            `scanner that could not run must never report clean. Last error: ${err.message}`,
+        );
+      }
+      const delay = baseDelayMs * 2 ** (attempt - 1);
+      onRetry({ scanner, attempt, attempts, delayMs: delay, reason: err.message });
+      sleep(delay);
+      waitedMs += delay;
+    }
+  }
+}
+
+/** Default retry reporter. A silent retry is indistinguishable from no retry, which is how this hides. */
+function reportScannerRetry({ scanner, attempt, attempts, delayMs, reason }) {
+  console.error(
+    `[sast-scan] [${scanner}] transient transport/service failure on attempt ${attempt}/${attempts} — ` +
+      `retrying in ${delayMs}ms. This is NOT a security finding. Cause: ${String(reason).slice(-200)}`,
+  );
+}
+
 // ── Config loaders ───────────────────────────────────────────────────────────
 export function loadSeverityMap(path = resolve(REPO_ROOT, 'security/sast/severity-map.yaml')) {
   return parseYaml(readFileSync(path, 'utf8'));
@@ -382,27 +516,37 @@ function normalizeCargoAudit(native, runtimeSet, map) {
 function runCargoAudit({ map }) {
   assertToolchain('cargo', 'cargo-audit');
   const runtimeSet = computeCargoRuntimeSet();
-  const r = run('cargo', ['audit', '--file', 'Cargo.lock', '--json']);
-  if (r.status !== 0 && r.status !== 1) {
-    throw new Error(`[cargo-audit] failed (exit ${r.status}) — advisory DB may be unreachable (fail-closed): ${(r.stderr || '').slice(-500)}`);
-  }
-  let native;
-  try {
-    native = JSON.parse(r.stdout);
-  } catch {
-    throw new Error(`[cargo-audit] non-JSON output — is cargo-audit installed and the advisory DB fetchable? ${(r.stderr || r.stdout || '').slice(-300)}`);
-  }
+  // `cargo audit` git-fetches the RustSec advisory DB, so it is network-dependent like pip-audit
+  // (item #449). Fixing only the scanner that happened to bite would leave the same defect twice.
+  const native = retryTransient('cargo-audit', () => {
+    const r = run('cargo', ['audit', '--file', 'Cargo.lock', '--json']);
+    const out = `${r.stderr || ''}\n${r.stdout || ''}`;
+    if (r.status !== 0 && r.status !== 1) {
+      throw transientOr(`[cargo-audit] failed (exit ${r.status}) — advisory DB may be unreachable (fail-closed): ${(r.stderr || '').slice(-500)}`, out);
+    }
+    try {
+      return JSON.parse(r.stdout);
+    } catch {
+      throw transientOr(`[cargo-audit] non-JSON output — is cargo-audit installed and the advisory DB fetchable? ${(r.stderr || r.stdout || '').slice(-300)}`, out);
+    }
+  });
   return { native, findings: normalizeCargoAudit(native, runtimeSet, map) };
 }
 
 // ── pnpm audit runner (T013) ─────────────────────────────────────────────────
 function pnpmAuditJson(extra) {
-  const r = run('pnpm', ['audit', '--json', ...extra]);
-  try {
-    return JSON.parse(r.stdout);
-  } catch {
-    throw new Error(`[pnpm-audit] non-JSON output (registry advisories unreachable?): ${(r.stderr || r.stdout || '').slice(-300)}`);
-  }
+  // Queries the npm registry's advisory endpoint — network-dependent, so bounded-retried (item #449).
+  return retryTransient('pnpm-audit', () => {
+    const r = run('pnpm', ['audit', '--json', ...extra]);
+    try {
+      return JSON.parse(r.stdout);
+    } catch {
+      throw transientOr(
+        `[pnpm-audit] non-JSON output (registry advisories unreachable?): ${(r.stderr || r.stdout || '').slice(-300)}`,
+        `${r.stderr || ''}\n${r.stdout || ''}`,
+      );
+    }
+  });
 }
 
 function normalizePnpmAudit(full, prodKeys, map) {
@@ -568,16 +712,23 @@ function auditOnePythonSurface({ project, dir }, map) {
   // already-synced env queries OSV for the installed distributions directly (~1 min, no download).
   // pip-audit is injected via `uv run --with`; its own deps are filtered out via agentSet.
   // Prereq: this surface's venv is synced (`uv sync` in its directory).
-  const r = run('uv', ['run', '--no-sync', '--with', 'pip-audit', 'pip-audit', '--format', 'json', '-s', 'osv', '--progress-spinner', 'off'], { cwd: surfaceDir });
-  if (r.status !== 0 && r.status !== 1) {
-    throw new Error(`[pip-audit] ${project} failed (exit ${r.status}) — OSV unreachable, or the venv is not synced (run \`uv sync\` in ${dir}): ${(r.stderr || '').slice(-500)}`);
-  }
-  let native;
-  try {
-    native = JSON.parse(r.stdout);
-  } catch {
-    throw new Error(`[pip-audit] ${project} produced non-JSON output: ${(r.stderr || r.stdout || '').slice(-300)}`);
-  }
+  //
+  // Bounded-retried (item #449): this exact call redded the required gate on run 3328 with an
+  // osv.dev ServiceError while the scan had otherwise completed clean. The venv-not-synced case in
+  // the message below is NOT retried — transientOr classifies it as a real fault, so it still fails
+  // on the first attempt rather than after the whole backoff budget.
+  const native = retryTransient('pip-audit', () => {
+    const r = run('uv', ['run', '--no-sync', '--with', 'pip-audit', 'pip-audit', '--format', 'json', '-s', 'osv', '--progress-spinner', 'off'], { cwd: surfaceDir });
+    const out = `${r.stderr || ''}\n${r.stdout || ''}`;
+    if (r.status !== 0 && r.status !== 1) {
+      throw transientOr(`[pip-audit] ${project} failed (exit ${r.status}) — OSV unreachable, or the venv is not synced (run \`uv sync\` in ${dir}): ${(r.stderr || '').slice(-500)}`, out);
+    }
+    try {
+      return JSON.parse(r.stdout);
+    } catch {
+      throw transientOr(`[pip-audit] ${project} produced non-JSON output: ${(r.stderr || r.stdout || '').slice(-300)}`, out);
+    }
+  });
   return { native, findings: normalizePipAudit(native, agentSet, runtimeSet, map, project) };
 }
 
