@@ -40,7 +40,7 @@
  *             · 2 the running realm REFUSES a projected credential — NOTHING is written (item #395).
  */
 import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -49,6 +49,27 @@ const AUTH_ENV = resolve(REPO_ROOT, 'infrastructure-as-code/docker/stacks/auth.e
 const ENV_DOCKER = resolve(REPO_ROOT, 'frontend/mcm-app/.env.docker');
 const ENV_LOCAL = resolve(REPO_ROOT, 'frontend/mcm-app/.env.local');
 const ENV_E2E = resolve(REPO_ROOT, 'frontend/mcm-app/.env.e2e.local');
+// Item #227 — the fifth file, and the one nothing wrote. `backend/mc-service/.env.local` is
+// documented in docs/runbooks/local-dev.md ("Local dev: `backend/mc-service/.env.local`
+// (gitignored)") along with the six variables it needs, and no command created it. Measured
+// 2026-08-22: `pnpm nx affected -t lint,test,typecheck` on a branch whose Rust tree was
+// BYTE-IDENTICAL to main reported `mc-service:test` FAILED, 25 passed / 16 failed, on
+//
+//   panicked at backend/mc-service/tests/integration/common/mod.rs:95:
+//   Missing test configuration — ensure .env.local exists in backend/mc-service/: Missing("MC_DB_URL")
+//
+// Writing this file from the runbook's values took it to 32 passed / 9 failed, so SEVEN of the sixteen
+// failures were one absent file and nothing distinguished them from the nine that were not — which
+// trains the reader to ignore a whole tier's result. Same defect as 048 US6, one directory over.
+// (The other nine were recorded on the item as needing the replica-set MongoDB. They did not; see the
+// E2E_* note at the write site below, where the tier now goes 41 passed / 0 failed.)
+const MC_SERVICE_ENV_LOCAL = resolve(REPO_ROOT, 'backend/mc-service/.env.local');
+const MC_SERVICE_CLIENT_ID = 'movie-collection-manager';
+// The documented LOCAL value (the Docker one, with ?replicaSet=rs0&directConnection=true, is set in
+// infrastructure-as-code/docker/mc-service/compose.yaml and is not this file's business). Overridable
+// from the environment for a box whose Mongo is not on the default port.
+const MC_DB_URL = process.env.MC_DB_URL || 'mongodb://localhost:27017/mc_db';
+const MC_SERVICE_PORT = process.env.MC_SERVICE_PORT || '3001';
 // The seeded realm's test user (fixed in dev-realm.json / ci-realm.json) + ROPC client. Deterministic
 // in dev, so the web E2E credential source is generated to match the realm — not hand-maintained.
 const REALM_TEST_USER = 'e2e-test-user';
@@ -342,10 +363,18 @@ writeFileSync(ENV_DOCKER, envDocker, 'utf8');
  * half-written by the same treatment, so that one still reports absence loudly instead.
  */
 function syncEnvFile(path, sync, opts = {}) {
+  // `defaults` (item #227): keys SEEDED when absent and never rewritten when present — the developer
+  // knobs (MC_DB_URL, MC_SERVICE_PORT, RUST_LOG), as opposed to `sync`'s realm-derived values which
+  // must match the realm by construction. Seeding-not-syncing is the difference between a fresh box
+  // that works and a re-run that silently undoes a deliberate `RUST_LOG=mc_service=debug` or a Mongo
+  // pointed somewhere else. Absence still has to be fixed, though: the measured panic is
+  // `Missing("MC_DB_URL")`, so a file that EXISTS without that key fails exactly like no file at all.
+  const defaults = opts.defaults ?? {};
   if (!existsSync(path)) {
     if (!opts.create) return false;
+    mkdirSync(dirname(path), { recursive: true });
     const header = opts.header ? `${opts.header}\n` : '';
-    const body = Object.entries(sync).map(([k, v]) => `${k}=${v}`).join('\n');
+    const body = Object.entries({ ...defaults, ...sync }).map(([k, v]) => `${k}=${v}`).join('\n');
     writeFileSync(path, `${header}${body}\n`, 'utf8');
     return 'created';
   }
@@ -361,6 +390,15 @@ function syncEnvFile(path, sync, opts = {}) {
       return line;
     });
   for (const [k, v] of Object.entries(sync)) if (!seen.has(k)) patched.push(`${k}=${v}`);
+  // A `defaults` key already in the file is left exactly as the developer set it; only an absent one
+  // is seeded. `seen` holds every key the file defines, including ones outside `sync`.
+  const present = new Set(
+    readFileSync(path, 'utf8')
+      .split(/\r?\n/)
+      .map((line) => /^([A-Za-z_][A-Za-z0-9_]*)=/.exec(line.trim())?.[1])
+      .filter(Boolean),
+  );
+  for (const [k, v] of Object.entries(defaults)) if (!present.has(k)) patched.push(`${k}=${v}`);
   writeFileSync(path, patched.join('\n'), 'utf8');
   return 'synced';
 }
@@ -405,6 +443,65 @@ writeFileSync(
   'utf8',
 );
 
+// 5 — backend/mc-service/.env.local (item #227): the mc-service integration suite's config source.
+// The realm trio is SYNCED (it must point at the realm these secrets came from, same rule as the
+// frontend file); the three developer knobs are SEEDED ONLY WHEN ABSENT, so a tuned RUST_LOG or a
+// redirected Mongo survives a re-run. No secret is written here — mc-service validates JWTs against
+// the realm's public JWKS and holds no client secret of its own.
+//
+// The E2E_* four are the SECOND half of item #227, found by running the tier rather than by reading
+// the item. The item recorded the residual 9 `http_authz_test::*` failures as "genuinely need the
+// local replica-set MongoDB — a real infrastructure requirement, not a missing file". MEASURED
+// 2026-09-15, with Mongo up and the other 32 cases passing against it, all 9 failed on
+//
+//   panicked at backend/mc-service/tests/integration/common/auth.rs:70:
+//   E2E_ROPC_CLIENT_ID is not set (or is empty). It must be set for the authenticated
+//   authorization tests — see backend/mc-service/.env.local.
+//
+// So they were never DB-gated: feature 046's authenticated-authz suite mints a real ROPC token and
+// needs four more variables in this same file. All four are already projected into
+// `.env.e2e.local` a few lines above, from the same `auth.env` — the values existed, the file that
+// needed them did not get them. Same defect, third instance. They are SYNCED, not seeded: they are
+// realm-derived credentials and must match the seeded realm by construction.
+const mcServiceResult = syncEnvFile(
+  MC_SERVICE_ENV_LOCAL,
+  {
+    KEYCLOAK_URL: KEYCLOAK_VERIFY_URL,
+    KEYCLOAK_REALM,
+    KEYCLOAK_CLIENT_ID: MC_SERVICE_CLIENT_ID,
+    E2E_ROPC_CLIENT_ID: ROPC_CLIENT_ID,
+    E2E_ROPC_CLIENT_SECRET,
+    E2E_TEST_USER: REALM_TEST_USER,
+    E2E_TEST_PASSWORD,
+  },
+  {
+    create: true,
+    defaults: { MC_DB_URL, MC_SERVICE_PORT, RUST_LOG: 'info' },
+    header:
+      '# GENERATED by scripts/gen-dev-env.mjs — gitignored, never commit.\n' +
+      '# The mc-service local-dev / integration-test configuration (docs/runbooks/local-dev.md,\n' +
+      '# "mc-service env vars"). The KEYCLOAK_*/E2E_* lines are rewritten on every re-run to match\n' +
+      '# the seeded realm; MC_DB_URL, MC_SERVICE_PORT and RUST_LOG are seeded once and then left\n' +
+      '# alone, so tune them freely. The E2E_* four are what feature 046\'s authenticated\n' +
+      '# http_authz_test::* cases use to mint a real ROPC token. Running the suite also needs the\n' +
+      '# local replica-set MongoDB up (`pnpm nx up infrastructure-as-code`) — infrastructure, not\n' +
+      '# this file.',
+  },
+);
+
+// Files that are documented but deliberately NOT generated. Naming them is part of the success line
+// being accurate: item #227 is as much about the output claiming completeness as about the missing
+// file, and a skipped file nobody mentions reads identically to one nobody thought of.
+const NOT_GENERATED = [
+  [
+    'agents/movie-assistant/.env.local',
+    'carries the operator\'s own Anthropic credential — CLAUDE.md scopes that to ' +
+      'MCM_ANTHROPIC_API_KEY, mapped to ANTHROPIC_API_KEY only at the point of use, so this ' +
+      'generator must not become a fourth place the key lives. Supply it by hand; see ' +
+      'docs/runbooks/agent-layer.md.',
+  ],
+];
+
 // The equality is claimed ONLY when it was checked. Every other path says what was, and was not,
 // done — the whole of item #395 is that this sentence used to be printed unconditionally.
 function claim({ status, reason }) {
@@ -425,8 +522,17 @@ console.log(
     (localResult === 'created' ? ' + CREATED .env.local (was absent)' : ' + synced .env.local') +
     (e2eSynced ? ' + synced .env.e2e.local (web E2E creds → seeded realm)' : '') +
     ` + web-api-mcp/.env.local (TMDB ${process.env.TMDB_API_KEY ? 'set' : 'empty'})` +
+    (mcServiceResult === 'created'
+      ? ' + CREATED backend/mc-service/.env.local (was absent)'
+      : ' + synced backend/mc-service/.env.local') +
     ` ${claim(verification)}`,
 );
+
+// What was NOT written, and why. Printed unconditionally and on the same run as the success line —
+// the whole of item #227 is that an absent file was indistinguishable from an unconsidered one.
+for (const [path, why] of NOT_GENERATED) {
+  console.log(`[gen-dev-env] NOT written (by design): ${path} — ${why}`);
+}
 
 // `.env.e2e.local` is NOT auto-created: its sync set is only the credential half, and the web E2E also
 // needs the non-generated fixture keys (E2E_COLLECTION_NAME, E2E_MOVIE_TITLE), so a created file would

@@ -91,8 +91,23 @@ async fn build_test_app_inner() -> (axum::Router, Arc<KeycloakAuthInstance>, Dat
     let db = test_db().await;
 
     // MC_SERVICE_PORT is irrelevant here (nothing binds); KEYCLOAK_* must be reachable.
-    let config = mc_service::config::Config::from_env()
-        .expect("Missing test configuration — ensure .env.local exists in backend/mc-service/");
+    let config = mc_service::config::Config::from_env().unwrap_or_else(|e| {
+        // Item #227: this used to say only "ensure .env.local exists", which names the missing
+        // input but not the command that supplies it — and until that item no command did. On
+        // 2026-08-22 the resulting `Missing("MC_DB_URL")` was read as "the Rust tier is broken"
+        // on a branch whose Rust tree was byte-identical to main (25 passed / 16 failed; 7 of
+        // the 16 were this file, 9 were the absent replica-set MongoDB below). Naming the fix
+        // here keeps the two apart at the moment of failure, the way check-sast-findings.mjs
+        // names which lever clears a finding.
+        panic!(
+            "Missing test configuration ({e:?}) — backend/mc-service/.env.local is absent or \
+             incomplete.\n  Fix:  node scripts/gen-dev-env.mjs   (writes it; gitignored)\n  \
+             Vars: docs/runbooks/local-dev.md, \"mc-service env vars\"\n\
+             This is a CONFIGURATION failure, not a code failure. Distinct from the \
+             http_authz_test::* cases, which need the local replica-set MongoDB up \
+             (`pnpm nx up infrastructure-as-code`)."
+        )
+    });
 
     // The router takes the database by value; the handle is needed by tests that
     // seed or inspect rows, so clone it — a `Database` handle is a cheap, shared

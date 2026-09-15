@@ -353,7 +353,33 @@ Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) �
 | `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` | — |
 | `MC_SERVICE_PORT` | `3001` | — |
 | `RUST_LOG` | `info` | `mc_service=debug,axum=info` for targeted filtering |
+| `E2E_ROPC_CLIENT_ID` | `mcm-bff-test` | Feature 046 — the authenticated `http_authz_test::*` cases mint a real ROPC token |
+| `E2E_ROPC_CLIENT_SECRET` | — | from `stacks/auth.env` (the value the realm imported) |
+| `E2E_TEST_USER` | `e2e-test-user` | the seeded realm's fixed test identity |
+| `E2E_TEST_PASSWORD` | — | from `stacks/auth.env` |
 
-Local dev: `backend/mc-service/.env.local` (gitignored). Docker values set in `infrastructure-as-code/docker/mc-service/compose.yaml`.
+Local dev: `backend/mc-service/.env.local` (gitignored). **Written by `node scripts/gen-dev-env.mjs`** —
+it is created when absent and the `KEYCLOAK_*` / `E2E_*` lines are re-synced from `stacks/auth.env` on
+every run, while `MC_DB_URL`, `MC_SERVICE_PORT` and `RUST_LOG` are seeded once and then left alone, so
+tune those freely. Docker values set in `infrastructure-as-code/docker/mc-service/compose.yaml`.
+
+> **Item #227 — this file used to have no generator, and its absence read as a broken Rust tier.**
+> Measured 2026-08-22: `pnpm nx affected -t lint,test,typecheck` on a branch whose Rust tree was
+> byte-identical to `main` reported `mc-service:test` FAILED, 25 passed / 16 failed, on
+> `panicked at tests/integration/common/mod.rs: Missing test configuration … Missing("MC_DB_URL")`.
+> Nothing distinguished a missing-file failure from a real one, which trains the reader to ignore that
+> tier's result.
+>
+> The `E2E_*` four are the second half of the same defect and were found by running the tier rather than
+> by reading the report. The 16 failures had been recorded as "7 missing file + 9 that genuinely need the
+> replica-set MongoDB". **That second half was wrong**: measured 2026-09-15 with Mongo up and the other 32
+> cases passing against it, all 9 `http_authz_test::*` failed on
+> `E2E_ROPC_CLIENT_ID is not set (or is empty)` — a fourth missing variable in this same file, whose value
+> `gen-dev-env.mjs` was already projecting into `.env.e2e.local`. With all ten variables written, that
+> binary goes **41 passed / 0 failed**.
+>
+> `scripts/__tests__/gen-dev-env.guard.test.mjs` now derives the set of `.env.local` files from these
+> runbooks and fails if one is neither generated nor a declared exception, so a documented file nothing
+> writes is visible here rather than three weeks later in someone's `nx affected`.
 
 **mc-service fails to start if `MC_DB_URL` is unreachable or if Keycloak JWKS endpoint cannot be fetched** (JWKS is cached on startup for JWT validation).

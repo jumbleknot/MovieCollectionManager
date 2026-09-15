@@ -66,6 +66,56 @@ all required fields (`scanner`, `id`, `locationPattern` regex, `justification`, 
 expiry semantics, and baseline-seeding steps are in
 [security/sast/README.md](../../security/sast/README.md#triage--allowlist-workflow).
 
+## When the gate goes red and NO finding was involved (a scanner outage)
+
+Three of the four scanners reach a **third party over the network** on the required gate's critical path:
+`pip-audit` queries **osv.dev**, `cargo-audit` git-fetches the **RustSec advisory DB**, and `pnpm audit`
+queries the **npm registry**'s advisory endpoint. Any of them can fail for a reason that has nothing to do
+with this repository.
+
+**Measured 2026-09-13, run 3328** (PR #444, the scheduled `openwiki-maintenance` PR) — `guardrails / sast`,
+a **required** context, went red on:
+
+```
+[sast-scan] FAILED fast: [pip-audit] agents/movie-assistant produced non-JSON output:
+  File ".../pip_audit/_service/osv.py", line 79, in query
+    raise ServiceError from http_error
+pip_audit._service.interface.ServiceError
+```
+
+The scan had otherwise **completed clean** — `scope=changed findings=16 blocking=0`, semgrep 0,
+cargo-audit 0. osv.dev answered 200 minutes later, and the identical path passed on PRs #443 and #445 the
+same day.
+
+**Since item #449 these are bounded-retried.** `sast-scan.mjs` classifies a failure as transport/service
+(the `TRANSIENT_SIGNATURES` list) and re-attempts it **3 times with exponential backoff** (2s, 4s) before
+giving a verdict. What you will see in the job log when it fires:
+
+```
+[sast-scan] [pip-audit] transient transport/service failure on attempt 1/3 — retrying in 2000ms.
+            This is NOT a security finding. Cause: …
+```
+
+and, if it never recovers, a verdict that says which kind of failure it was:
+
+```
+[pip-audit] TRANSPORT/SERVICE ERROR — the advisory service could not be reached, so this is NOT a
+security finding and nothing was detected in this repository. Retried 3 time(s) over 6.0s and it did
+not recover. Failing closed: a scanner that could not run must never report clean.
+```
+
+Two properties are deliberate and must not be "simplified" away:
+
+- **Fail-closed is preserved.** After the retries are exhausted the job still fails. Item #449 was about
+  not failing on the first blip, never about tolerating a scanner that cannot run.
+- **The classification is narrow.** A finding's own title routinely contains "error" or "timeout", and a
+  real fault (an unsynced venv, an unparseable lockfile, a panic) is **not** retried — it fails on the
+  first attempt, so a genuine red is not delayed by the whole backoff budget behind three identical
+  tracebacks. `scripts/__tests__/sast-scan-retry.guard.test.mjs` pins both directions.
+
+So: a red gate whose output says **TRANSPORT/SERVICE ERROR** is an outage that survived three attempts —
+re-run it. A red gate listing findings is the section below.
+
 ## When `main` goes red on SAST you didn't change (advisory churn)
 
 The SCA half runs **full every time** (a new advisory hits an *unchanged* dep — never path-gated,
