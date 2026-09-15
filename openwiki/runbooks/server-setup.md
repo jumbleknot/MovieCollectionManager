@@ -4,7 +4,7 @@ title: Homelab server setup (CI/CD + production host)
 description: The from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge, and Komodo for CD to production.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, runbook]
-timestamp: 2026-08-14T00:00:00Z
+timestamp: 2026-09-15T00:00:00Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -39,6 +39,26 @@ for why that distinction matters and why proposals themselves are out of scope f
 - **The forge's Actions-artifact API is a missing route, not an empty result.** `GET /api/v1/repos/.../actions/artifacts` answers `404 page not found` on this build (15.0.3+gitea-1.22.0), so `upload-artifact` APKs are reachable only by a human clicking through the run page and only until they expire. The `cd-deploy` `prod-apk` job therefore publishes every release APK to the **generic package registry** (`mcm-app-android` package, version `<expo.version>-<sha7>`) via `scripts/cd/publish-apk.mjs`, alongside the artifact. Use a `read:package` token to fetch it; see §6.7 of the runbook for the list/download/verify recipe.
   - **APK retention is count-based, not time-based.** The measured release APK size is **109 MB** (run #6036 — universal build). Unbounded accumulation is a disk-exhaustion path on this host. `publish-apk.mjs` prunes to the newest **5 versions** by `created_at` — not 30-day window because a quiet month would delete every installable APK and a busy week would keep far more than the disk can hold (5 × 109 MB ≈ 550 MB ceiling). **To pin a build so it survives pruning**, re-upload it under `<version>-keep`; pinned versions are kept and do not consume a retention slot.
   - **The script always exits 0 and is `continue-on-error` on the workflow step.** `prod-apk` is non-blocking by design; a registry hiccup must not turn a deploy red. Every failure path emits `::error::` so it is visible in the job log without failing the job.
+- **`ubuntu-latest` on this forge is `node:22-bookworm` — GitHub-hosted-runner recipes do not
+  transfer (item #457).** The forge's `ubuntu-latest` label maps to a plain Node image, not a
+  GitHub-hosted Ubuntu runner. Two consequences bite copied workflow snippets:
+  - **There is no `sudo`.** The container process is already root, so `sudo` is absent and
+    unnecessary. A copied `sudo …` line dies on its first word with `sudo: command not found`. If
+    the step carries the customary `|| true`, it goes **green having done nothing**. That is what
+    `cd-deploy`'s `prod-apk` "Free disk space" step did on every run it ever made. (The `kvm`
+    runner is the same story for a different reason: it runs on the host as the unprivileged `ci`
+    user, which also has no sudo.)
+  - **Dropping `sudo` is WORSE than the no-op.** Measured 2026-09-15 with `docker run --rm
+    node:22-bookworm`: `/usr/share/dotnet`, `/opt/ghc`, `/usr/local/.ghcup`, `/usr/share/swift`,
+    and `/usr/local/share/powershell` do not exist. The one sizeable removable directory,
+    `/usr/local/lib/node_modules` (19 MB), holds `corepack` and `npm`, which `pnpm/action-setup`
+    needs — so "just drop the `sudo`" turns a harmless no-op into a broken job. Deleting files
+    from an image's lower layers also writes whiteouts to the container layer, so host usage goes
+    UP. **To free real disk from a job, prune the rootless daemon** (`docker image prune -af`),
+    which needs no privileges and is what `app-e2e`, `dast`, and `build-deploy` all do. `prod-apk`
+    has no Docker CLI and builds no images, so it has nothing to prune.
+  - `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` fails any workflow step that invokes
+    `sudo`, pinning both directions.
 - **Never commit the real forge hostname, production domain, or tailnet address.** Every literal in
   this runbook is a placeholder; the topology-scrub and secret-scan CI gates block a real value from
   landing in git, matching the redaction posture in
