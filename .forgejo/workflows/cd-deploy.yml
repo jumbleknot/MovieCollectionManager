@@ -324,10 +324,40 @@ jobs:
       EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: https://auth.${{ vars.BASE_DOMAIN }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Free disk space
+      # Item #457. What stood here was a "Free disk space" step lifted from a GitHub-hosted-runner
+      # recipe. It never freed a byte on any run and could not: `runs-on: ubuntu-latest` on this forge
+      # is `--label ubuntu-latest:docker://node:22-bookworm`
+      # (docs/runbooks/Server-Setup-Runbook.md:588), a plain Node image where the process is already
+      # root and `sudo` is not installed — so the command died on its first word
+      # (`sudo: command not found`, captured verbatim in the digest for run 3409), the blanket
+      # `|| true` swallowed the non-zero exit, and the `df -h /` underneath printed a healthy line.
+      # The step went green reporting a reclamation that never happened.
+      #
+      # It is NOT re-armed by dropping `sudo`, which is the obvious-looking fix and is worse than the
+      # no-op. Measured 2026-09-15, `docker run --rm node:22-bookworm`: five of the six paths
+      # (/usr/share/dotnet, /opt/ghc, /usr/local/.ghcup, /usr/share/swift,
+      # /usr/local/share/powershell) do not exist in this image at all, and the sixth —
+      # /usr/local/lib/node_modules, 19 MB — contains `corepack` and `npm`, which the very next step
+      # (pnpm/action-setup, which resolves pnpm through corepack) needs. A working `rm -rf` would
+      # break the job to reclaim 19 MB of a 914 GB disk, and would not reclaim even that: deleting
+      # files that live in the image's lower layers writes whiteouts to the container layer, so host
+      # usage goes UP.
+      #
+      # The three sibling jobs that DO free space (app-e2e, dast, build-deploy) prune the rootless
+      # daemon's images, which needs no sudo and frees host disk for real. prod-apk has no Docker CLI
+      # and builds no images, so it has nothing of that kind to prune.
+      #
+      # So the reclamation is gone and this step only reports, plainly, that there is nothing to
+      # reclaim. No `|| true`: under `bash -e`, a failing `df` now fails the step instead of printing
+      # reassurance.
+      - name: Report disk space (nothing to reclaim — see item #457)
         run: |
-          bash scripts/ci-log-step.sh prod-apk-free-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift /usr/local/share/powershell /usr/local/lib/node_modules || true
+          bash scripts/ci-log-step.sh prod-apk-report-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
+          echo "No reclamation is attempted here. This job runs in node:22-bookworm, which carries"
+          echo "none of the GitHub-hosted-runner payloads (dotnet, ghc, swift, powershell) that a"
+          echo "cleanup step would target, and its only sizeable removable directory holds corepack"
+          echo "and npm, which the pnpm setup step below depends on. See item #457."
+          echo "The Android SDK install needs roughly 10-15 GB; below is what is actually free."
           df -h /
           CI_LOG_STEP
       # No `version:` — resolve pnpm from package.json `packageManager`, exactly like every other
