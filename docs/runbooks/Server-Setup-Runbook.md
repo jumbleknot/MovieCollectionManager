@@ -589,6 +589,26 @@ ci$ ./forgejo-runner daemon \
 ```
 The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once confirmed.
 
+> **`ubuntu-latest` here is `node:22-bookworm`, so GitHub-hosted-runner recipes do not transfer**
+> (item #457). The label above maps `ubuntu-latest` to a plain Node image — **not** a
+> GitHub-hosted Ubuntu runner. Two consequences bite copied workflow snippets:
+>
+> * **There is no `sudo`.** The container process is already root, so `sudo` is both absent and
+>   unnecessary. A copied `sudo …` line dies on its first word with `sudo: command not found`, and
+>   if it carries the customary `|| true` the step goes **green** having done nothing. That is
+>   exactly what `cd-deploy`'s `prod-apk` "Free disk space" step did on every run it ever made,
+>   for as long as it existed. (The `kvm` runner is the same story for a different reason: it
+>   executes on the host as the unprivileged `ci` user, which also has no sudo.)
+> * **The GitHub-hosted payloads are not there to delete.** Measured 2026-09-15 with
+>   `docker run --rm node:22-bookworm`: `/usr/share/dotnet`, `/opt/ghc`, `/usr/local/.ghcup`,
+>   `/usr/share/swift` and `/usr/local/share/powershell` do not exist. The one sizeable removable
+>   directory, `/usr/local/lib/node_modules` (19 MB), holds `corepack` and `npm` — which
+>   `pnpm/action-setup` needs — so "just drop the `sudo`" turns a harmless no-op into a broken job.
+>   To free real disk from a job, prune the **daemon** (`docker image prune -af`), which needs no
+>   privileges and is what `app-e2e`, `dast` and `build-deploy` all do.
+>
+> `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` fails any workflow step that invokes `sudo`.
+
 > **KVM for the Android-emulator job (feature 023 `app-ci`).** The workflow's emulator job runs on
 > `ubuntu-latest` (single runner), so `/dev/kvm` must be passed into the job *container* rather than
 > using a separate `kvm:host` label. (a) add `ci` to the `kvm` group (`sudo usermod -aG kvm ci`;

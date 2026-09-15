@@ -1591,3 +1591,142 @@ test('(dep-free) the hand-rolled needs parser agrees with the `yaml` package on 
     );
   }
 });
+
+// ─── item #403 — `watch` reported a commit settled while an ADVISORY context was still running ───
+//
+// Measured twice in one session, on the same defect:
+//
+//   1. PR #400 merged with 11/11 required contexts green. The push run's `app-ci / trigger-cd` then
+//      failed in 3s with `ERR_MODULE_NOT_FOUND: Cannot find package 'yaml'`. Nothing blocked, `main`
+//      stayed green, and THE CD DISPATCH SIMPLY DID NOT HAPPEN. A human found it by opening the run.
+//   2. Verifying the fix (PR #401, merge 211a3244), `watch` again exited 0 while `trigger-cd` was
+//      still `pending`. Confirming it needed a hand-rolled polling loop over that one context.
+//
+// `watch` was not wrong about the question it answered — advisory contexts do not gate a merge. It
+// answered a narrower question than the reader asked, and dropped the one row carrying the deploy
+// outcome. Same class as the superseded-vs-failed trap.
+//
+// The exit code is deliberately NOT part of the fix: `exit 0 ⟺ mergeable` is load-bearing for a
+// `ci-status && merge` wrapper, so the last test in this block pins that the new wait cannot change
+// it even when the advisory context never finishes.
+
+import { outstandingContexts, describeAdvisoryFailures, verdictLine as verdictLine403 } from '../ci-status.mjs';
+
+/** Required-green plus one advisory context in the requested state, both on the push event. */
+const withAdvisory = (advisoryStatus, advisoryDescription) => [
+  {
+    context: 'guardrails / naming (push)', status: 'success',
+    description: 'Successful in 1s', created_at: '2026-09-09T00:00:01Z',
+  },
+  {
+    context: 'app-ci / trigger-cd (push)', status: advisoryStatus,
+    description: advisoryDescription, created_at: '2026-09-09T00:00:02Z',
+  },
+];
+
+const ADVISORY_PENDING = withAdvisory('pending', 'Waiting to run');
+const ADVISORY_FAILED = withAdvisory('failure', 'Failing after 3s');
+const ADVISORY_GREEN = withAdvisory('success', 'Successful in 4s');
+
+test('(#403a) required all green + one advisory still PENDING is NOT settled', () => {
+  const v = computeMergeVerdict(ADVISORY_PENDING, { requiredGlobs: ['guardrails*'], event: 'push' });
+
+  // The commit is mergeable — that part was never wrong, and must not change.
+  assert.equal(v.mergeable, true, 'an advisory context must not block the merge verdict');
+  assert.equal(exitCodeForVerdict(v), 0, 'exit 0 ⟺ mergeable — advisory state cannot move it');
+
+  // ...but it has not SETTLED, and that is the question `watch` is asked.
+  const out = outstandingContexts(v);
+  assert.equal(out.settled, false, 'watch would have returned on a commit that had not finished');
+  assert.equal(out.requiredOutstanding, false, 'nothing required is outstanding — only the advisory');
+  assert.deepEqual(out.advisory.map((c) => c.job), ['app-ci / trigger-cd']);
+});
+
+test('(#403b) watch KEEPS POLLING while an advisory context is pending, then returns 0', async () => {
+  // The headline case, end to end: 11/11 required green from the first poll, advisory pending for
+  // two polls, then green. The old loop returned on poll 1.
+  const { calls, restore } = stubForge({
+    statusSequence: [ADVISORY_PENDING, ADVISORY_PENDING, ADVISORY_GREEN],
+  });
+  try {
+    const code = await quiet(() =>
+      cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 60, intervalSeconds: 0 }));
+    assert.ok(calls.status >= 3, `polled ${calls.status}x — it returned while trigger-cd was pending`);
+    assert.equal(code, 0, 'the eventual verdict was not returned');
+  } finally { restore(); }
+});
+
+test('(#403c) --required-only restores the narrower wait, and returns immediately', async () => {
+  const { calls, restore } = stubForge({ statusSequence: [ADVISORY_PENDING] });
+  try {
+    const code = await quiet(() =>
+      cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 60, intervalSeconds: 0, requiredOnly: true }));
+    assert.equal(code, 0);
+    assert.equal(calls.status, 1, '--required-only must not wait on the advisory context');
+  } finally { restore(); }
+});
+
+test('(#403d) --required-only is parsed, and defaults to false', () => {
+  assert.equal(parseTargetArgs(['watch', '--sha', FULL_SHA]).requiredOnly, false,
+    'waiting for advisory contexts must be the DEFAULT, not an opt-in');
+  assert.equal(parseTargetArgs(['watch', '--required-only']).requiredOnly, true);
+});
+
+test('(#403e) an advisory FAILURE is announced in its own block, not just as a table row', () => {
+  const v = computeMergeVerdict(ADVISORY_FAILED, { requiredGlobs: ['guardrails*'], event: 'push' });
+  const lines = describeAdvisoryFailures(v).join('\n');
+
+  assert.match(lines, /ADVISORY FAILURE/, 'the failure must be stated, not left to be inferred');
+  assert.match(lines, /app-ci \/ trigger-cd/, 'the failing context must be named');
+  assert.match(lines, /CD dispatch did NOT happen/,
+    'naming the context is not enough — the reader must be told what the failure COST');
+
+  // The whole point: `VERDICT mergeable` is what gets read, so the warning has to be above it.
+  assert.match(verdictLine403(v), /mergeable/, 'the verdict itself is unchanged, by design');
+  assert.deepEqual(describeAdvisoryFailures(
+    computeMergeVerdict(ADVISORY_GREEN, { requiredGlobs: ['guardrails*'], event: 'push' }),
+  ), [], 'a green advisory context must produce no banner at all');
+});
+
+test('(#403f) a PUSH-event advisory failure is announced while the VIEW is pull_request', () => {
+  // `trigger-cd` runs on the push event only. Reading advisory state from the event-filtered view
+  // would report nothing in precisely the case this item exists for (item #281, same shape).
+  const v = computeMergeVerdict(ADVISORY_FAILED, {
+    requiredGlobs: ['guardrails*'], event: 'pull_request',
+  });
+  assert.deepEqual(v.advisory, [], 'the VIEW genuinely holds no pull_request advisory failure');
+  assert.match(describeAdvisoryFailures(v).join('\n'), /app-ci \/ trigger-cd/,
+    'the gate holds it, and that is what must be rendered');
+});
+
+test('(#403g) an advisory context that never finishes does NOT turn a mergeable commit into exit 3', async () => {
+  // The dangerous direction of this change. `exit 0 ⟺ mergeable` is what a `ci-status && merge`
+  // wrapper is built on; making `watch` wait longer must not let a timeout on a context that gates
+  // NOTHING convert a green commit into "still waiting". The wait changes what is reported, never
+  // what is returned.
+  const { restore } = stubForge({ statusSequence: [ADVISORY_PENDING] });
+  const said = [];
+  const realLog = console.log;
+  console.log = (...a) => said.push(a.join(' '));
+  try {
+    const code = await cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 0, intervalSeconds: 0 });
+    assert.equal(code, 0, 'a timeout on an ADVISORY context must not change the merge answer');
+    assert.match(said.join('\n'), /advisory context\(s\) still running/,
+      'having waited and given up, it must say which context never reported');
+    assert.match(said.join('\n'), /app-ci \/ trigger-cd/);
+  } finally { console.log = realLog; restore(); }
+});
+
+test('(#403h) a REQUIRED context still pending at the timeout is still exit 3', async () => {
+  // The other half of (#403g): the starvation path must be untouched. Same fixture with the
+  // required context pending instead.
+  const { restore } = stubForge({ statusSequence: [[{
+    context: 'guardrails / naming (push)', status: 'pending',
+    description: 'Waiting to run', created_at: '2026-09-09T00:00:01Z',
+  }]] });
+  try {
+    const code = await quiet(() =>
+      cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 0, intervalSeconds: 0 }));
+    assert.equal(code, 3, 'runner starvation on a REQUIRED context is still exit 3');
+  } finally { restore(); }
+});
