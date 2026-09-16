@@ -4,7 +4,7 @@ title: mc-service (Rust/Axum movie-collection service)
 description: The Rust/Axum microservice that owns all movie-collection domain logic — CRUD, business-rule validation, and RBAC/DAC enforcement — for MovieCollectionManager, built as four Clean Architecture layers with CQRS, repository, and specification patterns.
 resource: docs/MCM-Architecture.md
 tags: [rust, axum, clean-architecture, cqrs, mongodb]
-timestamp: 2026-06-20T21:57:08-04:00
+timestamp: 2026-09-16T09:26:13Z
 ---
 
 # mc-service (Rust/Axum movie-collection service)
@@ -65,6 +65,8 @@ the database.
 - **~29% unit-test coverage is intentional, not a gap.** Clean Architecture concentrates the
   branching logic that's worth testing in the adapters/integration paths; those are exercised by
   integration tests instead. The CI coverage *floor* combines unit + integration to 70%.
+- **"index creation failed: I/O error: unexpected end of file" means the container died — not bad data.** The dev MongoDB container runs with no memory swap on the host. During a parallel integration run the WiredTiger cache is not the culprit: with it capped, the heap still grew because the integration harness mints a fresh database per test (`common::test_db()` → `mc_test_<uuid>`) and drops each database in `cleanup_db`, but MongoDB raises WiredTiger's sweeper thresholds (`closeIdleTime=600 s`, `closeMinimum=2000`) — sensible for stable namespaces, wrong for a workload that churns thousands of namespaces per minute. Nothing was ever eligible for sweeping, so open data-handle counts reached 65,844 for 2 live collections, the heap climbed until the OS killed mongod mid-run, and every subsequent test saw connection errors and server-selection timeouts. The symptom string is identical to the earlier nofile crash-loop (`ulimits` fixed that one, this one is memory). Fix applied in `infrastructure-as-code/docker/mc-service/compose.yaml`: `--wiredTigerCacheSizeGB 1` caps the cache, and `--setParameter wiredTigerFileHandleCloseIdleTime=30 --setParameter wiredTigerFileHandleCloseMinimum=250` restores WiredTiger's own defaults. These flags are startup-only (`setParameter` at runtime is refused). Dev-only: `compose.prod.yaml` carries its own `command` and is untouched.
+- **`nx test mc-service` and `nx test:integration mc-service` must run the integration binaries the same way — and they now do.** Before 2026-09-16 the developer-facing `nx test` invoked cargo at default parallelism while the CI gate (`test:integration`) always ran through `mc-service-integration-guard.mjs` at `--test-threads=1`. The two tiers disagreed about the one setting that changes the result: a test failing ~2 runs in 3 locally was green in CI for months. The reconciliation: `nx test mc-service` now delegates via `dependsOn` to `test:unit` and `test:integration` rather than running cargo itself, so `--test-threads=1` is decided in exactly one place. Do NOT flip to parallel without fixing the underlying contention first — measured 2 failures in 29 runs at default parallelism from a clean MongoDB after item #462 was resolved; serial over the same period was 180/180.
 
 See [Auth chain](/openwiki/invariants/auth-chain.md) for how mc-service fits into the end-to-end
 authorization sequence, and `docs/MCM-Architecture.md` (dedicated "mc-service Architecture" section)

@@ -4,7 +4,7 @@ title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — core components (mcm-app, mc-service, mc-db, Keycloak), the additive AI Agents layer, and the RBAC/DAC access-control model — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
 tags: [architecture, overview, rbac, dac]
-timestamp: 2026-07-16T16:05:08+00:00
+timestamp: 2026-09-16T09:26:13+00:00
 ---
 
 # System overview (MCM)
@@ -62,7 +62,12 @@ common source of confusion when reasoning about "why can't this user do X":
 - **`mc-db` runs as a single-member replica set, not a plain standalone `mongod`.** This is a
   correctness requirement (the cascade-delete transaction needs it), not an optional production
   hardening step — see [mc-service](/openwiki/projects/mc-service.md) gotchas for what breaks if you
-  substitute a bare `mongo` container.
+  substitute a bare `mongo` container. The dev compose stack also caps WiredTiger's cache at 1 GB
+  and restores its sweeper defaults (`closeIdleTime=30 s`, `closeMinimum=250`); without these,
+  parallel `cargo test` runs OOM-kill the container on memory-constrained dev boxes, producing
+  "unexpected end of file" / "Connection refused" errors that are indistinguishable from a MongoDB
+  consistency bug — see [mc-service](/openwiki/projects/mc-service.md) for the full measured
+  diagnosis (item #468).
 
 See `docs/MCM-Architecture.md` for the full purpose/roadmap statement, the complete component list,
 and the diagrammed mc-service layer table.
