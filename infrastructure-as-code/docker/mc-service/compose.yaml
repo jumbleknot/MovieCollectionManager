@@ -7,7 +7,58 @@ services:
     restart: unless-stopped
     # --replSet rs0: enables single-member replica set required for multi-document transactions.
     # --bind_ip_all: accepts connections from all network interfaces inside Docker.
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    #
+    # --wiredTigerCacheSizeGB 1 (item #468): WiredTiger's DEFAULT cache is max(0.5 * (RAM - 1 GB),
+    # 256 MB) — on this 16 GB dev box that is ~7.9 GB, so mongod alone is entitled to half the
+    # machine while ~20 other containers and a 20-thread `cargo test` share the rest. There is NO
+    # SWAP. MEASURED 2026-09-16: during `cargo test --test movies_test` at default parallelism
+    # mongod's RSS climbed 1.4 GB → 6.2 GB, free memory fell to 3.3 GB, and the container was
+    # killed and restarted mid-run (RestartCount 5 → 6 at 09:09:28, then again earlier at
+    # 09:03:46). Every symptom in item #468 is downstream of that ~45 s outage: `Connection
+    # refused` for new connections, `unexpected end of file` / `Connection reset by peer` for
+    # in-flight ones, and `Server selection timeout … Topology: Unknown` for the rest — which is
+    # why a failing run takes 60-85 s (two 30 s server-selection timeouts) instead of 6 s.
+    #
+    # Note the symptom string is IDENTICAL to the nofile crash-loop the `ulimits` block below
+    # fixed on 2026-07-27. Same symptom, different resource: that one was file descriptors (and
+    # is still fixed — mongod holds 64000 and peaked at ~180 connections here), this one is
+    # memory. "unexpected end of file" from this stack means THE CONTAINER DIED; the open
+    # question is only which resource ran out.
+    #
+    # 1 GB is generous for the dev dataset (a personal collection, plus ~180 tiny `mc_test_*`
+    # databases per integration run). Dev-only: compose.prod.yaml carries its own `command`.
+    # Same reasoning as OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g in the opensearch stack.
+    #
+    # --setParameter wiredTigerFileHandleClose* (item #468): the cache pin alone was NOT enough,
+    # and the reason is worth stating because it is counter-intuitive. MEASURED over 11 runs with
+    # only the pin in place: mongod's heap still grew 1.42 GB → 3.63 GB (~0.29 GB/run) while the
+    # WiredTiger cache sat at 0.31 GB of its 1.07 GB ceiling — so the growth was never the cache.
+    # serverStatus() named it exactly:
+    #
+    #   wiredTiger["data-handle"]  active = 65844,  swept = 0
+    #   catalogStats               collections = 2
+    #
+    # 65 844 open data handles for 2 live collections. The integration suite mints a database per
+    # test (`common::test_db()` → `mc_test_<uuid>`) and drops it in `cleanup_db` — ~180 databases,
+    # ~3 400 WiredTiger idents, per run. The DATABASES go away; their dhandles do not, because
+    # MongoDB raises WiredTiger's sweeper thresholds to `closeIdleTime=600 s` / `closeMinimum=2000`
+    # — sensible for a server whose namespace set is stable, wrong for a box that churns thousands
+    # of namespaces a minute. Nothing was ever eligible for sweeping, so `swept` stayed at 0 and
+    # the heap climbed until the box (16 GB, NO SWAP, ~20 containers) killed mongod.
+    #
+    # These two values restore WiredTiger's OWN defaults (30 s / 250), which is what a namespace-
+    # churning workload wants. Startup-only — `setParameter` at runtime is refused.
+    command:
+      - mongod
+      - --replSet
+      - rs0
+      - --bind_ip_all
+      - --wiredTigerCacheSizeGB
+      - "1"
+      - --setParameter
+      - wiredTigerFileHandleCloseIdleTime=30
+      - --setParameter
+      - wiredTigerFileHandleCloseMinimum=250
     # MongoDB requires nofile >= 64000. The dev container's Docker-in-Docker daemon hands containers
     # a default soft limit of 1024, which mongod survives while idle and then exhausts under a real
     # integration-test run — the listener starts logging "Error accepting new connection ... Too many

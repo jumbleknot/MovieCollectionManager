@@ -31,7 +31,8 @@ source of truth**: both `keycloak-store-postgres` (`POSTGRES_PASSWORD`) and `key
 (`KC_DB_PASSWORD`) interpolate the SAME `${KC_DB_PASSWORD}` — no `secrets/*.txt` file-secret, no
 `.env.local`.
 
-Mint the dev values once (creates `stacks/auth.env` from `auth.env.example`, including a random
+Mint the dev values once (creates `stacks/auth.env` from
+`infrastructure-as-code/docker/stacks/auth.env.example`, including a random
 `KC_DB_PASSWORD`):
 
 ```bash

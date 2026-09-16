@@ -18,6 +18,13 @@
 # Feature 022: track the committed prod placeholder templates (*.env.prod.example) under the
 # docker component dirs, while real *.env.prod values stay ignored by the *.env.* rule above.
 !infrastructure-as-code/docker/**/*.env.prod.example
+# Item #463: the agent gateway's env TEMPLATE. Named exactly, not globbed, because the file it
+# describes — agents/movie-assistant/.env.local — is the one .env.local gen-dev-env.mjs
+# deliberately does NOT write (it carries the operator's own Anthropic credential), so the
+# template is the only thing a human has to follow. The real .env.local beside it stays ignored
+# by the *.env.* rule above. scripts/__tests__/doc-env-example-citations.guard.test.mjs fails if
+# a live doc cites a .env*.example that is not tracked here.
+!agents/movie-assistant/.env.local.example
 # Feature 038 (dev-container full toolchain): the local env carrying MCM_DEVCONTAINER_IMAGE — the
 # digest-pinned forge ref of the prebuilt toolchain image (…/mcm-devcontainer@sha256:<digest>).
 # It keeps the FORGE HOST out of git (topology-scrub); devcontainer.json reads it only as
