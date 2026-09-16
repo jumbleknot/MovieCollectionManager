@@ -382,4 +382,31 @@ tune those freely. Docker values set in `infrastructure-as-code/docker/mc-servic
 > runbooks and fails if one is neither generated nor a declared exception, so a documented file nothing
 > writes is visible here rather than three weeks later in someone's `nx affected`.
 
+**Running the mc-service tests.** `pnpm nx test mc-service` runs **both** tiers — `test:unit`
+(`cargo test --lib`, no infrastructure) and `test:integration` (the three integration binaries, which
+need the local replica-set MongoDB and Keycloak). It **delegates** to
+`scripts/mc-service-integration-guard.mjs` rather than invoking cargo itself, so it cannot disagree
+with CI about how the suite is run.
+
+> **The integration tier runs SERIALLY (`--test-threads=1`), and that is deliberate.** The pin arrived
+> in the initial commit with no recorded reason and was carried unexamined for months; item #462 showed
+> the cost, when a test that failed ~2 runs in 3 under parallelism stayed green in CI because CI never
+> ran it that way. Measured 2026-09-16 from a clean MongoDB, the binaries at default parallelism fail
+> **2 runs in 29** — always in `movies::large_collection_test`, as either an index-creation failure or
+> a `MovieNotFound` read-back miss in `MongoMovieRepository::create`. Serial is 180/180 and stable.
+> A leaked-database theory was tested and rejected: dropping 91 stale `mc_test_*` databases changed
+> nothing, because the debris is a *consequence* of failed runs (a panicking test never reaches
+> `cleanup_db`), not a cause. Do not flip it to parallel for speed — at ~7% per run it would make a
+> required gate flaky. Tracked as item #468, which owns the fix and the re-measurement.
+
+> **Stale test databases.** A failed or interrupted run leaves its `mc_test_<uuid>` databases behind;
+> one crash during that investigation left 31. They are harmless but accumulate. To clear them:
+> ```bash
+> docker exec mc-service-store-mongo mongosh --quiet --eval '
+>   db.adminCommand({listDatabases:1,nameOnly:true}).databases
+>     .filter(x=>/^mc_test_[0-9a-f]{32}$/.test(x.name))
+>     .forEach(x=>{db.getSiblingDB(x.name).dropDatabase()});'
+> ```
+> The regex is anchored on purpose — `mc_db` is the real local database and must never match.
+
 **mc-service fails to start if `MC_DB_URL` is unreachable or if Keycloak JWKS endpoint cannot be fetched** (JWKS is cached on startup for JWT validation).

@@ -130,3 +130,94 @@ test('the compile check ADDS to the integration tier, it does not replace it', (
     '`app-e2e` no longer runs the mc-service integration guard',
   );
 });
+
+// ─── The `test` target must not disagree with the gate about threading ───────────────────────────
+//
+// Item #462's follow-on. `nx test:integration mc-service` — the ONLY invocation CI makes — runs the
+// integration binaries through `scripts/mc-service-integration-guard.mjs`, which pins
+// `--test-threads=1`. `nx test mc-service`, what a developer actually runs, used the
+// `@monodon/rust:test` executor and therefore ran cargo at DEFAULT parallelism. The two tiers
+// disagreed about the one setting that changes the result.
+//
+// That is not hypothetical. `logging_middleware_emits_structured_json` (item #462) failed ~2 runs in 3
+// under parallelism and was green in CI for months, because CI never ran it that way. A tier that
+// passes under one invocation and fails under another teaches the reader to ignore its result.
+//
+// MEASURED 2026-09-15/16, after item #462 was fixed, on a CLEAN MongoDB (no leaked test databases):
+// the integration binaries at default parallelism failed **2 runs in 29**, always in
+// `movies::large_collection_test` — either `create_indexes … index creation failed` or
+// `create <movie> failed: MovieNotFound`, a read-your-own-writes miss on the insert/read-back in
+// `MongoMovieRepository::create`. Serial is 180/180 and stable. So the gate stays serial, and the
+// reconciliation is that `test` DELEGATES rather than carrying its own copy of the setting.
+//
+// The delegation is the point: a second literal `--test-threads` anywhere is a second thing to drift,
+// and drift is how this started.
+
+test('#462-followon: `test` delegates to test:unit + test:integration, and owns no threading of its own', () => {
+  const proj = JSON.parse(
+    readFileSync(resolve(REPO_ROOT, 'backend/mc-service/project.json'), 'utf8'),
+  );
+  const target = proj.targets.test;
+  assert.ok(target, 'mc-service must keep a `test` target');
+
+  const deps = target.dependsOn ?? [];
+  assert.ok(
+    deps.includes('test:unit') && deps.includes('test:integration'),
+    `\`test\` must depend on both tiers so it cannot diverge from the gate; got ${JSON.stringify(deps)}`,
+  );
+
+  // Check what the target EXECUTES, not what it documents. An earlier version of this guard
+  // stringified the whole target, so the `metadata.description` explaining "do not give this target
+  // its own --test-threads" tripped the very rule it was describing. A guard that cannot tell a
+  // setting from a sentence about that setting will eventually be silenced rather than fixed.
+  const executed = [target.options?.command, ...(target.options?.commands ?? []), ...(target.options?.args ?? [])]
+    .filter(Boolean)
+    .join(' ');
+  assert.doesNotMatch(
+    executed,
+    /--test-threads/,
+    'the `test` target must NOT carry its own --test-threads — the guard owns that decision, and a ' +
+      `second copy is a second thing to drift; got: ${executed}`,
+  );
+  assert.notEqual(
+    target.executor,
+    '@monodon/rust:test',
+    'the @monodon/rust:test executor runs cargo at default parallelism, which is exactly the ' +
+      'divergence this pins',
+  );
+});
+
+test('#462-followon: the threading decision exists in exactly ONE place in the repo', () => {
+  // If this count ever exceeds one, the two tiers can disagree again without anyone noticing.
+  const guard = readFileSync(resolve(REPO_ROOT, 'scripts/mc-service-integration-guard.mjs'), 'utf8');
+  const inGuard = (guard.match(/cargoArgs\.push\([^)]*--test-threads=1/g) ?? []).length;
+  assert.equal(inGuard, 1, 'the guard must pin the thread count exactly once');
+
+  // Again: executed surface only, across every target — prose may name the flag, commands may not.
+  const proj = JSON.parse(readFileSync(resolve(REPO_ROOT, 'backend/mc-service/project.json'), 'utf8'));
+  const offenders = Object.entries(proj.targets ?? {})
+    .filter(([, t]) =>
+      [t.options?.command, ...(t.options?.commands ?? []), ...(t.options?.args ?? [])]
+        .filter(Boolean)
+        .some((c) => String(c).includes('--test-threads')),
+    )
+    .map(([name]) => name);
+  assert.deepEqual(
+    offenders,
+    [],
+    `project.json must not pin a thread count in any target — it would be a second, drifting source ` +
+      `of truth; offending target(s): ${offenders.join(', ')}`,
+  );
+});
+
+test('#462-followon: the serial pin carries its MEASURED reason, not just a value', () => {
+  // It sat unexplained from the initial commit (2026-05-23) until item #462's follow-on measured it.
+  // A setting nobody can justify is a setting nobody dares change, and this one hid a real flake.
+  const guard = readFileSync(resolve(REPO_ROOT, 'scripts/mc-service-integration-guard.mjs'), 'utf8');
+  const at = guard.indexOf('--test-threads=1');
+  const preamble = guard.slice(Math.max(0, at - 2500), at);
+  assert.match(preamble, /large_collection_test/,
+    'the comment must name where parallel execution actually fails');
+  assert.match(preamble, /2 runs in 29|2 failures in 29|2\/29/,
+    'the comment must carry the measured failure rate, so the next person can re-measure it');
+});
