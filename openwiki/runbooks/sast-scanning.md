@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-timestamp: 2026-09-08T00:00:00Z
+timestamp: 2026-09-15T10:21:00Z
 ---
 
 # SAST & SCA static scanning
@@ -174,6 +174,7 @@ container images rather than first-party code or first-party dependency graphs.
   second check matters because `semgrep --test` SKIPS an unfixtured rule and still prints `N/N ✓`
   (measured: `4/4 ✓ All tests passed` with five rule files present). The Semgrep pin lives only in
   `sast-scan.mjs`, so the workflow step carries no second copy to drift.
+- **A red `sast` gate whose output says `TRANSPORT/SERVICE ERROR` is an outage — re-run it (item #449).** Three scanners reach a third party on the required gate's critical path: `pip-audit` queries **osv.dev**, `cargo-audit` fetches the **RustSec advisory DB**, and `pnpm audit` queries the **npm registry**. Measured 2026-09-13 on run 3328: `guardrails / sast` went red on a pip-audit `ServiceError` from osv.dev while the scan had otherwise completed clean (`findings=16 blocking=0`). osv.dev recovered 200 minutes later. Since item #449, `sast-scan.mjs` classifies these as transport/service failures and **retries 3 times with exponential backoff (2 s, 4 s)** before giving a verdict — the job log will say `transient transport/service failure on attempt N/3 — retrying`. Two properties preserved: (1) **fail-closed** — after retries are exhausted the gate still fails; (2) **classification is narrow** — a real fault (unsynced venv, unparseable lockfile) fails on the first attempt without burning the backoff budget. `scripts/__tests__/sast-scan-retry.guard.test.mjs` pins both directions. Distinguishing a service outage from a genuine finding is the whole point: the output explicitly states "This is NOT a security finding."
 
 Full scanner matrix, local invocation, the CI gate steps, the triage/allowlist workflow, and the
 step-by-step "gate went red on an untouched dep" playbook: `docs/runbooks/sast-scanning.md`.

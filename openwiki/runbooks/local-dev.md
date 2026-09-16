@@ -4,7 +4,7 @@ title: Local dev infrastructure & environment variables
 description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — and the load-bearing ordering, credential-rotation, missing-.env.local, and stale-credential gotchas that break a fresh box or test run if skipped.
 resource: docs/runbooks/local-dev.md
 tags: [docker-compose, local-dev, secrets, keycloak, runbook]
-timestamp: 2026-09-10T00:00:00Z
+timestamp: 2026-09-15T10:21:00Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -20,6 +20,7 @@ per-machine stack credentials and seed the dev Keycloak realm before any stack i
 
 ## Gotchas
 
+- **`mc-service:test` going red on a byte-identical Rust tree means `backend/mc-service/.env.local` is absent — now fixed (item #227).** `gen-dev-env.mjs` writes `backend/mc-service/.env.local` on every run: `KEYCLOAK_*` / `E2E_*` lines are re-synced from `stacks/auth.env`, while `MC_DB_URL`, `MC_SERVICE_PORT` and `RUST_LOG` are seeded once and left alone so a tuned config survives a re-run. Without this file the Rust integration tier panics with `Missing("MC_DB_URL")` — 16 of 41 cases fail on configuration, not code, and nothing distinguished this from a real failure. Before item #227 the generator silently skipped this file: four `E2E_*` variables (for the authenticated `http_authz_test::*` cases that mint a real ROPC token) were also absent, accounting for a second half-dozen failures that had been wrongly attributed to "needing a replica-set MongoDB". After the fix: **41 passed / 0 failed**. The generator names the one `.env.local` it deliberately does NOT create (`agents/movie-assistant/`) so the omission is explicit.
 - **Bring `auth` up before the `mcm` `app` profile.** mc-service fetches Keycloak JWKS on startup
   and there is no cross-stack `depends_on` — the ordering is manual. `--profile app` without
   Keycloak already running just hangs.
