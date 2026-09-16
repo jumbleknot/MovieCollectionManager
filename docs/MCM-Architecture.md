@@ -609,8 +609,13 @@ docker network create keycloak-network
 docker volume create mc-service-store-mongo-data
 docker volume create keycloak-store-postgres-data
 docker volume create mcm-bff-cache-redis-data
-# Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
+# Mint the per-stack secrets. Feature 022 replaced the keycloak .env.local / secrets/*.txt pair
+# with one generated file per stack, so there is nothing to copy or fill in by hand:
+node scripts/gen-dev-secrets.mjs
 ```
+
+The generator writes the gitignored `infrastructure-as-code/docker/stacks/*.env` files from the
+tracked `*.env.example` templates beside them — see [runbooks/local-dev.md](runbooks/local-dev.md).
 
 ### Local IAM Testing
 
