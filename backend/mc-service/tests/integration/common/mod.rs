@@ -16,39 +16,46 @@ pub mod auth;
 /// `tracing` capture that survives `--test-threads > 1` (item #462).
 pub mod log_capture;
 
-use std::sync::Arc;
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use axum_keycloak_auth::instance::KeycloakAuthInstance;
-use mongodb::{options::ClientOptions, Client, Database};
+use mongodb::{bson::doc, options::ClientOptions, Client, Database};
 use uuid::Uuid;
 
 /// How long to wait for Keycloak OIDC discovery before failing a test outright.
 const JWKS_READY_TIMEOUT: Duration = Duration::from_secs(30);
 
-/// Connect to MongoDB and return a database with a unique name per test run.
-/// The database is NOT automatically cleaned up — each test should drop it on completion.
+/// Lease this test's database, emptied and indexed, ready to use (item #470).
+///
+/// Isolation is unchanged from the caller's point of view — a test still gets a database nobody
+/// else is writing to. What changed is the bookkeeping: the database is now leased from a bounded
+/// pool for the duration of the test and reset on ACQUIRE, rather than minted per call and dropped
+/// on release. Calling this twice within one test returns the same database.
+///
+/// See the pool section at the end of this file for why the cleaning moved to the acquire side,
+/// and why the slot is released by a thread-local destructor rather than by `cleanup_db`.
 pub async fn test_db() -> Database {
-    let _ = dotenvy::from_filename("backend/mc-service/.env.local");
-    let _ = dotenvy::dotenv();
-
-    let url =
-        std::env::var("MC_DB_URL").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
-
-    let mut opts = ClientOptions::parse(&url).await.expect("Invalid MC_DB_URL");
-    opts.app_name = Some("mc-service-integration-tests".to_string());
-
-    let client = Client::with_options(opts).expect("MongoDB client creation failed");
-
-    // Unique DB name per test run prevents cross-test contamination
-    let db_name = format!("mc_test_{}", Uuid::new_v4().simple());
-    client.database(&db_name)
+    let client = connect().await;
+    let name = lease_for_this_test(&client).await;
+    let db = client.database(&name);
+    reset(&db).await;
+    db
 }
 
-/// Drop the database after a test — call in an async drop pattern.
-pub async fn cleanup_db(db: &Database) {
-    db.drop().await.ok();
-}
+/// Historically dropped the test database; now a deliberate no-op.
+///
+/// DO NOT make this drop or wipe again. Dropping would destroy the leased database and the next
+/// acquire would recreate ~19 WiredTiger idents — reinstating exactly the churn item #470 removed.
+/// Wiping would be redundant work, because `test_db` already resets on acquire.
+///
+/// It is kept, rather than deleted, because the guarantee genuinely moved rather than disappearing
+/// and the 148 call sites read correctly either way: a test that ends by calling this still leaves
+/// a clean database for the next tenant — just by a different mechanism. Removing the calls would
+/// be a 148-site diff for no behavioural gain, and would lose the marker showing where each test
+/// considers itself finished.
+pub async fn cleanup_db(_db: &Database) {}
 
 /// Block until Keycloak OIDC discovery has **succeeded**, or the timeout expires.
 ///
@@ -159,4 +166,276 @@ pub async fn build_test_app_with_auth_instance() -> (axum::Router, Arc<KeycloakA
 pub async fn build_test_app_with_db() -> (axum::Router, Database) {
     let (app, _auth_instance, db) = build_test_app_inner().await;
     (app, db)
+}
+
+// ─── The leased test-database pool (item #470) ────────────────────────────────────────────────
+//
+// WHAT THIS REPLACES. `test_db()` used to mint `mc_test_<uuid>` per call and `cleanup_db` dropped
+// it. With ~180 tests across the binaries, each database carrying 2 collections and ~17 indexes,
+// that was ~3 400 WiredTiger idents created and unlinked PER RUN — and a test that panicked never
+// reached `cleanup_db`, so it leaked its database (52 stale ones after one aborted session; a
+// mongod restart once had to reconcile 62 512 orphaned idents before reporting healthy).
+//
+// THE INVERSION THAT MATTERS: cleaning happens on ACQUIRE, not on release. A panicking test never
+// runs its own cleanup, so a release-side guarantee cannot hold; an acquire-side one always does,
+// because the next tenant of the slot wipes before it starts. That is also why the 148 existing
+// `cleanup_db` call sites did not need to change — see `cleanup_db` below.
+//
+// A slot is leased for the life of the PROCESS, not per test: the thread→slot map below claims
+// once per thread. Every `test_db()` call refreshes the lease, so each test doubles as a free
+// heartbeat and no timer is needed (the longest binary run measured under item #468 was 85 s,
+// against a 600 s staleness window).
+
+/// How long a lease may go unrefreshed before another run may reclaim its slot.
+pub const LEASE_STALE_AFTER: Duration = Duration::from_secs(600);
+
+/// Database holding the lease bookkeeping. Never carries test data.
+const POOL_DB: &str = "mc_test_pool";
+const LEASES: &str = "leases";
+
+/// Upper bound on slots. Comfortably above any plausible `--test-threads`; when every slot is held
+/// by a LIVE process we fall back to a unique name (see `test_db`), so this is a soft ceiling.
+const MAX_SLOTS: u32 = 64;
+
+/// `mc_test_s<slot>` — the leased databases. Matching this shape is what distinguishes a pooled
+/// database from the old per-call unique name.
+fn slot_db_name(slot: u32) -> String {
+    format!("mc_test_s{slot}")
+}
+
+/// True when `name` is a bounded pool slot rather than a per-call unique name.
+pub fn is_pool_slot_name(name: &str) -> bool {
+    name.strip_prefix("mc_test_s")
+        .is_some_and(|rest| !rest.is_empty() && rest.bytes().all(|b| b.is_ascii_digit()))
+}
+
+fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("system clock before the epoch")
+        .as_millis() as i64
+}
+
+/// Build a client from `MC_DB_URL`, loading the dev env files the same way the suite always has.
+async fn connect() -> Client {
+    let _ = dotenvy::from_filename("backend/mc-service/.env.local");
+    let _ = dotenvy::dotenv();
+
+    let url =
+        std::env::var("MC_DB_URL").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
+
+    let mut opts = ClientOptions::parse(&url).await.expect("Invalid MC_DB_URL");
+    opts.app_name = Some("mc-service-integration-tests".to_string());
+    Client::with_options(opts).expect("MongoDB client creation failed")
+}
+
+/// A client pointed at the lease bookkeeping, for the pool's own tests.
+pub async fn pool_client() -> Client {
+    connect().await
+}
+
+fn leases(client: &Client) -> mongodb::Collection<mongodb::bson::Document> {
+    client.database(POOL_DB).collection(LEASES)
+}
+
+/// This machine's identity, so a lease is only judged by liveness on the host that created it.
+fn this_host() -> String {
+    std::fs::read_to_string("/proc/sys/kernel/hostname")
+        .map(|h| h.trim().to_string())
+        .unwrap_or_else(|_| "unknown".to_string())
+}
+
+/// Is `pid` a live process on THIS host?
+///
+/// Linux-only, which is the whole surface that runs this tier (devcontainer and CI runner). On
+/// anything else this answers "alive" and the staleness window is the only reclaim path — slower,
+/// never wrong.
+fn pid_is_alive(pid: u32) -> bool {
+    if cfg!(not(target_os = "linux")) {
+        return true;
+    }
+    std::path::Path::new(&format!("/proc/{pid}")).exists()
+}
+
+/// Backdate a slot's lease to a named holder, so liveness handling can be tested directly.
+pub async fn force_lease_held_by(client: &Client, slot: u32, pid: u32) {
+    let _ = leases(client)
+        .update_one(
+            doc! { "_id": slot as i64 },
+            doc! { "$set": { "pid": pid as i64, "host": this_host(), "at": now_ms() } },
+        )
+        .upsert(true)
+        .await;
+}
+
+/// Claim `slot` if it is free or its lease has gone stale. True when this caller now holds it.
+///
+/// Two steps rather than an upsert, because the distinction is the whole point: an `insert_one`
+/// that hits the `_id` duplicate-key error proves someone else has the slot, and only then do we
+/// ask whether their lease has expired. An upsert would silently take a LIVE slot on a race.
+pub async fn try_claim_slot(client: &Client, slot: u32) -> bool {
+    let now = now_ms();
+    let host = this_host();
+    let mine = doc! { "pid": std::process::id() as i64, "host": &host, "at": now };
+
+    let fresh =
+        doc! { "_id": slot as i64, "pid": std::process::id() as i64, "host": &host, "at": now };
+    if leases(client).insert_one(fresh).await.is_ok() {
+        return true;
+    }
+
+    // Taken — by whom, and are they still running?
+    //
+    // A lease belongs to a LIVE PROCESS, so a dead holder is reclaimable at once. That is the
+    // common case, not an edge one: the integration binaries run one after another, so every
+    // lease the previous binary took is held by an exited pid by the time the next one starts.
+    // Without this the slot space is exhausted inside a single run — measured: 64 leases held by
+    // 3 dead pids, after which the pool fell back to unique names.
+    //
+    // The staleness window remains as the backstop for a holder we cannot judge: a lease created
+    // on another host, or a pid whose liveness we could not read.
+    let holder = leases(client)
+        .find_one(doc! { "_id": slot as i64 })
+        .await
+        .ok()
+        .flatten();
+
+    let reclaimable = match holder {
+        None => true, // vanished between the insert and the read — treat as free
+        Some(ref d) => {
+            let same_host = d.get_str("host").map(|h| h == host).unwrap_or(false);
+            let pid = d.get_i64("pid").unwrap_or(0) as u32;
+            let dead_here = same_host && !pid_is_alive(pid);
+            let stale = d.get_i64("at").unwrap_or(0) < now - LEASE_STALE_AFTER.as_millis() as i64;
+            dead_here || stale
+        }
+    };
+    if !reclaimable {
+        return false;
+    }
+
+    // Re-assert the same predicate in the update, so two processes racing to reclaim the SAME
+    // abandoned slot cannot both win: whoever writes first changes `at`, and the loser's filter
+    // no longer matches.
+    let was = holder
+        .as_ref()
+        .and_then(|d| d.get_i64("at").ok())
+        .unwrap_or(0);
+    leases(client)
+        .update_one(
+            doc! { "_id": slot as i64, "at": was },
+            doc! { "$set": mine },
+        )
+        .await
+        .map(|r| r.matched_count == 1)
+        .unwrap_or(false)
+}
+
+/// Refresh the lease we already hold, so a long-running binary is never reclaimed under us.
+async fn refresh_lease(client: &Client, slot: u32) {
+    let _ = leases(client)
+        .update_one(
+            doc! { "_id": slot as i64 },
+            doc! { "$set": { "at": now_ms(), "pid": std::process::id() as i64, "host": this_host() } },
+        )
+        .await;
+}
+
+/// Backdate a slot's lease by `age`, so staleness handling can be tested without waiting.
+pub async fn force_lease_age(client: &Client, slot: u32, age: Duration) {
+    let backdated = now_ms() - age.as_millis() as i64;
+    let _ = leases(client)
+        .update_one(
+            doc! { "_id": slot as i64 },
+            // host deliberately absent: an unjudgeable holder, so this exercises the STALENESS
+            // backstop rather than the liveness path.
+            doc! { "$set": { "at": backdated, "pid": 0i64 }, "$unset": { "host": "" } },
+        )
+        .upsert(true)
+        .await;
+}
+
+/// Drop a slot's lease outright.
+pub async fn release_lease(client: &Client, slot: u32) {
+    let _ = leases(client).delete_one(doc! { "_id": slot as i64 }).await;
+}
+
+/// Slots this process has leased from MongoDB and is not currently using.
+///
+/// WHY A FREE LIST AND NOT A `ThreadId` MAP. The first cut keyed slots by thread, on the
+/// assumption that libtest pools its workers. It does not — libtest spawns a NEW THREAD PER TEST
+/// and `--test-threads` caps how many run at once, so a thread key is a test key in disguise.
+/// Measured: 41 tests produced 39 slots. What is actually bounded is CONCURRENCY, so the slot must
+/// be held for the duration of a test and handed back, not owned by a thread identity.
+static FREE_SLOTS: OnceLock<Mutex<Vec<u32>>> = OnceLock::new();
+
+fn free_slots() -> &'static Mutex<Vec<u32>> {
+    FREE_SLOTS.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+/// Returns its slot to the free list when the test's thread exits.
+///
+/// This is what makes a panicking test cost nothing. Rust unwinds on panic, the test's thread ends,
+/// and thread-local destructors run — so the slot comes back without any test calling anything.
+/// A release that depended on `cleanup_db` would be skipped by exactly the tests that most need it.
+struct SlotGuard(u32);
+
+impl Drop for SlotGuard {
+    fn drop(&mut self) {
+        if let Ok(mut free) = free_slots().lock() {
+            free.push(self.0);
+        }
+    }
+}
+
+thread_local! {
+    /// The slot this test is using. One per thread, and libtest gives each test its own thread,
+    /// so this is effectively one per test — released when the test ends, however it ends.
+    static HELD: RefCell<Option<SlotGuard>> = const { RefCell::new(None) };
+}
+
+/// The database name for this test: whatever slot it already holds, else one taken from the free
+/// list, else a slot newly leased from MongoDB.
+///
+/// The fallback matters: if every slot is held by a LIVE process, we degrade to the old per-call
+/// unique name rather than sharing a database with a running test. That makes this change strictly
+/// no worse than the behaviour it replaces, even under concurrent runs.
+async fn lease_for_this_test(client: &Client) -> String {
+    if let Some(slot) = HELD.with(|h| h.borrow().as_ref().map(|g| g.0)) {
+        return slot_db_name(slot);
+    }
+
+    if let Some(slot) = free_slots().lock().ok().and_then(|mut f| f.pop()) {
+        HELD.with(|h| *h.borrow_mut() = Some(SlotGuard(slot)));
+        refresh_lease(client, slot).await;
+        return slot_db_name(slot);
+    }
+
+    for slot in 0..MAX_SLOTS {
+        if try_claim_slot(client, slot).await {
+            HELD.with(|h| *h.borrow_mut() = Some(SlotGuard(slot)));
+            return slot_db_name(slot);
+        }
+    }
+
+    format!("mc_test_{}", Uuid::new_v4().simple())
+}
+
+/// Empty the leased database and ensure the product's indexes, so every test starts from the same
+/// state regardless of what the previous tenant of this slot did.
+///
+/// Deleting documents rather than dropping the database is the point: a drop unlinks ~19
+/// WiredTiger idents and the next acquire recreates them, which is the churn being removed.
+/// `mc-service` owns exactly two collections, so this is two statements — and `create_indexes` is
+/// idempotent, which is why 21 of the 23 test files can keep calling it themselves.
+async fn reset(db: &Database) {
+    for coll in ["movies", "movie_collections"] {
+        db.collection::<mongodb::bson::Document>(coll)
+            .delete_many(doc! {})
+            .await
+            .unwrap_or_else(|e| panic!("could not clear {coll} in {}: {e}", db.name()));
+    }
+    mc_service::adapters::mongodb::indexes::create_indexes(db)
+        .await
+        .unwrap_or_else(|e| panic!("index creation failed for {}: {e}", db.name()));
 }
