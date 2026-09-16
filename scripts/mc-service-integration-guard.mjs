@@ -162,23 +162,37 @@ function main() {
   // Run the integration binaries explicitly so the parsed `test result:` lines are integration-only
   // (`--tests` would also run the crate's inline unit tests, which have their own `test:unit` target).
   for (const b of binaries) cargoArgs.push('--test', b);
-  // SERIAL, AND THE REASON IS NOT RECORDED ANYWHERE — treat that as a liability, not a setting.
+  // SERIAL, DELIBERATELY — and this is the measured reason, which until 2026-09-16 did not exist.
   //
-  // `common/mod.rs` gives every test its own uniquely-named database precisely so the suite CAN run
-  // concurrently ("to prevent interference between concurrent test runs (when `--test-threads > 1`)"),
-  // so this pin is not what provides database isolation. No commit, comment or runbook says what it
-  // is for.
+  // The pin arrived in the initial commit (b4c54708, 2026-05-23) with no rationale in any commit,
+  // comment or runbook, and was carried forward unexamined. Item #462 then showed what an unexplained
+  // setting costs: `logging_middleware_emits_structured_json` failed ~2 runs in 3 under parallelism
+  // and stayed green in CI for months, because this line means CI never runs these binaries that way.
   //
-  // WHAT IT COSTS (item #462, measured 2026-09-15). CI runs the integration tier ONLY through this
-  // path, so CI has never executed these binaries in parallel — while `pnpm nx test mc-service`, what
-  // a developer actually runs, always does. A defect that only appears under parallelism is therefore
-  // invisible to the gate by construction. `logging_middleware_emits_structured_json` failed 2 runs in
-  // 3 locally and was green in CI for months for exactly this reason.
+  // MEASURED 2026-09-15/16, AFTER item #462 was fixed, from a CLEAN MongoDB (no leaked test
+  // databases): the integration binaries at DEFAULT parallelism failed **2 runs in 29**. Serial over
+  // the same period is 180/180 and stable. Both failures were in `movies::large_collection_test` —
+  // the heaviest file, ~100 movies per test — in one of two shapes:
   //
-  // Not flipped here: doing so would change what the required gate executes, and it should be a
-  // deliberate change with its own evidence, not a side effect of fixing one test. But if you are
-  // reading this because a test passes in CI and fails on your machine, this line is the first thing
-  // to suspect.
+  //   large_collection_test.rs:25  create_indexes … "index creation failed"
+  //   large_collection_test.rs:133 create <movie> failed: MovieNotFound
+  //
+  // The second is a read-your-own-writes miss: `MongoMovieRepository::create` inserts and then reads
+  // the document back by `_id`, and that read found nothing. On a single-node replica set with
+  // w:majority and reads on the primary that should be impossible, which is why it is worth a real
+  // investigation rather than a thread-count workaround. Tracked as backlog item #468.
+  //
+  // A leaked-database theory was TESTED AND REJECTED: 91 stale `mc_test_*` databases were dropped and
+  // the failure rate did not change. The leak runs the other way — a panicking test never reaches
+  // `cleanup_db`, so failures create debris rather than debris creating failures.
+  //
+  // SO DO NOT FLIP THIS TO PARALLEL to make the suite faster. At ~7% per run it would make a REQUIRED
+  // gate flaky, which is the one thing worse than a slow one. Re-measure before changing it, and fix
+  // the contention first.
+  //
+  // This is now the ONLY place the thread count is decided: `nx test mc-service` delegates here via
+  // its `dependsOn` rather than running cargo itself, so the two tiers cannot disagree again.
+  // `scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs` pins both properties.
   cargoArgs.push('--', '--test-threads=1', ...passthrough);
 
   console.log('[mc-service-integration-guard] cargo ' + cargoArgs.join(' '));

@@ -6,10 +6,16 @@
   "tags": ["scope:backend", "type:app", "platform:docker"],
   "targets": {
     "test": {
-      "executor": "@monodon/rust:test",
-      "options": {},
-      "cache": true,
-      "inputs": ["default", "^default"]
+      "executor": "nx:run-commands",
+      "dependsOn": ["test:unit", "test:integration"],
+      "options": {
+        "command": "echo '[mc-service] test = test:unit + test:integration (threading is owned by scripts/mc-service-integration-guard.mjs)'",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false,
+      "metadata": {
+        "description": "Both Rust tiers, in one command. It DELEGATES to test:unit and test:integration rather than invoking cargo itself, and that is the point (item #462 follow-on): the integration guard pins --test-threads=1, and when this target ran cargo directly it ran at DEFAULT parallelism, so `nx test mc-service` and the CI gate disagreed about the one setting that changes the result. logging_middleware_emits_structured_json failed ~2 runs in 3 locally and stayed green in CI for months because of exactly that gap. Do not give this target its own --test-threads; a second copy is a second thing to drift. Pinned by scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs."
+      }
     },
     "test:unit": {
       "executor": "nx:run-commands",
