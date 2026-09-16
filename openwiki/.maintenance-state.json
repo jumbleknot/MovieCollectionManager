@@ -1,44 +1,31 @@
 {
-  "coveredCommit": "6ea3f327cd0854e83b02bebe4e94822818a1a8ed",
-  "coveredAt": "2026-09-15T18:40:05.711Z",
+  "coveredCommit": "234339b8e985195d9c2c32bdcc71fd5d02e12c67",
+  "coveredAt": "2026-09-16T10:15:24.938Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 467,
-    "headCommit": "733efb08344be449f457a6d0aa9efabcfd16629c",
-    "markerBefore": "6ea3f327cd0854e83b02bebe4e94822818a1a8ed",
+    "number": 472,
+    "headCommit": "a430a5701ace41540b02dac4220f75ebee081256",
+    "markerBefore": "234339b8e985195d9c2c32bdcc71fd5d02e12c67",
     "slices": [
-      {
-        "area": "projects",
-        "pages": [
-          "sast.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/sast-scanning.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
       {
         "area": "runbooks",
         "pages": [
-          "ci-diagnostics.md",
-          "local-dev.md",
-          "sast-scanning.md"
+          "local-dev.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/local-dev.md; source changed: docs/runbooks/sast-scanning.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/local-dev.md; openwiki/runbooks/sast-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/local-dev.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/local-dev.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-15T18:40:06.036Z"
+    "updatedAt": "2026-09-16T10:15:25.290Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 4,
-    "elapsedSeconds": 318,
+    "pagesWritten": 1,
+    "elapsedSeconds": 109,
     "stoppedAtBudget": false
   }
 }
