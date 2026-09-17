@@ -1323,6 +1323,11 @@ import {
   summarizeDurations,
   selectDurationVersions,
   renderDurations,
+  proposeCeilings,
+  renderCeilingsTable,
+  CEILING_RETRY_FACTOR,
+  CEILING_FLOOR_SECONDS,
+  CEILING_MIN_SAMPLES,
 } from '../ci-status.mjs';
 
 test('(#338l) the four columns are parsed, and the header and blank lines are not rows', () => {
@@ -1729,4 +1734,74 @@ test('(#403h) a REQUIRED context still pending at the timeout is still exit 3', 
       cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 0, intervalSeconds: 0 }));
     assert.equal(code, 3, 'runner starvation on a REQUIRED context is still exit 3');
   } finally { restore(); }
+});
+
+// item #338 phase 2 — turning that distribution into ceilings
+// ================================================================================================
+//
+// The rule is deliberately arithmetic and lives HERE rather than in a spreadsheet or a head: the
+// defect being corrected was a figure chosen by eye whose stated basis described a different
+// measurement. A derivation that a test can re-run is one that cannot drift from what it claims.
+//
+//   ceiling = round_up_60(max_observed x CEILING_RETRY_FACTOR), floored at CEILING_FLOOR_SECONDS,
+//   and only for a step with at least CEILING_MIN_SAMPLES observations.
+//
+// CEILING_RETRY_FACTOR is 3 because that is the largest retry multiplier any wrapped step has —
+// ci-mobile-agent-flows.sh retries each flow up to 3 times (`max=3`), and Playwright is
+// `retries: 1`. So a run in which every retry fires still has headroom, and for a step with no
+// retry structure it is a 3x margin over the worst duration in the sample.
+
+const SUMMARY = (step, { n = 40, max = 100, censored = 0 } = {}) => ({
+  step, n, censored, ceiling: 2700, min: 1, p50: max, p95: max, max,
+});
+
+test('(#338v) a ceiling is the observed maximum times the retry factor, rounded up to a minute', () => {
+  // The MAXIMUM, not p95: p95 of 40 runs discards the two slowest, and the cost of being wrong
+  // downward (a false red costing a ~35-40 min re-run on a capacity-1 runner) is far higher than
+  // the cost of being wrong upward (a hang caught later than it could have been).
+  assert.equal(CEILING_RETRY_FACTOR, 3);
+  const [exact] = proposeCeilings([SUMMARY('web-e2e', { max: 280 })], { runIds: [3503, 3103] });
+  assert.equal(exact.ceiling, 840, '280s x 3 = 840s is already a whole minute and must be left alone');
+  const [rounded] = proposeCeilings([SUMMARY('bundle', { max: 281 })], { runIds: [3503, 3103] });
+  assert.equal(rounded.ceiling, 900, '281s x 3 = 843s should round UP to 900s, never down to 840s');
+});
+
+test('(#338w) a sub-minute step gets the floor, not a ceiling its own noise would trip', () => {
+  // `app-e2e-set-up-docker-cli` runs in 0s. 0 x 3 = 0, and `timeout 0` means NO LIMIT — the guard
+  // would be silently removed. Even a 2s step x 3 = 6s would red on ordinary runner contention.
+  const rows = proposeCeilings([SUMMARY('tiny', { max: 0 }), SUMMARY('small', { max: 31 })], { runIds: [1] });
+  assert.equal(CEILING_FLOOR_SECONDS, 300);
+  assert.deepEqual(rows.map((r) => r.ceiling), [300, 300]);
+});
+
+test('(#338y) a step with too few samples gets NO ceiling — it is left to the backstop', () => {
+  // `app-e2e-collect-container-logs` runs only on failure and has n=2. Deriving a bound from two
+  // observations is the "chosen by eye" failure with arithmetic painted on it.
+  const rows = proposeCeilings([
+    SUMMARY('well-sampled', { n: CEILING_MIN_SAMPLES, max: 100 }),
+    SUMMARY('barely-seen', { n: CEILING_MIN_SAMPLES - 1, max: 100 }),
+  ], { runIds: [1] });
+  assert.deepEqual(rows.map((r) => r.step), ['well-sampled']);
+  const table = renderCeilingsTable(rows, {
+    summary: [SUMMARY('barely-seen', { n: CEILING_MIN_SAMPLES - 1, max: 100 })], runIds: [1], job: 'app-e2e',
+  });
+  assert.match(table, /^#\s*barely-seen\b/m, 'an under-sampled step vanished instead of being recorded');
+});
+
+test('(#338z) a CENSORED sample never feeds a ceiling — the ratchet is closed at the source too', () => {
+  // summarizeDurations already excludes kills from `max`. This pins the other half: a step whose
+  // sample is mostly kills has too few OBSERVATIONS to calibrate from, whatever `censored` says.
+  const rows = proposeCeilings([SUMMARY('mostly-killed', { n: 2, censored: 38, max: 2700 })], { runIds: [1] });
+  assert.deepEqual(rows, [], 'a ceiling was derived from a step observed almost entirely through kills');
+});
+
+test('(#338aa) every emitted row carries the sample it rests on, and the rule that produced it', () => {
+  const rows = proposeCeilings([SUMMARY('web-e2e', { n: 40, max: 280 })], { runIds: [3503, 3500, 3103] });
+  assert.match(rows[0].basis, /n=40/);
+  assert.match(rows[0].basis, /max=280s/);
+  assert.match(rows[0].basis, /runs 3503/, 'the basis does not name the runs it was drawn from');
+  const table = renderCeilingsTable(rows, { summary: [], runIds: [3503, 3103], job: 'app-e2e' });
+  assert.match(table, /^web-e2e\t840\t/m, 'the table is not the tab-separated shape ci-log-step.sh reads');
+  assert.match(table, /ci-status\.mjs durations .*--propose/,
+    'the file does not say how to regenerate itself — the next reader edits it by hand');
 });

@@ -47,7 +47,7 @@ find "$root" -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
 # `set -e` is dropped from here so a failing command does not abort before the marker is written and
 # the real exit code is re-raised. pipefail is preserved (see below) — that is the load-bearing part.
 set +e
-# OPTIONAL PER-STEP CEILING (item #326). `always()` does NOT survive a job kill: when the runner
+# PER-STEP CEILING (item #326). `always()` does NOT survive a job kill: when the runner
 # enforces the job's `timeout-minutes`, the digest step never runs, so a HANG — the one failure
 # class with no other evidence trail — produces no digest at all. Measured on PR #322, app-e2e task
 # 8317: 75.1 min against a 75 min ceiling, and `ci-status failure` could only say "the job may have
@@ -55,12 +55,52 @@ set +e
 #
 # Enforcing the ceiling HERE, below the job's, converts that hang from a job kill into a STEP
 # failure: the job survives, the marker below is written, and the digest runs and can name what was
-# hanging. Opt-in per call site via CI_STEP_TIMEOUT_SECONDS.
-timeout_seconds="${CI_STEP_TIMEOUT_SECONDS:-}"
+# hanging.
+#
+# PER-STEP, NOT JOB-WIDE (item #338 phase 2). One value for the whole job had to be loose enough for
+# the slowest wrapped step, which left every other step bounded at 9x-337x its observed maximum —
+# `web-e2e` runs in ~4.7 min against a 45 min bound. The per-step values live in a DATA file whose
+# every row states the sample it was derived from, because the defect this corrects was a figure
+# whose stated basis had drifted from what was actually measured.
+#
+# Resolution order: this step's row in the table -> CI_STEP_TIMEOUT_SECONDS as a BACKSTOP for a step
+# the sample has not reached -> unbounded. The backstop is not optional dressing: falling through to
+# unbounded on a table miss would silently restore the #326 defect (a hang killing the JOB, so
+# `always()` never runs and no digest is published at all) for exactly the steps nobody has looked at.
+#
+# Located relative to THIS script, not to $PWD: app-ci.yml invokes the wrapper both as
+# `scripts/ci-log-step.sh` from the repo root and as `"$GITHUB_WORKSPACE/scripts/ci-log-step.sh"`
+# from inside a heredoc that has changed directory.
+ceilings_file="${CI_STEP_CEILINGS_FILE:-$(dirname "${BASH_SOURCE[0]}")/ci-step-ceilings.tsv}"
+timeout_seconds=""
+timeout_source=""
+if [ -r "$ceilings_file" ]; then
+  # WHOLE-NAME match on field 1. `web-e2e` and `web-e2e-model` differ only by a suffix and six steps
+  # share the `app-e2e-install` prefix, so a substring match would hand one step another's bound.
+  # Comment rows are skipped here as well as in the reader: `# web-e2e` parsing as a ceiling of 0
+  # would mean `timeout 0`, which is NO LIMIT — the guard removed by its own data file.
+  #
+  # Best-effort, like every other measurement in this script. An unreadable or malformed table falls
+  # through to the backstop rather than failing the step.
+  timeout_seconds="$(awk -F'\t' -v step="$name" \
+    '$0 !~ /^[[:space:]]*#/ && $1 == step && $2 ~ /^[0-9]+$/ && $2 > 0 { print $2; exit }' \
+    "$ceilings_file" 2>/dev/null || true)"
+fi
+if [ -n "$timeout_seconds" ]; then
+  timeout_source="$ceilings_file"
+else
+  # The backstop, for a step with no calibrated row.
+  timeout_seconds="${CI_STEP_TIMEOUT_SECONDS:-}"
+  [ -n "$timeout_seconds" ] && timeout_source="CI_STEP_TIMEOUT_SECONDS (backstop — this step has no calibrated row)"
+fi
 if [ -n "$timeout_seconds" ] && ! command -v timeout >/dev/null 2>&1; then
   # Never silently drop the protection — an absent guard that reports nothing is this repository's
   # most expensive failure shape. Warn into the step log, which the digest publishes.
-  echo "[ci-log-step] WARNING: CI_STEP_TIMEOUT_SECONDS=$timeout_seconds requested but \`timeout\` is not on PATH — running UNBOUNDED." >&2
+  #
+  # The warning NAMES THE SOURCE of the value, not a fixed variable name: since item #338 the ceiling
+  # usually comes from the table, and a message citing CI_STEP_TIMEOUT_SECONDS would send the reader
+  # to tune a number that had nothing to do with it — the same class of defect this item corrects.
+  echo "[ci-log-step] WARNING: ${timeout_seconds}s ceiling for \`$name\` (from $timeout_source) requested but \`timeout\` is not on PATH — running UNBOUNDED." >&2
   timeout_seconds=""
 fi
 
