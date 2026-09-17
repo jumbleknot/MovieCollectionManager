@@ -90,6 +90,12 @@ path = "tests/integration/collections_test.rs"
 name = "movies_test"
 path = "tests/integration/movies_test.rs"
 
+[[test]]
+# Item #470: the leased test-database pool's own behaviour — properties a passing suite cannot
+# show, because leased and minted databases look identical from a green run.
+name = "pool_test"
+path = "tests/integration/pool_test.rs"
+
 [profile.release]
 opt-level = 3
 lto = true
