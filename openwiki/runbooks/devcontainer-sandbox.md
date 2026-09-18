@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Dev container on Docker Sandbox microVM (primary environment)
-description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, bind-mount source resolution (VM daemon resolves paths, a missing source is silently created empty), networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure (resolve the digest from the registry via manifests/<tag>, not the run summary or packages API), and the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart).
+description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, bind-mount source resolution (VM daemon resolves paths, a missing source is silently created empty), networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure (resolve the digest from the registry via manifests/<tag>, not the run summary or packages API), the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart), and agent isolation (multiple concurrent sessions share the checkout — use a git worktree for any branch work).
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-09-07T14:30:00+00:00
+timestamp: 2026-09-18T00:00:00Z
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -154,6 +154,23 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
   **Fix (item #257):** `CLAUDE_CONFIG_DIR=/home/coder/.claude` in `containerEnv` relocates the config root, so Claude Code resolves `.claude.json` inside the volume rather than in `$HOME`. Every other path (settings, plugins, projects, sessions, backups, credentials) already lived there and resolves unchanged — only the one orphaned file moves onto the volume. `persist-claude-config.sh` in `onCreateCommand` seeds an existing config on the first run after the change, so no identity is lost during the migration.
 
   ⚠️ **A symlink from `~/.claude.json` into the volume does NOT work.** Claude Code replaces the file rather than editing it in place (hence the rolling `backups/`), so a write-then-rename replaces the symlink itself with a regular overlay file — silently restoring the bug. The `CLAUDE_CONFIG_DIR` env var cannot decay this way.
+
+- **★★★ You are probably not the only agent in here — use a worktree, not `/workspaces/mcm`, for any branch work (measured 2026-09-18).** Five concurrent sessions shared `/workspaces/mcm` on that date. They share the filesystem, the Docker daemon, the pnpm store, and — the part that bites — **the git index and the checked-out branch**. `git checkout -b`, `git add`, `git stash`, and `git rebase` in `/workspaces/mcm` are not private acts: they change what every other session is looking at, mid-edit. The failure is silent and lands on the *other* agent.
+
+  ```bash
+  git fetch -q origin main
+  git worktree add -b <branch> /home/coder/worktrees/<slug> origin/main
+  ln -sfn /workspaces/mcm/node_modules /home/coder/worktrees/<slug>/node_modules
+  ```
+
+  Four things that are not obvious and each cost a session:
+
+  - **`/home/coder/…`, never `/workspaces/.worktrees/…`.** `/workspaces` itself is not writable — only `/workspaces/mcm` is — so the latter fails on creating the leading directory with a bare `Permission denied` that reads like a git problem.
+  - **Symlink `node_modules`; do not `pnpm install`.** A fresh worktree has none (the pnpm workspace root lives in the main checkout), and installing would churn the store the other sessions are using.
+  - **The `node_modules` symlink used to be committable and `git add -A` committed it.** `.gitignore` carried `node_modules/` and a trailing slash matches only a directory — so the symlink was not ignored, `git diff --stat` does not list untracked files, and CI received a symlink where pnpm needs a directory. Every install-bearing job died with `ENOTDIR: not a directory, mkdir '.../node_modules'` — six required contexts on PR #488 — which reads like a broken toolchain. **Fixed:** the pattern is now `node_modules` (no trailing slash). If you add any other symlink-into-the-main-checkout, check `git status --porcelain` rather than `git diff` before committing.
+  - **A fresh worktree lacks gitignored artefacts** some gates read rather than generate. `security/infra-images/reports/findings.json` is one: without it `check-infra-image-findings.mjs --check-expiring` throws instead of passing. Copy it from the main checkout if you need that gate.
+
+  Clean up when the branch merges: `git worktree remove /home/coder/worktrees/<slug> && git worktree prune`. Reads (`git fetch`, `git log`, `ci-status`, forge API calls) need no worktree.
 
 - **`pnpm` is not in the VM shell — only inside the dev container.** VM-level scripts that call `pnpm` directly fail with `rc=127`. Use `docker exec … bash -lc` to run them inside the container.
 

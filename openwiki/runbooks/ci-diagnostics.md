@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), and the event-vs-trigger_event field split that makes a scheduled run look like a push.
+description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), the event-vs-trigger_event field split that makes a scheduled run look like a push, and the never-scheduled ⏳ trap where a path-gated job produces the same waiting state as a queued one.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-18T00:00:00Z
+timestamp: 2026-09-18T12:00:00Z
 ---
 
 # CI self-serve diagnostics
@@ -134,6 +134,19 @@ runtime rather than any literal configured value.
   expected and must never be conflated with an actual build failure.
 - **A pipe throws the exit code away — including exit 3 and exit 1.** `ci-status … watch | tail -30` reports **`tail`'s** status, so both arrive as `0`. Measured 2026-09-06: a watch that printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as `WATCH_EXIT=0`. Redirect and read the file instead: `node scripts/ci-status.mjs watch --pr 372 --timeout 5100 > /tmp/watch.log 2>&1; echo "EXIT=$?"`. `set -o pipefail` also works, but is not on by default. The general form of this trap — that `cmd | tail` reports `tail`'s status for any tool — is enumerated in [E2E testing](/openwiki/runbooks/e2e-testing.md) § instrument traps.
 - **Exit `3` twice running is usually SERIALIZATION, not a dead runner.** A merge commit fires `app-e2e` on `main`, and with capacity 1 that run takes the runner ahead of every open PR. Measured 2026-09-06: PR #370's `app-e2e` waited on `main`'s post-merge run from PR #369, then PR #372's waited on `main`'s from PR #370. Distinguish the two: a `running` row for your own branch means wait; recent rows for *other* branches with nothing for yours means starvation. Use `GET /actions/tasks?limit=14` and read `status` not `conclusion` — `conclusion` is `null` even for successful tasks in this listing.
+- **⏳ can mean NEVER SCHEDULED — and `watch` cannot tell the difference (measured 2026-09-18).** A required context that was never scheduled because it was path-gated out shows the same ⏳ `waiting (queued or running)` as one sitting in a queue, because both are simply the absence of a commit status. `watch`'s timeout line then converts that absence into the diagnosis *"runner starvation, not failure (exit 3)"* — which presumes the job exists. Measured on PRs #479 and #482, both docs-or-scripts-only: two watches expired (3000 s and 3300 s each), `actions/tasks` held **no `app-e2e` and no `infra-image-scan` row for either head**, and ~105 minutes were spent waiting for runs that were never going to be created. The session reported "runner starvation" to the operator — wrong, downstream of trusting the ⏳.
+
+  **The tell is ABSENCE, not `skipped`:**
+
+  | what you see in `actions/tasks` for your head sha | what it means |
+  |---|---|
+  | a `running` row for your branch | genuinely queued/running — wait |
+  | a `skipped` row for the job | the `changes` filter evaluated and declined it — it will not run |
+  | rows for other branches, none for your job, **and your job normally runs on this path** | starvation — wait |
+  | **no row for the job at all, and the path does not match its filter** | **never scheduled — waiting is futile** |
+
+  A job the `changes` filter evaluates and declines can appear as a real `skipped` task. One gated out before scheduling leaves no row. **One watch is evidence; a second watch is not.** If a context is still ⏳ after one full run's duration, query `actions/tasks` for your head sha directly rather than starting another `--timeout`.
+
 - **`/actions/runs/{id}/jobs` does not exist in this Forgejo build** (measured 2026-09-06 — it answers with a non-JSON body, so a naive `| jq` dies on a parse error rather than a 404). There is no per-job listing; `actions/tasks` is the only queue view.
 - **Do NOT open a PR with an AGit push (`HEAD:refs/for/main`).** AGit creates a PR with no backing
   branch — its `head.ref` is `refs/pull/<n>/head`. Forgejo treats a non-branch head as untrusted
