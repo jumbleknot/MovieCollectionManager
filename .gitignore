@@ -333,7 +333,12 @@ FakesAssemblies/
 
 # Node.js Tools for Visual Studio
 .ntvs_analysis.dat
-node_modules/
+# No trailing slash, deliberately: `node_modules/` matches only a DIRECTORY, so a node_modules
+# SYMLINK — which docs/runbooks/devcontainer.md tells a second agent to create when working in a
+# git worktree — was NOT ignored, and `git add -A` committed it. CI then checked out a symlink
+# where pnpm needs a directory and six required contexts died at install with
+# `ENOTDIR: not a directory, mkdir '.../node_modules'` (measured on PR #488).
+node_modules
 
 # Visual Studio 6 build log
 *.plg
