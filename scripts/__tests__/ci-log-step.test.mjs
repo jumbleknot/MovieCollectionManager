@@ -598,3 +598,56 @@ test('(#338o) the backstop survives, and says what it is for', () => {
   assert.match(comment, /backstop|fallback/i,
     'the backstop still reads as the ceiling — the next reader will tune the wrong number');
 });
+
+// ─── item #480 — a ceiling must agree with its OWN basis ────────────────────────────────────────
+//
+// #338m checks that a basis is PRESENT and well-shaped. #338k checks that the value clears the job
+// ceiling. Between them sat the whole space of values that are neither absent nor too large, and
+// nothing looked at whether a ceiling matched the sample printed beside it. Measured on `main` at
+// b8166037: `web-e2e  60  n=40 max=280s x3=840s -> 840s` passed all 37 guards — a 60s bound
+// advertising itself as the 840s answer.
+//
+// That is item #338's ORIGINAL defect reproduced inside the file built to prevent it: a figure whose
+// stated justification describes a different measurement. It also fails in the expensive direction,
+// since a hand-tightened ceiling is a FALSE red on a capacity-1 runner where every re-run costs
+// ~35-40 min — the trade item #338 explicitly rules out.
+//
+// The guard calls `ceilingForMax` rather than re-deriving anything. A guard holding its own copy of
+// the arithmetic keeps asserting the old rule after the rule changes, and waves through a table
+// generated under the new one — the same drift, one level up.
+
+test('(#480a) every ceiling in the table equals what its own basis derives', async () => {
+  const { ceilingForMax } = await import('../ci-status.mjs');
+  const rows = committedCeilings();
+  assert.ok(rows.length > 0, 'the ceilings table is empty — this guard would pass vacuously');
+
+  for (const { step, ceiling, basis } of rows) {
+    // An unparseable basis fails DISTINGUISHABLY from a mismatch: #338m already covers "no basis at
+    // all", and a reader who hits this one needs to know the row is unreadable, not merely wrong.
+    const m = /\bmax=(\d+)s\b/.exec(basis ?? '');
+    assert.ok(m, `${step}: basis states no \`max=<n>s\`, so its ceiling cannot be checked — ${basis}`);
+
+    const derived = ceilingForMax(Number(m[1]));
+    assert.equal(ceiling, derived,
+      `${step}: ceiling is ${ceiling}s but its own basis (max=${m[1]}s) derives ${derived}s. ` +
+      'The table is GENERATED — regenerate it with `ci-status durations --propose` rather than ' +
+      'editing a row, or the figure stops describing the measurement printed next to it.');
+  }
+});
+
+test('(#480b) a row on the backstop is not failed by that check', () => {
+  // A commented row carries `-` where a ceiling would be and names why (`n=2 < 10 observed
+  // samples`). It is a deliberate record, not a defect, and a guard that failed it would push the
+  // next reader to delete the line — losing the only trace that the step was considered at all.
+  const table = readFileSync(CEILINGS_TSV, 'utf8');
+  const backstopRows = table.split('\n').filter((l) => /^#\s+[a-z0-9-]+\t/.test(l));
+  assert.ok(backstopRows.length > 0, 'no backstop rows present — this guard would pass vacuously');
+  for (const row of backstopRows) {
+    assert.doesNotMatch(row.split('\t')[1] ?? '', /^\d+$/,
+      `a commented backstop row carries a real ceiling, so it is being silently ignored: ${row}`);
+  }
+  // And it must not have been swept into the calibrated set by the parser either.
+  const calibrated = committedCeilings().map((r) => r.step);
+  assert.ok(!calibrated.includes('app-e2e-collect-container-logs'),
+    'a backstop step is being read as calibrated — the comment prefix is not being honoured');
+});
