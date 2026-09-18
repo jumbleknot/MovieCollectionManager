@@ -534,11 +534,6 @@ jobs:
       - name: Reset stateful CI data (fresh realm + test data each run)
         run: |
           bash scripts/ci-log-step.sh app-e2e-reset-stateful-ci-data bash -e /dev/stdin <<'CI_LOG_STEP'
-          # THROWAWAY — item #338 criterion 5. Reverted in the next commit. This step's ceiling is
-          # 300s, a TABLE-derived value; the backstop is 2700s. So a digest reading "timeout after
-          # 300s" is proof the per-step table applied, not the job-wide fallback.
-          echo "planted hang — proving the table-driven ceiling kills the STEP, not the JOB"
-          sleep 600
           docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit \
             mc-service mc-service-store-mongo mc-service-store-mongo-rs-init \
             mcm-bff-service-nonsecure mcm-bff-cache-redis mcm-bff-store-mongo \
