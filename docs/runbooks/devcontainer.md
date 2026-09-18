@@ -291,6 +291,55 @@ Claude Code is installed onto `PATH` by `postCreateCommand` and the `anthropic.c
 extension is present. Run `claude` from the in-container terminal. Its blast radius is the
 container.
 
+### ★★★ You are probably not the only agent in here — work in a worktree
+
+**Several Claude sessions share this one container and this one checkout.** Measured 2026-09-18:
+`/workspaces/mcm` was the working directory of five concurrent sessions. They share the filesystem,
+the Docker daemon, the pnpm store and — the part that bites — **the git index and the checked-out
+branch**. `git checkout -b`, `git add`, `git stash` and `git rebase` in `/workspaces/mcm` are not
+private acts: they change what every other session is looking at, mid-edit.
+
+The failure is silent and lands on the *other* agent. It sees files it did not write, a branch it
+did not create, or a commit that sweeps up its half-finished work through `git add -A`.
+
+**So: never commit or switch branches in `/workspaces/mcm` when another session may be active. Add
+a worktree instead.**
+
+```bash
+git fetch -q origin main
+git worktree add -b <branch> /home/coder/worktrees/<slug> origin/main
+ln -sfn /workspaces/mcm/node_modules /home/coder/worktrees/<slug>/node_modules
+```
+
+Four things that are not obvious and each cost a session:
+
+- **`/home/coder/...`, never `/workspaces/.worktrees/...`.** `/workspaces` itself is not writable —
+  only `/workspaces/mcm` is — so the latter fails on creating the leading directory, reported as a
+  bare `Permission denied` that reads like a git problem rather than a path problem.
+- **Symlink `node_modules`; do not `pnpm install`.** A fresh worktree has none (the pnpm workspace
+  root lives in the main checkout), and installing would churn the store the other sessions are
+  using. The symlink is enough for `node --test` and the gate scripts.
+- **A fresh worktree lacks gitignored artefacts**, which some gates read rather than generate.
+  `security/infra-images/reports/findings.json` is one: without it
+  `check-infra-image-findings.mjs --check-expiring` throws instead of passing, which reads as a
+  code failure rather than a missing input. Copy it across from the main checkout if you need that
+  gate. (This is the shape [local-dev.md](local-dev.md) warns about — a credential-or-artefact
+  *absence* misread as a *capability* absence.)
+- **Reads are safe and shared.** `git fetch`, `git log`, `git show`, and anything against the forge
+  API — opening a PR, merging, commenting, `ci-status` — need no worktree at all. Only operations
+  that move `HEAD` or touch the index do.
+
+Clean up when the branch merges, or the next session inherits a stale tree:
+
+```bash
+git worktree remove /home/coder/worktrees/<slug>
+git worktree prune
+```
+
+**How to tell who else is here.** Other agents are not always visible from the shell; in Claude Code
+the session list names them. Treat "another session may be active" as the default when you have not
+checked — the worktree costs seconds and the collision costs someone else's work.
+
 ### Secrets (FR-010) — injected at runtime, never committed
 
 No secret is baked into the image or the committed config. Inject per-session via environment:

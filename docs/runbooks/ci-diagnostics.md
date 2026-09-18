@@ -104,6 +104,52 @@ Note `conclusion` is `null` even for successful tasks in this listing — read `
 non-JSON body, so a naive `| jq` dies on a parse error rather than a 404). There is no per-job
 listing to drill into; `actions/tasks` above is the only queue view.
 
+**There is a THIRD case, and the rule just above misclassifies it as starvation.** A required
+context that was never *scheduled* — path-gated out before a task was created — shows the same
+`⏳ waiting (queued or running)` as one sitting in a queue, because both are simply the absence of a
+commit status being rendered as a state. So "recent rows for other branches with nothing for yours"
+describes a starved job **and** a job that will never exist, and only one of them is worth waiting
+for.
+
+`watch`'s timeout line then converts that absence into a diagnosis: *"still waiting after Ns —
+runner starvation, not failure (exit 3)"*. That sentence presumes the job exists.
+
+Measured 2026-09-18 on PRs #479 and #482, both docs-or-scripts-only: two watches, 3000 s and 3300 s,
+each ended with the starvation wording; `actions/tasks` held **no `app-e2e` and no
+`infra-image-scan` row for either head**, while all nine other required contexts had run and passed.
+~105 minutes were spent waiting for runs that were never going to be created, and the session
+reported "runner starvation" and "my second push delayed the first" to the operator — both wrong,
+both downstream of trusting the ⏳.
+
+**The tell is ABSENCE, not `skipped`,** and this is the part that makes it easy to miss:
+
+| what you see in `actions/tasks` for your head sha | what it means |
+|---|---|
+| a `running` row for your branch | genuinely queued/running — wait |
+| a `skipped` row for the job | the `changes` filter evaluated it and declined — it will not run |
+| rows for other branches, none for your job, **and your job normally runs on this path** | starvation — wait |
+| **no row for the job at all, and the path does not match its filter** | **never scheduled — waiting is futile** |
+
+A job the `changes` filter evaluates and declines can appear as a real `skipped` task (`dast` did on
+#479). One gated out before scheduling leaves no row whatsoever. So do not read "no `skipped` row"
+as "it must still be coming".
+
+Once a context is in that last state the PR is as green as it will ever be, and the question stops
+being *when will it finish* and becomes *is the narrower evidence enough to merge* — which is an
+operator call, not a patience one. Check it directly rather than starting a second watch:
+
+```bash
+node --input-type=module -e "
+const h={Authorization:'token '+process.env.MCM_FORGE_TOKEN};
+const r=await fetch(process.env.FORGE+'/api/v1/repos/jumbleknot/mcm/actions/tasks?limit=50',{headers:h});
+for(const t of ((await r.json()).workflow_runs??[]))
+  if(String(t.head_sha).startsWith(process.env.SHA)) console.log(t.status.padEnd(10), t.name);
+"
+```
+
+**One watch is evidence; a second watch is not.** If a context is still ⏳ after one full run's
+duration, the next step is this query, never another `--timeout`.
+
 ---
 
 ## The four states that are reported wrong
