@@ -1356,7 +1356,20 @@ export const CEILING_FLOOR_SECONDS = 300;
 export const CEILING_MIN_SAMPLES = 10;
 
 /** Ceilings are whole minutes: the job ceiling is, and a bound to the second implies absent precision. */
-const CEILING_QUANTUM_SECONDS = 60;
+export const CEILING_QUANTUM_SECONDS = 60;
+
+/**
+ * The rule itself, as ONE function — `max(observed)` in, ceiling out.
+ *
+ * Extracted so the guard that re-checks the committed table (#480a) can CALL it rather than restate
+ * it. A guard holding its own copy of the arithmetic is a guard that keeps asserting the old rule
+ * after the rule changes, and silently passes a table generated under the new one — the same class
+ * of drift item #338 exists to correct, one level up.
+ */
+export function ceilingForMax(max) {
+  const rounded = Math.ceil((max * CEILING_RETRY_FACTOR) / CEILING_QUANTUM_SECONDS) * CEILING_QUANTUM_SECONDS;
+  return Math.max(CEILING_FLOOR_SECONDS, rounded);
+}
 
 const describeRuns = (runIds) =>
   runIds.length <= 1 ? `run ${runIds[0] ?? '?'}` : `runs ${runIds[0]}..${runIds[runIds.length - 1]}`;
@@ -1376,7 +1389,7 @@ export function proposeCeilings(summary, { runIds = [] } = {}) {
     .map((s) => {
       const scaled = s.max * CEILING_RETRY_FACTOR;
       const rounded = Math.ceil(scaled / CEILING_QUANTUM_SECONDS) * CEILING_QUANTUM_SECONDS;
-      const ceiling = Math.max(CEILING_FLOOR_SECONDS, rounded);
+      const ceiling = ceilingForMax(s.max);
       const how = ceiling === rounded
         ? `x${CEILING_RETRY_FACTOR}=${scaled}s -> ${ceiling}s`
         : `x${CEILING_RETRY_FACTOR}=${scaled}s -> floor ${ceiling}s`;
