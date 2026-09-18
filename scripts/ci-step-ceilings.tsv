@@ -1,0 +1,42 @@
+# Per-step CI ceilings — GENERATED, item #338. Do not hand-edit; regenerate:
+#
+#     node scripts/ci-status.mjs durations --job app-e2e --runs 40 --propose
+#
+# ci-log-step.sh bounds a wrapped step at its row here, falling back to the job-wide
+# CI_STEP_TIMEOUT_SECONDS backstop when the step has no row. Each ceiling is
+# max(observed) x 3, rounded up to a minute, floored at 300s,
+# and derived only from a step with at least 10 observed (non-killed) samples.
+#
+# Sample: 40 published app-e2e run(s), runs 3503..3103.
+#
+# step	ceiling	basis
+maestro-agent-flows	2580	n=27 max=844s x3=2532s -> 2580s; runs 3503..3103
+app-e2e-build-embedded-bundle-e2e	900	n=27 max=281s x3=843s -> 900s; runs 3503..3103
+web-e2e	840	n=40 max=280s x3=840s -> 840s; runs 3503..3103
+web-e2e-model	840	n=16 max=276s x3=828s -> 840s; runs 3503..3103
+mc-service-integration	420	n=40 max=122s x3=366s -> 420s; runs 3503..3103
+agent-integration	300	n=40 max=61s x3=183s -> floor 300s; runs 3503..3103
+app-e2e-bff-integration-tests	300	n=40 max=15s x3=45s -> floor 300s; runs 3503..3103
+app-e2e-bring-up-containerized-agent	300	n=40 max=22s x3=66s -> floor 300s; runs 3503..3103
+app-e2e-bring-up-keycloak	300	n=40 max=91s x3=273s -> 300s; runs 3503..3103
+app-e2e-first-time-docker-setup	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
+app-e2e-free-daemon-disk-space	300	n=40 max=2s x3=6s -> floor 300s; runs 3503..3103
+app-e2e-install-dependencies	300	n=40 max=8s x3=24s -> floor 300s; runs 3503..3103
+app-e2e-install-latest-docker	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
+app-e2e-install-maestro	300	n=27 max=8s x3=24s -> floor 300s; runs 3503..3103
+app-e2e-mint-per-stack-secrets	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
+app-e2e-reset-stateful-ci-data	300	n=40 max=8s x3=24s -> floor 300s; runs 3503..3103
+app-e2e-set-up-docker-cli	300	n=40 max=0s x3=0s -> floor 300s; runs 3503..3103
+app-e2e-tear-down-ci-stacks	300	n=40 max=31s x3=93s -> floor 300s; runs 3503..3103
+app-e2e-verify-kvm-available	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
+app-e2e-write-ci-env-secret-files	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
+e2e-contention-tally	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
+e2e-result-gate	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
+e2e-result-gate-model	300	n=16 max=0s x3=0s -> floor 300s; runs 3503..3103
+e2e-turn-tally	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
+mcp-integration-movie	300	n=40 max=5s x3=15s -> floor 300s; runs 3503..3103
+mcp-integration-spreadsheet	300	n=40 max=3s x3=9s -> floor 300s; runs 3503..3103
+mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
+#
+# ON THE BACKSTOP — seen in the sample, but too few observations to calibrate from:
+# app-e2e-collect-container-logs	-	n=2 < 10 observed samples (0 killed)

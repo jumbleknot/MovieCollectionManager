@@ -1309,12 +1309,20 @@ import {
 
 test('(#326k) a hung step yields a digest that NAMES it, marks it a TIMEOUT, and carries its log tail', () => {
   const root = mkdtempSync(join(tmpdir(), 'digest-e2e-'));
+  // Driven through a PURPOSE-BUILT ceilings table, not the job-wide backstop (item #338 phase 2).
+  // `web-e2e` is a calibrated step now, so its row wins over CI_STEP_TIMEOUT_SECONDS — and the
+  // table is the path that actually runs in CI, so it is the one this end-to-end guard must cross.
+  // Left on the backstop, this test passed for 30 s and then failed, which is how the regression
+  // was found: a real ceilings row silently outranked the 1 s the test thought it had set.
+  const ceilings = join(root, 'ceilings.tsv');
+  writeFileSync(ceilings, '# step\tceiling\tbasis\nweb-e2e\t1\tn=40 max=280s; runs 3503..3103\n');
   const env = {
     ...process.env,
     CI_STEP_LOG_ROOT: root,
     GITHUB_RUN_ID: 'RUN326',
     GITHUB_JOB: 'app-e2e',
-    CI_STEP_TIMEOUT_SECONDS: '1',
+    CI_STEP_CEILINGS_FILE: ceilings,
+    CI_STEP_TIMEOUT_SECONDS: '2700',
   };
   const script = resolve326(dirname326(fileURL326(import.meta.url)), '..', 'ci-log-step.sh');
   const r = spawn326(

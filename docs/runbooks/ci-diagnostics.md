@@ -890,11 +890,12 @@ and diagnosing it needed `ssh ci@homelab` — the out-of-band step this bundle e
 ```bash
 node scripts/ci-status.mjs durations                          # app-e2e, last 25 published runs
 node scripts/ci-status.mjs durations --job dast --runs 10
+node scripts/ci-status.mjs durations --runs 40 --propose      # regenerate scripts/ci-step-ceilings.tsv
 ```
 
 **What it answers, and why it did not exist before.** `app-e2e` runs every wrapped step under a
-per-step ceiling (`CI_STEP_TIMEOUT_SECONDS`, item #326) so a hang fails the STEP and still publishes
-a digest, instead of killing the JOB and destroying the evidence. That mechanism is validated in
+per-step ceiling (item #326) so a hang fails the STEP and still publishes a digest, instead of
+killing the JOB and destroying the evidence. That mechanism is validated in
 production. Its **value** was not: 2700 s was calibrated against an app-e2e **job** duration
 (~29 min) misread as a `web-e2e` **step** duration (~5.2 min), leaving it roughly 5x looser than the
 evidence supported — measured cost on 2026-09-02, a hung step burning the full 45 min remaining on a
@@ -924,11 +925,47 @@ Three things worth knowing before you trust a figure it prints:
   self-limiting to `app-e2e` by construction and making durations a counts source would turn ~1
   package version per run into ~20.
 
-**The ceiling is still 2700 s and still uncalibrated.** Do not tighten it from a thin sample: run
-2530 on `main` took 41 min and PASSED, so `maestro-agent-flows` plausibly uses ~25 min legitimately
-when its nine flows retry, and trading a slow true failure for a fast false one on a capacity-1
-runner — where each re-run costs ~35-40 min — is the worse direction. Per-step ceilings replace the
-single job-wide value once the distribution supports them.
+### The ceilings themselves — `scripts/ci-step-ceilings.tsv`
+
+Once ~40 runs had accumulated, the single job-wide value was replaced by **one ceiling per step**,
+each carrying the sample it came from. The file is **generated, never hand-edited** — regenerate it
+with `durations --propose` and commit the result.
+
+```
+# step                                ceiling  basis
+maestro-agent-flows                      2580  n=27 max=844s x3=2532s -> 2580s; runs 3503..3103
+app-e2e-build-embedded-bundle-e2e         900  n=27 max=281s x3=843s -> 900s;  runs 3503..3103
+web-e2e                                   840  n=40 max=280s x3=840s -> 840s;  runs 3503..3103
+mc-service-integration                    420  n=40 max=122s x3=366s -> 420s;  runs 3503..3103
+…20 further steps, all at the 300 s floor
+```
+
+**The rule:** `max(observed) x 3`, rounded up to a whole minute, floored at **300 s**, and applied
+only to a step with at least **10 observed (non-killed) samples**.
+
+- **`max`, not p95** — p95 of 40 runs discards the two slowest observations, and those are exactly
+  the runs a ceiling must not fail.
+- **x3 is the largest retry bound any wrapped step has**, not a taste call: `ci-mobile-agent-flows.sh`
+  runs each flow under `max=3`, and Playwright is `retries: 1`. A sample's maximum already contains
+  whatever retries fired in it; multiplying by the bound covers the run where they all do. Sanity
+  check against the figure that made this item cautious — run 2530's hypothesised ~25 min
+  (1500 s) maestro — `2580 s` still clears it by 1.7x.
+- **The 300 s floor exists because `timeout 0` means NO LIMIT.** Twenty steps run in under a second;
+  `0 x 3 = 0` would delete the guard by its own arithmetic, and a 2 s step bounded at 6 s would red
+  on ordinary contention.
+
+**`CI_STEP_TIMEOUT_SECONDS` survives as the BACKSTOP, not the ceiling.** It bounds a wrapped step
+with no calibrated row, so a table miss can never fall through to unbounded and restore the #326
+defect. Today exactly one step is on it — `app-e2e-collect-container-logs`, which runs only on the
+failure path and has n=2. It stays at 2700 s because an uncalibrated step's legitimate duration is
+by definition unknown, and the asymmetry still holds there: a fast **false** red costs a ~35-40 min
+re-run on this capacity-1 runner; a slow **true** failure costs only the difference between that
+bound and the job's 75 min.
+
+Three guards in `scripts/__tests__/ci-log-step.test.mjs` keep this honest: **#338k** re-checks the
+below-the-job-ceiling arithmetic for *every* row rather than one value, **#338m** fails a row whose
+basis does not state its sample, and **#338n** fails if a wrapped `app-e2e` step is neither
+calibrated nor recorded as deliberately on the backstop.
 
 ---
 

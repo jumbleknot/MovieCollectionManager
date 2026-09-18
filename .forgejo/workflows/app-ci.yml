@@ -349,45 +349,49 @@ jobs:
       # healthy baseline, and `ci-status failure` could say only "the job may have died before the
       # digest step ran".
       #
-      # ci-log-step.sh enforces this per wrapped step, so a hang fails the STEP instead: the job
+      # ci-log-step.sh enforces a ceiling per wrapped step, so a hang fails the STEP instead: the job
       # survives, the step is named in `_failed-step`, and the digest runs and reports it as a
       # TIMEOUT rather than as an assertion failure that never happened.
       #
-      # THIS VALUE IS UNCALIBRATED, AND ITS ORIGINAL JUSTIFICATION WAS WRONG (corrected 2026-09-02).
-      # This comment used to read "sits above the slowest legitimate step (`web-e2e`, measured at
-      # 28 m 40 s)". That conflated two different measurements, and BOTH are named here so the
-      # mistake cannot be repeated by reading the surviving half:
+      # THE CEILINGS THEMSELVES NOW LIVE IN scripts/ci-step-ceilings.tsv, ONE PER STEP (item #338).
+      # Each row states the sample it was derived from, and the file is generated, not hand-edited:
+      #
+      #     node scripts/ci-status.mjs durations --job app-e2e --runs 40            # the distribution
+      #     node scripts/ci-status.mjs durations --job app-e2e --runs 40 --propose  # regenerate it
+      #
+      # The rule is max(observed) x 3, rounded up to a minute, floored at 300 s, and applied only to
+      # a step with at least 10 observed (non-killed) samples. The x3 is the largest retry bound any
+      # wrapped step has — ci-mobile-agent-flows.sh runs each flow under `max=3`, Playwright is
+      # `retries: 1` — so a run where every retry fires still has headroom.
+      #
+      # THE VALUE BELOW IS NO LONGER THE CEILING. It is the BACKSTOP: what bounds a wrapped step
+      # that has no calibrated row, so a table miss can never fall through to unbounded and restore
+      # the defect above. Today exactly one step is on it — `app-e2e-collect-container-logs`, which
+      # runs only on the failure path and has n=2, too few observations to derive a bound from.
+      #
+      # WHY 2700 s, AND WHAT EACH FIGURE ACTUALLY MEASURED. The original value was calibrated by eye
+      # against a number describing something else, and BOTH are named here so the mistake cannot be
+      # repeated by reading the surviving half:
       #
       #   28 m 40 s  an app-e2e **JOB** duration — what was actually measured, and not a step at all
       #   ~5.2 min   `web-e2e` as a **STEP** — run 2453's bundle, "156 passed (5.2m)"
       #
-      # So the ceiling was calibrated against a number describing something else, and 2700 s is
-      # roughly 5x looser than the evidence supports. Its measured cost on 2026-09-02: a hung step
-      # burned the full 45 min remaining on a capacity-1 runner before failing.
+      # The comment here used to cite the first while claiming it described the second. The measured
+      # cost of that slack on 2026-09-02: a hung step burned the full 45 min remaining on a
+      # capacity-1 runner before failing. Per-step ceilings close that for every calibrated step —
+      # `web-e2e` is now bounded at 840 s against a 280 s observed max over 40 runs, not at 2700 s.
       #
-      # It is nonetheless left at 2700 s, deliberately. The mechanism is validated — on 2026-09-02
-      # it fired on a hung `maestro-agent-flows` and the digest named it, "⏱ timeout after 2700s",
-      # which is exactly the evidence a job kill used to destroy. Tightening it needs a per-step
-      # distribution: run 2530 on `main` took 41 min and PASSED, so maestro plausibly uses ~25 min
-      # legitimately when flows retry, and a 1500 s ceiling could fail runs that would have
-      # succeeded. Trading a slow true failure for a fast false one is the worse direction.
+      # 2700 s survives as the backstop because an UNCALIBRATED step is, by definition, one whose
+      # legitimate duration is unknown, and the asymmetry item #338 states still holds there: a fast
+      # FALSE red costs a ~35-40 min re-run on this capacity-1 runner, a slow TRUE failure costs only
+      # the difference between this bound and the job's. It is the loosest value that still leaves
+      # enough of the 75 min job ceiling for teardown and the digest step to publish.
       #
-      # THAT DISTRIBUTION IS NOW BEING COLLECTED (item #338). ci-log-step.sh records every wrapped
-      # step's wall-clock duration on every run, success or failure, and the digest publishes it
-      # beside each bundle. Read it back — and do not replace this value without doing so:
-      #
-      #     node scripts/ci-status.mjs durations --job app-e2e --runs 25
-      #
-      # Samples killed at the ceiling are reported separately and excluded from the percentiles: a
-      # killed step lasted exactly the ceiling, and folding that in would calibrate each ceiling
-      # against the previous one. Per-step ceilings replace this single job-wide value once the
-      # sample supports them; until then it is one number covering steps whose legitimate durations
-      # differ by an order of magnitude, and it is loose to fit the slowest.
-      #
-      # What the bound must satisfy, and all it currently guarantees: a hung step must fail while
-      # enough of the 75 min job ceiling remains for teardown and the digest step to publish.
-      # Raising it past ~60 min puts a hung step back into job-kill territory and silently restores
-      # the defect (pinned by #326j in scripts/__tests__/ci-log-step.test.mjs).
+      # Raising this, or any row in the table, past ~60 min puts a hung step back into job-kill
+      # territory and silently restores the defect. Pinned by #326j and #338k in
+      # scripts/__tests__/ci-log-step.test.mjs, which check the arithmetic for every value, not just
+      # this one; #338n additionally fails if a wrapped step is neither calibrated nor recorded as
+      # deliberately on the backstop.
       CI_STEP_TIMEOUT_SECONDS: '2700'
       # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
       DOCKER_HOST: unix:///run/user/1001/docker.sock

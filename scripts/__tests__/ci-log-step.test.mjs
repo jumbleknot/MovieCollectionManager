@@ -421,3 +421,180 @@ test('(#338x) the uncalibrated ceiling points at the command that measures it', 
   assert.match(comment, /ci-status\.mjs durations/,
     'the ceiling no longer names the command that measures it — the next reader calibrates by eye again');
 });
+
+// ─── item #338 phase 2 — per-step ceilings, derived from that sample ─────────────────────────────
+//
+// Phase 1 (above) made the question answerable; these guard the answer. `CI_STEP_TIMEOUT_SECONDS`
+// was ONE number covering steps whose legitimate durations differ by an order of magnitude, so it
+// had to be loose enough for the slowest — leaving every other step effectively unbounded. Measured
+// on 2026-09-02: a hung step burned the full 45 min remaining on a capacity-1 runner.
+//
+// The per-step values live in a DATA file, not in prose beside 28 call sites, because the defect
+// this item exists to correct was a figure whose stated basis had drifted from what was measured.
+// scripts/ci-step-ceilings.tsv carries the basis in the row itself, written by
+// `ci-status durations --propose` rather than by hand.
+
+const CEILINGS_TSV = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'ci-step-ceilings.tsv');
+
+/** Run the wrapper against a PURPOSE-BUILT ceilings table, so these never depend on the real one. */
+function runWithCeilings(args, table, { env: extraEnv = {} } = {}) {
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const file = join(root, 'ceilings.tsv');
+  writeFileSync(file, table);
+  const r = spawnSync('bash', [SCRIPT, ...args], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      CI_STEP_LOG_ROOT: root,
+      GITHUB_RUN_ID: 'test-run',
+      GITHUB_JOB: 'test-job',
+      CI_STEP_CEILINGS_FILE: file,
+      ...extraEnv,
+    },
+  });
+  const dir = join(root, 'test-run', 'test-job');
+  const read = (f) => (existsSync(join(dir, f)) ? readFileSync(join(dir, f), 'utf8').trim() : null);
+  return { code: r.status, dir, stderr: r.stderr ?? '', reason: read('_failed-step-reason') };
+}
+
+test('(#338f) a step NAMED in the table is bounded by ITS ceiling, not the job-wide one', needsBash, () => {
+  // The whole point: `web-e2e` must not inherit the ceiling that only `maestro-agent-flows` needs.
+  const r = runWithCeilings(['web-e2e', 'sleep', '30'], '# step\tceiling\tbasis\nweb-e2e\t1\tn=40 max=280s\n',
+    { env: { CI_STEP_TIMEOUT_SECONDS: '600' } });
+  assert.ok(r.code === 124 || r.code === 137, `the table ceiling did not apply — exit ${r.code}`);
+  assert.match(r.reason ?? '', /after 1s\b/, 'the job-wide backstop won over the step\'s own value');
+});
+
+test('(#338g) a step ABSENT from the table falls back to the backstop, never to unbounded', needsBash, () => {
+  // Dropping to unbounded on a miss would silently restore the job-kill defect for any step the
+  // sample has not reached yet — the failure shape item #326 exists to prevent.
+  const r = runWithCeilings(['unlisted-step', 'sleep', '30'], '# step\tceiling\tbasis\nweb-e2e\t900\tn=40\n',
+    { env: { CI_STEP_TIMEOUT_SECONDS: '1' } });
+  assert.ok(r.code === 124 || r.code === 137, `the backstop did not apply — exit ${r.code}`);
+  assert.match(r.reason ?? '', /after 1s\b/);
+});
+
+test('(#338h) the EFFECTIVE ceiling is what the duration row records', needsBash, () => {
+  // Censoring detection is per step, so a row carrying the backstop while the table bounded the
+  // step would make every kill look like an observation and corrupt the next calibration.
+  const r = runWithCeilings(['web-e2e', 'echo', 'hi'], '# step\tceiling\tbasis\nweb-e2e\t900\tn=40\n',
+    { env: { CI_STEP_TIMEOUT_SECONDS: '2700' } });
+  assert.equal(r.code, 0);
+  assert.equal(durationRows(r.dir)[0].ceiling, '900', 'the row records the backstop, not the applied ceiling');
+});
+
+test('(#338i) a missing or malformed table never fails a step, and never invents a ceiling', needsBash, () => {
+  // Best-effort like every other measurement here. A comment row must not parse as a ceiling of 0,
+  // which `timeout 0` would treat as "no limit" — a silent removal of the guard.
+  const ok = runWithCeilings(['quick-step', 'echo', 'hi'], '# step\tceiling\tbasis\n\n#web-e2e\t1\tcommented out\n');
+  assert.equal(ok.code, 0);
+  assert.equal(durationRows(ok.dir)[0].ceiling, '', 'a comment row was parsed as this step\'s ceiling');
+
+  const absent = spawnSync('bash', [SCRIPT, 'quick-step', 'echo', 'hi'], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      CI_STEP_LOG_ROOT: mkdtempSync(join(tmpdir(), 'ci-step-log-')),
+      GITHUB_RUN_ID: 'r', GITHUB_JOB: 'j',
+      CI_STEP_CEILINGS_FILE: '/nonexistent/ceilings.tsv',
+    },
+  });
+  assert.equal(absent.status, 0, 'an absent ceilings table failed the step');
+});
+
+test('(#338j) a step name is matched WHOLE — a prefix must not borrow another step\'s ceiling', needsBash, () => {
+  // `web-e2e` and `web-e2e-model` differ by a suffix, and `app-e2e-install-dependencies` shares a
+  // prefix with six others. A substring match would hand one step another's bound.
+  const r = runWithCeilings(['web-e2e-model', 'sleep', '30'], '# step\tceiling\tbasis\nweb-e2e\t1\tn=40\n',
+    { env: { CI_STEP_TIMEOUT_SECONDS: '600' } });
+  assert.notEqual(r.code, 124, '`web-e2e-model` was killed at `web-e2e`\'s 1s ceiling — prefix match');
+  assert.notEqual(r.code, 137, '`web-e2e-model` was killed at `web-e2e`\'s 1s ceiling — prefix match');
+});
+
+// ─── the committed table, and the arithmetic #326j pinned for the single value ───────────────────
+
+function committedCeilings() {
+  return readFileSync(CEILINGS_TSV, 'utf8')
+    .split('\n')
+    .filter((l) => l.trim() && !l.startsWith('#'))
+    .map((l) => {
+      const [step, ceiling, basis] = l.split('\t');
+      return { step, ceiling: Number(ceiling), basis };
+    });
+}
+
+function appE2eJobCeilingSeconds(yaml) {
+  const jobIdx = yaml.indexOf('\n  app-e2e:');
+  assert.ok(jobIdx > 0, 'app-e2e job not found — this guard is reading the wrong file');
+  const m = yaml.slice(jobIdx).match(/timeout-minutes:\s*(\d+)/);
+  assert.ok(m, 'app-e2e has no timeout-minutes');
+  return Number(m[1]) * 60;
+}
+
+test('(#338k) EVERY ceiling in the table stays below the job ceiling, with room for the digest', () => {
+  // #326j pinned this arithmetic while there was one value to pin. A table makes it 28 values, and
+  // a single row raised past the job ceiling would restore the defect while the mechanism still
+  // looked present — so the guard moves with the data rather than staying on the old shape.
+  const jobSeconds = appE2eJobCeilingSeconds(readFileSync(APP_CI, 'utf8'));
+  const rows = committedCeilings();
+  assert.ok(rows.length > 0, 'the ceilings table is empty — every step fell back to the backstop');
+  for (const { step, ceiling } of rows) {
+    assert.ok(Number.isFinite(ceiling) && ceiling > 0, `${step} has no usable ceiling: ${ceiling}`);
+    assert.ok(jobSeconds - ceiling >= 15 * 60,
+      `${step}'s ceiling (${ceiling}s) leaves only ${(jobSeconds - ceiling) / 60} min of the ` +
+      `${jobSeconds / 60} min job ceiling — a hang there would still outlive the digest step`);
+  }
+});
+
+test('(#338m) every row STATES the sample it came from — no figure without its basis', () => {
+  // The defect being corrected was a number whose stated justification described something else.
+  // A basis that may be blank is a basis that will be, so it is required per row, mechanically.
+  for (const { step, basis } of committedCeilings()) {
+    assert.match(basis ?? '', /n=\d+/, `${step}'s ceiling does not say how many samples it rests on`);
+    assert.match(basis ?? '', /max=\d+s/, `${step}'s ceiling does not say what the observed maximum was`);
+    assert.match(basis ?? '', /runs \d+/, `${step}'s ceiling does not name the runs it was drawn from`);
+  }
+});
+
+test('(#338n) every step app-e2e wraps is either calibrated or knowingly on the backstop', () => {
+  // A step that is in neither place is one nobody decided about. The backstop still bounds it, so
+  // this cannot go silently wrong — but it can go silently UNCALIBRATED, which is this item.
+  const yaml = readFileSync(APP_CI, 'utf8');
+  const start = yaml.indexOf('\n  app-e2e:');
+  const end = yaml.indexOf('\n  dast:');
+  assert.ok(start > 0 && end > start, 'could not isolate the app-e2e job');
+  const job = yaml.slice(start, end);
+  // INVOCATIONS only. A bare `ci-log-step.sh <word>` also matches the prose in the env block's own
+  // comment ("ci-log-step.sh enforces this per wrapped step"), which would make this guard demand a
+  // ceiling for the step `enforces`. Requiring the `bash …` prefix, and dropping comment lines,
+  // pins it to the call sites.
+  const wrapped = new Set(
+    job
+      .split('\n')
+      .filter((l) => !/^\s*#/.test(l))
+      .flatMap((l) => [...l.matchAll(/bash\s+"?[^"\s]*ci-log-step\.sh"?\s+([a-z0-9-]+)/g)])
+      .map((m) => m[1]),
+  );
+  assert.ok(wrapped.size > 20, `only ${wrapped.size} wrapped steps found — the scan is broken`);
+
+  const table = readFileSync(CEILINGS_TSV, 'utf8');
+  const calibrated = new Set(committedCeilings().map((r) => r.step));
+  for (const step of wrapped) {
+    if (calibrated.has(step)) continue;
+    assert.match(table, new RegExp(`^#\\s*${step}\\b`, 'm'),
+      `${step} is neither calibrated nor recorded as deliberately on the backstop`);
+  }
+});
+
+test('(#338o) the backstop survives, and says what it is for', () => {
+  // It is no longer the ceiling — it is what bounds a step the sample has not reached. Removing it
+  // outright would leave such a step unbounded, which is the #326 defect with extra steps.
+  const yaml = readFileSync(APP_CI, 'utf8');
+  const idx = yaml.indexOf('CI_STEP_TIMEOUT_SECONDS');
+  assert.ok(idx > 0, 'app-e2e no longer sets a backstop — an uncalibrated step would run unbounded');
+  const comment = yaml.slice(Math.max(0, idx - 4000), idx);
+  assert.match(comment, /ci-step-ceilings\.tsv/,
+    'the backstop does not point at the table that now supersedes it for calibrated steps');
+  assert.match(comment, /backstop|fallback/i,
+    'the backstop still reads as the ceiling — the next reader will tune the wrong number');
+});

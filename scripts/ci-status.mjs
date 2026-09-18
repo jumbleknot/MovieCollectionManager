@@ -745,6 +745,10 @@ export function parseTargetArgs(argv) {
     else if (flag === '--job') target.job = valueOf(flag, i++);
     else if (flag === '--run') target.run = valueOf(flag, i++);
     else if (flag === '--full') target.full = true;
+    // `durations --propose` emits the ceilings table instead of the human-readable distribution
+    // (item #338). Writing it is deliberately the caller's job: a command that rewrote a committed
+    // file as a side effect of a READ would be the surprising half of this tool.
+    else if (flag === '--propose') target.propose = true;
     // Item #403: `watch` waits for advisory contexts by DEFAULT, because "has this commit settled"
     // is the question it is asked. This narrows it back to the merge question alone.
     else if (flag === '--required-only') requiredOnly = true;
@@ -1314,6 +1318,110 @@ export function renderDurations(summary, { job, runIds = [] } = {}) {
   return lines.join('\n');
 }
 
+// --- Deriving per-step ceilings from that distribution (item #338 phase 2) -------------------------
+//
+// Phase 1 made "how long does this step take" answerable. This turns the answer into the bound.
+//
+// The single job-wide `CI_STEP_TIMEOUT_SECONDS` had to be loose enough for the slowest wrapped step,
+// so every other step was bounded at 9x-337x its observed maximum — effectively unbounded. Measured
+// cost on 2026-09-02: a hung step burned the full 45 min remaining on a capacity-1 runner.
+//
+// The rule is arithmetic, and lives in code rather than in a spreadsheet or a head, because the
+// defect this item exists to correct was a figure chosen by eye whose stated basis described a
+// DIFFERENT measurement. A derivation a test can re-run cannot drift from what it claims.
+
+/**
+ * The retry multiplier the ceiling must absorb.
+ *
+ * 3 is not a taste call: it is the largest retry bound any wrapped step has. ci-mobile-agent-flows.sh
+ * runs each flow under `attempt=1; max=3`, and Playwright is `retries: 1` (2 attempts). A sample's
+ * maximum already contains whatever retries happened to fire in it; multiplying by the bound covers
+ * the run where they all do. For a step with no retry structure it is simply a 3x margin over the
+ * worst duration seen — which is the right direction, because item #338 states the asymmetry
+ * plainly: a fast FALSE red costs a ~35-40 min re-run on a capacity-1 runner, while a slow TRUE
+ * failure costs only the difference between this ceiling and the job's.
+ */
+export const CEILING_RETRY_FACTOR = 3;
+
+/**
+ * The smallest ceiling any step may be given.
+ *
+ * Twenty of app-e2e's wrapped steps run in under a second. `0 x 3 = 0`, and `timeout 0` means NO
+ * LIMIT — the guard would be silently removed by its own arithmetic. Even a 2s step would get 6s and
+ * red on ordinary contention. 300s is still 9x tighter than the value it replaces.
+ */
+export const CEILING_FLOOR_SECONDS = 300;
+
+/** Fewest OBSERVED samples a step needs before a bound is derived rather than left to the backstop. */
+export const CEILING_MIN_SAMPLES = 10;
+
+/** Ceilings are whole minutes: the job ceiling is, and a bound to the second implies absent precision. */
+const CEILING_QUANTUM_SECONDS = 60;
+
+const describeRuns = (runIds) =>
+  runIds.length <= 1 ? `run ${runIds[0] ?? '?'}` : `runs ${runIds[0]}..${runIds[runIds.length - 1]}`;
+
+/**
+ * Derive one ceiling per adequately-sampled step, each carrying the sample it rests on.
+ *
+ * Reads `max`, never `p95`: p95 of 40 runs discards the two slowest observations, and those are
+ * exactly the runs a ceiling must not fail. `summarizeDurations` has already excluded kills from
+ * `max` and from `n`, so a step observed mostly through kills falls under CEILING_MIN_SAMPLES and
+ * gets no ceiling — which closes the ratchet at this end too, not just in the percentiles.
+ */
+export function proposeCeilings(summary, { runIds = [] } = {}) {
+  const ids = runIds.map(String);
+  return summary
+    .filter((s) => s.n >= CEILING_MIN_SAMPLES && Number.isFinite(s.max))
+    .map((s) => {
+      const scaled = s.max * CEILING_RETRY_FACTOR;
+      const rounded = Math.ceil(scaled / CEILING_QUANTUM_SECONDS) * CEILING_QUANTUM_SECONDS;
+      const ceiling = Math.max(CEILING_FLOOR_SECONDS, rounded);
+      const how = ceiling === rounded
+        ? `x${CEILING_RETRY_FACTOR}=${scaled}s -> ${ceiling}s`
+        : `x${CEILING_RETRY_FACTOR}=${scaled}s -> floor ${ceiling}s`;
+      return { step: s.step, ceiling, basis: `n=${s.n} max=${s.max}s ${how}; ${describeRuns(ids)}` };
+    })
+    .sort((a, b) => b.ceiling - a.ceiling || a.step.localeCompare(b.step));
+}
+
+/**
+ * Render the committed table `ci-log-step.sh` reads.
+ *
+ * Under-sampled steps are emitted as COMMENTED rows rather than omitted. A step that is simply
+ * absent is one nobody decided about; a commented row says "seen, not calibrated, on the backstop"
+ * and lets a guard tell the two apart.
+ */
+export function renderCeilingsTable(rows, { summary = [], runIds = [], job = 'app-e2e' } = {}) {
+  const ids = runIds.map(String);
+  const out = [
+    '# Per-step CI ceilings — GENERATED, item #338. Do not hand-edit; regenerate:',
+    '#',
+    `#     node scripts/ci-status.mjs durations --job ${job} --runs ${Math.max(ids.length, 1)} --propose`,
+    '#',
+    '# ci-log-step.sh bounds a wrapped step at its row here, falling back to the job-wide',
+    '# CI_STEP_TIMEOUT_SECONDS backstop when the step has no row. Each ceiling is',
+    `# max(observed) x ${CEILING_RETRY_FACTOR}, rounded up to a minute, floored at ${CEILING_FLOOR_SECONDS}s,`,
+    `# and derived only from a step with at least ${CEILING_MIN_SAMPLES} observed (non-killed) samples.`,
+    '#',
+    `# Sample: ${ids.length} published ${job} run(s), ${describeRuns(ids)}.`,
+    '#',
+    '# step\tceiling\tbasis',
+  ];
+  for (const r of rows) out.push(`${r.step}\t${r.ceiling}\t${r.basis}`);
+
+  const calibrated = new Set(rows.map((r) => r.step));
+  const skipped = summary.filter((s) => !calibrated.has(s.step));
+  if (skipped.length) {
+    out.push('#');
+    out.push('# ON THE BACKSTOP — seen in the sample, but too few observations to calibrate from:');
+    for (const s of skipped) {
+      out.push(`# ${s.step}\t-\tn=${s.n} < ${CEILING_MIN_SAMPLES} observed samples (${s.censored} killed)`);
+    }
+  }
+  return `${out.join('\n')}\n`;
+}
+
 // --- Subcommands ----------------------------------------------------------------------------------
 
 /** Exit codes: 0 mergeable · 1 required failure · 2 bad args/auth · 3 still waiting at timeout. */
@@ -1583,7 +1691,11 @@ async function cmdDurations(target, conn) {
     emit('Nothing has been published for it inside the 30-day bundle retention window.');
     return EXIT.OK;
   }
-  emit(`sampling ${selected.length} run(s) of \`${job}\` — ${DURATIONS_FILE} is a few hundred bytes each…`);
+  // The progress line goes to STDERR under --propose so `… --propose > scripts/ci-step-ceilings.tsv`
+  // writes the table and nothing else. On stdout it would become the file's first line, and a
+  // ceilings file whose first row is a progress message is one ci-log-step.sh reads as a step name.
+  const note = `sampling ${selected.length} run(s) of \`${job}\` — ${DURATIONS_FILE} is a few hundred bytes each…`;
+  if (target.propose) console.error(note); else emit(note);
 
   const rows = [];
   const runIds = [];
@@ -1599,8 +1711,15 @@ async function cmdDurations(target, conn) {
     runIds.push(String(v.version).split('--')[0]);
   }
 
-  emit('');
-  emit(renderDurations(summarizeDurations(rows), { job, runIds }));
+  const summary = summarizeDurations(rows);
+  if (!target.propose) emit('');
+  if (target.propose) {
+    // Straight to stdout, unadorned, so `… --propose > scripts/ci-step-ceilings.tsv` is the whole
+    // regeneration step.
+    emit(renderCeilingsTable(proposeCeilings(summary, { runIds }), { summary, runIds, job }).trimEnd());
+    return EXIT.OK;
+  }
+  emit(renderDurations(summary, { job, runIds }));
   return EXIT.OK;
 }
 
@@ -1713,7 +1832,7 @@ const USAGE = `Usage:
   node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name> | --run <id>] [--event push|pull_request]
   node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch … | --run <id>] [--timeout <seconds>] [--required-only]
   node scripts/ci-status.mjs failure [--sha … | --pr … | --branch … | --run <id>] [--job <name>] [--full]
-  node scripts/ci-status.mjs durations [--job <name>] [--runs <n>]
+  node scripts/ci-status.mjs durations [--job <name>] [--runs <n>] [--propose]
   node scripts/ci-status.mjs --selftest
 
 --run <id> selects the commit that run was for. --event narrows the VIEW only: the verdict always
