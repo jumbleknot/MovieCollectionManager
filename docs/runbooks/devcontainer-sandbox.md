@@ -547,7 +547,7 @@ Expo tunnel) needs no inbound rule at all.
 Measured 2026-08-23. `sbx ports`, **VS Code's dev-container port forwarding**, and anything published
 by Docker Desktop on Windows all bind the *same* `127.0.0.1` port space. There is no separation: a
 port the sandbox has forwarded is a port the host cannot bind, and vice versa. This is the same class
-of fault as [the prod/CI published-port collision](/openwiki/invariants/published-port-reservation.md),
+of fault as [the prod/CI published-port collision](../../openwiki/invariants/published-port-reservation.md),
 one layer down.
 
 **It cost most of a session, in two different disguises.**

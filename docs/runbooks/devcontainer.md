@@ -319,6 +319,15 @@ Four things that are not obvious and each cost a session:
 - **Symlink `node_modules`; do not `pnpm install`.** A fresh worktree has none (the pnpm workspace
   root lives in the main checkout), and installing would churn the store the other sessions are
   using. The symlink is enough for `node --test` and the gate scripts.
+- **That symlink used to be committable, and `git add -A` committed it.** `.gitignore` carried
+  `node_modules/`, and a **trailing slash matches only a directory** — so the symlink was not
+  ignored. `git diff --stat` does not list untracked files either, so reviewing the diff before
+  committing does not catch it. CI then checks out a symlink where pnpm needs a directory and
+  **every install-bearing job dies at once** with `ENOTDIR: not a directory, mkdir
+  '.../node_modules'` — six required contexts on PR #488, which reads like a broken toolchain
+  rather than like a stray file. The pattern is now `node_modules` (no slash) so this cannot
+  recur; if you add any other symlink-into-the-main-checkout, check `git status --porcelain`
+  rather than `git diff` before committing.
 - **A fresh worktree lacks gitignored artefacts**, which some gates read rather than generate.
   `security/infra-images/reports/findings.json` is one: without it
   `check-infra-image-findings.mjs --check-expiring` throws instead of passing, which reads as a
@@ -496,7 +505,7 @@ pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Dock
   deserves a decision.
 
   Formatting has its own trap in this crate — `cargo fmt -- <file>` formats the **whole crate**. See
-  [cargo fmt formats the WHOLE crate](/openwiki/gotchas/rust-formatting-scope.md).
+  [cargo fmt formats the WHOLE crate](../../openwiki/gotchas/rust-formatting-scope.md).
 
 - **Nested-container egress is a documented residual.** The firewall controls the dev container's
   own egress *and* dockerd's image pulls (both traverse the `OUTPUT` chain), but it deliberately
