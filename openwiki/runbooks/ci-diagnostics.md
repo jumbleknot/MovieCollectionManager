@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand for calibrating per-step ceilings, and the event-vs-trigger_event field split that makes a scheduled run look like a push.
+description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), and the event-vs-trigger_event field split that makes a scheduled run look like a push.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-15T11:01:00Z
+timestamp: 2026-09-18T00:00:00Z
 ---
 
 # CI self-serve diagnostics
@@ -163,10 +163,13 @@ runtime rather than any literal configured value.
   killed at its ceiling lasted exactly the ceiling; folding it in makes each ceiling a function of
   the previous one, ratcheting tighter on every kill. (2) **The sample only fills forward from the
   first run after item #338** — bundles published before that have no durations file and are skipped
-  silently; `runs sampled` in the output is the honest count. (3) **Do not tighten the ceiling
-  (currently 2700 s) from a thin sample** — run 2530 on `main` took 41 min and passed, so a step
-  plausibly uses ~25 min legitimately; trading a slow true failure for a fast false one on a
-  capacity-1 runner (each re-run ~35–40 min) is the worse direction.
+  silently; `runs sampled` in the output is the honest count. (3) **Item #338 shipped: the single
+  2700 s job-wide value is replaced by `scripts/ci-step-ceilings.tsv`** — one ceiling per step,
+  generated (never hand-edited) by `durations --propose`, with the rule `max(observed) x 3` rounded
+  up to a minute and floored at 300 s. `CI_STEP_TIMEOUT_SECONDS` survives as the backstop for
+  uncalibrated steps (n < 10 or failure-path-only); a table miss never falls through to unbounded.
+  See `docs/runbooks/ci-diagnostics.md` § "The ceilings themselves" for the full arithmetic and guard
+  details.
 - **Container-executor step logs are read in-job, before teardown — they do not need host
   persistence.** The wrong mental model ("`$HOME/mcm-ci-step-logs/` disappears when the container
   dies → containerized jobs are undiagnosable") is tempting and false. `Publish failure digest` is
