@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer — Docker Desktop / DinD pat
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container path — kept solely for Android emulator support via /dev/kvm. The primary AI-assisted dev environment is now the Docker Sandbox microVM; see devcontainer-sandbox.md. Documents the two-tier isolation model, default-deny egress firewall, and Windows-host quirks.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
-timestamp: 2026-08-27T22:00:00+00:00
+timestamp: 2026-09-18T00:00:00Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -103,6 +103,19 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   it. Full diagnosis commands: `docs/runbooks/devcontainer.md`.
 
 - **Editing a file under `node_modules/` writes into the pnpm STORE — every copy changes, and `pnpm install` will not undo it (measured 2026-09-07, item #242).** pnpm's store is content-addressed and `node_modules` entries are hardlinks into it, so files with identical content share one inode even across different package versions. Three paths that look like three copies of `metro/src/lib/contextModule.js` (0.84.5 and two 0.84.6 peer variants) are inode 601279, link count 4 — the fourth link being the store entry itself (`.pnpm-store/v11/files/fc/9a7b…`, whose name is the hash of the original content). Note the store is the in-workspace `.pnpm-store/` (gitignored), not the `~/.local/share/pnpm/store` volume, so the blast radius is this workspace rather than the machine. Two consequences, both hit during #242: (1) a per-file backup-then-patch loop corrupts its own backups (`bak1` clean, `bak2` one injected line, `bak3` two) — "restore each file from its own backup" reinstates the corruption; (2) the store entry disagrees with its own content hash and an ordinary `pnpm install` does not re-verify that, so the corruption outlives a reinstall. **Safe procedure:** `stat -c '%h %i'` the file first (link count > 1 means other paths and the store change with it); record the clean `md5sum` before the first write; patch one path and expect duplicates to follow (do not loop); then restore and verify — md5 from step 2 AND `pnpm store status` (walks the store, answers `Packages in the store are untouched` on exit 0). Recovery when backups are already dirty: strip the injected lines by content, not by restoring a file, then confirm against the clean md5 and `pnpm store status`.
+
+- **★★★ You are probably not the only agent in here — use a worktree, not `/workspaces/mcm`, for any branch work (measured 2026-09-18).** Multiple Claude sessions share this one container and one checkout. `git checkout -b`, `git add`, `git stash`, and `git rebase` in `/workspaces/mcm` are not private acts: they change what every other session is looking at, mid-edit. The failure is silent and lands on the *other* agent.
+
+  Create a worktree instead:
+  ```bash
+  git fetch -q origin main
+  git worktree add -b <branch> /home/coder/worktrees/<slug> origin/main
+  ln -sfn /workspaces/mcm/node_modules /home/coder/worktrees/<slug>/node_modules
+  ```
+
+  **The `node_modules` symlink used to be committable — `git add -A` committed it, and CI died.** `.gitignore` carried `node_modules/` with a trailing slash, which matches only a directory — not a symlink. Every install-bearing job then failed with `ENOTDIR: not a directory, mkdir '.../node_modules'` — six required contexts on PR #488 — which reads like a broken toolchain rather than a stray file. **Fixed:** the pattern is now `node_modules` (no trailing slash). If you add any other symlink-into-the-main-checkout, check `git status --porcelain` rather than `git diff` before committing.
+
+  Read-only operations (`git fetch`, `git log`, `ci-status`, forge API calls) need no worktree. Clean up: `git worktree remove /home/coder/worktrees/<slug> && git worktree prune`.
 
 Full prerequisite checklist, the Windows-host boot sequence, and the complete security-posture
 narrative: `docs/runbooks/devcontainer.md`.
