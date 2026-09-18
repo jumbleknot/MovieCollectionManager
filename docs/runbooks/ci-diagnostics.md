@@ -967,6 +967,55 @@ below-the-job-ceiling arithmetic for *every* row rather than one value, **#338m*
 basis does not state its sample, and **#338n** fails if a wrapped `app-e2e` step is neither
 calibrated nor recorded as deliberately on the backstop.
 
+### Recalibrating the table
+
+**When.** Four triggers, and only these — a ceiling nobody is complaining about does not need
+refreshing just because time passed:
+
+- **A step was killed at its ceiling but the work was legitimate** — the digest says
+  `⏱ timeout after Ns` and the step was slow, not hung. Resist fixing that one row; regenerate.
+- **`#338n` fails the build** — a newly wrapped `app-e2e` step has no row and no backstop note.
+- **A step got materially slower on purpose** — new specs, another Maestro flow, a bigger bundle.
+- **The runner changed** — capacity or hardware moves every figure at once, so the whole table is
+  stale, not one row of it.
+
+**How.**
+
+```bash
+# 1. Read the distribution FIRST. Never regenerate blind — the diff is the review surface,
+#    and you cannot review it if you do not know what the sample looks like.
+node scripts/ci-status.mjs durations --job app-e2e --runs 40
+
+# 2. Regenerate. Under --propose the progress line goes to STDERR, so the redirect is clean.
+node scripts/ci-status.mjs durations --job app-e2e --runs 40 --propose > scripts/ci-step-ceilings.tsv
+
+# 3. Review the DIFF, not the file. A row that moved a long way is a question, not a result.
+git diff scripts/ci-step-ceilings.tsv
+
+# 4. Verify before committing.
+node --test scripts/__tests__/ci-log-step.test.mjs scripts/__tests__/ci-status.test.mjs
+```
+
+**Three traps, all measured rather than reasoned about:**
+
+- **NEVER hand-edit a ceiling.** The guards check that a basis is *present* (#338m) and that the
+  value clears the job ceiling (#338k). **Neither checks that a ceiling matches its own basis.**
+  Measured: `web-e2e⇥60⇥n=40 max=280s x3=840s -> 840s` passes all 37 guards. A hand-edited number
+  beside a stale basis is item #338's original defect — a figure whose stated justification
+  describes a different measurement — reproduced inside the file built to prevent it. The file says
+  `GENERATED, do not hand-edit` in its own header for this reason.
+- **A step that keeps timing out gets LOOSER, not tighter.** Kills are censored, so a step killed
+  often *loses observations* and can fall under the `n >= 10` floor. It then drops off the table
+  onto the 2700 s backstop, recorded as a commented row. Measured: 9 observed + 31 killed yields
+  `# slow-step⇥-⇥n=9 < 10 observed samples (31 killed)`. This is the anti-ratchet working exactly as
+  designed — you cannot calibrate a step from its own kills — but the effect is the opposite of what
+  "it keeps timing out" intuitively suggests, and the row looks like it went missing rather than
+  like it was deliberately retired.
+- **`--runs 40` is an upper bound, not a promise.** Bundles expire after 30 days; `runs sampled` in
+  the output is the honest count. So **once the table is older than the retention window, the runs
+  its basis names no longer exist** — the figures remain correct, but they stop being checkable.
+  Regenerating is the only way back to a basis a reader can verify.
+
 ---
 
 ## `cd-deploy` is a special case
