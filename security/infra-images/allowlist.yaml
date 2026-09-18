@@ -283,3 +283,59 @@
   justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final / 4.2.17.Final) on an image we pull. RE-VERIFIED 2026-09-14 by a full local Trivy sweep (aquasec/trivy:0.74.0, DB stamped 07:14 UTC that morning): STILL PRESENT and still CRITICAL — netty-handler 4.1.136.Final, one blocking finding. No bump clears it: quay lists 26.7.3 (2026-08-31) as the newest release and it IS `latest` (checked 2026-09-14), so the remediation is an upstream rebuild against 4.1.137.Final. NARROWED 2026-09-14 from the transitional `26\.7\.[23]` span to a single version, now that PR #362 has landed and 26.7.2 is no longer referenced anywhere in infrastructure-as-code/ — same rule already applied to the otel-lgtm and postgres keys, and the reason the span existed for exactly one merge. That narrowing also RETIRES the inference the span carried: 26.7.2 was never scanned (it was established affected from both release tags declaring quarkus.version 3.33.3.1), and it no longer needs to be, because the only ref this key now covers is the one measured directly. Internal-only (identity provider). Time-boxed; delete on rebuild, do not renew.'
   addedBy: 'item-406'
   expiry: '2026-12-01'
+
+# ── NEW advisory on an unchanged pinned image, triaged 2026-09-18 (Renovate window; PR #478) ──────
+# Three CRITICALs in github.com/rabbitmq/amqp091-go v1.12.0 (fix 1.13.0), all published 2026-09-16:
+#   CVE-2026-77405  missing explicit TLS minimum version in the URI parser
+#   CVE-2026-77408  silent data truncation / state corruption via shortstr integer overflow
+#   CVE-2026-77411  protocol desynchronization and frame injection via integer overflow in readLongstr
+#
+# HOW IT SURFACED, and why the weekly cron earned its keep here. Nothing in the repository changed:
+# `grafana/otel-lgtm:0.32.1` has been pinned since 2026-09-04 and the 2026-09-11 scheduled sweep was
+# green (run 3073). The advisories landed on the 16th, so the 2026-09-18 sweep (run 3521) went red on
+# an image no pull request had touched — the exact case the un-path-gated weekly sweep exists for.
+# It then blocked Renovate's digest-pin PR #478, whose diff (node, rust, keycloak digests) has no
+# relation to it: branch protection requires `infra-image-scan / infra-image-scan*`, so an infra CVE
+# with no bearing on a PR's content makes that PR unmergeable. Same shape as the 2026-08-29 keycloak
+# case recorded above.
+#
+# NO BUMP CLEARS IT — measured, not inferred. Docker Hub lists 0.33.0 (2026-09-11) and 0.33.1
+# (2026-09-18T09:08Z, published while this was being triaged) as newer than our 0.32.1. The newest,
+# 0.33.1@sha256:d6c52678, was scanned DIRECTLY with the gate's own criterion
+# (`aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed`, ghcr DB mirrors, dev container):
+# **the same three advisories, the same amqp091-go v1.12.0**. So this satisfies the rule this file
+# states for itself — an entry is right only when no fix exists upstream. Remediation is an upstream
+# rebuild: otelcol-contrib must take amqp091-go 1.13.0 and Grafana must ship an otel-lgtm built on it.
+# (The `docker base images` group already proposes the otel-lgtm bump; it was rate-limited out of this
+# window. Taking it will NOT discharge these entries, and by design must not appear to — see below.)
+#
+# WHY THE RISK IS ACCEPTED. All three findings are in ONE binary, `otel-lgtm/otelcol-contrib`, and all
+# three are reachable only through the collector's AMQP client path (the rabbitmq receiver/exporter
+# vendored into the contrib distribution). This deployment configures no RabbitMQ component and runs
+# no AMQP broker, so nothing drives that code. otel-lgtm is internal-only besides: its :4317/:4318
+# OTLP ports stay unpublished and it is reached by internal DNS (`otel-lgtm:4318`).
+#
+# KEYED TO 0.32.1 DELIBERATELY, AND THE RE-BLOCK IS THE POINT. The version key means the pending
+# `docker base images` bump discharges these entries mechanically: the moment the ref leaves 0.32.1
+# they stop matching, the gate re-blocks, and they come back re-keyed WITH a scan of whatever tag
+# actually landed. A span (`0\.3[23]\.`) would suppress the advisory on a version nobody has scanned,
+# which is what `infra-image-scan.test.mjs`'s version-keying guard forbids. Per item #303, DELETE
+# these when an upstream rebuild clears them rather than letting the date pass.
+#
+# EXPIRY 2026-12-01 joins the existing cohort rather than starting a new date, so the next re-triage
+# stays one sitting. The date is a backstop here, not the primary discharge — the version key is.
+- image: 'grafana/otel-lgtm:0\.32\.1'
+  id: 'CVE-2026-77405'
+  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — missing explicit TLS minimum version in the URI parser) on an image we pull but do not build; surfaced by the 2026-09-18 weekly sweep (run 3521) on an unchanged pin, and blocked the unrelated Renovate PR #478. No upstream tag clears it: the newest release, 0.33.1@sha256:d6c52678 published 2026-09-18T09:08Z, was scanned directly with the gate criterion (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors) and carries the SAME amqp091-go v1.12.0 and the same three advisories, so remediation is an upstream rebuild of otelcol-contrib against 1.13.0. Reachable only via the collector AMQP client path (rabbitmq receiver/exporter in the contrib distribution); this deployment configures no RabbitMQ component and runs no AMQP broker, and otel-lgtm is internal-only with :4317/:4318 unpublished. Version-keyed on purpose so the pending `docker base images` bump re-blocks and forces a fresh scan. Time-boxed; delete on rebuild, do not renew.'
+  addedBy: 'renovate-window-2026-09-18'
+  expiry: '2026-12-01'
+- image: 'grafana/otel-lgtm:0\.32\.1'
+  id: 'CVE-2026-77408'
+  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — silent data truncation and state corruption via a shortstr integer overflow) on an image we pull but do not build; surfaced by the 2026-09-18 weekly sweep (run 3521) on an unchanged pin, and blocked the unrelated Renovate PR #478. No upstream tag clears it: the newest release, 0.33.1@sha256:d6c52678 published 2026-09-18T09:08Z, was scanned directly with the gate criterion (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors) and carries the SAME amqp091-go v1.12.0 and the same three advisories, so remediation is an upstream rebuild of otelcol-contrib against 1.13.0. Reachable only via the collector AMQP client path (rabbitmq receiver/exporter in the contrib distribution); this deployment configures no RabbitMQ component and runs no AMQP broker, and otel-lgtm is internal-only with :4317/:4318 unpublished. Version-keyed on purpose so the pending `docker base images` bump re-blocks and forces a fresh scan. Time-boxed; delete on rebuild, do not renew.'
+  addedBy: 'renovate-window-2026-09-18'
+  expiry: '2026-12-01'
+- image: 'grafana/otel-lgtm:0\.32\.1'
+  id: 'CVE-2026-77411'
+  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — protocol desynchronization and frame injection via an integer overflow in readLongstr) on an image we pull but do not build; surfaced by the 2026-09-18 weekly sweep (run 3521) on an unchanged pin, and blocked the unrelated Renovate PR #478. No upstream tag clears it: the newest release, 0.33.1@sha256:d6c52678 published 2026-09-18T09:08Z, was scanned directly with the gate criterion (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors) and carries the SAME amqp091-go v1.12.0 and the same three advisories, so remediation is an upstream rebuild of otelcol-contrib against 1.13.0. Reachable only via the collector AMQP client path (rabbitmq receiver/exporter in the contrib distribution); this deployment configures no RabbitMQ component and runs no AMQP broker, and otel-lgtm is internal-only with :4317/:4318 unpublished. Version-keyed on purpose so the pending `docker base images` bump re-blocks and forces a fresh scan. Time-boxed; delete on rebuild, do not renew.'
+  addedBy: 'renovate-window-2026-09-18'
+  expiry: '2026-12-01'
