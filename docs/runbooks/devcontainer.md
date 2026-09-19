@@ -311,14 +311,51 @@ git worktree add -b <branch> /home/coder/worktrees/<slug> origin/main
 ln -sfn /workspaces/mcm/node_modules /home/coder/worktrees/<slug>/node_modules
 ```
 
-Four things that are not obvious and each cost a session:
+Things that are not obvious, each of which cost a session:
 
 - **`/home/coder/...`, never `/workspaces/.worktrees/...`.** `/workspaces` itself is not writable —
   only `/workspaces/mcm` is — so the latter fails on creating the leading directory, reported as a
   bare `Permission denied` that reads like a git problem rather than a path problem.
-- **Symlink `node_modules`; do not `pnpm install`.** A fresh worktree has none (the pnpm workspace
-  root lives in the main checkout), and installing would churn the store the other sessions are
-  using. The symlink is enough for `node --test` and the gate scripts.
+- **Symlink `node_modules` to start — but know exactly how far the symlink gets you.** A fresh
+  worktree has none (the pnpm workspace root lives in the main checkout). The symlink is enough for
+  `node --test`, the `scripts/*.mjs` gates, and therefore most of `preflight`.
+
+  **It is not enough for any `pnpm nx <target>`, and the failure does not say so.** Measured
+  2026-09-19 (items #499/#500): `preflight` reported **24 of 27** green while
+  `nx lint|typecheck|test mcm-app` all died in pnpm's pre-run dependency check with
+
+  ```
+  ERR_PNPM_UNSAFE_MODULES_DIR  Refusing to remove the modules directory at
+  "/workspaces/mcm/node_modules" because its resolved target is not a strict
+  subdirectory of the project root at "/home/coder/worktrees/<slug>"
+  ```
+
+  That reads like a permissions or path bug in the target. It is not — pnpm verifies deps before
+  running a script, decides the tree is foreign, and wants to purge and reinstall it. **Two
+  plausible workarounds both fail**, so do not spend the time: `npm_config_verify_deps_before_run=false`
+  does not suppress the check, and `cp -al` cannot hardlink the tree because `/workspaces` and
+  `/home/coder` are **different devices** (`Invalid cross-device link`). A plain `cp -a` copy gets
+  further but pnpm still rejects it and asks to purge.
+
+  The only thing that works is a real install **in the worktree**:
+
+  ```bash
+  cd /home/coder/worktrees/<slug>
+  rm -f node_modules            # the symlink, if you made one
+  CI=true pnpm install --frozen-lockfile     # ~4 min, ~1.9 GB; CI=true answers the purge prompt
+  ```
+
+  This does **not** churn the other session's tree — it writes only inside the worktree, and the
+  content-addressed store is shared by design. The old advice here ("do not `pnpm install`") was
+  written for a session that only ran `node --test`; treat it as the default, not the rule. **Decide
+  from the diff**: if what you changed is only reachable through an nx target, budget the four
+  minutes rather than shipping that tier unproven.
+- **nx and pnpm will hand you a STALE failure.** In the same session, three targets failed with a
+  message naming a path that no longer existed — cached output. `--skip-nx-cache` produced a
+  completely different, and real, error. **If an nx failure's message does not match the state on
+  disk, re-run it with `--skip-nx-cache` before diagnosing it.** Same family as the superseded-run
+  trap in [ci-diagnostics.md](ci-diagnostics.md): the tool answered a question you already stopped
+  asking.
 - **That symlink used to be committable, and `git add -A` committed it.** `.gitignore` carried
   `node_modules/`, and a **trailing slash matches only a directory** — so the symlink was not
   ignored. `git diff --stat` does not list untracked files either, so reviewing the diff before
@@ -337,6 +374,13 @@ Four things that are not obvious and each cost a session:
 - **Reads are safe and shared.** `git fetch`, `git log`, `git show`, and anything against the forge
   API — opening a PR, merging, commenting, `ci-status` — need no worktree at all. Only operations
   that move `HEAD` or touch the index do.
+
+**A worktree does not survive a dev-container rebuild.** `/home/coder/worktrees/` is on the
+container's own filesystem, so a rebuild takes the directory with it while `git worktree list` — read
+from `/workspaces/mcm/.git`, which is on the mounted volume — still lists it, now marked `prunable`.
+Measured 2026-09-19, when a sandbox upgrade rebuilt the container mid-session. **Push the branch
+before any risky container operation**: a pushed branch and a merged PR survive, uncommitted worktree
+state does not. Afterwards, `git worktree prune` in `/workspaces/mcm` clears the stale record.
 
 Clean up when the branch merges, or the next session inherits a stale tree:
 
