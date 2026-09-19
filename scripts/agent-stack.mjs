@@ -121,6 +121,65 @@ function imageExists(tag) {
   return capture('docker', ['images', '-q', tag]) !== '';
 }
 
+/** Every argument this script accepts. Anything else is an ERROR — see resolveCommand. */
+const ACCEPTED_FLAGS = ['--down', '--status', '--build', '--no-build', '--help', '-h'];
+
+export const USAGE = `agent-stack.mjs — deploy/teardown the containerized agent stack for local E2E.
+
+  node scripts/agent-stack.mjs              deploy (BUILDS the images first) — the default action
+  node scripts/agent-stack.mjs --build      deploy, building explicitly (same as the default)
+  node scripts/agent-stack.mjs --no-build   deploy EXISTING images (local only; refused under CI)
+  node scripts/agent-stack.mjs --status     report what is running — the read-only probe
+  node scripts/agent-stack.mjs --down       remove the stack
+  node scripts/agent-stack.mjs --help       this text
+
+A bare invocation DEPLOYS. If you only want to look, use --status.`;
+
+/**
+ * Resolve argv into the action to take — and REJECT anything not recognised.
+ *
+ * WHY THIS EXISTS AS A FUNCTION RATHER THAN AN `if` CHAIN AT THE FOOT OF THE FILE. It used to be
+ * that chain, and it matched `--down`, then `--status`, and let EVERYTHING ELSE fall through to
+ * `deploy()`. So `--help` built and started the stack, and so did any typo: `--staus`, `--donw`, and
+ * `--dry-run` (a flag this script has never had) were all spelled "build and start the stack".
+ * `resolveBuildMode` only looks for `--no-build`, so an unrecognised flag also resolved to
+ * `build = true` — the fall-through did not merely start containers, it rebuilt the images first.
+ *
+ * Measured 2026-09-19: `--help` began building `movie-mcp:latest` within a second, during a session
+ * whose entire purpose was tearing things DOWN. It was caught only because the call happened to
+ * carry a `timeout`. The reflex used to find out what a script does was the one input that made it
+ * act.
+ *
+ * THE RULE IS REJECT, NOT GUESS. An unknown flag raises; it is never a silently-ignored token that
+ * leaves the default action running. That is the whole difference between this and the version that
+ * deployed — and it is why the parsing is a pure, tested function rather than control flow wrapped
+ * around side effects.
+ *
+ * @returns {{command: 'help'|'down'|'status'|'deploy', build: boolean}}
+ * @throws when any argument is not in ACCEPTED_FLAGS
+ */
+export function resolveCommand(argv = [], env = process.env) {
+  const args = argv.filter((a) => a !== '');
+
+  // Help wins outright: someone asking what this does must never trigger what it does.
+  if (args.includes('--help') || args.includes('-h')) return { command: 'help', build: true };
+
+  // Rejection happens BEFORE dispatch, so `--down --typo` fails loudly rather than tearing down and
+  // leaving the caller believing the typo meant something.
+  const unknown = args.filter((a) => !ACCEPTED_FLAGS.includes(a));
+  if (unknown.length) {
+    throw new Error(
+      `unrecognised argument(s): ${unknown.join(', ')}\n` +
+        `accepted: ${ACCEPTED_FLAGS.join(', ')}\n\n${USAGE}`,
+    );
+  }
+
+  // Precedence unchanged from the original chain: --down, then --status, then deploy.
+  if (args.includes('--down')) return { command: 'down', build: true };
+  if (args.includes('--status')) return { command: 'status', build: true };
+  return { command: 'deploy', build: resolveBuildMode(args, env) };
+}
+
 /**
  * Decide whether to (re)build the agent images. **Building is the DEFAULT** — feature 041.
  *
@@ -414,13 +473,16 @@ const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
 if (invokedPath === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2);
   try {
-    if (argv.includes('--down')) {
+    const { command, build } = resolveCommand(argv);
+    if (command === 'help') {
+      console.log(USAGE);
+    } else if (command === 'down') {
       removeContainers();
       log('agent stack removed (agent-gateway, movie-mcp, web-api-mcp).');
-    } else if (argv.includes('--status')) {
+    } else if (command === 'status') {
       status();
     } else {
-      deploy(resolveBuildMode(argv));
+      deploy(build);
     }
   } catch (e) {
     die(e.message);
