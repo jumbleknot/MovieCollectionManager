@@ -67,6 +67,41 @@ if [ ! -f "$CONFIG" ]; then
   echo "  ✗ config not found: $CONFIG"; echo "[verify-reproducible-recreate] FAIL (SC-005)"; exit 1
 fi
 
+# ── The BASE_IMAGE pin, and why this is checked BEFORE anything is destroyed ─────────────────────
+#
+# Taking the config as a parameter (above) fixed half of the 2026-08-16 failure. The other half bit
+# again on 2026-09-19: the sandbox config's BASE_IMAGE is
+# `${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}`, and that variable lives in ~/.mcm-sandbox-env,
+# which is deliberately NOT auto-sourced from .bashrc (D-07). A non-login shell — which is exactly
+# what run-harness.sh gives this script — therefore has it unset, the arg falls back to the bare tag,
+# and `devcontainer up` turns that into `docker pull mcm-devcontainer` → not a pullable reference.
+#
+# The damage is not the failed rebuild, it is the ORDER: the teardown below had already removed the
+# container, so the environment was left with NO dev container and every later check read as an
+# isolation fault. So: source the pin, then PROVE the base image is obtainable, and only then
+# destroy anything. A check that cannot rebuild must fail while the thing it would rebuild is still
+# standing.
+if [ -f "$HOME/.mcm-sandbox-env" ]; then
+  echo "  → sourcing the VM-local pin from ~/.mcm-sandbox-env (D-07: not auto-sourced)"
+  set -a; . "$HOME/.mcm-sandbox-env"; set +a
+fi
+
+BASE_IMAGE="${MCM_DEVCONTAINER_IMAGE:-mcm-devcontainer}"
+echo "  → base image       : $BASE_IMAGE"
+if ! docker image inspect "$BASE_IMAGE" >/dev/null 2>&1; then
+  echo "  → base image not present locally; pulling before teardown"
+  if ! docker pull "$BASE_IMAGE" >/dev/null 2>&1; then
+    echo "  ✗ base image '$BASE_IMAGE' is neither present nor pullable."
+    echo "    NOTHING WAS TORN DOWN — the dev container is untouched."
+    if [ "$BASE_IMAGE" = "mcm-devcontainer" ]; then
+      echo "    This is the bare fallback tag, so MCM_DEVCONTAINER_IMAGE was not set. On the sandbox"
+      echo "    it lives in ~/.mcm-sandbox-env; see docs/runbooks/devcontainer-sandbox.md §8b."
+    fi
+    echo "[verify-reproducible-recreate] FAIL (SC-005 — base image unobtainable, recreate not attempted)"
+    exit 1
+  fi
+fi
+
 echo "  → tearing down container + image + disposable volumes"
 devcontainer down --workspace-folder "$WS" --config "$CONFIG" 2>/dev/null || true
 # Remove any container/image the CLI created for this workspace + the disposable history volume.
