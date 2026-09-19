@@ -138,18 +138,47 @@ run. Both alternatives were checked and **neither is available or needed here**:
 So a bounded retry is the whole of the available fix, not a stopgap. Revisit if `actions/cache` is ever
 mirrored.
 
-#### `cd-deploy`'s built-image scan has the same exposure — item #495 AC7
+#### `cd-deploy`'s built-image scan had the same exposure — item #495 AC7, fixed in item #499
 
-`scripts/cd/scan-push.sh` runs a bare `trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed`
-and fetches the same DB from the same registry, so a blip hits it too — and **worse**: `--exit-code 1`
-is also what Trivy returns for a *finding*, so a DB-download failure there is indistinguishable from
-"a fixable Critical blocked the deploy". `minio-image.yml` is already covered, because it scans
-through `infra-image-scan.mjs --image`.
+`scripts/cd/scan-push.sh` used to run a bare
+`trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed`, fetching the same DB from the same
+registry — so a blip hit it too, and **worse**: `--exit-code 1` is also what Trivy returns for a
+*finding*, so a DB-download failure was indistinguishable from "a fixable Critical blocked the
+deploy".
 
-Not fixed here, deliberately. `cd-deploy` is **not** a required merge context and it **is**
-re-dispatchable (`workflow_dispatch`), so a blip costs a re-dispatch rather than a blocked PR — and the
-fix is a different mechanism (bash, disambiguating exit 1 from exit 2) on the production deploy path,
-which does not belong in the same red as a scanner change. Tracked as its own backlog item.
+**The fix was to delete the flag, not to grow one.** A bigger exit code cannot separate two meanings
+that share one integer; two commands can. The deploy path now runs what `minio-image.yml` has run
+since feature 069, once per image and before the push:
+
+```bash
+node scripts/infra-image-scan.mjs --image "$local_tag"   # --format json, NO --exit-code
+node scripts/check-infra-image-findings.mjs              # the verdict, from the normalized report
+```
+
+Trivy is invoked with `--format json` and no `--exit-code`, so a non-zero status from the first
+command can **only** mean the scanner could not run — and it has already bounded-retried a transport
+blip through `scripts/lib/scanner-retry.mjs`, reporting each retry to stderr so the failure digest
+carries it. The second command carries the verdict. Each branch prints which of the two happened, in
+words, rather than leaving an operator to infer it from an integer.
+
+| what happened | which command fails | what the step prints |
+|---|---|---|
+| vulnerability-DB blip, survived retries | the scan | `✗ SCANNER ERROR … This is NOT a vulnerability verdict` |
+| un-allowlisted fixable CRITICAL | the gate | `✗ BLOCKING FINDING … This IS a vulnerability verdict` |
+
+**The policy bar is unchanged** and that was the deciding fact. `normalizeTrivy()` marks
+`blocking = Critical AND a fix exists upstream`, which is exactly what
+`--severity CRITICAL --ignore-unfixed` meant — item #499's body predicted a widening to "fixable
+High/Critical", but that is only the wording in `summary.txt`, not the code. So the change buys the
+retry, the error/finding split and a reviewed allowlist without moving the gate. What *is* new is
+that an accepted finding on the deploy path now has somewhere to live
+(`security/infra-images/allowlist.yaml`) that the weekly expiry check reads — instead of a
+`.trivyignore` nobody reviews.
+
+Pinned by `scripts/__tests__/cd-scan-push-gate.guard.test.mjs`, which asserts the gate runs **before**
+`docker push` (a gate after the push gates nothing), that both commands sit inside the per-image loop
+(one `findings.json` per invocation, so a single scan outside it would silently gate only the last
+image), and that a fixable CRITICAL still blocks and is never classified transient.
 
 ### A green `infra-image-scan` usually proves nothing — check the DURATION
 

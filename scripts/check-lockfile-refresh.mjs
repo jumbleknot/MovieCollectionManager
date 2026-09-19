@@ -22,6 +22,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+// Item #500 — the shared argument contract. THIS SCRIPT'S DEFAULT ACTION WRITES TO THE PUBLIC
+// TRACKER. It is also the file renovate-health.mjs was copied from, so it carried the same defect
+// and the copy was fixed first: `--dryrun`, `--dry_run` and `-dry-run` each meant "post".
+import { ArgvError, dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ITEM = 218;
@@ -175,7 +179,8 @@ const api = (base, token) => async (method, path, body) => {
   return res.json();
 };
 
-async function main() {
+/** @param {'post'|'dry-run'} command — resolved by resolveCommand(), never re-read from process.argv. */
+async function main(command = 'post') {
   const token = process.env.CI_DIGEST_TOKEN?.trim() || process.env.MCM_FORGE_ISSUE_TOKEN?.trim();
   if (!token) {
     // Loudly, but exit 0: an absent Actions secret must not read as a verdict.
@@ -204,7 +209,7 @@ async function main() {
   console.log(`[lockfile-refresh-check] verdict=${result.verdict} pr=${result.pr?.number ?? '-'} since=${since}`);
 
   const body = buildComment(result, { since, window });
-  if (process.argv.includes('--dry-run')) {
+  if (command === 'dry-run') {
     // Exercises every read and the whole verdict path, and posts nothing. This exists because the
     // alternative is discovering on a Friday that the check itself is broken — the failure mode the
     // check was written to end.
@@ -215,9 +220,52 @@ async function main() {
   console.log(`[lockfile-refresh-check] commented on item #${ITEM}.`);
 }
 
+// ── The argument contract (item #500) ────────────────────────────────────────────────────────────
+
+/** Every argument this script accepts. Anything else is an ERROR — see resolveCommand. */
+export const ACCEPTED_FLAGS = ['--dry-run', '--help', '-h'];
+
+export const USAGE = `check-lockfile-refresh.mjs — did the lockfile refresh fire unaided? (item #218)
+
+  node scripts/check-lockfile-refresh.mjs             POST the verdict as a comment on the item — the default
+  node scripts/check-lockfile-refresh.mjs --dry-run   render the comment to stdout and post NOTHING
+  node scripts/check-lockfile-refresh.mjs --help      this text
+
+A bare invocation POSTS PUBLICLY. That is what the weekly workflow runs.`;
+
+/**
+ * Resolve argv into the action to take — and REJECT anything not recognised.
+ *
+ * Same contract, same reasoning, and the SAME shared mechanism as renovate-health.mjs — which
+ * inherited this file's design and, with it, this file's defect. See scripts/lib/argv-contract.mjs.
+ *
+ * @returns {{command: 'help'|'dry-run'|'post'}}
+ * @throws {ArgvError} when any argument is not in ACCEPTED_FLAGS
+ */
+export function resolveCommand(argv = []) {
+  const args = (argv ?? []).filter((a) => a !== '');
+  // Help wins outright: someone asking what this does must never trigger what it does.
+  if (wantsHelp(args)) return { command: 'help' };
+  const { flags } = partitionArgs(args, { accepted: ACCEPTED_FLAGS, maxPositionals: 0, usage: USAGE });
+  return { command: flags.has('--dry-run') ? 'dry-run' : 'post' };
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((err) => {
-    // Still exit 0 — see the header. A broken check must not present as a failed build.
-    console.error(`[lockfile-refresh-check] FAILED to produce a verdict: ${err.message}`);
-  });
+  // Resolved OUTSIDE the catch below: main()'s failures exit 0 by design (a weekly red trains people
+  // to ignore the check), but a mistyped flag is a CALLER error, not a check failure — routing it
+  // through that exit-0 discipline is precisely what made the typo invisible.
+  let command;
+  try {
+    ({ command } = resolveCommand(process.argv.slice(2)));
+  } catch (err) {
+    dieOnArgvError(err);
+  }
+  if (command === 'help') {
+    console.log(USAGE);
+  } else {
+    main(command).catch((err) => {
+      // Still exit 0 — see the header. A broken check must not present as a failed build.
+      console.error(`[lockfile-refresh-check] FAILED to produce a verdict: ${err.message}`);
+    });
+  }
 }

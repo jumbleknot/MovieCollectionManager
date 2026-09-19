@@ -30,7 +30,20 @@ const TRANSIENT_SIGNATURES = [
   // pip-audit / requests / urllib3 (the osv.dev path that redded run 3328 — item #449)
   /\bServiceError\b/,
   /\bConnectionError\b/,
-  /\bReadTimeout\b/, /\bConnectTimeout\b/, /\bRead timed out\b/i,
+  /\bReadTimeout\b/, /\bConnectTimeout\b/,
+  // ANCHORED TO THE TERMINATING PERIOD — item #499, and the same defect #495 fixed one
+  // signature away. This was a bare /\bRead timed out\b/i, which is ordinary English: the
+  // advisory title "openssl: read timed out while parsing a certificate" classified TRANSIENT,
+  // so a genuine scanner fault whose output carried that finding would be retried three times
+  // and then reported anyway — slower, for nothing, with a retry line misdescribing it as a
+  // blip. Not theoretical: sast-scan.mjs hands the classifier `stderr + stdout`, so finding
+  // titles DO reach it on the cargo-audit and pip-audit paths.
+  //
+  // requests emits a complete sentence — "HTTPSConnectionPool(host='api.osv.dev', port=443):
+  // Read timed out. (read timeout=15)" — so requiring the period costs no coverage, and the
+  // one measured sample (#449) independently matches ReadTimeout and HTTPSConnectionPool above
+  // anyway. A phrase that is also ordinary English is not a transport signature.
+  /\bRead timed out\.(?:\s|$)/i,
   /\bMaxRetryError\b/, /\bMax retries exceeded\b/i,
   /\bHTTPSConnectionPool\b/, /\bHTTPConnectionPool\b/,
   // HTTP statuses that are the server saying "not now" rather than "no".

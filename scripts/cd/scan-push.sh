@@ -21,12 +21,43 @@ for pair in $map; do
   local_tag="${pair%%=*}"; repo="${pair##*=}"
   ref="${REGISTRY}/${NS}/${repo}:${GITHUB_SHA}"
   docker tag "$local_tag" "$ref"
-  # Block only on ACTIONABLE criticals: --ignore-unfixed skips CVEs with no upstream fix
-  # (e.g. agent-gateway's debian perl-base CVE-2026-42496/8376 are fix_deferred/affected with
-  # no fixed version) so the deploy isn't dead-ended on things we can't patch. A CRITICAL that
-  # HAS a fix still fails the job.
-  echo "── Trivy scan $repo (block on fixable CRITICAL) ──"
-  trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --no-progress "$local_tag"
+  # ── CVE scan: TWO commands, because there are TWO meanings (item #499) ───────────────────────
+  #
+  # This was `trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed`, and it had two
+  # defects that compounded. It had NO RETRY, against the same vulnerability-DB registry that
+  # produced a measured coin-flip on the sibling path (item #495 — runs 3619/3622, same commit,
+  # one pass and one fail nine minutes apart). And `--exit-code 1` sets the code Trivy returns
+  # when it FINDS something, while Trivy also exits 1 on an ERROR — so the step could not tell the
+  # operator which had happened, and the obvious reading ("a fixable Critical blocked the deploy")
+  # was the wrong one roughly half the time it fired.
+  #
+  # A bigger flag does not fix that; splitting the two meanings across two commands does. This is
+  # the same pipeline minio-image.yml has run since feature 069, so it INHERITS #495's bounded
+  # retry, the severity map and the reviewed allowlist rather than growing a second signature list
+  # in bash — which the item names as the outcome to avoid.
+  #
+  # POLICY IS UNCHANGED: normalizeTrivy() marks blocking = Critical AND a fix exists upstream,
+  # which is exactly what `--severity CRITICAL --ignore-unfixed` meant. agent-gateway's
+  # fix-deferred perl-base CVEs still do not dead-end the deploy. What is NEW is that an accepted
+  # finding now has somewhere to live (security/infra-images/allowlist.yaml) that the weekly
+  # expiry check actually reads — instead of a .trivyignore nobody reviews.
+  echo "── CVE scan $repo (un-allowlisted fixable CRITICAL blocks the push) ──"
+  # Scans with --format json and NO --exit-code, so a non-zero status here can ONLY mean the
+  # scanner could not run. Each retry is reported on stderr, so the failure digest carries it.
+  if ! node scripts/infra-image-scan.mjs --image "$local_tag"; then
+    echo "✗ SCANNER ERROR for $repo — Trivy could not complete: a transport/service failure that"
+    echo "  survived its bounded retries, or a scanner fault. This is NOT a vulnerability verdict —"
+    echo "  nothing was assessed and no finding is being reported. Failing closed (an image that was"
+    echo "  not scanned must never be pushed); cd-deploy is re-dispatchable via workflow_dispatch."
+    exit 1
+  fi
+  # The VERDICT, from the normalized report the scan just wrote. Non-zero here means a finding.
+  if ! node scripts/check-infra-image-findings.mjs; then
+    echo "✗ BLOCKING FINDING in $repo — an un-allowlisted fixable CRITICAL. This IS a vulnerability"
+    echo "  verdict: the scan ran and found something with an upstream fix available. Patch it, or add"
+    echo "  a reviewed, justified, expiring entry to security/infra-images/allowlist.yaml."
+    exit 1
+  fi
   docker push "$ref"
   digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$ref" | cut -d'@' -f2)
   pinned="${REGISTRY}/${NS}/${repo}@${digest}"

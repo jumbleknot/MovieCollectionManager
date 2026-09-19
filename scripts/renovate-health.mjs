@@ -28,6 +28,10 @@ import { fileURLToPath } from 'node:url';
 // Item #485 — the required-context read this digest was not doing. Both are pure and already
 // exported; ci-status.mjs guards its own entrypoint, so importing it runs nothing.
 import { parseRequiredGlobs, computeMergeVerdict } from './ci-status.mjs';
+// Item #500 — the shared argument contract. THIS SCRIPT'S DEFAULT ACTION WRITES TO THE PUBLIC
+// TRACKER, so a silently-ignored flag is not a usability wart here: `--dryrun`, `--dry_run` and
+// `-dry-run` each used to mean "post the comment", with an exit code identical to the intended run's.
+import { ArgvError, dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ITEM = 311; // the digest's home — close it to stop the digest
@@ -333,7 +337,8 @@ function gitIsAncestor(branch) {
   }
 }
 
-async function main() {
+/** @param {'post'|'dry-run'} command — resolved by resolveCommand(), never re-read from process.argv. */
+async function main(command = 'post') {
   const token = process.env.CI_DIGEST_TOKEN?.trim() || process.env.MCM_FORGE_ISSUE_TOKEN?.trim();
   if (!token) {
     // Loudly, but exit 0: an absent Actions secret must not read as a verdict.
@@ -413,7 +418,7 @@ async function main() {
   });
 
   console.log(`[renovate-health] problems=${problems.length} emptyPr=${branches.emptyPr.length} stale=${branches.stale.length} unknown=${branches.unknown.length} openPrs=${openPrs.length} blocked=${blocked.length} sweep=${sweep.state} required=${requiredGlobs?.length ?? 'unreadable'}`);
-  if (process.argv.includes('--dry-run')) {
+  if (command === 'dry-run') {
     // Exercises every read and the whole render path, and posts nothing — so the check can be
     // proven working now rather than discovered broken on a Friday.
     console.log('\n──── digest that WOULD be posted ────\n' + body + '\n─────────────────────────────────────');
@@ -423,9 +428,57 @@ async function main() {
   console.log(`[renovate-health] commented on item #${ITEM}.`);
 }
 
+// ── The argument contract (item #500) ────────────────────────────────────────────────────────────
+
+/** Every argument this script accepts. Anything else is an ERROR — see resolveCommand. */
+export const ACCEPTED_FLAGS = ['--dry-run', '--help', '-h'];
+
+export const USAGE = `renovate-health.mjs — the weekly Renovate health digest (item #311).
+
+  node scripts/renovate-health.mjs             POST the digest as a comment on item #311 — the default
+  node scripts/renovate-health.mjs --dry-run   render the digest to stdout and post NOTHING
+  node scripts/renovate-health.mjs --help      this text
+
+A bare invocation POSTS PUBLICLY. That is what .forgejo/workflows/renovate-health.yml runs weekly.`;
+
+/**
+ * Resolve argv into the action to take — and REJECT anything not recognised.
+ *
+ * WHY A PURE FUNCTION rather than the `process.argv.includes('--dry-run')` it replaces. That test
+ * lived inline in main(), which meant the SAFE mode required an exact spelling while the mode that
+ * writes to the public tracker was what every other input produced. `--dryrun` posted. `--dry_run`
+ * posted. `-dry-run` posted. So did `--help`. And because this script always exits 0 by design, the
+ * typo'd run was indistinguishable from the intended one in both output and exit code.
+ *
+ * The rejection is deliberately NOT laundered through that exit-0 discipline — see dieOnArgvError.
+ *
+ * @returns {{command: 'help'|'dry-run'|'post'}}
+ * @throws {ArgvError} when any argument is not in ACCEPTED_FLAGS
+ */
+export function resolveCommand(argv = []) {
+  const args = (argv ?? []).filter((a) => a !== '');
+  // Help wins outright: someone asking what this does must never trigger what it does.
+  if (wantsHelp(args)) return { command: 'help' };
+  const { flags } = partitionArgs(args, { accepted: ACCEPTED_FLAGS, maxPositionals: 0, usage: USAGE });
+  return { command: flags.has('--dry-run') ? 'dry-run' : 'post' };
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((err) => {
-    // Still exit 0 — see the header. A broken digest must not present as a failed build.
-    console.error(`[renovate-health] FAILED to produce a digest: ${err.message}`);
-  });
+  // Argv is resolved OUTSIDE the catch below, on purpose. main()'s failures exit 0 (a weekly red
+  // trains people to ignore the digest), but a mistyped flag is a CALLER error, not a digest
+  // failure — routing it through the exit-0 discipline is exactly what made the typo invisible.
+  let command;
+  try {
+    ({ command } = resolveCommand(process.argv.slice(2)));
+  } catch (err) {
+    dieOnArgvError(err);
+  }
+  if (command === 'help') {
+    console.log(USAGE);
+  } else {
+    main(command).catch((err) => {
+      // Still exit 0 — see the header. A broken digest must not present as a failed build.
+      console.error(`[renovate-health] FAILED to produce a digest: ${err.message}`);
+    });
+  }
 }

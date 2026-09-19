@@ -40,6 +40,10 @@ import {
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { isBuiltin } from 'node:module';
 import { fileURLToPath } from 'node:url';
+// Item #500 — the shared argument contract. THIS SCRIPT DELETES DIRECTORY TREES, and the safe mode
+// used to be the one that required an exact spelling: `--dryrun`, `--dry_run` and `-dry-run` were
+// each silently ignored, leaving the real delete running with an identical exit code.
+import { ArgvError, dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
 
 // The two packages `frontend/mcm-app/server.js` requires by name. Everything the runtime touches
 // through them is reached by the closure walk below.
@@ -359,7 +363,7 @@ export function prune({ runtime, dryRun = false, log = console.log }) {
   );
 
   if (dryRun) {
-    log('[prune-bff-runtime] --dry-run: nothing removed');
+    log('[prune-bff-runtime] DRY RUN (the default): nothing removed — pass --apply to delete');
     return { before, keep, pnpmDelete, topDelete, binDelete, after: null };
   }
 
@@ -370,15 +374,93 @@ export function prune({ runtime, dryRun = false, log = console.log }) {
   return { before, keep, pnpmDelete, topDelete, binDelete, after };
 }
 
+// ── The argument contract (item #500) ────────────────────────────────────────────────────────────
+
+/** Every argument this script accepts. Anything else is an ERROR — see resolveCommand. */
+export const ACCEPTED_FLAGS = ['--check-bundle', '--apply', '--dry-run', '--help', '-h'];
+
+export const USAGE = `prune-bff-runtime-modules.mjs — shrink the shipped BFF runtime tree to its closure.
+
+  node scripts/prune-bff-runtime-modules.mjs [dir]                 DRY RUN — report what would be
+                                                                   removed and delete NOTHING (default)
+  node scripts/prune-bff-runtime-modules.mjs --dry-run [dir]       the same, stated explicitly
+  node scripts/prune-bff-runtime-modules.mjs --apply [dir]         DELETE the prunable packages
+  node scripts/prune-bff-runtime-modules.mjs --check-bundle [dir]  audit the exported bundle's
+                                                                   dynamic specifiers; deletes nothing
+  node scripts/prune-bff-runtime-modules.mjs --help                this text
+
+[dir] defaults to /app/runtime for a prune and dist/server for --check-bundle.
+DELETING REQUIRES --apply. frontend/mcm-app/Dockerfile is the caller that passes it.`;
+
+/**
+ * Resolve argv into the action to take — and REJECT anything not recognised.
+ *
+ * TWO CHANGES, and the second is the one that matters (item #500).
+ *
+ * 1. REJECTION. `--dry-run` used to be tested with `argv.includes(...)`, so every near-miss spelling
+ *    — `--dryrun`, `--dry_run`, `-dry-run` — was a silently-ignored token that left the default
+ *    running. The default deleted files.
+ *
+ * 2. INVERSION, which REMOVES the class rather than policing it. Dry-run is now the default and
+ *    `--apply` is required to delete. A guard is only as good as its coverage of the inputs someone
+ *    will actually type; an inversion means that even an input nobody anticipated — or a future
+ *    caller that bypasses this function outright — can only ever fail SAFE. On a script whose
+ *    failure mode is an irreversible `rmSync(…, { recursive: true })` inside a container image
+ *    build, that difference is worth the one-line Dockerfile change it cost.
+ *
+ * `--apply --dry-run` is REFUSED rather than resolved by precedence. Neither "last flag wins" nor
+ * "safe wins" is honest: an operator who typed both does not know what they asked for, and this
+ * script deletes.
+ *
+ * @returns {{command: 'help'|'check-bundle'|'prune', target: string, apply: boolean}}
+ * @throws {ArgvError} when any argument is not in ACCEPTED_FLAGS, or the flags contradict
+ */
+export function resolveCommand(argv = []) {
+  const args = (argv ?? []).filter((a) => a !== '');
+  // Help wins outright: someone asking what this does must never trigger what it does.
+  if (wantsHelp(args)) return { command: 'help', target: '', apply: false };
+
+  const { flags, positionals } = partitionArgs(args, {
+    accepted: ACCEPTED_FLAGS,
+    maxPositionals: 1,
+    usage: USAGE,
+  });
+
+  if (flags.has('--apply') && flags.has('--dry-run')) {
+    throw new ArgvError(
+      'both --apply and --dry-run were given, and they contradict each other.\n' +
+        'Pick one: --apply deletes, --dry-run (the default) does not.\n\n' + USAGE,
+    );
+  }
+  if (flags.has('--check-bundle') && flags.has('--apply')) {
+    throw new ArgvError(
+      '--check-bundle audits the exported bundle and deletes nothing, so --apply is meaningless ' +
+        'with it.\n\n' + USAGE,
+    );
+  }
+
+  if (flags.has('--check-bundle')) {
+    return { command: 'check-bundle', target: positionals[0] ?? 'dist/server', apply: false };
+  }
+  return { command: 'prune', target: positionals[0] ?? '/app/runtime', apply: flags.has('--apply') };
+}
+
 const invoked = process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
 if (invoked) {
-  const argv = process.argv.slice(2);
-  const target = argv.find((a) => !a.startsWith('--'));
+  let resolved;
   try {
-    if (argv.includes('--check-bundle')) {
-      checkBundle(target ?? 'dist/server');
+    resolved = resolveCommand(process.argv.slice(2));
+  } catch (err) {
+    dieOnArgvError(err);
+  }
+  const { command, target, apply } = resolved;
+  try {
+    if (command === 'help') {
+      console.log(USAGE);
+    } else if (command === 'check-bundle') {
+      checkBundle(target);
     } else {
-      prune({ runtime: target ?? '/app/runtime', dryRun: argv.includes('--dry-run') });
+      prune({ runtime: target, dryRun: !apply });
     }
   } catch (err) {
     console.error(`[prune-bff-runtime] ${err.message}`);
