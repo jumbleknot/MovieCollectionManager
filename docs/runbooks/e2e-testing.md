@@ -364,20 +364,37 @@ Every one of these produced a confident, wrong answer, and every one was checkab
   Same root, opposite direction, one check for both: **confirm the tool did what you asked by a
   signal other than its exit code** — a test count that actually dropped, a container list that
   actually did not change.
-- **The same shape, still live, in two scripts where the safety flag is opt-in by exact string.**
-  Audited 2026-09-19 across `scripts/*.mjs`: none of the fifteen argv-dispatching scripts handled
-  `--help`, but most default to a read-only gate where a fall-through is harmless. Two do not, and in
-  both the *dangerous* mode is the default while the safe one requires an exact spelling:
+- **The same shape in the scripts where the safety flag was opt-in by exact string — FIXED, item
+  #500.** Audited 2026-09-19 across `scripts/*.mjs`: none of the fifteen argv-dispatching scripts
+  handled `--help`, but most default to a read-only gate where a fall-through is harmless. The ones
+  that mutate did not, and in each the *dangerous* mode was the default while the safe one required
+  an exact spelling — so `--dryrun`, `--dry_run` or `-dry-run` meant **post a public comment** or
+  **delete files for real**, with an exit code identical to the intended run's.
 
-  ```js
-  scripts/renovate-health.mjs:416          if (process.argv.includes('--dry-run')) { …report only… }
-  scripts/prune-bff-runtime-modules.mjs:381  prune({ …, dryRun: argv.includes('--dry-run') })
-  ```
+  All four now route argv through one shared rejecting parser,
+  [`scripts/lib/argv-contract.mjs`](../../scripts/lib/argv-contract.mjs):
 
-  So `--dryrun`, `--dry_run` or `-dry-run` means **post a public comment to item #311**, and **delete
-  files for real**, respectively. Neither warns. Until they reject unknown flags, type `--dry-run`
-  and then confirm from the effect — the comment that did not appear, the files that are still there —
-  rather than from the exit code. Tracked as item #500.
+  | script | the default that used to fire on a typo | now |
+  |---|---|---|
+  | `agent-stack.mjs` | built + deployed the stack | rejects (PR #497) |
+  | `renovate-health.mjs` | posted a public comment to item #311 | rejects |
+  | `check-lockfile-refresh.mjs` | posted a public comment — **the file renovate-health was copied from**, missed by the manual audit | rejects |
+  | `prune-bff-runtime-modules.mjs` | deleted files | **inverted**: dry-run is the default, `--apply` deletes |
+
+  Two lessons outlast the fix. **The copy and the original carry the same defect** —
+  `renovate-health.mjs` names `check-lockfile-refresh.mjs` in its own header as the pattern it
+  inherited, and inherited the bug with it; fixing only the one the item named would have left the
+  ancestor posting on a typo. And **an inversion beats a guard where the act is irreversible**: a
+  guard is only as good as its coverage of the inputs someone will actually type, whereas after the
+  inversion even an unanticipated input, or a future caller that bypasses the parser outright, can
+  only fail safe.
+
+  `scripts/__tests__/argv-mutating-default.guard.test.mjs` re-runs the audit mechanically and fails
+  on any argv-dispatching script that can mutate and carries no recorded verdict — a table, not a
+  heuristic, because a heuristic that over-fires gets loosened until it passes, which is how an audit
+  stops auditing. One script is recorded as deliberately deferred: `ci-failure-digest.mjs` has a
+  mutating default (a typo'd `--selftest` posts a real digest comment) but FR-009 requires it to
+  always exit 0, which a hard argv rejection contradicts — item #504.
 - **A container reporting `running` can be answering nothing.** `movie-assistant-gateway` sat at
   **100% CPU on one core with memory at 1%**, `/health` timing out, its log 40 minutes stale, while
   `docker inspect` said `status=running OOMKilled=false ExitCode=0 RestartCount=0`. `restart: always`

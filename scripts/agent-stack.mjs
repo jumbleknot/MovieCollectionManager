@@ -46,6 +46,8 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
+// Item #500 — the shared argument contract, extracted from the rejection this file grew in PR #497.
+import { partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GATEWAY = 'movie-assistant-gateway';
@@ -122,7 +124,7 @@ function imageExists(tag) {
 }
 
 /** Every argument this script accepts. Anything else is an ERROR — see resolveCommand. */
-const ACCEPTED_FLAGS = ['--down', '--status', '--build', '--no-build', '--help', '-h'];
+export const ACCEPTED_FLAGS = ['--down', '--status', '--build', '--no-build', '--help', '-h'];
 
 export const USAGE = `agent-stack.mjs — deploy/teardown the containerized agent stack for local E2E.
 
@@ -162,17 +164,16 @@ export function resolveCommand(argv = [], env = process.env) {
   const args = argv.filter((a) => a !== '');
 
   // Help wins outright: someone asking what this does must never trigger what it does.
-  if (args.includes('--help') || args.includes('-h')) return { command: 'help', build: true };
+  if (wantsHelp(args)) return { command: 'help', build: true };
 
   // Rejection happens BEFORE dispatch, so `--down --typo` fails loudly rather than tearing down and
   // leaving the caller believing the typo meant something.
-  const unknown = args.filter((a) => !ACCEPTED_FLAGS.includes(a));
-  if (unknown.length) {
-    throw new Error(
-      `unrecognised argument(s): ${unknown.join(', ')}\n` +
-        `accepted: ${ACCEPTED_FLAGS.join(', ')}\n\n${USAGE}`,
-    );
-  }
+  //
+  // Delegated to scripts/lib/argv-contract.mjs by item #500. This rejection was hand-rolled here in
+  // PR #497, and the audit that followed found the same defect live in renovate-health.mjs and
+  // prune-bff-runtime-modules.mjs — so it is now one mechanism rather than three, because the part
+  // that drifts is the ERROR PATH, which by definition nobody exercises until the day it matters.
+  partitionArgs(args, { accepted: ACCEPTED_FLAGS, maxPositionals: 0, usage: USAGE });
 
   // Precedence unchanged from the original chain: --down, then --status, then deploy.
   if (args.includes('--down')) return { command: 'down', build: true };

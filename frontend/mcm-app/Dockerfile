@@ -59,7 +59,11 @@ RUN npx expo export --platform web
 # from the bundle just exported and FAILS THE BUILD if one appears that the prune script has not
 # accounted for, so a CopilotKit or LangChain upgrade that adds a provider is a red build here
 # rather than a route that 500s the first time a user hits it in production.
+# The script imports scripts/lib/argv-contract.mjs (item #500 — it DELETES, so an unrecognised
+# argument must be refused rather than left running the default). The import resolves relative
+# to the script, so the lib has to travel with it or the build fails on a missing module.
 COPY scripts/prune-bff-runtime-modules.mjs /build-scripts/prune-bff-runtime-modules.mjs
+COPY scripts/lib/argv-contract.mjs /build-scripts/lib/argv-contract.mjs
 RUN node /build-scripts/prune-bff-runtime-modules.mjs --check-bundle dist/server
 
 # ── Stage 2: Production dependency tree ───────────────────────────────────────
@@ -107,10 +111,14 @@ COPY packages/design-system/ ./packages/design-system/
 # serves touched 76 of them, every one inside the closure the script walks from `express`,
 # `@expo/server` and `openai`. It runs HERE, in the stage whose only output is /app/runtime, so the
 # removal is a smaller COPY into the runner rather than a delete layered on top of a fat one.
+# The script imports scripts/lib/argv-contract.mjs (item #500 — it DELETES, so an unrecognised
+# argument must be refused rather than left running the default). The import resolves relative
+# to the script, so the lib has to travel with it or the build fails on a missing module.
 COPY scripts/prune-bff-runtime-modules.mjs /build-scripts/prune-bff-runtime-modules.mjs
+COPY scripts/lib/argv-contract.mjs /build-scripts/lib/argv-contract.mjs
 RUN pnpm install --frozen-lockfile && \
     pnpm deploy --filter=mcm-app --prod --legacy /app/runtime && \
-    node /build-scripts/prune-bff-runtime-modules.mjs /app/runtime
+    node /build-scripts/prune-bff-runtime-modules.mjs --apply /app/runtime
 
 # ── Stage 3: Production runtime ───────────────────────────────────────────────
 # Receives artifacts only. No package manager runs here and none is needed —
