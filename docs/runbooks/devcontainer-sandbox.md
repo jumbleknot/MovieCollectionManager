@@ -273,7 +273,7 @@ blocked, with the commit sitting in git looking like the fix:
 ```powershell
 sbx ls                                             # confirm the name and that it is running
 sbx policy allow network <domain> --sandbox mcm    # operator, on the Windows host
-sbx policy ls --sandbox mcm                        # the rule should now be listed
+sbx policy ls mcm                                  # the rule should now be listed (POSITIONAL)
 ```
 
 `mcm` is this environment's sandbox — the same name every command in section 2 uses. It is only a
@@ -817,6 +817,92 @@ appeared to, which is the same lesson as a skipped test reading as a pass.
 
 ---
 
+## 7f. 🔴 "docker daemon failed to start" is usually sbx giving up, not dockerd failing
+
+```text
+ERROR: failed to start sandbox: start runtime: request failed: 500 Internal Server Error:
+docker daemon failed to start inside the sandbox
+```
+
+**Measured 2026-09-19, on both v0.39.0 and v0.43.0: dockerd had not failed.** In all five recorded
+occurrences it reached, in its own log, *after* sbx had already declared the failure:
+
+```text
+level=info msg="Daemon has completed initialization"
+level=info msg="API listen on /var/run/docker.sock"
+```
+
+On the 14:51 occurrence sbx reported the failure **1.7 seconds after** dockerd began serving the
+socket. The message names the wrong component, and it is the single most misleading string this
+environment produces — it reads as a corrupt VM or a full disk and is neither.
+
+### The mechanism — a readiness deadline, then the idle-stop finishes the job
+
+1. dockerd restores every container it finds, and this VM holds **20 with `restart: unless-stopped`**
+   (keycloak, the six langfuse services, unleash ×2, otel-lgtm, opa, bff ×3, mc-service ×2, ollama).
+   Restoring them took **54–101 s** across five measured starts.
+2. sbx's dockerd-readiness budget is shorter — **every one of those five overran it, so the budget is
+   under ~54 s.** It is hardcoded; there is no flag and no `DOCKER_SANDBOXES_*` variable for it
+   (checked against the strings in `sbx.exe` for both versions).
+3. sbx aborts and the **CLI process exits**, which the daemon logs as `session disconnected,
+   deferring auto-stop`.
+4. The ~30 s idle-stop then expires — `auto-stop grace period expired, stopping runtime` — and kills
+   a VM whose dockerd had been healthy for the whole grace period.
+
+So the sandbox is destroyed roughly 30 s *after* it finished coming up correctly.
+
+### Prove it before believing the message
+
+Read dockerd's own log out of the daemon log rather than trusting the CLI's summary:
+
+```bash
+python - <<'PY'
+import json
+p=r"C:\Users\Steve\AppData\Local\DockerSandboxes\sandboxes\state\sandboxd\daemon.log"
+for line in open(p,encoding='utf-8',errors='replace'):
+    if '"level":"ERROR"' in line and 'dockerd failed to start' in line:
+        b=json.loads(line)['msg']
+        print('completed_init=', 'Daemon has completed initialization' in b,
+              'api_listen=',     'API listen on /var/run/docker.sock' in b)
+PY
+```
+
+`completed_init=True` means dockerd is fine and the deadline is the fault.
+
+### Getting in anyway — the 30 s grace window
+
+The window between the CLI's error and the idle-stop is a live, healthy sandbox. A command issued
+into it attaches instantly and, being a session, **defers the auto-stop for as long as it runs**:
+
+```bash
+sbx run --name mcm          # ~60-100 s, then "fails". Ignore the error.
+sbx exec mcm sh -c 'docker ps'   # issue within ~30 s — attaches to the running VM
+```
+
+> ⚠️ **`sbx run` that succeeds does not return.** It attaches the interactive `shell` agent and
+> blocks forever with no TTY, so `sbx run … | tail` never prints. That is a held session, not a
+> hang — and it is the cheapest way to pin the sandbox up while you work through `sbx exec`.
+>
+> ⚠️ **Git Bash mangles a `/workspaces/...` argument** passed to `sbx.exe`: it becomes
+> `C:/Program Files/Git/workspaces/...` and the command exits **127**. Wrap it —
+> `sbx exec mcm sh -c 'bash /workspaces/mcm/...'` — or set `MSYS_NO_PATHCONV=1`.
+
+### The durable fix
+
+Reduce what dockerd has to restore. `unless-stopped` keeps a manually stopped container down across
+daemon restarts, so stopping the containers that are not needed every session is both effective and
+reversible:
+
+```bash
+sbx exec mcm sh -c 'docker stop langfuse-web langfuse-worker langfuse-clickhouse \
+  langfuse-minio langfuse-postgres langfuse-redis unleash-service unleash-postgres otel-lgtm'
+```
+
+Bring them back with the documented `nx up-*` targets. **v0.43.0 did not raise the deadline** — this
+is not fixed by upgrading.
+
+---
+
 ## 8. Disk — three volumes, all of them resizable
 
 > **Corrected 2026-08-27 (item #246).** This section used to state that the VM's Docker disk was
@@ -1069,13 +1155,91 @@ Twelve scripts across three vantage points (in-container, VM-side, host-side). T
 cannot be faked from inside — a claim asserted only from within the thing being claimed about is not
 proof — and the harness refuses to report them as passed without `MCM_HOST_CHECK`.
 
+> 🔴 **Running the harness DESTROYS the dev container, and will not always put it back.** The last
+> check, `verify-reproducible-recreate.sh`, removes the container *and its derived image* by design
+> and rebuilds them with `devcontainer up`. When that rebuild fails you are left with no dev
+> container — the service stacks survive, so the sandbox looks healthy from `docker ps`.
+>
+> **Measured 2026-09-19:** the rebuild needs the base image pin, and the harness does not supply it.
+> `verify-reproducible-recreate.sh` shells out to `devcontainer up` without sourcing
+> `~/.mcm-sandbox-env`, so `${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}` falls back to the
+> bare default, which is not a pullable reference:
+>
+> ```text
+> No such image: mcm-devcontainer:latest
+> Error: Command failed: docker pull mcm-devcontainer
+> ```
+>
+> Recover by rebuilding with the pin sourced, exactly as §8b specifies:
+>
+> ```bash
+> sbx exec mcm sh -c 'set -a; . ~/.mcm-sandbox-env; set +a
+>   devcontainer up --workspace-folder /workspaces/mcm \
+>                   --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json'
+> ```
+>
+> Treat a `reproducible-recreate` FAIL as "the dev container is gone right now", not as a report
+> about some hypothetical future recreate — and check `docker ps` for it before doing anything else.
+
+The harness has a second instrument problem, at the opposite end — a check that fails safe above, and
+one that passes unsafe here:
+
+> ⚠️ **`verify-engine-seam.sh --host-check` PASSES VACUOUSLY when Docker Desktop is stopped.** Its
+> assertions are all of the form *"the Windows engine does not list X"*, and it does not distinguish
+> **"the engine answered and X was absent"** from **"the engine could not be reached at all"**. With
+> Docker Desktop shut down every `docker` call fails, so all four assertions pass and it prints
+> `PASS host-side — the Windows engine sees nothing from the microVM` (measured 2026-09-19, exit 0).
+>
+> That is the non-fabricable proof the harness refuses to fake, so a vacuous pass is worth more
+> caution than a failure. Confirm the engine was actually reachable before believing it:
+>
+> ```bash
+> docker version --format 'server={{.Server.Version}}'   # must print a version, not a connect error
+> ```
+>
+> Nothing is *disproven* by the vacuous run — with no Windows engine running, nothing can leak to
+> one. But it cannot catch a regression that only appears while Docker Desktop is up, so re-run it
+> with Docker Desktop started before treating SC-002 as re-verified.
+
 ---
 
 ## 10b. The `sbx` version, and the ritual before upgrading it (R5)
 
-**Pinned and proven at: `v0.38.0` (`c022b14634c4bea846ca12870d1d5e97d5868b54`).** Everything on this
-page was measured against that build. Record the version whenever you report a problem — several
-behaviours here are version-specific and undocumented.
+**Pinned and proven at: `v0.43.0` (`79805a6e3c6667520dc2da4f6bdeddae9b700969`), upgraded from
+v0.39.0 on 2026-09-19.** Most of this page was originally measured against v0.38.0; where a
+behaviour was re-checked on v0.43.0 it says so. Record the version whenever you report a problem —
+several behaviours here are version-specific and undocumented.
+
+Re-checked on v0.43.0 and **unchanged**: `sbx start` still does not exist; there is still no
+`--disk` flag (sizes remain creation-time environment variables, §8); the local idle-stop still has
+no knob (`--on-timeout` exists but is cloud-only and tied to `--ttl`); and the dockerd-readiness
+deadline that makes a healthy sandbox unstartable is **not** raised (§7f).
+
+**Changed in v0.43.0:** `sbx create`/`sbx run` now take `--skills=off|readonly|readwrite` and
+default to **`readonly`**, so the host skills store is mounted into new sandboxes unless you opt
+out. `sbx policy ls` takes the sandbox **positionally** (`sbx policy ls mcm`); `--sandbox` is
+rejected there, though it is still correct for `sbx policy allow network --sandbox mcm` (§4).
+
+> ⚠️ **The upgrade itself was clean, and preserved more than expected.** The `E:` junction survived,
+> `DOCKER_SANDBOXES_DOCKER_SIZE`/`ROOT_SIZE` and both `.img` volumes were untouched, and the sandbox
+> survived v0.43.0's UUID migration with its local egress policy intact — **same policy UUID, all 50
+> network allow rules**. Only the *kit* policy's UUID changed, which is expected.
+
+**Verification actually performed for this upgrade (step 3/4 above), 2026-09-19:**
+
+| Check | Result |
+| --- | --- |
+| The 12 harness invocations except `reproducible-recreate` | **all PASS** |
+| `verify-sandbox-egress.sh --audit-check` (host-side, the G5 audit half) | **PASS** — refusal present in the governance audit log, **all 49 canonical destinations live in the policy** |
+| G5 sibling-egress refusal (in `verify-firewall-allowlist.sh`) | **PASS** — sibling container blackholed; default-deny intact |
+| `verify-reproducible-recreate.sh` | **FAIL — pre-existing, not the upgrade.** The base image is absent from the pre-upgrade inventory too; the script does not source the pin (see §10's warning) |
+| `verify-engine-seam.sh --host-check` | **VACUOUS** — Docker Desktop was stopped, so it proved nothing. Still owed |
+
+⚠️ `verify-firewall-allowlist.sh` failed on the first harness run and passed after a full
+`devcontainer up`. The dev container returns after a VM restart via `restart: always`, which does
+**not** re-run `postStart` — so `init-firewall.sh` never reapplies the in-container rules. A sandbox
+that has only ever been restarted, never `devcontainer up`-ed, can therefore be running without
+them.
 
 `sbx` is a fast-moving, pre-1.0 tool that this environment depends on for **isolation and egress
 enforcement**, so an upgrade is a security-relevant change, not a routine one. Before upgrading:
