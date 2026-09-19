@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: Dev container on Docker Sandbox microVM (primary environment)
-description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM. Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, bind-mount source resolution (VM daemon resolves paths, a missing source is silently created empty), networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure (resolve the digest from the registry via manifests/<tag>, not the run summary or packages API), the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart), and agent isolation (multiple concurrent sessions share the checkout — use a git worktree for any branch work).
+description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM (sbx v0.43.0). Covers lifecycle, egress policy (per-FQDN allowlist, MCP endpoint gotchas), the socat engine seam, bind-mount source resolution (VM daemon resolves paths, a missing source is silently created empty), networking quirks, restart/reboot survival, disk sizing (three independently-resizable volumes), the template-recreate trap, the re-pin procedure (resolve the digest from the registry via manifests/<tag>, not the run summary or packages API), the cold-recreate gaps (devcontainer CLI, insecure-registries, init.d restart), agent isolation (multiple concurrent sessions share the checkout — use a git worktree for any branch work), and the "docker daemon failed to start" false-failure (sbx gives up before dockerd finishes restoring containers; the launcher works around it by trusting SSH, not the exit code).
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-timestamp: 2026-09-18T00:00:00Z
+timestamp: 2026-09-19T00:00:00Z
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -28,6 +28,8 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 - **`--name` is load-bearing on `sbx run`.** Without it, `sbx run mcm` tries to run an agent called `mcm`; omitting `--name` can create a second sandbox instead of restarting the existing one.
 
 - **The VM idle-stops ~30 seconds after the last session disconnects — this is normal, not a fault.** Coming back to a "missing" environment usually means it idle-stopped; start it and nothing is lost. Long unattended jobs die unless a session is held open (`ssh mcm.sbx 'sleep 5400'` in another window; launch work with `setsid nohup … &`). The dev container carries `--restart=always` and returns by itself; the agent stack does not — see Restart and reboot below.
+
+- **🔴 `sbx run` reports "docker daemon failed to start inside the sandbox" while dockerd is perfectly healthy — measured five times on both v0.39.0 and v0.43.0.** dockerd restores every `unless-stopped` container on startup (20 of them in this VM), which took 54–101 s; sbx's hardcoded readiness budget is shorter. The CLI exits, which trips the 30 s idle-stop and kills a VM whose dockerd had been serving the socket the whole time. The message names the wrong component. **`scripts/open-sandbox.ps1` is immune**: it now treats the exit code as a claim and SSH answering as evidence, waiting up to 120 s. If you started by hand and hit the error, there is a ~30 s grace window while the sandbox is live: `sbx exec mcm sh -c 'docker ps'` issued within that window attaches to the running VM and defers the auto-stop. See source §7f for the full mechanism and proof command.
 
 - **`sandboxd` does not auto-start at boot.** After a workstation reboot, `sbx run --name mcm -d` starts it on demand. Reaching for `ssh mcm.sbx` first can surface a daemon error that reads like a broken environment rather than a cold host — start with `sbx run`.
 
@@ -131,7 +133,7 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 
 - **The sandbox, VS Code dev-container forwarding, and Docker Desktop all share the same `127.0.0.1` port space on Windows — measured 2026-08-23.** There is no separation: a port the sandbox has forwarded is a port the host cannot bind, and vice versa. This surfaces in two disguises: (1) a loud bind error (`"bind: Only one usage of each socket address"`) when bringing up the host's auth stack while the dev container is open — the natural reflex of `docker compose up -d` will **recreate** (not just start) the existing container and destroy it; use `docker start <name>` or `up -d --no-recreate` instead. (2) **The dangerous one:** VS Code keeps the host port bound for the lifetime of the window **even when the service inside the sandbox has stopped**. A client completes the TCP handshake and then waits forever with no error. An Android emulator sat on its splash screen indefinitely because the app's dev-server connection was `ESTAB` to a dead VS Code forward. Diagnose by ownership, not reachability: `Get-NetTCPConnection -LocalPort <port> -State Listen | ForEach-Object { "{0} <- PID {1} ({2})" -f $_.LocalAddress, $_.OwningProcess, (Get-Process -Id $_.OwningProcess).ProcessName }`. `Code` = VS Code forward (close the window or "Stop Forwarding Port"); `com.docker.backend` = Docker Desktop published port; `ssh` = manual tunnel.
 
-- **`sbx` is pinned at v0.38.0 — an upgrade is a security-relevant change, not a routine one.** It is load-bearing for isolation and egress enforcement. Before upgrading: read release notes for changes to network policy semantics, `--network=host` behaviour, port publishing, idle-stop timeout, secret injection, and template semantics; capture before-state with `verify-reboot-survival.sh --capture`; re-run the full harness; re-run G5 explicitly (sibling-egress refusal is the core security claim). Record the new version in the source runbook.
+- **`sbx` is pinned at v0.43.0 — an upgrade is a security-relevant change, not a routine one.** It is load-bearing for isolation and egress enforcement. Before upgrading: read release notes for changes to network policy semantics, `--network=host` behaviour, port publishing, idle-stop timeout, secret injection, and template semantics; capture before-state with `verify-reboot-survival.sh --capture`; re-run the full harness; re-run G5 explicitly (sibling-egress refusal is the core security claim). Record the new version in the source runbook.
 
 - **A cold recreate (new sandbox from scratch) needs three things the provisioning path does not supply.** All three were hit 2026-08-27; each stops the recreate dead:
 
@@ -261,9 +263,9 @@ The key is mapped to `ANTHROPIC_API_KEY` **only at the point of use**: agent gat
 ## One-step launch
 
 ```powershell
-pwsh scripts/open-sandbox.ps1
+.\scripts\open-sandbox.ps1
 ```
 
-Checks whether the sandbox is running, starts it if not, waits for SSH, and opens VS Code directly inside the dev container. The URI it generates is computed dynamically — a pasted URI silently opens the wrong target if the workspace path or config file moves. Once opened, the entry appears in **File → Open Recent** (`Ctrl+R`), but only while the sandbox is running; against a stopped VM the Recent entry fails in a way that reads as a broken environment.
+Checks whether the sandbox is running, starts it if not, waits for SSH (up to 120 s, deadline-based), and opens VS Code directly inside the dev container. It treats `sbx run`'s exit code as a claim and SSH answering as evidence — so the "docker daemon failed to start" false-failure (see §7f in the source) does not abort the launch. The URI it generates is computed dynamically — a pasted URI silently opens the wrong target if the workspace path or config file moves. Once opened, the entry appears in **File → Open Recent** (`Ctrl+R`), but only while the sandbox is running; against a stopped VM the Recent entry fails in a way that reads as a broken environment.
 
 Full lifecycle, egress allowlist management, the engine seam, restart/reboot survival, disk management, credential injection, and the verification harness: `docs/runbooks/devcontainer-sandbox.md`.
