@@ -228,6 +228,16 @@ test.describe('Settings — old addresses', () => {
     await expect(page.getByTestId('profile-display')).toHaveCount(0);
     // And the address is unmatched rather than redirected — the operator decision in §R1.
     await expect(page).toHaveURL(/\/profile$/, { timeout: 15000 });
+
+    // FEATURE 074 / item #237 — the positive half. Everything above asserts only what is ABSENT,
+    // which was all there was to assert while an unmatched address fell through to Expo Router's
+    // unstyled built-in screen. It now renders the branded screen instead.
+    await expect(page.getByTestId('not-found-screen')).toBeVisible({ timeout: 30000 });
+    // THE DISCRIMINATING ASSERTION for FR-002, and the detector plan.md §Risks names: the (app)
+    // group's +not-found must win resolution over the ROOT one, or the screen renders with no
+    // navigation bar and the change fixes only half of what #237 reported. If this fails, the
+    // fallback is to keep only the root route and record the finding — not to delete this line.
+    await expect(page.getByTestId('navigation-bar')).toBeVisible();
   });
 
   test('the pre-split admin-settings address is unmatched, not merely refused', async ({ page }) => {
@@ -244,5 +254,37 @@ test.describe('Settings — old addresses', () => {
     // has been deleted leaves the address alone and falls through to unmatched handling.
     // Red until T024 deletes the route; do not weaken it to go green sooner.
     await expect(page).toHaveURL(/\/admin\/settings$/, { timeout: 15000 });
+
+    // FEATURE 074 / item #237 — the positive half, as above.
+    await expect(page.getByTestId('not-found-screen')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId('navigation-bar')).toBeVisible();
+  });
+});
+
+/**
+ * FEATURE 074 / backlog item #237 — an address outside the (app) group entirely.
+ *
+ * The two cases above cover unmatched AUTHENTICATED addresses, which resolve to
+ * src/app/(app)/+not-found.tsx and keep the chrome. This one covers the root catch-all,
+ * src/app/+not-found.tsx: no navigation bar is available there, so the assertion is that the
+ * branded screen renders at all and that its one affordance works.
+ */
+test.describe('Unmatched addresses — feature 074', () => {
+  test('an address matching no route renders the branded screen and offers one way back', async ({ page }) => {
+    await page.goto(`${BASE}/total-nonsense-no-such-route`);
+
+    await expect(page.getByTestId('not-found-screen')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId('not-found-screen')).toContainText(/not found/i);
+
+    // FR-004's "exactly ONE affordance" half. Asserted HERE and not in the jest unit test because
+    // the instrument only works here: queryAllByRole('button') returns [] under jest-expo (RNTL's
+    // role query does not resolve the `role` prop Tamagui sets, which is why no unit test in this
+    // repository uses ByRole), while on web that same prop reaches the DOM — see the comment in
+    // packages/design-system/components/primitives/Button.tsx. Scoped INSIDE the container, so a
+    // chromed render does not count the navigation bar's own controls.
+    await expect(page.getByTestId('not-found-screen').getByRole('button')).toHaveCount(1);
+
+    await page.getByTestId('not-found-home-link').click();
+    await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 60000 });
   });
 });
