@@ -97,15 +97,30 @@ test('(#footgun) the error names the offending flag and points at usage', () => 
 test('(#footgun) every documented flag still resolves exactly as before', () => {
   // The control. Without it the assertions above are satisfied by a parser that rejects EVERYTHING,
   // which would break every caller including CI.
-  assert.equal(resolveCommand([]).command, 'deploy', 'a bare invocation still deploys — that is the documented default');
-  assert.equal(resolveCommand(['--down']).command, 'down');
-  assert.equal(resolveCommand(['--status']).command, 'status');
-  assert.equal(resolveCommand(['--build']).command, 'deploy');
-  assert.equal(resolveCommand(['--no-build']).command, 'deploy');
+  //
+  // EVERY case that can reach resolveBuildMode passes an EXPLICIT env. The first draft did not, and
+  // CI caught it: `resolveCommand(['--no-build'])` read `process.env`, and under `CI=true` the
+  // feature-041 guard correctly refuses --no-build ("a gate must test the code in the checkout").
+  // Locally CI is unset, so it passed here and failed in `guardrails / naming` — a test that
+  // asserts about argument parsing must not also depend on the ambient environment.
+  const LOCAL = { CI: '' };
+  assert.equal(resolveCommand([], LOCAL).command, 'deploy', 'a bare invocation still deploys — that is the documented default');
+  assert.equal(resolveCommand(['--down'], LOCAL).command, 'down');
+  assert.equal(resolveCommand(['--status'], LOCAL).command, 'status');
+  assert.equal(resolveCommand(['--build'], LOCAL).command, 'deploy');
+  assert.equal(resolveCommand(['--no-build'], LOCAL).command, 'deploy');
   // And the build mode still rides along, so the feature-041 default (build unless told otherwise)
   // is unchanged by the parsing rewrite.
-  assert.equal(resolveCommand([]).build, true);
-  assert.equal(resolveCommand(['--no-build'], { CI: '' }).build, false);
+  assert.equal(resolveCommand([], LOCAL).build, true);
+  assert.equal(resolveCommand(['--no-build'], LOCAL).build, false);
+
+  // The CI refusal itself is NOT weakened by the rewrite — resolveCommand delegates to
+  // resolveBuildMode, so --no-build under CI still raises rather than quietly deploying a stale image.
+  assert.throws(
+    () => resolveCommand(['--no-build'], { CI: 'true' }),
+    /refused under CI/,
+    'resolveCommand must not launder the feature-041 refusal',
+  );
 });
 
 test('(#footgun) --down and --status still win over build flags, as they did', () => {
