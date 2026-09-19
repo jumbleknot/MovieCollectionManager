@@ -121,21 +121,46 @@ if ($row -match '\brunning\b') {
   Write-Host "  sandbox '$Sandbox' is stopped (the microVM idle-stops ~30s after the last session) - starting..."
   # -d prints the id and exits rather than opening an interactive session; --name re-attaches to the
   # EXISTING sandbox (without it, the positional agent argument would create a new one).
-  $run = Invoke-Native -Exe 'sbx' -Arguments @('run', '--name', $Sandbox, '-d')
-  if ($run.ExitCode -ne 0) { throw "sbx run failed for '$Sandbox' (exit $($run.ExitCode))." }
+  $run = Invoke-Native -Exe 'sbx' -Arguments @('run', '--name', $Sandbox, '-d') -Capture
+
+  # 🔴 DO NOT TRUST THIS EXIT CODE. `sbx run` reports
+  #     500 Internal Server Error: docker daemon failed to start inside the sandbox
+  # while dockerd is in fact starting perfectly normally. dockerd restores every `unless-stopped`
+  # container first, which took 54-101 s across five measured starts, and sbx's readiness budget is
+  # a compiled-in constant somewhere below 53.7 s - there is no flag, no DOCKER_SANDBOXES_* variable,
+  # no settings file and no daemon option to raise it (checked on v0.39.0 and v0.43.0). sbx gives up,
+  # the CLI exits, and that exit starts the ~30 s idle-stop which then kills a VM whose dockerd had
+  # been serving the socket the whole time. Full mechanism: docs/runbooks/devcontainer-sandbox.md 7f.
+  #
+  # The exit code is a CLAIM; SSH answering is EVIDENCE. Prefer the evidence. This does not weaken
+  # failure detection: a genuinely broken sandbox never answers the probe below, and we then throw
+  # with the original exit code and output attached, so the real cause is still reported.
+  if ($run.ExitCode -ne 0) {
+    Write-Host "  sbx run reported exit $($run.ExitCode) - checking SSH before believing it (see runbook 7f)"
+  }
 
   # Wait for SSH rather than assuming: VS Code's attach fails confusingly if it races the boot.
+  # Deadline-based rather than iteration-based on purpose: each attempt costs up to ConnectTimeout
+  # PLUS the sleep, so a fixed loop count does not mean a fixed number of seconds. 120 s covers the
+  # slowest restore measured here (100.7 s) with margin.
+  $deadlineSeconds = 120
+  $sw = [System.Diagnostics.Stopwatch]::StartNew()
   $ready = $false
-  foreach ($i in 1..30) {
+  while ($sw.Elapsed.TotalSeconds -lt $deadlineSeconds) {
     $probe = Invoke-Native -Exe 'ssh' -Arguments @(
       '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no', '-o', 'ConnectTimeout=3', $SshHost, 'true')
     if ($probe.ExitCode -eq 0) { $ready = $true; break }
     Start-Sleep -Seconds 2
   }
+  $sw.Stop()
   if (-not $ready) {
-    throw "sandbox started but $SshHost did not answer SSH within ~60s. Check: sbx ls / ssh $SshHost"
+    $detail = "sandbox '$Sandbox' did not answer SSH on $SshHost within $deadlineSeconds s."
+    if ($run.ExitCode -ne 0) {
+      $detail += " sbx run had exited $($run.ExitCode): $(($run.Output | Out-String).Trim())"
+    }
+    throw "$detail Check: sbx ls / ssh $SshHost"
   }
-  Write-Host "  sandbox is up and answering SSH"
+  Write-Host ("  sandbox is up and answering SSH ({0:N0}s)" -f $sw.Elapsed.TotalSeconds)
 }
 
 # ── 2. build the compound URI ───────────────────────────────────────────────────────────────────
