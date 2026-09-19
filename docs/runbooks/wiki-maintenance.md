@@ -102,9 +102,20 @@ Measured on the wire at turn 25 of a real run: `stop_reason=max_tokens`, `output
 call. Full write-up and reproduction steps:
 [`HANDOFF-generator-reliability-ANSWER.md`](../../specs/044-openwiki-automation-migration/HANDOFF-generator-reliability-ANSWER.md).
 
-The target now pins **`claude-sonnet-4-6`**, which the table covers at 16384, and
-`scripts/__tests__/wiki-maintain.guard.test.mjs` fails any model id that lands back on the 4096
-fallback. **If you change `OPENWIKI_MODEL_ID`, run that guard.**
+**Fixed upstream at 0.5.2, and still pinned here anyway.** OpenWiki now supplies an explicit
+`maxTokens` of its own — `resolveAnthropicMaxOutputTokens` returns 16384 for any
+`claude-(haiku|sonnet|opus)-(4|5)` id — and `@langchain/anthropic`'s table has since grown a
+`claude-sonnet-5` entry, so both layers that failed now hold. That is exactly why the target does
+**not** rely on either: the fix is invisible at runtime, a model rename or a vendor change would undo
+it in one line, and the symptom is a green build with an empty diff. `wiki-update` therefore sets
+**`OPENWIKI_MAX_OUTPUT_TOKENS=16384`** explicitly, which OpenWiki reads ahead of everything else — so
+that value, not any vendor table, is the one that reaches the model. The model stays pinned at
+**`claude-sonnet-4-6`**.
+
+`scripts/__tests__/wiki-maintain.guard.test.mjs` now asserts all three: that the explicit cap is set
+and large enough, that OpenWiki's own resolver still matches the pinned id, and that the id would not
+land on the 4096 fallback if the explicit cap were removed. **If you change `OPENWIKI_MODEL_ID` or
+`OPENWIKI_MAX_OUTPUT_TOKENS`, run that guard.**
 
 **If zero-page runs return, do not add a fourth retry attempt — measure the wire.** Point
 `ANTHROPIC_BASE_URL` at a pass-through proxy that logs each response's `stop_reason` and
@@ -348,3 +359,52 @@ node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and no
 `--selftest` includes a **deliberately sabotaged generator** that exits 0 having written nothing. If it
 ever passes, the zero-page detector is broken — which is the one failure mode that would let this
 whole arrangement go quietly back to reporting false green.
+
+---
+
+## 8. The OKF v0.1 → v0.2 provenance migration (OpenWiki 0.5.x)
+
+OpenWiki 0.5.x emits **OKF v0.2**, which replaces the flat `timestamp:` scalar with a structured
+`generated: {by, at}` event. The bundle does not convert in one step, and the way it converts is the
+part worth knowing:
+
+- `finalizeGeneratedProvenance` stamps `generated` on every page whose **body changed** in the run,
+  and in the same pass **removes that page's `timestamp` field**. It is a replacement, not an
+  addition.
+- A page whose body did not change keeps its prior stamp untouched. So the bundle carries **both
+  shapes at once**, one per page, and flips over gradually as pages are regenerated.
+- The root `index.md` declares `okf_version: "0.2"`. The legacy `timestamp` stays valid on pages that
+  have not been rewritten, so there is nothing to migrate by hand and no cutover to schedule.
+
+**Why this needed a gate change rather than nothing.** `check-openwiki-okf.mjs` reads the stamp for
+V12, the drift warning that reports a concept whose cited source has moved on. Had it kept reading
+only `timestamp`, it would not have failed — it would have gone on printing `✅ conformant` while
+silently covering one fewer page every time a page was regenerated, until drift checked nothing at
+all. The gate now resolves the stamp through a single helper that prefers `generated.at` and falls
+back to `timestamp`, and V5 validates the ISO-8601 shape **inside** the nested `generated.at` and
+`verified.at` events rather than only at the top level.
+
+**The number to watch.** A concept that cites a `resource` but carries no usable stamp is one drift
+cannot check. That is not a conformance violation and never fails the build, but the gate now counts
+and prints those pages:
+
+```
+[openwiki-okf] ⚠️  N concept(s) cite a source but carry no usable `generated.at` or `timestamp` —
+drift is NOT checked for these:
+```
+
+If that count climbs, drift coverage is falling — investigate the generator's provenance pass rather
+than the pages. A silent loss of coverage is precisely the failure this counter exists to make loud.
+
+### Diagrams need their parser installed, or they degrade silently
+
+From 0.5.0 OpenWiki embeds Mermaid diagrams by default and validates every fence after a run. The
+authoritative validator is the real `mermaid` parser, which is an **optional peer dependency**
+alongside `jsdom`. Without them OpenWiki falls back to a lightweight built-in check, and any diagram
+that fails validation is rewritten in place into a plain `text` fence with a short comment — the run
+still exits 0 and every gate still passes.
+
+Both are therefore installed beside the generator in `.devcontainer/toolchain.Dockerfile` **and** in
+`.forgejo/workflows/wiki-maintain.yml`, and a guard in `scripts/__tests__/wiki-maintain.guard.test.mjs`
+asserts the two lists match — if only one environment has the parser, the two disagree about what a
+valid diagram is, and the one that writes the bundle wins.

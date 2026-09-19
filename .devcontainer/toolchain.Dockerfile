@@ -73,7 +73,17 @@ RUN corepack enable \
 # so it belongs in the shared image rather than a per-developer dotfiles layer.
 # NOTE: never invoke the bare CLI — `pnpm nx wiki-update infrastructure-as-code` is the supported
 # path because it sets OPENWIKI_TELEMETRY_DISABLED=1 (the tool reports usage telemetry by default).
-RUN npm install -g openwiki@0.2.3
+#
+# `mermaid` and `jsdom` are OPTIONAL peer dependencies, and their absence is SILENT rather than
+# loud — which is the whole reason they are pinned here. From 0.5.0 the generator embeds Mermaid
+# diagrams by default and validates every fence after a run. WITHOUT these two it falls back to a
+# lightweight built-in check that catches only common breakages; a diagram that passes that check
+# but fails the real parser is rewritten in place into a plain `text` fence. The run still exits 0
+# and every gate still passes — the only symptom is a diagram silently downgraded to preformatted
+# text. With the parser present, validation matches exactly what the forge renders, so a broken
+# diagram never ships. Kept in step with .forgejo/workflows/wiki-maintain.yml, which installs the
+# same three packages for the same reason.
+RUN npm install -g openwiki@0.5.2 mermaid jsdom
 
 # --- US1 (T013): gh (GitHub CLI) from the official apt repo [root, pre-user] --------------
 RUN export DEBIAN_FRONTEND=noninteractive \

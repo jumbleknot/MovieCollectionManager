@@ -957,8 +957,14 @@ nothing else would report it.
 
 ## OpenWiki — the OKF knowledge wiki (feature 043)
 
-`openwiki@0.2.3` is **baked into the toolchain image** (`.devcontainer/toolchain.Dockerfile`, beside
-the Claude Code CLI), so it is present with no per-developer install. Wiki maintenance is a repo
+`openwiki@0.5.2` is **baked into the toolchain image** (`.devcontainer/toolchain.Dockerfile`, beside
+the Claude Code CLI), together with its optional `mermaid` + `jsdom` peer dependencies, so it is
+present with no per-developer install. The two peers are installed because their absence is silent:
+OpenWiki embeds Mermaid diagrams by default from 0.5.0 and validates every fence after a run, and
+without the real parser it downgrades any diagram it cannot verify to a plain `text` fence while
+still exiting 0. `scripts/__tests__/wiki-maintain.guard.test.mjs` asserts that CI and this image
+install the same three packages, so the two environments cannot drift on what counts as a valid
+diagram. Wiki maintenance is a repo
 process, not a personal convenience, which is why it lives in the shared image rather than the
 dotfiles/personal layer that RTK uses.
 
