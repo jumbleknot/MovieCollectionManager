@@ -21,6 +21,8 @@
 import { readFileSync, writeFileSync, mkdirSync, globSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { parse as parseYaml } from 'yaml';
+// ONE retry mechanism for every network-dependent scanner (items #449, #495) — see the module header.
+import { retryTransient, transientOr, readTail } from './lib/scanner-retry.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative } from 'node:path';
 
@@ -206,21 +208,64 @@ function readInfraFiles() {
   }));
 }
 
-/** Spawn Trivy for one image. Fail-closed: spawn error or non-zero exit throws. */
-function scanImage(ref) {
-  const res = spawnSync('trivy', ['image', '--format', 'json', '--no-progress', '--scanners', 'vuln', ref], {
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  if (res.error) throw new ScanError(`trivy failed to run for ${ref}: ${res.error.message} (is Trivy installed / on PATH?)`);
-  if (res.status !== 0) throw new ScanError(`trivy exited ${res.status} for ${ref} (fail-closed): ${(res.stderr || '').slice(0, 500)}`);
-  let json;
-  try {
-    json = JSON.parse(res.stdout);
-  } catch (e) {
-    throw new ScanError(`trivy output for ${ref} was not parseable JSON (fail-closed): ${e.message}`);
-  }
-  return json;
+/**
+ * Spawn Trivy for one image, retrying a TRANSPORT failure. Fail-closed throughout.
+ *
+ * ITEM #495. Trivy fetches its vulnerability DB over the network on every run here, and this scanner
+ * is deliberately fail-closed — so an upstream blip redded `infra-image-scan`, a REQUIRED context,
+ * and made an unrelated PR unmergeable. Measured on PR #494, 2026-09-19: the SAME commit `3d72e67e`
+ * passed as run 3619 (push, 2m39s) and failed as run 3622 (pull_request, 33s) nine minutes later,
+ * before a single image had been scanned. Run 3625 then passed and run 3628 failed again — roughly a
+ * coin flip, interleaved, so intermittent rather than an outage.
+ *
+ * It costs more here than the shape suggests: `/actions/runs/{id}/rerun` and `/rerun-failed-jobs` are
+ * both 404 on this Forgejo build (measured 2026-09-19), so the only recovery from a flaked required
+ * job is a new commit — a full CI cycle per blip, not a button.
+ *
+ * THE RETRY DOES NOT SOFTEN THE GATE. Only a classified transport failure is re-attempted (see
+ * scripts/lib/scanner-retry.mjs); a real fault — Trivy absent, image not found, unparseable output —
+ * still throws on the first attempt, and exhausting the attempts still throws. A Trivy exit of 0 with
+ * blocking findings never reaches this function's failure path at all: findings are JSON on STDOUT and
+ * the gate verdict belongs to check-infra-image-findings.mjs.
+ *
+ * CLASSIFY ON STDERR ONLY. Trivy writes the vulnerability report to stdout, so handing stdout to the
+ * classifier would let a CVE's own title decide whether a scan is retried. Its diagnostics — including
+ * the `[vulndb]` lines this exists for — are on stderr.
+ *
+ * `opts` is for the tests: { spawn, attempts, baseDelayMs, sleep, onRetry }.
+ */
+export function scanImage(ref, opts = {}) {
+  const spawn = opts.spawn ?? spawnSync;
+  return retryTransient(
+    `trivy ${ref}`,
+    () => {
+      const res = spawn('trivy', ['image', '--format', 'json', '--no-progress', '--scanners', 'vuln', ref], {
+        encoding: 'utf8',
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      // A spawn error is the tool being absent or unexecutable. Retrying that is pure delay.
+      if (res.error) throw new ScanError(`trivy failed to run for ${ref}: ${res.error.message} (is Trivy installed / on PATH?)`);
+      if (res.status !== 0) {
+        // readTail, not `.slice(0, 500)`. The head is Trivy's INFO preamble; the verdict is at the
+        // end. Run 3622's captured failure ends mid-URL, cut off exactly where the HTTP status would
+        // have been — and a 403, a 429 and a 500 imply three different remedies. The diagnosis needed
+        // that number and the instrument had thrown it away.
+        throw transientOr(
+          `trivy exited ${res.status} for ${ref} (fail-closed): ${readTail(res.stderr)}`,
+          res.stderr,
+          ScanError,
+        );
+      }
+      let json;
+      try {
+        json = JSON.parse(res.stdout);
+      } catch (e) {
+        throw new ScanError(`trivy output for ${ref} was not parseable JSON (fail-closed): ${e.message}`);
+      }
+      return json;
+    },
+    { logPrefix: 'infra-image-scan', ...opts },
+  );
 }
 
 function writeReports(images, findings) {

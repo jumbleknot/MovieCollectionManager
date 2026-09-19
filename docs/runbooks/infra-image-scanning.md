@@ -60,6 +60,97 @@ Guarded by `scripts/__tests__/infra-image-scan.test.mjs`, which asserts the comp
 a **fixture** rather than the live tree. A live-tree assertion would stop testing anything the day
 MinIO is the only such image and someone removes it.
 
+### A Trivy DB-download blip is bounded-retried — item #495
+
+Trivy fetches its vulnerability DB over the network on **every** run here, and this scanner is
+deliberately fail-closed. So an upstream blip redded `infra-image-scan / infra-image-scan` — a
+**required** context — and made an unrelated PR unmergeable.
+
+**Measured, PR #494, 2026-09-19.** Four runs inside 32 minutes, across three commits:
+
+| run | started | commit | trigger | result |
+|---|---|---|---|---|
+| 3619 | 01:38:04 | `3d72e67e` | push | ✅ 2m39s |
+| 3622 | 01:47:32 | `3d72e67e` | pull_request | ❌ DB fetch |
+| 3625 | 01:56:50 | `10137f71` | pull_request | ✅ full 212s scan |
+| 3628 | 02:10:46 | `dbb3d25d` | pull_request | ❌ DB fetch |
+
+Roughly a coin flip, **interleaved** — a success sits between the two failures and one commit produced
+both. Intermittent, not an outage. Both failures were byte-identical, on the same blob, and killed the
+run before a single image was scanned:
+
+```
+INFO  [vulndb] Downloading artifact...  repo="mirror.gcr.io/aquasec/trivy-db:2"
+ERROR [vulndb] Failed to download artifact  repo="mirror.gcr.io/aquasec/trivy-db:2"
+      err="oci download error: failed to fetch the layer: GET https://mirror.gcr.io/v2/…"
+```
+
+It costs a full CI cycle per blip, not a button: `/actions/runs/{id}/rerun` **and**
+`/rerun-failed-jobs` are both **404** on this Forgejo build (measured 2026-09-19), so the only recovery
+from a flaked required job is a new commit.
+
+`scanImage()` now runs each Trivy invocation through the **shared** retry driver in
+`scripts/lib/scanner-retry.mjs` — the same one `sast-scan.mjs` has used since item #449, extracted
+rather than copied. Three attempts, exponential backoff (2s, 4s). What you see when it fires:
+
+```
+[infra-image-scan] [trivy axllent/mailpit:v1.31.1@sha256:…] transient transport/service failure on
+                   attempt 1/3 — retrying in 2000ms. This is NOT a security finding. Cause: …
+```
+
+The same two properties as the SAST retry are deliberate and must not be "simplified" away —
+**fail-closed is preserved** (exhausting the attempts still exits non-zero) and **the classification is
+narrow** (only a measured transport signature retries; Trivy absent, an image that cannot be found, or
+unparseable output all fail on the first attempt). `scripts/__tests__/infra-image-scan-retry.guard.test.mjs`
+pins both directions, and its CONTROL tests are the ones that matter: a retry firing on a real finding
+would be worse than no retry at all.
+
+> **The classifier is handed STDERR only.** Trivy writes the vulnerability report to **stdout**, so
+> classifying on stdout would let a CVE's own title decide whether a scan is retried. This is not
+> hypothetical: writing those control tests caught the signature list — inherited from #449 — matching
+> the advisory title *"net/http: HTTP/2 server does not limit **Service Unavailable** responses"*. The
+> HTTP-status signatures now require the **status code**, not just the phrase. Every failure #449
+> measured carries the code, so nothing was lost.
+
+#### Why the stderr in the failure message is the TAIL, not the head
+
+`scanImage()` truncated Trivy's stderr with `.slice(0, 500)` — the **head**. Trivy opens with several
+`INFO` lines, so run 3622's captured failure ended **mid-URL**, cut off exactly where the HTTP status
+would have been. A 403, a 429 and a 500 imply three different remedies and the digest could name none
+of them. It now carries the last 2000 characters and says how much it dropped. Truncate the boring end,
+never the verdict — and note that this also means run 3622's log **cannot** tell us whether Trivy fell
+back to its second DB registry, because those lines would have been past the cut too.
+
+#### Decided: no DB cache, no extra mirror (item #495 AC6)
+
+The question was whether retry treats a symptom and the real fix is to stop fetching the DB fresh per
+run. Both alternatives were checked and **neither is available or needed here**:
+
+- **A second registry is already configured.** Trivy's *default* `--db-repository` is a fallback list —
+  `mirror.gcr.io/aquasec/trivy-db:2` **then** `ghcr.io/aquasecurity/trivy-db:2` — and Trivy documents
+  fallback across it "in case of transient errors". Pinning a mirror by hand would **narrow** that, not
+  widen it. A private pull-through mirror would also hand a credential to a scanner whose whole design
+  is keyless.
+- **Cross-run caching is not on offer.** `actions/cache` is not mirrored on this forge (see the
+  `guardrails.yml` cargo-audit step, which installs fresh for the same reason), and each job runs in a
+  fresh container, so `~/.cache/trivy` starts empty every time.
+
+So a bounded retry is the whole of the available fix, not a stopgap. Revisit if `actions/cache` is ever
+mirrored.
+
+#### `cd-deploy`'s built-image scan has the same exposure — item #495 AC7
+
+`scripts/cd/scan-push.sh` runs a bare `trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed`
+and fetches the same DB from the same registry, so a blip hits it too — and **worse**: `--exit-code 1`
+is also what Trivy returns for a *finding*, so a DB-download failure there is indistinguishable from
+"a fixable Critical blocked the deploy". `minio-image.yml` is already covered, because it scans
+through `infra-image-scan.mjs --image`.
+
+Not fixed here, deliberately. `cd-deploy` is **not** a required merge context and it **is**
+re-dispatchable (`workflow_dispatch`), so a blip costs a re-dispatch rather than a blocked PR — and the
+fix is a different mechanism (bash, disambiguating exit 1 from exit 2) on the production deploy path,
+which does not belong in the same red as a scanner change. Tracked as its own backlog item.
+
 ### A green `infra-image-scan` usually proves nothing — check the DURATION
 
 The required context `infra-image-scan / infra-image-scan` posts `success` on **every** PR, including

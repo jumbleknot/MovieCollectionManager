@@ -99,6 +99,12 @@ test('#449: the classifier does not fall for the WORD "error" alone', () => {
   // retry real findings and, after the retries, still report them — slower, for nothing.
   assert.equal(isTransientScannerFailure('GHSA-xxxx: improper error handling in foo'), false);
   assert.equal(isTransientScannerFailure('RUSTSEC-2024-0001: timeout handling is unsound'), false);
+  // Item #495 tightened the HTTP-status signatures to require the CODE. Before that, an advisory
+  // whose own title names a status phrase classified transient, and this list is shared with
+  // infra-image-scan now — so the regression would red two gates, not one.
+  assert.equal(isTransientScannerFailure('CVE-2025-68121: net/http: server does not limit Service Unavailable responses'), false);
+  assert.equal(isTransientScannerFailure('GHSA-aaaa: proxy mishandles a Bad Gateway response body'), false);
+  assert.equal(isTransientScannerFailure('RUSTSEC-2025-0002: Too Many Requests are queued without bound'), false);
 });
 
 // ── The retry driver ─────────────────────────────────────────────────────────
