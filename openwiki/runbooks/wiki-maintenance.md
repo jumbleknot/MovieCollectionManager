@@ -4,7 +4,7 @@ title: OpenWiki knowledge-bundle maintenance
 description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — including the plan/execute split, slice sizing, the retry-then-backlog model, exit codes, and how a lost run record self-heals against the forge's own proposal state.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
-timestamp: 2026-08-01T00:55:16+00:00
+timestamp: 2026-09-19T00:16:22+00:00
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -71,6 +71,17 @@ never be invoked directly.
 - **A protected passage may only live on a concept with no `resource`.** Freezing a derived summary
   against the document it summarizes would fail every legitimate refresh; see
   `openwiki/protected.yaml` and the fingerprint-update command in the full runbook.
+- **The generator writes site-root-absolute body links (`](/openwiki/…)`) — those are dead on this
+  forge.** A leading `/` resolves against the site root, so the forge reads `openwiki` as a username
+  and 404s. Measured via `POST /api/v1/markup` (the one endpoint that takes `Context`, `BranchPath`,
+  and `FilePath`, rendering a link exactly as the file view does). 204 links across 61 of the
+  bundle's 77 files were broken this way while `okf-lint` passed, because V6 verified only the
+  `resource` front-matter field, not body links. Three layers now hold the line: `INSTRUCTIONS.md`
+  §6 states the convention; `verifySlice` normalises whatever the slice wrote before the gate reads
+  it; and `okf-lint` rules **V14** (site-root-absolute) and **V15** (does not resolve from its own
+  file's directory) fail the build for anything else. For a bundle-wide sweep (e.g. after restoring
+  from elsewhere): `node scripts/wiki-maintain.mjs --normalize-links` (offline, no credential; add
+  `--dry-run` to preview). Code fences and code spans are exempt.
 
 Full plan/execute CLI flags, the exit-code table, the CI workflow's proposal-adoption logic, and the
 self-test/lint/governance verification commands: `docs/runbooks/wiki-maintenance.md`.
