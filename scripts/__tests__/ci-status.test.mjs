@@ -18,6 +18,7 @@ import {
   describeAuthFailure,
   cacheRawPayload,
   detachedHeadWarning,
+  describeContextlessRunFailure,
 } from '../ci-status.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -1804,4 +1805,42 @@ test('(#338aa) every emitted row carries the sample it rests on, and the rule th
   assert.match(table, /^web-e2e\t840\t/m, 'the table is not the tab-separated shape ci-log-step.sh reads');
   assert.match(table, /ci-status\.mjs durations .*--propose/,
     'the file does not say how to regenerate itself — the next reader edits it by hand');
+});
+
+// ── Item #485 — a run that failed while posting NO commit status ─────────────────────────────────
+//
+// `failure --run 3521` answered "No failed jobs on 3cbe637e — checked every event's contexts" for a
+// run whose own API status is `failure`. True about what it read; the opposite of the truth. These
+// pin the reader that turns that absence into the finding it is.
+//
+// The field shapes below are MEASURED, 2026-09-19, against this forge (15.0.3+gitea-1.22.0), not
+// imagined: `status` carries the terminal verdict and `conclusion` is undefined on every run. A
+// fixture that filled in `conclusion` would test a payload this forge never sends.
+
+test('(#485) a failed run with no contexts is reported as a failure, not as health', () => {
+  const out = describeContextlessRunFailure({ id: 3521, status: 'failure', conclusion: null });
+  assert.ok(out, 'a run whose own status is `failure` must never be reported as "no failed jobs"');
+  assert.match(out, /3521/, 'the message must name the run, or it cannot be acted on');
+  assert.match(out, /FAILED/, 'the message must say the run failed');
+  // The old message read as thoroughness, which is what made it a false negative rather than a
+  // shrug. Whatever this says, it must not claim everything was checked and found clean.
+  assert.doesNotMatch(out, /No failed jobs/i);
+});
+
+test('(#485) `conclusion` is honoured too, for the GitHub-shaped payload', () => {
+  // This forge leaves `conclusion` unset, but the field is the documented one and a future build
+  // (or a mirrored payload) may populate it instead. Reading only `status` would go quiet.
+  assert.ok(describeContextlessRunFailure({ id: 9, status: 'completed', conclusion: 'failure' }));
+  assert.ok(describeContextlessRunFailure({ id: 9, status: 'FAILURE', conclusion: null }), 'case must not matter');
+});
+
+test('(#485) a run that did NOT fail stays silent — this must not fire on every clean run', () => {
+  // The control. Without it the assertions above are satisfied by a function that returns a warning
+  // unconditionally, which would make `failure` useless on every green commit.
+  assert.equal(describeContextlessRunFailure({ id: 3073, status: 'success', conclusion: null }), null);
+  assert.equal(describeContextlessRunFailure({ id: 1, status: 'running', conclusion: null }), null);
+  assert.equal(describeContextlessRunFailure({ id: 1, status: 'cancelled', conclusion: null }), null,
+    'a superseded run is not a broken one — that is the superseded branch\'s job, not this one');
+  assert.equal(describeContextlessRunFailure(null), null, 'no --run was passed; there is nothing to say');
+  assert.equal(describeContextlessRunFailure(undefined), null);
 });
