@@ -1155,31 +1155,36 @@ Twelve scripts across three vantage points (in-container, VM-side, host-side). T
 cannot be faked from inside — a claim asserted only from within the thing being claimed about is not
 proof — and the harness refuses to report them as passed without `MCM_HOST_CHECK`.
 
-> 🔴 **Running the harness DESTROYS the dev container, and will not always put it back.** The last
-> check, `verify-reproducible-recreate.sh`, removes the container *and its derived image* by design
-> and rebuilds them with `devcontainer up`. When that rebuild fails you are left with no dev
-> container — the service stacks survive, so the sandbox looks healthy from `docker ps`.
+> 🔴 **Running the harness DESTROYS and rebuilds the dev container.** The last check,
+> `verify-reproducible-recreate.sh`, removes the container *and its derived image* by design. That is
+> the check working as intended — but it means the harness is never a read-only operation, and a
+> `reproducible-recreate` FAIL means **the dev container is gone right now**, not that some
+> hypothetical future recreate would fail. Check `docker ps` for it before diagnosing anything else;
+> the service stacks survive, so the sandbox still looks healthy.
 >
-> **Measured 2026-09-19:** the rebuild needs the base image pin, and the harness does not supply it.
-> `verify-reproducible-recreate.sh` shells out to `devcontainer up` without sourcing
-> `~/.mcm-sandbox-env`, so `${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}` falls back to the
-> bare default, which is not a pullable reference:
+> **Measured 2026-09-19 — the rebuild used to fail, twice, for the same reason.** The sandbox
+> config's BASE_IMAGE is `${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}`, and that variable
+> lives in `~/.mcm-sandbox-env`, which is deliberately **not** auto-sourced (D-07). `run-harness.sh`
+> runs this script from a non-login shell, so it was unset, the arg fell back to the bare tag, and
+> `devcontainer up` turned it into a pull of a non-existent reference:
 >
 > ```text
-> No such image: mcm-devcontainer:latest
+> No manifest found for docker.io/library/mcm-devcontainer
 > Error: Command failed: docker pull mcm-devcontainer
 > ```
 >
-> Recover by rebuilding with the pin sourced, exactly as §8b specifies:
+> The damage was the **order** — the teardown had already run, so the failure left no dev container
+> at all and every later check reported `No such container`, which reads as an isolation fault.
+> **Fixed:** the script now sources the pin, and asserts the base image is present-or-pullable
+> **before** it destroys anything, failing with the dev container still standing if it is not.
+>
+> On an older checkout, recover by rebuilding with the pin sourced, exactly as §8b specifies:
 >
 > ```bash
 > sbx exec mcm sh -c 'set -a; . ~/.mcm-sandbox-env; set +a
 >   devcontainer up --workspace-folder /workspaces/mcm \
 >                   --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json'
 > ```
->
-> Treat a `reproducible-recreate` FAIL as "the dev container is gone right now", not as a report
-> about some hypothetical future recreate — and check `docker ps` for it before doing anything else.
 
 The harness has a second instrument problem, at the opposite end — a check that fails safe above, and
 one that passes unsafe here:
@@ -1232,8 +1237,24 @@ rejected there, though it is still correct for `sbx policy allow network --sandb
 | The 12 harness invocations except `reproducible-recreate` | **all PASS** |
 | `verify-sandbox-egress.sh --audit-check` (host-side, the G5 audit half) | **PASS** — refusal present in the governance audit log, **all 49 canonical destinations live in the policy** |
 | G5 sibling-egress refusal (in `verify-firewall-allowlist.sh`) | **PASS** — sibling container blackholed; default-deny intact |
-| `verify-reproducible-recreate.sh` | **FAIL — pre-existing, not the upgrade.** The base image is absent from the pre-upgrade inventory too; the script does not source the pin (see §10's warning) |
-| `verify-engine-seam.sh --host-check` | **VACUOUS** — Docker Desktop was stopped, so it proved nothing. Still owed |
+| `verify-reproducible-recreate.sh` | **PASS**, after fixing the script. It failed first for a **pre-existing** reason, not the upgrade — the base image is absent from the pre-upgrade inventory too and the script never sourced the pin. It now sources it and refuses before destroying (see §10) |
+| `verify-engine-seam.sh --host-check` | **PASS**, re-run against a **running** Windows engine (`server=29.7.2`) with a live probe. The first run was vacuous — Docker Desktop was stopped |
+
+The host-side proof is only worth reading when it was run properly, which means: Docker Desktop
+**up**, the in-container half run first with `KEEP_PROBE=1` so a probe actually exists on the other
+side of the boundary, and `MCM_SANDBOX_CONTAINER` set so the real dev container's absence is asserted
+too. Do **not** set `MCM_EXPECT_NO_STACKS=1` on this workstation: the retained Docker Desktop path
+legitimately leaves exited MCM stack containers on the Windows engine, and the script's own comment
+allows for exactly that.
+
+```bash
+# 1. in the sandbox — leave a probe behind
+sbx exec mcm sh -c 'DC=$(docker ps --filter label=devcontainer.config_file --format "{{.Names}}" | head -1)
+  docker exec -u coder -w /workspaces/mcm -e KEEP_PROBE=1 "$DC" bash .devcontainer/verify/verify-engine-seam.sh'
+# 2. on Windows, with Docker Desktop running
+MCM_SANDBOX_CONTAINER=<dev-container-name> \
+  bash .devcontainer/verify/verify-engine-seam.sh --host-check mcm-engine-seam-probe
+```
 
 ⚠️ `verify-firewall-allowlist.sh` failed on the first harness run and passed after a full
 `devcontainer up`. The dev container returns after a VM restart via `restart: always`, which does
