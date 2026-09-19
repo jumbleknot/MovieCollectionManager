@@ -22,9 +22,43 @@ name: infra-image-scan
 
 on:
   schedule:
-    # Friday 07:00 UTC ≈ 03:00 America/New_York (EDT, UTC-4) / 02:00 (EST, UTC-5). GitHub/Forgejo
-    # Actions cron is UTC-only and does NOT observe DST, so this drifts ±1h across the DST boundary.
-    - cron: '0 7 * * 5'
+    # Friday 04:00 UTC ≈ 00:00 America/New_York (EDT, UTC-4) / 23:00 Thursday (EST, UTC-5).
+    # GitHub/Forgejo Actions cron is UTC-only and does NOT observe DST, so this drifts ±1h across the
+    # DST boundary.
+    #
+    # ── 04:00 IS AN ORDERING CONSTRAINT, NOT A FREE SLOT. DO NOT "TIDY THE CRONS TOGETHER". ───────
+    #
+    # This sweep decides whether an infra-touching PR *can* merge. `renovate.yml`'s window run —
+    # the one that CREATES those PRs — fires at 07:00 UTC. While both sat at 07:00 the sweep's
+    # verdict on `main` was unknown until after the PRs it would block already existed, and the two
+    # long jobs contended for the capacity-1 runner. Measured on 2026-09-18 (item #487):
+    #
+    #   07:01:45  PR #475 created        07:02:16  PR #478 created
+    #   07:02:22  run 3521 starts        — this sweep, on main
+    #   07:46     RED — three amqp091-go CRITICALs on grafana/otel-lgtm:0.32.1, published 09-16
+    #
+    # `main` had been failing its weekly CVE gate for 44 minutes before anyone could know, and #478
+    # (node/rust/keycloak digest pins, no bearing on otel-lgtm) was unmergeable from the moment it
+    # was created, on someone else's CVE. Running FIRST makes Friday deterministic: `main`'s posture
+    # is known before Renovate opens a branch, so an infra PR that then goes red is red for its own
+    # reasons.
+    #
+    # WHY 04:00 SPECIFICALLY, and why the 3h gap is the real figure:
+    #   * This job takes ~3 minutes, but the runner may be inside a ~35-minute `app-e2e`, so the gap
+    #     budgets for QUEUE DEPTH, not for the job.
+    #   * No other Friday cron fires at 04:00. 05:00 is `minio-image` and 06:00 is
+    #     `devcontainer-image` — two heavy builds (timeout-minutes: 60 each) that used to sit
+    #     directly in front of this sweep on the single runner. 04:00 puts it ahead of both.
+    #   * Both crons are UTC, so the 3h gap is FIXED. DST moves `renovate.json`'s local-time window,
+    #     never the distance between these two UTC crons.
+    #   * Ordering ahead of `minio-image` is safe: compose pins `jumbleknot/minio` by immutable
+    #     digest, and `infra-image-scan.mjs` excludes it from this sweep anyway (BUILT_IMAGE_NAMES —
+    #     it is scanned by `minio-image.yml`, which gates its own publish). So this sweep's result
+    #     does not depend on that morning's rebuild.
+    #
+    # `renovate-workflow.guard.test.mjs` asserts this cron is strictly earlier than every
+    # `renovate.yml` window cron, so the ordering cannot be undone silently.
+    - cron: '0 4 * * 5'
   push:
     # push keeps its paths filter — a non-infra merge to main need not re-scan (the PR already did,
     # and the weekly cron is the safety net). Only the PR trigger must be un-path-gated (branch
@@ -169,13 +203,23 @@ jobs:
       # step is instrumented, so the gap passed CI while making a real failure undiagnosable over the
       # API. Measured on run 1162 (2026-07-26): the gate blocked on two new fixable Criticals and the
       # digest named neither, forcing a full local Trivy re-scan to find out which.
+      # `id: scan` — item #485. The weekly-verdict status below must tell "the sweep found blocking
+      # CVEs" apart from "the sweep could not run at all"; a fail-closed Trivy/pull/parse error is a
+      # red job that has found NOTHING, and reporting it as a CVE verdict would be a claim about
+      # images nobody scanned.
       - name: Scan infra images (Trivy)
+        id: scan
         if: ${{ env.RUN_SCAN == 'true' }}
         run: bash scripts/ci-log-step.sh infra-image-scan node scripts/infra-image-scan.mjs --emit-allowlist
 
       # The gate prints the "Blocking (un-allowlisted)" table — the single most useful thing to have in
       # the digest, since it names image + advisory id and is exactly what an allowlist entry needs.
+      # `id: gate` is load-bearing, not tidiness (item #484). `steps.<id>.outcome` on a LATER step is
+      # the only thing that distinguishes "the expiry step's `if:` evaluated false" from "an earlier
+      # step failed" — `outcome == 'skipped'` conflates the two by construction, and the expiry
+      # recorder below had to infer which it was on its very first live schedule run.
       - name: Gate — fail on any un-allowlisted fixable High/Critical
+        id: gate
         if: ${{ env.RUN_SCAN == 'true' }}
         run: bash scripts/ci-log-step.sh infra-image-gate node scripts/check-infra-image-findings.mjs
 
@@ -221,12 +265,67 @@ jobs:
       # carries `trigger_event` = "schedule", and `github.event_name` follows THAT. Measured over
       # all 68 scheduled runs since 2026-07-31: trigger_event "schedule" for every one, event
       # "push" for every one. Do not "fix" the expression below from the `event` field.
+      #
+      # ── `always()` — ITEM #484. THE WEEK THE GATE IS RED IS THE WEEK THIS MATTERS MOST. ─────────
+      #
+      # This step used to carry a bare `if: github.event_name == 'schedule'`, sitting immediately
+      # after the gate above. A failed step skips every later step that is not `always()`-guarded,
+      # so on any week the CVE gate went red the weekly expiry warning did not run at all.
+      #
+      # Measured, not reasoned about. The `infra-image-scan/expiry` status added by item #418 caught
+      # it on its first live schedule run — run 3521, the 2026-09-18 weekly cron, which failed the
+      # gate on three amqp091-go CRITICALs:
+      #
+      #   GET /repos/jumbleknot/mcm/commits/3cbe637e/statuses
+      #     infra-image-scan/expiry  success  description: "event_name=schedule expiry_step=skipped"
+      #
+      # `event_name=schedule` proves the `if:` evaluated TRUE, so the skip can only have come from
+      # the upstream failure. Nothing was actually missed that week (both checks exit 0 when run by
+      # hand against the 2026-09-14 sweep report) — the defect is that nothing would have said so
+      # either way.
+      #
+      # THE SCHEDULE GUARD IS STILL LOAD-BEARING and is preserved inside the `always()`. This job
+      # also serves `pull_request` (un-path-gated, so it posts the required context on every PR);
+      # without the guard a red expiry check would block every pull request the moment an entry
+      # entered the 14-day window, which is exactly what FR-021/SC-007 forbid. `always() &&
+      # github.event_name == 'schedule'` keeps that protection intact.
+      #
+      # THE CANCELLED-RUN DECISION, MADE DELIBERATELY RATHER THAN BY REFLEX (item #484 says to).
+      # `always()` also runs on a CANCELLED run, and this job is `cancel-in-progress: true` — so a
+      # scheduled sweep superseded before `Checkout` completed would reach this step with an empty
+      # workspace, fail on the missing scripts, and turn a `cancelled` conclusion into a `failure`
+      # for a commit that was never broken. That is the same fault FR-001a made the failure digest
+      # suppress, and it is suppressed here THE SAME WAY: from `job.status` inside the step body,
+      # not in the `if:`.
+      #
+      # Why not `!cancelled()` in the `if:`, which is the obvious expression? Because it has never
+      # once been used on this Forgejo — `always()` and `failure()` are the only status functions
+      # this repository has proven here (cd-deploy.yml's post-deploy rollback uses `failure()`), and
+      # the comment above this step already records what trusting an unverified expression cost.
+      # `job.status` in `env:` IS proven — nine workflows carry it into the failure digest.
+      #
+      # `--check-expiring` remains report-only: it does not evaluate blocking findings, so this step
+      # cannot fail for a reason the gate above is already responsible for, and a failure here after
+      # a red gate leaves the job's conclusion exactly as red as it already was. It cannot mask the
+      # gate and it cannot turn a red gate green.
       - name: Allowlist expiry check — both allowlists (weekly schedule only, never on a pull request)
         id: expiry
-        if: ${{ github.event_name == 'schedule' }}
+        if: ${{ always() && github.event_name == 'schedule' }}
+        env:
+          EXPIRY_JOB_STATUS: ${{ job.status }}
+        # The WHOLE block goes through ci-log-step.sh, including the cancellation guard — a command
+        # outside it reaches the feature-042 digest with no output and no failing-step marker, and
+        # `check-ci-digest-coverage.mjs` fails the build for exactly that. (It caught this step in
+        # its first draft, where the guard sat outside the wrapper.)
         run: |
-          bash scripts/ci-log-step.sh allowlist-expiry-check node scripts/check-sast-findings.mjs --check-expiring
-          bash scripts/ci-log-step.sh allowlist-expiry-check node scripts/check-infra-image-findings.mjs --check-expiring
+          bash scripts/ci-log-step.sh allowlist-expiry-check bash -e /dev/stdin <<'CI_LOG_STEP'
+          if [ "$EXPIRY_JOB_STATUS" = "cancelled" ]; then
+            echo "job.status=cancelled — superseded run, not a broken one. Skipping the expiry check."
+            exit 0
+          fi
+          node scripts/check-sast-findings.mjs --check-expiring
+          node scripts/check-infra-image-findings.mjs --check-expiring
+          CI_LOG_STEP
 
       # Item #418 — the residual allowlist-expiry-wiring.guard.test.mjs names but cannot close: that
       # guard pins the `if:` EXPRESSION, never the runner's EVALUATION of it. This step is the
@@ -258,16 +357,75 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MEASURED_EVENT_NAME: ${{ github.event_name }}
           MEASURED_EXPIRY_OUTCOME: ${{ steps.expiry.outcome }}
+          # Item #484. `steps.expiry.outcome == 'skipped'` CONFLATES two different faults: the `if:`
+          # evaluated false, and an earlier step failed so every non-`always()` step after it was
+          # skipped. `outcome` alone cannot tell them apart, and on run 3521 the status was readable
+          # only because it happened to carry `event_name` beside it — luck of composition, not
+          # design, on an instrument built specifically to stop inferring this step's execution.
+          # The gate's OWN outcome is the second measured field that closes it:
+          #   expiry_step=skipped gate=success  → the `if:` was false
+          #   expiry_step=skipped gate=failure  → an earlier step failed (the #484 fault itself)
+          # Both are MEASUREMENTS carried through raw. The status never restates a belief about one.
+          MEASURED_GATE_OUTCOME: ${{ steps.gate.outcome }}
         run: |
           bash scripts/ci-log-step.sh infra-image-scan-publish-expiry-execution bash -e /dev/stdin <<'CI_LOG_STEP'
           # `<unset>` is a real answer, not a formatting fallback: it says the runner returned no
           # value for that context, which is a different fault from returning the wrong one.
-          desc="event_name=${MEASURED_EVENT_NAME:-<unset>} expiry_step=${MEASURED_EXPIRY_OUTCOME:-<unset>}"
+          desc="event_name=${MEASURED_EVENT_NAME:-<unset>} gate=${MEASURED_GATE_OUTCOME:-<unset>} expiry_step=${MEASURED_EXPIRY_OUTCOME:-<unset>}"
           echo "measured: $desc"
           curl -fsS -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' \
             "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -d "{\"context\":\"infra-image-scan/expiry\",\"state\":\"success\",\"description\":\"$desc\"}" >/dev/null
           CI_LOG_STEP
+
+      # ── Item #485 — make a RED WEEKLY SWEEP visible on the commit. ────────────────────────────
+      #
+      # A `schedule`-triggered run of this workflow posts NO `infra-image-scan / infra-image-scan`
+      # commit status. Its red is visible only in the runs listing, the job log and the evidence
+      # bundle — nothing attached to the commit says `main` is failing its weekly CVE sweep.
+      # Measured over three scheduled runs whose API status is `failure`:
+      #
+      #   run 1948  2026-08-21  7a9ff92c  → no infra contexts on that sha
+      #   run 2132  2026-08-28  b3c77867  → no infra contexts on that sha
+      #   run 3521  2026-09-18  3cbe637e  → only infra-image-scan/expiry, posted by curl above
+      #
+      # The endpoint is not the problem: 3cbe637e carries 40 statuses from the previous day's push.
+      # Nothing from run 3521 is among them.
+      #
+      # Two consequences, both already paid for. `ci-status.mjs failure --run 3521` answered "No
+      # failed jobs on 3cbe637e — checked every event's contexts" — true about what it read, and the
+      # opposite of the truth. And a red `main` stayed silent for ~41 minutes until Renovate's PR
+      # #478 opened, ran the same sweep on its own head, and became unmergeable over three CVEs with
+      # no bearing on its diff. The first signal that `main` was failing a required gate was an
+      # unrelated pull request failing it.
+      #
+      # WHY NOT REVIVE THE DIGEST'S COMMIT-STATUS BRANCH. `ci-failure-digest.mjs` routes everything
+      # that is not a `pull_request` to the evidence bundle only; its status branch was removed
+      # deliberately (FR-008, amended by T040) because it needs `write:repository`, measured as a 403
+      # on smoke run 986. That decision stands. The `expiry` recorder above proves a NARROW status
+      # posts fine with `github.token`, and this reuses exactly that shape.
+      #
+      # THIS ONE CARRIES A REAL `state`, unlike the `expiry` recorder — that is the whole point. It
+      # is safe because it CANNOT GATE ANYTHING: branch protection requires the glob
+      # `infra-image-scan / infra-image-scan*`, and `infra-image-scan/weekly` has no ` / ` separator,
+      # so it does not match — the same reason `infra-image-scan/expiry` has never blocked a merge.
+      # Protection is evaluated on PR HEADS, and this posts only on the scheduled run's commit.
+      #
+      # `continue-on-error` + `-f` on curl: this is a REPORT on the sweep, never a second gate. If
+      # the POST itself fails, the job's own conclusion is already the truth, and the ABSENCE of the
+      # status is its own tell.
+      - name: 'Publish weekly sweep verdict (item #485)'
+        if: ${{ always() && github.event_name == 'schedule' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          # The GATE's outcome, not the job's: the job can also be red for an install or Trivy
+          # failure, and "the sweep could not run" is a different message from "the sweep found
+          # blocking CVEs". Both are reported, distinguishably, below.
+          MEASURED_GATE_OUTCOME: ${{ steps.gate.outcome }}
+          MEASURED_SCAN_OUTCOME: ${{ steps.scan.outcome }}
+          MEASURED_JOB_STATUS: ${{ job.status }}
+        run: bash scripts/ci-log-step.sh infra-image-scan-publish-weekly-verdict node scripts/publish-sweep-verdict.mjs
 
       - name: Upload scan report (findings.json + summary + proposed allowlist + raw Trivy)
         if: ${{ env.RUN_SCAN == 'true' && always() }}

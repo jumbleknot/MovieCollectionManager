@@ -25,12 +25,19 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+// Item #485 — the required-context read this digest was not doing. Both are pure and already
+// exported; ci-status.mjs guards its own entrypoint, so importing it runs nothing.
+import { parseRequiredGlobs, computeMergeVerdict } from './ci-status.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ITEM = 311; // the digest's home — close it to stop the digest
 const DASHBOARD = 29; // Renovate's Dependency Dashboard — READ ONLY here
 const STABILITY_CONTEXT = 'renovate/stability-days';
 const BRANCH_PREFIX = 'renovate/';
+const PROTECTED_BRANCH = 'main';
+// The weekly CVE sweep. Its `main` run gates every infra-touching PR, and it posts no required
+// context of its own — see selectNewestScheduledRun() for why this digest goes and reads it.
+const SWEEP_WORKFLOW = 'infra-image-scan.yml';
 
 // ── Pure logic (unit-tested in __tests__/renovate-health.test.mjs) ───────────
 
@@ -91,13 +98,158 @@ export function stabilityRows(prs, statusesBySha) {
   });
 }
 
-export function buildDigest({ problems, branches, budgetInfo, rows }) {
+/**
+ * Open Renovate PRs that a REQUIRED context is currently blocking (item #485).
+ *
+ * WHY THIS READ WAS MISSING AND WHAT IT COST. This digest read exactly one context —
+ * `renovate/stability-days`, which is ADVISORY — and rendered it in a table whose only verdict
+ * column says `success`. On 2026-09-18 at 11:57:15Z run 3562 posted "✅ Healthy" to item #311 while
+ * `main` had been failing a required gate since 07:02:22Z (five hours) and listed PR #478, which was
+ * unmergeable on exactly that failure, under a column reading `success`. The digest was not wrong
+ * about what it looked at. It looked at the wrong thing.
+ *
+ * This is the SECOND occurrence with a DIFFERENT cause — the digest previously reported Healthy with
+ * two red Renovate PRs on 2026-09-04 (runbook §5). That one was about PRs being red; the sweep half
+ * of this item is about `main` being red. Neither fix covers the other, so both are here.
+ *
+ * @param {object[]} prs open Renovate PRs
+ * @param {Record<string, object[]>} statusesBySha the combined-status list per head sha
+ * @param {string[]|null} requiredGlobs from branch protection; null means "could not read"
+ * @returns {{number:number,title:string,contexts:string[]}[]} one row per blocked PR
+ */
+export function blockedRequiredRows(prs, statusesBySha, requiredGlobs) {
+  // null means the protection read failed. Returning [] would render "nothing is blocked", which is
+  // precisely the absence-reads-as-health fault this whole file exists to prevent — so the caller
+  // reports the unknown instead, and this never manufactures a clean answer from a failed read.
+  if (!Array.isArray(requiredGlobs) || requiredGlobs.length === 0) return [];
+  const out = [];
+  for (const pr of prs) {
+    const statuses = statusesBySha[pr.head?.sha] ?? [];
+    if (!statuses.length) continue;
+    // Reuse the gate logic verbatim rather than re-deriving it — a second, subtly different notion
+    // of "required" is how the hand-maintained mirror drifted in the first place.
+    const verdict = computeMergeVerdict(statuses, { requiredGlobs, event: 'pull_request' });
+    const blocking = verdict.gate?.blocking ?? verdict.blocking ?? [];
+    if (blocking.length) {
+      out.push({ number: pr.number, title: pr.title, contexts: blocking.map((c) => c.job ?? c.context) });
+    }
+  }
+  return out;
+}
+
+/**
+ * The newest SCHEDULED run of a workflow, from a page of the runs API (item #485).
+ *
+ * THE #418 TRAP, RE-MEASURED 2026-09-19 AND STILL TRUE: the runs API reports `event` = "push" on
+ * every scheduled run. It is NOT the trigger. The same record carries `trigger_event` = "schedule",
+ * and that is the field to filter on. Filtering on `event` finds nothing and reads as "the sweep
+ * never ran".
+ *
+ * FOUR MEASURED QUIRKS OF THIS ENDPOINT, recorded so they are not re-derived (2026-09-19, Forgejo
+ * 15.0.3+gitea-1.22.0). They are the reason the caller's query looks over-specified:
+ *   1. `?limit=N` ALONE IS IGNORED — `?limit=3` returned all 3614 runs (371 KB). It works only when
+ *      paired with `?page=`.
+ *   2. `?trigger_event=schedule` IS SILENTLY IGNORED and returns the UNFILTERED set — 3614 runs
+ *      across every workflow. An unknown filter reading as "matched everything" is the same trap
+ *      the label filters have; this is why the filter below is applied CLIENT-SIDE.
+ *   3. `?workflow_id=<file>` IS a real server-side filter, and the value is the workflow FILE NAME.
+ *   4. `/actions/workflows/<file>/runs` is 404 on this build — it does not exist.
+ *
+ * @param {object[]} runs a page of workflow_runs
+ * @param {string} workflowId the workflow FILE NAME, e.g. 'infra-image-scan.yml'
+ * @returns {object|null} the newest scheduled run, or null when the page carries none
+ */
+export function selectNewestScheduledRun(runs, workflowId) {
+  const matching = (runs ?? []).filter(
+    (r) => r?.workflow_id === workflowId && r?.trigger_event === 'schedule',
+  );
+  if (!matching.length) return null;
+  // The API returns newest-first, but sort explicitly rather than relying on it: an ordering change
+  // would silently report a months-old sweep as this week's posture.
+  return matching.sort((a, b) => Date.parse(b.started ?? 0) - Date.parse(a.started ?? 0))[0];
+}
+
+/**
+ * Turn that run into a verdict (item #485).
+ *
+ * `status` carries the TERMINAL verdict on this forge — `conclusion` is undefined on every run
+ * measured. Verified against the three runs item #485 names: 3521/failure, 2132/failure,
+ * 1948/failure.
+ *
+ * `null` in means the page carried no scheduled run. That is an UNKNOWN, never a pass: a sweep this
+ * digest could not find is exactly the silence it exists to break.
+ */
+export function sweepVerdict(run) {
+  if (!run) {
+    return {
+      state: 'unknown',
+      text: 'no scheduled run found in the page read — the sweep may not have run, or the page did not reach back far enough',
+    };
+  }
+  const status = String(run.status ?? '').toLowerCase();
+  const where = `run ${run.id} (${run.started ?? 'unknown time'}, ${String(run.commit_sha ?? '').slice(0, 8)})`;
+  if (status === 'failure') return { state: 'failure', text: `${where} is FAILURE`, run };
+  if (status === 'success') return { state: 'success', text: `${where} is success`, run };
+  return { state: 'unknown', text: `${where} reports status=${run.status ?? '<unset>'}`, run };
+}
+
+export function buildDigest({ problems, branches, budgetInfo, rows, blocked = [], sweep = null, requiredGlobs = null }) {
+  // Item #485. `✅ Healthy` used to be decided by four branch/dashboard counters alone, so it could
+  // be — and on 2026-09-18 was — printed while `main` was five hours into failing a required gate
+  // and a listed PR was unmergeable on it. Every signal the line claims to cover must now be in
+  // this sum, including the ones whose answer is "I could not tell".
+  const requiredUnreadable = !Array.isArray(requiredGlobs) || requiredGlobs.length === 0;
+  const sweepBad = sweep && sweep.state !== 'success';
   const anomalies =
-    problems.length + branches.emptyPr.length + branches.stale.length + branches.unknown.length;
+    problems.length +
+    branches.emptyPr.length +
+    branches.stale.length +
+    branches.unknown.length +
+    blocked.length +
+    (sweepBad ? 1 : 0) +
+    (requiredUnreadable ? 1 : 0);
   const lines = ['### Weekly Renovate health digest', ''];
 
   if (anomalies === 0) {
-    lines.push('✅ **Healthy.** No repository problems, no empty-PR or stale `renovate/*` branches.');
+    lines.push(
+      '✅ **Healthy.** No repository problems, no empty-PR or stale `renovate/*` branches, ' +
+        'no open Renovate PR blocked by a required context, and the weekly CVE sweep on `main` is green.',
+    );
+  }
+
+  if (sweepBad) {
+    const verdict = sweep.state === 'failure' ? '❌' : '⚠️';
+    lines.push(
+      `${verdict} **The weekly CVE sweep on \`main\` is ${sweep.state}** — ${sweep.text}.`,
+      '',
+      sweep.state === 'failure'
+        ? '  `main` is failing a gate that every infra-touching PR inherits, so a Renovate PR can be ' +
+          'unmergeable for a CVE with no bearing on its own diff (the PR #478 shape, item #487). ' +
+          'A scheduled run posts no required context, which is why this digest goes and reads the run.'
+        : '  This is an UNKNOWN, not a pass — a sweep whose verdict cannot be read is the silence ' +
+          'this digest exists to break.',
+      '',
+    );
+  }
+
+  if (blocked.length) {
+    lines.push(
+      '❌ **Open Renovate PRs blocked by a REQUIRED context** — these cannot merge, whatever ' +
+        '`stability-days` says below:',
+      '',
+    );
+    for (const b of blocked) {
+      lines.push(`- #${b.number} — ${b.title} → \`${b.contexts.join('`, `')}\``);
+    }
+    lines.push('');
+  }
+
+  if (requiredUnreadable) {
+    lines.push(
+      '⚠️ **Could not read branch protection**, so no PR was checked against the REQUIRED set — ' +
+        'the `stability-days` column below is advisory only and proves nothing about mergeability.',
+      '',
+    );
   }
 
   if (problems.length) {
@@ -133,7 +285,13 @@ export function buildDigest({ problems, branches, budgetInfo, rows }) {
   }
 
   if (rows.length) {
-    lines.push('', '**Open Renovate PRs and their `stability-days` state** (the item #298 observation):', '');
+    lines.push(
+      '',
+      '**Open Renovate PRs and their `stability-days` state** (the item #298 observation). NOTE this ' +
+        'column is the ADVISORY check only — a `success` here says nothing about whether the PR can ' +
+        'merge; the required set is reported above (item #485):',
+      '',
+    );
     lines.push('| PR | created | stability-days |', '|---|---|---|');
     for (const r of rows) lines.push(`| #${r.number} — ${r.title} | \`${r.created_at}\` | ${r.stability} |`);
   }
@@ -210,9 +368,51 @@ async function main() {
     statusesBySha[sha] = (await call('GET', `/repos/${owner}/${repo}/commits/${sha}/status`)).statuses ?? [];
   }
   const rows = stabilityRows(openPrs, statusesBySha);
-  const body = buildDigest({ problems, branches, budgetInfo: budget(config, openPrs), rows });
 
-  console.log(`[renovate-health] problems=${problems.length} emptyPr=${branches.emptyPr.length} stale=${branches.stale.length} unknown=${branches.unknown.length} openPrs=${openPrs.length}`);
+  // ── Item #485, half one: which open PRs a REQUIRED context is blocking. ───────────────────────
+  // Degrade to null rather than [] on a failed read — blockedRequiredRows() then reports nothing
+  // and buildDigest() counts the unreadable protection as an anomaly, so a missing scope cannot
+  // present as "nothing is blocked".
+  let requiredGlobs = null;
+  try {
+    requiredGlobs = parseRequiredGlobs(
+      await call('GET', `/repos/${owner}/${repo}/branch_protections`),
+      PROTECTED_BRANCH,
+    );
+  } catch (err) {
+    console.error(`[renovate-health] could not read branch protection: ${err.message}`);
+  }
+  const blocked = blockedRequiredRows(openPrs, statusesBySha, requiredGlobs);
+
+  // ── Item #485, half two: is `main` failing its weekly CVE sweep right now? ────────────────────
+  // `workflow_id` is a REAL server-side filter and `page`+`limit` are what make the page size take
+  // effect; `trigger_event` is NOT a filter here and is applied client-side by
+  // selectNewestScheduledRun. See that function for all four measured quirks — three of them read
+  // as "matched everything" or "nothing ran" if trusted. 50 is measured as enough to reach the most
+  // recent scheduled sweep past a week of PR runs (run 3521 sat 1 page deep on 2026-09-19), and the
+  // absence of one is reported as an UNKNOWN rather than papered over.
+  let sweep = sweepVerdict(null);
+  try {
+    const runs = await call(
+      'GET',
+      `/repos/${owner}/${repo}/actions/runs?workflow_id=${SWEEP_WORKFLOW}&page=1&limit=50`,
+    );
+    sweep = sweepVerdict(selectNewestScheduledRun(runs.workflow_runs ?? [], SWEEP_WORKFLOW));
+  } catch (err) {
+    console.error(`[renovate-health] could not read the weekly sweep: ${err.message}`);
+  }
+
+  const body = buildDigest({
+    problems,
+    branches,
+    budgetInfo: budget(config, openPrs),
+    rows,
+    blocked,
+    sweep,
+    requiredGlobs,
+  });
+
+  console.log(`[renovate-health] problems=${problems.length} emptyPr=${branches.emptyPr.length} stale=${branches.stale.length} unknown=${branches.unknown.length} openPrs=${openPrs.length} blocked=${blocked.length} sweep=${sweep.state} required=${requiredGlobs?.length ?? 'unreadable'}`);
   if (process.argv.includes('--dry-run')) {
     // Exercises every read and the whole render path, and posts nothing — so the check can be
     // proven working now rather than discovered broken on a Friday.

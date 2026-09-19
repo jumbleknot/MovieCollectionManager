@@ -20,7 +20,8 @@ single CI runner.
 | --- | --- | --- |
 | **security** — `vulnerabilityAlerts` + OSV | nightly cron `0 3 * * *` | schedule-**exempt**, unbudgeted |
 | **lockfile refresh** — `lockFileMaintenance` | the window run | Friday, ranked ahead of routine work (`prPriority: 5`) |
-| **routine** — the grouped package rules | the window run | Friday only |
+| **docker base images** | the window run | Friday, ranked ahead of the other routine channels (`prPriority: 3`) |
+| **routine** — the other grouped package rules | the window run | Friday only, `prPriority` 0 |
 
 **Nothing auto-merges.** Every group carries `automerge: false`. A tick gets you a PR, never a merge.
 
@@ -31,6 +32,15 @@ single CI runner.
 - `0 3 * * *` — nightly, **outside** `renovate.json`'s permitted window, deliberately. Only
   schedule-exempt work (security PRs) lands here.
 - `0 7 * * 5` — Friday 07:00 UTC = 03:00 EDT / 02:00 EST, **inside** the `* 2-4 * * 5` window.
+
+> **The weekly CVE sweep runs at 04:00 UTC, three hours BEFORE this window, on purpose (item #487).**
+> `infra-image-scan.yml`'s sweep decides whether an infra-touching PR can merge; running it at the
+> same minute as the run that *creates* those PRs meant `main`'s CVE posture was unknown until after
+> the PRs it would block already existed. On 2026-09-18 `main` had been failing its weekly gate for
+> 44 minutes before anyone could know, and PR #478 (node/rust/keycloak digest pins) was unmergeable
+> from creation on an otel-lgtm CVE with no bearing on its diff. Both crons are UTC, so the 3h gap is
+> fixed and DST cannot narrow it. Do not "tidy the crons together" — a guard test asserts the
+> ordering.
 
 > ⚠️ **Routine branch work does not happen on the nightly run.** Outside the window Renovate returns
 > `not-scheduled` *before* branch creation. This has been got wrong repeatedly, including by readers of
@@ -45,6 +55,47 @@ PRs — the hourly limit, precisely. Everything else deferred a week.
 `handleConcurrentLimits()` checks the hourly PR limit for *every* key, so spending it also blocks
 **branch** creation, not just PR creation. And open PRs consume concurrency: leaving four green
 Renovate PRs unmerged caps the next window at one new PR. **Merging promptly is a throughput lever.**
+
+### How the four slots are allocated, and why docker outranks the rest (item #486)
+
+With one in-window run a week, `prHourlyLimit: 4` **is** the weekly throughput. There are **three**
+`lockFileMaintenance` channels (`pnpm`, `cargo-deps`, `python-deps`) and they carry `prPriority: 5` —
+so three of the four slots are spoken for before anything else is considered, every week, by
+construction. Measured over three consecutive windows, each one exactly at the limit:
+
+| window | PRs created | of which `lockFileMaintenance` |
+| --- | --- | --- |
+| 2026-09-04 | #344, #345, #346, #347 | 3 |
+| 2026-09-11 | #414, #415, #416, #419 | 3 |
+| 2026-09-18 | #475, #476, #477, #478 | 3 |
+
+The one remaining slot used to go to whichever routine channel sorted first, and **`docker base
+images` — the channel carrying base-image security bumps, for the same images `infra-image-scan`
+blocks merges over — was sixth in the rate-limited queue.** It had not received a window slot since
+PR #289 (2026-08-30); #362 existed only because a dispatch force-created it. At one non-lockfile slot
+a week behind five other channels, that is a **~six-week wait** for a base-image bump while the
+weekly CVE sweep gates merges on those same images.
+
+It now carries `prPriority: 3`: ahead of every routine channel (all default to 0), deliberately
+**behind** `lockFileMaintenance`'s 5. That ranking is not an accident to be inverted — lockfile
+refresh is first precisely because it is the channel that keeps the gates green, and raising docker
+above it would trade one starvation for another.
+
+> ⚠️ **Any later `packageRules` entry that takes a `groupName` away from `docker base images` must set
+> `"prPriority": 0` explicitly.** Renovate merges rules in order and a later rule overrides only the
+> keys it *sets*, so an unreset rule silently inherits 3 and competes for the very slot this exists to
+> secure. Today that is `python toolchain` and `docker digest pins`.
+> `renovate-workflow.guard.test.mjs` fails if a new one appears without the reset.
+
+**The Friday step this does not remove.** `docker base images` can still be rate-limited when it
+carries more than a window's worth. If the weekly sweep is blocking on an image that channel holds,
+tick its `unlimit-branch=` checkbox on the dashboard (§2) rather than waiting — a deterministic
+fourth slot is one PR a week, not all of them.
+
+**What the 2026-09-18 window does and does not prove.** That week's sweep went red on
+`grafana/otel-lgtm:0.32.1` and the waiting bump would **not** have helped: `0.33.1@sha256:d6c52678`
+carries the same `amqp091-go v1.12.0`, so PR #483 allowlisted instead. The harm was nil; the *shape*
+is the finding, and it will not stay nil.
 
 ---
 
@@ -391,6 +442,39 @@ on PATH both produced PRs; the one without never had.
 
 **Rule out "nothing to refresh" before believing a channel is idle** — run the refresh by hand
 (`uv lock --upgrade --dry-run`, `cargo update --dry-run`) and see whether work exists.
+
+### "✅ Healthy" was decided without looking at anything that blocks a merge (item #485)
+
+**Fixed 2026-09-19 — recorded because the shape recurs and the fix is narrow.**
+
+The health digest read exactly one context, `renovate/stability-days`, which is **advisory**. On
+2026-09-18 at 11:57:15Z it posted:
+
+```
+### Weekly Renovate health digest
+✅ **Healthy.** No repository problems, no empty-PR or stale `renovate/*` branches.
+…
+| PR | created | stability-days |
+| #478 — chore(deps): pin dependencies | 2026-09-18T07:02:16Z | success |
+```
+
+At that moment the weekly sweep on `main` had been **red since 07:02:22Z — five hours** — and #478
+was **unmergeable on exactly that failure**, listed under a column whose only verdict reads
+`success`. The digest was not wrong about what it looked at. It looked at the wrong thing.
+
+**This was the second occurrence with a different cause.** It previously reported Healthy with two
+red Renovate PRs on 2026-09-04; that one was about *PRs* being red, this one about **`main`** being
+red. Neither fix covers the other, so the digest now does both reads:
+
+- branch protection → any open Renovate PR blocked by a **required** context is named;
+- the newest **scheduled** `infra-image-scan` run → `main`'s CVE posture.
+
+Three things fail **closed**: an unreadable branch-protection payload, an unknown sweep verdict, and
+a sweep run it could not find are each an anomaly, never a pass. Absence must not read as health —
+that is the fault this whole digest exists for, and it had reproduced it one layer up.
+
+> ⚠️ **The `stability-days` column is advisory and always was.** A `success` there says nothing about
+> whether the PR can merge. The required set is reported above it in the digest.
 
 ### The release-age cooldown does not cover transitives
 
@@ -899,6 +983,8 @@ comment).
 - `.forgejo/workflows/renovate.yml` — schedule, toolchains, dispatch inputs
 - `scripts/__tests__/renovate-workflow.guard.test.mjs` — the assertions that keep the above true
 - `scripts/renovate-health.mjs` / item **#311** — the weekly health digest: channel liveness, stale
-  branches, budget consumption, `stability-days` states. Close item #311 to stop it.
+  branches, budget consumption, `stability-days` states, and (item #485) the **required**-context
+  state of every open Renovate PR plus the weekly CVE sweep's verdict on `main`. Close item #311 to
+  stop it.
 - [CI self-serve diagnostics](ci-diagnostics.md) — reading a failure without log access
 - [The agent-driven backlog](backlog.md) — item #29 and the `status/bot-managed` rule

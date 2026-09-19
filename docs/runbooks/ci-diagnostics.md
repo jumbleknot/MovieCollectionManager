@@ -386,6 +386,70 @@ const runs = (await api(`/repos/${owner}/${repo}/actions/runs?page=1&limit=50`))
 runs.filter((r) => r.ScheduleID).map((r) => [r.id, r.created, r.workflow_id, r.trigger_event]);
 ```
 
+### A scheduled run posts NO commit status — and "no failed jobs" used to mean "healthy" (item #485)
+
+A `schedule`-triggered run posts **no `<workflow> / <job>` commit status at all**. Its red is visible
+only in the runs listing, the job log and the evidence bundle. Nothing attached to the commit says
+`main` is failing. Measured across three scheduled `infra-image-scan` runs whose own API status is
+`failure`:
+
+| run | date | sha | infra contexts on that sha |
+|---|---|---|---|
+| 1948 | 2026-08-21 | `7a9ff92c` | *(none)* |
+| 2132 | 2026-08-28 | `b3c77867` | *(none)* |
+| 3521 | 2026-09-18 | `3cbe637e` | only `infra-image-scan/expiry`, which the job posts **itself** by curl |
+
+The endpoint is not the problem — `3cbe637e` carries 40 statuses from the previous day's push.
+
+**What this used to produce.** `failure --run <id>` reads *contexts*, found none, and answered:
+
+```
+$ node scripts/ci-status.mjs failure --run 3521
+No failed jobs on 3cbe637e — checked every event's contexts.     # exit 0
+```
+
+Not wrong about what it read, and the opposite of the truth. "Checked every event's contexts" reads
+as thoroughness, which is what made it a false negative rather than a shrug. **Fixed 2026-09-19** —
+the run's own status is now carried through from the `--run` lookup, so the same command answers:
+
+```
+⚠ Run 3521 is FAILED (status=failure conclusion=<unset>) but posted NO commit status …   # exit 1
+```
+
+> **`status` carries the terminal verdict on this forge; `conclusion` is `undefined` on every run
+> measured.** A reader that consults only `conclusion` sees nothing. `ci-status.mjs` reads both.
+
+A red scheduled sweep is now also visible **on the commit**: `infra-image-scan.yml` posts an
+`infra-image-scan/weekly` status carrying a real `success`/`failure`. It cannot gate anything —
+branch protection requires the glob `infra-image-scan / infra-image-scan*` and this context has no
+` / ` separator, the same reason `infra-image-scan/expiry` never has — and protection is evaluated on
+PR heads, while this posts only on the scheduled run's own commit.
+
+### Four measured quirks of `GET /actions/runs` (2026-09-19)
+
+Three of the four read as success while returning the wrong thing, which is why they are listed
+together. Forgejo `15.0.3+gitea-1.22.0`:
+
+| query | result |
+|---|---|
+| `?limit=3` **alone** | **IGNORED** — returned all 3614 runs (371 KB). `limit` takes effect only when paired with `page`. |
+| `?trigger_event=schedule` | **SILENTLY IGNORED** — returned the **unfiltered** set, 3614 runs across every workflow. Same shape as the unknown-label trap: a filter that does nothing reads as "matched everything". Filter `trigger_event` **client-side**. |
+| `?workflow_id=<file>` | **Works** — a real server-side filter. The value is the workflow **file name**, e.g. `infra-image-scan.yml`. |
+| `/actions/workflows/<file>/runs` | **404** — the endpoint does not exist on this build. |
+
+So the query that actually works is:
+
+```bash
+# the newest SCHEDULED run of one workflow: filter workflow_id on the server, trigger_event locally
+curl -s -H "Authorization: token $MCM_FORGE_TOKEN" \
+  "$FORGE/api/v1/repos/$OWNER/$REPO/actions/runs?workflow_id=infra-image-scan.yml&page=1&limit=50" \
+  | jq '[.workflow_runs[] | select(.trigger_event=="schedule")][0] | {id, status, started, commit_sha}'
+```
+
+`limit=50` is measured as enough to reach the most recent scheduled sweep past a week of PR runs
+(run 3521 sat one page deep on 2026-09-19). Treat "not found in the page" as **unknown**, never as a
+pass.
+
 ### Where the REQUIRED set comes from (do not hand-maintain it)
 
 The required globs are read **live** from `GET /repos/{owner}/{repo}/branch_protections` for the

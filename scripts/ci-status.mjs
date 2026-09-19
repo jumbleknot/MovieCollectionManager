@@ -970,6 +970,12 @@ export async function resolveSha({ sha, pr, run, branch }, conn) {
       base: DEFAULT_PROTECTED_BRANCH,
       headRef: null,
       prState: null,
+      // Item #485. This payload was fetched for its commit_sha alone and the run's OWN verdict was
+      // thrown away — which is how `failure --run 3521` came to answer "No failed jobs" about a run
+      // whose API status is `failure`. A scheduled workflow can fail while posting NO commit status
+      // at all (infra-image-scan's weekly sweep did, three times), so "no failed contexts" and "no
+      // failure" are different facts. Carried through so cmdFailure can tell them apart.
+      run: { id: Number(run), status: data.status ?? null, conclusion: data.conclusion ?? null },
     };
   }
 
@@ -1441,7 +1447,7 @@ export function renderCeilingsTable(rows, { summary = [], runIds = [], job = 'ap
 const EXIT = { OK: 0, FAILED: 1, USAGE: 2, WAITING: 3 };
 
 async function loadVerdict(target, conn) {
-  const { sha, pr, base, headRef, prState } = await resolveSha(target, conn);
+  const { sha, pr, base, headRef, prState, run } = await resolveSha(target, conn);
   const statuses = await fetchCached(
     `/repos/${conn.owner}/${conn.repo}/commits/${sha}/status`, conn, `status-${sha.slice(0, 8)}`,
   );
@@ -1464,7 +1470,7 @@ async function loadVerdict(target, conn) {
     runs: runs.data.workflow_runs ?? [],
     requiredGlobs: requiredGlobs.globs,
   });
-  return { verdict, sha, pr, headRef, prState, requiredGlobs, cachePaths: [statuses.path, runs.path] };
+  return { verdict, sha, pr, headRef, prState, run, requiredGlobs, cachePaths: [statuses.path, runs.path] };
 }
 
 async function cmdStatus(target, conn) {
@@ -1487,8 +1493,45 @@ export function failuresToExplain(verdict) {
   return pool.filter((c) => c.state === 'failed');
 }
 
+/**
+ * A run that FAILED while posting no commit status at all (item #485).
+ *
+ * `failuresToExplain` reads CONTEXTS. A `schedule`-triggered workflow posts none — measured on
+ * infra-image-scan's weekly sweep, three times:
+ *
+ *   run 1948  2026-08-21  7a9ff92c  → no infra contexts on that sha
+ *   run 2132  2026-08-28  b3c77867  → no infra contexts on that sha
+ *   run 3521  2026-09-18  3cbe637e  → only infra-image-scan/expiry, posted by the job itself
+ *
+ * So `failure --run 3521` found nothing to explain and said "No failed jobs on 3cbe637e — checked
+ * every event's contexts." Not wrong about what it read, and the OPPOSITE of the truth: that run's
+ * own API status is `failure`, and `main` was failing its weekly CVE gate. "Checked every event's
+ * contexts" reads as thoroughness, which is what made it a false negative rather than a shrug.
+ *
+ * The run id was in hand the whole time. This turns the absence of contexts into the finding it
+ * actually is, rather than reporting it as health.
+ *
+ * Both fields are consulted: this Forgejo reports the terminal verdict in `status` (that is what
+ * was measured on the three runs above), while `conclusion` is the GitHub-shaped field and may be
+ * empty here. Either one reading `failure` is a failure.
+ *
+ * @param {{id:number,status:string|null,conclusion:string|null}|null|undefined} run
+ * @returns {string|null} The line to print instead of "no failed jobs", or null when silence is right.
+ */
+export function describeContextlessRunFailure(run) {
+  if (!run) return null;
+  const terminal = [run.status, run.conclusion].filter((v) => typeof v === 'string').map((v) => v.toLowerCase());
+  if (!terminal.includes('failure')) return null;
+  const fields = `status=${run.status ?? '<unset>'} conclusion=${run.conclusion ?? '<unset>'}`;
+  return (
+    `⚠ Run ${run.id} is FAILED (${fields}) but posted NO commit status — so there is no context to explain.\n` +
+    `  This is not health. A scheduled workflow posts no required context, so its red is invisible\n` +
+    `  on the commit; read the run in the forge UI, or its evidence bundle. (item #485)`
+  );
+}
+
 export async function cmdFailure(target, conn) {
-  const { verdict, sha, pr } = await loadVerdict(target, conn);
+  const { verdict, sha, pr, run } = await loadVerdict(target, conn);
   const failed = failuresToExplain(verdict);
 
   if (!failed.length) {
@@ -1496,6 +1539,14 @@ export async function cmdFailure(target, conn) {
     // the wrong commit", which is exactly how item #226 stayed invisible: `--run` silently
     // resolved local HEAD and the reassuring message was about the working copy.
     const where = `${sha.slice(0, 8)}${pr ? ` (PR #${pr})` : ''}`;
+    // Item #485 — BEFORE the reassuring messages below. A run that is itself `failure` must never
+    // be reported as "nothing failed", and it must not be swallowed by the superseded branch
+    // either: superseded is about CONTEXTS being cancelled, and a contextless run has none.
+    const contextless = describeContextlessRunFailure(run);
+    if (contextless) {
+      emit(contextless);
+      return EXIT.FAILED;
+    }
     if (verdict.superseded.length) {
       emit(`No failure to explain on ${where} — this run was cancelled by a newer push (superseded, not broken).`);
       return EXIT.OK;

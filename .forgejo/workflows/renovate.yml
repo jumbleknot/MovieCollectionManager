@@ -154,8 +154,24 @@ jobs:
       # on main's tip every night would be pure noise. Read it back with
       #   GET /repos/{owner}/{repo}/commits/{sha}/status   → context `renovate/mode`.
       # Posted BEFORE Renovate runs so a LIVE dispatch can be distinguished (and abandoned) early.
+      #
+      # `always()` — ITEM #484, found by that item's cross-workflow audit. This recorder sits after
+      # Checkout, corepack/pnpm, the Rust install and the uv install, and carried a bare
+      # `if: github.event_name == 'workflow_dispatch'`. A failed step skips every later step that is
+      # not `always()`-guarded, so a dispatch whose toolchain setup died recorded NOTHING — and an
+      # unrecorded dispatch mode is precisely the absence item #268 built this step to end. Three
+      # introspective routes are dead on this forge (step names render `${{ }}` raw,
+      # `/actions/runs/{id}/jobs` is 404, there is no log endpoint, and `event_payload.inputs` echoes
+      # what you SENT rather than what the expression resolved to), so if this step does not run the
+      # mode is simply unknowable afterwards.
+      #
+      # The dispatch guard is preserved inside the `always()`: a `renovate/mode` status on every
+      # nightly and window run would be noise, and a dispatch is the only run whose mode is in doubt.
+      # `continue-on-error` matches the expiry recorder in infra-image-scan.yml — this is
+      # observability, never a gate, and it must not be able to fail the run it observes.
       - name: 'Publish dispatch mode (item #268)'
-        if: github.event_name == 'workflow_dispatch'
+        if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |

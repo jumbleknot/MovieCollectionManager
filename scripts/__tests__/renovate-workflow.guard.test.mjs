@@ -2981,3 +2981,155 @@ test('a customManager keeps the Maestro pin current, and its regex actually capt
   assert.equal(found.length, 1, 'the manager matchString must capture the pin that is actually in the file');
   assert.match(found[0].groups.currentValue, /^\d+\.\d+\.\d+$/);
 });
+
+// ── Item #487 — the weekly CVE sweep must decide before Renovate opens the PRs it will block ─────
+//
+// Two crons fired at the same minute on a forge with ONE runner: `renovate.yml`'s window run, which
+// CREATES infra-touching PRs, and `infra-image-scan.yml`'s full weekly sweep, which decides whether
+// they can merge. Measured 2026-09-18:
+//
+//   07:01:45  PR #475 created        07:02:16  PR #478 created
+//   07:02:22  run 3521 starts        — the sweep, on main
+//   07:46     RED — three amqp091-go CRITICALs on grafana/otel-lgtm:0.32.1, published 09-16
+//
+// `main` had been failing its weekly CVE gate for 44 minutes by the time anyone could know, and
+// #478 (node/rust/keycloak digest pins, no bearing on otel-lgtm) was unmergeable from creation on
+// someone else's CVE. Running the sweep FIRST makes Friday deterministic.
+
+const SWEEP_WORKFLOW = resolve(REPO_ROOT, '.forgejo/workflows/infra-image-scan.yml');
+const sweepWorkflow = parseYaml(readFileSync(SWEEP_WORKFLOW, 'utf8'));
+
+/** Absolute hour-of-week (0 = Sunday 00:00) for every slot a cron fires in. */
+const absoluteHours = (expression) =>
+  [...cronSlots(expression)].map((slot) => {
+    const [dow, hour] = slot.split(':').map(Number);
+    return dow * 24 + hour;
+  });
+
+test('(#487) the weekly CVE sweep runs STRICTLY EARLIER than the Renovate window', () => {
+  const sweepCrons = (sweepWorkflow?.on?.schedule ?? []).map((e) => e.cron);
+  assert.ok(sweepCrons.length > 0, 'infra-image-scan.yml declares no scheduled trigger at all');
+
+  // The Renovate WINDOW run only — the nightly `0 3 * * *` is the schedule-EXEMPT security channel
+  // and is a different job, which routine updates defer past. Comparing against it would be
+  // comparing against the wrong cron.
+  const windowCrons = (workflow?.on?.schedule ?? [])
+    .map((e) => e.cron)
+    .filter((c) => !cronSlots(c).size || [...cronSlots(c)].length <= 1);
+  assert.ok(
+    windowCrons.length > 0,
+    'renovate.yml has no single-slot (window) cron — the nightly fires 7 slots, the window exactly 1',
+  );
+
+  const latestSweep = Math.max(...sweepCrons.flatMap(absoluteHours));
+  const earliestWindow = Math.min(...windowCrons.flatMap(absoluteHours));
+
+  assert.ok(
+    latestSweep < earliestWindow,
+    'the weekly CVE sweep must fire STRICTLY BEFORE the Renovate window, so `main`\'s CVE posture ' +
+      'is known before Renovate opens a branch that would inherit a failure (item #487).\n' +
+      `  infra-image-scan crons (UTC): ${sweepCrons.join(' , ')}  → latest hour-of-week ${latestSweep}\n` +
+      `  renovate window crons  (UTC): ${windowCrons.join(' , ')}  → earliest hour-of-week ${earliestWindow}`,
+  );
+
+  // The gap must budget for QUEUE DEPTH, not for the job. The sweep itself takes ~3 minutes, but
+  // the capacity-1 runner may be inside a ~35-minute `app-e2e`, and two heavy weekly builds
+  // (minio-image 05:00, devcontainer-image 06:00, timeout-minutes: 60 each) sit between them.
+  assert.ok(
+    earliestWindow - latestSweep >= 2,
+    `only ${earliestWindow - latestSweep}h between the sweep and the window — too tight to absorb a ` +
+      'queued app-e2e, let alone the two 60-minute Friday image builds in between',
+  );
+});
+
+test('(#487) both crons are UTC-fixed, so DST cannot narrow the gap', () => {
+  // Actions cron is UTC-only and does not observe DST. The renovate.json WINDOW is local-time and
+  // does drift — but the distance between these two UTC crons cannot. This asserts the property the
+  // gap calculation above rests on: neither file expresses its cron in local time.
+  const all = [
+    ...(sweepWorkflow?.on?.schedule ?? []).map((e) => e.cron),
+    ...(workflow?.on?.schedule ?? []).map((e) => e.cron),
+  ];
+  for (const cron of all) {
+    assert.equal(cron.trim().split(/\s+/).length, 5, `'${cron}' is not a 5-field UTC cron`);
+  }
+  // And the ordering reason is written down where the next editor will see it, so a later
+  // "tidy the crons together" cannot silently undo it.
+  const sweepText = readFileSync(SWEEP_WORKFLOW, 'utf8');
+  assert.match(
+    sweepText,
+    /item #487/,
+    'infra-image-scan.yml must state WHY its cron is where it is — an unexplained time gets tidied',
+  );
+});
+
+// ── Item #486 — how the four weekly PR slots are allocated ───────────────────────────────────────
+//
+// `prHourlyLimit` is 4 with ONE in-window run a week, so it IS the weekly throughput. Three
+// lockFileMaintenance channels (pnpm, cargo-deps, python-deps) at prPriority 5 took three of those
+// four slots every week, measured over three consecutive windows. `docker base images` — the channel
+// carrying base-image security bumps for the same images `infra-image-scan` blocks merges over —
+// was SIXTH in the rate-limited queue, i.e. a ~six-week wait.
+
+const rulesWithPriority = () =>
+  (config.packageRules ?? []).map((r, i) => ({ i, ...r })).filter((r) => r.prPriority !== undefined);
+
+const ruleFor = (groupName) => (config.packageRules ?? []).find((r) => r.groupName === groupName);
+
+test('(#486) docker base images outranks routine work but NOT the lockfile refresh', () => {
+  const lfm = (config.packageRules ?? []).find((r) => (r.matchUpdateTypes ?? []).includes('lockFileMaintenance'));
+  const docker = ruleFor('docker base images');
+  assert.ok(lfm, 'the lockFileMaintenance prPriority rule is gone');
+  assert.ok(docker, 'the `docker base images` rule is gone');
+
+  assert.equal(typeof docker.prPriority, 'number', 'docker base images carries no prPriority, so it sorts with every other routine channel and waits ~6 weeks (item #486)');
+  assert.ok(
+    docker.prPriority > 0,
+    'docker base images must outrank the routine channels (all default to 0), or the single ' +
+      'non-lockfile slot goes to whichever of them happens to sort first',
+  );
+  assert.ok(
+    docker.prPriority < lfm.prPriority,
+    'docker base images must stay BELOW lockFileMaintenance. That ranking is deliberate — lockfile ' +
+      'refresh is first precisely because it is the channel that keeps the gates green — and ' +
+      'inverting it trades one starvation for another (item #486).',
+  );
+});
+
+test('(#486) every later docker rule that takes its own groupName RESETS the priority', () => {
+  // Renovate merges packageRules in order and a later rule overrides only the keys it SETS. A later
+  // docker rule with its own groupName and no prPriority would silently INHERIT `docker base
+  // images`' priority and compete for the very slot this change exists to secure — defeating it
+  // while every other assertion here still passed.
+  const docker = ruleFor('docker base images');
+  const dockerIndex = (config.packageRules ?? []).indexOf(docker);
+  assert.ok(dockerIndex >= 0);
+
+  const leaked = [];
+  (config.packageRules ?? []).forEach((rule, i) => {
+    if (i <= dockerIndex) return;
+    if (!rule.groupName || rule.groupName === 'docker base images') return;
+    // Only rules that can match what rule `dockerIndex` matched can inherit from it.
+    const matchesDocker = (rule.matchDatasources ?? []).includes('docker');
+    const matchesAnyManager = !rule.matchDatasources && !rule.matchManagers && rule.matchUpdateTypes;
+    if (!matchesDocker && !matchesAnyManager) return;
+    if (rule.prPriority === undefined) leaked.push(`[${i}] ${rule.groupName}`);
+  });
+
+  assert.deepEqual(
+    leaked,
+    [],
+    'these rules take a groupName away from `docker base images` but set no prPriority, so they ' +
+      `inherit ${docker.prPriority} and compete for its slot:\n  ${leaked.join('\n  ')}\n` +
+      'Set "prPriority": 0 explicitly on each, with a pointer to the docker base images rule.',
+  );
+});
+
+test('(#486) the allocation decision is RECORDED, not just enacted', () => {
+  // The item's first acceptance criterion. A priority number with no rationale beside it is the
+  // thing the next reader "tidies away", and `renovate.json` carries its reasoning inline by
+  // convention throughout.
+  const raw = readFileSync(CONFIG, 'utf8');
+  assert.match(raw, /item #486/, 'renovate.json must record WHY the slots are allocated as they are');
+  assert.ok(rulesWithPriority().length >= 3, 'expected the lockfile rule plus the two explicit resets');
+});
