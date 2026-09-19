@@ -887,19 +887,47 @@ sbx exec mcm sh -c 'docker ps'   # issue within ~30 s — attaches to the runnin
 > `C:/Program Files/Git/workspaces/...` and the command exits **127**. Wrap it —
 > `sbx exec mcm sh -c 'bash /workspaces/mcm/...'` — or set `MSYS_NO_PATHCONV=1`.
 
-### The durable fix
+### The durable fix — the launcher stopped believing the exit code
 
-Reduce what dockerd has to restore. `unless-stopped` keeps a manually stopped container down across
-daemon restarts, so stopping the containers that are not needed every session is both effective and
-reversible:
+**There is no knob.** The budget is a compiled-in constant: no `--flag`, no `DOCKER_SANDBOXES_*` or
+`SBX_*` variable, no settings file (there are none on disk at all), no `sbx daemon start` option, and
+no dockerd-timeout key in the binary — checked on **v0.39.0 and v0.43.0**. Patching `sbx.exe` is not
+a fix either: it breaks the Docker Inc Authenticode signature on the component that enforces this
+environment's isolation and egress, and every MSI upgrade reverts it.
+
+So the fix belongs on our side. `scripts/open-sandbox.ps1` used to `throw` the instant `sbx run`
+returned non-zero — three lines above a readiness probe that would have disproved it. It now treats
+the **exit code as a claim and SSH answering as evidence**, and waits up to **120 s** (deadline-based,
+because each probe costs `ConnectTimeout` plus the sleep, so a loop count is not a number of
+seconds). Failure detection is not weakened: a genuinely broken sandbox never answers, and the throw
+then carries the original exit code and output.
+
+Measured 2026-09-19 with all 20 containers restoring:
+
+```text
+sbx run reported exit 1 - checking SSH before believing it (see runbook 7f)
+sandbox is up and answering SSH (61s)
+EXITCODE=0
+```
+
+**This is what makes the environment robust, not the container count** — the launcher no longer cares
+how long dockerd takes, so the stacks can stay up.
+
+### Optional — trimming restore time
+
+Fewer restored containers still means a faster start (~24 s with 11, ~123 s with 20). `unless-stopped`
+keeps a manually stopped container down across daemon restarts, so this is effective and reversible:
 
 ```bash
 sbx exec mcm sh -c 'docker stop langfuse-web langfuse-worker langfuse-clickhouse \
   langfuse-minio langfuse-postgres langfuse-redis unleash-service unleash-postgres otel-lgtm'
 ```
 
-Bring them back with the documented `nx up-*` targets. **v0.43.0 did not raise the deadline** — this
-is not fixed by upgrading.
+Bring them back with the documented `nx up-*` targets. This is now a **speed** choice, not a
+correctness one. **v0.43.0 did not raise the deadline** — it is not fixed by upgrading.
+
+> ⚠️ **A bare `sbx run` / `sbx exec` still shows the false failure.** Only the launcher is immune.
+> When starting by hand, use the §7f grace window, or just run `scripts/open-sandbox.ps1`.
 
 ---
 
@@ -1218,7 +1246,8 @@ several behaviours here are version-specific and undocumented.
 Re-checked on v0.43.0 and **unchanged**: `sbx start` still does not exist; there is still no
 `--disk` flag (sizes remain creation-time environment variables, §8); the local idle-stop still has
 no knob (`--on-timeout` exists but is cloud-only and tied to `--ttl`); and the dockerd-readiness
-deadline that makes a healthy sandbox unstartable is **not** raised (§7f).
+deadline that makes a healthy sandbox unstartable is **not** raised, and still has no knob of any
+kind — the launcher works around it instead (§7f).
 
 **Changed in v0.43.0:** `sbx create`/`sbx run` now take `--skills=off|readonly|readwrite` and
 default to **`readonly`**, so the host skills store is mounted into new sandboxes unless you opt
