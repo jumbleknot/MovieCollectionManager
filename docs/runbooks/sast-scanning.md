@@ -87,9 +87,12 @@ The scan had otherwise **completed clean** — `scope=changed findings=16 blocki
 cargo-audit 0. osv.dev answered 200 minutes later, and the identical path passed on PRs #443 and #445 the
 same day.
 
-**Since item #449 these are bounded-retried.** `sast-scan.mjs` classifies a failure as transport/service
-(the `TRANSIENT_SIGNATURES` list) and re-attempts it **3 times with exponential backoff** (2s, 4s) before
-giving a verdict. What you will see in the job log when it fires:
+**Since item #449 these are bounded-retried.** The classifier and retry driver live in
+`scripts/lib/scanner-retry.mjs` — **shared** with `infra-image-scan.mjs` since item #495, which needed
+the same thing for Trivy's vulnerability-DB fetch. It was extracted rather than copied on purpose: the
+hard part is the `TRANSIENT_SIGNATURES` list, and a signature learned from one scanner's outage is
+exactly the one the other needs next. A failure is classified transport/service against that list and
+re-attempted **3 times with exponential backoff** (2s, 4s) before a verdict is given. What you will see in the job log when it fires:
 
 ```
 [sast-scan] [pip-audit] transient transport/service failure on attempt 1/3 — retrying in 2000ms.
@@ -112,6 +115,11 @@ Two properties are deliberate and must not be "simplified" away:
   real fault (an unsynced venv, an unparseable lockfile, a panic) is **not** retried — it fails on the
   first attempt, so a genuine red is not delayed by the whole backoff budget behind three identical
   tracebacks. `scripts/__tests__/sast-scan-retry.guard.test.mjs` pins both directions.
+- **The HTTP-status signatures require the status CODE, not just the phrase** (tightened by item #495).
+  `Service Unavailable`, `Bad Gateway` and `Too Many Requests` also occur in advisory TITLES — the
+  bare forms matched `net/http: HTTP/2 server does not limit Service Unavailable responses`, which
+  would have retried a finding three times and then reported it anyway. Every failure #449 measured
+  carries the code, so the anchor costs no coverage.
 
 So: a red gate whose output says **TRANSPORT/SERVICE ERROR** is an outage that survived three attempts —
 re-run it. A red gate listing findings is the section below.

@@ -20,6 +20,14 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
+// ONE retry mechanism for every network-dependent scanner (items #449, #495) — see below, and the
+// shared module's header for why it is shared rather than copied.
+import {
+  isTransientScannerFailure,
+  TransientScannerError,
+  transientOr as classifyTransient,
+  retryTransient as retryTransientShared,
+} from './lib/scanner-retry.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const IS_WIN = process.platform === 'win32';
@@ -121,113 +129,20 @@ function run(cmd, args, opts = {}) {
 // bounded retry BEFORE that verdict, and an output that distinguishes "the advisory service was
 // unreachable" from "the scanner ran and found something" — in run 3328 those rendered identically.
 //
-// The classification is deliberately NARROW. A finding's own title routinely contains "error" or
-// "timeout", and matching those would retry real findings three times and then report them anyway.
-// Only signatures that can ONLY come from the transport or the remote service are listed.
+// THE MECHANISM NOW LIVES IN scripts/lib/scanner-retry.mjs (item #495), because infra-image-scan.mjs
+// needed exactly this for Trivy's vulnerability-DB fetch and a second copy would have drifted — the
+// hard part is the signature list, and a signature learned from one scanner's outage is the one the
+// other needs next. The re-exports below keep this module's public surface unchanged.
+export { isTransientScannerFailure, TransientScannerError };
 
-/** Transport/service signatures. Each can only originate below the scanner's own logic. */
-const TRANSIENT_SIGNATURES = [
-  // pip-audit / requests / urllib3 (the osv.dev path that redded run 3328)
-  /\bServiceError\b/,
-  /\bConnectionError\b/,
-  /\bReadTimeout\b/, /\bConnectTimeout\b/, /\bRead timed out\b/i,
-  /\bMaxRetryError\b/, /\bMax retries exceeded\b/i,
-  /\bHTTPSConnectionPool\b/, /\bHTTPConnectionPool\b/,
-  // HTTP statuses that are the server saying "not now" rather than "no"
-  /\b(?:HTTP Error )?429\b[^\n]*Too Many Requests|\bToo Many Requests\b/i,
-  /\b(?:HTTP Error )?50[234]\b[^\n]*(?:Bad Gateway|Service Unavailable|Gateway Timeout)/i,
-  /\bBad Gateway\b/i, /\bService Unavailable\b/i, /\bGateway Timeout\b/i,
-  // Node / libc socket + DNS errors (pnpm audit, and anything using fetch)
-  /\bECONNRESET\b/, /\bECONNREFUSED\b/, /\bETIMEDOUT\b/, /\bEAI_AGAIN\b/,
-  /\bENOTFOUND\b/, /\bEHOSTUNREACH\b/, /\bENETUNREACH\b/, /\bEPIPE\b/,
-  /\bsocket hang up\b/i,
-  /\bTemporary failure in name resolution\b/i,
-  // git / cargo-audit fetching the advisory DB
-  /\bCould not resolve host\b/i,
-  /\bfailed to fetch advisory database\b/i,
-  /\bunable to access\b[^\n]*https?:\/\//i,
-  /\bTLS connection\b[^\n]*\b(?:reset|timed out)\b/i,
-];
-
-/**
- * Is this scanner output a transport/service failure rather than a scanner fault or a finding?
- *
- * Returns false for anything unrecognised, on purpose: an unknown failure is treated as REAL and
- * fails on the first attempt. Retrying an unknown fault would only delay a genuine red by the whole
- * backoff budget while hiding its cause behind three identical tracebacks.
- */
-export function isTransientScannerFailure(output) {
-  const text = String(output ?? '');
-  if (!text.trim()) return false;
-  return TRANSIENT_SIGNATURES.some((re) => re.test(text));
-}
-
-/** A failure the retry driver is allowed to re-attempt. Everything else propagates immediately. */
-export class TransientScannerError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'TransientScannerError';
-    this.transient = true;
-  }
-}
-
-/**
- * Build the error for a failed scanner invocation, classified from what the scanner actually printed.
- * Use at every network-dependent throw site so the classifier is consulted rather than bypassed.
- */
+/** Classify a failed scanner invocation from what the scanner actually printed. */
 function transientOr(message, output) {
-  return isTransientScannerFailure(output) ? new TransientScannerError(message) : new Error(message);
+  return classifyTransient(message, output);
 }
 
-/** Block the thread without a busy-loop. The scanners are synchronous (spawnSync), so the wait is too. */
-function sleepSync(ms) {
-  if (ms > 0) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-}
-
-/**
- * Run `fn`, re-attempting only a TransientScannerError, with deterministic exponential backoff.
- *
- * Deterministic rather than jittered: jitter exists to de-synchronize a herd, and there is one CI
- * runner running one scan — so it would buy nothing and cost testability.
- *
- * FAIL-CLOSED IS PRESERVED. When the attempts are exhausted this still throws; item #449 is about not
- * failing on the FIRST blip, never about tolerating a scanner that cannot run.
- */
+/** `retryTransient`, with this orchestrator's name on the retry report. See the shared module. */
 export function retryTransient(scanner, fn, opts = {}) {
-  const attempts = opts.attempts ?? 3;
-  const baseDelayMs = opts.baseDelayMs ?? 2000;
-  const sleep = opts.sleep ?? sleepSync;
-  const onRetry = opts.onRetry ?? reportScannerRetry;
-  let waitedMs = 0;
-  for (let attempt = 1; ; attempt += 1) {
-    try {
-      return fn();
-    } catch (err) {
-      // Not transient, or out of attempts on the last try → decide here.
-      if (!err?.transient) throw err;
-      if (attempt >= attempts) {
-        throw new Error(
-          `[${scanner}] TRANSPORT/SERVICE ERROR — the advisory service could not be reached, so this ` +
-            `is NOT a security finding and nothing was detected in this repository. Failed all ` +
-            `${attempts} attempt(s) over ${(waitedMs / 1000).toFixed(1)}s of backoff and did not ` +
-            `recover. Failing closed: a ` +
-            `scanner that could not run must never report clean. Last error: ${err.message}`,
-        );
-      }
-      const delay = baseDelayMs * 2 ** (attempt - 1);
-      onRetry({ scanner, attempt, attempts, delayMs: delay, reason: err.message });
-      sleep(delay);
-      waitedMs += delay;
-    }
-  }
-}
-
-/** Default retry reporter. A silent retry is indistinguishable from no retry, which is how this hides. */
-function reportScannerRetry({ scanner, attempt, attempts, delayMs, reason }) {
-  console.error(
-    `[sast-scan] [${scanner}] transient transport/service failure on attempt ${attempt}/${attempts} — ` +
-      `retrying in ${delayMs}ms. This is NOT a security finding. Cause: ${String(reason).slice(-200)}`,
-  );
+  return retryTransientShared(scanner, fn, { logPrefix: 'sast-scan', ...opts });
 }
 
 // ── Config loaders ───────────────────────────────────────────────────────────
