@@ -102,7 +102,23 @@
   // tissue: features 028/030 found `unless-stopped` insufficient for coming back after a host
   // restart and had to move to `always`. Note it does NOT defend against the R11 foot-gun — a
   // `docker rm -f` on the dev container's own container still ends the session.
-  "runArgs": ["--network=host", "--restart=always"],
+  // `--env-file` carries the four credentials instead of `containerEnv` (see the long note in
+  // containerEnv for the measurements). Only this PATH ever reaches the command line or the logs;
+  // the values do not, and they never become image layers. The file is written by
+  // `initializeCommand` below, which the CLI runs on the VM BEFORE the container is created — the
+  // ordering matters, because `docker run --env-file` fails outright on a missing file.
+  "runArgs": [
+    "--network=host",
+    "--restart=always",
+    "--env-file", "${localEnv:HOME}/.mcm-devcontainer-secrets.env"
+  ],
+
+  // Runs on the SANDBOX VM (the devcontainer CLI's "local" side), before build and create. It
+  // re-emits ~/.mcm-sandbox-env's shell `KEY='value'` form as the bare `KEY=value` that docker
+  // requires: `--env-file` does no quote processing, so feeding it the shell form verbatim would
+  // deliver credentials wrapped in literal apostrophes (measured — `Q1='quoted'` arrives as
+  // `['quoted']`), which fails auth in a way that reads as a bad key rather than a quoting bug.
+  "initializeCommand": "/bin/bash ${localWorkspaceFolder}/.devcontainer/gen-container-secrets-env.sh",
 
   // FR-002 — never root, never the host user. Unchanged.
   "remoteUser": "coder",
@@ -314,11 +330,23 @@
     // reason — the host runs Claude Code too). CI is unaffected: it injects ANTHROPIC_API_KEY from
     // repository secrets into jobs that run no interactive assistant, and every consumer above
     // still honours that name first.
-    "MCM_ANTHROPIC_API_KEY": "${localEnv:MCM_ANTHROPIC_API_KEY}",
-
-    "TMDB_API_KEY": "${localEnv:TMDB_API_KEY}",
-    "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}",
-    "MCM_FORGE_ISSUE_TOKEN": "${localEnv:MCM_FORGE_ISSUE_TOKEN}",
+    // 🔴 THE FOUR CREDENTIALS ARE NO LONGER LISTED HERE — and must not be added back.
+    //
+    // `containerEnv` is not just "environment for the container": the devcontainer CLI compiles
+    // every entry into an **ENV instruction in the generated Dockerfile-with-features**, so anything
+    // listed here is BAKED INTO THE IMAGE. Measured 2026-09-19 on the derived image: all four keys
+    // present in `Config.Env`, with literal values in **3 history layers**. That is a permanent
+    // leak — it survives every container recreate, and `docker image inspect` / `docker history`
+    // hand the values to anyone who can read the image. It also made `devcontainer up` echo them in
+    // clear text on the `docker run` line at every rebuild.
+    //
+    // `remoteEnv` is NOT the fix: see the note above — this sandbox is entered by `ssh mcm.sbx` +
+    // `docker exec`, which remoteEnv does not reach.
+    //
+    // They are now passed by `docker run --env-file` (see `initializeCommand` + `runArgs`), which
+    // keeps them out of the image while `docker exec` still inherits them. The naming rule above
+    // still applies in full — the file carries MCM_ANTHROPIC_API_KEY, never ANTHROPIC_API_KEY.
+    // Generator + the measurements: .devcontainer/gen-container-secrets-env.sh
 
     // ⚠️ "localEnv" here is the SANDBOX SHELL that runs `devcontainer up`, not Windows. Those six
     // values are provisioned into the VM by the D-07 fallback and must be sourced BEFORE the up:

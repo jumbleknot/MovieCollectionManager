@@ -1171,6 +1171,77 @@ secret wins. In this VM that variable holds `proxy-managed`, so a naive run inje
 and fails with a 401 that reads as a bad key rather than a precedence problem. Use
 `env -u ANTHROPIC_API_KEY` so `.env.local` wins.
 
+### 🔴 `containerEnv` BAKES a value into the image — never put a credential there
+
+`containerEnv` is not merely "environment for the container". The devcontainer CLI compiles every
+entry into an **`ENV` instruction in the generated `Dockerfile-with-features`**, so anything listed
+there becomes part of the image. Measured 2026-09-19, on the derived dev-container image while the
+four credentials were still listed:
+
+```bash
+docker image inspect <derived-image> --format '{{range .Config.Env}}{{println .}}{{end}}'
+#   MCM_ANTHROPIC_API_KEY=sk-ant-…   TMDB_API_KEY=…   MCM_FORGE_TOKEN=…   MCM_FORGE_ISSUE_TOKEN=…
+docker image history --no-trunc <derived-image> | grep -c 'sk-ant-'    # → 3 layers
+```
+
+That is a **permanent** leak: it survives every container recreate, and `docker image inspect` or
+`docker history` hands the values to anyone who can read the image. It also made `devcontainer up`
+echo all four in clear text on the `docker run` line at every rebuild — which is how it was found.
+
+> ✅ **The pushed base image was verified clean** — zero credentials in `Config.Env`, zero history
+> layers. The leak was confined to the locally built derived image, never published to the forge.
+
+**`remoteEnv` is not the fix here.** This sandbox is routinely entered by `ssh mcm.sbx` +
+`docker exec`, and `remoteEnv` does not reach those — it would silently strip the credentials from
+the path used most. The four are therefore passed by **`docker run --env-file`** (`runArgs`), with
+the file written by an `initializeCommand` that runs on the VM *before* create, because `--env-file`
+fails outright on a missing file. Measured:
+
+| | `containerEnv` | `--env-file` |
+| --- | --- | --- |
+| `docker exec` inherits it | ✅ | ✅ |
+| Baked into the image | 🔴 **yes** | ✅ no |
+| Printed on the `docker run` line | 🔴 **yes** | ✅ path only |
+| Visible in `docker inspect <container>` | yes | yes — **inherent** |
+
+The last row does not go away: if `docker exec` must see a variable, the container's own config has
+to carry it. What changes is that the exposure dies with the container instead of living in an image.
+
+⚠️ **`docker --env-file` is not a shell and does no quote processing.** Given `Q1='quoted'` the
+container sees `Q1=['quoted']`, apostrophes included (measured). `~/.mcm-sandbox-env` uses the
+shell's quoted form, so it must never be handed to docker directly — credentials would arrive
+wrapped in stray quotes and fail authentication in a way that reads as a bad key rather than a
+quoting bug. `.devcontainer/gen-container-secrets-env.sh` sources it as a shell and re-emits the
+bare form.
+
+> ⚠️ **A newline guard written as `*"$(printf '\n')"*` matches EVERYTHING.** Command substitution
+> strips trailing newlines, so it evaluates to the empty string and the pattern degrades to `*""*`.
+> Measured here: it rejected all four valid credentials and produced an empty env file. Use bash's
+> `*$'\n'*`.
+
+🔴 **`devcontainer up` does NOT recreate the container when only `runArgs` / `containerEnv` change.**
+Measured 2026-09-19: after moving the credentials to `--env-file`, a plain `devcontainer up`
+reattached to the existing container in ~13 log lines — straight to `postStartCommand`, no build, no
+`docker run` — and the environment kept running the **old image with the credentials still baked
+in**. It reports success, so the fix appears applied when nothing changed. Verify against the
+container, never against the command's exit code:
+
+```bash
+sbx exec mcm sh -c 'C=$(docker ps --filter label=devcontainer.config_file --format "{{.Names}}" | head -1)
+  docker inspect "$C" --format "{{.Created}} {{.Image}}"'      # is it actually new?
+```
+
+Force it when the config changed:
+
+```bash
+devcontainer up --remove-existing-container --workspace-folder /workspaces/mcm \
+                --config /workspaces/mcm/.devcontainer/sandbox/devcontainer.json
+```
+
+⚠️ **An image built while the credentials were still in `containerEnv` keeps them forever.** Moving
+to `--env-file` fixes new builds; it does not sanitise old ones. Remove any such image
+(`docker image rm <id>`) — and treat the credentials it carried as exposed.
+
 ---
 
 ## 10. Verification harness
