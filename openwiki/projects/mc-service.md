@@ -10,10 +10,10 @@ timestamp: 2026-09-16T09:26:13Z
 # mc-service (Rust/Axum movie-collection service)
 
 `backend/mc-service` is the sole authority for collection and movie domain logic. The
-[BFF](/openwiki/projects/bff.md) proxies every client request to it — the client never calls it
+[BFF](./bff.md) proxies every client request to it — the client never calls it
 directly — forwarding the caller's JWT as a bearer token. It persists to its own dedicated MongoDB
 instance and validates JWTs locally against a Keycloak JWKS cached at startup (see
-[Auth chain](/openwiki/invariants/auth-chain.md)).
+[Auth chain](../invariants/auth-chain.md)).
 
 Four Clean Architecture layers, outer-to-inner import rule enforced (`domain` never imports from
 `application`, `adapters`, or `api`):
@@ -68,6 +68,6 @@ the database.
 - **"index creation failed: I/O error: unexpected end of file" means the container died — not bad data.** The dev MongoDB container runs with no memory swap on the host. During a parallel integration run the WiredTiger cache is not the culprit: with it capped, the heap still grew because the integration harness mints a fresh database per test (`common::test_db()` → `mc_test_<uuid>`) and drops each database in `cleanup_db`, but MongoDB raises WiredTiger's sweeper thresholds (`closeIdleTime=600 s`, `closeMinimum=2000`) — sensible for stable namespaces, wrong for a workload that churns thousands of namespaces per minute. Nothing was ever eligible for sweeping, so open data-handle counts reached 65,844 for 2 live collections, the heap climbed until the OS killed mongod mid-run, and every subsequent test saw connection errors and server-selection timeouts. The symptom string is identical to the earlier nofile crash-loop (`ulimits` fixed that one, this one is memory). Fix applied in `infrastructure-as-code/docker/mc-service/compose.yaml`: `--wiredTigerCacheSizeGB 1` caps the cache, and `--setParameter wiredTigerFileHandleCloseIdleTime=30 --setParameter wiredTigerFileHandleCloseMinimum=250` restores WiredTiger's own defaults. These flags are startup-only (`setParameter` at runtime is refused). Dev-only: `compose.prod.yaml` carries its own `command` and is untouched.
 - **`nx test mc-service` and `nx test:integration mc-service` must run the integration binaries the same way — and they now do.** Before 2026-09-16 the developer-facing `nx test` invoked cargo at default parallelism while the CI gate (`test:integration`) always ran through `mc-service-integration-guard.mjs` at `--test-threads=1`. The two tiers disagreed about the one setting that changes the result: a test failing ~2 runs in 3 locally was green in CI for months. The reconciliation: `nx test mc-service` now delegates via `dependsOn` to `test:unit` and `test:integration` rather than running cargo itself, so `--test-threads=1` is decided in exactly one place. Do NOT flip to parallel without fixing the underlying contention first — measured 2 failures in 29 runs at default parallelism from a clean MongoDB after item #462 was resolved; serial over the same period was 180/180.
 
-See [Auth chain](/openwiki/invariants/auth-chain.md) for how mc-service fits into the end-to-end
+See [Auth chain](../invariants/auth-chain.md) for how mc-service fits into the end-to-end
 authorization sequence, and `docs/MCM-Architecture.md` (dedicated "mc-service Architecture" section)
 for the full layer/CQRS diagrammed description.

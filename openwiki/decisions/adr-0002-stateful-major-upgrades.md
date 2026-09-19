@@ -18,7 +18,7 @@ entries carry an expiry of 2026-10-01. The 14-day warning tier opens 2026-09-17.
 
 The `renovate.json` packageRule 19 (`opensearchproject/opensearch allowedVersions: "<3"`) is lifted
 by feature 071 once the §3 premise gate passes. PackageRule 20 (`langfuse/* < 4`) stands until the
-Langfuse spec exists. See the [infra-image scanning runbook](/openwiki/runbooks/infra-image-scanning.md)
+Langfuse spec exists. See the [infra-image scanning runbook](../runbooks/infra-image-scanning.md)
 for how the gate and allowlist interact.
 
 ## Why OpenSearch goes first
@@ -52,7 +52,7 @@ migration first keeps a red CI signal attributable to a single cause.
   Both volumes are recreated; rollback is a digest revert plus volume recreate, not a data restore.
   For the OpenSearch audit store this means **the production agent-audit history is discarded at
   cutover**. That store is an append-only security audit trail with a 90-day retention invariant
-  (see [logging-and-audit](/openwiki/invariants/logging-and-audit.md)); after cutover the 90-day
+  (see [logging-and-audit](../invariants/logging-and-audit.md)); after cutover the 90-day
   window restarts from the cutover date and preceding history is gone. If preserving the audit store
   is ever the right call, that is a one-line change in the ADR — but it changes the shape of both
   specs: snapshot/restore steps, tested rollback, and an index-compatibility check before the major
@@ -60,7 +60,7 @@ migration first keeps a red CI signal attributable to a single cause.
 
 - **The two majors must land in separate specs and PRs, not combined.** A combined spec shares one
   CI signal across two unrelated data migrations; a red would not say which half broke. This is the
-  same reasoning the [pull-request batching](/openwiki/process/pull-request-batching.md) convention
+  same reasoning the [pull-request batching](../process/pull-request-batching.md) convention
   applies to any multi-concern change.
 
 - **Allowlist entries are deleted on landing, not expired.** When OpenSearch 3 lands, both

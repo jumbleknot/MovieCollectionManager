@@ -14,7 +14,7 @@ Local/test infrastructure is split into four independently operable named Compos
 `infrastructure-as-code/docker/stacks/`, brought up/down individually via Nx targets
 (`up-auth`, `up-mcm`, `up-audit`, `up-observability`, and their `down-*` counterparts). Every
 credential in every stack is externalized to a `${VAR:?…}` interpolation reference — no clear-text
-secret lives in a tracked Compose file (see [Secrets management](/openwiki/invariants/secrets-management.md)).
+secret lives in a tracked Compose file (see [Secrets management](../invariants/secrets-management.md)).
 Two one-time generator scripts (`scripts/gen-dev-secrets.mjs`, `scripts/gen-dev-env.mjs`) mint
 per-machine stack credentials and seed the dev Keycloak realm before any stack is first brought up.
 
@@ -111,9 +111,9 @@ Unleash), `--profile audit` (OpenSearch) and OPA are not brought up by `app-e2e`
 are expected and allow-listed. A healthy local run of the agent integration suite is **51 passed,
 11 skipped, 0 failed**.
 
-See [Nx as the task runner](/openwiki/invariants/nx-task-runner.md) for why every stack lifecycle
+See [Nx as the task runner](../invariants/nx-task-runner.md) for why every stack lifecycle
 command goes through an Nx target rather than a bare `docker compose` invocation, and
-[Published-port reservation](/openwiki/invariants/published-port-reservation.md) for the convention
+[Published-port reservation](../invariants/published-port-reservation.md) for the convention
 that keeps these dev ports from colliding with production. Full stack/profile tables, the
 credential-generator scripts' exact behavior, and the Keycloak realm-reseed recovery procedure:
 `docs/runbooks/local-dev.md`.

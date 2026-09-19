@@ -39,7 +39,7 @@ ascending tiebreaker in every sort spec so repeated loads are stable even with d
   re-mapping through the general `sort_field()` helper would incorrectly fold `"titleSort"` back to
   the default field.
 
-See [mc-service](/openwiki/projects/mc-service.md) for the CQRS query layer this pagination lives
+See [mc-service](../projects/mc-service.md) for the CQRS query layer this pagination lives
 in, and
-[MongoDB indexes and uniqueness](/openwiki/gotchas/mongodb-indexes-and-uniqueness.md) for the
+[MongoDB indexes and uniqueness](./mongodb-indexes-and-uniqueness.md) for the
 sibling indexing decisions in the same file.

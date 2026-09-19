@@ -11,9 +11,9 @@ timestamp: 2026-09-15T10:21:00Z
 
 Four scanners — Semgrep (TS/JS + Python source), cargo audit (Rust deps), pnpm audit (JS deps), and
 pip-audit (Python deps) — feed one normalized findings report and one blocking `sast` CI job. It
-complements [DAST scanning](/openwiki/runbooks/dast-scanning.md): DAST exercises the running app,
+complements [DAST scanning](./dast-scanning.md): DAST exercises the running app,
 this scans source and the dependency graph at rest. It is also disjoint from
-[infra-image scanning](/openwiki/runbooks/infra-image-scanning.md), which scans pulled third-party
+[infra-image scanning](./infra-image-scanning.md), which scans pulled third-party
 container images rather than first-party code or first-party dependency graphs.
 
 ## Gotchas
@@ -39,7 +39,7 @@ container images rather than first-party code or first-party dependency graphs.
 - **Keyless and fail-closed.** All advisory data (Semgrep registry, RustSec, npm advisories, OSV) is
   fetched anonymously at scan time; if any fetch fails, that scanner fails the job rather than
   reporting a false clean. No secret is ever required — see
-  [Secrets management](/openwiki/invariants/secrets-management.md) for the broader no-clear-text-secrets
+  [Secrets management](../invariants/secrets-management.md) for the broader no-clear-text-secrets
   posture this fits into.
 - **The SCA half runs full on every push, unconditionally** — a newly published advisory can hit an
   unchanged dependency, so it is never path-gated. This means `main` can legitimately go red on a

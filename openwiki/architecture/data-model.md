@@ -10,7 +10,7 @@ timestamp: 2026-07-16T16:05:08+00:00
 # mc-service domain data model
 
 `backend/mc-service/src/domain/` is the innermost Clean Architecture layer of
-[mc-service](/openwiki/projects/mc-service.md) — plain Rust structs/enums with no dependency on
+[mc-service](../projects/mc-service.md) — plain Rust structs/enums with no dependency on
 MongoDB, Axum, or any outer layer. It defines two entities (`MovieCollection`, `Movie`), one value
 object (`ExternalIdentifier`), the domain error enum, and the `Specification<T>` rule set that
 validates data before a command handler touches the repository.
@@ -61,7 +61,7 @@ erDiagram
   hierarchy (`Owner ⊇ Contributor ⊇ Viewer`, via `AclRole::rank()`) backs
   `MovieCollection::authorizes(user_id, required)`, which grants access if *any* of a user's ACL
   entries meets or exceeds the required rank — this is the DAC primitive described in
-  [System overview](/openwiki/architecture/system-overview.md).
+  [System overview](./system-overview.md).
 - **`Movie`** (`movie.rs`) — required fields (`title`, `year`, `content_type`, `owned`, `ripped`,
   `childrens`; `language` is `Option<String>`, deliberately optional per feature 014 — see gotchas),
   plus a long tail of optional descriptive fields (`directors`, `actors`, `genres`, `tags`,
@@ -115,10 +115,10 @@ A generic `Specification<T>` trait (`is_satisfied_by(&self, candidate: &T) -> bo
   language must pass `None` through unchanged rather than substituting a default value, or they
   silently reintroduce the distinction the option type was added to remove.
 - **Domain code has zero MongoDB/Axum dependencies by construction** (Clean Architecture's
-  outer-to-inner import rule — see [mc-service](/openwiki/projects/mc-service.md)). If a domain file
+  outer-to-inner import rule — see [mc-service](../projects/mc-service.md)). If a domain file
   starts needing a `bson`/`axum` import, that is a layering violation, not a shortcut.
 
 See `docs/MCM-Architecture.md`'s "mc-service Architecture" section for how these entities map to the
 `movie_collections`/`movies` MongoDB collections, and
-[mc-service](/openwiki/projects/mc-service.md) for the CQRS command/query layer that calls into this
+[mc-service](../projects/mc-service.md) for the CQRS command/query layer that calls into this
 domain code.

@@ -15,7 +15,7 @@ Windows path runs them against the Metro dev server, which OOM-crashes after onl
 `/run` calls and produces a misleading black-screen/`status 0` failure that looks like an app bug.
 **Non-agent flows** (login, CRUD, sort, browse) run fine on the local emulator ritual below. The dev
 container now also runs the Android emulator natively via Linux KVM, with the SDK and a system image
-baked into the toolchain image — see [Containerized dev environment](/openwiki/runbooks/devcontainer.md).
+baked into the toolchain image — see [Containerized dev environment](./devcontainer.md).
 
 ## Gotchas
 
@@ -23,7 +23,7 @@ baked into the toolchain image — see [Containerized dev environment](/openwiki
   unchanged regardless of where the emulator runs; only the *transport* to reach the OOM-prone Metro
   server differs (tunnel vs. `10.0.2.2`).
 - **`10.0.2.2` works fine for TCP on this machine — the old claim that QEMU networking is broken was wrong (corrected 2026-08-23).** The real split is by service: **Metro must be reached at `10.0.2.2:8081`** (RN 0.85 hard-codes the gateway for its dev-server address; `adb reverse tcp:8081` is simply not consulted). **Keycloak and the BFF still require `adb reverse`** because Keycloak issues its session cookies for `localhost`, and reaching it at `10.0.2.2:8099` loses them mid-flow with `error="cookie_not_found"`. Re-run `adb reverse tcp:8082 tcp:8082` and `adb reverse tcp:8099 tcp:8099` after every emulator restart. If something else holds port 8081 on the host (a stale VS Code dev-container forward is a common culprit), the app hangs on the splash screen with no error — check the owner with `Get-NetTCPConnection -LocalPort 8081 -State Listen | ForEach-Object { (Get-Process -Id $_.OwningProcess).ProcessName }`.
-- **If you need the production APK (public BFF/Keycloak hosts baked in), don't rebuild — pull it from the generic package registry.** `cd-deploy`'s `prod-apk` job publishes every release APK to `mcm-app-android:<version>-<sha7>` with a `sha256` sidecar, fetchable by URL with a `read:package` token. The `upload-artifact` copy also exists on the run page, but this forge exposes no artifact API, so only a human clicking through the UI can retrieve that one. Recipe: [Homelab server setup §6.7](/openwiki/runbooks/server-setup.md).
+- **If you need the production APK (public BFF/Keycloak hosts baked in), don't rebuild — pull it from the generic package registry.** `cd-deploy`'s `prod-apk` job publishes every release APK to `mcm-app-android:<version>-<sha7>` with a `sha256` sidecar, fetchable by URL with a `read:package` token. The `upload-artifact` copy also exists on the run page, but this forge exposes no artifact API, so only a human clicking through the UI can retrieve that one. Recipe: [Homelab server setup §6.7](./server-setup.md).
 - **Before rebuilding the APK, check whether the last successful CI artifact is already
   native-compatible with HEAD.** A pure JS/Metro change (including a new pure-JS dependency with no
   native module) never needs a rebuild — diff the native-relevant paths against the last green CI
@@ -42,5 +42,5 @@ baked into the toolchain image — see [Containerized dev environment](/openwiki
   install.
 
 For the BFF-container modes an agent/non-agent flow runs against once launched, see
-[E2E testing](/openwiki/runbooks/e2e-testing.md). Full session-startup ritual, the CI trigger/watch
+[E2E testing](./e2e-testing.md). Full session-startup ritual, the CI trigger/watch
 commands, and the complete Windows build-wall workaround recipe: `docs/runbooks/android-emulator.md`.

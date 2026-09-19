@@ -13,7 +13,7 @@ Trivy scans every third-party image the project pulls but does not build — eve
 `infrastructure-as-code/**` except images scanned by their own builder and any `${..}`-interpolated
 reference. It is deliberately disjoint (enforced by a unit test) from the `cd-deploy` scan of the
 project's own built app images and from the `minio-image` workflow which builds MinIO from source and
-scans it before publishing. It is also disjoint from [SAST/SCA scanning](/openwiki/runbooks/sast-scanning.md), which
+scans it before publishing. It is also disjoint from [SAST/SCA scanning](./sast-scanning.md), which
 covers first-party source and first-party dependency graphs, not pulled base images. Renovate keeps
 base images current; this scan catches a freshly published CVE against an already-pinned image, which
 currency alone cannot.
@@ -43,8 +43,8 @@ now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`),
   is a report-only warning, since a version bump can't clear it and it must not wedge the gate
   indefinitely.
 - **Keyless and fail-closed**, matching the posture in
-  [Secrets management](/openwiki/invariants/secrets-management.md) and
-  [SAST/SCA scanning](/openwiki/runbooks/sast-scanning.md) — a Trivy/pull/parse failure fails the job
+  [Secrets management](../invariants/secrets-management.md) and
+  [SAST/SCA scanning](./sast-scanning.md) — a Trivy/pull/parse failure fails the job
   rather than producing a clean-looking report.
 - **The allowlist is baseline, not permanent.** Suppression is gate-only; findings stay visible in the
   report, and a suppressed entry must be deleted once the underlying image is actually bumped — leaving

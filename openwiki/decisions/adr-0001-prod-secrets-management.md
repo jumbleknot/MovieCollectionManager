@@ -42,8 +42,8 @@ never a second source of truth for a core stack.
   hosts/operators) — do not treat their absence as a gap to silently fix.
 
 This is the decision behind the day-to-day rules on the
-[Secrets management posture](/openwiki/invariants/secrets-management.md) page and governs credentials
-consumed by the [Agent Gateway](/openwiki/projects/agent-gateway.md)'s optional Vault reader and by
-[mc-service](/openwiki/projects/mc-service.md)'s and the [BFF](/openwiki/projects/bff.md)'s datastore
+[Secrets management posture](../invariants/secrets-management.md) page and governs credentials
+consumed by the [Agent Gateway](../projects/agent-gateway.md)'s optional Vault reader and by
+[mc-service](../projects/mc-service.md)'s and the [BFF](../projects/bff.md)'s datastore
 credentials. Full rationale table, secret-category coverage map, and revisit trigger:
 `docs/decisions/ADR-0001-prod-secrets-management.md`.

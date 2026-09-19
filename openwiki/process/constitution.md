@@ -26,7 +26,7 @@ storage); and stack-specific standards layered on top for each of the three deve
 
 - **A spec or plan may deviate from itself and self-correct; a deviation from the constitution
   requires explicit human approval and documented rationale.** This is the one asymmetry in the
-  [spec-driven-development lifecycle](/openwiki/process/spec-driven-development.md) — an AI assistant
+  [spec-driven-development lifecycle](./spec-driven-development.md) — an AI assistant
   encountering an apparent conflict between a task and the constitution must stop and ask, not
   silently pick one.
 - **"No Vibe Coding" is a named, load-bearing constraint**: the assistant must consult the current
@@ -36,7 +36,7 @@ storage); and stack-specific standards layered on top for each of the three deve
   application to treat a validated JWT as proof the identity provider already evaluated Conditional
   Access and MFA — the application must never re-implement or re-check those, only validate token
   signature/claims. This boundary is the constitutional basis for the enforcement split described in
-  [Authentication and authorization chain](/openwiki/invariants/auth-chain.md).
+  [Authentication and authorization chain](../invariants/auth-chain.md).
 - **"Behavior-Descriptive Identifiers" bans requirement IDs (FR-###, SC-###, T-###) from code
   identifiers** — they belong in a traceability comment, not a file/function/type name — because a
   reader should understand an artifact's purpose from its name alone. The one explicit exception is

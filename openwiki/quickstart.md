@@ -21,7 +21,7 @@ missed — the highest-value content on any page), and a `resource` link to the 
 full detail. If you need the complete step-by-step procedure, follow the `resource` link; the page
 itself will not replay it. See `openwiki/INSTRUCTIONS.md` for the full generation brief and its
 exclusions (notably `docs/proposals/**`, which is intentionally out of scope — see
-[Spec-driven development](/openwiki/process/spec-driven-development.md)).
+[Spec-driven development](./process/spec-driven-development.md)).
 
 ## How to query this bundle
 
@@ -44,28 +44,28 @@ Use these fields rather than guessing filenames:
 ## Concept areas
 
 - **[architecture/](architecture/)** — the whole-system map: the
-  [system overview](/openwiki/architecture/system-overview.md), the
-  [AI Agents layer architecture](/openwiki/architecture/agent-layer.md) (call chain and token
-  custody), and the [mc-service domain data model](/openwiki/architecture/data-model.md).
+  [system overview](./architecture/system-overview.md), the
+  [AI Agents layer architecture](./architecture/agent-layer.md) (call chain and token
+  custody), and the [mc-service domain data model](./architecture/data-model.md).
 - **[projects/](projects/)** — one page per deployable unit: the
-  [Expo/React Native universal app](/openwiki/projects/expo-app.md) and its
-  [design system](/openwiki/projects/design-system.md), the
-  [BFF](/openwiki/projects/bff.md), the
-  [mc-service (Rust/Axum)](/openwiki/projects/mc-service.md), the
-  [Agent Gateway (LangGraph)](/openwiki/projects/agent-gateway.md) and its
-  [three scoped MCP servers](/openwiki/projects/mcp-servers.md), the
-  [infrastructure-as-code stacks](/openwiki/projects/infrastructure-stacks.md), and the
-  [CI/CD pipeline](/openwiki/projects/ci-cd-pipeline.md).
+  [Expo/React Native universal app](./projects/expo-app.md) and its
+  [design system](./projects/design-system.md), the
+  [BFF](./projects/bff.md), the
+  [mc-service (Rust/Axum)](./projects/mc-service.md), the
+  [Agent Gateway (LangGraph)](./projects/agent-gateway.md) and its
+  [three scoped MCP servers](./projects/mcp-servers.md), the
+  [infrastructure-as-code stacks](./projects/infrastructure-stacks.md), and the
+  [CI/CD pipeline](./projects/ci-cd-pipeline.md).
 - **[invariants/](invariants/)** — cross-cutting rules that span projects and are easy to violate: the
-  [authentication and authorization chain](/openwiki/invariants/auth-chain.md), the
-  [secrets-management posture](/openwiki/invariants/secrets-management.md),
-  [model-provider environment scoping](/openwiki/invariants/model-provider-scoping.md), the
-  [published-port reservation convention](/openwiki/invariants/published-port-reservation.md),
-  [logging and audit conventions](/openwiki/invariants/logging-and-audit.md),
-  [testing tiers and what gates a merge](/openwiki/invariants/testing-tiers.md), and
-  [Nx as the universal task runner](/openwiki/invariants/nx-task-runner.md).
+  [authentication and authorization chain](./invariants/auth-chain.md), the
+  [secrets-management posture](./invariants/secrets-management.md),
+  [model-provider environment scoping](./invariants/model-provider-scoping.md), the
+  [published-port reservation convention](./invariants/published-port-reservation.md),
+  [logging and audit conventions](./invariants/logging-and-audit.md),
+  [testing tiers and what gates a merge](./invariants/testing-tiers.md), and
+  [Nx as the universal task runner](./invariants/nx-task-runner.md).
 - **[decisions/](decisions/)** — ratified architecture decision records, starting with
-  [ADR-0001: Production secrets-management standard](/openwiki/decisions/adr-0001-prod-secrets-management.md).
+  [ADR-0001: Production secrets-management standard](./decisions/adr-0001-prod-secrets-management.md).
 - **[gotchas/](gotchas/)** — standalone, non-obvious traps not scoped to a single invariant or project,
   covering pagination, SSRF guarding, cascade deletes, index uniqueness, telemetry leaks, build
   quirks, and the Expo/agent-transport edge cases.
@@ -73,9 +73,9 @@ Use these fields rather than guessing filenames:
   dev, the devcontainer, CI diagnostics, security scanning (SAST/DAST/infra-image), E2E and mobile
   testing, and the production bring-up/reboot/data-tier runbooks.
 - **[process/](process/)** — how this repository itself is governed and how work moves through it: the
-  [governing constitution](/openwiki/process/constitution.md), the
-  [proposal → spec → plan → tasks → implementation lifecycle](/openwiki/process/spec-driven-development.md),
-  and [how this wiki bundle itself is generated and maintained](/openwiki/process/wiki-maintenance.md).
+  [governing constitution](./process/constitution.md), the
+  [proposal → spec → plan → tasks → implementation lifecycle](./process/spec-driven-development.md),
+  and [how this wiki bundle itself is generated and maintained](./process/wiki-maintenance.md).
 
 ## Backlog
 

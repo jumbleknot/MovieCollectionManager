@@ -12,9 +12,9 @@ timestamp: 2026-07-12T20:28:28-04:00
 Covers provisioning a **host** machine with the toolchain MovieCollectionManager's AI-assisted
 workflow expects: Node.js, pnpm (via Corepack), Nx, Rust (stable), Python 3.13 + `uv`, Docker
 Desktop, and the Android SDK/emulator for mobile builds. Everything here is pre-provisioned in the
-[containerized dev environment](/openwiki/runbooks/devcontainer.md) already — this runbook exists
+[containerized dev environment](./devcontainer.md) already — this runbook exists
 for the case where the containerized path isn't used, or before bringing up
-[local dev infrastructure](/openwiki/runbooks/local-dev.md).
+[local dev infrastructure](./local-dev.md).
 
 ## Gotchas
 
@@ -24,8 +24,8 @@ for the case where the containerized path isn't used, or before bringing up
   installing globally.
 - **Never invoke the bare `openwiki` CLI on this repo — always go through the Nx target.** The bare
   CLI omits the telemetry opt-out and the raised Node heap size, and reliably OOMs; see
-  [OpenWiki bundle generation and maintenance](/openwiki/process/wiki-maintenance.md) and
-  [Nx as the task runner](/openwiki/invariants/nx-task-runner.md).
+  [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md) and
+  [Nx as the task runner](../invariants/nx-task-runner.md).
 - **Never run `openwiki --init` on this repo.** `--update` creates the bundle when none exists,
   which avoids triggering the interactive onboarding wizard and the out-of-repo `.openwiki/.env`
   file it would otherwise write.

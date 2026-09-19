@@ -56,7 +56,7 @@ free backlog, which is the normal case.
   explicit operator instruction: item history lives in the forge's database, not in git, so there is no
   `git revert` for a mass close.
 - **Not an Nx target**, unlike the gate scripts — an Nx invocation costs ~60 s in this workspace against
-  ~0.09 s direct. See [Nx as the universal task runner](/openwiki/invariants/nx-task-runner.md). Its unit
+  ~0.09 s direct. See [Nx as the universal task runner](../invariants/nx-task-runner.md). Its unit
   tests still run under Nx via `preflight`.
 
 Provisioning, the full command surface and the diagnosis table: `docs/runbooks/backlog.md`.

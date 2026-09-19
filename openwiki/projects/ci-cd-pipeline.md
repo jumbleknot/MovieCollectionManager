@@ -17,8 +17,8 @@ carry distinct responsibilities:
   conformance gate over this wiki bundle itself, and keyless agent quality gates (golden-pair replay,
   no model key).
 - **`app-ci.yml`** — Nx-affected lint/build/unit for changed projects, plus (path-gated) the heavy
-  `app-e2e` job: provisioned auth+mcm stacks, containerized [Agent Gateway](/openwiki/projects/agent-gateway.md)
-  and [MCP servers](/openwiki/projects/mcp-servers.md), full web Playwright E2E, a release APK build,
+  `app-e2e` job: provisioned auth+mcm stacks, containerized [Agent Gateway](./agent-gateway.md)
+  and [MCP servers](./mcp-servers.md), full web Playwright E2E, a release APK build,
   and Maestro mobile agent flows.
 - **`cd-deploy.yml`** — build six images via their Nx targets → Trivy scan (blocks on Critical) → push
   by tag+digest → **digest-by-git promotion** (write the immutable digest into tracked, host-free
@@ -234,13 +234,13 @@ flowchart LR
 - **There is no rollback endpoint — rollback is git-revert the promotion commit, then re-fire the
   webhook.** A failed post-deploy health probe drives this automatically.
 - **The integration test tier is what actually gates CI, not just unit tests** — see
-  [Testing tiers](/openwiki/invariants/testing-tiers.md) for why that gate was added and what it
+  [Testing tiers](../invariants/testing-tiers.md) for why that gate was added and what it
   closed. CI's own gate scripts (naming, secrets, topology, port-collision, and this OKF conformance
   gate itself) have their own unit tests under `scripts/__tests__/`, run by the `naming` job — a gate
   script that regresses silently is the same failure class this pipeline exists to prevent elsewhere.
 
-See [Infrastructure-as-code stacks](/openwiki/projects/infrastructure-stacks.md) for what `cd-deploy`
+See [Infrastructure-as-code stacks](./infrastructure-stacks.md) for what `cd-deploy`
 actually deploys to and the dependency order Komodo reconciles in, and CLAUDE.md's "Commands" →
 "CI/CD lives on the homelab forge" section plus
-[CI self-serve diagnostics](/openwiki/runbooks/ci-diagnostics.md) for the full operator loop
+[CI self-serve diagnostics](../runbooks/ci-diagnostics.md) for the full operator loop
 (driving a PR to green, merging, and verifying a deploy).

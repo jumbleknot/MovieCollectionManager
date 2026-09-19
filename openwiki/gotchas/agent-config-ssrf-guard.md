@@ -34,6 +34,6 @@ plus an optional `AGENT_OLLAMA_ALLOWED_HOSTS` allowlist for hardened multi-user 
   unguarded. `AGENT_OLLAMA_ALLOWED_HOSTS` is the recommended mitigation for genuinely hostile
   multi-user deployments, not the canonicalization fix itself.
 
-See [BFF](/openwiki/projects/bff.md) for where this guard sits in the request path, and
-[Agent Gateway](/openwiki/projects/agent-gateway.md) for the unguarded runtime fetch this guard does
+See [BFF](../projects/bff.md) for where this guard sits in the request path, and
+[Agent Gateway](../projects/agent-gateway.md) for the unguarded runtime fetch this guard does
 not reach.

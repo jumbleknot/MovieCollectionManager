@@ -49,7 +49,7 @@ flowchart LR
 - **Constitution deviations are the one case that isn't self-service.** A plan or implementation may
   diverge from `spec.md`/`plan.md` and simply update those files — but diverging from
   `.specify/memory/constitution.md` requires explicit human approval and a documented rationale. See
-  [Constitution](/openwiki/process/constitution.md).
+  [Constitution](./constitution.md).
 - **Feature numbers are sequential and load-bearing for cross-references** — many CLAUDE.md gotchas
   and runbooks cite a specific feature number (e.g., "feature 029", "feature 041") as the origin of a
   rule. When tracing why a convention exists, the numbered `specs/NNN-.../` folder is usually the
@@ -57,7 +57,7 @@ flowchart LR
 - **This wiki itself was built through this exact pipeline** — see
   `docs/proposals/openwiki-okf-adoption-plan.md` (the pre-spec research/proposal) →
   `specs/043-openwiki-okf/` (the spec, plan, and tasks that actually govern this bundle). See
-  [Wiki maintenance](/openwiki/process/wiki-maintenance.md) for what that feature produced.
+  [Wiki maintenance](./wiki-maintenance.md) for what that feature produced.
 
 - **When the behavior under test already exists, a compile error is not an acceptable RED.** A
   test-only feature (like feature 046, which added authenticated HTTP authorization tests against
@@ -65,7 +65,7 @@ flowchart LR
   its first run because the production behavior is already right. The prescribed mechanism is
   **mutation RED** — apply a named source edit, observe the test fail, revert the edit — not
   compile failure, and never "trust it works" without observing a real failure. A test that has
-  never run red has not been verified. See [Test authoring conventions](/openwiki/process/test-authoring-conventions.md)
+  never run red has not been verified. See [Test authoring conventions](./test-authoring-conventions.md)
   for the general RED/GREEN checkpoint format; this gotcha is specific to test-only features.
 - **A test double that returns a fresh object per render can invalidate memoised callbacks, repairing
   the bug it was meant to catch.** Measured on feature 053 (T001): the first attempt to observe a RED

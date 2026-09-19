@@ -11,7 +11,7 @@ timestamp: 2026-09-15T00:00:00Z
 
 Keyless, config-as-code security scanning that runs on every PR. Four scanners cover the full
 first-party surface at rest — no SaaS account, no CI secret. All findings funnel into one
-normalized report; one `sast` gate in [CI/CD pipeline](/openwiki/projects/ci-cd-pipeline.md)
+normalized report; one `sast` gate in [CI/CD pipeline](./ci-cd-pipeline.md)
 (`guardrails.yml`) decides pass or fail.
 
 | Kind | Scanner | Surface |
@@ -256,6 +256,6 @@ and imported by both gates. A dedicated `--check-expiring` mode runs **weekly** 
   blinded rule. A YAML rule's fixture must be named `<rule>.test.yml`; a bare `<rule>.yaml` would be
   loaded as a second rule by `--config security/sast/rules/`.
 
-See [CI/CD pipeline](/openwiki/projects/ci-cd-pipeline.md) for how the `sast` job sits in the
+See [CI/CD pipeline](./ci-cd-pipeline.md) for how the `sast` job sits in the
 `guardrails.yml` workflow, and `security/sast/README.md` for the full config reference and custom
 MCM rule definitions.

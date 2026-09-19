@@ -173,6 +173,77 @@ test('V12 drift is still reported when the concept is checked out with CRLF endi
 });
 
 // ── Reporting contract ──────────────────────────────────────────────────────────
+// ── V14/V15: body links (item #491) ─────────────────────────────────────────────
+test('V14 a site-root-absolute body link fails, even though every other rule is satisfied', () => {
+  // The defect this fixture isolates: the target IS a real repository path and the `resource`
+  // field resolves, so V6 and every front-matter rule pass. Only the leading `/` is wrong — which
+  // is precisely why 204 of these survived on `main` (item #491).
+  const { code, out } = onFixture('site-root-link');
+  assert.equal(code, 1, `expected exit 1, got ${code}\n${out}`);
+  assert.match(out, /absolute\.md/);
+  assert.match(out, /V14/);
+});
+
+test('V14 names the file-relative form to write instead', () => {
+  // A finding that says only "wrong" makes the reader re-derive the fix once per link.
+  const { code, out } = runGate(['--bundle', join(FIXTURES, 'site-root-link'), '--json']);
+  assert.equal(code, 1);
+  const f = JSON.parse(out).findings.find((x) => x.rule === 'V14');
+  assert.ok(f, 'expected a V14 finding');
+  assert.match(f.message, /\.\.\/\.\.\/\.\.\/openwiki\/INSTRUCTIONS\.md/, `expected the relative form, got: ${f.message}`);
+});
+
+test('V15 a relative link that resolves to nothing fails', () => {
+  const { code, out } = onFixture('unresolvable-link');
+  assert.equal(code, 1, `expected exit 1, got ${code}\n${out}`);
+  assert.match(out, /dangling\.md/);
+  assert.match(out, /V15/);
+});
+
+test('V14/V15 ignore links inside a code fence or a code span', () => {
+  // The brief has to be able to SHOW the wrong form (openwiki/INSTRUCTIONS.md §6). A gate that
+  // fails on documentation of the defect cannot be used to document the defect.
+  const dir = mkdtempSync(join(tmpdir(), 'okf-code-'));
+  try {
+    writeFileSync(join(dir, 'index.md'), '---\ntype: Reference\n---\n# Root\n- [A](a.md)\n');
+    writeFileSync(join(dir, 'a.md'),
+      '---\ntype: R\n---\nnever `[x](/openwiki/a.md)`:\n\n```md\n[y](/openwiki/b.md)\n[z](nope.md)\n```\n');
+    const { code, out } = runGate(['--bundle', dir]);
+    assert.equal(code, 0, `code samples must not fail the gate, got ${code}\n${out}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('V15 resolves a link from its own file\'s directory, not from the bundle root', () => {
+  // The mirror-image bug: resolving from the bundle root would pass a dangling sibling link and
+  // fail a valid one. Both directions are asserted in one bundle.
+  const dir = mkdtempSync(join(tmpdir(), 'okf-relbase-'));
+  try {
+    mkdirSync(join(dir, 'area'), { recursive: true });
+    writeFileSync(join(dir, 'index.md'), '---\ntype: Reference\n---\n# Root\n- [A](area/a.md)\n');
+    writeFileSync(join(dir, 'area', 'index.md'), '# Area\n- [a](a.md)\n- [b](b.md)\n');
+    writeFileSync(join(dir, 'area', 'b.md'), '---\ntype: R\n---\nb\n');
+    // `b.md` is a sibling — valid. `area/b.md` would only resolve from the bundle root — invalid.
+    writeFileSync(join(dir, 'area', 'a.md'), '---\ntype: R\n---\n[ok](b.md) and [bad](area/b.md)\n');
+    const { code, out } = runGate(['--bundle', dir, '--json']);
+    assert.equal(code, 1);
+    const found = JSON.parse(out).findings.filter((f) => f.rule === 'V15');
+    assert.equal(found.length, 1, `expected exactly one V15 finding, got ${found.length}: ${out}`);
+    assert.match(found[0].message, /area\/b\.md/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the real bundle has no site-root-absolute or dangling body link', () => {
+  // The regression guard for item #491 itself: the shipped bundle, not a fixture.
+  const { code, out } = runGate(['--json']);
+  const findings = JSON.parse(out).findings.filter((f) => f.rule === 'V14' || f.rule === 'V15');
+  assert.deepEqual(findings, [], `openwiki/ carries ${findings.length} broken body link(s)`);
+  assert.equal(code, 0, `the shipped bundle must be conformant, got ${code}`);
+});
+
 test('all findings are reported in one run, not just the first', () => {
   // Fixing a generated bundle one finding per run would be an N-run loop.
   const dir = mkdtempSync(join(tmpdir(), 'okf-multi-'));

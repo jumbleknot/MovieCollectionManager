@@ -53,7 +53,7 @@ measured reason — see the first gotcha below.
 - **The bare `openwiki` CLI OOMs on this repo — always invoke it through `pnpm nx wiki-update
   infrastructure-as-code`.** The Nx target sets the telemetry opt-out env var and raises the Node
   heap size; the bare CLI does neither, and the OOM is a direct consequence, not an intermittent
-  flake. See [Wiki maintenance](/openwiki/process/wiki-maintenance.md).
+  flake. See [Wiki maintenance](../process/wiki-maintenance.md).
 - **`nx affected`/`nx run-many` are the sanctioned way to scope or batch work** — reach for the
   `nx-workspace` skill for querying projects/targets/dependencies and `nx-generate` for scaffolding,
   rather than hand-rolling either.

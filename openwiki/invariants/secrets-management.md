@@ -21,7 +21,7 @@ enforced by a CI gate rather than relying on developer discipline alone.
   (`ADR-0001-prod-secrets-management.md`). Masked Komodo Variables are interpolated into each
   stack's gitignored `.env.prod` at deploy time behind the same fail-fast `${VAR:?}` pattern.
 - **HashiCorp Vault is deployed but deliberately dormant** for core stacks, and kept only as a
-  narrow, optional, fail-open reader inside the [Agent Gateway](/openwiki/projects/agent-gateway.md)
+  narrow, optional, fail-open reader inside the [Agent Gateway](../projects/agent-gateway.md)
   (`agents/movie-assistant/src/secrets.py`): it reads exactly one or two secrets (the gateway's
   Keycloak client secret, and `AGENT_CONFIG_ENC_KEY`) *iff* `VAULT_ADDR`/`VAULT_TOKEN` are set, and
   otherwise falls back to the same Komodo-injected environment. It never crashes on a Vault error and
@@ -60,9 +60,9 @@ enforced by a CI gate rather than relying on developer discipline alone.
   revisit trigger fires (dynamic DB credentials, mandated audit, or a move to multiple hosts/
   operators).
 
-This governs the credentials that the [auth chain](/openwiki/invariants/auth-chain.md) depends on
+This governs the credentials that the [auth chain](./auth-chain.md) depends on
 (Keycloak client secrets, BFF cookie/encryption keys) as well as datastore credentials for
-[mc-service](/openwiki/projects/mc-service.md) and the [BFF](/openwiki/projects/bff.md). Full
+[mc-service](../projects/mc-service.md) and the [BFF](../projects/bff.md). Full
 category-by-category coverage map, rationale table, and the revisit trigger:
 `docs/decisions/ADR-0001-prod-secrets-management.md`; day-to-day rules and CI gate list live in
 `CLAUDE.md`'s Configuration section.

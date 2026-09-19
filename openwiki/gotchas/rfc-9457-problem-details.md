@@ -36,5 +36,5 @@ a stack trace.
   trailing segment or a dedicated code field if one is added later — `title`/`detail` text is meant
   for humans and is free to be reworded.
 
-See [mc-service](/openwiki/projects/mc-service.md) for the Clean Architecture layering that produces
+See [mc-service](../projects/mc-service.md) for the Clean Architecture layering that produces
 `DomainError` in the application/domain layers before this API-layer handler ever sees it.

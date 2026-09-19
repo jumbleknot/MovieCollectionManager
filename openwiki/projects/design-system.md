@@ -11,7 +11,7 @@ timestamp: 2026-06-14T16:26:34-04:00
 
 `packages/design-system` (published as the workspace package `@mcm/design-system`) is a Material
 Design 3 token set plus Tamagui component library shared by both web and native builds of the
-[Expo/React Native app](/openwiki/projects/expo-app.md). It exists so the app's cinematic dark-first
+[Expo/React Native app](./expo-app.md). It exists so the app's cinematic dark-first
 look (Cinematic Blue primary, restrained orange "marquee light" tertiary accent, Outfit headings /
 Inter body) is expressed once, as tokens and components, rather than re-derived per screen.
 
@@ -28,7 +28,7 @@ states never use a raw green literal.
   pulls a breaking v2 by default; the compiler (babel/metro) plugins are intentionally *not*
   installed, only the runtime, to keep the Android build and the Reanimated worklets plugin
   untouched. Migrating to v2 or adding the compiler plugin is a separate, larger effort — don't do it
-  incidentally while fixing something else. See [Expo/React Native app](/openwiki/projects/expo-app.md)
+  incidentally while fixing something else. See [Expo/React Native app](./expo-app.md)
   for the app-side version-pin gotcha this mirrors.
 - **Orange (tertiary) is capped at 3-4 elements per screen, and that's enforced by convention, not a
   lint rule.** Sanctioned uses are the Grumpy Robot avatar, rating stars, the single "Add movie" FAB,
@@ -49,7 +49,7 @@ states never use a raw green literal.
 - **`dark` is the recommended default theme**, chosen because the product is a movie-collection app —
   don't flip the app's default theme without revisiting this rationale.
 
-See [Expo/React Native app](/openwiki/projects/expo-app.md) for how the app wires and consumes this
+See [Expo/React Native app](./expo-app.md) for how the app wires and consumes this
 package, `packages/DESIGN-SYSTEM.md` for the full token/component reference (colour roles, spacing,
 elevation, motion, and every component's props), and `frontend/mcm-app/README.md`'s "Design-system
 compliance & sanctioned deviations" section for the full R1-R7 rule table and deviation catalogue.

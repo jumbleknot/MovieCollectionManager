@@ -9,10 +9,10 @@ timestamp: 2026-07-30T13:49:05-04:00
 # Test authoring conventions
 
 Two conventions govern how tests are written and sequenced in this repository: where Rust tests
-physically live in [mc-service](/openwiki/projects/mc-service.md), and the checkpoint structure
+physically live in [mc-service](../projects/mc-service.md), and the checkpoint structure
 every feature's test tasks must follow regardless of language. Both are relocated here verbatim
 from `CLAUDE.md` because they are load-bearing conventions, not step-by-step procedures. See
-[Testing tiers and what gates a merge](/openwiki/invariants/testing-tiers.md) for how these tests
+[Testing tiers and what gates a merge](../invariants/testing-tiers.md) for how these tests
 fit into the unit/integration/golden/E2E tiers and what actually gates CI.
 
 ## Rust (mc-service) test placement

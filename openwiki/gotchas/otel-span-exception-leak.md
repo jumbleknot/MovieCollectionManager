@@ -38,6 +38,6 @@ both of those defaults call `str(exc)` internally.
   pattern explicitly** — OTel's safe-by-default assumption does not hold here, and there is no
   global setting that fixes it once; each span call site is responsible for its own flags.
 
-See [Agent Gateway](/openwiki/projects/agent-gateway.md) for web-api-mcp's role as one of the three
+See [Agent Gateway](../projects/agent-gateway.md) for web-api-mcp's role as one of the three
 scoped MCP servers the gateway calls, and `docs/runbooks/agent-layer.md` for the broader observability
 (Control Tower) integration.

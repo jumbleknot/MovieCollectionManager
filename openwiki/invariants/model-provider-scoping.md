@@ -8,7 +8,7 @@ timestamp: 2026-07-26T20:11:56+00:00
 
 # Model-provider environment scoping
 
-The [Agent Gateway](/openwiki/projects/agent-gateway.md) never hardcodes a model provider. Every
+The [Agent Gateway](../projects/agent-gateway.md) never hardcodes a model provider. Every
 graph node resolves its model from `MODEL_PROVIDER` (default `ollama`) plus per-node overrides, via
 `select_model_config` in `agents/movie-assistant/src/models.py` — a pure `env -> ModelSpec` function
 kept deliberately free of any LLM dependency so it is unit-testable without a live model call.
@@ -42,6 +42,6 @@ kept deliberately free of any LLM dependency so it is unit-testable without a li
 - **`MODEL_PROVIDER=anthropic` is the deliberate fallback path for the golden/Claude-surface**, used
   when validating behavior that must match golden cassettes, not merely a "better model" toggle.
 
-See [Testing tiers](/openwiki/invariants/testing-tiers.md) for how the golden suite consumes this
+See [Testing tiers](./testing-tiers.md) for how the golden suite consumes this
 scoping, and `CLAUDE.md`'s "AI Agent Layer" section plus `docs/runbooks/agent-layer.md` for the full
 per-node model configuration reference.

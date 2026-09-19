@@ -15,7 +15,7 @@ Komodo stacks, the agent chain's token-exchange proven end-to-end, the CD `deplo
 validated with a rollback drill, and the eventual consolidation from manually created stacks into a
 single config-as-code Komodo ResourceSync. It was relocated here from `docs/proposals/homelab-setup/`
 because it is a live operator record, not pre-specification ideation — see the
-[proposal → spec → plan → tasks → implementation lifecycle](/openwiki/process/spec-driven-development.md).
+[proposal → spec → plan → tasks → implementation lifecycle](../process/spec-driven-development.md).
 
 ## Gotchas
 
@@ -25,7 +25,7 @@ because it is a live operator record, not pre-specification ideation — see the
   token exchange with an auth error that looks like a missing-configuration problem, not a wrong-secret
   problem, which is why it recurred at two separate points in this chain (the BFF's subject-token
   exchange and the gateway's own re-exchange) rather than being caught once. See the
-  [auth chain](/openwiki/invariants/auth-chain.md) for where each of these exchanges sits.
+  [auth chain](../invariants/auth-chain.md) for where each of these exchanges sits.
 - **A single manually-attached webhook only redeploys the stack it's attached to.** Because one CD run
   promotes new image digests to all built-image stacks at once, a webhook scoped to only one stack
   leaves the others running stale images with silent drift between the promoted digest and the running

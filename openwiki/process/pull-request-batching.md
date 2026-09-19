@@ -13,9 +13,9 @@ costs a runner slot — and every merge invalidates the others' base, forcing an
 full re-run. A stack of N pull requests therefore trends toward O(N²) `app-e2e` runs. This rule
 governs how to decide when to batch unrelated changes into one PR versus splitting them, and is
 relocated here verbatim from `CLAUDE.md` because it is a non-obvious operational decision, not a
-step-by-step procedure. See [Testing tiers and what gates a merge](/openwiki/invariants/testing-tiers.md)
+step-by-step procedure. See [Testing tiers and what gates a merge](../invariants/testing-tiers.md)
 for why `app-e2e` (the integration tier) is the expensive gate this rule is protecting, and
-[the CI/CD pipeline](/openwiki/projects/ci-cd-pipeline.md) for where that job sits in the workflow.
+[the CI/CD pipeline](../projects/ci-cd-pipeline.md) for where that job sits in the workflow.
 
 ## Gotchas
 
@@ -55,7 +55,7 @@ What a merge *does* cost unconditionally is one runner slot: the merge commit tr
 after PR #369 merged, `main`'s own `app-e2e` ran ahead of PR #370's, and after #370 merged it ran
 ahead of #372's. Both times a `ci-status watch` expired against a queue, not a stall. Budget for
 that when sequencing merges; see
-[CI self-serve diagnostics](/openwiki/runbooks/ci-diagnostics.md) for reading a starved queue
+[CI self-serve diagnostics](../runbooks/ci-diagnostics.md) for reading a starved queue
 correctly.
 
 ## Splitting a feature moves the attribution baseline — `main` stops being the control

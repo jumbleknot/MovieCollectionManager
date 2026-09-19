@@ -45,6 +45,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
+import { normalizeLinks } from './openwiki-links.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -989,6 +990,50 @@ export const TIME_BUDGET_SECONDS = 20 * 60;
 
 const OKF_GATE = join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs');
 
+// ── link normalization (item #491) ──────────────────────────────────────────────────────────────
+//
+// The generator writes `](/openwiki/…)`, which the forge resolves against the SITE root and 404s —
+// measured via POST /api/v1/markup; scripts/openwiki-links.mjs carries the evidence. The BRIEF now
+// states the convention (openwiki/INSTRUCTIONS.md §6), but the brief is an instruction to a model,
+// not a guarantee: the generator is free to ignore every word of it, which is the same reason
+// verifySlice judges the working tree rather than believing the run message was honoured.
+//
+// So the harness fixes the form deterministically rather than hoping, and the OKF gate's V14 stays
+// as the fail-closed backstop for anything that reaches the tree by another route.
+
+/** Rewrite site-root-absolute body links to file-relative form in the given bundle files.
+ *  Returns one entry per file actually changed. Pure text surgery: only the target inside `](…)`
+ *  moves, so a page's prose cannot be altered by a normalization pass. */
+export function normalizeBundleLinks({ root = REPO_ROOT, files = [] } = {}) {
+  const changed = [];
+  for (const rel of files) {
+    const abs = join(root, rel);
+    if (!existsSync(abs) || !rel.endsWith('.md')) continue;
+    const before = readFileSync(abs, 'utf8');
+    const { text, rewrites } = normalizeLinks(before, abs, root);
+    if (rewrites.length === 0) continue;
+    writeFileSync(abs, text);
+    changed.push({ path: rel, rewrites });
+  }
+  return changed;
+}
+
+/** Every markdown file in the bundle, repository-relative — the target set for a full sweep. */
+export function bundleMarkdownFiles({ root = REPO_ROOT, bundleRoot = null } = {}) {
+  const dir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
+  const out = [];
+  const walk = (d) => {
+    for (const entry of readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = join(d, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.isFile() && entry.name.endsWith('.md')) out.push(relative(root, full).split(sep).join('/'));
+    }
+  };
+  if (existsSync(dir)) walk(dir);
+  return out;
+}
+
+
 /**
  * What the working tree says was written — the only trustworthy account of a run's output.
  *
@@ -1074,6 +1119,15 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
         violations.push(`${p} — the run may not write here: ${decision.reason}${decision.entry ? ` (policy entry \`${decision.entry.glob}\`)` : ''}`);
       }
     }
+  }
+
+  // Normalize link form BEFORE the gate reads the bundle, and only over what THIS slice wrote —
+  // those paths have just cleared the policy check above. Sweeping the whole bundle here would
+  // edit pages the slice never touched and that no policy decision covered, which is the kind of
+  // unrequested write the verifier exists to catch.
+  const normalized = normalizeBundleLinks({ root, files: written.filter((p) => p.startsWith(bundlePrefix)) });
+  for (const { path, rewrites } of normalized) {
+    console.log(`[wiki-maintain] normalized ${rewrites.length} site-root-absolute link(s) in ${path}`);
   }
 
   const okf = spawnSync(process.execPath, [OKF_GATE, '--bundle', bundleDir], { cwd: REPO_ROOT, encoding: 'utf8' });
@@ -1335,6 +1389,7 @@ export function parseArgs(argv) {
     else if (a === '--execute') setMode('execute');
     else if (a === '--selftest') setMode('selftest');
     else if (a === '--should-wait') setMode('should-wait');
+    else if (a === '--normalize-links') setMode('normalize-links');
     else if (a === '--propose') opts.propose = true;
     else if (a === '--dispatched') opts.dispatched = true;
     else if (a === '--json') opts.json = true;
@@ -1350,7 +1405,7 @@ export function parseArgs(argv) {
     else throw new Error(`unknown argument: ${a}`);
   }
 
-  if (opts.mode === null) throw new Error('one of --plan, --execute, --should-wait or --selftest is required');
+  if (opts.mode === null) throw new Error('one of --plan, --execute, --normalize-links, --should-wait or --selftest is required');
   for (const [k, v] of Object.entries({ maxSlices: opts.maxSlices, pageBudget: opts.pageBudget, timeBudgetSeconds: opts.timeBudgetSeconds })) {
     if (v !== null && (!Number.isFinite(v) || v <= 0)) throw new Error(`${k} must be a positive number`);
   }
@@ -1361,6 +1416,7 @@ const USAGE = [
   'Usage:',
   '  node scripts/wiki-maintain.mjs --plan    [--since <ref>] [--json]',
   '  node scripts/wiki-maintain.mjs --execute [--since <ref>] [--max-slices <n>] [--dry-run] [--json]',
+  '  node scripts/wiki-maintain.mjs --normalize-links [--dry-run] [--json]  # bundle-wide link form, offline',
   '  node scripts/wiki-maintain.mjs --should-wait [--dispatched]   # debounce decision, offline',
   '  node scripts/wiki-maintain.mjs --selftest',
   '',
@@ -1690,6 +1746,35 @@ async function main(argv) {
     const decision = shouldDeferMaintenance({ oldestUncoveredAgeSeconds: age, dispatched: opts.dispatched });
     console.log(`wait=${decision.defer}`);
     console.error(`[wiki-maintain] ${decision.reason}`);
+    return 0;
+  }
+
+  if (opts.mode === 'normalize-links') {
+    // A bundle-wide sweep, offline and free. `verifySlice` normalizes what a slice writes, which
+    // covers everything the generator produces FROM NOW ON; this is how a bundle that already
+    // contains the bad form is brought into line without hand-editing generated pages.
+    const files = bundleMarkdownFiles({ root: REPO_ROOT });
+    if (opts.dryRun) {
+      const would = files.flatMap((rel) => {
+        const abs = join(REPO_ROOT, rel);
+        const { rewrites } = normalizeLinks(readFileSync(abs, 'utf8'), abs, REPO_ROOT);
+        return rewrites.length === 0 ? [] : [{ path: rel, rewrites }];
+      });
+      if (opts.json) console.log(JSON.stringify({ dryRun: true, files: would }, null, 2));
+      else {
+        for (const { path, rewrites } of would) for (const r of rewrites) console.log(`${path}:${r.line}  ${r.from}  →  ${r.to}`);
+        const n = would.reduce((a, f) => a + f.rewrites.length, 0);
+        console.log(`[wiki-maintain] ${n} link(s) in ${would.length} file(s) would be rewritten — dry run, nothing written.`);
+      }
+      return 0;
+    }
+    const changed = normalizeBundleLinks({ root: REPO_ROOT, files });
+    const total = changed.reduce((a, f) => a + f.rewrites.length, 0);
+    if (opts.json) console.log(JSON.stringify({ dryRun: false, files: changed }, null, 2));
+    else {
+      for (const { path, rewrites } of changed) console.log(`[wiki-maintain] ${path}: ${rewrites.length} link(s) rewritten`);
+      console.log(`[wiki-maintain] ${total} site-root-absolute link(s) rewritten across ${changed.length} file(s).`);
+    }
     return 0;
   }
 

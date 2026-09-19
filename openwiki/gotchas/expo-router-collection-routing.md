@@ -18,7 +18,7 @@ route) so that `movies/[movieId].tsx` nested under it inherits the `collectionId
 `index.tsx` inside the directory for the collection screen. Never use `[collectionId].tsx` (file
 route) — it breaks `collectionId` availability in nested movie routes.
 
-See the [Expo/React Native app](/openwiki/projects/expo-app.md) for the broader `app/(app)/`
+See the [Expo/React Native app](../projects/expo-app.md) for the broader `app/(app)/`
 file-based routing structure this convention sits in, and
 [Expo Router server export and agent-transport traps](expo-router-and-transport-traps.md) for other
 Expo Router gotchas in the same codebase.

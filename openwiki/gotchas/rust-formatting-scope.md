@@ -60,7 +60,7 @@ rustfmt backend/mc-service/tests/<your-file>.rs    # then format just yours
 
 Dependency resolution in the dev container needs `cargo --offline`, and a *failing* `--offline`
 resolve is itself a signal — see
-[the devcontainer runbook](/docs/runbooks/devcontainer.md), which is where that half lives.
+[the devcontainer runbook](../../docs/runbooks/devcontainer.md), which is where that half lives.
 
-See also [mc-service musl-conditional vendored OpenSSL](/openwiki/gotchas/mc-service-musl-openssl.md)
-and [mc-service](/openwiki/projects/mc-service.md).
+See also [mc-service musl-conditional vendored OpenSSL](./mc-service-musl-openssl.md)
+and [mc-service](../projects/mc-service.md).

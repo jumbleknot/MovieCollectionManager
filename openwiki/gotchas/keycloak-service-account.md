@@ -15,7 +15,7 @@ service account via the OAuth2 client-credentials grant, not the realm admin pas
 in `keycloak.ts` posts `grant_type=client_credentials` with `keycloakServiceClientId` /
 `keycloakServiceClientSecret` to the realm's token endpoint and returns the resulting `access_token`;
 every Admin API caller (`keycloak.ts`, `email-service.ts`) goes through this helper. See
-[the auth chain](/openwiki/invariants/auth-chain.md) for how this fits alongside the user-facing
+[the auth chain](../invariants/auth-chain.md) for how this fits alongside the user-facing
 authorization-code flow.
 
 ## Gotchas

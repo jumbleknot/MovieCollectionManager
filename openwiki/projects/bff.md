@@ -10,16 +10,16 @@ timestamp: 2026-09-07T00:00:00+00:00
 # BFF (Backend-for-Frontend)
 
 The BFF is server-side code that lives *inside* the same Expo Router codebase as the client app (see
-[Expo/React Native app](/openwiki/projects/expo-app.md)) but runs only on the server: business
+[Expo/React Native app](./expo-app.md)) but runs only on the server: business
 logic in `frontend/mcm-app/src/bff-server/`, HTTP surface as Expo Router `+api.ts` handlers under
 `frontend/mcm-app/src/app/bff-api/`. In production/Docker it is served by `frontend/mcm-app/server.js`
 (an Express adapter around `@expo/server`). This split exists so the client never holds a raw
-credential — see [Auth chain](/openwiki/invariants/auth-chain.md), which the BFF is the primary
+credential — see [Auth chain](../invariants/auth-chain.md), which the BFF is the primary
 enforcement point for.
 
 Route groups: `bff-api/auth/*` (login, refresh, logout, registration, email verification),
-`bff-api/collections/*` and `.../movies/*` (proxy CRUD to [mc-service](/openwiki/projects/mc-service.md)),
-`bff-api/agent/*` (forwards to the [Agent Gateway](/openwiki/projects/agent-gateway.md) over AG-UI),
+`bff-api/collections/*` and `.../movies/*` (proxy CRUD to [mc-service](./mc-service.md)),
+`bff-api/agent/*` (forwards to the [Agent Gateway](./agent-gateway.md) over AG-UI),
 `bff-api/admin/settings`. Every proxy route follows the same shape: `requireAuth()` →
 `requireMcUser()`/`requireMcAdmin()` RBAC check → a per-request `mc-service-client.ts` Axios instance
 carrying the caller's JWT as `Authorization: Bearer` → `handleMcApiError()` translates mc-service's
@@ -64,7 +64,7 @@ RFC 9457 problem+json on failure. The client never calls mc-service directly.
   already unresolvable (record it as `'unresolvable'` in `KNOWN_DYNAMIC_SPECIFIERS`). Do not delete
   the check — its purpose is to turn a future production 500 into a red build here.
 
-See [Auth chain](/openwiki/invariants/auth-chain.md) for the full login-to-request-validation
-sequence, and [Secrets management](/openwiki/invariants/secrets-management.md) for how the BFF's own
+See [Auth chain](../invariants/auth-chain.md) for the full login-to-request-validation
+sequence, and [Secrets management](../invariants/secrets-management.md) for how the BFF's own
 credentials (client secret, cookie/encryption keys) are sourced. Full setup and env-var reference:
 `frontend/mcm-app/README.md` and `docs/runbooks/local-dev.md`.

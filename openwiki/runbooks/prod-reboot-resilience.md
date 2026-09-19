@@ -23,7 +23,7 @@ history, not a single fix.
   rebind or a full daemon restart (after the tailnet interface is up) recovers it, not a plain container
   restart. The fix was moving affected published ports to a broad bind behind the host firewall's
   default-deny-inbound posture, landing them in the
-  [published-port reservation range](/openwiki/invariants/published-port-reservation.md) to avoid
+  [published-port reservation range](../invariants/published-port-reservation.md) to avoid
   colliding with the CI runner sharing the same host.
   - **This is the second time the same physical ports moved** — a first change was itself superseded
     by a follow-up feature after those ports collided with the CI runner's own use of the same host's

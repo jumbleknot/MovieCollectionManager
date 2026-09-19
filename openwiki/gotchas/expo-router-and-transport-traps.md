@@ -10,7 +10,7 @@ timestamp: 2026-07-10T06:27:57-04:00
 # Expo Router server export and agent-transport traps
 
 Two separate runtime traps live at the boundary between [the Expo/React Native
-app](/openwiki/projects/expo-app.md)'s build tooling and its agent transport. Both were discovered
+app](../projects/expo-app.md)'s build tooling and its agent transport. Both were discovered
 the hard way (a crash and a silent auth failure, respectively) and both have narrow, load-bearing
 fixes that look removable if you don't know why they're there.
 
@@ -60,6 +60,6 @@ call `silentRefresh()`, and retry the run once after a short settle delay.
   item** at the time this was written — treat a related test failure as needing investigation, not
   an automatic false positive.
 
-See [Expo/React Native app](/openwiki/projects/expo-app.md) for the broader client-side app shape
-this hosting/transport layer sits in, and [BFF](/openwiki/projects/bff.md) for the server-side
+See [Expo/React Native app](../projects/expo-app.md) for the broader client-side app shape
+this hosting/transport layer sits in, and [BFF](../projects/bff.md) for the server-side
 `server.js` entrypoint these fixes live in.

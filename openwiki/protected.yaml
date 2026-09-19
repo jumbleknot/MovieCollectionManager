@@ -49,12 +49,20 @@ authoritative:
 passages:
   - concept: "gotchas/agent-config-ssrf-guard.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:85fc51d0e71a54ad44548d98bf2f043133ca226811fe7ae607c3d9442b398483"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:9fde24d649d4fb456fb166bdd0c30e9951a36f6bcc30c01a1dee23b7a775e1fa"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "gotchas/cascade-delete-and-replica-set.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:145a4b006359ef57739359b3209c86e8cae671ac5ed482f24d76d9cfcd7d511e"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:41f7d4cb808d49c5d48168abe9d517fd1d6a7e5e33c6d3d685873b05c5586f9b"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "gotchas/docker-internal-dns.md"
@@ -69,32 +77,56 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "gotchas/expo-router-collection-routing.md"
     anchor: "Gotcha"
-    fingerprint: "sha256:b6207e3e832bc965e10edf85516eb837e962145ca7cd2489568c0bd72e10e341"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:e7c7b9d46ef51559a4865d42c90e16a6ed41a0cb010afc6b554a9ebc8bdd5bc2"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "gotchas/keyset-pagination.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:287768e8e787453037ad7fc68490050304ee7290b1c3db16c84fe8e3745d0aae"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:b7fb861b2bd96508c24224c3bf1b4b1522e6b74b50e1c7e9e495742b98a7b67c"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "gotchas/mc-service-musl-openssl.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:4ca66187e4c1ac5a66780612734e0d363ee5385de9f1bba6238a796f497ebe9f"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:402531fe498e828f919c45e0f041f38f1287f784c1dfccbf36fabd84abb81dc0"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "gotchas/mongodb-indexes-and-uniqueness.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:857995b5260e9a01841f91d15aa3c612ef0461ed57351f9648557386d1897998"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:a951f48f9678b8468f6e6ccc2035869f97b5af8d34b077eede95cdaf6fe8fd06"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "gotchas/role-enforcement-is-a-layer.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:c95a42d06010e7b1dab5555a03aaa7ad276f097c4da9196518814893e46f3ea8"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:2b9bbecbf0fa1042fefa7c4a19c5b351d10e7ef947d5d788c841296c85490130"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/auth-chain.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:b838f771ea764dd01e1acd03c26de432eb01a32a79629cf544c5e85f6a85fce9"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:84f4721ddb6bd70f1719082e019f44ad5505728a295e2f20699d884922bf53b7"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/feature-validation-checklist.md"
@@ -105,17 +137,29 @@ passages:
     # Playwright container, so every agent spec had skipped on every CI run for the lifetime of that
     # job. The stale "all ten agent-*.spec.ts" count was corrected at the same time (13 files, 11
     # gated). The passage now describes what CI does rather than what it was assumed to do.
-    fingerprint: "sha256:f3b5419ff923719dd287ee9dfa430a9d7f43c9da30b233292b2d61ec4b5d4b34"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:350616f0b5cb0574d6010d73c458f75182267121990eef36ff0e536d1d0baf20"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/logging-and-audit.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:f6bb7c341f21e3c92b71c7e8420fa2202ac4453accc01b0c8fab1e8390ee5cef"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:dc90db206333020eb29c1753ce352c7304d0664a46c418946116cb9148581898"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/model-provider-scoping.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:b71838d03962d99cf1379e67c7c7159084f0ddf44d5c59c39061be53a33c8694"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:bf3e8a536f2064f5c116a28963e7c63803bf1d08bfd96b13b425ae78ba8cf3be"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/nx-task-runner.md"
@@ -128,7 +172,11 @@ passages:
     #     and conclude the tool was missing. The correction names the exception CLASS (arguments vary
     #     per invocation → invoked directly) and the measured reason: ~60 s per Nx target invocation in
     #     this workspace against 0.09 s direct, of which ~31 s is project-graph computation alone.
-    fingerprint: "sha256:20732171eab664e669226ec43c3db8637e2e5b2bed245a4268c1ee35ea5cdada"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:22447c6a27466a8c7e91e77dbae7dce5063599db2c1749515def08b0f5d08ceb"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/package-manager-enforcement.md"
@@ -136,12 +184,20 @@ passages:
     # Re-fingerprinted 2026-08-29 (item #286) in the same change as the text, per the gate's rule: the
     # "declared exactly once, in the ROOT manifest" bullet was added after a shadow pnpm 10.x pin in
     # frontend/mcm-app/package.json was found a whole major behind the root's.
-    fingerprint: "sha256:58c48fcbc248b4c58d15f387c73b0a687b0f6571995600949d0940850e2b663c"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:b306bad6f9b5dcd126a1681961898cd4f9499a93ed563196818b476f175ec85a"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/rtk-token-compression.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:ca09339c699cd222486a0f8297c2b21049cba2d1141dd91f38123b6be8750a49"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:902ea57c09f462b8c60e71447e11a1d833ac0d275b911b22096b3670ad7c8451"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/testing-tiers.md"
@@ -161,7 +217,11 @@ passages:
     #     a test that walks a fixed turn SEQUENCE must gain a turn, never a relaxed assertion; and
     #     the dangerous sequence-walkers are the ones that DON'T go red — two here, one passing a
     #     slid-by-one answer list, three specs missed by the task list and caught only by CI.
-    fingerprint: "sha256:b94ac6f19a80944e6ae53b4fb6a24b56b99e5b7379f280d66125d3c769b38326"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:fc15cbe49cabdb39db2d0e75147d45b0516f30f1cd615a9aacd8ca0b3f25ddc3"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/feature-test-scope.md"
@@ -246,6 +306,10 @@ passages:
     # (the dispatch sends {"ref":"main"}), and a [skip ci] commit can be the tip while running
     # nothing. Pinned executably by scripts/__tests__/cd-dispatch-gate.test.mjs and
     # scripts/__tests__/app-ci-trigger-cd.guard.test.mjs.
-    fingerprint: "sha256:e4e364d182690668d915cd94faadb15b161d743194c47653efa27d84e1ca91c2"
+    # Re-fingerprinted 2026-09-19 (item #491) — LINK FORM ONLY: the site-root-absolute
+    # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
+    # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
+    # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
+    fingerprint: "sha256:d04395794b44d1a8d69bd1edaea8d1cd7f3eaa597b4a21ff2be315fd8c3a0a27"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"

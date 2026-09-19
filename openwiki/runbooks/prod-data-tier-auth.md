@@ -26,7 +26,7 @@ host.
   not the recommended one.
 - **Seed the Komodo Variables for both stores before merging.** The compose uses fail-fast `${VAR:?}`
   interpolation, so a missing secret aborts the deploy outright rather than starting unauthenticated —
-  consistent with the posture in [Secrets management](/openwiki/invariants/secrets-management.md).
+  consistent with the posture in [Secrets management](../invariants/secrets-management.md).
 - **The keyfile only applies to the movie store.** The BFF store is standalone and needs SCRAM
   credentials only, never a keyfile — conflating the two setups is a common source of an unnecessary
   extra step or a misconfigured mount.
