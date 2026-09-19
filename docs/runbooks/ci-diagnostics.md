@@ -659,6 +659,82 @@ node -e 'const j=require("./config.json");
 propose that deliberately, because one transient blip blocking a merge is a policy change that should
 be decided on this data rather than ahead of it. Read the number; do not assume the gate acted on it.
 
+### A GREEN job that is not `app-e2e` emits nothing — record the measurement as a commit status
+
+The bullet above ("self-limiting to `app-e2e`, by construction") has a consequence worth stating
+outright, because it cost item #457 a close: **every other job's green publication finds nothing and
+uploads nothing.** Measured verbatim in `cd-deploy` run 3430's `Publish failure digest` step:
+
+```
+[ci-failure-digest] digest-outcome=not-needed — no digest was needed — the job passed and produced
+                    no counts sources
+[ci-failure-digest] counts mode — this job runs no e2e counts steps; nothing to publish.
+```
+
+So for any job but `app-e2e`, a **green run leaves no machine-readable trace of what its steps
+printed**. Every other route is closed too — measured against run 3430:
+
+| route | result |
+|---|---|
+| commit statuses on the run's sha | **zero rows** — `cd-deploy` posts none of its own |
+| `/actions/runs/3430/jobs` | **404** (item #268) |
+| `/actions/runs/3430/logs` | **404** |
+| `ci-failures` bundles | across all **274** published versions, the only `prod-apk` one is `3409--prod-apk` — a **failure** |
+
+Note what that last row means: `prod-apk`'s output has only ever been readable **because the job
+failed**. A step that succeeds at doing nothing leaves no trace at all. That is the same blindness as
+the `[skip ci]` and advisory-green classes — *a green tick is not evidence that a step did its job* —
+and it is why item #457 could confirm its fix had **shipped** but not that its output had **appeared**.
+
+**The pattern that closes it** (items #418, #268, #485, and now #457): have the step export its
+measurement to `$GITHUB_OUTPUT`, and add a tiny recorder that `curl`s it onto the commit as a status.
+
+```yaml
+- name: Report disk space (…)
+  id: disk
+  run: |
+    …
+    avail_gb=$(df -P -k / | awk 'NR==2 { printf "%.0f", $4/1048576 }')
+    echo "avail_gb=${avail_gb}" >> "$GITHUB_OUTPUT"
+
+- name: 'Publish prod-apk disk measurement (items #457, #418)'
+  if: ${{ always() && github.event_name != 'pull_request' }}
+  continue-on-error: true
+  env:
+    GITHUB_TOKEN: ${{ github.token }}
+    MEASURED_AVAIL_GB: ${{ steps.disk.outputs.avail_gb }}
+  run: |
+    desc="reclaimed=none avail=${MEASURED_AVAIL_GB:-<unset>}G …"
+    curl -fsS -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' \
+      "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+      -d "{\"context\":\"cd-deploy/prod-apk-disk\",\"state\":\"success\",\"description\":\"$desc\"}"
+```
+
+Read it back with `GET /repos/{owner}/{repo}/commits/{sha}/status`. Five properties are load-bearing:
+
+- **`always()`**, so a *failed* run still leaves the record — that is when it matters most. A recorder
+  gated on the thing it measures records nothing on exactly the run you needed it for (item #418).
+- **`continue-on-error`** and `-f` on curl: this is bookkeeping, never a second gate. If the POST
+  fails, the job's own conclusion is already the truth and the status's **absence** is its own tell.
+- **`state` is always `success`**, with the finding in the description. A red on `main`'s tip is a
+  signal a bookkeeping step has no standing to raise.
+- **Values are carried through RAW**, `<unset>` included. `<unset>` is a real answer — it says the
+  runner returned no value for that context, which is a different fault from returning a wrong one.
+- **The context name must match no required glob.** Check it against the real list, do not reason
+  about it:
+
+  ```bash
+  curl -s -H "Authorization: token $MCM_FORGE_TOKEN" "$API/branch_protections" \
+    | jq -r '.[].status_check_contexts[]'
+  # 2026-09-19 → guardrails*  app-ci / changes*  app-ci / affected*
+  #              app-ci / mc-service-checks*  app-ci / app-e2e*  infra-image-scan / infra-image-scan*
+  ```
+
+  ⚠️ **"A context without a ` / ` separator cannot gate" is NOT the rule** — `guardrails*` has no
+  separator and gates everything it prefixes. The separator argument happens to hold for
+  `infra-image-scan/expiry` and `infra-image-scan/weekly`; it is not general.
+  `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the check against the measured glob list.
+
 ## Why CI still judges its own counts
 
 The digest publishes **on failure**. That is right for diagnosis and wrong for verification: on a
