@@ -351,6 +351,7 @@ jobs:
       # reclaim. No `|| true`: under `bash -e`, a failing `df` now fails the step instead of printing
       # reassurance.
       - name: Report disk space (nothing to reclaim — see item #457)
+        id: disk
         run: |
           bash scripts/ci-log-step.sh prod-apk-report-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
           echo "No reclamation is attempted here. This job runs in node:22-bookworm, which carries"
@@ -359,6 +360,83 @@ jobs:
           echo "and npm, which the pnpm setup step below depends on. See item #457."
           echo "The Android SDK install needs roughly 10-15 GB; below is what is actually free."
           df -h /
+          # Item #457 AC4 — the figure, in a form that survives the job log.
+          #
+          # `df -P` (POSIX output) is one line per filesystem with no wrapping, so `NR==2` is always
+          # the row for `/` — `df -h` alone may wrap a long device name onto its own line and shift
+          # every field. -k keeps the units fixed rather than letting -h pick them, so the arithmetic
+          # does not depend on whether the runner happens to be in the G or T range. Command
+          # substitution rather than a nested heredoc: this body is itself a heredoc, and an inner
+          # terminator would have to sit at column 0 to be recognised.
+          avail_gb=$(df -P -k / | awk 'NR==2 { printf "%.0f", $4/1048576 }')
+          use_pct=$(df -P -k / | awk 'NR==2 { print $5 }')
+          echo "measured: reclaimed=none avail=${avail_gb}G used=${use_pct}"
+          echo "avail_gb=${avail_gb}" >> "$GITHUB_OUTPUT"
+          echo "use_pct=${use_pct}" >> "$GITHUB_OUTPUT"
+          CI_LOG_STEP
+
+      # Item #457 AC4, via the item #418 pattern — make this step's execution READABLE.
+      #
+      # The step above prints, in words, that nothing is reclaimed and what is actually free. On a
+      # GREEN run nobody can read it. Measured against run 3430 (the first `cd-deploy` carrying the
+      # rewritten step, `success`, prod-apk proven to have run by the sha embedded in its published
+      # APK version `1.0.0-85ae04f`):
+      #
+      #   commit statuses on the run's sha   → zero rows; cd-deploy posts no statuses at all
+      #   /actions/runs/3430/jobs            → 404 (item #268)
+      #   /actions/runs/3430/logs            → 404
+      #   Publish failure digest (always())  → "digest-outcome=not-needed … the job passed and
+      #                                         produced no counts sources", "counts mode — this job
+      #                                         runs no e2e counts steps; nothing to publish"
+      #
+      # That last line is the whole problem in one sentence: `counts` mode collects only app-e2e's
+      # steps, so every other job's green publication finds nothing and uploads nothing. Confirmed
+      # again across all 274 published `ci-failures` bundles — the ONLY `prod-apk` bundle is
+      # `3409--prod-apk`, the PRE-FIX FAILURE that produced item #457's original evidence. Note where
+      # that leaves us: `sudo: command not found` was visible only BECAUSE the job failed. A step that
+      # succeeds at doing nothing leaves no trace, which is the defect item #457 is about, one level up.
+      #
+      # So this records the measurement on the commit, the same channel and shape as
+      # `infra-image-scan/expiry` (item #418) and `renovate/mode` (item #268).
+      #
+      # IT CANNOT GATE ANYTHING. Measured, not reasoned about — `GET /repos/{owner}/{repo}/branch_protections`
+      # on 2026-09-19 returns exactly six required globs for `main`:
+      #
+      #   guardrails*  ·  app-ci / changes*  ·  app-ci / affected*  ·  app-ci / mc-service-checks*
+      #   app-ci / app-e2e*  ·  infra-image-scan / infra-image-scan*
+      #
+      # `cd-deploy/prod-apk-disk` matches none: it does not start with `guardrails`, and it carries no
+      # ` / ` separator, so it cannot match the five `<workflow> / <job>*` forms either. Note the first
+      # glob has no separator — "a status without ` / ` cannot gate" is NOT the general rule, and the
+      # name is what was checked against the real list. This is the same standing
+      # `infra-image-scan/expiry` has had since item #418.
+      #
+      # `state` is therefore always `success` and the finding lives in the description: this is
+      # observability, never a second gate.
+      #
+      # `always()` so a FAILED prod-apk still leaves the record — that is when it matters most — and
+      # `continue-on-error` + `-f` on curl because if the POST itself fails, the job's own conclusion
+      # is already the truth and the status's ABSENCE is its own tell. Not gated on the step's own
+      # outcome: a recorder gated on the thing it measures records nothing on exactly the run you
+      # needed it for (item #418).
+      - name: 'Publish prod-apk disk measurement (items #457, #418)'
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          # Carried through RAW. The status states a measurement; it never restates a belief about
+          # one. `<unset>` is a real answer — it says the runner returned no value for that context,
+          # which is a different fault from returning the wrong one.
+          MEASURED_AVAIL_GB: ${{ steps.disk.outputs.avail_gb }}
+          MEASURED_USE_PCT: ${{ steps.disk.outputs.use_pct }}
+          MEASURED_DISK_OUTCOME: ${{ steps.disk.outcome }}
+        run: |
+          bash scripts/ci-log-step.sh prod-apk-publish-disk-measurement bash -e /dev/stdin <<'CI_LOG_STEP'
+          desc="reclaimed=none step=${MEASURED_DISK_OUTCOME:-<unset>} avail=${MEASURED_AVAIL_GB:-<unset>}G used=${MEASURED_USE_PCT:-<unset>}"
+          echo "measured: $desc"
+          curl -fsS -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' \
+            "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -d "{\"context\":\"cd-deploy/prod-apk-disk\",\"state\":\"success\",\"description\":\"$desc\"}" >/dev/null
           CI_LOG_STEP
       # No `version:` — resolve pnpm from package.json `packageManager`, exactly like every other
       # pnpm/action-setup in this repo (cd-deploy:131, app-ci ×4, infra-image-scan). This job used to
