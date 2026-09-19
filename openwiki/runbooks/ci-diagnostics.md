@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), the event-vs-trigger_event field split that makes a scheduled run look like a push, and the never-scheduled ⏳ trap where a path-gated job produces the same waiting state as a queued one.
+description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), the event-vs-trigger_event field split that makes a scheduled run look like a push, the ⏳ trap where absence in the 50-row tasks window is not evidence a job was never scheduled, the scheduled-run-posts-no-commit-status fix (item #485), and the commit-status bookkeeping pattern for green jobs whose output would otherwise vanish (item #457).
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-18T12:00:00Z
+timestamp: 2026-09-19T12:00:00Z
 ---
 
 # CI self-serve diagnostics
@@ -134,18 +134,22 @@ runtime rather than any literal configured value.
   expected and must never be conflated with an actual build failure.
 - **A pipe throws the exit code away — including exit 3 and exit 1.** `ci-status … watch | tail -30` reports **`tail`'s** status, so both arrive as `0`. Measured 2026-09-06: a watch that printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as `WATCH_EXIT=0`. Redirect and read the file instead: `node scripts/ci-status.mjs watch --pr 372 --timeout 5100 > /tmp/watch.log 2>&1; echo "EXIT=$?"`. `set -o pipefail` also works, but is not on by default. The general form of this trap — that `cmd | tail` reports `tail`'s status for any tool — is enumerated in [E2E testing](./e2e-testing.md) § instrument traps.
 - **Exit `3` twice running is usually SERIALIZATION, not a dead runner.** A merge commit fires `app-e2e` on `main`, and with capacity 1 that run takes the runner ahead of every open PR. Measured 2026-09-06: PR #370's `app-e2e` waited on `main`'s post-merge run from PR #369, then PR #372's waited on `main`'s from PR #370. Distinguish the two: a `running` row for your own branch means wait; recent rows for *other* branches with nothing for yours means starvation. Use `GET /actions/tasks?limit=14` and read `status` not `conclusion` — `conclusion` is `null` even for successful tasks in this listing.
-- **⏳ can mean NEVER SCHEDULED — and `watch` cannot tell the difference (measured 2026-09-18).** A required context that was never scheduled because it was path-gated out shows the same ⏳ `waiting (queued or running)` as one sitting in a queue, because both are simply the absence of a commit status. `watch`'s timeout line then converts that absence into the diagnosis *"runner starvation, not failure (exit 3)"* — which presumes the job exists. Measured on PRs #479 and #482, both docs-or-scripts-only: two watches expired (3000 s and 3300 s each), `actions/tasks` held **no `app-e2e` and no `infra-image-scan` row for either head**, and ~105 minutes were spent waiting for runs that were never going to be created. The session reported "runner starvation" to the operator — wrong, downstream of trusting the ⏳.
+- **A ⏳ that will not resolve looks exactly like one that will — and the honest answer is usually "wait longer" (measured 2026-09-18).** Both are the absence of a commit status rendered as a state, and `actions/tasks` does NOT disambiguate them: a run queued but not yet dispatched has no task row at all. PRs #479 and #482 sat ⏳ on `app-e2e` and `infra-image-scan` through two watches (3000 s and 3300 s), each ending in the correct message — *"still waiting … runner starvation, not failure"*. `actions/tasks` showed no row for either job, and that absence was read as "path-gated out, never scheduled, waiting is futile." **It was wrong.** The statuses resolved on their own at 11:08:59Z and 11:18:52Z, roughly seven minutes after the check that declared them dead. Two lessons, in order of how much they cost:
 
-  **The tell is ABSENCE, not `skipped`:**
+  - **Absence in a 50-row shared-queue window is not evidence.** `actions/tasks?limit=50` is capped and repo-wide; a busy period pushes your job out of it, and a queued-but-undispatched job was never in it. Use the listing to confirm what IS running, never to prove what is not.
+  - **A path-gated job does eventually SAY so.** It posts `skipped` (API `success`, description `"Has been skipped"`) once evaluated. If a context is genuinely gated out, you get that word; you do not get a permanent ⏳. So ⏳ means *not yet evaluated*, whatever the paths say.
 
-  | what you see in `actions/tasks` for your head sha | what it means |
-  |---|---|
-  | a `running` row for your branch | genuinely queued/running — wait |
-  | a `skipped` row for the job | the `changes` filter evaluated and declined it — it will not run |
-  | rows for other branches, none for your job, **and your job normally runs on this path** | starvation — wait |
-  | **no row for the job at all, and the path does not match its filter** | **never scheduled — waiting is futile** |
+  The reliable check is the commit's own status history (carries timestamps and is not a capped window):
 
-  A job the `changes` filter evaluates and declines can appear as a real `skipped` task. One gated out before scheduling leaves no row. **One watch is evidence; a second watch is not.** If a context is still ⏳ after one full run's duration, query `actions/tasks` for your head sha directly rather than starting another `--timeout`.
+  ```bash
+  node --input-type=module -e "
+  const r=await fetch(process.env.FORGE+'/api/v1/repos/jumbleknot/mcm/commits/'+process.env.SHA+'/statuses?limit=50',
+    {headers:{Authorization:'token '+process.env.MCM_FORGE_TOKEN}});
+  for(const s of await r.json()) console.log(s.context.padEnd(38), String(s.status).padEnd(8), s.created_at);
+  "
+  ```
+
+  A context whose newest entry is `pending` is still coming. Compare its timestamp with the others: an hour behind a green board on this capacity-1 runner is normal serialization, not a dead job.
 
 - **`/actions/runs/{id}/jobs` does not exist in this Forgejo build** (measured 2026-09-06 — it answers with a non-JSON body, so a naive `| jq` dies on a parse error rather than a 404). There is no per-job listing; `actions/tasks` is the only queue view.
 - **Do NOT open a PR with an AGit push (`HEAD:refs/for/main`).** AGit creates a PR with no backing
@@ -340,6 +344,9 @@ runtime rather than any literal configured value.
   const runs = (await api(`/repos/${owner}/${repo}/actions/runs?page=1&limit=50`)).workflow_runs;
   runs.filter((r) => r.ScheduleID).map((r) => [r.id, r.created, r.workflow_id, r.trigger_event]);
   ```
+
+- **A scheduled run posts NO commit status — `failure --run <id>` used to exit 0 and say "no failed jobs" for a truly failed run (item #485, fixed 2026-09-19).** A `schedule`-triggered run posts **no `<workflow> / <job>` commit status at all**. Its red is visible only in the runs listing, the job log and the evidence bundle. Nothing attached to the commit says `main` is failing. Previously `failure --run <id>` read contexts, found none, and answered `No failed jobs on <sha> — checked every event's contexts` with exit 0 — not wrong about what it read, and the opposite of the truth. **Fixed:** the run's own `status` field is now carried through from the `--run` lookup; the same command now answers with `⚠ Run <id> is FAILED (status=failure conclusion=<unset>) but posted NO commit status` and exits 1. Note: `conclusion` is `undefined` on every run measured in this forge — a reader that consults only `conclusion` sees nothing. A red scheduled sweep is now also visible on the commit: `infra-image-scan.yml` posts an `infra-image-scan/weekly` status after each sweep (cannot gate — no ` / ` separator in the context name, unlike `infra-image-scan / infra-image-scan*`). Also: `?trigger_event=schedule` in `GET /actions/runs` is **silently ignored** — returns the unfiltered set. Filter `trigger_event` client-side, or use `?workflow_id=<file>&page=1&limit=50` server-side then filter locally.
+- **A green job that is not `app-e2e` emits nothing — use a commit status recorder when the output must survive (item #457 AC4).** Every other job's green publication finds nothing and uploads nothing. Measured verbatim in `cd-deploy` run 3430: `digest-outcome=not-needed`. The `prod-apk` disk measurement was only ever readable because the job had failed — a step that succeeds at doing nothing leaves no trace. The pattern that closes it (items #418, #268, #485, #457): have the step export its measurement to `$GITHUB_OUTPUT`, then add a recorder that `curl`s it as a commit status. Five properties are load-bearing: **`always()`** so a *failed* run still leaves the record; **`continue-on-error`** so a curl failure cannot be a second gate; **`state` always `success`** with the finding in the description; values carried through **raw**, `<unset>` included; and the **context name must match no required glob** (verify against the live branch-protection list, not by reasoning about separators — `guardrails*` has no ` / ` separator and gates everything). `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the check against the measured glob list.
 
 Full exit-code table, the exact API endpoints and payload measurements, the required-check
 fetch/fallback logic, the PR creation recipe, and the evidence-bundle hardening details:
