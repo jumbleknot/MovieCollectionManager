@@ -4,7 +4,7 @@ title: Infra-image CVE scanning
 description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code, but NOT MinIO which is now built from source and scanned by its own builder) — the coverage gap left by SAST/SCA and the built-image scanners, gated on fixable Critical findings only, and how to verify the weekly allowlist-expiry step actually ran.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
-timestamp: 2026-09-14T19:24:00Z
+timestamp: 2026-09-19T18:00:00Z
 ---
 
 # Infra-image CVE scanning
@@ -140,6 +140,14 @@ now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`),
   a measurement. Prefer the direction that fails safe: a key covering a ref that turns out clean
   suppresses nothing extra; a key that omits an affected ref blocks the board.
 
+- **The `cd-deploy` built-image scan had two meanings on one exit code — FIXED, item #499.** `scripts/cd/scan-push.sh` used to run `trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed` with no retry. Trivy exits 1 both for a finding AND for an error (e.g. a DB-download blip), so a transport failure was indistinguishable from "a fixable Critical blocked the deploy" — the obvious reading was wrong roughly half the time it fired. The fix was to split one command into two, each with exactly one meaning:
+
+  ```bash
+  node scripts/infra-image-scan.mjs --image "$local_tag"   # --format json, NO --exit-code → non-zero = scanner error only
+  node scripts/check-infra-image-findings.mjs              # the verdict, from the normalized report
+  ```
+
+  The scan step inherits bounded retry from `scripts/lib/scanner-retry.mjs` (same as the infra scan, item #495). A non-zero scan exit now means Trivy could not complete, printed as `✗ SCANNER ERROR … This is NOT a vulnerability verdict`; a non-zero gate exit means a finding, printed as `✗ BLOCKING FINDING … This IS a vulnerability verdict`. **The policy bar is unchanged**: `normalizeTrivy()` marks `blocking = Critical AND a fix exists upstream`, exactly what `--severity CRITICAL --ignore-unfixed` meant. What is new is that accepted findings on the deploy path now live in `security/infra-images/allowlist.yaml` — the same allowlist the weekly expiry check reads — rather than in a `.trivyignore` nobody reviews. Pinned by `scripts/__tests__/cd-scan-push-gate.guard.test.mjs`, which asserts the gate runs before `docker push` and a fixable CRITICAL still blocks.
 - **Did the weekly allowlist-expiry step run? Read its status, not its absence (item #418).** The
   expiry check over both allowlists is the only thing that ever reports an expired, expiring or
   unmatched suppression, and it runs on the **weekly cron only** (`if: github.event_name == 'schedule'`)
