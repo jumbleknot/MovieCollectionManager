@@ -32,6 +32,9 @@ import { execFileSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
 
 import { redactExcerpt, redactForPublication } from './ci-digest-redact.mjs';
+// Item #504 — the shared argument contract. This script's DEFAULT ACTION POSTS a digest comment
+// and a commit status, so a silently-ignored flag meant a typo'd `--selftest` published for real.
+import { dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
 
 /** Per-source caps. Bounded on two sides: agent context, and the ~135 KB/s link (NFR-003). */
 export const DEFAULT_CAPS = { lines: 200, bytes: 32 * 1024 };
@@ -1631,10 +1634,66 @@ async function pruneExpiredBundles(api) {
   }
 }
 
+// ── The argument contract (item #504) ───────────────────────────────────────────────────
+
+/** Every argument this script accepts. Anything else is an ERROR — see resolveCommand. */
+export const ACCEPTED_FLAGS = ['--selftest', '--help', '-h'];
+
+export const USAGE = `ci-failure-digest.mjs — publish the failure digest for the current job (feature 042).
+
+  node scripts/ci-failure-digest.mjs             PUBLISH the digest — the default, and what every
+                                                 workflow step runs (a comment + a commit status)
+  node scripts/ci-failure-digest.mjs --selftest  run the internal checks and publish NOTHING
+  node scripts/ci-failure-digest.mjs --help      this text
+
+A bare invocation PUBLISHES.`;
+
+/**
+ * Resolve argv into the action to take — and REJECT anything not recognised.
+ *
+ * WHY THIS IS NOT A CONTRADICTION OF FR-009, which item #500 deferred this fix over.
+ *
+ * FR-009 says this step must never change a job's outcome, and the entrypoint below still honours
+ * that absolutely: the digest path catches everything and forces `process.exitCode = 0`. What the
+ * deferral assumed — that FR-009 means "this script always exits 0, whatever you type" — was never
+ * true. `selftest()` has always ended in `process.exit(1)` on failure. FR-009 governs the DIGEST
+ * path; argument-driven paths have always been free to fail, and a rejection is one of those.
+ *
+ * Two further facts make the rejection unreachable from CI at all, both pinned by tests in
+ * scripts/__tests__/argv-mutating-default.guard.test.mjs so they cannot rot:
+ *   - all 22 workflow call sites invoke this BARE, with no arguments;
+ *   - all 22 carry `continue-on-error: true` regardless.
+ *
+ * So the only caller who can trigger a rejection is a human or agent at a terminal — which is
+ * exactly the audience that must not have `--seltest` silently publish a digest.
+ *
+ * @returns {{command: 'help'|'selftest'|'digest'}}
+ * @throws {ArgvError} when any argument is not in ACCEPTED_FLAGS
+ */
+export function resolveCommand(argv = []) {
+  const args = (argv ?? []).filter((a) => a !== '');
+  // Help wins outright: someone asking what this does must never trigger what it does.
+  if (wantsHelp(args)) return { command: 'help' };
+  const { flags } = partitionArgs(args, { accepted: ACCEPTED_FLAGS, maxPositionals: 0, usage: USAGE });
+  return { command: flags.has('--selftest') ? 'selftest' : 'digest' };
+}
+
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
 if (invokedPath === fileURLToPath(import.meta.url)) {
-  if (process.argv.includes('--selftest')) selftest();
-  else {
+  let command = null;
+  try {
+    ({ command } = resolveCommand(process.argv.slice(2)));
+  } catch (err) {
+    // SOFT on purpose — `hard: false` sets exitCode 2 and returns rather than calling
+    // process.exit(), which would discard the usage text still queued on stderr. This file is where
+    // that trap is documented (see the digest branch below); a hard exit here would contradict it.
+    dieOnArgvError(err, { hard: false });
+  }
+  if (command === 'help') {
+    console.log(USAGE);
+  } else if (command === 'selftest') {
+    selftest();
+  } else if (command === 'digest') {
     // FR-009: this step must NEVER change a job's outcome. Every error is caught and swallowed,
     // and the exit code is always 0 — `continue-on-error` in the workflow is belt to this braces.
     // FR-009: always exit 0. Set exitCode rather than calling process.exit(), which discards
@@ -1647,4 +1706,5 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
         process.exitCode = 0;
       });
   }
+  // command === null means the argv was rejected above: exitCode is already 2 and NOTHING runs.
 }

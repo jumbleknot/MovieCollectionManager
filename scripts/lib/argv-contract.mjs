@@ -95,9 +95,17 @@ export function usageNamesEveryFlag(usage, accepted) {
  * script exists to report, and renovate-health.mjs in particular always exits 0 by design (a weekly
  * red trains people to ignore it). Laundering a typo through that discipline would make the typo
  * invisible, which is the whole defect.
+ *
+ * `hard: false` sets `process.exitCode` and RETURNS instead of calling `process.exit()`. The caller
+ * must then not proceed to its default action. Use it where the script's output must not be
+ * truncated: `process.exit()` discards writes still queued on stdout/stderr, and a pipe — which is
+ * exactly what a CI log capture is — makes those writes asynchronous. ci-failure-digest.mjs (item
+ * #504) is the case that needed it, and is also the file where that trap is documented, so a hard
+ * exit there would contradict its own lesson.
  */
-export function dieOnArgvError(err, { log = console.error } = {}) {
+export function dieOnArgvError(err, { log = console.error, hard = true } = {}) {
   if (!(err instanceof ArgvError)) throw err;
   log(err.message);
-  process.exit(2);
+  if (hard) process.exit(2);
+  process.exitCode = 2;
 }

@@ -26,6 +26,7 @@ import { usageNamesEveryFlag } from '../lib/argv-contract.mjs';
 import * as renovateHealth from '../renovate-health.mjs';
 import * as prune from '../prune-bff-runtime-modules.mjs';
 import * as lockfileRefresh from '../check-lockfile-refresh.mjs';
+import * as ciDigest from '../ci-failure-digest.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -175,11 +176,11 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     'check-openwiki-okf.mjs': 'rejects-already',        // same parser shape
     'wiki-maintain.mjs': 'rejects-already',             // parseArgs throws, prints USAGE
 
-    // DEFERRED, with the reason recorded rather than left implicit. ci-failure-digest.mjs DOES have
-    // a mutating default (a typo'd `--selftest` posts a real digest comment), but FR-009 requires it
-    // to always exit 0 so it can never change a job's outcome — and a hard argv rejection exits
-    // non-zero. Reconciling those two is a decision of its own, not a detail of this change.
-    'ci-failure-digest.mjs': 'deferred-see-backlog',
+    // FIXED in item #504, and the deferral's premise turned out to be wrong. FR-009's exit-0 rule
+    // governs the DIGEST path, not argument-driven paths — `--selftest` has always hard-exited 1 on
+    // failure. So rejecting a bad argument non-zero is consistent with the existing contract rather
+    // than a violation of it. See the ci-failure-digest tests below for the evidence.
+    'ci-failure-digest.mjs': 'guarded',
   };
 
   const scriptsDir = resolve(REPO_ROOT, 'scripts');
@@ -241,4 +242,104 @@ test('(#500) the Dockerfile copies the lib the prune script now imports', () => 
     scriptCopies,
     'every stage that COPYs the prune script must also COPY scripts/lib/argv-contract.mjs',
   );
+});
+
+// ── ci-failure-digest.mjs — item #504 ────────────────────────────────────────────────────
+//
+// This was deferred out of #500 because FR-009 ("this step must NEVER change a job's outcome",
+// always exit 0) looked to contradict a rejection that exits non-zero. It does not, and the
+// deferral's premise was simply wrong: `--selftest` has ALWAYS ended in `process.exit(1)` on
+// failure. FR-009's exit-0 discipline therefore governs the DIGEST path only — the path that runs
+// when no argument is given — and has never applied to argument-driven paths.
+//
+// Two further facts, both asserted below rather than assumed, make an argv rejection unreachable in
+// CI anyway: every workflow call site passes NO arguments, and every one carries
+// `continue-on-error: true`.
+
+test('(#504) a mis-typed --selftest is REJECTED, never run as a real digest', () => {
+  // The defect: `--seltest` fell through to run(), which POSTs a digest comment and a commit status.
+  for (const flag of ['--seltest', '--self-test', '-selftest', '--selfcheck', '--dry-run', '-s']) {
+    assert.throws(
+      () => ciDigest.resolveCommand([flag]),
+      /unrecognised|unrecognized|unknown/i,
+      `${flag} must be REJECTED — falling through posts a digest comment for real`,
+    );
+  }
+});
+
+test('(#504) --help reports usage and posts NOTHING', () => {
+  for (const flag of ['--help', '-h']) {
+    assert.equal(ciDigest.resolveCommand([flag]).command, 'help');
+  }
+});
+
+test('(#504) CONTROL — the bare invocation and --selftest resolve exactly as before', () => {
+  // The bare form is what all 22 workflow call sites run. Breaking it would silence the failure
+  // digest across every workflow at once.
+  assert.equal(ciDigest.resolveCommand([]).command, 'digest', 'a bare invocation must still produce the digest');
+  assert.equal(ciDigest.resolveCommand(['--selftest']).command, 'selftest');
+});
+
+test('(#504) USAGE names every accepted flag', () => {
+  assert.deepEqual(usageNamesEveryFlag(ciDigest.USAGE, ciDigest.ACCEPTED_FLAGS), []);
+});
+
+test('(#504) FR-009 is intact: the DIGEST path still exits 0 and never hard-exits', () => {
+  // The guarantee the deferral was protecting. The digest path must still set `process.exitCode`
+  // rather than calling process.exit() — a hard exit discards queued stdout, and the no-token
+  // fallback prints the entire digest to stdout.
+  const src = readFileSync(resolve(REPO_ROOT, 'scripts/ci-failure-digest.mjs'), 'utf8');
+  const tail = src.slice(src.indexOf('run()'));
+  assert.match(tail, /process\.exitCode = 0/, 'the digest path must still force exit 0');
+  assert.doesNotMatch(tail, /process\.exit\(0\)/, 'the digest path must not hard-exit — it truncates stdout');
+});
+
+test('(#504) the argv rejection is SOFT: it sets exitCode rather than hard-exiting', () => {
+  // Same reasoning as FR-009 above, applied to the rejection itself. This file is where that trap is
+  // documented, so a hard exit here would contradict its own lesson: the usage text goes to stderr,
+  // and stderr to a pipe is asynchronous too.
+  const src = readFileSync(resolve(REPO_ROOT, 'scripts/ci-failure-digest.mjs'), 'utf8');
+  assert.match(src, /dieOnArgvError\([^)]*hard:\s*false/s, 'the rejection must use the soft (non-hard-exit) form');
+});
+
+test('(#504) EVERY workflow call site is bare — so an argv error is unreachable in CI', () => {
+  // The first of the two facts the decision rests on. If a future edit starts passing a flag, this
+  // fails here rather than in a workflow that suddenly exits 2.
+  const files = readdirSync(resolve(REPO_ROOT, '.forgejo/workflows')).filter((f) => f.endsWith('.yml'));
+  let sites = 0;
+  for (const f of files) {
+    const text = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows', f), 'utf8');
+    for (const line of text.split(/\r?\n/)) {
+      if (line.trim().startsWith('#')) continue;
+      const m = /run:\s*node scripts\/ci-failure-digest\.mjs(.*)$/.exec(line);
+      if (!m) continue;
+      sites += 1;
+      assert.equal(m[1].trim(), '', `${f}: the digest is invoked with arguments: ${line.trim()}`);
+    }
+  }
+  assert.ok(sites >= 20, `expected the digest to be wired into ~22 steps, found ${sites}`);
+});
+
+test('(#504) EVERY workflow call site carries continue-on-error — the second backstop', () => {
+  // The other fact. FR-009 says the step must never change a job's outcome; this is what actually
+  // enforces it at the workflow level, independent of the script's own exit code.
+  const files = readdirSync(resolve(REPO_ROOT, '.forgejo/workflows')).filter((f) => f.endsWith('.yml'));
+  const uncovered = [];
+  for (const f of files) {
+    const lines = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows', f), 'utf8').split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      if (!/run:\s*node scripts\/ci-failure-digest\.mjs/.test(lines[i])) continue;
+      if (lines[i].trim().startsWith('#')) continue;
+      const indent = lines[i].length - lines[i].trimStart().length;
+      let found = false;
+      for (let j = i; j >= 0; j--) {
+        const cur = lines[j];
+        const ci = cur.length - cur.trimStart().length;
+        if (cur.trimStart().startsWith('- ') && ci < indent) break; // start of this step
+        if (/^\s*continue-on-error:\s*true/.test(cur)) { found = true; break; }
+      }
+      if (!found) uncovered.push(`${f}:${i + 1}`);
+    }
+  }
+  assert.deepEqual(uncovered, [], 'these digest steps could red their job if the digest ever exits non-zero');
 });

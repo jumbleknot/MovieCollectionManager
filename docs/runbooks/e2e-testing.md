@@ -392,9 +392,26 @@ Every one of these produced a confident, wrong answer, and every one was checkab
   `scripts/__tests__/argv-mutating-default.guard.test.mjs` re-runs the audit mechanically and fails
   on any argv-dispatching script that can mutate and carries no recorded verdict — a table, not a
   heuristic, because a heuristic that over-fires gets loosened until it passes, which is how an audit
-  stops auditing. One script is recorded as deliberately deferred: `ci-failure-digest.mjs` has a
-  mutating default (a typo'd `--selftest` posts a real digest comment) but FR-009 requires it to
-  always exit 0, which a hard argv rejection contradicts — item #504.
+  stops auditing. Every argv-dispatching script that can mutate now carries a recorded verdict there,
+  and all four mutating defaults are guarded.
+
+  **`ci-failure-digest.mjs` was deferred out of that change on a premise that turned out to be false
+  — item #504, now fixed.** The deferral read FR-009 ("this step must NEVER change a job's outcome",
+  always exit 0) as "this script always exits 0, whatever you type", which would indeed have
+  contradicted a rejection that exits 2. But `selftest()` has always ended in `process.exit(1)` on
+  failure: **FR-009 governs the DIGEST path**, the one that runs when no argument is given, and
+  argument-driven paths were always free to fail. The apparent conflict was between the fix and a
+  *paraphrase* of the requirement, not the requirement.
+
+  Two facts settled it, and both are now assertions rather than recollections — all **22** workflow
+  call sites invoke the digest **bare**, and all 22 carry **`continue-on-error: true`**. So an argv
+  rejection is unreachable from CI twice over, and the only caller who can trigger one is a human or
+  agent at a terminal: exactly the audience that must not have `--seltest` publish a digest.
+
+  The rejection there is **soft** (`dieOnArgvError(err, { hard: false })` — sets `exitCode` and
+  returns) rather than the hard `process.exit(2)` the other three use. `process.exit()` discards
+  writes still queued on a pipe, and this is the file that documents that trap for its own stdout; a
+  hard exit would have contradicted its own lesson.
 - **A container reporting `running` can be answering nothing.** `movie-assistant-gateway` sat at
   **100% CPU on one core with memory at 1%**, `/health` timing out, its log 40 minutes stale, while
   `docker inspect` said `status=running OOMKilled=false ExitCode=0 RestartCount=0`. `restart: always`
