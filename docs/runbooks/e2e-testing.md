@@ -337,6 +337,46 @@ Every one of these produced a confident, wrong answer, and every one was checkab
 
   **Check it, do not trust it**: run the filtered form and confirm the reported test COUNT actually
   dropped. A filter that changes nothing is a filter that was not applied.
+- **`node scripts/agent-stack.mjs --help` BUILDS AND DEPLOYS THE STACK.** There is no help flag, and
+  an unrecognised argument is not an error — the dispatcher matches two literals and everything else
+  falls through to the default action:
+
+  ```js
+  // scripts/agent-stack.mjs, foot of file — verbatim
+  if (argv.includes('--down')) {
+    removeContainers();
+    log('agent stack removed (agent-gateway, movie-mcp, web-api-mcp).');
+  } else if (argv.includes('--status')) {
+    status();
+  } else {
+    deploy(resolveBuildMode(argv));      // ← --help lands here, and BUILDS
+  }
+  ```
+
+  `resolveBuildMode` only looks for `--no-build`, so an unrecognised flag resolves to `build = true`:
+  the fall-through does not merely start containers, it rebuilds the images first.
+
+  So the reflex used to find out what a script does is the one input that makes it *act*. Measured
+  2026-09-19: `--help` began building `movie-mcp:latest` within a second, during a session whose
+  entire purpose was tearing things DOWN. It was caught only because the call happened to carry a
+  `timeout`.
+
+  This is the `--grep-invert` class with the failure inverted. There the ignored flag caused
+  **under-action** (a filter that silently matched everything); here it causes **over-action** (a
+  query that silently deploys). Both come from the same root — *an argument the tool does not
+  recognise and does not reject* — and the same check catches both: confirm the tool did what you
+  asked by a signal other than its exit code.
+
+  ```bash
+  node scripts/agent-stack.mjs --status          # ✅ the actual read-only command
+  node scripts/agent-stack.mjs --down            # ✅ tear down
+  node scripts/agent-stack.mjs                   # ⚠️  deploys — this is the DEFAULT, not an error path
+  node scripts/agent-stack.mjs --help            # ❌ deploys, identically. So does any typo.
+  ```
+
+  **A typo deploys too.** `--staus`, `--donw` and `--dry-run` are all spelled "build and start the
+  stack". If you are unsure what an invocation will do, read the dispatcher at the foot of the file
+  rather than asking the script — and prefer `--status` as the safe probe.
 - **A container reporting `running` can be answering nothing.** `movie-assistant-gateway` sat at
   **100% CPU on one core with memory at 1%**, `/health` timing out, its log 40 minutes stale, while
   `docker inspect` said `status=running OOMKilled=false ExitCode=0 RestartCount=0`. `restart: always`
