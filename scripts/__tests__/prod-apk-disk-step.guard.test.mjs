@@ -114,3 +114,106 @@ test('the prod-apk disk step does not reclaim at all, and does not swallow a fai
   );
   assert.match(step.name ?? '', /nothing to reclaim/i, 'the step NAME must not promise a reclamation');
 });
+
+// ── AC4: the step's output must be READABLE, not merely printed ──────────────
+//
+// The rewritten step above says in words that nothing is reclaimed, and prints what is actually free.
+// On a GREEN run nobody could read either. Measured against run 3430 — the first `cd-deploy` carrying
+// the rewritten step, `success`, with `prod-apk` proven to have run by the sha embedded in its
+// published APK version `1.0.0-85ae04f`:
+//
+//   commit statuses on the run's sha  → zero rows; cd-deploy posts no statuses at all
+//   /actions/runs/3430/jobs           → 404 (item #268)
+//   /actions/runs/3430/logs           → 404
+//   Publish failure digest (always()) → "digest-outcome=not-needed … the job passed and produced no
+//                                        counts sources" / "counts mode — this job runs no e2e counts
+//                                        steps; nothing to publish"
+//
+// `counts` mode collects only app-e2e's steps, so every other job's green publication uploads nothing.
+// Confirmed across all 274 published `ci-failures` bundles: the ONLY `prod-apk` bundle is
+// `3409--prod-apk` — the PRE-FIX FAILURE that produced this item's original evidence. `sudo: command
+// not found` was visible only BECAUSE the job failed. A step that succeeds at doing nothing leaves no
+// trace, which is the same defect one level up.
+//
+// So the measurement is recorded on the commit instead (the item #418 pattern). These tests pin the
+// properties that make that safe and durable.
+
+// Located by what it DOES — posts a commit status — never by its context NAME. Keying the lookup on
+// the name would make a rename delete the step from this suite's view instead of failing the glob
+// test that exists to catch exactly that.
+const diskRecorderStep = () => {
+  const steps = (load('cd-deploy.yml')?.jobs?.['prod-apk']?.steps ?? []).filter((s) =>
+    runText(s).includes('/statuses/'),
+  );
+  assert.equal(steps.length, 1, 'expected exactly one prod-apk commit-status recorder step');
+  return steps[0];
+};
+
+test('the prod-apk disk step EXPORTS its measurement, so a recorder can carry it (item #457 AC4)', () => {
+  const step = prodApkDiskStep();
+  assert.ok(step.id, 'the step needs an `id:` or `steps.<id>.outputs` cannot reference it');
+  assert.match(step.run, /df -P -k \//, 'parse POSIX df output; `df -h` can wrap and shift every field');
+
+  // One assertion PER export, each anchored to its own line. A single dotAll `.*` spanning both
+  // matched the OTHER line's tail, so deleting either export still passed — caught by mutation.
+  for (const name of ['avail_gb', 'use_pct']) {
+    const line = new RegExp('^\\s*echo "' + name + '=\\$\\{' + name + '\\}" >> "\\$GITHUB_OUTPUT"\\s*$', 'm');
+    assert.match(
+      step.run,
+      line,
+      `${name} must reach $GITHUB_OUTPUT on its own line — printing it to the log is what nobody can read`,
+    );
+  }
+});
+
+test('a recorder publishes the prod-apk disk measurement to the commit (items #457 AC4, #418)', () => {
+  const step = diskRecorderStep();
+  assert.match(step.run, /\/statuses\/\$\{GITHUB_SHA\}/, "must POST a commit status on the run's sha");
+  assert.match(step.run, /reclaimed=none/, 'the description must carry the AC4 claim, not just a number');
+  assert.match(
+    step.run,
+    /MEASURED_AVAIL_GB:-<unset>/,
+    '`<unset>` is a real answer — it distinguishes "the runner returned no value" from a wrong value',
+  );
+});
+
+test('the disk recorder records even when prod-apk FAILS, and cannot fail the job (items #457, #418)', () => {
+  const step = diskRecorderStep();
+  // A recorder gated on the thing it measures records nothing on exactly the run you needed it for.
+  assert.match(String(step.if ?? ''), /always\(\)/, 'must be always() — a failed run is when this matters most');
+  assert.equal(
+    step['continue-on-error'],
+    true,
+    "a bookkeeping POST must never fail the job; the status's ABSENCE is its own tell",
+  );
+  assert.match(String(step.if ?? ''), /pull_request/, 'and must stay off pull requests, where it would be noise');
+});
+
+test('the disk recorder CANNOT gate a merge — it matches no required context glob (item #457 AC4)', () => {
+  // Measured 2026-09-19, GET /repos/{owner}/{repo}/branch_protections → main requires exactly these.
+  // Note the FIRST has no ` / ` separator, so "a status without a separator cannot gate" is NOT the
+  // rule — the name has to be checked against the real list, which is what this reproduces.
+  const REQUIRED_GLOBS = [
+    'guardrails*',
+    'app-ci / changes*',
+    'app-ci / affected*',
+    'app-ci / mc-service-checks*',
+    'app-ci / app-e2e*',
+    'infra-image-scan / infra-image-scan*',
+  ];
+  // The workflow embeds the JSON inside a double-quoted shell string, so the source carries \" not ".
+  const context = /\\"context\\":\\"([^\\"]+)\\"/.exec(diskRecorderStep().run)?.[1];
+  assert.equal(context, 'cd-deploy/prod-apk-disk', 'the recorder must post under its own context name');
+  for (const glob of REQUIRED_GLOBS) {
+    const re = new RegExp('^' + glob.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$');
+    assert.ok(!re.test(context), `\`${context}\` matches the required glob \`${glob}\` — it would gate merges`);
+  }
+
+  // `state` is always success: this is observability, and a red on main's tip is a signal a
+  // bookkeeping step has no standing to raise.
+  assert.match(
+    diskRecorderStep().run,
+    /\\"state\\":\\"success\\"/,
+    'the recorder must never post a non-success state',
+  );
+});
