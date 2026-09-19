@@ -303,13 +303,46 @@ against the document it summarizes would fail every legitimate refresh.
 
 ---
 
-## 6. Verifying the machinery itself
+## 6. Link form — the one thing the generator gets wrong on its own
+
+The generator writes `](/openwiki/…)`. **That is a dead link on this forge**, and it is not a
+cosmetic preference: a leading `/` resolves against the **site** root, so the forge reads `openwiki`
+as a *username* and 404s. Measured with `POST /api/v1/markup` (the endpoint that takes `Context`,
+`BranchPath` and `FilePath`, so it renders exactly as the file view does — `/api/v1/markdown` takes
+no file path and cannot answer this). 204 links across 61 of the bundle's 77 files were broken this
+way before anyone checked, and `okf-lint` passed the whole time because it only verified the
+`resource` front matter (item #491).
+
+Three things now hold the line, and you should not need any of them by hand:
+
+1. `openwiki/INSTRUCTIONS.md` §6 states the convention, so the generator is asked for the right form.
+2. `verifySlice` normalizes whatever the slice wrote, deterministically, before the gate reads it —
+   because the brief is an instruction to a model, not a guarantee.
+3. `okf-lint` rules **V14** (site-root-absolute) and **V15** (does not resolve from its own file's
+   directory) fail the build for anything that arrives by another route.
+
+If you ever need the bundle-wide sweep — a bundle restored from elsewhere, say:
+
+```bash
+node scripts/wiki-maintain.mjs --normalize-links --dry-run   # what would change, writes nothing
+node scripts/wiki-maintain.mjs --normalize-links             # do it
+```
+
+Offline and free; it needs no credential. It moves **only** the target inside `](…)`, never prose,
+and it skips code fences and code spans. If it touches a page carrying a protected passage, the
+governance gate will demand the fingerprint be re-cut in the same change — that is working as
+intended, and `--fingerprint <concept> "<anchor>"` prints the new value.
+
+---
+
+## 7. Verifying the machinery itself
 
 ```bash
 node scripts/wiki-maintain.mjs --selftest             # planner + verifier, offline, keyless
-pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V13
+pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V15
 pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G1–G12
 node --test scripts/__tests__/wiki-maintain*.test.mjs
+node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and normalizer
 ```
 
 `--selftest` includes a **deliberately sabotaged generator** that exits 0 having written nothing. If it

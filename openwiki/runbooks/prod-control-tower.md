@@ -14,9 +14,9 @@ Grafana/otel-lgtm + Unleash), and `prod-vault` (deliberately dormant) — deploy
 of prod: merge to `main`, Komodo ResourceSync picks it up. The BFF and agent gateway consume each
 capability through environment variables only, so deploying a support stack never itself changes app
 behavior; a capability only turns on when its consumer env is present. This is the production landing
-of the secrets posture documented in [Secrets management](/openwiki/invariants/secrets-management.md)
+of the secrets posture documented in [Secrets management](../invariants/secrets-management.md)
 (Vault here is the fail-open, dormant reader described there) and it shares the
-[published-port reservation convention](/openwiki/invariants/published-port-reservation.md) for its two
+[published-port reservation convention](../invariants/published-port-reservation.md) for its two
 tailnet-reachable operator UIs.
 
 ## Gotchas
@@ -33,7 +33,7 @@ tailnet-reachable operator UIs.
   Diagnose from container logs on the prod host itself, not from the compose file.
 - **The two tailnet-reachable operator UIs (LangFuse, Grafana) use the prod-reserved port range**,
   binding broadly but staying tailnet-only via the host firewall — see
-  [Published-port reservation](/openwiki/invariants/published-port-reservation.md) for the collision
+  [Published-port reservation](../invariants/published-port-reservation.md) for the collision
   this convention exists to prevent; do not put these ports back on their old defaults.
 - **Vault is intentionally left uninitialized and sealed in production.** A health-check override
   makes that state read as healthy; do not run the Vault init/unseal sequence as part of this rollout —
@@ -94,7 +94,7 @@ docker run --rm --entrypoint sh <the pinned image> -c 'stat -c "%u:%g" /data'   
 Langfuse 4 requires ClickHouse 25, and the pair was only verified on **empty volumes**. Nothing
 measured says an in-place ClickHouse 24→25 jump works, so the cutover **recreates the Postgres,
 ClickHouse-data, and ClickHouse-logs volumes**, discarding production Langfuse trace history. Per
-[ADR-0002](/openwiki/decisions/adr-0002-stateful-major-upgrades.md) §4 that trade is ratified.
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) §4 that trade is ratified.
 
 **The volume work must come BEFORE the merge.** Komodo reconciles `prod-observability` from `main`.
 Merge first and it deploys Langfuse 4 straight onto the existing 3.x Postgres schema and a 24.3
@@ -136,7 +136,7 @@ Full cutover script, verification commands, and rollback procedure: `docs/runboo
 
 ## OpenSearch 2 → 3 for the audit sink, PRESERVING the history (feature 071)
 
-Unlike the Langfuse cutover, this upgrade **keeps its data**. [ADR-0002 §4a](/openwiki/decisions/adr-0002-stateful-major-upgrades.md)
+Unlike the Langfuse cutover, this upgrade **keeps its data**. [ADR-0002 §4a](../decisions/adr-0002-stateful-major-upgrades.md)
 reversed the original §4 "recreate volumes" decision once the audit store proved non-empty — **5,276 documents, 326.9 kb** in `mcm-agent-audit`. History moves across by snapshot and restore; the acceptance check is an **exact document count**, not a health check.
 
 > **A zero from a filtered query means "no match", not "no data".** The count was nearly missed because `_cat/indices/mcm-agent-audit-*` returned empty — the pattern needs no trailing wildcard; the real index name is `mcm-agent-audit`. That empty result was one step from justifying the destruction of a security audit trail. Preserved verbatim from ADR-0002 §4a because the error shape recurs.

@@ -13,8 +13,8 @@ final validation. This mapping (from `CLAUDE.md`'s "Feature Branch Test Scope" s
 lookup table for which Playwright spec file and which Maestro mobile flow(s) correspond to each
 user story, so the correct narrow suite can be run instead of the full regression while iterating.
 The full-suite requirement belongs to the final validation checklist, not here — see
-[Testing tiers and what gates a merge](/openwiki/invariants/testing-tiers.md) for what runs in CI
-and gates a merge, and [the Expo/React Native app](/openwiki/projects/expo-app.md) for the project
+[Testing tiers and what gates a merge](../invariants/testing-tiers.md) for what runs in CI
+and gates a merge, and [the Expo/React Native app](../projects/expo-app.md) for the project
 these web/mobile suites live in.
 
 ## User Story → Test Mapping

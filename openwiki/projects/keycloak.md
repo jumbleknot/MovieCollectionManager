@@ -22,9 +22,9 @@ The service exposes port **8099** externally on the host; containers on the shar
 reach it via `keycloak-service:8080` (feature 020 unified the service key and `container_name` to
 `keycloak-service`; the old bare `keycloak` name no longer resolves).
 
-See [Authentication and authorization chain](/openwiki/invariants/auth-chain.md) for how every
+See [Authentication and authorization chain](../invariants/auth-chain.md) for how every
 downstream component enforces the tokens Keycloak issues, and
-[Infrastructure-as-code stacks](/openwiki/projects/infrastructure-stacks.md) for how `auth` fits
+[Infrastructure-as-code stacks](./infrastructure-stacks.md) for how `auth` fits
 into the overall stack topology and start-order rules.
 
 ## Three realm variants
@@ -106,7 +106,7 @@ even if the external nets race on reboot.
 rootless Docker daemons publishing into the same port space. CI publishes `127.0.0.1:8099`; a
 `0.0.0.0:8099` prod bind overlaps it and crash-looped `prod-auth` for 6 h on 2026-07-06. Feature 029
 moved prod Keycloak's admin binding to port 19099 (`KC_HOSTNAME_ADMIN`), disjoint from all CI/dev
-ports. See [Published-port reservation](/openwiki/invariants/published-port-reservation.md).
+ports. See [Published-port reservation](../invariants/published-port-reservation.md).
 
 **Bring `auth` up before the `mcm` `app` profile.** `mc-service` fetches Keycloak's JWKS endpoint on
 startup to cache the public key for JWT validation. There is no cross-project `depends_on` (removed

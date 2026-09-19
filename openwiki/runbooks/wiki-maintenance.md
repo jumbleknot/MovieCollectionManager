@@ -14,9 +14,9 @@ last recorded run into **slices** — at most 8 pages, exactly one bundle area e
 so there is never a reason to skip it before spending on `pnpm nx wiki-maintain infrastructure-as-code`
 (paid, needs `ANTHROPIC_API_KEY`). The run record lives at `openwiki/.maintenance-state.json`,
 committed because runners are ephemeral; it is distinct from the tool's own
-`openwiki/.last-update.json`. See [OpenWiki bundle generation and maintenance](/openwiki/process/wiki-maintenance.md)
+`openwiki/.last-update.json`. See [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md)
 for the underlying `wiki-update`/`okf-lint` Nx targets this machinery drives, and
-[Nx as the task runner](/openwiki/invariants/nx-task-runner.md) for why the bare `openwiki` CLI must
+[Nx as the task runner](../invariants/nx-task-runner.md) for why the bare `openwiki` CLI must
 never be invoked directly.
 
 ## Gotchas

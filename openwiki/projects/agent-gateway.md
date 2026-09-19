@@ -11,17 +11,17 @@ timestamp: 2026-08-18T00:00:00+00:00
 
 `agents/movie-assistant` is a LangGraph supervisor graph (compiled entrypoint `src/graph.py:graph`)
 served over AG-UI via FastAPI (`src/gateway.py`). It is reachable only from the
-[BFF](/openwiki/projects/bff.md)'s `bff-api/agent/*` routes — the gateway itself performs no
+[BFF](./bff.md)'s `bff-api/agent/*` routes — the gateway itself performs no
 end-user authentication; the BFF is the security boundary in front of it. It owns no movie data; it
 orchestrates calls to three scoped MCP servers on the user's behalf. The LLM is deliberately kept
 narrow: it only classifies intent, extracts entities, and phrases replies — all MCP tool selection
 and argument construction is code-orchestrated, never left to the model.
 
-The [three scoped MCP servers](/openwiki/projects/mcp-servers.md), reached over the MCP streamable-HTTP transport:
+The [three scoped MCP servers](./mcp-servers.md), reached over the MCP streamable-HTTP transport:
 
-- **movie-mcp** — fronts [mc-service](/openwiki/projects/mc-service.md) for domain reads/writes.
+- **movie-mcp** — fronts [mc-service](./mc-service.md) for domain reads/writes.
   Every call needs a per-call, per-user downscoped token (see
-  [Auth chain](/openwiki/invariants/auth-chain.md)).
+  [Auth chain](../invariants/auth-chain.md)).
 - **web-api-mcp** — outbound-only metadata enrichment (TMDB); carries no user JWT, but forwards a
   per-run API key out-of-band via a header set from a context variable — never an LLM-visible
   argument.
@@ -163,6 +163,6 @@ user's request swap provider/credentials without touching the shared process env
   `MCM_REQUIRE_LIVE_STACK=1` to escalate a non-allowlisted skip to a failure naming the unreachable
   server.
 
-See [Auth chain](/openwiki/invariants/auth-chain.md) for how the gateway's tool-call tokens are
+See [Auth chain](../invariants/auth-chain.md) for how the gateway's tool-call tokens are
 minted and scoped, and `docs/runbooks/agent-layer.md` for the full node/intent map, the containerized E2E
 procedure, and the observability (Control Tower) integration.

@@ -10,7 +10,7 @@
 // Exit codes: 0 clean / selftest passed · 1 violation / selftest broken · 2 bad args.
 //
 // Contract: specs/043-openwiki-okf/contracts/check-openwiki-okf-cli.md
-// Rules V1-V13: specs/043-openwiki-okf/data-model.md
+// Rules V1-V15: specs/043-openwiki-okf/data-model.md (V14/V15 added for item #491)
 //
 // Two properties are load-bearing and easy to break by accident:
 //   * OFFLINE (FR-013a). External `resource` links are shape-checked, NEVER fetched, so the
@@ -25,6 +25,10 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { parse as parseYaml } from 'yaml';
+
+// V14/V15 share their scanner with the generator's normalizer — see that module's header for the
+// measurement (POST /api/v1/markup) that establishes why a leading `/` is a dead link here.
+import { bodyLinks, classifyBodyLink, relativeFormFor, splitTarget } from './openwiki-links.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_BUNDLE = 'openwiki';
@@ -212,6 +216,26 @@ function validateBundle(bundleRoot) {
     if (kind === 'concept') conceptCount++;
 
     const text = readFileSync(file, 'utf8');
+
+    // V14/V15 — body links, checked BEFORE the front-matter branches below, which `continue` past
+    // the rest of the loop for an index carrying none. An index is the bundle's navigation surface:
+    // it is the last file whose links should go unchecked.
+    //
+    // This is the BODY. `resource` front matter is V6's job, and V6 passing on all of them is
+    // exactly why 204 dead body links survived on `main` unnoticed (item #491).
+    for (const { target, line } of bodyLinks(text)) {
+      const kind = classifyBodyLink(target).kind;
+      if (kind === 'skip') continue;
+      if (kind === 'site-root') {
+        add('V14', file, `line ${line}: link \`${target}\` is site-root-absolute — the forge resolves a leading \`/\` against the SITE root, so this renders as \`<forge>${target}\` and 404s (measured via POST /api/v1/markup). Write it relative to this file: \`${relativeFormFor(file, target, REPO_ROOT)}\``);
+        continue;
+      }
+      const abs = resolve(dirname(file), splitTarget(target).path);
+      if (!existsSync(abs)) {
+        add('V15', file, `line ${line}: link \`${target}\` does not resolve from this file's own directory — no such path as ${rel(abs)}`);
+      }
+    }
+
     const fm = extractFrontMatter(text);
 
     // V1 — front matter present and parseable.
@@ -419,6 +443,57 @@ function selftest() {
   mkdirSync(emptyDir, { recursive: true });
   if (!validateBundle(emptyDir).findings.some((f) => f.rule === 'V10')) fails.push('v10-empty: expected V10 for an empty bundle');
 
+  // V14 — a PLANTED site-root-absolute link must fail. This is the whole point of the rule: the
+  // link is a real repository path, `resource` validation is untouched, and every other rule is
+  // happy — which is precisely the state 204 dead links sat in on `main` (item #491).
+  scenario('v14', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\n---\nsee [the brief](/openwiki/INSTRUCTIONS.md)\n',
+  }, { rule: 'V14' });
+  // The finding must carry the relative form to use — a rule that says only "wrong" makes the
+  // reader re-derive the fix 204 times.
+  const v14 = scenario('v14-suggests-the-fix', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\n---\n[x](/openwiki/gotchas/keyset-pagination.md)\n',
+  }, { rule: 'V14' });
+  if (!v14.findings.some((f) => f.rule === 'V14' && f.message.includes('keyset-pagination.md`'))) {
+    fails.push('v14-suggests-the-fix: the finding must name the relative form to write instead');
+  }
+  // An absolute link inside a FENCE or a code span is illustrative, not a navigation link. A gate
+  // that fails on documentation OF the defect cannot be used to document the defect.
+  scenario('v14-code-is-illustrative', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\n---\nnever write `[x](/openwiki/a.md)`:\n\n```md\n[x](/openwiki/b.md)\n```\n',
+  }, { clean: true });
+  // An EXTERNAL or in-page target is not this rule's business.
+  scenario('v14-external-and-anchors-pass', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\n---\n[u](https://example.invalid/x) [m](mailto:a@b.c) [p](//cdn.example/x) [h](#here)\n',
+  }, { clean: true });
+
+  // V15 — a relative link is resolved from ITS OWN file's directory, not from the bundle root.
+  // `a.md` sits at the root here, so `gotchas/missing.md` is genuinely absent.
+  scenario('v15', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\n---\n[gone](gotchas/missing.md)\n',
+  }, { rule: 'V15' });
+  // ...and the same link IS valid from a file one directory down. Resolving from the bundle root
+  // instead would pass the case above and fail this one — the mirror-image bug.
+  scenario('v15-resolves-from-the-files-own-directory', {
+    'index.md': idx('area/a.md'),
+    'area/index.md': '# I\n- [x](a.md)\n- [y](b.md)\n',
+    'area/a.md': '---\ntype: R\n---\n[sibling](b.md) and [up](../index.md)\n',
+    'area/b.md': '---\ntype: R\n---\nb\n',
+  }, { clean: true });
+  // A fragment, a percent-escape and the angle-bracket form must not be mistaken for part of the
+  // path. `<b c.md>` also gives V9 the literal basename it matches on — a percent-escaped link
+  // alone would not, and the scenario would fail for a reason that has nothing to do with V15.
+  scenario('v15-fragment-and-escape', {
+    'index.md': '---\ntype: Reference\ndescription: Index.\n---\n# I\n- [x](a.md)\n- [y](<b c.md>)\n',
+    'a.md': '---\ntype: R\n---\n[f](b%20c.md#section) and [g](index.md#top)\n',
+    'b c.md': '---\ntype: R\n---\nb\n',
+  }, { clean: true });
+
   // V13 — a conformant bundle passes.
   scenario('v13', { 'index.md': idx('a.md'), 'a.md': '---\ntype: R\ntitle: A\nresource: README.md\ntags:\n  - t\n---\nb\n' }, { clean: true });
 
@@ -428,7 +503,7 @@ function selftest() {
     console.error('✗ openwiki-okf gate --selftest FAILED:\n  ' + fails.join('\n  '));
     return 1;
   }
-  console.log('✓ openwiki-okf gate --selftest passed (V1–V13: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing)');
+  console.log('✓ openwiki-okf gate --selftest passed (V1–V15: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file)');
   return 0;
 }
 

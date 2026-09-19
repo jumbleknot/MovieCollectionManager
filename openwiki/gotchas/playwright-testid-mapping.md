@@ -10,7 +10,7 @@ timestamp: 2026-07-30T11:50:53-04:00
 # Playwright testID mapping — React Native Web renders testID as data-testid
 
 React Native components take a `testID` prop, not a web `data-testid` attribute. When
-[the Expo/React Native app](/openwiki/projects/expo-app.md) is compiled for web via React Native
+[the Expo/React Native app](../projects/expo-app.md) is compiled for web via React Native
 Web, `testID` is rewritten to the DOM attribute `data-testid`. `playwright.config.ts` sets
 `testIdAttribute: 'data-testid'` (see the inline comment "React Native Web renders testID as
 data-testid") so that `page.getByTestId(...)` and `[data-testid="..."]` locators resolve against

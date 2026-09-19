@@ -50,9 +50,9 @@ reaches the assistant.
   whose stderr notice survives. The trigger is removed at source and kept out by
   `scripts/__tests__/grep-nul-binary-trap.test.mjs`, which fails if any tracked *text* file contains a
   NUL — so write a NUL sentinel as the `\u0000` escape, never as a raw byte.
-- **`rtk gain` is also the last item on the [feature validation checklist](/openwiki/invariants/feature-validation-checklist.md)**, run after every other check specifically because it measures the token cost of the runs that preceded it.
+- **`rtk gain` is also the last item on the [feature validation checklist](./feature-validation-checklist.md)**, run after every other check specifically because it measures the token cost of the runs that preceded it.
 
-See [Feature validation checklist](/openwiki/invariants/feature-validation-checklist.md) for where
+See [Feature validation checklist](./feature-validation-checklist.md) for where
 `rtk gain` fits in the full pre-completion sequence, and
-[Testing tiers and what gates a merge](/openwiki/invariants/testing-tiers.md) for the test runs whose
+[Testing tiers and what gates a merge](./testing-tiers.md) for the test runs whose
 output RTK is compressing.

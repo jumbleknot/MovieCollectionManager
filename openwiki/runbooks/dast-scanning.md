@@ -16,7 +16,7 @@ ephemeral throwaway stack, gating merges on any un-allowlisted High finding. ZAP
 passive only — active fuzzing there would trigger real, slow, non-deterministic LLM runs). ZAP
 attaches to the shared backend network and reaches every target by DNS rather than publishing new
 host ports, deliberately avoiding the prod/CI port-collision risk described in
-[Published-port reservation](/openwiki/invariants/published-port-reservation.md).
+[Published-port reservation](../invariants/published-port-reservation.md).
 
 ## Gotchas
 
@@ -26,7 +26,7 @@ host ports, deliberately avoiding the prod/CI port-collision risk described in
 - **Credentials are reused from existing E2E test secrets, not new secret material** — the scan
   scripts fall back to the `E2E_*` equivalents when DAST-specific env vars are unset, so no new
   credential surface is introduced for this feature. See
-  [Secrets management](/openwiki/invariants/secrets-management.md) for the broader posture this
+  [Secrets management](../invariants/secrets-management.md) for the broader posture this
   follows.
 - **An unreachable target logs a warning and is skipped — it never silently produces a clean-looking
   passing report.** Treat a target-skip warning as "coverage gap," not "all clear."
@@ -41,7 +41,7 @@ host ports, deliberately avoiding the prod/CI port-collision risk described in
 - **`dast` is path-gated and CI tears both dependent stacks down unconditionally afterward** — a
   docs-only or Komodo-only PR skips the job entirely, and the always-on teardown exists so a stray
   DAST-spun stack can never hold a host port against a later deploy (the same incident class as
-  [Published-port reservation](/openwiki/invariants/published-port-reservation.md)).
+  [Published-port reservation](../invariants/published-port-reservation.md)).
 
 Full target/auth table, local baseline invocation, and the triage/allowlist workflow:
 `docs/runbooks/dast-scanning.md`.

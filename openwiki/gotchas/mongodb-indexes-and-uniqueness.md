@@ -8,7 +8,7 @@ timestamp: 2026-06-13T13:22:14-04:00
 
 # MongoDB collation uniqueness and the language_override trap
 
-[mc-service](/openwiki/projects/mc-service.md) enforces two uniqueness rules purely with MongoDB
+[mc-service](../projects/mc-service.md) enforces two uniqueness rules purely with MongoDB
 index options in `backend/mc-service/src/adapters/mongodb/indexes.rs` — there is no derived
 lowercase field and no application-layer duplicate check:
 
@@ -39,6 +39,6 @@ domain errors `DuplicateCollectionName` / `DuplicateMovie` — callers never see
   `createIndexes` with explicit names every boot) — don't assume a schema migration step is needed
   when adding a new index; add it here and it self-heals on the next deploy.
 
-See [mc-service](/openwiki/projects/mc-service.md) for the service's layer architecture and
-[Keyset pagination](/openwiki/gotchas/keyset-pagination.md) for how the sibling cursor/sort indexes
+See [mc-service](../projects/mc-service.md) for the service's layer architecture and
+[Keyset pagination](./keyset-pagination.md) for how the sibling cursor/sort indexes
 in the same file are used.

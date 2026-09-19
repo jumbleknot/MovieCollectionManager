@@ -45,7 +45,7 @@ unit as the cascade.
   `ulimits.nofile.soft`/`hard` to `64000` explicitly for this reason — don't remove it as apparently
   redundant.
 
-See [mc-service](/openwiki/projects/mc-service.md) for the repository's place in the Clean
+See [mc-service](../projects/mc-service.md) for the repository's place in the Clean
 Architecture layering, and
-[MongoDB indexes and uniqueness](/openwiki/gotchas/mongodb-indexes-and-uniqueness.md) for the other
+[MongoDB indexes and uniqueness](./mongodb-indexes-and-uniqueness.md) for the other
 Mongo-level invariants this same adapter layer relies on.

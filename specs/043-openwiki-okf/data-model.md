@@ -71,8 +71,34 @@ Each rule maps to exactly one fixture bundle in `scripts/__tests__/fixtures/open
 | V11 | **[repo]** `INSTRUCTIONS.md` is exempt from all concept rules | pass | `instructions-only/` |
 | V12 | **[repo]** drift: a concept whose repo-relative `resource` changed after the concept's `timestamp` | **warn, exit 0** | `stale-concept/` |
 | V13 | A fully conformant bundle passes with no findings | pass | `valid/` |
+| V14 | **[repo]** no body link is site-root-absolute (`](/openwiki/…)`) | fail | `site-root-link/` |
+| V15 | **[repo]** every relative body link resolves **from its own file's directory** | fail | `unresolvable-link/` |
 
 **V12 is the only rule that reports without failing** (FR-014b). Every other listed failure is exit 1.
+
+### Body links (V14 / V15) — added for item #491, after V6 alone proved insufficient
+
+V6 verifies the `resource` FRONT MATTER and nothing else, so 204 dead body links across 61 of the
+bundle's 77 files passed this gate on `main` for months. V14/V15 close that.
+
+Measured on Forgejo `15.0.3+gitea-1.22.0` (2026-09-19) with `POST /api/v1/markup` — the endpoint
+that accepts `Context`, `BranchPath` and `FilePath`, and so renders a link exactly as the repository
+file view does. `/api/v1/markdown` cannot answer the question; it takes no file path:
+
+| written | rendered |
+|---|---|
+| `](/openwiki/process/spec-driven-development.md)` | `{forge}/openwiki/process/spec-driven-development.md` → **404** |
+| `](spec-driven-development.md)` | `{forge}/jumbleknot/mcm/src/branch/main/openwiki/process/…` → resolves |
+
+A leading `/` resolves against the **site** root, so the forge reads `openwiki` as a *username*.
+The absolute form is base-independent — four different `Context`/`BranchPath`/`FilePath`
+combinations rendered a byte-identical href — which is what makes the API result transfer to the
+file view rather than merely suggest an answer.
+
+Both rules are offline, like every other one here: resolution is a filesystem question. Links inside
+a fenced block or a code span are exempt, so the brief can show the wrong form (`INSTRUCTIONS.md`
+§6). The scanner is shared with the generator's normalizer in `scripts/openwiki-links.mjs`, so the
+gate and the fixer cannot disagree about what counts as a link.
 
 ### Resource resolution (V6 / V7)
 

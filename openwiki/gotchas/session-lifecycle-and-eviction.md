@@ -13,7 +13,7 @@ The BFF's Redis session (`session-manager.ts`) and the underlying Keycloak JWT a
 lifecycles. The session tracks its own idle timeout and absolute timeout independently of however
 long the JWT itself is valid for, and it additionally enforces a per-user cap on concurrent sessions
 (`MAX_CONCURRENT_SESSIONS`) that has nothing to do with token expiry. See
-[the auth chain](/openwiki/invariants/auth-chain.md) for where this session sits in the full
+[the auth chain](../invariants/auth-chain.md) for where this session sits in the full
 login-to-request sequence.
 
 ## Gotchas

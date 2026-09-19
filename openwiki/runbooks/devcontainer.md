@@ -44,7 +44,7 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   enough; fully quit VS Code (`taskkill /F /IM Code.exe`) and relaunch from a shell where the value is
   already visible, then rebuild. With `MCM_FORGE_ISSUE_TOKEN` unset, backlog reads still work via
   `MCM_FORGE_TOKEN`; writes are refused naming the missing variable. See
-  [The agent-driven backlog](/openwiki/runbooks/backlog.md) for credential and reach details.
+  [The agent-driven backlog](./backlog.md) for credential and reach details.
 - **NEVER set `ANTHROPIC_API_KEY` directly — use `MCM_ANTHROPIC_API_KEY` (feature 060).** Claude
   Code silently prefers `ANTHROPIC_API_KEY` over an existing subscription login with no warning and
   nothing in the UI showing which is in use. **Measured 2026-08-16: ~$15 of unintended API spend in a
@@ -65,7 +65,7 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   **A failing `--offline` resolve is not an obstacle to work around — it is a lock-discipline
   check:** it means the change is pulling a package absent from `Cargo.lock`, which CI will
   also reject. Do not reach for `--online`; inspect what is being added. See
-  [cargo fmt formats the WHOLE crate](/openwiki/gotchas/rust-formatting-scope.md) for the
+  [cargo fmt formats the WHOLE crate](../gotchas/rust-formatting-scope.md) for the
   companion formatting trap in this crate.
 - **`getaddrinfo ENOTFOUND keycloak-service` running the integration tier here is a missing env
   variable, not a capability gap.** `tests/integration/setup/env.ts` loads `.env.docker` (added by
@@ -81,13 +81,13 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   container, so a local agent E2E run against `MODEL_PROVIDER=ollama` is feasible. **Verify by
   running the liveness probe before trusting either version of this note** — it has flipped once:
   `docker exec movie-assistant-gateway python -c "import urllib.request,json; print([m['name'] for m in json.load(urllib.request.urlopen('http://host.docker.internal:11434/api/tags'))['models']])"`.
-  See [Model-provider scoping](/openwiki/invariants/model-provider-scoping.md) for how this interacts
+  See [Model-provider scoping](../invariants/model-provider-scoping.md) for how this interacts
   with the gateway's provider selection.
 - **A Docker CDN blob timeout on `docker compose up` is usually firewall/CDN-IP drift, not a real
   outage** — re-running `init-firewall.sh` to re-resolve the allowlisted CDN IPs and retrying is the
   documented fix, not disabling the firewall.
 - **The Android emulator now runs natively in the dev container** (baked-in SDK + system image, host
-  `/dev/kvm` passthrough) — see [Android emulator & APK builds](/openwiki/runbooks/android-emulator.md)
+  `/dev/kvm` passthrough) — see [Android emulator & APK builds](./android-emulator.md)
   for the boot ritual and the mobile-agent-flow caveat that still applies inside the container.
 - **`~/.claude.json` was NEVER on the `mcm-claude` volume — SC-007 held by accident, not by design (item #257, measured 2026-08-27).** The `mcm-claude` volume mounts the `~/.claude` **directory**; but Claude Code's global config is `~/.claude.json`, a sibling in `$HOME` on the ephemeral overlay. A container recreate therefore dropped `oauthAccount`, `userID`, `machineID`, and session history, while `~/.claude/.credentials.json` (the actual OAuth tokens) survived. **Fix (item #257):** `CLAUDE_CONFIG_DIR=/home/coder/.claude` in `containerEnv` relocates the config root so `.claude.json` resolves inside the volume. `persist-claude-config.sh` in `onCreateCommand` seeds an existing config on the first run after the change. ⚠️ A symlink does NOT work — Claude Code replaces the file rather than editing in place (write-then-rename swaps the symlink for an overlay file, silently restoring the bug). The env var cannot decay.
 - **"Docker won't start after a rebuild" is almost always a stale container holding the DinD lock, not

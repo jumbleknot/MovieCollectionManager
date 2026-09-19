@@ -20,7 +20,7 @@ project-specific meaning:
 | **E2E** | exercised indirectly via mcm-app E2E | Playwright (web) + Maestro (mobile) | mobile agent flows via Maestro |
 
 All tiers run through Nx (`pnpm nx test <project>`, `pnpm nx test:integration <project>`) — see
-[Nx as the task runner](/openwiki/invariants/nx-task-runner.md) for why direct tool invocation is
+[Nx as the task runner](./nx-task-runner.md) for why direct tool invocation is
 discouraged.
 
 ## The golden tier is a MARKER, not a directory
@@ -312,7 +312,7 @@ this arrangement exists to avoid. **Nothing leaves the gate without a tier that 
 - **Golden tests are the model-cost-bearing surface.** All intent mapping, dedup, and resolution logic
   is pure code and unit/property tested at zero model cost; only actual model *decisions* (intent
   classification, phrasing) are exercised by the golden cassette suite, keeping the expensive tier
-  small and stable. See [Model-provider scoping](/openwiki/invariants/model-provider-scoping.md) for
+  small and stable. See [Model-provider scoping](./model-provider-scoping.md) for
   why golden cassettes are recorded against Claude specifically.
 - **Nx target caching differs by tier**: `test` is cached, `test:integration` is explicitly
   uncached (`nx.json` `targetDefaults`) because it depends on live external state that Nx cannot see.

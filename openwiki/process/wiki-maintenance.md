@@ -26,14 +26,14 @@ tool reads on every run but never rewrites.
   being considered complete. This was a deliberate scope decision (phases 0–2 only of the adoption
   plan): no scheduled job, no new CI credential.
 - **Always invoke through the Nx target, never the bare `openwiki` CLI.** See
-  [Nx as the task runner](/openwiki/invariants/nx-task-runner.md) — the target sets
+  [Nx as the task runner](../invariants/nx-task-runner.md) — the target sets
   `OPENWIKI_TELEMETRY_DISABLED=1` (the tool reports usage telemetry to a third-party host by default,
   which the dev container's egress allowlist would block but the Windows host would not) and raises
   `NODE_OPTIONS` heap size to avoid the OOM.
 - **The conformance gate is fail-closed with no opt-out.** An absent, empty, or partially-written
   bundle is a violation, not a vacuous pass — there is no skip flag. This mirrors the same
   fail-closed posture other repository gates use (see
-  [Secrets management](/openwiki/invariants/secrets-management.md)) and was a deliberate choice: a
+  [Secrets management](../invariants/secrets-management.md)) and was a deliberate choice: a
   gate that passes when its subject is missing is exactly the failure mode that let an entire test
   tier rot silently for a month before a different feature caught it.
 - **The gate is offline and keyless by design.** Repository-relative `resource` links are resolved
@@ -45,7 +45,7 @@ tool reads on every run but never rewrites.
   a concept is a manual, model-cost step, so a blocking drift check would gate every unrelated
   documentation edit on a paid run.
 - **`docs/proposals/**` is deliberately excluded from the bundle** — see
-  [Spec-driven development](/openwiki/process/spec-driven-development.md) for why, and where the one
+  [Spec-driven development](./spec-driven-development.md) for why, and where the one
   process concept documenting that lifecycle lives instead.
 - **This page and its siblings are themselves generated content** — do not hand-edit generated
   concept pages outside an OpenWiki run unless explicitly asked; prefer updating the source

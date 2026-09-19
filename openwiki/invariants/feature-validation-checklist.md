@@ -82,18 +82,18 @@ different tools per stack:
 - **In the dev container, Playwright runs IN A CONTAINER and the integration tiers read their
   credentials from `stacks/auth.env`, not `frontend/mcm-app/.env.local`** (which does not exist on
   that path). Both incantations, including the mandatory `--user "$(id -u):$(id -g)"`, are in
-  [Containerized dev environment](/openwiki/runbooks/devcontainer.md).
+  [Containerized dev environment](../runbooks/devcontainer.md).
 - **A changed deployed service/BFF container must be rebuilt and redeployed before the E2E run runs
   against it**, or the suite silently validates a stale image and reports false confidence (the
   feature 011 lesson cited above).
 - **`rtk gain` runs last, deliberately** — see
-  [RTK token compression](/openwiki/invariants/rtk-token-compression.md) — because it measures the
+  [RTK token compression](./rtk-token-compression.md) — because it measures the
   token cost of every check that ran before it, not the checklist item itself.
 - **The wiki-update step is part of the checklist, not an optional add-on**: `pnpm nx wiki-update
   infrastructure-as-code` must run and its diff (even a no-op) belongs in the PR, followed by
   `pnpm nx okf-lint infrastructure-as-code` passing.
 
-See [Testing tiers and what gates a merge](/openwiki/invariants/testing-tiers.md) for how these same
+See [Testing tiers and what gates a merge](./testing-tiers.md) for how these same
 tiers map to what actually blocks CI versus what is exercised locally before a PR, and
-[Nx as the universal task runner](/openwiki/invariants/nx-task-runner.md) for why every item here is
+[Nx as the universal task runner](./nx-task-runner.md) for why every item here is
 invoked through `pnpm nx <target>` rather than the underlying tool directly.

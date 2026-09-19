@@ -16,7 +16,7 @@ volumes so a breakout in one cannot reach the other or the host as root), Forgej
 source-of-truth forge with its own OCI registry (push-mirrored to GitHub), and Komodo driving CD to
 production. This document was relocated here from `docs/proposals/homelab-setup/` because it is a live
 operator reference, not pre-specification ideation — see the
-[proposal → spec → plan → tasks → implementation lifecycle](/openwiki/process/spec-driven-development.md)
+[proposal → spec → plan → tasks → implementation lifecycle](../process/spec-driven-development.md)
 for why that distinction matters and why proposals themselves are out of scope for this wiki.
 
 ## Gotchas
@@ -24,7 +24,7 @@ for why that distinction matters and why proposals themselves are out of scope f
 - **Two rootless daemons, one host, one port space.** CI and prod are isolated at the daemon and
   filesystem level, but they still publish into the same host's port space — this is the origin of the
   collision class documented in
-  [Published-port reservation](/openwiki/invariants/published-port-reservation.md); a port assigned
+  [Published-port reservation](../invariants/published-port-reservation.md); a port assigned
   here without checking that convention can silently starve a prod redeploy later.
   - **A `machinectl shell <user>@` session is required to install rootless Docker for a service user,
     not `sudo -iu`/`su`.** The setup tool needs a real systemd user session to install its
@@ -62,7 +62,7 @@ for why that distinction matters and why proposals themselves are out of scope f
 - **Never commit the real forge hostname, production domain, or tailnet address.** Every literal in
   this runbook is a placeholder; the topology-scrub and secret-scan CI gates block a real value from
   landing in git, matching the redaction posture in
-  [Secrets management](/openwiki/invariants/secrets-management.md).
+  [Secrets management](../invariants/secrets-management.md).
 - **This is genuinely a from-scratch, phase-ordered runbook** — phases assume the prior phase's state
   (e.g. the two service users and their networks/volumes must exist before Forgejo or the app stacks are
   deployed). Do not skip ahead based on a partial rebuild.

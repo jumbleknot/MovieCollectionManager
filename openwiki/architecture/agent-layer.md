@@ -11,9 +11,9 @@ timestamp: 2026-08-18T00:00:00+00:00
 
 This page covers the *architectural shape* of the AI Agents layer — the call chain, its security
 boundary, and how per-user state and config are threaded through it. For the
-[Agent Gateway](/openwiki/projects/agent-gateway.md) service itself (its MCP servers, tool-invocation
+[Agent Gateway](../projects/agent-gateway.md) service itself (its MCP servers, tool-invocation
 chokepoint, and env-scoped model provider), see that page. Both cite the same canonical source,
-`docs/runbooks/agent-layer.md`; see also [System overview](/openwiki/architecture/system-overview.md) for
+`docs/runbooks/agent-layer.md`; see also [System overview](./system-overview.md) for
 where the agent layer sits relative to `mc-service`.
 
 ## Call chain and security boundary
@@ -30,7 +30,7 @@ and `mcm-bff` hosts the CopilotKit runtime bridge (`CopilotRuntime` + the AG-UI 
 vendored `ExperimentalEmptyAdapter` — no LLM call or orchestration in the BFF) rather than a
 hand-rolled per-event translation layer. The Agent Gateway and its `agent-db` (LangGraph checkpoint
 store) are private-network only; only the BFF ever reaches them. See
-[Auth chain](/openwiki/invariants/auth-chain.md) for how this fits the rest of the system's identity
+[Auth chain](../invariants/auth-chain.md) for how this fits the rest of the system's identity
 flow.
 
 ## Token custody: why a "run-scoped delegation token", not the session token
@@ -56,7 +56,7 @@ The assistant is **off by default** and shares no shared model or TMDB credentia
 in from the Profile screen and supplies their own provider credential (Ollama base URL or an
 Anthropic key) and TMDB key. These are AES-256-GCM-encrypted at rest in the BFF's own
 `mcm-bff-db` (physically separate from `mc-db` — see
-[Secrets management](/openwiki/invariants/secrets-management.md)) and decrypted only transiently, in
+[Secrets management](../invariants/secrets-management.md)) and decrypted only transiently, in
 memory, per run — never returned to the client, logged, or persisted to a checkpoint. The
 CopilotKit dock only mounts for a config that is actually runnable (enabled + provider credential +
 TMDB key); an un-opted-in user cannot trigger a billable run.

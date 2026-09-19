@@ -40,21 +40,21 @@ sequenceDiagram
   MCP->>mc: forwarded unchanged
 ```
 
-1. **Client → Keycloak (PKCE).** The [Expo app](/openwiki/projects/expo-app.md) performs the OAuth2
+1. **Client → Keycloak (PKCE).** The [Expo app](../projects/expo-app.md) performs the OAuth2
    authorization-code-with-PKCE exchange directly against Keycloak; the client only ever sees an
    authorization code, never a token.
-2. **BFF exchanges the code, owns the session.** The [BFF](/openwiki/projects/bff.md) trades the code
+2. **BFF exchanges the code, owns the session.** The [BFF](../projects/bff.md) trades the code
    for tokens, validates the ID token and the access-token JWT, extracts roles, and creates a
    Redis-backed session. It then hands the *client* only opaque `HttpOnly`, `SameSite=Strict` cookies
    — the raw JWT never reaches client-side JS on web or native. Subsequent requests carry only that
    cookie; the BFF re-extracts the JWT server-side on every request via `requireAuth()`.
-3. **mc-service re-validates independently.** [mc-service](/openwiki/projects/mc-service.md) does not
+3. **mc-service re-validates independently.** [mc-service](../projects/mc-service.md) does not
    trust that the BFF already checked auth — it runs its own `KeycloakAuthLayer` (a tower layer, so a
    new route is protected by default) plus a separate `require_app_role` middleware for the
    `mc-user` OR `mc-admin` check, validating the same JWT locally against a JWKS cached once at
    startup.
 4. **Agent Gateway gets a narrower, run-scoped token, not the user's session token.** When a request
-   goes to the [Agent Gateway](/openwiki/projects/agent-gateway.md), the BFF performs its own token
+   goes to the [Agent Gateway](../projects/agent-gateway.md), the BFF performs its own token
    exchange to mint a run-scoped, audience-narrowed delegation token and hands *that* to the gateway.
    The gateway then re-exchanges per tool call to bind a short-TTL, `aud=mc-service` token to each
    individual MCP call. This means the most model-exposed component in the system (the LLM-driven
@@ -78,6 +78,6 @@ sequenceDiagram
   so a compromised or misbehaving gateway can't act with the user's full session privileges, only a
   narrow, short-lived, audience-bound one.
 
-See [Secrets management](/openwiki/invariants/secrets-management.md) for how the credentials this
+See [Secrets management](./secrets-management.md) for how the credentials this
 chain depends on (Keycloak client secrets, cookie signing/encryption keys) are sourced and rotated,
 and `CLAUDE.md`'s Architecture and Non-Obvious Design Decisions sections for the full narrative.

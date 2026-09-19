@@ -47,8 +47,8 @@ downstream shipper.
   configuration, not a separate retention service — long-term retention requires a log shipper that
   does not exist in this stack yet.
 - **This is a different mechanism from the append-only audit sink pattern** described in
-  [Secrets management](/openwiki/invariants/secrets-management.md)'s references to the audit stack —
-  logging redaction protects what reaches storage, while the [auth chain](/openwiki/invariants/auth-chain.md)'s
+  [Secrets management](./secrets-management.md)'s references to the audit stack —
+  logging redaction protects what reaches storage, while the [auth chain](./auth-chain.md)'s
   audit events are what's *supposed* to reach storage, minus anything on the never-log list.
 
 Full field-by-field logger API and RUST_LOG examples: `CLAUDE.md`'s Logging section.

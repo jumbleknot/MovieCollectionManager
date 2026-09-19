@@ -133,7 +133,7 @@ rewording.
 **These pages are authoritative and therefore carry NO `resource` field.** Do not cite `CLAUDE.md`:
 that file is being reduced to an index and holds none of this content any more, so a citation would
 point at a summary of itself. An authoritative concept is the canonical home of its subject, which is
-also what makes the routing rule in section 6 decidable. Every authoritative concept must be listed
+also what makes the routing rule in section 7 decidable. Every authoritative concept must be listed
 under `authoritative:` in `openwiki/protected.yaml`; a concept that is neither listed there nor
 carrying a resolving `resource` fails the governance gate, because its status would be unknowable.
 
@@ -167,7 +167,45 @@ concept that is neither, and one that is both.
 `timestamp` should be ISO 8601. It is compared against the cited source's last modification to report
 drift, so an accurate timestamp is what makes staleness visible.
 
-## 6. Where a new learning goes — the canonical-home rule
+## 6. Links in the body — relative to the file, never to the site root
+
+**Every in-repository link in a page's body MUST be written relative to the file it is written in.**
+
+```markdown
+<!-- as written from a page in openwiki/runbooks/ -->
+✅  [Spec-driven development](../process/spec-driven-development.md)
+✅  [the devcontainer runbook](../../docs/runbooks/devcontainer.md)
+❌  [Spec-driven development](/openwiki/process/spec-driven-development.md)
+```
+
+The `../` depth therefore depends on where the page lives — a link is correct relative to **its own
+file**, not to the bundle root, and rule V15 below checks it from exactly there.
+
+A leading `/` is **not** the repository root. Forgejo resolves it against the **site** root, so
+`/openwiki/process/spec-driven-development.md` renders as
+`{forge}/openwiki/process/spec-driven-development.md` — which the forge reads as a *username*, and
+404s. Measured on Forgejo `15.0.3+gitea-1.22.0` (2026-09-19) with `POST /api/v1/markup`, the one
+endpoint that accepts `Context`, `BranchPath` and `FilePath` and so renders a link exactly as the
+repository file view does. The relative form resolved to
+`{forge}/jumbleknot/mcm/src/branch/main/openwiki/process/…` in the same call.
+
+This cost the bundle **204 dead links across 61 of its 77 files** before anyone checked (item #491),
+and it went unnoticed for a specific reason worth internalizing: §5's `resource` paths *were*
+verified, and they all passed. Body links were not checked at all, so the bundle looked conformant
+while most of its navigation was broken. A navigation layer whose links 404 is worse than no
+navigation layer, because the reader trusts it.
+
+Two mechanisms now enforce this, and neither is a reason to write the wrong form:
+
+- `scripts/wiki-maintain.mjs` rewrites a site-root-absolute link to the relative form after every
+  slice, deterministically.
+- `scripts/check-openwiki-okf.mjs` rule **V14** rejects the form outright, and rule **V15** rejects a
+  relative link that does not resolve from its own file's directory. Both fail the build.
+
+Links inside a fenced code block or a code span are exempt — that is how this section is able to
+show the wrong form above.
+
+## 7. Where a new learning goes — the canonical-home rule
 
 This section is for anyone (human or assistant) who has just learned something durable about this
 repository and has to decide where to write it. It is **not** about when a path may be regenerated —
@@ -211,7 +249,7 @@ Second, it reinstates the grow-then-trim cycle this arrangement exists to end. T
 grew to 592 lines and 72 KB once already. A rule that tolerates re-growth on the promise of a later
 cleanup produces the same file again, on a slower clock.
 
-## 7. Tone
+## 8. Tone
 
 Write for an engineer or coding agent who is competent but new to this repository. Be direct and
 concrete. Prefer the specific detail that prevents a mistake over the general statement that sounds

@@ -9,7 +9,7 @@ timestamp: 2026-07-26T20:11:56+00:00
 # Role enforcement is a layer, not a per-handler check — at every tier
 
 The same design rule repeats independently at three tiers of
-[the auth chain](/openwiki/invariants/auth-chain.md): application-role membership (`mc-user` /
+[the auth chain](../invariants/auth-chain.md): application-role membership (`mc-user` /
 `mc-admin`) is enforced by one centralized piece of middleware per tier, and anything that reads
 roles inside an individual handler or component is there only to *display or branch on* an
 already-enforced decision — never to be the actual gate.
@@ -48,6 +48,6 @@ already-enforced decision — never to be the actual gate.
   (`requireMcUser`, `hasRole`, the mc-service OR-check) treats admin as a superset, not a separate
   parallel permission; don't add a new check that requires both roles independently.
 
-See [Auth chain](/openwiki/invariants/auth-chain.md) for how these checks fit into the full
-login-to-request sequence, and [mc-service](/openwiki/projects/mc-service.md) /
-[BFF](/openwiki/projects/bff.md) for each service's broader architecture.
+See [Auth chain](../invariants/auth-chain.md) for how these checks fit into the full
+login-to-request sequence, and [mc-service](../projects/mc-service.md) /
+[BFF](../projects/bff.md) for each service's broader architecture.

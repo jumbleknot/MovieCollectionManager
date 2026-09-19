@@ -8,7 +8,7 @@ timestamp: 2026-07-06T03:01:34+00:00
 
 # mc-service musl-conditional vendored OpenSSL
 
-[mc-service](/openwiki/projects/mc-service.md) is built for production inside `rust:alpine3.21`,
+[mc-service](../projects/mc-service.md) is built for production inside `rust:alpine3.21`,
 which targets `x86_64-unknown-linux-musl`. Musl links binaries statically (`-static-pie`,
 `-Wl,-Bstatic`), but Alpine's `openssl-dev` package only ships dynamic `.so` libraries, not static
 `.a` archives — so a normal `cargo build` fails to find `-lssl` on that target.
@@ -31,5 +31,5 @@ produce static libs. The Dockerfile's build stage installs `perl make` for that 
 - **`OPENSSL_STATIC=1` alone doesn't fix it either** — Alpine simply doesn't have static libs to
   link against without the vendored (compile-from-source) feature.
 
-See [mc-service](/openwiki/projects/mc-service.md) for how this fits into the service's Docker
+See [mc-service](../projects/mc-service.md) for how this fits into the service's Docker
 build overall, and `CLAUDE.md`'s Non-Obvious Design Decisions section for the full narrative.

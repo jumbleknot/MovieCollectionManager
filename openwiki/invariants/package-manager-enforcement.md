@@ -41,6 +41,6 @@ npm and yarn are prohibited outright, not just discouraged in docs. The root `pa
   non-root manifest declaring the field, **including one whose value agrees**: the rule is "declared
   once", not "declared consistently", because an agreeing copy is one bot PR away from drifting.
 
-See [Nx as the universal task runner](/openwiki/invariants/nx-task-runner.md) for how installed
+See [Nx as the universal task runner](./nx-task-runner.md) for how installed
 dependencies are then invoked — every build/test/lint/deploy command goes through Nx, not through
 package-manager scripts directly.
