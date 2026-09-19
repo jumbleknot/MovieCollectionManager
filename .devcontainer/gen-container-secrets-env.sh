@@ -58,27 +58,40 @@ else
 fi
 
 written=0
+total=0
 missing=""
+emitted=""
 for v in $VARS; do
+  total=$((total + 1))
   eval "val=\${$v:-}"
   if [ -z "$val" ]; then missing="$missing $v"; continue; fi
   # docker's env-file format is one KEY=VALUE per line and has no continuation syntax, so a value
   # containing a newline would silently become a bogus extra entry. Refuse rather than corrupt.
+  #
+  # ⚠️ This MUST use bash's $'\n', not "$(printf '\n')". Command substitution strips trailing
+  # newlines, so the latter evaluates to the EMPTY STRING and the pattern degrades to *""* — which
+  # matches every value. Measured 2026-09-19: that mistake rejected all four perfectly valid
+  # credentials and produced an empty env file. A guard that cannot fail open is worth the pedantry.
   case "$val" in
-    *"$(printf '\n')"*)
+    *$'\n'*)
       echo "[gen-container-secrets-env] ✗ $v contains a newline — refusing to emit it" >&2
       continue ;;
   esac
   printf '%s=%s\n' "$v" "$val" >> "$OUT"
   written=$((written + 1))
+  emitted="$emitted $v"
 done
 
 # Report names and LENGTHS only. A generator for credentials must never be the thing that prints
 # them — that is the defect this whole file exists to remove.
-echo "[gen-container-secrets-env] wrote $written/4 credential(s) to $OUT (mode $(stat -c '%a' "$OUT" 2>/dev/null || echo '?'))"
-for v in $VARS; do
+#
+# The per-variable list reports what was actually WRITTEN, not merely what was present in the
+# environment: an earlier version ticked all four while the count said "wrote 0/4", which is exactly
+# the kind of summary that reads as success.
+echo "[gen-container-secrets-env] wrote $written/$total credential(s) to $OUT (mode $(stat -c '%a' "$OUT" 2>/dev/null || echo '?'))"
+for v in $emitted; do
   eval "val=\${$v:-}"
-  if [ -n "$val" ]; then echo "  ✓ $v (${#val} chars)"; fi
+  echo "  ✓ $v (${#val} chars)"
 done
 [ -n "$missing" ] && echo "  ⚠ not provisioned:$missing"
 
