@@ -12,7 +12,7 @@
  * name the BFF CONTAINER can reach it by — the browser never connects to it; the BFF does.
  */
 import { test, expect } from './fixtures/worker-session';
-import { type Page } from '@playwright/test';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 
@@ -75,17 +75,59 @@ test.describe('Backup destinations (feature 073)', () => {
   // failed before reaching its delete step leaves a destination behind, and the next run sees
   // several. That is exactly how `.first()` came to delete the wrong one and report the feature
   // broken. Start every test from a known-empty list instead of hoping the previous one tidied up.
-  test.beforeEach(async ({ request }) => {
-    // Jobs first: deleting a destination disables its jobs (FR-006) rather than removing them,
-    // so clearing destinations alone would leave disabled jobs behind and the job list would
-    // still be non-empty — which is what makes a `.first()` job locator ambiguous.
+  /**
+   * Remove every backup job and destination belonging to the acting user.
+   *
+   * Run BOTH before and after each test, deliberately. Before, so a test starts from a known
+   * list and a positional locator is unambiguous. After, so nothing this file created is still
+   * there for the next thing to trip over — the lesson the collections leak taught at the cost
+   * of three CI cycles.
+   *
+   * Jobs first: deleting a destination DISABLES its jobs (FR-006) rather than removing them, so
+   * clearing destinations alone would leave disabled jobs behind and a non-empty job list.
+   */
+  async function clearBackupState(request: APIRequestContext): Promise<void> {
     const jobs = await (await request.get(`${BASE}/bff-api/backups/jobs`)).json();
     for (const j of Array.isArray(jobs) ? jobs : []) {
       await request.delete(`${BASE}/bff-api/backups/jobs/${j.id}`);
     }
-    const existing = await (await request.get(`${BASE}/bff-api/backups/destinations`)).json();
-    for (const d of Array.isArray(existing) ? existing : []) {
+    const destinations = await (await request.get(`${BASE}/bff-api/backups/destinations`)).json();
+    for (const d of Array.isArray(destinations) ? destinations : []) {
       await request.delete(`${BASE}/bff-api/backups/destinations/${d.id}`);
+    }
+  }
+
+  test.beforeEach(async ({ request }) => {
+    await clearBackupState(request);
+  });
+
+  // THE COLLECTIONS THIS FILE CREATES MUST BE REMOVED, and that is not tidiness — it is the
+  // difference between a green suite and a broken one three flows later.
+  //
+  // MEASURED on run 3838. The restore test creates `<name> (backup <timestamp>)` collections and a
+  // `Mutated …` one, in the SHARED e2e test account. Left behind, the next mobile flow asked
+  // "tell me about Avatar" and the assistant answered:
+  //
+  //   "Which collection should I add Avatar: Fire and Ash to? You have: E2E Browse, E2E Mutation,
+  //    E2E Default, Mutated e2e-17899…, E2E Browse (backup 2026-09-20 19:03), …"
+  //
+  // — a disambiguation instead of a movie card, so `agent-disambiguation` failed three attempts on
+  // a card that never had a title. A test that mutates shared state and does not restore it does
+  // not fail itself; it fails something else, later, somewhere that looks unrelated.
+  //
+  // Matched by NAME because the restore is driven through the UI, so the created ids are not
+  // visible to the test. Both patterns are ones only this file produces: `(backup <timestamp>)` is
+  // the restore writer's own suffix, and `Mutated e2e-` is this file's mutation fixture.
+  test.afterEach(async ({ request }) => {
+    await clearBackupState(request);
+    const res = await request.get(`${BASE}/bff-api/collections`);
+    const list = await res.json();
+    for (const c of Array.isArray(list) ? list : (list.items ?? [])) {
+      const id = c.collectionId ?? c.id;
+      if (!id) continue;
+      if (/\(backup .+\)$/.test(c.name) || /^Mutated e2e-/.test(c.name)) {
+        await request.delete(`${BASE}/bff-api/collections/${id}`);
+      }
     }
   });
 
