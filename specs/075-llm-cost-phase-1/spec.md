@@ -62,6 +62,10 @@ A saving that depends on byte-for-byte prefix stability degrades silently: one i
 2. **Given** that assertion is running as the pre-deploy live gate, **When** no model credential is available, **Then** it **fails** rather than skipping — a skipped check reports exit zero and would certify a saving that was never measured.
 3. **Given** production selects the fast-tier supervisor model, **When** a classification runs, **Then** the explicitly cacheable marking is simply ignored (the prompt is below that model's minimum prefix) and the call behaves and is billed exactly as it does today — the restructure must be inert where it cannot help.
 4. **Given** the prompt is restructured, **When** the recorded-interaction suite runs in replay, **Then** every intent still classifies to the same label it did before, with no recorded interaction silently treated as a capacity failure or otherwise downgraded to a skip.
+
+4a. **Given** the keyless merge gate runs with no provider selected — which resolves to the **self-hosted** provider — **When** the restructured prompt replays there, **Then** the same in-domain and out-of-domain assertions still hold, proving the single message shape works on the default provider and not only on the hosted one.
+
+4b. **Given** the self-hosted recorded interactions have not been re-recorded, **When** the keyless merge gate runs, **Then** it **fails** naming the missing recording as drift — it MUST NOT skip, so the self-hosted path cannot break silently.
 5. **Given** someone later edits the static portion of the prompt in a way that breaks prefix stability, **When** the cache assertion runs, **Then** it fails and names prefix drift as the cause, rather than passing quietly at full price.
 
 ---
@@ -123,6 +127,13 @@ Because production deliberately pins no model ids and lets the code defaults rul
 - **FR-015**: The existing rule that a per-user run uses only that user's credential, with no shared fallback, MUST be preserved unchanged.
 - **FR-016**: A per-user run that selects a different provider MUST NOT inherit any model id introduced by this feature.
 
+**Both providers keep working (cross-cutting)**
+
+- **FR-021**: The assistant MUST continue to work on **both** supported providers — the self-hosted local provider (the default) and the hosted one. No change in this feature may make either unusable, and no change may introduce a provider-conditional branch in the classification path unless the self-hosted provider is measured to regress without one.
+- **FR-022**: The restructured classification request MUST be accepted by both providers using **one** message shape. On the self-hosted provider the cache marking MUST be ignored without error; on the hosted provider it MUST be honoured where the model's minimum prefix allows.
+- **FR-023**: The recorded interactions for the self-hosted provider MUST be re-recorded alongside the hosted ones, and the keyless merge gate — which resolves to the self-hosted tier because it sets no provider — MUST pass in replay afterwards.
+- **FR-024**: A re-record of the self-hosted tier requires a locally running model rather than a hosted credential; this MUST be tracked as its own task with its own prerequisite, not folded into the hosted re-record.
+
 **Cross-cutting**
 
 - **FR-017**: All recorded model interactions MUST be re-recorded against the live provider, and the recorded-interaction suite MUST pass in replay afterwards.
@@ -147,6 +158,7 @@ Because production deliberately pins no model ids and lets the code defaults rul
 - **SC-005**: Every intent classification and extraction that produced a correct result before this feature produces the same result after it; the recorded-interaction suite passes with zero regressions.
 - **SC-006**: A deliberate change to the unchanging portion of the classification prompt causes an automated check to fail, and that failure names prefix instability as the cause rather than reporting a generic error.
 - **SC-007**: The generator change and the gateway changes reach the default branch as separate merges, so that a failure in continuous integration identifies which of the two caused it without further investigation.
+- **SC-008**: The assistant answers correctly on **both** providers after the change — the keyless merge gate (self-hosted tier) and the pre-deploy gate (hosted tier) both pass, from one shared message shape with no provider-conditional branch in the classification path.
 
 ## Assumptions
 

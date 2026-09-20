@@ -285,12 +285,39 @@ conventional one, so the expected direction is neutral-to-positive. But "expecte
 not "measured", and the repository already documents that `qwen2.5` misclassifies edge
 cases the Anthropic models get right (for example "exit search" → `out_of_domain`).
 
-**Decision**: treat the single `qwen2.5` cassette re-record (R5) as the measurement,
-and run the local Ollama tier once after the restructure rather than assuming. This is
-cheap — one cassette, one local model — and it is the only evidence that the default
-provider did not regress. If `qwen2.5` does regress, the fallback is to keep the
-single-string shape for the Ollama path only, accepting a provider branch in
-`classify_intent` that R1 otherwise avoids.
+**Decision**: treat the `qwen2.5` cassette re-record (R5) as the measurement, and run
+the local Ollama tier after the restructure rather than assuming. If `qwen2.5` does
+regress, the fallback is to keep the single-string shape for the Ollama path only,
+accepting a provider branch in `classify_intent` that R1 otherwise avoids.
+
+**The repository already enforces this, and more strongly than first assessed.**
+`tests/integration/test_out_of_domain.py` resolves its cassette **from the resolved
+model id** (`_cassette_path(spec.model_id)`), and the two tiers are recorded as separate
+files on purpose. So the same 9 in-domain / out-of-domain assertions replay under
+**both** providers:
+
+| Gate | `MODEL_PROVIDER` | Resolves to | Cassette replayed |
+|---|---|---|---|
+| `guardrails` (keyless merge gate, every PR) | **unset** | Ollama tier | `topic-confinement.qwen2-5.json` |
+| `test:golden-live` (pre-deploy) | `anthropic` | fast tier | live, no cassette |
+
+Consequences that matter for this feature:
+
+1. **The Ollama classification path is covered by a merge-blocking gate on every PR** —
+   not by a single loose fixture. `guardrails` leaves `MODEL_PROVIDER` unset, which is
+   precisely why the Ollama tier is what it replays.
+2. **The prompt restructure will fail that gate until the `qwen2.5` cassette is
+   re-recorded**, with `pytest.fail("no cassette for supervisor model 'qwen2.5' … A
+   missing cassette is drift, not a reason to skip")`. This is a hard blocker by
+   construction — the Ollama path cannot silently break, and the re-record cannot be
+   quietly skipped.
+
+**What that gate does and does not prove.** It proves the restructured prompt still
+flows through the Ollama code path and still yields the right label on those 9 inputs —
+because re-recording is itself a live `qwen2.5` invocation, and replay then pins its
+answers. It does **not** prove `qwen2.5`'s accuracy is unchanged on inputs outside those
+9. `test_models_build.py` invokes a real Ollama but skips in CI (allowlisted — CI runs
+no Ollama), so the broader local check is a developer action, covered in the quickstart.
 
 ---
 
