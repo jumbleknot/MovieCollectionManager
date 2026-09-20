@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:bb7957d7d075a2fc82bf60b0d7820e713b320679f4d5f55c5c8a05a93c5512a5",
+  "claims": [
+    {
+      "id": "claim_38bde766ef97415d9b05311aeb02e233",
+      "statement": "The Docker Desktop / Docker-in-Docker devcontainer path is retained solely for Android emulator support via /dev/kvm; all other work (web E2E, integration, agent stack, day-to-day assistant) runs on the Docker Sandbox microVM primary environment.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L9-L14",
+          "version": "repo-lines-v1:sha256:edc97bc2dde4b009ac4d0884c9aa5295b136a5b42e35f98b408ebaec18e514eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRjMTQ4OWExOWU1ZmEwZDE4MjZhNzM4MTEzZmU0OWZjM2IyZTEzMTc2NGRiZjkxYmIxNmUxZWJlN2QxZDUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTE2NjI3MjU4NDU1YWFjMzA5ZTczNjY2OTdlMGJmNTcyNWRjYzYxNmMyMmEwOTRlYzY5N2M0Y2RkMmNkYWY4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTY5ZjFiZmNlMWMyMDNhZjhlZDIyOWM0ZmMwMGIyN2NhZjRkYTMyOWZlZDY1YzliZjg1NmZhYWRmNTI1NDQ0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc1ZDRiMTBjOTM2Nzc3NzhhYTVhMTFjMTA5Zjc2YTY2MzRmMjY4NTY0N2IzM2FkNDI5YjkwNDMwZjI3N2NhMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f39a39dc2d04440871e3ec7fb5aef08",
+      "statement": "The devcontainer provides two distinct isolation strengths: strong host-filesystem/credential/SSH isolation (no host profile, SSH keys, credential store, or Docker socket mounted) and only moderate container-engine isolation because DinD requires the container to run privileged, accepting a potential escape path to the shared Docker Desktop WSL2 host engine.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L73-L95",
+          "version": "repo-lines-v1:sha256:c383bb5b69613d34a294d58b7c1f63b9bcb3a2f3d1cb405795b8cfb18e64ddf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkMDQzOWRhYTgxZmZlNmY3YjE4MDUzZGZiMzhkYzczNmViMTczYjU4MTAzNTIxMDMzYjgzZWJmY2U1Mjg1MDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYWQ3OWIxNTU0OGQ1MmRjYWNmY2JhNzcwMDBhNjAwNjFlMjQyYzJjYWFkYjk1M2YwMDk3ZWUxOTBhZTI2NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3YzkwZTc4NGFkNzZiMzgwZWNhZjE1MTRiMDVhYTY0YjM2MmEyOWRlZGNkNjgyMWZkOTAzYzg3NGNmYTQ4YTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c869666a5e745988fd7a4648d1e9794",
+      "statement": "init-firewall.sh enforces a default-deny outbound egress policy with a narrow allowlist (Anthropic API, GitHub, npm, container-image registries and their CDN blob hosts) using ipset/iptables; the FORWARD chain is left to dockerd so nested-container networking is not broken, meaning nested containers' egress is not independently firewalled.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L560-L565",
+          "version": "repo-lines-v1:sha256:af2834095087266b5fce7755a2ba83a628cba74a525d29b1dd6e36cc1b704cb0:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYzYjdlY2UyZGRkMmYyZDJjMTUxOTk3OWFhYmIxYjNhMmY2M2YwMDQzYzc3NThjOWQ4YzZmY2FhYjIyYjExNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTIyMGU5Njc2ZjgzMDc0MWI3NmE1ZmVkOTRkNWY4NGJiYzI2NjlkYmEzMTAxMDU3YzAwMTY0NWY1Y2IyMDU3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODczMDI4MTM3YWJkODBiMDFmNjkxZTcyOGY4ZTFhNjM0MzlmMTE4MjNmMTNkZmJmZDZlMjlmNTFiZmU1NDQyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2E4YWRhZTVmYTNiNTQ2NjBlNTg3MjEzNWY5YzA4ZWQ1NzZiZTdkYzljYzBjODk2ODJmMGZhZjA0MjE0ZGZhZCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L86-L94",
+          "version": "repo-lines-v1:sha256:d400aa313684c506951a4e43bc287c0bd6fe8870c077a6223c8ce6247c629c59:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJhYTI1MDdiNjM4ZWQ3MThlYjgyZjdhOWM3YmMwNTA4NDRmNzUzY2I4ZGNkNzE4OTAzZWU0OThjYTljNDEyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQzYThiN2M2YzUxYTFjYjJiZDU1MDcxZDgxMDlhMWVhMjg0M2U2NGM3ZDVlYzkzMDVkZTZmNzg5MjRiYWVkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY3NzNkMGRmOTQ0YWQwOTY2OWI2MWU1OTE4ZmY4ZDlmNjczODZkZWJjYWNjZTY3YjdmNWJmZWQ0NTc3MzkxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDRhYzlmNDNhOWNlZWUxOTVhYzQzOGE5ZjIzMDExNzkwYzEzYzRjNzRjODUxODFiODIzM2U2YzgxZDU0YTFkMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_918102bfb7a04b93952f4e9581952abf",
+      "statement": "Docker Desktop Enhanced Container Isolation (ECI) must remain OFF; ECI is incompatible with the docker-in-docker devcontainer feature and causes a 'mount: /sys/kernel/security: permission denied' failure.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L96-L99",
+          "version": "repo-lines-v1:sha256:a37bcddfa910a6f304907693706efb283c2fc10b9a80e831a719637327f7c70f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGEzYWFkMWQ2MWNmMTMxYzBmM2RiYjE0MDZhMDEzMTgwYzg2ZjE4Mzk2ZDI1YjI3OGM1OGE0NjA2MjE1NGM1ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjkyMDk0NjBkNWM0MTVhMmMyMTE2ZGVkZTk2ZDM1ZDk3NzViYWFmOTUwYzY1ZmFjYzZjNTQ0ZTJjMzA3NTY2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGMwYjE2Yzg0MTdlMGJmYzQ2MDRlNjQ2MmIyMTAwYmQzZGNlMWQ3MzZlMDU1MWNlMjM4YzZmNTc5OWI2ZTEyYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3853a144637f493ba567245ca57f4a45",
+      "statement": "Two VS Code-specific behaviors break a privileged DinD container on Docker Desktop + WSL2: the Wayland-socket bind-mount (fixed by setting dev.containers.mountWaylandSocket: false in VS Code User settings) and the Docker credential-helper injection (already fixed in committed config via containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L113-L132",
+          "version": "repo-lines-v1:sha256:cbfadf507871eaefd106afb2d93651e82add9bbd3cb2e685793bee302c8d10d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYWVjZGM2ODM2OWMzODM4ZDFhN2U1M2YzNDQzNzMxOGY5Njk4ZDcwOTM1YjQ3MGU4NjY3ZjExNzE3OTc5NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYTAxNDk3ODlkYmNkMThlZWRjYjk1YzU3ZjU1YjYzZmU2NmJiYWI4NDI5NjVlMGNlMDUyODNiYzg2YTlhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiNzVhZDczYWYxMzA1MjRjM2VlNzFhM2JjNzZmM2UzMjk1MDhmMGUzYzI3NzVjNmMxMzk5N2RhOGYyOWVjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MmMxMzlkMGM3NTFhZTQ2YzAyNTc1NzIyMjc2NzA3YTNlMGY2MmI3Zjg1ZDkwY2ExMmUzYzU3ZGZmZTNkMjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ea4c8e357684f0c9c56bdc7ee6f38b4",
+      "statement": "Host env vars forwarded into the devcontainer via ${localEnv} (MCM_ANTHROPIC_API_KEY, MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, TMDB_API_KEY, MCM_FORGE_TOKEN, MCM_FORGE_ISSUE_TOKEN) are read from the VS Code process environment at launch time; setx alone is not enough — VS Code must be fully quit and relaunched with the value already present, then the container recreated.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L134-L139",
+          "version": "repo-lines-v1:sha256:f8e42df6dd922df15df34258b8246e68eeb981b6ddee251b2bbb17f0765d2346:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWZhOTA5YTE3OGVkNWM1ZjQ3ODI3N2YzMjk3YTkwM2NlNTA5NzMxNzBlMGU5ZWZiZjJiOWM3NWQyYTE1N2NhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmYyODZmMmM5NmEwZTBmYWQyMzQyOWE3OTI1Zjg3YzAzNWQ0YjQ0OTc1NDczYzY0ZmQzOGY0ZTZiMzY5ODIxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2M5MGJlMTcwYWY0ZGEyNTQyNjQwOWJlYWZlMzNhZDFmYmJlZGU0ODYyNzkwZjlkNGE2YTllNjRhMmNiZmY3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGZiOWMzM2EwNGI4Y2Y5NGQyZTU4OGZmM2E1NTk4NTQ2NmU0NTFmODFkYzlkNDhiNjgzNTk3OGJlMjUxZmJmNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c488ca1052694035bf10588a2a428cdb",
+      "statement": "MCM_DEVCONTAINER_IMAGE is required under VS Code — the ${localEnv:VAR:default} fallback default is NOT applied by the VS Code Dev Containers extension; with the var unset, VS Code passes --build-arg BASE_IMAGE= (empty) and the build fails. The headless @devcontainers/cli does apply the default.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L1072-L1088",
+          "version": "repo-lines-v1:sha256:7b093a0f6499d932241ec2424b7b282f304f3a8c963b3d8c0d77e3a5ecf6c1de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTY3NmM2ZWUxOTY5NTc2YTQ4NjFhNDkyZWE0YzAxODc3ZDI2YjUwNTZmODBjZGQ3YWFiMGFkZDc3MTFmMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjY2VkOTgzMWZiY2NmNjQzMDM3Mjk1MDA2MmNhZDI2NDk1ZTA5Y2QwNWJhYTgwMzNiMmFhM2E3YjMyZWYwNzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NmI1NzFlNjFmZDdkYTQ0YjRhNTM2MDgyZDBhZjYyMWE0NzFhMTYzMzhkZjA2OGJmNDczYzliOTFhYzMwNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNTc0ODVkM2JiODIwYjgwNmZlNGIzMDIxNWQ2YzNhOGQwNjUyY2U5YTAwNzE1N2EwYTkyMTY1OGMyNzExNjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b0c1d00ef1e42ef8b16af5e68e7e782",
+      "statement": "ANTHROPIC_API_KEY must never be set directly on the host or in the devcontainer shell; Claude Code silently prefers it over a subscription login. The key is carried as MCM_ANTHROPIC_API_KEY and remapped to ANTHROPIC_API_KEY only at the point of use (agent gateway, OpenWiki maintenance, containerized E2E recipe) — each a separate process running no interactive assistant. Measured 2026-08-16: ~$15 unintended API spend in one day.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L141-L183",
+          "version": "repo-lines-v1:sha256:22f920855010476e7b4df9d89ad92bc55af1b26421b93277aa0394456d71932c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjExOTIwOTM3ZDg3OGYyYmM5NjcwZTA2MGE3ZTY5MmExOGRkYzlmZmFjNTU1ZDcwOTY3YzMwNmQ2Y2E4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMDY4ODFlZWY0N2M4NTE2MzdhNjIwZjU0MDNlM2NhZTY2MTY3YzUyNDdmZDUxNDFhMjQzMGYzZmFkYjE0OGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1MjFiMTViY2RlMTg4M2QwZGJjOGI4YTBlYmQ0YTk2MGYyY2JiM2EwZWI2YmY0MGZiOTRkZDA2ZmU5MmNiY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNTEyM2E0MzI1M2IxMjY0ZmY1MjAzMTdhMTA3ZjIzODg1YTU0YzQwZTI0OTVkNjdkZDIxNDU1MzAxNjdlNmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_800455cc6cfb4f8da4d34eb5a8f975f2",
+      "statement": "api.themoviedb.org is allowlisted in init-firewall.sh for the devcontainer shell's OUTPUT chain (needed by the pytest integration test runner) but runtime app paths (BFF validate-on-save probe, web-api-mcp curator enrichment) run as nested containers traversing the FORWARD chain and never needed the allowlist entry. Conflating the two chains is the documented trap; a stale ruleset causing timeouts should be fixed by re-applying init-firewall.sh, not by widening the allowlist.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L184-L212",
+          "version": "repo-lines-v1:sha256:aad02eadfdf212181539ab51a659415e386a1e674d15453a962500e06d9f2a64:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyOGRiMjljYjcwNTBjYmI0ZmIwYzQwODMwNGI5MTI1NWE3NTQwNzFmZTFlNTk3NWNhZjNjOTI2ZGZiNTJiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NTYyMjRlN2M2OGQzNmI5YmJkZjA2ODEzNmY0OWFlNWQ1MzhjZmFlNDVkMDAwNjZlNzIyMWE5N2JiZTFkMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYzQ4NTIwZWVlYjAyMDE2MjE2MzNlODU2NDMzMDE4ZDJhYTc0ZjEzZmZjYzFiMmI1MmE4Yzk4YTZiOWJiNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViNjBjOWMwYTZlMmFmZTZlMzJhMGUyN2MxZGRjMWJhYTE2NmUxNTYzOTQ1ZTkxYjAyNjc1N2VkMGQ4NzZiYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c4f33eafb73e49a6a453aa3e3fe7af9d",
+      "statement": "crates.io is not allowlisted in the devcontainer egress firewall; all cargo commands must use --offline. A failing --offline resolve signals that the change adds a package absent from Cargo.lock — treat it as a lock-discipline check, not an obstacle to work around.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L529-L555",
+          "version": "repo-lines-v1:sha256:75dca0cdc0bc0f7045fe8907bce585015826ece528cad45f586a50b969227e5c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNjc1ODAwMjUzZjk2YjI0MjFmMDBmYjBjNTZkZjcyOTk3MmRjZWQ1ZDVkNDk0NjI4NDU5MWE3ODU4OTE1ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMGY5M2Y0MzEwMmFjYmJkY2UxOWVmZDBiY2UyYmVjZGE0ZTMwZjJjMDNhMjQyMzhjYzMxMjAyNDE4ZWM5ODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZjA2OWVhNTNmN2NkMGVjYmUyMjRhMjE2YTAzMWVkNzcxOTk3NDVmM2E4YjM2NzRkN2JmZDFiOGFjMWUwMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyZDE3Y2MxYjQ4NDJkZWViMjNmY2YyYzY0OTdhNzBlNjFiZjFlNzFlODczYjNlNjE4NzdkYzk3YzE5NzVhYWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7ce05a58c8d94282a493515fd0f8400d",
+      "statement": "getaddrinfo ENOTFOUND keycloak-service when running the integration tier in the devcontainer shell is caused by .env.docker (loaded by tests/integration/setup/env.ts for CI) containing Docker-internal hostnames not overridden for a host-shell run. Fix: export KEYCLOAK_URL=http://localhost:8099, MONGO_URL=mongodb://localhost:27018, REDIS_TEST_URL=redis://localhost:6379/1. Measured 2026-08-09: 84 failed/31 passed without these exports; 114/115 with them.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L768-L780",
+          "version": "repo-lines-v1:sha256:ab0f1e1be9e2c3706ec92e0a96194db98014cf739529ae52f01ae3759bb251f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNGEwYWRmNjE3NThlZTJjMmMzNzQxODNkOWUzYjJhZTY5ZDg2MTlmZjQ4MDY3YjRhMjAyN2NlMGVjNzExZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2YTlmYzdjOTMxMmZjZGU3NTg3OGFhYTE2MmM1OTExNTU5MGZlYTA2ZmQ4OWEzMzQ4Nzk2OThhZmY1MGU3NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3YzU2NTA0N2Y2OGZjZTA4N2M2YTEwOTgwM2JmYjFmYzVlZGVkODkxNGQ4NjEwYmM0MDdlNDM5YjhhMWMzYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2OWNhMWU5ZjhmZWJmNGZiMDJiZGRmMzRmNWQ0ODExZWZjNWY4MTMwOTA3MzNiNDg1ZDg1MjA3MjRhNTQ0OTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_819741c15da241faa3df0b4af200f36b",
+      "statement": "Local Ollama runs inside the devcontainer via the dev-ollama nested container (scripts/devcontainer-ollama.sh, run at postStartCommand), publishing on 0.0.0.0:11434 so nested containers can reach it via host.docker.internal. The agent gateway targets host.docker.internal:11434 and reaches dev-ollama with no gateway change, image rebuild, or firewall change.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L39-L54",
+          "version": "repo-lines-v1:sha256:9d7487de4fa21bc5fc80109f3454dd07462c032f60a42ad1374ce99eaa5061eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhZjdjYWRhMjVkNWEyMGRiNTU1ZGE2N2I4OTYyNjg2YjQ5NWU2Yjg5MjVjNDFlNWZkMDA2NGY5MmRlN2U3MDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNGUyMjAwZjYxOTNmMWI2ZjRmNTQ3Y2MwZmU5YzBiZTUyOTFiMTFkYjE1ZWNiMDdhYWU0ZWUzYTc1MzkyNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4NzQ3NDVjYzczZGE2MzM3NjcwYTUwMDRkNmNiMTFmY2U1YjU5ZGZhY2M0OTk1NTIwNGVmYWJhMjQxYzI2ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxYjQ4NjViMDE4NDAwMTk0MDFhMGFmZjdkMjI5OThhYjBlMzk5N2U4NTM1YjU3N2JiYjljY2JjZDkzY2Q3ODkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7c0f0e5f8b9243568e622be32480691e",
+      "statement": "The Android SDK and an android-34 google_apis x86_64 system image are baked into the toolchain image; the privileged DinD container passes through the host /dev/kvm, enabling a headless hardware-accelerated emulator boot. An older MCM_DEVCONTAINER_IMAGE silently has no Android layer and devcontainer-android.sh no-ops cleanly rather than erroring.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L655-L709",
+          "version": "repo-lines-v1:sha256:53b1ca8ff7190026ff4d7046348235a1b78d9cd1bf4231dd0d15de35a3c65462:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMjI1OWRjMGJkNmEwZWI4ZGNiYzI2MDc0MTBhZDlmZGRmZGJlN2RiYjEwZDA1ZmYwOGQ1MGIyMjAzZDkyMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5YjYzNTQzM2E4MGE0OTc2ZTY0ZGFmMjYwOTRkZTkzZDUxM2IxYjMyNWIwNGQwNTIxZDc5MTY4NjlkMzMxMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiY2UxZmU3ZWY0NTllZjhmMjNlY2M0YjM1ODQ0MDM4ZDY5MWY4YTFhZGRkYzJiYmUyYzJlMTI5NThjMDMyOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxZDNiMzNjNjU3NzhkNjZjYTdmOGQ0ZDQ5YzQ3NjE5ZWY5MTZiNmNhZGNiMjkwOWIzOTAxNGNjMzgwNDUxNTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3405e36d6162483294a06e52d5dd03d9",
+      "statement": "~/.claude.json (Claude Code's global config holding oauthAccount, userID, machineID, and session history) is a sibling of the ~/.claude directory in $HOME on the ephemeral overlay and was NOT persisted by the mcm-claude volume. Fix: CLAUDE_CONFIG_DIR=/home/coder/.claude in containerEnv relocates the config root onto the volume. A symlink does not work because Claude Code replaces the file via write-then-rename, swapping the symlink for a regular overlay file.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L1174-L1228",
+          "version": "repo-lines-v1:sha256:8f7a86d17cff57d0567b90b64b5fc396c652c10466e6164224236fe7c8617069:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOTc3N2UzMzliZWVjZGMzNjZiMGU4ZmY0NzA4ODczOWQ1ZjBkNmVhZDU4NmYxOGNjNjczZmU4MjMxZGFiMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZjQ0YWQzZTYyZmIwM2JmMzRkMGU3MGQzOWE2ZGQ2OGM2MjMxMmI2MTY4NDdiMGI0NmEyMTgyY2QxZTk2OTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiMzQ5ODZkZjZjZWEzMTA2ZGUyNmQ0OGJjMzgzZjVlMzJjYWI4Nzc4ZTgxNDVlNzhiMzQ1NTMxMmZiYTQ1NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyZDU0ZGMyY2VkZDRhNWY3ZmNkODIzMTA2Y2U4N2U0YzQwZGFjNzNhMjY3MmM4Zjk1NDczNzU5YjUwNzVmMjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a2598a7acf5407abc2ec7c6ac366a8b",
+      "statement": "Docker won't start after a devcontainer rebuild when a previous container instance is still running; its containerd holds an flock on the DinD volume's meta.db, blocking the new daemon indefinitely. Diagnosis: python3 flock probe distinguishes locked (recoverable) from corrupt (destructive). Fix: docker rm -f every other container, then sudo nohup /usr/local/share/docker-init.sh. Do NOT delete meta.db or docker volume rm — meta.db deletion destroys all DinD images, and /workspaces is a named volume so a prune removes the working tree.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L435-L491",
+          "version": "repo-lines-v1:sha256:6f231089d9d1d01f1232df0f09ef514642223163ee7b905595ec9365ae14fc09:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyM2M4ZjM5ZDg1NWQwNzU3ZmY2MmJkODRhODVmYmVjZjkwOWI1ZjAwZDhlNzc0ZmY1MGVmMTE4Zjg5OGM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNTM0NzdjOTFlZThmZjRiOGU3MGQ5ODI5NDdjYzM1YTA1NThhNTczYjQ3NDU5N2ZlYzhiNDI0NGYzYTVlY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNGEyZTk4MjJmNmZjMjg2YmRjMzcxNWM2M2RmMzBkZmI1MTRhM2M4YTRiZDRhMWQ3MTI1ZjM0YTIzMDNiYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxM2MxNjM4Y2ExOGQyNmNmZWMwMTM1MjVmM2YwZTQ2MzI1OTE5NmY0NzU5MWY0ZDA4NmU2NTYzNTQwYmQxZjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2027bdc40ec3436097fad37fda90e724",
+      "statement": "Editing a file under node_modules/ writes into the pnpm content-addressed store because node_modules entries are hardlinks into it; files with identical content share one inode across package versions. A per-file backup-then-patch loop corrupts its own backups (the store entry changes with the first write), and pnpm install does not re-verify store content hashes so corruption outlives a reinstall. Safe procedure: stat -c '%h %i' first, record clean md5sum, patch one path, then verify with md5 and pnpm store status.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L1127-L1172",
+          "version": "repo-lines-v1:sha256:725c30b96178d4343f7ffba1459cf07d9b5afd59252d9bff9376f1b5a4338a76:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYjVhOTg0YmRhYjg2N2QxMTdjNTkwYjkyMTZhMjI3ZjI2MGM2MTEyM2ZiNzYxMmJhN2I5NTRjMDg0MWE5MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YmJlZGRkNmQ0OTliZTc5NTg0MjgzYmI0YWIxOThmZmYxNGIzNWE1YzBiZWNhMTQwZTdmZjI4YWFmODdhN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwMTVlMmMyY2JiMTJkMjdkMjRmNTIxYWYzYzY3OTQwZTE1MGIxN2JiZmI1NzdkZDExZGRkMDQwY2E2YmQ2NDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjZjFmYzBkOWYzMDc4NWU2YjdhMjYxNjU0OTNjZDk5ZGYzNmExOWU0MTQ4ZDcxZDAzOTg3ZDFjMzA5NmFlMmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f2dd1f6c2824a0ebed12c5def9aaf63",
+      "statement": "Multiple Claude sessions share one devcontainer and one checkout; git operations in /workspaces/mcm are visible to all sessions. Branch work must use a git worktree under /home/coder/worktrees/<slug>. The node_modules symlink from the worktree to the main checkout is sufficient for node --test and scripts/*.mjs gates but causes ERR_PNPM_UNSAFE_MODULES_DIR for any pnpm nx target — a real pnpm install in the worktree is the only fix (~4 min). Worktrees do not survive a container rebuild.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L301-L400",
+          "version": "repo-lines-v1:sha256:06633f111d11aaf0147a2b070ebf5734bf89292e43eaac6981c26088334d68a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkMzQ3ZmEyZTkyZDgxNjJkZjIzNmE1NjYzNDJkMjg0ZjllMGIzMGFlOWMwYjJiNzFjYzliY2E2YTU0YTYwYzdiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmM2NiY2I5NmNjN2NmMDJkMmMwMzhhMGU3MDM3ZjZhYTU5OWJjNGZlMmM5ZDViODA0ZWRhYTRmYTYyNTk0ZjQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNjMwZTRiMmUyMTRiNTA3OWE1YzRhOTc1ZWUzMGI3NzI3OTllNWI4NzEwYzc1MDY5ZTRlNGMwYTViODgwOTNmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b3261795d3c48feba8ef48f97c77521",
+      "statement": "An nx failure message that does not match the state on disk is likely stale cached output; re-run with --skip-nx-cache to get the real error before diagnosing.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L359-L364",
+          "version": "repo-lines-v1:sha256:e215c6366649c61f317626711ad16e4a4fdf81e5379dfc4b2bb2934bf3214c41:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0N2FiZmZhNjVkMjVlMjFiYTEwZmVjN2Q2YzliNGEwN2NmMGQ0ZWU3NjhkYWI1NzA4OTEzMDBhNWMxN2VmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGRkNDNmMTQwNzk0ZjM2MTVjOTIzNjdhMDJlNTQ1MGViNWNlMjU0MTYzNWY5ZTI0MjBkNTVkYTQzMzNmYzc3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZThjYjhiZjJmOGFlMDg0NDc5ZjlkYTJmOGRiMGE0MjI3NmY5NDQyZTg0ZDgxN2IzNWZiODYyYWRiOThiMmEyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDY3MmNiMDg1MThlZTM5ZGU3OGIwNTdiNDg1NWNkYjUwYzI0Y2Y1ZTViMGE2ZTBmNGI2YzE2NGM2ZmI4ZWNlMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b0f55e31298d471ab4512ede1fad3006",
+      "statement": "The node_modules symlink in a worktree was previously committable because .gitignore carried node_modules/ with a trailing slash (matching only directories, not symlinks); this caused every install-bearing CI job to fail with ENOTDIR. Fixed by changing the pattern to node_modules (no trailing slash).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L365-L373",
+          "version": "repo-lines-v1:sha256:29aab3a0f89082bfca5fb5a0b80ca1558198d381decfdcee58c44c10e3961164:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDllNmUzZTY2OWYyYWIyZGRlZTU1NjBhZDc1Nzk4NTZkZmZiMTgzZmVhNzk3NWMxZDQ4MmNmMzA0YmU5ZmJmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTIxMjQzMzE5ZjRhOGJiOTNiOTI3NDNmNjEyMDc5MjZlNDk5MGZmMmM3ODYxNjEwNmE0ZGFiNmQ1OWI0MWUyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg5ZTY5MTJlOGNiMDRlZGI3MTE1ZDRlYTY0MmU0YmVhNWRjYTZjOGYzYWU1YWNjZjE2OTMzYzhhODg1ZDFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzE1MDMwZjkyZjdhMWQ1Yzc2NzBmOTlkNTdmOWExOWYxZjEyZjVmYjU1NGE2MWExYmI0ZjZjYmM0NzBlNTQ2OSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-20T11:41:17.059Z"
+  }
+}

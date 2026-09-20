@@ -4,7 +4,13 @@ title: Containerized dev environment (devcontainer — Docker Desktop / DinD pat
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container path — kept solely for Android emulator support via /dev/kvm. The primary AI-assisted dev environment is now the Docker Sandbox microVM; see devcontainer-sandbox.md. Documents the two-tier isolation model, default-deny egress firewall, and Windows-host quirks.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
-timestamp: 2026-09-19T23:02:37Z
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-20T11:41:17.059Z
+sources:
+  - id: openwiki-source-a9fc7285078c8062777b3180
+    resource: repo://docs/runbooks/devcontainer.md
+generated: { by: "openwiki/0.5.2", at: "2026-09-20T11:41:17.059Z" }
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -38,13 +44,21 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   (`dev.containers.mountWaylandSocket: false`); the Docker credential-helper injection is already
   fixed in committed config — don't remove that fix.
 - **A host env var forwarded via `${localEnv}` (`MCM_ANTHROPIC_API_KEY`, `MCM_DEVCONTAINER_IMAGE`,
-  `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`) is read from the VS Code process's own
-  environment at launch time.** Setting it after VS Code is already running does nothing — VS Code must
-  be relaunched with the value already present, then the container recreated. `setx` alone is not
-  enough; fully quit VS Code (`taskkill /F /IM Code.exe`) and relaunch from a shell where the value is
-  already visible, then rebuild. With `MCM_FORGE_ISSUE_TOKEN` unset, backlog reads still work via
-  `MCM_FORGE_TOKEN`; writes are refused naming the missing variable. See
-  [The agent-driven backlog](./backlog.md) for credential and reach details.
+  `FORGE_REGISTRY_HOST`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`) is read from
+  the VS Code process's own environment at launch time.** Setting it after VS Code is already running
+  does nothing — VS Code must be relaunched with the value already present, then the container
+  recreated. `setx` alone is not enough; fully quit VS Code (`taskkill /F /IM Code.exe`) and relaunch
+  from a shell where the value is already visible, then rebuild.
+  - **`MCM_DEVCONTAINER_IMAGE` is REQUIRED under VS Code — the `${localEnv:VAR:default}` default is
+    NOT applied.** With the var unset, VS Code passes `--build-arg BASE_IMAGE=` (empty) and the build
+    fails with `base name (${BASE_IMAGE}) should not be blank`. The headless `@devcontainers/cli`
+    does apply the default; VS Code does not.
+  - **`FORGE_REGISTRY_HOST`** — must be set so `init-firewall.sh` can allowlist the forge registry.
+    Unset → the container still comes up, but forge git push/pull and image pulls are blocked. Can be
+    re-applied without a rebuild: `sudo env FORGE_REGISTRY_HOST=<host> bash .devcontainer/init-firewall.sh`.
+  - **`MCM_FORGE_ISSUE_TOKEN`** unset: backlog reads still work via `MCM_FORGE_TOKEN`; writes are
+    refused naming the missing variable. See [The agent-driven backlog](./backlog.md) for credential
+    and reach details.
 - **NEVER set `ANTHROPIC_API_KEY` directly — use `MCM_ANTHROPIC_API_KEY` (feature 060).** Claude
   Code silently prefers `ANTHROPIC_API_KEY` over an existing subscription login with no warning and
   nothing in the UI showing which is in use. **Measured 2026-08-16: ~$15 of unintended API spend in a

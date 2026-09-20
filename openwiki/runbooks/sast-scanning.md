@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-timestamp: 2026-09-15T10:21:00Z
+generated: { by: "openwiki/0.5.2", at: "2026-09-20T11:41:17.059Z" }
 ---
 
 # SAST & SCA static scanning
@@ -68,6 +68,7 @@ container images rather than first-party code or first-party dependency graphs.
   re-reads the committed file by itself: the in-VM iptables half re-applies from `init-firewall.sh`,
   while the **host-side sandbox policy is scoped per sandbox** and does not pick up a new destination
   until an operator re-applies it (`sbx policy allow network semgrep.dev --sandbox mcm` on the
+<!-- openwiki: broken internal link [devcontainer-sandbox.md#4-egress-allowlist] heading anchor "4-egress-allowlist" does not exist in "devcontainer-sandbox.md". Fix the href or restore the target, then delete this comment. -->
   Windows host — see [devcontainer-sandbox.md](devcontainer-sandbox.md#4-egress-allowlist)). The
   committed entry does not tell you which world you are in. One command does:
   ```bash

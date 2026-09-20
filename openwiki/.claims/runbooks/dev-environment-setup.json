@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:6c6c37b278716c10056d9a7298a43fc1d6b60ef646af4e320fc83bb9af75e2a5",
+  "claims": [
+    {
+      "id": "claim_bcc478242c8643dabbfe30e448e6b1e6",
+      "statement": "OpenWiki 0.5.x treats mermaid and jsdom as optional peer dependencies; when they are absent the generator falls back to a weaker built-in fence check, silently rewrites any Mermaid diagram it cannot verify into a plain text fence, exits 0, and passes every gate — leaving a quietly degraded diagram as the only symptom.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L109-L114",
+          "version": "repo-lines-v1:sha256:969dbf6dd1156bdf46d968f4b62e88d58c76eaa87d71e86c7f81d36c9848a764:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJjY2U2M2UzNDcxZjYxNDcxMmY3NGRiNDNiMzdhMzBkMTljMzY1MjFkNzUwMDFhYTFjNzhhYmFkNWRmOTYyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc2MDYwNzRkMWRhOGI3MWI3MTA0NzJhM2ExMTBhZTljOTU3OTQzMGM1MDAzNjk5NDE4NjdhNjk4YTk2YmIwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2Q4MTQ4OWZiZTdkZDgwNzc0YjUwNWFlNDJjMmQwMzZjN2UwYjdhYjFkZDg5MzQ3MGYyN2ZjYWFjYTcwMzNmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGRjY2ZlNDlhOWVkZDI4NzFkN2NlNDg5MjQ2ODMxM2UwYWJhYTNiMjc5OTcyMjdhOTE3ZGE4MmQ1MzI0NmU3MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_56e5d718ae014a25b614be6ca38921b6",
+      "statement": "The host toolchain for MovieCollectionManager requires Node.js 24.14.1 (LTS), pnpm 11.17.0 via Corepack, Nx (workspace, via pnpm nx), Rust stable, Python 3.13 with uv, Docker Desktop 24+, OpenJDK 17, and Android SDK Platform 35 with Build Tools and Emulator; these are all pre-provisioned in the devcontainer toolchain image.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L14-L24",
+          "version": "repo-lines-v1:sha256:95c2ef1a0bb494e3f656d64dffa7bcc97b28b23e66a5db595c40b5f8dfa24f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjMTU5OTU0OWVmNDc0NDMxZjU2ZThkZmU0NDgzMDJiZmYxZDU4MmQwYzEyM2UxZDU5NTQ1ODc5YWE4OWI4Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNzA2Njg4ZDFlN2VmMjk5NDEzZWJiMmY0YTU2MzY1NGZkNWRlNjk1OGEzNjBlNzAyNmVhNmEzMDUyMGY0OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ODk0YWViNjJkZmU3YmQyZDBiZWMyZmRkMzcyZmRkOGUzNWQzNDY3ZGEwZjZmYTIxY2UwNWMxYmUxOWNhODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMDAyNGQ5MDc1YjQzOGNmYjljZDU3MDcyNjBiM2IxMTY2ZmNmYmVmMWE3YzcyY2ZiZjUxNzlhNThlZTgzYjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1f9390161fa0451ab168f384ebbe7d4e",
+      "statement": "The bare openwiki CLI must never be invoked directly on this repo; it omits the telemetry opt-out env var (OPENWIKI_TELEMETRY_DISABLED=1) and the raised Node heap size that the pnpm nx wiki-update infrastructure-as-code Nx target sets, causing reliable OOM failures.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L119-L130",
+          "version": "repo-lines-v1:sha256:c113cd492381976f16936bc779907377a4d784b78c0ed595ca0f4f11788bad38:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlN2Q0ZDA4OWZjZGQ5OTE2NTI4MzY1YjcxY2JmZmQyNTk0MWVkNzgwOGE5NDc5OWQ5Y2ZjN2NjNDZjNjQxMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZWY1ZGVhMWZlNzJmYzZlYjkzM2EyZDcyOTllZWJmNzllMjA4NmI0NGQwOWZkZDhmMDU4OGE5NDE2YjUwYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxMDhiYWRjZjlkNzdjMzMxYmNhOTJmMjM0NDJjYmU1M2NhNmQwOWNmOTllMGM1YWVlYzI2N2ZlYjZlNDA0NWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c59c863d123448d955b02c842849f91",
+      "statement": "openwiki --init must never be run on this repo; --update creates the bundle when none exists, avoiding the interactive onboarding wizard and the out-of-repo .openwiki/.env file --init would write.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L136-L138",
+          "version": "repo-lines-v1:sha256:8d32197ba2f5999d2ecaff4791537f6eff25c76bf3893f4feff8d9c5af0dd8ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE3NDFmZDY4YjJjNmEwMDA3MDlhYjlhMGE2ZDJmNmI0ZmQ1NGZkMGYyYmJmZDZmYWMwMjE1ZTcxOWQ4NGE2YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWNiZGZjNzgxZTY5MTIyZWExNzU3OGIyZTBiNDdmNTBjN2QwZTZjNGFkMTEwNmRiZjU2Mzg1YjY1N2M2YmJlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzIwYTlkNDRhOTUyZjc4NTBjOWY0NDY4OTdkYmU2N2ViYjU2Y2I2OWY2MjI1NjQ0MmRkZGQ0YmRmYjQxOGIwNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6050a49665a743ddbaeda16775a5f07b",
+      "statement": "On Windows, the 'Desktop development with C++' Visual Studio Build Tools workload is required before cargo build succeeds because native Rust crates link against it; omitting it produces a build failure that does not identify the missing toolchain as the root cause.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L60-L63",
+          "version": "repo-lines-v1:sha256:c71a610c4a8ce19ce4c94b85463d7cef311224c0f1362b1a90ab3fd1dec634fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBlYzE1NTg2NjYwNDc2MzU2M2NlZmI4ZDY5OTM2OTMxOWQwNTg2ZmRlNzcwMTYyNjAyMWZiYzA0YTFmODRkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDkxODM3YWM3NDMxNDFkMGIzZDMxMzNkNWVlNmUzMjMxN2E5MzcyNGJmZTQ1NmZhYmRmZWI4ZGZkZGUzNjYxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2MyM2I4NmI3OTFjOTE2ZDBiYjJkODg3NzgyOTg2MjExYzRmOGQwZmJmMWFlOTY3Y2NlNTlkZjk4NjYyNGYxYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDA4MzllMDlhYWQ5ZGNiYTg2ZmM3NjIxMTRlYmNiM2NmN2VlNTFkZmJiZjZmODVmNDJiYjU4OGVkZjhkNjMxZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_140507f20c8c43e982c2d39963bd28f3",
+      "statement": "RTK (Rust Token Killer) is mandatory for AI-assisted sessions on this repo, not optional; it compresses terminal output before it reaches the assistant's context with ~89% token savings measured, and skipping it materially degrades agent session quality on the repo's verbose toolchains.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L86-L94",
+          "version": "repo-lines-v1:sha256:6061e5f806abd3c2476fcf9cd58bdd38adc65331c6093dbe5521b8c12fc0f57b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU0Yjc4NDEyZjQwMWE3MDc0ZWI5MjU2NGIxNjRjMzZmZTg4OGZmZGVlNDA1Y2I5YzU2N2VkMDIyYTA3ZTFhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk1OTc1NTBiOTQxZDVkY2MyNmFiOWZjOGE4Mjk1MTE1NTZjYWU5MjBkNzQwNGE5YjI5YmZkOTRlNDZmYTEwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGExY2ViM2E1ODRmZTM1ZTg2NmI2Y2VjNDZjNjY2ZjU2MTI3OTE0Zjg3YzliMDEwYzRmNWY2NzJlNWVkYTA4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGM3OTljNDA3OWNjYmY4ZGE1NjU1MjJiMWYwNDMzM2Q1ZjY4ZDNlNDRlNjRiOGQwODZlMzIzYTZlZmU0ODEwZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_91c02aa788734a6e90a5c9eb2bab952f",
+      "statement": "OpenWiki must be pinned to the exact version installed in the devcontainer toolchain image (.devcontainer/toolchain.Dockerfile); a version skew between host and container workspaces can produce structurally different wiki bundles for the same repository state.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L98-L107",
+          "version": "repo-lines-v1:sha256:60bdad51cabe882e755c4019728cf6835aca11e570570d197cfe4a1002fb6ac6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MjYzY2Y0OGQ1ZTA2MTM5NDVhOTRlMDg4ZWQ1ZjRmZGEyMmE4YTM1NzIxNmU4Y2UzMWEyZDY1MjJiNmMyYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjNzk5YzQwNzljY2JmOGRhNTY1NTIyYjFmMDQzMzNkNWY2OGQzZTQ0ZTY0YjhkMDg2ZTMyM2E2ZWZlNDgxMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhZWMzMTlhYzViNzc2ZjdiOWUwNmQ1ODU1ODkyY2VlMmY0ODI5Yzg2NTA2ZDFhMmQzZDI1YmE1NmU4YjYxZTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0782a2a411a401ab0fb7698f0c1dd63",
+      "statement": "Any regenerated OpenWiki bundle must be gated with pnpm nx okf-lint infrastructure-as-code before committing; an ungated regeneration can drift from the conformance rules silently.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L139-L143",
+          "version": "repo-lines-v1:sha256:380c2eca1a84df0547aba69320a8cc4adc0c0b466e7c58b6d708e3ca41368fa1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzYyNzU5OWVlMWYxMzU3NGY3ZGExODViMzZjODQ5ODliNDcxOTIzNTJhNDVjY2ZhYWNjNmUwNTUyZTYzZjk0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGQzMjE5N2JhMmY1OTk5ZDJlY2FmZjQ3OTE1MzdmNmVmZjI1Yzc2YmYzODkzZjRmZWZmOGQ5YzVhZjBkZDhlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjFjMTUyMTBmOTlmYjBkOTMxNzQwNzEwZjhkMWY4OGI2NjQzMzgxN2Q0YzA2M2Q2MGQ3Zjk4ZThhZjhjMWUwNiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-20T11:41:17.059Z"
+  }
+}
