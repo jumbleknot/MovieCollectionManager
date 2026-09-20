@@ -95,9 +95,21 @@ const die = (m) => {
 };
 
 /** Run a command, inheriting stdio; throw on non-zero. */
+/**
+ * Redact `NAME=value` arguments whose NAME looks like a credential, for error messages only.
+ *
+ * Belt and braces alongside passing secrets through the environment: the throw below joins every
+ * argument into the message, so a future caller that reintroduces an inline `-e SECRET=value`
+ * leaks it into logs and CI output rather than only into `ps`.
+ */
+export function redactArgs(args) {
+  return args.map((a) =>
+    a.replace(/^([A-Za-z_][A-Za-z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD)[A-Za-z0-9_]*)=.+$/i, '$1=***'),
+  );
+}
 function run(cmd, args, opts = {}) {
   const r = spawnSync(cmd, args, { cwd: REPO_ROOT, stdio: 'inherit', ...opts });
-  if (r.status !== 0) throw new Error(`${cmd} ${args.join(' ')} exited ${r.status}`);
+  if (r.status !== 0) throw new Error(`${cmd} ${redactArgs(args).join(' ')} exited ${r.status}`);
 }
 /** Run a command, capturing stdout (trimmed); throw on non-zero. */
 function capture(cmd, args, opts = {}) {
@@ -373,6 +385,18 @@ function deploy(build) {
   ]);
   run('docker', ['network', 'connect', REDIS_NETWORK, 'movie-assistant-mcp-spreadsheet']);
 
+  // Secrets go into the CHILD PROCESS ENVIRONMENT, never into argv. `docker run -e NAME=value`
+  // puts the value on a command line that every user and every other agent session on this host
+  // can read with `ps` — measured on this repository, where a routine `ps -eo cmd` printed a live
+  // Anthropic key, a TMDB key and this Keycloak client secret in full. `-e NAME` with no `=` makes
+  // docker read NAME from ITS OWN environment instead, so the value never becomes an argument.
+  //
+  // ANTHROPIC_API_KEY is set HERE, on the docker child only — never in this process's own
+  // environment, and never exported into the shell. That is the point-of-use mapping CLAUDE.md
+  // requires: an ANTHROPIC_API_KEY visible to an interactive Claude Code session silently bills
+  // pay-per-token against an unused subscription.
+  const secretEnv = { AGENT_GATEWAY_CLIENT_SECRET: secret };
+
   // Common gateway env (provider-agnostic): production nodes + token exchange + Keycloak.
   const gatewayEnv = [
     '-e', `MODEL_PROVIDER=${MODEL_PROVIDER}`,
@@ -382,13 +406,14 @@ function deploy(build) {
     '-e', 'WEB_API_MCP_URL=http://movie-assistant-mcp-webapi:8000/mcp',
     '-e', 'SPREADSHEET_MCP_URL=http://movie-assistant-mcp-spreadsheet:8000/mcp',
     '-e', 'AGENT_GATEWAY_CLIENT_ID=agent-gateway',
-    '-e', `AGENT_GATEWAY_CLIENT_SECRET=${secret}`,
+    '-e', 'AGENT_GATEWAY_CLIENT_SECRET',
   ];
   if (MODEL_PROVIDER === 'anthropic') {
     // Claude (haiku-4-5 supervisor / sonnet-4-6 specialist defaults). Do NOT pass the Ollama model
     // IDs (they'd be sent to Anthropic → 404); pin via ANTHROPIC_SUPERVISOR/SPECIALIST_MODEL.
     log('starting agent-gateway (production nodes; provider=ANTHROPIC / Claude) ...');
-    gatewayEnv.push('-e', `ANTHROPIC_API_KEY=${anthropicKey()}`);
+    secretEnv.ANTHROPIC_API_KEY = anthropicKey();
+    gatewayEnv.push('-e', 'ANTHROPIC_API_KEY');
     if ((process.env.ANTHROPIC_SUPERVISOR_MODEL || '').trim())
       gatewayEnv.push('-e', `SUPERVISOR_MODEL=${process.env.ANTHROPIC_SUPERVISOR_MODEL.trim()}`);
     if ((process.env.ANTHROPIC_SPECIALIST_MODEL || '').trim())
@@ -406,7 +431,8 @@ function deploy(build) {
     '--add-host', 'host.docker.internal:host-gateway',
     ...gatewayEnv,
     'agent-gateway:latest',
-  ]);
+  // The ONLY place these values exist outside this process: the docker child's environment.
+  ], { env: { ...process.env, ...secretEnv } });
   // The gateway must also reach web-api-mcp on the isolated movie-assistant-mcp-network network.
   run('docker', ['network', 'connect', 'movie-assistant-mcp-network', GATEWAY]);
 

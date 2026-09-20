@@ -160,9 +160,15 @@ already in its environment*, and the container recreated.
   >
   > | Consumer | How it gets the key |
   > | --- | --- |
-  > | agent gateway | `scripts/agent-stack.mjs` passes `-e ANTHROPIC_API_KEY=…` **into the container** |
+  > | agent gateway | `scripts/agent-stack.mjs` sets it in the **docker child's environment** and passes bare `-e ANTHROPIC_API_KEY` |
   > | OpenWiki maintenance | `scripts/wiki-maintain.mjs` accepts either name |
-  > | containerized web/agent E2E | the Playwright recipe passes `-e ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY"` |
+  > | containerized web/agent E2E | the Playwright recipe exports it for one command and passes bare `-e ANTHROPIC_API_KEY` |
+  >
+  > **Never `-e NAME=$VALUE`.** The bare form is not a style choice: `docker run -e NAME=value` puts
+  > the value on a command line that every user and every other agent session on this host can read
+  > with `ps`. Measured here — a routine `ps -eo cmd` printed a live Anthropic key, a TMDB key and
+  > the Keycloak service client secret in full, and the keys had to be rotated. `-e NAME` with no
+  > `=` makes docker read NAME from its own environment, so the value is never an argument.
   >
   > **CI is unaffected** — it injects `ANTHROPIC_API_KEY` from repository secrets into jobs that run
   > no interactive assistant, and every consumer above still honours that name first.
@@ -811,16 +817,25 @@ so `playwright install [--with-deps]` times out and the baked-in chromium is mis
 
 ```bash
 cd frontend/mcm-app
+# Secrets reach docker through a per-command ASSIGNMENT PREFIX plus the BARE `-e NAME` form.
+# Two rules at once, and neither is a style choice:
+#   * never `-e NAME="$VALUE"` — the value lands in argv, where `ps` shows it to every user and
+#     every other agent session on this shared host (see the note above; this was measured here);
+#   * never `export ANTHROPIC_API_KEY` — an exported key is inherited by any Claude Code session
+#     started from that shell, which silently bills pay-per-token against an unused subscription.
+# A `VAR=value cmd` prefix scopes the value to this one command: not in argv, not in your shell.
 SVC_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' ../../infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
+ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY" \
+KEYCLOAK_SERVICE_CLIENT_SECRET="$SVC_SECRET" \
 docker run --rm --network host --env-file ./.env.e2e.local \
   --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v /workspaces/mcm:/workspaces/mcm \
   -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
   -e E2E_BFF_TARGET=dev-container -e CI=true \
   -e E2E_AGENT_PRODUCTION=1 -e E2E_AGENT_PROVIDER=anthropic \
-  -e ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY" -e TMDB_API_KEY="$TMDB_API_KEY" \
+  -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
   -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
-  -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET="$SVC_SECRET" \
+  -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET \
   -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
   -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.62.1-noble \
   node_modules/.bin/playwright test tests/e2e/web/<spec>.spec.ts --project=chromium --workers=1 --reporter=line
