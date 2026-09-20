@@ -32,7 +32,10 @@ describe('BackupsSettingsScreen', () => {
     const { getByText, getByTestId } = render(<BackupsSettingsScreen />);
     // Exact, not /backups/i — the area names itself in the heading AND the body copy, and a
     // loose match would resolve both and fail on ambiguity rather than on the requirement.
+    // The jobs card below is titled "Backup jobs" precisely so this stays unambiguous: two
+    // cards headed "Backups" on one screen was confusing to read before it was hard to locate.
     expect(getByText('Backups')).toBeTruthy();
+    expect(getByText('Backup jobs')).toBeTruthy();
     await waitFor(() => expect(getByTestId('backup-destination-add')).toBeTruthy());
   });
 

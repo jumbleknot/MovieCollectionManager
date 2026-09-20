@@ -40,10 +40,16 @@ let destinationIdA: string;
 const authA = () => ({ headers: { Authorization: `Bearer ${tokenA}` } });
 const authB = () => ({ headers: { Authorization: `Bearer ${tokenB}` } });
 
+// The REAL test MinIO, addressed the way the BFF CONTAINER reaches it. A placeholder like
+// `https://s3.example.com` is refused on save with a 400, and correctly so: the guard RESOLVES
+// the host, and a name that does not resolve is not safe, it is unknown. Using a placeholder
+// here made the positive control fail for a reason that had nothing to do with authorization.
+const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-backup-test-minio:9000';
+
 const s3Body = (label: string) => ({
   type: 's3',
   label,
-  endpoint: 'https://s3.example.com',
+  endpoint: S3_ENDPOINT,
   bucket: 'backups',
   region: 'us-east-1',
   pathStyle: true,
@@ -124,17 +130,29 @@ describe('user B gets 404, never 403 (FR-034)', () => {
 });
 
 describe('no route accepts a userId from the request', () => {
-  it('a spoofed body userId does not create a destination for another user', async () => {
+  it('a spoofed body userId is REJECTED outright, not quietly ignored', async () => {
+    // The body schema is `.strict()`, so an unknown key is a 400 rather than a field that is
+    // dropped. Both are safe — the store never reads a userId from a body — but rejecting
+    // makes the attempt VISIBLE, in the response and in the logs, instead of letting a client
+    // believe it set something it did not. That is the difference between a control that is
+    // enforced and one that merely happens to hold.
+    const before = await (await getBackupDestinationsCollection()).countDocuments({ userId: userA.userId });
     const res = await bff.post(
       BASE,
       { ...s3Body(`spoof-${Date.now()}`), userId: userA.userId, _id: 'chosen-by-caller' },
       authB(),
     );
+    expect(res.status).toBe(400);
+    const after = await (await getBackupDestinationsCollection()).countDocuments({ userId: userA.userId });
+    expect(after).toBe(before);
+  });
+
+  it('the same body WITHOUT the spoofed keys becomes B\u2019s own destination', async () => {
+    // The control for the case above: it must be the spoofed keys that are refused, not the
+    // request shape, or the 400 would prove nothing about userId handling.
+    const res = await bff.post(BASE, s3Body(`clean-${Date.now()}`), authB());
     expect(res.status).toBe(201);
-    // It became B's, with an id the server chose.
-    expect(res.data.id).not.toBe('chosen-by-caller');
-    const collection = await getBackupDestinationsCollection();
-    const doc = await collection.findOne({ _id: res.data.id });
+    const doc = await (await getBackupDestinationsCollection()).findOne({ _id: res.data.id });
     expect(doc?.userId).toBe(userB.userId);
   });
 

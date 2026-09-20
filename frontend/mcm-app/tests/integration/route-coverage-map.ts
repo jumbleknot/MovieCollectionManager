@@ -70,4 +70,7 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'backups/jobs/[jobId]/index+api.ts': { tests: ['backup-jobs-authz.integration.test.ts'] },
   'backups/jobs/[jobId]/run+api.ts': { tests: ['backup-jobs-authz.integration.test.ts'] },
   'backups/jobs/[jobId]/runs+api.ts': { tests: ['backup-jobs-authz.integration.test.ts'] },
+  'backups/jobs/[jobId]/versions+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
+  'backups/jobs/[jobId]/restore+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
+  'backups/jobs/[jobId]/download+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
 };
