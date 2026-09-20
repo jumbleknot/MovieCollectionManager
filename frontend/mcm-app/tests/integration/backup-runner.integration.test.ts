@@ -13,6 +13,12 @@
  * restorable version, and the user would find out what it really was at the worst moment.
  */
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+// `ajv/dist/2020`, not the default entry: the contract declares draft 2020-12 and Ajv 8's
+// default export knows only draft-07, failing with a message about a missing $ref.
+import Ajv2020 from 'ajv/dist/2020';
 
 import { runBackup } from '@/bff-server/backup-runner';
 import { createBackupDriver } from '@/bff-server/backup-destination-driver';
@@ -170,6 +176,40 @@ describe('a successful run', () => {
 
     const artifact = decompressArtifact(await driver.get(run.artifactKey!));
     expect(() => verifyArtifact(artifact)).not.toThrow();
+  }, 180_000);
+
+  it('validates against the PUBLISHED contract — with real mc-service movies in it', async () => {
+    // The unit suite validates a hand-built artifact against the same schema, which proves the
+    // builder agrees with the contract. This proves the CONTRACT agrees with mc-service: the
+    // movies here came out of the real service, with its real field names and enum values.
+    //
+    // That distinction is not academic. The contract previously described movies with
+    // `releaseYear` and `externalIdentifiers{source,value}` — fields mc-service does not have —
+    // and a hand-built fixture using the same invented names validated happily. Anyone writing a
+    // reader from the published schema would have found none of those fields in a real artifact.
+    const destination = await makeDestination();
+    const job = await makeJob(destination.id, [collectionIdA]);
+    const run = await runBackup({ userId: user.userId, jwt: token, job, trigger: 'manual' });
+    expect(run.status).toBe('success');
+
+    const driver = await driverFor(destination.id);
+    const artifact = decompressArtifact(await driver.get(run.artifactKey!));
+
+    const schemaPath = join(
+      __dirname, '..', '..', '..', '..',
+      'specs', '073-scheduled-backups', 'contracts', 'backup-artifact-v1.schema.json',
+    );
+    const validate = new Ajv2020({ strict: false }).compile(JSON.parse(readFileSync(schemaPath, 'utf8')));
+    const valid = validate(JSON.parse(JSON.stringify(artifact)));
+    if (!valid) console.error(validate.errors);
+    expect(valid).toBe(true);
+
+    // And the movies really are populated — a contract check over an empty array proves nothing.
+    expect(artifact.collections[0].movies.length).toBeGreaterThan(0);
+    const movie = artifact.collections[0].movies[0] as Record<string, unknown>;
+    expect(movie.title).toBeTruthy();
+    expect(movie.year).toEqual(expect.any(Number));
+    expect(Array.isArray(movie.externalIds)).toBe(true);
   }, 180_000);
 
   it('records counts that match LIVE data read back from mc-service', async () => {

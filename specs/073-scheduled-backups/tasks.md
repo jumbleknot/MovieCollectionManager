@@ -7,16 +7,49 @@ Task detail blocks follow `docs/templates/feature-test-tasks-template.md`, manda
 constitution's TDD Checkpoint Format. Tasks without a unit under test (config, compose, docs) carry a
 **Done when** instead of a RED/GREEN pair, and say so rather than pretending to be RED.
 
-## Before the first task — two environment facts that cost time if learned late
+## Before the first task — environment facts that cost time if learned late
 
-- **`pnpm nx` does not work in a fresh worktree.** The `node_modules` symlink covers `node --test`
-  and the gate scripts, but any nx target dies in pnpm's deps check with `ERR_PNPM_UNSAFE_MODULES_DIR`
-  naming the main checkout — a path error that is really a foreign-tree error. Run
-  `CI=true pnpm install --frozen-lockfile` inside this worktree once (~4 min) **before T001**.
-- **`node --test <file> --test-name-pattern "x"` silently runs EVERYTHING.** Everything after the
-  script path becomes the script's own argv. Node's flags go **before** the path. This is the trap
-  that turns a Verify RED into "all green" while filtering nothing — and it would invalidate most
-  checkpoints in this file.
+- **`pnpm nx` does not work in a fresh worktree.** The `node_modules` symlink covers the gate
+  scripts, but any nx target dies in pnpm's deps check with `ERR_PNPM_UNSAFE_MODULES_DIR` naming
+  the main checkout — a path error that is really a foreign-tree error. **Remove the symlink
+  first**, then run `CI=true pnpm install --frozen-lockfile` inside this worktree (~4 min)
+  **before T001**. Leaving the symlink in place makes the install print that same
+  `ERR_PNPM_UNSAFE_MODULES_DIR` and **exit 0** — it looks like it worked and nothing was
+  installed.
+- **A fresh worktree has no gitignored artefacts, and several gates READ rather than generate
+  them.** Copy `.env.local`, `.env.docker`, `.env.e2e.local`, `stacks/*.env` and
+  `backend/mc-service/.env.local` in from the main checkout before running any tier.
+- **These suites are jest, NOT `node --test`.** They use `describe`/`it`/`expect`, `jest.mock`
+  and the `@/` path alias, none of which node's test runner resolves — it errors rather than
+  producing a meaningful RED. Every command below was corrected to
+  `pnpm nx test mcm-app --testPathPattern='<stem>'` after being run.
+  (The original warning here — that `node --test <file> --test-name-pattern "x"` silently runs
+  everything because anything after the script path becomes the script's own argv — is true and
+  worth keeping in mind generally, but it does not apply to this repository's suites.)
+- **There is no `mcm-app-e2e` nx project and no `e2e` target.** The web suite runs through
+  Playwright directly from `frontend/mcm-app`. Do **not** use `--grep-invert` to select a tier:
+  Playwright 1.60+ accepts it here and silently does nothing — `E2E_TIER` in
+  `playwright.config.ts` is the mechanism.
+- **Running the web E2E from a worktree needs a different recipe than the runbook gives.** The
+  documented `docker run -v "$PWD"` cannot work: the dev container's Docker is a Sandbox microVM
+  sharing only `/workspaces`, so a worktree path mounts as an EMPTY DIRECTORY. Copy the source in
+  instead (`tar --exclude=node_modules | docker cp -`) and let the container run its own
+  `pnpm install` — and pass **both** `.env.e2e.local` and `.env.local`, or the credential-gated
+  specs all skip and the run exits 0 having asserted nothing. Tracked as item #524.
+
+## Three suites are INTEGRATION, not unit — and why
+
+T010 (the Redis lock), T018 (the destination store) and T036 (the job store) were specified here
+as unit suites and were written as integration ones. Every property each of them asserts is a
+behaviour of the DEPENDENCY, not of code in this repository: `SET NX EX` having exactly one
+winner and expiring on its own, an atomic compare-and-delete, a Mongo read projection excluding a
+field, a filter scoping by `userId`, a partial `$set` leaving an omitted field intact. Asserted
+against a mock, each of those tests only proves that the author's model of Redis or Mongo agrees
+with itself.
+
+The repository already draws this line in the same place: `unit-tests/rate-limiter.test.ts` mocks
+the cache service and tests the DECISION logic, while `rate-limiter.integration.test.ts` exercises
+the Redis behaviour against a real instance.
 
 ## Ordering principle
 
@@ -116,7 +149,7 @@ the whole feature's safety rests on, and the two drivers everything else writes 
 - [X] T007 Implement the DNS-resolving, connection-pinning guard in `frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts`
 - [X] T008 [P] Write the AAD-binding unit suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-credential-crypto.test.ts`
 - [X] T009 [P] Add backup AAD helpers to `frontend/mcm-app/src/bff-server/agent-config-crypto.ts`
-- [X] T010 [P] Write the lock suite and implement `frontend/mcm-app/src/bff-server/redis-lock.ts`
+- [X] T010 [P] Write the lock suite (`frontend/mcm-app/tests/integration/redis-lock.integration.test.ts` — INTEGRATION, see the block) and implement `frontend/mcm-app/src/bff-server/redis-lock.ts`
 - [X] T011 Define the driver interface in `frontend/mcm-app/src/bff-server/backup-destination-driver.ts`
 - [X] T012 Write the SigV4 signer suite against published AWS test vectors in `frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts`
 - [X] T013 Implement the SigV4 signer in `frontend/mcm-app/src/bff-server/backup-request-signer.ts`
@@ -172,7 +205,7 @@ rejected. Checking only the first answer is the subtle version of this bug.
 
 **Verify RED**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-destination-url-guard.test.ts
+pnpm nx test mcm-app --testPathPattern='backup-destination-url-guard'
 ```
 **Expected RED**: the whole suite fails to resolve the module — `backup-destination-url-guard.ts`
 does not exist yet. After T007 stubs the export, expect **every** assertion in groups 1–4 failing.
@@ -205,14 +238,14 @@ the address checked is the address connected to. **Keep `redirect: 'manual'`** �
 
 **Verify GREEN**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-destination-url-guard.test.ts
+pnpm nx test mcm-app --testPathPattern='backup-destination-url-guard'
 ```
 **Expected GREEN**: 0 failures.
 
 **Also run** (the existing guard must be untouched — this feature adds a guard, it does not modify
 the Ollama one):
 ```bash
-node --test frontend/mcm-app/src/bff-server/agent-config-ssrf.test.ts
+pnpm nx test mcm-app --testPathPattern='agent-config-ssrf'
 ```
 **Expected**: previously passing tests still pass.
 
@@ -234,7 +267,7 @@ user A fails under user B's; the correct AAD round-trips.
 
 **Verify RED**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-credential-crypto.test.ts
+pnpm nx test mcm-app --testPathPattern='backup-credential-crypto'
 ```
 **Expected RED**: 3 failures — the helpers are not exported yet.
 
@@ -256,7 +289,7 @@ Do not let a passing lock test stand in for it.
 
 **Verify RED**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/redis-lock.test.ts
+pnpm nx test:integration mcm-app --testPathPattern='redis-lock'
 ```
 **Expected RED**: 3 failing cases.
 
@@ -299,7 +332,7 @@ with itself.
 
 **Verify RED**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts
+pnpm nx test mcm-app --testPathPattern='backup-request-signer'
 ```
 **Expected RED**: every vector failing — the module does not exist.
 
@@ -345,7 +378,7 @@ this tier is that the real server's dialect is what gets exercised.
 **Independent test**: Add both kinds, test both, edit one, delete the other — with no job, no backup
 and no scheduler in existence.
 
-- [X] T018 [P] [US1] Write the destination store suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-destination-store.test.ts`
+- [X] T018 [P] [US1] Write the destination store suite in `frontend/mcm-app/tests/integration/backup-destination-store.integration.test.ts` (INTEGRATION, not unit — see the block)
 - [X] T019 [US1] Implement `frontend/mcm-app/src/bff-server/backup-destination-store.ts`
 - [X] T020 [P] [US1] Write the destination route authz suite in `frontend/mcm-app/tests/integration/backup-destinations-authz.test.ts`
 - [X] T021 [US1] Implement the destination routes under `frontend/mcm-app/src/app/bff-api/backups/destinations/`
@@ -372,7 +405,7 @@ Assert:
 
 **Verify RED**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-destination-store.test.ts
+pnpm nx test:integration mcm-app --testPathPattern='backup-destination-store'
 ```
 **Expected RED**: 4 failing cases — module absent.
 
@@ -393,7 +426,7 @@ never sees plaintext.
 
 **Verify GREEN**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-destination-store.test.ts
+pnpm nx test:integration mcm-app --testPathPattern='backup-destination-store'
 ```
 **Expected GREEN**: 0 failures — `4 passed`.
 
@@ -497,7 +530,7 @@ Locators use `data-testid` — React Native Web renders `testID` as `data-testid
 
 **Verify RED**:
 ```bash
-pnpm nx e2e mcm-app-e2e --grep '@gate' --testPathPattern='backups'
+E2E_BFF_TARGET=dev-container E2E_TIER=gate npx playwright test backups
 ```
 **Expected RED**: the spec fails at the first locator — the Backups screen still shows the 062
 placeholder.
@@ -528,7 +561,7 @@ recorded contents match live data — with no scheduler and no restore path buil
 - [X] T033 [US2] Implement `frontend/mcm-app/src/bff-server/backup-runner.ts`
 - [X] T034 [P] [US2] Write the concurrency and rate-limit suite in `frontend/mcm-app/tests/integration/backup-run-gate.test.ts`
 - [X] T035 [US2] Implement the per-user run gate and rate limit in `frontend/mcm-app/src/bff-server/backup-runner.ts`
-- [X] T036 [P] [US2] Write the job and run store suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-job-store.test.ts`
+- [X] T036 [P] [US2] Write the job and run store suite in `frontend/mcm-app/tests/integration/backup-job-store.integration.test.ts` (INTEGRATION, not unit — see the block)
 - [X] T037 [US2] Implement `backup-job-store.ts`, `backup-run-store.ts` and the job, run and runs routes under `frontend/mcm-app/src/app/bff-api/backups/jobs/`
 - [X] T038 [US2] Build the job form, "Back up now" and run history UI in `frontend/mcm-app/src/components/backups/`
 - [X] T039 [US2] Extend the `@gate` E2E with the back-up-now flow in `frontend/mcm-app/e2e/web/backups.spec.ts`
@@ -580,19 +613,19 @@ unstable across Node versions and every restore fails months later for no visibl
 
 **Verify RED**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-artifact.test.ts
+pnpm nx test mcm-app --testPathPattern='backup-artifact'
 ```
 **Expected RED**: 5 failing cases.
 
 **Verify GREEN**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-artifact.test.ts
+pnpm nx test mcm-app --testPathPattern='backup-artifact'
 ```
 **Expected GREEN**: 0 failures — `5 passed`.
 
 **Also run** (the artifact contract must still validate):
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-credential-crypto.test.ts
+pnpm nx test mcm-app --testPathPattern='backup-credential-crypto'
 ```
 **Expected**: previously passing tests still pass.
 
@@ -678,7 +711,7 @@ is broken when it is working correctly.
 
 **Verify RED**:
 ```bash
-pnpm nx e2e mcm-app-e2e --grep '@gate' --testPathPattern='backups'
+E2E_BFF_TARGET=dev-container E2E_TIER=gate npx playwright test backups
 ```
 **Expected RED**: the back-up-now case fails at the job-form locator; the T025 destination cases
 still pass.
@@ -711,13 +744,13 @@ a run record to its job atomically ([data-model.md](./data-model.md)).
 
 **Verify RED**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-job-store.test.ts
+pnpm nx test:integration mcm-app --testPathPattern='backup-job-store'
 ```
 **Expected RED**: 5 failing cases — module absent.
 
 **Verify GREEN**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-job-store.test.ts
+pnpm nx test:integration mcm-app --testPathPattern='backup-job-store'
 pnpm nx test:integration mcm-app --testPathPattern='backup-run-gate'
 ```
 **Expected GREEN**: 0 failures in both.
@@ -892,7 +925,7 @@ Pure unit tests. **No clock, no network, no database** — `now` is an argument.
 
 **Verify RED**:
 ```bash
-node --test frontend/mcm-app/src/bff-server/unit-tests/backup-schedule.test.ts
+pnpm nx test mcm-app --testPathPattern='backup-schedule'
 ```
 **Expected RED**: all 9 groups failing — module absent.
 
@@ -1205,7 +1238,7 @@ File as backlog items, with acceptance criteria — a vague idea cannot ever be 
 ```bash
 pnpm nx affected -t lint test build --skip-nx-cache
 pnpm nx test:integration mcm-app
-pnpm nx e2e mcm-app-e2e --grep '@gate'
+E2E_BFF_TARGET=dev-container E2E_TIER=gate npx playwright test
 ```
 
 Run the tiers **your diff touches**, derived from what changed — not the ones you remember. This
@@ -1226,7 +1259,7 @@ Back up → change live data → restore → assert the restored collection appe
 live collection still holds the mutation. The second half is the point: it is SC-003 through the real
 UI, and without it the test proves only that restore creates something.
 
-**Verify RED**: `pnpm nx e2e mcm-app-e2e --grep '@gate' --testPathPattern='backups'` — the restore
+**Verify RED**: `E2E_BFF_TARGET=dev-container E2E_TIER=gate npx playwright test backups` — the restore
 case fails at the version-list locator.
 **Verify GREEN**: same command, 0 failures.
 
@@ -1273,7 +1306,7 @@ Pure unit tests over the summary shape: duration derives from start and finish; 
 present when and only when status is `failed` or `partial`; next-run renders in the **job's** zone;
 and no field carries a credential or collection content (US6-AC4).
 
-**Verify RED**: `node --test frontend/mcm-app/src/bff-server/unit-tests/backup-run-summary.test.ts`
+**Verify RED**: `pnpm nx test mcm-app --testPathPattern='backup-run-summary'`
 — 4 failing cases.
 **Verify GREEN**: same command, 0 failures.
 
@@ -1288,7 +1321,7 @@ Run to exceed the retention count, assert the version list settles at N. Then fo
 assert the banner appears **and persists across a reload** — a banner held only in component state
 disappears on refresh, which is exactly when a user would look for it.
 
-**Verify RED**: `pnpm nx e2e mcm-app-e2e --grep '@gate' --testPathPattern='backups'` — both cases
+**Verify RED**: `E2E_BFF_TARGET=dev-container E2E_TIER=gate npx playwright test backups` — both cases
 fail.
 **Verify GREEN**: same command, 0 failures.
 

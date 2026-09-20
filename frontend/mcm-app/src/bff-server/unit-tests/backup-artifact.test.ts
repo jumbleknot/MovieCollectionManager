@@ -50,7 +50,10 @@ const movie = (title: string, year: number) => ({
   collectionId: 'cid-1',
   title,
   year,
-  contentType: 'MOVIE',
+  // 'Movie', not 'MOVIE' — mc-service's ContentType enum is [Movie, Series, Concert].
+  // The corrected contract caught this the moment it described the real field set;
+  // the previous schema named fields mc-service does not have, so it validated anything.
+  contentType: 'Movie',
   owned: true,
   ripped: false,
   childrens: false,
@@ -59,7 +62,7 @@ const movie = (title: string, year: number) => ({
   actors: ['An Actor'],
   tags: ['tag'],
   genres: ['Drama'],
-  ownedMedia: ['BLURAY'],
+  ownedMedia: ['Blu-Ray'],
   ripQuality: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-02T00:00:00.000Z',
