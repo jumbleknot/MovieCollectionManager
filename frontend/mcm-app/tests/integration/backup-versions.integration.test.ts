@@ -26,6 +26,12 @@ import {
 } from '@/bff-server/mongo-client';
 import type { BackupDestination, BackupJob } from '@/types/backups';
 
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
+
 const S3_ENDPOINT = process.env.BACKUP_TEST_S3_ENDPOINT || 'http://localhost:9100';
 const S3_BUCKET = process.env.BACKUP_TEST_S3_BUCKET || 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env.BACKUP_TEST_S3_ACCESS_KEY || 'mcmbackuptest';
@@ -105,11 +111,11 @@ afterAll(async () => {
   await closeMongo();
 });
 
-it('has a destination secret to work with', () => {
-  expect(S3_SECRET).not.toBe('');
+itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
+  assertBackupTargetsPresent();
 });
 
-describe('what is listed', () => {
+describeBackupTargets('what is listed', () => {
   it('lists this job’s versions NEWEST FIRST', async () => {
     const versions = await listBackupVersions(USER, job);
     expect(versions.map((v) => v.key)).toEqual([
@@ -133,7 +139,7 @@ describe('what is listed', () => {
   }, 120_000);
 });
 
-describe('usable vs merely present', () => {
+describeBackupTargets('usable vs merely present', () => {
   it('marks a healthy object usable', async () => {
     const versions = await listBackupVersions(USER, job);
     const healthy = versions.find((v) => v.key.includes('2026-09-20'))!;
@@ -164,7 +170,7 @@ describe('usable vs merely present', () => {
   }, 120_000);
 });
 
-describe('corruption that a size check alone would miss', () => {
+describeBackupTargets('corruption that a size check alone would miss', () => {
   it('marks a gzip whose CONTENTS fail verification unusable', async () => {
     // Non-zero, valid gzip, parses as JSON — and its digest does not match. Only opening it
     // catches this, which is why usability is not decided on size alone.

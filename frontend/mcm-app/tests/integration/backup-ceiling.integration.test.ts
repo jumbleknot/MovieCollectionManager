@@ -28,6 +28,12 @@ import {
 import type { BackupDestination, BackupJob } from '@/types/backups';
 
 import { createBffClient } from './helpers/bff-test-server';
+
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
 import {
   createTestUser,
   deleteTestUser,
@@ -162,11 +168,11 @@ function withCeilings<T>(ceilings: { movies?: number; bytes?: number }, body: ()
   });
 }
 
-it('has a destination secret to work with', () => {
-  expect(S3_SECRET).not.toBe('');
+itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
+  assertBackupTargetsPresent();
 });
 
-describe('the count ceiling', () => {
+describeBackupTargets('the count ceiling', () => {
   it('fails the run and writes NOTHING when the movie count exceeds it', async () => {
     const destination = await makeDestination();
     const job = await makeJob(destination.id);
@@ -193,7 +199,7 @@ describe('the count ceiling', () => {
   }, 180_000);
 });
 
-describe('the byte ceiling', () => {
+describeBackupTargets('the byte ceiling', () => {
   it('fails the run and writes NOTHING when the uncompressed size exceeds it', async () => {
     // Checked independently of the count: a collection of a few very large records is under
     // any count ceiling and can still be far too big to hold.
@@ -210,7 +216,7 @@ describe('the byte ceiling', () => {
   }, 180_000);
 });
 
-describe('an ordinary run is unaffected', () => {
+describeBackupTargets('an ordinary run is unaffected', () => {
   it('succeeds and writes one object when both ceilings are comfortable', async () => {
     // The control. Without it, a ceiling that rejected EVERYTHING would pass both cases above.
     const destination = await makeDestination();

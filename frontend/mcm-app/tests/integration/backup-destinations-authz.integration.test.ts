@@ -28,6 +28,12 @@ import {
 } from './helpers/keycloak-test-client';
 import { getBackupDestinationsCollection, closeMongo } from '@/bff-server/mongo-client';
 
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
+
 const bff = createBffClient();
 const BASE = '/bff-api/backups/destinations';
 
@@ -75,7 +81,7 @@ afterAll(async () => {
   await closeMongo();
 });
 
-describe('the positive control — without this, every 404 below is meaningless', () => {
+describeBackupTargets('the positive control — without this, every 404 below is meaningless', () => {
   it('user A can create and then read their OWN destination (200)', async () => {
     const created = await bff.post(BASE, s3Body(`authz-${Date.now()}`), authA());
     expect(created.status).toBe(201);
@@ -94,7 +100,7 @@ describe('the positive control — without this, every 404 below is meaningless'
   });
 });
 
-describe('user B gets 404, never 403 (FR-034)', () => {
+describeBackupTargets('user B gets 404, never 403 (FR-034)', () => {
   it('GET of A’s destination → 404', async () => {
     const res = await bff.get(`${BASE}/${destinationIdA}`, authB());
     expect(res.status).toBe(404);
@@ -129,7 +135,7 @@ describe('user B gets 404, never 403 (FR-034)', () => {
   });
 });
 
-describe('no route accepts a userId from the request', () => {
+describeBackupTargets('no route accepts a userId from the request', () => {
   it('a spoofed body userId is REJECTED outright, not quietly ignored', async () => {
     // The body schema is `.strict()`, so an unknown key is a 400 rather than a field that is
     // dropped. Both are safe — the store never reads a userId from a body — but rejecting
@@ -163,7 +169,7 @@ describe('no route accepts a userId from the request', () => {
   });
 });
 
-describe('authentication is required at all', () => {
+describeBackupTargets('authentication is required at all', () => {
   it('rejects an unauthenticated list', async () => {
     const res = await bff.get(BASE);
     expect([401, 403]).toContain(res.status);

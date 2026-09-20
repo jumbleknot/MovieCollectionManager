@@ -23,6 +23,12 @@ import {
 } from './helpers/keycloak-test-client';
 import { getBackupDestinationsCollection, closeMongo } from '@/bff-server/mongo-client';
 
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
+
 const bff = createBffClient();
 const PROBE = '/bff-api/backups/destinations/test';
 
@@ -64,12 +70,12 @@ afterAll(async () => {
   await closeMongo();
 });
 
-it('has credentials to probe with — without them every case below is the same failure', () => {
+itBackupTargets('has credentials to probe with — without them every case below is the same failure', () => {
   expect(S3_SECRET).not.toBe('');
   expect(DAV_PASSWORD).not.toBe('');
 });
 
-describe('the four outcomes are told apart (FR-004)', () => {
+describeBackupTargets('the four outcomes are told apart (FR-004)', () => {
   it('reachable, authorised, can write → ok', async () => {
     const res = await bff.post(PROBE, s3Draft(), auth());
     expect(res.status).toBe(200);
@@ -120,7 +126,7 @@ describe('the four outcomes are told apart (FR-004)', () => {
   });
 });
 
-describe('the probe is not a way around the save-time guard', () => {
+describeBackupTargets('the probe is not a way around the save-time guard', () => {
   it('refuses a blocked address (FR-005), with no probe attempted', async () => {
     // Without this the probe would be a general-purpose "make my server fetch this URL"
     // primitive — strictly more useful to an attacker than the save path it sits beside.
@@ -130,7 +136,7 @@ describe('the probe is not a way around the save-time guard', () => {
   });
 });
 
-describe('a draft can be probed before it is committed', () => {
+describeBackupTargets('a draft can be probed before it is committed', () => {
   it('accepts an unsaved draft and stores nothing', async () => {
     const before = await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId });
     const res = await bff.post(PROBE, s3Draft(), auth());
@@ -163,7 +169,7 @@ describe('a draft can be probed before it is committed', () => {
   });
 });
 
-describe('nothing sensitive comes back', () => {
+describeBackupTargets('nothing sensitive comes back', () => {
   it('never echoes the submitted secret or an upstream body', async () => {
     const res = await bff.post(PROBE, s3Draft({ secret: 'super-secret-probe-value' }), auth());
     const serialized = JSON.stringify(res.data);

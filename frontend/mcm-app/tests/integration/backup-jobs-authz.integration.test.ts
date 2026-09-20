@@ -19,6 +19,12 @@ import {
 } from '@/bff-server/mongo-client';
 
 import { createBffClient } from './helpers/bff-test-server';
+
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
 import {
   createTestUser,
   deleteTestUser,
@@ -101,7 +107,7 @@ afterAll(async () => {
   await closeMongo();
 });
 
-describe('the positive control — without this, every 404 below is meaningless', () => {
+describeBackupTargets('the positive control — without this, every 404 below is meaningless', () => {
   it('user A creates and reads their OWN job (201 then 200)', async () => {
     const created = await bff.post(
       JOBS,
@@ -117,7 +123,7 @@ describe('the positive control — without this, every 404 below is meaningless'
   });
 });
 
-describe('user B gets 404, never 403 (FR-034)', () => {
+describeBackupTargets('user B gets 404, never 403 (FR-034)', () => {
   it.each([
     ['GET', (id: string) => bff.get(`${JOBS}/${id}`, authB())],
     ['PATCH', (id: string) => bff.patch(`${JOBS}/${id}`, { label: 'hijacked' }, authB())],
@@ -153,7 +159,7 @@ describe('user B gets 404, never 403 (FR-034)', () => {
   });
 });
 
-describe('validation', () => {
+describeBackupTargets('validation', () => {
   it('rejects keepLast outside 1..365', async () => {
     const res = await bff.post(
       JOBS,
@@ -182,7 +188,7 @@ describe('validation', () => {
   });
 });
 
-describe('back up now', () => {
+describeBackupTargets('back up now', () => {
   it('runs, reports a summary, and records it in history (US2-AC1)', async () => {
     const res = await bff.post(`${JOBS}/${jobA}/run`, {}, authA());
     expect(res.status).toBe(202);
@@ -210,7 +216,7 @@ describe('back up now', () => {
   }, 120_000);
 });
 
-describe('authentication is required', () => {
+describeBackupTargets('authentication is required', () => {
   it.each([
     ['list', () => bff.get(JOBS)],
     ['create', () => bff.post(JOBS, {})],

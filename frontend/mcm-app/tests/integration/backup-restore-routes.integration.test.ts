@@ -21,6 +21,12 @@ import {
 } from '@/bff-server/mongo-client';
 
 import { createBffClient } from './helpers/bff-test-server';
+
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
 import {
   createTestUser,
   deleteTestUser,
@@ -114,7 +120,7 @@ afterAll(async () => {
   await closeMongo();
 }, 300_000);
 
-describe('versions', () => {
+describeBackupTargets('versions', () => {
   it('lists the version the run wrote, marked usable', async () => {
     const res = await bff.get(`${JOBS}/${jobId}/versions`, authA());
     expect(res.status).toBe(200);
@@ -128,7 +134,7 @@ describe('versions', () => {
   });
 });
 
-describe('download', () => {
+describeBackupTargets('download', () => {
   it('streams bytes that gunzip into a valid artifact', async () => {
     // The point of FR-028: a user must be able to read their own backup WITHOUT this system.
     // If these bytes do not gunzip into plain JSON outside the app, that promise is not kept.
@@ -165,7 +171,7 @@ describe('download', () => {
   });
 });
 
-describe('restore', () => {
+describeBackupTargets('restore', () => {
   it('restores into NEW collections and reports what it did', async () => {
     const before = (await bff.get('/bff-api/collections', authA())).data.length;
     const res = await bff.post(`${JOBS}/${jobId}/restore`, { key: versionKey }, authA());

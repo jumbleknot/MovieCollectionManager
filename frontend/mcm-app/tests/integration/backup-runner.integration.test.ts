@@ -33,6 +33,12 @@ import {
 import type { BackupDestination, BackupJob } from '@/types/backups';
 
 import { createBffClient } from './helpers/bff-test-server';
+
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
 import {
   createTestUser,
   deleteTestUser,
@@ -156,11 +162,11 @@ afterAll(async () => {
   await closeMongo();
 });
 
-it('has a destination secret — without it every case below is one auth failure', () => {
-  expect(S3_SECRET).not.toBe('');
+itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
+  assertBackupTargetsPresent();
 });
 
-describe('a successful run', () => {
+describeBackupTargets('a successful run', () => {
   it('writes EXACTLY ONE object, whose digest recomputes', async () => {
     const destination = await makeDestination();
     const job = await makeJob(destination.id, [collectionIdA]);
@@ -265,7 +271,7 @@ describe('a successful run', () => {
   }, 180_000);
 });
 
-describe('a run that fails mid-way', () => {
+describeBackupTargets('a run that fails mid-way', () => {
   it('is recorded FAILED and leaves NO object behind (FR-014)', async () => {
     // Asserted on the destination, not on the exception. "It threw" does not prove nothing was
     // written, and a partial object would later be offered as a restorable version.

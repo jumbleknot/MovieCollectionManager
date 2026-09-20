@@ -23,6 +23,12 @@ import { createBackupDriver } from '@/bff-server/backup-destination-driver';
 import { DestinationUrlNotAllowedError } from '@/bff-server/backup-destination-url-guard';
 import type { S3BackupDestination } from '@/types/backups';
 
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
+
 const S3_ENDPOINT = process.env.BACKUP_TEST_S3_ENDPOINT || 'http://localhost:9100';
 const S3_BUCKET = process.env.BACKUP_TEST_S3_BUCKET || 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env.BACKUP_TEST_S3_ACCESS_KEY || 'mcmbackuptest';
@@ -63,13 +69,11 @@ beforeAll(() => {
   (env as { backupAllowedDestinationHosts: string }).backupAllowedDestinationHosts = [...hosts].join(',');
 });
 
-it('has a secret to test with — an empty one would make every case below meaningless', () => {
-  // A credential-driven skip reads as a pass. This asserts the input exists instead of letting
-  // the suite discover it as four identical authentication failures.
-  expect(S3_SECRET).not.toBe('');
+itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
+  assertBackupTargetsPresent();
 });
 
-describe('put / get', () => {
+describeBackupTargets('put / get', () => {
   it('round-trips bytes EXACTLY, including binary gzip content', async () => {
     const driver = await driverFor(destination());
     // Real artifact-shaped content: gzip is binary, so any encoding mistake in the transport
@@ -100,7 +104,7 @@ describe('put / get', () => {
   });
 });
 
-describe('list', () => {
+describeBackupTargets('list', () => {
   it('returns keys in lexicographic order under the prefix, and nothing outside it', async () => {
     const driver = await driverFor(destination());
     const mine = `${PREFIX}/listing`;
@@ -147,7 +151,7 @@ describe('list', () => {
   });
 });
 
-describe('delete', () => {
+describeBackupTargets('delete', () => {
   it('removes ONE object and leaves its neighbours intact', async () => {
     const driver = await driverFor(destination());
     const base = `${PREFIX}/deletion`;
@@ -164,7 +168,7 @@ describe('delete', () => {
   });
 });
 
-describe('testConnection reports WHICH thing failed (FR-004)', () => {
+describeBackupTargets('testConnection reports WHICH thing failed (FR-004)', () => {
   it('reachable and authorised with write permission → ok', async () => {
     const outcome = await (await driverFor(destination())).testConnection();
     expect(outcome).toEqual({ ok: true });
@@ -201,7 +205,7 @@ describe('testConnection reports WHICH thing failed (FR-004)', () => {
   });
 });
 
-describe('the guard is not bypassable through the driver', () => {
+describeBackupTargets('the guard is not bypassable through the driver', () => {
   it('refuses to build a driver for an address the guard rejects', async () => {
     // The guard runs in the FACTORY, so there is no path from a destination document to a socket
     // that skips it — a stronger property than "each driver remembers to call it".

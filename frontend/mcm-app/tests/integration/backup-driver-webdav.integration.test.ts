@@ -20,6 +20,12 @@ import { createBackupDriver } from '@/bff-server/backup-destination-driver';
 import { DestinationUrlNotAllowedError } from '@/bff-server/backup-destination-url-guard';
 import type { WebdavBackupDestination } from '@/types/backups';
 
+import {
+  describeBackupTargets,
+  itBackupTargets,
+  assertBackupTargetsPresent,
+} from './helpers/backup-targets';
+
 const DAV_ENDPOINT = process.env.BACKUP_TEST_WEBDAV_ENDPOINT || 'http://localhost:9102';
 const DAV_USER = process.env.BACKUP_TEST_WEBDAV_USER || 'mcmbackuptest';
 const DAV_PASSWORD = process.env.BACKUP_TEST_WEBDAV_PASSWORD || '';
@@ -51,11 +57,11 @@ beforeAll(() => {
   env.backupAllowedDestinationHosts = [...hosts].join(',');
 });
 
-it('has a password to test with — an empty one would make every case below meaningless', () => {
-  expect(DAV_PASSWORD).not.toBe('');
+itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
+  assertBackupTargetsPresent();
 });
 
-describe('put / get', () => {
+describeBackupTargets('put / get', () => {
   it('round-trips binary bytes exactly', async () => {
     const driver = await driverFor(destination());
     const original = gzipSync(Buffer.from(JSON.stringify({ manifest: { formatVersion: 1 } })));
@@ -83,7 +89,7 @@ describe('put / get', () => {
   });
 });
 
-describe('list', () => {
+describeBackupTargets('list', () => {
   it('returns keys in lexicographic order under the prefix, and nothing outside it', async () => {
     const driver = await driverFor(destination());
     const mine = `${PREFIX}/listing`;
@@ -123,7 +129,7 @@ describe('list', () => {
   });
 });
 
-describe('delete', () => {
+describeBackupTargets('delete', () => {
   it('removes ONE object and leaves its neighbours intact', async () => {
     const driver = await driverFor(destination());
     const base = `${PREFIX}/deletion`;
@@ -140,7 +146,7 @@ describe('delete', () => {
   });
 });
 
-describe('testConnection reports WHICH thing failed (FR-004)', () => {
+describeBackupTargets('testConnection reports WHICH thing failed (FR-004)', () => {
   it('reachable and authorised with write permission → ok', async () => {
     expect(await (await driverFor(destination())).testConnection()).toEqual({ ok: true });
   });
@@ -166,7 +172,7 @@ describe('testConnection reports WHICH thing failed (FR-004)', () => {
   });
 });
 
-describe('the guard is not bypassable through the driver', () => {
+describeBackupTargets('the guard is not bypassable through the driver', () => {
   it('refuses to build a driver for an address the guard rejects', async () => {
     await expect(
       driverFor(destination({ endpoint: 'http://169.254.169.254/' })),
