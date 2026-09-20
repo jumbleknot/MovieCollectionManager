@@ -500,7 +500,10 @@
         "movie-collection-manager": [
           "mc-user"
         ]
-      }
+      },
+      "realmRoles": [
+        "default-roles-jumbleknot"
+      ]
     },
     {
       "username": "e2e-admin-user",
@@ -521,7 +524,10 @@
           "mc-user",
           "mc-admin"
         ]
-      }
+      },
+      "realmRoles": [
+        "default-roles-jumbleknot"
+      ]
     },
     {
       "username": "service-account-agent-gateway",
