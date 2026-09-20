@@ -14,6 +14,12 @@ export interface UserAgentConfigDoc {
   tmdbKeyEnc?: string;
   costLimitUsd: number | null;
   updatedAt: string; // ISO-8601 UTC
+  // Feature 073: standing permission to back up while the user is away. ONE PER USER, not per
+  // job — a user consents once and revocation is a single act (FR-023). Held here rather than
+  // in a new collection so "wipe this user's secrets" stays one operation.
+  // AES-256-GCM under AAD `${userId}:offlineRefresh`. Never returned to a client, never logged.
+  offlineRefreshEnc?: string;
+  offlineGrantedAt?: string;
 }
 
 // Non-secret projection returned by GET /bff-api/agent/config (FR-018).

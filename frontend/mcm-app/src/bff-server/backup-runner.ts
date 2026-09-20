@@ -20,6 +20,11 @@
 // expose as a complete object.
 
 import { buildArtifact, compressArtifact } from '@/bff-server/backup-artifact';
+import {
+  OfflineTokenUnusableError,
+  mintUserAccessToken,
+} from '@/bff-server/backup-offline-token';
+import { getBackupJobsCollection } from '@/bff-server/mongo-client';
 import { createBackupDriver } from '@/bff-server/backup-destination-driver';
 import { DestinationUrlNotAllowedError } from '@/bff-server/backup-destination-url-guard';
 import * as destinationStore from '@/bff-server/backup-destination-store';
@@ -243,4 +248,48 @@ export async function runBackup(request: RunRequest): Promise<BackupRun> {
     });
     return finished ?? { ...run, status: 'failed', failureReason };
   }
+}
+
+/**
+ * One UNATTENDED run: mint the user's own token from their standing permission, then run
+ * exactly the same backup a "back up now" would (feature 073, T053 — FR-021/FR-024; US4-AC7).
+ *
+ * THE MINT COMES FIRST, AND A FAILED MINT ENDS IT. Nothing is read, nothing is written, and no
+ * other identity is tried (FR-024) — there is no service-account path here to fall back to,
+ * because a backup that quietly succeeded using broader privilege than the user granted would
+ * be a worse outcome than one that failed.
+ *
+ * The failure is recorded as a RUN, not thrown. A scheduled run has no caller to catch
+ * anything, and the user needs to find the reason in their run history rather than in a log
+ * they cannot see.
+ */
+export async function runScheduledBackup(userId: string, jobId: string): Promise<BackupRun> {
+  const job = await (await getBackupJobsCollection()).findOne({ _id: jobId, userId });
+  if (!job) throw new Error('That backup job no longer exists');
+
+  let jwt: string;
+  try {
+    jwt = await mintUserAccessToken(userId);
+  } catch (err) {
+    if (!(err instanceof OfflineTokenUnusableError)) throw err;
+    // Its message is user-facing by construction and names the remedy, so it is passed through
+    // verbatim: "unauthorized" would leave the user with a job that has silently stopped and
+    // nothing they could do about it.
+    const run = await runStore.startRun(userId, jobId, 'scheduled');
+    const failed = await runStore.finishRun(run._id, {
+      status: 'failed',
+      failureReason: err.message,
+    });
+    logger.error('Scheduled backup could not authenticate as the user', {
+      action: 'backup_run_failed',
+      userId,
+      jobId,
+      runId: run._id,
+      trigger: 'scheduled',
+      reason: 'offline_grant_unusable',
+    });
+    return failed ?? { ...run, status: 'failed', failureReason: err.message };
+  }
+
+  return runBackup({ userId, jwt, job, trigger: 'scheduled' });
 }
