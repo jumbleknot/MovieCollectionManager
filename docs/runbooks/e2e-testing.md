@@ -255,6 +255,44 @@ deliberately. `scripts/__tests__/e2e-collection-ownership.guard.test.mjs` pins i
 (`assistant-config.spec.ts` clears it and re-seeds in `afterEach`), the *default collection* that
 drives the FR-009 redirect, and the `MUTATION` fixture that `movies.spec.ts` empties.
 
+### A leak is bounded for Playwright and UNBOUNDED for the mobile tier (PR #527, 2026-09-20)
+
+The paragraph above calls leaking "the safe direction, deliberately" because global setup sweeps at
+the start of the next run. That reasoning is sound for Playwright and **false for everything
+downstream of it in the same job**. Two facts compose:
+
+- **Nothing sweeps collections between the tiers.** `resetNonFixtureCollections` runs in
+  `global-setup.ts` — at the *start* of a Playwright run. `global-teardown.ts` deletes per-worker
+  Keycloak identities and nothing else. So residue survives the whole rest of the job.
+- **`app-ci.yml` runs the Maestro emulator flows AFTER both web tiers**, against the same
+  `E2E_TEST_USER`. Whatever the web suites leave behind is live production-shaped state by the time
+  the mobile agent flows ask the assistant a question.
+
+And the assistant *reads that state*. On PR #527 the restore E2E left collections named
+`… (backup 2026-09-20 18:04)` and `Mutated e2e-…` in the account; `agent-disambiguation` then found
+several plausible matches and asked a disambiguation question instead of rendering a card. The flow
+failed three times, ~35 minutes each.
+
+**The ownership guard does not catch this, by construction.**
+`e2e-collection-ownership.guard.test.mjs` matches `request.post('/bff-api/collections'` — a spec that
+makes collections exist through *another route* (here `POST /bff-api/backups/restore`, which creates
+them server-side under names the test never posts) passes the guard while leaking every run. The same
+hole covers any future route with a side effect on the collection list — import, seed, restore.
+
+**The rule**: a spec cleans up what it caused to exist, by whatever route, and cleans it by **name**
+in `afterEach` when the server chose the name. `backups.spec.ts` sweeps `/\(backup .+\)$/` and
+`/^Mutated e2e-/` alongside its own destinations and jobs. Do not reason from "the next run will
+sweep it" unless nothing runs between here and the next run — in this job, the model tier and
+the whole mobile tier do.
+
+**Why this cost three cycles rather than one.** The failure surfaces in a *different suite, a
+different tier and a different language* from the one that caused it, so every local signal points
+away from the cause: the diff touches no render path, and the Maestro log shows a well-formed
+assistant turn. It was settled in seconds by the **screenshot** in the `maestro-debug` artifact, which
+an agent in the dev container cannot currently fetch (item #531). When a mobile agent flow fails and
+the diff looks unrelated, **suspect shared data before layout**, and list the test account's
+collections first.
+
 ## "Green" told you nothing until the result gate existed (2026-08-10)
 
 Three facts compose into a false green that nobody can even detect:
