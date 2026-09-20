@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcm.local/schemas/backup-artifact-v1.json",
+  "title": "MCM collection backup artifact, format version 1",
+  "description": "The uncompressed body of a `<basePath>/<jobId>/<ISO timestamp>.json.gz` object. This is a portable contract: a user who downloads an artifact must be able to read their own data without this application. Additive fields only within version 1; any removal or semantic change requires formatVersion 2, because restore refuses a version it does not recognise rather than guessing.",
+  "type": "object",
+  "required": ["manifest", "collections"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest": {
+      "type": "object",
+      "required": ["formatVersion", "createdAt", "jobId", "collections", "totalMovieCount", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "formatVersion": { "type": "integer", "const": 1 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "jobId": { "type": "string" },
+        "totalMovieCount": { "type": "integer", "minimum": 0 },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Hex SHA-256 over the canonically serialised `collections` array, UNCOMPRESSED. Verified before any write on restore."
+        },
+        "collections": {
+          "type": "array",
+          "description": "Per-collection counts, checked against the body. A disagreement means a corrupt artifact.",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "movieCount"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "movieCount": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "collections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "movies"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "movies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["title"],
+              "properties": {
+                "title": { "type": "string" },
+                "releaseYear": { "type": ["integer", "null"] },
+                "genres": { "type": "array", "items": { "type": "string" } },
+                "externalIdentifiers": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["source", "value"],
+                    "properties": {
+                      "source": { "type": "string" },
+                      "value": { "type": "string" }
+                    }
+                  }
+                }
+              },
+              "description": "Mirrors the mc-service movie representation. The authoritative field list is api-specs/mc-service-api.yaml; the implementation task must reconcile the two, because a field missing here is a field silently lost on restore."
+            }
+          }
+        }
+      }
+    }
+  }
+}
