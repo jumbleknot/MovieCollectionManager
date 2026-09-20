@@ -91,18 +91,61 @@ test('the job timeout sits above the declared effective ceiling', () => {
 
 // ── the runner has to actually have the generator ───────────────────────────────
 
+/**
+ * The generator's install command, read from a REAL command line rather than from prose.
+ *
+ * Both files also NAME the install in a comment, and a whole-file regex happily matches the comment
+ * first. That is how the first version of the diagram-parity guard below failed: it compared the
+ * comment on one side against the command on the other and reported a mismatch that did not exist.
+ * A pin check that can read documentation instead of the thing being pinned is not a pin check.
+ */
+function generatorInstall(text) {
+  for (const line of text.split('\n')) {
+    if (/^\s*(#|\/\/)/.test(line)) continue;
+    const m = line.match(/npm install -g openwiki@([\d.]+)([^\n]*)/);
+    if (m) return { version: m[1], rest: m[2] };
+  }
+  return null;
+}
+
 test('the workflow installs the generator, pinned to the dev container version', () => {
   // The first real run on `main` died with `/bin/sh: 1: openwiki: not found`. The generator is a
   // GLOBAL npm binary baked into the dev container's toolchain image, not a workspace dependency, so
   // nothing put it on the CI runner. The orchestrator planned correctly and then had nothing to call.
-  const install = raw.match(/npm install -g openwiki@([\d.]+)/);
+  const install = generatorInstall(raw);
   assert.ok(install, 'the workflow must install the generator');
 
   const dockerfile = readFileSync(join(REPO_ROOT, '.devcontainer', 'toolchain.Dockerfile'), 'utf8');
-  const pinned = dockerfile.match(/npm install -g openwiki@([\d.]+)/);
+  const pinned = generatorInstall(dockerfile);
   assert.ok(pinned, 'the dev container pins a version');
-  assert.equal(install[1], pinned[1],
+  assert.equal(install.version, pinned.version,
     'CI and the dev container must run the SAME generator version — otherwise they silently differ on the thing whose output is gated');
+});
+
+test('CI and the dev container both install the Mermaid parser, or neither validates diagrams', () => {
+  // `mermaid` and `jsdom` are OPTIONAL peer dependencies of the generator, and their absence is
+  // silent. From 0.5.0 diagrams are embedded by default and every fence is validated after a run;
+  // without the real parser a weaker built-in check runs instead, and a diagram that passes it but
+  // fails the real one is rewritten in place into a plain `text` fence. Exit code 0, gates green,
+  // diagram silently downgraded.
+  //
+  // Parity matters more than presence: if only one side has the parser, the two environments
+  // disagree about what a valid diagram is, and the one that writes the bundle decides. That is the
+  // same class of drift the version pin above exists to stop.
+  const dockerfile = readFileSync(join(REPO_ROOT, '.devcontainer', 'toolchain.Dockerfile'), 'utf8');
+  const peerDeps = (text) =>
+    new Set((generatorInstall(text)?.rest ?? '').trim().split(/\s+/).filter((w) => /^(mermaid|jsdom)$/.test(w)));
+  const inCi = peerDeps(raw);
+  const inContainer = peerDeps(dockerfile);
+  assert.deepEqual(
+    [...inCi].sort(),
+    [...inContainer].sort(),
+    `CI installs [${[...inCi].sort()}] alongside the generator and the dev container installs ` +
+      `[${[...inContainer].sort()}]. They must match, or the two environments silently disagree ` +
+      'about which Mermaid diagrams are valid.',
+  );
+  assert.deepEqual([...inCi].sort(), ['jsdom', 'mermaid'],
+    'both `mermaid` and `jsdom` are required for authoritative diagram validation — with either missing, openwiki falls back to the weaker built-in check and downgrades diagrams it cannot verify');
 });
 
 // ── injection (found by semgrep on this workflow's first CI run) ────────────────
@@ -173,36 +216,56 @@ test('the outcome is reported distinguishably, including exit 3', () => {
   assert.match(text, /nothing-to-do/, 'FR-017: the three outcomes must be distinguishable');
   assert.match(text, /\b3\b/, 'and a budget stop (exit 3) must not be reported as a failure');
 });
-
-// ── the generator's per-turn output ceiling (research 2026-08-01) ────────────────
+// ── the generator's per-turn output ceiling (research 2026-08-01, revised 2026-09-19) ──────────
 //
 // THIS IS THE GUARD FOR THE BUG THAT LOOKED LIKE NON-DETERMINISM.
 //
-// openwiki never passes `maxTokens`, so `@langchain/anthropic` resolves a per-turn output cap by
-// PREFIX-MATCHING the configured model id against a hard-coded table, falling back to 4096 on a miss.
-// `claude-sonnet-5` — which this target pinned for the whole of feature 044 — is absent from that
-// table, so every turn was capped at 4096. A turn truncated at the cap BEFORE it opens a `tool_use`
-// block returns an assistant message with zero tool calls, and zero tool calls is precisely
-// LangGraph's ReAct stop condition: the graph exits cleanly, openwiki exits 0, Nx reports success,
-// and no page is written. That was the measured ~50% zero-page rate.
+// The original defect: openwiki <=0.4.x never passed `maxTokens`, so `@langchain/anthropic` resolved
+// a per-turn output cap by PREFIX-MATCHING the configured model id against a hard-coded table,
+// falling back to 4096 on a miss. `claude-sonnet-5` — which this target pinned for the whole of
+// feature 044 — was absent from that table, so every turn was capped at 4096. A turn truncated at
+// the cap BEFORE it opens a `tool_use` block returns an assistant message with zero tool calls, and
+// zero tool calls is precisely LangGraph's ReAct stop condition: the graph exits cleanly, openwiki
+// exits 0, Nx reports success, and no page is written. That was the measured ~50% zero-page rate.
 //
-// Nothing in the stack reports this. Not openwiki, which never inspects `stop_reason`; not Nx, which
+// Nothing in the stack reports this. Not openwiki, which never inspected `stop_reason`; not Nx, which
 // sees exit 0; not the verifier, which can say a page is missing but never why. The failure is
 // therefore INVISIBLE UNTIL SOMEONE MEASURES THE WIRE — which is exactly the class of property this
 // file exists to pin down.
 //
-// A model rename, an openwiki upgrade, or a LangChain upgrade can reintroduce it in one line. So the
-// check is mechanical: resolve the pinned id through the INSTALLED table and fail on the fallback.
-// Offline, token-free, no API call.
+// ── WHAT CHANGED AT 0.5.2, AND WHY THIS GUARD WAS REWRITTEN RATHER THAN DELETED ────────────────
+//
+// 0.5.2 fixes the defect at its cause: `resolveAnthropicMaxOutputTokens` returns an explicit
+// `maxTokens` for any `claude-(haiku|sonnet|opus)-(4|5)` id, defaulting to 16384, and honours an
+// `OPENWIKI_MAX_OUTPUT_TOKENS` override ahead of everything else. The LangChain table ALSO grew a
+// `claude-sonnet-5` entry. So the original assertion — "the pinned id must hit a prefix in
+// LangChain's table" — now passes for a reason that no longer decides anything: whenever openwiki
+// supplies `maxTokens`, that value WINS and the table is never consulted.
+//
+// A guard that passes for a reason that stopped being load-bearing is not a guard. Deleting it
+// would retire the only mechanical check on a property that is still invisible at runtime, so the
+// premise is restated instead: assert the value that ACTUALLY reaches the model, and keep the
+// table check as the fallback it has become.
+//
+// The check is mechanical, offline, token-free, and makes no API call.
 
 const PROJECT_JSON = join(REPO_ROOT, 'infrastructure-as-code', 'project.json');
 const MIN_OUTPUT_TOKENS = 16_384;
 const LANGCHAIN_FALLBACK_TOKENS = 4096;
 
+const OPENWIKI_ROOT = '/usr/local/lib/node_modules/openwiki';
+const LANGCHAIN_CHAT_MODELS = `${OPENWIKI_ROOT}/node_modules/@langchain/anthropic/dist/chat_models.js`;
+const OPENWIKI_AGENT = `${OPENWIKI_ROOT}/dist/agent/index.js`;
+
+/** The `env` block the generator will actually run with. */
+function wikiUpdateEnv() {
+  const project = JSON.parse(readFileSync(PROJECT_JSON, 'utf8'));
+  return project.targets['wiki-update'].options.env;
+}
+
 /** The id the generator will actually run with. */
 function pinnedModelId() {
-  const project = JSON.parse(readFileSync(PROJECT_JSON, 'utf8'));
-  return project.targets['wiki-update'].options.env.OPENWIKI_MODEL_ID;
+  return wikiUpdateEnv().OPENWIKI_MODEL_ID;
 }
 
 /**
@@ -210,10 +273,7 @@ function pinnedModelId() {
  * a copy would drift and then agree with itself while the real cap moved.
  */
 function resolveMaxOutputTokens(modelId) {
-  const source = readFileSync(
-    '/usr/local/lib/node_modules/openwiki/node_modules/@langchain/anthropic/dist/chat_models.js',
-    'utf8',
-  );
+  const source = readFileSync(LANGCHAIN_CHAT_MODELS, 'utf8');
   const table = source.match(/const MODEL_DEFAULT_MAX_OUTPUT_TOKENS = \{([\s\S]*?)\n\};/);
   assert.ok(table, 'could not locate the max-output-token table — the upstream shape changed, re-verify by hand');
   const entries = [...table[1].matchAll(/"([^"]+)":\s*(\d+)/g)].map((m) => [m[1], Number(m[2])]);
@@ -221,7 +281,67 @@ function resolveMaxOutputTokens(modelId) {
   return { tokens: hit ? hit[1] : LANGCHAIN_FALLBACK_TOKENS, matched: hit?.[0] ?? null };
 }
 
+// ── the new premise: the cap we set explicitly is the one that reaches the model ────────────────
+//
+// These two read nothing but our own project.json, so they are ALWAYS runnable. They must never
+// skip: a skipped test reads as a pass, and this is the property that failed silently for a month.
+
+test('the target sets an explicit per-turn output cap, at or above what a page-writing turn needs', () => {
+  const cap = wikiUpdateEnv().OPENWIKI_MAX_OUTPUT_TOKENS;
+  assert.ok(
+    cap !== undefined,
+    'OPENWIKI_MAX_OUTPUT_TOKENS is unset, so the per-turn cap falls back to whatever openwiki and ' +
+      '@langchain/anthropic happen to resolve for the pinned id. That implicit path is what capped ' +
+      `every turn at ${LANGCHAIN_FALLBACK_TOKENS} and made the generator write nothing ~half the time. ` +
+      'Set it explicitly rather than depending on a vendor table.',
+  );
+  assert.match(cap, /^\d+$/, `OPENWIKI_MAX_OUTPUT_TOKENS must be a plain integer string, got ${JSON.stringify(cap)}`);
+  assert.ok(
+    Number(cap) >= MIN_OUTPUT_TOKENS,
+    `OPENWIKI_MAX_OUTPUT_TOKENS=${cap} is below the ${MIN_OUTPUT_TOKENS} a page-writing turn needs.`,
+  );
+});
+
+test('the target records WHY the cap is pinned, so it is not "tidied" back', () => {
+  // The one-line change that reintroduces this bug is indistinguishable from a routine model bump
+  // unless the reason travels with the value.
+  const project = JSON.parse(readFileSync(PROJECT_JSON, 'utf8'));
+  const description = project.targets['wiki-update'].metadata.description;
+  assert.match(description, /maxTokens|max_tokens|output cap|per-turn/i, 'the token cap must be named');
+  assert.match(description, /4096/, 'and the specific fallback that bit us');
+});
+
+// ── the fallback path: still checked, but no longer the thing that decides ──────────────────────
+
+test('openwiki still resolves an explicit per-turn cap for the pinned model', (t) => {
+  let source;
+  try {
+    source = readFileSync(OPENWIKI_AGENT, 'utf8');
+  } catch (error) {
+    // The guard is only meaningful where openwiki is installed. Skipping is honest; passing is not.
+    t.skip(`openwiki not installed here (${error.code ?? error.message}) — cannot read its resolver`);
+    return;
+  }
+  const resolver = source.match(/function resolveAnthropicMaxOutputTokens\(([\s\S]*?)\n\}/);
+  assert.ok(
+    resolver,
+    'openwiki no longer exports `resolveAnthropicMaxOutputTokens` — it may have stopped setting ' +
+      '`maxTokens` explicitly, which is the 0.5.2 behaviour this target now relies on. Re-verify by ' +
+      'hand which layer decides the per-turn cap before trusting the pin.',
+  );
+  const pattern = resolver[1].match(/\/\^?(claude-[^/]*)\/u?\.test/);
+  assert.ok(pattern, 'the resolver no longer matches model ids by regex — re-verify the cap by hand');
+  assert.match(
+    pinnedModelId(),
+    new RegExp(pattern[1]),
+    `OPENWIKI_MODEL_ID="${pinnedModelId()}" is NOT matched by openwiki's own Anthropic cap resolver, ` +
+      'so openwiki would pass no `maxTokens` for it and the cap would fall back to the LangChain table.',
+  );
+});
+
 test('the pinned generator model does NOT fall back to the 4096-token per-turn cap', (t) => {
+  // Defence in depth. `OPENWIKI_MAX_OUTPUT_TOKENS` overrides this table, so this can only bite if
+  // that variable is removed — which is exactly the edit this test exists to survive.
   let resolved;
   try {
     resolved = resolveMaxOutputTokens(pinnedModelId());
@@ -234,22 +354,13 @@ test('the pinned generator model does NOT fall back to the 4096-token per-turn c
   assert.notEqual(
     resolved.matched,
     null,
-    `OPENWIKI_MODEL_ID="${id}" matches NO prefix in @langchain/anthropic's table, so it silently gets ` +
-      `${LANGCHAIN_FALLBACK_TOKENS} output tokens per turn. That is the defect that made the generator ` +
-      `write nothing ~half the time. Pin a model the table covers, or set maxTokens explicitly upstream.`,
+    `OPENWIKI_MODEL_ID="${id}" matches NO prefix in @langchain/anthropic's table, so WITHOUT an ` +
+      `explicit OPENWIKI_MAX_OUTPUT_TOKENS it silently gets ${LANGCHAIN_FALLBACK_TOKENS} output ` +
+      'tokens per turn. That is the defect that made the generator write nothing ~half the time.',
   );
   assert.ok(
     resolved.tokens >= MIN_OUTPUT_TOKENS,
     `OPENWIKI_MODEL_ID="${id}" resolves to ${resolved.tokens} output tokens per turn (via prefix ` +
       `"${resolved.matched}"), below the ${MIN_OUTPUT_TOKENS} a page-writing turn needs.`,
   );
-});
-
-test('the target records WHY the model is pinned, so it is not "tidied" back', () => {
-  // The one-line change that reintroduces this bug is indistinguishable from a routine model bump
-  // unless the reason travels with the value.
-  const project = JSON.parse(readFileSync(PROJECT_JSON, 'utf8'));
-  const description = project.targets['wiki-update'].metadata.description;
-  assert.match(description, /maxTokens|max_tokens|output cap|per-turn/i, 'the token cap must be named');
-  assert.match(description, /4096/, 'and the specific fallback that bit us');
 });

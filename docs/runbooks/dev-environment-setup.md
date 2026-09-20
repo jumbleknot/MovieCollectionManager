@@ -103,10 +103,17 @@ toolchain image.
 version skew between the two workspaces can produce structurally different bundles:
 
 ```powershell
-pnpm add -g openwiki@0.2.3
+pnpm add -g openwiki@0.5.2 mermaid jsdom
 ```
 
-Requires Node ≥ 22. Configuration lives in `%USERPROFILE%\.openwiki\.env` — outside the repository,
+`mermaid` and `jsdom` are the generator's **optional** peer dependencies, and leaving them out fails
+silently rather than loudly: from 0.5.0 OpenWiki embeds Mermaid diagrams by default and validates
+every fence after a run, but without the real parser it falls back to a weaker built-in check and
+rewrites any diagram it cannot verify into a plain `text` fence. The run still exits 0 and every gate
+still passes — the only symptom is a diagram quietly downgraded to preformatted text. Install them
+here for the same reason CI and the container image do.
+
+Requires Node ≥ 22.22 (OpenWiki 0.5.x raised its own floor; the container is on Node 24). Configuration lives in `%USERPROFILE%\.openwiki\.env` — outside the repository,
 so it cannot enter git.
 
 > **Always invoke it through the Nx target, never the bare CLI:**

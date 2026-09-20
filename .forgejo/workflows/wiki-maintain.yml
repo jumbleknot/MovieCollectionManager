@@ -114,7 +114,7 @@ jobs:
         run: bash scripts/ci-log-step.sh maintain-install-js-dependencies pnpm install --frozen-lockfile
 
       # The generator is a GLOBAL npm binary, not a workspace dependency: the dev container bakes it
-      # into its toolchain image (`npm install -g openwiki@0.2.3`), so it is simply absent on the CI
+      # into its toolchain image (`npm install -g openwiki@0.5.2`), so it is simply absent on the CI
       # runner. The first real run on `main` died with `/bin/sh: 1: openwiki: not found` — the
       # orchestrator did everything right, planned two slices, and then had nothing to invoke.
       #
@@ -122,7 +122,14 @@ jobs:
       # mean CI and local silently running different versions of the thing whose output we gate on.
       - name: Install the OpenWiki generator (pinned to match the dev container)
         if: steps.self.outputs.skip != 'true'
-        run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.2.3
+        #
+        # `mermaid` + `jsdom` are the generator's optional peer deps, and installing them HERE is
+        # what the vendor means by "install the Mermaid parser wherever you run OpenWiki". From
+        # 0.5.0 diagrams are embedded by default and every fence is validated after a run; without
+        # the real parser a diagram that fails only the strict check is rewritten in place into a
+        # plain `text` fence, the run still exits 0, and every gate still passes. The scheduled run
+        # is the one that writes the bundle, so a silent downgrade here is the one that ships.
+        run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.5.2 mermaid jsdom
 
       # ── property 1 + 2: debounce, with a git-derived ceiling ────────────────────
       - name: Wait out the quiet period unless the maximum deferral is reached

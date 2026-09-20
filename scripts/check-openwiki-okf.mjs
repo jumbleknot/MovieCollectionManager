@@ -125,6 +125,51 @@ function resolveRelativeResource(value) {
   return { target: withoutFragment, abs: resolve(REPO_ROOT, withoutFragment) };
 }
 
+// ── the concept provenance stamp (OKF v0.1 `timestamp` → v0.2 `generated.at`) ───
+//
+// OKF v0.2 replaced the flat `timestamp` scalar with a `generated: {by, at}` event, and openwiki
+// >=0.5.0 does not merely ADD it — `finalizeGeneratedProvenance` calls
+// `removeFrontmatterField(..., "timestamp")` on every page whose body changed in the run. So a
+// bundle mid-migration carries BOTH shapes, one per page, and the set flips over gradually as pages
+// are regenerated.
+//
+// Reading only `timestamp` would therefore not fail loudly — it would make V12 quietly stop
+// covering each page as that page was rewritten, until drift detection covered nothing while the
+// gate still printed `✅ conformant`. That is the same silent-green failure the normalizeFields
+// comment above documents, arriving by a different route, so the fallback is written once, here,
+// and every caller goes through it.
+//
+// `timestamp` is still honoured because v0.2 explicitly tolerates it on pages that have not been
+// rewritten yet, and because a hand-authored concept may carry it indefinitely.
+
+/** ISO-8601-valued keys, wherever they appear. Order is preference order, most specific first. */
+const STAMP_FIELDS = [
+  ['generated', 'at'],
+  ['timestamp'],
+];
+
+/** Read a nested front-matter path, returning the string only when it is a non-empty one. */
+function readPath(fields, path) {
+  let cursor = fields;
+  for (const key of path) {
+    if (cursor === null || typeof cursor !== 'object' || Array.isArray(cursor)) return null;
+    cursor = cursor[key];
+  }
+  return isNonEmptyString(cursor) ? cursor : null;
+}
+
+/**
+ * The concept's provenance stamp: v0.2 `generated.at` if present, else the v0.1 `timestamp`.
+ * Returns the field path too, so a message can name the shape it actually read.
+ */
+function conceptStamp(fields) {
+  for (const path of STAMP_FIELDS) {
+    const value = readPath(fields, path);
+    if (value !== null) return { value, field: path.join('.') };
+  }
+  return null;
+}
+
 // ── drift (V12) — git commit date, NOT mtime ────────────────────────────────────
 // A fresh checkout stamps every file's mtime with the checkout time, so an mtime-based comparison
 // would report EVERY concept as stale in CI. The last-commit date is the only meaningful signal.
@@ -181,6 +226,7 @@ function classifyFile(name) {
 function validateBundle(bundleRoot) {
   const findings = [];
   const warnings = [];
+  const unstampable = [];
   const rel = (p) => relative(REPO_ROOT, p).split(sep).join('/');
   const add = (rule, file, message) => findings.push({ rule, file: rel(file), message });
 
@@ -280,12 +326,14 @@ function validateBundle(bundleRoot) {
       }
     }
 
-    // V5 — timestamp must be ISO 8601. No `.trim()` here: normalizeFields has already done it for
-    // every field, which is what stops the next validator being written without one (see V12 below).
-    if (isNonEmptyString(fields.timestamp)) {
-      const ts = fields.timestamp;
-      if (!ISO_8601.test(ts) || Number.isNaN(Date.parse(ts))) {
-        add('V5', file, `field \`timestamp\` is not a valid ISO 8601 value: ${ts}`);
+    // V5 — every ISO-8601-valued key must parse, in BOTH the v0.1 and the v0.2 shape. No `.trim()`
+    // here: normalizeFields has already done it for every field, nested values included, which is
+    // what stops the next validator being written without one (see V12 below).
+    for (const path of [...STAMP_FIELDS, ['verified', 'at']]) {
+      const value = readPath(fields, path);
+      if (value === null) continue;
+      if (!ISO_8601.test(value) || Number.isNaN(Date.parse(value))) {
+        add('V5', file, `field \`${path.join('.')}\` is not a valid ISO 8601 value: ${value}`);
       }
     }
 
@@ -300,12 +348,21 @@ function validateBundle(bundleRoot) {
         const { target, abs } = resolveRelativeResource(value);
         if (!existsSync(abs)) {
           add('V6', file, `resource does not resolve: ${target}`);
-        } else if (isNonEmptyString(fields.timestamp) && !Number.isNaN(Date.parse(fields.timestamp))) {
+        } else {
           // V12 — drift REPORTS ONLY. A documentation edit must never block a merge on a paid
           // regeneration run, so this can never touch the exit code.
-          const sourceDate = lastCommitDate(abs);
-          if (sourceDate && sourceDate > new Date(fields.timestamp)) {
-            warnings.push({ rule: 'V12', file: rel(file), source: target });
+          const stamp = conceptStamp(fields);
+          if (stamp === null || Number.isNaN(Date.parse(stamp.value))) {
+            // A concept that cites a source but carries no usable stamp is one V12 CANNOT check.
+            // Counted rather than dropped: the whole point of the fallback above is that this
+            // number is visible, so a migration that strips stamps shows up as coverage falling
+            // instead of as a gate that silently checks less each run.
+            unstampable.push({ file: rel(file), source: target });
+          } else {
+            const sourceDate = lastCommitDate(abs);
+            if (sourceDate && sourceDate > new Date(stamp.value)) {
+              warnings.push({ rule: 'V12', file: rel(file), source: target });
+            }
           }
         }
       }
@@ -334,7 +391,7 @@ function validateBundle(bundleRoot) {
 
   findings.sort((a, b) => a.file.localeCompare(b.file) || a.rule.localeCompare(b.rule));
   warnings.sort((a, b) => a.file.localeCompare(b.file));
-  return { findings, warnings, conceptCount, directoryCount: byDir.size, missingBundle: false };
+  return { findings, warnings, unstampable, conceptCount, directoryCount: byDir.size, missingBundle: false };
 }
 
 // ── reporting ───────────────────────────────────────────────────────────────────
@@ -347,6 +404,7 @@ function report(result, bundleRoot, asJson) {
       directoryCount: result.directoryCount,
       findings: result.findings,
       warnings: result.warnings,
+      unstampable: result.unstampable,
     }, null, 2));
     return;
   }
@@ -357,8 +415,19 @@ function report(result, bundleRoot, asJson) {
   }
 
   if (result.warnings.length > 0) {
-    console.log(`[openwiki-okf] ⚠️  ${result.warnings.length} concept(s) may be stale (source changed after the concept's timestamp):`);
+    console.log(`[openwiki-okf] ⚠️  ${result.warnings.length} concept(s) may be stale (source changed after the concept's stamp):`);
     for (const w of result.warnings) console.log(`  ${w.file} ← ${w.source}`);
+  }
+
+  // Never a finding — an unstamped concept is not malformed. But it IS a concept drift cannot
+  // check, and the number has to be visible: a silent drop in V12 coverage is precisely how this
+  // gate could go on printing green while checking less every run.
+  if (result.unstampable.length > 0) {
+    console.log(
+      `[openwiki-okf] ⚠️  ${result.unstampable.length} concept(s) cite a source but carry no usable ` +
+        `\`generated.at\` or \`timestamp\` — drift is NOT checked for these:`,
+    );
+    for (const u of result.unstampable) console.log(`  ${u.file} ← ${u.source}`);
   }
 
   if (result.findings.length > 0) {
@@ -396,6 +465,12 @@ function selftest() {
     if (expect.warnsCleanExit && r.findings.length > 0) {
       fails.push(`${name}: drift must not produce findings, got ${r.findings.map((f) => f.rule).join(',')}`);
     }
+    if (expect.noWarns && r.warnings.length > 0) {
+      fails.push(`${name}: expected no drift warning, got ${r.warnings.length}`);
+    }
+    if (expect.unstampable !== undefined && r.unstampable.length !== expect.unstampable) {
+      fails.push(`${name}: expected ${expect.unstampable} unstampable, got ${r.unstampable.length}`);
+    }
     return r;
   };
 
@@ -427,6 +502,47 @@ function selftest() {
     'index.md': idx('a.md'),
     'a.md': '---\ntype: R\nresource: README.md\ntimestamp: 2001-01-01T00:00:00Z\n---\nb\n',
   }, { warns: true, warnsCleanExit: true });
+
+  // ── OKF v0.2 provenance (openwiki >=0.5.0) ─────────────────────────────────────
+  //
+  // These four are the regression guard for the upgrade to 0.5.2. The generator STRIPS `timestamp`
+  // from every page whose body it rewrites and replaces it with `generated: {by, at}`, so a gate
+  // that reads only the v0.1 field would keep printing green while covering fewer pages each run.
+
+  // Drift is detected from the v0.2 stamp alone, exactly as it was from the v0.1 one.
+  scenario('v12-generated-at', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\nresource: README.md\ngenerated:\n  by: openwiki/0.5.2\n  at: 2001-01-01T00:00:00Z\n---\nb\n',
+  }, { warns: true, warnsCleanExit: true, unstampable: 0 });
+
+  // A fresh stamp must NOT warn — proves the v0.2 value is really being parsed, not just found.
+  scenario('v12-generated-at-fresh', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\nresource: README.md\ngenerated:\n  by: openwiki/0.5.2\n  at: 2999-01-01T00:00:00Z\n---\nb\n',
+  }, { clean: true, noWarns: true, unstampable: 0 });
+
+  // `generated.at` wins over a stale legacy `timestamp` left behind on the same page.
+  scenario('v12-generated-at-precedence', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\nresource: README.md\ntimestamp: 2001-01-01T00:00:00Z\ngenerated:\n  by: openwiki/0.5.2\n  at: 2999-01-01T00:00:00Z\n---\nb\n',
+  }, { clean: true, noWarns: true, unstampable: 0 });
+
+  // V5 reaches INSIDE the nested v0.2 events. A malformed `generated.at` is a finding, not a shrug.
+  scenario('v5-generated-at', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\ngenerated:\n  by: openwiki/0.5.2\n  at: someday\n---\nb\n',
+  }, { rule: 'V5' });
+  scenario('v5-verified-at', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\nverified:\n  by: openwiki/0.5.2\n  at: nope\n---\nb\n',
+  }, { rule: 'V5' });
+
+  // A concept citing a source with NO stamp at all: not malformed, so no finding — but it must be
+  // COUNTED, because that is the number that makes a silent loss of drift coverage visible.
+  scenario('v12-unstampable', {
+    'index.md': idx('a.md'),
+    'a.md': '---\ntype: R\nresource: README.md\n---\nb\n',
+  }, { clean: true, noWarns: true, unstampable: 1 });
 
   // V2 exemption — a GENERATED directory summary carries no `type`. Regression guard: requiring it
   // would fail a file the generator itself produces.
