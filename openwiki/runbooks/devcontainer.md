@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer — Docker Desktop / DinD pat
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container path — kept solely for Android emulator support via /dev/kvm. The primary AI-assisted dev environment is now the Docker Sandbox microVM; see devcontainer-sandbox.md. Documents the two-tier isolation model, default-deny egress firewall, and Windows-host quirks.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
-timestamp: 2026-09-18T00:00:00Z
+timestamp: 2026-09-19T23:02:37Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -112,6 +112,20 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   git worktree add -b <branch> /home/coder/worktrees/<slug> origin/main
   ln -sfn /workspaces/mcm/node_modules /home/coder/worktrees/<slug>/node_modules
   ```
+
+  **The `node_modules` symlink is NOT enough for `pnpm nx <target>`, and the failure does not say so (measured 2026-09-19, items #499/#500).** `preflight` can report 24/27 green while `nx lint|typecheck|test mcm-app` all die in pnpm's pre-run dependency check with `ERR_PNPM_UNSAFE_MODULES_DIR Refusing to remove the modules directory … because its resolved target is not a strict subdirectory of the project root`. That reads like a permissions or path bug in the target. It is not — pnpm decides the tree is foreign and wants to purge and reinstall it. Two plausible workarounds both fail: `npm_config_verify_deps_before_run=false` does not suppress the check, and `cp -al` cannot hardlink the tree because `/workspaces` and `/home/coder` are different devices. The only thing that works is a real install **in the worktree**:
+
+  ```bash
+  cd /home/coder/worktrees/<slug>
+  rm -f node_modules                              # the symlink, if you made one
+  CI=true pnpm install --frozen-lockfile          # ~4 min; CI=true answers the purge prompt
+  ```
+
+  This does not churn the other session's tree — the content-addressed store is shared by design. Use the symlink as the default for sessions that only run `node --test` or `scripts/*.mjs` gates; budget the four minutes when what you changed is only reachable through an nx target.
+
+  **nx and pnpm will hand you a STALE failure.** Measured 2026-09-19: three targets failed with a message naming a path that no longer existed — cached output. `--skip-nx-cache` produced a completely different, real error. **If an nx failure's message does not match the state on disk, re-run it with `--skip-nx-cache` before diagnosing it.** Same family as the superseded-run trap in [ci-diagnostics.md](ci-diagnostics.md).
+
+  **A worktree does not survive a dev-container rebuild.** `/home/coder/worktrees/` is on the container's own filesystem, so a rebuild takes the directory with it while `git worktree list` — read from `/workspaces/mcm/.git` on the mounted volume — still lists it, now marked `prunable`. Measured 2026-09-19. **Push the branch before any risky container operation.** Afterwards, `git worktree prune` in `/workspaces/mcm` clears the stale record.
 
   **The `node_modules` symlink used to be committable — `git add -A` committed it, and CI died.** `.gitignore` carried `node_modules/` with a trailing slash, which matches only a directory — not a symlink. Every install-bearing job then failed with `ENOTDIR: not a directory, mkdir '.../node_modules'` — six required contexts on PR #488 — which reads like a broken toolchain rather than a stray file. **Fixed:** the pattern is now `node_modules` (no trailing slash). If you add any other symlink-into-the-main-checkout, check `git status --porcelain` rather than `git diff` before committing.
 
