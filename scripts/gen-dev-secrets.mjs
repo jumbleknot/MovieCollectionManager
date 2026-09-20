@@ -93,6 +93,56 @@ function mint(kind) {
 const PLACEHOLDER = /^<generate:([a-z0-9-]+)>$/;
 const KV = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
 
+/**
+ * Add any template key absent from an existing `<stack>.env`, minting placeholders as usual and
+ * copying fixtures verbatim. Existing keys are left EXACTLY as they are — including ones a
+ * developer edited by hand — so this is safe to run on a live box with stacks up.
+ */
+function seedMissingKeys(stack, tmpl, out) {
+  const present = new Set(
+    readFileSync(out, 'utf8')
+      .split(/\r?\n/)
+      .map((l) => KV.exec(l.trim())?.[1])
+      .filter(Boolean),
+  );
+  const added = [];
+  for (const line of readFileSync(tmpl, 'utf8').split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const kv = KV.exec(trimmed);
+    if (!kv) {
+      console.error(`  ${stack}: malformed template line: ${line}`);
+      return { stack, status: 'malformed' };
+    }
+    const [, key, rawValue] = kv;
+    if (present.has(key)) continue;
+    const ph = PLACEHOLDER.exec(rawValue.trim());
+    let value;
+    if (ph) {
+      try {
+        value = mint(ph[1]);
+      } catch (e) {
+        console.error(`  ${stack}: ${e.message} (key ${key})`);
+        return { stack, status: 'bad-kind' };
+      }
+    } else {
+      value = rawValue;
+    }
+    added.push(`${key}=${value}`);
+  }
+  if (added.length === 0) {
+    console.log(`  ${stack}: up to date (exists; --force to rotate)`);
+    return { stack, status: 'skipped' };
+  }
+  const body = readFileSync(out, 'utf8').replace(/\n*$/, '\n');
+  writeFileSync(out, `${body}${added.join('\n')}\n`, { encoding: 'utf8' });
+  console.log(
+    `  ${stack}: seeded ${added.length} new key(s) into ${stack}.env ` +
+      `(${added.map((a) => a.split('=')[0]).join(', ')}); existing values untouched`,
+  );
+  return { stack, status: 'seeded' };
+}
+
 function generateStack(stack, force) {
   const tmpl = resolve(STACKS_DIR, `${stack}.env.example`);
   const out = resolve(STACKS_DIR, `${stack}.env`);
@@ -101,8 +151,13 @@ function generateStack(stack, force) {
     return { stack, status: 'no-template' };
   }
   if (existsSync(out) && !force) {
-    console.log(`  ${stack}: skipped (exists; --force to rotate)`);
-    return { stack, status: 'skipped' };
+    // NOT a plain skip. A template that has GAINED a key since this file was written would
+    // otherwise never deliver it to an existing box, and the only way to get it would be
+    // `--force`, which rotates every OTHER value — taking the running stacks down to add one
+    // variable. That is why this generator's skip was a silent no-op with a success message, the
+    // same defect class as 048 US6 and item #227: the step reports done and the thing is absent.
+    // So: seed the keys the file does not yet define, and touch nothing it already has.
+    return seedMissingKeys(stack, tmpl, out);
   }
 
   const lines = readFileSync(tmpl, 'utf8').split(/\r?\n/);

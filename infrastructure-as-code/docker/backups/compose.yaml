@@ -1,0 +1,166 @@
+# Backup destination targets for the feature-073 integration tier.
+#
+# These are REAL servers, and that is the point. The constitution's Test Type Integrity rule puts
+# the S3 and WebDAV drivers in the integration tier precisely so that the dialect they are tested
+# against is a real server's, not a hand-written fixture's. A driver suite that passes with these
+# containers down has proved nothing — the drivers set MCM_REQUIRE_LIVE_STACK=1 so that a
+# credential- or connectivity-driven skip fails instead of reading as a pass.
+#
+# Both carry `profiles: [backups]`, so the ordinary dev stack is unchanged until asked:
+#
+#   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile backups up -d
+#
+# Both bind to 127.0.0.1 only. They hold test fixtures, but a WebDAV server with a known password
+# and an S3 endpoint with a known key pair are not things to expose on a LAN interface.
+#
+# NOTE FOR THE URL GUARD: loopback is DENIED by default by the backup destination guard (the
+# inverse of the Ollama one). These hosts are reachable from the BFF only because
+# gen-dev-env.mjs puts them in BACKUP_ALLOWED_DESTINATION_HOSTS for dev. That is the guard
+# working, not a misconfiguration to route around.
+
+services:
+  # Reuses the from-source, non-root MinIO image built by features 069/070 — the same digest the
+  # observability stack runs. Deliberately NOT a third-party pull: upstream withdrew minio/minio
+  # from Docker Hub on 2026-09-11, which is the whole reason that image exists here.
+  mcm-backup-test-minio:
+    image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
+    container_name: mcm-backup-test-minio
+    profiles: [backups]
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: "${BACKUP_TEST_S3_ACCESS_KEY:-mcmbackuptest}"
+      MINIO_ROOT_PASSWORD: "${BACKUP_TEST_S3_SECRET_KEY:?set in stacks/mcm.env}"
+    ports:
+      - "127.0.0.1:9100:9000"
+      - "127.0.0.1:9101:9001"
+    volumes:
+      - mcm-backup-test-minio-data:/data
+    networks:
+      - mcm-bff-network
+    # `mc ready local` runs the client INSIDE the server container — the single-image property the
+    # 069 build exists to preserve. An image carrying only the server would start, serve traffic,
+    # and never become healthy.
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # One-shot: create the test bucket. MinIO does not auto-create one, and a driver suite failing
+  # on NoSuchBucket looks exactly like a driver bug.
+  mcm-backup-test-minio-init:
+    image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
+    container_name: mcm-backup-test-minio-init
+    profiles: [backups]
+    depends_on:
+      mcm-backup-test-minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://mcm-backup-test-minio:9000 ${BACKUP_TEST_S3_ACCESS_KEY:-mcmbackuptest} ${BACKUP_TEST_S3_SECRET_KEY:?set in stacks/mcm.env} &&
+      mc mb --ignore-existing local/mcm-backups-test &&
+      echo 'mcm-backups-test bucket ready'"
+    networks:
+      - mcm-bff-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # The WebDAV image is DISTROLESS — no shell, and no flag for declaring a user — so its config
+  # must arrive as a file. It arrives in a named VOLUME written by this one-shot, NOT as a bind
+  # mount of a file in the repo, and that is deliberate:
+  #
+  #   MEASURED 2026-09-20. A bind mount of `./webdav-config.yaml` works from /workspaces/mcm and
+  #   silently does NOT work from a git worktree under /home/coder. The dev container's Docker is
+  #   a Sandbox microVM that shares only /workspaces; a source path outside it does not exist in
+  #   the VM, so the daemon CREATES AN EMPTY DIRECTORY there and mounts that. The container then
+  #   fails with `read /etc/webdav/config.yaml: is a directory` — a message about file types, for
+  #   a problem that is really about which filesystem the daemon can see. Since CLAUDE.md sends
+  #   every agent sharing this container to a worktree, a bind mount here would break for the
+  #   most common way this stack is brought up.
+  #
+  # The writer is the project's own MinIO image rather than a `busybox`: it is already required by
+  # the service above, it has a shell, and it keeps this profile at ONE pulled third-party image
+  # instead of two in the infra-image CVE sweep.
+  mcm-backup-test-webdav-init:
+    image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
+    container_name: mcm-backup-test-webdav-init
+    profiles: [backups]
+    # The 069 MinIO image runs NON-ROOT by design, and a freshly created named volume is owned by
+    # root — so the writer cannot write. Overridden to root for this ONE-SHOT only: it writes a
+    # single file and exits, and the long-lived containers keep their own non-root identity (the
+    # server above, and the WebDAV server that mounts this volume READ-ONLY).
+    user: "0:0"
+    environment:
+      WEBDAV_USER: "${BACKUP_TEST_WEBDAV_USER:-mcmbackuptest}"
+      WEBDAV_PASSWORD: "${BACKUP_TEST_WEBDAV_PASSWORD:?set in stacks/mcm.env}"
+    entrypoint: >
+      /bin/sh -c "
+      printf '%s\n' 'address: 0.0.0.0' 'port: 6065' 'prefix: /' 'directory: /data'
+      'permissions: CRUD' 'users:' \"  - username: $$WEBDAV_USER\"
+      \"    password: $$WEBDAV_PASSWORD\" '    permissions: CRUD' > /etc/webdav/config.yaml &&
+      echo 'webdav config written'"
+    volumes:
+      - mcm-backup-test-webdav-config:/etc/webdav
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # A new PULLED third-party image, so it enters the infra-image CVE sweep — see
+  # openwiki/runbooks/infra-image-scanning.md and security/infra-images/. Digest-pinned like
+  # every other pulled image in this repository: a tag alone is a moving target that turns a
+  # reproducible test target into whatever was pushed last.
+  mcm-backup-test-webdav:
+    image: ghcr.io/hacdias/webdav:v5.15.1@sha256:7fbcb867b704ed7aee2d2e8795c4836e86eb910244e7cc69278e8dfa5702a80b
+    container_name: mcm-backup-test-webdav
+    profiles: [backups]
+    restart: unless-stopped
+    command: ["--config", "/etc/webdav/config.yaml"]
+    ports:
+      - "127.0.0.1:9102:6065"
+    volumes:
+      - mcm-backup-test-webdav-config:/etc/webdav:ro
+      - mcm-backup-test-webdav-data:/data
+    networks:
+      - mcm-bff-network
+    depends_on:
+      mcm-backup-test-webdav-init:
+        condition: service_completed_successfully
+    # DELIBERATELY NO HEALTHCHECK, and the reason matters more than the omission.
+    #
+    # This image is distroless: no shell, no wget, no curl. `CMD-SHELL` cannot run, and `CMD`
+    # has only the `webdav` binary to call. `webdav version` WOULD exit 0 and paint the container
+    # green — while proving nothing about whether it is listening, whether its config parsed, or
+    # whether the credentials in it are the ones the suite holds. That is a health check that
+    # cannot fail, which is worse than none: it turns "unhealthy" into a state the system can
+    # never report. MEASURED here first as `Up (unhealthy)` against a server that was serving
+    # correctly the whole time.
+    #
+    # Liveness is asserted where it can be asserted honestly — from OUTSIDE, by the integration
+    # suite's preflight (tests/integration/setup/preflight.global.js), which HTTP-probes this
+    # port and expects the 401 an unauthenticated request earns from a working server.
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  mcm-bff-network:
+    name: mcm-bff-network
+
+volumes:
+  mcm-backup-test-minio-data:
+  mcm-backup-test-webdav-data:
+  mcm-backup-test-webdav-config:

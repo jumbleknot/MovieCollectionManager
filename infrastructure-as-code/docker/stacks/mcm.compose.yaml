@@ -11,6 +11,8 @@ name: mcm
 #   --profile bff-secure      + mcm-bff-service-secure + mcm-bff-tls-proxy (prod cookie posture, HTTPS :8443)
 #   --profile agents          + movie-assistant-gateway + the 3 MCP servers + movie-assistant-store-postgres
 #   --profile agents-metro    movie-assistant-gateway-metro on loopback 127.0.0.1:8123 (Metro-dev BFF only)
+#   --profile backups         + mcm-backup-test-minio (+ bucket init) + mcm-backup-test-webdav
+#                               — REAL backup destinations for the feature-073 integration tier
 #
 #   pnpm nx up-mcm infrastructure-as-code
 #   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure up -d
@@ -35,3 +37,8 @@ include:
   - ../movie-mcp/compose.yaml
   - ../web-api-mcp/compose.yaml
   - ../spreadsheet-mcp/compose.yaml
+  # Feature 073 — S3 (MinIO) and WebDAV backup destinations for the integration tier, behind
+  # `--profile backups` so the ordinary dev stack is unchanged. env_file pins mcm.env as the
+  # interpolation source for their credentials and REGISTRY_HOST, the same way agent-db does.
+  - path: ../backups/compose.yaml
+    env_file: ./mcm.env
