@@ -89,7 +89,16 @@ export function createWebdavDriver(
     let walked = rootPath;
     for (const segment of segments) {
       walked = `${walked}/${segment}`;
-      const res = await send('MKCOL', walked);
+      // TRAILING SLASH, and it is not cosmetic. RFC 4918 identifies a collection by a URL ending
+      // in `/`, and Apache's mod_dav — the reference implementation — answers `MKCOL /foo` with a
+      // 301 redirect to `/foo/`. This driver follows no redirects by design (a vetted URL must
+      // not 30x-bounce), so without the slash every MKCOL fails as an unfollowable 301.
+      //
+      // MEASURED when the test destination moved from a lenient Go server to mod_dav: five
+      // driver cases went red on `MKCOL failed: HTTP 301`. The driver had been accidentally
+      // coupled to one server's leniency, which is precisely the bug this tier exists to catch —
+      // it would have surfaced on a user's own NAS, not here.
+      const res = await send('MKCOL', `${walked}/`);
       if (ok(res) || res.status === 405) continue;
       // 409 here means a parent is still missing, which cannot happen walking top-down; anything
       // else is a real failure and is better reported now than as a confusing PUT 409 later.

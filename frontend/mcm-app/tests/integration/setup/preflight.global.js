@@ -131,7 +131,7 @@ module.exports = async function preflight() {
     ['BFF Mongo', `${mongo.host}:${mongo.port}`, tcpProbe(mongo.host, mongo.port)],
   ];
 
-  // Feature 073 — the two REAL backup destinations behind `--profile backups`. Gated on their own
+  // Feature 073 — the two REAL backup destinations, in their own compose file. Gated on their own
   // flag because they are not part of the default stack: the other thirty suites must not start
   // requiring two containers they never touch. The driver suites set it, so for THEM a target that
   // is down is a hard failure rather than a skip that reads as a pass.

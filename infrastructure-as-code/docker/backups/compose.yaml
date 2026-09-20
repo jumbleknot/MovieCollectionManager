@@ -6,9 +6,14 @@
 # containers down has proved nothing — the drivers set MCM_REQUIRE_LIVE_STACK=1 so that a
 # credential- or connectivity-driven skip fails instead of reading as a pass.
 #
-# Both carry `profiles: [backups]`, so the ordinary dev stack is unchanged until asked:
+# These are in their OWN compose file rather than a profile inside the mcm stack, and that is a
+# correction rather than a preference: Compose interpolates every service in an included file at
+# PARSE time, whatever profiles are selected, so a `${REGISTRY_HOST:?}` here broke `up` for the
+# entire stack — including CI's app-e2e, which sets no REGISTRY_HOST and wants none of these
+# services. A separate file is real isolation; a profile is not. Bring them up explicitly:
 #
-#   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile backups up -d
+#   docker compose -p mcm --env-file infrastructure-as-code/docker/stacks/mcm.env \
+#     -f infrastructure-as-code/docker/backups/compose.yaml up -d
 #
 # Both bind to 127.0.0.1 only. They hold test fixtures, but a WebDAV server with a known password
 # and an S3 endpoint with a known key pair are not things to expose on a LAN interface.
@@ -25,7 +30,6 @@ services:
   mcm-bff-backup-minio:
     image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
     container_name: mcm-bff-backup-minio
-    profiles: [backups]
     restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
@@ -66,7 +70,6 @@ services:
   mcm-bff-backup-minio-init:
     image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
     container_name: mcm-bff-backup-minio-init
-    profiles: [backups]
     depends_on:
       mcm-bff-backup-minio:
         condition: service_healthy
@@ -86,81 +89,143 @@ services:
         max-size: "5m"
         max-file: "3"
 
-  # The WebDAV image is DISTROLESS — no shell, and no flag for declaring a user — so its config
-  # must arrive as a file. It arrives in a named VOLUME written by this one-shot, NOT as a bind
-  # mount of a file in the repo, and that is deliberate:
+  # WebDAV is served by Apache's mod_dav — the reference implementation — on the OFFICIAL httpd
+  # image, and both halves of that sentence were forced by CI.
   #
-  #   MEASURED 2026-09-20. A bind mount of `./webdav-config.yaml` works from /workspaces/mcm and
-  #   silently does NOT work from a git worktree under /home/coder. The dev container's Docker is
-  #   a Sandbox microVM that shares only /workspaces; a source path outside it does not exist in
-  #   the VM, so the daemon CREATES AN EMPTY DIRECTORY there and mounts that. The container then
-  #   fails with `read /etc/webdav/config.yaml: is a directory` — a message about file types, for
-  #   a problem that is really about which filesystem the daemon can see. Since CLAUDE.md sends
-  #   every agent sharing this container to a worktree, a bind mount here would break for the
-  #   most common way this stack is brought up.
+  # This was `ghcr.io/hacdias/webdav`, a small purpose-built Go server. Two things ruled it out:
   #
-  # The writer is the project's own MinIO image rather than a `busybox`: it is already required by
-  # the service above, it has a shell, and it keeps this profile at ONE pulled third-party image
-  # instead of two in the infra-image CVE sweep.
+  #   1. THE CVE SWEEP CANNOT READ ghcr.io. The CI runner has no docker socket, so Trivy falls
+  #      back to `remote` and asks the registry directly — and ghcr.io answers the anonymous token
+  #      request with `DENIED: denied`. The scan is FAIL-CLOSED, so an unreadable image is a red
+  #      required check, not a skipped one. Every other image in this repository is on Docker Hub
+  #      or quay.io, which is why nothing had hit this before.
+  #
+  #   2. IT CARRIED 9 FIXABLE HIGH CVEs, all Go stdlib (DoS in net/http, net/url, crypto/tls,
+  #      encoding/xml, and an html/template XSS), dischargeable only by upstream rebuilding with a
+  #      newer toolchain. httpd:2.4-alpine scans with ZERO fixable findings at any severity.
+  #
+  # The config and the password file arrive in a named VOLUME written by a one-shot, not a bind
+  # mount, and that is deliberate: a bind mount works from /workspaces/mcm and silently does NOT
+  # work from a git worktree under /home/coder. The dev container's Docker is a Sandbox microVM
+  # that shares only /workspaces, so a source path outside it does not exist in the VM and the
+  # daemon CREATES AN EMPTY DIRECTORY there and mounts that — the container then fails with
+  # `is a directory`, a message about file types for a problem about which filesystem the daemon
+  # can see. CLAUDE.md sends every agent sharing this container to a worktree, so the bind-mount
+  # form would be broken for the most common way this stack is brought up.
   mcm-bff-backup-webdav-init:
-    image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
+    image: httpd:2.4@sha256:454942557d44332cd7e4ae415e7ec9b4dbbf01b4a042491f423fcaf10a32ce9f
     container_name: mcm-bff-backup-webdav-init
-    profiles: [backups]
-    # The 069 MinIO image runs NON-ROOT by design, and a freshly created named volume is owned by
-    # root — so the writer cannot write. Overridden to root for this ONE-SHOT only: it writes a
-    # single file and exits, and the long-lived containers keep their own non-root identity (the
-    # server above, and the WebDAV server that mounts this volume READ-ONLY).
+    # Root for this ONE-SHOT only: a freshly created named volume is owned by root, so the writer
+    # could not otherwise write. It writes two files and exits; the long-lived server below mounts
+    # the same volume READ-ONLY.
     user: "0:0"
     environment:
+      # In the CONTAINER'S ENVIRONMENT, referenced as $$VAR below — never interpolated into the
+      # entrypoint by Compose, which would put the password in the container's argv where
+      # `docker inspect` and any `ps` can read it (the defect fixed on main in 56983c75).
       WEBDAV_USER: "${BACKUP_TEST_WEBDAV_USER:-mcmbackuptest}"
       WEBDAV_PASSWORD: "${BACKUP_TEST_WEBDAV_PASSWORD:?set in stacks/mcm.env}"
-    entrypoint: >
-      /bin/sh -c "
-      printf '%s\n' 'address: 0.0.0.0' 'port: 6065' 'prefix: /' 'directory: /data'
-      'permissions: CRUD' 'users:' \"  - username: $$WEBDAV_USER\"
-      \"    password: $$WEBDAV_PASSWORD\" '    permissions: CRUD' > /etc/webdav/config.yaml &&
-      echo 'webdav config written'"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        cat > /conf/httpd.conf <<'CONF'
+        ServerName mcm-bff-backup-webdav
+        Listen 6065
+        PidFile /tmp/httpd.pid
+        LoadModule mpm_event_module modules/mod_mpm_event.so
+        LoadModule authn_file_module modules/mod_authn_file.so
+        LoadModule authn_core_module modules/mod_authn_core.so
+        LoadModule authz_user_module modules/mod_authz_user.so
+        LoadModule authz_core_module modules/mod_authz_core.so
+        LoadModule auth_basic_module modules/mod_auth_basic.so
+        LoadModule dav_module modules/mod_dav.so
+        LoadModule dav_fs_module modules/mod_dav_fs.so
+        LoadModule mime_module modules/mod_mime.so
+        LoadModule log_config_module modules/mod_log_config.so
+        LoadModule unixd_module modules/mod_unixd.so
+        LoadModule dir_module modules/mod_dir.so
+        User www-data
+        Group www-data
+        ErrorLog /proc/self/fd/2
+        CustomLog /proc/self/fd/1 common
+        # DavLockDB is REQUIRED even though this driver never issues LOCK: mod_dav consults the
+        # lock database to verify a possible `If:` header on EVERY write, and 500s without one
+        # ("A lock database was not specified with the DAVLockDB directive").
+        #
+        # This is also why the image is the DEBIAN httpd and not httpd:2.4-alpine. Alpine's
+        # apr-util ships no DBM driver at all — no apr_dbm_*.so — so mod_dav_fs answers
+        # `AH00576: The DBM driver could not be loaded` and every write 500s. Debian's apr-util
+        # carries apr_dbm_gdbm and apr_dbm_db. Both images scan with ZERO fixable findings, so
+        # the driver availability is the whole difference and it is not optional.
+        DavLockDB /var/lock/apache2/davlock
+        DocumentRoot /data
+        <Directory /data>
+          Dav On
+          Options Indexes
+          AllowOverride None
+          AuthType Basic
+          AuthName "MCM backup destination"
+          AuthUserFile /conf/htpasswd
+          Require valid-user
+        </Directory>
+        CONF
+        # bcrypt, not the default crypt — a test fixture is still a credential, and a weak hash in
+        # a file that lives in a volume teaches the wrong habit.
+        htpasswd -cbB /conf/htpasswd "$$WEBDAV_USER" "$$WEBDAV_PASSWORD"
+        chmod 0644 /conf/httpd.conf /conf/htpasswd
+        # A freshly created named volume is root-owned, and httpd drops to www-data — so without
+        # this every write 500s with a permission error that looks exactly like a driver bug.
+        chown -R www-data:www-data /data
+        mkdir -p /var/lock/apache2 && chown www-data:www-data /var/lock/apache2
+        echo 'webdav config written'
     volumes:
-      - mcm-bff-backup-webdav-config:/etc/webdav
+      - mcm-bff-backup-webdav-config:/conf
+      - mcm-bff-backup-webdav-data:/data
+      - mcm-bff-backup-webdav-lock:/var/lock/apache2
     logging:
       driver: json-file
       options:
         max-size: "5m"
         max-file: "3"
 
-  # A new PULLED third-party image, so it enters the infra-image CVE sweep — see
-  # openwiki/runbooks/infra-image-scanning.md and security/infra-images/. Digest-pinned like
-  # every other pulled image in this repository: a tag alone is a moving target that turns a
-  # reproducible test target into whatever was pushed last.
   mcm-bff-backup-webdav:
-    image: ghcr.io/hacdias/webdav:v5.15.1@sha256:7fbcb867b704ed7aee2d2e8795c4836e86eb910244e7cc69278e8dfa5702a80b
+    image: httpd:2.4@sha256:454942557d44332cd7e4ae415e7ec9b4dbbf01b4a042491f423fcaf10a32ce9f
     container_name: mcm-bff-backup-webdav
-    profiles: [backups]
     restart: unless-stopped
-    command: ["--config", "/etc/webdav/config.yaml"]
+    command: ["httpd", "-f", "/conf/httpd.conf", "-DFOREGROUND"]
     ports:
       - "127.0.0.1:9102:6065"
     volumes:
-      - mcm-bff-backup-webdav-config:/etc/webdav:ro
+      - mcm-bff-backup-webdav-config:/conf:ro
       - mcm-bff-backup-webdav-data:/data
+      - mcm-bff-backup-webdav-lock:/var/lock/apache2
     networks:
       - mcm-bff-network
     depends_on:
       mcm-bff-backup-webdav-init:
         condition: service_completed_successfully
-    # DELIBERATELY NO HEALTHCHECK, and the reason matters more than the omission.
+    # A REAL healthcheck, spoken over bash's /dev/tcp because this image has NO wget, curl or nc —
+    # a slim Debian base, so `CMD-SHELL` with any of those silently exits 1 and the container sits
+    # `unhealthy` while serving perfectly (measured here first). The previous distroless image
+    # could not carry a healthcheck at ALL; this one can, and the difference is worth the
+    # awkwardness of the probe.
     #
-    # This image is distroless: no shell, no wget, no curl. `CMD-SHELL` cannot run, and `CMD`
-    # has only the `webdav` binary to call. `webdav version` WOULD exit 0 and paint the container
-    # green — while proving nothing about whether it is listening, whether its config parsed, or
-    # whether the credentials in it are the ones the suite holds. That is a health check that
-    # cannot fail, which is worse than none: it turns "unhealthy" into a state the system can
-    # never report. MEASURED here first as `Up (unhealthy)` against a server that was serving
-    # correctly the whole time.
-    #
-    # Liveness is asserted where it can be asserted honestly — from OUTSIDE, by the integration
-    # suite's preflight (tests/integration/setup/preflight.global.js), which HTTP-probes this
-    # port and expects the 401 an unauthenticated request earns from a working server.
+    # It asserts the 401 an UNAUTHENTICATED request earns, which proves three things at once: the
+    # config parsed, the server is listening, and auth is configured. Probing WITH credentials
+    # would make health depend on the very auth the driver suite exists to exercise, so a
+    # credential typo would read as "container unhealthy" rather than as a failing test.
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - 'exec 3<>/dev/tcp/127.0.0.1/6065 && printf "GET / HTTP/1.0\r\n\r\n" >&3 && head -1 <&3 | grep -q " 401 "'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     logging:
       driver: json-file
       options:
@@ -168,10 +233,15 @@ services:
         max-file: "3"
 
 networks:
+  # EXTERNAL: this file is standalone and attaches to the network the mcm stack already created,
+  # rather than creating one. If the mcm stack is not up, `up` fails saying the network is
+  # missing — which is the right answer, since the BFF is what writes to these destinations.
   mcm-bff-network:
+    external: true
     name: mcm-bff-network
 
 volumes:
   mcm-bff-backup-minio-data:
   mcm-bff-backup-webdav-data:
   mcm-bff-backup-webdav-config:
+  mcm-bff-backup-webdav-lock:

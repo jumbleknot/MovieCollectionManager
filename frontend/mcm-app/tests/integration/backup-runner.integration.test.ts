@@ -201,7 +201,7 @@ describe('a successful run', () => {
     );
     const validate = new Ajv2020({ strict: false }).compile(JSON.parse(readFileSync(schemaPath, 'utf8')));
     const valid = validate(JSON.parse(JSON.stringify(artifact)));
-    if (!valid) console.error(validate.errors);
+    expect(validate.errors ?? []).toEqual([]);
     expect(valid).toBe(true);
 
     // And the movies really are populated — a contract check over an empty array proves nothing.

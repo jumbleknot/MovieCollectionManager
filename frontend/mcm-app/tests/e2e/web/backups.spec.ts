@@ -43,11 +43,33 @@ async function fillDestination(page: Page, label: string): Promise<void> {
 }
 
 test.describe('Backup destinations (feature 073)', () => {
-  // A missing secret would make every case below fail as the same authentication error, which
-  // reads as a broken feature rather than a missing input. NOTE the cost of this guard: it
-  // turns a missing credential into a SKIP, and a skip reads as a pass. A run of this file that
-  // reports "6 skipped" has asserted nothing — check the count, not the exit code.
-  test.skip(S3_SECRET === '', 'BACKUP_TEST_S3_SECRET_KEY is not set — bring up the `backups` profile.');
+  // A missing credential would make every case below fail as the same authentication error,
+  // which reads as a broken feature rather than a missing input — so it skips instead.
+  //
+  // BUT A SKIP READS AS A PASS, and these are `@gate` tests. So the skip is ESCALATABLE, the same
+  // way MCM_REQUIRE_LIVE_STACK works for the integration tier: set E2E_REQUIRE_BACKUP_TARGETS=1
+  // and a missing target becomes a hard failure instead of a quiet green.
+  //
+  // WHY THIS MATTERS RIGHT NOW: CI's app-e2e does NOT bring these targets up. The S3 one is
+  // `${REGISTRY_HOST}/jumbleknot/minio` — the repository's own from-source image, in the forge
+  // registry — and that job has no REGISTRY_HOST and no registry credentials. Until that is
+  // wired up (or the S3 target moves to a public image with an acceptable CVE posture), this
+  // file SKIPS in CI and proves nothing there. It is verified locally instead. Do not read a
+  // green app-e2e as evidence that backups work.
+  const targetsMissing = S3_SECRET === '';
+  if (targetsMissing && process.env['E2E_REQUIRE_BACKUP_TARGETS'] === '1') {
+    throw new Error(
+      'E2E_REQUIRE_BACKUP_TARGETS=1 but BACKUP_TEST_S3_SECRET_KEY is unset — the backup ' +
+        'destinations are not up. Bring them up with: docker compose -p mcm --env-file ' +
+        'infrastructure-as-code/docker/stacks/mcm.env -f ' +
+        'infrastructure-as-code/docker/backups/compose.yaml up -d',
+    );
+  }
+  test.skip(
+    targetsMissing,
+    'BACKUP_TEST_S3_SECRET_KEY is unset — the backup destinations are not up. This is a SKIP, ' +
+      'not a pass. Set E2E_REQUIRE_BACKUP_TARGETS=1 to make it a failure.',
+  );
 
   // Each worker has its OWN user (054 US4), but that user persists across runs — so a spec that
   // failed before reaching its delete step leaves a destination behind, and the next run sees

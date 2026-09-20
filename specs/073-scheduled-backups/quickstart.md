@@ -30,7 +30,7 @@ This repository has lost more time to trusting an instrument than to real bugs. 
 ```bash
 # Bring up the dev stacks, including the two new test destinations
 node scripts/gen-dev-env.mjs
-docker compose --profile mcm --profile backups up -d
+docker compose --profile mcm -f infrastructure-as-code/docker/backups/compose.yaml up -d
 
 # Required new environment (see .env.local)
 #   BACKUP_CREDENTIAL_ENC_KEY        32 random bytes, base64 — NOT the agent-config key

@@ -8,8 +8,8 @@
  * fixture would encode MY guess at all three, and the driver would pass here and fail against
  * the user's NAS.
  *
- *   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
- *     --profile backups up -d
+ *   docker compose -p mcm --env-file infrastructure-as-code/docker/stacks/mcm.env \
+ *     -f infrastructure-as-code/docker/backups/compose.yaml up -d
  *
  * Run with MCM_REQUIRE_BACKUP_TARGETS=1 MCM_REQUIRE_LIVE_STACK=1 and WATCH THE SKIP COUNT.
  */

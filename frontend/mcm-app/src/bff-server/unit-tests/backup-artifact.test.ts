@@ -200,7 +200,7 @@ describe('the published contract', () => {
     const validate = ajv.compile(schema);
     const artifact = JSON.parse(JSON.stringify(buildArtifact(JOB_ID, collections(), CREATED_AT)));
     const valid = validate(artifact);
-    if (!valid) console.error(validate.errors);
+    expect(validate.errors ?? []).toEqual([]);
     expect(valid).toBe(true);
   });
 

@@ -11,8 +11,15 @@ name: mcm
 #   --profile bff-secure      + mcm-bff-service-secure + mcm-bff-tls-proxy (prod cookie posture, HTTPS :8443)
 #   --profile agents          + movie-assistant-gateway + the 3 MCP servers + movie-assistant-store-postgres
 #   --profile agents-metro    movie-assistant-gateway-metro on loopback 127.0.0.1:8123 (Metro-dev BFF only)
-#   --profile backups         + mcm-bff-backup-minio (+ bucket init) + mcm-bff-backup-webdav
-#                               — REAL backup destinations for the feature-073 integration tier
+#
+# Feature 073's backup destinations are NOT included here — they are a SEPARATE compose file,
+# brought up explicitly (see infrastructure-as-code/docker/backups/compose.yaml). Compose
+# interpolates every service in an included file at PARSE time, regardless of which profiles are
+# selected, so a `${REGISTRY_HOST:?}` in a profile-gated service broke `up` for the WHOLE stack:
+#   error while interpolating services.mcm-bff-backup-minio.image:
+#   required variable REGISTRY_HOST is missing a value
+# That failed CI's app-e2e bring-up, which sets no REGISTRY_HOST and wants none of these
+# services. A profile is not isolation from interpolation.
 #
 #   pnpm nx up-mcm infrastructure-as-code
 #   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure up -d
@@ -37,8 +44,3 @@ include:
   - ../movie-mcp/compose.yaml
   - ../web-api-mcp/compose.yaml
   - ../spreadsheet-mcp/compose.yaml
-  # Feature 073 — S3 (MinIO) and WebDAV backup destinations for the integration tier, behind
-  # `--profile backups` so the ordinary dev stack is unchanged. env_file pins mcm.env as the
-  # interpolation source for their credentials and REGISTRY_HOST, the same way agent-db does.
-  - path: ../backups/compose.yaml
-    env_file: ./mcm.env

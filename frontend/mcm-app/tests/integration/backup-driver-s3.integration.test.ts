@@ -9,8 +9,8 @@
  * agreeing with something I also wrote.
  *
  * Bring the target up first:
- *   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
- *     --profile backups up -d
+ *   docker compose -p mcm --env-file infrastructure-as-code/docker/stacks/mcm.env \
+ *     -f infrastructure-as-code/docker/backups/compose.yaml up -d
  *
  * Run with MCM_REQUIRE_BACKUP_TARGETS=1 MCM_REQUIRE_LIVE_STACK=1 so a target that is down is a
  * hard failure. WATCH THE SKIP COUNT: a skipped test reads as a pass, and a suite that passes

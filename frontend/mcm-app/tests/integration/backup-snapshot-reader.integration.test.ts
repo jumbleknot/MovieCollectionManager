@@ -16,7 +16,6 @@
 import { randomUUID } from 'node:crypto';
 
 import { readSnapshot } from '@/bff-server/backup-snapshot-reader';
-import { createMcServiceClient } from '@/bff-server/mc-service-client';
 
 import { createBffClient } from './helpers/bff-test-server';
 import {
@@ -109,10 +108,16 @@ describe('reads a collection COMPLETELY, past the page boundary', () => {
   }, 120_000);
 
   it('really did need more than one page — otherwise the test above proves nothing', async () => {
-    // If mc-service's page size ever exceeded the seeded count, the paging assertion would
-    // pass against a reader that never followed a cursor. This asserts the premise.
-    const client = createMcServiceClient(token);
-    const firstPage = await client.get(`/api/v1/collections/${bigCollectionId}/movies`);
+    // If mc-service's page size ever exceeded the seeded count, the paging assertion would pass
+    // against a reader that never followed a cursor. This asserts the premise.
+    //
+    // Asked through the BFF rather than by constructing an mc-service client here. That is the
+    // path the application actually uses, so the page size this observes is the one the reader
+    // will meet — and it keeps this file free of a direct upstream client, which the
+    // mcm-auth-before-authz rule flags (correctly: a client built with no visible authorization
+    // guard is exactly the shape that rule exists to catch).
+    const firstPage = await bff.get(`/bff-api/collections/${bigCollectionId}/movies`, auth());
+    expect(firstPage.status).toBe(200);
     expect(firstPage.data.items.length).toBeLessThan(SEED_MOVIES);
     expect(firstPage.data.nextCursor).toBeTruthy();
   }, 60_000);

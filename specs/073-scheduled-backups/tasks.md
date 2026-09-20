@@ -110,7 +110,7 @@ destination exists — absent-and-unused must stay startable so the feature is g
 **Type**: Config change | **Time**: 45m | **Risk**: Low
 **Spec reference**: [research.md](./research.md) §R11 · constitution §Test Type Integrity
 
-Add two services behind a `backups` Compose profile so they are opt-in:
+Add two services in their own compose file so they are opt-in:
 
 - **MinIO** — reuse `infrastructure-as-code/docker/minio/Dockerfile`, the from-source non-root image
   from features 069/070. Do not add a third-party pull for something already built here.
@@ -119,7 +119,7 @@ Add two services behind a `backups` Compose profile so they are opt-in:
 
 Both bind to `127.0.0.1` only, and both hosts go in `BACKUP_ALLOWED_DESTINATION_HOSTS` for dev.
 
-**Done when**: `docker compose --profile backups up -d` yields two healthy containers, and
+**Done when**: `docker compose -p mcm --env-file infrastructure-as-code/docker/stacks/mcm.env -f infrastructure-as-code/docker/backups/compose.yaml up -d` yields two healthy containers, and
 `mc alias set` against the MinIO one succeeds. **These must be real** — an integration test that
 passes with these containers down is not an integration test and its result is worthless.
 
@@ -355,7 +355,7 @@ which); and the connection was made to the **pinned address** from T007.
 
 **Verify RED**:
 ```bash
-docker compose --profile backups up -d
+docker compose -f infrastructure-as-code/docker/backups/compose.yaml up -d
 pnpm nx test:integration mcm-app --testPathPattern='backup-driver-s3'
 ```
 **Expected RED**: all cases failing — no driver module.
