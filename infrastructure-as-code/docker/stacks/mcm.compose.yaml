@@ -11,7 +11,7 @@ name: mcm
 #   --profile bff-secure      + mcm-bff-service-secure + mcm-bff-tls-proxy (prod cookie posture, HTTPS :8443)
 #   --profile agents          + movie-assistant-gateway + the 3 MCP servers + movie-assistant-store-postgres
 #   --profile agents-metro    movie-assistant-gateway-metro on loopback 127.0.0.1:8123 (Metro-dev BFF only)
-#   --profile backups         + mcm-backup-test-minio (+ bucket init) + mcm-backup-test-webdav
+#   --profile backups         + mcm-bff-backup-minio (+ bucket init) + mcm-bff-backup-webdav
 #                               — REAL backup destinations for the feature-073 integration tier
 #
 #   pnpm nx up-mcm infrastructure-as-code

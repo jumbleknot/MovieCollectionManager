@@ -26,11 +26,11 @@ import { getBackupDestinationsCollection, closeMongo } from '@/bff-server/mongo-
 const bff = createBffClient();
 const PROBE = '/bff-api/backups/destinations/test';
 
-const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-backup-test-minio:9000';
+const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-minio:9000';
 const S3_BUCKET = process.env.BACKUP_TEST_S3_BUCKET || 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env.BACKUP_TEST_S3_ACCESS_KEY || 'mcmbackuptest';
 const S3_SECRET = process.env.BACKUP_TEST_S3_SECRET_KEY || '';
-const DAV_ENDPOINT = process.env.BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT || 'http://mcm-backup-test-webdav:6065';
+const DAV_ENDPOINT = process.env.BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-webdav:6065';
 const DAV_USER = process.env.BACKUP_TEST_WEBDAV_USER || 'mcmbackuptest';
 const DAV_PASSWORD = process.env.BACKUP_TEST_WEBDAV_PASSWORD || '';
 
@@ -87,7 +87,7 @@ describe('the four outcomes are told apart (FR-004)', () => {
   it('unreachable → says so, and does NOT say credentials', async () => {
     const res = await bff.post(
       PROBE,
-      s3Draft({ endpoint: 'http://mcm-backup-test-minio:9999' }),
+      s3Draft({ endpoint: 'http://mcm-bff-backup-minio:9999' }),
       auth(),
     );
     expect(res.status).toBe(200);

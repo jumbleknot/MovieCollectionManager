@@ -168,7 +168,7 @@ const BACKUP_TICK_SECRET =
 // (the inverse of the Ollama guard), so the feature's own test containers are unreachable until
 // they are named here. Both bind to loopback only — see the `backups` Compose profile.
 const BACKUP_ALLOWED_DESTINATION_HOSTS =
-  'localhost,127.0.0.1,mcm-backup-test-minio,mcm-backup-test-webdav';
+  'localhost,127.0.0.1,mcm-bff-backup-minio,mcm-bff-backup-webdav';
 
 // --- Verify the projection against the RUNNING realm (item #395) ---------------------------------
 //
@@ -492,8 +492,8 @@ const localResult = syncEnvFile(
       // "unreachable" against a server that is up, which reads as a driver bug.
       BACKUP_TEST_S3_ENDPOINT: 'http://localhost:9100',
       BACKUP_TEST_WEBDAV_ENDPOINT: 'http://localhost:9102',
-      BACKUP_TEST_S3_INTERNAL_ENDPOINT: 'http://mcm-backup-test-minio:9000',
-      BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT: 'http://mcm-backup-test-webdav:6065',
+      BACKUP_TEST_S3_INTERNAL_ENDPOINT: 'http://mcm-bff-backup-minio:9000',
+      BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT: 'http://mcm-bff-backup-webdav:6065',
       BACKUP_TEST_S3_BUCKET: 'mcm-backups-test',
       MC_SERVICE_URL: 'http://localhost:3001',
       KEYCLOAK_URL: 'http://localhost:8099',

@@ -44,7 +44,7 @@ const authB = () => ({ headers: { Authorization: `Bearer ${tokenB}` } });
 // `https://s3.example.com` is refused on save with a 400, and correctly so: the guard RESOLVES
 // the host, and a name that does not resolve is not safe, it is unknown. Using a placeholder
 // here made the positive control fail for a reason that had nothing to do with authorization.
-const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-backup-test-minio:9000';
+const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-minio:9000';
 
 const s3Body = (label: string) => ({
   type: 's3',
