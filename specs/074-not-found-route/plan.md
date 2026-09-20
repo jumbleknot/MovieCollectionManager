@@ -29,14 +29,14 @@ Unchanged from the rest of `frontend/mcm-app`:
 
 ```
 frontend/mcm-app/src/app/
-  +not-found.tsx              → NotFoundScreen   (bare: no AuthGuard, no NavigationBar)
-  (app)/
-    _layout.tsx               AuthGuard + NavigationBar + Stack
-    +not-found.tsx            → NotFoundScreen   (inherits the layout's chrome)
+  +not-found.tsx              → NotFoundScreen   (the ONLY route; catches everything)
 frontend/mcm-app/src/screens/
-  not-found-screen.tsx        the screen component
+  not-found-screen.tsx        the screen — renders NavigationBar itself when authenticated
   not-found-screen.test.tsx   its unit test
 ```
+
+*(As built. The design below was written around a second route inside the `(app)` group; it was
+measured unreachable and removed — see §"The (app)-group route, and why it was removed".)*
 
 The root `+not-found.tsx` is the catch-all. An address outside the `(app)` group has no
 authenticated session to draw chrome from, so it renders the screen bare — still branded, still
@@ -99,12 +99,40 @@ the unit test fails on an unresolved import — a genuine RED, and the test-only
 compile error is not an acceptable RED") does not apply here, because the behaviour under test does
 not already exist.
 
+## The (app)-group route, and why it was removed
+
+**The risk this plan named came true, and the detector worked.** The plan above was written around
+two route files, the second inside the `(app)` group so that an unmatched authenticated address
+would inherit `AuthGuard` and `NavigationBar` from `(app)/_layout.tsx`. It named the assertion that
+would detect the design being wrong, and pre-committed to a fallback rather than to weakening it.
+
+**Measured, web E2E against the dev-container BFF:** `/(app)/profile` and `/(app)/admin/settings`
+rendered the branded screen with **no navigation bar**. The group's `+not-found` never rendered at
+all. The cause is not a bug: **Expo Router groups are URL-transparent**, so `/(app)/profile`
+normalizes to `/profile`, and an unmatched path carries nothing that could attribute it back to a
+group. The root `+not-found` takes every unmatched address, always, and a group-scoped one is dead
+code.
+
+**The instrument was checked before the result was believed.** `getByTestId('navigation-bar')` sits
+on a Tamagui `XStack`, which is exactly the node type that can drop `testID` → `data-testid` on
+React Native Web — so the failure could have been the selector rather than the routing. It is not:
+`auth.spec.ts`'s "shows navigation bar and profile display" uses the same selector and passes
+(re-run in isolation: 1 passed, 2.5 s). Only then was the routing conclusion drawn.
+
+**Resolution, taken by the operator rather than the pre-committed fallback.** The fallback was
+root-only *without* chrome, which would have half-fixed item #237 — the missing navigation bar was
+half of what it reported. Instead: `src/app/(app)/+not-found.tsx` is deleted, and `NotFoundScreen`
+renders `NavigationBar` itself when `useAuth()` reports the visitor authenticated. The root layout
+already supplies `AuthProvider` and `ThemeProvider`, and `NavigationBar` needs nothing else — it
+does not use `useAuth`. The E2E assertion was **kept exactly as written** and now passes on merit.
+
+This is also why the unit test gained an AsyncStorage mock and a `ThemeProvider` wrapper: rendering
+`NavigationBar` reaches `use-theme` → `@react-native-async-storage/async-storage`. Same mock and
+wrapper as `src/components/navigation-bar.test.tsx`.
+
 ## Risks
 
-- **Expo Router's `+not-found` resolution inside a group is the one thing this plan asserts without
-  having measured it.** If `/(app)/profile` resolves to the ROOT `+not-found` rather than the
-  group's, FR-002 silently degrades to FR-001 and the navigation bar is absent. T004's E2E
-  assertion on the navigation bar is what detects that; if it fires, the fallback is to keep only
-  the root route and record the finding in this plan rather than to weaken the assertion.
+- **Resolved:** the group-route risk above. Recorded rather than deleted, because the reasoning is
+  the reusable part.
 - **A shared-hook-style regression is not a risk here.** Nothing in this change is loaded by other
-  specs; it adds two leaf routes and one leaf screen.
+  specs; it adds one leaf route and one leaf screen.

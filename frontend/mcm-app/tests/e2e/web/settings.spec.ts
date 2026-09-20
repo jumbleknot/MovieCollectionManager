@@ -233,10 +233,13 @@ test.describe('Settings — old addresses', () => {
     // which was all there was to assert while an unmatched address fell through to Expo Router's
     // unstyled built-in screen. It now renders the branded screen instead.
     await expect(page.getByTestId('not-found-screen')).toBeVisible({ timeout: 30000 });
-    // THE DISCRIMINATING ASSERTION for FR-002, and the detector plan.md §Risks names: the (app)
-    // group's +not-found must win resolution over the ROOT one, or the screen renders with no
-    // navigation bar and the change fixes only half of what #237 reported. If this fails, the
-    // fallback is to keep only the root route and record the finding — not to delete this line.
+    // THE DISCRIMINATING ASSERTION for FR-002, and the reason the change is not half a fix: a
+    // signed-in user who followed a dead bookmark keeps the app's chrome. This line is what
+    // MEASURED the original design wrong — a second route inside the (app) group was supposed to
+    // inherit the navigation bar, and never rendered at all, because Expo Router groups are
+    // URL-transparent and the ROOT +not-found takes every unmatched address. The screen renders
+    // the chrome itself now. The selector was verified sound before that was believed: the same
+    // getByTestId('navigation-bar') passes in auth.spec.ts.
     await expect(page.getByTestId('navigation-bar')).toBeVisible();
   });
 
@@ -264,10 +267,9 @@ test.describe('Settings — old addresses', () => {
 /**
  * FEATURE 074 / backlog item #237 — an address outside the (app) group entirely.
  *
- * The two cases above cover unmatched AUTHENTICATED addresses, which resolve to
- * src/app/(app)/+not-found.tsx and keep the chrome. This one covers the root catch-all,
- * src/app/+not-found.tsx: no navigation bar is available there, so the assertion is that the
- * branded screen renders at all and that its one affordance works.
+ * The two cases above cover addresses that LOOK like they belong to the (app) group. This one is
+ * an address with no relationship to any group at all — proving the single root route really is
+ * the catch-all — and it is the case that exercises the affordance end to end.
  */
 test.describe('Unmatched addresses — feature 074', () => {
   test('an address matching no route renders the branded screen and offers one way back', async ({ page }) => {
@@ -281,7 +283,8 @@ test.describe('Unmatched addresses — feature 074', () => {
     // role query does not resolve the `role` prop Tamagui sets, which is why no unit test in this
     // repository uses ByRole), while on web that same prop reaches the DOM — see the comment in
     // packages/design-system/components/primitives/Button.tsx. Scoped INSIDE the container, so a
-    // chromed render does not count the navigation bar's own controls.
+    // chromed render does not count the navigation bar's own controls (this session is signed in,
+    // so the chrome IS present).
     await expect(page.getByTestId('not-found-screen').getByRole('button')).toHaveCount(1);
 
     await page.getByTestId('not-found-home-link').click();

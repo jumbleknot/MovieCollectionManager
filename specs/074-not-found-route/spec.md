@@ -41,11 +41,17 @@ unstyled default screen whose only escape is the browser's Back button.
 - **FR-001** — `frontend/mcm-app/src/app/+not-found.tsx` exists and renders a screen component
   imported from `frontend/mcm-app/src/screens/`. The route file holds no screen content of its own,
   per the Screens-Layer rule (routes never define screen components).
-- **FR-002** — `frontend/mcm-app/src/app/(app)/+not-found.tsx` exists and renders the same screen
-  component. It sits inside the `(app)` group, so unmatched *authenticated* addresses — including
-  the two that feature 062 removed — inherit `AuthGuard` and `NavigationBar` from
-  `(app)/_layout.tsx`. The root route of FR-001 remains the catch-all for addresses outside the
-  group, where no authenticated chrome is available or appropriate.
+- **FR-002** *(REVISED after measurement — see plan.md §"The (app)-group route, and why it was
+  removed")* — the screen renders the app's `NavigationBar` itself when the visitor is
+  authenticated, so an unmatched *authenticated* address — including the two that feature 062
+  removed — keeps the app's chrome. An anonymous visitor sees the branded screen without it,
+  because every nav link points at an authenticated destination.
+
+  **Superseded wording:** "a second route at `src/app/(app)/+not-found.tsx` inherits `AuthGuard`
+  and `NavigationBar` from `(app)/_layout.tsx`." That route was built and measured **unreachable**:
+  Expo Router groups are URL-transparent, so `/(app)/profile` normalizes to `/profile`, which
+  cannot be attributed back to the group, and the root route of FR-001 takes every unmatched
+  address. The file was deleted rather than shipped as dead code.
 - **FR-003** — The screen carries the `testID` `not-found-screen` on a **React Native host node**
   (a `View` imported from `react-native`), so it resolves as `data-testid` on web and `id` on
   native. A `testID` placed on a Tamagui component can be dropped on React Native Web — see the

@@ -7,9 +7,13 @@
  * Route only — the screen component lives in src/screens/, per the Screens-Layer rule that routes
  * never define screen content.
  *
- * No useReportUiState here, deliberately: that hook reports into authenticated app state, and this
- * route is outside the (app) group by design. Its sibling at (app)/+not-found.tsx does report,
- * because it runs inside AuthGuard.
+ * There is deliberately no sibling inside the (app) group. One was built and measured unreachable:
+ * Expo Router groups are URL-transparent, so /(app)/profile normalizes to /profile and cannot be
+ * attributed back to the group — this root route takes every unmatched address. The navigation bar
+ * item #237 asked for is therefore rendered by the screen itself, for signed-in visitors.
+ *
+ * No useReportUiState here: that hook reports into authenticated app state, and this route is
+ * outside the (app) group, where an anonymous visitor may also land.
  */
 
 import React from 'react';
