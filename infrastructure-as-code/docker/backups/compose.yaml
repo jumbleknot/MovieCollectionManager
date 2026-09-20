@@ -55,6 +55,14 @@ services:
 
   # One-shot: create the test bucket. MinIO does not auto-create one, and a driver suite failing
   # on NoSuchBucket looks exactly like a driver bug.
+  #
+  # The credentials reach `mc` through the CONTAINER'S ENVIRONMENT and are referenced as `$$VAR`
+  # inside the entrypoint — NOT interpolated into it by Compose. Interpolating puts the secret in
+  # the container's argv, where `docker inspect` and any `ps` inside that container can read it.
+  # That is the defect fixed on main in 56983c75, where a routine `ps -eo cmd` printed a live
+  # Anthropic key in full and keys had to be rotated. These are test-fixture credentials rather
+  # than production ones, but a new file should not reintroduce a pattern the repository has just
+  # ratified against — and the sibling webdav-init below already does it this way.
   mcm-backup-test-minio-init:
     image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
     container_name: mcm-backup-test-minio-init
@@ -62,9 +70,12 @@ services:
     depends_on:
       mcm-backup-test-minio:
         condition: service_healthy
+    environment:
+      MC_ACCESS_KEY: "${BACKUP_TEST_S3_ACCESS_KEY:-mcmbackuptest}"
+      MC_SECRET_KEY: "${BACKUP_TEST_S3_SECRET_KEY:?set in stacks/mcm.env}"
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://mcm-backup-test-minio:9000 ${BACKUP_TEST_S3_ACCESS_KEY:-mcmbackuptest} ${BACKUP_TEST_S3_SECRET_KEY:?set in stacks/mcm.env} &&
+      mc alias set local http://mcm-backup-test-minio:9000 \"$$MC_ACCESS_KEY\" \"$$MC_SECRET_KEY\" &&
       mc mb --ignore-existing local/mcm-backups-test &&
       echo 'mcm-backups-test bucket ready'"
     networks:
