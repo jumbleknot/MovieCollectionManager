@@ -33,9 +33,23 @@ import { env } from '@/config/env';
 export interface VettedDestination {
   /** The hostname as written, lower-cased and de-bracketed. Used for SNI and certificate checks. */
   hostname: string;
-  /** The single address every connection to this destination is pinned to. */
+  /** The first vetted address — what a caller reports or logs. */
   address: string;
   family: 4 | 6;
+  /**
+   * EVERY address that passed the check, in resolution order.
+   *
+   * The connection is pinned to this SET, not to a single member, and that is a correction to an
+   * earlier design rather than a convenience. Pinning to one address removes the OS's normal
+   * dual-stack fallback: MEASURED here, `localhost` resolves to `::1` first while the target
+   * bound only 127.0.0.1, so every request died on `ECONNREFUSED ::1:9100` against a server that
+   * was up and reachable. A destination with both an A and an AAAA record where only one answers
+   * is the same situation in production.
+   *
+   * The security property is untouched, because it was never about connecting to exactly one
+   * address — it is that every address connected to has been CHECKED. All of these have.
+   */
+  addresses: { address: string; family: 4 | 6 }[];
   port: number;
   protocol: 'http:' | 'https:';
   /** The parsed URL, so callers do not re-parse and risk disagreeing with what was vetted. */
@@ -55,7 +69,7 @@ export class DestinationUrlNotAllowedError extends Error {
 /** The resolver seam — `dns.lookup(host, { all: true })` in production, a stub under test. */
 export type DestinationLookup = (
   hostname: string,
-) => Promise<Array<{ address: string; family: number }>>;
+) => Promise<{ address: string; family: number }[]>;
 
 const NOT_ALLOWED =
   'That address is not allowed. Backups may not be sent to a loopback, private, link-local or ' +
@@ -181,17 +195,19 @@ export async function assertDestinationUrlAllowed(
     if (!allowListed && isBlockedAddress(hostname)) {
       throw new DestinationUrlNotAllowedError(NOT_ALLOWED);
     }
+    const family = literal === 6 ? (6 as const) : (4 as const);
     return {
       hostname,
       address: hostname,
-      family: literal === 6 ? 6 : 4,
+      family,
+      addresses: [{ address: hostname, family }],
       port,
       protocol: url.protocol,
       url,
     };
   }
 
-  let answers: Array<{ address: string; family: number }>;
+  let answers: { address: string; family: number }[];
   try {
     answers = await lookup(hostname);
   } catch {
@@ -216,11 +232,15 @@ export async function assertDestinationUrlAllowed(
     }
   }
 
-  const chosen = answers[0];
+  const addresses = answers.map((a) => ({
+    address: a.address,
+    family: (a.family === 6 ? 6 : 4) as 4 | 6,
+  }));
   return {
     hostname,
-    address: chosen.address,
-    family: chosen.family === 6 ? 6 : 4,
+    address: addresses[0].address,
+    family: addresses[0].family,
+    addresses,
     port,
     protocol: url.protocol,
     url,
@@ -246,8 +266,11 @@ export function createPinnedAgent(vetted: VettedDestination): http.Agent | https
     const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
     const options = typeof optionsOrCallback === 'function' ? {} : (optionsOrCallback ?? {});
     // `all: true` callers expect an array; everyone else expects (address, family).
+    // `all: true` is what Node's connect path uses for its dual-stack attempt sequence, so
+    // handing back EVERY vetted address is what restores the fallback that single-address
+    // pinning removed. Every one of them passed the guard.
     if ((options as { all?: boolean }).all) {
-      callback(null, [{ address: vetted.address, family: vetted.family }]);
+      callback(null, vetted.addresses.map((a) => ({ address: a.address, family: a.family })));
     } else {
       callback(null, vetted.address, vetted.family);
     }
@@ -264,7 +287,7 @@ type NodeLookup = (
   options: unknown,
   callback: (
     err: NodeJS.ErrnoException | null,
-    address: string | Array<{ address: string; family: number }>,
+    address: string | { address: string; family: number }[],
     family?: number,
   ) => void,
 ) => void;

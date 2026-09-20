@@ -20,14 +20,14 @@
 // record that would have to exist somewhere. If group 3 ever passes against an implementation
 // that never calls the resolver, the TEST is wrong, not the guard.
 
-jest.mock('@/config/env', () => ({ env: { backupAllowedDestinationHosts: '' } }));
-
 import { env } from '@/config/env';
 import {
   assertDestinationUrlAllowed,
   DestinationUrlNotAllowedError,
   type DestinationLookup,
 } from '@/bff-server/backup-destination-url-guard';
+
+jest.mock('@/config/env', () => ({ env: { backupAllowedDestinationHosts: '' } }));
 
 const mockEnv = env as unknown as { backupAllowedDestinationHosts: string };
 
@@ -88,6 +88,21 @@ describe('group 1 — literal blocked addresses', () => {
     expect(vetted.address).toBe('93.184.216.34');
     expect(vetted.hostname).toBe('s3.example.com');
     expect(vetted.family).toBe(4);
+    expect(vetted.addresses).toEqual([{ address: '93.184.216.34', family: 4 }]);
+  });
+
+  it('carries EVERY vetted address, so a dual-stack host keeps its fallback', () => {
+    // Pinning to one address removes the OS's normal A/AAAA fallback. Measured against the
+    // integration target: `localhost` resolves to ::1 first while the server bound 127.0.0.1
+    // only, and every request died on ECONNREFUSED against a server that was up. Returning the
+    // whole vetted set restores the fallback without weakening anything — the guarantee is that
+    // every address connected to was checked, and all of these were.
+    return assertDestinationUrlAllowed('https://dual.example.com/', {
+      lookup: resolverReturning('2606:2800:220:1:248:1893:25c8:1946', '93.184.216.34'),
+    }).then((vetted) => {
+      expect(vetted.addresses).toHaveLength(2);
+      expect(vetted.addresses.map((a) => a.family)).toEqual([6, 4]);
+    });
   });
 });
 

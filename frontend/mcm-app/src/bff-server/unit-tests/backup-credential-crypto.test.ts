@@ -12,8 +12,6 @@
 // A secret is also never sealed under the assistant's key: BACKUP_CREDENTIAL_ENC_KEY is separate
 // from AGENT_CONFIG_ENC_KEY so that one key's exposure does not reach both.
 
-jest.mock('@/config/env', () => ({ env: { backupCredentialEncKey: '' } }));
-
 import { env } from '@/config/env';
 import { encryptSecret, decryptSecret } from '@/bff-server/agent-config-crypto';
 import {
@@ -21,6 +19,8 @@ import {
   offlineTokenAad,
   backupEncryptionKey,
 } from '@/bff-server/agent-config-crypto';
+
+jest.mock('@/config/env', () => ({ env: { backupCredentialEncKey: '' } }));
 
 const mockEnv = env as unknown as { backupCredentialEncKey: string };
 

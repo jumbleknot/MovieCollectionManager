@@ -139,6 +139,24 @@ const AGENT_CONFIG_ENC_KEY =
 // under the other, and the symptom is an authentication failure on a secret that was stored
 // correctly. Same validity rule as the agent key: a wrong-length prior value is re-minted, because
 // reusing it would silently preserve the bug it represents.
+// The feature-073 backup test destinations' credentials live in stacks/mcm.env, minted by
+// gen-dev-secrets.mjs alongside the other stack secrets. They are PROJECTED into .env.local for
+// the same reason the realm secrets are: the integration suite and the containers must hold the
+// same values by construction, not by someone remembering to copy them. Absent (no mcm.env yet)
+// they are simply not written, and the driver suites then fail on their own explicit
+// "has a secret to test with" assertion rather than as four identical auth errors.
+const MCM_STACK_ENV = resolve(REPO_ROOT, 'infrastructure-as-code/docker/stacks/mcm.env');
+const mcmStack = existsSync(MCM_STACK_ENV) ? parseEnv(MCM_STACK_ENV) : {};
+const BACKUP_TEST_KEYS = [
+  'BACKUP_TEST_S3_ACCESS_KEY',
+  'BACKUP_TEST_S3_SECRET_KEY',
+  'BACKUP_TEST_WEBDAV_USER',
+  'BACKUP_TEST_WEBDAV_PASSWORD',
+];
+const backupTestCreds = Object.fromEntries(
+  BACKUP_TEST_KEYS.filter((k) => mcmStack[k]).map((k) => [k, mcmStack[k]]),
+);
+
 const priorLocal = existsSync(ENV_LOCAL) ? parseEnv(ENV_LOCAL) : {};
 const priorBackupKey = priorDocker.BACKUP_CREDENTIAL_ENC_KEY || priorLocal.BACKUP_CREDENTIAL_ENC_KEY || '';
 const BACKUP_CREDENTIAL_ENC_KEY =
@@ -438,7 +456,12 @@ function syncEnvFile(path, sync, opts = {}) {
 // skips every credential-dependent agent/MCP integration test.
 const localResult = syncEnvFile(
   ENV_LOCAL,
-  { KEYCLOAK_CLIENT_SECRET, KEYCLOAK_SERVICE_CLIENT_SECRET, AGENT_SUBJECT_TOKEN_CLIENT_SECRET },
+  {
+    KEYCLOAK_CLIENT_SECRET,
+    KEYCLOAK_SERVICE_CLIENT_SECRET,
+    AGENT_SUBJECT_TOKEN_CLIENT_SECRET,
+    ...backupTestCreds,
+  },
   {
     create: true,
     // 073 — SEEDED, not synced. Rewriting BACKUP_CREDENTIAL_ENC_KEY on a re-run would orphan every
