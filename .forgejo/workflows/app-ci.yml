@@ -587,6 +587,27 @@ jobs:
         run: bash scripts/ci-log-step.sh app-e2e-write-ci-env-secret-files node scripts/gen-ci-env.mjs
 
       # ── Backend + agent stack (auth BEFORE mcm app profile — manual ordering, FR-006) ───────────
+      # Split out of `app-e2e-bring-up-keycloak`, and the reason is measured rather than stylistic.
+      #
+      # That step is calibrated at 300s from max(91s) x 3. Its REAL distribution over 25 recent
+      # runs is min 47s / p50 85s / p95 100s — but max 293s, seven seconds under the bound. The
+      # spread is entirely the Docker layer cache: when `COPY frontend/mcm-app/` hits, the build is
+      # CACHED and the step is ~85s; when a PR touches frontend source the cache breaks and the
+      # full Expo web export runs, which is what the 293s sample is. A feature that adds
+      # dependencies AND source (073) busts it reliably, and the step was killed at its ceiling
+      # twice — reporting "timeout after 300s" against a step whose name says Keycloak, while the
+      # actual work in flight was `pnpm deploy --filter=mcm-app`.
+      #
+      # So the bound was never wrong; the step was doing unbounded work under a name that did not
+      # describe it. The builds get their own budget and their own attribution, and the Keycloak
+      # step returns to the fast, cache-independent profile its ceiling was calibrated against.
+      - name: Build mc-service + mcm-bff images (cache-dependent; own budget)
+        run: |
+          bash scripts/ci-log-step.sh app-e2e-build-images bash -e /dev/stdin <<'CI_LOG_STEP'
+          pnpm nx build mc-service
+          pnpm nx docker-build mcm-app
+          CI_LOG_STEP
+
       - name: Bring up Keycloak (auth stack, ci-realm imported) + Redis + Mongo + mc-service
         env:
           # Feature 027 US5: ci-realm.json commits only ${ENV_VAR} placeholders; Keycloak resolves them
@@ -617,14 +638,94 @@ jobs:
           docker compose -p auth \
             -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
-          # Neither mc-service nor mcm-bff has a build: in its compose (both are `image: …:latest`), so
-          # build them locally BEFORE the up. Build the BFF too here: on this runner the `app` profile
-          # pulls in the bff-nonsecure service, so mcm-bff:latest must already exist or --wait hangs.
-          pnpm nx build mc-service
-          pnpm nx docker-build mcm-app
+          # The images were built in the step BEFORE this one — see the note there for why they are
+          # no longer built inline. Neither mc-service nor mcm-bff has a `build:` in its compose
+          # (both are `image: …:latest`), and on this runner the `app` profile pulls in the
+          # bff-nonsecure service, so mcm-bff:latest must already exist or `--wait` hangs.
           # Bring up app infra + mc-service + the dev BFF (:8082) together, images now present.
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure up -d --wait
+
+          CI_LOG_STEP
+
+      # Feature 073 — a SEPARATE step, and that is the fix for a real failure rather than tidiness.
+      # Folded into the Keycloak bring-up above, these two image pulls (the from-source MinIO and
+      # Debian httpd) pushed that step past its CALIBRATED 300s ceiling — a bound derived from 40
+      # runs whose max was 91s — and app-e2e died on `timeout after 300s` having brought nothing
+      # up. Its own step gets its own budget and, more importantly, its own failure attribution:
+      # a slow image pull now reads as a slow image pull instead of as "Keycloak would not start".
+      - name: Bring up the backup destinations (S3 + WebDAV) for the feature-073 suites
+        env:
+          # A non-secret repository VARIABLE, never a git literal (check-topology-scrub). No
+          # REGISTRY_TOKEN: jumbleknot/minio is anonymously pullable, so this job needs no
+          # credential, and handing it the write-capable publishing token would be a privilege
+          # expansion for a pull.
+          REGISTRY_HOST: ${{ vars.REGISTRY }}
+        run: |
+          bash scripts/ci-log-step.sh app-e2e-bring-up-backup-destinations bash -e /dev/stdin <<'CI_LOG_STEP'
+          # ── Feature 073: the REAL backup destinations (S3 + WebDAV) ──────────────────────────
+          #
+          # A SEPARATE compose file, not a profile in the stack above, and deliberately so:
+          # Compose interpolates every service in an INCLUDED file at parse time whatever
+          # profiles are selected, so a `${REGISTRY_HOST:?}` in a profile-gated service failed
+          # `up` for this entire stack. A profile is not isolation from interpolation.
+          #
+          # Credentials are MINTED PER RUN and exported to $GITHUB_ENV for the test steps, the
+          # same pattern E2E_ROPC_CLIENT_SECRET uses above. They are throwaway fixtures: the
+          # containers are created and destroyed inside this job, so there is nothing to rotate
+          # and no value in a long-lived secret.
+          #
+          # REGISTRY_HOST is a non-secret var and NO registry login is needed — jumbleknot/minio
+          # is anonymously pullable (verified: an unauthenticated token request returns a token
+          # that gets 200 on the manifest). Giving this job the write-capable REGISTRY_TOKEN,
+          # which the publishing workflows use, would be a privilege expansion for a pull.
+          export BACKUP_TEST_S3_ACCESS_KEY=mcmbackuptest
+          export BACKUP_TEST_WEBDAV_USER=mcmbackuptest
+          export BACKUP_TEST_S3_SECRET_KEY="$(node -e 'process.stdout.write(require("crypto").randomBytes(24).toString("hex"))')"
+          export BACKUP_TEST_WEBDAV_PASSWORD="$(node -e 'process.stdout.write(require("crypto").randomBytes(24).toString("hex"))')"
+          {
+            echo "BACKUP_TEST_S3_ACCESS_KEY=$BACKUP_TEST_S3_ACCESS_KEY"
+            echo "BACKUP_TEST_S3_SECRET_KEY=$BACKUP_TEST_S3_SECRET_KEY"
+            echo "BACKUP_TEST_WEBDAV_USER=$BACKUP_TEST_WEBDAV_USER"
+            echo "BACKUP_TEST_WEBDAV_PASSWORD=$BACKUP_TEST_WEBDAV_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+          if [ -z "${REGISTRY_HOST:-}" ]; then
+            echo "::error::REGISTRY_HOST is unset — set the repository variable REGISTRY. The backup" \
+                 "destinations cannot come up without it, and their suites would then SKIP, which reads" \
+                 "as a pass."
+            exit 1
+          fi
+          # NOT `--wait`. MEASURED: it exits 1 here, because this file has two ONE-SHOT init
+          # containers (bucket creation, WebDAV config) and `--wait` treats a service that exits
+          # as a failure even on exit code 0. The wait below asserts what actually matters
+          # instead, and says which container is wrong when it is.
+          docker compose -p mcm \
+            -f infrastructure-as-code/docker/backups/compose.yaml up -d
+
+          for c in mcm-bff-backup-minio mcm-bff-backup-webdav; do
+            health=missing
+            for _ in $(seq 1 60); do
+              health="$(docker inspect -f '{{.State.Health.Status}}' "$c" 2>/dev/null || echo missing)"
+              [ "$health" = healthy ] && break
+              sleep 2
+            done
+            if [ "$health" != healthy ]; then
+              echo "::error::backup destination $c never became healthy (last: $health)"
+              docker logs "$c" 2>&1 | tail -40
+              exit 1
+            fi
+          done
+          # The one-shots must have SUCCEEDED, not merely finished: without the bucket, every S3
+          # suite fails on NoSuchBucket, which reads like a driver bug rather than a setup one.
+          for c in mcm-bff-backup-minio-init mcm-bff-backup-webdav-init; do
+            code="$(docker inspect -f '{{.State.ExitCode}}' "$c" 2>/dev/null || echo missing)"
+            if [ "$code" != "0" ]; then
+              echo "::error::backup init container $c exited $code"
+              docker logs "$c" 2>&1 | tail -40
+              exit 1
+            fi
+          done
           CI_LOG_STEP
 
       - name: Bring up containerized agent gateway + MCP (production nodes)
@@ -810,6 +911,15 @@ jobs:
       - name: BFF integration tests (live BFF + Keycloak + Redis + Mongo)
         env:
           MCM_REQUIRE_LIVE_STACK: '1'
+          # Feature 073: turns a missing backup destination from a SKIP into a hard failure. The
+          # suites skip when the targets are absent so a developer without them is not blocked —
+          # but a skip reads as a pass, so here, where they ARE up, absence must be loud.
+          MCM_REQUIRE_BACKUP_TARGETS: '1'
+          BACKUP_TEST_S3_ENDPOINT: http://localhost:9100
+          BACKUP_TEST_WEBDAV_ENDPOINT: http://localhost:9102
+          BACKUP_TEST_S3_INTERNAL_ENDPOINT: http://mcm-bff-backup-minio:9000
+          BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT: http://mcm-bff-backup-webdav:6065
+          BACKUP_TEST_S3_BUCKET: mcm-backups-test
           BFF_BASE_URL: http://localhost:8082
           KEYCLOAK_URL: http://localhost:8099
           KEYCLOAK_REALM: grumpyrobot
@@ -880,8 +990,24 @@ jobs:
             -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
             -e E2E_AGENT_PRODUCTION -e E2E_REQUIRE_AGENT_STACK=1 \
             -e KEYCLOAK_SERVICE_CLIENT_SECRET \
+            -e E2E_REQUIRE_BACKUP_TARGETS=1 \
+            -e BACKUP_TEST_S3_INTERNAL_ENDPOINT=http://mcm-bff-backup-minio:9000 \
+            -e BACKUP_TEST_S3_BUCKET=mcm-backups-test \
+            -e BACKUP_TEST_S3_ACCESS_KEY -e BACKUP_TEST_S3_SECRET_KEY \
+            -e BACKUP_TEST_WEBDAV_USER -e BACKUP_TEST_WEBDAV_PASSWORD \
             mcr.microsoft.com/playwright:v1.63.0-noble \
             sh -c "corepack enable && pnpm exec playwright test"
+
+      # Feature 073 note on the four lines above. The two ENDPOINTS are non-secret hostnames and
+      # are passed as literals; the two CREDENTIALS use the bare `-e NAME` pass-through form, which
+      # makes docker read the value from its own environment instead of putting it on a command
+      # line every user on this shared host can read with `ps` (the defect fixed in 56983c75,
+      # where a routine `ps -eo cmd` printed live keys and they had to be rotated).
+      #
+      # E2E_REQUIRE_BACKUP_TARGETS=1 is the important one: backups.spec.ts SKIPS when the
+      # destinations are absent, so that a developer without them is not blocked — and a skip
+      # reads as a pass. Here the destinations ARE up, so their absence must fail the gate rather
+      # than quietly shrink it.
 
       # The MODEL tier. Non-blocking, and NOT absent — nothing leaves the gate without a tier that
       # runs it (051 SC-001, 054 FR-017); a tier nobody runs is quarantine wearing a schedule.
@@ -1146,7 +1272,9 @@ jobs:
           for c in movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
                    movie-assistant-mcp-spreadsheet mcm-bff-service-nonsecure mc-service keycloak-service \
                    keycloak-store-postgres mc-service-store-mongo mc-service-store-mongo-rs-init \
-                   mcm-bff-store-mongo mcm-bff-cache-redis movie-assistant-store-postgres; do
+                   mcm-bff-store-mongo mcm-bff-cache-redis movie-assistant-store-postgres \
+                   mcm-bff-backup-minio mcm-bff-backup-minio-init \
+                   mcm-bff-backup-webdav mcm-bff-backup-webdav-init; do
             docker logs -t "$c" > "container-logs/$c.log" 2>&1 || echo "container absent: $c" > "container-logs/$c.log"
             # The healthcheck's own output is THE reason a container reports "unhealthy" — capture it.
             docker inspect --format '{{json .State.Health}}' "$c" > "container-logs/$c.health.json" 2>/dev/null || true
@@ -1206,6 +1334,12 @@ jobs:
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml down -v --remove-orphans || true
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure down -v --remove-orphans || true
+          # Feature 073: a separate compose FILE in the same project, so the `down` above does not
+          # reach it. Left running on this persistent runner it would be silently reused by the
+          # next run — the same shape as the stale-image false green feature 041 fixed. `-v` drops
+          # the bucket and the written artifacts with it.
+          docker compose -p mcm \
+            -f infrastructure-as-code/docker/backups/compose.yaml down -v --remove-orphans || true
           pnpm nx down-agents-prod infrastructure-as-code || true
           CI_LOG_STEP
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or

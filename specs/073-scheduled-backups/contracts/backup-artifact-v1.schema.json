@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcm.local/schemas/backup-artifact-v1.json",
+  "title": "MCM collection backup artifact, format version 1",
+  "description": "The uncompressed body of a `<basePath>/<jobId>/<ISO timestamp>.json.gz` object. This is a portable contract: a user who downloads an artifact must be able to read their own data without this application. Additive fields only within version 1; any removal or semantic change requires formatVersion 2, because restore refuses a version it does not recognise rather than guessing.",
+  "type": "object",
+  "required": [
+    "manifest",
+    "collections"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "manifest": {
+      "type": "object",
+      "required": [
+        "formatVersion",
+        "createdAt",
+        "jobId",
+        "collections",
+        "totalMovieCount",
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "formatVersion": {
+          "type": "integer",
+          "const": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "jobId": {
+          "type": "string"
+        },
+        "totalMovieCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Hex SHA-256 over the canonically serialised `collections` array, UNCOMPRESSED. Verified before any write on restore."
+        },
+        "collections": {
+          "type": "array",
+          "description": "Per-collection counts, checked against the body. A disagreement means a corrupt artifact.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "movieCount"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "movieCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "collections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "movies"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "movies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title"
+              ],
+              "properties": {
+                "movieId": {
+                  "type": "string",
+                  "description": "Server-assigned. Provenance only; ignored on restore."
+                },
+                "collectionId": {
+                  "type": "string",
+                  "description": "Server-assigned, and the ORIGINAL collection. Ignored on restore."
+                },
+                "title": {
+                  "type": "string"
+                },
+                "year": {
+                  "type": "integer",
+                  "minimum": 1000,
+                  "maximum": 9999,
+                  "description": "NOT `releaseYear` \u2014 mc-service calls this `year`."
+                },
+                "contentType": {
+                  "type": "string",
+                  "enum": [
+                    "Movie",
+                    "Series",
+                    "Concert"
+                  ]
+                },
+                "language": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "owned": {
+                  "type": "boolean"
+                },
+                "ripped": {
+                  "type": "boolean"
+                },
+                "childrens": {
+                  "type": "boolean"
+                },
+                "originalTitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "releaseDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "outline": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "plot": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "runtime": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1
+                },
+                "rated": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "G",
+                    "PG",
+                    "PG-13",
+                    "R",
+                    "NC-17",
+                    "NR",
+                    "Unrated",
+                    null
+                  ]
+                },
+                "movieSet": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "directors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "actors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "genres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "ownedMedia": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "DVD",
+                      "Blu-Ray",
+                      "Blu-Ray 3D",
+                      "UHD Blu-Ray"
+                    ]
+                  }
+                },
+                "ripQuality": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "DVD",
+                      "Blu-Ray",
+                      "Blu-Ray 3D",
+                      "UHD Blu-Ray"
+                    ]
+                  }
+                },
+                "externalIds": {
+                  "type": "array",
+                  "description": "NOT `externalIdentifiers`, and the members are {system, uniqueId, url} \u2014 not {source, value}.",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "system",
+                      "uniqueId"
+                    ],
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "e.g. IMDB, TMDB."
+                      },
+                      "uniqueId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "url": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^https?://",
+                        "description": "Optional. http(s) only \u2014 other schemes are rejected at the source."
+                      }
+                    }
+                  }
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Server-assigned. Provenance only; ignored on restore."
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Server-assigned. Provenance only; ignored on restore."
+                }
+              },
+              "description": "One movie, stored EXACTLY as mc-service returns it \u2014 see api-specs/mc-service-api.yaml, schema `Movie`, which is authoritative. Storing the service's own representation verbatim is the only choice that cannot silently lose a field, and a field missing from the artifact is a field gone from the restore, discovered when it matters most. The properties below are therefore DESCRIPTIVE of that shape rather than a reduced projection of it. `additionalProperties` stays open so a field added to mc-service appears in artifacts immediately, without a formatVersion bump: within version 1 the rule is additive-only. `movieId`, `collectionId`, `createdAt` and `updatedAt` are server-assigned; they are kept for provenance and IGNORED on restore, which creates new records."
+            }
+          }
+        }
+      }
+    }
+  }
+}

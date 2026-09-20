@@ -174,18 +174,29 @@ test.describe('Settings destination', () => {
   });
 
   /**
-   * FR-007, SC-006, US3-AC1/AC2. The Backups area is a placeholder with no capability behind it,
-   * so what is worth asserting is that it is a REAL addressable route rather than a dead entry:
-   * it renders, and navigation works away from it and back.
+   * SC-006, US3-AC1/AC2. What this test protects is the ROUTE, not the screen's contents: that
+   * Backups is a REAL addressable area rather than a dead entry — it renders, and navigation
+   * works away from it and back.
+   *
+   * UPDATED AT THE CAUSE, not deleted. It used to assert the area said the capability was "not
+   * yet available", and feature 073 is exactly the change that makes that false — 062 shipped
+   * that placeholder so that 073 would replace its BODY and touch nothing else, which is the
+   * extension property SC-006 asks for. So the placeholder assertion is replaced by one that
+   * still proves the same thing 062 cared about (the area renders and names itself under its
+   * unchanged testID), and the navigation assertions below are untouched.
+   *
+   * Deliberately NOT asserting feature 073's own controls here: that belongs in backups.spec.ts,
+   * and coupling this route test to the backups UI would make it fail for reasons that have
+   * nothing to do with routing.
    */
-  test('the Backups area renders its placeholder and navigates both ways', async ({ page }) => {
+  test('the Backups area renders and navigates both ways', async ({ page }) => {
     await page.goto(`${BASE}/(app)/settings`);
     await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30000 });
 
     await page.getByTestId('settings-nav-backups').click();
     await expect(page).toHaveURL(/\/settings\/backups$/, { timeout: 20000 });
     await expect(page.getByTestId('settings-backups-screen')).toBeVisible({ timeout: 30000 });
-    await expect(page.getByTestId('settings-backups-screen')).toContainText(/not yet available/i);
+    await expect(page.getByTestId('settings-backups-screen')).toContainText(/backups/i);
     await expect(page.getByTestId('settings-nav')).toBeVisible();
 
     // Away…

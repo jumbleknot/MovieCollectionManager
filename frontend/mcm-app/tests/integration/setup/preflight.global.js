@@ -131,6 +131,24 @@ module.exports = async function preflight() {
     ['BFF Mongo', `${mongo.host}:${mongo.port}`, tcpProbe(mongo.host, mongo.port)],
   ];
 
+  // Feature 073 — the two REAL backup destinations, in their own compose file. Gated on their own
+  // flag because they are not part of the default stack: the other thirty suites must not start
+  // requiring two containers they never touch. The driver suites set it, so for THEM a target that
+  // is down is a hard failure rather than a skip that reads as a pass.
+  //
+  // The WebDAV container is distroless and cannot self-probe, so this is the ONLY place its
+  // liveness is asserted (see infrastructure-as-code/docker/backups/compose.yaml). An
+  // unauthenticated request earning 401 is the proof: it means the server parsed its config,
+  // is listening, and has auth configured — which a bare TCP connect would not establish.
+  if (process.env.MCM_REQUIRE_BACKUP_TARGETS === '1') {
+    const s3Url = process.env.BACKUP_TEST_S3_ENDPOINT || 'http://localhost:9100';
+    const davUrl = process.env.BACKUP_TEST_WEBDAV_ENDPOINT || 'http://localhost:9102';
+    checks.push(
+      ['Backup S3 (MinIO)', `${s3Url}/minio/health/live`, httpProbe(`${s3Url}/minio/health/live`, { expectStatus: 200 })],
+      ['Backup WebDAV', davUrl, httpProbe(davUrl, { expectStatus: 401 })],
+    );
+  }
+
   const results = await Promise.all(checks.map(([, , p]) => p));
   const down = checks
     .map(([name, target], i) => ({ name, target, error: results[i] }))

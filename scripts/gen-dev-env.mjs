@@ -129,6 +129,47 @@ const priorEncKey = priorDocker.AGENT_CONFIG_ENC_KEY ?? '';
 const AGENT_CONFIG_ENC_KEY =
   Buffer.from(priorEncKey, 'base64').length === 32 ? priorEncKey : randomBytes(32).toString('base64');
 
+// Feature 073 — backup destination credentials. A SEPARATE AES-256-GCM key from
+// AGENT_CONFIG_ENC_KEY by design (see env.ts): one key protecting assistant credentials, another
+// protecting "where this server may write the user's entire collection".
+//
+// It is reused from `.env.docker` FIRST and `.env.local` SECOND, and that order matters. The two
+// files feed two different BFF processes — the containerized one and the Metro dev loop — against
+// the SAME BFF Mongo. If they hold different keys, a destination saved under one is undecryptable
+// under the other, and the symptom is an authentication failure on a secret that was stored
+// correctly. Same validity rule as the agent key: a wrong-length prior value is re-minted, because
+// reusing it would silently preserve the bug it represents.
+// The feature-073 backup test destinations' credentials live in stacks/mcm.env, minted by
+// gen-dev-secrets.mjs alongside the other stack secrets. They are PROJECTED into .env.local for
+// the same reason the realm secrets are: the integration suite and the containers must hold the
+// same values by construction, not by someone remembering to copy them. Absent (no mcm.env yet)
+// they are simply not written, and the driver suites then fail on their own explicit
+// "has a secret to test with" assertion rather than as four identical auth errors.
+const MCM_STACK_ENV = resolve(REPO_ROOT, 'infrastructure-as-code/docker/stacks/mcm.env');
+const mcmStack = existsSync(MCM_STACK_ENV) ? parseEnv(MCM_STACK_ENV) : {};
+const BACKUP_TEST_KEYS = [
+  'BACKUP_TEST_S3_ACCESS_KEY',
+  'BACKUP_TEST_S3_SECRET_KEY',
+  'BACKUP_TEST_WEBDAV_USER',
+  'BACKUP_TEST_WEBDAV_PASSWORD',
+];
+const backupTestCreds = Object.fromEntries(
+  BACKUP_TEST_KEYS.filter((k) => mcmStack[k]).map((k) => [k, mcmStack[k]]),
+);
+
+const priorLocal = existsSync(ENV_LOCAL) ? parseEnv(ENV_LOCAL) : {};
+const priorBackupKey = priorDocker.BACKUP_CREDENTIAL_ENC_KEY || priorLocal.BACKUP_CREDENTIAL_ENC_KEY || '';
+const BACKUP_CREDENTIAL_ENC_KEY =
+  Buffer.from(priorBackupKey, 'base64').length === 32 ? priorBackupKey : randomBytes(32).toString('base64');
+// Guards the INTERNAL tick route. Shared between the two files for the same reason.
+const BACKUP_TICK_SECRET =
+  priorDocker.BACKUP_TICK_SECRET || priorLocal.BACKUP_TICK_SECRET || randomBytes(32).toString('hex');
+// The dev destinations the backup URL guard must admit: the guard denies private space BY DEFAULT
+// (the inverse of the Ollama guard), so the feature's own test containers are unreachable until
+// they are named here. Both bind to loopback only — see the `backups` Compose profile.
+const BACKUP_ALLOWED_DESTINATION_HOSTS =
+  'localhost,127.0.0.1,mcm-bff-backup-minio,mcm-bff-backup-webdav';
+
 // --- Verify the projection against the RUNNING realm (item #395) ---------------------------------
 //
 // Writing the files proves the values reached disk. It proves NOTHING about whether they still
@@ -338,6 +379,12 @@ AGENT_RATE_LIMIT_REQUESTS=10000
 # Feature 018 — per-user agent config (BFF→Mongo AES-256-GCM store)
 AGENT_CONFIG_ENC_KEY=${AGENT_CONFIG_ENC_KEY}
 MONGO_URL=mongodb://mcm-bff-store-mongo:27017
+
+# Feature 073 — per-user scheduled collection backups. The ceilings are left at their code
+# defaults here; set them only to tighten a specific deployment.
+BACKUP_CREDENTIAL_ENC_KEY=${BACKUP_CREDENTIAL_ENC_KEY}
+BACKUP_TICK_SECRET=${BACKUP_TICK_SECRET}
+BACKUP_ALLOWED_DESTINATION_HOSTS=${BACKUP_ALLOWED_DESTINATION_HOSTS}
 `;
 writeFileSync(ENV_DOCKER, envDocker, 'utf8');
 
@@ -409,9 +456,55 @@ function syncEnvFile(path, sync, opts = {}) {
 // skips every credential-dependent agent/MCP integration test.
 const localResult = syncEnvFile(
   ENV_LOCAL,
-  { KEYCLOAK_CLIENT_SECRET, KEYCLOAK_SERVICE_CLIENT_SECRET, AGENT_SUBJECT_TOKEN_CLIENT_SECRET },
+  {
+    KEYCLOAK_CLIENT_SECRET,
+    KEYCLOAK_SERVICE_CLIENT_SECRET,
+    AGENT_SUBJECT_TOKEN_CLIENT_SECRET,
+    ...backupTestCreds,
+  },
   {
     create: true,
+    // 073 — SEEDED, not synced. Rewriting BACKUP_CREDENTIAL_ENC_KEY on a re-run would orphan every
+    // destination secret already sealed under the old one, and the failure would surface much later
+    // as an authentication error on a credential the user entered correctly. The ceilings and the
+    // tick interval are developer knobs and follow the same seed-once rule.
+    defaults: {
+      // The host-reachable service URLs. These are NOT new knobs — `.env.docker` already defines
+      // all four, with DOCKER-INTERNAL names, and the integration suite loads that file LAST as a
+      // fallback. With `.env.local` silent on them, the fallback wins and every local suite that
+      // touches Mongo, mc-service or Keycloak dies on `getaddrinfo ENOTFOUND mcm-bff-store-mongo`
+      // — a name no process outside the compose network can resolve. MEASURED 2026-09-20:
+      // `agent-config-store.integration.test.ts` fails that way on a box where the same Mongo is
+      // answering on 127.0.0.1:27018, and `tests/integration/setup/env.ts` says in a comment that
+      // "MONGO_URL comes from .env.local (the dedicated 27018)" — the expectation was written down
+      // and nothing ever wrote the line. Seeded, not synced, so a developer pointing at a
+      // different instance keeps it.
+      MONGO_URL: 'mongodb://localhost:27018',
+      // The dev-container BFF publishes on 8082; tests/integration/helpers/bff-test-server.ts
+      // defaults to 8081, which is the Metro dev-loop port and is not listening in the ordinary
+      // compose-up. Unset, every HTTP-level integration suite fails with curl 000 against a BFF
+      // that is running and healthy one port over.
+      BFF_BASE_URL: 'http://localhost:8082',
+      // Two spellings of the same two servers, and both are needed. A suite running on the HOST
+      // reaches them on loopback; the BFF CONTAINER reaches them by compose service name on the
+      // shared network and cannot resolve loopback to them at all. A probe test drives the BFF,
+      // so the endpoint it sends must be the container's spelling — sending the host's produces
+      // "unreachable" against a server that is up, which reads as a driver bug.
+      BACKUP_TEST_S3_ENDPOINT: 'http://localhost:9100',
+      BACKUP_TEST_WEBDAV_ENDPOINT: 'http://localhost:9102',
+      BACKUP_TEST_S3_INTERNAL_ENDPOINT: 'http://mcm-bff-backup-minio:9000',
+      BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT: 'http://mcm-bff-backup-webdav:6065',
+      BACKUP_TEST_S3_BUCKET: 'mcm-backups-test',
+      MC_SERVICE_URL: 'http://localhost:3001',
+      KEYCLOAK_URL: 'http://localhost:8099',
+      REDIS_URL: 'redis://localhost:6379',
+      BACKUP_CREDENTIAL_ENC_KEY,
+      BACKUP_TICK_SECRET,
+      BACKUP_ALLOWED_DESTINATION_HOSTS,
+      BACKUP_MAX_MOVIES: 25000,
+      BACKUP_MAX_UNCOMPRESSED_BYTES: 67108864,
+      BACKUP_TICK_INTERVAL_MS: 60000,
+    },
     header:
       '# GENERATED by scripts/gen-dev-env.mjs — gitignored, never commit.\n' +
       '# The realm client secrets, projected from stacks/auth.env so they match the imported dev\n' +

@@ -154,3 +154,33 @@
 # means a regression re-blocks. If metro ever reintroduces image-size, the findings return
 # un-suppressed, which is the intent.
 
+
+# ── SAST: feature 073 backups — auth enforced by the route layer, not per function ───────────────
+#
+# `mcm-auth-before-authz` flags `createMcServiceClient(...)` without a textually preceding
+# requireAuth/requireMcUser in the SAME function. Both modules below are service-layer functions
+# that receive an ALREADY-AUTHENTICATED jwt; the guard runs one layer up, in `withBackupRoute`
+# (frontend/mcm-app/src/bff-server/backup-route-support.ts), which performs requireAuth →
+# requireMcUser and only then invokes a handler body — passing it `{ userId, jwt }` and nothing
+# else. A handler that skipped authorization is not expressible there.
+#
+# This is the exact limitation the rule documents ("Auth performed in a wrapper/HOF ... is not
+# recognized — triage such patterns into security/sast/allowlist.yaml"), and pushing a
+# requireMcUser call down into these functions would CONTRADICT the constitution's
+# role-enforcement-is-a-layer rule (openwiki/gotchas/role-enforcement-is-a-layer.md) by
+# reintroducing the per-call-site check that rule exists to prevent.
+#
+# RESIDUAL RISK, stated rather than implied: a future caller could invoke either function with a
+# jwt obtained some other way. That is bounded by the fact that a jwt has to come from somewhere —
+# today, only the authenticated route layer — and the entries are pinned to these two files, so a
+# new unguarded upstream client anywhere else still fails the gate.
+- scanner: "semgrep"
+  id: "security.sast.rules.mcm-auth-before-authz"
+  locationPattern: "frontend/mcm-app/src/bff-server/backup-snapshot-reader\\.ts:.*"
+  justification: "Service-layer reader that takes an already-authenticated jwt. requireAuth + requireMcUser run in withBackupRoute before any handler body executes; the reader is never reachable without them. Pushing the check into this function would duplicate the enforcement layer the constitution mandates."
+  addedBy: "steve"
+- scanner: "semgrep"
+  id: "security.sast.rules.mcm-auth-before-authz"
+  locationPattern: "frontend/mcm-app/src/bff-server/backup-restore-writer\\.ts:.*"
+  justification: "Service-layer writer that takes an already-authenticated jwt, and writes AS THE USER so mc-service applies its own DAC and validation. requireAuth + requireMcUser run in withBackupRoute before any handler body executes. Same layer argument as backup-snapshot-reader."
+  addedBy: "steve"

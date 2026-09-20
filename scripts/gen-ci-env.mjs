@@ -24,6 +24,7 @@
  *
  * Usage (CI step): KEYCLOAK_CLIENT_SECRET=… COOKIE_SECRET=… … node scripts/gen-ci-env.mjs
  */
+import { randomBytes } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -45,6 +46,26 @@ const KEYCLOAK_SERVICE_CLIENT_SECRET = reqSecret('KEYCLOAK_SERVICE_CLIENT_SECRET
 const COOKIE_SECRET = reqSecret('COOKIE_SECRET');
 const AGENT_SUBJECT_TOKEN_CLIENT_SECRET = reqSecret('AGENT_SUBJECT_TOKEN_CLIENT_SECRET');
 const AGENT_CONFIG_ENC_KEY = reqSecret('AGENT_CONFIG_ENC_KEY');
+
+// ── Feature 073 — backups ─────────────────────────────────────────────────────────────────────
+//
+// MINTED PER RUN rather than read from a Forgejo secret, and that is the right call rather than a
+// shortcut: nothing in CI has to decrypt across runs. Every destination this job creates is
+// created and torn down inside it, so a fresh key each time is strictly better than a long-lived
+// shared one — there is no value to steal and no rotation to remember. (AGENT_CONFIG_ENC_KEY is a
+// secret because the agent config it protects is seeded from real operator credentials; a backup
+// destination in CI points at a throwaway container.)
+//
+// 32 bytes base64, because backup-credential-crypto rejects any other length — minting it as hex
+// would give 64 chars that decode to 48 bytes and fail at first use, which is the same trap
+// gen-dev-env.mjs documents for AGENT_CONFIG_ENC_KEY.
+const BACKUP_CREDENTIAL_ENC_KEY =
+  process.env.BACKUP_CREDENTIAL_ENC_KEY || randomBytes(32).toString('base64');
+
+// The backup URL guard denies private space BY DEFAULT (the inverse of the Ollama guard), so the
+// test destinations are unreachable until named here. These are the compose service names the BFF
+// container resolves them by — NOT the loopback ports the host-side suites use.
+const BACKUP_ALLOWED_DESTINATION_HOSTS = 'localhost,127.0.0.1,mcm-bff-backup-minio,mcm-bff-backup-webdav';
 
 // 1 — BFF .env.docker. Non-secret values are Docker-internal service DNS (matches the committed
 //     .env.docker.example + compose); E2E raises the per-user cost/rate ceilings so a shared test
@@ -90,6 +111,12 @@ AGENT_RATE_LIMIT_REQUESTS=10000
 # Feature 018 — per-user agent config (BFF→Mongo AES-256-GCM store)
 AGENT_CONFIG_ENC_KEY=${AGENT_CONFIG_ENC_KEY}
 MONGO_URL=mongodb://mcm-bff-store-mongo:27017
+
+# Feature 073 — per-user collection backups. The host-side jest suites also read this file (see
+# tests/integration/setup/env.ts, which falls back to .env.docker in CI), so the encryption key
+# has to be here for the in-process store suites as well as for the BFF container.
+BACKUP_CREDENTIAL_ENC_KEY=${BACKUP_CREDENTIAL_ENC_KEY}
+BACKUP_ALLOWED_DESTINATION_HOSTS=${BACKUP_ALLOWED_DESTINATION_HOSTS}
 `;
 writeFileSync(resolve(REPO_ROOT, 'frontend/mcm-app/.env.docker'), envDocker, 'utf8');
 

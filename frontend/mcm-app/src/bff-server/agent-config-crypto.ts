@@ -7,6 +7,8 @@
 
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
+import { env } from '@/config/env';
+
 const ALGORITHM = 'aes-256-gcm';
 const IV_BYTES = 12; // GCM standard nonce length
 const TAG_BYTES = 16;
@@ -66,4 +68,59 @@ export function decryptSecret(blobBase64: string, keyBase64: string, aad = ''): 
  */
 export function secretAad(userId: string, field: 'anthropicKey' | 'tmdbKey'): string {
   return `${userId}:${field}`;
+}
+
+// ─── Backups (feature 073) ─────────────────────────────────────────────────────
+//
+// The same AES-256-GCM primitives above, under a DIFFERENT master key and different AADs. Sharing
+// AGENT_CONFIG_ENC_KEY would have been one fewer variable and would have widened that key's blast
+// radius from "the user's assistant credentials" to "every store the user's whole collection can
+// be written to". The primitives are shared; the key is not.
+
+/**
+ * AAD for a destination's stored secret — binds the blob to its owner AND to the specific
+ * destination.
+ *
+ * The destination id is what makes this more than a copy of `secretAad`. Bound to the user alone,
+ * two of ONE user's own destination secrets would be interchangeable: a store-layer mixup that
+ * put the WebDAV app password into the S3 document would decrypt perfectly and the BFF would
+ * then present it to the S3 endpoint as an access key. Bound to the destination, that same mixup
+ * fails the GCM authentication check, which is a loud failure instead of a silent leak.
+ */
+export function backupSecretAad(userId: string, destinationId: string): string {
+  return `${userId}:backupDestinationSecret:${destinationId}`;
+}
+
+/**
+ * AAD for the standing-permission (offline) refresh token. ONE per user, not one per job — a user
+ * consents once and revocation is a single act — so the owner is the whole context.
+ */
+export function offlineTokenAad(userId: string): string {
+  return `${userId}:offlineRefresh`;
+}
+
+/**
+ * The backup master key, validated.
+ *
+ * Read at USE, not at boot. A deployment that never configures a destination must still start:
+ * the feature is genuinely optional, and refusing to boot over an unused variable would make it
+ * mandatory in practice. The cost of that choice is that this message is the only thing telling
+ * an operator WHICH of the two keys is missing, so it names BACKUP_CREDENTIAL_ENC_KEY explicitly
+ * rather than deferring to `loadKey`'s message about the assistant key.
+ */
+export function backupEncryptionKey(): string {
+  const keyBase64 = env.backupCredentialEncKey;
+  if (!keyBase64) {
+    throw new Error(
+      'BACKUP_CREDENTIAL_ENC_KEY is not set — a backup destination secret cannot be stored or ' +
+        'read. It is a separate key from AGENT_CONFIG_ENC_KEY; generate 32 bytes base64.',
+    );
+  }
+  if (Buffer.from(keyBase64, 'base64').length !== KEY_BYTES) {
+    throw new Error(
+      `BACKUP_CREDENTIAL_ENC_KEY must decode to ${KEY_BYTES} bytes ` +
+        `(got ${Buffer.from(keyBase64, 'base64').length})`,
+    );
+  }
+  return keyBase64;
 }

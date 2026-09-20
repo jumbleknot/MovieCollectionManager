@@ -99,6 +99,36 @@ export const env = {
   // "ollama.internal,10.0.0.5") in a hardened multi-user deployment to permit ONLY those hosts.
   agentOllamaAllowedHosts: optionalEnv('AGENT_OLLAMA_ALLOWED_HOSTS', ''),
 
+  // ── Per-user scheduled collection backups (feature 073) ────────────────────────────────────
+  // BACKUP_CREDENTIAL_ENC_KEY is a SEPARATE AES-256-GCM master key from AGENT_CONFIG_ENC_KEY
+  // (32 bytes, base64). Reusing the agent key would widen that key's blast radius from
+  // "assistant credentials" to "every destination a user can write their whole collection to"
+  // for no gain. Empty by default so a deployment that never configures a destination still
+  // starts; `backup-credential-crypto` throws a named error the first time a secret is sealed
+  // or opened without it (same lazy-failure shape as agentConfigEncKey).
+  backupCredentialEncKey: optionalEnv('BACKUP_CREDENTIAL_ENC_KEY', ''),
+  // Bearer guarding the INTERNAL tick route. Compared in constant time; when this is empty the
+  // route answers 404 rather than 401, so it never advertises its own existence.
+  backupTickSecret: optionalEnv('BACKUP_TICK_SECRET', ''),
+  // Comma-separated host allow-list for backup destinations. The backup URL guard is the
+  // INVERSE of the Ollama one: private/loopback/link-local are denied BY DEFAULT, because a
+  // destination address is a place this server will POST the user's entire collection to, and
+  // mc-service/keycloak-service/the BFF's own Mongo all live in private space. A homelab NAS is
+  // the primary legitimate destination, so it must be named here to be reachable.
+  backupAllowedDestinationHosts: optionalEnv('BACKUP_ALLOWED_DESTINATION_HOSTS', ''),
+  // Size ceilings (FR-015). A run that would exceed either fails LOUDLY and writes nothing —
+  // deliberately not streamed, because a truncated artifact that looks complete is the worst
+  // failure this feature can have. The reason names both the ceiling and the measured value.
+  backupMaxMovies: parseInt(optionalEnv('BACKUP_MAX_MOVIES', '25000'), 10),
+  backupMaxUncompressedBytes: parseInt(optionalEnv('BACKUP_MAX_UNCOMPRESSED_BYTES', '67108864'), 10), // 64 MiB
+  // How often server.js pokes the loopback tick route. Not the schedule resolution — the tick
+  // only looks for jobs already due, so a longer interval delays a run, it never skips one.
+  backupTickIntervalMs: parseInt(optionalEnv('BACKUP_TICK_INTERVAL_MS', '60000'), 10),
+  // The three backup collections in the BFF's own Mongo, named like the two that precede them.
+  backupDestinationsCollection: optionalEnv('BACKUP_DESTINATIONS_COLLECTION', 'backup_destinations'),
+  backupJobsCollection: optionalEnv('BACKUP_JOBS_COLLECTION', 'backup_jobs'),
+  backupRunsCollection: optionalEnv('BACKUP_RUNS_COLLECTION', 'backup_runs'),
+
   // App
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
   isDevelopment: optionalEnv('NODE_ENV', 'development') === 'development',

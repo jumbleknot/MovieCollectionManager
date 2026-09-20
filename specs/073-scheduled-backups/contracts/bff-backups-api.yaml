@@ -1,0 +1,408 @@
+openapi: 3.1.0
+info:
+  title: MCM BFF — Backups API
+  version: 1.0.0
+  description: |
+    Per-user backup destinations, jobs, runs and restore (feature 073).
+
+    Every route below is authenticated by the BFF session cookie and authorized by the shared
+    `requireAuth` → `requireMcUser` layer — not by per-handler checks. The owning userId is taken
+    from the validated session and NEVER from a path, query or body parameter: there is
+    deliberately no `userId` anywhere in this document.
+
+    Destination secrets are write-only. No response schema here contains one.
+
+servers:
+  - url: /bff-api/backups
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: mcm_session
+  schemas:
+    Problem:
+      description: RFC 9457 Problem Details. Never carries an upstream response body, URL or stack.
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+    TestResult:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+        reason:
+          type: string
+          description: Present only when ok is false. Distinguishes unreachable from credentials-rejected (FR-004), and is always a safe, normalised string.
+    Destination:
+      type: object
+      description: Response shape. Contains no secret — `secretEnc` is excluded at the store layer, not stripped per route.
+      required: [id, type, label, endpoint, createdAt]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [s3, webdav] }
+        label: { type: string, maxLength: 64 }
+        endpoint: { type: string, format: uri }
+        bucket: { type: string }
+        region: { type: string }
+        pathStyle: { type: boolean }
+        basePath: { type: string }
+        accessKeyId: { type: string }
+        username: { type: string }
+        lastTestedAt: { type: string, format: date-time }
+        lastTestResult: { $ref: '#/components/schemas/TestResult' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    DestinationWrite:
+      type: object
+      description: |
+        Discriminated on `type`. Omitting `secret` on update PRESERVES the stored secret (FR-003);
+        sending an empty string is rejected rather than treated as a clear, because silently
+        blanking a credential is indistinguishable from a UI bug.
+      required: [type, label, endpoint]
+      properties:
+        type: { type: string, enum: [s3, webdav] }
+        label: { type: string, maxLength: 64 }
+        endpoint: { type: string, format: uri }
+        bucket: { type: string }
+        region: { type: string }
+        pathStyle: { type: boolean }
+        basePath: { type: string }
+        accessKeyId: { type: string }
+        username: { type: string }
+        secret: { type: string, writeOnly: true, minLength: 1 }
+    Schedule:
+      type: object
+      required: [frequency, hour, minute, timeZone]
+      properties:
+        frequency: { type: string, enum: [daily, weekly, monthly] }
+        hour: { type: integer, minimum: 0, maximum: 23 }
+        minute: { type: integer, minimum: 0, maximum: 59 }
+        weekday: { type: integer, minimum: 1, maximum: 7, description: ISO weekday, Monday=1. weekly only. }
+        dayOfMonth: { type: integer, minimum: 1, maximum: 31, description: monthly only. Clamps to the last day in shorter months — never skips a month. }
+        timeZone: { type: string, description: IANA zone name, validated against the runtime zone list. A property of the job, not the requesting device. }
+    Job:
+      type: object
+      required: [id, destinationId, label, collectionIds, keepLast, enabled]
+      properties:
+        id: { type: string }
+        destinationId: { type: string }
+        label: { type: string }
+        collectionIds:
+          type: array
+          items: { type: string }
+          description: Empty means every collection the user owns at run time.
+        schedule: { $ref: '#/components/schemas/Schedule' }
+        keepLast: { type: integer, minimum: 1, maximum: 365, default: 7 }
+        enabled: { type: boolean }
+        nextRunAt: { type: string, format: date-time }
+        lastRun: { $ref: '#/components/schemas/RunSummary' }
+    RunSummary:
+      type: object
+      properties:
+        runId: { type: string }
+        status: { type: string, enum: [running, success, failed, partial] }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+        collectionCount: { type: integer }
+        movieCount: { type: integer }
+        artifactBytes: { type: integer }
+        failureReason: { type: string }
+        pruneFailureReason: { type: string }
+    Version:
+      type: object
+      required: [key, createdAt, sizeBytes]
+      properties:
+        key: { type: string }
+        createdAt: { type: string, format: date-time }
+        sizeBytes: { type: integer }
+        usable:
+          type: boolean
+          description: False for a zero-length or unreadable object. Such a version is listed but not offered for restore.
+
+security:
+  - sessionCookie: []
+
+paths:
+  /destinations:
+    get:
+      operationId: listBackupDestinations
+      summary: The caller's own destinations
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Destination' } }
+    post:
+      operationId: createBackupDestination
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DestinationWrite' }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Destination' }
+        '400':
+          description: Validation failed, or the address was refused by the resolving SSRF guard (FR-005).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /destinations/{destinationId}:
+    parameters:
+      - name: destinationId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getBackupDestination
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Destination' }
+        '404':
+          description: Not found, or owned by another user — deliberately indistinguishable (FR-034).
+    patch:
+      operationId: updateBackupDestination
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DestinationWrite' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Destination' }
+    delete:
+      operationId: deleteBackupDestination
+      description: Erases the stored credential and disables every job referencing it (FR-006).
+      responses:
+        '204': { description: Deleted }
+
+  /destinations/test:
+    post:
+      operationId: testBackupDestination
+      description: |
+        Server-side probe of reachability, credentials and write permission. Accepts either a saved
+        destinationId or an unsaved draft, so a user can verify BEFORE committing a credential.
+        The address passes the resolving guard here too — a probe must never be a way around it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [destinationId]
+                  properties:
+                    destinationId: { type: string }
+                - $ref: '#/components/schemas/DestinationWrite'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TestResult' }
+        '429': { description: Probe rate limit exceeded }
+
+  /jobs:
+    get:
+      operationId: listBackupJobs
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Job' } }
+    post:
+      operationId: createBackupJob
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Job' }
+        '409':
+          description: A schedule was requested but no standing permission is held — the caller must complete the consent flow first (FR-022).
+
+  /jobs/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getBackupJob
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Job' }
+    patch:
+      operationId: updateBackupJob
+      description: Recomputes nextRunAt whenever the schedule changes. Disabling the last enabled schedule revokes the standing permission (FR-023).
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Job' }
+    delete:
+      operationId: deleteBackupJob
+      responses:
+        '204': { description: Deleted }
+
+  /jobs/{jobId}/run:
+    post:
+      operationId: runBackupJobNow
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '202':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunSummary' }
+        '409': { description: A run is already in progress for this user (FR-013). }
+        '429': { description: On-demand rate limit exceeded (FR-012). }
+
+  /jobs/{jobId}/runs:
+    get:
+      operationId: listBackupRuns
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/RunSummary' } }
+
+  /jobs/{jobId}/versions:
+    get:
+      operationId: listBackupVersions
+      description: Reads the destination directly, so it reflects what is actually there — including versions this system did not write and objects that have since been removed.
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Version' } }
+
+  /jobs/{jobId}/restore:
+    post:
+      operationId: restoreBackupVersion
+      description: |
+        Non-destructive (FR-029). Validates manifest, formatVersion and sha256 BEFORE creating
+        anything; on any failure nothing is written. Creates new collections named
+        `<name> (backup <timestamp>)` through the ordinary mc-service path as the caller.
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdCollectionIds: { type: array, items: { type: string } }
+                  movieCount: { type: integer }
+                  partial: { type: boolean }
+        '422':
+          description: Integrity check failed or formatVersion unrecognised. Nothing was written (FR-031/FR-032).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /jobs/{jobId}/download:
+    get:
+      operationId: downloadBackupVersion
+      description: Streams the artifact so the user is not dependent on this system to read their own backup (FR-028).
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: key
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/gzip:
+              schema: { type: string, format: binary }
+
+  /consent:
+    get:
+      operationId: startBackupConsent
+      description: |
+        Begins the separate OIDC round trip that obtains the standing permission
+        (`scope=openid offline_access`). Distinct from login: the result is STORED, never turned
+        into a session. Returns the authorization URL for the client to visit.
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authorizationUrl: { type: string, format: uri }
+    delete:
+      operationId: revokeBackupConsent
+      description: Revokes the standing permission at the identity provider, then clears the local record — in that order (FR-023).
+      responses:
+        '204': { description: Revoked }
+
+  /tick:
+    post:
+      operationId: runBackupTick
+      description: |
+        INTERNAL. Not part of the user-facing API and not exposed through the reverse proxy.
+        Driven by `server.js` over loopback in production; called directly by tests so scheduling
+        is verified without sleeping on a wall clock.
+
+        Guarded by a `BACKUP_TICK_SECRET` bearer compared in constant time. Responds 404 — not 401 —
+        when the secret is absent or wrong, so the route does not advertise its own existence.
+      security: []
+      parameters:
+        - name: now
+          in: query
+          description: Test-only override for the current instant. Rejected unless the deployment is explicitly non-production.
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  leader: { type: boolean, description: False when another instance holds the lock — a normal, non-error outcome. }
+                  claimed: { type: integer }
+                  completed: { type: integer }
+                  failed: { type: integer }
+        '404': { description: Secret absent or incorrect. }

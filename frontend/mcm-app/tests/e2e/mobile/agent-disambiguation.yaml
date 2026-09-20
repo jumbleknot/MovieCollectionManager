@@ -179,7 +179,22 @@ appId: com.grumpyrobot.mcmapp
 
 # A card with a real title — not an empty shell. Which film it is depends on live TMDB ranking, so
 # it is deliberately not asserted here (see the note above); the web mirror covers that.
-- assertVisible:
-    id: "render-movie-card-title"
+#
+# A WAIT, not a bare assertVisible, and for the same reason as this file's last two fixes: the
+# affordance you waited for is not the affordance you are asserting. The step above waits for
+# `render-movie-card` — the CONTAINER — and this asserts one of its CHILDREN. The card renders an
+# async poster <Image> ABOVE the title, so the title's position moves when that image loads;
+# sampling once, the instant the container appears, races that layout pass.
+#
+# MEASURED: failed three consecutive attempts on run 3838 with `render-movie-card` visible,
+# `disambiguation-options` correctly collapsed, and only the title's visibility false — i.e. the
+# turn resolved exactly as intended and the assertion sampled too early.
+#
+# This does NOT weaken the assertion. A bounded wait still fails if the title never becomes
+# visible; it only removes the race. A title that genuinely never renders still reds this flow.
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card-title"
+    timeout: 15000
 - assertNotVisible:
     id: "approval-request"

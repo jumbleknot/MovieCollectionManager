@@ -67,6 +67,11 @@ interface RedisLike {
   sadd(key: string, ...members: string[]): Promise<void>;
   srem(key: string, ...members: string[]): Promise<void>;
   scard(key: string): Promise<number>;
+  // Feature 073: compare-and-delete for the leader lock. A plain GET-then-DEL would have a
+  // window in which the lock expires and another instance acquires between the two commands,
+  // and the DEL would then delete the NEW holder's lock — the precise failure the holder check
+  // exists to prevent. EVAL runs both halves as one server-side operation.
+  eval(script: string, numKeys: number, ...args: string[]): Promise<unknown>;
   quit(): Promise<void>;
 }
 
@@ -304,6 +309,46 @@ export async function claimAgentThreadOwner(
     if (claimed) return userId; // 'OK' → this user just claimed an unowned thread
     const owner = await redis.get(key); // already owned — read the owner back
     return owner ?? userId; // race fallback: treat as ours rather than failing open
+  } catch {
+    throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
+  }
+}
+
+// ─── Leader lock primitives (feature 073) ──────────────────────────────────────
+//
+// Narrow pair rather than an exported Redis handle: everything else in this module owns its own
+// key shape, and handing out the raw client would make every future caller a place where a key
+// namespace or a TTL could be got wrong.
+
+/** `SET key holder EX ttl NX` — true when this caller took the lock. */
+export async function setLockIfAbsent(
+  key: string,
+  holderId: string,
+  ttlSeconds: number,
+): Promise<boolean> {
+  const redis = await getRedis();
+  try {
+    const set = await redis.set(key, holderId, 'EX', Math.max(1, ttlSeconds), 'NX');
+    return set !== null;
+  } catch {
+    throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
+  }
+}
+
+// Delete the key ONLY if it still holds this caller's id, as one atomic server-side step.
+const RELEASE_IF_HELD = `
+if redis.call('get', KEYS[1]) == ARGV[1] then
+  return redis.call('del', KEYS[1])
+else
+  return 0
+end`;
+
+/** True when this caller held the lock and it was deleted; false otherwise (a no-op). */
+export async function releaseLockIfHeld(key: string, holderId: string): Promise<boolean> {
+  const redis = await getRedis();
+  try {
+    const deleted = await redis.eval(RELEASE_IF_HELD, 1, key, holderId);
+    return Number(deleted) === 1;
   } catch {
     throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
   }
