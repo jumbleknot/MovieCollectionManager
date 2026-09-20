@@ -4,7 +4,13 @@ title: Developer environment setup (host toolchain)
 description: How to provision a host development machine for MovieCollectionManager — the pinned toolchain versions (Node, pnpm, Rust, Python/uv, Android SDK) and the required companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer.
 resource: docs/runbooks/dev-environment-setup.md
 tags: [setup, toolchain, host, runbook]
-timestamp: 2026-07-12T20:28:28-04:00
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-20T11:41:17.059Z
+sources:
+  - id: openwiki-source-8cb0da307c90adb4287997a5
+    resource: repo://docs/runbooks/dev-environment-setup.md
+generated: { by: "openwiki/0.5.2", at: "2026-09-20T11:41:17.059Z" }
 ---
 
 # Developer environment setup (host toolchain)
@@ -38,6 +44,15 @@ for the case where the containerized path isn't used, or before bringing up
 - **Regenerate any wiki bundle before committing it** by running the wiki-update Nx target and
   gating with `pnpm nx okf-lint infrastructure-as-code` — an ungated regeneration can drift from the
   conformance rules silently.
+- **Install `mermaid` and `jsdom` as peer dependencies alongside `openwiki` — omitting them silently
+  degrades diagram fences to plain text.** From OpenWiki 0.5.x, `mermaid` and `jsdom` are optional
+  peer dependencies; without them the generator falls back to a weaker built-in fence check and
+  rewrites any Mermaid diagram it cannot verify into a plain `text` fence. The run still exits 0 and
+  every gate still passes — the only symptom is a diagram quietly downgraded to preformatted text,
+  with no error, no warning, and no diff context to flag it. Install all three packages together at
+  the same version the devcontainer toolchain image pins (see
+  `docs/runbooks/dev-environment-setup.md` §6a for the exact invocation and the Node ≥ 22.22
+  floor that OpenWiki 0.5.x also requires).
 
 Full pinned-version table, per-tool install commands, and the Claude Code plugin list:
 `docs/runbooks/dev-environment-setup.md`.

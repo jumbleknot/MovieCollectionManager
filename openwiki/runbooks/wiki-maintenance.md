@@ -1,10 +1,20 @@
 ---
 type: Runbook
 title: OpenWiki knowledge-bundle maintenance
-description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — including the plan/execute split, slice sizing, the retry-then-backlog model, exit codes, and how a lost run record self-heals against the forge's own proposal state.
+description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — including the plan/execute split, slice sizing, the retry-then-backlog model, exit codes, the OKF v0.2 provenance migration, diagram parser installation, and how a lost run record self-heals against the forge's own proposal state.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
-timestamp: 2026-09-19T00:16:22+00:00
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-20T11:41:17.059Z
+sources:
+  - id: openwiki-source-c231cd090281b3129aaf6167
+    resource: repo://docs/runbooks/wiki-maintenance.md
+  - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
+    resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
+  - id: openwiki-source-ccaf212e2940e782eb0de272
+    resource: repo://scripts/check-openwiki-okf.mjs
+generated: { by: "openwiki/0.5.2", at: "2026-09-20T11:41:17.059Z" }
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -82,6 +92,27 @@ never be invoked directly.
   file's directory) fail the build for anything else. For a bundle-wide sweep (e.g. after restoring
   from elsewhere): `node scripts/wiki-maintain.mjs --normalize-links` (offline, no credential; add
   `--dry-run` to preview). Code fences and code spans are exempt.
+- **The OKF v0.2 provenance migration flips the bundle gradually — both stamp shapes coexist until
+  every page has been regenerated.** OpenWiki 0.5.x replaces the flat `timestamp:` scalar with a
+  structured `generated: {by, at}` event. `finalizeGeneratedProvenance` stamps `generated` on every
+  page whose body changed in the run and removes that page's `timestamp` field in the same pass; a
+  page whose body did not change keeps its prior stamp untouched. The gate helper that reads the stamp
+  for drift detection (rule V12) prefers `generated.at` and falls back to `timestamp`, so no manual
+  migration is needed. However, a concept that cites a `resource` but carries neither a usable
+  `generated.at` nor a `timestamp` is silently excluded from drift coverage — the gate counts and
+  prints those pages as a warning, never a failure. **If that count climbs, drift coverage is falling;
+  investigate the generator's provenance pass, not the pages.**
+- **Mermaid and jsdom are optional peer dependencies — missing them causes diagram fences to be
+  silently rewritten to plain text fences while the run exits 0.** From OpenWiki 0.5.0, Mermaid
+  diagrams are embedded by default and every fence is validated after a run. Without `mermaid` and
+  `jsdom` installed alongside the generator, OpenWiki falls back to a weaker built-in check; any
+  diagram that fails that check is rewritten in place as a plain `text` fence with a comment — the run
+  still exits 0, every gate still passes, and the diagram is silently downgraded. Both packages are
+  therefore installed in `.devcontainer/toolchain.Dockerfile` **and** in
+  `.forgejo/workflows/wiki-maintain.yml`. A guard in
+  `scripts/__tests__/wiki-maintain.guard.test.mjs` asserts that the two lists match: if only one
+  environment has the parser, they disagree about what a valid diagram is, and the environment that
+  writes the bundle decides.
 
 Full plan/execute CLI flags, the exit-code table, the CI workflow's proposal-adoption logic, and the
 self-test/lint/governance verification commands: `docs/runbooks/wiki-maintenance.md`.
