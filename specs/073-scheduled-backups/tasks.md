@@ -29,11 +29,11 @@ and find out why before implementing.
 
 ## Phase 1: Setup
 
-- [ ] T001 Add `luxon` and `fast-xml-parser` to `frontend/mcm-app/package.json`
-- [ ] T002 [P] Add the six new environment variables to `frontend/mcm-app/src/config/env.ts` and `scripts/gen-dev-env.mjs`
-- [ ] T003 [P] Define shared backup types in `frontend/mcm-app/src/types/backups.ts`
-- [ ] T004 [P] Add MinIO and WebDAV test services to `infrastructure-as-code/docker/stacks/` under a `backups` profile
-- [ ] T005 Add the three collection accessors and their indexes to `frontend/mcm-app/src/bff-server/mongo-client.ts`
+- [X] T001 Add `luxon` and `fast-xml-parser` to `frontend/mcm-app/package.json`
+- [X] T002 [P] Add the six new environment variables to `frontend/mcm-app/src/config/env.ts` and `scripts/gen-dev-env.mjs`
+- [X] T003 [P] Define shared backup types in `frontend/mcm-app/src/types/backups.ts`
+- [X] T004 [P] Add MinIO and WebDAV test services to `infrastructure-as-code/docker/stacks/` under a `backups` profile
+- [X] T005 Add the three collection accessors and their indexes to `frontend/mcm-app/src/bff-server/mongo-client.ts`
 
 ### T001 — Add the two new dependencies
 
@@ -112,18 +112,18 @@ multi-document transactions. Nothing in this feature may span two documents atom
 **Blocking.** Nothing in any user story may land before this phase. It contains the security control
 the whole feature's safety rests on, and the two drivers everything else writes through.
 
-- [ ] T006 Write the resolving URL guard unit suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-destination-url-guard.test.ts`
-- [ ] T007 Implement the DNS-resolving, connection-pinning guard in `frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts`
-- [ ] T008 [P] Write the AAD-binding unit suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-credential-crypto.test.ts`
-- [ ] T009 [P] Add backup AAD helpers to `frontend/mcm-app/src/bff-server/agent-config-crypto.ts`
-- [ ] T010 [P] Write the lock suite and implement `frontend/mcm-app/src/bff-server/redis-lock.ts`
-- [ ] T011 Define the driver interface in `frontend/mcm-app/src/bff-server/backup-destination-driver.ts`
-- [ ] T012 Write the SigV4 signer suite against published AWS test vectors in `frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts`
-- [ ] T013 Implement the SigV4 signer in `frontend/mcm-app/src/bff-server/backup-request-signer.ts`
-- [ ] T014 Write the S3 driver integration suite in `frontend/mcm-app/tests/integration/backup-driver-s3.test.ts`
-- [ ] T015 Implement the S3 driver in `frontend/mcm-app/src/bff-server/backup-driver-s3.ts`
-- [ ] T016 [P] Write the WebDAV driver integration suite in `frontend/mcm-app/tests/integration/backup-driver-webdav.test.ts`
-- [ ] T017 [P] Implement the WebDAV driver in `frontend/mcm-app/src/bff-server/backup-driver-webdav.ts`
+- [X] T006 Write the resolving URL guard unit suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-destination-url-guard.test.ts`
+- [X] T007 Implement the DNS-resolving, connection-pinning guard in `frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts`
+- [X] T008 [P] Write the AAD-binding unit suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-credential-crypto.test.ts`
+- [X] T009 [P] Add backup AAD helpers to `frontend/mcm-app/src/bff-server/agent-config-crypto.ts`
+- [X] T010 [P] Write the lock suite and implement `frontend/mcm-app/src/bff-server/redis-lock.ts`
+- [X] T011 Define the driver interface in `frontend/mcm-app/src/bff-server/backup-destination-driver.ts`
+- [X] T012 Write the SigV4 signer suite against published AWS test vectors in `frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts`
+- [X] T013 Implement the SigV4 signer in `frontend/mcm-app/src/bff-server/backup-request-signer.ts`
+- [X] T014 Write the S3 driver integration suite in `frontend/mcm-app/tests/integration/backup-driver-s3.test.ts`
+- [X] T015 Implement the S3 driver in `frontend/mcm-app/src/bff-server/backup-driver-s3.ts`
+- [X] T016 [P] Write the WebDAV driver integration suite in `frontend/mcm-app/tests/integration/backup-driver-webdav.test.ts`
+- [X] T017 [P] Implement the WebDAV driver in `frontend/mcm-app/src/bff-server/backup-driver-webdav.ts`
 
 ### T003 — Shared types
 
@@ -345,14 +345,14 @@ this tier is that the real server's dialect is what gets exercised.
 **Independent test**: Add both kinds, test both, edit one, delete the other — with no job, no backup
 and no scheduler in existence.
 
-- [ ] T018 [P] [US1] Write the destination store suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-destination-store.test.ts`
-- [ ] T019 [US1] Implement `frontend/mcm-app/src/bff-server/backup-destination-store.ts`
-- [ ] T020 [P] [US1] Write the destination route authz suite in `frontend/mcm-app/tests/integration/backup-destinations-authz.test.ts`
-- [ ] T021 [US1] Implement the destination routes under `frontend/mcm-app/src/app/bff-api/backups/destinations/`
-- [ ] T022 [P] [US1] Write the probe suite in `frontend/mcm-app/tests/integration/backup-destination-probe.test.ts`
-- [ ] T023 [US1] Implement `POST /bff-api/backups/destinations/test`
-- [ ] T024 [US1] Build the destination UI in `frontend/mcm-app/src/components/backups/destination-form.tsx` and `destination-list.tsx`
-- [ ] T025 [US1] Write the destination E2E in `frontend/mcm-app/e2e/web/backups.spec.ts`, tagged `@gate`
+- [X] T018 [P] [US1] Write the destination store suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-destination-store.test.ts`
+- [X] T019 [US1] Implement `frontend/mcm-app/src/bff-server/backup-destination-store.ts`
+- [X] T020 [P] [US1] Write the destination route authz suite in `frontend/mcm-app/tests/integration/backup-destinations-authz.test.ts`
+- [X] T021 [US1] Implement the destination routes under `frontend/mcm-app/src/app/bff-api/backups/destinations/`
+- [X] T022 [P] [US1] Write the probe suite in `frontend/mcm-app/tests/integration/backup-destination-probe.test.ts`
+- [X] T023 [US1] Implement `POST /bff-api/backups/destinations/test`
+- [X] T024 [US1] Build the destination UI in `frontend/mcm-app/src/components/backups/destination-form.tsx` and `destination-list.tsx`
+- [X] T025 [US1] Write the destination E2E in `frontend/mcm-app/e2e/web/backups.spec.ts`, tagged `@gate`
 
 ### T018 — The store must make leaking a secret impossible, not merely unlikely
 
@@ -518,20 +518,20 @@ placeholder.
 **Independent test**: Press "Back up now", inspect the destination, confirm one artifact whose
 recorded contents match live data — with no scheduler and no restore path built.
 
-- [ ] T026 [P] [US2] Write the snapshot reader suite in `frontend/mcm-app/tests/integration/backup-snapshot-reader.test.ts`
-- [ ] T027 [US2] Implement `frontend/mcm-app/src/bff-server/backup-snapshot-reader.ts`
-- [ ] T028 [P] [US2] Write the artifact suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-artifact.test.ts`
-- [ ] T029 [US2] Implement `frontend/mcm-app/src/bff-server/backup-artifact.ts`
-- [ ] T030 [P] [US2] Write the size-ceiling suite in `frontend/mcm-app/tests/integration/backup-ceiling.test.ts`
-- [ ] T031 [US2] Enforce the ceiling in `frontend/mcm-app/src/bff-server/backup-runner.ts`
-- [ ] T032 [US2] Write the runner suite in `frontend/mcm-app/tests/integration/backup-runner.test.ts`
-- [ ] T033 [US2] Implement `frontend/mcm-app/src/bff-server/backup-runner.ts`
-- [ ] T034 [P] [US2] Write the concurrency and rate-limit suite in `frontend/mcm-app/tests/integration/backup-run-gate.test.ts`
-- [ ] T035 [US2] Implement the per-user run gate and rate limit in `frontend/mcm-app/src/bff-server/backup-runner.ts`
-- [ ] T036 [P] [US2] Write the job and run store suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-job-store.test.ts`
-- [ ] T037 [US2] Implement `backup-job-store.ts`, `backup-run-store.ts` and the job, run and runs routes under `frontend/mcm-app/src/app/bff-api/backups/jobs/`
-- [ ] T038 [US2] Build the job form, "Back up now" and run history UI in `frontend/mcm-app/src/components/backups/`
-- [ ] T039 [US2] Extend the `@gate` E2E with the back-up-now flow in `frontend/mcm-app/e2e/web/backups.spec.ts`
+- [X] T026 [P] [US2] Write the snapshot reader suite in `frontend/mcm-app/tests/integration/backup-snapshot-reader.test.ts`
+- [X] T027 [US2] Implement `frontend/mcm-app/src/bff-server/backup-snapshot-reader.ts`
+- [X] T028 [P] [US2] Write the artifact suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-artifact.test.ts`
+- [X] T029 [US2] Implement `frontend/mcm-app/src/bff-server/backup-artifact.ts`
+- [X] T030 [P] [US2] Write the size-ceiling suite in `frontend/mcm-app/tests/integration/backup-ceiling.test.ts`
+- [X] T031 [US2] Enforce the ceiling in `frontend/mcm-app/src/bff-server/backup-runner.ts`
+- [X] T032 [US2] Write the runner suite in `frontend/mcm-app/tests/integration/backup-runner.test.ts`
+- [X] T033 [US2] Implement `frontend/mcm-app/src/bff-server/backup-runner.ts`
+- [X] T034 [P] [US2] Write the concurrency and rate-limit suite in `frontend/mcm-app/tests/integration/backup-run-gate.test.ts`
+- [X] T035 [US2] Implement the per-user run gate and rate limit in `frontend/mcm-app/src/bff-server/backup-runner.ts`
+- [X] T036 [P] [US2] Write the job and run store suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-job-store.test.ts`
+- [X] T037 [US2] Implement `backup-job-store.ts`, `backup-run-store.ts` and the job, run and runs routes under `frontend/mcm-app/src/app/bff-api/backups/jobs/`
+- [X] T038 [US2] Build the job form, "Back up now" and run history UI in `frontend/mcm-app/src/components/backups/`
+- [X] T039 [US2] Extend the `@gate` E2E with the back-up-now flow in `frontend/mcm-app/e2e/web/backups.spec.ts`
 
 ### T026 / T027 — Paging is where a silent truncation would come from
 
@@ -731,14 +731,14 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-run-gate'
 **Independent test**: Back up, change live data, restore, confirm the restored copy is faithful and
 the live data is untouched.
 
-- [ ] T040 [P] [US3] Write the verify-before-write suite in `frontend/mcm-app/tests/integration/backup-restore-verify.test.ts`
-- [ ] T041 [US3] Implement artifact verification in `frontend/mcm-app/src/bff-server/backup-artifact.ts`
-- [ ] T042 [US3] Write the restore fidelity and non-destructiveness suite in `frontend/mcm-app/tests/integration/backup-restore.test.ts`
-- [ ] T043 [US3] Implement `frontend/mcm-app/src/bff-server/backup-restore-writer.ts`
-- [ ] T044 [P] [US3] Implement version listing and `usable` detection in `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/versions+api.ts`
-- [ ] T045 [US3] Implement the restore and download routes under `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/`
-- [ ] T046 [US3] Build the version list, Restore and Download UI in `frontend/mcm-app/src/components/backups/version-list.tsx`
-- [ ] T047 [US3] Extend the `@gate` E2E with backup → mutate → restore → verify in `frontend/mcm-app/e2e/web/backups.spec.ts`
+- [X] T040 [P] [US3] Write the verify-before-write suite in `frontend/mcm-app/tests/integration/backup-restore-verify.test.ts`
+- [X] T041 [US3] Implement artifact verification in `frontend/mcm-app/src/bff-server/backup-artifact.ts`
+- [X] T042 [US3] Write the restore fidelity and non-destructiveness suite in `frontend/mcm-app/tests/integration/backup-restore.test.ts`
+- [X] T043 [US3] Implement `frontend/mcm-app/src/bff-server/backup-restore-writer.ts`
+- [X] T044 [P] [US3] Implement version listing and `usable` detection in `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/versions+api.ts`
+- [X] T045 [US3] Implement the restore and download routes under `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/`
+- [X] T046 [US3] Build the version list, Restore and Download UI in `frontend/mcm-app/src/components/backups/version-list.tsx`
+- [X] T047 [US3] Extend the `@gate` E2E with backup → mutate → restore → verify in `frontend/mcm-app/e2e/web/backups.spec.ts`
 
 ### T040 / T041 — Nothing is written until the artifact proves itself
 
