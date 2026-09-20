@@ -480,6 +480,21 @@ const localResult = syncEnvFile(
       // and nothing ever wrote the line. Seeded, not synced, so a developer pointing at a
       // different instance keeps it.
       MONGO_URL: 'mongodb://localhost:27018',
+      // The dev-container BFF publishes on 8082; tests/integration/helpers/bff-test-server.ts
+      // defaults to 8081, which is the Metro dev-loop port and is not listening in the ordinary
+      // compose-up. Unset, every HTTP-level integration suite fails with curl 000 against a BFF
+      // that is running and healthy one port over.
+      BFF_BASE_URL: 'http://localhost:8082',
+      // Two spellings of the same two servers, and both are needed. A suite running on the HOST
+      // reaches them on loopback; the BFF CONTAINER reaches them by compose service name on the
+      // shared network and cannot resolve loopback to them at all. A probe test drives the BFF,
+      // so the endpoint it sends must be the container's spelling — sending the host's produces
+      // "unreachable" against a server that is up, which reads as a driver bug.
+      BACKUP_TEST_S3_ENDPOINT: 'http://localhost:9100',
+      BACKUP_TEST_WEBDAV_ENDPOINT: 'http://localhost:9102',
+      BACKUP_TEST_S3_INTERNAL_ENDPOINT: 'http://mcm-backup-test-minio:9000',
+      BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT: 'http://mcm-backup-test-webdav:6065',
+      BACKUP_TEST_S3_BUCKET: 'mcm-backups-test',
       MC_SERVICE_URL: 'http://localhost:3001',
       KEYCLOAK_URL: 'http://localhost:8099',
       REDIS_URL: 'redis://localhost:6379',

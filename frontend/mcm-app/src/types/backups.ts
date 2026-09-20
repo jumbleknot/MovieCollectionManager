@@ -86,9 +86,22 @@ export interface Schedule {
 export type BackupRunStatus = 'running' | 'success' | 'failed' | 'partial';
 export type BackupTrigger = 'manual' | 'scheduled';
 
-// Per-collection tally, and what the fidelity assertion is checked against.
+// Per-collection tally on a RUN RECORD, keyed by `collectionId`.
 export interface BackupCollectionCount {
   collectionId: string;
+  name: string;
+  movieCount: number;
+}
+
+// Per-collection tally inside the ARTIFACT MANIFEST, keyed by `id`.
+//
+// Deliberately a separate type from BackupCollectionCount despite the identical shape. The
+// manifest is a PUBLISHED contract (backup-artifact-v1.schema.json) that names the field `id`,
+// while a run record is internal and names it `collectionId`. Collapsing them would mean either
+// renaming a field in a contract other people's tooling reads, or carrying both names on one
+// object — which is what the first draft did, with casts to make it compile.
+export interface ManifestCollectionCount {
+  id: string;
   name: string;
   movieCount: number;
 }
@@ -162,7 +175,7 @@ export interface BackupManifest {
   formatVersion: number;
   createdAt: string;
   jobId: string;
-  collections: BackupCollectionCount[];
+  collections: ManifestCollectionCount[];
   totalMovieCount: number;
   // Hex sha256 over the canonically serialised, UNCOMPRESSED `collections` array — not over the
   // compressed bytes, so the check survives a change of compression level and still catches a
