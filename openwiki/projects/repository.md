@@ -4,7 +4,21 @@ title: MovieCollectionManager repository — structure and working conventions
 description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two dev-environment options (sandbox microVM and Docker Desktop), the mandatory pre-work gates (credential rule, SDD gate, PR-head rule), and the load-bearing gotchas that cost a session when missed.
 resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
-timestamp: 2026-08-18T00:00:00+00:00
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-20T14:56:38.255Z
+sources:
+  - id: openwiki-source-a2371d6362e5db4bc834ad03
+    resource: repo://CLAUDE.md
+  - id: openwiki-source-f83bd1373e0f000fa5d548c0
+    resource: repo://docs/runbooks/ci-diagnostics.md
+  - id: openwiki-source-7b223ba4df7203eeb5667fa8
+    resource: repo://docs/runbooks/devcontainer-sandbox.md
+  - id: openwiki-source-a9fc7285078c8062777b3180
+    resource: repo://docs/runbooks/devcontainer.md
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+generated: { by: "openwiki/0.5.2", at: "2026-09-20T14:56:38.255Z" }
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -215,6 +229,20 @@ base image's `node` to 1100 first), so both sides share the same uid. The rule a
 for automation scripts — `ssh <sandbox> 'git …'` re-poisons the tree even after the fix. See
 [docs/runbooks/devcontainer-sandbox.md §7d](../../docs/runbooks/devcontainer-sandbox.md) for the
 re-pin procedure and the two rejected alternatives.
+
+### `containerEnv` entries leak into the image — credentials must go through the runtime env file
+
+Every entry in `containerEnv` becomes an `ENV` instruction in the generated derived image. This is
+not a secret — it is what the devcontainer CLI does by design — but the consequence is a permanent,
+image-layer-level leak: **measured on the derived image on 2026-09-19**, all four credential values
+were present in `Config.Env` and in **three history layers**, readable by anyone who can read the
+image.
+
+For this reason, the sandbox dev container's credentials are written to a runtime env file by
+`.devcontainer/gen-container-secrets-env.sh` at container-creation time (via `onCreateCommand`),
+not declared in `containerEnv`. If you are tempted to add a secret to `containerEnv` for
+convenience, it will be baked permanently into every layer of the next image build. Use the
+runtime env file instead.
 
 ---
 

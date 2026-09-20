@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f736dcc8d2175ef0c7af4d2ee100fefa4b105f5c9c4875ceec11ad339897495b",
+  "claims": [
+    {
+      "id": "claim_39c45fe0e3394e05a8299438457db8dd",
+      "statement": "MCM is a polyglot pnpm/Nx monorepo comprising a React Native/Expo universal client, a Rust/Axum domain service, a Python LangGraph agent gateway, three scoped MCP servers, shared infrastructure-as-code, and a self-hosted Forgejo CI/CD pipeline.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L1-L8",
+          "version": "repo-lines-v1:sha256:034b1df9ba5fca11c4530d931b734f0ee1e803639d2be75b69877a12c9e626b2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ1OTc0ZTZlNjNhZDBlMDI3ZDllY2VhMjI3ZWQ1NmZjMjFmY2Y5YzMwMjFiZDM5ODhlOWU0MWE4ODYwYjI1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzU3YjJhZmIxNThmYWMxNDEzYTI4NDYwMmM1YzIxYzcyNmZlMjI0ZmU0MmIwY2Y5Y2YzZDQxM2Q5MDEyYmYyMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d12dc1a848d4255840eedc7e11a8ab9",
+      "statement": "All build, test, and lint tasks in the MCM monorepo are invoked through Nx as the universal task runner; npm/yarn and the underlying tools (cargo, pytest, etc.) are never run directly.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L1-L2",
+          "version": "repo-lines-v1:sha256:31cf2084f046cf51d860f5ec3abe85ee9732ac10140d6622dc3e4631670c5b79:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ2YjY1NTEyZjRkMWE1ZjE1MjU4NmFhMDMyNTFiMTVlZTlkZDE3MzE3ZmY5ODQ1Yzk5ZmU3YjJiZmVlM2JjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWRhYjgwMzhmYWEyMzZhMmZiMmUyOThmMjgyOTFhNTc4OTFlYWM3NGIzNDhmODg1YzU2NDRiZjY3NWQwZGUzNCJ9"
+        },
+        {
+          "resource": "repo://README.md#L179-L190",
+          "version": "repo-lines-v1:sha256:976b35eca7f3a34b295d1ed0ffc9e3b70838029a6faca076078b9b326fd13f62:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhYjA3MTc0NWJkZTQyMWM2MDFiMDY5NmFhMjQ5ZjMwMGQwOTA1NmE4NWJiMTJhNzRkMTkzNzRiOTcyYzc1M2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3ZjMyMDE4MmVhOWIxMGEzYTUxNDk5ZDliNWM2NzM5MWExNWNmYjVhZjQyMTkwZjFhY2I1NjIyNjU1YWFiMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1YWJlMTJmMTRiZWM4MmI3NTZmNTlkYzdmODVlN2NmN2NmYjcxMmY0YTgyNWZkMjRjZjIwY2QyN2U1ODJlNDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c44ea14c25774e62b4dfce9d1e2ace1c",
+      "statement": "The primary AI-assisted development environment is a dev container hosted inside a Docker Sandbox microVM (feature 060), not Docker-in-Docker. Sibling containers build on the microVM's own engine and share its network namespace (`docker-outside-of-docker`, `--network=host`); egress is enforced by a deny-by-default policy outside the VM.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L138-L146",
+          "version": "repo-lines-v1:sha256:f1181a461dc89545c316d208d573bd6d3a177e2b3b8529fa8e3e047eef48af01:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFmNGJiMDYyMDZmNzNlODQxNjM3ZjM4M2UyMDA3ZTUyMDE4ZDVmMTllYzQ2NDU2NTU5MWE3ZWU0YmQ4YzNiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWJkMzQ5N2I4ZWY5MWFmOThlMmNiYzFmNjU3NGVlZTdlZWMwZDM2MDZjYjk3OGVkNjM0Y2ZiZWQxOWQ4OThjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2YzZDlkZWFlN2NmZTE3YjlmNjU0NTVmMDAwMTAwMzEwZGVjY2JlY2YzOGQ2YmRlMTYzN2U0MTM2NmE3NjAwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODJiOTgxYmFiYjFmMWYzZTkzZjYxYjM0MWRmMDViYzcyNmMxZDg4ZGYwOWNhYzRkYzNiZmNjM2E5ZTgzMTQ1YSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L1-L12",
+          "version": "repo-lines-v1:sha256:276c5cdeab693441ce0ff737154f9892d269fbd1cf0af75a8efd1dd1b85df16e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3OWFmMGJkNmZiNjVjMjU1OGUxNDM1YWJlMTM0YzViZDZjMmI5NDFhMDgwYTUwZTYxODY2ZjgyNGQ5MzMzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NWYwNWJmZmI2MDkxNTIzMjMzNmM5OTllNTM3NDgyNzY1NjM5N2FlNjMwYTYwOTA0YmZiZDYyNWIzM2ViYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5fe5250a99f846dca8e6a0ef933d4d78",
+      "statement": "The sandbox microVM path measured 0.43× the wall-clock of the Docker-in-Docker path across five bring-up stages; `docker-build` alone went from 1024 s to 293 s.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L142-L143",
+          "version": "repo-lines-v1:sha256:58f1b2162dfce385d257bfc6b77436514e106f32c7ff253884566ea808682625:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE5Y2M1NThlMjk5MWExZjllZDQxMDNmMzA4MDEyMjM3ZjNiOTAwYjk4NzY2YjY0ZDc2ZjU3Mjg0ODc2ZDJlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGViZWRmYjBkZDk0MTQyMzViMzY4NDFjMTU5M2I2M2E2YmNjZGM3NGUyOTJjOWRjYzcxNGFmZTZjNDNmZjVmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2RlYzQxZTdmYzYzZjY5NDU1ZTBlNDNiYzQwNTQyZGZmMWUzYmFkMTkxYTZjMGRlYjhmMzk2MGVmMTc4MjM0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTUxODNjZGFiNzEwY2FkYjNlMWZjZTY4ZmUxZjYwMjIxZmI2ZjE0NmQzZjMyM2ViYzBjNzRjYmFiNmE5MzY1NyJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L12-L14",
+          "version": "repo-lines-v1:sha256:df7e5d5ebc8795e4a8c5453e1a097e8a6db0845ab4a1a08ac071cedfd8cf2fec:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQ3Zjg2ODg4MzFiZTU0NzNlZjU2Y2Y5NmEzZTAwYzc5NjQ0YTg0ZjA0YjE2MzA4NDIzN2VmNDcxN2M4ZTdhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTE2NjI3MjU4NDU1YWFjMzA5ZTczNjY2OTdlMGJmNTcyNWRjYzYxNmMyMmEwOTRlYzY5N2M0Y2RkMmNkYWY4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDBlOGIwYzQwNTU2YTdjNDJiZGIyNTdiMjA3Yjk3OThmYTYzYmJmOTVjNGNlMmY3NTQ4MjNjZThkNjRhNzUzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc1ZDRiMTBjOTM2Nzc3NzhhYTVhMTFjMTA5Zjc2YTY2MzRmMjY4NTY0N2IzM2FkNDI5YjkwNDMwZjI3N2NhMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_04a2227f29d04f0aad32089beaf32dff",
+      "statement": "The one-step entry to the sandbox dev environment is `./scripts/open-sandbox.ps1`, which runs on Windows PowerShell 5.1 (not pwsh), checks whether the sandbox is running, starts it if not, waits for SSH, and opens VS Code directly inside the dev container.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L79-L85",
+          "version": "repo-lines-v1:sha256:bf84f0f7c41188f0caa67dda059d13ba295b536a108f82c25786e2c32ab916fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTliMTI0YzE5OGZlZWY3NTFmM2Y5NzA0ZTU1OGE5YjQwMzI4ZTYyZTQ4OWVlYzQ1YWYzYjM2NDQ5ZGQ1N2M1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODVhMTRmYzYyNDJhMTQ1YzBmODJjZWMwMGVjOTYwNDBhODU5Njg4MDM1ODliODdkZTdlNThiZDAyYzRhZmQ1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmZiODJjOGZkNDM5NDJiMWU1OWJhZDQzZWJmNDBhNTIyMWU4NmU0MDBiYWZhNGMxMDMxNjY2ODdjMThkMzYwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRmMGRmYzQ5ZTlmMjhkOWNkODYxMjdhNjBjMjk3ZDAzOTM4MTJmODMwMzFlMDk3ZTUzYzVmYWEzNzY2MTQ2NyJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L39-L60",
+          "version": "repo-lines-v1:sha256:bece9a25e37ffed05f21fcc5e59c75c01a9be97230bd293eb6085b0cf71b22ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjYTljYTRiNmEwYWNjYzVkM2RiMTZmNmEyM2Q5OGQ5ZGY4NjI1NDE5NzcyNmRkYWVhMGMzZWVlMGZjMTFmODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NDFjN2IwOGVjNzRlODM1ZDE3MGIyOGM5NjM1N2QyMjBmYmIxOWM3MTY1MzM3N2E4NjU5ZWU3YTNmMjY0MmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5d802da5dba442a8b328d3741e60ebb9",
+      "statement": "The Docker Desktop / Docker-in-Docker path is retained solely for the Android emulator, which needs `/dev/kvm` that the microVM cannot provide (no nested virtualization). All other work — web E2E, integration, the agent stack, day-to-day assistant work — belongs on the sandbox.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L155-L173",
+          "version": "repo-lines-v1:sha256:931722407bae844b0e4afd8e8e1110533b64bd9f766422f753a22f9435753c65:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NzE3N2U1NGI2MDc3YTY0MTM0OTkyNTgwMmU5NmRkMmE1OTI3ZTA0MzVjOGEyZGJmOWQ2YmY1YzFiOTAzNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDFlZThlZjhmZTgwZDVmZTMwMTgwMGQzYmM2MTYzZGQ3NzVjYzRhNjNkZmRmYWYyYTlmOTgwYWUzOWE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhN2I3YzZhYzgxZjRkZjFiMGIzYzRmMjFkYjA5NjhhNzZhYmVlYWJjYjc3YmZjYWFiYmFhZmNjNGIxZWNkMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMzhlOGUxMDcxOTFlNDZmZjJhMTI2MGIwY2M2OGRkOGU4OTE1MDhjNDFmOTJkNDBkMzcwOTc5MWVjMzQ2NmQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L8-L10",
+          "version": "repo-lines-v1:sha256:08d182acfd692a1eebef1071cc3f9ede083618239bab4f9afad6fc7028389bc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWVhYjNjM2I0YTJhYjYwZGFkMGVlZGFiNGIzOTIzMGE5Nzg3NzEyN2I1ZjFiYzU5MjE0NzNkMzQ4MDQyMDNkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTkxMTQ1NjgwYzdkYjIyYmRkMTRhYjYyMWM0NWNlMjg5YmI3NjdiNjc2ODM5ZTUwMTYwNGYzM2NhMjczOWQ5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM3ZWZmNDcxY2QzMWUzZmI3M2FjNzM4YWI3Y2ZkMzY2YTYwOTAxYzAyOGRkMDZmYjE5ZmViNmI1MDc3ZjEwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5946b80b745a4c2992414070b9062cdc",
+      "statement": "AI-assisted coding (Claude Code) runs on the Claude MAX subscription. `MCM_ANTHROPIC_API_KEY` is mapped to `ANTHROPIC_API_KEY` only at the point of use in three separate processes (`agent-stack.mjs`, `wiki-maintain.mjs`, containerized E2E). Setting `ANTHROPIC_API_KEY` in any environment silently bills pay-per-token; this was measured at ~$15 unintended spend in one day (2026-08-16).",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L5-L5",
+          "version": "repo-lines-v1:sha256:703b6a465ca92025af8b9c1149149b8a0966d253c67c57b2e88766cc6b0bb583:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAzYjZhNDY1Y2E5MjAyNWFmOGI5YzExNDkxNDliOGEwOTY2ZDI1M2M2N2M1N2IyZTg4NzY2Y2M2YjBiYjU4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAzYjZhNDY1Y2E5MjAyNWFmOGI5YzExNDkxNDliOGEwOTY2ZDI1M2M2N2M1N2IyZTg4NzY2Y2M2YjBiYjU4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmNkYTZkN2EzNDUwNmE1ODYzOTI5MTRiNjk2NGQ2Zjg5MzIxOThhODQ5NTI3Y2U3NDFjNzE1NjE4OTE0NmExNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGNmMDI4YmUzN2RiMjJmOWYxMmMxY2Q1NGZjMTQzNWNhZWQ2OTZiNTQ2NmI5MWUwOGIxYzY2NTdhODAwOWQ1YSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L14-L37",
+          "version": "repo-lines-v1:sha256:077ac17be49b6aa5ab05589e9ef145c370fec61c1b0c2d45a33bdb74d5bee1bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyM2ZkMzBkOWE0MmJlOGQ4NDc2NjAxMjRjNmNiZjlkMmQ5OTNmZmM4ZGY2ZjI5N2Q4ZjExNjcyMGUwZmI3MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmODRkYmNjNDI1ZjExYTI5ZTA5MTAzNjk2MDMyZGNmOGFhNjkxZjFjZGJhMzI5OGQyM2MwNmIwODZmNGFiYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_baf437ba5f454f9881eb6f6f4871a115",
+      "statement": "Before writing implementation code under `backend/`, `frontend/`, `agents/`, `mcp-servers/`, or `infrastructure-as-code/`, a numbered `specs/NNN-*/` spec → plan → tasks set must already exist. Proposals and knowledge/index edits are exempt.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L6-L6",
+          "version": "repo-lines-v1:sha256:b0469b25fbc47f5514e0e5cd6fd4964fe1736c1c67f243ab1a9d80689c6ff51f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjA0NjliMjVmYmM0N2Y1NTE0ZTBlNWNkNmZkNDk2NGZlMTczNmMxYzY3ZjI0M2FiMWE5ZDgwNjg5YzZmZjUxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjA0NjliMjVmYmM0N2Y1NTE0ZTBlNWNkNmZkNDk2NGZlMTczNmMxYzY3ZjI0M2FiMWE5ZDgwNjg5YzZmZjUxZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhYjgwMzhmYWEyMzZhMmZiMmUyOThmMjgyOTFhNTc4OTFlYWM3NGIzNDhmODg1YzU2NDRiZjY3NWQwZGUzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM0NTNkYzc0Zjc5YjM0ZGJlMjYyMjA1ZTBjMTI5YzhhMzllNTI2OGQ3MjhkMWE4NzgwODRkMTk2YjgwMTdhYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_92efebf75d9f4acfa0e4cd8f1644977d",
+      "statement": "A PR's head must be a real branch (`git push origin HEAD:<branch>`), not an AGit push (`HEAD:refs/for/main`). An AGit push yields a `refs/pull/N/head` head that Forgejo runs with NO Actions secrets — every `${{ secrets.* }}` is empty. This cost two sessions on issue #126.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L8-L8",
+          "version": "repo-lines-v1:sha256:67f97dd647965610c9495cf40f2271575e1b4f95287528ecf4d4a59142764001:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWExOGVkY2IyNjNkYTI5ZWZhMDkwOWY4MTdlNDY3MGRlZTU0YmM1NWNiMGExODVmOWM5OWU2YjE4MzA5Y2U0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQxMTNkZGVmZDRkMmIyYmYzNDg4OWM1ZDBlZWVlZGU1Mzc2MzAzZWM2ZDZjMzg5MGU1MjViZTg5NzFmNTM0OSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1-L16",
+          "version": "repo-lines-v1:sha256:eef041abc54fd0632ab73a5265310803d82c913bc8e227fc5cfaf08b2eaae194:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MzFjZjE3MTBjZmQ2OWYzYjg0NTYzNmUzNWRhMmZiZjU0MWRiNTM0YjA3M2VkYTYzOTJhOTY4MTI1OGFhNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MjJhMGFjNDk2ZTZhNzlmMDljNmM0NjY0NGI5ZjE1MjU0NWJjMDY4ODFhMWNlNWJiMTcwNjA0OTg4Y2RkZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a96549b5bd8b4245964101e60ee837bd",
+      "statement": "`sbx start` is not a valid command — it silently prints the root help. To restart a stopped sandbox, use `sbx run --name mcm -d`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L90-L93",
+          "version": "repo-lines-v1:sha256:630b0b241cca7080e7d1517b1f867a03b1e8072d034fda7f67d3f8d2297460b8:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQzOTQwMGIyZjk2ZDRmYTc2MjM4OGMzOGY5ZWE3NGJjZTZhYmE2N2Y5ZDc2NzU3ZjJmMmMyNzk4NTcxNDk0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2VlYTNlMWJjOWZlYWFiNmE5YzJlZjEzNTcxNzljZWVkZDliNGE3YWQ3YjU5YjMxMjI0MzY3OGU0M2UwNjkxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWU5MmJkMDQwMTgzMDg4MzQxNGE3ZDFjZjRlMzE1NThkN2IzMjI1ZTZjNTk1OTA2ZWEwOTdiZjlmNDQ0ZTNjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2FiNGJjYTU5ZTc5ZWQ4OTJlYjhhYTdhYzEyOGY2YjIxZWM2Yzk5NWFlYzc1MmZiMGZjY2YzNGVhOTc1ODc2OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_59d86e031a974bd98950cae7297be71e",
+      "statement": "`--name` is load-bearing on `sbx run` because the first positional argument is an agent, not a sandbox name. Omitting it can create a second sandbox instead of restarting the existing one.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L95-L97",
+          "version": "repo-lines-v1:sha256:ab85603430843b4f145e9c7f4192039d772575f572ea39140b20439367aa7e1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ3ZTNiNmYyYTIzYWUzMzM2NWM1ODhmZjBiYTBkODM3YTcyMGEwMjAwY2VmNDUwYmFlOTFlMDUwNjE2MjM2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ2ZmNmNzMyNjFmNGI2MDAyNDkyZDNmOGI4MzhmZjY2NTI5ZWExZjRiZWQ1ZjM5ZjM3MzJhMmZlMmNjZTQzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjYwYTc1YWZjZmZkNWUzNzU2YjE3ODdjNjU2Y2U4NjY1NjQxMWRmZGI4NzVkNDhhYjI2MjA5YTRmNTJhNmFjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWI3ODI5MmViYTYzOWI4MDZhYzY3MjA4MmI2YjJmMTNhOGJjN2I1MGE1MmU3ZDQ0NDIyZjI2M2NkMGI2Y2NlMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b607f6b0b54e434483c2aff7b3b6d941",
+      "statement": "`sandboxd` does not auto-start at boot. `sbx run --name mcm -d` starts it on demand. Reaching for `ssh mcm.sbx` before starting it surfaces a daemon error that reads like a broken environment rather than a cold host.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L99-L108",
+          "version": "repo-lines-v1:sha256:e752daebd812b8a07c8547d2b1afc3d956ba91a9aa50e2e668e511a0cdbb6e95:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4Zjk3MWU5OGYxYTY5NDc3YWU0OGQ2ZDYxZTAwOTAzZWQ2Y2UyNDI0NjY2ODAyZTZlMjdjNDBlZTlmNjlkYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlODFhMGNjNmFmMWFlZDcyZWNjYjJmYjUyMmExZmFiMmVkN2YwNmQ2N2ExZGY4MzQyNDdjNTQzYWNiZTA3ZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0N2FhZWQwYWYwM2NmNmQzODc0MTRhMmY3M2QwYWNjMzFhMjFjNTA4NDAyMGNlNjI4YzllNGUxOTExZTI1ODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiZWFmOGQ5NTE4YjM2YzljMjVjNTU2MDQ4Nzg0MmQ1NDQxZGM2NWQ3MTQzMzJmNWYzYTZkOTE2Y2NlMWE2NjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea4d53b90dee4893a3e4a8838f08e294",
+      "statement": "`sbx template save` snapshots the VM root filesystem, not the Docker data disk, so a sandbox recreated from a template starts with zero images. The egress policy is also not carried in a template — a recreated sandbox gets the default profile and must have its policy re-applied.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L1-L12",
+          "version": "repo-lines-v1:sha256:276c5cdeab693441ce0ff737154f9892d269fbd1cf0af75a8efd1dd1b85df16e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3OWFmMGJkNmZiNjVjMjU1OGUxNDM1YWJlMTM0YzViZDZjMmI5NDFhMDgwYTUwZTYxODY2ZjgyNGQ5MzMzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NWYwNWJmZmI2MDkxNTIzMjMzNmM5OTllNTM3NDgyNzY1NjM5N2FlNjMwYTYwOTA0YmZiZDYyNWIzM2ViYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_51ac2a450acc4ebab5ed02fc22c081e0",
+      "statement": "`sbx run` mounts the current directory as the sandbox workspace over virtiofs, read-write, unless an explicit path is given. Creating a sandbox from inside the repo mounts the repo into the VM. Measured 2026-08-16: a file written inside a recreated sandbox appeared immediately in the Windows working copy.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L1-L12",
+          "version": "repo-lines-v1:sha256:276c5cdeab693441ce0ff737154f9892d269fbd1cf0af75a8efd1dd1b85df16e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3OWFmMGJkNmZiNjVjMjU1OGUxNDM1YWJlMTM0YzViZDZjMmI5NDFhMDgwYTUwZTYxODY2ZjgyNGQ5MzMzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NWYwNWJmZmI2MDkxNTIzMjMzNmM5OTllNTM3NDgyNzY1NjM5N2FlNjMwYTYwOTA0YmZiZDYyNWIzM2ViYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_270348d6b84f4852bd110ae49e627305",
+      "statement": "The `docker-outside-of-docker` feature fronts the VM socket with a socat relay whose half-close timeout defaults to 0.5 s. `docker exec` half-closes stdin immediately, so socat tears the relay down mid-response — fast commands return exit 0 with no output. The fix is to use `DOCKER_HOST=unix:///var/run/docker-host.sock`, already applied in `.devcontainer/sandbox/devcontainer.json`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L180-L226",
+          "version": "repo-lines-v1:sha256:17909d7a44db470dde622d4ba8d2d40794fcfef4d12e427d3f0577d781650051:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMWZiZThiNmQ2YjcyNjBiNjk1ZjQyMDJjOWIyMzA0Y2ZhNDhlODQ1ZGNjYzQxOTUxNDg2MzZiYjA5NWUyZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MTM1M2RhYjIwMjY1YjkwNTlmM2ZlZjI3NWU1MzQ0YWUzZTM0Yjk5MmFmOTVkMDU5MTg5NjcxOGRlZjliZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiODczMTQzM2M2OTVkMDFiNzQwZDEzMDliYmUzZWJiOWI5MzkxNDc4YzI1MzBlNDk5MmFmODRiOWVhYzI1ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzOTA3NjRhODk1MTUzNjI4M2U0MDFlMTU4NTE4YTYyZGM3NWZiZWZjNzI3NzhmOWZhZDQwODBjOTI1ZjI4MjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1336a6cd9d764aa0a75fca600b5b7d46",
+      "statement": "In the sandbox, the in-VM firewall (`ipset`/`iptables`) is not used; enforcement is the host-side policy outside the VM. Egress triage order is therefore host policy first, in-VM second — the opposite of the Docker Desktop path. `nc -z <ip> 443` reports OPEN against a blocked destination because the proxy accepts TCP and refuses at TLS.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L185-L227",
+          "version": "repo-lines-v1:sha256:821f8d9988e92280b5bcb7091e8777c9cc8b8dcc55796fe01aedb371b5439873:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmZmNkMzVjZjc3NDI2ZjEzNDg2YzE1ZDUzOGFkYTdkZGZiMjJkODI5OWMwZDgxNTU5Y2RiMGFlMDQ0Njk3YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwZjBhNGRhZGViN2ZkZWEwYzQ0Yzk3ZjU5ZWNmNWY2OTM2YmVmNzBlMWI1Nzg4ZWU3Mzg3OTY2YjRmYzNlNDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7c0a0fc6da6473c82edbb1d1d65d7e7",
+      "statement": "Git must run inside the dev container, not in the VM shell. The VM user and container user previously had different UIDs (uid 1000 vs a different uid), causing git writes from the VM shell to be unwritable by the container user. Fixed 2026-08-17: `toolchain.Dockerfile` now creates `coder` at 1000:1000.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L1-L12",
+          "version": "repo-lines-v1:sha256:276c5cdeab693441ce0ff737154f9892d269fbd1cf0af75a8efd1dd1b85df16e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3OWFmMGJkNmZiNjVjMjU1OGUxNDM1YWJlMTM0YzViZDZjMmI5NDFhMDgwYTUwZTYxODY2ZjgyNGQ5MzMzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NWYwNWJmZmI2MDkxNTIzMjMzNmM5OTllNTM3NDgyNzY1NjM5N2FlNjMwYTYwOTA0YmZiZDYyNWIzM2ViYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58ba995640414751b0850e3a4e0a7274",
+      "statement": "Every `containerEnv` entry in a devcontainer.json becomes an `ENV` instruction in the generated derived image, making it permanently readable in `Config.Env` and history layers. Measured on the derived image on 2026-09-19: all four credential values were present in `Config.Env` and in three history layers. Credentials must go through the runtime env file written by `.devcontainer/gen-container-secrets-env.sh`, not declared in `containerEnv`.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L141-L141",
+          "version": "repo-lines-v1:sha256:b3679ee6b341a7fcbf81c7e6cd5b32a4eeca4af2aafed9163193d6fbbac62c18:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM2NzllZTZiMzQxYTdmY2JmODFjN2U2Y2Q1YjMyYTRlZWNhNGFmMmFhZmVkOTE2MzE5M2Q2ZmJiYWM2MmMxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM2NzllZTZiMzQxYTdmY2JmODFjN2U2Y2Q1YjMyYTRlZWNhNGFmMmFhZmVkOTE2MzE5M2Q2ZmJiYWM2MmMxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjcxNjU5ZGU5MmNiMTZjOWEzYjdlYTI3NmY5MDYzZjk3YTU0MTQ2ODMyZjE4MWQwZmZhN2E0ZmRiY2Y4MTQ2OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODUxYjMxMjYxNGQyODc5YTk4NWU0M2MzYWQ4NDU2NGQ2ZjBmYmFkNWNkMmM4NTRjMzM5NjdkOTA0OTc5YTY0YyJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L127-L175",
+          "version": "repo-lines-v1:sha256:fbbdef1ca33aecc582a2af7d209114e50bfda178045a406671b8af13e30dddc8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNWRiY2I4MTYyNGE4YTk3MGU3MWE3M2Y1MDljNWU3NWQyZDI1MzgyYmYyOGFhNjVhOWNmODgwMjA0NTkzZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3ZTY2NTA1YmE1YmJmMmNjMzM5MjE3YzNkMjMzMzkzZjVkYWY4NGU0MDEwNGY0NGYxNWYwNGQ4NGI5ZDg1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjYWY4N2E0YThhMTI4NGMzNmM5ZGMxZDNiNzhjZTRmNjFhNjc1ZTI3M2E5NjAxZjk5Nzk1ZDI2NTM5NGIwZWQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-20T14:56:38.255Z"
+  }
+}
