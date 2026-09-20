@@ -587,6 +587,27 @@ jobs:
         run: bash scripts/ci-log-step.sh app-e2e-write-ci-env-secret-files node scripts/gen-ci-env.mjs
 
       # ── Backend + agent stack (auth BEFORE mcm app profile — manual ordering, FR-006) ───────────
+      # Split out of `app-e2e-bring-up-keycloak`, and the reason is measured rather than stylistic.
+      #
+      # That step is calibrated at 300s from max(91s) x 3. Its REAL distribution over 25 recent
+      # runs is min 47s / p50 85s / p95 100s — but max 293s, seven seconds under the bound. The
+      # spread is entirely the Docker layer cache: when `COPY frontend/mcm-app/` hits, the build is
+      # CACHED and the step is ~85s; when a PR touches frontend source the cache breaks and the
+      # full Expo web export runs, which is what the 293s sample is. A feature that adds
+      # dependencies AND source (073) busts it reliably, and the step was killed at its ceiling
+      # twice — reporting "timeout after 300s" against a step whose name says Keycloak, while the
+      # actual work in flight was `pnpm deploy --filter=mcm-app`.
+      #
+      # So the bound was never wrong; the step was doing unbounded work under a name that did not
+      # describe it. The builds get their own budget and their own attribution, and the Keycloak
+      # step returns to the fast, cache-independent profile its ceiling was calibrated against.
+      - name: Build mc-service + mcm-bff images (cache-dependent; own budget)
+        run: |
+          bash scripts/ci-log-step.sh app-e2e-build-images bash -e /dev/stdin <<'CI_LOG_STEP'
+          pnpm nx build mc-service
+          pnpm nx docker-build mcm-app
+          CI_LOG_STEP
+
       - name: Bring up Keycloak (auth stack, ci-realm imported) + Redis + Mongo + mc-service
         env:
           # Feature 027 US5: ci-realm.json commits only ${ENV_VAR} placeholders; Keycloak resolves them
@@ -617,11 +638,10 @@ jobs:
           docker compose -p auth \
             -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
-          # Neither mc-service nor mcm-bff has a build: in its compose (both are `image: …:latest`), so
-          # build them locally BEFORE the up. Build the BFF too here: on this runner the `app` profile
-          # pulls in the bff-nonsecure service, so mcm-bff:latest must already exist or --wait hangs.
-          pnpm nx build mc-service
-          pnpm nx docker-build mcm-app
+          # The images were built in the step BEFORE this one — see the note there for why they are
+          # no longer built inline. Neither mc-service nor mcm-bff has a `build:` in its compose
+          # (both are `image: …:latest`), and on this runner the `app` profile pulls in the
+          # bff-nonsecure service, so mcm-bff:latest must already exist or `--wait` hangs.
           # Bring up app infra + mc-service + the dev BFF (:8082) together, images now present.
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure up -d --wait

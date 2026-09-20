@@ -39,6 +39,11 @@ mcp-integration-spreadsheet	300	n=40 max=3s x3=9s -> floor 300s; runs 3503..3103
 mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
 #
 # ON THE BACKSTOP — seen in the sample, but too few observations to calibrate from:
+# app-e2e-build-images	-	split out of app-e2e-bring-up-keycloak (feature 073); NO observations
+#   yet under this name. It is the cache-dependent half: ~0s when the Docker layer cache hits,
+#   and a full Expo web export when a PR touches frontend source — which is what drove that
+#   step's 293s max against a 300s bound and killed it twice. Regenerate once ~10 runs have
+#   published a duration.
 # app-e2e-bring-up-backup-destinations	-	new in feature 073; NO observations yet. Pulls two
 #   images (the from-source MinIO and Debian httpd) and waits for two healthchecks. It exists as
 #   its own step BECAUSE folding it into app-e2e-bring-up-keycloak pushed that step past its
