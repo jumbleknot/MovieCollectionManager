@@ -41,14 +41,16 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 
 | Area | Technology |
 |---|---|
-| Frontend | React Native 0.85, Expo SDK 56, Expo Router, Tamagui (`@mcm/design-system`), TypeScript |
-| BFF | Expo Router API routes (Node 24 container), Redis sessions, Axios |
-| Backend | Rust, Axum, Tokio, `medi-rs` (CQRS), MongoDB |
-| AI agents | Python 3.13, LangGraph, FastAPI + AG-UI, MCP, Langfuse/OpenTelemetry |
-| Identity & secrets | Keycloak, HashiCorp Vault |
-| Monorepo & build | pnpm workspaces + Nx (JS/TS, Rust, and Python orchestrated through one task runner) |
+| Frontend | React Native 0.85, React 19.2, Expo SDK 56, Expo Router, Tamagui 2.3 (`@mcm/design-system`), CopilotKit 1.70 + AG-UI, TypeScript |
+| BFF | Expo Router API routes (Node 24 container), Redis 8 sessions, Axios |
+| Backend | Rust 1.98 (pinned), Axum 0.8, Tokio, `medi-rs` (CQRS), MongoDB 8 |
+| AI agents | Python 3.14, LangGraph, FastAPI + AG-UI, MCP SDK 2.x, Langfuse / OpenTelemetry |
+| Identity | Keycloak 26.7 on PostgreSQL 18 — OAuth 2.0 + PKCE, RBAC |
+| Secrets | Komodo Variables in production ([ADR-0001](openwiki/decisions/adr-0001-prod-secrets-management.md)); Vault is deployed but dormant and agent-layer-scoped |
+| Observability & audit | Langfuse 4 + ClickHouse 25 + MinIO (built from source, non-root), Grafana `otel-lgtm`, OpenSearch 3 audit sink, OPA, Unleash |
+| Monorepo & build | pnpm 11 workspaces + Nx 22 (JS/TS, Rust, and Python orchestrated through one task runner) |
 | Testing | Jest, Playwright (web E2E), Maestro (mobile E2E), cargo test, pytest |
-| CI/CD & security | Forgejo Actions (self-hosted), Renovate, Semgrep (SAST), OWASP ZAP (DAST), Trivy (image CVEs), secret-scanning gates |
+| CI/CD & security | Forgejo Actions (self-hosted), Renovate, Semgrep (SAST), OWASP ZAP (DAST), Trivy (weekly image CVE sweep), secret-scanning gates |
 
 ## Repository Structure
 
@@ -70,15 +72,31 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 
 ## Getting Started
 
-### Prerequisites
+There are two supported environments. **The dev container on a Docker Sandbox microVM is the default** — it carries the entire toolchain and is what this project is developed in day to day. Install the native host toolchain only if you need the Android emulator or native mobile builds.
 
-- Node.js 24 (LTS), pnpm (via Corepack), Nx
-- Rust (stable toolchain)
-- Python 3.13 + uv (agent layer)
+### Recommended — dev container on Docker Sandbox
+
+```powershell
+.\scripts\open-sandbox.ps1     # Windows PowerShell 5.1; pwsh is NOT required
+```
+
+This starts the microVM if it has idle-stopped (it stops ~30 s after the last session) and opens VS Code **directly inside the dev container** — replacing the four-step *Remote-SSH → Open Folder → Attach* route. Rust and its cargo tooling, Python via `uv`, Node 24 / pnpm / Nx, the Specify CLI, and `gh` are already baked into the prebuilt `mcm-devcontainer` image, so there is no toolchain to install and none to keep current by hand.
+
+First-time setup of the sandbox itself: [docs/runbooks/devcontainer-sandbox.md](docs/runbooks/devcontainer-sandbox.md). What the container covers, what it deliberately does not, and the headless and Docker Desktop entry points: [Development environments](#development-environments) below.
+
+### Alternative — native host toolchain
+
+Needed only for the Android emulator and native mobile builds, which the microVM cannot host.
+
+**Prerequisites**
+
+- Node.js 24, pnpm (via Corepack), Nx
+- Rust — pinned to **1.98.0** by [rust-toolchain.toml](rust-toolchain.toml); `rustup` reads that file automatically for every `cargo`/`rustc` call in the repo, so there is no channel to choose
+- Python 3.14 + uv (agent layer)
 - Docker Desktop
 - Android Studio + JDK 17 (mobile development only)
 
-### Setup
+**Setup**
 
 ```bash
 git clone <repo-url> && cd MovieCollectionManager
@@ -98,7 +116,9 @@ docker volume create mcm-bff-store-mongo-data
 node scripts/gen-dev-secrets.mjs
 ```
 
-### Run locally
+Full step-by-step host setup: [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md).
+
+### Run locally (either environment)
 
 ```bash
 # 1. Bring up auth (Keycloak + Postgres) — required first
@@ -113,24 +133,17 @@ cd frontend/mcm-app && pnpm start
 
 Full environment details, profiles, and endpoints: [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md).
 
-## Run in Dev Containers
+## Development environments
 
 The repo ships a [Dev Containers](https://containers.dev/) definition (`.devcontainer/`, features 037/038/060) that runs the entire workshop — including the AI coding assistant — inside a disposable, isolated Linux container. **As of feature 060 that container is hosted on a Docker Sandbox microVM** rather than Docker-in-Docker:
 
 - **Isolation first** — the assistant runs as a non-root user with no path to the host filesystem, SSH keys, or credential stores. Containers and test stacks build on the **microVM's own engine as siblings** (`docker-outside-of-docker`), behind a **deny-by-default egress policy enforced outside the VM** — which is what makes it cover sibling containers too, closing the gap the in-container firewall never could.
+- **No credentials in the image** — the container's credentials are written to a runtime env file by `.devcontainer/gen-container-secrets-env.sh` rather than declared in `containerEnv`. The devcontainer CLI turns every `containerEnv` entry into an `ENV` instruction in the generated image, which is a permanent leak: measured on the derived image on 2026-09-19, all four values were present in `Config.Env` and in **three history layers**, readable by anyone who can read the image.
 - **Faster, measurably** — the same five-stage bring-up takes **0.43×** the Docker-in-Docker wall-clock; `docker-build` alone went **1024 s → 293 s**, because a nesting level and the Windows filesystem are both out of the path.
-- **One-step entry** — `.\scripts\open-sandbox.ps1` (Windows PowerShell 5.1; `pwsh` not required) starts the sandbox if it is idle-stopped and opens VS Code directly inside the dev container.
 - **Full toolchain, pre-provisioned** — Rust + cargo tooling, Python via `uv`, Specify CLI, Node 24/pnpm/Nx, and `gh` are baked into a prebuilt `mcm-devcontainer` image (pulled from the forge registry by digest, or built locally via `node scripts/build-devcontainer-image.mjs`), so nothing is reinstalled per session.
 - **Fast** — budgets: cold first build < 5 min, warm recreate < 90 s, stop→start < 15 s; `cargo`/`pnpm`/`uv` caches persist across recreates on named volumes.
+- **Shared by more than one session** — several assistant sessions can share one container, and they share its git index and checked-out branch. Commit from a `git worktree`, never from the shared checkout: a `git checkout -b`, `git add -A`, or `git stash` there rewrites what another session is mid-edit on. Procedure and the traps: [docs/runbooks/devcontainer.md](docs/runbooks/devcontainer.md).
 - **Personal AI layer (optional)** — point the Dev Containers `dotfiles.repository` setting at your personal dotfiles repo to restore your Claude Code plugins/skills, RTK (built once from source in-container), and service logins; these persist on a personal-config volume, and the container is fully team-capable without them.
-
-**Interactive (daily driver — sandbox path):**
-
-```powershell
-.\scripts\open-sandbox.ps1     # Windows PowerShell 5.1; pwsh is NOT required
-```
-
-Starts the microVM if it has idle-stopped (it stops ~30 s after the last session) and opens VS Code **directly inside the dev container** — replacing the four-step *Remote-SSH → Open Folder → Attach* route. First-time setup of the sandbox itself: [docs/runbooks/devcontainer-sandbox.md](docs/runbooks/devcontainer-sandbox.md).
 
 **Headless (run inside the VM, where the engine and the workspace clone live):**
 
@@ -212,11 +225,12 @@ Supply-chain and code-quality helpers used across the workflow: `cargo-audit`, `
 
 - ≥70% line coverage enforced on new code (Jest / tarpaulin)
 - Unit, integration (real dependencies — no mocks), and E2E suites repeated across web and mobile clients
-- CI gates on every push/PR: secret scan, naming conventions, SAST + dependency SCA, DAST, and weekly third-party image CVE scans
+- **The agent E2E suite is split by tier.** Tests tagged `@gate` block a merge; tests tagged `@model-decision` — whose assertions turn on what the model chose to do — run non-blocking on `main` and on dispatch, publishing their own counts. The selection is `E2E_TIER` in `playwright.config.ts` (deliberately in the config, not a CLI flag), and a separate guard — `scripts/__tests__/agent-test-classification.test.mjs` — fails on any agent test carrying neither tag, so an unclassified test is a failure rather than a silent default and nothing leaves the gate without a tier that runs it.
+- CI gates on every push/PR: secret scan, naming conventions, SAST + dependency SCA, and DAST — plus a weekly third-party image CVE sweep whose risk-allowlist entries carry expiry dates and are re-triaged on schedule.
 
 ## Security
 
-Highlights: BFF token custody (no tokens in the client), deny-by-default centralized authorization, structured logging with PII redaction and append-only audit streams, externalized secrets (no credentials in git — CI-enforced), and RFC 9457 error responses. See the constitution's Security section for the complete policy.
+Highlights: BFF token custody (no tokens in the client), deny-by-default centralized authorization, structured logging with PII redaction and append-only audit streams (OpenSearch 3), externalized secrets (no credentials in git — CI-enforced, with Komodo Variables as the sanctioned production mechanism per [ADR-0001](openwiki/decisions/adr-0001-prod-secrets-management.md)), and RFC 9457 error responses. See the constitution's Security section for the complete policy.
 
 ## Roadmap
 
