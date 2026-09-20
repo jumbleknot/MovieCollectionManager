@@ -28,7 +28,12 @@ import {
   encryptSecret,
   offlineTokenAad,
 } from '@/bff-server/agent-config-crypto';
-import { getAgentConfigCollection, getBackupJobsCollection } from '@/bff-server/mongo-client';
+import {
+  getAgentConfigCollection,
+  getBackupDestinationsCollection,
+  getBackupJobsCollection,
+  getBackupRunsCollection,
+} from '@/bff-server/mongo-client';
 import { logger } from '@/bff-server/logger';
 import { env } from '@/config/env';
 
@@ -307,4 +312,41 @@ export async function revokeIfNoScheduleRemains(
   if (remaining > 0) return false;
   await revokeOfflineToken(userId, options);
   return true;
+}
+
+// ─── Account deletion (FR-023, spec.md Edge Cases) ────────────────────────────
+
+/**
+ * Erase everything this feature holds for a user, and give up the standing permission.
+ *
+ * WHAT IS DELETED: the standing permission (at Keycloak first, then locally), every
+ * destination and its sealed credential, every job, and the whole run history.
+ *
+ * WHAT IS NOT DELETED, DELIBERATELY: the artifacts at the user's own destination. They sit in
+ * storage the user owns and pays for. Removing them would not be cleaning up after ourselves —
+ * it would be destroying the data we were trusted to copy, at the moment the user has least
+ * reason to expect it and least ability to object. If they want those objects gone they have
+ * the credentials to do it; we never had the standing to decide for them.
+ *
+ * ORDER: revoke, then delete. A revocation failure THROWS and leaves every local record in
+ * place, so the deletion can be retried and the token is still reachable. Deleting first and
+ * failing to revoke strands a live, non-expiring token at Keycloak with nothing left in this
+ * system that knows it exists — the failure this whole module is arranged to prevent.
+ */
+export async function tearDownUserBackups(
+  userId: string,
+  options: RevokeOptions = {},
+): Promise<void> {
+  // Throws on failure, by design. Nothing below runs if this does not succeed.
+  await revokeOfflineToken(userId, options);
+
+  // Three independent deletes because there is no transaction on a standalone Mongo. They are
+  // ordered destinations → jobs → runs so that a crash part way through never leaves a job
+  // pointing at a destination that is gone, which is the state that would be hardest to
+  // interpret if someone had to finish the job by hand.
+  await (await getBackupDestinationsCollection()).deleteMany({ userId });
+  await (await getBackupJobsCollection()).deleteMany({ userId });
+  await (await getBackupRunsCollection()).deleteMany({ userId });
+
+  logger.audit('backup_account_teardown_completed', { userId });
 }

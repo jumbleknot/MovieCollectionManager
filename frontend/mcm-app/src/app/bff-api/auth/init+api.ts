@@ -20,10 +20,17 @@ export async function GET(_req: Request): Promise<Response> {
 }
 
 async function _get(): Promise<Response> {
+  // ALL FOUR, every time. This function replaces the list it is given, so dropping one of the
+  // original three here is how this goes wrong — the app would keep working until someone hit
+  // the flow whose URI went missing.
   await ensureClientRedirectUris([
     `${BASE_URL}/auth-callback`,        // web OAuth PKCE callback
     `${BASE_URL}/login?verified=true`,  // email verification redirect
     'mcm-app://native-auth-callback',   // native OAuth PKCE callback
+    // Feature 073 (T056): the backup-schedule consent callback. A SEPARATE URI from the login
+    // callback on purpose — its result is stored as a standing permission and never turned
+    // into a session, and sharing the login URI would blur two flows that must stay distinct.
+    `${BASE_URL}/bff-api/backups/consent`,
   ]);
   return Response.json({ ok: true }, { headers: securityHeaders() });
 }
