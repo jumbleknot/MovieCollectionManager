@@ -125,6 +125,20 @@ the whole feature's safety rests on, and the two drivers everything else writes 
 - [ ] T016 [P] Write the WebDAV driver integration suite in `frontend/mcm-app/tests/integration/backup-driver-webdav.test.ts`
 - [ ] T017 [P] Implement the WebDAV driver in `frontend/mcm-app/src/bff-server/backup-driver-webdav.ts`
 
+### T003 — Shared types
+
+**Type**: New file | **Time**: 30m | **Risk**: None
+**Spec reference**: [data-model.md](./data-model.md)
+
+`BackupDestination`, `BackupJob`, `Schedule`, `RunSummary`, `BackupRun`, `BackupVersion`, and the
+`BackupDestinationDriver` result types. Discriminated on `type` so an `s3` value cannot carry a
+`username`. **No `FR-###` in any identifier** — requirement ids belong in a provenance comment, per
+the constitution's Behavior-Descriptive Identifiers rule.
+
+**Done when**: `pnpm nx lint mcm-app` and `tsc --noEmit` both pass with the types imported nowhere yet.
+
+---
+
 ### T006 — The guard suite, including the case the existing guard cannot catch
 
 **Type**: Test | **Time**: 1h30m | **Risk**: High
@@ -226,6 +240,48 @@ node --test frontend/mcm-app/src/bff-server/unit-tests/backup-credential-crypto.
 
 **Verify GREEN**: same command, 0 failures. Also re-run `agent-config-crypto.test.ts` unchanged.
 
+### T010 — The Redis leader lock
+
+**Type**: Test + Implementation | **Time**: 1h | **Risk**: Low
+**Spec reference**: FR-018 · [research.md](./research.md) §R2
+
+`cache-service.ts`'s private `RedisLike` already declares `set(key, value, 'EX', n, 'NX')` — export a
+narrow `acquireLock` / `releaseLock` pair rather than the raw client.
+
+Assert: two concurrent acquires → one wins; the lock expires after its TTL; releasing a lock held by
+a **different** instance id is a no-op (or a stale holder steals another's lock).
+
+This is an **optimisation, not the correctness guarantee** — that is the atomic claim in T050/T051.
+Do not let a passing lock test stand in for it.
+
+**Verify RED**:
+```bash
+node --test frontend/mcm-app/src/bff-server/unit-tests/redis-lock.test.ts
+```
+**Expected RED**: 3 failing cases.
+
+**Verify GREEN**: same command, 0 failures.
+
+---
+
+### T011 — The driver interface
+
+**Type**: New file | **Time**: 30m | **Risk**: Low
+**Spec reference**: FR-001 · [research.md](./research.md) §R5
+
+`put` / `get` / `list` / `delete` / `testConnection`, plus a factory selecting on
+`destination.type`. Every method takes an already-vetted, pinned connection from T007 — the guard
+must not be something a driver can forget to call.
+
+**This interface is what contains the SigV4 decision.** If the operator later prefers
+`@aws-sdk/client-s3`, only T013 and T015 change. Keep it free of S3-shaped assumptions: no
+`bucket` in the signatures, no ETag semantics, no multipart.
+
+**Done when**: both drivers in T015 and T017 satisfy it with no `type`-specific branching outside the
+factory.
+
+---
+
 ### T012 / T013 — SigV4
 
 **Type**: Test + Implementation | **Time**: 3h | **Risk**: High
@@ -321,6 +377,27 @@ node --test frontend/mcm-app/src/bff-server/unit-tests/backup-destination-store.
 
 **Verify GREEN**: same command, 0 failures.
 
+### T019 — The destination store
+
+**Type**: Implementation | **Time**: 1h30m | **Risk**: Medium
+**Spec reference**: FR-002, FR-003, FR-006, FR-034 · **Prerequisite**: T018 complete and verified RED.
+
+Implement `backup-destination-store.ts` following `agent-config-store.ts`: partial upsert so an
+omitted field is left intact, `userId` always a caller argument, and a read projection that
+**excludes `secretEnc` at the store layer**. A route that forgets to strip it must be unable to leak
+it — that is the difference between a control and a convention.
+
+Secrets are sealed by the caller using `backupSecretAad(userId, destinationId)` from T009; this layer
+never sees plaintext.
+
+**Verify GREEN**:
+```bash
+node --test frontend/mcm-app/src/bff-server/unit-tests/backup-destination-store.test.ts
+```
+**Expected GREEN**: 0 failures — `4 passed`.
+
+---
+
 ### T020 — 404, never 403
 
 **Type**: Test | **Time**: 1h | **Risk**: Medium
@@ -344,6 +421,28 @@ path failing at RED.
 
 > This is the trap in authz testing: "not found" is both the failure mode and the expected result.
 > Without a positive control the suite passes against a feature that was never built.
+
+### T021 — The destination routes
+
+**Type**: Implementation | **Time**: 2h | **Risk**: Medium
+**Spec reference**: FR-001..FR-006, FR-034 · **Prerequisite**: T020 complete and verified RED.
+
+Implement the routes under `src/app/bff-api/backups/destinations/` per
+[contracts/bff-backups-api.yaml](./contracts/bff-backups-api.yaml). Every handler goes through the
+shared `requireAuth` → `requireMcUser` layer — **no per-handler auth checks**, which the constitution
+prohibits: a handler added without the opt-in would be silently unprotected.
+
+Bodies are `zod`-parsed as a discriminated union on `type`, so an `s3` document can never carry a
+`username`. A foreign or unknown id returns **404, never 403**.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-destinations-authz'
+```
+**Expected GREEN**: 0 failures. The positive control (user A's own 200) passing is what makes the
+404 cases meaningful — check it is in the passing set, not skipped.
+
+---
 
 ### T022 / T023 — The probe reports *which* thing failed
 
@@ -402,6 +501,10 @@ pnpm nx e2e mcm-app-e2e --grep '@gate' --testPathPattern='backups'
 **Expected RED**: the spec fails at the first locator — the Backups screen still shows the 062
 placeholder.
 
+> This task carries a Verify RED but no Verify GREEN, and that is deliberate: its paired
+> implementation is T024, which is a UI task verified by a **Done when** condition. The GREEN
+> for this spec arrives with T024's completion — run the command again then.
+
 > Do **not** use `--grep-invert` to split tiers. Playwright 1.60 accepts it here and **silently does
 > nothing**; `E2E_TIER` in `playwright.config.ts` is the mechanism.
 
@@ -424,9 +527,10 @@ recorded contents match live data — with no scheduler and no restore path buil
 - [ ] T033 [US2] Implement `frontend/mcm-app/src/bff-server/backup-runner.ts`
 - [ ] T034 [P] [US2] Write the concurrency and rate-limit suite in `frontend/mcm-app/tests/integration/backup-run-gate.test.ts`
 - [ ] T035 [US2] Implement the per-user run gate and rate limit in `frontend/mcm-app/src/bff-server/backup-runner.ts`
-- [ ] T036 [US2] Implement `backup-run-store.ts`, `backup-job-store.ts` CRUD and the job/run routes
-- [ ] T037 [US2] Build the job form, "Back up now" and run history UI in `frontend/mcm-app/src/components/backups/`
-- [ ] T038 [US2] Extend the `@gate` E2E with the back-up-now flow in `frontend/mcm-app/e2e/web/backups.spec.ts`
+- [ ] T036 [P] [US2] Write the job and run store suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-job-store.test.ts`
+- [ ] T037 [US2] Implement `backup-job-store.ts`, `backup-run-store.ts` and the job, run and runs routes under `frontend/mcm-app/src/app/bff-api/backups/jobs/`
+- [ ] T038 [US2] Build the job form, "Back up now" and run history UI in `frontend/mcm-app/src/components/backups/`
+- [ ] T039 [US2] Extend the `@gate` E2E with the back-up-now flow in `frontend/mcm-app/e2e/web/backups.spec.ts`
 
 ### T026 / T027 — Paging is where a silent truncation would come from
 
@@ -450,6 +554,13 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-snapshot-reader'
 ```
 **Expected RED**: 3 failing cases.
 
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-snapshot-reader'
+```
+**Expected GREEN**: 0 failures — `3 passed`. Set `MCM_REQUIRE_LIVE_STACK=1` so a credential-driven
+skip becomes a failure, and **watch the skip count**: a skipped test reads as a pass.
+
 ### T028 / T029 — Manifest and integrity
 
 **Type**: Test + Implementation | **Time**: 2h | **Risk**: Medium
@@ -472,6 +583,18 @@ node --test frontend/mcm-app/src/bff-server/unit-tests/backup-artifact.test.ts
 ```
 **Expected RED**: 5 failing cases.
 
+**Verify GREEN**:
+```bash
+node --test frontend/mcm-app/src/bff-server/unit-tests/backup-artifact.test.ts
+```
+**Expected GREEN**: 0 failures — `5 passed`.
+
+**Also run** (the artifact contract must still validate):
+```bash
+node --test frontend/mcm-app/src/bff-server/unit-tests/backup-credential-crypto.test.ts
+```
+**Expected**: previously passing tests still pass.
+
 ### T030 / T031 — The ceiling fails loudly and writes nothing
 
 **Type**: Test + Implementation | **Time**: 1h30m | **Risk**: High
@@ -492,6 +615,19 @@ ones (bytes-bound).
 BACKUP_MAX_MOVIES=5 pnpm nx test:integration mcm-app --testPathPattern='backup-ceiling'
 ```
 **Expected RED**: 3 failing cases — no ceiling is enforced, so the run succeeds and writes an object.
+
+**Verify GREEN**:
+```bash
+BACKUP_MAX_MOVIES=5 pnpm nx test:integration mcm-app --testPathPattern='backup-ceiling'
+```
+**Expected GREEN**: 0 failures — `3 passed`, and the destination object count asserted at **zero**
+in each case.
+
+**Also run** (the ceiling must not break an ordinary run):
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-runner'
+```
+**Expected**: previously passing tests still pass.
 
 ### T032 / T033 — The runner, end to end, against MinIO
 
@@ -527,6 +663,66 @@ nothing about the race), and that the key expires.
 
 ---
 
+### T038 / T039 — Job UI and the back-up-now E2E
+
+**Type**: Implementation + Test | **Time**: 3h30m | **Risk**: Low
+**Spec reference**: FR-007, FR-012, FR-036 · **Scenarios covered**: US2-AC3, US2-AC4 · Tag: `@gate`
+
+Job form (destination, collections, retention), a "Back up now" button, and run history. Design-system
+tokens only, no raw values.
+
+The button must be **disabled while a run is in flight** and show why — the 409 from T035 is the
+server-side guarantee, but a user who can click twice and receive an error has been told the feature
+is broken when it is working correctly.
+
+**Verify RED**:
+```bash
+pnpm nx e2e mcm-app-e2e --grep '@gate' --testPathPattern='backups'
+```
+**Expected RED**: the back-up-now case fails at the job-form locator; the T025 destination cases
+still pass.
+
+**Verify GREEN**: same command, 0 failures.
+
+---
+
+### T036 / T037 — Job and run persistence, and the routes over them
+
+**Type**: Test + Implementation | **Time**: 3h | **Risk**: Medium
+**Spec reference**: FR-007, FR-034 · **Scenarios covered**: US2-AC1, US6-AC1
+
+Job definition is the feature's central entity and had no test of its own until this task existed.
+
+Assert on the store: a job round-trips `collectionIds`, `keepLast` and `enabled`; an **empty**
+`collectionIds` means *every collection the user owns at run time*, resolved at run time and not at
+save time (a collection created after the job must be included); `keepLast` outside 1–365 is
+rejected; `destinationId` must reference a destination **the same user owns**, checked against the
+caller's id rather than trusted from the body (FR-034); and `lastRun` is a denormalised copy so the
+list view is one query.
+
+Implement all three route groups from the contract, including **`GET /jobs/{jobId}/runs`**
+(`listBackupRuns`) — it is defined in
+[contracts/bff-backups-api.yaml](./contracts/bff-backups-api.yaml) and was missing from the plan's
+file tree, so it is easy to skip.
+
+Run records are written as **independent documents**: the BFF Mongo is standalone, so nothing can tie
+a run record to its job atomically ([data-model.md](./data-model.md)).
+
+**Verify RED**:
+```bash
+node --test frontend/mcm-app/src/bff-server/unit-tests/backup-job-store.test.ts
+```
+**Expected RED**: 5 failing cases — module absent.
+
+**Verify GREEN**:
+```bash
+node --test frontend/mcm-app/src/bff-server/unit-tests/backup-job-store.test.ts
+pnpm nx test:integration mcm-app --testPathPattern='backup-run-gate'
+```
+**Expected GREEN**: 0 failures in both.
+
+---
+
 ## Phase 5: User Story 3 — Recover without risking what I have now (P1)
 
 **Goal**: Restore a version into new collections, having proven the artifact first.
@@ -534,16 +730,16 @@ nothing about the race), and that the key expires.
 **Independent test**: Back up, change live data, restore, confirm the restored copy is faithful and
 the live data is untouched.
 
-- [ ] T039 [P] [US3] Write the verify-before-write suite in `frontend/mcm-app/tests/integration/backup-restore-verify.test.ts`
-- [ ] T040 [US3] Implement artifact verification in `frontend/mcm-app/src/bff-server/backup-artifact.ts`
-- [ ] T041 [US3] Write the restore fidelity and non-destructiveness suite in `frontend/mcm-app/tests/integration/backup-restore.test.ts`
-- [ ] T042 [US3] Implement `frontend/mcm-app/src/bff-server/backup-restore-writer.ts`
-- [ ] T043 [P] [US3] Implement the version-listing route in `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/versions+api.ts`
-- [ ] T044 [US3] Implement the restore and download routes under `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/`
-- [ ] T045 [US3] Build the version list, Restore and Download UI in `frontend/mcm-app/src/components/backups/version-list.tsx`
-- [ ] T046 [US3] Extend the `@gate` E2E with backup → mutate → restore → verify in `frontend/mcm-app/e2e/web/backups.spec.ts`
+- [ ] T040 [P] [US3] Write the verify-before-write suite in `frontend/mcm-app/tests/integration/backup-restore-verify.test.ts`
+- [ ] T041 [US3] Implement artifact verification in `frontend/mcm-app/src/bff-server/backup-artifact.ts`
+- [ ] T042 [US3] Write the restore fidelity and non-destructiveness suite in `frontend/mcm-app/tests/integration/backup-restore.test.ts`
+- [ ] T043 [US3] Implement `frontend/mcm-app/src/bff-server/backup-restore-writer.ts`
+- [ ] T044 [P] [US3] Implement version listing and `usable` detection in `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/versions+api.ts`
+- [ ] T045 [US3] Implement the restore and download routes under `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/`
+- [ ] T046 [US3] Build the version list, Restore and Download UI in `frontend/mcm-app/src/components/backups/version-list.tsx`
+- [ ] T047 [US3] Extend the `@gate` E2E with backup → mutate → restore → verify in `frontend/mcm-app/e2e/web/backups.spec.ts`
 
-### T039 / T040 — Nothing is written until the artifact proves itself
+### T040 / T041 — Nothing is written until the artifact proves itself
 
 **Type**: Test + Implementation | **Time**: 2h | **Risk**: High
 **Spec reference**: FR-031, FR-032 · SC-004 · **Scenarios covered**: US3-AC3, US3-AC4
@@ -565,7 +761,13 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-restore-verify'
 ```
 **Expected RED**: 4 failing cases.
 
-### T041 / T042 — Fidelity, and the guarantee the feature rests on
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-restore-verify'
+```
+**Expected GREEN**: 0 failures — `4 passed`, each having asserted **zero collections created**.
+
+### T042 / T043 — Fidelity, and the guarantee the feature rests on
 
 **Type**: Test + Implementation | **Time**: 4h | **Risk**: High
 **Spec reference**: FR-029, FR-030, FR-033 · SC-002, SC-003 · **Scenarios covered**: US3-AC1, US3-AC2, US3-AC6
@@ -595,6 +797,57 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-restore'
 
 ---
 
+### T044 — Version listing, and the artifact that is present but unusable
+
+**Type**: Test + Implementation | **Time**: 2h | **Risk**: Medium
+**Spec reference**: FR-028 · spec.md Edge Cases · **Scenarios covered**: US3-AC5
+
+Lists the job's prefix at the destination directly, so it reflects **what is actually there** —
+including objects this system did not write and versions since removed elsewhere.
+
+The case that is easy to miss, and is in the spec's Edge Cases and the contract's `usable` field:
+**an object that is present but zero-length or unreadable must be listed as unusable, not offered for
+restore.** A version list that offers a corrupt object as restorable sends the user to a failure at
+the worst possible moment.
+
+Assert: a zero-length object → `usable: false`; an object that is not valid gzip → `usable: false`;
+a healthy object → `usable: true`; objects outside this job's prefix are not listed; ordering is
+newest-first.
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-versions'
+```
+**Expected RED**: 5 failing cases — route absent.
+
+**Verify GREEN**: same command, 0 failures — `5 passed`.
+
+---
+
+### T045 / T046 — Restore and download, route and UI
+
+**Type**: Implementation | **Time**: 3h | **Risk**: Medium
+**Spec reference**: FR-028, FR-029, FR-031 · **Prerequisite**: T040–T043 complete and verified.
+
+The restore route is a thin caller of T041's verification and T043's writer — **no validation logic
+lives in the handler**, so the verify-before-write ordering cannot be bypassed by a second entry
+point later.
+
+Download follows `agent/export-download+api.ts`: stream the bytes with a `Content-Disposition`
+attachment, audit by key and size only. Unlike that route the handle is **not** a capability — the
+key is guessable, so ownership is checked from the session on every request.
+
+The UI offers Restore and Download per version, with `usable: false` versions visibly non-restorable.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-restore'
+```
+**Expected GREEN**: 0 failures, and a manual download whose bytes gunzip and validate against
+[contracts/backup-artifact-v1.schema.json](./contracts/backup-artifact-v1.schema.json).
+
+---
+
 ## Phase 6: User Story 4 — Backups happen without me (P2)
 
 **Goal**: A job fires at its configured local time with no session present, exactly once.
@@ -602,20 +855,22 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-restore'
 **Independent test**: Configure a daily schedule, log out entirely, confirm the run fires and
 produces a valid artifact.
 
-- [ ] T047 [P] [US4] Write the schedule arithmetic suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-schedule.test.ts`
-- [ ] T048 [US4] Implement `frontend/mcm-app/src/bff-server/backup-schedule.ts`
-- [ ] T049 [P] [US4] Write the atomic-claim suite in `frontend/mcm-app/tests/integration/backup-job-claim.test.ts`
-- [ ] T050 [US4] Implement the atomic claim in `frontend/mcm-app/src/bff-server/backup-job-store.ts`
-- [ ] T051 [US4] Write the consent and revocation suite in `frontend/mcm-app/tests/integration/backup-offline-token.test.ts`
-- [ ] T052 [US4] Implement `frontend/mcm-app/src/bff-server/backup-offline-token.ts` and the consent routes
-- [ ] T053 [US4] Register the consent redirect URI in `frontend/mcm-app/src/app/bff-api/auth/init+api.ts`
-- [ ] T054 [P] [US4] Write the tick route suite in `frontend/mcm-app/tests/integration/backup-tick.test.ts`
-- [ ] T055 [US4] Implement `frontend/mcm-app/src/app/bff-api/backups/tick+api.ts`
-- [ ] T056 [US4] Add the tick clock to `frontend/mcm-app/server.js`
-- [ ] T057 [US4] Build the schedule editor and consent prompt UI in `frontend/mcm-app/src/components/backups/schedule-editor.tsx`
-- [ ] T058 [US4] Extend the `@gate` E2E with an unattended, exactly-once scheduled run in `frontend/mcm-app/e2e/web/backups.spec.ts`
+- [ ] T048 [P] [US4] Write the schedule arithmetic suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-schedule.test.ts`
+- [ ] T049 [US4] Implement `frontend/mcm-app/src/bff-server/backup-schedule.ts`
+- [ ] T050 [P] [US4] Write the atomic-claim suite in `frontend/mcm-app/tests/integration/backup-job-claim.test.ts`
+- [ ] T051 [US4] Implement the atomic claim in `frontend/mcm-app/src/bff-server/backup-job-store.ts`
+- [ ] T052 [US4] Write the consent and revocation suite in `frontend/mcm-app/tests/integration/backup-offline-token.test.ts`
+- [ ] T053 [US4] Implement `frontend/mcm-app/src/bff-server/backup-offline-token.ts` and the consent routes
+- [ ] T054 [P] [US4] Write the account-deletion teardown suite in `frontend/mcm-app/tests/integration/backup-account-deletion.test.ts`
+- [ ] T055 [US4] Implement backup teardown on account deletion in `frontend/mcm-app/src/bff-server/backup-offline-token.ts` and the account-deletion path
+- [ ] T056 [US4] Register the consent redirect URI in `frontend/mcm-app/src/app/bff-api/auth/init+api.ts`
+- [ ] T057 [P] [US4] Write the tick route suite in `frontend/mcm-app/tests/integration/backup-tick.test.ts`
+- [ ] T058 [US4] Implement `frontend/mcm-app/src/app/bff-api/backups/tick+api.ts`
+- [ ] T059 [US4] Add the tick clock to `frontend/mcm-app/server.js`
+- [ ] T060 [US4] Build the schedule editor and consent prompt UI in `frontend/mcm-app/src/components/backups/schedule-editor.tsx`
+- [ ] T061 [US4] Extend the `@gate` E2E with an unattended, exactly-once scheduled run in `frontend/mcm-app/e2e/web/backups.spec.ts`
 
-### T047 / T048 — DST, both directions, and the month that has no 31st
+### T048 / T049 — DST, both directions, and the month that has no 31st
 
 **Type**: Test + Implementation | **Time**: 3h | **Risk**: High
 **Spec reference**: FR-019 · SC-006 · **Scenarios covered**: US4-AC5
@@ -631,16 +886,18 @@ Pure unit tests. **No clock, no network, no database** — `now` is an argument.
 | Monthly 29th | Non-leap February | Clamp to the 28th |
 | Weekly | Across a DST boundary | Still the same local time |
 | Invalid zone | `Not/AZone` | Rejected at save time |
+| **Raw cron string** (M1) | `frequency: '0 3 * * *'` | **Rejected** at save time (FR-016). A malformed expression silently means "never", the worst failure a backup can have |
+| **User changes timezone** (M2) | job stored as `Europe/London`, request arrives from `America/New_York` | Next run is computed from the **job's** stored zone. The requesting device's zone must not influence it |
 
 **Verify RED**:
 ```bash
 node --test frontend/mcm-app/src/bff-server/unit-tests/backup-schedule.test.ts
 ```
-**Expected RED**: all 7 groups failing — module absent.
+**Expected RED**: all 9 groups failing — module absent.
 
 **Verify GREEN**: same command, 0 failures. SC-006 says 100%; there is no partial credit here.
 
-### T049 / T050 — Exactly once, without transactions
+### T050 / T051 — Exactly once, without transactions
 
 **Type**: Test + Implementation | **Time**: 2h | **Risk**: High
 **Spec reference**: FR-018 · SC-005 · **Scenarios covered**: US4-AC4
@@ -664,7 +921,18 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-job-claim'
 ```
 **Expected RED**: 4 failing cases.
 
-### T051 / T052 — Revocation must be asserted at Keycloak, not locally
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-job-claim'
+```
+**Expected GREEN**: 0 failures — `4 passed`. Run it at least 5 times: a race that passes once has
+not been shown to be safe.
+
+```bash
+for i in $(seq 5); do pnpm nx test:integration mcm-app --testPathPattern='backup-job-claim' --skip-nx-cache || break; done
+```
+
+### T052 / T053 — Revocation must be asserted at Keycloak, not locally
 
 **Type**: Test + Implementation | **Time**: 3h | **Risk**: High
 **Spec reference**: FR-021..FR-024 · SC-012 · **Scenarios covered**: US4-AC2, US4-AC3, US4-AC7
@@ -691,7 +959,58 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-offline-token'
 ```
 **Expected RED**: 4 failing cases.
 
-### T054 / T055 — The tick route
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-offline-token'
+```
+**Expected GREEN**: 0 failures — `4 passed`. The SC-012 case must pass by **Keycloak rejecting the
+stored token when used**, not by observing a local delete.
+
+### T054 / T055 — Account deletion must take the standing permission with it
+
+**Type**: Test + Implementation | **Time**: 2h | **Risk**: High
+**Spec reference**: FR-023 · spec.md Edge Cases · **Scenarios covered**: US4-AC3
+
+The spec says a deleted account leaves nothing behind: destinations, credentials, jobs, run history
+and the standing permission are all erased. **Nothing covered this until now** — a deleted account
+could leave a live offline token at Keycloak with no local record that it exists, which is the same
+failure SC-012 exists to prevent, arriving by a different door.
+
+Assert, for a user who is deleted:
+
+1. The stored refresh token is **rejected by Keycloak when used** afterwards — the same standard as
+   SC-012. A local `$unset` is not evidence that anything was revoked.
+2. Every `backup_destinations`, `backup_jobs` and `backup_runs` document for that user is gone, and
+   no `secretEnc` survives anywhere.
+3. **Artifacts at the user's own destination are untouched.** They are the user's property at storage
+   the user owns and pays for — this system deleting them would be destroying data it was trusted to
+   copy, not cleaning up after itself.
+4. Revocation is attempted **before** local deletion, and a revocation failure is surfaced rather
+   than swallowed — reversed, a failed revocation orphans a live token with nothing left pointing
+   at it.
+5. Deleting a user with no backup configuration at all succeeds and is a no-op.
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-account-deletion'
+```
+**Expected RED**: 5 failing cases — no teardown path exists.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-account-deletion'
+```
+**Expected GREEN**: 0 failures — `5 passed`.
+
+**Also run** (the existing account-deletion path must be unbroken):
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='auth'
+```
+**Expected**: previously passing tests still pass.
+
+---
+
+### T057 / T058 — The tick route
 
 **Type**: Test + Implementation | **Time**: 2h | **Risk**: Medium
 **Spec reference**: FR-017, FR-018, FR-020 · **Scenarios covered**: US4-AC1, US4-AC4, US4-AC6
@@ -721,7 +1040,14 @@ exist, which **coincides with case 1's expected result**. Case 1 is therefore **
 RED; it becomes meaningful only once cases 2–6 pass. Note this in the checkpoint rather than
 counting case 1 as a genuine RED.
 
-### T056 — The clock
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app --testPathPattern='backup-tick'
+```
+**Expected GREEN**: 0 failures — `6 passed`. Case 1 only becomes meaningful here, once cases 2–6
+pass and a 404 can no longer be explained by the route being absent.
+
+### T059 — The clock
 
 **Type**: Implementation | **Time**: 1h | **Risk**: Medium
 **Spec reference**: [research.md](./research.md) §R1
@@ -744,7 +1070,7 @@ defensive code and removing it reintroduces a silent production-only hang
 `server.js` does not run under Metro, so **no tick fires in dev** — that is expected, and the tick
 route is called directly instead.
 
-### T058 — Unattended E2E
+### T061 — Unattended E2E
 
 **Type**: Test | **Time**: 2h | **Risk**: Medium
 **Spec reference**: SC-005 · **Scenarios covered**: US4-AC1, US4-AC4 · Tag: `@gate`
@@ -761,14 +1087,14 @@ one artifact. Deterministic: the instant is supplied, never waited for.
 **Independent test**: keep-last-3, run four times → three remain, oldest gone. Then force a failure →
 still three.
 
-- [ ] T059 [P] [US5] Write the retention suite in `frontend/mcm-app/tests/integration/backup-retention.test.ts`
-- [ ] T060 [US5] Implement `frontend/mcm-app/src/bff-server/backup-retention.ts`
-- [ ] T061 [US5] Wire pruning into `frontend/mcm-app/src/bff-server/backup-runner.ts`, after the artifact is confirmed written
-- [ ] T062 [P] [US6] Write the run-history and next-run surfacing suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-run-summary.test.ts`
-- [ ] T063 [US6] Build the run history, failure banner and next-run UI in `frontend/mcm-app/src/components/backups/run-history.tsx`
-- [ ] T064 [US6] Extend the `@gate` E2E with retention and the failure banner in `frontend/mcm-app/e2e/web/backups.spec.ts`
+- [ ] T062 [P] [US5] Write the retention suite in `frontend/mcm-app/tests/integration/backup-retention.test.ts`
+- [ ] T063 [US5] Implement `frontend/mcm-app/src/bff-server/backup-retention.ts`
+- [ ] T064 [US5] Wire pruning into `frontend/mcm-app/src/bff-server/backup-runner.ts`, after the artifact is confirmed written
+- [ ] T065 [P] [US6] Write the run-history and next-run surfacing suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-run-summary.test.ts`
+- [ ] T066 [US6] Build the run history, failure banner and next-run UI in `frontend/mcm-app/src/components/backups/run-history.tsx`
+- [ ] T067 [US6] Extend the `@gate` E2E with retention and the failure banner in `frontend/mcm-app/e2e/web/backups.spec.ts`
 
-### T059 / T060 / T061 — A failed run must never cost a good version
+### T062 / T063 / T064 — A failed run must never cost a good version
 
 **Type**: Test + Implementation | **Time**: 2h30m | **Risk**: High
 **Spec reference**: FR-025, FR-026, FR-027 · SC-007, SC-008 · **Scenarios covered**: US5-AC1..AC5
@@ -797,7 +1123,7 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-retention'
 
 **Verify GREEN**: same command, 0 failures.
 
-### T063 — Visibility
+### T066 — Visibility
 
 **Type**: Implementation | **Time**: 2h | **Risk**: Low
 **Spec reference**: FR-036, FR-037 · **Scenarios covered**: US6-AC1..AC4
@@ -810,14 +1136,14 @@ Last run outcome, time, duration, artifact size, per-collection counts; next run
 
 ## Phase 8: Polish & cross-cutting
 
-- [ ] T065 [P] Write the audit-event coverage suite in `frontend/mcm-app/tests/integration/backup-audit.test.ts`
-- [ ] T066 [P] Run the credential and content leak scan per `specs/073-scheduled-backups/quickstart.md` Scenario 10
-- [ ] T067 [P] Write the operator runbook at `docs/runbooks/backups.md`
-- [ ] T068 [P] Record the durable learnings in `openwiki/gotchas/agent-config-ssrf-guard.md` and `openwiki/projects/bff.md`
-- [ ] T069 File the follow-up backlog items via `scripts/backlog.mjs` (streaming, email, Ollama guard, SFTP driver)
-- [ ] T070 Full gate sweep per `specs/073-scheduled-backups/quickstart.md` before opening the PR
+- [ ] T068 [P] Write the audit-event coverage suite in `frontend/mcm-app/tests/integration/backup-audit.test.ts`
+- [ ] T069 [P] Run the credential and content leak scan per `specs/073-scheduled-backups/quickstart.md` Scenario 10
+- [ ] T070 [P] Write the operator runbook at `docs/runbooks/backups.md`
+- [ ] T071 [P] Record the durable learnings in `openwiki/gotchas/agent-config-ssrf-guard.md` and `openwiki/projects/bff.md`
+- [ ] T072 File the follow-up backlog items via `scripts/backlog.mjs` (streaming, email, Ollama guard, SFTP driver)
+- [ ] T073 Full gate sweep per `specs/073-scheduled-backups/quickstart.md` before opening the PR
 
-### T065 — All eleven audit events, and nothing sensitive in them
+### T068 — All eleven audit events, and nothing sensitive in them
 
 **Type**: Test | **Time**: 1h30m | **Risk**: Medium
 **Spec reference**: FR-035 · SC-009
@@ -829,7 +1155,7 @@ The `audit()` sink already strips every key containing `token` plus an explicit 
 it for the new events rather than assuming inheritance**. A field named `destinationSecret` is not
 caught by the `token` rule.
 
-### T066 — The leak scan
+### T069 — The leak scan
 
 **Type**: Test | **Time**: 1h | **Risk**: Medium
 **Spec reference**: SC-009
@@ -840,7 +1166,7 @@ password, and `refresh_token`. Expect **0**.
 Note `awk 'length>100'` counts **bytes**, so any byte-length check over text containing em-dashes
 over-reports. Use character length if a length assertion is involved.
 
-### T068 — Where the learnings go
+### T071 — Where the learnings go
 
 **Type**: Documentation | **Time**: 1h | **Risk**: None
 
@@ -858,7 +1184,7 @@ concept. Candidates from this feature:
 Never into the root `CLAUDE.md`: it is an index, and `check-openwiki-governance.mjs` fails on prose
 beyond it.
 
-### T069 — Follow-ups this feature deliberately did not do
+### T072 — Follow-ups this feature deliberately did not do
 
 **Type**: Documentation | **Time**: 30m | **Risk**: None
 
@@ -873,7 +1199,7 @@ File as backlog items, with acceptance criteria — a vague idea cannot ever be 
 4. **A third destination kind** (SFTP), which should be a third file against the T011 interface — if
    it is not, the interface failed and that is worth knowing.
 
-### T070 — The gate
+### T073 — The gate
 
 ```bash
 pnpm nx affected -t lint test build --skip-nx-cache
@@ -887,6 +1213,102 @@ must be run explicitly.
 
 A stale nx cache answers with a failure from a path that no longer exists — re-run with
 `--skip-nx-cache` before diagnosing anything.
+
+---
+
+### T047 — Restore E2E
+
+**Type**: Test | **Time**: 1h30m | **Risk**: Low
+**Spec reference**: SC-002, SC-003 · **Scenarios covered**: US3-AC1, US3-AC2 · Tag: `@gate`
+
+Back up → change live data → restore → assert the restored collection appears **and** the mutated
+live collection still holds the mutation. The second half is the point: it is SC-003 through the real
+UI, and without it the test proves only that restore creates something.
+
+**Verify RED**: `pnpm nx e2e mcm-app-e2e --grep '@gate' --testPathPattern='backups'` — the restore
+case fails at the version-list locator.
+**Verify GREEN**: same command, 0 failures.
+
+---
+
+### T056 — Register the consent redirect URI
+
+**Type**: Config change | **Time**: 30m | **Risk**: Medium
+**Spec reference**: FR-022
+
+`ensureClientRedirectUris()` in `auth/init+api.ts` already takes a list and registers three URIs;
+this adds a fourth for the consent callback. Non-destructive and idempotent, as that route already is.
+
+**Done when**: the Keycloak client shows the new URI after one `/bff-api/auth/init` call, and the
+existing three are **still present** — this function replaces a list, so dropping one of them is the
+way this task goes wrong.
+
+---
+
+### T060 — Schedule editor and consent prompt
+
+**Type**: Implementation | **Time**: 3h | **Risk**: Medium
+**Spec reference**: FR-016, FR-022 · **Scenarios covered**: US4-AC2, US4-AC5
+
+Frequency, time, weekday/day-of-month, timezone (defaulted from the device but **stored on the job**),
+retention count. No free-text recurrence field anywhere in the UI — FR-016 is a UI constraint as much
+as a validation rule.
+
+The consent step must state plainly what is being granted: that the system will read the user's
+collections while they are away, and that disabling the schedule revokes it. An OAuth consent screen
+the user cannot connect to a cause they recognise is consent in name only.
+
+**Done when**: enabling a schedule without consent is impossible through the UI, and the next run
+time is shown in the job's timezone immediately after saving.
+
+---
+
+### T065 — Run summary surfacing
+
+**Type**: Test | **Time**: 45m | **Risk**: Low
+**Spec reference**: FR-036, FR-037 · **Scenarios covered**: US6-AC1..AC4
+
+Pure unit tests over the summary shape: duration derives from start and finish; a failure reason is
+present when and only when status is `failed` or `partial`; next-run renders in the **job's** zone;
+and no field carries a credential or collection content (US6-AC4).
+
+**Verify RED**: `node --test frontend/mcm-app/src/bff-server/unit-tests/backup-run-summary.test.ts`
+— 4 failing cases.
+**Verify GREEN**: same command, 0 failures.
+
+---
+
+### T067 — Retention and failure-banner E2E
+
+**Type**: Test | **Time**: 1h | **Risk**: Low
+**Spec reference**: SC-007 · **Scenarios covered**: US5-AC1, US6-AC2 · Tag: `@gate`
+
+Run to exceed the retention count, assert the version list settles at N. Then force a failure and
+assert the banner appears **and persists across a reload** — a banner held only in component state
+disappears on refresh, which is exactly when a user would look for it.
+
+**Verify RED**: `pnpm nx e2e mcm-app-e2e --grep '@gate' --testPathPattern='backups'` — both cases
+fail.
+**Verify GREEN**: same command, 0 failures.
+
+---
+
+### T070 — Operator runbook
+
+**Type**: Documentation | **Time**: 1h30m | **Risk**: None
+**Spec reference**: FR-015, R1
+
+`docs/runbooks/backups.md`. Must cover, because each is a support question waiting to happen:
+
+- The six environment variables, and that `BACKUP_CREDENTIAL_ENC_KEY` is **not** the agent-config key.
+- **`server.js` does not run under Metro, so no scheduled backup fires in dev.** Expected, not broken.
+- Raising the size ceiling, and reading the error that names it.
+- Why a private-range destination is refused by default and how `BACKUP_ALLOWED_DESTINATION_HOSTS`
+  admits a NAS.
+- How to confirm a standing permission was really revoked — by using the token, not by reading a
+  database.
+
+**Done when**: the runbook is linked from `openwiki/quickstart.md` and the docs gate passes.
 
 ---
 
@@ -914,7 +1336,7 @@ Phase 1 (Setup)  ──►  Phase 2 (Foundational)  ──►  ┌─ Phase 3 (U
 - **Phase 2**: the crypto pair (T008/T009) and the lock (T010) are independent of the guard
   (T006/T007). The two drivers (T014–T017) are independent of each other once T011 and T013 land.
 - **Phase 3**: T018, T020, T022 are three independent suites.
-- **Phase 8**: T065–T069 are fully parallel.
+- **Phase 8**: T068–T072 are fully parallel.
 
 Every `[P]` task touches a file no other concurrent task touches.
 

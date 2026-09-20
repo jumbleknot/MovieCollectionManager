@@ -54,7 +54,7 @@ completes in under 60 s. Scheduled runs fire within 5 minutes of their local tim
 snapshot is built in the BFF heap, which is the application server — the ceiling is what keeps a
 backup from taking the app down.
 
-**Scale/Scope**: Single-digit-to-dozens of users (homelab). ~8 new BFF API routes, ~14 new
+**Scale/Scope**: Single-digit-to-dozens of users (homelab). 12 new BFF API route files (14 operations, per the contract), ~16 new
 server-side modules, 4 new UI screens/sections inside the existing Backups route, 2 new Compose
 services for testing.
 
@@ -113,6 +113,7 @@ frontend/mcm-app/
 │   │   ├── jobs/index+api.ts                   # GET list, POST create
 │   │   ├── jobs/[jobId]+api.ts                 # GET, PATCH, DELETE
 │   │   ├── jobs/[jobId]/run+api.ts             # POST "back up now"
+│   │   ├── jobs/[jobId]/runs+api.ts            # GET run history
 │   │   ├── jobs/[jobId]/versions+api.ts        # GET version list
 │   │   ├── jobs/[jobId]/restore+api.ts         # POST restore
 │   │   ├── jobs/[jobId]/download+api.ts        # GET artifact bytes
@@ -156,16 +157,21 @@ the agent gateway are untouched.
 
 Each phase maps to the spec's user-story priorities and is independently shippable.
 
-| Phase | Delivers | Spec stories |
-| --- | --- | --- |
-| **1 — Foundation** | Types, stores, encryption wiring, the resolving URL guard, the driver interface, both drivers, Compose test services | US1 |
-| **2 — Destinations UI + API** | Full destination CRUD and "test connection", end to end | US1 |
-| **3 — Backup on demand** | Snapshot reader, artifact builder, runner, "Back up now", run history | US2 |
-| **4 — Restore + download** | Version listing, verify-before-write restore, artifact download | US3 |
-| **5 — Scheduling** | Consent flow, offline token custody, schedule arithmetic, tick route, `server.js` clock, locking | US4 |
-| **6 — Retention + visibility** | Pruning, failure banner, next-run display | US5, US6 |
+Phase numbers match `tasks.md` exactly, so "Phase 5" means the same thing in both documents.
 
-Phases 3 and 4 are the MVP: a user who stops there has real backups they can restore.
+| Phase | Delivers | Spec stories | Tasks |
+| --- | --- | --- | --- |
+| **1 — Setup** | Dependencies, environment, shared types, Compose test services, collections and indexes | — | T001–T005 |
+| **2 — Foundational** | The resolving URL guard, credential encryption, the leader lock, the driver interface, both drivers | — | T006–T017 |
+| **3 — Destinations** | Full destination CRUD and "test connection", end to end | US1 | T018–T025 |
+| **4 — Backup on demand** | Snapshot reader, artifact builder, runner, job/run persistence, "Back up now" | US2 | T026–T039 |
+| **5 — Restore + download** | Verify-before-write restore, version listing, artifact download | US3 | T040–T047 |
+| **6 — Scheduling** | Consent, offline token custody, account-deletion teardown, schedule arithmetic, tick route, `server.js` clock | US4 | T048–T061 |
+| **7 — Retention + visibility** | Pruning, failure banner, next-run display | US5, US6 | T062–T067 |
+| **8 — Polish** | Audit coverage, leak scan, runbook, OpenWiki learnings, follow-up items, gate sweep | — | T068–T073 |
+
+**Phases 1–5 are the MVP**: a user who stops there can configure storage they own, take real backups,
+and restore from them. Scheduling and retention are convenience on top.
 
 ## Complexity Tracking
 
