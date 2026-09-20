@@ -66,6 +66,11 @@ const BACKUP_CREDENTIAL_ENC_KEY =
 // test destinations are unreachable until named here. These are the compose service names the BFF
 // container resolves them by — NOT the loopback ports the host-side suites use.
 const BACKUP_ALLOWED_DESTINATION_HOSTS = 'localhost,127.0.0.1,mcm-bff-backup-minio,mcm-bff-backup-webdav';
+// Feature 073 (T058): the tick route is guarded by this secret and returns 404 — not 401 — to
+// anything that does not carry it, so an ABSENT secret does not look like a misconfiguration.
+// It looks like the route does not exist, and the scheduled-run E2E fails with a 404 that says
+// nothing about why. Generated per run; nothing outside the stack needs to know it.
+const BACKUP_TICK_SECRET = process.env.BACKUP_TICK_SECRET || randomBytes(32).toString('hex');
 
 // 1 — BFF .env.docker. Non-secret values are Docker-internal service DNS (matches the committed
 //     .env.docker.example + compose); E2E raises the per-user cost/rate ceilings so a shared test
@@ -116,6 +121,10 @@ MONGO_URL=mongodb://mcm-bff-store-mongo:27017
 # tests/integration/setup/env.ts, which falls back to .env.docker in CI), so the encryption key
 # has to be here for the in-process store suites as well as for the BFF container.
 BACKUP_CREDENTIAL_ENC_KEY=${BACKUP_CREDENTIAL_ENC_KEY}
+BACKUP_TICK_SECRET=${BACKUP_TICK_SECRET}
+# CI drives the scheduling tick at a supplied instant rather than waiting for one to be due.
+# Production never sets this; the route refuses `?now=` without it.
+BACKUP_TICK_ALLOW_TIME_OVERRIDE=1
 BACKUP_ALLOWED_DESTINATION_HOSTS=${BACKUP_ALLOWED_DESTINATION_HOSTS}
 `;
 writeFileSync(resolve(REPO_ROOT, 'frontend/mcm-app/.env.docker'), envDocker, 'utf8');

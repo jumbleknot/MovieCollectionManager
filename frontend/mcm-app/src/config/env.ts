@@ -124,6 +124,14 @@ export const env = {
   // How often server.js pokes the loopback tick route. Not the schedule resolution — the tick
   // only looks for jobs already due, so a longer interval delays a run, it never skips one.
   backupTickIntervalMs: parseInt(optionalEnv('BACKUP_TICK_INTERVAL_MS', '60000'), 10),
+  // Lets the tick be driven at a SUPPLIED instant (`?now=`) instead of the wall clock, so a
+  // scheduling test can assert a due job without sleeping until it is due — a scheduling test
+  // that sleeps is a flaky test, and this repository has paid for flaky E2E more than once.
+  //
+  // DENY BY DEFAULT, and an explicit opt-in rather than an inference from NODE_ENV. Inferring
+  // it would mean a container that happened to be built without NODE_ENV=production silently
+  // accepted "it is 03:00" from anyone who also had the tick secret. An operator has to mean it.
+  backupTickAllowTimeOverride: optionalEnv('BACKUP_TICK_ALLOW_TIME_OVERRIDE', '') === '1',
   // The three backup collections in the BFF's own Mongo, named like the two that precede them.
   backupDestinationsCollection: optionalEnv('BACKUP_DESTINATIONS_COLLECTION', 'backup_destinations'),
   backupJobsCollection: optionalEnv('BACKUP_JOBS_COLLECTION', 'backup_jobs'),

@@ -83,6 +83,73 @@ app.use(
 //   /*          → SSR pages (web frontend)
 app.all('*', createRequestHandler({ build: DIST_SERVER, mode: process.env.NODE_ENV ?? 'production' }));
 
+// ─── Feature 073 (T059): the scheduling clock ────────────────────────────────
+//
+// THE BFF'S FIRST BACKGROUND-WORK MECHANISM. Before this, `grep -rn setInterval src/` returned
+// nothing: every line of BFF code ran because a request arrived. FR-017 needs runs with no user
+// present, so something has to keep time.
+//
+// WHY A LOOPBACK HTTP CALL RATHER THAN CALLING THE FUNCTION. This file is CommonJS and lives
+// OUTSIDE the Metro bundle — it `require`s `@expo/server/adapter/express` and hands `dist/server`
+// to `createRequestHandler`. It cannot `require('./src/bff-server/...')`, because those modules
+// exist only inside the bundle, compiled and resolved by Metro's own `@/` aliasing. The loopback
+// request is the seam between the clock and the work, and it is a real one, not a workaround
+// dressed up: the tick route is then equally callable by a cron sidecar or by an operator, which
+// is what keeps the "move this to a scheduler later" escape hatch open.
+//
+// DEV/PROD ASYMMETRY, DELIBERATE AND DOCUMENTED: `server.js` does not run under Metro, so NO TICK
+// FIRES IN `pnpm start`. That is expected, not a bug to hunt. In dev the tick route is called
+// directly, which is also what makes the E2E deterministic.
+//
+// ERRORS ARE LOGGED AND SWALLOWED. A failing tick must never take the HTTP server down — an
+// unhandled rejection here would turn "one backup did not run" into "the application is offline".
+const TICK_INTERVAL_MS = parseInt(process.env.BACKUP_TICK_INTERVAL_MS ?? '60000', 10);
+const TICK_SECRET = process.env.BACKUP_TICK_SECRET ?? '';
+
+function startBackupScheduler() {
+  // No secret means the scheduler is not enabled for this deployment. Said once, at boot,
+  // because the alternative is silence — and "scheduled backups never ran" with nothing in the
+  // log explaining why is the single worst way for this feature to fail.
+  if (!TICK_SECRET) {
+    console.log('MCM BFF: backup scheduler disabled (BACKUP_TICK_SECRET is not set)');
+    return;
+  }
+  if (!Number.isFinite(TICK_INTERVAL_MS) || TICK_INTERVAL_MS <= 0) {
+    console.log(`MCM BFF: backup scheduler disabled (invalid BACKUP_TICK_INTERVAL_MS)`);
+    return;
+  }
+
+  console.log(`MCM BFF: backup scheduler ticking every ${TICK_INTERVAL_MS}ms`);
+  const timer = setInterval(() => {
+    // 127.0.0.1, never the public hostname: the tick is internal, and routing it through
+    // whatever is in front of this process would expose it to that surface for no reason.
+    fetch(`http://127.0.0.1:${PORT}/bff-api/backups/tick`, {
+      method: 'POST',
+      headers: { 'x-backup-tick-secret': TICK_SECRET },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          console.warn(`MCM BFF: backup tick returned HTTP ${res.status}`);
+          return;
+        }
+        const body = await res.json().catch(() => ({}));
+        // Only when something happened. A line a minute saying "nothing was due" is a log
+        // nobody reads, which is a log that hides the line that mattered.
+        if (body && body.claimed > 0) {
+          console.log(`MCM BFF: backup tick ran ${body.claimed} job(s)`);
+        }
+      })
+      .catch((err) => {
+        console.warn(`MCM BFF: backup tick failed: ${err && err.message ? err.message : err}`);
+      });
+  }, TICK_INTERVAL_MS);
+  // Do not hold the process open on this timer alone — a clock should not be the reason a
+  // container refuses to shut down.
+  if (typeof timer.unref === 'function') timer.unref();
+}
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`MCM BFF listening on port ${PORT}`);
+  // Started AFTER the server is listening, or the first tick races the port it calls.
+  startBackupScheduler();
 });
