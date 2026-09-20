@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3abc602a9ae11f98dc28560fdb718bef054795e862193b82c0faa4f08c6f0892",
+  "claims": [
+    {
+      "id": "claim_9a0bfbae84254f9ab28b19990354065b",
+      "statement": "The BFF runs in three modes: local dev (Metro, port 8081, HTTP, non-Secure cookies), dev container (mcm-bff-service-nonsecure, port 8082, HTTP, non-Secure — the standard final local E2E run), and prod container (mcm-bff-service-secure + TLS proxy, port 8443, HTTPS, Secure cookies — reserved for future CI/CD, not a routine local step).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L103-L109",
+          "version": "repo-lines-v1:sha256:49b57e0110bdd4a035846e94da29fd12aba50935033d666f60ba5c75af34d193:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlmNzRhYTM4ZGJhMTVhNzExYzkzMWI5MzRiMzIzNzg2OGI0ZTMxNTVhYTViM2RiOWUyMDY4ZWRkMjJjMzk5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZmYjFmMjdmOWIwMDUzODBkMWRlNGFhYWI4ZjA3NzU5ZmJlMDExMzZkMDE1N2RmNTNjNWNmZDJjNTNmYzY0NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb64cb92733b4a94a92ebaf7eab8bc4c",
+      "statement": "The dev-container run is the deterministic baseline for flaky-vs-broken triage (~54s for the current suite); Metro has JIT/long-session variance that produces misleading red herrings and must not be used for this diagnosis.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L204-L212",
+          "version": "repo-lines-v1:sha256:fdbed2ec293f6204a0c88441050dc28bb6dc337af02bb9757fdb50d8cf155b4d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNkMWNlZTJlZDU1NjdlNjAxYjgyNjMyNWU5Y2I5MDFhN2FjZTg5NGVhMzdjMGNjMmNlODgwODRkNmJmNTVjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU2YWMyOWY5YjdkNGQ2ZjA0YjY1MGMwY2ZjZjY2MDgzZjM3Njg4M2QzMjNhNThkZWU0YzJmNmY5MmQ3MTcyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODUzM2RjMzc2NDJhMDBlNDVjYTYyNWRlNjZlMDEyZGYzNGEyN2FiZDg3OWUwOWI2N2UxNDQxMjE3MTc3ZDI2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzY4YjBmYjFhYTRjYTBiMTkwOTJjNDM0ODIyNTk1YjhiMzgxMTYyMmViNmY4YjQ2NjJlYzg1YmI4YWE4YTEyMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_68b5f7693c95494cb35d9a29887d2de3",
+      "statement": "global-setup.ts asserts the X-BFF-Source header to fail-fast on a Metro false-green when dev-container mode is expected.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L97-L98",
+          "version": "repo-lines-v1:sha256:d3d77bb089ee90991bee7107465b3ddfe486843ca28dc908179a1d1c4b8b8827:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmYwN2U1MTViNzY2YWEyZjJmZGZiYjllZTQ0NTc5YzRkODgyMmVjYWU4YjM5NDlmOTgwZjNhZGIyYTNkZTM4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmIyYTQxNDlhNzY3NGEzNTgyMDk2Mjc1ZjU1MGRlNDVkYTkyYzkzZTIxOWE0NzlmZDk5ZGRjOTYzMWM2MmMwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGM3ZTcwOTVkM2I5YTY3N2M4Mzc4MzI0OWEwMjdmNTcxZmUwZmZmMmFlZTliYmIyOWRhYjRlMjk4ODI4MDZjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2FmYTVjNWQxYTBmNjI4NzNkY2U0NDJmODdjYWRiNzQ1NDEwYWM0YmM4ZmQ0MTEzNDAyMGQ0NTI3Mzg3YWYwYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_56960f66de434976bfde18a0860c9d24",
+      "statement": "app-ci's app-e2e job runs test:integration for all three projects (movie-assistant, mc-service, mcm-app) before the web/APK/emulator legs, with MCM_REQUIRE_LIVE_STACK=1 that escalates a SKIP to a FAILURE; before feature 041 no project's integration tier ran in CI.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1-L15",
+          "version": "repo-lines-v1:sha256:57dda1257174fccf4fbcb070d81afa3a465129533ebfc56c3588bd0d0010aa11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYzIzZWE0N2I1OTI5NWY3MjJjNTI1ODJhYzg4OGIxOTQ2MGQyMTQ5NDgwOGRhZDkzNDdiZjFiZDBiMGJlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwMWJkY2ZmMDg3YTU0MDFmOGUwNjhlOGMyNzIzZTliNmM2NWU2NjNjMzc5MWE0YTI3MjhiMGMxM2E5ODFjNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlNGU4YzAwODEwMzU5NjRmYTc1Y2FlYWQxYmYwNTEyMWM5YTdlNzZlMWYzZmViMmZkOTIwZDYyNTkyYzI2Y2MifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L62-L86",
+          "version": "repo-lines-v1:sha256:0a839eb2707defc5d86d077a81cfd8350dc1aa9275dff48b1ce2784916783f48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OTY4NTVmYTgwMjhjYmYxOGIxYmY4ODQyMWU2NDZkYjhiYTM2YjYwNWQwODMxMzM3MzQyMDg2YzA0MjlhYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzOTU3MWRhMTFhZjdmZTcxYTk3MjM1Yzc3ZWVhNGU1NTJkYTk4NmM3Y2Y2YWVkZTZmYWM0M2E4YzI4NjRmOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNzQ0YjY0YzU3MjExYzUzMTYzNDdhNTQxZGIyMDE4YjU4NGM0NzQyNWZmOTIxNDUwNDNlM2E5ODk4ODVlMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NjM3YTE5MDIzMTI0OGIyODUxOTU0ODdiMWU4ZWNkZDlkYzVkZGE0ODY4NGUwMjA2YjdkMjE4N2M5MzgxYzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_86c70747a8f04c94a169256973d7c822",
+      "statement": "The BFF integration test harness uses testEnvironment: node and maxWorkers: 1 (serial) because tests share Redis db 1 and the live BFF — parallel flushdb/teardown would corrupt another file's data mid-test.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L746-L746",
+          "version": "repo-lines-v1:sha256:dc0ec4a1149f119b4b4c76a75c049580fb5d68b799ae4d2f917886f69b4fb385:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMwZWM0YTExNDlmMTE5YjRiNGM3NmE3NWMwNDk1ODBmYjVkNjhiNzk5YWU0ZDJmOTE3ODg2ZjY5YjRmYjM4NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMwZWM0YTExNDlmMTE5YjRiNGM3NmE3NWMwNDk1ODBmYjVkNjhiNzk5YWU0ZDJmOTE3ODg2ZjY5YjRmYjM4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzIxMDQxMzUzMjE0MWUxYWI5M2M1ZDYyMDk0Y2E5NTAyZDcwYTdlYTk2ODQwMDVmNjJmYTAxYjJkYTUyOTAwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWM5Y2YxZDZkNTkwZDcxOTAwZWRhODhkNjM1NzIwMjE3ODBhNmJkYTM0YmNhNTM0NzA1MWJiYjZjMjc2NWRjMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2182c593ab7b42db8ac90cfee9bc2f88",
+      "statement": "BFF integration tests acquire real tokens via the test-only mcm-bff-test ROPC client; calling ensureRopcAudienceMapper() in beforeAll is required for any test that hits validateJwt or mc-service, or ROPC tokens are rejected as 'Invalid token audience'.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L749-L749",
+          "version": "repo-lines-v1:sha256:8581efbfd0817e90db6570133efde3174ecb27ad816330d82f35083d18a1454d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODU4MWVmYmZkMDgxN2U5MGRiNjU3MDEzM2VmZGUzMTc0ZWNiMjdhZDgxNjMzMGQ4MmYzNTA4M2QxOGExNDU0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU4MWVmYmZkMDgxN2U5MGRiNjU3MDEzM2VmZGUzMTc0ZWNiMjdhZDgxNjMzMGQ4MmYzNTA4M2QxOGExNDU0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzU4OGIyZDFlZjkyZDc5MmZlYThkMTFmMzFlMDY5MjFlMGY1MzVhODlkOGM3ZjczODQ3MDE1Yjk0Y2Q5M2I3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQwOGFlOTU2MjE0ZGNmYTA3MDVkZWRkMjE3Mjk2MGI5NDVjZjk5NjAyNTc2N2FmYjdmZTlhMTAzNmQxMzFjZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d7004f473c04b2f92b0839bfb310cd3",
+      "statement": "route-coverage-map.ts fails the build if any +api.ts route lacks a test or justified exclusion; login PKCE is the only map-level exclusion.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L750-L750",
+          "version": "repo-lines-v1:sha256:8d7c629f934bba61864f5ee40c184965f74ebd417913668159d46806a549688b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ3YzYyOWY5MzRiYmE2MTg2NGY1ZWU0MGMxODQ5NjVmNzRlYmQ0MTc5MTM2NjgxNTlkNDY4MDZhNTQ5Njg4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ3YzYyOWY5MzRiYmE2MTg2NGY1ZWU0MGMxODQ5NjVmNzRlYmQ0MTc5MTM2NjgxNTlkNDY4MDZhNTQ5Njg4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWM5Y2YxZDZkNTkwZDcxOTAwZWRhODhkNjM1NzIwMjE3ODBhNmJkYTM0YmNhNTM0NzA1MWJiYjZjMjc2NWRjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVkZDFjMGM1YzdkOGJkZTBkZTk1YjM1MmFhMzUxYzE3YjQ0OTA3ZjI3YTdhM2MzYjA3NWU4ODk1NDM3MmE4MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_47039183133e4b83abbb4b5d453664d7",
+      "statement": "preflight.global.js probes BFF, Keycloak, Redis, and BFF Mongo and throws when MCM_REQUIRE_LIVE_STACK=1 and any dependency is unreachable; locally the flag is unset and the guard is a no-op.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/setup/preflight.global.js#L111-L167",
+          "version": "repo-lines-v1:sha256:3cf37f7319a0d5f5b6b2604fc0edb9de3445f36085eac6179ccae2acec392d16:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZWY3ZmFjNmFjZDM2MDYyNTllMGIzNjhiODllZjVlZGVhMmM0YTJmNTY5ZDAyOTBjYzEyYWE5NjA2NGE5NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c4ff54d908644172854e6dbbac402867",
+      "statement": "agent-e2e.mjs runs each agent spec file in a fresh nx e2e invocation (isolated per file) and does NOT work inside the dev container because chromium cannot be installed there; agent-stack.mjs itself works fine inside the container.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L157-L163",
+          "version": "repo-lines-v1:sha256:548fe8d32fe88700a13044393e26e5fd1b266b1160d934b796f914a21c8cd86a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmVkNTg5MzQ4NTA1Y2M3ZjNhZWZiZWI2ZTVlNGNlZTI4NTQxNWYyODQ0NDJlYjFjYmI3M2U5YWRmNDRlZTlmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDlmMzg2ZmI5MDBiZjRlYjNjOThjNzc2N2M0MjZjMmUwZTUzZmY2N2FjZTMwZmYxZWI2OGU1Nzg2NWYwOGVkOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmM1MzY4ZmY4NjliNTk5YzA1YmM1NzEzNWFjZDMwNjExNDRmZmRjNWUzZTI5OTU1MmIxNDQzNTA3OWE5YTQ2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjc2YjIyZjBkYjg5ZmMxNjEwZmU3ODRhOTkyNDZjNjk4ZTE4ZDg5NzdiMDZhNGE5MzJjMTU4MDZjZjM0ZWY5NCJ9"
+        },
+        {
+          "resource": "repo://scripts/agent-e2e.mjs#L1-L25",
+          "version": "repo-lines-v1:sha256:6fa39c6296b2896e9f9b91bb0be58a8b2d0f8d5b25e4b2bb7cd9193465a3b87e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjOGFmOWM3ZGQ1MzI2YzkzY2I4MzVjOWFiY2ExNzg0OTQ3NTZlNjZjY2UxYzg5YTk3MTAzZjIzMTYzMDNhNGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ea750d8669c44188f08b6b865fed6f3",
+      "statement": "agent-stack.mjs requires KEYCLOAK_SERVICE_CLIENT_SECRET to be exported before running; without it the script fails with 'service-account admin token failed (401)' naming neither the variable nor the source file.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/agent-stack.mjs#L1-L44",
+          "version": "repo-lines-v1:sha256:11dcf372096ecc11d3e52182e35277691ae3ba7985a800e3caa06e896de3d23c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYzk0NDdmYzMwZjU1MGYxODNkYWY3Y2ZmZTAzZGIzMDU0OGE5OGFlZWNmNGZhMTkxODU1NzkxYTM5YjE5MTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1be1bdc72a234200bd63c6c69e5a5eed",
+      "statement": "agent-stack.mjs resolveCommand() is a pure tested function that rejects any unrecognised argv via scripts/lib/argv-contract.mjs (PR #497); before the fix, --help and any typo caused the script to build and deploy the full agent stack.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/agent-stack.mjs#L152-L194",
+          "version": "repo-lines-v1:sha256:46c25238dc315858c64652541e8f4e586f169a197b5073fdd4ed7bafcc78716a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxZmVmYTJkMDQxNTc1NzM4YThkMGMzZTMzYmVlOGZmNmZkZDdmM2RkM2ExMWIzOTJmNGZjYjA2ZmM0MGQwZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZjZkY2E3NjQ5NWRmNTQyOWI1MmI3YTNkMmZjMjk2NThlYTQ2MDBhOTE3MDI3N2I2ZjM2NjgzZWFjZDQzOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ffdf07b25a3c46848a0e94889f804d61",
+      "statement": "The Playwright image tag must match the @playwright/test version the lockfile resolves; a mismatch causes ZERO tests to run and the e2e result gate reports 'no Playwright summary found'. The tag lives in three places with unequal weight: app-ci.yml (authoritative, 2 occurrences), devcontainer.md (3 occurrences), e2e-testing.md (1 occurrence). Enforced by scripts/check-toolchain-consistency.mjs in ~0.4s before app-e2e starts.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L656-L692",
+          "version": "repo-lines-v1:sha256:ec88d08506b5b70a6534a42eab74939706b0ed534e2fe7590a5e330fa6984420:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNWMwNTE3MTU2MjU0OGIwMWU0ZGRhMTMyOGI5NzVjN2M1ODFkMzViMmVhZGNkZDcwZTRiNmM5MGJkYzBhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZmNlZjk1YTIzMTgzZjkxM2NmM2Q2ZmUzMGJjZjhlOGQzMWNiZTZkYjA4MWQ3YmRlYTdiNjlkZjY2YTZiNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1ZGRlNjY4YmVhZmJlZTJjNjQ1ODg5YTFkZmQxZGY4OTJmNTc2OTc0NzJiYjk5ZGVkYTA1OGE0NThjZmJjN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5ZGRhYzFkYmJhMjg5NDQ5OWE1Nzg5NTAxOWQxNjc5MzM0Zjc5YTJhMjcwOGE4ODgyNWFhZDhkMTUxZDgxMzYifQ"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L36-L42",
+          "version": "repo-lines-v1:sha256:ee97073e52b1d4b7ef405b0d83dd092d11374d47bc5951c9648c08c0252f3ba5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjRhNWNhNjQ1NGM4MmNlMDFkZGEzYmYyZWFiNjY4NDc2MmUyNzE2YmIwYzAzMDcxZDUxODE3MGRjNDIyNGYxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhmZjkwNTFjZGEzODhmYWNiM2YzMjkwNjBlNTk1ZDE0YzAzNmQ1ODMwNjlhZjVkYmJiYWFlZDFhMjBhNTQxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRkMGExNTc2OTJkYTFlZmIxZjM3ZTZkZWZkNjQ4ZjQwYmFmZmJmOTY2Y2I0MTJkZDIzNGIyN2I0YWZiYTE1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWE5YTY1YjQ1Y2NjNmVkODU3NzI5MjZlOWVkMGRlM2M0OTQ0ZjA4M2FmNTU3ODFjNjM3NmVkZWI4MmRjMzllYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_82c18edf11644b6bbd6fbdddc0c587ea",
+      "statement": "Agent E2E flows must never assert on a specific TMDB-ranked title; assert by list position (slot index testID such as disambig-option-1), never by hardcoded name. However, assistant-disambiguate specs hardcode the same film on purpose (load-bearing for substring regression) and must not be made dynamic.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L709-L735",
+          "version": "repo-lines-v1:sha256:d891cc650166f04b3fe8046b100e88999e4c89cff9ad816a243ac9dfb57d2e02:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NWVhNTEzZDAxOTYyNDU4NDNiNTFmOTdkNjY2ODY0YzUyYTNlNTk5ZDk0MjQ1ZWMzZmZmYzBkNDNhYzVkZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMjc3NjM3MGY4OTA1ZGFlODk4NmQwMzQwNTk0YTNiOGM0N2FmODRlZmQ1ODk5MTcyMjIwNTIyNGY0MDlhOTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5ZjU4NjQ0Mjk2MTQ4YWI0MzRhMjBmOGZhZWI4OTU2NjUzMDQ4YTgyYjFmY2ZkOGI2MjEzYjM0YjNmMzMxM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmZDU5OGRhNWVjNmE5OWZhMGEzYjgxMDBhOTk5NTA4NTYzZDU0MDg1NzE2ZGE1ZWMyYmEwMmJhOTQ1YjRhNTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/mobile/agent-disambiguation.yaml#L54-L77",
+          "version": "repo-lines-v1:sha256:5e6df73b20ea03358b5c86a88bac1d62ce681f90a9f4685ad9bdd40537128a3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkYTRlMGYzYzg5YTUwZTFlYjAyNzI5ZWE2Yzg3YzI0ZjZhNTllMDBhMmRiYzQ5M2E0NTBhNjkwMDA1YjIyYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNDkxYTE1YTJhM2I0NGVhN2U4YmZkZTY2ODM0ZjYwZWExYmJmYzBjOWYyYTI4M2ZmZmNmZmMxOWVhZDA4Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzJiNjc5MTFkMzFhMTY5ZGRkNGQ0YWUzNDhiZDNjYzhiM2ViYTMyOTU0YmM3Yjk2MzU5NmI4MDlmMTQ1OTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzODlhMWY0NjA1ZDJmZGY2NTIyZDRhNTA3MWMzZTg5NzE4ZjE4MWFlMTdhZmYzNjM2ZGIyZDhlZmEyYmIwMmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_32128c4b2e08419fb6448ca0863c60f1",
+      "statement": "The ownership guard (e2e-collection-ownership.guard.test.mjs) only matches request.post('/bff-api/collections') and does NOT catch specs that create collections via non-POST routes such as backup restore, import, or seed. Such specs must clean up what they caused to exist by name in afterEach.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L258-L295",
+          "version": "repo-lines-v1:sha256:c51965e5bdf9332133039c3a894bc19dc1005a24ec729856f16a489b23d61533:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNWY5YTZmNzZjNzhlYjYyNzkzM2UwNjMwMGViYWQzZjY5MDQxMTgzM2ZjMTE2ODk3ZDM1NGE4YzgxYTJhZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YWU1Y2Q5MTc3ZDJkOTY1MTgwMGYzZDQ5MzNjMDUzZTMxMThkYWM0Mjc4MTE0NGMzY2RjZGFiMGU3MjJmM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiMDkwZjYwMGM4MTdmMGU0ZGJmNjg4YmE5NDQ2YTkwNTVjNjkwNzZhYmM2ZWI5YjFiY2Q2Yjc4NTExYmI1OWUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts#L101-L132",
+          "version": "repo-lines-v1:sha256:e426ef86fd84c84f6b67f1d135b47eff33944b96f510c9adb50f006205768042:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNmIwNjNlOTI2Njk1MTg2NzUwYTVlMGJmOTZkMmVkNGNkNWE0Y2Q1YzJkYzk5OGI2YmU3ZGQ4NTk1Y2E0NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4OTg2ZDg4NjIwZGIzMDQ4N2U1MjQwNmQ5NzQ4MTljNjQyYjNiYzZjMDc4Nzk1ZGIyOWFmNTQ2NTNlNThmOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzNDY5MTFhZjIxNTZlMDY4NGJiNjI4MjdjMzBjNGM1MmU4YjRlMDFmYmQ0MjI4M2VkNzY5YWZlNGZjMzk4M2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_826b78961d17401d9e7f6f2c29fd9251",
+      "statement": "On PR #527, backup restore left collections named '... (backup timestamp)' and 'Mutated e2e-...' in the shared test account; agent-disambiguation then produced a disambiguation question instead of a movie card and failed three Maestro attempts (~35 min each) — a cross-tier data contamination failure.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L258-L295",
+          "version": "repo-lines-v1:sha256:c51965e5bdf9332133039c3a894bc19dc1005a24ec729856f16a489b23d61533:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNWY5YTZmNzZjNzhlYjYyNzkzM2UwNjMwMGViYWQzZjY5MDQxMTgzM2ZjMTE2ODk3ZDM1NGE4YzgxYTJhZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YWU1Y2Q5MTc3ZDJkOTY1MTgwMGYzZDQ5MzNjMDUzZTMxMThkYWM0Mjc4MTE0NGMzY2RjZGFiMGU3MjJmM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiMDkwZjYwMGM4MTdmMGU0ZGJmNjg4YmE5NDQ2YTkwNTVjNjkwNzZhYmM2ZWI5YjFiY2Q2Yjc4NTExYmI1OWUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts#L105-L132",
+          "version": "repo-lines-v1:sha256:6b1dc0b3be587606f50ea9ec552d1cc69e49d2c410b4a794bcf61138e67fab82:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYTRlNmExYWU3ZGVlN2Q1MmZmZjczYWI4NTk5NmM3ODc4MDY4ZDIxYjEwZmZlOWI0MmE2YmNmYmQ3ZjExNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NWUwMGVhOGExZTRjYWU5ZWNjZjYwMWQ1NWNmMGNiYTE3NTVhODNmZmUzYTkwMzhhM2ZhZjFiZjY0ZWZjZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzNDY5MTFhZjIxNTZlMDY4NGJiNjI4MjdjMzBjNGM1MmU4YjRlMDFmYmQ0MjI4M2VkNzY5YWZlNGZjMzk4M2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_64a2481cd7f34f6fb7775b83d0ce80d5",
+      "statement": "dev-realm previously had accessTokenLifespan: 300; it now matches ci-realm at 5400s. The globalTeardown fails any local run with refresh_rate_limited > 0. In the dev container the guard does not fire — run e2e-contention-tally.sh manually on the host after a containerized run.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L509-L537",
+          "version": "repo-lines-v1:sha256:234f0c4e6dba0906ff2e83c6eedaeb8ec9a99549007a7e9eb8379c114dfc3a3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZjk1MTcxOGRkMjUyNzVmMWRiNWMyYWRiZWQyYjFiZWYxMTE1MjViZDBmZWViYmQxMzI4OTliNjVmYzM4NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmOWIyNjE4YjNiMTExZmZmM2VhNDFkMzY2MjZiMTRiZGRhODllMTNjYTNiMGIxNTAwODE1YTVmNGM3Mzc0YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5OGMwYTdmMWU0NzZiOGZjOGYwMTY1ZTlkY2Q0MTA2ZDk3ZDk2NmM5MDVkODI1Y2JjNjFmM2E2Yzg3YjcyODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMTdlOGJhNTM5OTJhMzNlZmUyMjVhYzdkYWFjMmE0N2U1N2ZkYmU1ZjYyNjcwOTNlMGI3OWI5OWNjZTI4NTMifQ"
+        },
+        {
+          "resource": "repo://scripts/e2e-contention-tally.sh#L1-L50",
+          "version": "repo-lines-v1:sha256:074300a1fd770c519467581d35019fde948c9007ae1e48fb48013343ac47a853:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMjc3MzU5NzRhMTg1ZjU1YzBiOGY5ZDg1N2VlYzY1MTMyN2IyMTk1MWZhN2MwZGM5ZDA4NTA2NTgyMjFmYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2NmVlZTk2MTQ1Mzk5OTQzNzQxMjM0MmViMmU3MjgzZWVhZTE3YjQ1NjRkN2RmMzRmZjcxOWE0NzBmOWFhYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_06a6330c070d416cbac0f5dc667a53e7",
+      "statement": "A datastore volume that survives between runs fails the NEXT run, not the current one. mcm-bff-cache-redis-data was missing from the CI reset step; a Redis version mismatch between consecutive runs produces 'Can't handle RDB format version N' at bring-up. Fixed by adding the volume to both reset steps; app-ci-stateful-reset.guard.test.mjs enforces it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L325-L348",
+          "version": "repo-lines-v1:sha256:5f0a006e55a99f5f8ba768dc114616996bb6ff94982e5703cbe8398ff98585f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkYzRlMzUxODBhNjg0NmU2OGRhYjMyOGRhN2QyNTk5YjhkNjAyYjZiNmExMTczM2JiOWM5NWYwMjFiZDVjMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZDVjMTk1YTcxNGNjOGI0YTljZWNhOGUwYmY1MTQ2NmJjOWFhNDcyMWQzYTY5NjliZTJmODM4MWIwYmZmZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNGIyMjU2Mjg2ODJlYWI4YjZlNDBjYWMwNGU3Mzc0ZGMwOTc1ZTgyM2ZiNWQyYjAxNzYyYWNmNjM1MDNhM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YTkyODY4NGQ1NDRiOGViZDgzMjZhNTQzMzYzZTI4ZTJiNmVlNmM5ZWEyYmJiOTRiM2FiYWFjNmUwYWRhMjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfc66e4fa510457084c7ffe05f35ecc0",
+      "statement": "Six workers share ONE user (E2E_TEST_USER). Teardown now deletes only what the test declared with ownCollection() by name; forgetting to declare leaks the collection (bounded — global setup sweeps at next run start) rather than deleting a live fixture. The guard fails if POST /bff-api/collections is called without ownCollection.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L216-L256",
+          "version": "repo-lines-v1:sha256:4f24fb29e0fbe33a86fb98a64af5eb4fb1fac53e2e16c55d7cf1727304bf46f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhYTI0NDNkMmEzNjQ3OGJhMWFkMTZiZDBjZDg5MjNkMDg0ZGY0ZWU3MzRmMWJjOGNiMDgzMjBhMjI0YmE2NDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMDYzMTVmMDVhYzYwYThmZWJhZWVjOTQzNmM2MjRkMzRhNWM0NmEyYTgxMzE1NWYyYWU2NWRjYTY1MGMwMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2OGIwZmIxYWE0Y2EwYjE5MDkyYzQzNDgyMjU5NWI4YjM4MTE2MjJlYjZmOGI0NjYyZWM4NWJiOGFhOGExMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMTMzMDI2NmI1ZDkwMjQ2ODQwNjljZDY5NWRlY2UyYmJiNjcwZmQzYWVkNTk2MGNjNGZlYmZmYmY2MGI4N2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8e7ab24afe54813bbc4699a67c1520f",
+      "statement": "CI agent-flow failures ship full per-service container logs plus docker inspect health JSON as the agent-e2e-container-logs artifact before teardown; the artifact is the required first diagnostic step because containers are gone after teardown.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L209-L210",
+          "version": "repo-lines-v1:sha256:4f27539022b5d2f18938a6b1f4c678d08deedab53a43463d1c55a4b68a8712a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQ0Nzg0YmQ1NDVjZWRkYTdiNzYxMDg0ODZiZTE5Zjk2NWEwY2NlNzA4MjdhOWI0NDllZGU2OTU4MTgyNmEyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y2NDJiMDk4OTFmOThmMmQ2NWE5MmQxNjM5MmQ5ODk4MDU0OWI5MTM5ZWJhYjgxYmYxYjg4ZTMzNjc5ZTY2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2ViMzk1NjZhODVlN2EwM2I5NGFkNzcxMmZjYTdkYjE3YmJiM2FkZjEzYmI4ODdjNTRkY2U2NzBjNTFkMzQyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDA5YmYwMjM2MTdlZWZmOWY0NzM3YzA5ZDRiNjYyNTdmMjA2OGIxY2UzMGI5ZWYxNDZkODFhNjYyNTIxMDhiMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b6ef973716540fa85a73afcb57e6732",
+      "statement": "Bounded E2E retry is at most one retry per test (web: Playwright retries:1; mobile: maestro-e2e.mjs re-runs a failed flow once, logging RETRY 1/1). Additional retries risk masking a real defect.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L214-L214",
+          "version": "repo-lines-v1:sha256:130fc18d49bfe577de246c8bbd6a5b5c0762ca8a81d1f0073135ee02cfc9fb6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTMwZmMxOGQ0OWJmZTU3N2RlMjQ2YzhiYmQ2YTViNWMwNzYyY2E4YTgxZDFmMDA3MzEzNWVlMDJjZmM5ZmI2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTMwZmMxOGQ0OWJmZTU3N2RlMjQ2YzhiYmQ2YTViNWMwNzYyY2E4YTgxZDFmMDA3MzEzNWVlMDJjZmM5ZmI2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA5YmYwMjM2MTdlZWZmOWY0NzM3YzA5ZDRiNjYyNTdmMjA2OGIxY2UzMGI5ZWYxNDZkODFhNjYyNTIxMDhiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGU3ZmUyYWFkYTUwZWRhYTU0ZTU2OWY0NjUwZmQyZDNhMjg4MzhmZTMwODgxNzMyN2VhOWZiY2E1N2ViMDVjYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_22a3cf2a566f41cabd4eb12f7a9ca6bd",
+      "statement": "Agent tests are classified by E2E_TIER: @gate (155 tests, blocking) and @model-decision (22 tests, non-blocking, main + dispatch only). An unclassified agent test fails the gate enforced by scripts/__tests__/agent-test-classification.test.mjs.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L490-L503",
+          "version": "repo-lines-v1:sha256:8bb2265774833fa666962774dad555c520c57961962b395e80df29c17b8461f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YmIzZTQxOGY0YmYwMjA5MjZlNDljMTI3Y2FmZmQ0YTUwNDMwZmU5MGJiZmVmZTJmZjE5NTA5NTdlMjgwZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMjI4NDJmZGVmYzkyMzhkN2ZjMGJlMWVmNzQ5N2ZmZjJjZjMyZWRiYTcxZGZhYjgxMGM4Mjg0Y2E1MDZjMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZDM2YmE2Y2I4NDNhYzQzYzE0NTc0MzQzOGNmMDRlZTBjOWI5YWE3MDYyNzI1NTQ5ZTllMmY0ZjYyNzFkOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NWYzMWE5NzhlZmVmNmVlYjI2ZTAzMjliNWY1Njc0NzlmMWFlMDcwZjFhMDBkMTM4OTBkNGVmN2Q0NDYxNTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d7aa0fd31954d0b803e775c67076567",
+      "statement": "--grep-invert is accepted by Playwright 1.60 but silently does nothing; the tier split must be applied via E2E_TIER -> grep/grepInvert in playwright.config.ts, not as a CLI flag.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L354-L357",
+          "version": "repo-lines-v1:sha256:f9cd76aa49c981734a390259f3d2288f4a1623ab8fc37de95da9cc202ae54b09:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODQ0ZWM0ZGQ0M2FkNWZhMGUzMTk5OTI3Y2Y3YzY1MzFkNjY5ODIzM2FlNmE4YmRkZjgxYzU2MmFhMmJkMzhiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTk3Y2FhZmEyOTg4MDQzODBjOWRkMTBhZWI5MTNkNWI4YjE0NWRhYzZjNThhZDliMjBlZTNjYTVlYThjODk2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhkZTE0OTk3OTYzZDZiYjVkNDkyMjYzMmE4MDJjN2RmN2JkOWRjYjgwZDFlNTc3YjAwZDk4YTNjYjNlOTM0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYwMzM5NGZkMjAzZTk3ZjVhZDhiYzZkYTMwNzBkZDQwN2E0YmMwMzFmYmM1ZGE1MjQzYmYwNTAwZjc3MmVhMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9300e924bfe244099803175dacd64b82",
+      "statement": "node --test <file> --test-name-pattern silently runs everything; Node stops parsing its own flags at the script path so the pattern is passed to the script as argv and ignored. The safe form is flags-before-path.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L358-L378",
+          "version": "repo-lines-v1:sha256:72efff2810fae223f94b16997aa0d2db56558ec0fb9df8cf044fee1ecc939981:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwNGFjZDM3NDIwMDNmNjI0NTBmMTU0OGQ4M2M4MDRiMTYxZTYwNGE1ZmM1ZmFmZTUzNDA4NzUyZDI1ZWE1MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmM2U5YmNiN2VhZmVmYWU4Y2JhYWY1MzQ0YTg0MTFiODNmOGJlYWI2ZjQxYjViOTI2ZGZmNzZkMmI2MTk4OTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjNDhmMDk2NWViNThmZTk3NzgyOGU4ZjFkM2I0ZDQ3NGUxYjYzM2Q2MmZmYmM1NzE4N2Q4NGU0NzEzYjA4ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxNWY1ODdiYzI4Yjk3MGIzMjRkMzE1NDlkZDJlNmM2MzQ1NWE0ZDhmMjZhZmZhODgyNWQ1NGUxMzFmNmNjZjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_032bfce0ba4d4fb79c5d1f8ba10459bc",
+      "statement": "A pipe discards the exit code — cmd | tail reports tail's status (almost always 0). Use cmd > /tmp/out.log 2>&1; echo EXIT=$? or set -o pipefail. grep exits 1 when it matches nothing, so a filtered check can invent a failure.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L466-L488",
+          "version": "repo-lines-v1:sha256:8c907e7d77259fb14c6981ba54f4625abe2bc6234c8df4f9cee75961fa76d3c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZTU4Y2M1MmZlZjI3MmM1MjkyMzVmN2MxN2ZkMDRkOTA0YTY3OGU5NzEzYmMwYWM0YzYwZDkzYTI1ZWYyYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZDE0OTdiM2RmMDcyMzZiZmRlZjQyZmU0MWIwNDE5OGQ4NmZiNTRjZTEyNzFhNzc2N2M3MTVhYzE4M2NjZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZWUwMzQwMzQ5YjBlMGFlOWE4OWNlODc5ZTE5OGJhZTkxNDFjYmY4ZjFmNzYwMGYxNjcwZDU4N2E2NzcwNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNTE1MzJjZGUzY2FlZjFiOTliNzQ2MWM3YzViYjFiZDQ4OTI1YTQ2NzRkNjMxMjdjNjY1NjJkMzI3NzliY2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5cf7f98b5fe04811a703211d88574584",
+      "statement": "A container reporting running at 100% CPU on one core is wedged (spin), not slow — a blocked await sits near 0%. movie-assistant-gateway has been caught in a livelock and now carries a healthcheck so docker ps says unhealthy instead of Up; it is NOT auto-restarted.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L541-L568",
+          "version": "repo-lines-v1:sha256:be64eacf44424f3e6a2520419794f86d5d8698770a85dc58dbf5a620c58e1143:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNGE3ZmFhNzAxYzkwZTQ3MjFlMTMwMzFiNjZjZWI3YWZiODk1MWQwZWNmNTY2YTVkZGI1MGQzYTgyNzZkZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZjhkZDhmYjRjNmYzMDUyMmU1ZDYwZGI0MjgyNmJlYTAwZTBhMmNjMDhjMTI3MGJkOWRjZjIzZGZlYjQ3MzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMTdlOGJhNTM5OTJhMzNlZmUyMjVhYzdkYWFjMmE0N2U1N2ZkYmU1ZjYyNjcwOTNlMGI3OWI5OWNjZTI4NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4MzZhZTQzZDMxODI2MmQ0ZGYzZGM1MTA5M2JkNDQwYjJiZWUxM2FlMTcxN2Q2NTQxMzkyZjRkY2FjYTRmYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7fb1f72bd004fa2981488cb8a69e583",
+      "statement": "After driving an agent control, assert on what the assistant said, not client-local state. The Add button's disabled state is set by setActioned(true) in the tap handler BEFORE the agent has replied — it cannot distinguish any two agent responses.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L594-L618",
+          "version": "repo-lines-v1:sha256:6948fd9f17edcdadd117d4185cf7f186c73ea016287e841d13f350eee1e814bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NjE4YjFhM2FkNGQ1MDdjNjczNDI3NGE4YjNkMzE1YWUyNDM1OTIzZTg0YjkyMzkwNDU3MDhiYmEwNzYwYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYjA0MDMyYzBhZjFmZDYyODIyZDkyOGQ2YTUzODNhZjcyMTAyYjllZTMxNjkwOWY5NTAxYTM0NmY4NjlmZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMjE1YzA1YmZlMDhkNDVkZjdlNmIwOGJjNzAzMTI0ZmM4MmQ2YzE5YTNjNDYwYjhiZTY5NzQxMDAzNmVhMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTdlMjFhMWM5MGFjNjFjZDZjMzE4ZGQyZTQ5ZGJkNjI4ZWY4NTFhMWIzZTZiMjk3MjU5ODA1MGU1ZTNiYmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ec26d475ee78419ba893e24f5f60e96f",
+      "statement": "Reply assertions must be scoped to ONE new reply, not the whole transcript panel. Count replies before and after the action, wait for count+1, then read only the last one. Include the assistant's decline copy in the negatives.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L620-L643",
+          "version": "repo-lines-v1:sha256:d64c5eda9458626262b1a3968d9b074912a348f0cb941318e7c7a29abb54ba7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMGI3YTUwZThjMTk2NWNmNWFhZTEyYWM5Njk3OTFkZjE3ZjI3OWJjZTJkNDgxZWY0MTY5NzI5YTNhYjkzNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NDAyNThmMTdjYzA5NjdhNGJiODk2ZTY3Mjg1NWUwZjUyYTIxYjg4MjVmY2RlNmQwMGIyMThmMzI4OWQwMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1YWQwYTg1ZWY4Zjc1ODI1N2Q5OThjZTk4NDg1M2M2ZmZlOGExZjE0ODBlZjc2MmRhYjAwMGY3NDYxYjRhMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmYzdjYjFmODRiNGQ5MzI1YWU4ZTdlNmExMGQ0ODIzM2U3MzQxMmMyNGFkOTIzOTlmMDQyMjAzYWVlN2NjY2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_caa1033620a649208144cd77678c11a4",
+      "statement": "The Expo web bundle is baked into the BFF image; any change under frontend/mcm-app/src/ is invisible to a containerized E2E run until pnpm nx run mcm-app:build plus a container recreate.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L186-L193",
+          "version": "repo-lines-v1:sha256:815417e753f32107f46d6250ea6259995c768eac38fa567337b377e25efd96a5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU4YmI1MTYyNDI4MDQxMjc2MWM5YzAzM2QxMWMwNzZhMTA4OTEzZDM4ZTc1YjIyYzhkYWVlMTNhMDEwNTdmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmM1MGVlZTY0YjYxYTM4ZTEyMjlmMTNlNTQ0MGFmOTg1OWZiMzk4ZTE4ZmY0YTJkM2NjNzNmZDk0YmVhZjgxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmZhMzNlNzU0NTUxYTYwOWVjZGE3ZWExMDE3NTY3OTMzYmE2MTI1YmVhMzU2OWQyNWE0ZWM5NjcwYWY3NzczYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3767396174d34973a3159da8aefc3e48",
+      "statement": "The lifecycle Playwright project (bff-prod-lifecycle + admin-registration, 3 tests) has dependencies: ['chromium'] and never runs while the main project has any failure — these report 'N did not run', not a skip, and went unnoticed for months.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L320-L323",
+          "version": "repo-lines-v1:sha256:5bc8900745e6cfc40b1b8c4d178212f034c30b964b91f4e0d58c68dfb800a5e9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNiMWY4MzczMGMyN2JhMTE0Y2VhMzMzNTgyMzU2Y2YzYTE5Yjg0ZTg5NGFhN2Q2Nzc2MWI0NGViNTZhMDAwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY5YTFhMDc1ZTQyOTY3MDkzYjNhY2ViNDQ2YWIwYmU4MGU0MGU2NGJmYWUyZDYyYjNmMmRiYTcyY2FiNjQyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjVjNzQyNDgyZTAyZTc3MDI4NmZkOTEzMGVkM2QwOTkzZjYyYTFlNzAxZjk1YjIyZjcwMTE2OTBmMTRiNDc5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA5YTZmZjM5MmU3YTUwMmJkZmMyZDljYTcyMDBlNmViYTU2MzYzYTRmMGM4NzVhMzQ2YjJiY2U4NjBjOTI2MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd78bb4296b04e94a8ebe8e97fb7a553",
+      "statement": "app-ci now runs node scripts/e2e-failure-set.mjs gate after the web E2E; it fails on skipped > 0, did not run > 0, or a log with no summary at all. flaky is still NOT observable on a green run.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L309-L318",
+          "version": "repo-lines-v1:sha256:b436c0ee2523fad707213449d1ce2bf773b6ca5f835d2d7a90811a5bdab7d84f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MTc5OWRkZGUxODFkZDVlODQyYTNiMDc2OGMyZjBlNGQxMzJkNjNjMmM0NTIzZDQ4MmRjYzFmYTc2ZWJkYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4NDVlNzczMDdjYjc2OTE1OTI4ZWIxMjFhM2Q0Njc1NGFlZmZiN2VkOTgwZmFlNWZmMDkwMDliYzk3MDRlZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhMDZiYzZkMzY4OGY2MzlhNjU1MWI1Y2ZhMDQ4YjZmNTE4NjZiMWQxNjMwMTY5ZTNlZWM0N2JiODVkMjMyZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZDA3ZmU3NThmMGFiNTY3NmM2MmNlODkwZDAwZDFiOWM0MWI0MjQ4MGQ1MmU3MGNhN2UxOGNhN2RlNDVjOTkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-20T22:37:14.004Z"
+  }
+}
