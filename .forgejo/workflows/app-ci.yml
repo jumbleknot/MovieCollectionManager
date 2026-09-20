@@ -589,10 +589,6 @@ jobs:
       # ── Backend + agent stack (auth BEFORE mcm app profile — manual ordering, FR-006) ───────────
       - name: Bring up Keycloak (auth stack, ci-realm imported) + Redis + Mongo + mc-service
         env:
-          # Feature 073: where the from-source MinIO image lives. A non-secret repository VARIABLE,
-          # never a git literal (check-topology-scrub), and no REGISTRY_TOKEN — the package is
-          # anonymously pullable, so this job needs read access it already has.
-          REGISTRY_HOST: ${{ vars.REGISTRY }}
           # Feature 027 US5: ci-realm.json commits only ${ENV_VAR} placeholders; Keycloak resolves them
           # from the keycloak-service container env at import (compose.ci.yaml passes these through). The
           # 3 real client secrets come from Forgejo (same values .env.docker uses → realm==BFF by
@@ -630,6 +626,23 @@ jobs:
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure up -d --wait
 
+          CI_LOG_STEP
+
+      # Feature 073 — a SEPARATE step, and that is the fix for a real failure rather than tidiness.
+      # Folded into the Keycloak bring-up above, these two image pulls (the from-source MinIO and
+      # Debian httpd) pushed that step past its CALIBRATED 300s ceiling — a bound derived from 40
+      # runs whose max was 91s — and app-e2e died on `timeout after 300s` having brought nothing
+      # up. Its own step gets its own budget and, more importantly, its own failure attribution:
+      # a slow image pull now reads as a slow image pull instead of as "Keycloak would not start".
+      - name: Bring up the backup destinations (S3 + WebDAV) for the feature-073 suites
+        env:
+          # A non-secret repository VARIABLE, never a git literal (check-topology-scrub). No
+          # REGISTRY_TOKEN: jumbleknot/minio is anonymously pullable, so this job needs no
+          # credential, and handing it the write-capable publishing token would be a privilege
+          # expansion for a pull.
+          REGISTRY_HOST: ${{ vars.REGISTRY }}
+        run: |
+          bash scripts/ci-log-step.sh app-e2e-bring-up-backup-destinations bash -e /dev/stdin <<'CI_LOG_STEP'
           # ── Feature 073: the REAL backup destinations (S3 + WebDAV) ──────────────────────────
           #
           # A SEPARATE compose file, not a profile in the stack above, and deliberately so:

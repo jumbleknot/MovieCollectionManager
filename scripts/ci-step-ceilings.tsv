@@ -39,4 +39,9 @@ mcp-integration-spreadsheet	300	n=40 max=3s x3=9s -> floor 300s; runs 3503..3103
 mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
 #
 # ON THE BACKSTOP — seen in the sample, but too few observations to calibrate from:
+# app-e2e-bring-up-backup-destinations	-	new in feature 073; NO observations yet. Pulls two
+#   images (the from-source MinIO and Debian httpd) and waits for two healthchecks. It exists as
+#   its own step BECAUSE folding it into app-e2e-bring-up-keycloak pushed that step past its
+#   calibrated 300s and killed the job. Regenerate this table once ~10 runs have published a
+#   duration for it; until then the 2700s backstop bounds it.
 # app-e2e-collect-container-logs	-	n=2 < 10 observed samples (0 killed)
