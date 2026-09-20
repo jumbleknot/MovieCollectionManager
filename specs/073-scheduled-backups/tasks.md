@@ -889,20 +889,20 @@ pnpm nx test:integration mcm-app --testPathPattern='backup-restore'
 **Independent test**: Configure a daily schedule, log out entirely, confirm the run fires and
 produces a valid artifact.
 
-- [ ] T048 [P] [US4] Write the schedule arithmetic suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-schedule.test.ts`
-- [ ] T049 [US4] Implement `frontend/mcm-app/src/bff-server/backup-schedule.ts`
-- [ ] T050 [P] [US4] Write the atomic-claim suite in `frontend/mcm-app/tests/integration/backup-job-claim.test.ts`
-- [ ] T051 [US4] Implement the atomic claim in `frontend/mcm-app/src/bff-server/backup-job-store.ts`
-- [ ] T052 [US4] Write the consent and revocation suite in `frontend/mcm-app/tests/integration/backup-offline-token.test.ts`
-- [ ] T053 [US4] Implement `frontend/mcm-app/src/bff-server/backup-offline-token.ts` and the consent routes
-- [ ] T054 [P] [US4] Write the account-deletion teardown suite in `frontend/mcm-app/tests/integration/backup-account-deletion.test.ts`
-- [ ] T055 [US4] Implement backup teardown on account deletion in `frontend/mcm-app/src/bff-server/backup-offline-token.ts` and the account-deletion path
-- [ ] T056 [US4] Register the consent redirect URI in `frontend/mcm-app/src/app/bff-api/auth/init+api.ts`
-- [ ] T057 [P] [US4] Write the tick route suite in `frontend/mcm-app/tests/integration/backup-tick.test.ts`
-- [ ] T058 [US4] Implement `frontend/mcm-app/src/app/bff-api/backups/tick+api.ts`
-- [ ] T059 [US4] Add the tick clock to `frontend/mcm-app/server.js`
-- [ ] T060 [US4] Build the schedule editor and consent prompt UI in `frontend/mcm-app/src/components/backups/schedule-editor.tsx`
-- [ ] T061 [US4] Extend the `@gate` E2E with an unattended, exactly-once scheduled run in `frontend/mcm-app/e2e/web/backups.spec.ts`
+- [x] T048 [P] [US4] Write the schedule arithmetic suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-schedule.test.ts`
+- [x] T049 [US4] Implement `frontend/mcm-app/src/bff-server/backup-schedule.ts`
+- [x] T050 [P] [US4] Write the atomic-claim suite in `frontend/mcm-app/tests/integration/backup-job-claim.test.ts`
+- [x] T051 [US4] Implement the atomic claim in `frontend/mcm-app/src/bff-server/backup-job-store.ts`
+- [x] T052 [US4] Write the consent and revocation suite in `frontend/mcm-app/tests/integration/backup-offline-token.test.ts`
+- [x] T053 [US4] Implement `frontend/mcm-app/src/bff-server/backup-offline-token.ts` and the consent routes
+- [x] T054 [P] [US4] Write the account-deletion teardown suite in `frontend/mcm-app/tests/integration/backup-account-deletion.test.ts`
+- [x] T055 [US4] Implement backup teardown on account deletion in `frontend/mcm-app/src/bff-server/backup-offline-token.ts` and the account-deletion path
+- [x] T056 [US4] Register the consent redirect URI in `frontend/mcm-app/src/app/bff-api/auth/init+api.ts`
+- [x] T057 [P] [US4] Write the tick route suite in `frontend/mcm-app/tests/integration/backup-tick.test.ts`
+- [x] T058 [US4] Implement `frontend/mcm-app/src/app/bff-api/backups/tick+api.ts`
+- [x] T059 [US4] Add the tick clock to `frontend/mcm-app/server.js`
+- [x] T060 [US4] Build the schedule editor and consent prompt UI in `frontend/mcm-app/src/components/backups/schedule-editor.tsx`
+- [x] T061 [US4] Extend the `@gate` E2E with an unattended, exactly-once scheduled run in `frontend/mcm-app/e2e/web/backups.spec.ts`
 
 ### T048 / T049 — DST, both directions, and the month that has no 31st
 
