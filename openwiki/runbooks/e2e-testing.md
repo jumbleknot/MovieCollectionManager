@@ -3,8 +3,30 @@ type: Runbook
 title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate that now blocks a merge.
 resource: docs/runbooks/e2e-testing.md
-tags: [e2e, testing, playwright, ci, flakiness, runbook]
-timestamp: 2026-09-19T23:02:43Z
+tags: [e2e, testing, playwright, ci, flakiness, runbook, integration]
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-20T22:37:14.004Z
+sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-f8d87cfe0689163c27061841
+    resource: repo://docs/runbooks/e2e-testing.md
+  - id: openwiki-source-8f96001caf98cb41c4d64a48
+    resource: repo://frontend/mcm-app/tests/e2e/mobile/agent-disambiguation.yaml
+  - id: openwiki-source-2d7a83a560ab6dec0daf8651
+    resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-77b77a1d89a52ebe7205f42b
+    resource: repo://frontend/mcm-app/tests/integration/setup/preflight.global.js
+  - id: openwiki-source-dd77016bffd7cb9b5f844735
+    resource: repo://scripts/agent-e2e.mjs
+  - id: openwiki-source-7efe877535a6dbac41dcc29c
+    resource: repo://scripts/agent-stack.mjs
+  - id: openwiki-source-238cf8b88f30f267614313be
+    resource: repo://scripts/check-toolchain-consistency.mjs
+  - id: openwiki-source-4a5107e668fbfa127e4c2d48
+    resource: repo://scripts/e2e-contention-tally.sh
+generated: { by: "openwiki/0.5.2", at: "2026-09-20T22:37:14.004Z" }
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -16,6 +38,99 @@ final local E2E run), and **prod container** (`mcm-bff-service-secure` + TLS pro
 cookies — reserved for a future CI/CD job, not a routine local step). See
 [Testing tiers](../invariants/testing-tiers.md) for how this E2E tier fits alongside unit,
 integration, and golden tests, and how CI enforces the integration tier ahead of the E2E legs.
+
+| Mode | BFF served by | Port | Cookies | When to use |
+|---|---|---|---|---|
+| **Local dev** *(default)* | Metro (`@expo/server` dev) | `:8081` HTTP | non-Secure | iterative development + unit/integration/iterative E2E |
+| **Dev container** | Docker `mcm-bff-service-nonsecure` (`NODE_ENV=development`) | `:8082` HTTP | non-Secure | **local final E2E** (after dev is green); deterministic ~54 s baseline |
+| **Prod container** | Docker `mcm-bff-service-secure` + `mcm-bff-tls-proxy` (`NODE_ENV=production`) | `:8443` **HTTPS** | **Secure** | future CI/CD only — not a routine local step |
+
+The `X-BFF-Source` header is asserted in `global-setup.ts` to fail-fast on a Metro false-green when
+the dev-container mode is expected. Full container-mode commands, the complete flakiness-diagnosis
+protocol, and the integration-tier CI enforcement detail: `docs/runbooks/e2e-testing.md`.
+
+## Integration tier CI gate (feature 041)
+
+`app-ci`'s `app-e2e` job runs `test:integration` for **all three** projects — agent
+(`movie-assistant`), `mc-service`, `mcm-app` — before the web/APK/emulator legs, so a failure costs
+~5 min instead of burning 25+ min of emulator time. Every step sets `MCM_REQUIRE_LIVE_STACK=1`,
+which escalates a SKIP to a FAILURE: in CI a down dependency is a broken harness, not a pass.
+
+Before feature 041 no project's integration tier ran anywhere in CI. It had rotted silently for a
+month — the first green run surfaced a month-old contract regression and a credential leak.
+
+What this changes for you:
+
+- **Run the touched suite before pushing** — a red integration test blocks the merge.
+- **Skips are failures in CI.** Legitimately-optional skips are allowlisted per suite: agent
+  `_LEGITIMATE_SKIPS` in `agents/movie-assistant/tests/integration/conftest.py`; mcm-app via the
+  jest `globalSetup` preflight (`frontend/mcm-app/tests/integration/setup/preflight.global.js`),
+  which probes BFF/Keycloak/Redis/Mongo and throws. Add to those deliberately — never to turn a
+  red run green.
+- **Agent/MCP images rebuild every run** (`scripts/agent-stack.mjs` builds by default; `--no-build`
+  is refused under CI), so `agents/**` and `mcp-servers/**` changes are genuinely under test.
+
+See [BFF integration test harness](#bff-integration-test-harness-mcm-app) below for the mcm-app
+integration tier specifics.
+
+## BFF integration test harness (mcm-app)
+
+BFF integration tests (`frontend/mcm-app/tests/integration/*.integration.test.ts`) run against real
+Keycloak + Redis + mc-service (no mocking) via `frontend/mcm-app/jest.integration.config.js` (not
+the package.json `jest` block). Run: `pnpm nx test:integration mcm-app`. Key facts so they are not
+rediscovered:
+
+- **`testEnvironment: node`, `maxWorkers: 1` (serial)** — tests share Redis db 1 and the live BFF;
+  parallel `flushdb`/teardown would corrupt another file's data mid-test.
+- **Real tokens via ROPC:** `helpers/keycloak-test-client.ts` acquires tokens via the test-only
+  `mcm-bff-test` ROPC client. Call **`ensureRopcAudienceMapper()` in `beforeAll`** for any test that
+  hits `validateJwt` or mc-service — without the audience mapper, ROPC tokens (`azp=mcm-bff-test`)
+  are rejected as "Invalid token audience". The ROPC grant must never be enabled on the production
+  client.
+- **Route coverage gate:** `tests/integration/route-coverage.integration.test.ts` +
+  `route-coverage-map.ts` fail if any `+api.ts` route lacks a test or a justified exclusion —
+  login is the only map-level exclusion.
+- **Preflight guard:** `setup/preflight.global.js` probes BFF, Keycloak, Redis, and BFF Mongo and
+  throws when `MCM_REQUIRE_LIVE_STACK=1` and any is unreachable. Locally the flag is unset and the
+  guard is a no-op.
+
+## Running the agent specs
+
+`pnpm nx e2e mcm-app` runs the general web suite and skips every `agent-*.spec.ts` — all gate on
+`E2E_AGENT_PRODUCTION=1`. The run still reports green, which is the trap. To run agent specs:
+
+```
+node scripts/agent-stack.mjs   # deploy gateway + MCP servers (builds images by default)
+node scripts/agent-e2e.mjs     # every agent spec, isolated per file
+node scripts/agent-e2e.mjs assistant-add  # one spec by basename
+```
+
+`agent-e2e.mjs` sets `E2E_AGENT_PRODUCTION=1` and `E2E_BFF_TARGET=dev-container`, recreates the dev
+BFF with the agent-e2e rate-limit override first, and runs each spec file in isolation (a fresh
+`nx e2e` invocation = fresh login/session). Set `E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run
+to convert a missing stack into a hard failure instead of a skip.
+
+## Two tiers: what blocks a merge (feature 061)
+
+Agent tests carry `@gate` or `@model-decision`:
+
+- **`@gate`** — 155 tests, blocking, what a PR pays for.
+- **`@model-decision`** — 22 tests, non-blocking, run only on `main` and dispatch.
+- Unset `E2E_TIER` → all 177 run (local default).
+- An **unclassified** agent test fails the gate rather than defaulting into a tier
+  (`scripts/__tests__/agent-test-classification.test.mjs`).
+
+## Cycle time
+
+The mobile half (APK build + Maestro emulator flows) runs **after** the web E2E, so a failing web
+suite aborts the job before it. Red runs take ~15–19 min (web E2E only); green runs take ~30–35 min
+(web + APK + emulator). Fixing the suite roughly doubles the wall clock — do not read job duration
+as a performance signal without checking the outcome.
+
+For mobile-specific tunneling and APK-rebuild decisions, see
+[Android emulator & APK builds](./android-emulator.md).
+
+---
 
 ## Gotchas
 
@@ -113,7 +228,7 @@ integration, and golden tests, and how CI enforces the integration tier ahead of
 - **Include the assistant's *decline* copy in the negatives.** The same routing bug can surface as
   "I couldn't find…" on one model and "I can only help with your movie collections." on another. A
   test that knows only one symptom misses the same defect on a different provider.
-- **Six workers share ONE user — teardown deletes other workers' live data.** `playwright.config.ts`
+- **Six workers share ONE user — teardown deletes only what the test declared with `ownCollection()`.** `playwright.config.ts`
   sets `fullyParallel: false` and up to six workers. That serialises tests *within a file* and runs
   different *files in parallel* — all as the same `E2E_TEST_USER`. `cleanupNonFixtureCollections`
   deleted every non-fixture collection the user owned from 21 spec files' `afterEach`; the median
@@ -165,6 +280,10 @@ integration, and golden tests, and how CI enforces the integration tier ahead of
 - **A pipe discards the exit code — `cmd | tail` reports `tail`'s status, which is almost always 0.** Measured 2026-09-06, twice in one session: `pnpm nx affected … | tail -40` printed `EXIT=0` while nx's own output said `Failed tasks: mcm-app:typecheck`, and `ci-status … watch | tail -30` printed `WATCH_EXIT=0` for a watch whose text said `still waiting after 5100s … (exit 3)`. Both times the true answer was printed directly over the false one, so reading the output caught it — unlike `--test-name-pattern`, which leaves no contrary evidence. The danger is when the status drives control flow: `cmd | tail && <next step>`, an `until` guard, or any wrapper keying off `$?`. Use `cmd > /tmp/out.log 2>&1; echo "EXIT=$?"` or `set -o pipefail`. Applies to `nx`, `jest`, `cargo`, `pytest` — all lose their status the same way. `grep` is worse than `tail`: it exits `1` when it matches nothing, so a filtered check can invent a failure as readily as hide one. The `ci-status watch` instance and the `ci-status status && merge` control-flow failure are documented in [CI diagnostics](./ci-diagnostics.md).
 - **A container reporting `running` at 100% CPU on one core is wedged, not slow.** 100% CPU means a spin; a blocked await sits near 0%. `movie-assistant-gateway` has been caught in a livelock (`drain_audit_tasks` refilling its own loop) where `docker inspect` said `running`, logs were 40 minutes stale, and `/health` timed out — five specs "reproduced" against a dead stack, not a defect. The gateway now carries a healthcheck so `docker ps` says `unhealthy` instead of `Up`. It is NOT auto-restarted (a wedged gateway must stay visible). Stack dump in one command: `docker kill -s USR1 movie-assistant-gateway && docker logs --tail 100 movie-assistant-gateway`. Zero gateway requests for a turn means check liveness first: `docker exec mcm-bff-service-nonsecure wget -qO- http://movie-assistant-gateway:8000/health`.
 - **A datastore volume that survives between runs fails the NEXT run, not the current one.** The `kvm` runner is persistent; `app-ci.yml`'s "Reset stateful CI data" step removes data volumes so each run starts clean — but `mcm-bff-cache-redis-data` was missing from that step. PR #362's `app-e2e` ran Redis 8.10.1 and wrote an RDB v15 dump into it; the next `app-e2e` on Redis 8.6.2 (the `main` merge of PR #361, run 2735) died at bring-up with `# Can't handle RDB format version 15 … dependency failed to start: container mcm-bff-cache-redis is unhealthy`. Nothing in either failing commit touched Redis — the failing run was poisoned by the previous run's container. **Two diagnostic rules:** (1) "unhealthy at bring-up" with the container `Restarting (1)` is the signature — read the datastore's own log (the bundle's `mcm-bff-cache-redis.log`) before blaming the change; (2) a redis version moving in EITHER direction between consecutive runs trips this — an older-version PR after a newer-version PR is the common case on a Renovate day. Fixed 2026-09-05 by adding the volume to both reset steps; `scripts/__tests__/app-ci-stateful-reset.guard.test.mjs` now asserts every volume the setup step creates is also removed by the reset step.
+- **A leak is bounded for Playwright but UNBOUNDED for the mobile tier** — the ownership guard does not catch specs that create collections via non-POST routes (e.g. backup restore). `backups.spec.ts` demonstrates the safe pattern: a spec cleans up what it caused to exist, by whatever route, by name in `afterEach`. On PR #527 the restore E2E left collections named `… (backup 2026-09-20 18:04)` and `Mutated e2e-…` in the shared account; `agent-disambiguation` then found several plausible matches and asked a disambiguation question instead of rendering a card — failing three Maestro attempts (~35 min each) in a suite and tier that looked completely unrelated to the diff. `e2e-collection-ownership.guard.test.mjs` matches `request.post('/bff-api/collections'` and passes a spec that creates via restore, import, or seed. Do not reason from "the next run will sweep it" unless nothing runs between here and the next run — in the CI job the model tier and the whole mobile tier do.
+- **`dev-realm` `accessTokenLifespan: 300` — any local run past ~5 min re-enters refresh contention.** `dev-realm` now matches `ci-realm` at 5400 s. The `globalTeardown` fails the run if `refresh_rate_limited > 0`, with a message naming the token lifespan. In the dev container that guard does NOT fire — the Playwright image has no Docker CLI to read the BFF container. Run the tally manually after a containerized local run: `bash scripts/e2e-contention-tally.sh` (tally only) or `bash scripts/e2e-contention-tally.sh --gate` (exit 1 on any contention). A running Keycloak keeps the old lifespan until the realm is re-imported.
+- **TMDB drift disambiguation lesson — assert by position, never by hardcoded name.** Assert by `disambig-option-1` slot index (testID), not by title string. `agent-disambiguation.yaml` previously matched the button by label text, which caused failures when "Avatar: The Way of Water" left the offered set entirely on 2026-07-20. Do NOT make every hardcoded title dynamic: `assistant-disambiguate.{spec.ts,yaml}` hardcodes the same film on purpose (load-bearing for substring regression — the user types the full title so drift is irrelevant, and the bug-1 regression needs a pair where one title is a substring of the other). That hardcoding must stay.
+- **BFF integration test harness key facts: `testEnvironment: node`, `maxWorkers: 1` (serial — parallel `flushdb` would corrupt data), ROPC client `mcm-bff-test` requires `ensureRopcAudienceMapper()` in `beforeAll` or ROPC tokens are rejected as invalid audience; `route-coverage-map.ts` fails if any `+api.ts` route lacks a test or justified exclusion.**
 
 For mobile-specific tunneling and APK-rebuild decisions, see
 [Android emulator & APK builds](./android-emulator.md). Full container-mode
