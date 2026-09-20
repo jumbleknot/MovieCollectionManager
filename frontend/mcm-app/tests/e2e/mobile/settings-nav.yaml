@@ -49,7 +49,7 @@ appId: com.grumpyrobot.mcmapp
 - assertVisible:
     id: "settings-nav"
 
-# ── The Backups area renders its placeholder ──
+# ── The Backups area renders (a real area since feature 073; this flow asserts the ROUTE) ──
 - tapOn:
     id: "settings-nav-backups"
 - extendedWaitUntil:
