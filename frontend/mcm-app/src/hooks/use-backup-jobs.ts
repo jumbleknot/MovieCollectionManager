@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { apiClient } from '@/bff-server/api-client';
-import { getErrorMessage } from '@/utils/errors';
+import { backupErrorMessage } from '@/hooks/backup-error-message';
 import type { BackupJob, BackupVersion, RunSummary, Schedule } from '@/types/backups';
 
 const BASE = '/bff-api/backups/jobs';
@@ -57,7 +57,7 @@ export function useBackupJobs(): UseBackupJobsReturn {
       setJobs(res.data);
       setError(null);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(backupErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ export function useBackupJobs(): UseBackupJobsReturn {
         }
       })
       .catch((err) => {
-        if (active) setError(getErrorMessage(err));
+        if (active) setError(backupErrorMessage(err));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -93,7 +93,7 @@ export function useBackupJobs(): UseBackupJobsReturn {
         if (refresh) await reload();
         return value;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(backupErrorMessage(err));
         return null;
       } finally {
         setBusy(false);

@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { apiClient } from '@/bff-server/api-client';
-import { getErrorMessage } from '@/utils/errors';
+import { backupErrorMessage } from '@/hooks/backup-error-message';
 import type { BackupDestinationView, BackupTestResult } from '@/types/backups';
 
 const BASE = '/bff-api/backups/destinations';
@@ -53,7 +53,7 @@ export function useBackupDestinations(): UseBackupDestinationsReturn {
       setDestinations(res.data);
       setError(null);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(backupErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ export function useBackupDestinations(): UseBackupDestinationsReturn {
         }
       })
       .catch((err) => {
-        if (active) setError(getErrorMessage(err));
+        if (active) setError(backupErrorMessage(err));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -89,7 +89,7 @@ export function useBackupDestinations(): UseBackupDestinationsReturn {
         await reload();
         return res.data;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(backupErrorMessage(err));
         return null;
       } finally {
         setBusy(false);
@@ -110,7 +110,7 @@ export function useBackupDestinations(): UseBackupDestinationsReturn {
         await reload();
         return res.data;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(backupErrorMessage(err));
         return null;
       } finally {
         setBusy(false);
@@ -128,7 +128,7 @@ export function useBackupDestinations(): UseBackupDestinationsReturn {
         await reload();
         return true;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(backupErrorMessage(err));
         return false;
       } finally {
         setBusy(false);
@@ -143,7 +143,7 @@ export function useBackupDestinations(): UseBackupDestinationsReturn {
       const res = await apiClient.post<BackupTestResult>(`${BASE}/test`, input);
       return res.data;
     } catch (err) {
-      return { ok: false as const, reason: getErrorMessage(err) };
+      return { ok: false as const, reason: backupErrorMessage(err) };
     } finally {
       setBusy(false);
     }

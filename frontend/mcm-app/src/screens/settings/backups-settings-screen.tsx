@@ -148,6 +148,25 @@ export function BackupsSettingsScreen(): React.JSX.Element {
         )}
       </View>
 
+      {/* The probe result when NO form is open — pressing Test on a SAVED destination in the
+          list set this state and nothing rendered it, so the user got no feedback whatsoever.
+          Found by the E2E; the integration tier asserts the HTTP response and structurally
+          cannot see that the answer never reached the screen. The form renders its own copy
+          under the same testID, and the two are mutually exclusive: this branch requires no
+          form to be open. */}
+      {testResult && !adding && !editing ? (
+        <View style={styles.section}>
+          <Banner
+            tone={testResult.ok ? 'success' : 'error'}
+            testID="backup-destination-test-result"
+          >
+            {testResult.ok
+              ? 'Reached that destination and confirmed it can be written to.'
+              : testResult.reason}
+          </Banner>
+        </View>
+      ) : null}
+
       {notice ? (
         <View style={styles.section}>
           <Banner tone="success" testID="backup-notice-banner">
