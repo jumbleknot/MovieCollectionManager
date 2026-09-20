@@ -292,9 +292,10 @@ final signature are all specified with known-good expected values, so this is ve
 external oracle rather than against itself. Cover PUT with a payload hash, GET, LIST (query string
 signing, which is where the canonical-query ordering rule bites), and DELETE.
 
-**This is the plan's flagged decision.** If the operator prefers `@aws-sdk/client-s3`, these two
-tasks disappear and T015 changes; nothing else in the feature moves, because the driver interface
-contains it.
+**Ratified 2026-09-20 — do not substitute the AWS SDK.** This was the plan's one open decision and
+the operator settled it in favour of the signer. Verification is against AWS's published vectors (an
+external oracle) plus a real MinIO in T014, so "it works" never rests on the implementation agreeing
+with itself.
 
 **Verify RED**:
 ```bash

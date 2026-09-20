@@ -173,11 +173,12 @@ quietly inherit the gap.
 | PROPFIND XML | `fast-xml-parser` | Node has no XML parser and a regex over XML is the wrong answer. Single small dependency, used in exactly one place. |
 | Schedule/DST arithmetic | **Luxon** | See R6. |
 
-**This is the plan's most debatable decision and is flagged as such.** Hand-writing a request signer
-is not free, and "don't roll your own crypto" is a good instinct — though note SigV4 is HMAC over a
-canonical string, not a cryptographic construction being invented. The mitigating structure is that
-both drivers sit behind one interface, so replacing the signer with the AWS SDK later is one file,
-not a redesign. If the operator prefers the SDK, say so and the change is contained.
+**This was the plan's most debatable decision. The operator ratified it on 2026-09-20 — it is
+settled.** Hand-writing a request signer is not free, and "don't roll your own crypto" is a good
+instinct — though note SigV4 is HMAC over a canonical string, not a cryptographic construction being
+invented, and it is verified against AWS's own published test vectors rather than against itself.
+Both drivers sit behind one interface, so replacing the signer with the AWS SDK later would be one
+file, not a redesign — but that is an escape hatch, not a plan.
 
 ---
 
