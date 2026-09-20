@@ -138,6 +138,18 @@ jobs:
               - 'security/zap/**'                      # feature 031: DAST scan config re-runs the dast job
               - 'scripts/zap-scan.mjs'                 # feature 031: the scan runner
               - 'scripts/check-dast-findings.mjs'      # feature 031: the gate script
+              # A script that DEPLOYS OR CONFIGURES what this suite exercises belongs here; one that
+              # only REPORTS on the run (ci-status, ci-failure-digest, the e2e-*-tally pair,
+              # ci-log-step) does not, because it cannot make the app wrong. Found the hard way on
+              # PR #520: `scripts/agent-stack.mjs` changed HOW THE GATEWAY RECEIVES ITS CREDENTIALS
+              # and app-e2e — the only job that would have proven the gateway still starts — was
+              # skipped, because `scripts/**` was not matched by anything above. The job runs
+              # `pnpm nx up-agents-prod` (agent-stack.mjs) at the "bring up containerized agent"
+              # step, so the script it deploys with was outside its own gate.
+              - 'scripts/agent-stack.mjs'              # app-e2e deploys the agent stack with this
+              - 'scripts/gen-ci-env.mjs'               # mints the env the E2E stacks come up on
+              - 'scripts/gen-dev-secrets.mjs'          # mints the secrets those stacks authenticate with
+              - 'scripts/mc-service-integration-guard.mjs'  # a gate that runs INSIDE app-e2e
               # Feature 058 / item #186. A lockfile bump changes transitive deps, and 057's FR-013 says
               # the E2E tier is the only one that sees a bad floor (`nx test` passes over it). The `push:`
               # filter above already said so; this one did not, and app-e2e reported `skipped` on PR #185

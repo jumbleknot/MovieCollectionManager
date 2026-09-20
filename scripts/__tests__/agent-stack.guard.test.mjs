@@ -139,3 +139,39 @@ test('(#footgun) USAGE names every accepted flag, so the help cannot drift from 
   // And it must say what a BARE invocation does, that being the one the trap turned on.
   assert.match(USAGE, /deploy/i, 'USAGE must state that the default action deploys');
 });
+
+// ─── Secret-in-argv guard ─────────────────────────────────────────────────────
+//
+// `docker run -e NAME=value` puts the value on a command line that every user and every other
+// agent session on this shared host can read with `ps`. Measured on this repository: a routine
+// `ps -eo cmd` printed a live Anthropic key, a TMDB key and the Keycloak service client secret in
+// full, and the keys had to be rotated. The bare `-e NAME` form makes docker read NAME from its
+// own environment instead, so the value never becomes an argument.
+//
+// Source-scanning rather than behavioural, deliberately: the failure mode is a future edit that
+// interpolates a secret back into an argument, and that is visible in the source without Docker.
+
+test('no secret is interpolated into a docker -e ARGUMENT (it would be readable via ps)', () => {
+  const src = readFileSync(resolve(REPO_ROOT, 'scripts/agent-stack.mjs'), 'utf8');
+  // `'-e', `NAME=${...}`` where NAME looks like a credential. The safe forms are `'-e', 'NAME'`
+  // (pass-through) and a non-secret literal such as `MODEL_PROVIDER=${MODEL_PROVIDER}`.
+  const offenders = [
+    ...src.matchAll(/'-e',\s*`([A-Za-z_][A-Za-z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD)[A-Za-z0-9_]*)=\$\{/gi),
+  ].map((m) => m[1]);
+  assert.deepEqual(
+    offenders,
+    [],
+    `pass these through the child's environment instead: run(..., { env: { ...process.env, NAME: value } }) `
+      + `with a bare '-e', 'NAME'. Offending: ${offenders.join(', ')}`,
+  );
+});
+
+test("run()'s failure message redacts credential-shaped arguments", async () => {
+  const { redactArgs } = await import('../agent-stack.mjs');
+  assert.equal(typeof redactArgs, 'function', 'redactArgs must be exported for this guard');
+  assert.deepEqual(
+    redactArgs(['-e', 'ANTHROPIC_API_KEY=sk-ant-secret', '-e', 'MODEL_PROVIDER=anthropic']),
+    ['-e', 'ANTHROPIC_API_KEY=***', '-e', 'MODEL_PROVIDER=anthropic'],
+    'a credential-shaped NAME=value must be redacted; a non-secret one must survive intact',
+  );
+});

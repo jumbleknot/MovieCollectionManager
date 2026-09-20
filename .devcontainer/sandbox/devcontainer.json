@@ -320,11 +320,18 @@
     // The key is still needed — by the agent gateway, the golden cassette RE-RECORD path, and the
     // containerized E2E runs — so it is carried under a name Claude Code does not recognise, and
     // mapped back to ANTHROPIC_API_KEY only at the point of use:
-    //   • scripts/agent-stack.mjs   → passes `-e ANTHROPIC_API_KEY=…` INTO the gateway container
+    //   • scripts/agent-stack.mjs   → sets it in the docker CHILD'S ENVIRONMENT, flag is bare `-e ANTHROPIC_API_KEY`
     //   • scripts/wiki-maintain.mjs → accepts either name
-    //   • the Playwright E2E recipe → `-e ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY"`
+    //   • the Playwright E2E recipe → a per-command `VAR=value` prefix, flag is bare `-e ANTHROPIC_API_KEY`
     // Each of those is a separate process or container where no assistant runs, so the raw name is
     // safe there and unsafe here.
+    //
+    // NEVER `-e NAME=$VALUE`. The value would land in the `docker run` argv, where `ps` shows it to
+    // every user and every other agent session on this shared host — measured here, when a routine
+    // `ps -eo cmd` printed a live Anthropic key, the TMDB key and the Keycloak service client
+    // secret in full, and the keys had to be rotated. The bare `-e NAME` form makes docker read the
+    // value from its own environment, so it never becomes an argument. Guarded by two cases in
+    // scripts/__tests__/agent-stack.guard.test.mjs.
     //
     // Set `MCM_ANTHROPIC_API_KEY` on the host (and NOT `ANTHROPIC_API_KEY`, for exactly the same
     // reason — the host runs Claude Code too). CI is unaffected: it injects ANTHROPIC_API_KEY from
