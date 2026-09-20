@@ -42,6 +42,28 @@ satisfied by construction, on Ollama *and* on the fast-tier Anthropic model whos
 4,096-token minimum the ~2,650-token prefix does not clear. No provider branch, no
 conditional, no second code path to keep in sync.
 
+**Executed, not just read** (2026-09-20). `ChatOllama` constructs without connecting, so
+the converter can be driven offline with no server:
+
+```python
+m = ChatOllama(model="qwen2.5", base_url="http://127.0.0.1:1")   # never connects
+m._convert_messages_to_ollama_messages([SystemMessage(...cache_control...), HumanMessage(...)])
+# → system | '\nYou route a user message. Labels: add, enrich, ...'
+#   user   | 'find the movie Dune'
+```
+
+Two things this establishes:
+
+1. `cache_control` is dropped and the text survives — R1 confirmed by execution.
+2. **It runs offline with no Ollama server**, which means this is CI-gateable. See
+   R11 — it is not currently gated anywhere, and that is the real hole.
+
+**A detail the reading missed**: the converter accumulates with
+`content += f"\n{content_part['text']}"` starting from `""`, so the Ollama-rendered
+system content carries a **leading newline** the current single-string prompt does not.
+Harmless semantically, but it is real bytes the model sees and it is part of the
+re-recorded cassette key. Worth knowing before someone treats it as corruption.
+
 **Alternatives rejected**:
 - *Pass the provider into `classify_intent` and branch.* Breaks the provider-agnostic
   seam the golden harness depends on, for no benefit given the above.
@@ -337,3 +359,52 @@ Read and confirmed still-intact, with no change required by this feature:
   specialist without an Anthropic key; the flag defaults off. FR-014.
 - **The keyless replay gate stays keyless.** `guardrails.yml` runs `nx test:golden` in
   replay with no credential. FR-018.
+
+---
+
+## R11 — CORRECTION: replay does not exercise the Ollama adapter, so R1 is ungated
+
+**Raised by the operator, 2026-09-20**: *"Ollama is the default for this dev container
+only. Ollama doesn't exist in CI."* Correct, and chasing it down overturned part of R9.
+
+**What R9 got right** (each verified by running it, not by reading):
+
+- `guardrails` sets only `LLM_CASSETTE_MODE: replay` on the golden step — no
+  `MODEL_PROVIDER` anywhere in the workflow — so `select_model_config("supervisor", {})`
+  returns `ModelSpec(provider='ollama', model_id='qwen2.5')`.
+- `test_out_of_domain.py` carries a module-level `pytestmark = pytest.mark.golden`, so
+  it *is* collected by `pytest tests/integration -m golden`.
+- The `qwen2.5` cassette is genuinely load-bearing on every PR. Removing it takes the
+  gate from **51 passed** to **42 passed, 9 errors**.
+- None of this needs an Ollama server — it is pure replay.
+
+**What R9 got wrong.** Under replay, `build_chat_model` returns a `ReplayChatModel`
+**and never constructs `ChatOllama` at all**. So the guardrails gate exercises
+`classify_intent`'s message construction and the cassette layer — but **not one line of
+`langchain_ollama`'s message conversion**. The R1 finding that makes the whole
+single-shape design safe is therefore verified by source reading plus a local
+execution, and by **nothing in continuous integration**.
+
+Accurate coverage table:
+
+| Property | Exercised by | Runs in CI? |
+|---|---|---|
+| `classify_intent` builds the right messages; labels still correct on the Ollama tier | `guardrails` golden replay | **Yes, blocking, every PR** |
+| `langchain_ollama` drops `cache_control` without raising (**the R1 claim**) | nothing today | **No** |
+| A live `qwen2.5` still classifies correctly on the new shape | the re-record; `test_models_build.py` | **No** — the latter skips in CI (allowlisted; CI runs no Ollama) |
+
+**Decision**: close the middle row with an offline unit test that drives
+`ChatOllama._convert_messages_to_ollama_messages` directly — proven feasible above,
+needs no server, cannot skip, and asserts exactly the property the design rests on
+(`cache_control` absent from the converted message, static text intact). This is FR-025.
+
+**Why this matters more than it looks.** The failure it guards is a *dependency-bump*
+failure, not an authoring failure. If a future `langchain-ollama` tightens that
+`else: raise ValueError` arm to reject unknown keys on a text part, the single-shape
+design breaks for the default provider — and today nothing would catch it until someone
+ran the assistant locally against Ollama. A Renovate bump could land it silently.
+
+**Correction to the earlier claim** that "each provider has its own blocking gate": CI
+blocks on the Ollama *cassette*, not on the Ollama *adapter*. With FR-025 the statement
+becomes true for the part that matters; the live-model dimension stays a local check by
+design, which is the same position every other provider-live behaviour occupies here.
