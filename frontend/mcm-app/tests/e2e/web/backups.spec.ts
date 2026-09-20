@@ -44,8 +44,36 @@ async function fillDestination(page: Page, label: string): Promise<void> {
 
 test.describe('Backup destinations (feature 073)', () => {
   // A missing secret would make every case below fail as the same authentication error, which
-  // reads as a broken feature rather than a missing input.
+  // reads as a broken feature rather than a missing input. NOTE the cost of this guard: it
+  // turns a missing credential into a SKIP, and a skip reads as a pass. A run of this file that
+  // reports "6 skipped" has asserted nothing — check the count, not the exit code.
   test.skip(S3_SECRET === '', 'BACKUP_TEST_S3_SECRET_KEY is not set — bring up the `backups` profile.');
+
+  // Each worker has its OWN user (054 US4), but that user persists across runs — so a spec that
+  // failed before reaching its delete step leaves a destination behind, and the next run sees
+  // several. That is exactly how `.first()` came to delete the wrong one and report the feature
+  // broken. Start every test from a known-empty list instead of hoping the previous one tidied up.
+  test.beforeEach(async ({ request }) => {
+    // Jobs first: deleting a destination disables its jobs (FR-006) rather than removing them,
+    // so clearing destinations alone would leave disabled jobs behind and the job list would
+    // still be non-empty — which is what makes a `.first()` job locator ambiguous.
+    const jobs = await (await request.get(`${BASE}/bff-api/backups/jobs`)).json();
+    for (const j of Array.isArray(jobs) ? jobs : []) {
+      await request.delete(`${BASE}/bff-api/backups/jobs/${j.id}`);
+    }
+    const existing = await (await request.get(`${BASE}/bff-api/backups/destinations`)).json();
+    for (const d of Array.isArray(existing) ? existing : []) {
+      await request.delete(`${BASE}/bff-api/backups/destinations/${d.id}`);
+    }
+  });
+
+  /** The server-assigned id for a destination, so a locator names ONE row rather than the first. */
+  async function destinationIdFor(page: Page, label: string): Promise<string> {
+    const list = await (await page.request.get(`${BASE}/bff-api/backups/destinations`)).json();
+    const match = (Array.isArray(list) ? list : []).find((d: { label: string }) => d.label === label);
+    if (!match) throw new Error(`no destination named ${label} — it was not created`);
+    return match.id;
+  }
 
   test('add, verify, edit and delete a destination', { tag: '@gate' }, async ({ page }) => {
     const label = unique();
@@ -60,8 +88,10 @@ test.describe('Backup destinations (feature 073)', () => {
     // ── Verify (US1-AC2) — a real probe against a real server ────────────────
     const row = page.locator('[data-testid="backup-destination-list"]').getByText(label, { exact: true });
     await expect(row).toBeVisible();
-    const testButton = page.locator('[data-testid^="backup-destination-test-"]').first();
-    await testButton.click();
+    // By ID, not `.first()`. The list can legitimately hold more than one destination, and a
+    // positional locator silently acts on whichever happens to sort first.
+    const id = await destinationIdFor(page, label);
+    await page.click(`[data-testid="backup-destination-test-${id}"]`);
     await expect(page.locator('[data-testid="backup-destination-test-result"]')).toContainText(
       /confirmed it can be written to/i,
       { timeout: 30000 },
@@ -69,7 +99,7 @@ test.describe('Backup destinations (feature 073)', () => {
 
     // ── Edit, WITHOUT retyping the secret (US1-AC3 / FR-003) ─────────────────
     const renamed = `${label}-renamed`;
-    await page.locator('[data-testid^="backup-destination-edit-"]').first().click();
+    await page.click(`[data-testid="backup-destination-edit-${id}"]`);
     await page.waitForSelector('[data-testid="backup-destination-form"]', { state: 'visible', timeout: 15000 });
     // The secret field is EMPTY on edit — not a row of dots. A masked stand-in would say a
     // credential had been fetched into the page, and none was.
@@ -79,14 +109,14 @@ test.describe('Backup destinations (feature 073)', () => {
     await expect(page.getByText(renamed, { exact: true })).toBeVisible({ timeout: 20000 });
 
     // Still verifiable, which proves the stored credential survived an update that omitted it.
-    await page.locator('[data-testid^="backup-destination-test-"]').first().click();
+    await page.click(`[data-testid="backup-destination-test-${id}"]`);
     await expect(page.locator('[data-testid="backup-destination-test-result"]')).toContainText(
       /confirmed it can be written to/i,
       { timeout: 30000 },
     );
 
     // ── Delete ───────────────────────────────────────────────────────────────
-    await page.locator('[data-testid^="backup-destination-delete-"]').first().click();
+    await page.click(`[data-testid="backup-destination-delete-${id}"]`);
     await expect(page.getByText(renamed, { exact: true })).toHaveCount(0, { timeout: 20000 });
   });
 
@@ -110,7 +140,8 @@ test.describe('Backup destinations (feature 073)', () => {
 
     await page.click('[data-testid="backup-destination-save"]');
     await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
-    await page.locator('[data-testid^="backup-destination-test-"]').first().click();
+    const id = await destinationIdFor(page, label);
+    await page.click(`[data-testid="backup-destination-test-${id}"]`);
     await expect(page.locator('[data-testid="backup-destination-test-result"]')).toBeVisible({ timeout: 30000 });
 
     expect(bodies.length).toBeGreaterThan(0); // a leak check over zero responses proves nothing
@@ -119,7 +150,7 @@ test.describe('Backup destinations (feature 073)', () => {
       expect(body).not.toContain('secretEnc');
     }
 
-    await page.locator('[data-testid^="backup-destination-delete-"]').first().click();
+    await page.click(`[data-testid="backup-destination-delete-${id}"]`);
   });
 
   test('a blocked address is refused with a reason the user can act on (US1-AC4)', { tag: '@gate' }, async ({ page }) => {
