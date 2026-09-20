@@ -12,12 +12,13 @@
 
 import { z } from 'zod';
 
-import { requireAuth } from '@/bff-server/auth';
+import { requireAuth, extractRawToken } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { BackupDestinationInputError } from '@/bff-server/backup-destination-store';
+import { BackupJobInputError } from '@/bff-server/backup-job-store';
 import { DestinationUrlNotAllowedError } from '@/bff-server/backup-destination-url-guard';
 
 export const json = (body: unknown, status = 200): Response =>
@@ -39,21 +40,34 @@ export const problem = (title: string, status: number, detail?: string): Respons
  */
 export const notFound = (): Response => problem('Not found', 404);
 
+/**
+ * What a handler body is given, and the only identity it has.
+ *
+ * `jwt` is the caller's own token, carried so that reads and writes against mc-service happen
+ * AS THEM — this feature never acts with a service identity, so DAC, validation and audit
+ * apply to a backup exactly as they do to any other request the user makes.
+ */
+export interface BackupRouteContext {
+  userId: string;
+  jwt: string;
+}
+
 export async function withBackupRoute(
   req: Request,
   action: string,
-  body: (userId: string) => Promise<Response>,
+  body: (ctx: BackupRouteContext) => Promise<Response>,
 ): Promise<Response> {
   return withRequestContext(async () => {
     try {
       const headers = Object.fromEntries(req.headers.entries());
       const { user } = await requireAuth(headers);
       requireMcUser(user);
-      // The ONLY userId any handler ever sees. Nothing downstream can read one from the path,
-      // the query or the body, because nothing downstream is given one.
-      return await body(user.id);
+      // The ONLY identity any handler ever sees. Nothing downstream can read a userId from the
+      // path, the query or the body, because nothing downstream is given one.
+      return await body({ userId: user.id, jwt: extractRawToken(headers)! });
     } catch (err) {
       if (err instanceof BackupDestinationInputError) return problem('Invalid destination', 400, err.message);
+      if (err instanceof BackupJobInputError) return problem('Invalid backup job', 400, err.message);
       if (err instanceof DestinationUrlNotAllowedError) return problem('Address not allowed', 400, err.reason);
       return handleMcApiError(err, action);
     }
@@ -148,3 +162,53 @@ export function firstIssue(error: z.ZodError): string {
   const issue = error.issues[0];
   return issue ? `${issue.path.join('.') || 'body'}: ${issue.message}` : 'Invalid request body';
 }
+
+// ─── Job schemas ───────────────────────────────────────────────────────────────
+
+const iana = z.string().trim().min(1).refine(
+  (zone) => {
+    // Validated against the RUNTIME's zone list rather than a hard-coded set: an unknown zone
+    // accepted here becomes a job that throws on every schedule computation, for ever, and the
+    // error surfaces nowhere near the form that accepted it.
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: zone });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  { message: 'Unknown time zone' },
+);
+
+export const scheduleSchema = z
+  .object({
+    frequency: z.enum(['daily', 'weekly', 'monthly']),
+    hour: z.number().int().min(0).max(23),
+    minute: z.number().int().min(0).max(59),
+    weekday: z.number().int().min(1).max(7).optional(),
+    dayOfMonth: z.number().int().min(1).max(31).optional(),
+    timeZone: iana,
+  })
+  .strict();
+
+export const jobCreateSchema = z
+  .object({
+    destinationId: z.string().min(1),
+    label: z.string().trim().min(1).max(64),
+    collectionIds: z.array(z.string().min(1)).default([]),
+    keepLast: z.number().int().min(1).max(365).default(7),
+    enabled: z.boolean().default(true),
+    schedule: scheduleSchema.optional(),
+  })
+  .strict();
+
+export const jobUpdateSchema = z
+  .object({
+    destinationId: z.string().min(1).optional(),
+    label: z.string().trim().min(1).max(64).optional(),
+    collectionIds: z.array(z.string().min(1)).optional(),
+    keepLast: z.number().int().min(1).max(365).optional(),
+    enabled: z.boolean().optional(),
+    schedule: scheduleSchema.nullable().optional(),
+  })
+  .strict();

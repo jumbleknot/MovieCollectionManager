@@ -66,4 +66,8 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'backups/destinations/test+api.ts': {
     tests: ['backup-destination-probe.integration.test.ts'],
   },
+  'backups/jobs/index+api.ts': { tests: ['backup-jobs-authz.integration.test.ts'] },
+  'backups/jobs/[jobId]/index+api.ts': { tests: ['backup-jobs-authz.integration.test.ts'] },
+  'backups/jobs/[jobId]/run+api.ts': { tests: ['backup-jobs-authz.integration.test.ts'] },
+  'backups/jobs/[jobId]/runs+api.ts': { tests: ['backup-jobs-authz.integration.test.ts'] },
 };

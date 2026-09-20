@@ -26,14 +26,14 @@ import { logger } from '@/bff-server/logger';
 type Params = { destinationId: string };
 
 export async function GET(req: Request, { destinationId }: Params): Promise<Response> {
-  return withBackupRoute(req, 'backup_destination_get', async (userId) => {
+  return withBackupRoute(req, 'backup_destination_get', async ({ userId }) => {
     const found = await store.getDestination(userId, destinationId);
     return found ? json(found) : notFound();
   });
 }
 
 export async function PATCH(req: Request, { destinationId }: Params): Promise<Response> {
-  return withBackupRoute(req, 'backup_destination_update', async (userId) => {
+  return withBackupRoute(req, 'backup_destination_update', async ({ userId }) => {
     const body = await parseJsonBody(req);
     if (!body.ok) return body.response;
 
@@ -54,7 +54,7 @@ export async function PATCH(req: Request, { destinationId }: Params): Promise<Re
 }
 
 export async function DELETE(req: Request, { destinationId }: Params): Promise<Response> {
-  return withBackupRoute(req, 'backup_destination_delete', async (userId) => {
+  return withBackupRoute(req, 'backup_destination_delete', async ({ userId }) => {
     const deleted = await store.deleteDestination(userId, destinationId);
     if (!deleted) return notFound();
     // Recorded because deleting a destination also DISABLES every job that used it (FR-006) —

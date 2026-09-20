@@ -24,13 +24,13 @@ import {
 import { logger } from '@/bff-server/logger';
 
 export async function GET(req: Request): Promise<Response> {
-  return withBackupRoute(req, 'backup_destination_list', async (userId) =>
+  return withBackupRoute(req, 'backup_destination_list', async ({ userId }) =>
     json(await store.listDestinations(userId)),
   );
 }
 
 export async function POST(req: Request): Promise<Response> {
-  return withBackupRoute(req, 'backup_destination_create', async (userId) => {
+  return withBackupRoute(req, 'backup_destination_create', async ({ userId }) => {
     const body = await parseJsonBody(req);
     if (!body.ok) return body.response;
 

@@ -34,7 +34,7 @@ import { logger } from '@/bff-server/logger';
 import type { BackupDestination, BackupTestResult } from '@/types/backups';
 
 export async function POST(req: Request): Promise<Response> {
-  return withBackupRoute(req, 'backup_destination_test', async (userId) => {
+  return withBackupRoute(req, 'backup_destination_test', async ({ userId }) => {
     const body = await parseJsonBody(req);
     if (!body.ok) return body.response;
 
