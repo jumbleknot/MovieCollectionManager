@@ -15,7 +15,7 @@ import type { JobDraft, JobView } from '@/hooks/use-backup-jobs';
 
 export interface JobFormProps {
   destinations: BackupDestinationView[];
-  collections: Array<{ id: string; name: string }>;
+  collections: { id: string; name: string }[];
   existing?: JobView | null;
   busy?: boolean;
   onSubmit: (draft: JobDraft) => void | Promise<void>;
