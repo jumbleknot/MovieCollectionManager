@@ -24,6 +24,7 @@ import {
   json,
   problem,
 } from '@/bff-server/backup-route-support';
+import { securityHeaders } from '@/bff-server/security-headers';
 import { setBackupConsentRequest, takeBackupConsentRequest } from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
 
@@ -74,7 +75,15 @@ async function completeConsentCallback(userId: string, code: string, url: URL): 
   }
 
   await offlineToken.completeConsent(userId, code, pending.codeVerifier, CONSENT_REDIRECT_URI);
-  return json({ granted: true });
+
+  // A REDIRECT, not JSON. Keycloak sent the user's BROWSER here, so whatever this returns is
+  // what they look at next — and a page of JSON is not an answer to "did my backup schedule
+  // get turned on?". They go back to the screen they started from, where the status now reads
+  // as granted.
+  return new Response(null, {
+    status: 302,
+    headers: { ...securityHeaders(), Location: `${BASE_URL}/settings/backups?consent=granted` },
+  });
 }
 
 /**

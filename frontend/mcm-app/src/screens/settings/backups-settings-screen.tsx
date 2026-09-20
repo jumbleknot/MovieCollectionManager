@@ -22,15 +22,18 @@ import { DestinationList } from '@/components/backups/destination-list';
 import { JobForm } from '@/components/backups/job-form';
 import { RunHistory } from '@/components/backups/run-history';
 import { VersionList } from '@/components/backups/version-list';
+import { ScheduleEditor } from '@/components/backups/schedule-editor';
 import { useBackupDestinations, type DestinationDraft } from '@/hooks/use-backup-destinations';
 import { useBackupJobs, type JobDraft, type JobView } from '@/hooks/use-backup-jobs';
+import { useBackupConsent } from '@/hooks/use-backup-consent';
 import { useCollections } from '@/hooks/use-collections';
-import type { BackupDestinationView, BackupTestResult, BackupVersion, RunSummary } from '@/types/backups';
+import type { BackupDestinationView, BackupTestResult, BackupVersion, RunSummary, Schedule } from '@/types/backups';
 
 export function BackupsSettingsScreen(): React.JSX.Element {
   const theme = useTheme();
   const { destinations, loading, busy, error, create, update, remove, test } = useBackupDestinations();
   const jobs = useBackupJobs();
+  const consent = useBackupConsent();
   const { collections } = useCollections();
 
   const [editing, setEditing] = useState<BackupDestinationView | null>(null);
@@ -257,6 +260,31 @@ export function BackupsSettingsScreen(): React.JSX.Element {
 
                       {openJobId === job.id ? (
                         <View style={styles.section}>
+                          <ScheduleEditor
+                            value={job.schedule ?? null}
+                            consentGranted={consent.granted}
+                            busy={jobs.busy || consent.busy}
+                            onChange={async (schedule: Schedule | null) => {
+                              await jobs.update(job.id, { schedule: schedule ?? undefined });
+                              // Turning the LAST schedule off gives the standing permission up
+                              // (FR-023) — the server decides whether any other job still needs
+                              // it, so this only has to re-read the answer.
+                              await consent.reload();
+                            }}
+                            onRequestConsent={async () => {
+                              const url = await consent.startGrant();
+                              // A full page navigation, not a fetch: this is an interactive
+                              // sign-in at Keycloak, and it must happen in the user's browser.
+                              if (url && typeof window !== 'undefined') window.location.assign(url);
+                            }}
+                            onRevokeConsent={async () => {
+                              if (await consent.revoke()) {
+                                setNotice('Scheduled backups are switched off and the permission has been withdrawn.');
+                                await jobs.reload();
+                              }
+                            }}
+                          />
+                          <View style={styles.section} />
                           <RunHistory runs={runs} lastRun={job.lastRun} />
                           <View style={styles.section}>
                             <VersionList
