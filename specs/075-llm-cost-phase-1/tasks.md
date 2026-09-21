@@ -706,6 +706,49 @@ credential. Never an AGit push.
 
 ---
 
+## T019 — RESULT (recorded 2026-09-21)
+
+Run locally against the rebuilt gateway and the live stack, before CI.
+
+| Check | Result |
+|---|---|
+| `nx affected -t lint test` | ✅ 1202 passed |
+| `test:golden` replay, credentials UNSET | ✅ 51 passed |
+| `test:golden-live` — LIVE, on code defaults (= production's config) | ✅ 51 passed |
+| live model invocability + prompt-cache effectiveness | ✅ 9 passed |
+| live-Ollama build test (skips in CI; ran here) | ✅ 2 passed |
+| **web E2E, `E2E_TIER=model`** | ✅ **30 passed, 0 failed, 0 flaky (3.3m)** |
+| ruff + mypy | ✅ clean, 44 source files |
+
+**The E2E tier was the only thing that caught the two parsing defects** (R16). Every other tier
+above — including a spot check inside the deployed container — was green while `classify_intent`
+returned `"ambiguous"` for requests it had classified perfectly. Before the fixes this tier was
+`4 failed, 1 flaky, 25 passed (13.7m)`; the 4× speedup afterwards is the retries disappearing.
+
+Deployed-artifact check, because a rebuilt image is not a recreated container:
+
+```
+build_classify_messages -> ['system','human'];  marker {'type':'ephemeral'}
+escalation default -> claude-opus-5;  sonnet-5 omits temperature -> True
+container SUPERVISOR_MODEL=claude-sonnet-5
+three live classifications: call 1 cold 2333 uncached; calls 2-3 read 2322, uncached 8-11
+```
+
+**Two instrument errors worth not repeating**, both "trusted a proxy instead of the thing":
+
+- `docker run … | tail -N` then `$?` reports **tail's** exit code. The harness said "exit code 0"
+  on two runs Playwright had failed. Write to a file and read the real code.
+- "staging complete" inferred from the **absence** of the `e2e-stage` container — true both before
+  it is created and after it is removed. It reported success while `tar` was still streaming, and
+  the run started against a volume holding 12 of 31 entries. Verify by CONTENT: entry count,
+  `packages/`, and the playwright binary.
+
+Running the web E2E from a worktree needs the staged-volume recipe in
+[docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md) — a bind mount of
+`/home/coder/worktrees/...` silently mounts a near-empty directory.
+
+---
+
 ## Completion Checklist
 
 Before marking `075-llm-cost-phase-1` complete, verify all success criteria from
