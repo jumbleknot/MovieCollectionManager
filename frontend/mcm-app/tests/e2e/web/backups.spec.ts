@@ -482,4 +482,129 @@ test.describe('Backup destinations (feature 073)', () => {
       expect(Array.isArray(versions) ? versions.length : 0).toBe(1);
     },
   );
+  // ── US5/US6: retention, and a failure you cannot miss ────────────────────────
+
+  test(
+    'keep-last-N prunes the oldest on success, and a failure prunes nothing (SC-007, SC-008)',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      const label = unique();
+      await openBackupsSettings(page);
+      await fillDestination(page, label);
+      await page.click('[data-testid="backup-destination-save"]');
+      await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+
+      // keep-last-2 so three runs are enough to prove the prune, without three times the wait.
+      await page.click('[data-testid="backup-job-add"]');
+      await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
+      await page.fill('[data-testid="backup-job-label"]', `${label} retention`);
+      await page.fill('[data-testid="backup-job-keep-last"]', '2');
+      await page.click('[data-testid="backup-job-save"]');
+      await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+
+      const jobs = (await (await request.get(`${BASE}/bff-api/backups/jobs`)).json()) as {
+        id: string;
+        label: string;
+      }[];
+      const jobId = jobs.find((j) => j.label === `${label} retention`)!.id;
+      const versionKeys = async () =>
+        ((await (await request.get(`${BASE}/bff-api/backups/jobs/${jobId}/versions`)).json()) as {
+          key: string;
+        }[]).map((v) => v.key).sort();
+
+      // Three successful runs through the real button.
+      for (let i = 0; i < 3; i += 1) {
+        await page.locator(`[data-testid="backup-job-run-${jobId}"]`).click();
+        await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
+          /Backed up \d+ movies/i,
+          { timeout: 120000 },
+        );
+        // Each run's key carries its own ISO timestamp, so waiting for the COUNT to settle is
+        // what makes the next click a separate version rather than a same-second overwrite.
+        await expect.poll(async () => (await versionKeys()).length, { timeout: 60000 }).toBe(
+          Math.min(i + 1, 2),
+        );
+      }
+
+      const afterThree = await versionKeys();
+      expect(afterThree).toHaveLength(2);
+
+      // Now force a FAILURE and confirm the two survivors are untouched (SC-008). Pointing the
+      // job at a destination that cannot be written is the only failure this UI can cause.
+      const blockedLabel = `${label}-blocked`;
+      await page.click('[data-testid="backup-destination-add"]');
+      await page.waitForSelector('[data-testid="backup-destination-form"]', { state: 'visible', timeout: 15000 });
+      await page.fill('[data-testid="backup-destination-label"]', blockedLabel);
+      await page.fill('[data-testid="backup-destination-endpoint"]', S3_ENDPOINT);
+      await page.fill('[data-testid="backup-destination-bucket"]', `absent-${Date.now()}`);
+      await page.fill('[data-testid="backup-destination-access-key-id"]', S3_ACCESS_KEY);
+      await page.fill('[data-testid="backup-destination-secret"]', S3_SECRET);
+      await page.click('[data-testid="backup-destination-save"]');
+      await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+
+      const blockedId = await destinationIdFor(page, blockedLabel);
+      await page.click(`[data-testid="backup-job-edit-${jobId}"]`);
+      await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
+      await page.click(`[data-testid="backup-job-destination-${blockedId}"]`);
+      await page.click('[data-testid="backup-job-save"]');
+      await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+
+      await page.locator(`[data-testid="backup-job-run-${jobId}"]`).click();
+      await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
+        /did not finish/i,
+        { timeout: 120000 },
+      );
+
+      // THE ASSERTION. The failed run wrote nothing AND deleted nothing: a failure must never
+      // be the reason a good version disappears.
+      expect(await versionKeys()).toEqual(afterThree);
+    },
+  );
+
+  test(
+    'a failed run is surfaced and STAYS surfaced until a later one succeeds (FR-037)',
+    { tag: '@gate' },
+    async ({ page }) => {
+      const label = unique();
+      await openBackupsSettings(page);
+
+      // A destination that saves but cannot be written to, so the run fails for real.
+      await page.click('[data-testid="backup-destination-add"]');
+      await page.waitForSelector('[data-testid="backup-destination-form"]', { state: 'visible', timeout: 15000 });
+      await page.fill('[data-testid="backup-destination-label"]', label);
+      await page.fill('[data-testid="backup-destination-endpoint"]', S3_ENDPOINT);
+      await page.fill('[data-testid="backup-destination-bucket"]', `absent-${Date.now()}`);
+      await page.fill('[data-testid="backup-destination-access-key-id"]', S3_ACCESS_KEY);
+      await page.fill('[data-testid="backup-destination-secret"]', S3_SECRET);
+      await page.click('[data-testid="backup-destination-save"]');
+      await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+
+      await page.click('[data-testid="backup-job-add"]');
+      await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
+      await page.fill('[data-testid="backup-job-label"]', `${label} failing`);
+      await page.click('[data-testid="backup-job-save"]');
+      await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+
+      await page.locator('[data-testid^="backup-job-run-"]').first().click();
+      await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
+        /did not finish/i,
+        { timeout: 120000 },
+      );
+
+      // Open the job's history: the banner is there with a reason.
+      await page.locator('[data-testid^="backup-job-versions-"]').first().click();
+      await expect(page.locator('[data-testid="backup-failure-banner"]')).toBeVisible({ timeout: 30000 });
+
+      // IT SURVIVES A RELOAD. That is the whole of FR-037 — the banner is derived from the
+      // newest run, not from dismissable client state, so a user who closes the app and comes
+      // back is still told their backups are not working.
+      await page.reload();
+      await page.waitForSelector('[data-testid="settings-backups-screen"]', { state: 'visible', timeout: 30000 });
+      await page.locator('[data-testid^="backup-job-versions-"]').first().click();
+      await expect(page.locator('[data-testid="backup-failure-banner"]')).toBeVisible({ timeout: 30000 });
+
+      // And the next-run line is present, naming the zone rather than a bare time.
+      await expect(page.locator('[data-testid="backup-next-run"]')).toContainText(/Not scheduled/i);
+    },
+  );
 });
