@@ -1,0 +1,207 @@
+# Implementation Plan: LLM cost reduction, phase 1 — no new vendor
+
+**Branch**: `075-llm-cost-phase-1` | **Date**: 2026-09-20 | **Spec**: [spec.md](./spec.md)
+
+**Input**: Feature specification from `/specs/075-llm-cost-phase-1/spec.md`
+
+## Summary
+
+Halve the measured $74.89/30-day model spend without adding a vendor, by changing
+two model defaults, one generator model id, and the *shape* of one prompt — then
+asserting in-repo that the shape change actually buys what it is supposed to buy.
+
+The technical approach, established in [research.md](./research.md):
+
+- **Generator**: one env value in `infrastructure-as-code/project.json`. The existing
+  offline guard already accepts the new id (verified at both resolution layers, R6);
+  nothing else moves.
+- **Classification**: `classify_intent` stops building one string and builds
+  `[SystemMessage(<static, cache_control: ephemeral>), HumanMessage(<user text>)]`.
+  One shape for both providers — verified inert on Ollama and on the fast Anthropic
+  tier, honoured on the cached tier (R1). No provider branch.
+- **Model parameters**: stop sending `temperature` to models that reject it. This is a
+  **blocker**, not a nicety — `claude-sonnet-5` returns 400 on every call today (R13),
+  so US2 is unshippable without it, and the same defect already leaves the escalation
+  tier non-functional on `main`.
+- **Model selection**: two table edits, plus **provider-scoped** environment pins on
+  exactly the burst surfaces, plus a small change to `select_model_config` so a scoped
+  pin resolves ahead of a bare one (R12 — a bare pin follows the active provider and
+  would send a Claude id to Ollama on the `provider: ollama` dispatch). The golden gate
+  deliberately keeps the code defaults so it still certifies what production runs
+  (R3 — this corrects the proposal).
+- **Verification**: one offline unit test proving the cached prefix is byte-stable, and
+  one live-model integration test proving a repeated classification is served from
+  cache, gated by the existing fail-not-skip escalation (R7).
+
+Ships as **two independent merges** (FR-020) so a red pipeline names its own cause.
+
+## Technical Context
+
+**Language/Version**: Python 3.14 (agent gateway); Node/JSON configuration elsewhere
+
+**Primary Dependencies**: `langchain-core 1.6.2`, `langchain-anthropic 1.7.2`,
+`langchain-ollama 1.1.0`, `anthropic 1.5.0`, `openwiki 0.5.2` (all installed versions
+verified in R1/R2/R6; no dependency is added, removed or bumped by this feature)
+
+**Storage**: N/A — no persisted state changes. Committed JSON cassettes under
+`agents/movie-assistant/tests/golden/cassettes/` are regenerated fixtures, not storage.
+
+**Testing**: `pytest` via Nx (`test`, `test:integration`, `test:golden`,
+`test:golden-live`); `node --test` for the generator guard; Playwright/Maestro for
+`app-e2e`
+
+**Target Platform**: Linux containers (agent gateway, CI runners, dev container)
+
+**Project Type**: Polyglot Nx monorepo — this feature touches the Python agent gateway,
+the infrastructure Nx project, two Forgejo workflows, the dev-container definition and
+the knowledge bundle
+
+**Performance Goals**: No latency target. The cached tier adds negligible per-call
+latency and is only selected on non-interactive surfaces.
+
+**Constraints**:
+
+- The static classification prefix MUST be byte-identical across calls (FR-006) — the
+  entire saving is a prefix match.
+- Production MUST NOT move to the cached tier; break-even is a ≈65% hit rate that real
+  user traffic cannot reach (R8).
+- A cassette miss MUST fail, never skip — constitutional requirement, and the ordering
+  in `invoke_or_skip` that guarantees it must not be weakened (R5).
+
+**Scale/Scope**: ~29M classification input tokens/month on the CI surface; 43 committed
+cassettes to re-record (31 + 11 Anthropic, 1 Ollama); 5 source files, 2 workflows,
+4 documents.
+
+## Constitution Check
+
+*GATE: evaluated before Phase 0 and re-evaluated after Phase 1 design. No violations.*
+
+| Principle | Assessment |
+|---|---|
+| **TDD (NON-NEGOTIABLE)** | PASS. Both new tests are written and verified RED before the change they cover. The prefix-stability unit test is RED while the prompt is still one string (no static block exists to assert on); the cache assertion is RED on the fast tier (`cache_read` is 0 because 2,650 < 4,096). `tasks.md` will carry the mandated Verify RED / Verify GREEN commands per `docs/templates/feature-test-tasks-template.md`. |
+| **Test Type Integrity (NON-NEGOTIABLE)** | PASS. The cache assertion needs the *real* provider — a replayed cassette carries no usage metadata — so it is a genuine integration test with nothing mocked, placed in `tests/integration/` and excluded from the golden marker. The prefix-stability test touches one pure function with no IO and is a genuine unit test. |
+| **Sanctioned exception — agent golden tier** | PASS, and relied upon. The constitution states cassettes are keyed on `sha256(model_id + normalized prompt)` so "a prompt or model change produces a loud miss, never a stale pass; a cassette miss MUST fail the run and MUST NOT be converted to a skip". This feature triggers that loud miss deliberately and re-records; it does not widen the exception, and it preserves the type-before-text ordering in `invoke_or_skip` that keeps a miss from being read as capacity. |
+| **Agent Architecture Boundaries** | PASS. Additive and non-breaking; no route, no domain logic, no tool surface changes. Only which model answers a classification. |
+| **Model-provider scoping — BOTH providers stay supported** | PASS. The self-hosted provider remains the default (`MODEL_PROVIDER` unset → Ollama) and the hosted one remains the documented fallback; neither is removed, deprecated or made conditional, and one message shape serves both (R1, executed). Coverage is precise rather than symmetric: `guardrails` replays the **Ollama tier** on every PR (verified — removing that cassette takes the gate from 51 passed to 42 passed + 9 errors), `test:golden-live` exercises the **Anthropic tier** before every deploy, and FR-025 adds the offline adapter check that replay cannot provide (R11). Live `qwen2.5` behaviour stays a local check by design — CI runs no Ollama. FR-021–025, SC-008. |
+| **Identity Propagation (NON-NEGOTIABLE)** | PASS, explicitly preserved. `runtime_env`'s no-shared-fallback rule and its dropping of per-node pins on a provider switch are unchanged and are what make the new environment pins safe under BYOK (FR-015/FR-016, R10). |
+| **Agent Security — Secrets** | PASS. No new credential. The new live test reads the same `ANTHROPIC_API_KEY` the tier already uses, and asserts on a token *count*, never on prompt or key material. |
+| **Agent Security — Rate Limiting / token spend** | ADVANCED. The per-user `costLimitUsd` ceiling is unchanged, but a cheaper extractor buys each user ~30% more turns under the same ceiling. |
+| **Logging & Monitoring** | PASS. No new log lines. The cache signal is read from a response object inside a test, not logged. |
+| **Model-provider scoping invariant** | PASS with a required doc update (FR-019). The invariant's premise — provider is env-scoped per environment, not one global choice — is exactly what this feature leans on; the specific ids it names change and must be corrected in the canonical page. |
+| **Nx as universal task runner** | PASS. Every command runs through an existing Nx target; no target is added. |
+
+**Post-Phase-1 re-evaluation**: still no violations, but the scope grew once. R12 adds
+provider-scoped override resolution to `select_model_config` — a canonical pure function
+this feature would otherwise only have edited two table entries in. It is an extension
+of that function's existing precedence rule rather than a new abstraction, it stays pure
+and offline-testable, and it removes a configuration footgun at the cause instead of
+documenting around it. Recorded here rather than absorbed quietly; the cheaper
+alternative (a conditional expression in one workflow) is set out in R12 if the smaller
+diff is preferred. No new project, dependency or credential. Complexity Tracking remains
+empty.
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/075-llm-cost-phase-1/
+├── spec.md              # /speckit-specify output
+├── plan.md              # This file (/speckit-plan output)
+├── research.md          # Phase 0 output — 10 findings, 3 corrections to the proposal
+├── data-model.md        # Phase 1 output — the model-selection entities
+├── quickstart.md        # Phase 1 output — runnable validation
+├── contracts/
+│   └── model-selection.md   # Phase 1 output — env → model-tier contract per surface
+├── checklists/
+│   └── requirements.md      # spec quality validation
+└── tasks.md             # Phase 2 output (/speckit-tasks — NOT created here)
+```
+
+### Source Code (repository root)
+
+```text
+agents/movie-assistant/
+├── src/
+│   ├── models.py                       # _BALANCED_DEFAULTS["anthropic"] → fast tier (FR-013)
+│   │                                   # + provider-scoped override resolution (FR-007b, R12)
+│   └── nodes/
+│       └── supervisor.py               # classify_intent: string → [System(cached), Human] (FR-005/006)
+└── tests/
+    ├── unit/
+    │   ├── test_supervisor_prompt_cache.py      # NEW — prefix byte-stability, offline (FR-006)
+    │   └── test_ollama_adapter_accepts_shape.py # NEW — Ollama converter drops cache_control, offline (FR-025)
+    ├── integration/
+    │   ├── live_model.py                        # reused unchanged — fail-not-skip escalation
+    │   └── test_prompt_cache_effectiveness.py   # NEW — cache_read > 0, live (FR-009..012)
+    └── golden/cassettes/                        # 43 cassettes re-recorded (FR-017)
+
+infrastructure-as-code/
+└── project.json                        # OPENWIKI_MODEL_ID → claude-sonnet-5 (FR-001)
+
+scripts/__tests__/
+└── wiki-maintain.guard.test.mjs        # RUN UNCHANGED — must pass as-is (FR-004)
+
+.forgejo/workflows/
+└── app-ci.yml                          # app-e2e job env: supervisor pin (FR-007)
+
+.devcontainer/
+└── devcontainer.json                   # local runs take the same pin (FR-007)
+
+infrastructure-as-code/docker/agents/
+└── compose.prod.yaml                   # header comment only — still pins nothing (FR-008/019)
+
+openwiki/invariants/model-provider-scoping.md   # canonical — learning goes here (FR-019)
+docs/runbooks/agent-layer.md                    # cited source (FR-019)
+```
+
+**Structure Decision**: No new project, directory or module. The feature edits two
+tables and one function in the existing gateway, one env block in the existing
+infrastructure project, and adds two test files to the two existing test tiers. The
+only structural judgement is *which* tier the cache assertion belongs to, resolved by
+Test Type Integrity: it drives the real provider, so it is an integration test, and it
+carries no `golden` marker so the keyless replay gate stays keyless (FR-018).
+
+## Delivery sequence
+
+Two merges, ordered so the risk-free one is not held hostage by the risky one
+(FR-020, SC-007). This follows the repository's PR-batching rule: batch by default,
+split when a red pipeline would otherwise be ambiguous — and here it genuinely would
+be, because a re-recorded cassette, a downgraded specialist and a restructured prompt
+all land in the same suite.
+
+**Merge 1 — generator (US1).** `OPENWIKI_MODEL_ID`, plus the guard run and the doc
+line. No application code, no cassettes, no e2e. Green or red is unambiguous. Merge
+first so the queued #525/#526 regeneration runs on the cheaper model.
+
+**Merge 2 — gateway (US2 + US3).** The prompt restructure, both defaults, both new
+tests, the workflow and dev-container pins, the cassette re-record and the remaining
+docs. US2 and US3 are *not* split from each other: both invalidate the same 43
+cassettes, so splitting them would mean re-recording twice at double the live cost for
+no diagnostic gain — the failure signatures (a classification regression vs an
+extraction regression) are already distinct within one suite because the cassettes are
+per-pair.
+
+## Risks and how the plan answers each
+
+| Risk | Answer |
+|---|---|
+| The prefix silently stops caching after a later edit | The offline prefix-stability unit test fails at merge time; the live assertion fails at deploy time. Neither can skip (R7). |
+| **The assistant stops working on one of the two providers** | One message shape serves both, verified by *executing* each adapter (R1). Gated on both sides once FR-025 lands — see the row below for what was missing. FR-021/022 make it a requirement rather than a side effect. |
+| **A `langchain-ollama` bump tightens content-part validation and breaks the default provider** | **This was an unguarded hole, found by the operator's challenge (R11).** Replay returns a `ReplayChatModel` and never constructs `ChatOllama`, so no CI gate executes that adapter — the property R1 rests on was asserted nowhere automatic. FR-025 adds an offline unit test driving the converter directly (no server, cannot skip), proven feasible in R1. Without it, a Renovate bump lands the breakage silently and nobody is editing this feature when it does. |
+| **`claude-sonnet-5` returns 400 on every call because we send `temperature`** | **This was a BLOCKER, found by the operator questioning stale model versions (R13).** Measured: `sonnet-5`, `opus-5` and `opus-4-8` all reject `temperature`; `haiku-4-5`, `sonnet-4-6` and `opus-4-6` accept it. `_build_real_chat_model` sends it unconditionally, so US2 could never have worked. FR-026/026a stop sending it, defaulting to omit for unknown ids. FR-028 adds the missing instrument — one live call per resolvable model — which would have caught this and the dormant escalation defect. US1 is unaffected: openwiki sets `temperature` nowhere. |
+| **The escalation escape hatch is already broken on `main`** | Pre-existing, not caused here: `claude-opus-4-8` rejects `temperature` too, so every escalation would 400 the moment the flag was enabled. Dormant, so never observed. FR-027 moves it to `claude-opus-5` — same list price, current generation, works once the parameter is dropped. |
+| **A cached-tier model id reaches Ollama and breaks the `provider: ollama` run** | **This was a defect in the plan itself, found by checking against the canonical invariant (R12).** R4 specified a bare `SUPERVISOR_MODEL` at `app-e2e` job scope; that job accepts `provider: choice [anthropic, ollama]`, and measured, the bare pin yields `ModelSpec(provider='ollama', model_id='claude-sonnet-5')`. Fixed at the cause: FR-007a/b make every pin provider-scoped and teach `select_model_config` to resolve the scoped name first, so a pin cannot reach the wrong provider on any surface. |
+| `qwen2.5` regresses on the new message shape | Re-record its cassette and run the Ollama tier; if it regresses, fall back to the string shape on the Ollama path only (R9) — a provider branch is the sanctioned fallback, not a failure. Measured, not assumed. |
+| The Ollama re-record is forgotten | **Mechanically impossible to merge without it.** `guardrails` leaves `MODEL_PROVIDER` unset, so it resolves the Ollama tier and `pytest.fail`s with "no cassette for supervisor model 'qwen2.5' … A missing cassette is drift, not a reason to skip" (R9). Still tracked as its own task (FR-024) because its prerequisite is a local Ollama, not an Anthropic key. |
+| The cheaper extractor degrades extraction quality | The 11 re-recorded extraction pairs are the gate. A failure blocks the change; it is not waived. |
+| A cassette miss is misread as provider capacity | `invoke_or_skip` re-raises `CassetteMissError` by type *before* its text heuristic. The plan forbids touching that ordering (R5, and the constitution requires it). |
+| The live gate certifies a model production does not run | Corrected by R3 — the golden gate keeps the code defaults. |
+| Re-record cost is treated as incidental | Budgeted as its own task. 43 cassettes against a live key, plus one local Ollama recording. |
+
+## Out of scope
+
+Explicitly deferred to the proposal's later phases and not foreclosed by anything here:
+a cheaper non-Anthropic generator provider (phase 2); an OpenAI-compatible provider
+adapter and the BYOK UI to expose it (phase 3); surfacing per-user running cost against
+`costLimitUsd` (phase 4). The escalation tier stays pinned and dormant throughout.
