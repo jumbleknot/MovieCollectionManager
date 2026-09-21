@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: OpenWiki knowledge-bundle maintenance
-description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — including the plan/execute split, slice sizing, the retry-then-backlog model, exit codes, the OKF v0.2 provenance migration, diagram parser installation, and how a lost run record self-heals against the forge's own proposal state.
+description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — including the plan/execute split, slice sizing, the retry-then-backlog model, exit codes, the claude-sonnet-5 model pin and its temperature gotcha, the OKF v0.2 provenance migration, diagram parser installation, and how a lost run record self-heals against the forge's own proposal state.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-20T11:41:17.059Z
+    at: 2026-09-21T01:56:46.322Z
 sources:
   - id: openwiki-source-c231cd090281b3129aaf6167
     resource: repo://docs/runbooks/wiki-maintenance.md
@@ -14,7 +14,9 @@ sources:
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
     resource: repo://scripts/check-openwiki-okf.mjs
-generated: { by: "openwiki/0.5.2", at: "2026-09-20T11:41:17.059Z" }
+  - id: openwiki-source-b7fa1c4f46ecc1980211c9d4
+    resource: repo://specs/075-llm-cost-phase-1/research.md
+generated: { by: "openwiki/0.5.2", at: "2026-09-21T01:56:46.322Z" }
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -48,11 +50,31 @@ never be invoked directly.
   count is always reported. A retry can never forgive what an earlier attempt did: the working tree is
   snapshotted once, before the first attempt, so a forbidden write on attempt 1 still fails the slice
   even if attempt 2 behaves. Note: the ~50% "miss" rate measured during feature-044 was not genuine
-  non-determinism — it was a fixed bug (the `claude-sonnet-5` model id was absent from `@langchain/anthropic`'s
-  table, so every turn was silently capped at 4096 output tokens and truncated before it could open a
-  tool call). The target now pins `claude-sonnet-4-6` (16 384 token ceiling). **If zero-page runs
-  return, measure the wire — check `stop_reason` and `output_tokens` on a pass-through proxy — not the
-  retry count.**
+  non-determinism — it was a fixed bug (the model id then pinned was absent from
+  `@langchain/anthropic`'s table, so every turn was silently capped at 4096 output tokens and truncated
+  before it could open a tool call). OpenWiki 0.5.2 fixed the cause upstream — an explicit `maxTokens`
+  now beats the vendor table — and `wiki-update` additionally sets `OPENWIKI_MAX_OUTPUT_TOKENS=16384`
+  itself rather than trusting either layer to keep holding. The pinned model is now **`claude-sonnet-5`**
+  (moved from `claude-sonnet-4-6` in feature 075, a cost-only swap — see the model-pin gotcha below).
+  **If zero-page runs return, measure the wire — check `stop_reason` and `output_tokens` on a
+  pass-through proxy — not the retry count.**
+- **The model pin moved from `claude-sonnet-4-6` to `claude-sonnet-5` (feature 075, 2026-09-21), and
+  it was a cost-only move** — same vendor, same credential, same workflow, same Deep Agents caching
+  middleware, only the id changed. Sonnet 5 lists at $2/$10 per MTok against Sonnet 4.6's $3/$15, with
+  cache reads at $0.20/MTok against $0.30. Generation is the largest line on the model bill (~53% of a
+  measured $74.89 over the 30 days to 2026-09-20) and already ~92% cache reads, so the *cached-read*
+  rate — not the list input price — was the number that decided it: roughly −33%, from ≈$1.72 to
+  ≈$1.15 per run-day. **OpenWiki sends no `temperature` parameter, which is why this bump was safe
+  where the agent gateway's equivalent bump was not** — Sonnet 5 and Opus 5 reject `temperature` with a
+  400, and the gateway sent it unconditionally. A model id is only a drop-in for the parameters the
+  caller actually sends; if OpenWiki ever starts sending sampling parameters, re-check this before
+  bumping the pin again. `scripts/__tests__/wiki-maintain.guard.test.mjs` now asserts three things
+  together whenever `OPENWIKI_MODEL_ID` or `OPENWIKI_MAX_OUTPUT_TOKENS` changes: the explicit token cap
+  is set and large enough, OpenWiki's own resolver still matches the pinned model id, and that id would
+  not land on the 4096-token fallback if the explicit cap were removed. **Read the SKIP COUNT, not just
+  the exit code** — two of its four cap assertions skip when OpenWiki is absent from the global
+  `node_modules` path, and a skip reads as a pass; the `claude-sonnet-5` bump was verified at
+  20 passed / 0 failed / 0 skipped.
 - **The budget is 16 pages and 20 minutes, whichever comes first, checked between slices** — a
   declared effective ceiling of ≤24 pages / ~37 minutes. The page count is files that actually
   appeared in the working tree, not what the generator claims to have written. Exit code `3` means the

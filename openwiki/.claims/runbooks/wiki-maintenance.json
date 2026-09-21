@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9f272b60008b573bc82665587a8a96e77019fe0258081303b6992883d3a0f8ae",
+  "pageVersion": "sha256:7f8365698b9132cbaa3830ef248ace77114293987d806614fceb2485b6e6f8f2",
   "claims": [
     {
       "id": "claim_2e510cf3ee1d4ddba5718a1220547924",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:e862488b1544b6030ec026d5b9d4e290a77b027120393ea7a158f4800b710dd6"
+          "version": "repo-file-v1:sha256:d5f86b6a12638ea4e7840c75f411cf8f5fbb330d405383cf4e892cc2e05144e8"
         }
       ]
     },
@@ -179,10 +179,56 @@
           "version": "repo-lines-v1:sha256:06e3b62b4d92c2e8f55917b4733bbf1b20a75cb6a025e63ab7901f4852ec3ed5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ZDFlNWI0NmNkNzIwM2IyZTU1ZTIyY2Q3ZDQ1ZjIwZWYzMDQ2ODBjOGI4ZjJmYTVjNjZhZTQ4ZTZhNjU4MDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlYmM4MGRmODQ2MzMzZmNiYWQ2NGRjZWIwZDI3MzMxN2QwZDM0NzY2ODAzNzZhMzNjYWI2ZTUxOTFhMTUzOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3MGIzMDgxYzRlMzE4NTY4OWI2NjBkMzViODdhYmMxN2M0MmFhZDc0MzhjMzFiZDQxZTkwZWY3OWUzZWY3ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0MzhmZTg0YTJjOTZmN2E5NGI1NWI5NDM2YTFiYWMyMTAyMjI5ZDVkZGFjZDc2YWMzOGQ2NTgxZTFlOTVjOWEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_15530ca278604bbaa640fd0ad2c5ab84",
+      "statement": "The wiki-update generation model pin moved from claude-sonnet-4-6 to claude-sonnet-5 in feature 075 (2026-09-21) purely for cost: same vendor, credential, workflow and Deep Agents caching middleware, only the id changed. Sonnet 5 lists at $2/$10 per MTok versus Sonnet 4.6's $3/$15, with cache reads at $0.20/MTok versus $0.30; generation was ~53% of a measured $74.89 model bill over the 30 days to 2026-09-20 and already ~92% cache reads, so the cached-read rate — not list input price — decided it, yielding roughly a 33% reduction (~$1.72 to ~$1.15 per run-day).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L105-L121",
+          "version": "repo-lines-v1:sha256:cb0887d32ae8a9019df82db7e3ebf1f852c61e9cf8587bcea1581273b39fddb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZTI5MDA4ODI1ZTUxNWVjNDE5Y2FjODljOGUzNWIxYThhNWNmZWFiMzQwNTc4YTRiNmZhYWNiMzAyMzExNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNzI5YTlmNjBiY2M4YTUxY2JhMTRhYzUyMmJlM2UyNWZjODE4YTI0MGQzMGY1NjYyNTJiMjk1MTI1ZGUzMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzYjg2YTVkZWY1YjM5MTJiN2I5YjQ4YjIyNWMwNTRjOWNhM2YzZWZhNWJiYjNiYjdhYmIyNzM1MzU5MTk3N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MDMwMjg2NzhiNzgxYTZhODJiYjA4OGI0ZTU4NWJiMGZkNWQ0Yzg5Zjc1MDFhODEzZWYzMmZkYzM5MWZlNzIifQ"
+        },
+        {
+          "resource": "repo://specs/075-llm-cost-phase-1/research.md#L486-L510",
+          "version": "repo-lines-v1:sha256:415f96bea475eaa82b5f4cda22c4d4b4d6501da5a4c24cf008efef2525e3c92b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMTU4NDU5MWEzNzMxYjgzMTAzNzVjNTViMWRmZjZiMTgyOGY2NzE0ZWM5ZjFkOTgzMTE5M2E3YTA3YzFiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZDRmMmFkOTI4MmI4NTg5ZGNjYjNkNTNhYzM1ZGFmODE0MmIzMjA5MjUzZWYyY2JiYzA4ZGY3ZDU3MTEyOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmYjU0ZDYwZjhmMjkwNTJlYjI4ZDAxNGVhMmQzYmVkN2M2ZTFkZWEyNjYyZmY1NWY4NWE5YzA5YTlhMjc3NDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d340754bb13d4b6d87e0f781174a242f",
+      "statement": "OpenWiki sends no temperature parameter to the model, which is why bumping the wiki-maintain pin to claude-sonnet-5 was safe where an equivalent bump broke the agent gateway: the gateway sent temperature unconditionally and Sonnet 5 / Opus 5 reject that parameter with HTTP 400. A model id is therefore only a drop-in for the sampling parameters the caller actually sends, and must be re-checked if OpenWiki ever starts sending them.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L128-L137",
+          "version": "repo-lines-v1:sha256:aa601a050f3de02cf2781811c2011e5ce6594bb9859a92c54509ff2d058fbfaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZWY4ZjlmOWNlZDBlMzA1YzE4ZGY3NzYzZGI0YTdkZDhhOTRmNWJiMzEzNzVjMTllZDIwN2FhNzA5Y2I2NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1YmRkOWE0OWQwMDRlNzdiNzNjNDE1YzljY2E3ODdhNjRjMjhmNzUyMjMwM2FlNDU1MDVlM2VmZGNjODlmZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YWQ5NjMxZmU0Nzg5NzE0MTc0YzJiOTY1Mzc1NjQ4YWIyZWUwNmIzOTk4MDZmOWE2MWNhY2ZkNzc0YTc4Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiNzE5Y2IyYzM3OTc1MmI3Mzk2NjkwYjRkYmYyNmI5YmRjMzE3NzdhOGQwYWVjMWRkODIxYTU0YjBkNDBjY2YifQ"
+        },
+        {
+          "resource": "repo://specs/075-llm-cost-phase-1/research.md#L486-L510",
+          "version": "repo-lines-v1:sha256:415f96bea475eaa82b5f4cda22c4d4b4d6501da5a4c24cf008efef2525e3c92b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMTU4NDU5MWEzNzMxYjgzMTAzNzVjNTViMWRmZjZiMTgyOGY2NzE0ZWM5ZjFkOTgzMTE5M2E3YTA3YzFiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZDRmMmFkOTI4MmI4NTg5ZGNjYjNkNTNhYzM1ZGFmODE0MmIzMjA5MjUzZWYyY2JiYzA4ZGY3ZDU3MTEyOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmYjU0ZDYwZjhmMjkwNTJlYjI4ZDAxNGVhMmQzYmVkN2M2ZTFkZWEyNjYyZmY1NWY4NWE5YzA5YTlhMjc3NDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ce38c486f6c45f6ac4280c4206faf63",
+      "statement": "scripts/__tests__/wiki-maintain.guard.test.mjs asserts three things together for the pinned generation model: the explicit OPENWIKI_MAX_OUTPUT_TOKENS cap is set and at or above the 16384-token minimum a page-writing turn needs, OpenWiki's own resolveAnthropicMaxOutputTokens regex still matches OPENWIKI_MODEL_ID, and that id would not resolve to @langchain/anthropic's 4096-token fallback if the explicit cap were removed. Two of its four cap-related tests skip (rather than fail) when OpenWiki is not installed under the global node_modules path, so a skip can misleadingly read as a pass; the claude-sonnet-5 bump was verified at 20 passed / 0 failed / 0 skipped.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L123-L137",
+          "version": "repo-lines-v1:sha256:e3091401cf366b027b95c70afe12ff192286b472ddf9a2bb316ba32f8970cdf3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkYjdiYTI5MjEzOGRkMTFjYzE2YmI3ODg0Y2MxYmFlODkyODE2ZmRjMDBiYzRhODI5Y2YxYzdhMmYwYjE0NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1YmRkOWE0OWQwMDRlNzdiNzNjNDE1YzljY2E3ODdhNjRjMjhmNzUyMjMwM2FlNDU1MDVlM2VmZGNjODlmZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhN2YyZDczYjgwYTdlMTJlYzdjNjU1ZDYzYTRkYzc5MGVhMDNiZWZlNzU5MDA3NWQzNTRhZmRiMDkyMjZhNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiNzE5Y2IyYzM3OTc1MmI3Mzk2NjkwYjRkYmYyNmI5YmRjMzE3NzdhOGQwYWVjMWRkODIxYTU0YjBkNDBjY2YifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L236-L303",
+          "version": "repo-lines-v1:sha256:d6551cce68a3dbe8b28ecf15366c2efb83e690980448d1a46e4cb5c708efb5cb:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MTU4MGU1NTdhNTlhNzZkOGMwNWI3YTAwOTI5YTQzNWQwMWEwNDAwZmM5Mzc4NGEwYjVmZGVkZTgwODhlN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0MTZlNGEzMDliZDE2YWMzNWZlYjU1Yjg3ODZkM2RhZjI1MDYxODljMGUyMWY3NDk3Mjk2ZDM1ZWEwNWVmYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNzQ5ZWE0NjVmOWY2OGU4Njk2OWRlN2Y5NzIyODVhZmRhYTUyYmI0MjAxYmFhMGE5MjdjMTkxNDQ0MjA2N2QifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L316-L365",
+          "version": "repo-lines-v1:sha256:fcc49d0a03ab8a3228d6c760eb1565707fbe51f3558874749e3a76fd14f42a1c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NjY2MzJlNDIxZGQ0NGRmNzYzNTZiYWEwYzgzYzg4MjUzMmJmZWYwNzk3NWYzMTUwOWRmMWNkOWZjZGZmMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5YzBlY2QyYjM1NDllODVlZjg1ZWYxYjc2MzJiNWExYjZjODgxZjNlYzNjMzIwNTA1YTYxODljZGU4ZjE1MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-20T11:41:17.059Z"
+    "at": "2026-09-21T01:56:46.322Z"
   }
 }
