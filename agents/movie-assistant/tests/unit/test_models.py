@@ -35,10 +35,10 @@ def test_anthropic_fallback_supervisor():
 def test_anthropic_fallback_specialist():
     spec = select_model_config("curator", {"MODEL_PROVIDER": "anthropic"})
     assert spec.provider == "anthropic"
-    # Feature 075 TRIED to drop this tier to a cheaper model and the golden gate refused: haiku-4-5
-    # failed 11 of 51 pairs, and sonnet-5 was FLAKY because it rejects `temperature` so extraction
-    # can no longer be pinned to 0. See _BALANCED_DEFAULTS for the measurements.
-    assert spec.model_id == "claude-sonnet-4-6"
+    # Feature 075: 4.6 -> 5 for a -33% on extraction. haiku-4-5 was tried and FAILS this tier
+    # (11 of 51 golden pairs); see _BALANCED_DEFAULTS for that and for the two parsing defects that
+    # made sonnet-5 look flaky when it was not.
+    assert spec.model_id == "claude-sonnet-5"
 
 
 def test_provider_scoped_pin_wins_over_the_bare_name():

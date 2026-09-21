@@ -606,3 +606,72 @@ does not.
 **If someone wants the extraction saving later**, the route is structured outputs / a JSON schema
 constraining the response — not swapping the model id again and hoping. `_BALANCED_DEFAULTS`
 carries that note.
+
+---
+
+## R16 — R15 WAS WRONG. The "model flakiness" was two parsing defects of ours
+
+**Found by the E2E, 2026-09-21**, which is the only tier that runs the real prompt through the real
+gateway. The unit, golden and live-model tiers were all green when this was broken.
+
+**R15 concluded** that `claude-sonnet-5` was too flaky for the extraction tier, and blamed sampling
+variance from the lost `temperature` parameter. **That diagnosis was wrong.** The model answered
+correctly every single time in both failure modes; our code could not read the answer.
+
+### Defect 1 — `.content` is a LIST on a thinking-enabled model
+
+Sonnet 5 and Opus 5 run adaptive thinking **by default**, so `.content` is not a string:
+
+```
+[{"type": "thinking", "signature": "...", "thinking": ""}, {"type": "text", "text": "query"}]
+```
+
+Four call sites did `str(response.content)`. That 478-character blob then becomes:
+
+- an intent matching no label, so `classify_intent` returns `"ambiguous"` and the assistant asks
+  the user to clarify a request it classified perfectly;
+- a `json.loads` failure in all three extractors, swallowed by their defensive `except` into `{}`,
+  so a required field silently arrives as `None` and a write proposal is built without it.
+
+**It is intermittent**, which is what made it look like model quality: the same model returns a bare
+string when it does not engage thinking. Measured on one input, 5 runs: 4 block-lists, 1 bare
+string. A handful of probes can pass entirely by luck — mine did.
+
+Fixed by `response_text()` (`AIMessage.text`), applied at all four sites **and in
+`RecordingChatModel`**, which had the same bug and would have baked the blob into cassettes.
+
+### Defect 2 — the JSON arrives inside a markdown fence, sometimes
+
+Independently, Sonnet 5 intermittently wraps its JSON reply in ```` ```json ```` despite being told
+to return bare JSON. Measured: 1 of 4 calls fenced, 3 bare, identical correct content in all four.
+`json.loads` rejects the fenced form → the same `{}` fallback. Fixed by `json_from_response()`.
+
+### What this changes
+
+| Specialist | Golden pairs, after the fixes |
+|---|---|
+| `claude-haiku-4-5` | **11 of 51 fail** — R15's finding here stands; it genuinely cannot extract |
+| `claude-sonnet-5` | **51/51** |
+| `claude-sonnet-4-6` | 51/51 |
+
+So the specialist tier **does** move, to `claude-sonnet-5`: −33% on extraction ($2/$10 vs $3/$15),
+reaching BYOK users through the code default. **FR-013 is reinstated in amended form** (the *cached*
+tier, not the *fast* tier) and **SC-004 is reinstated**.
+
+### The lesson worth keeping
+
+**On a newer model, "flaky output" is far more likely to be a brittle parser than a worse model.**
+Both defects presented as model quality, both were ours, and both were invisible to every tier that
+did not run the real prompt through the real gateway. The way to tell them apart is to print the
+RAW response text before concluding anything about the model — which is what finally did it here.
+
+Two smaller defects fell out of the same investigation:
+
+- **The cassette `model_id` label was sticky.** `Cassette.load` prefers the file's own value and
+  `save` writes it back, so re-recording on a new model left the file claiming the old one for
+  ever while its entries were keyed to the new one. Nothing broke — which is what made it
+  dangerous. It misled this investigation once. Fixed at the cause in `RecordingChatModel`.
+- **A test of ours was contaminated by ambient env.** `_FAST_TIER_ENV` overlaid `os.environ` but
+  only *omitted* the pin rather than clearing it, so on any surface that exports
+  `ANTHROPIC_SUPERVISOR_MODEL` the "production is unaffected" test asserted it about the cached
+  tier instead. Now clears the pins explicitly.

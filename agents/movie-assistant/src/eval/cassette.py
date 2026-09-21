@@ -125,10 +125,27 @@ class RecordingChatModel:
         self._inner = inner
         self._cassette = cassette
         self._model_id = model_id
+        # Stamp the cassette with the model being RECORDED. `Cassette.load` prefers the file's own
+        # `model_id` over the one passed in, and `save` writes that value back — so without this
+        # the label is STICKY: re-record a pair on a new model and the file still claims the old
+        # one, for ever, while its entries are keyed to the new one. The entries stay correct
+        # (ReplayChatModel keys on the live spec), so nothing breaks — which is exactly what makes
+        # it dangerous. Feature 075 hit it: a grep of the cassettes reported
+        # `claude-sonnet-4-6` for files that had just been re-recorded on `claude-sonnet-5`.
+        cassette.model_id = model_id
 
     def invoke(self, model_input: Any, *args: Any, **kwargs: Any) -> Any:
         result = self._inner.invoke(model_input, *args, **kwargs)
-        content = getattr(result, "content", result)
+        # The TEXT, not `str(content)`. A thinking-enabled model (Sonnet 5, Opus 5) returns a LIST
+        # of content blocks, and stringifying it records a 478-char blob like
+        # "[{'type':'thinking',...}, {'type':'text','text':'query'}]" — which then replays as an
+        # intent that matches no label, or as JSON that will not parse — the cassette would
+        # faithfully preserve a value the graph can never use. `.text` concatenates the text
+        # blocks only; where content is already a plain string this is byte-identical to before,
+        # so existing cassettes stay valid. See `response_text` in src/models.py.
+        from src.models import response_text
+
+        content = response_text(result)
         tool_calls = list(getattr(result, "tool_calls", []) or [])
         self._cassette.put(
             cassette_key(self._model_id, model_input),

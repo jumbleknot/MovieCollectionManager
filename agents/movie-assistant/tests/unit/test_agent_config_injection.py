@@ -110,7 +110,7 @@ def test_runtime_env_drops_provider_specific_model_pins_on_provider_switch() -> 
     # The Anthropic provider's built-in balanced/fast defaults now apply.
     # The property under test is that the NEW provider's own default applies after a switch — an
     # Ollama pin must not survive onto Anthropic. What matters is that it is Anthropic's default.
-    assert select_model_config("curator", env).model_id == "claude-sonnet-4-6"
+    assert select_model_config("curator", env).model_id == "claude-sonnet-5"
     assert select_model_config("supervisor", env).model_id == "claude-haiku-4-5"
 
 

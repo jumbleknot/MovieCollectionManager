@@ -36,7 +36,15 @@ from tests.integration.live_model import invoke_or_skip, require_live_credential
 # The tier CI's burst surfaces select. Kept as a local mapping because `select_model_config` is pure
 # over a Mapping — no process-env mutation needed, so this test cannot leak into its neighbours.
 _CACHED_TIER_ENV = {"MODEL_PROVIDER": "anthropic", "ANTHROPIC_SUPERVISOR_MODEL": "claude-sonnet-5"}
-_FAST_TIER_ENV = {"MODEL_PROVIDER": "anthropic"}
+# The fast tier must EXPLICITLY clear the pins, not merely omit them. These dicts are overlaid onto
+# `os.environ`, and the surfaces that run this suite (CI's app-e2e job, the dev container) export
+# ANTHROPIC_SUPERVISOR_MODEL — so an omission silently inherits the cached tier and the
+# "production is unaffected" test quietly asserts it about the wrong model. Found exactly that way.
+_FAST_TIER_ENV = {
+    "MODEL_PROVIDER": "anthropic",
+    "ANTHROPIC_SUPERVISOR_MODEL": "",
+    "SUPERVISOR_MODEL": "",
+}
 
 
 def _cache_counts(response) -> tuple[int, int]:

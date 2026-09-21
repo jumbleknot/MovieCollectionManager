@@ -11,6 +11,7 @@ dependency. Instantiating the LangChain chat model from a ModelSpec (build_chat_
 is a thin adapter added when the graph wiring (T020) requires it.
 """
 
+import json
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -22,28 +23,23 @@ if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
 
 _FAST_DEFAULTS = {"ollama": "qwen2.5", "anthropic": "claude-haiku-4-5"}
-_BALANCED_DEFAULTS = {"ollama": "qwen2.5:32b", "anthropic": "claude-sonnet-4-6"}
-# THE SPECIALIST TIER STAYS ON SONNET 4.6 — feature 075 TRIED to drop it and the gate said no.
+_BALANCED_DEFAULTS = {"ollama": "qwen2.5:32b", "anthropic": "claude-sonnet-5"}
+# The specialist tier moved 4.6 -> 5 for cost: $2/$10 per MTok against $3/$15, a straight -33% on
+# extraction. The three extraction prompts are 120-520 tokens returning a small JSON object, far
+# too short to cache under any model (the smallest cacheable prefix is 1,024 tokens), so price per
+# token is the only lever. This is a CODE DEFAULT, which is what carries the saving to BYOK users:
+# compose.prod.yaml pins nothing.
 #
-# The cost case was good on paper: the three extraction prompts are 120-520 tokens returning a
-# small JSON object, far too short to cache under any model, so only price per token varies and the
-# fast tier is 3x cheaper. Measured against the golden pairs, both cheaper options FAILED:
+# `claude-haiku-4-5` WAS TRIED AND FAILS THIS TIER — 11 of 51 golden pairs, returning None for
+# required fields ('title' expected 'Coherence', got None) and [] for organize plans. It is not
+# marginal; it cannot do the extraction. Do not "save more" by dropping to it.
 #
-#   claude-haiku-4-5  11 of 51 pairs failed — systematically returns None for required fields
-#                     ('title' expected 'Coherence', got None) and [] for organize plans.
-#   claude-sonnet-5   1 pair failed, and worse, FLAKILY: 3 runs of "add the movie Inception to
-#                     this" gave Inception, {}, {}. Sonnet 5 REJECTS `temperature`, so this tier
-#                     can no longer be pinned to 0 and free-form JSON extraction picks up sampling
-#                     variance. Sonnet 4.6 accepts temperature=0 and returned Inception 3/3.
-#
-# That last point is the one to remember: on a newer model the loss of `temperature` costs
-# DETERMINISM, not just accuracy — and this tier feeds the write-proposal path behind the HITL
-# approval gate, where a silently-dropped field becomes a wrong proposal. Classification is
-# unaffected (a one-word label from a fixed set: 6 probes x 3 runs, 0 wrong, 0 flaky on Sonnet 5),
-# which is why the SUPERVISOR still moves and the specialist does not.
-#
-# Revisit only with structured outputs / a JSON schema constraining the response — not by swapping
-# the id again and hoping.
+# Sonnet 5 initially looked flaky here too (2 of 5 runs on one input). IT WAS NOT THE MODEL — it
+# was two parsing defects on our side, both fixed: `.content` is a LIST of blocks on a
+# thinking-enabled model (see `response_text`), and the JSON arrives inside a ```json fence on
+# some calls (see `json_from_response`). The model answered correctly every time in both cases.
+# That is the lesson worth keeping: on a newer model, "flaky output" is far more likely to be a
+# brittle parser than a worse model, and the way to tell is to print the RAW text.
 _ESCALATION_DEFAULT = "claude-opus-5"
 
 # ── Which Anthropic models still accept `temperature` ───────────────────────────────────────────
@@ -224,6 +220,61 @@ def frontier_escalation_enabled(env: Mapping[str, str]) -> bool:
     from src.flags import FRONTIER_ESCALATION, get_flag_provider
 
     return get_flag_provider(env).enabled(FRONTIER_ESCALATION)
+
+
+def response_text(result: Any) -> str:
+    """The assistant's TEXT from a model response — never `str(result.content)`.
+
+    ── WHY THIS EXISTS (and why the naive form is a silent, intermittent bug) ───────────────────
+
+    `.content` is a plain string on Haiku 4.5 and Sonnet 4.6, so `str(msg.content)` worked for
+    years. It is NOT a string on a model that thinks: Sonnet 5 and Opus 5 run adaptive thinking by
+    DEFAULT, and their `.content` is a list of blocks —
+
+        [{"type": "thinking", "signature": "...", "thinking": ""},
+         {"type": "text", "text": "query"}]
+
+    `str()` of that list is a 478-character blob. Downstream it becomes:
+
+      * an intent label that matches nothing in INTENTS, so `classify_intent` returns "ambiguous"
+        and the graph asks the user to clarify a request it understood perfectly;
+      * a `json.loads` failure in every extractor, caught by their defensive `{}` fallback, so a
+        field silently arrives as None and a write proposal is built without it.
+
+    Both look like MODEL QUALITY problems and are not. Worse, they are INTERMITTENT: the same model
+    returns a bare string when it does not engage thinking, so a handful of probes can all pass.
+    Measured on one input, 5 runs: 4 block-lists, 1 bare string — while the model answered "query"
+    correctly every single time.
+
+    `AIMessage.text` concatenates the text blocks and ignores the rest, which is exactly right.
+    Falls back to `str(content)` for anything without it (cassette doubles, other providers).
+    """
+    text = getattr(result, "text", None)
+    if isinstance(text, str):
+        return text
+    if callable(text):  # older langchain-core exposed .text() as a method
+        return str(text())
+    return str(getattr(result, "content", result))
+
+
+def json_from_response(result: Any) -> Any:
+    """Parse a model's JSON reply, tolerating a markdown code fence.
+
+    Newer models intermittently wrap JSON in ```json ... ``` even when told to return bare JSON —
+    measured on Sonnet 5: the SAME prompt returned a fenced block on 1 of 4 calls and a bare object
+    on the other 3, with identical, correct content every time. `json.loads` rejects the fenced
+    form, the extractors' defensive `except` turns that into `{}`, and a required field silently
+    arrives as None. The model was never wrong; the parser was brittle.
+
+    This is intermittent by nature, so a handful of manual probes will not catch it — it shows up as
+    a golden pair that fails 2 runs in 5 and gets written off as model flakiness. Strip the fence.
+    """
+    text = response_text(result).strip()
+    if text.startswith("```"):
+        # ```json\n{...}\n```  ->  {...}
+        body = text.split("\n", 1)[1] if "\n" in text else ""
+        text = body.rsplit("```", 1)[0].strip() if "```" in body else body.strip()
+    return json.loads(text)
 
 
 def build_chat_model(spec: ModelSpec, env: Mapping[str, str] | None = None) -> "ChatModel":

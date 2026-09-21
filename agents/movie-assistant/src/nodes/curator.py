@@ -15,13 +15,13 @@ options, none → say so — never fabricate metadata.
 
 from __future__ import annotations
 
-import json
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
 
+from src.models import json_from_response
 from src.nodes.organizer import _as_int, _last_user_text, references_current_screen
 from src.proposals import EnrichedMovieCandidate, tmdb_movie_url
 from src.tools.generative_ui_tools import (
@@ -53,7 +53,7 @@ def extract_entities(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any
         f"Request: {last}"
     )
     try:
-        return dict(json.loads(str(model.invoke(prompt).content)))
+        return dict(json_from_response(model.invoke(prompt)))
     except (ValueError, TypeError):
         return {}
 
@@ -213,7 +213,7 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
                 names = ", ".join(f"{o.get('title')} ({o.get('year')})" for o in options[:5])
                 return _reply(
                     f"I'm not sure which one you mean. The matches are: {names}. "
-                    "You can say the title, the year, or e.g. \"the first one\".",
+                    'You can say the title, the year, or e.g. "the first one".',
                     confidence="ambiguous",
                     options=options,
                     target=target_collection,

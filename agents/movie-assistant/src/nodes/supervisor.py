@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END
 
+from src.models import response_text
+
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
 
@@ -301,7 +303,7 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
     Pure w.r.t. the model: the caller injects the (possibly cassetted) model (T017/T032).
     """
     last = messages[-1].content if messages else ""
-    label = str(model.invoke(build_classify_messages(str(last))).content).strip().lower()
+    label = response_text(model.invoke(build_classify_messages(str(last)))).strip().lower()
     return label if label in INTENTS else "ambiguous"
 
 
