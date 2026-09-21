@@ -2,6 +2,98 @@
 
 Date: 2026-09-20 · Scope: read-only review of `E:\Programming\VSCode\MovieCollectionManager` plus the Anthropic console usage/cost export for 2026-08-22 → 2026-09-20 · Out of scope by request: Claude Code as the coding assistant, Ollama for local agent testing.
 
+---
+
+> ## ⚠️ CORRECTIONS — read before acting on anything below
+>
+> **Added 2026-09-21**, while turning Phase 1 into [`specs/075-llm-cost-phase-1/`](../../specs/075-llm-cost-phase-1/spec.md). This document was written from a **read-only** review, and several of its premises do not survive contact with the running code. **One is a blocker that would have failed Phase 1 on its first model call.** The measured spend in §0 is sound and remains the basis for the work — these corrections are about the *recommendations*, not the numbers.
+>
+> Each was verified by executing something, not by reading. Full evidence in [`specs/075-llm-cost-phase-1/research.md`](../../specs/075-llm-cost-phase-1/research.md); the R-numbers are its findings.
+>
+> ### 🔴 BLOCKER — `claude-sonnet-5` rejects `temperature`, so the headline recommendation could not have worked (R13)
+>
+> `models.py`'s `_build_real_chat_model` passes `temperature=spec.temperature` unconditionally, and `ModelSpec` always carries `0.0`. Measured, one live call per model:
+>
+> | Model | `temperature=0.0` |
+> |---|---|
+> | `claude-haiku-4-5` | accepted |
+> | `claude-sonnet-4-6` | accepted |
+> | `claude-opus-4-6` | accepted |
+> | **`claude-sonnet-5`** | **400 — `` `temperature` is deprecated for this model`` ** |
+> | **`claude-opus-5`** | **400 — same** |
+> | **`claude-opus-4-8`** | **400 — same** |
+>
+> Sonnet 5 and Opus 5 both work fine *without* it. Consequences:
+>
+> 1. **Every `SUPERVISOR_MODEL=claude-sonnet-5` call would have returned 400.** The cached-supervisor recommendation — the largest single lever in this document — was unshippable as written. Phase 1 must fix the parameter first.
+> 2. **The escalation tier is already non-functional on `main`, and this document does not notice.** §2A calls it "latent" and says it "costs nothing today", true only because nothing routes there. It is pinned to `claude-opus-4-8`, which also 400s — so the frontier escape hatch would fail on first use the moment `mcm.agent.frontier-escalation` was enabled. A pre-existing defect, not one this work introduces.
+> 3. **OpenWiki is unaffected** — it sets `temperature` nowhere in its dist, so §2B's recommendation stands.
+>
+> **Why nothing caught it**: the generator guard checks only an output cap; `select_model_config`'s tests are pure and never call a provider; the golden suite replays cassettes and never constructs a real model. Every gate was green and truthful about a narrower claim than the one being relied on. Spec 075 adds the missing instrument — a live check that every resolvable model is invocable with the parameters this repo actually sends.
+>
+> ### 🟠 The model ids here are a generation behind (R13)
+>
+> Live from `GET /v1/models` on 2026-09-21: `claude-sonnet-5` and `claude-opus-5` are current; **`claude-sonnet-4-6` and `claude-opus-4-8` are superseded** (still served). Spec 075 moves escalation to `claude-opus-5` — same list price, current, and it works once the parameter is dropped. Note for whoever enables that tier: Opus 5 runs adaptive thinking **by default** where 4.8 did not, so escalation output tokens will not resemble the dormant tier's historical zero.
+>
+> **`claude-haiku-4-5` is still the current Haiku** — there is no Haiku 5 — so every fast-tier target recommended here was already current.
+>
+> ### 🟠 The `golden` surface must NOT take the cached-tier supervisor (R3)
+>
+> §1 and §3 group "CI/golden/devcontainer" for `SUPERVISOR_MODEL=claude-sonnet-5`. Including `golden` is wrong twice over:
+>
+> - **`test:golden-live` is the pre-deploy gate for production, and production runs the code defaults.** It deliberately sets no per-node pin, mirroring `compose.prod.yaml`. Pinning a different model there makes the gate certify a configuration that never ships.
+> - **Cassettes are keyed by model id**, so a pin there misses all 31 committed supervisor cassettes, or forces a second parallel set at double the re-record cost.
+>
+> Only `app-e2e` and the dev container take the pin. The $22 that matters is in `app-e2e`; the deploy gate's $5.62 was already proportionate, as §0 says.
+>
+> ### 🟠 A bare `SUPERVISOR_MODEL` pin follows whichever provider is active (R12)
+>
+> §3 Phase 1 says to set `SUPERVISOR_MODEL` in the CI job env. But `app-ci.yml` declares `provider: choice [anthropic, ollama]` and the `app-e2e` job reads `MODEL_PROVIDER` from it, so that job genuinely runs both ways. Measured:
+>
+> ```
+> MODEL_PROVIDER=ollama + SUPERVISOR_MODEL=claude-sonnet-5
+>   → ModelSpec(provider='ollama', model_id='claude-sonnet-5')   # a Claude id sent to Ollama
+> MODEL_PROVIDER=ollama + ANTHROPIC_SUPERVISOR_MODEL=claude-sonnet-5
+>   → ModelSpec(provider='ollama', model_id='qwen2.5')           # correct
+> ```
+>
+> Every pin must be **provider-scoped**. Spec 075 teaches `select_model_config` to resolve `<PROVIDER>_SUPERVISOR_MODEL` ahead of the bare name, so a pin cannot reach the wrong provider on any surface.
+>
+> ### 🟠 The prompt change is shared with Ollama, which this document never considers (R1, R11)
+>
+> `classify_intent` is used by **both** providers, and Ollama — not Anthropic — is the default. Splitting the prompt into a `cache_control`-marked system block therefore changes what `qwen2.5` sees too. Verified by execution: `langchain_ollama` silently drops an unknown key on a `text` content part, so **one message shape serves both providers with no branch**, and the marker is inert on Ollama and on Haiku (whose 4,096-token minimum the ~2,650-token prefix does not clear).
+>
+> Two things follow that this document does not mention:
+>
+> - **Replay never constructs `ChatOllama`** — `build_chat_model` returns a `ReplayChatModel` — so no CI gate executes that adapter. Spec 075 adds an offline unit test for it, because the failure mode is a dependency bump, not an authoring mistake.
+> - The rendered Ollama system content gains a **leading newline** (the converter accumulates with `content += f"\n{text}"`). Harmless, but part of the cassette key.
+>
+> ### 🟡 The generator guard does NOT need relaxing (R6)
+>
+> §1.1(c) warns the guard "will flag an id it doesn't know" and suggests relaxing the assertion. It will not. `openwiki@0.5.2`'s own resolver matches `/^claude-(?:haiku|sonnet|opus)-(?:4|5)(?:[-.@]|$)/u`, and `@langchain/anthropic`'s table carries an explicit `"claude-sonnet-5": 16384`. Measured with the bump applied: **20 passed, 0 failed, 0 skipped** — the skip count being the part that matters, since those two assertions skip when openwiki is absent and a skip reads as a pass. **Spec 075 forbids relaxing that guard** (FR-004): it is the only mechanical check on the property that once produced a ~50% zero-page rate at exit 0.
+>
+> ### 🟡 "Confirm on the console the next day" is not a test (R7)
+>
+> §3 Phase 1 says: *"Confirm on the console the next day that `mcm-ci-e2e` shows `input_cache_read` rows; that is the whole test."* It is not. Caching is a prefix match: one interpolated byte and the cache-read rate drops to zero with **no error raised and no test failing**. An operator reading a dashboard once cannot defend that. Spec 075 makes it two in-repo assertions — an offline check that the static prefix is byte-stable, and a live check that a repeated classification is served from cache, gated so a missing credential **fails** rather than skipping.
+>
+> ### 🟡 The re-record is 43 cassettes, one of which an Anthropic key cannot regenerate (R5, R9)
+>
+> §3 says "Re-record cassettes" as a single step. Cassettes are keyed on `sha256(model_id + normalized prompt)`, and Phase 1 changes **both**:
+>
+> | Keyed id | Count | Invalidated by | Credential needed |
+> |---|---|---|---|
+> | `claude-haiku-4-5` (intent) | 31 | prompt shape | Anthropic |
+> | `claude-sonnet-4-6` (extraction) | 11 | specialist id change | Anthropic |
+> | **`qwen2.5`** (topic confinement) | 1 | prompt shape | **a local Ollama** |
+>
+> That last row is the trap. It is also the *only* measurement of live `qwen2.5` behaviour on the new message shape — and skipping it fails the keyless merge gate, which resolves the Ollama tier because `guardrails` sets no `MODEL_PROVIDER` (verified: removing that one cassette takes the gate from 51 passed to 42 passed + 9 errors).
+>
+> ### ✅ What held up
+>
+> The §0 spend measurements; Haiku 4.5's 4,096-token minimum cacheable prefix and Sonnet 5's 1,024; the cache read/write pricing; the ≈65% break-even that keeps production on Haiku; and the central insight that the dominant gateway cost is an uncacheable static classifier prompt rather than "Sonnet specialists". **Phases 2–4 are unreviewed** — they were out of scope for spec 075, and the corrections above should be assumed to apply to them in spirit.
+
+---
+
 ## 0. Measured spend, 22 Aug – 20 Sep 2026 (30 days)
 
 **Total: $74.89** across five keys, all on Haiku 4.5 and Sonnet 4.6 (no Opus calls at all — the escalation tier really is dormant).
@@ -45,6 +137,8 @@ The repository has exactly **two workloads that spend Anthropic tokens on the or
 | F | Dev container `MCM_ANTHROPIC_API_KEY` | Feeds A and B when a developer runs them locally with `MODEL_PROVIDER=anthropic` / `wiki-execute` | as A/B | Org / developer | $3.51 / 30 days on 7 days of use |
 | G | Golden gate in `guardrails.yml` | Cassette **replay** — keyless, no network | none | — | Zero |
 
+>**⚠️ Items 1(a) and 1(c) below are corrected at the top of this document.** 1(a) omits the `temperature` blocker and wrongly includes `golden` in the surfaces that take the cached-tier supervisor; 1(c)'s warning that the generator guard needs relaxing is unfounded (measured 20 passed / 0 failed / 0 skipped). 1(b) and 1(d) stand.
+
 **Recommended approach, in order of effort vs. payoff:**
 
 1. **Anthropic-only wins (do first, this week) — the data says they roughly halve the org bill.** (a) **CI/golden/devcontainer supervisor → `claude-sonnet-5` with the static prompt prefix marked `cache_control`**, set via `SUPERVISOR_MODEL` in the job env rather than the code default: Haiku 4.5 cannot cache a 2.7k prompt (4,096-token minimum), so CI's classifier is paying full price on 29M input tokens a month; in a CI burst a cached Sonnet 5 call is ≈5× cheaper than an uncached Haiku call and is the better classifier. Prod keeps Haiku as the code default — a lone user turn would pay the cache *write* and cost ≈2× Haiku. (b) **Specialists → `claude-haiku-4-5`** as the code default: the three extraction prompts are 120–520 tokens returning a JSON object; Haiku handles them and they are too short to cache anyway, so cheapest-per-token wins here — $5.3 → ≈$1.8 for the org, and a 3× cut on the (rare) specialist call for prod users. (c) For OpenWiki, move to `claude-sonnet-5` ($2/$10 vs $3/$15; cache hits $0.20 vs $0.30) — a straight −33% on a workload that is already 92% cache reads — verify with `node --test scripts/__tests__/wiki-maintain.guard.test.mjs` first because that guard reads `@langchain/anthropic`'s max-token table and will flag an id it doesn't know. (d) Adding `cache_control` to the prompt is harmless on Haiku (ignored below the minimum), so the code change can ship once and take effect wherever the model allows it.
@@ -64,7 +158,7 @@ Design facts that matter for cost:
 
 - **Code-orchestrated tools.** The LLM never picks MCP tools or forges write args; it only classifies and extracts (README "Code-orchestrated tools (key decision)"). This is the single most important fact: the model needs *instruction following + JSON output*, not agentic reasoning.
 - **Per turn, at most two model calls**: supervisor classify (~2,650 tokens of static prompt + the user message → a one-word label, temperature 0) then one specialist extraction (120–520 token prompt → small JSON, temperature 0). Search, navigate, import, export, approval gate and all disambiguation stages are pure code.
-- **Escalation (`claude-opus-4-8`) is latent**: hard-pinned to Anthropic, gated by an Unleash flag that defaults off; `escalation_or_base` degrades to the specialist when no Anthropic key is present. It costs nothing today. It should stay pinned to Anthropic (the invariant in `openwiki/invariants/model-provider-scoping.md` exists to keep golden cassettes stable).
+- **Escalation (`claude-opus-4-8`) is latent**: hard-pinned to Anthropic, gated by an Unleash flag that defaults off; `escalation_or_base` degrades to the specialist when no Anthropic key is present. It costs nothing today. **⚠️ Correction: it is also BROKEN today.** `claude-opus-4-8` rejects the `temperature` this code always sends (measured — see Corrections), so every escalation would 400 on first use. It is additionally a superseded id; spec 075 moves it to `claude-opus-5`. It should stay pinned to Anthropic (the invariant in `openwiki/invariants/model-provider-scoping.md` exists to keep golden cassettes stable).
 - **Golden cassettes are keyed by `model_id`** (`ReplayChatModel(cassette, spec.model_id)`), so changing any default model id means re-recording with `LLM_CASSETTE_MODE=record`.
 - **Where it runs on the org's key**: `app-ci.yml` `app-e2e` job (`MODEL_PROVIDER` defaults to `anthropic`; web Playwright agent specs + Maestro mobile flows + live agent integration tests `-m "not golden"`), and `cd-deploy.yml` `test:golden-live` (`MCM_REQUIRE_LIVE_MODEL=1`). Spec 048 records "~52 live-model E2E flows stay on live Anthropic" (decided 2026-08-07) — that decision was about tier correctness, not about which vendor.
 - **Prod** (`infrastructure-as-code/docker/agents/compose.prod.yaml`): `MODEL_PROVIDER=anthropic`, code-default ids, per-user BYOK key injected per run via `X-Agent-Config`; shared key optional and typically empty. Per-user `costLimitUsd` ceiling is enforced in the BFF.
@@ -119,6 +213,8 @@ Recommendation for B, in order: (1) `claude-sonnet-5` **now** — certain −33%
 - **Golden replay (G)**: keyless. Untouched by any of this.
 
 ## 3. Concrete implementation plan
+
+> **⚠️ Phase 1 as written below is superseded.** It carries the `temperature` blocker, the `golden` grouping error, the bare-pin error and the console-check "test" — see the Corrections at the top. The executable version, with TDD checkpoints and two ordered merges, is [`specs/075-llm-cost-phase-1/tasks.md`](../../specs/075-llm-cost-phase-1/tasks.md). The text below is kept as the original reasoning, not as instructions. Phases 2–4 have not been reviewed.
 
 Phase 1 — no new vendor, ~1 day:
 
