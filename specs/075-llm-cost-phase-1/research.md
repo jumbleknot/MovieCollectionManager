@@ -480,3 +480,86 @@ wrong silently — which is how this defect arose in the first place.
 **Scope note**: this widens the feature by one small change to a canonical pure function
 plus its unit tests. That is a real increase and is called out rather than absorbed
 quietly; the cheaper alternative above is available if the smaller diff is preferred.
+
+---
+
+## R13 — BLOCKER: `claude-sonnet-5` rejects `temperature`, so US2 as planned could never have worked
+
+**Raised by the operator, 2026-09-21**, noticing that `claude-sonnet-4-6` and
+`claude-opus-4-8` look superseded. They are — and chasing it found a defect that would
+have failed the feature on its very first model call.
+
+**First, the model inventory, live from the vendor today** (`GET /v1/models`, free) —
+not from a cached table:
+
+```
+claude-fable-5-1, claude-opus-5, claude-sonnet-5, claude-fable-5,
+claude-opus-4-8, claude-opus-4-7, claude-sonnet-4-6, claude-opus-4-6,
+claude-opus-4-5-20251101, claude-haiku-4-5-20251001, claude-sonnet-4-5-20250929
+```
+
+So `claude-sonnet-5` and `claude-opus-5` are current; `claude-sonnet-4-6` and
+`claude-opus-4-8` are prior generations, still served. **`claude-haiku-4-5` is still the
+current Haiku** — there is no Haiku 5 — so every fast-tier target in this feature is
+already current.
+
+**The blocker.** `_build_real_chat_model` passes `temperature=spec.temperature`
+unconditionally, and `ModelSpec` always carries `0.0`. Measured, one tiny live call per
+model:
+
+| Model | `temperature=0.0` | Without `temperature` |
+|---|---|---|
+| `claude-haiku-4-5` | accepted | — |
+| `claude-sonnet-4-6` | accepted | — |
+| `claude-opus-4-6` | accepted | — |
+| **`claude-sonnet-5`** | **400 — `` `temperature` is deprecated for this model``** | **works** |
+| **`claude-opus-5`** | **400 — same** | **works** |
+| **`claude-opus-4-8`** | **400 — same** | — |
+
+Consequences, in order of severity:
+
+1. **US2 was unshippable as written.** Every `SUPERVISOR_MODEL=claude-sonnet-5` call
+   would have returned 400. The cache assertion (R7) would have failed — correctly, but
+   for a reason nobody would have predicted from the plan — and `app-e2e` would have
+   gone red on the first run.
+2. **There is a latent defect on `main` today, independent of this feature.** The
+   escalation tier is pinned to `claude-opus-4-8`, which also 400s on the `temperature`
+   this code always sends. The tier is dormant (flag defaults off, nothing routes there)
+   so nobody has hit it — but the frontier escape hatch is **non-functional**, and would
+   fail on first use the moment `mcm.agent.frontier-escalation` was enabled.
+3. **US1 is unaffected.** `openwiki`'s agent constructs
+   `new ChatAnthropic(modelId, { apiKey, maxTokens, ...retryOptions })` and sets
+   `temperature` nowhere in its entire dist. Grepped: no match. The generator bump to
+   `claude-sonnet-5` remains the risk-free, merge-first story.
+
+**Why the existing guards missed it.** The generator guard (R6) only ever checked the
+output cap, and passed. `select_model_config` is pure and never calls a provider, so its
+unit tests pass. The golden suite replays cassettes and never constructs a real model.
+Nothing in the repository asserts that *a model this repo can resolve is actually
+invocable with the parameters this repo sends* — which is precisely the "check the
+instrument" failure mode: every green tick was truthful about a narrower claim than the
+one being relied on.
+
+**Decision — fix the cause, and add the missing instrument**:
+
+- Stop sending `temperature` to models that reject it. Direction of the default matters:
+  **omitting it never errors, sending it can**, so an unrecognised model id must default
+  to *omitting*, with the models known to accept it named explicitly. The reverse
+  default reintroduces this bug on the next model generation.
+- Move escalation to `claude-opus-5`. Same list price as `claude-opus-4-8`
+  ($5/$25), current generation, and — unlike the id pinned today — it actually works
+  once `temperature` is dropped. Fixing the parameter bug without fixing the id would
+  leave the escape hatch on a superseded model for no reason, since this feature is
+  editing that line anyway. Note for whoever enables the tier: Opus 5 runs adaptive
+  thinking *by default* where Opus 4.8 did not, so output tokens per escalation will be
+  higher than the dormant tier's historical zero suggests.
+- **Add a live "every resolvable model is invocable" test.** One minimal call per model
+  id this repo can select, asserting no 4xx. It is the instrument that was missing: it
+  would have caught both this blocker and the dormant escalation defect, and it is the
+  only thing that will catch the next parameter deprecation. Cheap — a handful of tokens
+  per model — and it belongs in the live tier with the existing fail-not-skip gating.
+
+**Scope**: this is a blocker, not an enhancement, so the parameter fix is in scope for
+merge 2 by necessity. The escalation id bump and the new invocability test are
+judgement calls made here rather than deferred, because the feature is already editing
+`models.py`'s defaults and the alternative is knowingly leaving a broken escape hatch.
