@@ -22,7 +22,6 @@ follow up; the proposals/apply/movie-mcp layers already support update).
 
 from __future__ import annotations
 
-import json
 import re
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
@@ -30,6 +29,7 @@ from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
 
+from src.models import json_from_response
 from src.proposals import (
     CollectionRef,
     EnrichedMovieCandidate,
@@ -120,9 +120,7 @@ def _movie_label(movie: dict[str, Any]) -> str:
     return f"{title} ({year})" if year not in (None, "") else title
 
 
-def _resolve_op_movie(
-    op_title: str, movies: Sequence[dict[str, Any]]
-) -> tuple[str, Any]:
+def _resolve_op_movie(op_title: str, movies: Sequence[dict[str, Any]]) -> tuple[str, Any]:
     """Resolve an organize op's (possibly partial) title to the collection's movie(s).
 
     Returns one of:
@@ -181,7 +179,7 @@ def plan_operations(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]
         "collection\n"
         "A movie TITLE is whatever text the user names as the movie — it may read like an "
         'ordinary phrase or sentence (a film can literally be titled "I really want this movie"). '
-        "Extract the exact title span VERBATIM; never judge whether it \"looks like\" a real "
+        'Extract the exact title span VERBATIM; never judge whether it "looks like" a real '
         "title, and never drop the operation just because the title is unusual. Use [] for "
         "operations ONLY when the request names no movie operation at all.\n"
         "Examples:\n"
@@ -198,7 +196,7 @@ def plan_operations(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]
         f"Request: {last}"
     )
     try:
-        parsed = dict(json.loads(str(model.invoke(prompt).content)))
+        parsed = dict(json_from_response(model.invoke(prompt)))
     except (ValueError, TypeError):
         return {"collection": None, "operations": []}
     parsed.setdefault("operations", [])
@@ -546,8 +544,13 @@ async def _add(
         if not owned:
             # US4-AC1: unchanged behaviour — added as not owned, with nothing else recorded.
             return _build_ownership_proposal(
-                state, candidate, new_id,
-                owned=False, owned_media=[], ripped=False, rip_quality=[],
+                state,
+                candidate,
+                new_id,
+                owned=False,
+                owned_media=[],
+                ripped=False,
+                rip_quality=[],
             )
         formats = await _media_format_values(get_movie_metadata)
         if formats is None:
@@ -583,14 +586,24 @@ async def _add(
         if not ripped:
             # US4-AC4 / FR-026: not ripped ⇒ no qualities, and the question is not asked.
             return _build_ownership_proposal(
-                state, candidate, new_id,
-                owned=True, owned_media=owned_media, ripped=False, rip_quality=[],
+                state,
+                candidate,
+                new_id,
+                owned=True,
+                owned_media=owned_media,
+                ripped=False,
+                rip_quality=[],
             )
         formats = await _media_format_values(get_movie_metadata)
         if formats is None:
             return _build_ownership_proposal(
-                state, candidate, new_id,
-                owned=True, owned_media=owned_media, ripped=True, rip_quality=[],
+                state,
+                candidate,
+                new_id,
+                owned=True,
+                owned_media=owned_media,
+                ripped=True,
+                rip_quality=[],
             )
         return _ask_multi_select(
             stage="awaiting_rip_quality",
@@ -613,8 +626,13 @@ async def _add(
                 add_owned_media=owned_media,
             )
         return _build_ownership_proposal(
-            state, candidate, new_id,
-            owned=True, owned_media=owned_media, ripped=True, rip_quality=chosen,
+            state,
+            candidate,
+            new_id,
+            owned=True,
+            owned_media=owned_media,
+            ripped=True,
+            rip_quality=chosen,
         )
 
     collections = await list_collections()
@@ -640,7 +658,7 @@ async def _add(
                 "messages": [
                     AIMessage(
                         content=(
-                            f"I'm not sure which collection you mean by \"this\". "
+                            f'I\'m not sure which collection you mean by "this". '
                             f"Open a collection or tell me its name.{listing}"
                         )
                     )
@@ -1053,8 +1071,11 @@ async def _organize_pick(
     text = _last_user_text(state.get("messages", []))
     # "Cancel <op>" button (or typed cancel) → abandon the disambiguation cleanly (013 Inc5).
     if is_organize_cancel(text):
-        return {**_ORGANIZE_RESET, "pending_proposal": None,
-                "messages": [AIMessage(content="Okay — cancelled.")]}
+        return {
+            **_ORGANIZE_RESET,
+            "pending_proposal": None,
+            "messages": [AIMessage(content="Okay — cancelled.")],
+        }
     options = list(state.get("organize_options") or [])
     pending = dict(state.get("organize_pending") or {})
     pick = resolve_option(text, options)
@@ -1072,8 +1093,11 @@ async def _organize_pick(
                             "name": RENDER_SELECTION,
                             "args": render_selection(
                                 [
-                                    {"label": _movie_label(m), "value": _movie_label(m),
-                                     "kind": "movie"}
+                                    {
+                                        "label": _movie_label(m),
+                                        "value": _movie_label(m),
+                                        "kind": "movie",
+                                    }
                                     for m in options
                                 ]
                             ),
@@ -1088,7 +1112,9 @@ async def _organize_pick(
     matched = next((c for c in collections if str(c.get("collectionId")) == cid), {})
     target = CollectionRef(collection_id=cid, name=str(matched.get("name") or ""))
     operation = {
-        "op": pending.get("op"), "to": pending.get("to"), "changes": pending.get("changes"),
+        "op": pending.get("op"),
+        "to": pending.get("to"),
+        "changes": pending.get("changes"),
     }
     op, reason = _make_op(operation, pick, target, collections, str(pick.get("title") or ""))
     ops = [op] if op is not None else []
@@ -1129,8 +1155,18 @@ def references_current_screen(text: str) -> bool:
 # (not a substring) so a real film whose title merely CONTAINS "this"/"it" — e.g. "I really want
 # this movie" — resolves by title rather than being hijacked to the on-screen film (013 Inc5 Bug 2).
 _CURRENT_MOVIE_REFS = frozenset(
-    {"this", "this movie", "this film", "this one", "this title", "it", "the movie",
-     "the film", "current movie", "the current movie"}
+    {
+        "this",
+        "this movie",
+        "this film",
+        "this one",
+        "this title",
+        "it",
+        "the movie",
+        "the film",
+        "current movie",
+        "the current movie",
+    }
 )
 
 
@@ -1198,14 +1234,22 @@ def _resolve_current_collection(
 
 # Generic references that mean "the user's default collection", not a literally-named one.
 _GENERIC_TARGETS = frozenset(
-    {"", "my collection", "my collections", "my list", "my movies", "default",
-     "default collection", "the collection", "a collection", "my default collection"}
+    {
+        "",
+        "my collection",
+        "my collections",
+        "my list",
+        "my movies",
+        "default",
+        "default collection",
+        "the collection",
+        "a collection",
+        "my default collection",
+    }
 )
 
 
-def _resolve_target(
-    name: str, collections: list[dict[str, Any]]
-) -> tuple[CollectionRef, bool]:
+def _resolve_target(name: str, collections: list[dict[str, Any]]) -> tuple[CollectionRef, bool]:
     """Resolve the add target to a CollectionRef, or signal that clarification is needed.
 
     Returns ``(target, needs_clarify)``:

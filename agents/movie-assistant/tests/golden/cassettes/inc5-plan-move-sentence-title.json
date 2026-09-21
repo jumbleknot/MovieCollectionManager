@@ -3,7 +3,11 @@
     "347fea594fa0c87fc456eb801a94bdf8cf92f87395f4d4674bc974948fa599df": {
       "content": "{\"collection\": null, \"operations\": [{\"op\": \"move\", \"title\": \"I really want this movie\", \"to\": \"Movie Collection\"}]}",
       "tool_calls": []
+    },
+    "5cd52ee966229c4f0c6d8dd6409981c8816e3115cf57f42de58e920edc224af3": {
+      "content": "{\"collection\": null, \"operations\": [{\"op\": \"move\", \"title\": \"I really want this movie\", \"to\": \"Movie Collection\"}]}",
+      "tool_calls": []
     }
   },
-  "model_id": "claude-sonnet-4-6"
+  "model_id": "claude-sonnet-5"
 }

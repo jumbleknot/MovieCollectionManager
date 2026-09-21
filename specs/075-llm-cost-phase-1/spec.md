@@ -126,7 +126,7 @@ Because production deliberately pins no model ids and lets the code defaults rul
 
 **Extraction (User Story 3)**
 
-- **FR-013**: The extraction specialist default MUST be the fast tier.
+- **FR-013 (amended, REINSTATED 2026-09-21)**: The extraction specialist default MUST move to the **cached tier**, not the fast tier. *(History: first written as "fast tier", withdrawn when the golden gate rejected it, then reinstated in this form once R16 showed the cached tier's apparent flakiness was two parsing defects of ours, not the model. The fast tier remains genuinely unfit — 11 of 51 pairs fail.)* Original text and reasoning:  ~~the fast tier~~ — The fast tier failed 11 of 51 model-decision pairs, returning empty values for required fields; the cached tier passed all but one and was *flaky* on that one, because it rejects the sampling parameter and free-form extraction then picks up variance a one-word classification does not. The extraction tier feeds the write-proposal path behind the approval gate, where a silently-dropped field becomes a wrong proposal. The default is unchanged. Revisit only with a schema-constrained response format, not another id swap.
 - **FR-014**: The escalation tier MUST remain pinned to its current vendor and MUST remain disabled by default; this feature MUST NOT route to it.
 
 **Model parameters must match what the model accepts**
@@ -164,10 +164,10 @@ Because production deliberately pins no model ids and lets the code defaults rul
 
 ### Measurable Outcomes
 
-- **SC-001**: Measured 30-day spend falls from $74.89 to $37–40 — a reduction of approximately 48% — at unchanged workload volumes.
+- **SC-001**: Measured 30-day spend falls from $74.89 to **≈$45–47 — a reduction of approximately 38%** — at unchanged workload volumes. *(Revised down from the projected $37–40 / −48% once measured: the withdrawn extraction change accounts for ≈$3.5, and the classifier prompt is smaller than the proposal assumed — 1,699 fast-tier tokens, not ~2,650 — so the cached-tier advantage is **3.3×, not 5×**. Both corrections are measurements, not estimates: research R13/R15.)*
 - **SC-002**: Knowledge-bundle generation cost per run-day falls by approximately one third, from ≈$1.72 to ≈$1.15, with no increase in runs that produce no pages.
 - **SC-003**: The share of classification input tokens served from cache on the continuous-integration surface exceeds 95%, measured from the provider's own usage reporting, where today it is 0%. **The automated gate is the weaker claim — that the share is above zero at all** — because a repeated classification either hits the cache or does not; the 95% figure is a property of how densely those calls arrive in a burst, which no test controls and only the billing export can confirm. A gate asserting 95% would fail on a sparse run that was working correctly.
-- **SC-004**: Cost per assistant turn for a user on their own credential falls from ≈$0.005 to ≈$0.0035 — a reduction of approximately 30% — with no change required by the user.
+- **SC-004 (REINSTATED 2026-09-21)**: Cost per assistant turn for a user on their own credential falls, via the extraction tier moving to the cached model (−33% on that call). *(Briefly withdrawn when FR-013 was; restored with it — see R16.)* Superseded note:  ~~this feature delivers no user-facing saving~~ — It depended entirely on the extraction default reaching production, and that change was rejected by the gate (FR-013). Production keeps both its defaults, so a member on their own credential pays exactly what they paid before. Recorded rather than quietly dropped, because the user-spend argument was one of the proposal's four motivations and it did not survive.
 - **SC-005**: Every intent classification and extraction that produced a correct result before this feature produces the same result after it; the recorded-interaction suite passes with zero regressions.
 - **SC-006**: A deliberate change to the unchanging portion of the classification prompt causes an automated check to fail, and that failure names prefix instability as the cause rather than reporting a generic error.
 - **SC-007**: The generator change and the gateway changes reach the default branch as separate merges, so that a failure in continuous integration identifies which of the two caused it without further investigation.

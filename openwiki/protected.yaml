@@ -159,7 +159,14 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:bf3e8a536f2064f5c116a28963e7c63803bf1d08bfd96b13b425ae78ba8cf3be"
+        # Re-fingerprinted 2026-09-21 by feature 075, in the same change as the text, per the gate's own
+    #   instruction. Three gotchas added, each MEASURED rather than reasoned: newer Claude models
+    #   REJECT `temperature` with a 400 (which had already killed the escalation tier silently);
+    #   losing that parameter costs DETERMINISM, which is what decided that the supervisor could
+    #   move to a cached model while the specialist tier's move had to be re-proved; and a model pin
+    #   must name its provider, because a bare one follows whichever provider is active and the
+    #   app-e2e job accepts an `ollama` dispatch.
+    fingerprint: "sha256:bf6996a03655d1e918922a49b4e3939e21d3a7b708195989123873fe01d404fa"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/nx-task-runner.md"

@@ -131,8 +131,15 @@
     // `FORGE_REGISTRY_HOST` on the host (setx) exactly like MCM_DEVCONTAINER_IMAGE. Unset → empty →
     // init-firewall skips it cleanly (no forge access, but the container still comes up).
     "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
+    // Feature 075: local `MODEL_PROVIDER=anthropic` runs get the cached-tier supervisor, the same
+    // burst-shaped saving CI takes. INERT on the Ollama default — the `ANTHROPIC_` prefix means it
+    // is only read when that provider is active, so the dev-container default (self-hosted Ollama)
+    // is untouched by this line. Production deliberately does NOT take this pin: a lone user turn
+    // never hits the 5-minute cache and would pay the cache WRITE, costing ~2.5x more than Haiku.
+    "ANTHROPIC_SUPERVISOR_MODEL": "claude-sonnet-5",
     // Anthropic API key for the movie-assistant agent's model backend and the golden cassette
-    // RE-RECORD path (golden's surface is Claude — claude-haiku-4-5 / claude-sonnet-4-6 — so record
+    // RE-RECORD path (golden's surface is Claude — claude-haiku-4-5 for both the supervisor and,
+    // since feature 075, the specialist tier — so record
     // mode makes real Anthropic calls; replay mode is keyless). Ollama is unreachable from the
     // containerized gateway (the nested-DinD `host.docker.internal` resolves to this container, not the
     // Windows host), so Anthropic is the in-container model path; api.anthropic.com is already in the

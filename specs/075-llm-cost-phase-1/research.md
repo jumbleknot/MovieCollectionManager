@@ -563,3 +563,115 @@ one being relied on.
 merge 2 by necessity. The escalation id bump and the new invocability test are
 judgement calls made here rather than deferred, because the feature is already editing
 `models.py`'s defaults and the alternative is knowingly leaving a broken escape hatch.
+
+---
+
+## R15 — THE SPECIALIST DOWNGRADE FAILED ITS GATE, and the reason generalises
+
+**Measured 2026-09-21 during T015.** The proposal's recommendation 1(b) — drop the extraction
+specialists to the fast tier — is **rejected**. Recorded against the 51 golden pairs:
+
+| Specialist model | Result |
+|---|---|
+| `claude-haiku-4-5` | **11 of 51 failed.** Systematically returns `None` for required fields (`'title' expected 'Coherence', got None`) and `[]` for organize plans. Not marginal — it cannot do the task. |
+| `claude-sonnet-5` | **1 failed, and FLAKY.** Three runs of `"add the movie Inception to this"` gave `Inception`, `{}`, `{}`. |
+| `claude-sonnet-4-6` (status quo) | 51/51, and deterministic: `Inception` 3/3 on the same input. |
+
+**The flakiness is the important finding, and it is a second-order effect of R13.** Sonnet 5
+rejects `temperature`, so this tier can no longer be pinned to 0 — and free-form JSON extraction
+with optional fields picks up sampling variance that a one-word classification does not. Measured
+either side: 6 classification probes × 3 runs on Sonnet 5 gave **0 wrong, 0 flaky**; the same model
+on extraction gave 1-in-3.
+
+**So the loss of `temperature` costs DETERMINISM, not just accuracy** — and this tier feeds the
+write-proposal path behind the HITL approval gate, where a silently-dropped field becomes a wrong
+proposal rather than a wrong answer. That asymmetry is why the supervisor moves and the specialist
+does not.
+
+**Consequences for the feature:**
+
+- **FR-013 is dropped.** `_BALANCED_DEFAULTS["anthropic"]` stays `claude-sonnet-4-6`.
+- **SC-004 is dropped.** The per-turn BYOK saving depended entirely on the specialist default
+  reaching production. It does not, so **users see no cost change from this feature**. Saying
+  otherwise would be the more comfortable claim and the false one.
+- **SC-001 is revised.** Projected 30-day total is **≈$45–47, ≈−38%**, not $37–40 / −48%. Two
+  corrections compound: the specialist saving (~$3.5) is gone, and the supervisor saving is smaller
+  than modelled because the prompt is smaller than assumed — 1,699 Haiku tokens, not ~2,650, so
+  uncached Haiku costs $0.0017/call rather than $0.0027, and the cached-Sonnet-5 advantage is
+  **3.3×, not 5×** (measured $0.000516 vs $0.001719).
+
+**What this does not change**: the supervisor move is still the largest lever and still works
+(CI supervisor line ≈$22.24 → ≈$6.68), and the generator bump already merged at ≈−33%.
+
+**If someone wants the extraction saving later**, the route is structured outputs / a JSON schema
+constraining the response — not swapping the model id again and hoping. `_BALANCED_DEFAULTS`
+carries that note.
+
+---
+
+## R16 — R15 WAS WRONG. The "model flakiness" was two parsing defects of ours
+
+**Found by the E2E, 2026-09-21**, which is the only tier that runs the real prompt through the real
+gateway. The unit, golden and live-model tiers were all green when this was broken.
+
+**R15 concluded** that `claude-sonnet-5` was too flaky for the extraction tier, and blamed sampling
+variance from the lost `temperature` parameter. **That diagnosis was wrong.** The model answered
+correctly every single time in both failure modes; our code could not read the answer.
+
+### Defect 1 — `.content` is a LIST on a thinking-enabled model
+
+Sonnet 5 and Opus 5 run adaptive thinking **by default**, so `.content` is not a string:
+
+```
+[{"type": "thinking", "signature": "...", "thinking": ""}, {"type": "text", "text": "query"}]
+```
+
+Four call sites did `str(response.content)`. That 478-character blob then becomes:
+
+- an intent matching no label, so `classify_intent` returns `"ambiguous"` and the assistant asks
+  the user to clarify a request it classified perfectly;
+- a `json.loads` failure in all three extractors, swallowed by their defensive `except` into `{}`,
+  so a required field silently arrives as `None` and a write proposal is built without it.
+
+**It is intermittent**, which is what made it look like model quality: the same model returns a bare
+string when it does not engage thinking. Measured on one input, 5 runs: 4 block-lists, 1 bare
+string. A handful of probes can pass entirely by luck — mine did.
+
+Fixed by `response_text()` (`AIMessage.text`), applied at all four sites **and in
+`RecordingChatModel`**, which had the same bug and would have baked the blob into cassettes.
+
+### Defect 2 — the JSON arrives inside a markdown fence, sometimes
+
+Independently, Sonnet 5 intermittently wraps its JSON reply in ```` ```json ```` despite being told
+to return bare JSON. Measured: 1 of 4 calls fenced, 3 bare, identical correct content in all four.
+`json.loads` rejects the fenced form → the same `{}` fallback. Fixed by `json_from_response()`.
+
+### What this changes
+
+| Specialist | Golden pairs, after the fixes |
+|---|---|
+| `claude-haiku-4-5` | **11 of 51 fail** — R15's finding here stands; it genuinely cannot extract |
+| `claude-sonnet-5` | **51/51** |
+| `claude-sonnet-4-6` | 51/51 |
+
+So the specialist tier **does** move, to `claude-sonnet-5`: −33% on extraction ($2/$10 vs $3/$15),
+reaching BYOK users through the code default. **FR-013 is reinstated in amended form** (the *cached*
+tier, not the *fast* tier) and **SC-004 is reinstated**.
+
+### The lesson worth keeping
+
+**On a newer model, "flaky output" is far more likely to be a brittle parser than a worse model.**
+Both defects presented as model quality, both were ours, and both were invisible to every tier that
+did not run the real prompt through the real gateway. The way to tell them apart is to print the
+RAW response text before concluding anything about the model — which is what finally did it here.
+
+Two smaller defects fell out of the same investigation:
+
+- **The cassette `model_id` label was sticky.** `Cassette.load` prefers the file's own value and
+  `save` writes it back, so re-recording on a new model left the file claiming the old one for
+  ever while its entries were keyed to the new one. Nothing broke — which is what made it
+  dangerous. It misled this investigation once. Fixed at the cause in `RecordingChatModel`.
+- **A test of ours was contaminated by ambient env.** `_FAST_TIER_ENV` overlaid `os.environ` but
+  only *omitted* the pin rather than clearing it, so on any surface that exports
+  `ANTHROPIC_SUPERVISOR_MODEL` the "production is unaffected" test asserted it about the cached
+  tier instead. Now clears the pins explicitly.

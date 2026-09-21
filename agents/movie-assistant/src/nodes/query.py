@@ -27,13 +27,13 @@ model-backed entity extraction (golden-gated). All resolution below it is pure.
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
 
+from src.models import json_from_response
 from src.nodes.organizer import (
     _GENERIC_TARGETS,
     _last_user_text,
@@ -97,7 +97,7 @@ def extract_query(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]:
         f"Request: {last}"
     )
     try:
-        parsed = dict(json.loads(str(model.invoke(prompt).content)))
+        parsed = dict(json_from_response(model.invoke(prompt)))
     except (ValueError, TypeError):
         return {"collection_ref": None, "filter": {}}
     parsed.setdefault("filter", {})
@@ -188,13 +188,13 @@ def _describe_filter(filt: dict[str, Any]) -> str:
     """A short human phrase for the active filter (" in the Sci-Fi genre …"), or "" if none."""
     parts: list[str] = []
     if filt.get("genre"):
-        parts.append(f'in the {filt["genre"]} genre')
+        parts.append(f"in the {filt['genre']} genre")
     if filt.get("decade"):
-        parts.append(f'from the {filt["decade"]}s')
+        parts.append(f"from the {filt['decade']}s")
     if filt.get("owned") is True:
         parts.append("you own")
     if filt.get("language"):
-        parts.append(f'in {filt["language"]}')
+        parts.append(f"in {filt['language']}")
     return (" " + " and ".join(parts)) if parts else ""
 
 
@@ -236,8 +236,7 @@ def build_query_node(
                 total += await count_movies(str(collection["collectionId"]), filt)
             scope = _describe_filter(filt)
             return _reply(
-                f"You have {total} movie(s){scope} across "
-                f"{len(collections)} collection(s)."
+                f"You have {total} movie(s){scope} across {len(collections)} collection(s)."
             )
 
         target = _resolve_query_collection(
@@ -266,9 +265,7 @@ def build_query_node(
         summary = render_collection_summary({**target, "movieCount": count})
         return _reply(
             f'Your "{name}" collection has {count} movie(s){scope}:{listing}',
-            tool_calls=[
-                {"name": RENDER_COLLECTION_SUMMARY, "args": summary, "id": f"q-rcs-{cid}"}
-            ],
+            tool_calls=[{"name": RENDER_COLLECTION_SUMMARY, "args": summary, "id": f"q-rcs-{cid}"}],
         )
 
     return query
