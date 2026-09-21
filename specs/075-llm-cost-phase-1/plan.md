@@ -19,9 +19,12 @@ The technical approach, established in [research.md](./research.md):
   `[SystemMessage(<static, cache_control: ephemeral>), HumanMessage(<user text>)]`.
   One shape for both providers — verified inert on Ollama and on the fast Anthropic
   tier, honoured on the cached tier (R1). No provider branch.
-- **Model selection**: two table edits plus environment pins on exactly the burst
-  surfaces. The golden gate deliberately keeps the code defaults so it still certifies
-  what production runs (R3 — this corrects the proposal).
+- **Model selection**: two table edits, plus **provider-scoped** environment pins on
+  exactly the burst surfaces, plus a small change to `select_model_config` so a scoped
+  pin resolves ahead of a bare one (R12 — a bare pin follows the active provider and
+  would send a Claude id to Ollama on the `provider: ollama` dispatch). The golden gate
+  deliberately keeps the code defaults so it still certifies what production runs
+  (R3 — this corrects the proposal).
 - **Verification**: one offline unit test proving the cached prefix is byte-stable, and
   one live-model integration test proving a repeated classification is served from
   cache, gated by the existing fail-not-skip escalation (R7).
@@ -111,6 +114,7 @@ specs/075-llm-cost-phase-1/
 agents/movie-assistant/
 ├── src/
 │   ├── models.py                       # _BALANCED_DEFAULTS["anthropic"] → fast tier (FR-013)
+│   │                                   # + provider-scoped override resolution (FR-007b, R12)
 │   └── nodes/
 │       └── supervisor.py               # classify_intent: string → [System(cached), Human] (FR-005/006)
 └── tests/
@@ -175,6 +179,7 @@ per-pair.
 | The prefix silently stops caching after a later edit | The offline prefix-stability unit test fails at merge time; the live assertion fails at deploy time. Neither can skip (R7). |
 | **The assistant stops working on one of the two providers** | One message shape serves both, verified by *executing* each adapter (R1). Gated on both sides once FR-025 lands — see the row below for what was missing. FR-021/022 make it a requirement rather than a side effect. |
 | **A `langchain-ollama` bump tightens content-part validation and breaks the default provider** | **This was an unguarded hole, found by the operator's challenge (R11).** Replay returns a `ReplayChatModel` and never constructs `ChatOllama`, so no CI gate executes that adapter — the property R1 rests on was asserted nowhere automatic. FR-025 adds an offline unit test driving the converter directly (no server, cannot skip), proven feasible in R1. Without it, a Renovate bump lands the breakage silently and nobody is editing this feature when it does. |
+| **A cached-tier model id reaches Ollama and breaks the `provider: ollama` run** | **This was a defect in the plan itself, found by checking against the canonical invariant (R12).** R4 specified a bare `SUPERVISOR_MODEL` at `app-e2e` job scope; that job accepts `provider: choice [anthropic, ollama]`, and measured, the bare pin yields `ModelSpec(provider='ollama', model_id='claude-sonnet-5')`. Fixed at the cause: FR-007a/b make every pin provider-scoped and teach `select_model_config` to resolve the scoped name first, so a pin cannot reach the wrong provider on any surface. |
 | `qwen2.5` regresses on the new message shape | Re-record its cassette and run the Ollama tier; if it regresses, fall back to the string shape on the Ollama path only (R9) — a provider branch is the sanctioned fallback, not a failure. Measured, not assumed. |
 | The Ollama re-record is forgotten | **Mechanically impossible to merge without it.** `guardrails` leaves `MODEL_PROVIDER` unset, so it resolves the Ollama tier and `pytest.fail`s with "no cassette for supervisor model 'qwen2.5' … A missing cassette is drift, not a reason to skip" (R9). Still tracked as its own task (FR-024) because its prerequisite is a local Ollama, not an Anthropic key. |
 | The cheaper extractor degrades extraction quality | The 11 re-recorded extraction pairs are the gate. A failure blocks the change; it is not waived. |

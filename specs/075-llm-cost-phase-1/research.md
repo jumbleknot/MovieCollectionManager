@@ -408,3 +408,75 @@ ran the assistant locally against Ollama. A Renovate bump could land it silently
 blocks on the Ollama *cassette*, not on the Ollama *adapter*. With FR-025 the statement
 becomes true for the part that matters; the live-model dimension stays a local check by
 design, which is the same position every other provider-live behaviour occupies here.
+
+---
+
+## R12 — CORRECTION: R4's job-scope pin would break the `provider: ollama` path
+
+**Raised by the operator, 2026-09-21**, checking this feature against
+`openwiki/invariants/model-provider-scoping.md` bullet 1 — *"Dev and test default to
+self-hosted Ollama"*. The check found a defect in R4, not a wording problem.
+
+**The invariant's three rules, and what this feature does to each**:
+
+| Invariant rule | Effect of this feature |
+|---|---|
+| Dev and test default to self-hosted Ollama (`qwen2.5` / `qwen2.5:32b`) | **Unchanged.** No default moves; `MODEL_PROVIDER` still defaults to `ollama`. |
+| The golden surface and prod use Claude (`claude-haiku-4-5` fast, `claude-sonnet-4-6` balanced) | **The balanced id changes** to `claude-haiku-4-5`. The page must be corrected (FR-019) — it is canonical, so the learning goes *into* it. |
+| Escalation is always `claude-opus-4-8`, unconditionally | **Unchanged.** |
+
+Plus one category the page does not yet describe: the **burst CI surfaces** take a
+cached-tier supervisor. That is new text, not a correction.
+
+**The defect.** R4 said to set, at `app-e2e` job scope, both
+`ANTHROPIC_SUPERVISOR_MODEL` (for the container) and a bare `SUPERVISOR_MODEL` (for the
+in-job pytest process). But `app-ci.yml` declares a `workflow_dispatch` input
+`provider: choice [anthropic, ollama]`, and the job reads
+`MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}`.
+So that job **can** run on Ollama — and a bare, unconditional job-scope pin follows it
+there. Measured:
+
+```
+MODEL_PROVIDER=ollama + SUPERVISOR_MODEL=claude-sonnet-5
+  → ModelSpec(provider='ollama', model_id='claude-sonnet-5')   # an Anthropic id sent to Ollama
+MODEL_PROVIDER=ollama + ANTHROPIC_SUPERVISOR_MODEL=claude-sonnet-5
+  → ModelSpec(provider='ollama', model_id='qwen2.5')           # correctly inert
+```
+
+`agent-stack.mjs`'s Ollama branch pushes `-e SUPERVISOR_MODEL=${SUPERVISOR_MODEL}`
+(`process.env.SUPERVISOR_MODEL || 'qwen2.5'`), so the container breaks the same way.
+R4's own contract file even warned that a bare pin "would be wrong on any job that can
+run with `provider: ollama`" — and then specified it on exactly such a job. The caveat
+contradicted the instruction.
+
+**The dev container is fine**, and for the reason the invariant implies: the
+`ANTHROPIC_*` names are read only on the Anthropic path, so a pin in
+`devcontainer.json` is inert while a developer stays on the Ollama default. Bullet 1
+holds there without any change.
+
+**Decision — fix it at the cause, not with a conditional.** Teach
+`select_model_config` to honour a **provider-scoped** override ahead of the bare one:
+
+```
+SUPERVISOR_MODEL  resolution: env[f"{PROVIDER}_SUPERVISOR_MODEL"] → env["SUPERVISOR_MODEL"] → tier default
+```
+
+Rationale:
+
+- It makes the rule *unbreakable by configuration* rather than documented-around. A
+  provider-scoped pin can never reach the wrong provider, on any surface, ever.
+- One variable name then works for both the container and the in-job process, which
+  deletes the "two names on one job" awkwardness R4 introduced.
+- It moves a convention currently implemented in one Node script into the pure function
+  the invariant already names as the single place model selection happens — so
+  `agent-stack.mjs`'s translation becomes redundant rather than load-bearing.
+- It is offline-testable, because `select_model_config` is pure over a `Mapping`.
+
+**Alternative rejected**: a conditional YAML expression pinning the bare name only when
+the provider input is `anthropic`. It works, but it re-encodes the invariant in a
+template expression in one workflow, where the next job to copy the pattern gets it
+wrong silently — which is how this defect arose in the first place.
+
+**Scope note**: this widens the feature by one small change to a canonical pure function
+plus its unit tests. That is a real increase and is called out rather than absorbed
+quietly; the cheaper alternative above is available if the smaller diff is preferred.

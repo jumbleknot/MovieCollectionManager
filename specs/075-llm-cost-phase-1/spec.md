@@ -114,7 +114,9 @@ Because production deliberately pins no model ids and lets the code defaults rul
 
 - **FR-005**: The classification request MUST be split into an unchanging portion, marked as explicitly cacheable, and a separate short portion carrying the user's message.
 - **FR-006**: The unchanging portion MUST be byte-for-byte identical across calls — it MUST NOT interpolate any per-call value.
-- **FR-007**: Continuous integration, the pre-deploy gate, and local developer runs MUST select the cached-tier supervisor model through environment configuration, using the override mechanism that already exists for this purpose.
+- **FR-007**: The burst surfaces — continuous integration's end-to-end job and local developer runs — MUST select the cached-tier supervisor through environment configuration. The pre-deploy gate MUST NOT; it keeps the code defaults so it certifies what production runs.
+- **FR-007a**: Any such pin MUST be **provider-scoped** — it MUST take effect only when the hosted provider is active, and MUST be inert on the self-hosted provider. A pin that follows whichever provider happens to be active is prohibited, because the end-to-end job accepts a provider input and genuinely runs both ways; a hosted model id reaching the self-hosted provider is a broken run.
+- **FR-007b**: Model selection MUST resolve a provider-scoped override ahead of an unscoped one, so this rule holds wherever selection happens rather than only inside the one script that currently implements it by convention.
 - **FR-008**: Production MUST continue to select the fast-tier supervisor model, and this MUST remain a code default rather than a deployment setting, so that it holds wherever no override is present.
 - **FR-009**: The system MUST provide an automated check asserting that a repeated classification is served from cache.
 - **FR-010**: That check MUST fail, not skip, when it is running as the pre-deploy gate and cannot obtain a credential.
@@ -140,7 +142,8 @@ Because production deliberately pins no model ids and lets the code defaults rul
 
 - **FR-017**: All recorded model interactions MUST be re-recorded against the live provider, and the recorded-interaction suite MUST pass in replay afterwards.
 - **FR-018**: The keyless replay gate MUST remain green, and MUST remain keyless.
-- **FR-019**: Documentation that states which model each environment uses MUST be updated to match, including the canonical statement of model-provider scoping, the agent-layer runbook, and the production deployment file's explanatory header.
+- **FR-019**: Documentation that states which model each environment uses MUST be updated to match, including the canonical statement of model-provider scoping, the agent-layer runbook, and the production deployment file's explanatory header. Specifically, the canonical page MUST (a) keep its statement that dev and test default to the self-hosted provider **unchanged**, (b) correct the balanced-tier model id it names for the golden surface and production, (c) gain the burst-surface category it does not yet describe, and (d) keep its escalation rule unchanged. Because that page is canonical, the learning is written **into** it rather than into a source it cites.
+- **FR-019a**: The self-hosted provider MUST remain the default for dev and test after this feature. No change may alter which provider is selected when none is specified.
 - **FR-020**: The generator change MUST be mergeable independently of the gateway changes, so that a failure in either is unambiguous as to its cause.
 
 ### Key Entities

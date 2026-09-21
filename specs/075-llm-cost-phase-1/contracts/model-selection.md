@@ -34,7 +34,8 @@ under the wrong name.
 |---|---|---|---|---|---|
 | **Production** | `anthropic` | *code default* — fast tier | *code default* — fast tier | `compose.prod.yaml` pins **neither** | A lone user turn never reaches the cache; the cached tier would cost ≈2.5× more (R8). Pinning nothing is deliberate and is what ships the extraction saving to BYOK users automatically. |
 | **`app-e2e` gateway container** | `anthropic` | **cached tier** | *code default* | `ANTHROPIC_SUPERVISOR_MODEL` in the `app-e2e` job env | Where the $22 actually is: ~29M uncached classification tokens/month in back-to-back bursts, hit rate ≥95%. |
-| **`app-e2e` in-job live tests** (`-m "not golden"`) | `anthropic` | **cached tier** | *code default* | `SUPERVISOR_MODEL` in the same job env | Same burst, but this process reads the variable directly — see the naming rule below. |
+| **`app-e2e` in-job live tests** (`-m "not golden"`) | `anthropic` | **cached tier** | *code default* | the **same** `ANTHROPIC_SUPERVISOR_MODEL` — see the naming rule below | Same burst. Reads the provider-scoped name directly once `select_model_config` honours it (R12); a bare `SUPERVISOR_MODEL` here would break the `provider: ollama` dispatch. |
+| **`app-e2e` dispatched with `provider: ollama`** | `ollama` | `qwen2.5` | `qwen2.5:32b` | nothing — the Anthropic-scoped pins are inert | **This path must keep working.** `app-ci.yml` offers `provider: choice [anthropic, ollama]`, so the job genuinely runs both ways (R12). |
 | **`test:golden`** (merge gate, replay) | `anthropic` | *code default* | *code default* | nothing — replay, keyless | Cassettes are keyed by model id; a pin here would miss all 31 committed supervisor cassettes (R3). |
 | **`test:golden-live`** (pre-deploy gate) | `anthropic` | *code default* | *code default* | target sets only `MODEL_PROVIDER` + `MCM_REQUIRE_LIVE_MODEL` | A deploy gate must certify **what deploys**. Production runs the code defaults, so the gate must too (R3 — this corrects the proposal). |
 | **Dev container** | per developer | **cached tier** when Anthropic | *code default* | `ANTHROPIC_SUPERVISOR_MODEL` in `devcontainer.json` | Same burst shape as CI; same saving. |
@@ -43,29 +44,41 @@ under the wrong name.
 
 ---
 
-## Naming rule — two variables, and why both are needed
+## Naming rule — provider-scoped pins, and why a bare one is unsafe
 
-`scripts/agent-stack.mjs` maintains a deliberate split, and this feature uses it rather
-than adding a third mechanism:
+**A pin must name the provider it is for.** `scripts/agent-stack.mjs` already works this
+way, and after R12 `select_model_config` does too, so the rule holds on every surface
+rather than only inside one Node script:
 
-- **`SUPERVISOR_MODEL` / `SPECIALIST_MODEL`** default to the Ollama ids (`qwen2.5`,
-  `qwen2.5:32b`) inside that script and are forwarded straight through on the Ollama
-  path. Setting either to an Anthropic id at job scope would send that id to Ollama.
-- **`ANTHROPIC_SUPERVISOR_MODEL` / `ANTHROPIC_SPECIALIST_MODEL`** are read only on the
-  Anthropic path and forwarded into the container as `-e SUPERVISOR_MODEL=…`.
+- **`SUPERVISOR_MODEL` / `SPECIALIST_MODEL`** are the *bare* names. They follow whatever
+  provider is active — including Ollama, where they default to `qwen2.5` /
+  `qwen2.5:32b`. Setting either to an Anthropic id at job scope sends that id to
+  whichever provider the job happens to run.
+- **`ANTHROPIC_SUPERVISOR_MODEL` / `ANTHROPIC_SPECIALIST_MODEL`** are read **only** on
+  the Anthropic path, and are inert everywhere else.
 
-So for one job that both **starts a gateway container** and **runs pytest in-process**,
-the pin is written twice under two names on purpose:
+So the `app-e2e` job pins one name, the provider-scoped one:
 
 ```yaml
 # app-e2e job env
-ANTHROPIC_SUPERVISOR_MODEL: claude-sonnet-5   # → the gateway container, via agent-stack.mjs
-SUPERVISOR_MODEL: claude-sonnet-5             # → the in-job pytest process, read directly
+ANTHROPIC_SUPERVISOR_MODEL: claude-sonnet-5   # gateway container AND in-job pytest
 ```
 
-This is safe only because `MODEL_PROVIDER` is `anthropic` for that job. It would be
-wrong on any job that can run with `provider: ollama`, which is why the pin is scoped
-to the job rather than set workflow-wide.
+**Why not the bare name.** `app-ci.yml` declares
+`provider: choice [anthropic, ollama]` and the job reads
+`MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}`,
+so this job really does run both ways. Measured (R12):
+
+```
+MODEL_PROVIDER=ollama + SUPERVISOR_MODEL=claude-sonnet-5
+  → ModelSpec(provider='ollama', model_id='claude-sonnet-5')   # broken
+MODEL_PROVIDER=ollama + ANTHROPIC_SUPERVISOR_MODEL=claude-sonnet-5
+  → ModelSpec(provider='ollama', model_id='qwen2.5')           # correct
+```
+
+The same reasoning is why the dev-container pin is safe: a developer on the Ollama
+default never sees it, which is what keeps the invariant's "dev and test default to
+self-hosted Ollama" true.
 
 ---
 
