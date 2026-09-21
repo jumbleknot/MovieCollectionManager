@@ -500,7 +500,10 @@
         "movie-collection-manager": [
           "mc-user"
         ]
-      }
+      },
+      "realmRoles": [
+        "default-roles-jumbleknot"
+      ]
     },
     {
       "username": "e2e-admin-user",
@@ -521,7 +524,10 @@
           "mc-user",
           "mc-admin"
         ]
-      }
+      },
+      "realmRoles": [
+        "default-roles-jumbleknot"
+      ]
     },
     {
       "username": "service-account-agent-gateway",
@@ -1134,7 +1140,10 @@
         "http://localhost:8081/login?verified=true",
         "https://localhost:8443/login?verified=true",
         "http://localhost:8082/auth-callback",
-        "mcm-app://native-auth-callback"
+        "mcm-app://native-auth-callback",
+        "http://localhost:8081/bff-api/backups/consent",
+        "http://localhost:8082/bff-api/backups/consent",
+        "https://localhost:8443/bff-api/backups/consent"
       ],
       "webOrigins": [
         "https://app.example.com",

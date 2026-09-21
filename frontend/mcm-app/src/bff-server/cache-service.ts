@@ -286,6 +286,41 @@ export async function clearAgentImportFile(userId: string): Promise<void> {
   await redis.del(agentImportFileKey(userId));
 }
 
+// ─── Backup schedule consent (feature 073, T053 — FR-022) ─────────────────────
+
+/**
+ * How long a started consent round trip stays valid.
+ *
+ * Long enough for a user to read the prompt and sign in, short enough that an abandoned attempt
+ * cannot be completed later by someone who got hold of the callback URL.
+ */
+const BACKUP_CONSENT_TTL_SECONDS = 10 * 60;
+
+const backupConsentKey = (userId: string) => `backup-consent:${userId}`;
+
+/**
+ * Stash the PKCE verifier and state for a consent round trip, SERVER-SIDE and keyed by user.
+ *
+ * The verifier is the secret half of PKCE and must never reach the client — a verifier the
+ * browser holds is a verifier an attacker who has the authorization code can also use, which is
+ * the entire attack PKCE exists to stop. Keying by the authenticated user, rather than by the
+ * state parameter, additionally means a callback can only ever complete the consent that THAT
+ * user started.
+ */
+export async function setBackupConsentRequest(userId: string, payloadJson: string): Promise<void> {
+  const redis = await getRedis();
+  await redis.set(backupConsentKey(userId), payloadJson, 'EX', BACKUP_CONSENT_TTL_SECONDS);
+}
+
+/** Read and CLEAR the pending consent request — single use, so a code cannot be replayed. */
+export async function takeBackupConsentRequest(userId: string): Promise<string | null> {
+  const redis = await getRedis();
+  const key = backupConsentKey(userId);
+  const value = await redis.get(key);
+  if (value !== null) await redis.del(key);
+  return value;
+}
+
 // ─── Agent thread ownership (implementation-review 2026-06-09 — cross-user resume guard) ──────
 
 /**

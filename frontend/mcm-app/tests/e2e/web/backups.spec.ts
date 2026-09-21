@@ -23,6 +23,14 @@ const S3_SECRET = process.env['BACKUP_TEST_S3_SECRET_KEY'] ?? '';
 
 const unique = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
+// Feature 073 T061. BACKUP_TICK_SECRET lives in `.env.local`, NOT `.env.e2e.local` — and
+// `loadE2eEnv()` only reads the latter. Passing just the e2e file is what produced a green run
+// with silently skipped backup tests once already, so the scheduling test fails loudly rather
+// than skipping when this is absent.
+const TICK_SECRET = process.env['BACKUP_TICK_SECRET'] ?? '';
+const E2E_USER = process.env['E2E_TEST_USER'] ?? '';
+const E2E_PASSWORD = process.env['E2E_TEST_PASSWORD'] ?? '';
+
 async function openBackupsSettings(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   await page.waitForSelector('[data-testid="nav-settings"]', { state: 'visible', timeout: 60000 });
@@ -50,12 +58,16 @@ test.describe('Backup destinations (feature 073)', () => {
   // way MCM_REQUIRE_LIVE_STACK works for the integration tier: set E2E_REQUIRE_BACKUP_TARGETS=1
   // and a missing target becomes a hard failure instead of a quiet green.
   //
-  // WHY THIS MATTERS RIGHT NOW: CI's app-e2e does NOT bring these targets up. The S3 one is
-  // `${REGISTRY_HOST}/jumbleknot/minio` — the repository's own from-source image, in the forge
-  // registry — and that job has no REGISTRY_HOST and no registry credentials. Until that is
-  // wired up (or the S3 target moves to a public image with an acceptable CVE posture), this
-  // file SKIPS in CI and proves nothing there. It is verified locally instead. Do not read a
-  // green app-e2e as evidence that backups work.
+  // CI DOES RUN THIS FILE NOW — corrected 2026-09-21, run 3873. An earlier revision of this
+  // comment said app-e2e could not bring the targets up, because the S3 one is the repository's
+  // own `${REGISTRY_HOST}/jumbleknot/minio` and the job had neither the variable nor registry
+  // credentials. Both were since wired up: app-ci's `app-e2e-bring-up-backup-destinations` step
+  // pulls it anonymously and the suite runs for real, with E2E_REQUIRE_BACKUP_TARGETS=1 so an
+  // absent target fails rather than skips.
+  //
+  // The correction matters more than the fact. Acting on the stale note, this session reported
+  // "a green app-e2e is not evidence that backups work" — which had stopped being true, and
+  // would have had a reviewer discount a signal that was real.
   const targetsMissing = S3_SECRET === '';
   if (targetsMissing && process.env['E2E_REQUIRE_BACKUP_TARGETS'] === '1') {
     throw new Error(
@@ -95,6 +107,12 @@ test.describe('Backup destinations (feature 073)', () => {
     for (const d of Array.isArray(destinations) ? destinations : []) {
       await request.delete(`${BASE}/bff-api/backups/destinations/${d.id}`);
     }
+    // AND THE STANDING PERMISSION (feature 073 T061). The scheduling test grants a real, NON-
+    // EXPIRING Keycloak offline token to the acting user. Leaving one behind is worse than
+    // leaving a collection behind: it is a live credential on a shared test account that
+    // nothing later in the job would clean up, and it does not age out. Revoked here so the
+    // token is given up at Keycloak, not merely forgotten.
+    await request.delete(`${BASE}/bff-api/backups/consent`);
   }
 
   test.beforeEach(async ({ request }) => {
@@ -316,4 +334,152 @@ test.describe('Backup destinations (feature 073)', () => {
       await expect(page.locator(`[data-testid="backup-version-restore-${key}"]`)).toBeDisabled();
     }
   });
+  // ── US4: backups happen without me ───────────────────────────────────────────
+
+  test(
+    'a scheduled backup runs unattended and exactly once (SC-005, US4-AC1/AC4)',
+    { tag: '@gate' },
+    async ({ page, request, browser }) => {
+      // THE INSTANT IS SUPPLIED, NEVER WAITED FOR. The job's own `nextRunAt` is read back and
+      // handed to the tick as `?now=`, so this asserts the real scheduling path at a real due
+      // time without the test sleeping until 03:00. A scheduling test that waits is slow when
+      // it passes and flaky when it does not.
+      if (TICK_SECRET === '') {
+        throw new Error(
+          'BACKUP_TICK_SECRET is unset, so the tick route would answer 404 and this test would ' +
+            'report a missing route as a broken feature. It lives in .env.local (NOT ' +
+            '.env.e2e.local, which is all Playwright loads by itself) — export it, or source ' +
+            'frontend/mcm-app/.env.local, before running this spec.',
+        );
+      }
+
+      const label = unique();
+      await openBackupsSettings(page);
+      await fillDestination(page, label);
+      await page.click('[data-testid="backup-destination-save"]');
+      await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+
+      await page.click('[data-testid="backup-job-add"]');
+      await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
+      await page.fill('[data-testid="backup-job-label"]', `${label} scheduled`);
+      await page.click('[data-testid="backup-job-save"]');
+      await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+
+      // Open the job so the schedule editor is on screen.
+      await page.locator('[data-testid^="backup-job-versions-"]').first().click();
+      await expect(page.locator('[data-testid="backup-schedule-editor"]')).toBeVisible({ timeout: 20000 });
+
+      // CONSENT IS A REAL OIDC ROUND TRIP (FR-022) — the app navigates to Keycloak and comes
+      // back through the consent callback. The worker already holds a Keycloak SSO session, so
+      // this usually returns without showing a login form; both paths are handled because
+      // which one happens depends on state this test does not own.
+      // WHO THIS SESSION ACTUALLY IS. Worker 0 reuses the canonical E2E_TEST_USER; workers 1+
+      // get their own minted identity. The BFF stores the grant under the SESSION's user, so
+      // if a Keycloak login form appears we must sign in as that same person — signing in as
+      // someone else would store one user's offline token against another user's id.
+      const sessionUser = (await (await request.get(`${BASE}/bff-api/auth/user`)).json()) as {
+        username?: string;
+      };
+
+      await expect(page.locator('[data-testid="backup-consent-prompt"]')).toBeVisible();
+      await page.click('[data-testid="backup-consent-grant"]');
+
+      // Keycloak either passes straight through on the existing SSO session or asks for
+      // credentials. Wait for WHICHEVER arrives.
+      //
+      // `locator.isVisible()` cannot be used for this: it is a NON-RETRYING check that answers
+      // immediately, so called right after the click it races the navigation, always reports
+      // false, and the login step is silently skipped — which is exactly how this test failed
+      // while the page sat on Keycloak's login form for the full 30s poll.
+      await page.waitForURL(/localhost:8099|consent=granted/, { timeout: 60000 });
+
+      if (page.url().includes('localhost:8099')) {
+        await page.waitForSelector('input[name="username"]', { state: 'visible', timeout: 30000 });
+        if (sessionUser.username && sessionUser.username.toLowerCase() !== E2E_USER.toLowerCase()) {
+          throw new Error(
+            `This worker is signed in as "${sessionUser.username}" but only ${E2E_USER}'s password ` +
+              'is available here, and Keycloak asked for credentials rather than reusing the SSO ' +
+              'session. Signing in as a different user would store that user\'s offline token ' +
+              'against this session\'s id — failing instead of doing that quietly.',
+          );
+        }
+        await page.fill('input[name="username"]', E2E_USER);
+        await page.fill('input[name="password"]', E2E_PASSWORD);
+        await page.click('input[type="submit"], button[type="submit"]');
+      }
+
+      // The callback's own redirect target, so this cannot match the page we started on.
+      await page.waitForURL(/consent=granted/, { timeout: 60000 });
+      await expect
+        .poll(async () => (await (await request.get(`${BASE}/bff-api/backups/consent`)).json()).granted, {
+          timeout: 30000,
+        })
+        .toBe(true);
+
+      // Turn scheduling on, now that the permission exists.
+      await openBackupsSettings(page);
+      await page.locator('[data-testid^="backup-job-versions-"]').first().click();
+      await expect(page.locator('[data-testid="backup-schedule-editor"]')).toBeVisible({ timeout: 20000 });
+      // By ROLE, scoped to the editor. The design-system Switch does not forward a testID to
+      // the DOM (see the note in schedule-editor.tsx), so a bare testID locator matches nothing
+      // and the click times out as if the screen were broken — which is exactly how this read.
+      await page
+        .locator('[data-testid="backup-schedule-editor"]')
+        .getByRole('switch')
+        .click();
+
+      // Read back the instant the SERVER decided this job is next due. Using the server's own
+      // answer rather than one the test computes is what makes this a test of the scheduling
+      // arithmetic instead of a test of the test's copy of it.
+      interface ScheduledJob {
+        id: string;
+        nextRunAt?: string;
+      }
+      const scheduledJobOrNull = async (): Promise<ScheduledJob | null> => {
+        const jobs = (await (await request.get(`${BASE}/bff-api/backups/jobs`)).json()) as ScheduledJob[];
+        return (Array.isArray(jobs) ? jobs : []).find((j) => j.nextRunAt) ?? null;
+      };
+      await expect
+        .poll(async () => (await scheduledJobOrNull()) !== null, {
+          timeout: 30000,
+          message: 'turning the schedule on never produced a nextRunAt on any job',
+        })
+        .toBe(true);
+      const job = (await scheduledJobOrNull())!;
+
+      // EVERY COOKIE CLEARED. Without this the run could be succeeding on the session rather
+      // than on the stored permission, and the test would prove nothing about unattended
+      // operation — which is the entire point of US4.
+      await page.context().clearCookies();
+      await expect
+        .poll(async () => (await page.context().cookies()).length, { timeout: 10000 })
+        .toBe(0);
+
+      // The ticks go through a context with NO storage state and no cookies at all — a
+      // deliberately anonymous caller holding nothing but the tick secret.
+      const anonymous = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+      const tickUrl = `${BASE}/bff-api/backups/tick?now=${encodeURIComponent(job.nextRunAt!)}`;
+      const tickOptions = { headers: { 'x-backup-tick-secret': TICK_SECRET }, timeout: 120000 };
+      // TWO AT ONCE, standing in for two application instances. Exactly one must claim the job.
+      const [a, b] = await Promise.all([
+        anonymous.request.post(tickUrl, tickOptions),
+        anonymous.request.post(tickUrl, tickOptions),
+      ]);
+      const bodies = await Promise.all([a.json(), b.json()]);
+      await anonymous.close();
+
+      expect(a.status()).toBe(200);
+      expect(b.status()).toBe(200);
+      // `leader: false` from one of them is a NORMAL outcome, not an error — so the assertion
+      // is on the total claimed, not on both reporting success.
+      expect(bodies.reduce((n, x) => n + (x.claimed ?? 0), 0)).toBe(1);
+
+      // EXACTLY ONE ARTIFACT. Two would mean the claim did not hold; none would mean the run
+      // never happened without a session.
+      const versions = await (
+        await request.get(`${BASE}/bff-api/backups/jobs/${job.id}/versions`)
+      ).json();
+      expect(Array.isArray(versions) ? versions.length : 0).toBe(1);
+    },
+  );
 });

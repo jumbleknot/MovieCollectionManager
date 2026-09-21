@@ -630,7 +630,7 @@ official image instead: browsers are baked in, and `--network host` shares the d
 docker run --rm --network host -v "$PWD":/work -w /work/frontend/mcm-app \
   -e E2E_BFF_TARGET=dev-container -e E2E_AGENT_PROVIDER=anthropic \
   -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e ANTHROPIC_API_KEY -e TMDB_API_KEY -e CI=1 \
-  mcr.microsoft.com/playwright:v1.62.1-noble \
+  mcr.microsoft.com/playwright:v1.63.0-noble \
   sh -c "corepack enable && pnpm exec playwright test"
 ```
 
@@ -837,17 +837,43 @@ docker run --rm --network host --env-file ./.env.e2e.local \
   -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
   -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET \
   -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
-  -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.62.1-noble \
+  -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.63.0-noble \
   node_modules/.bin/playwright test tests/e2e/web/<spec>.spec.ts --project=chromium --workers=1 --reporter=line
 ```
 
 Pin the image to the repo's Playwright version (`pnpm exec playwright --version`, currently
-**v1.62.1** → `mcr.microsoft.com/playwright:v1.62.1-noble`) so the browser build matches.
+**v1.63.0** → `mcr.microsoft.com/playwright:v1.63.0-noble`) so the browser build matches.
 This pin is NOT cosmetic and NOT independent of the lockfile: a lockfile refresh that moves
 `@playwright/test` without moving this tag makes the browser launch fail outright
 (`browserType.launch: Executable doesn't exist at /ms-playwright/chromium_headless_shell-…`),
 so ZERO tests run and the e2e gate reports `no Playwright summary found` rather than a count.
 Measured on PR #199, where the lockfile moved 1.60.0 → 1.62.1 and this tag did not follow.
+
+> **From a WORKTREE, the `-v` in that recipe does not work, and it fails by going QUIET rather
+> than erroring.** Only `/workspaces/mcm` is bind-mounted from the Docker host (confirm with
+> `docker inspect -f '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}' <this container>`);
+> `/home/coder/worktrees/...` lives in this container's own overlay and the daemon cannot see
+> it. Mounting it anyway **succeeds** and yields a near-empty directory — Docker auto-creates
+> the path, plus any subdirectories earlier mounts happened to make — so the run reports
+> `stat node_modules/.bin/playwright: no such file or directory`, or worse collects zero tests
+> and looks like a code problem. Measured 2026-09-21 running the feature-073 `@gate` E2E:
+> the mount produced **2 entries where the worktree has 31**.
+>
+> Do NOT copy the worktree into `/workspaces/mcm` to get around it — that is the shared
+> checkout another session is working in. Stage it into a named volume instead, which touches
+> nothing shared:
+>
+> ```bash
+> docker volume create mcm-e2e-wt
+> docker create --name e2e-stage -v mcm-e2e-wt:/work alpine:3 true
+> tar -C /home/coder/worktrees/<slug> --exclude=./target --exclude=./.nx -cf - . \
+>   | docker cp - e2e-stage:/work
+> docker rm e2e-stage
+> # then swap the bind for:  -v mcm-e2e-wt:/work  -w /work/frontend/mcm-app
+> ```
+>
+> `node_modules` must be included (the specs import `@playwright/test` from it); `target/` is
+> ~1 GB of Rust build output and is safe to leave out. Remove the volume when done.
 
 **The tag here is the operator's copy; the AUTHORITATIVE one is `.forgejo/workflows/app-ci.yml`**
 (two occurrences — CI runs the suite in that image). Changing only this runbook fixes your local

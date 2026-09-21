@@ -690,6 +690,22 @@ jobs:
             echo "BACKUP_TEST_WEBDAV_PASSWORD=$BACKUP_TEST_WEBDAV_PASSWORD"
           } >> "$GITHUB_ENV"
 
+          # Feature 073 (T061). The scheduled-run E2E drives the tick route directly, and that
+          # route is secret-guarded: without the right value it answers 404 — deliberately
+          # indistinguishable from "no such route" — so the test would report a missing input as
+          # a broken feature.
+          #
+          # READ BACK from the .env.docker gen-ci-env.mjs already wrote, NOT minted again here.
+          # A second random value would be just as valid-looking and would 404 against a BFF
+          # holding the first one, which is the same failure wearing a convincing disguise.
+          BACKUP_TICK_SECRET="$(grep '^BACKUP_TICK_SECRET=' frontend/mcm-app/.env.docker | cut -d= -f2-)"
+          if [ -z "$BACKUP_TICK_SECRET" ]; then
+            echo "::error::BACKUP_TICK_SECRET is absent from the generated .env.docker — the" \
+                 "scheduled-backup E2E cannot drive the tick route. Check scripts/gen-ci-env.mjs."
+            exit 1
+          fi
+          echo "BACKUP_TICK_SECRET=$BACKUP_TICK_SECRET" >> "$GITHUB_ENV"
+
           if [ -z "${REGISTRY_HOST:-}" ]; then
             echo "::error::REGISTRY_HOST is unset — set the repository variable REGISTRY. The backup" \
                  "destinations cannot come up without it, and their suites would then SKIP, which reads" \
@@ -995,6 +1011,7 @@ jobs:
             -e BACKUP_TEST_S3_BUCKET=mcm-backups-test \
             -e BACKUP_TEST_S3_ACCESS_KEY -e BACKUP_TEST_S3_SECRET_KEY \
             -e BACKUP_TEST_WEBDAV_USER -e BACKUP_TEST_WEBDAV_PASSWORD \
+            -e BACKUP_TICK_SECRET \
             mcr.microsoft.com/playwright:v1.63.0-noble \
             sh -c "corepack enable && pnpm exec playwright test"
 
@@ -1003,6 +1020,10 @@ jobs:
       # makes docker read the value from its own environment instead of putting it on a command
       # line every user on this shared host can read with `ps` (the defect fixed in 56983c75,
       # where a routine `ps -eo cmd` printed live keys and they had to be rotated).
+      #
+      # BACKUP_TICK_SECRET uses the same bare pass-through form, for the same reason. It is the
+      # one credential here the BFF must AGREE with rather than merely accept, so it is read back
+      # from the generated .env.docker at bring-up rather than minted a second time.
       #
       # E2E_REQUIRE_BACKUP_TARGETS=1 is the important one: backups.spec.ts SKIPS when the
       # destinations are absent, so that a developer without them is not blocked — and a skip
