@@ -386,8 +386,8 @@ BACKUP_CREDENTIAL_ENC_KEY=${BACKUP_CREDENTIAL_ENC_KEY}
 BACKUP_TICK_SECRET=${BACKUP_TICK_SECRET}
 BACKUP_ALLOWED_DESTINATION_HOSTS=${BACKUP_ALLOWED_DESTINATION_HOSTS}
 # Lets the tick be driven at a supplied instant so the E2E can assert a scheduled run without
-# waiting for one. DEV AND CI ONLY — production never sets this, and the route refuses `?now=`
-# without it.
+# waiting for one. DEV AND CI ONLY - production never sets this, and the tick route refuses a
+# supplied ?now= without it.
 BACKUP_TICK_ALLOW_TIME_OVERRIDE=1
 `;
 writeFileSync(ENV_DOCKER, envDocker, 'utf8');

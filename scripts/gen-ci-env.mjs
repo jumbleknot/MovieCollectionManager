@@ -123,7 +123,7 @@ MONGO_URL=mongodb://mcm-bff-store-mongo:27017
 BACKUP_CREDENTIAL_ENC_KEY=${BACKUP_CREDENTIAL_ENC_KEY}
 BACKUP_TICK_SECRET=${BACKUP_TICK_SECRET}
 # CI drives the scheduling tick at a supplied instant rather than waiting for one to be due.
-# Production never sets this; the route refuses `?now=` without it.
+# Production never sets this; the tick route refuses a supplied ?now= without it.
 BACKUP_TICK_ALLOW_TIME_OVERRIDE=1
 BACKUP_ALLOWED_DESTINATION_HOSTS=${BACKUP_ALLOWED_DESTINATION_HOSTS}
 `;
