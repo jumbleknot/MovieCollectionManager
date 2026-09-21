@@ -369,15 +369,43 @@ test.describe('Backup destinations (feature 073)', () => {
       // back through the consent callback. The worker already holds a Keycloak SSO session, so
       // this usually returns without showing a login form; both paths are handled because
       // which one happens depends on state this test does not own.
+      // WHO THIS SESSION ACTUALLY IS. Worker 0 reuses the canonical E2E_TEST_USER; workers 1+
+      // get their own minted identity. The BFF stores the grant under the SESSION's user, so
+      // if a Keycloak login form appears we must sign in as that same person — signing in as
+      // someone else would store one user's offline token against another user's id.
+      const sessionUser = (await (await request.get(`${BASE}/bff-api/auth/user`)).json()) as {
+        username?: string;
+      };
+
       await expect(page.locator('[data-testid="backup-consent-prompt"]')).toBeVisible();
       await page.click('[data-testid="backup-consent-grant"]');
-      const loginField = page.locator('input[name="username"]');
-      if (await loginField.isVisible({ timeout: 8000 }).catch(() => false)) {
-        await loginField.fill(E2E_USER);
+
+      // Keycloak either passes straight through on the existing SSO session or asks for
+      // credentials. Wait for WHICHEVER arrives.
+      //
+      // `locator.isVisible()` cannot be used for this: it is a NON-RETRYING check that answers
+      // immediately, so called right after the click it races the navigation, always reports
+      // false, and the login step is silently skipped — which is exactly how this test failed
+      // while the page sat on Keycloak's login form for the full 30s poll.
+      await page.waitForURL(/localhost:8099|consent=granted/, { timeout: 60000 });
+
+      if (page.url().includes('localhost:8099')) {
+        await page.waitForSelector('input[name="username"]', { state: 'visible', timeout: 30000 });
+        if (sessionUser.username && sessionUser.username.toLowerCase() !== E2E_USER.toLowerCase()) {
+          throw new Error(
+            `This worker is signed in as "${sessionUser.username}" but only ${E2E_USER}'s password ` +
+              'is available here, and Keycloak asked for credentials rather than reusing the SSO ' +
+              'session. Signing in as a different user would store that user\'s offline token ' +
+              'against this session\'s id — failing instead of doing that quietly.',
+          );
+        }
+        await page.fill('input[name="username"]', E2E_USER);
         await page.fill('input[name="password"]', E2E_PASSWORD);
         await page.click('input[type="submit"], button[type="submit"]');
       }
-      await page.waitForURL(/\/settings\/backups/, { timeout: 60000 });
+
+      // The callback's own redirect target, so this cannot match the page we started on.
+      await page.waitForURL(/consent=granted/, { timeout: 60000 });
       await expect
         .poll(async () => (await (await request.get(`${BASE}/bff-api/backups/consent`)).json()).granted, {
           timeout: 30000,
@@ -388,7 +416,13 @@ test.describe('Backup destinations (feature 073)', () => {
       await openBackupsSettings(page);
       await page.locator('[data-testid^="backup-job-versions-"]').first().click();
       await expect(page.locator('[data-testid="backup-schedule-editor"]')).toBeVisible({ timeout: 20000 });
-      await page.click('[data-testid="backup-schedule-enabled"]');
+      // By ROLE, scoped to the editor. The design-system Switch does not forward a testID to
+      // the DOM (see the note in schedule-editor.tsx), so a bare testID locator matches nothing
+      // and the click times out as if the screen were broken — which is exactly how this read.
+      await page
+        .locator('[data-testid="backup-schedule-editor"]')
+        .getByRole('switch')
+        .click();
 
       // Read back the instant the SERVER decided this job is next due. Using the server's own
       // answer rather than one the test computes is what makes this a test of the scheduling
