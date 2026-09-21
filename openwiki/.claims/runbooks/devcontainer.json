@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bb7957d7d075a2fc82bf60b0d7820e713b320679f4d5f55c5c8a05a93c5512a5",
+  "pageVersion": "sha256:15c6042d5af326719e790eab56b543590a91e6c6bedabc995ee05fd964b5781b",
   "claims": [
     {
       "id": "claim_38bde766ef97415d9b05311aeb02e233",
@@ -81,8 +81,8 @@
       "statement": "ANTHROPIC_API_KEY must never be set directly on the host or in the devcontainer shell; Claude Code silently prefers it over a subscription login. The key is carried as MCM_ANTHROPIC_API_KEY and remapped to ANTHROPIC_API_KEY only at the point of use (agent gateway, OpenWiki maintenance, containerized E2E recipe) — each a separate process running no interactive assistant. Measured 2026-08-16: ~$15 unintended API spend in one day.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L141-L183",
-          "version": "repo-lines-v1:sha256:22f920855010476e7b4df9d89ad92bc55af1b26421b93277aa0394456d71932c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjExOTIwOTM3ZDg3OGYyYmM5NjcwZTA2MGE3ZTY5MmExOGRkYzlmZmFjNTU1ZDcwOTY3YzMwNmQ2Y2E4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMDY4ODFlZWY0N2M4NTE2MzdhNjIwZjU0MDNlM2NhZTY2MTY3YzUyNDdmZDUxNDFhMjQzMGYzZmFkYjE0OGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1MjFiMTViY2RlMTg4M2QwZGJjOGI4YTBlYmQ0YTk2MGYyY2JiM2EwZWI2YmY0MGZiOTRkZDA2ZmU5MmNiY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNTEyM2E0MzI1M2IxMjY0ZmY1MjAzMTdhMTA3ZjIzODg1YTU0YzQwZTI0OTVkNjdkZDIxNDU1MzAxNjdlNmEifQ"
+          "resource": "repo://docs/runbooks/devcontainer.md#L141-L186",
+          "version": "repo-lines-v1:sha256:717df3d00326eb4012ac134c28804df0a450d08236fb317da38ec7683c43ce20:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjExOTIwOTM3ZDg3OGYyYmM5NjcwZTA2MGE3ZTY5MmExOGRkYzlmZmFjNTU1ZDcwOTY3YzMwNmQ2Y2E4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMDY4ODFlZWY0N2M4NTE2MzdhNjIwZjU0MDNlM2NhZTY2MTY3YzUyNDdmZDUxNDFhMjQzMGYzZmFkYjE0OGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1MjFiMTViY2RlMTg4M2QwZGJjOGI4YTBlYmQ0YTk2MGYyY2JiM2EwZWI2YmY0MGZiOTRkZDA2ZmU5MmNiY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNTEyM2E0MzI1M2IxMjY0ZmY1MjAzMTdhMTA3ZjIzODg1YTU0YzQwZTI0OTVkNjdkZDIxNDU1MzAxNjdlNmEifQ"
         }
       ]
     },
@@ -91,8 +91,8 @@
       "statement": "api.themoviedb.org is allowlisted in init-firewall.sh for the devcontainer shell's OUTPUT chain (needed by the pytest integration test runner) but runtime app paths (BFF validate-on-save probe, web-api-mcp curator enrichment) run as nested containers traversing the FORWARD chain and never needed the allowlist entry. Conflating the two chains is the documented trap; a stale ruleset causing timeouts should be fixed by re-applying init-firewall.sh, not by widening the allowlist.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L184-L212",
-          "version": "repo-lines-v1:sha256:aad02eadfdf212181539ab51a659415e386a1e674d15453a962500e06d9f2a64:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyOGRiMjljYjcwNTBjYmI0ZmIwYzQwODMwNGI5MTI1NWE3NTQwNzFmZTFlNTk3NWNhZjNjOTI2ZGZiNTJiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NTYyMjRlN2M2OGQzNmI5YmJkZjA2ODEzNmY0OWFlNWQ1MzhjZmFlNDVkMDAwNjZlNzIyMWE5N2JiZTFkMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYzQ4NTIwZWVlYjAyMDE2MjE2MzNlODU2NDMzMDE4ZDJhYTc0ZjEzZmZjYzFiMmI1MmE4Yzk4YTZiOWJiNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViNjBjOWMwYTZlMmFmZTZlMzJhMGUyN2MxZGRjMWJhYTE2NmUxNTYzOTQ1ZTkxYjAyNjc1N2VkMGQ4NzZiYzEifQ"
+          "resource": "repo://docs/runbooks/devcontainer.md#L187-L216",
+          "version": "repo-lines-v1:sha256:2f086df9dca3758bf1a644747775c2314657421a61ff46a205c244b7a4dbf61f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyOGRiMjljYjcwNTBjYmI0ZmIwYzQwODMwNGI5MTI1NWE3NTQwNzFmZTFlNTk3NWNhZjNjOTI2ZGZiNTJiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MWE0YjFkMGUyMzk1OTIyZDFlYTQ3NTk3NTUyNWVjM2I5YmJkOWZkNzJlYmQ4MzVhMTQ1OTA2MDFlODkxZTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYzQ4NTIwZWVlYjAyMDE2MjE2MzNlODU2NDMzMDE4ZDJhYTc0ZjEzZmZjYzFiMmI1MmE4Yzk4YTZiOWJiNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmNTExNmFhZjFhOTE2ZDQxMGIzNmU1Zjc5NDI4MmEyN2ExN2E1MTUxMjA5YjMxNzZjZDFjYTc4NmFjODhkNzQifQ"
         }
       ]
     },
@@ -101,8 +101,8 @@
       "statement": "crates.io is not allowlisted in the devcontainer egress firewall; all cargo commands must use --offline. A failing --offline resolve signals that the change adds a package absent from Cargo.lock — treat it as a lock-discipline check, not an obstacle to work around.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L529-L555",
-          "version": "repo-lines-v1:sha256:75dca0cdc0bc0f7045fe8907bce585015826ece528cad45f586a50b969227e5c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNjc1ODAwMjUzZjk2YjI0MjFmMDBmYjBjNTZkZjcyOTk3MmRjZWQ1ZDVkNDk0NjI4NDU5MWE3ODU4OTE1ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMGY5M2Y0MzEwMmFjYmJkY2UxOWVmZDBiY2UyYmVjZGE0ZTMwZjJjMDNhMjQyMzhjYzMxMjAyNDE4ZWM5ODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZjA2OWVhNTNmN2NkMGVjYmUyMjRhMjE2YTAzMWVkNzcxOTk3NDVmM2E4YjM2NzRkN2JmZDFiOGFjMWUwMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyZDE3Y2MxYjQ4NDJkZWViMjNmY2YyYzY0OTdhNzBlNjFiZjFlNzFlODczYjNlNjE4NzdkYzk3YzE5NzVhYWEifQ"
+          "resource": "repo://docs/runbooks/devcontainer.md#L532-L561",
+          "version": "repo-lines-v1:sha256:f08443a077ec407d43b3d758bf044637b8a21a9b43095feff258ba7767a50f59:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNjc1ODAwMjUzZjk2YjI0MjFmMDBmYjBjNTZkZjcyOTk3MmRjZWQ1ZDVkNDk0NjI4NDU5MWE3ODU4OTE1ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwY2FhZmJkNjM1OWVmMzczOTY2MzI4OWE2MTI5N2YzYjUxYmJlYWM4YmRjMzg4NDFlYzk0ZThmOTkzNjIwMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZjA2OWVhNTNmN2NkMGVjYmUyMjRhMjE2YTAzMWVkNzcxOTk3NDVmM2E4YjM2NzRkN2JmZDFiOGFjMWUwMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3ODAwYTJjZDdiMWYyZjA3ZmZmMzBjOTBjYjdmOTczYTE3NGUzYTAxZjM3YmE3Y2I0MjI1MDQyMjQ0N2E0NjIifQ"
         }
       ]
     },
@@ -138,11 +138,15 @@
     },
     {
       "id": "claim_3405e36d6162483294a06e52d5dd03d9",
-      "statement": "~/.claude.json (Claude Code's global config holding oauthAccount, userID, machineID, and session history) is a sibling of the ~/.claude directory in $HOME on the ephemeral overlay and was NOT persisted by the mcm-claude volume. Fix: CLAUDE_CONFIG_DIR=/home/coder/.claude in containerEnv relocates the config root onto the volume. A symlink does not work because Claude Code replaces the file via write-then-rename, swapping the symlink for a regular overlay file.",
+      "statement": "~/.claude.json (Claude Code's global config holding oauthAccount, userID, machineID, and session history) is a sibling of the ~/.claude directory in $HOME on the ephemeral overlay and was NOT persisted by the mcm-claude volume. Fix: CLAUDE_CONFIG_DIR=/home/coder/.claude in containerEnv relocates the config root onto the volume (item #257, measured 2026-08-27). A symlink does not work because Claude Code replaces the file via write-then-rename, swapping the symlink for a regular overlay file.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L1174-L1228",
-          "version": "repo-lines-v1:sha256:8f7a86d17cff57d0567b90b64b5fc396c652c10466e6164224236fe7c8617069:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOTc3N2UzMzliZWVjZGMzNjZiMGU4ZmY0NzA4ODczOWQ1ZjBkNmVhZDU4NmYxOGNjNjczZmU4MjMxZGFiMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZjQ0YWQzZTYyZmIwM2JmMzRkMGU3MGQzOWE2ZGQ2OGM2MjMxMmI2MTY4NDdiMGI0NmEyMTgyY2QxZTk2OTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiMzQ5ODZkZjZjZWEzMTA2ZGUyNmQ0OGJjMzgzZjVlMzJjYWI4Nzc4ZTgxNDVlNzhiMzQ1NTMxMmZiYTQ1NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyZDU0ZGMyY2VkZDRhNWY3ZmNkODIzMTA2Y2U4N2U0YzQwZGFjNzNhMjY3MmM4Zjk1NDczNzU5YjUwNzVmMjIifQ"
+          "resource": "repo://.devcontainer/devcontainer.json#L102-L127",
+          "version": "repo-lines-v1:sha256:7bbf7081fce184a538754be70bb15a08d892a5e719af7950873a1fee28e196cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZjU0OTAzYjQ2MWFlMWM1ZTU3YTRkMGY0YzZlNTNkMDAyOWNmZTE5NmVhMzIyOWNlMjU0MWMxYjczOGRlZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNDczMWVlNDcxN2E2MDMxZWNmNjFhZTdlMzZjODgzNGE5NTg3OTg4ZGEzNmU0OWMzZmQyNDU1NzFlMTdmYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3ODlhYTFjMWY1ODgzZGRiZDQzMjQ0NWM1ODMwZjY0Mzk1ZmVkNTA4MzFjZTE2ODJkOWE5ZjZiNzU1ZGY5OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzNzI0MjYwODQ4ZDAwMzdjOWUxZTY4ZjZmODhlOWYxYTFiMjE5ODdiNGNlNTI0MzlkNzJjMzQ0NzE4ZDA1ZGUifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L1203-L1262",
+          "version": "repo-lines-v1:sha256:c8ebe7fa7f83f75aa973f3c4b553b77cb60914f58ca120076d027fa215ce0333:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOTc3N2UzMzliZWVjZGMzNjZiMGU4ZmY0NzA4ODczOWQ1ZjBkNmVhZDU4NmYxOGNjNjczZmU4MjMxZGFiMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYzYzYWU3OGRjMjI3MTExNGQ2NDExYWRiMTI3Yzg2YTdiODFiYmJkZTc3YWM5MzIyMTMyYmEwZjVmODJlY2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiMzQ5ODZkZjZjZWEzMTA2ZGUyNmQ0OGJjMzgzZjVlMzJjYWI4Nzc4ZTgxNDVlNzhiMzQ1NTMxMmZiYTQ1NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1ZDI3ZWE4YjRmYzczOWZiYzIxYTQ2MDk5NWUzMzFiM2U5NDVkOGM2M2RiMGQ2MzQwZjMzMzg1MTNlNTFjOTgifQ"
         }
       ]
     },
@@ -151,7 +155,7 @@
       "statement": "Docker won't start after a devcontainer rebuild when a previous container instance is still running; its containerd holds an flock on the DinD volume's meta.db, blocking the new daemon indefinitely. Diagnosis: python3 flock probe distinguishes locked (recoverable) from corrupt (destructive). Fix: docker rm -f every other container, then sudo nohup /usr/local/share/docker-init.sh. Do NOT delete meta.db or docker volume rm — meta.db deletion destroys all DinD images, and /workspaces is a named volume so a prune removes the working tree.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L435-L491",
+          "resource": "repo://docs/runbooks/devcontainer.md#L438-L494",
           "version": "repo-lines-v1:sha256:6f231089d9d1d01f1232df0f09ef514642223163ee7b905595ec9365ae14fc09:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyM2M4ZjM5ZDg1NWQwNzU3ZmY2MmJkODRhODVmYmVjZjkwOWI1ZjAwZDhlNzc0ZmY1MGVmMTE4Zjg5OGM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNTM0NzdjOTFlZThmZjRiOGU3MGQ5ODI5NDdjYzM1YTA1NThhNTczYjQ3NDU5N2ZlYzhiNDI0NGYzYTVlY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNGEyZTk4MjJmNmZjMjg2YmRjMzcxNWM2M2RmMzBkZmI1MTRhM2M4YTRiZDRhMWQ3MTI1ZjM0YTIzMDNiYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxM2MxNjM4Y2ExOGQyNmNmZWMwMTM1MjVmM2YwZTQ2MzI1OTE5NmY0NzU5MWY0ZDA4NmU2NTYzNTQwYmQxZjAifQ"
         }
       ]
@@ -171,8 +175,8 @@
       "statement": "Multiple Claude sessions share one devcontainer and one checkout; git operations in /workspaces/mcm are visible to all sessions. Branch work must use a git worktree under /home/coder/worktrees/<slug>. The node_modules symlink from the worktree to the main checkout is sufficient for node --test and scripts/*.mjs gates but causes ERR_PNPM_UNSAFE_MODULES_DIR for any pnpm nx target — a real pnpm install in the worktree is the only fix (~4 min). Worktrees do not survive a container rebuild.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L301-L400",
-          "version": "repo-lines-v1:sha256:06633f111d11aaf0147a2b070ebf5734bf89292e43eaac6981c26088334d68a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkMzQ3ZmEyZTkyZDgxNjJkZjIzNmE1NjYzNDJkMjg0ZjllMGIzMGFlOWMwYjJiNzFjYzliY2E2YTU0YTYwYzdiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmM2NiY2I5NmNjN2NmMDJkMmMwMzhhMGU3MDM3ZjZhYTU5OWJjNGZlMmM5ZDViODA0ZWRhYTRmYTYyNTk0ZjQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNjMwZTRiMmUyMTRiNTA3OWE1YzRhOTc1ZWUzMGI3NzI3OTllNWI4NzEwYzc1MDY5ZTRlNGMwYTViODgwOTNmIn0"
+          "resource": "repo://docs/runbooks/devcontainer.md#L303-L404",
+          "version": "repo-lines-v1:sha256:611fc7bfb038da642d83d6108f65b770633a995f93f12e91d8599e354c8e4f56:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYzI2MDVmMmIzNjQxMTkxNTdiMmJlMTEwZjk2ZmY3NWNlZjM0YzU0ODJjOTkzNzZlOGI2OThjYWFiNTVhNTY0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlMmQ2YTI1NTU1NWI1Y2ZhZjc4ODI3MGQ0YmFmMzFhMzI4ZjdkYmU5N2YzYzY4NTBmMmVmNTZmZGE2NDM3MjI2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzMzEzYmI5YmNkODAxM2JkMWMwMzg3ZjkzYzRlYjU5NzhkNDNjOGJhZDllMWY0ZDIzYjgwNWYzYTBhZmZkZTEzIn0"
         }
       ]
     },
@@ -199,6 +203,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-20T11:41:17.059Z"
+    "at": "2026-09-21T19:51:08.727Z"
   }
 }
