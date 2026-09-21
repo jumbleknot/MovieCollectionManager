@@ -872,8 +872,21 @@ Measured on PR #199, where the lockfile moved 1.60.0 → 1.62.1 and this tag did
 > # then swap the bind for:  -v mcm-e2e-wt:/work  -w /work/frontend/mcm-app
 > ```
 >
-> `node_modules` must be included (the specs import `@playwright/test` from it); `target/` is
-> ~1 GB of Rust build output and is safe to leave out. Remove the volume when done.
+> `node_modules` must be included if you stage it this way (the specs import `@playwright/test`
+> from it), and `target/` — ~1 GB of Rust build output — is safe to leave out. **Better still,
+> leave `node_modules` out entirely and let the container install its own**: source alone is
+> ~39 MB against 1.9 GB, the install takes under a minute, and copying a host-built
+> `node_modules` into a different base image is the wrong thing on its own terms. Then the
+> command becomes `sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm exec
+> playwright test <pattern> --reporter=line"`. Remove the volume when done.
+>
+> **PASS BOTH ENV FILES.** Playwright's own setup loads only `.env.e2e.local`. The feature-073
+> specs need `BACKUP_TEST_*` and `BACKUP_TICK_SECRET`, and per-worker identities need
+> `KEYCLOAK_SERVICE_CLIENT_SECRET` — all of which live in `.env.local`. Measured: run with only
+> `.env.e2e.local`, the suite **exited 0 with "6 skipped"**, every spec having hit its own
+> credential guard and asserted nothing. That is this repository's standing trap — a skip reads
+> as a pass — reproduced in the harness rather than in the code, and it is the reason the
+> scheduled-run spec THROWS naming the missing file instead of skipping.
 
 **The tag here is the operator's copy; the AUTHORITATIVE one is `.forgejo/workflows/app-ci.yml`**
 (two occurrences — CI runs the suite in that image). Changing only this runbook fixes your local
