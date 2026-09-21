@@ -23,6 +23,27 @@ if TYPE_CHECKING:
 
 _FAST_DEFAULTS = {"ollama": "qwen2.5", "anthropic": "claude-haiku-4-5"}
 _BALANCED_DEFAULTS = {"ollama": "qwen2.5:32b", "anthropic": "claude-sonnet-4-6"}
+# THE SPECIALIST TIER STAYS ON SONNET 4.6 — feature 075 TRIED to drop it and the gate said no.
+#
+# The cost case was good on paper: the three extraction prompts are 120-520 tokens returning a
+# small JSON object, far too short to cache under any model, so only price per token varies and the
+# fast tier is 3x cheaper. Measured against the golden pairs, both cheaper options FAILED:
+#
+#   claude-haiku-4-5  11 of 51 pairs failed — systematically returns None for required fields
+#                     ('title' expected 'Coherence', got None) and [] for organize plans.
+#   claude-sonnet-5   1 pair failed, and worse, FLAKILY: 3 runs of "add the movie Inception to
+#                     this" gave Inception, {}, {}. Sonnet 5 REJECTS `temperature`, so this tier
+#                     can no longer be pinned to 0 and free-form JSON extraction picks up sampling
+#                     variance. Sonnet 4.6 accepts temperature=0 and returned Inception 3/3.
+#
+# That last point is the one to remember: on a newer model the loss of `temperature` costs
+# DETERMINISM, not just accuracy — and this tier feeds the write-proposal path behind the HITL
+# approval gate, where a silently-dropped field becomes a wrong proposal. Classification is
+# unaffected (a one-word label from a fixed set: 6 probes x 3 runs, 0 wrong, 0 flaky on Sonnet 5),
+# which is why the SUPERVISOR still moves and the specialist does not.
+#
+# Revisit only with structured outputs / a JSON schema constraining the response — not by swapping
+# the id again and hoping.
 _ESCALATION_DEFAULT = "claude-opus-5"
 
 # ── Which Anthropic models still accept `temperature` ───────────────────────────────────────────
@@ -75,6 +96,25 @@ class ModelSpec:
     temperature: float
 
 
+def _pin(env: Mapping[str, str], provider: str, name: str) -> str | None:
+    """Resolve a per-node model pin, PROVIDER-SCOPED name first, then the bare one.
+
+    `ANTHROPIC_SUPERVISOR_MODEL` beats `SUPERVISOR_MODEL` when the provider is Anthropic, and is
+    invisible on any other provider.
+
+    WHY THE SCOPED NAME EXISTS. A bare pin follows whichever provider is active. `app-ci.yml`
+    declares `provider: choice [anthropic, ollama]` and the app-e2e job takes `MODEL_PROVIDER` from
+    it, so that job really does run both ways — and a bare `SUPERVISOR_MODEL=claude-sonnet-5` at job
+    scope resolves to `ModelSpec(provider='ollama', model_id='claude-sonnet-5')`, sending a Claude
+    id to Ollama. `scripts/agent-stack.mjs` already worked around this by reading
+    ANTHROPIC_SUPERVISOR_MODEL and translating it for the container; that convention now lives here
+    instead, so it holds for every caller rather than only the one that goes through that script.
+
+    The bare name keeps working unchanged for everyone already using it.
+    """
+    return (env.get(f"{provider.upper()}_{name}") or env.get(name) or "").strip() or None
+
+
 def select_model_config(node: str, env: Mapping[str, str]) -> ModelSpec:
     """Resolve the model for a graph node from the environment.
 
@@ -84,11 +124,11 @@ def select_model_config(node: str, env: Mapping[str, str]) -> ModelSpec:
     provider = env.get("MODEL_PROVIDER") or "ollama"
 
     if node == "supervisor":
-        model_id = env.get("SUPERVISOR_MODEL") or _FAST_DEFAULTS[provider]
+        model_id = _pin(env, provider, "SUPERVISOR_MODEL") or _FAST_DEFAULTS[provider]
         return ModelSpec(provider=provider, model_id=model_id, temperature=0.0)
 
     if node in ("curator", "organizer", "query"):
-        model_id = env.get("SPECIALIST_MODEL") or _BALANCED_DEFAULTS[provider]
+        model_id = _pin(env, provider, "SPECIALIST_MODEL") or _BALANCED_DEFAULTS[provider]
         return ModelSpec(provider=provider, model_id=model_id, temperature=0.0)
 
     if node == "escalation":
@@ -126,6 +166,14 @@ def runtime_env(
             # user inherits the gateway's `SPECIALIST_MODEL=qwen2.5:32b` and every Claude call
             # 404s on an unknown model (018 review #1). ESCALATION_MODEL is always Anthropic, so
             # dropping it just reverts to the frontier default.
+            # These three BARE names only. The provider-scoped names `_pin` also reads
+            # (ANTHROPIC_SUPERVISOR_MODEL, OLLAMA_SPECIALIST_MODEL, ...) are deliberately NOT
+            # popped and must not be added here: a scoped name is inert on the wrong provider by
+            # construction, so an Ollama user cannot inherit an Anthropic pin however the base env
+            # was configured. Extending this list would be harmless but would imply the scoped
+            # names are dangerous, which is the opposite of why they exist. The bare names ARE
+            # dangerous — they follow whatever provider is active — which is exactly why they are
+            # popped. (075 FR-016.)
             for pinned in ("SUPERVISOR_MODEL", "SPECIALIST_MODEL", "ESCALATION_MODEL"):
                 overlay.pop(pinned, None)
         overlay["MODEL_PROVIDER"] = provider

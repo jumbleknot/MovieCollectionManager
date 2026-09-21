@@ -416,6 +416,25 @@ jobs:
       E2E_BFF_TARGET: dev-container
       E2E_AGENT_PRODUCTION: '1'
       MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
+      # Feature 075. The supervisor's ~2,650-token classifier prompt was the single largest line on
+      # the model bill ($22.24 of a $74.89 month) because `claude-haiku-4-5` CANNOT cache it: that
+      # tier's minimum cacheable prefix is 4,096 tokens and the prompt counts 1,699 there. On
+      # `claude-sonnet-5` the same prompt counts 2,333 against a 1,024 minimum, so it caches — and a
+      # cached classify is ~3.3x cheaper than an uncached Haiku one (measured: $0.000516 vs
+      # $0.001719). CI is a burst of back-to-back calls, so the hit rate is near 100%.
+      #
+      # THE `ANTHROPIC_` PREFIX IS LOAD-BEARING — do not "simplify" this to SUPERVISOR_MODEL.
+      # `provider:` above is a dispatch CHOICE (anthropic|ollama), so this job really does run both
+      # ways. A bare SUPERVISOR_MODEL follows whichever provider is active and would resolve to
+      # ModelSpec(provider='ollama', model_id='claude-sonnet-5') on an Ollama run — a Claude id sent
+      # to Ollama. The provider-scoped name is invisible to any other provider (see `_pin` in
+      # agents/movie-assistant/src/models.py) and is read by BOTH the in-job pytest process and, via
+      # scripts/agent-stack.mjs, the gateway container.
+      #
+      # Deliberately NOT set on `test:golden`/`test:golden-live`: that gate is the pre-deploy check
+      # for PRODUCTION, which runs the code defaults (compose.prod.yaml pins nothing), and cassettes
+      # are keyed by model id.
+      ANTHROPIC_SUPERVISOR_MODEL: claude-sonnet-5
       # Per-surface model credential (048 US4). One shared secret backed three unrelated surfaces —
       # this job, the dast job, and wiki generation — so the Anthropic console conflated all three
       # and no one could say what a CI run costs versus a wiki run. The VARIABLE name is unchanged

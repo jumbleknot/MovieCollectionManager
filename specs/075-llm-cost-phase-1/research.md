@@ -563,3 +563,46 @@ one being relied on.
 merge 2 by necessity. The escalation id bump and the new invocability test are
 judgement calls made here rather than deferred, because the feature is already editing
 `models.py`'s defaults and the alternative is knowingly leaving a broken escape hatch.
+
+---
+
+## R15 — THE SPECIALIST DOWNGRADE FAILED ITS GATE, and the reason generalises
+
+**Measured 2026-09-21 during T015.** The proposal's recommendation 1(b) — drop the extraction
+specialists to the fast tier — is **rejected**. Recorded against the 51 golden pairs:
+
+| Specialist model | Result |
+|---|---|
+| `claude-haiku-4-5` | **11 of 51 failed.** Systematically returns `None` for required fields (`'title' expected 'Coherence', got None`) and `[]` for organize plans. Not marginal — it cannot do the task. |
+| `claude-sonnet-5` | **1 failed, and FLAKY.** Three runs of `"add the movie Inception to this"` gave `Inception`, `{}`, `{}`. |
+| `claude-sonnet-4-6` (status quo) | 51/51, and deterministic: `Inception` 3/3 on the same input. |
+
+**The flakiness is the important finding, and it is a second-order effect of R13.** Sonnet 5
+rejects `temperature`, so this tier can no longer be pinned to 0 — and free-form JSON extraction
+with optional fields picks up sampling variance that a one-word classification does not. Measured
+either side: 6 classification probes × 3 runs on Sonnet 5 gave **0 wrong, 0 flaky**; the same model
+on extraction gave 1-in-3.
+
+**So the loss of `temperature` costs DETERMINISM, not just accuracy** — and this tier feeds the
+write-proposal path behind the HITL approval gate, where a silently-dropped field becomes a wrong
+proposal rather than a wrong answer. That asymmetry is why the supervisor moves and the specialist
+does not.
+
+**Consequences for the feature:**
+
+- **FR-013 is dropped.** `_BALANCED_DEFAULTS["anthropic"]` stays `claude-sonnet-4-6`.
+- **SC-004 is dropped.** The per-turn BYOK saving depended entirely on the specialist default
+  reaching production. It does not, so **users see no cost change from this feature**. Saying
+  otherwise would be the more comfortable claim and the false one.
+- **SC-001 is revised.** Projected 30-day total is **≈$45–47, ≈−38%**, not $37–40 / −48%. Two
+  corrections compound: the specialist saving (~$3.5) is gone, and the supervisor saving is smaller
+  than modelled because the prompt is smaller than assumed — 1,699 Haiku tokens, not ~2,650, so
+  uncached Haiku costs $0.0017/call rather than $0.0027, and the cached-Sonnet-5 advantage is
+  **3.3×, not 5×** (measured $0.000516 vs $0.001719).
+
+**What this does not change**: the supervisor move is still the largest lever and still works
+(CI supervisor line ≈$22.24 → ≈$6.68), and the generator bump already merged at ≈−33%.
+
+**If someone wants the extraction saving later**, the route is structured outputs / a JSON schema
+constraining the response — not swapping the model id again and hoping. `_BALANCED_DEFAULTS`
+carries that note.

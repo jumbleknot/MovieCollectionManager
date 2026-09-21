@@ -7,6 +7,10 @@
     "cf0b786a9821dc7f1a430189dad94976bc0e2c619ecfcf082548c5eb9d166d0a": {
       "content": "out_of_domain",
       "tool_calls": []
+    },
+    "dde8d61476c8ef2e92f0e221ca1a98ecc6a59b091c596dc4ad2562a6641ec5f7": {
+      "content": "out_of_domain",
+      "tool_calls": []
     }
   },
   "model_id": "claude-haiku-4-5"

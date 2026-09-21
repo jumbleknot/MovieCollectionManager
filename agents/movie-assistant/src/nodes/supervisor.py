@@ -13,6 +13,7 @@ import re
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END
 
 if TYPE_CHECKING:
@@ -33,11 +34,16 @@ INTENTS = (
 # Ordinal words → zero-based index into the offered options (T069/R14, RC1). Bare cardinals
 # ("one", "two") are deliberately excluded: "one" is too common ("the X one") to mean an index.
 _ORDINALS: dict[str, int] = {
-    "first": 0, "1st": 0,
-    "second": 1, "2nd": 1,
-    "third": 2, "3rd": 2,
-    "fourth": 3, "4th": 3,
-    "fifth": 4, "5th": 4,
+    "first": 0,
+    "1st": 0,
+    "second": 1,
+    "2nd": 1,
+    "third": 2,
+    "3rd": 2,
+    "fourth": 3,
+    "4th": 3,
+    "fifth": 4,
+    "5th": 4,
     "last": -1,
 }
 
@@ -109,6 +115,7 @@ def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, An
             return options[idx]
     return None
 
+
 _INTENT_TO_NODE = {
     "add": "curator",
     "enrich": "curator",
@@ -126,6 +133,167 @@ _INTENT_TO_NODE = {
 }
 
 
+# ── The static classification prefix ────────────────────────────────────────────────────────────
+#
+# BYTE-STABLE BY CONTRACT. This is the cached prefix: ~2,650 tokens sent identically on every
+# classification, with only the user's message differing. Prompt caching is a PREFIX MATCH, so a
+# single interpolated value anywhere in here — a timestamp, a session id, an f-string hole — drops
+# the cache-read rate to zero with NO error raised and NO other test failing. The bill simply goes
+# back up. `tests/unit/test_supervisor_prompt_cache.py` asserts the stability; keep it a plain
+# constant and put anything that varies in the human turn, after the marker.
+#
+# SIZE IS LOAD-BEARING, AND THE TWO TOKENIZERS DISAGREE. Counted with `messages.count_tokens`
+# (2026-09-21), not estimated:
+#
+#     claude-sonnet-5    2333 tokens  >= its 1024 minimum  -> CACHED (this is the saving)
+#     claude-haiku-4-5   1699 tokens  <   its 4096 minimum -> marker silently ignored
+#
+# Both numbers matter. The first is why the cached tier is worth selecting on CI's burst surfaces;
+# the second is why production can keep the fast tier untouched and be billed exactly as before.
+# If this prefix is ever SHORTENED below ~1,024 tokens the marker becomes a no-op on every model
+# and the saving disappears with no error anywhere — so trimming the taxonomy is not free.
+_CLASSIFY_SYSTEM_PROMPT = (
+    "You route a user's message in a MOVIE COLLECTION assistant to exactly one label.\n"
+    "Labels:\n"
+    "- add: add a specific movie/film to one of the user's collections.\n"
+    "- enrich: the user explicitly asks for EXTERNAL INFORMATION about a specific film (facts,"
+    ' not locating it) — "tell me about", "what year was", "who directed/starred in", "give me'
+    ' details/a synopsis/a preview of". Requires an explicit info-request — a bare "look up X"'
+    " is NOT enrich, it is search.\n"
+    "- organize: CHANGE something in an existing collection — move, remove, delete, sort, or"
+    " rename items; UPDATE a movie's fields (mark/set a movie as owned/ripped/childrens, change"
+    " its rating/runtime); or ADD/REMOVE tags. The tell is an imperative to MODIFY existing"
+    ' data: "mark X as owned", "set X as ripped", "move X to Y", "remove X", "add the tag T to'
+    ' X".\n'
+    "- navigate: take the user to one of their COLLECTIONS (a named collection or the current"
+    ' screen), or open the add-movie form — "take me to my Favorites collection", "open my'
+    ' Sci-Fi collection", or "add a movie" (NO specific film) to open the add form. A MOVIE'
+    " target is NOT navigate — it is search.\n"
+    "- search: FIND, LOOK UP, OPEN, or CHECK FOR a specific movie/film — locate it in the"
+    ' user\'s collections (with a web fallback) or take them to it. Tells: "show me X",'
+    ' "find X", "search for X", "look up X", "look for X", "open X", "go to X", "navigate to'
+    ' X", "do I have X", "is X in my collection", or a bare movie title — where X is a FILM'
+    " TITLE.\n"
+    "- query: ANSWER A COUNT or LIST question about what is ALREADY in the user's own"
+    ' collection(s). The tell is an AGGREGATE question scoped to THEIR collection: "how many …'
+    ' do I have", "what\'s in my X", "list/show my … movies". A question about whether ONE'
+    ' specific film is present ("do I have X", "is X in my collection") is NOT query — it'
+    " is search.\n"
+    "- import: BULK-load movies INTO the user's collection(s) FROM a spreadsheet/CSV/Excel"
+    ' file. The VERB "import" ALWAYS means this label — even with no file named and no'
+    ' specific movie (e.g. a bare "import", "import movies", "import my movies", "import a'
+    ' spreadsheet"): the assistant will ask for the file. Other tells: "load my movies from'
+    ' this file/spreadsheet", "upload this spreadsheet", "import these movies into my'
+    ' collections". A single named film to add is NOT import — it is add.\n'
+    "- export: WRITE OUT the user's existing collection(s) TO a spreadsheet/Excel/CSV file"
+    ' for them to download/save. Tells: "export", "download my movies/collections as a'
+    ' spreadsheet/Excel/file", "save my collection to a file". This produces a file FROM their'
+    " data — the opposite of import.\n"
+    "- out_of_domain: NOT about movies, films, or the user's collections at all"
+    " (weather, math, code, general chit-chat).\n"
+    "Rules: anything about movies, films, or the user's collections is IN DOMAIN — use add,"
+    " enrich, organize, navigate, search, query, import, or export, and NEVER out_of_domain."
+    " Use out_of_domain ONLY when the topic has nothing to do with movies or collections.\n"
+    "import vs add: a FILE/spreadsheet/CSV of many movies to load => import; one named film"
+    " => add.\n"
+    "import vs export: bringing movies INTO a collection FROM a file => import; writing a"
+    " collection OUT TO a file to download/save => export.\n"
+    'import vs navigate: the verb "import" (e.g. "import movies", "import my collection") is'
+    " ALWAYS import — NEVER navigate — even though it mentions movies/a collection; the"
+    " assistant asks for the file next.\n"
+    "search vs navigate: a MOVIE title to find/open => search; a COLLECTION to open =>"
+    " navigate. When the target is EXPLICITLY QUALIFIED as a collection — the word"
+    " 'collection' appears after the name, or a possessive 'my <name> collection' — it is"
+    " navigate EVEN with the verbs open / go to / navigate to (e.g. 'navigate to Test Import"
+    " collection', 'go to my Wish List collection' => navigate). A bare title with NO"
+    " 'collection' qualifier ('navigate to Coherence', 'open Inception') stays search.\n"
+    "search vs enrich: 'find/show/open/look up <movie>' to locate or pull it up => search;"
+    " use enrich ONLY when the user explicitly asks for external INFORMATION ('tell me about',"
+    " 'what year was', 'who directed', 'give me details/a synopsis of' <movie>).\n"
+    "search vs query: anything about ONE specific film — locating it OR checking whether they"
+    " have it ('find/show/open <movie>', 'do I have X', 'is X in my collection') => search; an"
+    " AGGREGATE question about a collection ('how many', \"what's in\", 'list my movies') =>"
+    " query.\n"
+    "organize vs the rest: a COMMAND that CHANGES a movie ('mark/set X as owned', 'add the tag"
+    " T to X', 'move/remove/rename X') => organize. 'mark/set/move/remove/rename/sort/tag/"
+    "update' are ALWAYS organize — NEVER navigate, search, or query — EVEN WHEN the target or"
+    " destination collection name contains the words 'movie' or 'collection' (e.g. moving a"
+    " film to a collection literally named 'Movie Collection').\n"
+    "A SPECIFIC film named for ADDING => add.\n"
+    "Reply with only the label, nothing else.\n"
+    "Examples:\n"
+    "add the movie Coherence (2013) to my Sci-Fi collection => add\n"
+    "tell me about the movie Inception => enrich\n"
+    "look up details for the movie Blade Runner and show me a preview => enrich\n"
+    "move Dune to my Favorites => organize\n"
+    "remove The Matrix from my list => organize\n"
+    "mark Inception as owned in my Sci-Fi collection => organize\n"
+    "set Dune as ripped => organize\n"
+    "add the tag classic to The Matrix => organize\n"
+    "move this movie to Movie Collection => organize\n"
+    "take me to my Favorites collection => navigate\n"
+    "open my Sci-Fi collection => navigate\n"
+    "navigate to my Wish List collection => navigate\n"
+    "go to the Test Import collection => navigate\n"
+    "navigate to Test Import collection => navigate\n"
+    "open the Movie Collection collection => navigate\n"
+    "let me add a movie to my Favorites => navigate\n"
+    "show me Avatar in my collection => search\n"
+    "find the movie Dune => search\n"
+    "look up the matrix => search\n"
+    "navigate to Coherence => search\n"
+    "open Inception => search\n"
+    "search for The Matrix => search\n"
+    "how many movies do I have => query\n"
+    "what is in my Sci-Fi collection => query\n"
+    "do I have Coherence in my Sci-Fi collection => search\n"
+    "is The Matrix in my Wish List => search\n"
+    "import my movies from this spreadsheet => import\n"
+    "import movies => import\n"
+    "import => import\n"
+    "import my collection => import\n"
+    "load these movies from a file into my collections => import\n"
+    "upload this csv and import the movies => import\n"
+    "export my collections to a spreadsheet => export\n"
+    "download my movies as an excel file => export\n"
+    "save my Sci-Fi collection to a spreadsheet file => export\n"
+    "what's the weather in Paris => out_of_domain\n"
+).strip()
+
+
+def build_classify_messages(user_text: str) -> list[Any]:
+    """Build the two-message classification request: cached static prefix + the user's turn.
+
+    ONE SHAPE FOR BOTH PROVIDERS, deliberately, with no provider branch — `classify_intent` takes a
+    `ChatModel` protocol (so the golden harness can inject a cassette) and must not know which
+    vendor is behind it.
+
+    * Anthropic, cached tier: the `cache_control` marker is honoured and the prefix becomes a cache
+      read at ~1/10th the price.
+    * Anthropic, fast tier: the marker is accepted and IGNORED — the prefix is ~2,650 tokens and
+      that tier's minimum cacheable prefix is 4,096. Billed exactly as before, which is why
+      production keeps the fast tier as its default (a lone user turn never hits a 5-minute cache,
+      and would pay the cache WRITE instead).
+    * Ollama: `langchain_ollama` dispatches content parts on `type` and drops every other key on a
+      `text` part, so the marker vanishes and the instruction text arrives intact.
+
+    Render order is tools -> system -> messages, so the marker at the end of `system` covers exactly
+    the static prefix and nothing volatile.
+    """
+    return [
+        SystemMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": _CLASSIFY_SYSTEM_PROMPT,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+        ),
+        HumanMessage(content=user_text),
+    ]
+
+
 def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
     """Classify the latest user request into one intent label using the supervisor model.
 
@@ -133,115 +301,7 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
     Pure w.r.t. the model: the caller injects the (possibly cassetted) model (T017/T032).
     """
     last = messages[-1].content if messages else ""
-    prompt = (
-        "You route a user's message in a MOVIE COLLECTION assistant to exactly one label.\n"
-        "Labels:\n"
-        "- add: add a specific movie/film to one of the user's collections.\n"
-        "- enrich: the user explicitly asks for EXTERNAL INFORMATION about a specific film (facts,"
-        ' not locating it) — "tell me about", "what year was", "who directed/starred in", "give me'
-        ' details/a synopsis/a preview of". Requires an explicit info-request — a bare "look up X"'
-        " is NOT enrich, it is search.\n"
-        "- organize: CHANGE something in an existing collection — move, remove, delete, sort, or"
-        " rename items; UPDATE a movie's fields (mark/set a movie as owned/ripped/childrens, change"
-        " its rating/runtime); or ADD/REMOVE tags. The tell is an imperative to MODIFY existing"
-        ' data: "mark X as owned", "set X as ripped", "move X to Y", "remove X", "add the tag T to'
-        ' X".\n'
-        "- navigate: take the user to one of their COLLECTIONS (a named collection or the current"
-        ' screen), or open the add-movie form — "take me to my Favorites collection", "open my'
-        ' Sci-Fi collection", or "add a movie" (NO specific film) to open the add form. A MOVIE'
-        " target is NOT navigate — it is search.\n"
-        "- search: FIND, LOOK UP, OPEN, or CHECK FOR a specific movie/film — locate it in the"
-        " user's collections (with a web fallback) or take them to it. Tells: \"show me X\","
-        ' "find X", "search for X", "look up X", "look for X", "open X", "go to X", "navigate to'
-        ' X", "do I have X", "is X in my collection", or a bare movie title — where X is a FILM'
-        " TITLE.\n"
-        "- query: ANSWER A COUNT or LIST question about what is ALREADY in the user's own"
-        ' collection(s). The tell is an AGGREGATE question scoped to THEIR collection: "how many …'
-        ' do I have", "what\'s in my X", "list/show my … movies". A question about whether ONE'
-        ' specific film is present ("do I have X", "is X in my collection") is NOT query — it'
-        " is search.\n"
-        "- import: BULK-load movies INTO the user's collection(s) FROM a spreadsheet/CSV/Excel"
-        " file. The VERB \"import\" ALWAYS means this label — even with no file named and no"
-        ' specific movie (e.g. a bare "import", "import movies", "import my movies", "import a'
-        ' spreadsheet"): the assistant will ask for the file. Other tells: "load my movies from'
-        ' this file/spreadsheet", "upload this spreadsheet", "import these movies into my'
-        ' collections". A single named film to add is NOT import — it is add.\n'
-        "- export: WRITE OUT the user's existing collection(s) TO a spreadsheet/Excel/CSV file"
-        ' for them to download/save. Tells: "export", "download my movies/collections as a'
-        ' spreadsheet/Excel/file", "save my collection to a file". This produces a file FROM their'
-        " data — the opposite of import.\n"
-        "- out_of_domain: NOT about movies, films, or the user's collections at all"
-        " (weather, math, code, general chit-chat).\n"
-        "Rules: anything about movies, films, or the user's collections is IN DOMAIN — use add,"
-        " enrich, organize, navigate, search, query, import, or export, and NEVER out_of_domain."
-        " Use out_of_domain ONLY when the topic has nothing to do with movies or collections.\n"
-        "import vs add: a FILE/spreadsheet/CSV of many movies to load => import; one named film"
-        " => add.\n"
-        "import vs export: bringing movies INTO a collection FROM a file => import; writing a"
-        " collection OUT TO a file to download/save => export.\n"
-        'import vs navigate: the verb "import" (e.g. "import movies", "import my collection") is'
-        " ALWAYS import — NEVER navigate — even though it mentions movies/a collection; the"
-        " assistant asks for the file next.\n"
-        "search vs navigate: a MOVIE title to find/open => search; a COLLECTION to open =>"
-        " navigate. When the target is EXPLICITLY QUALIFIED as a collection — the word"
-        " 'collection' appears after the name, or a possessive 'my <name> collection' — it is"
-        " navigate EVEN with the verbs open / go to / navigate to (e.g. 'navigate to Test Import"
-        " collection', 'go to my Wish List collection' => navigate). A bare title with NO"
-        " 'collection' qualifier ('navigate to Coherence', 'open Inception') stays search.\n"
-        "search vs enrich: 'find/show/open/look up <movie>' to locate or pull it up => search;"
-        " use enrich ONLY when the user explicitly asks for external INFORMATION ('tell me about',"
-        " 'what year was', 'who directed', 'give me details/a synopsis of' <movie>).\n"
-        "search vs query: anything about ONE specific film — locating it OR checking whether they"
-        " have it ('find/show/open <movie>', 'do I have X', 'is X in my collection') => search; an"
-        " AGGREGATE question about a collection ('how many', \"what's in\", 'list my movies') =>"
-        " query.\n"
-        "organize vs the rest: a COMMAND that CHANGES a movie ('mark/set X as owned', 'add the tag"
-        " T to X', 'move/remove/rename X') => organize. 'mark/set/move/remove/rename/sort/tag/"
-        "update' are ALWAYS organize — NEVER navigate, search, or query — EVEN WHEN the target or"
-        " destination collection name contains the words 'movie' or 'collection' (e.g. moving a"
-        " film to a collection literally named 'Movie Collection').\n"
-        "A SPECIFIC film named for ADDING => add.\n"
-        "Reply with only the label, nothing else.\n"
-        "Examples:\n"
-        "add the movie Coherence (2013) to my Sci-Fi collection => add\n"
-        "tell me about the movie Inception => enrich\n"
-        "look up details for the movie Blade Runner and show me a preview => enrich\n"
-        "move Dune to my Favorites => organize\n"
-        "remove The Matrix from my list => organize\n"
-        "mark Inception as owned in my Sci-Fi collection => organize\n"
-        "set Dune as ripped => organize\n"
-        "add the tag classic to The Matrix => organize\n"
-        "move this movie to Movie Collection => organize\n"
-        "take me to my Favorites collection => navigate\n"
-        "open my Sci-Fi collection => navigate\n"
-        "navigate to my Wish List collection => navigate\n"
-        "go to the Test Import collection => navigate\n"
-        "navigate to Test Import collection => navigate\n"
-        "open the Movie Collection collection => navigate\n"
-        "let me add a movie to my Favorites => navigate\n"
-        "show me Avatar in my collection => search\n"
-        "find the movie Dune => search\n"
-        "look up the matrix => search\n"
-        "navigate to Coherence => search\n"
-        "open Inception => search\n"
-        "search for The Matrix => search\n"
-        "how many movies do I have => query\n"
-        "what is in my Sci-Fi collection => query\n"
-        "do I have Coherence in my Sci-Fi collection => search\n"
-        "is The Matrix in my Wish List => search\n"
-        "import my movies from this spreadsheet => import\n"
-        "import movies => import\n"
-        "import => import\n"
-        "import my collection => import\n"
-        "load these movies from a file into my collections => import\n"
-        "upload this csv and import the movies => import\n"
-        "export my collections to a spreadsheet => export\n"
-        "download my movies as an excel file => export\n"
-        "save my Sci-Fi collection to a spreadsheet file => export\n"
-        "what's the weather in Paris => out_of_domain\n"
-        f"Message: {last}"
-    )
-    label = str(model.invoke(prompt).content).strip().lower()
+    label = str(model.invoke(build_classify_messages(str(last))).content).strip().lower()
     return label if label in INTENTS else "ambiguous"
 
 

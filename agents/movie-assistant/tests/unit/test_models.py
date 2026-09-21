@@ -35,7 +35,50 @@ def test_anthropic_fallback_supervisor():
 def test_anthropic_fallback_specialist():
     spec = select_model_config("curator", {"MODEL_PROVIDER": "anthropic"})
     assert spec.provider == "anthropic"
+    # Feature 075 TRIED to drop this tier to a cheaper model and the golden gate refused: haiku-4-5
+    # failed 11 of 51 pairs, and sonnet-5 was FLAKY because it rejects `temperature` so extraction
+    # can no longer be pinned to 0. See _BALANCED_DEFAULTS for the measurements.
     assert spec.model_id == "claude-sonnet-4-6"
+
+
+def test_provider_scoped_pin_wins_over_the_bare_name():
+    """FR-007b: `<PROVIDER>_SUPERVISOR_MODEL` resolves ahead of `SUPERVISOR_MODEL`."""
+    env = {
+        "MODEL_PROVIDER": "anthropic",
+        "ANTHROPIC_SUPERVISOR_MODEL": "claude-sonnet-5",
+        "SUPERVISOR_MODEL": "should-not-win",
+    }
+    assert select_model_config("supervisor", env).model_id == "claude-sonnet-5"
+
+    env_spec = {
+        "MODEL_PROVIDER": "anthropic",
+        "ANTHROPIC_SPECIALIST_MODEL": "claude-haiku-4-5",
+        "SPECIALIST_MODEL": "should-not-win",
+    }
+    assert select_model_config("curator", env_spec).model_id == "claude-haiku-4-5"
+
+
+def test_provider_scoped_pin_is_INERT_on_a_different_provider():
+    """FR-007a — the regression this whole mechanism exists to prevent.
+
+    `app-ci.yml` declares `provider: choice [anthropic, ollama]` and the app-e2e job reads
+    MODEL_PROVIDER from it, so that job genuinely runs BOTH ways. A bare pin follows whichever
+    provider is active, which sends a Claude id to Ollama and breaks the run. A provider-scoped
+    pin cannot: Ollama reads OLLAMA_SUPERVISOR_MODEL and never sees the Anthropic one.
+    """
+    env = {"MODEL_PROVIDER": "ollama", "ANTHROPIC_SUPERVISOR_MODEL": "claude-sonnet-5"}
+    spec = select_model_config("supervisor", env)
+    assert spec.provider == "ollama"
+    assert spec.model_id == "qwen2.5", (
+        "an Anthropic-scoped pin leaked onto the Ollama provider — this is exactly the "
+        "`provider: ollama` dispatch breakage the scoped names exist to prevent"
+    )
+
+
+def test_the_bare_name_still_works_when_no_scoped_pin_is_present():
+    """The bare override is unchanged for everyone already using it (e.g. agent-stack.mjs)."""
+    env = {"MODEL_PROVIDER": "ollama", "SUPERVISOR_MODEL": "qwen2.5:14b"}
+    assert select_model_config("supervisor", env).model_id == "qwen2.5:14b"
 
 
 def test_temperature_is_offered_only_to_models_that_accept_it():
