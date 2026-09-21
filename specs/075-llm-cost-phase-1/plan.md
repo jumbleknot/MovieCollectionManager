@@ -86,9 +86,15 @@ cassettes to re-record (31 + 11 Anthropic, 1 Ollama); 5 source files, 2 workflow
 | **Model-provider scoping invariant** | PASS with a required doc update (FR-019). The invariant's premise — provider is env-scoped per environment, not one global choice — is exactly what this feature leans on; the specific ids it names change and must be corrected in the canonical page. |
 | **Nx as universal task runner** | PASS. Every command runs through an existing Nx target; no target is added. |
 
-**Post-Phase-1 re-evaluation**: unchanged. The design added no new project, no new
-dependency, no new abstraction and no new credential. Complexity Tracking is therefore
-empty and omitted.
+**Post-Phase-1 re-evaluation**: still no violations, but the scope grew once. R12 adds
+provider-scoped override resolution to `select_model_config` — a canonical pure function
+this feature would otherwise only have edited two table entries in. It is an extension
+of that function's existing precedence rule rather than a new abstraction, it stays pure
+and offline-testable, and it removes a configuration footgun at the cause instead of
+documenting around it. Recorded here rather than absorbed quietly; the cheaper
+alternative (a conditional expression in one workflow) is set out in R12 if the smaller
+diff is preferred. No new project, dependency or credential. Complexity Tracking remains
+empty.
 
 ## Project Structure
 
