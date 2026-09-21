@@ -8,8 +8,17 @@
 # gitignored .env.prod / Komodo). Registry host never enters git.
 #
 # Models: #PROD MODEL_PROVIDER=anthropic (Claude), NOT Ollama. Model ids are CODE defaults — supervisor
-# claude-haiku-4-5, specialists claude-sonnet-4-6, escalation claude-opus-4-8 — so SUPERVISOR_MODEL/
-# SPECIALIST_MODEL are deliberately NOT set. Per feature 018, the Anthropic key is PER-USER (BYO, injected
+# claude-haiku-4-5, specialists claude-sonnet-4-6, escalation claude-opus-5 — so SUPERVISOR_MODEL/
+# SPECIALIST_MODEL are deliberately NOT set.
+#
+# THE ABSENCE IS THE DESIGN, not an oversight, and feature 075 made it load-bearing. CI's app-e2e job
+# and the dev container DO pin a cached supervisor (ANTHROPIC_SUPERVISOR_MODEL=claude-sonnet-5),
+# because a CI burst sends back-to-back classifications that hit the prompt cache and cost $0.000516
+# instead of $0.001719. Production must NOT: a real user's turns are minutes or days apart, so the
+# 5-minute cache entry has always expired and each call would pay the cache WRITE — about 2.5x the
+# uncached Haiku call it replaced. Break-even is a ~65% hit rate that user traffic never reaches.
+# Leaving both unset is what keeps prod on the cheaper path, and means a code-default change ships
+# to users with the next image without touching this file. Per feature 018, the Anthropic key is PER-USER (BYO, injected
 # per-run via X-Agent-Config); the gateway pops any shared key for users who don't configure one, so a
 # shared ANTHROPIC_API_KEY is OPTIONAL here (env_file, typically empty — NOT a fail-fast secret).
 #

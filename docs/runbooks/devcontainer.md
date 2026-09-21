@@ -139,8 +139,11 @@ process's environment** — so setting one is not enough; VS Code must be *relau
 already in its environment*, and the container recreated.
 
 - **`MCM_ANTHROPIC_API_KEY`** — needed for the movie-assistant agent's Anthropic model backend and
-  the **golden cassette RE-RECORD** path (golden's surface is Claude — `claude-haiku-4-5` /
-  `claude-sonnet-4-6`; replay is keyless). Ollama is unreachable from the containerized gateway (the
+  the **golden cassette RE-RECORD** path (golden's surface is Claude — `claude-haiku-4-5` for the
+  supervisor, `claude-sonnet-4-6` for the specialists; replay is keyless). One cassette
+  (`topic-confinement.qwen2-5.json`) is keyed to **qwen2.5** and an Anthropic key CANNOT regenerate
+  it — that one needs a local Ollama, and the keyless merge gate replays it because `guardrails`
+  sets no `MODEL_PROVIDER` and so resolves the Ollama tier. Ollama is unreachable from the containerized gateway (the
   nested-DinD `host.docker.internal` resolves to the dev container, not the Windows host), so Anthropic
   is the in-container model path; `api.anthropic.com` is already in the `init-firewall.sh` allowlist.
   Use a real `sk-ant-…` **API key** (pay-per-token) — this is NOT your Claude Code subscription login.

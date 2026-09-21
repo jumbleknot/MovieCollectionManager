@@ -40,9 +40,28 @@ _FAST_TIER_ENV = {"MODEL_PROVIDER": "anthropic"}
 
 
 def _cache_counts(response) -> tuple[int, int]:
-    """(cache_read, cache_creation) for one response, defaulting absent fields to 0."""
+    """(cache_read, cache_write) for one response.
+
+    `cache_creation` IS NOT THE WRITE COUNT. When the provider returns the per-TTL breakdown,
+    langchain-anthropic moves the real figure into `ephemeral_5m_input_tokens` /
+    `ephemeral_1h_input_tokens` and sets `cache_creation` to **0** (chat_models.py ~L2986-2991).
+    Measured on a guaranteed-cold call inside the deployed gateway:
+
+        {"cache_read": 0, "cache_creation": 0,
+         "ephemeral_5m_input_tokens": 2342, "ephemeral_1h_input_tokens": 0}
+
+    Reading `cache_creation` alone therefore reports "no cache activity" on precisely the call that
+    populates the cache. This test would then fail on a COLD cache — which is what every fresh CI
+    runner has — while passing locally for whoever had just run it. Sum all three.
+    """
     details = (getattr(response, "usage_metadata", None) or {}).get("input_token_details") or {}
-    return int(details.get("cache_read") or 0), int(details.get("cache_creation") or 0)
+    read = int(details.get("cache_read") or 0)
+    write = (
+        int(details.get("cache_creation") or 0)
+        + int(details.get("ephemeral_5m_input_tokens") or 0)
+        + int(details.get("ephemeral_1h_input_tokens") or 0)
+    )
+    return read, write
 
 
 def test_a_repeated_classification_is_served_from_cache() -> None:
