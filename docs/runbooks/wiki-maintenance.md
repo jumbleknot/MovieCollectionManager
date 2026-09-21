@@ -109,8 +109,27 @@ call. Full write-up and reproduction steps:
 **not** rely on either: the fix is invisible at runtime, a model rename or a vendor change would undo
 it in one line, and the symptom is a green build with an empty diff. `wiki-update` therefore sets
 **`OPENWIKI_MAX_OUTPUT_TOKENS=16384`** explicitly, which OpenWiki reads ahead of everything else — so
-that value, not any vendor table, is the one that reaches the model. The model stays pinned at
-**`claude-sonnet-4-6`**.
+that value, not any vendor table, is the one that reaches the model. The model is pinned at
+**`claude-sonnet-5`**.
+
+**Why that model** (feature 075, 2026-09-21). It was `claude-sonnet-4-6` until then. The move is
+purely a cost one: same vendor, same credential, same workflow, same Deep Agents caching middleware
+— only the id changes. Sonnet 5 lists at $2/$10 per MTok against Sonnet 4.6's $3/$15, with cache
+reads at $0.20/MTok against $0.30. Generation is the single largest line on the model bill (53% of
+$74.89 over the 30 days to 2026-09-20) and is already ~92% cache reads, so list *input* price is the
+wrong number to compare and the cached-read rate is the one that decides: a straight ≈−33%, from
+≈$1.72 to ≈$1.15 per run-day, at no quality risk.
+
+Two things to know before changing it again:
+
+- **Run the guard first, and read the SKIP COUNT, not just the exit code.** Two of its four cap
+  assertions skip when OpenWiki is absent from `/usr/local/lib/node_modules`, and a skip reads as a
+  pass. The `claude-sonnet-5` bump was verified at 20 passed / 0 failed / **0 skipped**.
+- **OpenWiki sends no `temperature`**, which is why this bump was safe where the agent gateway's was
+  not. Sonnet 5 and Opus 5 reject that parameter with a 400 and the gateway was sending it
+  unconditionally — see [`specs/075-llm-cost-phase-1/research.md`](../../specs/075-llm-cost-phase-1/research.md)
+  R13. A model id is only a drop-in for the parameters the caller actually sends; if a future
+  OpenWiki release starts sending sampling parameters, re-check that before bumping again.
 
 `scripts/__tests__/wiki-maintain.guard.test.mjs` now asserts all three: that the explicit cap is set
 and large enough, that OpenWiki's own resolver still matches the pinned id, and that the id would not
