@@ -55,12 +55,28 @@ export class OfflineTokenRevocationError extends Error {
   }
 }
 
+// TWO DIFFERENT KEYCLOAK ORIGINS, AND THE DISTINCTION IS NOT COSMETIC.
+//
+// `keycloakUrl` is the INTERNAL address this server dials — `keycloak-service:8080` inside the
+// compose network. `keycloakPublicUrl` is the BROWSER-facing one — `localhost:8099`.
+//
+// The token and revoke endpoints are called by THIS PROCESS, so they take the internal URL.
+// The authorize endpoint is never called from here at all: its URL is handed to the user's
+// BROWSER to navigate to. Building it from the internal URL sends the browser to a hostname
+// that exists only inside the Docker network, so it fails DNS and lands on a blank page —
+// silently, with no error anywhere, and the schedule simply never turns on.
+//
+// Measured exactly that way by the T061 E2E against the dev container: the browser was sent to
+// `http://keycloak-service:8080/realms/…/auth`. It did not show up in the integration tier
+// because there `KEYCLOAK_URL` is already `localhost:8099`, so the two origins coincide and the
+// bug is invisible. Same family as openwiki/gotchas/docker-internal-dns.md, in the other
+// direction.
 const tokenEndpoint = () =>
   `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/token`;
-const authorizeEndpoint = () =>
-  `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/auth`;
 const revokeEndpoint = () =>
   `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/revoke`;
+const browserAuthorizeEndpoint = () =>
+  `${env.keycloakPublicUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/auth`;
 
 function clientCredentials(): Record<string, string> {
   return env.keycloakClientSecret
@@ -105,7 +121,7 @@ export async function buildConsentRequest(redirectUri: string): Promise<ConsentR
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
   });
-  return { authorizationUrl: `${authorizeEndpoint()}?${params}`, state, codeVerifier };
+  return { authorizationUrl: `${browserAuthorizeEndpoint()}?${params}`, state, codeVerifier };
 }
 
 /**

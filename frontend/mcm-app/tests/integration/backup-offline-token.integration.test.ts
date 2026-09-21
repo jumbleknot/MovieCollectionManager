@@ -38,6 +38,8 @@ import {
 } from '@/bff-server/mongo-client';
 import { randomUUID } from 'node:crypto';
 
+import { env } from '@/config/env';
+
 // Feature 041's skip-escalation convention: a skipped test reads as a pass, so when the CI
 // contract says the live stack must be there, an absent credential FAILS instead of skipping.
 const CREDS_PRESENT = Boolean(process.env.KEYCLOAK_CLIENT_SECRET && process.env.E2E_TEST_PASSWORD);
@@ -122,6 +124,33 @@ describeLive('offline token custody', () => {
       expect(status.grantedAt).toEqual(expect.any(String));
       // The status object is what a route may return. It must not carry the token in any form.
       expect(JSON.stringify(status)).not.toContain(token);
+    });
+
+    it('builds the authorization URL on the BROWSER-facing Keycloak origin', async () => {
+      // REGRESSION (found by the T061 E2E against the dev container). The authorize URL is not
+      // fetched by this server — it is handed to the user's BROWSER. Built from the internal
+      // `keycloakUrl` it points at `keycloak-service:8080`, which resolves only inside the
+      // compose network: the browser fails DNS, lands on a blank page, and the schedule
+      // silently never turns on.
+      //
+      // This case exists because the rest of the suite CANNOT catch it: in the integration
+      // environment KEYCLOAK_URL is already localhost:8099, so the internal and public origins
+      // coincide and the bug is invisible. The two are forced apart here.
+      const mutableEnv = env as unknown as { keycloakUrl: string; keycloakPublicUrl: string };
+      const savedInternal = mutableEnv.keycloakUrl;
+      const savedPublic = mutableEnv.keycloakPublicUrl;
+      mutableEnv.keycloakUrl = 'http://keycloak-service:8080';
+      mutableEnv.keycloakPublicUrl = 'http://localhost:8099';
+      try {
+        const { authorizationUrl } = await offlineToken.buildConsentRequest(
+          'http://localhost:8082/bff-api/backups/consent',
+        );
+        expect(authorizationUrl.startsWith('http://localhost:8099/')).toBe(true);
+        expect(authorizationUrl).not.toContain('keycloak-service');
+      } finally {
+        mutableEnv.keycloakUrl = savedInternal;
+        mutableEnv.keycloakPublicUrl = savedPublic;
+      }
     });
 
     it('builds an authorization URL that asks for offline access, with PKCE', async () => {
