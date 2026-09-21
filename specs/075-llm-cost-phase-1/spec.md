@@ -166,7 +166,7 @@ Because production deliberately pins no model ids and lets the code defaults rul
 
 - **SC-001**: Measured 30-day spend falls from $74.89 to $37–40 — a reduction of approximately 48% — at unchanged workload volumes.
 - **SC-002**: Knowledge-bundle generation cost per run-day falls by approximately one third, from ≈$1.72 to ≈$1.15, with no increase in runs that produce no pages.
-- **SC-003**: The share of classification input tokens served from cache on the continuous-integration surface exceeds 95%, measured from the provider's own usage reporting, where today it is 0%.
+- **SC-003**: The share of classification input tokens served from cache on the continuous-integration surface exceeds 95%, measured from the provider's own usage reporting, where today it is 0%. **The automated gate is the weaker claim — that the share is above zero at all** — because a repeated classification either hits the cache or does not; the 95% figure is a property of how densely those calls arrive in a burst, which no test controls and only the billing export can confirm. A gate asserting 95% would fail on a sparse run that was working correctly.
 - **SC-004**: Cost per assistant turn for a user on their own credential falls from ≈$0.005 to ≈$0.0035 — a reduction of approximately 30% — with no change required by the user.
 - **SC-005**: Every intent classification and extraction that produced a correct result before this feature produces the same result after it; the recorded-interaction suite passes with zero regressions.
 - **SC-006**: A deliberate change to the unchanging portion of the classification prompt causes an automated check to fail, and that failure names prefix instability as the cause rather than reporting a generic error.

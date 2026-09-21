@@ -235,6 +235,16 @@ Resolution order per node becomes:
 single place model selection happens, so a pin can no longer reach the wrong provider on
 *any* surface.
 
+**Record why `runtime_env`'s pop list is not extended.** It pops exactly
+`SUPERVISOR_MODEL`, `SPECIALIST_MODEL` and `ESCALATION_MODEL` when a per-user config
+switches provider, so that an Anthropic user never inherits an Ollama id. This task adds
+a *family* of scoped names it does not pop — and it must not need to, because a scoped
+name is inert on the wrong provider by construction: a run with `MODEL_PROVIDER=ollama`
+reads `OLLAMA_SUPERVISOR_MODEL`, never `ANTHROPIC_SUPERVISOR_MODEL`. Leave the pop list
+alone and put that reasoning in a comment beside it, or the next reviewer reads the
+three-name list as an oversight and "fixes" it. FR-016 is preserved by the design, not
+by the pop list.
+
 **Verify GREEN**:
 ```bash
 pnpm nx test movie-assistant -- --testNamePattern "provider_scoped"
@@ -302,6 +312,23 @@ pnpm nx test movie-assistant -- --testNamePattern "prompt_cache"
 ```
 **Expected RED**: fails — there is no separable static block to compare while the prompt
 is one string ending in `f"Message: {last}"`.
+
+**Then verify the test can actually catch what SC-006 promises** — after T011 lands,
+temporarily interpolate something per-call into the static block (a timestamp, a counter)
+and re-run:
+
+```bash
+pnpm nx test movie-assistant -- --testNamePattern "prompt_cache"   # with the prefix deliberately broken
+```
+**Expected**: 1 failure, and **the message names prefix instability and points at the
+static block** — not a bare `assert a == b` diff of two 2,650-token strings. Revert the
+mutation afterwards.
+
+> This step is the difference between having an assertion and having a *usable* one.
+> SC-006 is a claim about the failure message, so the only way to verify it is to read
+> the message a real break produces. An unreadable diff here means the next person
+> treats the failure as a flake, which is exactly the outcome this test exists to
+> prevent.
 
 ---
 
@@ -380,9 +407,14 @@ provider outage would have surfaced as a capacity failure instead — FR-011.
 cd agents/movie-assistant && ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY" \
   MCM_REQUIRE_LIVE_MODEL=1 uv run pytest tests/integration/test_prompt_cache_effectiveness.py -v
 ```
-**Expected RED**: 1 failure — `cache_read` is 0. Run this **before** T011 lands if you
-want the purest RED (the prompt is one string, nothing is marked cacheable); after T011
-it is RED only until the burst surfaces select the cached tier.
+**Expected RED**: 1 failure — `cache_read` is 0, because nothing has yet selected the
+cached tier for this call.
+
+**Canonical order**: write and RED this test *here*, after T011, and leave it RED until
+T013 pins the burst surfaces. It is RED for a different reason before T011 (no cacheable
+block exists at all) but that is not the state this test is for — the assertion under
+test is "the cached tier serves a repeat from cache", and that only becomes meaningful
+once the block exists. Do not reorder it ahead of T011.
 
 > **Instrument check**: drop `MCM_REQUIRE_LIVE_MODEL=1` and a missing credential becomes
 > a **skip** at exit 0. Always read the skip count, not just the exit code.
@@ -413,6 +445,13 @@ Do **not** touch `test:golden` or `test:golden-live`: they keep the code default
 pre-deploy gate certifies what production runs (R3). Do **not** touch
 `compose.prod.yaml`'s env — production pins nothing by design (FR-008).
 
+**Also fix the stale comment in the file you are already opening.**
+`.devcontainer/devcontainer.json:135` describes the re-record path as
+"golden's surface is Claude — claude-haiku-4-5 / claude-sonnet-4-6". After T014 the
+specialist is `claude-haiku-4-5`, so leaving it would put a stale id directly beside the
+new pin — the worst place for one, because the next reader takes the neighbouring line
+as current.
+
 **Verify GREEN**:
 ```bash
 cd agents/movie-assistant && ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY" \
@@ -423,19 +462,20 @@ cd agents/movie-assistant && ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY" \
 
 ---
 
-## T014 — Test + implement: the extraction specialist drops to the fast tier
+## T014 — Test: the extraction specialist resolves to the fast tier
 
-**Type**: Test + Implementation | **Time**: 30 min | **Risk**: Medium
+**Type**: Test | **Time**: 15 min | **Risk**: Low
 
 **Spec reference**: FR-013, SC-004
 
-**File(s)**: `agents/movie-assistant/src/models.py`,
-`agents/movie-assistant/tests/unit/test_models.py`
+**Scenarios covered**:
+- US3-AC1: every extraction pair still yields its expected structured output (the model
+  change this asserts is what T015's re-record then exercises end to end).
 
-Assert `select_model_config("curator"|"organizer"|"query", {"MODEL_PROVIDER": "anthropic"})`
-resolves to `claude-haiku-4-5`, then change `_BALANCED_DEFAULTS["anthropic"]` to match.
-This is a **code default**, not a deployment setting — that is what carries the saving to
-BYOK users with the next gateway image (FR-008).
+**File(s)**: `agents/movie-assistant/tests/unit/test_models.py`
+
+Assert that `select_model_config("curator"|"organizer"|"query", {"MODEL_PROVIDER": "anthropic"})`
+resolves to `claude-haiku-4-5`. Offline, pure, cannot skip.
 
 **Verify RED**:
 ```bash
@@ -443,7 +483,43 @@ pnpm nx test movie-assistant -- --testNamePattern "balanced|specialist"
 ```
 **Expected RED**: assertion error — resolves to `claude-sonnet-4-6`.
 
-**Verify GREEN**: same command, 0 failures.
+---
+
+## T014a — Drop the extraction specialist default to the fast tier
+
+**Type**: Implementation | **Time**: 15 min | **Risk**: Medium
+
+**Spec reference**: FR-013, FR-008, SC-004
+
+**Prerequisite**: T014 complete and verified RED.
+
+**File(s)**: `agents/movie-assistant/src/models.py`
+
+Change `_BALANCED_DEFAULTS["anthropic"]` to `claude-haiku-4-5`. This is a **code
+default**, not a deployment setting — that is precisely what carries the saving to BYOK
+users with the next gateway image (FR-008), because `compose.prod.yaml` pins nothing.
+
+**Comment the tier convergence.** After this change `_FAST_DEFAULTS["anthropic"]` and
+`_BALANCED_DEFAULTS["anthropic"]` both hold `claude-haiku-4-5`, so on Anthropic the two
+tiers resolve identically and `SUPERVISOR_MODEL` vs `SPECIALIST_MODEL` stops being a
+distinction without an explicit override. That is intended — the extraction prompts are
+120–520 tokens returning a small object, work the fast tier handles, and they are far
+too short to cache under any model, so cheapest-per-token wins. Say so in the file, or
+the duplicated value reads as a copy-paste error and someone "restores" the balanced id.
+The tables stay separate because the Ollama column still differs (`qwen2.5` vs
+`qwen2.5:32b`) and because a future provider may diverge again.
+
+**Verify GREEN**:
+```bash
+pnpm nx test movie-assistant -- --testNamePattern "balanced|specialist"
+```
+**Expected GREEN**: 0 failures.
+
+**Also run the touched suite**:
+```bash
+pnpm nx test movie-assistant
+```
+**Expected**: previously passing unit tests still pass.
 
 ---
 
@@ -545,7 +621,14 @@ here.
 **Spec reference**: FR-019, FR-008
 
 **File(s)**: `docs/runbooks/agent-layer.md`,
+`docs/runbooks/devcontainer.md`,
 `infrastructure-as-code/docker/agents/compose.prod.yaml`
+
+**`docs/runbooks/devcontainer.md:143`** names `claude-sonnet-4-6` as the re-record
+surface. It is the last stale id outside the cassettes and the historical spec folders,
+and it is easy to miss because this feature otherwise has no reason to open that file.
+Correct it, and leave the surrounding "replay is keyless" statement alone — that is
+still true.
 
 Correct the per-node model reference in the runbook. In the compose header comment,
 state that the file still pins **neither** `SUPERVISOR_MODEL` nor `SPECIALIST_MODEL`
@@ -553,8 +636,49 @@ state that the file still pins **neither** `SUPERVISOR_MODEL` nor `SPECIALIST_MO
 what ships the extraction saving to BYOK users, and a lone user turn would pay a cache
 write and cost ≈2.5× more on the cached tier (R8).
 
-**Done when**: both files name the current ids and the compose header explains the
-deliberate absence rather than merely noting it.
+**Done when**: all three files name the current ids, the compose header explains the
+deliberate absence rather than merely noting it, and
+`grep -rn "claude-sonnet-4-6\|claude-opus-4-8" --include=*.md --include=*.json --include=*.yaml .`
+returns nothing outside `docs/proposals/`, `specs/0[0-6]*/` and the regenerated
+cassettes — those are history and stay as they are.
+
+---
+
+## T018a — Verify the four invariants this feature must NOT disturb
+
+**Type**: Verification | **Time**: 30 min | **Risk**: Low
+
+**Spec reference**: FR-014, FR-015, FR-016, FR-018. Covers [research.md](./research.md) R10.
+
+These four are *preservation* requirements — nothing in this feature is supposed to
+change them, which is exactly why they are the ones that get broken without anyone
+noticing. Each already has a home in an existing suite; this task names them so a
+reviewer can see they were checked rather than assumed.
+
+| Requirement | What must still hold | Where it is asserted |
+|---|---|---|
+| **FR-014** | Escalation stays provider-pinned and flag-off; nothing routes to it. T006 changes only its model **id**. | `tests/unit/test_models.py` — `select_model_config("escalation", …)` forces `provider="anthropic"` whatever the base provider; `escalation_or_base` still degrades to the specialist without a key |
+| **FR-015** | A per-user run uses that user's credential alone — no shared fallback. | `tests/unit/test_agent_config_injection.py` — `runtime_env` drops an ambient key when the run carries none; `resolve_anthropic_key` reads only the per-run value |
+| **FR-016** | A BYOK provider switch inherits no model id from the other provider. | same file — the pop list, **plus** the scoped-name reasoning recorded in T008 |
+| **FR-018** | The merge gate needs no credential. | `guardrails.yml` runs `test:golden` in replay; the two new live tests are marked `not golden` so they are never collected there |
+
+```bash
+pnpm nx test movie-assistant -- --testNamePattern "escalation|runtime_env|agent_config"
+env -u ANTHROPIC_API_KEY -u MCM_ANTHROPIC_API_KEY \
+  bash -c 'cd agents/movie-assistant && LLM_CASSETTE_MODE=replay uv run pytest tests/integration -m golden -q'
+```
+
+**Expected**: the unit selection passes; the second command passes **with no credential
+present at all** — `51 passed`, and no test errors reaching for a key.
+
+> The second command is the real check for FR-018, and it is deliberately run with the
+> credentials *unset* rather than merely absent from the command line. A new live test
+> accidentally collected into the golden marker would pass on a developer machine that
+> happens to have a key exported, and fail only in CI.
+
+**Done when**: both commands pass and the `not golden` marking on
+`test_prompt_cache_effectiveness.py` and `test_model_invocability.py` is confirmed by
+their absence from the golden run's collected set.
 
 ---
 
@@ -589,10 +713,11 @@ Before marking `075-llm-cost-phase-1` complete, verify all success criteria from
 
 - [ ] **SC-001**: 30-day spend falls from $74.89 to $37–40 (≈−48%) at unchanged volumes
 - [ ] **SC-002**: generator cost per run-day ≈$1.72 → ≈$1.15, no rise in zero-page runs
-- [ ] **SC-003**: CI classification input served from cache >95% (was 0%)
+- [ ] **SC-003**: CI classification input served from cache — **gate**: T012 asserts >0; **confirmation**: >95% read from the billing export (was 0%)
 - [ ] **SC-004**: cost per BYOK turn ≈$0.005 → ≈$0.0035
 - [ ] **SC-005**: zero regressions in the recorded-interaction suite
-- [ ] **SC-006**: a deliberate break of the static prefix fails a check that names prefix instability
+- [ ] **SC-006**: a deliberate break of the static prefix fails a check that names prefix instability — **verified by mutation in T010, not by the test merely existing**
+- [ ] **FR-014/015/016/018**: the four preservation invariants re-verified (T018a), including a golden run with the credentials unset
 - [ ] **SC-007**: generator and gateway reached `main` as separate merges
 - [ ] **SC-008**: both providers pass — keyless merge gate (Ollama tier) and pre-deploy gate (Anthropic tier)
 - [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
