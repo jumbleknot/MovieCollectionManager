@@ -26,6 +26,7 @@ import {
 } from '@/bff-server/backup-offline-token';
 import { getBackupJobsCollection } from '@/bff-server/mongo-client';
 import { createBackupDriver } from '@/bff-server/backup-destination-driver';
+import { pruneAfterRun } from '@/bff-server/backup-retention';
 import { DestinationUrlNotAllowedError } from '@/bff-server/backup-destination-url-guard';
 import * as destinationStore from '@/bff-server/backup-destination-store';
 import { readSnapshot } from '@/bff-server/backup-snapshot-reader';
@@ -217,11 +218,33 @@ export async function runBackup(request: RunRequest): Promise<BackupRun> {
       movieCount: c.movies.length,
     }));
 
+    // PRUNE ONLY NOW — after the PUT above has returned, so the new artifact is confirmed
+    // written before any old one is considered for deletion (FR-025). Pruning first, or
+    // concurrently, would open a window in which the user has fewer versions than they asked
+    // for and no new one yet; if the write then failed they would be down a backup for nothing.
+    //
+    // Reached on the SUCCESS path only. `pruneAfterRun` re-checks that itself, so the rule
+    // survives a future caller that forgets (FR-026).
+    //
+    // A prune failure NEVER fails the run (FR-027): the backup the user just asked for did
+    // happen, and reporting it as failed would say otherwise. It is recorded in its own field,
+    // and because retention is "list, sort, delete the tail" the next successful run simply
+    // sees the same objects again and retries — there is no retry state to keep.
+    const prune = await pruneAfterRun(
+      driver,
+      destinationDoc as BackupDestination,
+      job._id,
+      job.keepLast,
+      'success',
+    );
+
     const finished = await runStore.finishRun(run._id, {
       status: 'success',
       artifactKey: key,
       artifactBytes: body.byteLength,
       collectionCounts,
+      prunedCount: prune.prunedCount,
+      ...(prune.failureReason ? { pruneFailureReason: prune.failureReason } : {}),
     });
     logger.audit('backup_run_succeeded', {
       userId,
@@ -231,6 +254,7 @@ export async function runBackup(request: RunRequest): Promise<BackupRun> {
       collectionCount: collections.length,
       movieCount: artifact.manifest.totalMovieCount,
       artifactBytes: body.byteLength,
+      prunedCount: prune.prunedCount,
     });
     return finished ?? { ...run, status: 'success', artifactKey: key, collectionCounts };
   } catch (err) {

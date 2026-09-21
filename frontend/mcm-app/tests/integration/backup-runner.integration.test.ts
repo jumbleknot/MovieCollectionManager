@@ -21,6 +21,7 @@ import { join } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020';
 
 import { runBackup } from '@/bff-server/backup-runner';
+import { env } from '@/config/env';
 import { createBackupDriver } from '@/bff-server/backup-destination-driver';
 import { decompressArtifact, verifyArtifact } from '@/bff-server/backup-artifact';
 import * as destinationStore from '@/bff-server/backup-destination-store';
@@ -102,7 +103,11 @@ async function makeDestination(overrides: Record<string, unknown> = {}) {
   });
 }
 
-async function makeJob(destinationId: string, collectionIds: string[] = []): Promise<BackupJob> {
+async function makeJob(
+  destinationId: string,
+  collectionIds: string[] = [],
+  keepLast = 7,
+): Promise<BackupJob> {
   const jobs = await getBackupJobsCollection();
   const job: BackupJob = {
     _id: randomUUID(),
@@ -110,7 +115,7 @@ async function makeJob(destinationId: string, collectionIds: string[] = []): Pro
     destinationId,
     label: 'runner job',
     collectionIds,
-    keepLast: 7,
+    keepLast,
     enabled: true,
     claimedAt: null,
     createdAt: new Date().toISOString(),
@@ -311,4 +316,102 @@ describeBackupTargets('a run that fails mid-way', () => {
     expect(run.status).toBe('failed');
     expect(run.failureReason).toMatch(/not allowed/i);
   }, 180_000);
+  // ── T064: pruning is wired into the runner, on the success path only ─────────
+
+  itBackupTargets(
+    'keeps the last N across repeated runs, removing the oldest (SC-007)',
+    async () => {
+      // The spec's own independent test for US5: keep-last-3, run four times, three remain.
+      // Driven through `runBackup` rather than the retention module, because what this asserts
+      // is the WIRING — that a real run prunes at all, and after the write rather than before.
+      const destination = await makeDestination();
+      const job = await makeJob(destination.id, [collectionIdA], 3);
+      const driver = await driverFor(destination.id);
+      const prefix = `${PREFIX}/${job._id}/`;
+
+      const keysAfterEachRun: string[][] = [];
+      for (let i = 0; i < 4; i += 1) {
+        const run = await runBackup({ userId: user.userId, jwt: token, job, trigger: 'manual' });
+        expect(run.status).toBe('success');
+        keysAfterEachRun.push((await driver.list(prefix)).map((o) => o.key).sort());
+      }
+
+      const [afterOne, , , afterFour] = keysAfterEachRun;
+      expect(afterOne).toHaveLength(1);
+      expect(afterFour).toHaveLength(3);
+      // The one that went is the OLDEST — asserting the count alone would pass an
+      // implementation that deleted the newest, which is the opposite of retention.
+      expect(afterFour).not.toContain(afterOne[0]);
+
+      for (const key of afterFour) await driver.delete(key).catch(() => undefined);
+    },
+    240_000,
+  );
+
+  itBackupTargets(
+    'records what was pruned on the run, separately from its outcome',
+    async () => {
+      const destination = await makeDestination();
+      const job = await makeJob(destination.id, [collectionIdA], 1);
+      const driver = await driverFor(destination.id);
+      const prefix = `${PREFIX}/${job._id}/`;
+
+      await runBackup({ userId: user.userId, jwt: token, job, trigger: 'manual' });
+      const second = await runBackup({ userId: user.userId, jwt: token, job, trigger: 'manual' });
+
+      expect(second.status).toBe('success');
+      expect(second.prunedCount).toBe(1);
+      // FR-027: a clean prune leaves the separate failure field unset. It is not folded into
+      // the run's own failureReason, because a prune problem is not a backup problem.
+      expect(second.pruneFailureReason).toBeUndefined();
+      expect(second.failureReason).toBeUndefined();
+
+      for (const o of await driver.list(prefix)) await driver.delete(o.key).catch(() => undefined);
+    },
+    240_000,
+  );
+
+  itBackupTargets(
+    'a FAILED run prunes nothing — the good versions survive (SC-008)',
+    async () => {
+      // THE ONE THAT MATTERS. A retention bug on the failure path turns "today's backup did not
+      // happen" into "and yesterday's is gone too", discovered at restore.
+      //
+      // THE FAILING RUN USES THE SAME DESTINATION AND THE SAME PREFIX as the good versions, and
+      // that is the whole design of this case. An earlier draft pointed the failing run at a
+      // broken destination — where the existing artifacts were untouched trivially, because a
+      // prune would have hit the broken bucket instead. It passed while asserting nothing. The
+      // failure is induced with the size ceiling, which fires AFTER the snapshot is in hand and
+      // BEFORE anything is written, so the run reaches the same code path a real failure takes
+      // against a destination that really does hold the user's backups.
+      const destination = await makeDestination();
+      const job = await makeJob(destination.id, [collectionIdA], 1);
+      const driver = await driverFor(destination.id);
+      const prefix = `${PREFIX}/${job._id}/`;
+
+      await runBackup({ userId: user.userId, jwt: token, job: { ...job, keepLast: 9 }, trigger: 'manual' });
+      await runBackup({ userId: user.userId, jwt: token, job: { ...job, keepLast: 9 }, trigger: 'manual' });
+      const before = (await driver.list(prefix)).map((o) => o.key).sort();
+      expect(before).toHaveLength(2);
+
+      // keepLast=1, so a prune on this path WOULD delete one of the two.
+      const mutableEnv = env as unknown as { backupMaxMovies: number };
+      const savedCeiling = mutableEnv.backupMaxMovies;
+      mutableEnv.backupMaxMovies = 1;
+      let failing;
+      try {
+        failing = await runBackup({ userId: user.userId, jwt: token, job, trigger: 'manual' });
+      } finally {
+        mutableEnv.backupMaxMovies = savedCeiling;
+      }
+
+      expect(failing.status).toBe('failed');
+      expect(failing.prunedCount ?? 0).toBe(0);
+      // Both good versions still at the destination the failing run was aimed at.
+      expect((await driver.list(prefix)).map((o) => o.key).sort()).toEqual(before);
+
+      for (const key of before) await driver.delete(key).catch(() => undefined);
+    },
+    300_000,
+  );
 });
