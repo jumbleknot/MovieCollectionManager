@@ -23,7 +23,47 @@ if TYPE_CHECKING:
 
 _FAST_DEFAULTS = {"ollama": "qwen2.5", "anthropic": "claude-haiku-4-5"}
 _BALANCED_DEFAULTS = {"ollama": "qwen2.5:32b", "anthropic": "claude-sonnet-4-6"}
-_ESCALATION_DEFAULT = "claude-opus-4-8"
+_ESCALATION_DEFAULT = "claude-opus-5"
+
+# ── Which Anthropic models still accept `temperature` ───────────────────────────────────────────
+#
+# THIS LIST IS THE OPPOSITE WAY ROUND FROM THE OBVIOUS ONE, ON PURPOSE.
+#
+# Newer Claude models REMOVED the sampling parameters and reject them outright — not a warning, a
+# hard 400 `temperature is deprecated for this model`. Measured 2026-09-21, one live call each:
+#
+#     claude-haiku-4-5    accepted        claude-sonnet-5    400
+#     claude-sonnet-4-6   accepted        claude-opus-5      400
+#     claude-opus-4-6     accepted        claude-opus-4-8    400
+#
+# We used to send `temperature=0.0` unconditionally, which meant the escalation tier
+# (`claude-opus-4-8`) was ALREADY BROKEN — it would have 400'd on first use. Nobody saw it because
+# the tier is flag-gated off and nothing routes there.
+#
+# The default direction matters more than the list. OMITTING the parameter never fails; SENDING it
+# can. So an id we do not recognise is treated as NOT supporting it: a model generation nobody here
+# has met yet gets the request that works, rather than the request that 400s. The cost of being
+# wrong in this direction is a little more sampling variance on a model that would have accepted
+# temperature=0; the cost of being wrong the other way is every call failing.
+#
+# Ollama is not consulted here — it accepts `temperature` and relies on it.
+_ANTHROPIC_TEMPERATURE_SUPPORTED = (
+    "claude-haiku-4-5",
+    "claude-sonnet-4-6",
+    "claude-sonnet-4-5",
+    "claude-opus-4-6",
+    "claude-opus-4-5",
+    "claude-3-",
+)
+
+
+def anthropic_accepts_temperature(model_id: str) -> bool:
+    """Whether this Anthropic model still accepts a sampling parameter (see the table above).
+
+    Unknown ids answer False — omitting never errors, sending can. Exposed (not private) so the
+    invocability tier and the unit tests can assert the rule rather than re-deriving it.
+    """
+    return model_id.startswith(_ANTHROPIC_TEMPERATURE_SUPPORTED)
 
 
 @dataclass(frozen=True)
@@ -180,11 +220,25 @@ def _build_real_chat_model(spec: ModelSpec, env: Mapping[str, str]) -> "BaseChat
         # can exhaust: on 2026-07-20 it took out two live-model integration tests mid-run. The SDK
         # applies exponential backoff between attempts, so a higher ceiling costs nothing on the
         # happy path and absorbs a short overload. Tunable for operators who want it lower.
+        api_key = resolve_anthropic_key(env)
+        max_retries = int(env.get("ANTHROPIC_MAX_RETRIES") or 6)
+
+        # `temperature` is passed ONLY to models that still accept it — a rejected one is a hard
+        # 400 on EVERY call, not a warning. See `anthropic_accepts_temperature` for the measured
+        # table and for why an unknown id omits it. Written as two explicit constructor calls
+        # rather than conditional `**kwargs`: unpacking a dict defeats the type checker here, and
+        # this seam is exactly where a silent type error becomes a 400 in production.
+        if anthropic_accepts_temperature(spec.model_id):
+            return ChatAnthropic(  # type: ignore[call-arg]
+                model=spec.model_id,
+                temperature=spec.temperature,
+                api_key=api_key,  # type: ignore[arg-type]
+                max_retries=max_retries,
+            )
         return ChatAnthropic(  # type: ignore[call-arg]
             model=spec.model_id,
-            temperature=spec.temperature,
-            api_key=resolve_anthropic_key(env),  # type: ignore[arg-type]
-            max_retries=int(env.get("ANTHROPIC_MAX_RETRIES") or 6),
+            api_key=api_key,  # type: ignore[arg-type]
+            max_retries=max_retries,
         )
 
     raise ValueError(f"unknown model provider: {spec.provider!r}")

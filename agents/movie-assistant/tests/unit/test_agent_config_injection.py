@@ -158,9 +158,11 @@ def test_escalation_degrades_to_base_without_an_anthropic_key() -> None:
 
 
 def test_escalation_uses_claude_when_an_anthropic_key_is_present() -> None:
+    # Id moved 4-8 -> 5 in feature 075 (the old one 400s on `temperature`); the property asserted
+    # here — a per-run Anthropic key reaches the frontier tier — is unchanged.
     spec = escalation_or_base({"ANTHROPIC_API_KEY": "sk-x"})
     assert spec.provider == "anthropic"
-    assert spec.model_id == "claude-opus-4-8"
+    assert spec.model_id == "claude-opus-5"
 
 
 # ── runtime wrapper bridges config["configurable"]["agent_config"] → node-task ContextVar ────
