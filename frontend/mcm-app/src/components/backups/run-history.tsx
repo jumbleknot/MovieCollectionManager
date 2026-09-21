@@ -74,18 +74,21 @@ export function RunHistory({
         </View>
       ) : null}
 
-      {timeZone ? (
-        <View style={styles.nextRun}>
-          <Text
-            fontFamily="$body"
-            fontSize={12}
-            color={theme.onSurfaceVariant?.val}
-            testID="backup-next-run"
-          >
-            {`Next run: ${formatNextRun(nextRunAt, timeZone)}`}
-          </Text>
-        </View>
-      ) : null}
+      {/*
+        ALWAYS RENDERED, including for a job with no schedule — "Not scheduled" is an answer and
+        an absent line is not. Hiding it left a user unable to tell "this runs nightly" from
+        "this only runs when I press the button", which is the distinction the line exists for.
+      */}
+      <View style={styles.nextRun}>
+        <Text
+          fontFamily="$body"
+          fontSize={12}
+          color={theme.onSurfaceVariant?.val}
+          testID="backup-next-run"
+        >
+          {`Next run: ${formatNextRun(nextRunAt, timeZone ?? 'UTC')}`}
+        </Text>
+      </View>
 
       <Card>
         <CardHeader title="Recent runs" subtitle="The last few backups for this job" />

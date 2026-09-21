@@ -485,16 +485,24 @@ test.describe('Backup destinations (feature 073)', () => {
   // ── US5/US6: retention, and a failure you cannot miss ────────────────────────
 
   test(
-    'keep-last-N prunes the oldest on success, and a failure prunes nothing (SC-007, SC-008)',
+    'keep-last-N prunes the oldest version on success (SC-007, US5-AC1)',
     { tag: '@gate' },
     async ({ page, request }) => {
+      // WHAT THIS DOES NOT ASSERT, AND WHY. SC-008 — "a failed run prunes nothing" — is not
+      // provable through this UI. Every failure inducible from the browser (a bucket that does
+      // not exist, a wrong credential, a blocked address) also breaks the DELETE path and the
+      // versions listing, so a wrongly-attempted prune would fail for the same reason the run
+      // did and the test would pass without discriminating anything. An earlier draft of this
+      // case did exactly that. SC-008 is proven in the integration tier instead, at the same
+      // destination with working credentials, by inducing the failure with the size ceiling —
+      // and verified there by mutation. See backup-runner.integration.test.ts.
       const label = unique();
       await openBackupsSettings(page);
       await fillDestination(page, label);
       await page.click('[data-testid="backup-destination-save"]');
       await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
 
-      // keep-last-2 so three runs are enough to prove the prune, without three times the wait.
+      // keep-last-2, so three runs prove the prune without three times the wait.
       await page.click('[data-testid="backup-job-add"]');
       await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
       await page.fill('[data-testid="backup-job-label"]', `${label} retention`);
@@ -507,57 +515,36 @@ test.describe('Backup destinations (feature 073)', () => {
         label: string;
       }[];
       const jobId = jobs.find((j) => j.label === `${label} retention`)!.id;
-      const versionKeys = async () =>
-        ((await (await request.get(`${BASE}/bff-api/backups/jobs/${jobId}/versions`)).json()) as {
-          key: string;
-        }[]).map((v) => v.key).sort();
+      const versionKeys = async (): Promise<string[]> => {
+        const body = await (
+          await request.get(`${BASE}/bff-api/backups/jobs/${jobId}/versions`)
+        ).json();
+        // Defensive: a non-array here means the listing errored, and `.map` on it throws a
+        // TypeError that hides the real reason. Surface an empty list and let the poll fail
+        // on the count instead.
+        return Array.isArray(body) ? (body as { key: string }[]).map((v) => v.key).sort() : [];
+      };
 
-      // Three successful runs through the real button.
+      let firstKey = '';
       for (let i = 0; i < 3; i += 1) {
         await page.locator(`[data-testid="backup-job-run-${jobId}"]`).click();
         await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
           /Backed up \d+ movies/i,
           { timeout: 120000 },
         );
-        // Each run's key carries its own ISO timestamp, so waiting for the COUNT to settle is
-        // what makes the next click a separate version rather than a same-second overwrite.
-        await expect.poll(async () => (await versionKeys()).length, { timeout: 60000 }).toBe(
-          Math.min(i + 1, 2),
-        );
+        // Each run writes a key stamped with its own instant, so the count is polled to settle
+        // before the next click — clicking early is how two runs become one version.
+        await expect
+          .poll(async () => (await versionKeys()).length, { timeout: 60000 })
+          .toBe(Math.min(i + 1, 2));
+        if (i === 0) [firstKey] = await versionKeys();
       }
 
-      const afterThree = await versionKeys();
-      expect(afterThree).toHaveLength(2);
-
-      // Now force a FAILURE and confirm the two survivors are untouched (SC-008). Pointing the
-      // job at a destination that cannot be written is the only failure this UI can cause.
-      const blockedLabel = `${label}-blocked`;
-      await page.click('[data-testid="backup-destination-add"]');
-      await page.waitForSelector('[data-testid="backup-destination-form"]', { state: 'visible', timeout: 15000 });
-      await page.fill('[data-testid="backup-destination-label"]', blockedLabel);
-      await page.fill('[data-testid="backup-destination-endpoint"]', S3_ENDPOINT);
-      await page.fill('[data-testid="backup-destination-bucket"]', `absent-${Date.now()}`);
-      await page.fill('[data-testid="backup-destination-access-key-id"]', S3_ACCESS_KEY);
-      await page.fill('[data-testid="backup-destination-secret"]', S3_SECRET);
-      await page.click('[data-testid="backup-destination-save"]');
-      await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
-
-      const blockedId = await destinationIdFor(page, blockedLabel);
-      await page.click(`[data-testid="backup-job-edit-${jobId}"]`);
-      await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
-      await page.click(`[data-testid="backup-job-destination-${blockedId}"]`);
-      await page.click('[data-testid="backup-job-save"]');
-      await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
-
-      await page.locator(`[data-testid="backup-job-run-${jobId}"]`).click();
-      await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
-        /did not finish/i,
-        { timeout: 120000 },
-      );
-
-      // THE ASSERTION. The failed run wrote nothing AND deleted nothing: a failure must never
-      // be the reason a good version disappears.
-      expect(await versionKeys()).toEqual(afterThree);
+      const remaining = await versionKeys();
+      expect(remaining).toHaveLength(2);
+      // The one that went is the OLDEST. Asserting the count alone would pass an
+      // implementation that deleted the newest, which is the opposite of retention.
+      expect(remaining).not.toContain(firstKey);
     },
   );
 

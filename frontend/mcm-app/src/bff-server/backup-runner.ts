@@ -262,6 +262,17 @@ export async function runBackup(request: RunRequest): Promise<BackupRun> {
     // The run is recorded FAILED and returned, not thrown. A scheduled run has no caller to
     // catch anything, and a manual one needs the failure in history rather than as a 500.
     const finished = await runStore.finishRun(run._id, { status: 'failed', failureReason });
+    // BOTH, and they are not redundant. The audit event is the security/compliance record
+    // FR-035 enumerates and is what an operator alerts on; the error log carries the caught
+    // exception for diagnosis. Only the audit line is guaranteed free of upstream content —
+    // `failureReason` has been through `safeReason`, the raw `error` has not.
+    logger.audit('backup_run_failed', {
+      userId,
+      jobId: job._id,
+      runId: run._id,
+      trigger,
+      failureReason,
+    });
     logger.error('Backup run failed', {
       action: 'backup_run_failed',
       userId,
