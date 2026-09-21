@@ -285,7 +285,14 @@ export function BackupsSettingsScreen(): React.JSX.Element {
                             }}
                           />
                           <View style={styles.section} />
-                          <RunHistory runs={runs} lastRun={job.lastRun} />
+                          <RunHistory
+                            runs={runs}
+                            lastRun={job.lastRun}
+                            nextRunAt={job.nextRunAt}
+                            // The JOB's zone, not the device's (FR-036). A user who set 03:00
+                            // in London and opens the app in New York must still read 03:00.
+                            timeZone={job.schedule?.timeZone}
+                          />
                           <View style={styles.section}>
                             <VersionList
                               versions={versions}
