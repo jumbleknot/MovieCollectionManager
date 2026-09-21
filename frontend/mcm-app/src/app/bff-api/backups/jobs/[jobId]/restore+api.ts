@@ -67,14 +67,10 @@ export async function POST(req: Request, { jobId }: Params): Promise<Response> {
     logger.audit('backup_restore_started', { userId, jobId, artifactBytes: bytes.byteLength });
 
     try {
+      // `restoreFromBytes` emits `backup_restore_completed` itself — one act, one audit
+      // record. Emitting it here too would double-count every restore in the trail and make
+      // the count untrustworthy for exactly the reader who relies on it.
       const result = await restoreFromBytes({ userId, jwt, bytes, jobId });
-      logger.audit('backup_restore_completed', {
-        userId,
-        jobId,
-        collectionCount: result.createdCollectionIds.length,
-        movieCount: result.movieCount,
-        partial: result.partial,
-      });
       return json({
         createdCollectionIds: result.createdCollectionIds,
         movieCount: result.movieCount,

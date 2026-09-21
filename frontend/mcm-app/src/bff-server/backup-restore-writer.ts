@@ -205,7 +205,10 @@ async function writeArtifact(
     failures,
   };
 
-  logger.audit('backup_restored', {
+  // FR-035's "restore completed". Emitted HERE rather than at the route because this is the
+  // only place that knows `failureCount`, and because a future caller that restores without
+  // going through the route still gets the record.
+  logger.audit('backup_restore_completed', {
     userId: request.userId,
     jobId: request.jobId,
     collectionCount: createdCollectionIds.length,
