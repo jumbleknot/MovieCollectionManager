@@ -73,4 +73,12 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'backups/jobs/[jobId]/versions+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
   'backups/jobs/[jobId]/restore+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
   'backups/jobs/[jobId]/download+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
+  'backups/consent+api.ts': {
+    tests: ['backup-consent-routes.integration.test.ts', 'backup-offline-token.integration.test.ts'],
+  },
+  // The tick is INTERNAL and secret-guarded — it has no session and 404s rather than 401s, so
+  // it cannot be exercised the way the user-facing routes are. Its suite drives the handler
+  // in-process with a Request it constructs, which is also the only way to be certain no
+  // cookie was sent: the central claim is that a scheduled run needs no session at all.
+  'backups/tick+api.ts': { tests: ['backup-tick.integration.test.ts'] },
 };

@@ -28,14 +28,31 @@ import { securityHeaders } from '@/bff-server/security-headers';
 import { setBackupConsentRequest, takeBackupConsentRequest } from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
 
-const BASE_URL = process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081';
-
-/** Registered on the Keycloak client by `/bff-api/auth/init` (T056). */
-export const CONSENT_REDIRECT_URI = `${BASE_URL}/bff-api/backups/consent`;
+/**
+ * The consent callback, on the origin THIS REQUEST arrived at.
+ *
+ * DERIVED FROM THE REQUEST, not from a build-time base URL, and that is a correctness fix
+ * rather than a preference. The same image serves the dev container on :8082 and the TLS proxy
+ * on :8443, while `EXPO_PUBLIC_BFF_BASE_URL` is frequently unset and falls back to :8081. A
+ * fixed base URL therefore sends the user's browser to a port with no BFF on it after they
+ * sign in: the callback never arrives, the grant is never stored, and the schedule silently
+ * never turns on. Measured exactly that way against the dev container.
+ *
+ * SAFE AGAINST A SPOOFED HOST HEADER because Keycloak only honours redirect URIs registered on
+ * the client. An attacker who could forge the Host would produce an unregistered URI, and
+ * Keycloak refuses the authorization request outright rather than redirecting anywhere.
+ *
+ * The same URI must be sent on BOTH legs — the authorize request and the code exchange — or
+ * the exchange fails `invalid_grant`, which is why it is computed once per request and passed.
+ */
+function consentRedirectUri(req: Request): string {
+  return `${new URL(req.url).origin}/bff-api/backups/consent`;
+}
 
 interface PendingConsent {
   state: string;
   codeVerifier: string;
+  redirectUri: string;
 }
 
 export async function GET(req: Request): Promise<Response> {
@@ -43,17 +60,20 @@ export async function GET(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
 
-    if (code) return completeConsentCallback(userId, code, url);
-    if (url.searchParams.has('start')) return startConsent(userId);
+    if (code) return completeConsentCallback(userId, code, url, consentRedirectUri(req));
+    if (url.searchParams.has('start')) return startConsent(userId, consentRedirectUri(req));
     return json(await offlineToken.describeConsent(userId));
   });
 }
 
-async function startConsent(userId: string): Promise<Response> {
+async function startConsent(userId: string, redirectUri: string): Promise<Response> {
   const { authorizationUrl, state, codeVerifier } = await offlineToken.buildConsentRequest(
-    CONSENT_REDIRECT_URI,
+    redirectUri,
   );
-  const pending: PendingConsent = { state, codeVerifier };
+  // The redirect URI is stashed WITH the verifier: the exchange must present the identical
+  // value the authorize request used, and recomputing it on the callback would silently differ
+  // if the two legs ever arrived on different origins.
+  const pending: PendingConsent = { state, codeVerifier, redirectUri };
   await setBackupConsentRequest(userId, JSON.stringify(pending));
   logger.audit('backup_schedule_consent_started', { userId });
   // Only the URL. The verifier stays server-side — a verifier the browser holds is one an
@@ -61,7 +81,12 @@ async function startConsent(userId: string): Promise<Response> {
   return json({ authorizationUrl });
 }
 
-async function completeConsentCallback(userId: string, code: string, url: URL): Promise<Response> {
+async function completeConsentCallback(
+  userId: string,
+  code: string,
+  url: URL,
+  fallbackRedirectUri: string,
+): Promise<Response> {
   const stashed = await takeBackupConsentRequest(userId);
   if (!stashed) {
     return problem('No consent request is pending', 400, 'Start again from the schedule settings.');
@@ -74,7 +99,12 @@ async function completeConsentCallback(userId: string, code: string, url: URL): 
     return problem('That consent request did not match', 400, 'Start again from the schedule settings.');
   }
 
-  await offlineToken.completeConsent(userId, code, pending.codeVerifier, CONSENT_REDIRECT_URI);
+  await offlineToken.completeConsent(
+    userId,
+    code,
+    pending.codeVerifier,
+    pending.redirectUri ?? fallbackRedirectUri,
+  );
 
   // A REDIRECT, not JSON. Keycloak sent the user's BROWSER here, so whatever this returns is
   // what they look at next — and a page of JSON is not an answer to "did my backup schedule
@@ -82,7 +112,10 @@ async function completeConsentCallback(userId: string, code: string, url: URL): 
   // as granted.
   return new Response(null, {
     status: 302,
-    headers: { ...securityHeaders(), Location: `${BASE_URL}/settings/backups?consent=granted` },
+    headers: {
+      ...securityHeaders(),
+      Location: `${new URL(url.toString()).origin}/settings/backups?consent=granted`,
+    },
   });
 }
 
