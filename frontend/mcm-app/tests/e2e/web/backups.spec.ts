@@ -58,12 +58,16 @@ test.describe('Backup destinations (feature 073)', () => {
   // way MCM_REQUIRE_LIVE_STACK works for the integration tier: set E2E_REQUIRE_BACKUP_TARGETS=1
   // and a missing target becomes a hard failure instead of a quiet green.
   //
-  // WHY THIS MATTERS RIGHT NOW: CI's app-e2e does NOT bring these targets up. The S3 one is
-  // `${REGISTRY_HOST}/jumbleknot/minio` — the repository's own from-source image, in the forge
-  // registry — and that job has no REGISTRY_HOST and no registry credentials. Until that is
-  // wired up (or the S3 target moves to a public image with an acceptable CVE posture), this
-  // file SKIPS in CI and proves nothing there. It is verified locally instead. Do not read a
-  // green app-e2e as evidence that backups work.
+  // CI DOES RUN THIS FILE NOW — corrected 2026-09-21, run 3873. An earlier revision of this
+  // comment said app-e2e could not bring the targets up, because the S3 one is the repository's
+  // own `${REGISTRY_HOST}/jumbleknot/minio` and the job had neither the variable nor registry
+  // credentials. Both were since wired up: app-ci's `app-e2e-bring-up-backup-destinations` step
+  // pulls it anonymously and the suite runs for real, with E2E_REQUIRE_BACKUP_TARGETS=1 so an
+  // absent target fails rather than skips.
+  //
+  // The correction matters more than the fact. Acting on the stale note, this session reported
+  // "a green app-e2e is not evidence that backups work" — which had stopped being true, and
+  // would have had a reviewer discount a signal that was real.
   const targetsMissing = S3_SECRET === '';
   if (targetsMissing && process.env['E2E_REQUIRE_BACKUP_TARGETS'] === '1') {
     throw new Error(
