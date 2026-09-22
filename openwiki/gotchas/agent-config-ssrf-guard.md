@@ -37,3 +37,26 @@ plus an optional `AGENT_OLLAMA_ALLOWED_HOSTS` allowlist for hardened multi-user 
 See [BFF](../projects/bff.md) for where this guard sits in the request path, and
 [Agent Gateway](../projects/agent-gateway.md) for the unguarded runtime fetch this guard does
 not reach.
+
+## A second, different guard now exists — do not assume one covers both
+
+Feature 073 (per-user collection backups) added its own destination guard in
+`backup-destination-url-guard.ts`. **It is not this one, and neither supersedes the other.** The
+difference matters at review time, because "the SSRF guard" is now ambiguous:
+
+| | Ollama guard (this page) | Backup destination guard |
+|---|---|---|
+| Resolves DNS | **No** — literal host string only | **Yes**, and pins the connection to the resolved address |
+| Default for private addresses | Allowed (a homelab Ollama is normally on the LAN) | **Denied**, unless explicitly allow-listed |
+| Rebinding between check and use | Not covered — the documented residual risk above | Covered by connection pinning |
+
+So the DNS-blindness recorded above is **still true of the Ollama path** and was *not* fixed by
+feature 073. A reader who sees "backups resolve and pin" and concludes the agent config path does
+too would be wrong, which is the whole reason this section exists.
+
+The two policies differ because the threats do. An Ollama base URL is *expected* to be private —
+denying private addresses would break the ordinary case. A backup destination is expected to be
+remote storage the user owns, so private is the suspicious case and must be opted into.
+
+Closing the Ollama gap — and the entirely unguarded Python `ChatOllama` fetch — is tracked as a
+follow-up, not done here. See [the backups runbook](../../docs/runbooks/backups.md).

@@ -115,6 +115,10 @@ export interface RunSummary {
   collectionCount: number;
   movieCount: number;
   artifactBytes?: number;
+  // The per-collection breakdown US6-AC1 asks to be shown. Optional because the copy
+  // denormalised onto the job keeps only the totals — the list view does not need it, and
+  // carrying it there would grow a document read on every page load.
+  collectionCounts?: BackupCollectionCount[];
   failureReason?: string;
   // Deliberately separate from `failureReason`: a prune that fails has not cost the user the
   // backup that was just written, and reporting the run as failed would say it did.

@@ -8,6 +8,7 @@
 
 import { randomUUID } from 'node:crypto';
 
+import { logger } from '@/bff-server/logger';
 import { getBackupRunsCollection, RUN_HISTORY_TTL_MS } from '@/bff-server/mongo-client';
 import type { BackupCollectionCount, BackupRun, BackupRunStatus, BackupTrigger } from '@/types/backups';
 
@@ -29,6 +30,10 @@ export async function startRun(
     expiresAt: new Date(Date.now() + RUN_HISTORY_TTL_MS),
   };
   await (await getBackupRunsCollection()).insertOne(run);
+  // FR-035. Emitted at the START, not only at the end: a run that dies hard — the process
+  // killed, the container restarted — otherwise leaves no trace it was ever attempted, and
+  // "no event" then looks identical to "the scheduler never fired".
+  logger.audit('backup_run_started', { userId, jobId, runId: run._id, trigger });
   return run;
 }
 

@@ -118,3 +118,48 @@ E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app
 
 See CLAUDE.md → "Final local E2E runs against the BFF container" for the full
 matrix (dev vs prod container, mobile deltas) and the Metro reset afterwards.
+
+## Two standing constraints the backups feature ran into (feature 073)
+
+Both are properties of *this* server that the next feature to need them will meet too, and
+neither is obvious from the code that depends on it.
+
+### The BFF's Mongo is a STANDALONE instance — there are no transactions
+
+`mongo-client.ts` connects to a single mongod, not a replica set. MongoDB only offers
+multi-document transactions on a replica set, so **nothing here can span two documents
+atomically**. This is not a configuration oversight to route around; it is the shape of the
+store.
+
+What it cost feature 073: exactly-once scheduling could not be "claim the job and write the run
+record in one transaction". It is instead a single `findOneAndUpdate` on the job document alone,
+whose filter is due-and-enabled-and-not-already-claimed — correctness expressed entirely within
+one document, with the run record written separately and deliberately allowed to lag. A Redis
+lock sits in front of it as an optimisation, but its safety rests on a TTL, so it is explicitly
+*not* the guarantee.
+
+If you need atomicity across two collections here, you need a different design, not a
+transaction.
+
+### `server.js` runs OUTSIDE the Metro bundle — it cannot import `src/`
+
+`server.js` is CommonJS. It `require`s `@expo/server/adapter/express` and hands the built
+`dist/server` to `createRequestHandler`. It **cannot** `require('./src/bff-server/…')`: those
+modules exist only inside the bundle, compiled and `@/`-aliased by Metro.
+
+What it cost feature 073: the BFF had no background-work mechanism at all before it
+(`grep -rn setInterval src/` returned nothing), and a scheduled backup needs one. The timer
+therefore lives in `server.js` and reaches the work through a **loopback HTTP call** to a
+secret-guarded internal route, rather than calling a function. That seam is real rather than a
+workaround — it keeps the tick equally callable by a cron sidecar if the timer ever moves out of
+the app — but the reason it exists is this constraint.
+
+Two consequences worth knowing before you add the second background job:
+
+- **Nothing scheduled fires under `pnpm start`.** `server.js` does not run under Metro. In dev
+  you call the route directly; that is also what makes the E2E deterministic.
+- **Do not remove the `__ExpoImportMetaRegistry` seeding** at the top of `server.js`. It looks
+  like dead defensive code and removing it reintroduces a silent production-only hang.
+
+Operating detail for the scheduler itself is in
+[docs/runbooks/backups.md](../../docs/runbooks/backups.md).

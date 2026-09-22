@@ -1121,12 +1121,12 @@ one artifact. Deterministic: the instant is supplied, never waited for.
 **Independent test**: keep-last-3, run four times → three remain, oldest gone. Then force a failure →
 still three.
 
-- [ ] T062 [P] [US5] Write the retention suite in `frontend/mcm-app/tests/integration/backup-retention.test.ts`
-- [ ] T063 [US5] Implement `frontend/mcm-app/src/bff-server/backup-retention.ts`
-- [ ] T064 [US5] Wire pruning into `frontend/mcm-app/src/bff-server/backup-runner.ts`, after the artifact is confirmed written
-- [ ] T065 [P] [US6] Write the run-history and next-run surfacing suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-run-summary.test.ts`
-- [ ] T066 [US6] Build the run history, failure banner and next-run UI in `frontend/mcm-app/src/components/backups/run-history.tsx`
-- [ ] T067 [US6] Extend the `@gate` E2E with retention and the failure banner in `frontend/mcm-app/e2e/web/backups.spec.ts`
+- [x] T062 [P] [US5] Write the retention suite in `frontend/mcm-app/tests/integration/backup-retention.test.ts`
+- [x] T063 [US5] Implement `frontend/mcm-app/src/bff-server/backup-retention.ts`
+- [x] T064 [US5] Wire pruning into `frontend/mcm-app/src/bff-server/backup-runner.ts`, after the artifact is confirmed written
+- [x] T065 [P] [US6] Write the run-history and next-run surfacing suite in `frontend/mcm-app/src/bff-server/unit-tests/backup-run-summary.test.ts`
+- [x] T066 [US6] Build the run history, failure banner and next-run UI in `frontend/mcm-app/src/components/backups/run-history.tsx`
+- [x] T067 [US6] Extend the `@gate` E2E with retention and the failure banner in `frontend/mcm-app/e2e/web/backups.spec.ts`
 
 ### T062 / T063 / T064 — A failed run must never cost a good version
 
@@ -1170,12 +1170,12 @@ Last run outcome, time, duration, artifact size, per-collection counts; next run
 
 ## Phase 8: Polish & cross-cutting
 
-- [ ] T068 [P] Write the audit-event coverage suite in `frontend/mcm-app/tests/integration/backup-audit.test.ts`
-- [ ] T069 [P] Run the credential and content leak scan per `specs/073-scheduled-backups/quickstart.md` Scenario 10
-- [ ] T070 [P] Write the operator runbook at `docs/runbooks/backups.md`
-- [ ] T071 [P] Record the durable learnings in `openwiki/gotchas/agent-config-ssrf-guard.md` and `openwiki/projects/bff.md`
-- [ ] T072 File the follow-up backlog items via `scripts/backlog.mjs` (streaming, email, Ollama guard, SFTP driver)
-- [ ] T073 Full gate sweep per `specs/073-scheduled-backups/quickstart.md` before opening the PR
+- [x] T068 [P] Write the audit-event coverage suite in `frontend/mcm-app/tests/integration/backup-audit.test.ts`
+- [x] T069 [P] Run the credential and content leak scan per `specs/073-scheduled-backups/quickstart.md` Scenario 10
+- [x] T070 [P] Write the operator runbook at `docs/runbooks/backups.md`
+- [x] T071 [P] Record the durable learnings in `openwiki/gotchas/agent-config-ssrf-guard.md` and `openwiki/projects/bff.md`
+- [x] T072 File the follow-up backlog items via `scripts/backlog.mjs` (streaming, email, Ollama guard, SFTP driver)
+- [x] T073 Full gate sweep per `specs/073-scheduled-backups/quickstart.md` before opening the PR
 
 ### T068 — All eleven audit events, and nothing sensitive in them
 

@@ -18,6 +18,7 @@ import { randomUUID } from 'node:crypto';
 
 import { getBackupDestinationsCollection, getBackupJobsCollection } from '@/bff-server/mongo-client';
 import { assertValidSchedule, computeNextRun } from '@/bff-server/backup-schedule';
+import { logger } from '@/bff-server/logger';
 import type { BackupJob, RunSummary, Schedule } from '@/types/backups';
 
 export class BackupJobInputError extends Error {
@@ -212,6 +213,11 @@ export async function createJob(userId: string, input: JobInput): Promise<JobVie
     updatedAt: now,
   };
   await (await getBackupJobsCollection()).insertOne(doc);
+  // FR-035. A schedule turning on is a change to what this system does while the user is
+  // ABSENT, which is why it is its own event rather than folded into a generic "job created".
+  if (nextRunAt) {
+    logger.audit('backup_schedule_enabled', { userId, jobId: doc._id, frequency: input.schedule?.frequency });
+  }
   return toView(doc);
 }
 
@@ -265,6 +271,18 @@ export async function updateJob(
     Object.keys(unset).length > 0 ? { $set: set, $unset: unset } : { $set: set },
     { returnDocument: 'after' },
   );
+
+  // Audited on the TRANSITION, not on every save (FR-035). A patch that renames the job has
+  // not changed whether it runs unattended, and an event on each save would bury the two that
+  // matter among dozens that do not.
+  const wasScheduled = Boolean(existing.schedule && existing.enabled);
+  const isScheduled = Boolean(nextRunAt);
+  if (!wasScheduled && isScheduled) {
+    logger.audit('backup_schedule_enabled', { userId, jobId, frequency: schedule?.frequency });
+  } else if (wasScheduled && !isScheduled) {
+    logger.audit('backup_schedule_disabled', { userId, jobId });
+  }
+
   return doc ? toView(doc) : null;
 }
 

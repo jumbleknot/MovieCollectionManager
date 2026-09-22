@@ -39,6 +39,13 @@
 > [devcontainer.md §3 "Web + agent E2E"](devcontainer.md). Stated here, at the top, because this is
 > where someone looks before concluding they cannot verify something — and concluding that wrongly
 > means shipping unverified. See the note in that section on `--user`, which is not optional.
+>
+> **From a git worktree the `-v "$PWD"` bind mount silently does NOT work** — the daemon shares
+> only `/workspaces`, so a source path under `/home/coder/worktrees/` mounts as an almost-empty
+> auto-created directory and the run looks like broken code. The same section gives the
+> named-volume recipe that does work, and the reason to pass BOTH env files (`.env.local` holds
+> the backup and service-account credentials Playwright does not load by itself; without them a
+> run exits 0 having skipped everything).
 
 ## The integration tier gates CI (feature 041)
 

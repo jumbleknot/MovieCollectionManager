@@ -29,6 +29,9 @@ export async function GET(req: Request, { jobId }: Params): Promise<Response> {
       finishedAt: run.finishedAt,
       collectionCount: run.collectionCounts.length,
       movieCount: run.collectionCounts.reduce((n, c) => n + c.movieCount, 0),
+      // Names and counts only (US6-AC4). No movie ever crosses this boundary — a run record
+      // is a tally of what was backed up, never a copy of it.
+      collectionCounts: run.collectionCounts,
       artifactBytes: run.artifactBytes,
       failureReason: run.failureReason,
       pruneFailureReason: run.pruneFailureReason,

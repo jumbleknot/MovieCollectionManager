@@ -13,6 +13,7 @@ import { ArtifactVerificationError } from '@/bff-server/backup-artifact';
 import { createBackupDriver } from '@/bff-server/backup-destination-driver';
 import * as destinationStore from '@/bff-server/backup-destination-store';
 import * as jobStore from '@/bff-server/backup-job-store';
+import { logger } from '@/bff-server/logger';
 import { restoreFromBytes } from '@/bff-server/backup-restore-writer';
 import { keyBelongsToJob } from '@/bff-server/backup-version-lister';
 import {
@@ -46,7 +47,14 @@ export async function POST(req: Request, { jobId }: Params): Promise<Response> {
     // The key comes from the client and is GUESSABLE, so it is confined to this job's prefix
     // here rather than trusted. Without this, a key naming another job's object — or a
     // traversal out of the prefix — would be fetched and restored.
-    if (!keyBelongsToJob(destinationDoc, job, key)) return notFound();
+    if (!keyBelongsToJob(destinationDoc, job, key)) {
+      // FR-035: a REFUSAL is the security-interesting event — it is what an attempt against
+      // another job's artifact looks like from outside. Logging only completions would leave
+      // exactly the events worth alerting on unrecorded. A reason CODE, never the key, which
+      // is attacker-supplied input and has no business in an audit record.
+      logger.audit('backup_restore_refused', { userId, jobId, reason: 'key-not-owned' });
+      return notFound();
+    }
 
     const secret = await destinationStore.getDestinationSecret(userId, job.destinationId);
     if (secret === null) return problem('Destination unavailable', 409, 'No credential is stored for that destination');
@@ -54,7 +62,14 @@ export async function POST(req: Request, { jobId }: Params): Promise<Response> {
     const driver = await createBackupDriver(destinationDoc, secret);
     const bytes = await driver.get(key);
 
+    // Recorded BEFORE the work, so a restore that dies part-way still shows that it began —
+    // and a restore is the one operation here that WRITES to the user's collections.
+    logger.audit('backup_restore_started', { userId, jobId, artifactBytes: bytes.byteLength });
+
     try {
+      // `restoreFromBytes` emits `backup_restore_completed` itself — one act, one audit
+      // record. Emitting it here too would double-count every restore in the trail and make
+      // the count untrustworthy for exactly the reader who relies on it.
       const result = await restoreFromBytes({ userId, jwt, bytes, jobId });
       return json({
         createdCollectionIds: result.createdCollectionIds,
@@ -65,6 +80,7 @@ export async function POST(req: Request, { jobId }: Params): Promise<Response> {
       if (err instanceof ArtifactVerificationError) {
         // Nothing was written. The message is one this feature constructed and names no
         // upstream content.
+        logger.audit('backup_restore_refused', { userId, jobId, reason: 'verification-failed' });
         return problem('That backup could not be restored', 422, err.message);
       }
       throw err;
