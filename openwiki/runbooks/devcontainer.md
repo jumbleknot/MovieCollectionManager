@@ -6,19 +6,19 @@ resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-21T19:51:08.727Z
+    at: 2026-09-22T02:06:41.363Z
 sources:
   - id: openwiki-source-f7c89635dfc6efb0ecec007f
     resource: repo://.devcontainer/devcontainer.json
   - id: openwiki-source-a9fc7285078c8062777b3180
     resource: repo://docs/runbooks/devcontainer.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-21T19:51:08.727Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T02:06:41.363Z" }
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
 
 > **This is the RETAINED path, not the primary one (feature 060).** The primary AI-assisted
-> development environment is now the [Docker Sandbox microVM](devcontainer-sandbox.md), which
+> development environment is now the [Docker Sandbox microVM](./devcontainer-sandbox.md), which
 > measured **0.43×** the wall-clock of this path across five build stages. This Docker Desktop /
 > Docker-in-Docker path is kept for one reason: the **Android emulator**, which needs `/dev/kvm`
 > that the microVM cannot provide. Everything else — web E2E, integration, the agent stack, day-to-day
@@ -140,7 +140,7 @@ API, GitHub, npm, the container-image registries DinD pulls from).
 
   This does not churn the other session's tree — the content-addressed store is shared by design. Use the symlink as the default for sessions that only run `node --test` or `scripts/*.mjs` gates; budget the four minutes when what you changed is only reachable through an nx target.
 
-  **nx and pnpm will hand you a STALE failure.** Measured 2026-09-19: three targets failed with a message naming a path that no longer existed — cached output. `--skip-nx-cache` produced a completely different, real error. **If an nx failure's message does not match the state on disk, re-run it with `--skip-nx-cache` before diagnosing it.** Same family as the superseded-run trap in [ci-diagnostics.md](ci-diagnostics.md).
+  **nx and pnpm will hand you a STALE failure.** Measured 2026-09-19: three targets failed with a message naming a path that no longer existed — cached output. `--skip-nx-cache` produced a completely different, real error. **If an nx failure's message does not match the state on disk, re-run it with `--skip-nx-cache` before diagnosing it.** Same family as the superseded-run trap in [ci-diagnostics.md](./ci-diagnostics.md).
 
   **A worktree does not survive a dev-container rebuild.** `/home/coder/worktrees/` is on the container's own filesystem, so a rebuild takes the directory with it while `git worktree list` — read from `/workspaces/mcm/.git` on the mounted volume — still lists it, now marked `prunable`. Measured 2026-09-19. **Push the branch before any risky container operation.** Afterwards, `git worktree prune` in `/workspaces/mcm` clears the stale record.
 

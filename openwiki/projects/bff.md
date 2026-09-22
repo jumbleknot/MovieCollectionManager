@@ -1,10 +1,42 @@
 ---
 type: Service
 title: BFF (Backend-for-Frontend)
-description: The Node.js server-side layer embedded in the mcm-app Expo Router process. Owns session/auth handling, proxies every domain call to mc-service, and forwards agent requests to the Agent Gateway. The only component the browser/mobile client is allowed to talk to.
+description: The Node.js server-side layer embedded in the mcm-app Expo Router process. Owns session/auth handling, proxies domain calls to mc-service and the Agent Gateway, and now also owns its own MongoDB/Redis-backed state for per-user agent config and scheduled collection backups.
 resource: frontend/mcm-app/README.md
-tags: [bff, expo-router, auth, proxy, nodejs]
-timestamp: 2026-09-07T00:00:00+00:00
+tags: [bff, expo-router, auth, proxy, nodejs, mongodb, backups]
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-22T01:58:43.929Z
+sources:
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
+  - id: openwiki-source-75c613635390ab18cc167ec1
+    resource: repo://frontend/mcm-app/README.md
+  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
+    resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
+  - id: openwiki-source-1f97e5240572ea9ecae44ac5
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
+  - id: openwiki-source-c22d81a0331031d61ad2c7e3
+    resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
+  - id: openwiki-source-e37e5da5fa7401fdb7992219
+    resource: repo://frontend/mcm-app/src/bff-server/backup-job-store.ts
+  - id: openwiki-source-0476c5058778e33745a9b2c2
+    resource: repo://frontend/mcm-app/src/bff-server/backup-route-support.ts
+  - id: openwiki-source-284b2b399a6eebffc24d3e93
+    resource: repo://frontend/mcm-app/src/bff-server/backup-runner.ts
+  - id: openwiki-source-2dee841e6c78f22b5fdaa6fb
+    resource: repo://frontend/mcm-app/src/bff-server/mc-api-error.ts
+  - id: openwiki-source-6129cd750694ad94a5d9cb3f
+    resource: repo://frontend/mcm-app/src/bff-server/mc-service-client.ts
+  - id: openwiki-source-1c2acc0a72ab64fd663510a9
+    resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
+  - id: openwiki-source-3bf0ad96857ee228607b018c
+    resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T01:58:43.929Z" }
 ---
 
 # BFF (Backend-for-Frontend)
@@ -19,11 +51,43 @@ enforcement point for.
 
 Route groups: `bff-api/auth/*` (login, refresh, logout, registration, email verification),
 `bff-api/collections/*` and `.../movies/*` (proxy CRUD to [mc-service](./mc-service.md)),
-`bff-api/agent/*` (forwards to the [Agent Gateway](./agent-gateway.md) over AG-UI),
-`bff-api/admin/settings`. Every proxy route follows the same shape: `requireAuth()` →
-`requireMcUser()`/`requireMcAdmin()` RBAC check → a per-request `mc-service-client.ts` Axios instance
-carrying the caller's JWT as `Authorization: Bearer` → `handleMcApiError()` translates mc-service's
-RFC 9457 problem+json on failure. The client never calls mc-service directly.
+`bff-api/agent/*` (forwards agent turns to the [Agent Gateway](./agent-gateway.md) over AG-UI,
+plus `agent/config` for the user's own provider/TMDB credentials), `bff-api/backups/*`
+(destinations, jobs, and the internal scheduling tick), `bff-api/admin/settings`. Every proxy
+route follows the same shape: `requireAuth()` → `requireMcUser()`/`requireMcAdmin()` RBAC check
+→ a per-request `mc-service-client.ts` Axios instance carrying the caller's JWT as
+`Authorization: Bearer` → `handleMcApiError()` translates mc-service's RFC 9457 problem+json on
+failure. The client never calls mc-service directly.
+
+## The BFF's own state: MongoDB and Redis
+
+Unlike a pure proxy, the BFF owns two features' worth of durable state directly, in a MongoDB
+instance dedicated to the BFF (separate from mc-service's own database — the BFF never reaches
+across a service boundary into a backend service's store):
+
+- **Per-user agent config** (feature 018, `agent-config-service.ts` / `agent-config-store.ts`):
+  each user's chosen LLM provider, encrypted API keys/Ollama URL, and TMDB key, so the assistant
+  can run with the user's own credentials rather than a shared one. Secrets are AES-256-GCM
+  sealed with `AGENT_CONFIG_ENC_KEY`, decrypted only transiently per run, and never returned to
+  the client or logged. A user-supplied Ollama URL is validated against an SSRF guard before it
+  is ever saved or probed — see
+  [SSRF guard: canonicalized IP, not hostname string](../gotchas/agent-config-ssrf-guard.md)
+  for that mechanism (do not re-derive it here).
+- **Scheduled collection backups** (feature 073, `backup-*.ts`): per-user destinations
+  (S3-compatible or WebDAV, credential sealed with a *separate* `BACKUP_CREDENTIAL_ENC_KEY`),
+  jobs (what/where/how often/how many to keep), and run history. An unattended scheduled run
+  acts as the user via a Keycloak **offline token** they explicitly granted — there is no
+  service account and no privileged fallback; if the grant is gone, the run fails rather than
+  finding another way in. Destination addresses go through a *different*, inverse-default SSRF
+  guard (private/loopback denied unless allow-listed) — also owned by
+  [the SSRF guard page](../gotchas/agent-config-ssrf-guard.md), which documents both guards
+  side by side.
+
+Both collections' Mongo instance is a **standalone `mongod`, not a replica set** — there is no
+multi-document transaction available anywhere in the BFF's own store. That single fact shapes
+the backup job-claim design below and is the first thing to know before extending either
+feature. Full operating detail: `docs/runbooks/backups.md` and
+`frontend/mcm-app/README.md`'s "Two standing constraints" section (not reproduced here).
 
 ## Gotchas
 
@@ -63,8 +127,30 @@ RFC 9457 problem+json on failure. The client never calls mc-service directly.
   the new specifier resolves from `/app/runtime` (add it to `DYNAMIC_ROOTS` in the script) or is
   already unresolvable (record it as `'unresolvable'` in `KNOWN_DYNAMIC_SPECIFIERS`). Do not delete
   the check — its purpose is to turn a future production 500 into a red build here.
+- **A silently empty Mongo client-metadata document means Jest, not a driver/server mismatch.**
+  `mongodb` driver ≥7.6.0 resolves its OS adapter via a dynamic `import('os')`
+  (`lib/runtime_adapters.js`); Jest's CJS runtime can't execute that without
+  `--experimental-vm-modules`, so the promise rejects — and the driver deliberately swallows the
+  rejection (`squashError`), collapsing the client metadata to `{}`. MongoDB then refuses the
+  handshake ("Missing required sub-document 'driver'"), which looks exactly like a driver/server
+  incompatibility and is not one: the same driver version connects fine from plain Node against
+  the same server. `mongo-client.ts` works around it by passing `runtimeAdapters: { os }` (a
+  static `import * as os from 'node:os'`) so the dynamic import branch never runs, keeping tests
+  and production on one code path. Do not "fix" this instead by setting
+  `NODE_OPTIONS=--experimental-vm-modules` repo-wide — that flips on experimental module handling
+  for every integration suite to work around two lines in one file.
+- **The Redis leader lock around the backup scheduling tick is an optimisation, not the
+  exactly-once guarantee.** `redis-lock.ts` lets only one BFF instance scan for due jobs per
+  tick when several are running, but its safety rests on a TTL — a guess at how long a run can
+  take — so an overrunning run legitimately loses the lock to another instance while still live.
+  The actual exactly-once guarantee is a single-document atomic `findOneAndUpdate` claim on the
+  job itself (`backup-job-store.ts`), which carries no timing assumption at all and is what
+  survives the BFF's Mongo having no replica set (and therefore no multi-document transactions)
+  to tie a claim to a run record. A passing lock test proves nothing about double-firing; only
+  the job-store claim does.
 
 See [Auth chain](../invariants/auth-chain.md) for the full login-to-request-validation
 sequence, and [Secrets management](../invariants/secrets-management.md) for how the BFF's own
-credentials (client secret, cookie/encryption keys) are sourced. Full setup and env-var reference:
-`frontend/mcm-app/README.md` and `docs/runbooks/local-dev.md`.
+credentials (client secret, cookie/encryption keys, the two backup/agent-config master keys) are
+sourced. Full setup and env-var reference: `frontend/mcm-app/README.md` and
+`docs/runbooks/local-dev.md`; scheduled-backups operations: `docs/runbooks/backups.md`.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3abc602a9ae11f98dc28560fdb718bef054795e862193b82c0faa4f08c6f0892",
+  "pageVersion": "sha256:a1540b81651d2f65c5fe0f6ac998a988411bd74a74bb192ad6baae6b17d54dc8",
   "claims": [
     {
       "id": "claim_9a0bfbae84254f9ab28b19990354065b",
@@ -329,10 +329,20 @@
           "version": "repo-lines-v1:sha256:b436c0ee2523fad707213449d1ce2bf773b6ca5f835d2d7a90811a5bdab7d84f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MTc5OWRkZGUxODFkZDVlODQyYTNiMDc2OGMyZjBlNGQxMzJkNjNjMmM0NTIzZDQ4MmRjYzFmYTc2ZWJkYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4NDVlNzczMDdjYjc2OTE1OTI4ZWIxMjFhM2Q0Njc1NGFlZmZiN2VkOTgwZmFlNWZmMDkwMDliYzk3MDRlZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhMDZiYzZkMzY4OGY2MzlhNjU1MWI1Y2ZhMDQ4YjZmNTE4NjZiMWQxNjMwMTY5ZTNlZWM0N2JiODVkMjMyZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZDA3ZmU3NThmMGFiNTY3NmM2MmNlODkwZDAwZDFiOWM0MWI0MjQ4MGQ1MmU3MGNhN2UxOGNhN2RlNDVjOTkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9ef612d1b29340babf7ceb28a0854df3",
+      "statement": "The maestro-debug artifact's screenshot is the diagnostic that settles a mobile-tier data-leak failure (e.g. PR #527) in seconds, because the failure surfaces in a different suite/tier/language than the one that caused it and every local signal points away from the true cause. An agent working inside the dev container currently cannot fetch that artifact (item #531, unresolved) — so when a mobile-tier agent flow fails on an apparently-unrelated diff, suspect shared account/collection state before layout and list the test account's collections first.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md#L295-L301",
+          "version": "repo-lines-v1:sha256:47183b0902bff9ba47b3952c4f7cc08f5fb94e5c3efb692eab44d1039a6ad393:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0ZjE0OGMwOTE2YzE1NjZhMDQ4YWIwYjAyZjgyMGY1OGM0N2E1MmJiODcyMGE5MmMxMWU0NTE1ZWFhNDZhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmZhZWU3MjdlNTc0NDBkMWNlZmIxZjJhMzI2NzFhNWJkNjY4ZjBkYTg1OGY5ZGY1MWQxYzJiZjE4NjUwY2EyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGM4NjRhMTE2ZjFkNTVhNWVjYWUwNzc3NDFkNDBjYmJlY2RjOGE1OGJmMjgzYWY4YzExZTMwNDBjMGVjOTg4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmY3YjJhZjUyNzE3ZjA4YTBkMjdjMjYzNjA1YjE5ZTQwYzIwZTBiZTlhOWUyNjAzOTk3MTRmZmVmNDJmYzgxYSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-20T22:37:14.004Z"
+    "at": "2026-09-22T02:06:41.363Z"
   }
 }
