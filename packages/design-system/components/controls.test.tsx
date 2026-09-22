@@ -142,6 +142,31 @@ describe('Switch', () => {
     fireEvent.press(getByLabelText('Dark mode'));
     expect(onValueChange).not.toHaveBeenCalled();
   });
+
+  // Item #545. Switch used to destructure `...rest` and never spread it, so a testID passed in
+  // reached nothing. On web that is a `[data-testid=...]` locator matching zero elements, and the
+  // click TIMES OUT rather than erroring — it reads as a broken screen, which is what made it
+  // expensive enough to be worked around twice. These two assertions are the regression guard:
+  // the id must land on the element that actually receives the press, and it must not cost the
+  // role or the accessible name that `getByRole` locators already depend on.
+  it('forwards testID to the element that receives the press', () => {
+    const onValueChange = jest.fn();
+    const { getByTestId } = renderDS(
+      <Switch testID="sw" label="Dark mode" value={false} onValueChange={onValueChange} />,
+    );
+    const node = getByTestId('sw');
+    expect(node.props.accessibilityRole).toBe('switch');
+    fireEvent.press(node);
+    expect(onValueChange).toHaveBeenCalledWith(true);
+  });
+
+  it('keeps the role and accessible name when other view props are forwarded', () => {
+    const { getByTestId, getByLabelText } = renderDS(
+      <Switch testID="sw" label="Dark mode" value onValueChange={jest.fn()} />,
+    );
+    expect(getByTestId('sw')).toBe(getByLabelText('Dark mode'));
+    expect(getByLabelText('Dark mode').props.accessibilityState.checked).toBe(true);
+  });
 });
 
 describe('Dialog', () => {

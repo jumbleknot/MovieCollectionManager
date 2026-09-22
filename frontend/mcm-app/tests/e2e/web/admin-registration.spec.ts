@@ -66,7 +66,9 @@ async function registrationAllowed(page: Page): Promise<boolean> {
 async function setRegistration(adminPage: Page, desired: boolean): Promise<void> {
   await adminPage.goto(`${BASE}/(app)/settings/admin`);
   await expect(adminPage.getByTestId('admin-settings-screen')).toBeVisible({ timeout: 30000 });
-  // The design-system Switch renders role="switch" (its testID isn't forwarded to the DOM node).
+  // Located by role rather than by testID because the accessibility contract is the thing worth
+  // depending on here. (The testID reaches the DOM too as of item #545 — it previously did not,
+  // which is what this comment used to record.)
   const toggle = adminPage.getByRole('switch', { name: /self-registration/i });
   await expect(toggle).toBeVisible();
   if ((await registrationAllowed(adminPage)) !== desired) {
@@ -146,6 +148,9 @@ test.describe('US3 — admin disables self-registration', () => {
     await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 30000 });
     await page.goto(`${BASE}/(app)/settings/admin`);
     // AuthGuard(mc-admin) bounces a non-admin — the screen + toggle must never render for them.
+    // NOTE: the toggle assertion was VACUOUS until item #545. The DS Switch dropped its testID, so
+    // `toggle-self-registration` matched nothing whether or not the control had rendered, and this
+    // line passed for the wrong reason. Now that the id reaches the DOM it is a real assertion.
     await expect(page.getByTestId('admin-settings-screen')).toHaveCount(0);
     await expect(page.getByTestId('toggle-self-registration')).toHaveCount(0);
   });

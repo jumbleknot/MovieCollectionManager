@@ -95,9 +95,11 @@ test.describe('Admin settings area — visibility and enforcement', () => {
       await entry.click();
       await expect(adminPage).toHaveURL(/\/settings\/admin$/, { timeout: 20000 });
       await expect(adminPage.getByTestId('admin-settings-screen')).toBeVisible({ timeout: 30000 });
-      // The DS Switch renders role="switch" but does NOT forward its testID to the DOM (same
-      // limitation as the Card — see admin-registration.spec.ts) — assert the control by role.
+      // The DS Switch now forwards its testID (item #545), so BOTH locators resolve. The role
+      // locator is kept because it is the accessibility contract and must not regress; the
+      // testID assertion beside it is what proves the forwarding still works end to end.
       await expect(adminPage.getByRole('switch', { name: /self-registration/i })).toBeVisible();
+      await expect(adminPage.getByTestId('toggle-self-registration')).toBeVisible();
     });
 
     test('the address itself admits an admin and refuses an mc-user, sub-navigation never rendered', async ({ page }) => {
