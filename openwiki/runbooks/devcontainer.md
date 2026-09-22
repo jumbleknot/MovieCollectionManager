@@ -6,11 +6,13 @@ resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-20T11:41:17.059Z
+    at: 2026-09-21T19:51:08.727Z
 sources:
+  - id: openwiki-source-f7c89635dfc6efb0ecec007f
+    resource: repo://.devcontainer/devcontainer.json
   - id: openwiki-source-a9fc7285078c8062777b3180
     resource: repo://docs/runbooks/devcontainer.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-20T11:41:17.059Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-21T19:51:08.727Z" }
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -53,7 +55,8 @@ API, GitHub, npm, the container-image registries DinD pulls from).
     NOT applied.** With the var unset, VS Code passes `--build-arg BASE_IMAGE=` (empty) and the build
     fails with `base name (${BASE_IMAGE}) should not be blank`. The headless `@devcontainers/cli`
     does apply the default; VS Code does not.
-  - **`FORGE_REGISTRY_HOST`** — must be set so `init-firewall.sh` can allowlist the forge registry.
+  - **`FORGE_REGISTRY_HOST`** — must be set so `init-firewall.sh` can allowlist the forge registry
+    host (never write that host literal into a document — refer to it abstractly).
     Unset → the container still comes up, but forge git push/pull and image pulls are blocked. Can be
     re-applied without a rebuild: `sudo env FORGE_REGISTRY_HOST=<host> bash .devcontainer/init-firewall.sh`.
   - **`MCM_FORGE_ISSUE_TOKEN`** unset: backlog reads still work via `MCM_FORGE_TOKEN`; writes are
@@ -103,7 +106,7 @@ API, GitHub, npm, the container-image registries DinD pulls from).
 - **The Android emulator now runs natively in the dev container** (baked-in SDK + system image, host
   `/dev/kvm` passthrough) — see [Android emulator & APK builds](./android-emulator.md)
   for the boot ritual and the mobile-agent-flow caveat that still applies inside the container.
-- **`~/.claude.json` was NEVER on the `mcm-claude` volume — SC-007 held by accident, not by design (item #257, measured 2026-08-27).** The `mcm-claude` volume mounts the `~/.claude` **directory**; but Claude Code's global config is `~/.claude.json`, a sibling in `$HOME` on the ephemeral overlay. A container recreate therefore dropped `oauthAccount`, `userID`, `machineID`, and session history, while `~/.claude/.credentials.json` (the actual OAuth tokens) survived. **Fix (item #257):** `CLAUDE_CONFIG_DIR=/home/coder/.claude` in `containerEnv` relocates the config root so `.claude.json` resolves inside the volume. `persist-claude-config.sh` in `onCreateCommand` seeds an existing config on the first run after the change. ⚠️ A symlink does NOT work — Claude Code replaces the file rather than editing in place (write-then-rename swaps the symlink for an overlay file, silently restoring the bug). The env var cannot decay.
+- **`~/.claude.json` was NEVER on the `mcm-claude` volume — SC-007 held by accident, not by design (item #257, measured 2026-08-27).** The `mcm-claude` volume mounts the `~/.claude` **directory**; but Claude Code's global config is `~/.claude.json`, a sibling in `$HOME` on the ephemeral overlay. A container recreate therefore dropped `oauthAccount`, `userID`, `machineID`, and session history, while `~/.claude/.credentials.json` (the actual OAuth tokens) survived. **Fix (item #257):** `CLAUDE_CONFIG_DIR=/home/coder/.claude` in `containerEnv` relocates the config root so `.claude.json` resolves inside the volume — the same fix is mirrored in `.devcontainer/devcontainer.json`'s `containerEnv` comment (and its sandbox-path duplicate, since the two `devcontainer.json` files are not one shared config). `persist-claude-config.sh` in `onCreateCommand` seeds an existing config on the first run after the change. ⚠️ A symlink does NOT work — Claude Code replaces the file rather than editing in place (write-then-rename swaps the symlink for an overlay file, silently restoring the bug). The env var cannot decay.
 - **"Docker won't start after a rebuild" is almost always a stale container holding the DinD lock, not
   corruption.** DinD's data-root lives on a persistent named volume keyed by workspace hash, so a
   rebuilt container reuses the same volume. If a *previous* dev-container instance is still running,
