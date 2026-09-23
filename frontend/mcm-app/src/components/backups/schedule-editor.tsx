@@ -147,22 +147,13 @@ export function ScheduleEditor({
       />
       <CardContent>
         <View style={styles.row}>
-          {/*
-            The testID lives on a WRAPPER, not on the Switch. The design-system Switch renders a
-            Pressable with `role="switch"` and does not spread its remaining props, so a testID
-            passed to it never reaches the DOM — a locator using it matches nothing and the click
-            times out looking like a broken screen. (`admin-settings-access.spec.ts` records the
-            same thing and works around it with `getByRole`.) A tight wrapper around only the
-            Switch keeps the id addressable without touching a shared component.
-          */}
-          <View testID="backup-schedule-enabled">
-            <Switch
-              value={enabled}
-              onValueChange={toggleScheduling}
-              disabled={busy}
-              label="Run this backup automatically"
-            />
-          </View>
+          <Switch
+            testID="backup-schedule-enabled"
+            value={enabled}
+            onValueChange={toggleScheduling}
+            disabled={busy}
+            label="Run this backup automatically"
+          />
           <Text fontFamily="$body" fontSize={14} color={theme.onSurface?.val} marginLeft={12}>
             {enabled ? 'On' : 'Off'}
           </Text>

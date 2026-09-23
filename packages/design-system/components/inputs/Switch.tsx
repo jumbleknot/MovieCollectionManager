@@ -6,6 +6,14 @@
  *   - Animated thumb slide + colour change
  *   - icons on thumb (on/off state)
  *   - 48x48 minimum touch target via hitSlop
+ *
+ * Remaining view props (notably `testID`) are forwarded to the Pressable — the element that
+ * actually receives the press — so `[data-testid="..."]` resolves on web. They are spread FIRST
+ * rather than last, which is the opposite of the house idiom used by Chip and SearchBar. That is
+ * deliberate: `accessibilityRole="switch"` and `accessibilityState` are what make this control a
+ * switch to assistive technology and to `getByRole` locators, so they are pinned after the spread
+ * and cannot be clobbered by a caller. `accessibilityLabel` and `style` are merged rather than
+ * pinned, because a caller overriding either is a legitimate thing to want.
  */
 
 import React, { useState, useEffect } from 'react'
@@ -40,6 +48,8 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
     iconOn,
     iconOff,
     label,
+    accessibilityLabel,
+    style,
     ...rest
   },
   ref,
@@ -87,15 +97,16 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
 
   return (
     <Pressable
+      {...(rest as object)}
       ref={ref}
       onPress={() => !disabled && onValueChange(!value)}
       accessible
-      accessibilityLabel={label ?? (value ? 'On' : 'Off')}
+      accessibilityLabel={label ?? accessibilityLabel ?? (value ? 'On' : 'Off')}
       accessibilityRole="switch"
       accessibilityState={{ checked: value, disabled }}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       disabled={disabled}
-      style={{ opacity: disabled ? 0.38 : 1 }}
+      style={[{ opacity: disabled ? 0.38 : 1 }, style as object]}
     >
       {/* Track */}
       <View
