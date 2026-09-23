@@ -3,30 +3,26 @@
 // This is a SECOND guard, not a replacement for `agent-config-ssrf.ts`, and the two differ in
 // both policy and mechanism:
 //
-//   POLICY. The Ollama guard ALLOWS private and loopback addresses, because the user's own model
-//   server is the whole point of "bring your own Ollama". This guard DENIES them by default. A
-//   destination endpoint is an address this server will send the user's entire collection to, and
-//   mc-service, keycloak-service, the BFF's own Mongo and the container network all sit in private
-//   space. A homelab NAS — the primary legitimate destination — gets in by being named in
-//   BACKUP_ALLOWED_DESTINATION_HOSTS, which is a deliberate act by an operator.
+//   POLICY — still the whole difference. The Ollama guard ALLOWS private addresses, because the
+//   user's own model server is the point of "bring your own Ollama". This guard DENIES them by
+//   default. A destination endpoint is an address this server will send the user's entire
+//   collection to, and mc-service, keycloak-service, the BFF's own Mongo and the container network
+//   all sit in private space. A homelab NAS — the primary legitimate destination — gets in by being
+//   named in BACKUP_ALLOWED_DESTINATION_HOSTS, a deliberate act by an operator.
 //
-//   MECHANISM. The Ollama guard checks the hostname STRING and is DNS-blind by documented design
-//   (openwiki/gotchas/agent-config-ssrf-guard.md records it as a residual risk in those words).
-//   That is acceptable there — it allows private space anyway, so a name resolving into private
-//   space wins nothing. It is NOT acceptable here, where private space is exactly what is being
-//   kept out. So this guard resolves the name, checks EVERY answer, and then pins the connection
-//   to the answer it checked.
+//   MECHANISM — no longer a difference, as of item #542. The Ollama guard used to check the
+//   hostname STRING and was DNS-blind by documented design; it now resolves and pins too, and the
+//   shared pinning machinery moved to `pinned-agent.ts` so both can use it. Do not re-derive the
+//   old claim from an older comment: `agent-config-ssrf.ts` resolves.
 //
 // THE PINNING IS THE POINT. Resolve-then-connect without pinning leaves a TOCTOU window: the name
 // is checked, the resolver is asked again by the HTTP stack, and the second answer is the one
 // connected to. A guard with that window is theatre. `createPinnedAgent` supplies a `lookup` that
-// can only ever return the vetted address, so the address checked and the address connected to are
+// can only ever return a vetted address, so the address checked and the address connected to are
 // the same by construction rather than by timing.
 
 import { isIP } from 'node:net';
 import { promises as dns } from 'node:dns';
-import * as http from 'node:http';
-import * as https from 'node:https';
 
 import { env } from '@/config/env';
 
@@ -249,45 +245,8 @@ export async function assertDestinationUrlAllowed(
 
 // ─── Pinning ───────────────────────────────────────────────────────────────────
 
-/**
- * An HTTP(S) agent whose resolver can only return the vetted address.
- *
- * The connection is still made with the original HOSTNAME — so TLS SNI and certificate
- * verification are unchanged and a destination keeps a valid certificate — while the socket goes
- * to the address that was actually checked. That is the whole difference between a guard and a
- * guard with a TOCTOU window.
- */
-export function createPinnedAgent(vetted: VettedDestination): http.Agent | https.Agent {
-  const pinnedLookup: typeof dns.lookup extends never ? never : NodeLookup = (
-    _hostname,
-    optionsOrCallback,
-    maybeCallback,
-  ) => {
-    const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
-    const options = typeof optionsOrCallback === 'function' ? {} : (optionsOrCallback ?? {});
-    // `all: true` callers expect an array; everyone else expects (address, family).
-    // `all: true` is what Node's connect path uses for its dual-stack attempt sequence, so
-    // handing back EVERY vetted address is what restores the fallback that single-address
-    // pinning removed. Every one of them passed the guard.
-    if ((options as { all?: boolean }).all) {
-      callback(null, vetted.addresses.map((a) => ({ address: a.address, family: a.family })));
-    } else {
-      callback(null, vetted.address, vetted.family);
-    }
-  };
-
-  const options = { keepAlive: false, lookup: pinnedLookup };
-  return vetted.protocol === 'https:' ? new https.Agent(options) : new http.Agent(options);
-}
-
-// Node's `LookupFunction` shape, spelled out because the exported one is not part of the public
-// type surface in a way that survives `tsc --noEmit` here.
-type NodeLookup = (
-  hostname: string,
-  options: unknown,
-  callback: (
-    err: NodeJS.ErrnoException | null,
-    address: string | { address: string; family: number }[],
-    family?: number,
-  ) => void,
-) => void;
+// The mechanism moved to `pinned-agent.ts` in item #542, so the Ollama guard could pin as well
+// without importing from a backups module. Re-exported here because this is still where callers
+// in this feature expect to find it, and because the guard result and the pinning belong together
+// at the call site. `VettedDestination` satisfies `PinnedTarget` structurally.
+export { createPinnedAgent, type PinnedTarget } from '@/bff-server/pinned-agent';

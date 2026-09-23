@@ -89,7 +89,10 @@ export async function validateAndSave(
   if (update.ollamaBaseUrl !== undefined && update.ollamaBaseUrl !== null) {
     // Shape + SSRF guard (review #3): rejects non-http(s) AND link-local / cloud-metadata
     // targets, regardless of provider, so a blocked URL can never be saved or later probed.
-    const guard = validateOllamaUrl(update.ollamaBaseUrl);
+    // RESOLVES the name as of item #542 — hence `await`. Passing the save-time check is not a
+    // permanent licence: the probe and the gateway both check again against the answer of the
+    // moment, which is what catches a name rebinding after it was saved.
+    const guard = await validateOllamaUrl(update.ollamaBaseUrl);
     if (!guard.ok) {
       shape.push({ field: 'ollamaBaseUrl', reason: guard.reason ?? 'Must be a valid http(s) URL' });
     }

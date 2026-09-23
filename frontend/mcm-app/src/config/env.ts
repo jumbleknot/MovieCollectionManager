@@ -98,6 +98,13 @@ export const env = {
   // "bring your own Ollama" works locally. Set to a comma-separated host list (e.g.
   // "ollama.internal,10.0.0.5") in a hardened multi-user deployment to permit ONLY those hosts.
   agentOllamaAllowedHosts: optionalEnv('AGENT_OLLAMA_ALLOWED_HOSTS', ''),
+  // Which LOOPBACK ports an Ollama base URL may target (item #542). Loopback is not the user's
+  // machine from inside a container — it is THIS server, so an unrestricted loopback allowance
+  // lets a user-supplied URL address whatever else is listening locally. Private/LAN addresses
+  // stay allowed unconditionally (that is the ordinary homelab Ollama); loopback is narrowed to
+  // the ports Ollama itself uses, which keeps the bare-metal "Ollama on localhost" case working.
+  // Comma-separated; empty value denies loopback entirely.
+  agentOllamaLoopbackPorts: optionalEnv('AGENT_OLLAMA_LOOPBACK_PORTS', '11434'),
 
   // ── Per-user scheduled collection backups (feature 073) ────────────────────────────────────
   // BACKUP_CREDENTIAL_ENC_KEY is a SEPARATE AES-256-GCM master key from AGENT_CONFIG_ENC_KEY
