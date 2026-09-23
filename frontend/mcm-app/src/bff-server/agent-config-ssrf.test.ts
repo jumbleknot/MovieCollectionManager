@@ -16,6 +16,7 @@ jest.mock('@/config/env', () => ({
 import { env } from '@/config/env';
 import {
   validateOllamaUrl,
+  validateOllamaUrlOffline,
   assertOllamaUrlAllowed,
   OllamaUrlNotAllowedError,
   type OllamaLookup,
@@ -182,6 +183,47 @@ describe('validateOllamaUrl', () => {
       const r = await ok('http://ollama.internal:11434', resolvesTo('169.254.169.254'));
       expect(r.ok).toBe(false);
     });
+  });
+});
+
+describe('validateOllamaUrlOffline — the SAVE-SHAPE check, which must not touch the network', () => {
+  beforeEach(() => {
+    mockEnv.agentOllamaAllowedHosts = '';
+    mockEnv.agentOllamaLoopbackPorts = '11434';
+  });
+
+  // THE REGRESSION THIS GUARDS. `validateAndSave` is staged: shape problems are 400, live probe
+  // failures are 422, and that split is part of the API contract. When the save path resolved,
+  // a host that merely did not RESOLVE came back 400 instead of reaching the probe and coming
+  // back 422 — which turned `agent-config-save.integration.test.ts` red in CI, where
+  // `host.docker.internal` has no address. "No such name" is a reachability fact, not a
+  // malformed field.
+  it('accepts a NAME without resolving it, whatever it would resolve to', () => {
+    expect(validateOllamaUrlOffline('http://host.docker.internal:11434').ok).toBe(true);
+    expect(validateOllamaUrlOffline('http://does-not-exist.invalid:11434').ok).toBe(true);
+    // Even a name that WOULD resolve to metadata passes here — the probe is what catches it, and
+    // the probe is what reports it as a 422.
+    expect(validateOllamaUrlOffline('http://evil.test:11434').ok).toBe(true);
+  });
+
+  it('still refuses everything a name lookup would not have changed', () => {
+    expect(validateOllamaUrlOffline('file:///etc/passwd').ok).toBe(false);
+    expect(validateOllamaUrlOffline('not a url').ok).toBe(false);
+    expect(validateOllamaUrlOffline('http://169.254.169.254/').ok).toBe(false);
+    expect(validateOllamaUrlOffline('http://[fe80::1]:11434/').ok).toBe(false);
+    expect(validateOllamaUrlOffline('http://[::ffff:a9fe:a9fe]/').ok).toBe(false);
+    expect(validateOllamaUrlOffline('http://127.0.0.1:8081/').ok).toBe(false);
+  });
+
+  it('allows the ordinary literal cases', () => {
+    expect(validateOllamaUrlOffline('http://192.168.1.20:11434').ok).toBe(true);
+    expect(validateOllamaUrlOffline('http://127.0.0.1:11434').ok).toBe(true);
+  });
+
+  it('enforces the allow-list, which needs no resolution either', () => {
+    mockEnv.agentOllamaAllowedHosts = 'ollama.internal';
+    expect(validateOllamaUrlOffline('http://ollama.internal:11434').ok).toBe(true);
+    expect(validateOllamaUrlOffline('http://192.168.1.20:11434').ok).toBe(false);
   });
 });
 

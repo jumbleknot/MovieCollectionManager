@@ -248,7 +248,7 @@ async function resolveOrThrow(
 }
 
 /**
- * The save-path wrapper: the same check, reported as a field error rather than thrown.
+ * The resolving check, reported as a field error rather than thrown.
  */
 export async function validateOllamaUrl(
   value: string,
@@ -261,4 +261,53 @@ export async function validateOllamaUrl(
     if (err instanceof OllamaUrlNotAllowedError) return { ok: false, reason: err.reason };
     throw err;
   }
+}
+
+/**
+ * The SAVE-SHAPE check: everything decidable without touching the network.
+ *
+ * WHY THIS IS SEPARATE, and why the save path must not resolve. `validateAndSave` is staged —
+ * shape/enum problems are 400, live probe failures are 422 — and that distinction is part of the
+ * API contract. Resolving here put a DNS lookup inside the SHAPE stage, so a host that simply did
+ * not resolve came back 400 instead of reaching the probe and coming back 422. MEASURED: it turned
+ * `agent-config-save.integration.test.ts` red in CI, where `host.docker.internal` does not resolve.
+ * "That name has no address" is a reachability fact, not a malformed field, and it belongs in the
+ * stage that reports reachability.
+ *
+ * NOTHING IS LOST SECURITY-WISE, because a save-time resolution could never have bound the future
+ * anyway: the answer for a name can change the moment after it is saved. The resolving check is
+ * what runs at PROBE time (`probeOllama`, which then pins) and again in the gateway at USE time,
+ * and USE is the only place rebinding can actually be caught. What this check still refuses
+ * outright is everything a name lookup would not have changed: a bad scheme, a blocked literal
+ * address, a host outside the allow-list.
+ */
+export function validateOllamaUrlOffline(value: string): UrlCheckResult {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return { ok: false, reason: NOT_HTTP };
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return { ok: false, reason: NOT_HTTP };
+  }
+  const hostname = normalizeHost(url.hostname);
+  if (!hostname) return { ok: false, reason: NOT_HTTP };
+
+  const allow = allowedHosts();
+  if (allow.length > 0 && !allow.includes(hostname)) {
+    return { ok: false, reason: NOT_ON_ALLOW_LIST };
+  }
+
+  // A literal address is its own answer — no resolution would change it, so the full policy
+  // applies here and now. A NAME is deliberately left to the probe.
+  if (isIP(hostname)) {
+    const port = Number(url.port || (url.protocol === 'https:' ? 443 : 80));
+    const verdict = classifyOllamaAddress(hostname);
+    if (verdict === 'blocked') return { ok: false, reason: NOT_ALLOWED };
+    if (verdict === 'loopback' && !loopbackPorts().includes(port)) {
+      return { ok: false, reason: NOT_ALLOWED_LOOPBACK };
+    }
+  }
+  return { ok: true };
 }

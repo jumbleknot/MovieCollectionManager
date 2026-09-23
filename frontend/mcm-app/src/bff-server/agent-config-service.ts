@@ -6,7 +6,7 @@
 import * as store from '@/bff-server/agent-config-store';
 import { decryptSecret, encryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
 import { probeOllama, probeAnthropic, probeTmdb } from '@/bff-server/agent-config-probes';
-import { validateOllamaUrl } from '@/bff-server/agent-config-ssrf';
+import { validateOllamaUrlOffline } from '@/bff-server/agent-config-ssrf';
 import { env } from '@/config/env';
 import {
   DISABLED_AGENT_CONFIG_VIEW,
@@ -89,10 +89,11 @@ export async function validateAndSave(
   if (update.ollamaBaseUrl !== undefined && update.ollamaBaseUrl !== null) {
     // Shape + SSRF guard (review #3): rejects non-http(s) AND link-local / cloud-metadata
     // targets, regardless of provider, so a blocked URL can never be saved or later probed.
-    // RESOLVES the name as of item #542 — hence `await`. Passing the save-time check is not a
-    // permanent licence: the probe and the gateway both check again against the answer of the
-    // moment, which is what catches a name rebinding after it was saved.
-    const guard = await validateOllamaUrl(update.ollamaBaseUrl);
+    //
+    // Deliberately the OFFLINE variant — this is the 400 stage, and it must not depend on the
+    // network. The resolving check runs at probe time below (stage 3, a 422) and again in the
+    // gateway at use time. See `validateOllamaUrlOffline` for why resolving here was wrong.
+    const guard = validateOllamaUrlOffline(update.ollamaBaseUrl);
     if (!guard.ok) {
       shape.push({ field: 'ollamaBaseUrl', reason: guard.reason ?? 'Must be a valid http(s) URL' });
     }
