@@ -6,7 +6,7 @@ resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook, integration]
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-20T22:37:14.004Z
+    at: 2026-09-22T02:06:41.363Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -26,7 +26,7 @@ sources:
     resource: repo://scripts/check-toolchain-consistency.mjs
   - id: openwiki-source-4a5107e668fbfa127e4c2d48
     resource: repo://scripts/e2e-contention-tally.sh
-generated: { by: "openwiki/0.5.2", at: "2026-09-20T22:37:14.004Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T02:06:41.363Z" }
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -219,12 +219,12 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   **DIAGNOSTIC — `failed=0 flaky=0 passed=0` means check the image pin FIRST.** A drifted tag does
   not present as a test failure — it presents as the *absence* of results, and the e2e result gate's
   `no Playwright summary found` is the only signal. Run the gate above before opening a single
-  container log. Current pin: **v1.62.1**.
+  container log. Current pin: **v1.63.0-noble**.
 - **Killing the shell does NOT kill a containerised `docker run`.** The container detaches from the
   CLI process, so cancelling the command leaves Playwright still running — consuming the same shared
   test user and gateway as any subsequent run. Measured 2026-08-09: an abandoned full-suite run was
   still at test 24/174 fifteen minutes after being "stopped". Always confirm and kill:
-  `docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.62.1-noble`.
+  `docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.63.0-noble`.
 - **Include the assistant's *decline* copy in the negatives.** The same routing bug can surface as
   "I couldn't find…" on one model and "I can only help with your movie collections." on another. A
   test that knows only one symptom misses the same defect on a different provider.
@@ -283,6 +283,13 @@ For mobile-specific tunneling and APK-rebuild decisions, see
 - **A leak is bounded for Playwright but UNBOUNDED for the mobile tier** — the ownership guard does not catch specs that create collections via non-POST routes (e.g. backup restore). `backups.spec.ts` demonstrates the safe pattern: a spec cleans up what it caused to exist, by whatever route, by name in `afterEach`. On PR #527 the restore E2E left collections named `… (backup 2026-09-20 18:04)` and `Mutated e2e-…` in the shared account; `agent-disambiguation` then found several plausible matches and asked a disambiguation question instead of rendering a card — failing three Maestro attempts (~35 min each) in a suite and tier that looked completely unrelated to the diff. `e2e-collection-ownership.guard.test.mjs` matches `request.post('/bff-api/collections'` and passes a spec that creates via restore, import, or seed. Do not reason from "the next run will sweep it" unless nothing runs between here and the next run — in the CI job the model tier and the whole mobile tier do.
 - **`dev-realm` `accessTokenLifespan: 300` — any local run past ~5 min re-enters refresh contention.** `dev-realm` now matches `ci-realm` at 5400 s. The `globalTeardown` fails the run if `refresh_rate_limited > 0`, with a message naming the token lifespan. In the dev container that guard does NOT fire — the Playwright image has no Docker CLI to read the BFF container. Run the tally manually after a containerized local run: `bash scripts/e2e-contention-tally.sh` (tally only) or `bash scripts/e2e-contention-tally.sh --gate` (exit 1 on any contention). A running Keycloak keeps the old lifespan until the realm is re-imported.
 - **TMDB drift disambiguation lesson — assert by position, never by hardcoded name.** Assert by `disambig-option-1` slot index (testID), not by title string. `agent-disambiguation.yaml` previously matched the button by label text, which caused failures when "Avatar: The Way of Water" left the offered set entirely on 2026-07-20. Do NOT make every hardcoded title dynamic: `assistant-disambiguate.{spec.ts,yaml}` hardcodes the same film on purpose (load-bearing for substring regression — the user types the full title so drift is irrelevant, and the bug-1 regression needs a pair where one title is a substring of the other). That hardcoding must stay.
+- **BFF integration test harness key facts: `testEnvironment: node`, `maxWorkers: 1` (serial — parallel `flushdb` would corrupt data), ROPC client `mcm-bff-test` requires `ensureRopcAudienceMapper()` in `beforeAll` or ROPC tokens are rejected as invalid audience; `route-coverage-map.ts` fails if any `+api.ts` route lacks a test or justified exclusion.**
+
+For mobile-specific tunneling and APK-rebuild decisions, see
+[Android emulator & APK builds](./android-emulator.md). Full container-mode
+commands, the complete flakiness-diagnosis protocol, and the integration-tier CI enforcement detail:
+`docs/runbooks/e2e-testing.md`.
+vant, and the bug-1 regression needs a pair where one title is a substring of the other). That hardcoding must stay.
 - **BFF integration test harness key facts: `testEnvironment: node`, `maxWorkers: 1` (serial — parallel `flushdb` would corrupt data), ROPC client `mcm-bff-test` requires `ensureRopcAudienceMapper()` in `beforeAll` or ROPC tokens are rejected as invalid audience; `route-coverage-map.ts` fails if any `+api.ts` route lacks a test or justified exclusion.**
 
 For mobile-specific tunneling and APK-rebuild decisions, see

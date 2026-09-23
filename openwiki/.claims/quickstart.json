@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4051258949c4f7cb41dc13cfcb592d4c0cd251ff3ddd331c8c6857cad6ccab56",
+  "claims": [
+    {
+      "id": "claim_d7748f9965734f80b8433848368ddbb3",
+      "statement": "The openwiki/runbooks/ directory provides one concept page per live operator document under docs/runbooks/, including a page for per-user scheduled/on-demand collection backups distilling docs/runbooks/backups.md, alongside local dev, devcontainer, CI diagnostics, security scanning, E2E/mobile testing, and production bring-up/reboot/data-tier runbooks.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md",
+          "version": "repo-file-v1:sha256:bfa4ccdfba942e9c7f6e8606d7ae5bda7684dcfa5f4d64c5dfd19572f60845b8"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-22T02:14:04.779Z"
+  }
+}

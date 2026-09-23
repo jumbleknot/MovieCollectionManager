@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0bb8ba7bb66a0df2fba65f4d645275ec2989ba9e9a516293da39a9f040ceb91e",
+  "claims": [
+    {
+      "id": "claim_5b86a47d89ae4efd9e3852642427292a",
+      "statement": "Feature 073 provides per-user scheduled and on-demand backups of movie collections to user-owned S3-compatible or WebDAV storage, with versioning, keep-last-N retention, and restore that only ever creates a new collection.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L1-L8",
+          "version": "repo-lines-v1:sha256:4a24fc32dd5819601b81dacc3200cab7e8ea11b3a8eb9ad95106e2cde1867d0c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY3ODM2YjAwMDI1M2E1ZDUwNDRjMGUwNDYyMTJlY2UwYTRlMGQ2NWVjNGJjMWM3ODkzNTc0MDdhOGIzMjkyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmM3ZTI2YWE1MWNkMTA1OTg1YmZlMTJiODRiNWRhNDZjMjMxMjM0NzI0ZTUwOTFhNzY2MjliZWM1NDBmMWRlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://specs/073-scheduled-backups/spec.md",
+          "version": "repo-file-v1:sha256:3b5a1385275a1eab11bb3a0ba0489ff2c57996036fa99deb40ad2d6fd5b1e438"
+        }
+      ]
+    },
+    {
+      "id": "claim_992aa7a0f8f64dc380ca065c6f2b97c3",
+      "statement": "Destination credentials (S3 secret key, WebDAV app password) are sealed and never returned/logged/echoed; a destination probe failure can only report which kind of failure occurred, never the server's actual reply, and account deletion does not delete the user's stored backup artifacts because they belong to the user's own storage.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L17-L22",
+          "version": "repo-lines-v1:sha256:e6ff5bc8632bf51f5c696af607cb273187a6a2283a951cd1e4c3d980423f9af4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ZhZGEzMGEzYzVjOTBhMjc2NWE5NDU5NzFkZWI5NmYzYzM2Yzc5ODg5Yzk5ZTFiZGYyYWNlMTBiYmM3Y2RhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU1YzNkMjM3MTA3OTI2Y2NlMTkwYjA1OWM0NDFkZWUzZTRlMzkwMmY5N2I4MmIyOWVhYjBiZTllYWJmYmU4MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODViNTExMTIyYjllMjNlMjVhOGM0ZmZiMWM0MjNmYzM2NmU2ODFlYTQ0Y2RkYmNmYzQzZDMxNDNiMTkyMGFlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzliZTZjZjQ0NGQ3YzAxMTE3MGQyM2U2MTNjYzJkOWNlZDhjOWM5OGEyYWFjNzVhYjRkZjhjN2M0YjIzZGVkYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6aa92f48d28d45eb9e02ce05af635ea8",
+      "statement": "An unattended scheduled backup run acts as the user via a Keycloak offline token granted through explicit consent; there is no service account or privileged fallback, so a revoked or missing grant makes the run fail rather than use another identity.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L24-L27",
+          "version": "repo-lines-v1:sha256:0348e1b56a6506f2cde3ab6395e6ed08a94934df9ebf86a8d2bce26acf0568a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDBjMTA0MjY0MjQwZjViMjlmZmVmZmU2YzlmY2RiZjQ2MzUxMzAxZjVmYzJjZTQxMmZlMDc3ZmRhZmQ4MDAxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzkxMzM2YjQyMjgwOTkxNmQwNjZkZDliZWViYmYwZDA1MzZhYzc2ODZmNjljYzBmMjhiZWRhMzU3YTM5MjdiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmU0OGU5OTVlMmEyZmY5NjkwM2I3YTgyZmQ2OTIxMmI4MGY5YjU2M2M2MDdkNjVkMWQ4MzI5NDUxNmM5YjQwYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM0ODY4ODNmN2Y3Y2Y2NWI3NmQ0NjY2NmQ5MGUzYTM1OTBhYmY0MDM2MWVlZWQ4OTgwOTU4MDlmOTIxOWRlYyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L40-L41",
+          "version": "repo-lines-v1:sha256:5abc4e6bf6168d97f379ec6c2deac863781a30dabfb5ae95a6b077ce80920260:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGRjNGUxYzIwMzVkZTcyZGIwOGEwZDBmM2Q0ZmRiZTE3MDcxMzYyNjRlNWY2ODUwMGMzZjNjNTQyOWM5ODhhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTM3MWYwMjQ5MWRkYzkwYzM2OThiNTgyOGYxYjA4ZTM4NDU3OWYwNzRhZWY0NTYxNTRjZWY5ZmUxNjYxYzliOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzNmJlNWE5MzY0MDYzYzZkN2QyODg3NGFlNjE3NzA3YTk4NGRiNjQ0ZmY4N2RmZDQwMzljYjZmNmVjMDVjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGUyNjI5ZDQ1ZTUzNmQ4YjJiYTIwMmE1ZDc5OGIzYjg2MmUwMTE5NzQ3NjNhYzU4MzRhNGEzM2NkMTA5NjY4YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f011c84757a04d38b03c08753012b118",
+      "statement": "The BFF's MongoDB is a standalone mongod with no replica set and no multi-document transactions, so exactly-once job scheduling rests on a single-document atomic claim (findOneAndUpdate) rather than a transaction; the Redis leader lock beside it is an optimization with a TTL guess, not the correctness guarantee.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L29-L31",
+          "version": "repo-lines-v1:sha256:ba1a087011c0dc90dc1cebbd84d69ee13e3cc6a866f1894fecbb7c3ae430e52e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWNmNjM4NmMwNGNmZmY5ZjkyYzBlYzJkOWRlYWRhNjc2MjdmZmUyMjVjMjNjMzMyYTk1MzZjNmU2ZGExZWVkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E5MWNiMWNhM2YzYWQ3ZDYyMTJlNjY3N2RlOWVlNzYwOGUxZjY0Y2Q4Y2QwMGMwNmY0NTEyMDUzOTkxZDNkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRjNDA0M2I3ZTM1OWFkMzBhMTAyOGE0NzczNjc3YWE1MDkyODE2OWE0MGYxMDA1NzJmM2VkN2RmMGUyMTg2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-job-store.ts#L76-L149",
+          "version": "repo-lines-v1:sha256:fa84c0103e7e7a175bfd8cdafd98b7b6204cc121cf014f4e9ad849615b7777d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYzY0YTY1MTE1MzBmNDE3ODVhN2E4OGZiYjRhMjgzYTcyMTI3ZWRkMjc3MmMxNDVkM2JlNTY1MTYxNGQ0ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZjE3ZDM3MzFmZDQ5MTkyNWNhMjRkYWE0ZWNiZDVlYWY0Y2ZkNDE3MWQ5NmRlZmU4ZDY4OGNmZjMzNzM5ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMjdmMjEzMDQ1MDRkZGFlOTQ2ZGMzNDE0NTRmNzU0MmEwOWNlNGI4MWQxMzk0ZmFiMGQ3MGZmOTdkNTM2YTAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/redis-lock.ts#L1-L9",
+          "version": "repo-lines-v1:sha256:77ed29084c378b6eb5b4002debf251ba1166a0c9fff71ce332071d3763534b93:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk3YTg2MjRjOTQxYzNiYTJlYjBjM2M3NDRkMWI3MzdhNjNiNzdhZDQwMWFhM2IyZjM5NDRjYzRlOGNiZTgxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjkxZTIyNTI0MGZkOGE0ZTdhMmFhM2FmM2U1ZjVkYmEwOWQ4MTNiOWMzMWM2ODI3NGRkMGM5OWZmODRmZGQ2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWZjOGY1NWNjNTBiOGEwNjA1N2JmZmMxMjdhZDhhYzIzMTcwNDc2ZTNiNTRmOGQzMGU3MmY1ZTI4ZWE5MDlmNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d683557c3dd7445cb0ec8a8394d9b417",
+      "statement": "BACKUP_MAX_MOVIES and BACKUP_MAX_UNCOMPRESSED_BYTES exist because a backup run holds the entire artifact in memory instead of streaming it; streaming snapshots are a deliberate filed follow-up, not an oversight.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L44-L57",
+          "version": "repo-lines-v1:sha256:fd88afae7bbe8a2197b334b478b1c75ad570d588bdf2165db50962365496d85a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyOGMyN2Y4ZGRmZThlM2Q0ZDY2MmYyZDY0Y2FhYjJlZDg3NDA0NjY1ZWE5YjZhYmM5ZTQ5ZjAxYjlmYjZlMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNGI5NTc5MTBiM2EyMzliODMxZDIxY2E2MGYxZmFmMGEyMjg1NmY5NjdhOGMwODA5OTg0MTUzMWEwYjc5MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxNjk3M2IzYjM3YzU4NzM3MTEwODhhYjU1ZTdjNTk5YzFjNWUyNjA0ZDRiYjczNjQwNjVkOTU0NDU3NDYwNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e206ef6734ad443d8d5e1c2e0e35bf9f",
+      "statement": "The scheduler tick is server.js POSTing to the internal /bff-api/backups/tick route over loopback (127.0.0.1) with a shared secret, because server.js is CommonJS outside the Metro bundle and cannot import src/bff-server/* directly; consequently no tick fires under `pnpm start` in dev and the tick route must be called directly.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L63-L69",
+          "version": "repo-lines-v1:sha256:3050a5badfd7f36ce2e89abecf948fdc5615c8f823a9ee2252bd54a7468c2175:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVlN2MzMWEzM2RkMmI0OTQ1ZmE5MzY0MGM4ZDE4NjBmOTVlY2Y4MWZkODVmNTRhMjhlZTRmMWUxM2NkZWRmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFmMWViODFmNDAxYjdmZTc3ZWI1YjJkMzgyNTZkNzFlNzNlNDRkNjBjMmQzZDljZTMxYWQwNTQ5ZDMxYjczNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc2MjJlN2FjMzU2Njg0NzY3MzBjOTA5NDRhMjVkOTNlN2UyM2Q3NGYxZTBjNTQ0MWEwY2U4MDA1MzVmMzIxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWExZTdhNGU5NTFmZDI3YjEzNWY3ZTQxOGVlMmFiMWUzY2Y5YjU5ZWU0OWVhY2Q1OGJjNmQ5MTQ1M2MzMjBiNyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L97-L143",
+          "version": "repo-lines-v1:sha256:e986fd4b7dec65972fd9cd9e80e37bcdfd93ca561ae0a33dfefc0e6045883e69:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNjI0NDgzZmMxMTVmZjY5NmE2NmNjZjc3MTFlYzY5YjY2Y2NiOWVkNjI5ZTZmNzNjMWI1YTE5YTJlMTA2ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDkxODg0MjkyY2QxMjVkNDA4ZDMwMTQ4YzM3NjdkNGYwZWUzY2MzY2UwM2EyY2VjYmZmOGIwMTFiMDY0OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkODExODNmZWQxZGQ2Njc3YjAwMGE4NzU0OTQ1YjA5YjM5OThjODNjZjRmZjhmZGQ5YjFmNWQ0M2U3NmViNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjgzZmNjZTE0ZDZjNzhjMTQ3YmMwOWI0ZTdkZDE0Y2U5OGMxNzRlYzZkNTg2OGE4NDM1MjZmNzNiODAyODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b27dda9c5141417a89822628f5a68a41",
+      "statement": "Retention's safety property is that a failed or partial run prunes nothing, and a prune failure never fails the run — it is recorded separately in pruneFailureReason distinct from the run's failureReason.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L137-L143",
+          "version": "repo-lines-v1:sha256:70dd47ae039a88a6e81c9071739c666524b7c2658ed422be06f6d1c1a6c5992e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGI5MjRiZGQwYWM1MWNiZTY2ODRjZDRjMjhhZGJjNGEyMWE0YjZmMTk4YmJkMDE1ZjJmNDdmZjk4MzQ3ZTVkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI4NmI5NThkMDBkOTgyZDQ4MDU3YThlZWQ2Yzg2MThlMWE0MDlmNjAwMzY5OWNkN2FjYzgyMjZhNDRjNzllNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzQxYzEyODU1ODJmNGFlZDM2NzlkMDIzNDkyODRiMmFiZTY3NTRmY2RlZmMzYzBjMDFlY2Q4NDliOTg4YzdlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTU5MTQ1ZDk4YmRhY2Y0MTczODQ5ODEyMDU3NGUxYWQ3MzU0YzhhMzk4MzlkZTZkZjhmNzc5ZmI2ZjBmYjBjYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9cac7cd812c7450787ce7cf2cd35f001",
+      "statement": "Revocation ordering on disabling a schedule, deleting a job, or deleting the account is revoke-at-Keycloak-first, forget-locally-second, so a failed revocation never strands a live non-expiring offline token with no local record pointing at it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L113-L115",
+          "version": "repo-lines-v1:sha256:2ac093caba6504744b0c46267636b93ddd3594a3745f9847d533834c9c29b09c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcyNDRjNzNkZjAxYmVkYjAwZWQ5ODQ0ODk2YTZjNjNiM2RiOTQ1OTRkMWE1ZmVmNzI1M2I0OTFhNWM1ZTQ1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUyYTAwMmNmMzQzNjJmZGE3MTk3MmU2MmVhZWRjZjkyYzY3N2E3YTJmMjRiZGJlM2VmMTA3NjllOGQ2MTY4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M2ZTYwNGQ5MDkzYjZmMTM0YzMwNDZjMmRlZTVmMmZiYmM5OGY5ODIwYWUyNzlkMmI1MDIzMDRiZGE5OTg1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQwM2EzYWZmMjIzYTFlZDQ3YTg1NmZhYTAzMzkzYTgyY2NhZmZhMjM2MWQ5ZjRjN2MyNTRkYzMzYTQyNmMzYyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L19-L20",
+          "version": "repo-lines-v1:sha256:163242e8df9105efa1ff000669ff1ace04172bdaf43c1f9d724c0816dcd42bf6:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTJjNmE0MTdiM2NkY2Q2ZjQxZWY3NTE2OTZmMTNlYmRiNDVmMDM2ZmY1ODlkOWFkMjRmZGJmYzM4ZWNlNDIxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNmYWY3YTcwOWUyMmI0ZjhjZGNkZDA5OWQ1ZjcwNjQ4ODUyZmJlM2M2ZTFhZDM2OWQyOGU4ZmFlODY0ODMwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2UyN2JhNDhiNjFmM2I5Mjk1MDBjMjg2ZjM0YjRjNjhlYWU3Y2FiOTZmNjhmMDMyY2EzNDA0OWQ0MTYyMWY3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmU4YmZkZWEyNTdiOTY5OWIyYmJjNWEzOWU4NjkwZTViZTllMDU3MTA5OWI3NjhiOWU1YmRmYzMzNmFkNzU3YSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L347-L357",
+          "version": "repo-lines-v1:sha256:6f092fa9284be993947189eee516d8a9f73ca4e574f017db6c37dfd77f0e94fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNmQxZDFlMDZlZGVjMGMzY2E4OGVmZmY4ZDM0ZjQ0OTg0NTU1ODgxZGU5NjUxN2MwMzVmOGU3NTQ2ODM3NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMmUyZDczZmIwYWY0NDNmYzhmZWQ5Mjk1NTdjODFjNDBlNTI1NmUyMTE1ZjBiMDVjZmZhNjJjMWI3MTQ1YjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0ZTRmN2Y1M2ZlNDI5OWZiYWZlNDYyOTI0YTdmYmY4NTY5ZTkxYWNiNTA1MzMxN2E3Y2Y4YjQ5ODFkMDEzNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YjIxYTZkNzMzMDVkZWNlZThkMzFmMTNjMzc1NGU1MDUxMjcwMmU3NzFkMjkzNDliYzZiNmVjYzM5NjMwOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe112f24f4b0436181f778d7eb99dcc4",
+      "statement": "The audit-sink redaction rule strips any key containing 'token' plus an explicit redact list, which does not name secretEnc, accessKeyId, or a destination password by field name; those fields are excluded by construction rather than by the token-matching rule and are asserted against real secret values in backup-audit.integration.test.ts.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L190-L193",
+          "version": "repo-lines-v1:sha256:0dad9b00d0c64a4862206d1fd3dd1c10748852ca36d7c7774a645586196390b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQzNGQ2ZGJlMmY4MzdmZjllY2ExNDQ5Mzg4YTY1YTg0MjE2YTU1ZDViMjdmZDExMGI5YzcxOTQ0M2ZhZTUzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM0MDk3YjRlOGNmMDJmODlhNGFjYjU0NDZmOTEzZmJiNzEwNGE2YWU4NDJmODg5MTRmYTI4YTU3ZTE2ZGFlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE0ZDhlNjdmNzVlY2NhZTZkMzM0ODRjOGJkOWEzZmFhNDZjYzMyNjQ5NzgxZGM1YTcyYzk3MmI3YWY1YjliZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2FjMGM4YTA5MGFmNDA3MmIyZTFlZGEyMTQ1MzFiYmMyNTQwYmE3ZTEwZWI1MGQyMTJmOTk1MGY0NGM2NDhlMyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/audit-sink.ts#L24-L58",
+          "version": "repo-lines-v1:sha256:f14cbe46c878253382a6c4d216ec8a5d9656aca6d0a672aa8c6b42d4527c5645:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwMGViN2M2NjlkZjg1YTM1YWVjYTVmY2RhMTBkYWNhNjRmYTAxZTZhOWU3NjM3ZDBlNzU2Mjc0ZDJmOTNiODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNjg4OTMxYTAwZmNkNzBiZTk4OTIzNjUzNGFhNGMzY2ZiMzRmZGI5YTU3N2ZhZTRiNjJiNmEwYWNjODZkMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_937542fb88994981897059fd44ebb8c5",
+      "statement": "No account-deletion route exists in the app: tearDownUserBackups(userId) is implemented and tested but nothing calls it, since there is no deletion endpoint and no deleteUser path in the Keycloak client.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L209-L212",
+          "version": "repo-lines-v1:sha256:093816e2426789f75ef76cf9868c67eaefc249d32dc695c22163c7fc13745409:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU2ZDk5ZDA4MjQ4M2NmZjZhMWFmMjE1M2M5ZDhmMmNiNDZkOTlkNzc5OWJjYWQxYjkwM2Y3N2Y2OWU2MTA4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk5NTc3NmM2MTIxYTA5NGU0MjIzYmRjZmE5ZDllNDMyNGE2YmQ0ODM0MDY3NDU0ZjBkMzEyOThjZjA2ODIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTU2ZmMzNzc0ZWRmYjM1YTcwZmJmMDZmNzQ3NDM5NjY4Y2E2OGQzNTBjYzg2YjdiY2MxMDAwZGNlOGIwYTkwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAyMTk2MmQ5OTU4OWNhNDU2ZDgxYjI0NGRkN2MyNTU4MTZkNzBmN2U1NGRlNjZlNTk1NjE1ZWM2ZmZlYzg2NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bbb6a2b6f574426aaa692ee55199860d",
+      "statement": "Streaming snapshots are not implemented (the size/count ceiling stands in for them), and failure notification is in-app only with no outbound email channel, since the existing email service only drives Keycloak account flows.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L213-L215",
+          "version": "repo-lines-v1:sha256:4021962d99589ca456d81b244dd7c255816d70f7e54de66e595615ec6ffec864:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVjNjk1YTE5NDQ4OWQ2YTQyNTMyZWFkZDM4MDU5NGRiMmE1MjlmMjMwY2NhNjI2MDhmNjE4MTg5YjdkYzMzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJjZmZiNjEzN2FkZDEyM2JiZjIyNjYyY2NmMmVjMmExMjUzZDc5M2VjOWFkNjZkZGYyOWQxMzY2ZWQ0ZjVlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODVjZTk1MzU5MzllY2FhM2Y3M2NhMTUzOTUwZTE0NmE2MDM3YzcyMGMxY2QxZWZjNGIzYWFkMDc1M2ZmZDUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/email-service.ts",
+          "version": "repo-file-v1:sha256:9c0ea5f2494236e854f37e2ceb33859fd19f078fee6ad558b5cfc187d34e6aab"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-22T02:14:04.779Z"
+  }
+}

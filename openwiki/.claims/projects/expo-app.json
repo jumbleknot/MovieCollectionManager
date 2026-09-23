@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:cbbc4f3a70fe53f6296c922cddbb002d4a77f9e6858b13d443ec223f81bc3ca5",
+  "claims": [
+    {
+      "id": "claim_f8f00460dc84485e9d772fc7224921cd",
+      "statement": "frontend/mcm-app is a single Expo Router codebase whose app.json configures Metro's web output as \"server\" (not a static export) because the same process also hosts the BFF via file-based +api.ts routes under src/app/.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L1-L6",
+          "version": "repo-lines-v1:sha256:b33bd28aa73813f41b739c1c311609f379a3f51dd357ccfa9bfbf8196a6ade5e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEwNjEyNjczNGQ1ODY3MTY4ZWE1MTg4ZWY3N2M4MGVjNGI5N2IxMDFlM2NkYTcxYzk0OGMxMmIzMTEzNTA0ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGMzNmZkODJhN2RjZWQ3YzRjMDAwYmMyNWFmNDA0Y2ZjNTMzMTNkNmE3OGI2NmU4MjdmNTM5M2VkNDZjZTUwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTY4YzlmNTk3Mzg2NDMxYTk0OTg4NzNmYjJmZDAxZjBjNzZiMmI0ZTJiNjYzZjI2ZDgwNjY1YzA2ZDdhYmExYiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L1-L29",
+          "version": "repo-lines-v1:sha256:2c9ec9a6a58c3fb6de89e20a7a44036e8d0f799e9150d3c910067781d2ec8a97:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZjI0MTNmYmYyNjI0MjAzMjAyYjdkZmI0YjEzNWViNjA4NGUxYzZlZTFmMGViNDhjN2ViM2RjY2Y3MGNiN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NTRjZDliM2FlOTYzMDJhOGEwOThmZjEwMTg4ZWYyNTQzMDc2NjI1Y2ViMjA4MDdmOTBlYjM3ZmJiNjliMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa72f95432eb470393d32f792801fb0a",
+      "statement": "mcm-app and @mcm/design-system have both migrated from Tamagui v1 to Tamagui v2 (package.json pins tamagui/@tamagui/* to ^2.3.0 in both packages), reversing the earlier v1-only pin.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L30-L65",
+          "version": "repo-lines-v1:sha256:a94c8d636b34ac1c74fe2a1270d89697d0a0282af899d6c11fbc6795730abaf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3OTM5MGM5YTAyNjkyZGE3ODViMTQ2MDg2NDQ1ZGMzYjEyYjFmOGQyNzNhOWY5NWI5NDY5YzdlZmM4NWNiNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YTQ0NGRkZTEyYmIzMjViNmJhYjVjMTlkZjAzNmZkYWQ0NmM2MDg5Njg3OWQzZmU5ZjkzZTc3OWFlNTVhOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0ZjcyMzc2MjhmYzcwNTlhODk5NjUzMDJlZTMzZGI0M2U3MTM3YzU0ZTg2ZjdkYjI3NTg5ZDBkNGM4OGQxNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YzRiN2ZkMzBkYmIyN2JjMDJkYzljZjIxZDIzOTBmMGU2MDE1ZDA4YzUwNDNlMzZiM2VmZmIxMGJhNjUzYTYifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/package.json#L15-L28",
+          "version": "repo-lines-v1:sha256:1df5bee69e8ac50a5636745c794d20e641dfe217a3eb807f21bd668e5d277971:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYWM4YzQyOGE3MTM4ZTEyZjVkOTc2NTU1YjUyNjg1Zjc3YTMyOWIwODhhZDk3YjM0N2IzOWZmNWEwNTkyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMjk1OTFiYTE5YWU4NmUxMjMwODE5MGRkZjdkNTU5YjViNzJjNDUwYjZiMjMzOTdhZGY3ZjQ5YzNmZTdiOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzMDJhYzJhYWMzY2UxNWRkMjAwNWRkY2RmZjNjOThkMjg2ZDc2YzRiY2FmYmJhNTM3MWM2NGYwMDAyMjMwYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwZWM2YTkwOTBjODk3Yzc0NzI2NzY4NDM0N2IzOWIyMDQzMzQ2MWM3YzBjN2M4MzVlMjBmZTE3MzkxMTkwYTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0ed0dd997c854a3c87b74c38c96140e3",
+      "statement": "babel.config.js now installs the @tamagui/babel-plugin optimizing compiler plugin for every non-test build (excluded only under NODE_ENV=test so Jest still renders Tamagui at runtime), whereas the design system previously ran with only the Tamagui runtime and no compiler plugin.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/babel.config.js#L1-L32",
+          "version": "repo-lines-v1:sha256:a0a4f0b2e4267bb6c8cc577f9889c470ba28a3fede1df05c917902887db9551c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MTBkZDc5NjhhOTQ5YzM2M2FiMjI0MWM5ZTA2ZjkxYTM2ODVhZDRjMTdlNDNmZDc3M2VhZmVmM2YzZDJiYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c265fa31059b4cc7b1d1a2d92fcb146e",
+      "statement": "The Tamagui compiler plugin lets Metro tree-shake the @mcm/design-system barrel import, which fixes the earlier problem where importing one design-system component pulled the whole Tamagui library into the web bundle and OOM-crashed Metro's dev bundler.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/babel.config.js#L5-L11",
+          "version": "repo-lines-v1:sha256:ce68e05204980eedfc7dfe95143d3c77343a6214948a2be14ae80dd556b4b133:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRlOWM5N2YxY2Y4MmFmNzllYjkzZWY1NzI0YzllODI3YzczMzk3ZjQxZWQ1ODFmMGQ2ODcxMWM4NDlhYjdmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTNjZTkyMzdmNGZlZjlhZWU1MzdhODkzM2M1YmVjM2QyMmFkZTUwYmFkMjE5MGZmOGFiZTNhY2U5N2RhOWI1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGVmYjgyMjU0MzY5MThmNjdhNzY2NWNlNmEzNTYyYzI0YzNjY2U3MzRlMmY3MDE3MDc0ZGRiYTdhNDRjMjQ1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGMzMTJlMDEwYmNhNTM1OWE2ZjA5OTJiMjVmYmMzNTZkZTA1ZDc3NmUzYTI4ZDFkOWQ0ZDQ3ZGI4MGYyZmQ4ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_241f96f65821476fb8159b546ca2196a",
+      "statement": "src/app/(app)/settings/ is an Expo Router group with a _layout.tsx that renders a shared SettingsNav sub-navigation above the active area via a Slot (not a nested Stack), because the settings areas behave as a tab row with no push/pop navigation history of their own.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/(app)/settings/_layout.tsx#L1-L73",
+          "version": "repo-lines-v1:sha256:67269f63aecb5c655e08db9594cd04d8dafa78106481fcac694defdf9d79e8e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4NjNjMzYyMzczNzI2MjhjZjA0NzlhYjA1ODVlNTQ5ZjZiZGExZDJkNmMzNmJkNjBhNGM4NmJiYWQwYmEyZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0bf59a5559c84f3a91fc08c616d21b5e",
+      "statement": "The settings sub-navigation is defined by a single SETTINGS_AREAS registry (src/components/settings/settings-nav.tsx) listing Profile, Movie Assistant, Backups, and an admin-only Admin entry; role-based hiding of the Admin entry is presentation only, and access is actually enforced by a separate ProtectedRoute requiredRole=\"mc-admin\" guard on the admin route itself.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/settings/settings-nav.tsx#L17-L57",
+          "version": "repo-lines-v1:sha256:d88feabc48cc7fb60c8b27acd2c764c1423dfef591435c7ed2ba537fcb5771ed:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNGI0NDUxYjI3OGUwNWY5MzA2MzRmYjcyOTJhMzNiNTA4MTYwNjAzZmY1ZTkzODY2Mzk2ZjUyYTc4NzRmMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0YjhiYjI1MmFhNmU5NmE3YWJhMzZhOTU0ZmY0NDk0NTI1Nzg5ZjgxMGNjMjcyMzY4ZDk4NmU2ZDI3ZGI5ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3MjZmZGRkMjk1MmY3ZTVlZTRiODMxYWE1YjBjZWZjMzM1MjY1MjJjMDdlZmU5MGFlY2JiYzAwZTFjN2MyM2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d20003e58e72472c9a898dc3015fe089",
+      "statement": "Each settings route (index.tsx, assistant.tsx, backups.tsx, admin.tsx) is a thin file that reports its own current_screen label via useReportUiState and renders a screen component from src/screens/settings/, so adding a new settings area is meant to require only a registry row, a route, and a screen.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/(app)/settings/backups.tsx#L1-L15",
+          "version": "repo-lines-v1:sha256:e5a0f402c583e2d1b53bc36858a1dc380ad9d686460f74d5a1617d45700c21b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/(app)/settings/index.tsx#L1-L17",
+          "version": "repo-lines-v1:sha256:e99fa405e214a52ceaa2fe11ecc8a61bac25e3e6ed634278dab388b5bbd5de7b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9584ae4998649f6bd6868577545ed7b",
+      "statement": "The client-side Backups settings area (feature 073 / backlog #236, src/screens/settings/backups-settings-screen.tsx) lets a user configure backup destinations, create/edit backup jobs and schedules, view run history and stored versions, and manage the standing consent for unattended scheduled runs, composed from src/components/backups/ and the use-backup-destinations/use-backup-jobs/use-backup-consent hooks.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-consent.ts#L1-L29",
+          "version": "repo-lines-v1:sha256:3803970568a0a014b3407b5fb2c8fd7c79b05482847b52c3f22ae0b020cacf50:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwZDM5NmU3ZmZjNDY5NDgxMGQyYzZiNTdiNWMzN2E3N2ZjMDdjNjQzMTQ5MjAzODU4MDQ5ZjliMDU3ZDUzNGYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts#L1-L42",
+          "version": "repo-lines-v1:sha256:324ca01d23520181661c5641527171654078d2bbf884092b060cb5c1d2b619fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZGE3MzEzMzRmZWI3NWNmMDVhM2Y0NDhiNTVjNTU4YWU4YjY4MDZkMDQ3YzBjYzcyZjFlNDkxNWYwMDg3ZmEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L1-L54",
+          "version": "repo-lines-v1:sha256:2cb9b58144d608aa73efa99b2648399271907851da2a753049220d45297a07b7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MzYyZTQwMzdiNTJkMTNlNGVlOGMzMmMwNDY2MzI0ZWNlZjc2NjA4MWEwMWYzODA2MzFmYjQ2YjEyNGIzMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_edc85c1d09a2476ba6e956c198f41d35",
+      "statement": "The Backups settings area's hooks call the BFF's bff-api/backups/* routes through the same cookie-authenticated api-client.ts as the rest of the client, and a destination secret is write-only end to end — the client never receives one back and an edit form starts with an empty secret field by design.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts#L1-L30",
+          "version": "repo-lines-v1:sha256:f092190b43bd965fd2069746cc3add1b684d576fc5d69b42a530679d009945d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0N2Q0NGZkYTM1Nzk0NTdlNzdkYTVlZTQ2YTRkYWM0MGVlODMyNGYzNWZlNjQ4MTFjODViYmYyNGYzZWFmZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d82cf39bb934217ac7a939eb19fe765",
+      "statement": "Password-manager autofill is suppressed via the NoAutoFillInput component used across most forms (collection/movie forms, search bar, assistant config), while the registration form (register-form.tsx) deliberately uses a plain React Native TextInput so autofill works there.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/no-autofill-input.tsx",
+          "version": "repo-file-v1:sha256:3f564f1355f30644c84ca9d8fa6a0b9506a9f9e38526164e8e2eb2bf8e465f41"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/components/register-form.tsx#L1-L16",
+          "version": "repo-lines-v1:sha256:4360cccc1dcc04b543529d18f6b72a2736f67ba5a7310602b2e4a274427dbda1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZmM5MGFiODUwZDEzNTdiY2ExNWRhZmY1MjM2MDI0NDM0Y2Y1ZjVmMGM0YTc0NjM3YzVmMjc1ZjY4OTQyMWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczN2NlY2Y4MTZkNmE4NjVjYTI1ODExNmE5NTEzODhiNjQ1YWI3NDUyYzE2NDVmMGM5MDQ5MjljZjU4YWQwMzgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-22T01:58:43.929Z"
+  }
+}

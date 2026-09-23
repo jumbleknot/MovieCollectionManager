@@ -4,7 +4,13 @@ title: OpenWiki quickstart — MovieCollectionManager
 description: The root entry point for this repository's OpenWiki bundle — what it is, how it is organized, how to query it by type or tag, and links to every concept area.
 resource: openwiki/INSTRUCTIONS.md
 tags: [openwiki, navigation, quickstart]
-timestamp: 2026-07-27T14:56:38.654Z
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-22T02:14:04.779Z
+sources:
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T02:14:04.779Z" }
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -71,7 +77,7 @@ Use these fields rather than guessing filenames:
   quirks, and the Expo/agent-transport edge cases.
 - **[runbooks/](runbooks/)** — one concept per live operator document under `docs/runbooks/`: local
   dev, the devcontainer, CI diagnostics, security scanning (SAST/DAST/infra-image), E2E and mobile
-  testing, and the production bring-up/reboot/data-tier runbooks.
+  testing, per-user scheduled backups, and the production bring-up/reboot/data-tier runbooks.
 - **[process/](process/)** — how this repository itself is governed and how work moves through it: the
   [governing constitution](./process/constitution.md), the
   [proposal → spec → plan → tasks → implementation lifecycle](./process/spec-driven-development.md),

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:48b7f3264698c3aacab1c420b565727e5358808a40b92de03178c33bb11ea57b",
+  "claims": [
+    {
+      "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
+      "statement": "The BFF's HTTP surface is implemented as Expo Router +api.ts route handlers under frontend/mcm-app/src/app/bff-api/ (auth, collections/movies proxy, agent, backups, admin/settings), while its business logic lives in frontend/mcm-app/src/bff-server/; in production/Docker this is served by frontend/mcm-app/server.js, an Express adapter wrapping @expo/server.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L1-L29",
+          "version": "repo-lines-v1:sha256:2c9ec9a6a58c3fb6de89e20a7a44036e8d0f799e9150d3c910067781d2ec8a97:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZjI0MTNmYmYyNjI0MjAzMjAyYjdkZmI0YjEzNWViNjA4NGUxYzZlZTFmMGViNDhjN2ViM2RjY2Y3MGNiN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NTRjZDliM2FlOTYzMDJhOGEwOThmZjEwMTg4ZWYyNTQzMDc2NjI1Y2ViMjA4MDdmOTBlYjM3ZmJiNjliMTAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts",
+          "version": "repo-file-v1:sha256:e408ef3ed1e567ee177e530a2e1a8bd4f123f9fc5e8e6fdd10c59d8094763581"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts",
+          "version": "repo-file-v1:sha256:0c6d10784d924be28dedcc79e583cc9d99eecb8d1d977238decb6c93e2fe0679"
+        }
+      ]
+    },
+    {
+      "id": "claim_e91a51ae25a546a1b3e1caee71f4aa7f",
+      "statement": "Every mc-service proxy route in the BFF follows the same pipeline: requireAuth() then a requireMcUser()/requireMcAdmin() RBAC check, then a per-request mc-service-client.ts Axios instance carrying the caller's own JWT as Authorization: Bearer, with handleMcApiError() translating mc-service's RFC 9457 problem+json responses on failure.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts#L55-L75",
+          "version": "repo-lines-v1:sha256:da74140921faa16dd44c4b2157471a5c172ac017dd0220365bf0612ac1972eb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNzQ3MDdhZTcwZWFmYmFkNzBlZTQ1ODI2MDk4Nzk2NTJhNzE1ZGY2Yzk1ZjFlNDc1ZTNmMTNlYWNlODQwYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhM2E4ZGUwYjE0YmZhNTc1ZjJlOGVlNjkxYTk2ZTc0NTM5M2M4YWIxYzEwYTk2YzZlOGJiMmM5MGM2NmIxNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZjI0NzFhMDNjNzRhM2JjZjRkMjhkZDFlYTUzMTkyZWVmYzYwNzQ1NjlhOTczMTljNDYxZWUwN2UzYTk1Y2YifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
+          "version": "repo-file-v1:sha256:9b401a4f484bde2f36eb7343623c840a25a4d990d9829e0c47826618eec14840"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mc-service-client.ts",
+          "version": "repo-file-v1:sha256:3135367771407fce8ef28ff16df40d0f2bfa607d8449ae49a194f1e798da5ec9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3434ae38c73e442aaace115c44507d27",
+      "statement": "The BFF maintains its own MongoDB instance, deliberately separate from mc-service's database, storing per-user agent config (feature 018: encrypted provider/TMDB credentials) and, for feature 073, backup destinations, jobs, and run history — all connected lazily via a cached singleton client in mongo-client.ts using BFF-scoped env.mongoUrl/env.mongoDbName.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mongo-client.ts#L1-L16",
+          "version": "repo-lines-v1:sha256:d3f2d0af9ce30455c6e4a573f5011c01e11d423cce8722a722ebce32c7cb7dbd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4MjkyNjBhNTRiMWRlNzJjNTQ3YzNhZmY2NjkxNjI5ZGEyNzEyNDVhMzllNTEwZDE5ZTA5N2I3MjM1N2M4NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2M2Y5ZWEwZGRjYWEyNDRiODJmNTExYTNlMDliNzJkMzRlNWZkYzhlZWI1MzIwNThjYTBjOWJlOGY1ZjMwOWUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L79-L138",
+          "version": "repo-lines-v1:sha256:ed8453e7570a468b3d7e9f84e92fca367b5cf5b84578e73c971af8bcfa3caa16:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YzgwZjU0ZmUyNjQxZTRjMjM5MzRjZjE4ZmIzM2UzNGM1MDI5NDgzMTJmYWY4ZWNkZmMwNGI3ODUwZTBkZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YmIyN2ZkNDkwZDFkMTI3YzcyMmVkMDJlZDNmMDNhMTQwNmJmMWE2NGUzNmE2Njc3NjIxNjlmZDhiZTJmM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMDcxNzM5NzBiNjEwM2YxYzM2MDhkNjg1MTIxM2Q3NzQ5NmI0YzAzNzMwYmU3MjU4ZmI1OGE4OTFhZTk4MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MTNiYzNmNWQ5ZmRiYjZjMWNmNTAxOGUwYzhlYzA2NGYzY2NhYTZiNTI5ZTI0NzFmYzc3ZTBhZTUzMGUwNTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4230241fbdb34b599a9caf838f7f8f11",
+      "statement": "The BFF's Mongo store is a standalone mongod, not a replica set, so no multi-document transaction is available anywhere in it; this shapes the backup feature's design so that all correctness (e.g. exactly-once job claiming) must be expressed within a single document rather than across two.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L122-L143",
+          "version": "repo-lines-v1:sha256:780693e40be237d192a4c2e1d491f97a85ba3298679481eb24dfa443ca5e0f4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NTg4YzU1NDRjYTNlYmE1YTNiMWFiMzExNWE0YzJiY2U4YmQ1M2YyZTFmYWM3OTA3NDRiMDFmN2JjNjQ5Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2ZDU3MWQ0OWIxYjE3YjM2ODY4MGMxYTc5ZDRjMzczN2U3NDZiNDYyZTRjZTY5ZjNkNDc4ZTBhNjFiNTBkYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNjdkYTJiMGVmYjhlYTkxNDQ4MmJiNjdhNTcxNjMwZTYzZTY2NTE3NTFjZDFkYzJmMTQzNjMxZWVkZGNjNGIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-job-store.ts#L76-L100",
+          "version": "repo-lines-v1:sha256:4283859fe9896b4971c7798af67c6e84c86af4cf2ec5e7589f8b54ecc39e2d85:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYzY0YTY1MTE1MzBmNDE3ODVhN2E4OGZiYjRhMjgzYTcyMTI3ZWRkMjc3MmMxNDVkM2JlNTY1MTYxNGQ0ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNGY5MGY1NmE4MjBhYzA3YzZhNTlhMTk4ZTgyNjc2NGExMTAxYTc5NTI3MzJhMTVhOThjMjRkZDZmMmE5ZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYzNmNjlkZGE3MTg4ZjFkOTNjNmU1ZmZkNzZkNTUzOGQ4YTk2YmEzYjg1MjZmYzI5YjEyODA2MWYwZDljNGMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mongo-client.ts#L84-L100",
+          "version": "repo-lines-v1:sha256:45e558901d686ed95f3d58fb9d803e68e02814e5222dc3580d04d8a5357c8ce1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkYWNjNTMxODljY2QzZDYxNzZhZDViMGFkNGUwNzA2NWM2NjJlMDYyZGQ1MzU5ZWIwNDA2MjhkM2Y3NWFmY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYzA5YWY2NjNiMzEzNzVlNjMxNDk4ZDJlNjI3MGE2NGFkOWIyZjUwYzYyY2NjZWY0NjMyNGI0NDUyOGZhNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiYjUxYjUzMzM1MzBjNDUwMWU2YmVlZDFhMTY3ZTk2ODY0NzJlMWEwMGQ5YjNiNjkzZDI3MTg4NDE4MTA0NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0Mjk2OGQ4M2JlNTAwZTE1Njc2ZDk2MjQ1ZDhhN2M1YWE0ZTdlYjI2MmYzMTFiNzZlN2I2ZDViYmRhNGM3ODUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_10a94bfb2c2a40c191283b6160604a1a",
+      "statement": "Scheduled backup runs act as the user via a Keycloak offline token the user explicitly granted via consent; there is no service account or privileged fallback, and if the offline-token grant is revoked or missing, the scheduled run fails rather than substituting another identity.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L24-L27",
+          "version": "repo-lines-v1:sha256:0348e1b56a6506f2cde3ab6395e6ed08a94934df9ebf86a8d2bce26acf0568a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDBjMTA0MjY0MjQwZjViMjlmZmVmZmU2YzlmY2RiZjQ2MzUxMzAxZjVmYzJjZTQxMmZlMDc3ZmRhZmQ4MDAxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzkxMzM2YjQyMjgwOTkxNmQwNjZkZDliZWViYmYwZDA1MzZhYzc2ODZmNjljYzBmMjhiZWRhMzU3YTM5MjdiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmU0OGU5OTVlMmEyZmY5NjkwM2I3YTgyZmQ2OTIxMmI4MGY5YjU2M2M2MDdkNjVkMWQ4MzI5NDUxNmM5YjQwYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM0ODY4ODNmN2Y3Y2Y2NWI3NmQ0NjY2NmQ5MGUzYTM1OTBhYmY0MDM2MWVlZWQ4OTgwOTU4MDlmOTIxOWRlYyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-runner.ts#L22-L26",
+          "version": "repo-lines-v1:sha256:36fb5643e347aba847a934b7f72189c1c30f8ab8d4a1b50c5869fd64704bd151:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdkZGYyNjQ0MDMwYWY4YzAzMjNkZGM2NGZiN2NjMDYwNTM1YmYzM2IzYTZlMWU3NDZkMmI3MDM5YTA3NzY4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkzZmY3MzJmZTNhYzliMGQzOWIyOWVmYjhhNWUxMDRmYzdjZDhmZjkxOGFjNTAwMjk3MTU0YmJlZDM4NmJlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTMzN2EzOWY5MWJjYzczMDQyZTg4NGJiZTFlYjcwODk3NmM5MTQ3OWJmOTQ1YTEyYjBkNzgxZDcyNmMzNWE1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjkxZmQxZWQzZGFkNmY2ZTk0OGQyNDZhOTRlM2YwMWU2YTdjMjg1YWFlZTA1NDI1MTA1MTFjNTU2Y2ZmZjcyMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c65ff4c09cf74611a54783366b7b7ca6",
+      "statement": "Feature 073 (scheduled backups) enforces a distinct, inverse-default SSRF-style guard on user-supplied destination hosts (private/loopback/link-local denied by default, opt-in via BACKUP_ALLOWED_DESTINATION_HOSTS) that is separate from and does not supersede the feature 018 Ollama-URL SSRF guard, which instead allows private/loopback addresses by default.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts#L1-L20",
+          "version": "repo-lines-v1:sha256:3bb3042b3b5aa143f8475cc558dfa098e8c2baadc61e05c0b20207f970572b03:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwY2IzY2Q4YWJmN2NhYTE2MWU1OTQxODJmZjQ3M2FlNDliMmU5MjExYzc4NmFkOTUyMWIyYmM2YjQyZTBlNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZmU0ZmNlYTEyOTM2ZmM1MWY2OWIwOTQ2NmExMTEwZTFjNTA1M2M0YWRiYjBjMTk5ZjliOWQxNjg0ZjhiNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjYmE0N2FkZTZkZDVmNmIzMjNhNjMwMzlhZDEzYTYzMDNhY2I1N2RjYmE4OGYxMGZmYTNkODYzYzEyNDE0YjIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L113-L118",
+          "version": "repo-lines-v1:sha256:ddee6d38cca41554a05d82df091f764e57486c2dc4e819adf46536736d2e36a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMzYTk2MmJlM2ViMWM1MDY2MTJlYzMzZGE4MDE0ZjMxOWE4MjJiMjc4MTg2ZDFhN2Q3NGI3MmFhOGM1ZjdlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQ1ZjE5ZGEwOWYyNWQ2YTQ4OGQ4NTQ3OWNkZGEzNTQ5MzljNTFiM2I5NzY2YjdlMmI0YTNkZmY4OTRjZWE1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ4MTQxNTc5YTY0OGJiYzNkNzg1YzY2NThjMDhmMGFlZWE1M2I1YzhkODJlNTQyY2I5YTUwNzUyYmIwNjMwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzViOWQyZmNkMmRkZjFlOGFkN2NkN2VlMGQwNGFiY2Q0YzY1YjljMzM2OTU1ZTFiOTJlYTViMDE0NDMwMzY2NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f080aee71a14be8b234c9db347faf07",
+      "statement": "server.js runs outside the Metro/Expo bundle as plain CommonJS and cannot import frontend/mcm-app/src/bff-server modules directly, so the backup feature's scheduling clock (a setInterval in server.js) reaches the scheduling logic via a loopback HTTP POST to /bff-api/backups/tick guarded by a shared secret (BACKUP_TICK_SECRET), rather than by calling a function; this tick never fires under `pnpm start` because server.js does not run under Metro.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L144-L163",
+          "version": "repo-lines-v1:sha256:644a1f55ac0150e9355f8c6645e916219a587b989d61f48b81b2295af1748eb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5OTA4ZTA4OWZjZWQxMmE4NjEyM2YxYmNlZDEyYmM1MjY5NTg3ZjFmOTUxOTFlZGMyYzdjYzZiY2EzOTk0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmOWJhYWI5ZWNmZjZjNGU0MzVmNjQ4ZWU2YTNmOTZkZGQ5Y2FmYWFjNmRmN2IxZDY0NTQ2NDY3NGNmYzhhZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyMGMwMmIzMGUwMzI4OTMxYzNhMDM0MmY4MTgwZTAzZTk4ZGU1ZTk1NTlmZjNkOGI1NDY4N2E1OGZjNDBjNmIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L86-L120",
+          "version": "repo-lines-v1:sha256:d708d07504f8c9d59e9e977e59dd4474286e6001104253d1e040883a549ae674:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4N2FmMGZiZDg3MjQ4MjBlNTRlMmM3MTIxNTJlNzcyMGQyMTJlYTY3NzIwNzNhOTNlZGE5MDllNTgwMWRiYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOWI3ZDA2ODYzYTUwYzg3ZjQxMjRmMzQ1MGM0OTVmMWNjZDg0Nzc4MjNlNmYyMWY5MDk1NGFjNDRlMTA2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5ZDU3ODQwNTNlY2ZkNGJhZWJjMTk3OTQ5MDgyZjczN2NhYmMwOTI3Nzg4NTIyMjJhMjlmOGQ2MzlhYzU4ODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_511f1f481eea40df966a04fac5f7242b",
+      "statement": "mongo-client.ts explicitly passes a static `runtimeAdapters: { os }` (imported via `import * as os from 'node:os'`) to the MongoClient constructor to work around a mongodb driver ≥7.6.0 regression where the driver's dynamic `import('os')` promise rejects under Jest's CJS runtime and is silently swallowed, collapsing the client metadata document to `{}` and causing MongoDB to refuse the handshake with a 'Missing required sub-document driver' error that mimics a driver/server incompatibility.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mongo-client.ts#L26-L52",
+          "version": "repo-lines-v1:sha256:089546ae3836750320f7198c0ccc414853e68aa9e1721c9ca69047806f15bdc4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZGIxNGI3Y2Q2NmU5ZjhiYjIxNjdjNGZjY2IyMzM5MTc2ZjdkZjA5MDk2YjRkOGUyOGU0MWJjOTBiZmY4NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwZWZjMTRhMWY1MTlkMjRkMzIzODQ2YWIwZmYxMzNkMWFlODRiZjI0ODBjNjJlZTY1NTk2ZmNlNzhmYzk1N2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YWMzNGQzMDVhYjhhOGMxNDZmNThjNDUwYjAyMzk4OWNjMDc1ZWExMjkwZDNjODU2ZjQ4ZjQ3YzdhNjVjYzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c323241b900c48039805885c8f8fed48",
+      "statement": "The Redis leader lock guarding the scheduled-backup tick (redis-lock.ts) is only an optimisation to avoid duplicate scanning across multiple BFF instances and relies on a TTL guess, so an overrunning run can legitimately lose the lock to another instance while still active; the actual exactly-once guarantee for job execution is a single-document atomic findOneAndUpdate claim in backup-job-store.ts that carries no timing assumption.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-job-store.ts#L76-L100",
+          "version": "repo-lines-v1:sha256:4283859fe9896b4971c7798af67c6e84c86af4cf2ec5e7589f8b54ecc39e2d85:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYzY0YTY1MTE1MzBmNDE3ODVhN2E4OGZiYjRhMjgzYTcyMTI3ZWRkMjc3MmMxNDVkM2JlNTY1MTYxNGQ0ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNGY5MGY1NmE4MjBhYzA3YzZhNTlhMTk4ZTgyNjc2NGExMTAxYTc5NTI3MzJhMTVhOThjMjRkZDZmMmE5ZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYzNmNjlkZGE3MTg4ZjFkOTNjNmU1ZmZkNzZkNTUzOGQ4YTk2YmEzYjg1MjZmYzI5YjEyODA2MWYwZDljNGMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/redis-lock.ts#L1-L37",
+          "version": "repo-lines-v1:sha256:6c6260f95c20e240bc6634f017d0ecac0a903b21016337643b43ea3cf9dcabbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5N2E4NjI0Yzk0MWMzYmEyZWIwYzNjNzQ0ZDFiNzM3YTYzYjc3YWQ0MDFhYTNiMmYzOTQ0Y2M0ZThjYmU4MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4MDhmNzYyYTkxOGIwNzZmY2ZlMGM5Y2JlMDQ0Y2ZjNmIzMDMxNDM4ZWJjNjE0ZGQ2YjE1MmJiOWIxMTZlYzYifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-22T01:58:43.929Z"
+  }
+}
