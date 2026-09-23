@@ -4,17 +4,16 @@
 // reused, for two independent reasons:
 //
 //  1. Its POLICY is the opposite of what is needed here. "Bring your own Ollama" allows private
-//     and loopback addresses by design, because the user's own model server is the primary case.
-//     A backup destination is an address this server POSTs the user's entire collection to, and
+//     addresses by design, because the user's own model server is the primary case. A backup
+//     destination is an address this server POSTs the user's entire collection to, and
 //     mc-service, keycloak-service and the BFF's own Mongo all live in private space. So private
 //     ranges are DENIED here by default, and a homelab NAS gets in by being named in
-//     BACKUP_ALLOWED_DESTINATION_HOSTS.
+//     BACKUP_ALLOWED_DESTINATION_HOSTS. This reason still stands and always will.
 //
-//  2. It is DNS-BLIND by documented design — openwiki/gotchas/agent-config-ssrf-guard.md records
-//     that as a residual risk in those words. It checks the hostname STRING. A name that resolves
-//     to 169.254.169.254 passes it. Group 3 below is that case, and it is the capability this
-//     module adds: resolve first, check every answer, then connect to the address that was
-//     checked.
+//  2. It WAS DNS-blind — and is not any more. Item #542 gave the Ollama guard resolution and
+//     pinning, so this second reason has expired; reason 1 alone is why the two guards remain
+//     separate. The shared pinning now lives in `pinned-agent.ts`. Group 3 below still earns its
+//     place: it is what proves THIS guard resolves, independently of what the other one does.
 //
 // The resolver is injected so group 3 asserts real behaviour rather than depending on a DNS
 // record that would have to exist somewhere. If group 3 ever passes against an implementation

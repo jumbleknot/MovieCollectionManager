@@ -305,10 +305,20 @@ def _build_real_chat_model(spec: ModelSpec, env: Mapping[str, str]) -> "BaseChat
     if spec.provider == "ollama":
         from langchain_ollama import ChatOllama
 
+        from src.ollama_guard import assert_ollama_url_allowed, loopback_ports_from_env
+
+        base_url = env.get("OLLAMA_BASE_URL") or "http://localhost:11434"
+        # `base_url` is USER-SUPPLIED on this path: it arrives from the BFF as a per-run overlay
+        # (see `runtime_env`) and this is where it becomes an outbound connection. The BFF checks
+        # it too, but that check happened in another process and possibly days earlier, so it
+        # cannot speak for what the name resolves to now. Item #542; residual TOCTOU documented in
+        # `ollama_guard`.
+        assert_ollama_url_allowed(base_url, loopback_ports=loopback_ports_from_env(env))
+
         return ChatOllama(
             model=spec.model_id,
             temperature=spec.temperature,
-            base_url=env.get("OLLAMA_BASE_URL") or "http://localhost:11434",
+            base_url=base_url,
         )
 
     if spec.provider == "anthropic":
