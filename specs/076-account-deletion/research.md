@@ -52,16 +52,37 @@ requested"): with `max_age=0` the thing requested is *freshness*, so the check i
 current session was established with. An absent `auth_time` is a refusal, not a pass — a missing
 claim must never read as a satisfied one.
 
-**To verify at implementation**: that Keycloak emits `auth_time` and `amr` on the ID token for this
-client. Neither is guaranteed by configuration alone.
+**Measured against the live dev realm, 2026-09-24 (T001).** Two throwaway users, driven through a
+real authorization-code + PKCE round trip:
 
-```bash
-# After completing one step-up round trip against the dev stack, decode the ID token:
-#   expect: auth_time present and within seconds of now; amr listing the methods performed
+| Claim | Result |
+|---|---|
+| `auth_time` | **Present**, on both the ID token and the access token, equal to the moment of login |
+| `amr` | **Absent** — Keycloak does not emit it for this client |
+| `acr` | Present as `"1"`, but with no LoA mapping it carries no information |
+
+A second probe tested the property the feature actually rests on — that `max_age=0` re-prompts
+rather than silently reusing the SSO cookie — with a control leg to prove the session was live:
+
+```
+leg 1  log in normally               → SSO session established (KEYCLOAK_IDENTITY, KEYCLOAK_SESSION)
+leg 2  authorize WITHOUT max_age     → code returned, no prompt   (control: SSO *is* live and reused)
+leg 3  authorize WITH max_age=0      → login form served again    (the property under test)
 ```
 
-If `amr` proves absent it changes nothing structural — `auth_time` carries the requirement, and
-`amr` is recorded in the audit event as supporting detail only.
+`auth_time` advanced by the elapsed 2s on the re-authentication, so comparing it against
+`authTimeFloor` distinguishes a genuine step-up from the original login. **A stolen session cannot
+complete the step-up.**
+
+**Consequence — `amr` must come out of the design.** It was carried as non-load-bearing supporting
+detail in the audit event; it does not exist, so recording it would mean writing a field that is
+always absent. `auth_time` carries the requirement on its own and the freshness check is unaffected.
+
+**A note on the probe itself**, because the same trap will catch the integration tests: Python's
+`http.cookiejar` rewrites the dotless host `localhost` to `localhost.local`, and Keycloak marks its
+session cookies `Secure`. A stock `CookieJar` therefore never sends them back over plain http and
+Keycloak answers `400` with the login page re-served and no error text — which reads as "wrong
+password". Handle the cookies manually, or drive the flow through a real browser.
 
 ---
 

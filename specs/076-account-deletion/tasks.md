@@ -49,15 +49,16 @@ check the skip count. A green run with the suite skipped proves nothing.
 
 **Purpose**: Settle the one open research item and register the OAuth redirect URI. No feature code.
 
-- [ ] T001 Confirm Keycloak emits `auth_time` (and note whether `amr` appears) on the ID token for the `movie-collection-manager` client, following [quickstart.md](quickstart.md) V0, and record the result in [research.md](research.md) R1
+- [X] T001 Confirm Keycloak emits `auth_time` (and note whether `amr` appears) on the ID token for the `movie-collection-manager` client, following [quickstart.md](quickstart.md) V0, and record the result in [research.md](research.md) R1
 
   **Type**: Investigation | **Risk**: High — the whole step-up verification rests on this
-  **Blocking**: If `auth_time` is absent, STOP and revisit the design before writing T009/T025. Do
-  **not** substitute `iat`: it records when the token was minted, not when the user authenticated,
-  so a silent SSO-cookie reuse would satisfy it. That would make FR-009 unenforceable while looking
-  correct.
+  **DONE 2026-09-24.** `auth_time` present and fresh on both ID and access tokens. A second probe
+  with a control leg proved `max_age=0` re-prompts even when the SSO session is live and would
+  otherwise be reused — so a stolen session cannot complete the step-up. `auth_time` advances on
+  re-authentication, so the `authTimeFloor` comparison works. **`amr` is ABSENT** and has been
+  removed from the design (data-model §2, §4). Full detail in research R1.
 
-- [ ] T002 Register the deletion callback redirect URI on the app client via `ensureClientRedirectUris` in `frontend/mcm-app/src/bff-server/keycloak.ts`
+- [X] T002 Register the deletion callback redirect URI on the app client via `ensureClientRedirectUris` in `frontend/mcm-app/src/bff-server/keycloak.ts`
 
   The URI is `{origin}/bff-api/account/delete`, per [contracts/bff-api.md](contracts/bff-api.md).
   Without it Keycloak refuses the authorization request outright — which is also the property that
@@ -73,7 +74,7 @@ is the only destructive endpoint, so the two cannot be separated.
 
 **⚠️ CRITICAL**: No user story work begins until this phase is complete.
 
-- [ ] T003 [P] Write failing tests for `deleteUser` in `frontend/mcm-app/src/bff-server/unit-tests/keycloak-delete-user.test.ts`
+- [X] T003 [P] Write failing tests for `deleteUser` in `frontend/mcm-app/src/bff-server/unit-tests/keycloak-delete-user.test.ts`
 
   **Scenarios covered**: US1-AC1 (the account no longer exists), FR-027 (retry-safety)
   Covers: a `204` is success; a **`404` is also success** (the account is already gone, so a retry
@@ -85,7 +86,7 @@ is the only destructive endpoint, so the two cannot be separated.
   ```
   **Expected RED**: 3 failing — `deleteUser is not a function`
 
-- [ ] T004 [P] Implement `deleteUser(userId)` in `frontend/mcm-app/src/bff-server/keycloak.ts`
+- [X] T004 [P] Implement `deleteUser(userId)` in `frontend/mcm-app/src/bff-server/keycloak.ts`
 
   **Prerequisite**: T003 verified RED.
   `DELETE {env.keycloakAdminApiBase}/users/{userId}` with the service-account admin token. Treat
@@ -99,7 +100,7 @@ is the only destructive endpoint, so the two cannot be separated.
   ```
   **Expected GREEN**: 0 failures — `3 passed`
 
-- [ ] T005 [P] Write failing tests for the pending-deletion cache pair in `frontend/mcm-app/src/bff-server/unit-tests/pending-account-deletion.test.ts`
+- [X] T005 [P] Write failing tests for the pending-deletion cache pair in `frontend/mcm-app/src/bff-server/unit-tests/pending-account-deletion.test.ts`
 
   **Scenarios covered**: US2-AC2 (abandoned request), US2-AC4 (proof reused)
   Covers: park then take returns the record; a **second take returns null** (single-use); a 300s TTL
@@ -111,7 +112,7 @@ is the only destructive endpoint, so the two cannot be separated.
   ```
   **Expected RED**: 4 failing — `setPendingAccountDeletion is not a function`
 
-- [ ] T006 [P] Implement `setPendingAccountDeletion` / `takePendingAccountDeletion` in `frontend/mcm-app/src/bff-server/cache-service.ts`
+- [X] T006 [P] Implement `setPendingAccountDeletion` / `takePendingAccountDeletion` in `frontend/mcm-app/src/bff-server/cache-service.ts`
 
   **Prerequisite**: T005 verified RED.
   Key `account:delete:pending:{userId}`, TTL 300s, single-use take. Mirror the existing
@@ -120,7 +121,7 @@ is the only destructive endpoint, so the two cannot be separated.
 
   **Verify GREEN**: same command as T005 | **Expected GREEN**: `4 passed`
 
-- [ ] T007 [P] Write failing tests for full agent-config removal in `frontend/mcm-app/src/bff-server/unit-tests/agent-config-remove.test.ts`
+- [X] T007 [P] Write failing tests for full agent-config removal in `frontend/mcm-app/src/bff-server/unit-tests/agent-config-remove.test.ts`
 
   **Scenarios covered**: US1-AC1 (assistant configuration destroyed)
   Covers: `remove(userId)` deletes the whole document; removing a non-existent document is a no-op,
@@ -133,7 +134,7 @@ is the only destructive endpoint, so the two cannot be separated.
   ```
   **Expected RED**: 2 failing — `remove is not a function`
 
-- [ ] T008 [P] Implement `remove(userId)` in `frontend/mcm-app/src/bff-server/agent-config-store.ts`
+- [X] T008 [P] Implement `remove(userId)` in `frontend/mcm-app/src/bff-server/agent-config-store.ts`
 
   **Prerequisite**: T007 verified RED.
   A `deleteOne({ _id: userId })`. Leave `clear()` untouched — it has its own caller and its own
@@ -141,7 +142,7 @@ is the only destructive endpoint, so the two cannot be separated.
 
   **Verify GREEN**: same command as T007 | **Expected GREEN**: `2 passed`
 
-- [ ] T009 Write failing tests for the step-up authorization URL in `frontend/mcm-app/src/bff-server/unit-tests/account-step-up-request.test.ts`
+- [X] T009 Write failing tests for the step-up authorization URL in `frontend/mcm-app/src/bff-server/unit-tests/account-step-up-request.test.ts`
 
   **Scenarios covered**: US2-AC1 (re-authentication is required)
   Covers: the URL carries `prompt=login`, `max_age=0`, `code_challenge_method=S256`; **`scope` is
@@ -155,7 +156,7 @@ is the only destructive endpoint, so the two cannot be separated.
   ```
   **Expected RED**: 5 failing — `Cannot find module '@/bff-server/account-step-up'`
 
-- [ ] T010 Implement `buildStepUpRequest(redirectUri)` in `frontend/mcm-app/src/bff-server/account-step-up.ts`
+- [X] T010 Implement `buildStepUpRequest(redirectUri)` in `frontend/mcm-app/src/bff-server/account-step-up.ts`
 
   **Prerequisite**: T009 verified RED.
   Model on `buildConsentRequest` in `backup-offline-token.ts`, with two deliberate differences:

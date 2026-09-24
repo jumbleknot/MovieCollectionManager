@@ -321,6 +321,48 @@ export async function takeBackupConsentRequest(userId: string): Promise<string |
   return value;
 }
 
+// ─── Pending account deletion (feature 076, FR-011/FR-012) ────────────────────────────────────
+
+/**
+ * Five minutes, the same clock the step-up proof is checked against.
+ *
+ * ONE window rather than two, deliberately: a pending request that outlives the authentication
+ * it is waiting for has nothing left to do, and two numbers would only invite them to drift.
+ */
+const ACCOUNT_DELETE_TTL_SECONDS = 5 * 60;
+
+const accountDeleteKey = (userId: string) => `account-delete:${userId}`;
+
+/**
+ * Park the PKCE verifier and state for a deletion step-up, SERVER-SIDE and keyed by user.
+ *
+ * Same shape and the same reasons as the backup-consent pair: the verifier is the secret half
+ * of PKCE and must never reach the browser, and keying by the authenticated user means a
+ * callback can only ever complete the request THAT user started.
+ *
+ * Overwrites any earlier request rather than refusing — a user who abandons the round trip and
+ * starts again must not be locked out for the rest of the window.
+ */
+export async function setPendingAccountDeletion(userId: string, payloadJson: string): Promise<void> {
+  const redis = await getRedis();
+  await redis.set(accountDeleteKey(userId), payloadJson, 'EX', ACCOUNT_DELETE_TTL_SECONDS);
+}
+
+/**
+ * Read and CLEAR the pending deletion request.
+ *
+ * Single use, which is what makes a proof unreplayable (FR-010). Note that the CALLER consumes
+ * this before validating, so a proof that fails its checks burns the request too — a bad proof
+ * must not be retryable against the same pending record.
+ */
+export async function takePendingAccountDeletion(userId: string): Promise<string | null> {
+  const redis = await getRedis();
+  const key = accountDeleteKey(userId);
+  const value = await redis.get(key);
+  if (value !== null) await redis.del(key);
+  return value;
+}
+
 // ─── Agent thread ownership (implementation-review 2026-06-09 — cross-user resume guard) ──────
 
 /**

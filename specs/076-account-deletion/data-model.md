@@ -58,9 +58,11 @@ the duration of the request.
 |---|---|---|
 | `sub` | ID token | Must equal the session's userId (FR-010). |
 | `auth_time` | ID token | Must be present, within 300s of now, and `> authTimeFloor` (FR-009, FR-010). **Absent is a refusal**, never a pass. |
-| `amr` | ID token | Recorded in the audit event as supporting detail. Not load-bearing — research R1 has not confirmed Keycloak emits it for this client. |
 | `access_token` | token response | Used for the mc-service collection deletes (research R4). |
 | `refresh_token` | token response | Revoked in a `finally`, on both the success and the failure path. |
+
+`amr` is deliberately absent from this table: T001 measured the live realm and Keycloak does not
+emit it for this client, so there is nothing to record.
 
 **Why it is never stored**: it is proof of a moment. Persisting it would create exactly the kind of
 reusable standing credential this feature exists to destroy.
@@ -119,7 +121,7 @@ session id, or the user's name or email (FR-037).
 | `account_deletion_reauth_rejected` | Any step-up check fails | `reason` (one of: `no_pending`, `state_mismatch`, `subject_mismatch`, `stale_auth`, `missing_auth_time`) |
 | `account_deletion_refused_last_admin` | FR-013 refusal | — |
 | `account_deletion_failed` | Any pipeline step throws | `step` (the ordered step number/name) |
-| `account_deletion_completed` | The account is gone | `amr` if present, `collectionsDeleted` count |
+| `account_deletion_completed` | The account is gone | `collectionsDeleted` count |
 
 `reason` and `step` are enumerated rather than free-text so a failure can be counted, and so no
 message from a downstream system leaks into the audit stream.

@@ -171,6 +171,40 @@ export async function refreshTokens(refreshToken: string): Promise<KeycloakToken
  * Admin API call forcibly deletes all user sessions so the SSO cookie becomes
  * stale and the next auth request requires credentials.
  */
+/**
+ * Delete a user's account at the identity provider (feature 076, FR-021).
+ *
+ * THE LAST STEP OF ACCOUNT DELETION, and the only irreversible one. Everything before it is
+ * retryable; once the account is gone there is no identity left to authenticate as, so nothing
+ * that needed the user to exist can be attempted again.
+ *
+ * A 404 IS SUCCESS. The account being absent is the outcome this asks for, and a retry after a
+ * partial failure will re-issue this delete against an account the first attempt already
+ * removed. Treating that as an error would make the retry path — the thing that rescues a
+ * half-finished deletion — fail precisely when it had otherwise worked.
+ *
+ * Unlike `logoutUserSessions`, a failure here is NOT swallowed: the caller must be able to tell
+ * the user their account still exists rather than reporting a deletion that did not happen.
+ */
+export async function deleteUser(userId: string): Promise<void> {
+  const adminToken = await getAdminToken();
+  const res = await keycloakFetch(
+    `${env.keycloakAdminApiBase}/users/${encodeURIComponent(userId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    },
+  );
+
+  if (res.ok || res.status === 404) return;
+
+  throw new AuthError(
+    AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+    `Failed to delete user at the identity provider (HTTP ${res.status})`,
+    502,
+  );
+}
+
 export async function logoutUserSessions(userId: string): Promise<void> {
   const adminToken = await getAdminToken();
   await keycloakFetch(
