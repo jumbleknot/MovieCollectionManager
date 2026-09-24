@@ -104,10 +104,12 @@ async function handle(req: Request): Promise<Response> {
   } catch (err) {
     // FR-028: the account was NOT deleted. Never a partial success, and never the underlying
     // message — it can carry a hostname or a connection string.
+    // The AUDIT is the pipeline's — it alone knows which step failed. This logs the cause for
+    // operators and decides what the user sees; duplicating the audit here would double-count
+    // every failure and record the weaker of the two entries.
     logger.error('account deletion failed', {
       action: 'account_deletion_error', userId, ip, error: err,
     });
-    logger.audit('account_deletion_failed', { userId, ip });
     return redirectTo(`${ACCOUNT_SETTINGS_PATH}?error=failed`);
   }
 

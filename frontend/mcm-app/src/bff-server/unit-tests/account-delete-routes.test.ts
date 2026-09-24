@@ -229,8 +229,15 @@ describe('GET /bff-api/account/delete', () => {
     const res = await callback(callbackReq('code=c&state=st'));
 
     expect(res.headers.get('Location')).toBe('/settings/account?error=failed');
-    expect(mockAudit).toHaveBeenCalledWith('account_deletion_failed',
-      expect.objectContaining({ userId: 'user-1' }));
+  });
+
+  it('leaves the failure audit to the pipeline, which knows which step failed', async () => {
+    mockRun.mockRejectedValue(new Error('mc-service unreachable'));
+
+    await callback(callbackReq('code=c&state=st'));
+
+    // Auditing here too would double-count every failure and record the weaker entry.
+    expect(mockAudit).not.toHaveBeenCalledWith('account_deletion_failed', expect.anything());
   });
 
   it('does not leak the internal failure into the redirect', async () => {

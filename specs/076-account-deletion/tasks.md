@@ -446,7 +446,7 @@ confirm each is refused with nothing destroyed.
 **Independent test**: Force each step to fail in turn; confirm the account remains retryable, the
 standing permission is never stranded, and a retry succeeds.
 
-- [ ] T035 [US3] Write failing tests for abort semantics at every step in `frontend/mcm-app/src/bff-server/unit-tests/account-deletion-failure.test.ts`
+- [X] T035 [US3] Write failing tests for abort semantics at every step in `frontend/mcm-app/src/bff-server/unit-tests/account-deletion-failure.test.ts`
 
   **Scenarios covered**: US3-AC1, US3-AC2, US3-AC3 (SC-005, SC-008)
   A revocation failure destroys **nothing** and throws. A failure at step N leaves N+1… untouched.
@@ -459,7 +459,7 @@ standing permission is never stranded, and a retry succeeds.
   ```
   **Expected RED**: 9 failing — abort handling not implemented
 
-- [ ] T036 [US3] Implement abort handling and the `finally` step-up token revoke in `account-deletion.ts`
+- [X] T036 [US3] Implement abort handling and the `finally` step-up token revoke in `account-deletion.ts`
 
   **Prerequisite**: T035 verified RED.
   The `finally` revoke matters most on the **failure** path: it must not leave a second live token
@@ -467,7 +467,7 @@ standing permission is never stranded, and a retry succeeds.
 
   **Verify GREEN**: same command as T035 | **Expected GREEN**: `9 passed`
 
-- [ ] T037 [US3] Write failing tests for idempotency in the same file
+- [X] T037 [US3] Write failing tests for idempotency in the same file
 
   **Scenarios covered**: US3-AC2 (SC-006)
   Run each step twice and assert the second run succeeds. Cover the two places retry-safety must be
@@ -477,7 +477,7 @@ standing permission is never stranded, and a retry succeeds.
 
   **Verify RED**: same command as T035, `-t 'idempot'` | **Expected RED**: 4 failing
 
-- [ ] T038 [US3] Implement 404-as-success in the collection loop | **Verify GREEN**: same as T037 | **Expected GREEN**: `4 passed`
+- [X] T038 [US3] Implement 404-as-success in the collection loop | **Verify GREEN**: same as T037 | **Expected GREEN**: `4 passed`
 
 - [ ] T039 [P] [US3] Write a failing test that an in-flight backup run stops, in `frontend/mcm-app/tests/integration/account-deletion.integration.test.ts`
 

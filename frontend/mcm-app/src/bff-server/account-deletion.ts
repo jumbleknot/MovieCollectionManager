@@ -173,17 +173,30 @@ export async function runAccountDeletion(
 ): Promise<AccountDeletionResult> {
   const { userId, accessToken, refreshToken } = input;
 
+  // Each step is run through `at`, so the step that failed is recorded rather than inferred from
+  // a stack trace. The name is enumerated (DeletionStep), so a failure can be counted and no
+  // message from a downstream system reaches the audit stream.
+  let current: DeletionStep = 'tearDownUserBackups';
+  const at = async <T>(step: DeletionStep, run: () => Promise<T>): Promise<T> => {
+    current = step;
+    return run();
+  };
+
   try {
-    await steps.tearDownUserBackups(userId);
-    const collectionsDeleted = await steps.deleteCollections(userId, accessToken);
-    await steps.removeAgentConfig(userId);
-    await steps.clearTransientState(userId);
-    await steps.terminateSessions(userId);
-    await steps.logoutIdpSessions(userId);
-    await steps.deleteIdentity(userId);
+    await at('tearDownUserBackups', () => steps.tearDownUserBackups(userId));
+    const collectionsDeleted = await at('deleteCollections', () =>
+      steps.deleteCollections(userId, accessToken));
+    await at('removeAgentConfig', () => steps.removeAgentConfig(userId));
+    await at('clearTransientState', () => steps.clearTransientState(userId));
+    await at('terminateSessions', () => steps.terminateSessions(userId));
+    await at('logoutIdpSessions', () => steps.logoutIdpSessions(userId));
+    await at('deleteIdentity', () => steps.deleteIdentity(userId));
 
     logger.audit('account_deletion_completed', { userId, collectionsDeleted });
     return { collectionsDeleted };
+  } catch (err) {
+    logger.audit('account_deletion_failed', { userId, step: current });
+    throw err;
   } finally {
     // Best effort, and deliberately not allowed to mask the outcome: if the deletion succeeded
     // the account is already gone and its tokens with it, and if it failed the caller must see
