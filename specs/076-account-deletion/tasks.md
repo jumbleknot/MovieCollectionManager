@@ -403,7 +403,7 @@ confirm each is refused with nothing destroyed.
 
 - [X] T029 [US2] Wire the refusals into `delete+api.ts` | **Verify GREEN**: same as T028 | **Expected GREEN**: `5 passed`
 
-- [ ] T030 [P] [US2] Write a failing test for the second-factor branch in `frontend/mcm-app/tests/integration/account-deletion-mfa.integration.test.ts`
+- [X] T030 [P] [US2] Write a failing test for the second-factor branch in `frontend/mcm-app/tests/integration/account-deletion-mfa.integration.test.ts`
 
   **Scenarios covered**: US2-AC6, US2-AC7 (SC-013)
   Enrol TOTP on a fixture user and assert the step-up demands it; assert a user **without** TOTP is
@@ -416,7 +416,7 @@ confirm each is refused with nothing destroyed.
   ```
   **Expected RED**: 2 failing — no TOTP fixture user exists
 
-- [ ] T031 [US2] Add the TOTP fixture user and confirm both branches | **Verify GREEN**: same as T030 | **Expected GREEN**: `2 passed`
+- [X] T031 [US2] Add the TOTP fixture user and confirm both branches | **Verify GREEN**: same as T030 | **Expected GREEN**: `2 passed`
 
 - [X] T032 [P] [US2] Write a failing test for the last-administrator refusal in `frontend/mcm-app/tests/integration/account-delete-challenge.integration.test.ts`
 
@@ -512,7 +512,7 @@ standing permission is never stranded, and a retry succeeds.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T043 [P] Add the web E2E spec `frontend/mcm-app/tests/e2e/web/account-deletion.spec.ts`
+- [X] T043 [P] Add the web E2E spec `frontend/mcm-app/tests/e2e/web/account-deletion.spec.ts`
 
   Settings → Account → dialog (both lists visible) → confirm → Keycloak → `/account-deleted`; then
   the session is dead and sign-in fails.

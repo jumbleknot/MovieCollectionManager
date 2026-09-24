@@ -17,9 +17,9 @@
  * client: an unregistered URI is refused outright rather than redirected to.
  */
 
-import { requireAuth } from '@/bff-server/auth';
+import { requireAuth, extractRawToken } from '@/bff-server/auth';
 import { requireMcUser, isAdmin } from '@/bff-server/role-check';
-import { countUsersInClientRole } from '@/bff-server/keycloak';
+import { countUsersInClientRole, decodeJwtPayload } from '@/bff-server/keycloak';
 import { buildStepUpRequest, buildNativeStepUpRequest } from '@/bff-server/account-step-up';
 import { setPendingAccountDeletion } from '@/bff-server/cache-service';
 import { checkAccountDeletionRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
@@ -53,7 +53,26 @@ async function handle(req: Request): Promise<Response> {
       );
     }
 
-    const authTimeFloor = Math.floor(Date.now() / 1000);
+    // THE FLOOR IS THE SESSION'S OWN `auth_time`, NOT `Date.now()`.
+    //
+    // Both values then come from Keycloak, so the comparison is within one clock domain and one
+    // granularity. Using a wall clock here is wrong twice over: it compares a BFF timestamp
+    // against a Keycloak one, and `auth_time` has SECOND granularity — a step-up completed in
+    // the same second as the challenge yields `auth_time === floor`, and a genuine
+    // re-authentication is rejected as stale. Measured exactly that way: floor 1790259893,
+    // step-up auth_time 1790259893, refused — while the same proof had correctly advanced past
+    // the original login.
+    //
+    // It is also what FR-010 actually asks for: the proof must postdate the authentication the
+    // SESSION was established with.
+    const sessionClaims = (() => {
+      const raw = extractRawToken(headers);
+      return raw ? decodeJwtPayload(raw) : null;
+    })();
+    const sessionAuthTime = (sessionClaims as { auth_time?: unknown } | null)?.auth_time;
+    // Absent is possible in principle; the freshness window below still bounds the proof, so
+    // fall back to a floor that cannot reject a valid step-up rather than one that might.
+    const authTimeFloor = typeof sessionAuthTime === 'number' ? sessionAuthTime : 0;
 
     // NATIVE. The constitution is explicit that the BFF cannot redirect a native app, so the
     // device runs the OIDC flow itself and expo-auth-session mints the PKCE verifier there. All
@@ -66,7 +85,7 @@ async function handle(req: Request): Promise<Response> {
       const { state, authorizationParams } = buildNativeStepUpRequest();
       await setPendingAccountDeletion(
         user.id,
-        JSON.stringify({ state, authTimeFloor, requestedAt: authTimeFloor, native: true }),
+        JSON.stringify({ state, authTimeFloor, requestedAt: Math.floor(Date.now() / 1000), native: true }),
       );
       logger.audit('account_deletion_requested', { userId: user.id, ip, platform: 'native' });
       // No authorizationUrl: the device builds its own request, because only it can bind the
@@ -87,7 +106,7 @@ async function handle(req: Request): Promise<Response> {
         codeVerifier,
         redirectUri,
         authTimeFloor,
-        requestedAt: authTimeFloor,
+        requestedAt: Math.floor(Date.now() / 1000),
       }),
     );
 

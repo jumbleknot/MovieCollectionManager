@@ -141,6 +141,34 @@ describe('verifyStepUpProof — acceptance', () => {
     );
   });
 
+  it('accepts a step-up completed in the SAME SECOND as the request was parked', async () => {
+    // THE REGRESSION THIS PINS. `auth_time` has second granularity, so a fast step-up can land
+    // on exactly the second the challenge was issued. While the floor was `Date.now()` that made
+    // `auth_time > floor` false and a genuine re-authentication was refused as stale — measured
+    // against the live stack, floor 1790259893 vs auth_time 1790259893.
+    //
+    // With the floor taken from the SESSION's own auth_time (FLOOR, an hour earlier here), the
+    // comparison is between two Keycloak timestamps and the same-second case passes.
+    mockTake.mockResolvedValue(pending({ authTimeFloor: FLOOR }));
+    const result = await verifyStepUpProof({
+      userId: 'user-1',
+      code: 'the-code',
+      state: 'the-state',
+      now: NOW,
+      exchange: exchangeReturning({ sub: 'user-1', auth_time: NOW }),
+    });
+
+    expect(result).toMatchObject({ ok: true });
+  });
+
+  it('still refuses a proof whose auth_time equals the SESSION auth_time', async () => {
+    // The advance check has to keep working: a token minted off the ORIGINAL login carries the
+    // session's own auth_time, and must not satisfy a step-up.
+    const result = await run({ claims: { sub: 'user-1', auth_time: FLOOR } });
+
+    expect(result).toMatchObject({ ok: false, reason: 'stale_auth' });
+  });
+
   it('accepts an auth_time at the very edge of the window', async () => {
     const result = await run({ claims: { sub: 'user-1', auth_time: NOW - 299 } });
 
