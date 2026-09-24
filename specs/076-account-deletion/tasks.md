@@ -227,7 +227,7 @@ whose identity checks are not yet written.
 
   **Verify GREEN**: same command as T013 | **Expected GREEN**: `1 passed`
 
-- [ ] T015 [US1] Write failing tests for the challenge route in `frontend/mcm-app/tests/integration/account-delete-challenge.integration.test.ts`
+- [X] T015 [US1] Write failing tests for the challenge route in `frontend/mcm-app/tests/integration/account-delete-challenge.integration.test.ts`
 
   **Scenarios covered**: US1-AC1 (entry point), US2-AC1, FR-002
   Covers: `401` without a session; `200` with `{ authorizationUrl }`; a pending record is parked;
@@ -244,7 +244,7 @@ whose identity checks are not yet written.
   ```
   **Expected RED**: 5 failing — route returns 404
 
-- [ ] T016 [US1] Implement `frontend/mcm-app/src/app/bff-api/account/delete-challenge+api.ts`
+- [X] T016 [US1] Implement `frontend/mcm-app/src/app/bff-api/account/delete-challenge+api.ts`
 
   **Prerequisite**: T015 verified RED.
   Per [contracts/bff-api.md](contracts/bff-api.md). Origin-derived redirect URI; park the pending
@@ -252,7 +252,7 @@ whose identity checks are not yet written.
 
   **Verify GREEN**: same command as T015 | **Expected GREEN**: `5 passed`
 
-- [ ] T017 [US1] Write a failing test for the callback happy path in `frontend/mcm-app/tests/integration/account-delete-callback.integration.test.ts`
+- [X] T017 [US1] Write a failing test for the callback happy path in `frontend/mcm-app/tests/integration/account-delete-callback.integration.test.ts`
 
   **Scenarios covered**: US1-AC1, US1-AC4, US1-AC5, US1-AC6
   A valid callback returns `302` to `/account-deleted`, clears the auth cookies, destroys every
@@ -264,7 +264,7 @@ whose identity checks are not yet written.
   ```
   **Expected RED**: 6 failing — route returns 404
 
-- [ ] T018 [US1] Implement `frontend/mcm-app/src/app/bff-api/account/delete+api.ts`
+- [X] T018 [US1] Implement `frontend/mcm-app/src/app/bff-api/account/delete+api.ts`
 
   **Prerequisite**: T017 verified RED.
   Verify, then run the pipeline, then redirect. All outcomes are redirects, never JSON — Keycloak
@@ -345,6 +345,13 @@ whose identity checks are not yet written.
   ```
   **Expected GREEN**: `2 passed`
 
+
+> **Deviation, T015/T017.** The task list placed these under `tests/integration/`, but they mock
+> `requireAuth` and the stores — which makes them unit tests, and the constitution forbids mocking
+> the dependency under test inside `tests/integration/`. They live at
+> `src/bff-server/unit-tests/account-delete-routes.test.ts` instead. The real-Keycloak proof
+> (T019/T020) is unaffected and remains a true integration test.
+
 **Checkpoint**: deletion works end to end on the happy path. Not yet safe to deploy — US2 next.
 
 ---
@@ -411,7 +418,7 @@ confirm each is refused with nothing destroyed.
 
 - [ ] T031 [US2] Add the TOTP fixture user and confirm both branches | **Verify GREEN**: same as T030 | **Expected GREEN**: `2 passed`
 
-- [ ] T032 [P] [US2] Write a failing test for the last-administrator refusal in `frontend/mcm-app/tests/integration/account-delete-challenge.integration.test.ts`
+- [X] T032 [P] [US2] Write a failing test for the last-administrator refusal in `frontend/mcm-app/tests/integration/account-delete-challenge.integration.test.ts`
 
   **Scenarios covered**: SC-010, FR-013
   The sole `mc-admin` gets `409` and nothing is destroyed; an admin who is **not** the last one
@@ -419,9 +426,9 @@ confirm each is refused with nothing destroyed.
 
   **Verify RED**: `… -t 'administrator'` | **Expected RED**: 2 failing — refusal not implemented
 
-- [ ] T033 [US2] Implement the last-administrator check in the challenge route | **Verify GREEN**: same as T032 | **Expected GREEN**: `2 passed`
+- [X] T033 [US2] Implement the last-administrator check in the challenge route | **Verify GREEN**: same as T032 | **Expected GREEN**: `2 passed`
 
-- [ ] T034 [P] [US2] Add per-IP rate limiting to the challenge route and a test asserting `429`
+- [X] T034 [P] [US2] Add per-IP rate limiting to the challenge route and a test asserting `429`
 
   Uses the existing limiter (research R11). The deletion endpoint is self-limiting; the challenge
   endpoint is not, and an unlimited one is a way to spray authorization requests at the IdP.

@@ -70,6 +70,16 @@ const RATE_LIMITS: Record<string, RateLimitRule> = {
     windowSeconds: 3600,       // 1 hour
     retryAfterSeconds: 3600,
   },
+  // Feature 076. The DELETION endpoint is self-limiting — it succeeds at most once per account —
+  // but the CHALLENGE endpoint is not, and an unlimited one is a way to spray authorization
+  // requests at the identity provider. Deliberately loose: a user who abandons the round trip
+  // and restarts a few times is doing something legitimate.
+  accountDeletion: {
+    endpoint: 'account-deletion',
+    limit: 5,
+    windowSeconds: 3600,       // 1 hour
+    retryAfterSeconds: 3600,
+  },
 };
 
 // ─── Rate limit enforcement ────────────────────────────────────────────────────
@@ -183,6 +193,10 @@ export async function checkResendVerificationRateLimit(email: string): Promise<v
  * @param trustProxy whether the deployment runs behind a configured trusted
  *   reverse proxy that sets `X-Forwarded-For` (defaults to `env.trustProxy`).
  */
+export async function checkAccountDeletionRateLimit(ip: string | null): Promise<void> {
+  await enforceIpLimit(RATE_LIMITS['accountDeletion']!, ip);
+}
+
 export function extractClientIp(
   headers: Record<string, string | string[] | undefined>,
   trustProxy: boolean = env.trustProxy,

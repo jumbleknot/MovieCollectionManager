@@ -205,6 +205,43 @@ export async function deleteUser(userId: string): Promise<void> {
   );
 }
 
+/**
+ * How many users hold a client role (feature 076, FR-013).
+ *
+ * Used for one decision only: refusing to delete the last remaining administrator. A system with
+ * no administrator cannot be administered, and self-service deletion must not be how that
+ * happens.
+ *
+ * Counts by listing role members. `briefRepresentation` keeps the payload small; the realm is
+ * small enough that paging would be ceremony. A failure THROWS rather than returning 0 — a
+ * failed count must not read as "no administrators exist" and let the last one delete
+ * themselves.
+ */
+export async function countUsersInClientRole(roleName: string): Promise<number> {
+  const adminToken = await getAdminToken();
+
+  const clientsRes = await keycloakFetch(
+    `${env.keycloakAdminApiBase}/clients?clientId=${encodeURIComponent(env.keycloakClientId)}`,
+    { headers: { Authorization: `Bearer ${adminToken}` } },
+  );
+  if (!clientsRes.ok) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to look up the client', 502);
+  }
+  const clientInternalId = ((await clientsRes.json()) as { id: string }[])[0]?.id;
+  if (!clientInternalId) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Client not found', 502);
+  }
+
+  const usersRes = await keycloakFetch(
+    `${env.keycloakAdminApiBase}/clients/${clientInternalId}/roles/${encodeURIComponent(roleName)}/users?briefRepresentation=true&max=1000`,
+    { headers: { Authorization: `Bearer ${adminToken}` } },
+  );
+  if (!usersRes.ok) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to count role members', 502);
+  }
+  return ((await usersRes.json()) as unknown[]).length;
+}
+
 export async function logoutUserSessions(userId: string): Promise<void> {
   const adminToken = await getAdminToken();
   await keycloakFetch(
