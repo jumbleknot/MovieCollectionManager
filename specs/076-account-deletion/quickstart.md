@@ -131,15 +131,49 @@ MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mcm-app -- --testPathPattern='
 
 ## V5 — E2E: the round trip a user actually performs
 
-```bash
-pnpm nx e2e mcm-app -- --grep "account deletion"
-```
-
 Settings → Account → Delete → dialog (both lists visible) → confirm → Keycloak login → returns to
 `/account-deleted`. Then: the session is dead, and signing in with those credentials fails.
 
-Playwright runs here in the official image — a failing `nx e2e` is about that target, not evidence
-that E2E cannot run in this environment.
+**`pnpm nx e2e mcm-app` does not work in the dev container.** Playwright's browsers are not
+installed (`~/.cache/ms-playwright` is empty) and the default target also tries to start Metro,
+timing out after 120s. Both are environment facts, not failures of this feature. Run it in the
+official image against the already-running BFF instead.
+
+From a **worktree**, the runbook's `-v /workspaces/mcm` bind mount silently yields a near-empty
+directory — only `/workspaces/mcm` is shared with the Docker daemon — so stage a named volume:
+
+```bash
+docker volume create mcm-e2e-wt
+docker create --name e2e-stage -v mcm-e2e-wt:/work alpine:3 true
+tar -C /home/coder/worktrees/076-account-deletion \
+    --exclude=./target --exclude=./.nx --exclude=./.git -cf - . | docker cp - e2e-stage:/work
+docker rm e2e-stage
+
+SVC_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' \
+  ../../infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
+KEYCLOAK_SERVICE_CLIENT_SECRET="$SVC_SECRET" docker run --rm --network host \
+  --env-file ./.env.e2e.local --env-file ./.env.local \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp -v mcm-e2e-wt:/work \
+  -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright -e E2E_BFF_TARGET=dev-container -e CI=true \
+  -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
+  -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET \
+  -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
+  -w /work/frontend/mcm-app mcr.microsoft.com/playwright:v1.63.0-noble \
+  node_modules/.bin/playwright test tests/e2e/web/account-deletion.spec.ts \
+    --project=chromium --workers=1 --reporter=line
+```
+
+**Expected**: 4 passed. TWO env files are required — Playwright loads `.env.e2e.local` but not
+`.env.local`, and the backup-target credentials live in the latter.
+
+**The BFF container must be running the image you just built**, or a stale container answers
+`404` for a new route and the failures read as code bugs. Diff the ids before believing any
+result: `docker inspect mcm-bff-service-nonsecure --format '{{.Image}}'` against
+`docker images mcm-bff:latest`.
+
+**This tier is worth the trouble.** It caught a defect the unit and integration tiers could not:
+`auth_time` has second granularity, so a step-up completing in the same second as the challenge
+was refused as stale. Only a browser doing the real round trip in real time reaches that.
 
 **The disconnect case (SC-012)** belongs in V3, not here: drop the client immediately after
 confirmation and assert from outside that the deletion still completed. Driving that through a

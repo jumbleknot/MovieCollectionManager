@@ -530,7 +530,7 @@ standing permission is never stranded, and a retry succeeds.
   Native step-up is deferred (plan.md Structure Decision). Until it lands the button must not
   silently do nothing, and must certainly not delete without a step-up.
 
-- [ ] T046 [P] Run the full touched-tier check — derive the tiers from the diff, not from memory
+- [X] T046 [P] Run the full touched-tier check — derive the tiers from the diff, not from memory
 
   ```bash
   pnpm nx lint mcm-app && pnpm nx typecheck mcm-app
@@ -538,6 +538,13 @@ standing permission is never stranded, and a retry succeeds.
   MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mcm-app
   ```
   A tier you did not think of is a tier that did not run.
+
+  **DONE 2026-09-24.** Unit 152 suites / 1552 tests pass. Integration 56 of 58 suites pass —
+  the two failures are `backup-driver-webdav` and `backup-destination-probe`, both
+  `WebDAV … HTTP 401` from the missing `BACKUP_TEST_WEBDAV_*` credentials recorded as backlog
+  item #552. They are pre-existing, unrelated to this feature, and **CI is unaffected**: the
+  workflow mints both secrets per run. Web E2E 4 passed. `typecheck`, `lint`, `check-naming`,
+  `check-no-inline-secrets` and `okf-governance` all pass.
 
 - [ ] T047 Close backlog item #544 — **after the pull request MERGES**, not before
 
