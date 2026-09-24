@@ -269,6 +269,17 @@ const AGENT_IMPORT_FILE_TTL_SECONDS = 15 * 60;
  * bytes, never a credential); the next `/agent/run` reads + clears it and bridges it to the
  * gateway as the `X-Import-File` header for the import node (mirrors the UI-snapshot bridge).
  */
+/**
+ * Drop the snapshot (feature 076, FR-019).
+ *
+ * There was a setter and a getter but no deleter, because until account deletion existed nothing
+ * ever needed the snapshot gone before its TTL.
+ */
+export async function clearAgentUiSnapshot(userId: string): Promise<void> {
+  const redis = await getRedis();
+  await redis.del(agentUiStateKey(userId));
+}
+
 export async function setAgentImportFile(userId: string, referenceJson: string): Promise<void> {
   const redis = await getRedis();
   await redis.set(agentImportFileKey(userId), referenceJson, 'EX', AGENT_IMPORT_FILE_TTL_SECONDS);

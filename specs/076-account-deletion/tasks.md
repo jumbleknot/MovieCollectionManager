@@ -181,7 +181,7 @@ cannot sign in.
 destructive endpoint and US2 supplies its refusal paths; merging US1 alone would expose a deletion
 whose identity checks are not yet written.
 
-- [ ] T011 [US1] Write failing unit tests for the deletion pipeline's ORDER in `frontend/mcm-app/src/bff-server/unit-tests/account-deletion-order.test.ts`
+- [X] T011 [US1] Write failing unit tests for the deletion pipeline's ORDER in `frontend/mcm-app/src/bff-server/unit-tests/account-deletion-order.test.ts`
 
   **Scenarios covered**: US1-AC1, US1-AC2, US3-AC1
   With every collaborator stubbed and recording call order, assert the sequence is exactly:
@@ -196,7 +196,7 @@ whose identity checks are not yet written.
   ```
   **Expected RED**: 8 failing — `Cannot find module '@/bff-server/account-deletion'`
 
-- [ ] T012 [US1] Implement the pipeline in `frontend/mcm-app/src/bff-server/account-deletion.ts`
+- [X] T012 [US1] Implement the pipeline in `frontend/mcm-app/src/bff-server/account-deletion.ts`
 
   **Prerequisite**: T011 verified RED.
   The seven ordered steps from [plan.md](plan.md). Calls `tearDownUserBackups` unchanged. Uses the
@@ -205,7 +205,7 @@ whose identity checks are not yet written.
 
   **Verify GREEN**: same command as T011 | **Expected GREEN**: `8 passed`
 
-- [ ] T013 [US1] Write a failing test asserting the pipeline never reaches the user's storage, in `frontend/mcm-app/src/bff-server/unit-tests/account-deletion-no-driver.test.ts`
+- [X] T013 [US1] Write a failing test asserting the pipeline never reaches the user's storage, in `frontend/mcm-app/src/bff-server/unit-tests/account-deletion-no-driver.test.ts`
 
   **Scenarios covered**: US1-AC3 (artifacts untouched), FR-023
   A static import assertion: `account-deletion.ts` must not import `backup-destination-driver` or
@@ -218,10 +218,12 @@ whose identity checks are not yet written.
   ```
   **Expected RED**: 1 failing — module under test does not exist yet
 
-- [ ] T014 [US1] Confirm the import guard passes against the T012 implementation
+- [X] T014 [US1] Confirm the import guard passes against the T012 implementation
 
   **Prerequisite**: T012, T013.
-  No new code expected. If it fails, remove the offending import — do not relax the test.
+  **DONE.** Passed on arrival — 8 assertions, never RED, because T012 was written first and
+  already avoided the imports. That is by design for this pair (T014 says "confirm", not
+  "implement"): it pins a negative property as a regression guard rather than driving code.
 
   **Verify GREEN**: same command as T013 | **Expected GREEN**: `1 passed`
 
@@ -354,7 +356,7 @@ whose identity checks are not yet written.
 **Independent test**: Submit a deletion carrying a stale, mismatched, absent or replayed proof and
 confirm each is refused with nothing destroyed.
 
-- [ ] T026 [US2] Write failing tests for every refusal path in `frontend/mcm-app/src/bff-server/unit-tests/account-step-up-verify.test.ts`
+- [X] T026 [US2] Write failing tests for every refusal path in `frontend/mcm-app/src/bff-server/unit-tests/account-step-up-verify.test.ts`
 
   **Scenarios covered**: US2-AC1 through US2-AC5, US2-AC8 (SC-007)
   One case per enumerated `reason`: `no_pending`, `state_mismatch`, `subject_mismatch`,
@@ -371,7 +373,7 @@ confirm each is refused with nothing destroyed.
   ```
   **Expected RED**: 6 failing — `verifyStepUpProof is not a function`
 
-- [ ] T027 [US2] Implement `verifyStepUpProof` in `frontend/mcm-app/src/bff-server/account-step-up.ts`
+- [X] T027 [US2] Implement `verifyStepUpProof` in `frontend/mcm-app/src/bff-server/account-step-up.ts`
 
   **Prerequisite**: T026 verified RED.
   Three checks, all must pass: `sub` equals the session user; `auth_time` present, within 300s, and

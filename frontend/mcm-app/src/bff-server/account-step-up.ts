@@ -25,6 +25,7 @@
 
 import { createHash, randomBytes } from 'crypto';
 import { env } from '@/config/env';
+import { takePendingAccountDeletion } from '@/bff-server/cache-service';
 
 /**
  * The freshness window, shared by the parked request's TTL and the `auth_time` check.
@@ -90,4 +91,92 @@ export async function buildStepUpRequest(redirectUri: string): Promise<StepUpReq
     codeVerifier,
     redirectUri,
   };
+}
+
+// ─── Verification (FR-009, FR-010, FR-012) ────────────────────────────────────────────────────
+
+/**
+ * Why a proof was refused. Enumerated rather than free-text so a refusal can be counted, and so
+ * no message from Keycloak can leak into the audit stream.
+ */
+export type StepUpRejectionReason =
+  | 'no_pending'
+  | 'state_mismatch'
+  | 'subject_mismatch'
+  | 'missing_auth_time'
+  | 'stale_auth';
+
+export type StepUpVerification =
+  | { ok: true; accessToken: string; refreshToken: string }
+  | { ok: false; reason: StepUpRejectionReason };
+
+export interface StepUpExchangeResult {
+  idClaims: Record<string, unknown>;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export type StepUpExchange = (
+  code: string,
+  codeVerifier: string,
+  redirectUri: string,
+) => Promise<StepUpExchangeResult>;
+
+interface PendingDeletionRecord {
+  state: string;
+  codeVerifier: string;
+  redirectUri: string;
+  authTimeFloor: number;
+}
+
+/**
+ * Verify that the user really did just re-authenticate, before anything is destroyed.
+ *
+ * THE PENDING RECORD IS CONSUMED FIRST, whatever the outcome. A proof that fails its checks must
+ * not be retryable against the same request — otherwise an attacker who can reach the callback
+ * gets unlimited attempts at the state value.
+ *
+ * ABSENT `auth_time` IS A REFUSAL, never a pass. This is the check most likely to be written the
+ * wrong way round: `if (authTime && isStale(authTime))` reads naturally and lets a token with no
+ * `auth_time` at all straight through. A missing claim must never read as a satisfied
+ * requirement, so the presence check is separate and comes first.
+ *
+ * TWO FRESHNESS TESTS, not one. The proof must be recent (within the window) AND must postdate
+ * the authentication the session was established with. T001 measured that `auth_time` advances
+ * on a genuine re-authentication, so the second test is what distinguishes a real step-up from
+ * a token minted off the original login.
+ */
+export async function verifyStepUpProof(input: {
+  userId: string;
+  code: string;
+  state: string;
+  now: number;
+  exchange: StepUpExchange;
+}): Promise<StepUpVerification> {
+  const { userId, code, state, now, exchange } = input;
+
+  const stored = await takePendingAccountDeletion(userId);
+  if (!stored) return { ok: false, reason: 'no_pending' };
+
+  const pending = JSON.parse(stored) as PendingDeletionRecord;
+
+  // Before the exchange, so a forged callback never causes a token to be minted at all.
+  if (state !== pending.state) return { ok: false, reason: 'state_mismatch' };
+
+  const { idClaims, accessToken, refreshToken } = await exchange(
+    code,
+    pending.codeVerifier,
+    pending.redirectUri,
+  );
+
+  if (idClaims['sub'] !== userId) return { ok: false, reason: 'subject_mismatch' };
+
+  const authTime = idClaims['auth_time'];
+  if (typeof authTime !== 'number') return { ok: false, reason: 'missing_auth_time' };
+
+  const withinWindow = now - authTime < STEP_UP_MAX_AGE_SECONDS;
+  const advanced = authTime > pending.authTimeFloor;
+  if (!withinWindow || !advanced) return { ok: false, reason: 'stale_auth' };
+
+  return { ok: true, accessToken, refreshToken };
 }
