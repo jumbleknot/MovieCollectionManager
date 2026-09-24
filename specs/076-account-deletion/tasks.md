@@ -310,7 +310,7 @@ whose identity checks are not yet written.
 
 - [ ] T022 [US1] Confirm artifacts are untouched | **Verify GREEN**: same as T021 | **Expected GREEN**: `1 passed`
 
-- [ ] T023 [P] [US1] Write failing screen tests in `frontend/mcm-app/src/screens/settings/account-settings-screen.test.tsx`
+- [X] T023 [P] [US1] Write failing screen tests in `frontend/mcm-app/src/screens/settings/account-settings-screen.test.tsx`
 
   **Scenarios covered**: US1-AC1, FR-003, FR-004
   Covers: the danger zone renders; the dialog lists **both** what is destroyed and what is not; the
@@ -323,7 +323,7 @@ whose identity checks are not yet written.
   ```
   **Expected RED**: 6 failing — component does not exist
 
-- [ ] T024 [US1] Implement the screen, route and nav row
+- [X] T024 [US1] Implement the screen, route and nav row
 
   **Prerequisite**: T023 verified RED.
   `frontend/mcm-app/src/screens/settings/account-settings-screen.tsx` (content),
@@ -334,7 +334,7 @@ whose identity checks are not yet written.
 
   **Verify GREEN**: same command as T023 | **Expected GREEN**: `6 passed`
 
-- [ ] T025 [P] [US1] Add the public `/account-deleted` screen and its test in `frontend/mcm-app/src/app/account-deleted.tsx`
+- [X] T025 [P] [US1] Add the public `/account-deleted` screen and its test in `frontend/mcm-app/src/app/account-deleted.tsx`
 
   **Must be a public route.** The user has no session when they arrive, so a guarded route bounces
   them to login — which reads as "your deletion failed".
