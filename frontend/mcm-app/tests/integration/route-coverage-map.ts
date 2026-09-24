@@ -73,6 +73,16 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'backups/jobs/[jobId]/versions+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
   'backups/jobs/[jobId]/restore+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
   'backups/jobs/[jobId]/download+api.ts': { tests: ['backup-restore-routes.integration.test.ts'] },
+  // Feature 076. The DESTRUCTIVE endpoint is the callback; the challenge only parks a request.
+  // Both are covered at the HTTP level by account-delete-routes, which proves every path that
+  // SKIPS the step-up refuses. The pipeline behind them — including the standing permission
+  // being rejected by Keycloak afterwards — is account-deletion.integration.
+  'account/delete+api.ts': {
+    tests: ['account-delete-routes.integration.test.ts', 'account-deletion.integration.test.ts'],
+  },
+  'account/delete-challenge+api.ts': {
+    tests: ['account-delete-routes.integration.test.ts'],
+  },
   'backups/consent+api.ts': {
     tests: ['backup-consent-routes.integration.test.ts', 'backup-offline-token.integration.test.ts'],
   },

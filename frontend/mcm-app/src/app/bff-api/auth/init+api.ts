@@ -20,7 +20,7 @@ export async function GET(_req: Request): Promise<Response> {
 }
 
 async function _get(): Promise<Response> {
-  // ALL FIVE, every time. This function replaces the list it is given, so dropping one of the
+  // ALL SIX, every time. This function replaces the list it is given, so dropping one of the
   // others here is how this goes wrong — the app would keep working until someone hit
   // the flow whose URI went missing.
   await ensureClientRedirectUris([
@@ -37,6 +37,11 @@ async function _get(): Promise<Response> {
     // authorization request outright, which is also what makes deriving the redirect URI from
     // the request origin safe against a forged Host header.
     `${BASE_URL}/bff-api/account/delete`,
+    // Feature 076 native: the device runs the OIDC flow itself and Keycloak redirects to the
+    // app. A SEPARATE scheme URI from the login callback on purpose — routing a deletion code
+    // into `native-auth-callback` would exchange it for a SESSION, turning a deletion into a
+    // sign-in.
+    'mcm-app://account-delete-callback',
   ]);
   return Response.json({ ok: true }, { headers: securityHeaders() });
 }

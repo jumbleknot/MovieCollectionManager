@@ -28,7 +28,8 @@ import {
   Banner,
   Dialog,
 } from '@mcm/design-system';
-import { apiClient } from '@/bff-server/api-client';
+import { useRouter } from 'expo-router';
+import { useAccountDeletion } from '@/hooks/use-account-deletion';
 
 /**
  * What the callback reports back through the query string.
@@ -45,30 +46,26 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export function AccountSettingsScreen(): React.JSX.Element {
   const theme = useTheme();
+  const router = useRouter();
   const params = useLocalSearchParams<{ error?: string }>();
+  const deletion = useAccountDeletion();
   const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [challengeError, setChallengeError] = useState<string | null>(null);
+  const busy = deletion.busy;
 
   const error = challengeError ?? (params.error ? ERROR_MESSAGES[params.error] : undefined);
 
   async function startDeletion(): Promise<void> {
-    setBusy(true);
     setChallengeError(null);
     try {
-      const res = await apiClient.post<{ authorizationUrl: string }>(
-        '/bff-api/account/delete-challenge',
-      );
+      // Web navigates away and never returns here; native resolves with the outcome, because the
+      // BFF cannot redirect a native app (research R10). One call site, one guarantee.
+      const { deleted } = await deletion.start();
       setConfirming(false);
-      // A full page navigation, not a fetch. This is an interactive sign-in at the identity
-      // provider and it must happen in the user's own browser — the same mechanism the
-      // backup-consent grant uses.
-      if (typeof window !== 'undefined') window.location.assign(res.data.authorizationUrl);
+      if (deleted) router.replace('/account-deleted');
     } catch {
       setConfirming(false);
       setChallengeError(ERROR_MESSAGES['challenge']!);
-    } finally {
-      setBusy(false);
     }
   }
 

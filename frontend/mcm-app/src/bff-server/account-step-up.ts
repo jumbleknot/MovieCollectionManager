@@ -93,6 +93,27 @@ export async function buildStepUpRequest(redirectUri: string): Promise<StepUpReq
   };
 }
 
+/**
+ * The native variant: mint the `state`, and describe the request the DEVICE must build.
+ *
+ * No URL and no code challenge, because only the device can bind the request to a verifier it
+ * holds. What the BFF keeps is the `state` — minted here, parked server-side, matched on
+ * completion and consumed once — so the CSRF binding and the single-use property survive even
+ * though PKCE moves to the client (research R10).
+ */
+export function buildNativeStepUpRequest(): {
+  state: string;
+  authorizationParams: { scope: string; prompt: string; max_age: string };
+} {
+  return {
+    state: randomBytes(16).toString('base64url'),
+    // The same two parameters that carry the security on web. T001 measured that max_age=0
+    // re-prompts even when the SSO session is live; a native client that dropped it would get a
+    // silent SSO reuse and the step-up would buy nothing.
+    authorizationParams: { scope: 'openid', prompt: 'login', max_age: '0' },
+  };
+}
+
 // ─── Verification (FR-009, FR-010, FR-012) ────────────────────────────────────────────────────
 
 /**
@@ -124,9 +145,24 @@ export type StepUpExchange = (
 
 interface PendingDeletionRecord {
   state: string;
-  codeVerifier: string;
-  redirectUri: string;
+  /** Absent on the native path — see `native`. */
+  codeVerifier?: string;
+  /** Absent on the native path; the client supplies the URI it actually used. */
+  redirectUri?: string;
   authTimeFloor: number;
+  /**
+   * NATIVE PATH. The constitution is explicit that the BFF cannot redirect a native app, so the
+   * client initiates the OIDC flow itself and expo-auth-session generates the PKCE verifier on
+   * the device. The verifier therefore cannot be parked here — the same trade the existing
+   * native login already makes.
+   *
+   * What still protects this path: the `state` is minted and parked SERVER-SIDE and matched on
+   * completion, the record is single-use, it is keyed by the authenticated user, and the
+   * exchanged token must still satisfy the `sub` and `auth_time` checks below. The verifier's
+   * job is to bind the authorization code to the client that requested it; on native that
+   * client is the app itself, which is also the one completing the exchange.
+   */
+  native?: boolean;
 }
 
 /**
@@ -152,6 +188,9 @@ export async function verifyStepUpProof(input: {
   state: string;
   now: number;
   exchange: StepUpExchange;
+  /** Native only: the verifier and redirect URI the DEVICE used. Ignored on the web path. */
+  clientCodeVerifier?: string;
+  clientRedirectUri?: string;
 }): Promise<StepUpVerification> {
   const { userId, code, state, now, exchange } = input;
 
@@ -163,11 +202,14 @@ export async function verifyStepUpProof(input: {
   // Before the exchange, so a forged callback never causes a token to be minted at all.
   if (state !== pending.state) return { ok: false, reason: 'state_mismatch' };
 
-  const { idClaims, accessToken, refreshToken } = await exchange(
-    code,
-    pending.codeVerifier,
-    pending.redirectUri,
-  );
+  // The web path uses the verifier parked at challenge time; the native path uses the one the
+  // device holds. A record NOT marked native never reads client-supplied values, so a client
+  // cannot opt itself onto the weaker path by sending them.
+  const codeVerifier = pending.native ? input.clientCodeVerifier : pending.codeVerifier;
+  const redirectUri = pending.native ? input.clientRedirectUri : pending.redirectUri;
+  if (!codeVerifier || !redirectUri) return { ok: false, reason: 'state_mismatch' };
+
+  const { idClaims, accessToken, refreshToken } = await exchange(code, codeVerifier, redirectUri);
 
   if (idClaims['sub'] !== userId) return { ok: false, reason: 'subject_mismatch' };
 

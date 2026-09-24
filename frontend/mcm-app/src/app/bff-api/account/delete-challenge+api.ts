@@ -20,7 +20,7 @@
 import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser, isAdmin } from '@/bff-server/role-check';
 import { countUsersInClientRole } from '@/bff-server/keycloak';
-import { buildStepUpRequest } from '@/bff-server/account-step-up';
+import { buildStepUpRequest, buildNativeStepUpRequest } from '@/bff-server/account-step-up';
 import { setPendingAccountDeletion } from '@/bff-server/cache-service';
 import { checkAccountDeletionRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { logger } from '@/bff-server/logger';
@@ -53,6 +53,27 @@ async function handle(req: Request): Promise<Response> {
       );
     }
 
+    const authTimeFloor = Math.floor(Date.now() / 1000);
+
+    // NATIVE. The constitution is explicit that the BFF cannot redirect a native app, so the
+    // device runs the OIDC flow itself and expo-auth-session mints the PKCE verifier there. All
+    // this route can do is issue the `state` — which is still minted and parked server-side, so
+    // it remains the CSRF binding and the single-use marker even though the verifier is not here.
+    const body = await req.json().catch(() => ({}));
+    const native = (body as { platform?: string })?.platform === 'native';
+
+    if (native) {
+      const { state, authorizationParams } = buildNativeStepUpRequest();
+      await setPendingAccountDeletion(
+        user.id,
+        JSON.stringify({ state, authTimeFloor, requestedAt: authTimeFloor, native: true }),
+      );
+      logger.audit('account_deletion_requested', { userId: user.id, ip, platform: 'native' });
+      // No authorizationUrl: the device builds its own request, because only it can bind the
+      // request to a verifier it holds.
+      return Response.json({ state, authorizationParams }, { status: 200, headers: securityHeaders() });
+    }
+
     const redirectUri = deletionCallbackUri(req);
     const { authorizationUrl, state, codeVerifier } = await buildStepUpRequest(redirectUri);
 
@@ -65,8 +86,8 @@ async function handle(req: Request): Promise<Response> {
         state,
         codeVerifier,
         redirectUri,
-        authTimeFloor: Math.floor(Date.now() / 1000),
-        requestedAt: Math.floor(Date.now() / 1000),
+        authTimeFloor,
+        requestedAt: authTimeFloor,
       }),
     );
 

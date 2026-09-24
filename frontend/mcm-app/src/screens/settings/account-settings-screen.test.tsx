@@ -16,31 +16,27 @@ import React from 'react';
 // "Missing theme" the moment a screen calls useTheme().
 import { render, screen, fireEvent, waitFor } from '@/test-support/render';
 
-const mockPost = jest.fn();
-jest.mock('@/bff-server/api-client', () => ({
-  apiClient: { post: (...a: unknown[]) => mockPost(...a) },
+// The screen delegates the platform branch to the hook; this asserts the SCREEN's contract —
+// two deliberate acts, both lists shown, and every failure saying the account still exists.
+// The hook's own web/native behaviour is covered by use-account-deletion.test.ts.
+const mockStart = jest.fn();
+jest.mock('@/hooks/use-account-deletion', () => ({
+  useAccountDeletion: () => ({ busy: false, start: mockStart }),
 }));
 
 let mockSearchParams: Record<string, string> = {};
+const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockSearchParams,
-  useRouter: () => ({ replace: jest.fn(), push: jest.fn() }),
+  useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
 }));
-
-// A full page navigation, not a fetch: this is an interactive sign-in at the identity provider
-// and it must happen in the user's own browser. Same mechanism the backup-consent flow uses.
-const mockAssign = jest.fn();
-Object.defineProperty(window, 'location', {
-  value: { assign: mockAssign, href: 'http://localhost:8082/settings/account' },
-  writable: true,
-});
 
 import { AccountSettingsScreen } from '@/screens/settings/account-settings-screen';
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockSearchParams = {};
-  mockPost.mockResolvedValue({ data: { authorizationUrl: 'http://kc/auth?x=1' } });
+  mockStart.mockResolvedValue({ deleted: false });
 });
 
 describe('AccountSettingsScreen', () => {
@@ -61,10 +57,10 @@ describe('AccountSettingsScreen', () => {
     render(<AccountSettingsScreen />);
 
     fireEvent.press(screen.getByTestId('account-delete-button'));
-    expect(mockPost).not.toHaveBeenCalled();
+    expect(mockStart).not.toHaveBeenCalled();
 
     fireEvent.press(screen.getByTestId('account-delete-confirm'));
-    await waitFor(() => expect(mockPost).toHaveBeenCalledWith('/bff-api/account/delete-challenge'));
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
   });
 
   it('states what will be destroyed AND what will not', () => {
@@ -83,15 +79,27 @@ describe('AccountSettingsScreen', () => {
     fireEvent.press(screen.getByTestId('account-delete-cancel'));
 
     await waitFor(() => expect(screen.queryByTestId('account-delete-confirm')).toBeNull());
-    expect(mockPost).not.toHaveBeenCalled();
+    expect(mockStart).not.toHaveBeenCalled();
   });
 
-  it('sends the browser to the identity provider once the challenge is issued', async () => {
+  it('hands off to the identity provider round trip once confirmed', async () => {
     render(<AccountSettingsScreen />);
     fireEvent.press(screen.getByTestId('account-delete-button'));
     fireEvent.press(screen.getByTestId('account-delete-confirm'));
 
-    await waitFor(() => expect(mockAssign).toHaveBeenCalledWith('http://kc/auth?x=1'));
+    await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(1));
+  });
+
+  it('shows the confirmation page when native reports the account was deleted', async () => {
+    // Web never reaches this — it navigates away and the BFF redirects. Native completes
+    // in-process, so the screen owns the final navigation.
+    mockStart.mockResolvedValue({ deleted: true });
+
+    render(<AccountSettingsScreen />);
+    fireEvent.press(screen.getByTestId('account-delete-button'));
+    fireEvent.press(screen.getByTestId('account-delete-confirm'));
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/account-deleted'));
   });
 
   it.each([
@@ -128,13 +136,13 @@ describe('AccountSettingsScreen', () => {
   });
 
   it('reports a failed challenge without claiming anything was deleted', async () => {
-    mockPost.mockRejectedValue(new Error('network'));
+    mockStart.mockRejectedValue(new Error('network'));
 
     render(<AccountSettingsScreen />);
     fireEvent.press(screen.getByTestId('account-delete-button'));
     fireEvent.press(screen.getByTestId('account-delete-confirm'));
 
     await waitFor(() => expect(screen.getByTestId('account-delete-error')).toBeTruthy());
-    expect(mockAssign).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });

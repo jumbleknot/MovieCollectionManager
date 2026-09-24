@@ -1146,7 +1146,8 @@
         "https://localhost:8443/bff-api/backups/consent",
         "http://localhost:8081/bff-api/account/delete",
         "http://localhost:8082/bff-api/account/delete",
-        "https://localhost:8443/bff-api/account/delete"
+        "https://localhost:8443/bff-api/account/delete",
+        "mcm-app://account-delete-callback"
       ],
       "webOrigins": [
         "https://app.example.com",

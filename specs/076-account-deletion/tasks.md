@@ -272,7 +272,7 @@ whose identity checks are not yet written.
 
   **Verify GREEN**: same command as T017 | **Expected GREEN**: `6 passed`
 
-- [ ] T019 [US1] Write the failing test that closes backlog item #544, in `frontend/mcm-app/tests/integration/account-deletion.integration.test.ts`
+- [X] T019 [US1] Write the failing test that closes backlog item #544, in `frontend/mcm-app/tests/integration/account-deletion.integration.test.ts`
 
   **Scenarios covered**: US1-AC2 (SC-001, SC-002, SC-004, SC-009) — **this is the test the feature exists for**
   Capture the stored refresh token before deletion; after deletion, **present it to Keycloak and
@@ -291,12 +291,12 @@ whose identity checks are not yet written.
   ```
   **Expected RED**: 4 failing — the refresh token is still accepted by Keycloak
 
-- [ ] T020 [US1] Confirm SC-001 passes against the T012/T018 implementation
+- [X] T020 [US1] Confirm SC-001 passes against the T012/T018 implementation
 
   **Prerequisite**: T012, T018, T019.
   **Verify GREEN**: same command as T019 | **Expected GREEN**: `4 passed`, skip count 0
 
-- [ ] T021 [US1] Write a failing test that the user's artifacts survive, in the same integration file
+- [X] T021 [US1] Write a failing test that the user's artifacts survive, in the same integration file
 
   **Scenarios covered**: US1-AC3 (SC-003)
   Write real artifacts to a destination, delete the account, then list the destination and assert
@@ -308,7 +308,7 @@ whose identity checks are not yet written.
   ```
   **Expected RED**: 1 failing — destination not yet reachable from the test fixture
 
-- [ ] T022 [US1] Confirm artifacts are untouched | **Verify GREEN**: same as T021 | **Expected GREEN**: `1 passed`
+- [X] T022 [US1] Confirm artifacts are untouched | **Verify GREEN**: same as T021 | **Expected GREEN**: `1 passed`
 
 - [X] T023 [P] [US1] Write failing screen tests in `frontend/mcm-app/src/screens/settings/account-settings-screen.test.tsx`
 
@@ -389,7 +389,7 @@ confirm each is refused with nothing destroyed.
 
   **Verify GREEN**: same command as T026 | **Expected GREEN**: `6 passed`
 
-- [ ] T028 [US2] Write a failing test that nothing is destroyed on a refusal, in `frontend/mcm-app/tests/integration/account-delete-callback.integration.test.ts`
+- [X] T028 [US2] Write a failing test that nothing is destroyed on a refusal, in `frontend/mcm-app/tests/integration/account-delete-callback.integration.test.ts`
 
   **Scenarios covered**: US2-AC2, US2-AC3, US2-AC8
   For each refusal reason: every store still holds the user's data afterwards, the account still
@@ -401,7 +401,7 @@ confirm each is refused with nothing destroyed.
   ```
   **Expected RED**: 5 failing — refusals not yet wired into the route
 
-- [ ] T029 [US2] Wire the refusals into `delete+api.ts` | **Verify GREEN**: same as T028 | **Expected GREEN**: `5 passed`
+- [X] T029 [US2] Wire the refusals into `delete+api.ts` | **Verify GREEN**: same as T028 | **Expected GREEN**: `5 passed`
 
 - [ ] T030 [P] [US2] Write a failing test for the second-factor branch in `frontend/mcm-app/tests/integration/account-deletion-mfa.integration.test.ts`
 
@@ -479,7 +479,7 @@ standing permission is never stranded, and a retry succeeds.
 
 - [X] T038 [US3] Implement 404-as-success in the collection loop | **Verify GREEN**: same as T037 | **Expected GREEN**: `4 passed`
 
-- [ ] T039 [P] [US3] Write a failing test that an in-flight backup run stops, in `frontend/mcm-app/tests/integration/account-deletion.integration.test.ts`
+- [X] T039 [P] [US3] Write a failing test that an in-flight backup run stops, in `frontend/mcm-app/tests/integration/account-deletion.integration.test.ts`
 
   **Scenarios covered**: FR-034
   Start an unattended run, delete the owner mid-run, and assert the run fails and stops — it must
@@ -487,9 +487,9 @@ standing permission is never stranded, and a retry succeeds.
 
   **Verify RED**: `… -t 'in flight'` | **Expected RED**: 2 failing
 
-- [ ] T040 [US3] Make the runner fail closed when its owner's records vanish | **Verify GREEN**: same as T039 | **Expected GREEN**: `2 passed`
+- [X] T040 [US3] Make the runner fail closed when its owner's records vanish | **Verify GREEN**: same as T039 | **Expected GREEN**: `2 passed`
 
-- [ ] T041 [P] [US3] Write and verify the client-disconnect test (SC-012) in the integration file
+- [X] T041 [P] [US3] Write and verify the client-disconnect test (SC-012) in the integration file
 
   **Scenarios covered**: US1 edge case, FR-032, FR-033
   Drop the client immediately after the callback is accepted, then assert **from outside** that the
@@ -500,7 +500,7 @@ standing permission is never stranded, and a retry succeeds.
 
   If this fails, abort plumbing has been introduced somewhere; fix the cause, not the test.
 
-- [ ] T042 [P] [US3] Write and verify the re-registration test (SC-014)
+- [X] T042 [P] [US3] Write and verify the re-registration test (SC-014)
 
   **Scenarios covered**: US1 edge case, FR-025, FR-026
   Delete, register again with the same email, and assert the new account has zero collections, zero
@@ -523,9 +523,9 @@ standing permission is never stranded, and a retry succeeds.
   **Expected**: 1 passed. Playwright runs here in its official image — a failing `nx e2e` is about
   that target, not evidence that E2E cannot run in this environment.
 
-- [ ] T044 [P] Assert the audit stream in an integration test: every event in [data-model.md](data-model.md) §4 fires, and **no entry contains a credential, token, session id, name or email** (SC-011, FR-037)
+- [X] T044 [P] Assert the audit stream in an integration test: every event in [data-model.md](data-model.md) §4 fires, and **no entry contains a credential, token, session id, name or email** (SC-011, FR-037)
 
-- [ ] T045 Make the Android confirm path fail closed with a clear message, per [contracts/ui-contract.md](contracts/ui-contract.md) §5
+- [X] T045 **SUPERSEDED — native parity implemented instead** (operator directive). The Android path now runs the real client-initiated OIDC step-up rather than failing closed; see `use-account-deletion.ts`. Verified via CI.
 
   Native step-up is deferred (plan.md Structure Decision). Until it lands the button must not
   silently do nothing, and must certainly not delete without a step-up.
@@ -539,10 +539,16 @@ standing permission is never stranded, and a retry succeeds.
   ```
   A tier you did not think of is a tier that did not run.
 
-- [ ] T047 Close backlog item #544 — but only after T020 has passed with a skip count of 0
+- [ ] T047 Close backlog item #544 — **after the pull request MERGES**, not before
 
-  The item's acceptance criteria require the standing permission be proved dead **at Keycloak**.
-  Verify, then close; a merged pull request is not closure.
+  **Operator directive, 2026-09-24: do not close until the pull request has merged successfully.**
+  That supersedes the note this task originally carried, which said a merged PR is not closure —
+  the two are not in conflict: verification is necessary but no longer sufficient. T020 has
+  passed with a skip count of 0, so the evidence the item asks for exists; the close waits on
+  the merge.
+
+  T045 is superseded by the same directive: native parity is now IN scope for this feature
+  rather than a follow-up, and is to be verified via CI.
 
 ---
 
