@@ -351,3 +351,40 @@
   justification: 'New advisory (org.bouncycastle:bcprov-jdk18on below 1.85 — Name Constraints bypass via a trailing dot in rfc822Name and URI, CWE-295 improper certificate validation; GHSA-9pwp-9qqc-pr26) on an image we pull but do not build. Published to NVD 2026-08-03 but only GitHub-reviewed 2026-09-18T17:35:38Z, so it reached Trivy overnight and blocked an unchanged pin — infra-image-scan run 3619 (01:38Z) was green and run 3632 the same morning was not, on identical code. NO UPSTREAM TAG CLEARS IT, measured directly 2026-09-19 rather than inferred: both the current pin 26.7.3@sha256:29be7252 AND 26.7.4@sha256:82a77884 — the newest version Renovate offers, waiting in the rate-limited `docker base images` channel — were pulled from quay.io and inspected, and BOTH ship bcprov-jdk18on-1.84.jar. The bump moves the tag and the digest and leaves the vulnerable jar untouched, so remediation is an upstream Keycloak rebuild against bcprov 1.85 (the same shape as the otel-lgtm entries above, one day apart). The defect is in X.509 certificate CHAIN validation, and that path is not exercised here: no client in the prod, dev or ci realm sets clientAuthenticatorType to x509 (checked, zero in each), the only non-DISABLED x509 execution is the built-in `clients:client-x509=ALTERNATIVE` that ships in every Keycloak realm export and is unreachable unless a client opts into it, no custom truststore or name-constrained CA is configured, and both realms use the stock `browser` and `direct grant` flows. Keycloak is not internet-facing: prod publishes 19099 on the tailnet behind the host ufw default-deny (feature 028/029) and dev binds 127.0.0.1:8099. Version-keyed on purpose so the pending `docker base images` bump re-blocks and forces a fresh scan rather than inheriting this suppression. Time-boxed; delete on upstream rebuild, do not renew.'
   addedBy: 'keycloak-bcprov-2026-09-19'
   expiry: '2026-12-01'
+
+# ── NEW advisory on an unchanged pinned image, triaged 2026-09-25 (surfaced by PR #553) ──────────
+# CVE-2026-84939 — org.freemarker:freemarker 2.3.32 (fix 2.3.35), GHSA-27j2-h3m2-8237.
+#
+# HOW IT SURFACED, and why it had not been seen before. Nothing in the repository changed: the
+# keycloak pin has been 26.7.3@sha256:29be7252 throughout. `infra-image-scan` is PATH-FILTERED on
+# the push trigger, so `main` does not run it on an ordinary merge — PR #553 touched
+# infrastructure-as-code/ (realm redirect URIs for account deletion, nothing to do with images) and
+# that is what made the gate run and the finding block. Same shape as the 2026-08-29 keycloak case
+# and the 2026-09-18 otel-lgtm cohort recorded above: an advisory lands, and the next PR to trip the
+# path filter wears it.
+#
+# NO UPSTREAM TAG CLEARS IT, measured rather than inferred. Both 26.7.3 (the pin) and 26.7.4 (the
+# newest release, 2026-09-16, and what Renovate offers) were scanned on 2026-09-25 with
+# aquasec/trivy:0.74.0 using the gate's own criterion (--severity CRITICAL --ignore-unfixed). 26.7.4
+# reports THREE fixable Criticals and freemarker 2.3.32 is one of them:
+#     CVE-2026-75595  io.netty:netty-handler 4.1.136.Final  (fix 4.2.17.Final / 4.1.137.Final)
+#     CVE-2026-84939  org.freemarker:freemarker 2.3.32      (fix 2.3.35)
+#     CVE-2026-8763   org.bouncycastle:bcprov-jdk18on 1.84  (fix 1.85)
+# The first and third already have entries above, both established the same way. So the bump moves
+# the tag and leaves the vulnerable jar in place; remediation is an upstream Keycloak rebuild.
+#
+# EXPLOITABILITY HERE. FreeMarker is Keycloak's server-side template engine for the login, account
+# and email themes. Template content is operator-supplied, not user-supplied: this deployment
+# configures NO custom theme (loginTheme/accountTheme/emailTheme/adminTheme are all unset in both
+# dev-realm.json and ci-realm.json — checked, zero theme keys) and mounts no theme directory or
+# provider jar into either compose file. The templates rendered are the ones shipped inside the
+# image. Keycloak is also not internet-facing: prod publishes 19099 on the tailnet behind the host
+# ufw default-deny (features 028/029) and dev binds 127.0.0.1:8099.
+#
+# Version-keyed on purpose, so the pending `docker base images` bump re-blocks and forces a fresh
+# scan rather than inheriting this suppression. Time-boxed; delete on upstream rebuild, do not renew.
+- image: 'quay\.io/keycloak/keycloak:26\.7\.3'
+  id: 'CVE-2026-84939'
+  justification: 'New advisory (org.freemarker:freemarker below 2.3.35; GHSA-27j2-h3m2-8237) on an image we pull but do not build. NO UPSTREAM TAG CLEARS IT, measured directly 2026-09-25 rather than inferred: both the current pin 26.7.3 and 26.7.4 — the newest release (2026-09-16) and what Renovate offers — were scanned with aquasec/trivy:0.74.0 under the gate criterion (--severity CRITICAL --ignore-unfixed) and BOTH ship freemarker 2.3.32; 26.7.4 reports three fixable Criticals of which this is one, the other two already carrying entries here. Remediation is an upstream Keycloak rebuild against 2.3.35. FreeMarker renders Keycloak theme templates, which are OPERATOR-supplied: this deployment sets no custom theme (no loginTheme/accountTheme/emailTheme/adminTheme in dev-realm.json or ci-realm.json) and mounts no theme directory or provider jar in either compose file, so only the templates shipped inside the image are rendered. Not internet-facing: prod publishes 19099 on the tailnet behind the host ufw default-deny (features 028/029), dev binds 127.0.0.1:8099. Surfaced by PR #553 because infra-image-scan is path-filtered and that PR touched infrastructure-as-code/; the pin itself is unchanged. Version-keyed so the pending base-image bump re-blocks and forces a fresh scan. Time-boxed; delete on upstream rebuild, do not renew.'
+  addedBy: 'keycloak-freemarker-2026-09-25'
+  expiry: '2026-12-01'
