@@ -184,3 +184,25 @@
   locationPattern: "frontend/mcm-app/src/bff-server/backup-restore-writer\\.ts:.*"
   justification: "Service-layer writer that takes an already-authenticated jwt, and writes AS THE USER so mc-service applies its own DAC and validation. requireAuth + requireMcUser run in withBackupRoute before any handler body executes. Same layer argument as backup-snapshot-reader."
   addedBy: "steve"
+
+# ── Feature 076: the account-deletion pipeline ───────────────────────────────────────────────────
+# Same shape as the two backup service-layer entries above, and stronger. `account-deletion.ts`
+# is not a route handler: its only two production callers are the account-deletion routes, and
+# BOTH run requireAuth → requireMcUser before the pipeline is entered, and then additionally
+# require a verified step-up proof — a FRESH authentication at the identity provider, which the
+# ordinary routes do not demand. The token it hands to createMcServiceClient is the step-up
+# token, minted seconds earlier for that same user, so mc-service applies its own DAC to it.
+#
+# The rule's own documentation names this case: "Auth performed in a wrapper/HOF … is not
+# recognized — triage such patterns into security/sast/allowlist.yaml."
+#
+# RESIDUAL RISK, stated rather than implied: a future caller could invoke runAccountDeletion with
+# a token obtained some other way. Bounded by the entry being pinned to this one file — a new
+# unguarded upstream client anywhere else still fails the gate — and by
+# `account-deletion-routes.integration.test.ts`, which asserts that every route-level path
+# skipping the step-up refuses.
+- scanner: "semgrep"
+  id: "security.sast.rules.mcm-auth-before-authz"
+  locationPattern: "frontend/mcm-app/src/bff-server/account-deletion\\.ts:.*"
+  justification: "Pipeline step that takes an already-authenticated step-up access token. requireAuth + requireMcUser run in both account-deletion route handlers before runAccountDeletion is called, followed by verifyStepUpProof requiring a fresh authentication at the identity provider; the step is not reachable without all three. Deletes are performed AS THE USER so mc-service applies its own DAC."
+  addedBy: "steve"

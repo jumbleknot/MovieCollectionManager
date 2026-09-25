@@ -33,11 +33,24 @@ const CONFIG = resolve(REPO_ROOT, 'frontend/mcm-app/playwright.config.ts');
 const GLOBAL_SETUP = resolve(REPO_ROOT, 'frontend/mcm-app/tests/e2e/web/setup/global-setup.ts');
 const ENV_TS = resolve(REPO_ROOT, 'frontend/mcm-app/src/config/env.ts');
 
-/** Specs that must run UNAUTHENTICATED — they opt out via a file-level `test.use`. */
+/**
+ * Specs that must NOT inherit the shared worker session — they opt out via a file-level
+ * `test.use({ storageState: … })`.
+ *
+ * Most are unauthenticated: they are about what happens with no session at all, and the fixture
+ * would hand them one. `account-deletion.spec.ts` (feature 076) is here for the opposite reason —
+ * it authenticates, but as a THROWAWAY identity it then deletes. Running it on the shared session
+ * would delete the user every other spec depends on, so it mints its own context exactly as
+ * `bff-prod-lifecycle` does.
+ *
+ * Both cases share the property this guard actually protects: the file must not pick up the
+ * shared `storageState`, so it must not import the fixture, and it must say so explicitly.
+ */
 const UNAUTHENTICATED = new Set([
   'auth.spec.ts',
   'bff-prod-lifecycle.spec.ts',
   'security-headers.spec.ts',
+  'account-deletion.spec.ts',
 ]);
 
 const specs = readdirSync(WEB_E2E).filter((f) => f.endsWith('.spec.ts'));
