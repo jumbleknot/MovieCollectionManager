@@ -135,7 +135,7 @@ test('(g2) the fixtures load and have the shape the classifier expects', () => {
 // T009 — classifyCheckState: five states, two of which the raw API reports WRONG.
 // ================================================================================================
 
-import { classifyCheckState, parseContext, findRunForContext } from '../ci-status.mjs';
+import { classifyCheckState, parseContext, findRunForContext, bundleJobName } from '../ci-status.mjs';
 
 const statusesOf = (f) => fixture(f).statuses;
 const byContext = (f, needle) => statusesOf(f).find((s) => s.context.includes(needle));
@@ -151,6 +151,35 @@ test('(h) context strings parse into job + event', () => {
   });
   // A context without a suffix must still parse rather than throw.
   assert.equal(parseContext('some / context').job, 'some / context');
+});
+
+// ── The bundle-owning JOB is not always the tail of the context. ──────────────────────────────────
+//
+// Bundles are versioned `<runId>--<jobName>`, so a wrong derivation turns a 404 into the sentence
+// "no bundle exists … the job may have died before the digest step ran" — a confident wrong diagnosis
+// on precisely the run you need to read. Measured on the 2026-09-25 weekly sweep: the context
+// `infra-image-scan/weekly` resolved to `weekly`, so `failure --run 3946` asked for `3946--weekly`
+// and declared the bundle absent. It exists as `3946--infra-image-scan`.
+//
+// The two shapes nest differently and BOTH directions are asserted, because either alone is satisfied
+// by a broken rule: `split(' / ').pop()` fixes the narrow status and breaks nothing only if the real
+// checks keep resolving to their job, and `split('/')[0]` would break every real check.
+test('(h2) bundleJobName resolves a real check to its job and a narrow status to its OWNER', () => {
+  // Real Actions checks: `<workflow> / <job>`, WITH spaces. The job is the tail.
+  assert.equal(bundleJobName('guardrails / naming'), 'naming');
+  assert.equal(bundleJobName('app-ci / app-e2e (pull_request)'), 'app-e2e');
+  assert.equal(bundleJobName('infra-image-scan / infra-image-scan (push)'), 'infra-image-scan');
+  assert.equal(bundleJobName('minio-image / build-publish (push)'), 'build-publish');
+
+  // Narrow statuses a job posts about ITSELF by curl (items #418, #485). No ` / `, deliberately —
+  // a separator-less context cannot match the required glob `infra-image-scan / infra-image-scan*`,
+  // which is the only reason posting them is safe. The tail is a LABEL; the OWNER is the head.
+  assert.equal(bundleJobName('infra-image-scan/weekly'), 'infra-image-scan');
+  assert.equal(bundleJobName('infra-image-scan/expiry'), 'infra-image-scan');
+  assert.equal(bundleJobName('renovate/mode'), 'renovate');
+
+  // A bare context with no slash at all is its own job.
+  assert.equal(bundleJobName('sast'), 'sast');
 });
 
 test('(i) success → passed', () => {

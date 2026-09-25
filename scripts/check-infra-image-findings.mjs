@@ -149,6 +149,17 @@ export function evaluate(report, allowlist, now = today()) {
   // REQUIRED, NOT OPTIONAL. Defaulting a missing field to "everything is in scope" would restore the
   // old behaviour silently, on a gate that still exits 0 — the exact failure mode this check exists
   // to avoid. A producer that stops writing the field fails here instead.
+  // THE ONE EXEMPTION, AND WHY IT IS NOT A HOLE — the sibling of the note in check-sast-findings.mjs,
+  // and found the same way: by running the weekly step verbatim rather than each command alone. An
+  // ANNOUNCED absent report (`main()`'s ENOENT path under --check-expiring) has no scanned set because
+  // no scan ran to produce one, so the throw below fired on it. In the `infra-image-scan` job the scan
+  // step writes this report, so the crash is not reachable there — but it is reachable wherever the
+  // expiry tier is run without a scan, and a `bash -e` step then takes every later command with it.
+  // Keyed on the explicit marker: a report that EXISTS and omits the field still throws, which is what
+  // item #423 wrote this check for. Nothing is waved through — an absent report has zero findings, so
+  // there is no in-scope entry whose match could go unchecked.
+  if (report?.reportAbsent === true) return { failures, warnings, suppressed, expiring, expired, unmatched: [] };
+
   const scanned = report?.generatedForImages;
   if (!Array.isArray(scanned)) {
     throw new GateError('report has no `generatedForImages` array — regenerate it with scripts/infra-image-scan.mjs. Unmatched-entry detection is scoped to the images this run actually scanned (item #423), and cannot be computed without it.');
@@ -325,6 +336,22 @@ function selftest() {
   // --check-expiring does not evaluate blocking findings — that is the normal run's job.
   if (capture(() => gate(rep([F()]), [], NOW, { checkExpiring: true })).code !== 0) failures.push('(g7) --check-expiring must ignore blocking findings');
 
+  // (g7b) THE ABSENT-REPORT PATH MUST NOT CRASH. `main()` synthesises `reportAbsent: true` on its
+  // announced ENOENT path; the item #423 scope guard below used to throw on that object, and in a
+  // `bash -e` weekly step a throw here takes every later command with it. Found by running the weekly
+  // step verbatim after fixing the identical defect in check-sast-findings.mjs — the sibling was only
+  // visible once the first command stopped aborting first.
+  const g7bAbsent = { findings: [], reportAbsent: true };
+  const g7b = capture(() => gate(g7bAbsent, g4allow, NOW, { checkExpiring: true }));
+  if (g7b.code !== 0) failures.push(`(g7b) --check-expiring on an ABSENT report must exit 0, got ${g7b.code}`);
+  if (/UNMATCHED ENTRIES/.test(g7b.out)) failures.push('(g7b) an absent report must not flag the entry set as unmatched');
+  // And the exemption is keyed on the MARKER, not on a missing field: the same object without it still
+  // throws. Without this half, `return []` unconditionally would pass the assertion above.
+  try {
+    gate({ findings: [] }, g4allow, NOW, { checkExpiring: true });
+    failures.push('(g7b) a report with no generatedForImages and no reportAbsent marker must still be rejected');
+  } catch (e) { if (!(e instanceof GateError)) failures.push('(g7b) the unmarked report must throw GateError'); }
+
   // ── (g8/g9) scope: the item #423 guard ──────────────────────────────────────────────────────────
   //
   // Two jobs consult this one allowlist — the sweep (every pulled image) and the `minio-image`
@@ -359,7 +386,7 @@ function selftest() {
     console.error('✗ check-infra-image-findings --selftest FAILED:\n  ' + failures.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ check-infra-image-findings --selftest passed (fail on fixable-Critical, allowlist-suppress, fixable-High warn, unfixable warn, medium warn, clean, blank-justification reject, expiry, warning tier + unmatched + --check-expiring).');
+  console.log('✓ check-infra-image-findings --selftest passed (fail on fixable-Critical, allowlist-suppress, fixable-High warn, unfixable warn, medium warn, clean, blank-justification reject, expiry, warning tier + unmatched + --check-expiring + the absent-report path).');
   process.exit(0);
 }
 
@@ -387,7 +414,10 @@ function main() {
     // A report that exists but will not parse is still exit 2.
     if (checkExpiring && e.code === 'ENOENT') {
       console.log(`ℹ no scan report at ${reportPath} — expiry/expired classification still runs from the allowlist; UNMATCHED detection is skipped (no scanner produced findings).`);
-      report = { findings: [] };
+      // `reportAbsent` is what the exemption in `evaluate()` keys on. Set ONLY here, on the announced
+      // ENOENT path — a report read off disk never carries it, so a real report missing
+      // `generatedForImages` is still a hard error.
+      report = { findings: [], reportAbsent: true };
     } else {
       console.error(`✗ could not read/parse report ${reportPath}: ${e.message}`);
       process.exit(2);

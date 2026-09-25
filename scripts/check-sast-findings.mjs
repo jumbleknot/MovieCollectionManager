@@ -159,6 +159,21 @@ export function evaluate(report, allowlist, now = today()) {
  * way a missing file class switched off the thing it guards.
  */
 function selectAsymmetric(report, blockingFindings) {
+  // THE ONE EXEMPTION, AND WHY IT IS NOT A HOLE. `--check-expiring` runs inside the
+  // `infra-image-scan` job, which does not produce a SAST report at all; `main()` handles that ENOENT
+  // by ANNOUNCING it on stdout and synthesising `{ findings: [], reportAbsent: true }`. That object
+  // has no `generatedAtScope` because no scan ran to have one — so the throw below fired on it and
+  // aborted the whole weekly step, taking `check-infra-image-findings.mjs --check-expiring` with it
+  // (the next line of a `bash -e` block). Measured on the 2026-09-25 weekly sweep, run 3946: the SAST
+  // and infra-image expiry tiers had BOTH been dead since 2026-09-12, reported as `expiry_step=failure`
+  // and nothing else. Item #484's `always()` is what finally let the step run and expose it.
+  //
+  // The exemption is keyed on the explicit marker, never on a missing field: a report that EXISTS and
+  // omits its scope still throws, which is the fault this guard was written for. There is also nothing
+  // to evaluate here by construction — an absent report carries zero findings, so there is no blocking
+  // finding that could be scope-asymmetric and be waved through.
+  if (report?.reportAbsent === true) return [];
+
   const scope = report?.generatedAtScope;
   if (scope !== 'full' && scope !== 'changed') {
     throw new GateError(`report has no usable \`generatedAtScope\` (got ${JSON.stringify(scope)}) — regenerate it with scripts/sast-scan.mjs. The gate-scope symmetry check (items #224/#426) cannot be evaluated without knowing which scope produced this report, and silently skipping it is the failure mode it exists to prevent.`);
@@ -522,11 +537,27 @@ function selftest() {
     failures.push('(g9g) a report without generatedAtScope must be rejected, not silently unguarded');
   } catch (e) { if (!(e instanceof GateError)) failures.push('(g9g) a report without generatedAtScope must throw GateError'); }
 
+  // (g9h) THE ABSENT-REPORT PATH MUST NOT CRASH — the regression the 2026-09-25 weekly sweep caught.
+  // `--check-expiring` runs where no SAST report exists, and `main()` synthesises `reportAbsent: true`
+  // for it. Before this, `selectAsymmetric` threw on that object and `bash -e` then skipped the
+  // infra-image expiry check on the next line, so BOTH tiers were silently dead from 2026-09-12.
+  // Asserted through `gate()` rather than `selectAsymmetric()` directly, because the crash reached the
+  // weekly step through the full call path and a unit-level assertion would not have caught it there.
+  const absentRep = { schemaVersion: 1, scanners: [], findings: [], reportAbsent: true };
+  const g9h = capture(() => gate(absentRep, [], NOW, { checkExpiring: true }));
+  if (g9h.code !== 0) failures.push(`(g9h) --check-expiring on an ABSENT report must exit 0, got ${g9h.code}`);
+  // And the exemption must be keyed on the marker, not on a missing scope: the same object WITHOUT
+  // the marker still throws. A test for the fix alone would pass against `return []` unconditionally.
+  try {
+    gate({ schemaVersion: 1, scanners: [], findings: [] }, [], NOW, { checkExpiring: true });
+    failures.push('(g9h) a report with no scope and no reportAbsent marker must still be rejected');
+  } catch (e) { if (!(e instanceof GateError)) failures.push('(g9h) the unmarked no-scope report must throw GateError'); }
+
   if (failures.length) {
     console.error('✗ check-sast-findings --selftest FAILED:\n  ' + failures.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ check-sast-findings --selftest passed (fail, allowlist-suppress, dev-warn, clean, blank-justification reject, expiry, warning tier + unmatched + blinded-rule report + --check-expiring + per-surface pip-audit suppression + gate-scope asymmetry).');
+  console.log('✓ check-sast-findings --selftest passed (fail, allowlist-suppress, dev-warn, clean, blank-justification reject, expiry, warning tier + unmatched + blinded-rule report + --check-expiring + per-surface pip-audit suppression + gate-scope asymmetry + the absent-report path).');
   process.exit(0);
 }
 
@@ -560,7 +591,10 @@ function main() {
     // report that EXISTS but will not parse is still exit 2 on both paths.
     if (checkExpiring && e.code === 'ENOENT') {
       console.log(`ℹ no scan report at ${reportPath} — expiry/expired classification still runs from the allowlist; UNMATCHED detection is skipped (no scanner produced findings).`);
-      report = { findings: [] };
+      // `reportAbsent` is what `selectAsymmetric` keys its exemption on. It must be set HERE, on the
+      // announced ENOENT path, and nowhere else — a report read off disk never carries it, so a real
+      // report missing `generatedAtScope` is still a hard error.
+      report = { findings: [], reportAbsent: true };
     } else {
       console.error(`✗ could not read/parse report ${reportPath}: ${e.message}`);
       process.exit(2);

@@ -218,6 +218,37 @@ export function parseContext(context) {
 }
 
 /**
+ * The JOB that owns a context's evidence bundle — which is NOT always the tail of the context.
+ *
+ * Bundles are versioned `<runId>--<jobName>`, so getting this wrong turns a 404 into the confident
+ * wrong sentence "no bundle exists … the job may have died before the digest step ran".
+ *
+ * Two shapes of context reach this repository's commits, and they nest differently:
+ *
+ *   `guardrails / naming`     a real Actions check. Forgejo renders it `<workflow> / <job>` WITH
+ *                             spaces around the slash, so the job is the tail.
+ *   `infra-image-scan/weekly` a NARROW status a job posts about ITSELF by curl (items #418, #485).
+ *                             It carries no ` / ` **deliberately**: branch protection requires the
+ *                             glob `infra-image-scan / infra-image-scan*`, and a separator-less
+ *                             context cannot match it, which is the only reason these are safe to
+ *                             post. Here the tail is a LABEL (`weekly`, `expiry`) and the
+ *                             bundle-owning job is the part BEFORE the slash.
+ *
+ * Measured on the 2026-09-25 weekly sweep: `infra-image-scan/weekly` resolved to `weekly`, so
+ * `failure --run 3946` asked for `3946--weekly` and reported the bundle absent. It exists as
+ * `3946--infra-image-scan`.
+ */
+export function bundleJobName(context) {
+  const { job } = parseContext(context);
+  const parts = job.split(' / ');
+  // A real Actions check: `<workflow> / <job>` (two or more segments, spaces included).
+  if (parts.length > 1) return parts[parts.length - 1].trim();
+  // A narrow self-posted status: `<job>/<label>`, no spaces. The job owns the bundle, not the label.
+  const [head] = job.split('/');
+  return head.trim();
+}
+
+/**
  * Find the run that produced a context, matching on BOTH workflow file and event — the same job
  * appears once per event and the two can disagree, so matching on workflow alone picks the wrong run.
  */
@@ -1561,7 +1592,7 @@ export async function cmdFailure(target, conn) {
     // the runId already on every check.
     emit(`${failed.length} failed job(s) on a non-PR commit — reading each digest from its bundle:`);
     for (const c of failed) {
-      const jobName = c.job.split('/').pop().trim();
+      const jobName = bundleJobName(c.job);
       // `--run` is the documented escape hatch when the context could not be matched to a run; it
       // is now actually consulted here rather than merely suggested (item #226).
       const runId = c.runId ?? target.run ?? null;
@@ -1600,7 +1631,7 @@ export async function cmdFailure(target, conn) {
     // the absent case — which is what this code did unconditionally before.
     const outcomes = [];
     for (const c of failed) {
-      const jobName = c.job.split('/').pop().trim();
+      const jobName = bundleJobName(c.job);
       if (!c.runId) continue;
       try {
         const bundle = await fetchBundle(conn, c.runId, jobName);

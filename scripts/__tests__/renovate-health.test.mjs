@@ -15,6 +15,7 @@ import {
   buildDigest,
   blockedRequiredRows,
   selectNewestScheduledRun,
+  selectNewestMainSweepRun,
   sweepVerdict,
 } from '../renovate-health.mjs';
 
@@ -242,6 +243,46 @@ test('(#485) the NEWEST scheduled run wins even if the page is out of order', ()
   assert.equal(selectNewestScheduledRun(runs, 'infra-image-scan.yml')?.id, 3521);
 });
 
+// ── selectNewestMainSweepRun — a STALE verdict is as wrong as an absent one ──
+//
+// The real 2026-09-25 page, which is the case this exists for: the 04:00 cron (3946) was red on one
+// finding; it was allowlisted and merged, and the same gate passed on `main` at 12:33 (3975, push).
+// Reading only the cron reports `❌ main is failure` for six days on a green `main`.
+const PAGE_2026_09_25 = [
+  { id: 3975, workflow_id: 'infra-image-scan.yml', trigger_event: 'push', prettyref: 'main', status: 'success', started: '2026-09-25T12:33:12Z', commit_sha: '09247f3da7' },
+  { id: 3972, workflow_id: 'infra-image-scan.yml', trigger_event: 'pull_request', prettyref: '#553', status: 'success', started: '2026-09-25T11:34:24Z', commit_sha: '39ec964000' },
+  { id: 3965, workflow_id: 'infra-image-scan.yml', trigger_event: 'push', prettyref: '076-account-deletion', status: 'success', started: '2026-09-25T10:33:34Z', commit_sha: 'a5c8f06300' },
+  { id: 3959, workflow_id: 'infra-image-scan.yml', trigger_event: 'push', prettyref: 'renovate/docker-base-images', status: 'failure', started: '2026-09-25T07:36:38Z', commit_sha: 'd46747c400' },
+  { id: 3946, workflow_id: 'infra-image-scan.yml', trigger_event: 'schedule', prettyref: 'main', status: 'failure', started: '2026-09-25T04:00:14Z', commit_sha: '174cbe5800' },
+];
+
+test('(#485b) `main`’s posture is the newest run ON main, cron or push — not the newest cron', () => {
+  assert.equal(selectNewestMainSweepRun(PAGE_2026_09_25, 'infra-image-scan.yml')?.id, 3975);
+  // The control: the old selector still answers the cron question, which the digest still reports.
+  assert.equal(selectNewestScheduledRun(PAGE_2026_09_25, 'infra-image-scan.yml')?.id, 3946);
+});
+
+test('(#485b) a push run on ANOTHER BRANCH is never adopted as `main`’s posture', () => {
+  // `prettyref` is the discriminator — `head_branch` is null on every run this build returns. Both
+  // directions matter: 3959 is RED on a Renovate branch and 3965 is GREEN on a feature branch, and
+  // adopting either would report some other branch's verdict as the one every PR inherits.
+  const noMain = PAGE_2026_09_25.filter((r) => r.prettyref !== 'main');
+  assert.equal(selectNewestMainSweepRun(noMain, 'infra-image-scan.yml'), null,
+    'with no run on `main`, the answer must be null (→ UNKNOWN), never another branch’s run');
+});
+
+test('(#485b) a pull_request run is never `main`’s posture, even on a page full of them', () => {
+  const prsOnly = [
+    { id: 3958, workflow_id: 'infra-image-scan.yml', trigger_event: 'pull_request', prettyref: 'main', status: 'success', started: '2026-09-25T07:36:34Z' },
+  ];
+  assert.equal(selectNewestMainSweepRun(prsOnly, 'infra-image-scan.yml'), null);
+});
+
+test('(#485b) another workflow’s run on main is not mistaken for the sweep', () => {
+  const other = [{ id: 1, workflow_id: 'wiki-maintain.yml', trigger_event: 'push', prettyref: 'main', status: 'failure', started: '2026-09-25T13:00:00Z' }];
+  assert.equal(selectNewestMainSweepRun(other, 'infra-image-scan.yml'), null);
+});
+
 // ── sweepVerdict ─────────────────────────────────────────────────────────────
 
 test('(#485) `status` carries the verdict on this forge, and a missing run is UNKNOWN not a pass', () => {
@@ -252,7 +293,44 @@ test('(#485) `status` carries the verdict on this forge, and a missing run is UN
   assert.equal(sweepVerdict({ id: 1, status: 'running' }).state, 'unknown');
 });
 
+test('(#485b) a superseding run NAMES the verdict it replaces, and the event of both', () => {
+  // Dropping the superseded red silently is how a digest starts hiding things again — item #485's own
+  // fault. "green now, red at 04:00, a fix landed" is the sentence worth having.
+  const v = sweepVerdict(
+    { id: 3975, trigger_event: 'push', status: 'success', started: '2026-09-25T12:33:12Z', commit_sha: '09247f3da7' },
+    { id: 3946, trigger_event: 'schedule', status: 'failure', started: '2026-09-25T04:00:14Z' },
+  );
+  assert.equal(v.state, 'success');
+  assert.match(v.text, /push run/, 'the reader must be able to tell a push run from the weekly cron');
+  assert.match(v.text, /supersedes the weekly cron run 3946/);
+  assert.match(v.text, /FAILURE/, 'the superseded verdict must be stated, not dropped');
+  // And with nothing superseded, no such clause is invented.
+  const plain = sweepVerdict({ id: 3946, trigger_event: 'schedule', status: 'failure', started: 'x', commit_sha: 'ab' });
+  assert.match(plain.text, /weekly cron/);
+  assert.doesNotMatch(plain.text, /supersedes/);
+});
+
 // ── buildDigest — the ✅ Healthy line ────────────────────────────────────────
+
+test('(#485b) the Healthy line names the run it read, and carries a superseded red', () => {
+  // "the WEEKLY sweep is green" is a claim only the cron supports. When the verdict came from a push
+  // run the line must not promise it, and a green push run that superseded a RED cron is the week's
+  // CVE event — reported even though nothing is wrong now.
+  const healthyFromPush = {
+    ...CLEAN,
+    sweep: sweepVerdict(
+      { id: 3975, trigger_event: 'push', status: 'success', started: '2026-09-25T12:33:12Z', commit_sha: '09247f3da7' },
+      { id: 3946, trigger_event: 'schedule', status: 'failure', started: '2026-09-25T04:00:14Z' },
+    ),
+  };
+  const out = buildDigest(healthyFromPush);
+  assert.match(out, /✅ \*\*Healthy/, 'a green sweep is still healthy');
+  assert.doesNotMatch(out, /the weekly CVE sweep on `main` is green/,
+    'the Healthy line must not promise a WEEKLY verdict it read from a push run');
+  assert.match(out, /Read from run 3975 \(push run/);
+  assert.match(out, /supersedes the weekly cron run 3946/, 'the superseded red must survive into the digest');
+  assert.match(out, /FAILURE/);
+});
 
 test('(#485) ✅ Healthy still appears when everything really is healthy', () => {
   // The control for every assertion below: without it they all pass against a digest that has

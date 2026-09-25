@@ -453,18 +453,43 @@ test('(063) every allowlist entry for a formerly-floating image can be discharge
   // AT THE CAUSE rather than deleted: the version-keying rule it enforces has not changed, and it
   // now enforces that rule for ALL SIX of feature 063's formerly-floating repositories the moment an
   // entry is written for any of them, instead of only for the one that happened to carry an entry.
-  const NEXT = {
-    'axllent/mailpit': 'axllent/mailpit:v1.32.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
-    'curlimages/curl': 'curlimages/curl:8.23.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
-    'grafana/otel-lgtm': 'grafana/otel-lgtm:0.33.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
-    'openpolicyagent/opa': 'openpolicyagent/opa:1.20.3@sha256:1111111111111111111111111111111111111111111111111111111111111111',
-    'unleashorg/unleash-server': 'unleashorg/unleash-server:8.2.0@sha256:1111111111111111111111111111111111111111111111111111111111111111',
+  //
+  // DERIVED FROM THE PIN, NOT HAND-WRITTEN — corrected 2026-09-25. This used to be a literal map of
+  // "a plausible next version" per repository, and a base-image bump silently invalidated it: the
+  // 2026-09-25 `docker base images` window moved unleash to **8.2.0**, which was the map's own "next"
+  // value, and otel-lgtm to 0.33.1, leaving the map's 0.33.0 BEHIND the pin. Neither broke the build,
+  // which is the problem — the fixture stopped meaning "a later version" while still reading like it.
+  // Left alone, the first allowlist entry written for unleash would have failed direction (2) and
+  // accused a correctly version-keyed entry of being unkeyable.
+  //
+  // Incrementing the last numeric component of the ACTUAL pin cannot drift, and is still synthetic in
+  // the way the original comment cared about: it is not a guess at what upstream will publish (that
+  // is Renovate's network step), only a reference that is definitely *not this one*. The digest is
+  // replaced too — a key must stop matching on the version, never on the digest.
+  const SYNTHETIC_DIGEST = `@sha256:${'1'.repeat(64)}`;
+  const nextRefFor = (currentRef) => {
+    const tag = currentRef.replace(/^[^:]+(?::(\d+))?:/, '').replace(/@sha256:[0-9a-f]+$/, '');
+    const bumped = tag.replace(/(\d+)(?!.*\d)/, (n) => String(Number(n) + 1));
+    assert.notEqual(bumped, tag, `could not derive a later version from ${JSON.stringify(currentRef)} — its tag carries no number, so this repository needs a declared exception rather than a synthetic bump`);
+    return `${currentRef.split(':')[0]}:${bumped}${SYNTHETIC_DIGEST}`;
   };
 
+  const REPOSITORIES = [
+    'axllent/mailpit',
+    'curlimages/curl',
+    'grafana/otel-lgtm',
+    'openpolicyagent/opa',
+    'unleashorg/unleash-server',
+  ];
+
   let checked = 0;
-  for (const [repository, nextRef] of Object.entries(NEXT)) {
+  for (const repository of REPOSITORIES) {
     const currentRef = refFor(repository);
     assert.ok(currentRef, `${repository} is not referenced in infrastructure-as-code/** any more — is this list stale?`);
+    const nextRef = nextRefFor(currentRef);
+    // The self-check the literal map could not have: the synthetic "later" ref must differ from the
+    // pin, or direction (2) below is asserting nothing at all.
+    assert.notEqual(nextRef, currentRef, `the synthetic next ref for ${repository} equals the pin`);
 
     for (const entry of allowlist) {
       // Only the entries written FOR this image. Keyed on the repository appearing in the entry's
@@ -500,9 +525,9 @@ test('(063) every allowlist entry for a formerly-floating image can be discharge
   // the loop above already catches it against the live compose files. The second became true on
   // 2026-09-14 when the last such entry was deleted, and a suppression-free image is exactly what
   // this file is trying to reach — so failing on it would punish the good outcome and invite
-  // someone to delete the guard to get green. What is still worth asserting is that the map itself
-  // has not been emptied, which would silence every check above without a word.
-  assert.ok(Object.keys(NEXT).length > 0, 'the NEXT map is empty, so every assertion above is vacuous.');
+  // someone to delete the guard to get green. What is still worth asserting is that the repository
+  // list itself has not been emptied, which would silence every check above without a word.
+  assert.ok(REPOSITORIES.length > 0, 'the REPOSITORIES list is empty, so every assertion above is vacuous.');
 });
 
 // ---------------------------------------------------------------------------------------------
