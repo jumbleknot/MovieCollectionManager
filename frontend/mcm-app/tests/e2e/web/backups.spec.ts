@@ -525,18 +525,54 @@ test.describe('Backup destinations (feature 073)', () => {
         return Array.isArray(body) ? (body as { key: string }[]).map((v) => v.key).sort() : [];
       };
 
+      // ── EVERY WAIT IN THIS LOOP MUST BE ON SOMETHING THAT CHANGES (item #564). ────────────────
+      //
+      // Both of the original waits matched the state the PREVIOUS iteration left behind, so on the
+      // third run neither waited at all and the assertions below raced the run:
+      //
+      //   1. the banner reads `Backed up N movies` after EVERY run, so `toContainText` matched run
+      //      1's banner the instant run 2 was clicked;
+      //   2. the count was polled `.toBe(Math.min(i + 1, 2))`, which is **2 for both i=1 and i=2** —
+      //      a ceiling already reached, so the poll returned on its first tick.
+      //
+      // Measured on run 3980: the two surviving keys were 258ms apart and run 2's key was ABSENT,
+      // i.e. the final assertion ran before the third backup existed. Nothing had been pruned
+      // because nothing yet needed pruning — the retention code was never implicated.
       let firstKey = '';
       for (let i = 0; i < 3; i += 1) {
+        // The key set BEFORE the click is what makes this run distinguishable from the last one.
+        const before = new Set(await versionKeys());
         await page.locator(`[data-testid="backup-job-run-${jobId}"]`).click();
+
+        // A COMPOUND fact, because each half alone is satisfiable by the previous iteration's end
+        // state on the third run:
+        //   fresh — this run wrote a key that was not present before the click. On its own this is
+        //           satisfied the instant the third key lands, which is BEFORE the prune.
+        //   total — retention has settled back to the ceiling. On its own this is already true at
+        //           i=2 before the click, which is fault (2) above.
+        // Only the pair pins "this run finished AND retention has run". Polled as one object so a
+        // transient where both are momentarily true of different instants cannot slip through.
+        await expect
+          .poll(
+            async () => {
+              const keys = await versionKeys();
+              return { fresh: keys.filter((k) => !before.has(k)).length, total: keys.length };
+            },
+            { timeout: 120000 },
+          )
+          .toEqual({ fresh: 1, total: Math.min(i + 1, 2) });
+
+        // The banner is asserted AFTER that poll, and is deliberately NOT the wait. Its text is
+        // identical for every run, so as a wait it sequences nothing — which is how this test broke.
+        // It is kept because "the UI told the user" is worth asserting, and moved here so it cannot
+        // be mistaken for a wait again. The other run-clicks in this file each do exactly ONE run
+        // with no prior banner on screen, so their identical assertions DO wait; this loop was the
+        // only place the text's sameness mattered.
         await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
           /Backed up \d+ movies/i,
-          { timeout: 120000 },
+          { timeout: 30000 },
         );
-        // Each run writes a key stamped with its own instant, so the count is polled to settle
-        // before the next click — clicking early is how two runs become one version.
-        await expect
-          .poll(async () => (await versionKeys()).length, { timeout: 60000 })
-          .toBe(Math.min(i + 1, 2));
+
         if (i === 0) [firstKey] = await versionKeys();
       }
 
