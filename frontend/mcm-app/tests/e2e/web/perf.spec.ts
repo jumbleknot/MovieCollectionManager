@@ -10,11 +10,26 @@
  * a React-Native-Web + Tamagui bundle, so a generous ceiling guards only against a
  * catastrophic regression and the real numbers are logged/attached for the PR. If the
  * 3G TTI materially exceeds the budget, the documented follow-up is code-splitting /
- * deeper Tamagui-compiler tree-shaking.
+ * deeper Tamagui-compiler tree-shaking (backlog item #558).
+ *
+ * THE WAIT AND THE CEILING ARE ONE CONSTANT, and that is load-bearing. They used to
+ * disagree — the wait was 120 s while the assertion allowed 150 s — so any TTI in that
+ * 30 s band died as a `TimeoutError` before `ttiMs` was ever computed. Three things
+ * followed, all bad: the documented 150 s ceiling was unreachable, the failure said
+ * "waiting for locator" instead of naming the measured TTI, and the metric this file
+ * exists to produce was missing from exactly the runs where it mattered most. A slow
+ * load must fail as a NUMBER against a threshold, not as a timeout.
  */
 import { test, expect } from './fixtures/worker-session';
 import { type Page } from '@playwright/test';
 import { E2E_BASE_URL as BASE } from './setup/target';
+
+/**
+ * The catastrophic-regression ceiling, and therefore also the wait.
+ *
+ * The wait must never be TIGHTER than the ceiling or the assertion below is unreachable.
+ */
+const TTI_CEILING_MS = 150_000;
 
 // Chrome DevTools "Slow 3G": ~400 kbps down, 400 ms RTT.
 const SLOW_3G = {
@@ -42,8 +57,8 @@ async function sumJsBytes(page: Page, run: () => Promise<void>): Promise<number>
 
 async function waitHome(page: Page): Promise<void> {
   await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 120000 }),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 120000 }),
+    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: TTI_CEILING_MS }),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: TTI_CEILING_MS }),
   ]);
 }
 
@@ -71,6 +86,6 @@ test.describe('bundle + cold TTI (T040)', () => {
 
     // Catastrophic-regression guards only (NOT the 2s budget — see file header).
     expect(jsKB, 'transferred JS sanity ceiling').toBeLessThan(8000);
-    expect(ttiMs, 'Slow-3G TTI sanity ceiling').toBeLessThan(150000);
+    expect(ttiMs, 'Slow-3G TTI sanity ceiling').toBeLessThan(TTI_CEILING_MS);
   });
 });

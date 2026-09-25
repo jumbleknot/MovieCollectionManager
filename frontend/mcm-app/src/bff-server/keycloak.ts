@@ -171,6 +171,77 @@ export async function refreshTokens(refreshToken: string): Promise<KeycloakToken
  * Admin API call forcibly deletes all user sessions so the SSO cookie becomes
  * stale and the next auth request requires credentials.
  */
+/**
+ * Delete a user's account at the identity provider (feature 076, FR-021).
+ *
+ * THE LAST STEP OF ACCOUNT DELETION, and the only irreversible one. Everything before it is
+ * retryable; once the account is gone there is no identity left to authenticate as, so nothing
+ * that needed the user to exist can be attempted again.
+ *
+ * A 404 IS SUCCESS. The account being absent is the outcome this asks for, and a retry after a
+ * partial failure will re-issue this delete against an account the first attempt already
+ * removed. Treating that as an error would make the retry path — the thing that rescues a
+ * half-finished deletion — fail precisely when it had otherwise worked.
+ *
+ * Unlike `logoutUserSessions`, a failure here is NOT swallowed: the caller must be able to tell
+ * the user their account still exists rather than reporting a deletion that did not happen.
+ */
+export async function deleteUser(userId: string): Promise<void> {
+  const adminToken = await getAdminToken();
+  const res = await keycloakFetch(
+    `${env.keycloakAdminApiBase}/users/${encodeURIComponent(userId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    },
+  );
+
+  if (res.ok || res.status === 404) return;
+
+  throw new AuthError(
+    AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+    `Failed to delete user at the identity provider (HTTP ${res.status})`,
+    502,
+  );
+}
+
+/**
+ * How many users hold a client role (feature 076, FR-013).
+ *
+ * Used for one decision only: refusing to delete the last remaining administrator. A system with
+ * no administrator cannot be administered, and self-service deletion must not be how that
+ * happens.
+ *
+ * Counts by listing role members. `briefRepresentation` keeps the payload small; the realm is
+ * small enough that paging would be ceremony. A failure THROWS rather than returning 0 — a
+ * failed count must not read as "no administrators exist" and let the last one delete
+ * themselves.
+ */
+export async function countUsersInClientRole(roleName: string): Promise<number> {
+  const adminToken = await getAdminToken();
+
+  const clientsRes = await keycloakFetch(
+    `${env.keycloakAdminApiBase}/clients?clientId=${encodeURIComponent(env.keycloakClientId)}`,
+    { headers: { Authorization: `Bearer ${adminToken}` } },
+  );
+  if (!clientsRes.ok) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to look up the client', 502);
+  }
+  const clientInternalId = ((await clientsRes.json()) as { id: string }[])[0]?.id;
+  if (!clientInternalId) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Client not found', 502);
+  }
+
+  const usersRes = await keycloakFetch(
+    `${env.keycloakAdminApiBase}/clients/${clientInternalId}/roles/${encodeURIComponent(roleName)}/users?briefRepresentation=true&max=1000`,
+    { headers: { Authorization: `Bearer ${adminToken}` } },
+  );
+  if (!usersRes.ok) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to count role members', 502);
+  }
+  return ((await usersRes.json()) as unknown[]).length;
+}
+
 export async function logoutUserSessions(userId: string): Promise<void> {
   const adminToken = await getAdminToken();
   await keycloakFetch(

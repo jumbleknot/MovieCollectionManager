@@ -53,6 +53,10 @@ const SETTINGS_AREAS: SettingsArea[] = [
   { key: 'index',     label: 'Profile',         href: SETTINGS_GROUP,                testID: 'settings-nav-profile' },
   { key: 'assistant', label: 'Movie Assistant', href: `${SETTINGS_GROUP}/assistant`, testID: 'settings-nav-assistant' },
   { key: 'backups',   label: 'Backups',         href: `${SETTINGS_GROUP}/backups`,   testID: 'settings-nav-backups' },
+  // Feature 076. Last among the non-admin entries: an area whose only purpose is an irreversible
+  // action does not belong beside the ones a user visits routinely. No adminOnly flag — every
+  // user may delete their own account, including an administrator who is not the last one.
+  { key: 'account',   label: 'Account',         href: `${SETTINGS_GROUP}/account`,   testID: 'settings-nav-account' },
   { key: 'admin',     label: 'Admin',           href: `${SETTINGS_GROUP}/admin`,     testID: 'settings-nav-admin', adminOnly: true },
 ];
 

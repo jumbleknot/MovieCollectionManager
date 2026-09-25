@@ -46,3 +46,19 @@ export async function clear(userId: string): Promise<void> {
     },
   );
 }
+
+/**
+ * Delete the whole document (feature 076, FR-018).
+ *
+ * NOT `clear`. `clear()` disables the assistant and wipes the secrets while deliberately keeping
+ * the non-secret settings, so turning the assistant off does not lose a user's configuration.
+ * Account deletion needs the record gone, not tidied.
+ *
+ * ORDERING: this must run only AFTER the backup teardown. The standing permission lives in this
+ * same document as `offlineRefreshEnc`, so removing it first would destroy the only record of a
+ * token still live at the identity provider — with no user left to notice.
+ */
+export async function remove(userId: string): Promise<void> {
+  const col = await getAgentConfigCollection();
+  await col.deleteOne({ _id: userId });
+}
