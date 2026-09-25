@@ -85,16 +85,21 @@ for (const [k, n] of [...agg].sort((a, b) => b[1] - a[1]).slice(0, Number(proces
 
 ## Confirm a package left the entry chunk
 
+`glob` is **not** a dependency of this workspace, so the obvious one-liner using it fails with
+`MODULE_NOT_FOUND`. Use `readdirSync`:
+
 ```bash
 node -e "
-const g=require('glob'),fs=require('fs');
-const m=JSON.parse(fs.readFileSync(g.sync('/tmp/dist-check/client/_expo/static/js/web/entry-*.js.map')[0],'utf8'));
-for (const p of ['text-encoding','zod','graphql','luxon','bff-server'])
+const fs=require('fs'), d='/tmp/dist-check/client/_expo/static/js/web';
+const maps=fs.readdirSync(d).filter(f=>f.startsWith('entry-')&&f.endsWith('.js.map'));
+if (maps.length!==1) { console.error('expected exactly 1 entry map, found '+maps.length); process.exit(1); }
+const m=JSON.parse(fs.readFileSync(d+'/'+maps[0],'utf8'));
+for (const p of ['text-encoding','web-streams-polyfill','zod','graphql','@copilotkit/','@ag-ui/','luxon','bff-server'])
   console.log(p, m.sources.filter(s=>s.includes(p)).length);
 "
 ```
 
-All five must print `0` after this feature.
+All eight must print `0` after this feature.
 
 ## Measure cold TTI the way the gate does
 

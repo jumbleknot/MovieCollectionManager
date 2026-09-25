@@ -401,13 +401,16 @@ A single chunk means the boundary did not take — check step 2 first.
 
 ```bash
 node -e "
-const g=require('glob'),fs=require('fs');
-const m=JSON.parse(fs.readFileSync(g.sync('/tmp/dist-077/client/_expo/static/js/web/entry-*.js.map')[0],'utf8'));
+const fs=require('fs'), d='/tmp/dist-077/client/_expo/static/js/web';
+const maps=fs.readdirSync(d).filter(f=>f.startsWith('entry-')&&f.endsWith('.js.map'));
+if (maps.length!==1) { console.error('expected exactly 1 entry map, found '+maps.length); process.exit(1); }
+const m=JSON.parse(fs.readFileSync(d+'/'+maps[0],'utf8'));
 for (const p of ['text-encoding','web-streams-polyfill','zod','graphql','@copilotkit/','@ag-ui/','luxon','bff-server'])
   console.log(p, m.sources.filter(s=>s.includes(p)).length);
 "
 ```
-**Expected**: every line prints `0`.
+**Expected**: every line prints `0`. (`glob` is **not** a dependency of this workspace — a snippet
+using it exits `MODULE_NOT_FOUND`, which reads as "could not verify" rather than as a failure.)
 
 ---
 
@@ -423,14 +426,30 @@ for (const p of ['text-encoding','web-streams-polyfill','zod','graphql','@copilo
 
 **File(s)**: `frontend/mcm-app/tests/e2e/web/perf.spec.ts`
 
+> **Do this task BEFORE starting T011.** Its RED can only be observed against a tree without the
+> boundary, and the alternative — stashing a finished T011 to reach back for a RED — is how a RED
+> gets skipped or attributed to the wrong tree. Author and RED this spec first, then implement T011,
+> then take the GREEN in T013. The task numbering is not renumbered to match: every citation in this
+> feature's artifacts already refers to these IDs, and renumbering silently invalidates them.
+
 - Lower `TTI_CEILING_MS` from `150_000` to `75_000` — the ≥50%-headroom criterion (SC-002). The
   constant already feeds both the `waitForSelector` timeouts and the assertion, so the ceiling stays
   reachable (the defect 076 fixed); do not reintroduce a separate wait.
 - Lower the transferred-JS sanity ceiling from `8000` KB to `2600` KB.
-- Add the assertion that **no response observed before the interactive mark** has a URL matching the
-  deferred chunk (`/_expo/static/js/web/assistant-`). This is what proves deferral rather than
-  merely benefiting from it — and it is the assertion that would have caught the boundary-too-high
-  mistake in research.md R3.
+- Add the assertion that proves deferral rather than merely benefiting from it — this is the
+  assertion that would have caught the boundary-too-high mistake in research.md R3. Assert it
+  **structurally, not by chunk name**: of the `_expo/static/js/web/*.js` responses observed before
+  the interactive mark, exactly one matches `entry-*.js` and there are **no others**.
+  Do *not* match on a `assistant-` filename prefix: Metro derives a chunk's name from the imported
+  module, so renaming `assistant-panel.tsx` would silently turn a prefix assertion into a
+  tautology that always passes. The structural form is also strictly stronger — it catches any
+  unexpected chunk, not just this one.
+- **Cover FR-007 in the same spec** — a second test case that loads an authenticated route as a user
+  whose assistant config is **not** runnable, asserting the same "entry chunk only" property. Without
+  it FR-007 has no assertion at all: every other test in this feature would still pass if a future
+  change prefetched the runtime unconditionally, because they all run as the seeded *runnable* user.
+  Clear the seeded config for this case and restore it afterwards, the way
+  `assistant-config.spec.ts` already does.
 - Keep the `perf-metrics` attachment and its fields; add the deferred-chunk verdict to the payload
   so the PR carries the evidence.
 
@@ -440,8 +459,9 @@ for (const p of ['text-encoding','web-streams-polyfill','zod','graphql','@copilo
 cd /home/coder/worktrees/077-web-bundle-diet/frontend/mcm-app
 MCM_REQUIRE_LIVE_STACK=1 pnpm exec playwright test tests/e2e/web/perf.spec.ts
 ```
-**Expected RED**: 1 test failing — the deferred-chunk assertion fails (there is no second chunk, so
-the whole bundle is on the critical path) and/or `Slow-3G TTI sanity ceiling: expected < 75000`.
+**Expected RED**: 2 tests failing — in both, the "entry chunk only" assertion fails because there is
+no second chunk at all, so the whole bundle is on the critical path; the runnable-user case also
+fails `Slow-3G TTI sanity ceiling: expected < 75000`.
 **Check the skip count is 0** — a skipped perf test reads as a pass.
 
 ---
@@ -459,8 +479,9 @@ the whole bundle is on the critical path) and/or `Slow-3G TTI sanity ceiling: ex
 cd /home/coder/worktrees/077-web-bundle-diet/frontend/mcm-app
 MCM_REQUIRE_LIVE_STACK=1 pnpm exec playwright test tests/e2e/web/perf.spec.ts
 ```
-**Expected GREEN**: 1 passed, 0 skipped; `perf-metrics` shows `slow3gColdTtiMs` < 75,000 and the
-deferred chunk absent before interactive.
+**Expected GREEN**: 2 passed, 0 skipped; `perf-metrics` shows `slow3gColdTtiMs` < 75,000, and in
+both the runnable and non-runnable cases the only JS chunk fetched before interactive is the entry
+chunk.
 
 **Also run the assistant suites** — these are the direct test of FR-008 (hydration across the new
 boundary), which no unit test and no export can prove:
@@ -471,6 +492,35 @@ MCM_REQUIRE_LIVE_STACK=1 pnpm exec playwright test tests/e2e/web/assistant.spec.
 ```
 **Expected**: previously passing tests still pass, 0 skipped. A hydration mismatch surfaces here as
 a dock that never becomes interactive — not as an export failure.
+
+### T013a — Confirm the native assistant is unregressed
+
+**Type**: Implementation (verification) | **Time**: 40 min | **Risk**: Medium
+
+**Spec reference**: FR-013
+
+**Prerequisite**: T011 complete.
+
+FR-013 is the one requirement with no web-side evidence at all, and until now it was named only in
+the parity table and the Final Validation block — work that belongs to no task is work that gets
+dropped under time pressure, which is why it has an ID.
+
+Nothing in T011 touches `src/assistant-polyfills.ts` or any native path, so this is a regression
+check rather than new behaviour. What could break it: the `AssistantProvider` move (step 2) changes
+where CopilotKit's provider mounts on **every** platform, not just web, and `React.lazy` with
+`Suspense` behaves differently under Hermes than under a browser.
+
+```bash
+cd /home/coder/worktrees/077-web-bundle-diet
+pnpm nx e2e:agents mcm-app
+```
+**Expected**: the existing agent flows (`assistant-add.yaml`, `agent-search.yaml`,
+`agent-add-ownership.yaml`) pass as before, 0 skipped. The emulator needs `/dev/kvm`, which the
+Docker Sandbox microVM cannot provide — run this on the Docker Desktop/DinD path per
+[openwiki/runbooks/android-emulator.md](../../openwiki/runbooks/android-emulator.md), or record here
+that it was deferred to CI's emulator half and why.
+
+---
 
 **Checkpoint**: US1 complete. The entry chunk is ≤2.4 MB, the assistant still works, and the perf
 test proves the deferral rather than assuming it.
@@ -503,6 +553,10 @@ Against synthetic `dist` fixtures in a temp directory, per
 - **Zero `entry-*.js` matches → exit 1** (not a pass). An export that never ran must not read as clean.
 - **More than one `entry-*.js` → exit 1.** Ambiguity means the reported number is not the claimed number.
 - A deferred package present in the entry chunk's source-map `sources` → exit 1, **naming that package**.
+- **A `src/bff-server/` module present in the DEFERRED chunk's map → exit 1.** SC-005 forbids server
+  code in *any* client chunk; a gate reading only the entry chunk would report clean while server
+  code shipped inside the deferred chunk. This case is the one that distinguishes assertion 3 from
+  assertion 2, so it must be tested explicitly or the wider scope is unproven.
 - Map absent → size check still runs, and the zero-modules assertion is reported as **skipped on its
   own line** rather than silently passing.
 - `--selftest` exits 0; an unknown flag exits **2** without scanning.
@@ -526,8 +580,10 @@ node --test scripts/__tests__/check-web-bundle-budget.test.mjs
 T011 actually measured, not from the probe's figure.
 
 Implement `scripts/check-web-bundle-budget.mjs` exactly to
-[contracts/bundle-budget.md](./contracts/bundle-budget.md) — flags, exit codes, both assertions, the
-failure text naming the overage and the newly-present packages, and `argv-contract` parsing.
+[contracts/bundle-budget.md](./contracts/bundle-budget.md) — flags, exit codes, **all three**
+assertions (entry size; deferred packages absent from the entry chunk; server-only code absent from
+*every* client chunk), the failure text naming the overage and the newly-present packages, and
+`argv-contract` parsing.
 
 **Verify GREEN**:
 ```bash
@@ -604,7 +660,7 @@ Mandatory per the constitution's Frontend App Quality Standards. Every scenario,
 |---|---|---|---|
 | US1-AC1 — cold `/home` excludes the assistant chunk | `perf.spec.ts` (T012) | **N/A** | Chunk splitting is a web-bundler behaviour. Native ships one Hermes bytecode bundle with no equivalent of a deferred HTTP chunk, so there is nothing to assert and no regression to catch. |
 | US1-AC2 — the assistant still opens and accepts input | `assistant.spec.ts`, `assistant-query.spec.ts` (existing, re-run T013) | `assistant-add.yaml`, `agent-search.yaml` (existing) | — |
-| US1-AC3 — a non-runnable config renders no dock | `assistant-config.spec.ts` (existing) | `assistant-config-disable.yaml` (existing) | — |
+| US1-AC3 / FR-007 — a non-runnable config renders no dock **and fetches no chunk** | `assistant-config.spec.ts` (existing, dock absence) + `perf.spec.ts` non-runnable case (T012, chunk absence) | `assistant-config-disable.yaml` (existing) | — |
 | US1-AC4 — idle prefetch, at most one fetch | Unit: `use-assistant-runtime.test.tsx`, `assistant-runtime-loader.test.ts` (T008, T006) | **N/A** | Deliberately not an E2E assertion on either platform: asserting on idle-callback timing through a browser is inherently flaky, and a flaky required check is not a check (the split recorded in `openwiki/invariants/testing-tiers.md`). The single-flight and scheduling contracts are fully determined at unit level. Native has no prefetch to test. |
 | US1-AC5 — loading state, then opens | Unit: `assistant-dock.test.tsx` (T010) | **N/A** | Requires a controllable slow chunk response. Deterministic at unit level; an E2E version would need network throttling fine enough to land inside the load window, which is the flakiness this repo already refuses elsewhere. |
 | US1-AC6 / FR-006 — chunk load fails, assistant stays recoverable | Unit: `assistant-dock.test.tsx` (T010) | **N/A** | Needs an injected import rejection, which only the unit seam provides. No native equivalent — there is no chunk to fail. |
@@ -614,7 +670,7 @@ Mandatory per the constitution's Frontend App Quality Standards. Every scenario,
 | US2-AC3 — a new server import fails the checks | `check-no-server-imports.test.mjs` (T003) | **N/A** | A repository gate, not app behaviour. |
 | US3-AC1/AC2 — the budget reports and fails correctly | `check-web-bundle-budget.test.mjs` (T014) | **N/A** | A repository gate. |
 | US3-AC3 — `perf-metrics` attached, ≥50% headroom | `perf.spec.ts` (T012) | **N/A** | The metric is a web transfer measurement. |
-| FR-013 — native polyfills and behaviour unregressed | — | `assistant-add.yaml`, `agent-search.yaml`, `agent-add-ownership.yaml` (existing) | Web has no polyfill requirement; the assertion only means something on native. |
+| FR-013 — native polyfills and behaviour unregressed | **N/A** | `assistant-add.yaml`, `agent-search.yaml`, `agent-add-ownership.yaml` (existing, run by **T013a**) | Web has no polyfill requirement; the assertion only means something on native. Owned by T013a rather than by the Final Validation block alone — work belonging to no task gets dropped. |
 
 ## Dependencies & Execution Order
 
@@ -631,7 +687,8 @@ Mandatory per the constitution's Frontend App Quality Standards. Every scenario,
 - T001 → T002 (test before implementation)
 - T003 → T004 → T005
 - T006 → T007; T008 → T009; both before T010 → T011
-- T012 must be verified RED **against the pre-T011 tree**, then GREEN in T013
+- T012 must be authored and verified RED **before T011 begins**, then GREEN in T013
+- T013a depends on T011 only; it may run in parallel with T013
 - T014 → T015 → T016
 - T017 last — it quotes the final measured numbers
 
@@ -646,7 +703,7 @@ Mandatory per the constitution's Frontend App Quality Standards. Every scenario,
 | Phase | Story | Tasks | Test tasks | Est. |
 |---|---|---|---|---|
 | 1 | US2 (P2) | T001–T005 | T001, T003 | ~3 h |
-| 2 | US1 (P1) | T006–T013 | T006, T008, T010, T012 | ~6 h |
+| 2 | US1 (P1) | T006–T013a | T006, T008, T010, T012 | ~7 h |
 | 3 | US3 (P3) | T014–T017 | T014 | ~3 h |
 
 **MVP**: Phase 2 alone satisfies SC-001 through SC-004. Phase 1 is a correctness fix worth shipping
@@ -672,7 +729,7 @@ pnpm nx bundle-budget mcm-app --skip-nx-cache
 # Web E2E — full suite; the diff touches the authenticated layout, so route scope is the whole app
 cd frontend/mcm-app && MCM_REQUIRE_LIVE_STACK=1 pnpm exec playwright test
 
-# Mobile agent flows — FR-013's only real check
+# Mobile agent flows — FR-013's only real check (T013a; needs the DinD/KVM path, not the microVM)
 pnpm nx e2e:agents mcm-app
 ```
 

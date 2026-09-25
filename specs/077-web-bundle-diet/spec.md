@@ -262,6 +262,8 @@ with the measured and permitted numbers named; restore it and confirm it passes.
   `react-native-web`, `react-dom` and `@tamagui/web` total ~1,000 KB and are needed to render
   any route. Reducing them is a separate concern and is out of scope; SC-001 is set
   accordingly and the constitution's 2-second 3G budget remains unmet after this feature.
+  That residual deviation is tracked as **item #565**, which owns the decision between continuing
+  to close it and amending the principle to a target this stack can meet.
 - **Route-level splitting is out of scope.** Measurement puts its ceiling at ~68 KB. If it is
   wanted later for its own sake, it is a separate item.
 - **The assistant remains additive.** Deferring its delivery changes when its code arrives,
