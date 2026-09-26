@@ -34,6 +34,12 @@
 // otherwise unreadable: the forge API exposes no job logs, and the failure digest only publishes on
 // failure. So on a green run there is nowhere to read `skipped=` from, and a skip reads as a pass.
 // `gate` moves that judgement into CI, where it cannot be skipped by whoever is not looking.
+//
+// For the same reason it NAMES what it counted (item #568). Run 4033 was green with `flaky=1`, and
+// which test had needed its retry could not be recovered afterwards by any route — counts mode
+// publishes only the tally logs, the bundle records "playwright report — not present", and this forge
+// build 404s `/actions/runs/{id}/jobs`. The identities were being parsed and discarded one function
+// later. On the green path this step's log is the only place they can survive.
 
 import { readFileSync } from 'node:fs';
 
@@ -94,10 +100,19 @@ export function failureSet(text) {
   return new Set(s.failed?.tests ?? []);
 }
 
-/** Counts a run should be judged by — never its exit status. */
+/**
+ * Counts a run should be judged by — never its exit status.
+ *
+ * The per-section IDENTITIES are carried alongside the counts, not dropped (item #568). They were
+ * parsed and discarded here for months, which is why a green run could report `flaky=1` and leave no
+ * way to learn which test it was: on the green path the dot-reporter output reaches no artifact a
+ * session can read. Counting something without naming it is the same defect this script exists to
+ * prevent, one level up.
+ */
 export function runCounts(text) {
   const s = parsePlaywrightSummary(text);
   const get = (k) => s[k]?.count ?? 0;
+  const tests = (k) => s[k]?.tests ?? [];
   return {
     failed: get('failed'),
     flaky: get('flaky'),
@@ -105,6 +120,9 @@ export function runCounts(text) {
     didNotRun: get('did not run'),
     skipped: get('skipped'),
     failedListed: s.failed?.tests.length ?? 0,
+    flakyTests: tests('flaky'),
+    skippedTests: tests('skipped'),
+    didNotRunTests: tests('did not run'),
   };
 }
 
@@ -201,7 +219,37 @@ export function gateCounts(text) {
         "dependencies: ['chromium'], so these never executed at all.",
     );
   }
-  return { counts: c, ok: reasons.length === 0, reasons };
+  // ── name what was counted (item #568) ───────────────────────────────────────────────────────
+  //
+  // `notes` is informational and never decides the verdict: a flaky test PASSED on retry, so naming
+  // it must not turn a green run red. It exists because on the green path these names reach no
+  // artifact — so if they are not printed into this step's log, which the counts bundle publishes,
+  // they are gone.
+  const notes = [];
+  const name = (label, count, listed) => {
+    if (count === 0) return;
+    notes.push(`${label}:`);
+    for (const t of listed) notes.push(`  ${t}`);
+    // A header that outnumbers its identities means a truncated log. Saying so matters more here
+    // than anywhere else: a reader who takes this list as complete would conclude the OTHER flaky
+    // tests did not exist, which is worse than printing nothing at all.
+    if (listed.length !== count) {
+      notes.push(
+        `  (the header says ${count} but ${listed.length} identit${listed.length === 1 ? 'y is' : 'ies are'} ` +
+          'listed — the log is truncated, so this list is INCOMPLETE)',
+      );
+    }
+  };
+  name(
+    `the ${c.flaky} FLAKY test(s) — each PASSED on retry, so the job stays green and this is the ` +
+      'only record of them',
+    c.flaky,
+    c.flakyTests,
+  );
+  name(`the ${c.skipped} SKIPPED test(s)`, c.skipped, c.skippedTests);
+  name(`the ${c.didNotRun} test(s) that DID NOT RUN`, c.didNotRun, c.didNotRunTests);
+
+  return { counts: c, ok: reasons.length === 0, reasons, notes };
 }
 
 function gate(file) {
@@ -213,11 +261,13 @@ function gate(file) {
     console.error('[e2e-gate] treating an unreadable log as a FAILURE — silence is not a pass.');
     return 1;
   }
-  const { counts: c, ok, reasons } = gateCounts(text);
+  const { counts: c, ok, reasons, notes } = gateCounts(text);
   console.log(
     `[e2e-gate] failed=${c.failed} flaky=${c.flaky} passed=${c.passed} ` +
       `did-not-run=${c.didNotRun} skipped=${c.skipped}`,
   );
+  // Before the verdict, so the names are present whichever way it goes.
+  for (const n of notes) console.log(`[e2e-gate] ${n}`);
   if (ok) {
     console.log('[e2e-gate] OK — nothing hidden: no skips, nothing left unrun.');
     return 0;
