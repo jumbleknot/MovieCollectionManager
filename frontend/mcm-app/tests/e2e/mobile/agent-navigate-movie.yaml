@@ -36,14 +36,37 @@ appId: com.grumpyrobot.mcmapp
       id: "assistant-dock-panel"
     timeout: 10000
 
-# The supervisor classifies ANY movie target as SEARCH, never navigate (supervisor.py: a MOVIE
-# target is NOT navigate; few-shot "open Inception => search"). So "open <movie> in <collection>"
-# routes to the search node; the named collection lets _run_owned resolve the single owned match to
-# a result BUTTON (New Scope 1 — never auto-navigated). Tapping the button emits navigate_to_movie →
-# router.push to the movie's detail screen. The phrasing MUST end with "… <Name> collection":
-# _extract_search only resolves a NAMED collection from a trailing "in my <Name> collection/list"
-# clause (search.py _NAMED_RE) — "open Epsilon in E2E Browse" fails to resolve → scope buttons (no
-# pick). The navigator node owns COLLECTION targets, not movies.
+# ⚠️ THE SUPERVISOR'S ROUTE HERE IS A MODEL DECISION — this flow must not assert which one it took.
+#
+# This comment used to state, flatly, that "the supervisor classifies ANY movie target as SEARCH,
+# never navigate (supervisor.py: a MOVIE target is NOT navigate; few-shot 'open Inception =>
+# search')". MEASURED FALSE on run 4069 (main, commit 6c2f74a1): all THREE attempts routed
+# `intent=navigate node=navigator`, while nine other turns in the same run routed
+# `intent=search node=search` — including this flow's web mirror, which PASSED on the same commit,
+# stack and model. The navigator then resolved the movie and emitted navigate_to_movie directly, so
+# the app was already on Epsilon's detail screen while this flow sat waiting 150 s for a pick button
+# that the chosen route never renders. Confirmed from the captured view hierarchy at the failing
+# step: `movie-detail-title` = "Epsilon", `assistant-ui-action-navigate`, and no `selection-options`.
+#
+# Note it failed 3/3, which reads like a hard regression and is not one: a classification is
+# deterministic for a fixed prompt, so a model-decision failure can be STABLE rather than
+# intermittent. "It failed every attempt" is not evidence against a model branch.
+#
+# Both routes satisfy US6-AC1 — the member ends on the named movie's detail screen — so THAT is what
+# this flow asserts now, per `_await-turn.yaml` and openwiki/invariants/testing-tiers.md. The mobile
+# suite has no tier split, and item #337 chose branch-tolerance as its equivalent rather than a
+# label; this flow simply was never migrated (`agent-search.yaml` still has not been — see the item).
+#
+# The two routes, for whoever reads a future failure:
+#   search   → _run_owned resolves the single owned match to a result BUTTON (New Scope 1 — never
+#              auto-navigated); tapping it emits navigate_to_movie → router.push.
+#   navigate → the navigator resolves the movie itself and emits navigate_to_movie straight away.
+#
+# The phrasing MUST still end with "… <Name> collection" for the SEARCH route: _extract_search only
+# resolves a NAMED collection from a trailing "in my <Name> collection/list" clause (search.py
+# _NAMED_RE) — "open Epsilon in E2E Browse" fails to resolve → scope buttons (no pick). That trailing
+# word is very likely also what tips the classifier toward `navigate`, since the navigator owns
+# COLLECTION targets; the web mirror says "in <name>" with no trailing noun and routed to search.
 - tapOn:
     id: "assistant-dock-input"
 - inputText: "open Epsilon in my E2E Browse collection"
@@ -51,19 +74,50 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "assistant-dock-send"
 
+# Wait for the turn to be ANSWERED without asserting which node answered it (item #337).
+- runFlow: "_await-turn.yaml"
+
+# Then, and only then, look for the pick — SHORT and `optional`, the _login-helper idiom.
+#
+# Short, because once the turn has been answered the buttons are either rendered or never will be;
+# the old 150 s here, retried 3x by ci-mobile-agent-flows.sh, is what turned one differently-routed
+# turn into a ~7.5-minute hunt for an element that was never coming.
+#
+# `optional: true` rather than a bare `when: visible`, because the affordance LAGS the bubble:
+# AG-UI streams TEXT_MESSAGE_CONTENT first and the tool call after, so a branch guard read
+# immediately after _await-turn sees neither branch (measured, CI run 2570). 30 s rather than the
+# sibling's 15 s buys margin for that lag; it is also the whole cost of the navigate route, which
+# falls through this wait.
 - extendedWaitUntil:
     visible:
       id: "selection-options"
-    timeout: 150000
-# The pick sits above the trailing controls and the dock auto-scrolls to the bottom — scroll it into
-# view (direction UP) before tapping (same off-screen-after-autoscroll pattern as agent-search).
-- scrollUntilVisible:
-    element:
-      id: "selection-option-pick-0"
-    direction: UP
-    timeout: 20000
-- tapOn:
-    id: "selection-option-pick-0"
+    timeout: 30000
+    optional: true
+
+# SEARCH route only. The pick sits above the trailing controls and the dock auto-scrolls to the
+# bottom — scroll it into view (direction UP) before tapping (same off-screen-after-autoscroll
+# pattern as agent-search).
+#
+# Still `selection-option-pick-0` rather than the "Choose <label>" accessibility selector
+# agent-navigate-collection.yaml argues for: its index-instability case is about `_clarify` emitting
+# one button PER COLLECTION, which this scoped movie search does not do, and swapping the selector
+# would be an unverified second change in the same edit. Recorded as a follow-up instead.
+- runFlow:
+    when:
+      visible:
+        id: "selection-options"
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "selection-option-pick-0"
+          direction: UP
+          timeout: 20000
+      - tapOn:
+          id: "selection-option-pick-0"
+
+# THE ASSERTION THAT MATTERS, and it is route-independent: the member is on Epsilon's detail screen.
+# This still fails loudly if navigation never happens by either route — it is narrowed to the model's
+# CHOICE, not weakened on the OUTCOME.
 - extendedWaitUntil:
     visible:
       id: "movie-detail-title"
