@@ -6,7 +6,7 @@ resource: frontend/mcm-app/README.md
 tags: [bff, expo-router, auth, proxy, nodejs, mongodb, backups]
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-22T01:58:43.929Z
+    at: 2026-09-26T05:36:02.343Z
 sources:
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
@@ -18,6 +18,8 @@ sources:
     resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
   - id: openwiki-source-1f97e5240572ea9ecae44ac5
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
+  - id: openwiki-source-e6a53b75d3e6241fef647e04
+    resource: repo://frontend/mcm-app/src/bff-server/agent-config-ssrf.ts
   - id: openwiki-source-c22d81a0331031d61ad2c7e3
     resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
   - id: openwiki-source-e37e5da5fa7401fdb7992219
@@ -32,11 +34,13 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/mc-service-client.ts
   - id: openwiki-source-1c2acc0a72ab64fd663510a9
     resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
+  - id: openwiki-source-a0956a8d887958011704f33b
+    resource: repo://frontend/mcm-app/src/bff-server/pinned-agent.ts
   - id: openwiki-source-3bf0ad96857ee228607b018c
     resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T01:58:43.929Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-26T05:36:02.343Z" }
 ---
 
 # BFF (Backend-for-Frontend)
@@ -69,17 +73,28 @@ across a service boundary into a backend service's store):
   each user's chosen LLM provider, encrypted API keys/Ollama URL, and TMDB key, so the assistant
   can run with the user's own credentials rather than a shared one. Secrets are AES-256-GCM
   sealed with `AGENT_CONFIG_ENC_KEY`, decrypted only transiently per run, and never returned to
-  the client or logged. A user-supplied Ollama URL is validated against an SSRF guard before it
-  is ever saved or probed — see
+  the client or logged. A user-supplied Ollama URL is validated against an SSRF guard
+  (`agent-config-ssrf.ts`) before it is ever saved or probed: by policy it allows private/LAN
+  addresses ("bring your own Ollama" is the point), always blocks link-local and cloud-metadata
+  addresses, and — since item #542 — narrows loopback to only the ports Ollama itself uses
+  (`AGENT_OLLAMA_LOOPBACK_PORTS`, default `11434`), because inside a container loopback is this
+  server, not the user's own machine. See
   [SSRF guard: canonicalized IP, not hostname string](../gotchas/agent-config-ssrf-guard.md)
-  for that mechanism (do not re-derive it here).
+  for the mechanism shared with the backups guard below (do not re-derive it here).
 - **Scheduled collection backups** (feature 073, `backup-*.ts`): per-user destinations
   (S3-compatible or WebDAV, credential sealed with a *separate* `BACKUP_CREDENTIAL_ENC_KEY`),
   jobs (what/where/how often/how many to keep), and run history. An unattended scheduled run
   acts as the user via a Keycloak **offline token** they explicitly granted — there is no
   service account and no privileged fallback; if the grant is gone, the run fails rather than
   finding another way in. Destination addresses go through a *different*, inverse-default SSRF
-  guard (private/loopback denied unless allow-listed) — also owned by
+  guard (`backup-destination-url-guard.ts`; private/loopback/link-local denied unless the host is
+  on `BACKUP_ALLOWED_DESTINATION_HOSTS`). The two guards keep opposite **policies** by design (an
+  Ollama endpoint is expected to be on the LAN, a backup destination is expected to be remote),
+  but as of item #542 they no longer differ in **mechanism**: both resolve the hostname, check
+  every DNS answer (not just the first), and pin the outbound connection to that vetted address
+  set via `createPinnedAgent` (`pinned-agent.ts`, extracted so both guards can share it) — closing
+  the TOCTOU window a name-only check would leave, where the resolver could hand back a different
+  answer to the HTTP stack than the one just checked. Also owned by
   [the SSRF guard page](../gotchas/agent-config-ssrf-guard.md), which documents both guards
   side by side.
 
