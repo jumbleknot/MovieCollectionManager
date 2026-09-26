@@ -41,6 +41,14 @@
  *   pipe. Byte totals barely move and everything looks merely disappointing. This
  *   assertion names that mistake instead.
  *
+ * FR-007 (a non-runnable config must fetch nothing) is NOT asserted here, and that is deliberate. The
+ * E2E form of it had to clear the SHARED test user's agent config and re-seed it mid-run, while nine
+ * other workers were executing assistant specs that assume a runnable dock —
+ * `assistant-config.spec.ts` gates itself behind E2E_AGENT_PRODUCTION for exactly that reason. Shared
+ * mutable state in a parallel suite is a defect however careful the teardown looks. The gate is fully
+ * determined at unit level and is asserted in `tests/app/(app)/_layout.test.tsx`, with the dock's own
+ * suite covering the other half (mounting is what schedules the prefetch).
+ *
  * THE WAIT AND THE CEILING ARE ONE CONSTANT, and that is load-bearing. They used to
  * disagree — the wait was 120 s while the assertion allowed 150 s — so any TTI in that
  * 30 s band died as a `TimeoutError` before `ttiMs` was ever computed. Three things
@@ -52,7 +60,6 @@
 import { test, expect } from './fixtures/worker-session';
 import { type Page } from '@playwright/test';
 import { E2E_BASE_URL as BASE } from './setup/target';
-import { agentSeedingEnabled, clearAgentConfig, seedAgentConfig } from './setup/agent-config-seed';
 
 /**
  * Cold-TTI ceiling, and therefore also the wait.
@@ -197,26 +204,4 @@ test.describe('cold-load budget (T040; feature 077)', () => {
     ).toEqual([]);
   });
 
-  test('a user with no runnable assistant config never fetches the assistant runtime', async ({ page }) => {
-    // FR-007. Every other test in this feature runs as the seeded RUNNABLE user, so without this
-    // case an unconditional prefetch would pass the entire suite: the dock-absence specs only
-    // assert the dock is absent, never that nothing was downloaded for it.
-    test.skip(!agentSeedingEnabled(), 'needs a seedable agent config to clear and restore');
-    test.setTimeout(180_000);
-
-    await clearAgentConfig(page.request);
-    try {
-      const { chunkNames, interactive } = await coldLoadHome(page);
-      expect(interactive, 'the route must still load for a user without the assistant').toBe(true);
-      expect(
-        nonEntryChunks(chunkNames),
-        'a non-runnable user fetched a non-entry chunk — the assistant runtime is being loaded for ' +
-          'someone who cannot use it',
-      ).toEqual([]);
-      await expect(page.getByTestId('assistant-dock-toggle')).toHaveCount(0);
-    } finally {
-      // Restore the seeded config; the rest of the assistant suite assumes a dock.
-      await seedAgentConfig(page.request);
-    }
-  });
 });
