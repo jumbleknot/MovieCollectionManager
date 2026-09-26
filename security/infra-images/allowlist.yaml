@@ -220,6 +220,79 @@
 # Same advisory the deleted upstream images carried as seed entries, so this is continuity of an
 # existing accepted risk, not a new one. Internal-only (Langfuse object store, not internet-facing).
 # Time-boxed; DELETE when a MinIO release ships grpc >= 1.79.3 rather than renewing the date.
+# ── The 2026-09-16 amqp091-go cohort, on OUR from-source MinIO image (item #560) ──────────────────
+# Three CRITICALs in github.com/rabbitmq/amqp091-go v1.10.0 (fix 1.13.0), all published 2026-09-16:
+#   CVE-2026-77405  missing explicit TLS minimum version in the URI parser
+#   CVE-2026-77408  silent data truncation / state corruption via a shortstr integer overflow
+#   CVE-2026-77411  protocol desynchronization and frame injection via an integer overflow in readLongstr
+#
+# THE SAME THREE ADVISORIES already carry entries above for grafana/otel-lgtm, added by the 2026-09-18
+# Renovate window. This is the same cohort reaching a second image by a different route — otel-lgtm
+# through otelcol-contrib's rabbitmq receiver, MinIO through its AMQP event-notification target — so
+# this continues an already-triaged accepted risk rather than opening a new question.
+#
+# HOW IT SURFACED, and how long it went unseen. `minio-image.yml` gates its own publish on this scan,
+# and its weekly cron went red on 2026-09-18 (run 3518) and every run since — 3947, 3960, 3979, and
+# the post-merge run on `main`. Nothing reported it: the scheduled run posts NO commit status, the
+# health digest does not read this workflow, and on a pull request `minio-image / build-publish` is
+# ADVISORY, so a red never blocks and nothing summarises it. Two weeks of a red gate on `main`, in
+# silence. That visibility gap is item #560's other half and is NOT fixed by this entry.
+#
+# NO UPSTREAM RELEASE CLEARS IT — measured at the source, not inferred (2026-09-26):
+#   RELEASE.2025-09-07T16-13-09Z  go.mod: amqp091-go v1.10.0   <- our pin
+#   RELEASE.2025-10-15T17-29-55Z  go.mod: amqp091-go v1.10.0   <- the NEWEST release
+#   master                        go.mod: amqp091-go v1.10.0
+# `curl raw.githubusercontent.com/minio/minio/<ref>/go.mod | grep amqp091-go`, three refs, one answer.
+#
+# AND THE STRUCTURAL REASON IT WILL NOT CHANGE BY WAITING: MinIO's last community release is
+# 2025-10-15, **eleven months BEFORE these advisories were published**. Community edition moved to
+# source-only and then stopped releasing; there is no upstream cadence left to deliver a fix. This is
+# criterion 1 of the `docs/runbooks/renovate.md` §4 rule in its strongest form — not "the wait is
+# long", but "no wait can ever satisfy it".
+#
+# WHY THE RISK IS ACCEPTED. All three defects are in the AMQP **client**, reachable only once MinIO
+# instantiates an AMQP notification target and connects to a broker. Checked across the whole tree
+# (2026-09-26), not assumed:
+#   • NO `MINIO_NOTIFY_*` variable is set anywhere — zero matches under infrastructure-as-code/,
+#     scripts/ and the BFF server;
+#   • NO AMQP broker exists in any stack — zero matches for rabbitmq or :5672;
+#   • all four MinIO instances run the same bare `server /data --console-address :9001` with only
+#     root credentials in `environment:`, so no target is configured at startup either.
+# With no target configured the client is never constructed, and the vulnerable readers and URI
+# parser are never reached.
+#
+# NOT INTERNET-FACING, on either instance:
+#   • `mcm-bff-backup-minio` publishes 127.0.0.1:9100/9101 — LOOPBACK only;
+#   • prod `langfuse-minio` declares NO `ports:` at all — internal compose network only.
+#
+# KEYED TO THE VERSION, DELIBERATELY DIVERGING FROM THE SIBLING ENTRY BELOW. The grpc entry keys on
+# the bare `jumbleknot/minio:` prefix, which matches every tag this image will ever carry; that was
+# accepted for it, but a floating key is exactly what feature 063 / item #297 forbids, and here it
+# would be actively wrong. Our tag is DERIVED from `MINIO_TAG` (`2025.09.07-161309` from
+# `RELEASE.2025-09-07T16-13-09Z`), so the version key makes a MinIO bump discharge these entries
+# mechanically: the moment the tag moves they stop matching, the gate re-blocks, and they come back
+# only with a scan of whatever release actually landed. Since a MinIO bump is the ONLY thing that
+# could ever clear these advisories, that is precisely the event this entry must not survive.
+# The registry host is still omitted — it is topology-sensitive and injected at runtime, and the
+# matcher is an unanchored regex, so this matches `<forge>/jumbleknot/minio:2025.09.07-161309@<digest>`.
+#
+# EXPIRY 2026-12-01 joins the existing cohort so the next re-triage stays one sitting. Per item #303,
+# DELETE these when upstream is remediated rather than letting the date pass.
+- image: 'jumbleknot/minio:2025\.09\.07-161309'
+  id: 'CVE-2026-77405'
+  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — missing explicit TLS minimum version in the URI parser) in our from-source MinIO image (feature 069, item #420). THE SAME THREE ADVISORIES already carry entries here for grafana/otel-lgtm from the 2026-09-18 window, so this continues a triaged accepted risk reaching a second image by a different route. NO UPSTREAM RELEASE CLEARS IT, measured at the source 2026-09-26 rather than inferred: amqp091-go is v1.10.0 in the go.mod of our pin RELEASE.2025-09-07T16-13-09Z, of the NEWEST release RELEASE.2025-10-15T17-29-55Z, and of master. Structurally unfixable by waiting: MinIO''s last community release is 2025-10-15, ELEVEN MONTHS before these advisories were published, and community edition has stopped releasing — there is no upstream cadence left to deliver a fix. Reachable only through MinIO''s AMQP event-notification target: no MINIO_NOTIFY_* variable is set anywhere in the tree, no AMQP broker exists in any stack, and all four instances run a bare `server /data` with only root credentials, so the client is never constructed. Not internet-facing — the backup instance binds 127.0.0.1:9100/9101 and prod''s langfuse-minio declares no ports at all. Version-keyed to the MINIO_TAG-derived tag so a MinIO bump — the only thing that could ever clear it — re-blocks and forces a fresh scan. Time-boxed; delete on upstream remediation, do not renew.'
+  addedBy: 'item-560'
+  expiry: '2026-12-01'
+- image: 'jumbleknot/minio:2025\.09\.07-161309'
+  id: 'CVE-2026-77408'
+  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — silent data truncation and state corruption via a shortstr integer overflow) in our from-source MinIO image (feature 069, item #420). THE SAME THREE ADVISORIES already carry entries here for grafana/otel-lgtm from the 2026-09-18 window, so this continues a triaged accepted risk reaching a second image by a different route. NO UPSTREAM RELEASE CLEARS IT, measured at the source 2026-09-26 rather than inferred: amqp091-go is v1.10.0 in the go.mod of our pin RELEASE.2025-09-07T16-13-09Z, of the NEWEST release RELEASE.2025-10-15T17-29-55Z, and of master. Structurally unfixable by waiting: MinIO''s last community release is 2025-10-15, ELEVEN MONTHS before these advisories were published, and community edition has stopped releasing — there is no upstream cadence left to deliver a fix. Reachable only through MinIO''s AMQP event-notification target: no MINIO_NOTIFY_* variable is set anywhere in the tree, no AMQP broker exists in any stack, and all four instances run a bare `server /data` with only root credentials, so the client is never constructed. Not internet-facing — the backup instance binds 127.0.0.1:9100/9101 and prod''s langfuse-minio declares no ports at all. Version-keyed to the MINIO_TAG-derived tag so a MinIO bump — the only thing that could ever clear it — re-blocks and forces a fresh scan. Time-boxed; delete on upstream remediation, do not renew.'
+  addedBy: 'item-560'
+  expiry: '2026-12-01'
+- image: 'jumbleknot/minio:2025\.09\.07-161309'
+  id: 'CVE-2026-77411'
+  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — protocol desynchronization and frame injection via an integer overflow in readLongstr) in our from-source MinIO image (feature 069, item #420). THE SAME THREE ADVISORIES already carry entries here for grafana/otel-lgtm from the 2026-09-18 window, so this continues a triaged accepted risk reaching a second image by a different route. NO UPSTREAM RELEASE CLEARS IT, measured at the source 2026-09-26 rather than inferred: amqp091-go is v1.10.0 in the go.mod of our pin RELEASE.2025-09-07T16-13-09Z, of the NEWEST release RELEASE.2025-10-15T17-29-55Z, and of master. Structurally unfixable by waiting: MinIO''s last community release is 2025-10-15, ELEVEN MONTHS before these advisories were published, and community edition has stopped releasing — there is no upstream cadence left to deliver a fix. Reachable only through MinIO''s AMQP event-notification target: no MINIO_NOTIFY_* variable is set anywhere in the tree, no AMQP broker exists in any stack, and all four instances run a bare `server /data` with only root credentials, so the client is never constructed. Not internet-facing — the backup instance binds 127.0.0.1:9100/9101 and prod''s langfuse-minio declares no ports at all. Version-keyed to the MINIO_TAG-derived tag so a MinIO bump — the only thing that could ever clear it — re-blocks and forces a fresh scan. Time-boxed; delete on upstream remediation, do not renew.'
+  addedBy: 'item-560'
+  expiry: '2026-12-01'
 - image: 'jumbleknot/minio:'
   id: 'CVE-2026-33186'
   justification: 'Our from-source MinIO image (feature 069, item #420). google.golang.org/grpc v1.72.0 (fix 1.79.3) is an INDIRECT dependency pinned in upstream MinIO''s own go.mod, so our choice of Go toolchain cannot move it — verified 2026-09-11 that the newest upstream release RELEASE.2025-10-15T17-29-55Z pins v1.72.0 too, so no bump clears it. Rejected forcing it with a go.mod replace: rewriting upstream''s dependency graph eight minor versions forward, unilaterally, on a service holding production object data is a larger change than the advisory warrants. The deleted upstream images carried a seed entry for this same advisory, so this continues an accepted risk rather than adding one. Internal-only. Keyed to the repository prefix WITHOUT the registry host, because the host is topology-sensitive and injected at runtime — the matcher is an unanchored regex, so this matches `<forge>/jumbleknot/minio:<tag>@<digest>`. Time-boxed; delete when a MinIO release ships grpc >= 1.79.3.'
