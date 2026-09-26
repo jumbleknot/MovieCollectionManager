@@ -14,7 +14,7 @@ import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/use-auth';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { storeSession } from '@/utils/session-storage';
 import { consumePkce } from '@/utils/pkce-store';
 

@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { getErrorMessage } from '@/utils/errors';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import type { RegisterRequest, RegisterResponse } from '@/types/auth';
 
 export interface RegistrationState {

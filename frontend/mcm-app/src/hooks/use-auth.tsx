@@ -14,7 +14,7 @@ import React, {
 import { useRouter } from 'expo-router';
 import { clearSession, hasStoredSession } from '@/utils/session-storage';
 import { clearAutoNav } from '@/utils/default-collection-auto-nav';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { getErrorMessage } from '@/utils/errors';
 import type { UserProfile } from '@/types/auth';
 

@@ -3,7 +3,12 @@
   "projectType": "application",
   "root": "frontend/mcm-app",
   "sourceRoot": "frontend/mcm-app/src",
-  "tags": ["scope:frontend", "type:app", "platform:mobile", "platform:web"],
+  "tags": [
+    "scope:frontend",
+    "type:app",
+    "platform:mobile",
+    "platform:web"
+  ],
   "targets": {
     "test": {
       "executor": "nx:run-commands",
@@ -12,7 +17,10 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": ["default", "^default"]
+      "inputs": [
+        "default",
+        "^default"
+      ]
     },
     "test:integration": {
       "executor": "nx:run-commands",
@@ -29,7 +37,9 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": ["default"]
+      "inputs": [
+        "default"
+      ]
     },
     "typecheck": {
       "executor": "nx:run-commands",
@@ -38,7 +48,10 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": ["default", "^default"]
+      "inputs": [
+        "default",
+        "^default"
+      ]
     },
     "e2e:mobile": {
       "executor": "nx:run-commands",
@@ -89,7 +102,10 @@
         "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml --profile bff-nonsecure --profile bff-secure up -d",
         "cwd": "{workspaceRoot}"
       },
-      "dependsOn": ["build", "start-keycloak"],
+      "dependsOn": [
+        "build",
+        "start-keycloak"
+      ],
       "cache": false
     },
     "eas-build-local": {
@@ -110,10 +126,23 @@
     "export-server": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx expo export --platform web",
+        "command": "npx expo export --platform web --source-maps",
         "cwd": "{projectRoot}"
       },
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "cache": true
+    },
+    "bundle-budget": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/check-web-bundle-budget.mjs --dist frontend/mcm-app/dist --require-maps",
+        "cwd": "{workspaceRoot}"
+      },
+      "dependsOn": [
+        "export-server"
+      ],
       "cache": true
     },
     "docker-build": {

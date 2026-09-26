@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getErrorMessage } from '@/utils/errors';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 
 export interface UseLogoutReturn {
   isLoading: boolean;

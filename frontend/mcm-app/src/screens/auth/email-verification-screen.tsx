@@ -12,7 +12,7 @@ import {
 import { useTheme } from '@tamagui/core';
 import { Banner, Button } from '@mcm/design-system';
 import { getErrorMessage } from '@/utils/errors';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 
 interface EmailVerificationScreenProps {
   email: string;

@@ -261,8 +261,11 @@ jobs:
       # `typecheck` (tsc --noEmit) closes an uncovered-check gap: no CI job ran it, so a type error
       # could land on main unnoticed (it had — a cross-copy @ag-ui/client AbstractAgent mismatch).
       # Only projects that define the target (mcm-app today) run it; the rest are skipped.
-      - name: nx affected — lint + typecheck + unit (remote-cache-backed)
-        run: bash scripts/ci-log-step.sh affected-nx pnpm nx affected --target=lint,test,typecheck --base=origin/main --head=HEAD --exclude=mc-service
+      - name: nx affected — lint + typecheck + unit + web bundle budget (remote-cache-backed)
+        # `bundle-budget` (feature 077) depends on `export-server`, so it costs one web export when
+        # mcm-app is affected and a cache hit otherwise. It is here rather than in guardrails because
+        # it needs the built artifact, and nx's affected graph is what keeps it off unrelated pushes.
+        run: bash scripts/ci-log-step.sh affected-nx pnpm nx affected --target=lint,test,typecheck,bundle-budget --base=origin/main --head=HEAD --exclude=mc-service
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

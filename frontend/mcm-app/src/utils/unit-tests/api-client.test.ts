@@ -30,7 +30,7 @@ jest.mock('@/config/bff-url', () => ({ BFF_BASE_URL: 'http://test.api' }));
 // ─── Module under test — imported AFTER mocks so createApiClient() sees them ──
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-require('@/bff-server/api-client');
+require('@/utils/api-client');
 
 // ─── Capture interceptors registered during createApiClient() ─────────────────
 

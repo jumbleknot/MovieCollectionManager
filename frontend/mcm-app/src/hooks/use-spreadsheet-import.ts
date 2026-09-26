@@ -12,7 +12,7 @@
 
 import { useState, useCallback } from 'react';
 
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 
 export type SpreadsheetImportStatus = 'idle' | 'uploading' | 'uploaded' | 'error';
 

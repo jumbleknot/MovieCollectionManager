@@ -5,6 +5,14 @@
  * sends NO `Authorization: Bearer` header — `withCredentials: true` carries the BFF's HttpOnly
  * session/access cookies (web same-origin; native via RN's cookie jar). On a 401 the response
  * interceptor silently refreshes (POST /auth/refresh re-sets the cookies) and retries once.
+ *
+ * WHY THIS LIVES IN THE UTILS-LAYER (feature 077 / item #566). It used to sit under
+ * `src/bff-server/`, which named the thing it TALKS TO rather than where it RUNS — and it runs in
+ * the browser and in the RN runtime, carrying the caller's own cookies, which is the whole point of
+ * it. That misfiling was not cosmetic: it made the directory useless as a signal, and it is how
+ * `backup-run-summary` came to be imported from a component and shipped 70 KB of `luxon` to every
+ * user. `src/bff-server/**` now means server-only, without exception, and
+ * `scripts/check-no-server-imports.mjs` enforces that.
  */
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';

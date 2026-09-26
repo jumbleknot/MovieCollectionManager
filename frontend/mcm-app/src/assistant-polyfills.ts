@@ -1,20 +1,22 @@
-// CopilotKit React Native polyfills loader (feature 012). Imported FIRST by app/_layout.tsx.
+// Assistant runtime globals — WEB (feature 077; the native loader is assistant-polyfills.native.ts).
 //
-// Hermes/React Native lack Web globals CopilotKit needs: `crypto.getRandomValues` (uuid — the
-// runtime-info fetch throws `crypto.getRandomValues() not supported` without it), a streaming
-// `fetch` (SSE agent runs), and `TextEncoder`. The crypto polyfill warns via `console.warn` at
-// import time; LogBox only suppresses FUTURE logs, so we register the ignore BEFORE loading it
-// (otherwise the banner overlaps the bottom-left assistant-dock toggle). `require` runs inline
-// (not hoisted like `import`), guaranteeing the ignore is in place first. No-ops on web.
-import { LogBox } from 'react-native';
-
-LogBox.ignoreLogs(['[CopilotKit] Installing non-cryptographic']);
-
+// Imported FIRST by app/_layout.tsx, on every platform. On web there is nothing to polyfill:
+// `TextEncoder`/`TextDecoder`, a streaming `fetch`, `crypto.getRandomValues`, the DOM globals and
+// `location` are all native to the platform, and the CopilotKit React Native polyfills that install
+// them all guard on the global first — so on web they ran, checked, and did nothing.
+//
+// They were not free, though. The `require`s are static, so Metro put `text-encoding` (535 KB) and
+// `web-streams-polyfill` (61 KB) in the ENTRY chunk: 596 KB of unreachable code in front of the first
+// paint, for every user, on every route. That is 14% of the pre-077 bundle.
+//
+// THIS COULD NOT BE FIXED INSIDE THE POLYFILL BARREL, and it is worth recording why the obvious
+// alternative fails. `@copilotkit/react-native/dist/headless.mjs` opens with `import "./polyfills.mjs"`
+// — a side effect of the package's OWN entry point — so any import of the package drags the barrel in.
+// Removing only this file's explicit `require`s while the root layout still imported the package
+// saved 69 KB of 4.28 MB. The split has to be at the platform boundary, here.
+//
+// What web DOES need is the refresh-retry wrapper: the CopilotKit runtime fetch to /bff-api/agent/run
+// bypasses the axios token-refresh interceptor on every platform, so a `/run` that meets an expired
+// `mcm_access_token` cookie must refresh and retry once. See utils/agent-fetch-refresh.ts.
 /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
-require('@copilotkit/react-native/polyfills/crypto');
-require('@copilotkit/react-native/polyfills');
-
-// Wrap globalThis.fetch so an expired access-token cookie on the agent /run route triggers a
-// silent refresh + retry (the CopilotKit transport bypasses the axios refresh interceptor).
-// Installed here — after the streaming-fetch polyfill, before CopilotKit issues any run.
 require('./utils/agent-fetch-refresh').installAgentFetchRefresh();

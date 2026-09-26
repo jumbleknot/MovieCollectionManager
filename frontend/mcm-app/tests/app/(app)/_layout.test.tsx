@@ -39,7 +39,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: {
     get: jest.fn(async () => ({ data: mockRunnableConfig })),
     put: jest.fn(),
@@ -117,5 +117,37 @@ describe('(app) layout — AssistantConfigProvider placement', () => {
     // refresh the dock in-session. Two providers would give two independent fetches.
     expect(getByTestId('probe-under-stack').props.children).toBe('true');
     expect(getByTestId('probe-under-dock').props.children).toBe('true');
+  });
+
+  // FR-007 (feature 077): a user who cannot run the assistant must not cause its runtime chunk to be
+  // fetched. The mechanism is this gate: `AuthedAssistant` renders nothing, so `AssistantDock` never
+  // mounts, so `useAssistantRuntimePrefetch` never runs and no chunk is requested.
+  //
+  // ASSERTED HERE RATHER THAN IN perf.spec.ts, deliberately. The E2E version had to clear the SHARED
+  // test user's agent config and re-seed it, mid-run, while nine other workers were executing assistant
+  // specs that assume a runnable dock — `assistant-config.spec.ts` gates itself behind
+  // E2E_AGENT_PRODUCTION for exactly that reason, and the perf version had no such guard. Shared
+  // mutable state in a parallel suite is a defect however carefully the teardown is written. The gate
+  // is fully determined at this level, and the dock's own suite proves the other half (that mounting is
+  // what schedules the prefetch), so the two together cover FR-007 with nothing shared.
+  it('closes the dock gate for a config that is not runnable, so nothing is fetched for it', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { apiClient } = require('@/utils/api-client');
+    // Same shape, one missing credential — the TMDB key — so `runnable` resolves false.
+    (apiClient.get as jest.Mock).mockResolvedValue({
+      data: { ...mockRunnableConfig, hasTmdbKey: false },
+    });
+
+    const { getByTestId, queryByTestId } = render(
+      <ThemeProvider>
+        <AppLayout />
+      </ThemeProvider>,
+    );
+
+    // The route still renders: the assistant is additive, and its absence must not affect anything.
+    await waitFor(() => expect(getByTestId('probe-under-stack')).toBeTruthy());
+    expect(getByTestId('probe-under-stack').props.children).toBe('false');
+    // And the dock — the only thing that would request the runtime chunk — is not mounted at all.
+    expect(queryByTestId('probe-under-dock')).toBeNull();
   });
 });

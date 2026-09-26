@@ -3,10 +3,10 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { useRegistration } from '@/hooks/use-registration';
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: { post: jest.fn(), get: jest.fn() },
 }));
 

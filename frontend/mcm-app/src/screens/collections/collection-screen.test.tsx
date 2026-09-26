@@ -110,7 +110,7 @@ jest.mock('expo-router', () => {
   };
 });
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), put: jest.fn() },
 }));
 

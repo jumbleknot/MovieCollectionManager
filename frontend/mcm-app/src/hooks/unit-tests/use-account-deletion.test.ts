@@ -16,7 +16,7 @@
  */
 
 const mockPost = jest.fn();
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: { post: (...a: unknown[]) => mockPost(...a) },
 }));
 

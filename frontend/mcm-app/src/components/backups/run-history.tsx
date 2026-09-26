@@ -7,7 +7,7 @@
  * never sees is a failure twice — once when the backup did not happen, and again when they
  * find out at restore.
  *
- * ALL DERIVATION LIVES IN `backup-run-summary`, not here. The rules that matter — a failure
+ * ALL DERIVATION LIVES IN `@/utils/backup-run-summary`, not here. The rules that matter — a failure
  * persisting until a later run SUCCEEDS, the next run rendered in the JOB's zone rather than
  * the device's — are the ones that go wrong quietly, and they are testable there without a
  * rendered tree.
@@ -27,7 +27,7 @@ import {
   formatNextRun,
   formatRunDuration,
   shouldShowFailureBanner,
-} from '@/bff-server/backup-run-summary';
+} from '@/utils/backup-run-summary';
 import type { RunSummary } from '@/types/backups';
 
 export interface RunHistoryProps {

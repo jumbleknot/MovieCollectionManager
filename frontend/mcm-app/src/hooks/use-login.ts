@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { getErrorMessage } from '@/utils/errors';
 import { storeSession } from '@/utils/session-storage';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import type { LoginRequest, LoginResponse } from '@/types/auth';
 
 export interface LoginState {

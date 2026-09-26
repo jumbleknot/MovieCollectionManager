@@ -21,11 +21,11 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { useMovies } from '@/hooks/use-movies';
 import type { Movie, CreateMovieRequest, FilterOptionsData } from '@/types/collection';
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: {
     get: jest.fn(),
     post: jest.fn(),

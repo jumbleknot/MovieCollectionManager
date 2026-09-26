@@ -156,6 +156,11 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh naming-override-consistency-gate node scripts/check-override-consistency.mjs --selftest
           bash scripts/ci-log-step.sh naming-override-consistency-gate node scripts/check-override-consistency.mjs
+      - name: Server-import gate (selftest + scan — no client-side import of src/bff-server, feature 077)
+        run: |
+          bash scripts/ci-log-step.sh naming-server-import-gate-selftest node scripts/check-no-server-imports.mjs --selftest
+          bash scripts/ci-log-step.sh naming-server-import-gate node scripts/check-no-server-imports.mjs
+
       - name: DAST gate selftest (feature 031 — check-dast-findings fail/suppress/clean paths proven each push)
         run: bash scripts/ci-log-step.sh naming-dast-gate-selftest node scripts/check-dast-findings.mjs --selftest
       - name: Realm-consistency gate (feature 039 — dev-realm.json ⟷ ci-realm.json client/user contract stays in lockstep)
