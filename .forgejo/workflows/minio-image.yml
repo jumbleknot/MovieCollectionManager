@@ -84,7 +84,23 @@ jobs:
       NS: ${{ vars.NS }}
       REGISTRY_USER: ${{ vars.REGISTRY_USER }}
     steps:
+      # The promotion step (below) pushes a branch, so this checkout needs the same three settings
+      # cd-deploy's does — a bare checkout would leave the promoter pushing with the run-provisioned
+      # token and from a depth-1 clone:
+      #   token/persist-credentials  the write-scoped PAT is what `git push` actually uses; without
+      #                              it the push authenticates as the run, which cannot create the
+      #                              branch the pull request needs as its head.
+      #   fetch-depth: 0             a force-push of a commit made on a SHALLOW clone is refused
+      #                              (`shallow update not allowed`). Costs a full clone on every
+      #                              run of this workflow, including the canary; that is the price
+      #                              of the promoter being able to push at all.
+      # Nothing here would have shown up on the pull request that introduced the promoter: the step
+      # only runs on a minio Dockerfile change, so no CI run exercises this path.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CD_PUSH_TOKEN }}
+          persist-credentials: true
 
       - name: Set up Docker CLI (talk to the runner's daemon socket)
         run: |

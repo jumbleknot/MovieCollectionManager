@@ -133,6 +133,24 @@ test('the promoter opens a pull request rather than pushing to main', () => {
   assert.ok(!/:(refs\/heads\/)?main['"`\s]/.test(refspec), `the promoter pushes to main: ${refspec}`);
 });
 
+test('the checkout can actually push the branch the pull request needs', () => {
+  // FOUND BY READING, NOT BY CI — and CI could not have found it. The promotion step only runs on a
+  // minio Dockerfile change, so no pull request exercises the push path; the first time this would
+  // have been discovered is the first real Renovate bump, which is precisely the moment it matters.
+  //
+  // A bare `actions/checkout` gives a depth-1 clone with the run-provisioned token. `git push` would
+  // then authenticate as the run rather than as the write-scoped PAT, and a force-push of a commit
+  // made on a shallow clone is refused outright (`shallow update not allowed`). cd-deploy, the other
+  // workflow here that pushes, sets all three.
+  const checkout = steps.find((s) => String(s?.uses ?? '').startsWith('actions/checkout@'));
+  assert.ok(checkout, 'build-publish has no checkout step');
+  assert.equal(checkout.with?.['fetch-depth'], 0, 'a shallow clone cannot force-push the promotion branch');
+  assert.match(String(checkout.with?.token ?? ''), /secrets\.CD_PUSH_TOKEN/,
+    'the checkout does not carry the write credential, so `git push` would use the run token');
+  assert.equal(checkout.with?.['persist-credentials'], true,
+    'credentials are not persisted into the remote, so `git push` has none to use');
+});
+
 // ── 4. The PR it opens is actually exercised ──────────────────────────────────────────────────
 
 test('app-ci still routes infrastructure-as-code/docker/** into the app filter', () => {
