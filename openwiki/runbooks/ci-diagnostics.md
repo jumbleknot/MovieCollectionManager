@@ -1,10 +1,28 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), the event-vs-trigger_event field split that makes a scheduled run look like a push, the ⏳ trap where absence in the 50-row tasks window is not evidence a job was never scheduled, the scheduled-run-posts-no-commit-status fix (item #485), and the commit-status bookkeeping pattern for green jobs whose output would otherwise vanish (item #457).
+description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the anti-ratchet per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), the event-vs-trigger_event field split that makes a scheduled run look like a push, the ⏳ trap where absence in the 50-row tasks window is not evidence a job was never scheduled, the scheduled-run-posts-no-commit-status fix (item #485), the commit-status bookkeeping pattern for green jobs whose output would otherwise vanish (item #457), and the mc-service evidence-bundle log-ordering trap that can manufacture a race that never happened (item #568).
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-09-19T12:00:00Z
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-26T17:09:29.023Z
+sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-f83bd1373e0f000fa5d548c0
+    resource: repo://docs/runbooks/ci-diagnostics.md
+  - id: openwiki-source-083be07d2570a758cc6c0b74
+    resource: repo://scripts/__tests__/renovate-health.test.mjs
+  - id: openwiki-source-f8f2427f127614b5db674fca
+    resource: repo://scripts/cd-dispatch-gate.mjs
+  - id: openwiki-source-1edeb18757a8f02d496d8f2b
+    resource: repo://scripts/ci-log-step.sh
+  - id: openwiki-source-70875ab1853f42b7c7d4b78a
+    resource: repo://scripts/ci-status.mjs
+  - id: openwiki-source-7183777a95d300ed54250302
+    resource: repo://scripts/ci-step-ceilings.tsv
+generated: { by: "openwiki/0.5.2", at: "2026-09-26T17:09:29.023Z" }
 ---
 
 # CI self-serve diagnostics
@@ -282,6 +300,18 @@ runtime rather than any literal configured value.
   unsupported formats, and reader-side entries past the 500-entry ceiling. The device-capture line is
   now **three-way**: carried / captured on the runner but not folded into `container-logs` / genuinely
   not present.
+- **A bundle's `logs/mc-service.log` is ordered by completion, not by start — read literally it
+  manufactures races that never happened (item #568).** mc-service logs its domain event in the same
+  emit as the response, at the END of the handler, so a slow request's line appears *after*
+  everything that ran during it. Recover real ordering by subtracting each line's `duration_ms` from
+  its own timestamp to get a start time, then sort on that — never trust file order for timing. A
+  fully-reasoned cross-worker race hypothesis, built from four adjacent raw lines, nearly triggered a
+  per-worker test-fixture redesign; subtracting durations showed the "later" write had actually
+  started earlier, so there was no concurrency to isolate at all. Before accepting any cross-worker or
+  cross-actor theory, check it against `subject` / `preferred_username` / `authorized_party` in the
+  same lines first — mc-service scopes collections by `owner_id = token.subject`, so two lines with
+  different `subject` values cannot be acting on the same collection regardless of how their
+  timestamps or sequential-looking ObjectIds line up.
 - **A session merging through the API must pass `delete_branch_after_merge: true` every time — the
   repo setting does not cover API merges.** `default_delete_branch_after_merge: true` (enabled
   2026-08-29) is the default for the **web UI merge button only**. An API merge omitting the flag

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:81ddb4e5ec75a508f6111f34608311f3e83a2fc3d0ac552ce5a30f0b6ddb9daf",
+  "claims": [
+    {
+      "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
+      "statement": "scripts/ci-status.mjs derives two check states that the raw Forgejo API misreports rather than trusting the literal payload: a path-gated job reads status=success with description \"Has been skipped\" (fails safe, since the payload never states why), and a run cancelled by a newer push reads status=failure on every context it touched even though nothing broke (fails loud, announcing a broken build that isn't); classifyCheckState checks the cancelled description or the owning run's own cancelled status before the success/failure branches to catch this.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-status.mjs#L193-L283",
+          "version": "repo-lines-v1:sha256:178a2a2576bc4b894a600b5f98c06a2d0e85968886a426a21fa8d414cb349c88:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwYzc3OWNkZTAwMDczNDc3YzIwODY2YzQ0ODYxMjgzMTQ0N2YxYTljMzc2ODYxNTMzMWU2ZDI4Yjg0NmJlZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MjgzYTMyMmE2NTgxOTcxN2NjZjc0ZGFhMTgwZmZkNGY3MGY3MjU5N2YyOWY5MWRlYTdlZjk1Y2Y2OTlmMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMzFmNjRiMDhlYzJjNGM4MTExNmYyYjI3MzQxYmVlZGY2OGI0NzllZWY4NDAyNTZkOWNiMTZjODQxNWRiYzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c3efe049ea6341a29f82b44d3a7a09b4",
+      "statement": "ci-status.mjs prints one of three skip-cause annotations derived by walking `needs:` edges parsed out of .forgejo/workflows/*.yml, because the commit-status payload for a skipped job never states why it was skipped: '(path-gated -> satisfied)' when every needs: dependency passed, '(NOT run - needs: X, which did not pass)' when a declared dependency failed, and '(skipped - cause not determined: ...)' when the workflow can't be parsed or the dependency hasn't reported yet.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-status.mjs#L285-L299",
+          "version": "repo-lines-v1:sha256:8a611b1a99871920db10a30536310fd86819a95d23f71fb23b7582039048224d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZThiNzUyZWJkNmMwOGRhNDRhNTE1MWM5Yzc4ZmIxMDY3YzVlNzNhN2JmM2NkOTE3YTZkYjhiYzgzZjY2OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZDY2MzQzY2QyMDVmMThlNDc2MGY0MTEwYjU4MmE3M2IzZjhjOGY4MjI3MDU1MDc0YzczMzI3NjZlOWY3MzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0YTg1OWQ4ZDdkOGQwMGViZjg0ZDU0NmIxOWUyYzI2OWJmNGQzOWFjNGI1OWQ2ZDQ1YzA5OWRjZTMyMzI3NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxZDAwZjNiMjAzNzViOGQ1OWE4YTU1NGQxNzA3NzAxZjU0MWNlZjFjOTQ5MGMyMDBlMGU3OWVkMTc1MTkzOTcifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L429-L429",
+          "version": "repo-lines-v1:sha256:10976fa88c8115ce8b1ded9bb1352b3164e268cf19005299626560d76a947fff:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5NzZmYTg4YzgxMTVjZThiMWRlZDliYjEzNTJiMzE2NGUyNjhjZjE5MDA1Mjk5NjI2NTYwZDc2YTk0N2ZmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5NzZmYTg4YzgxMTVjZThiMWRlZDliYjEzNTJiMzE2NGUyNjhjZjE5MDA1Mjk5NjI2NTYwZDc2YTk0N2ZmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzllNzJjMmM4N2EwZDY1OGIwZDYzODM1Nzg5NThkNmMxOWYyODI2MjBjODBhOTY3NmRjYzQ1NTFmY2QyMTA1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQzZmVmNzlhMzEzZjIyYjRjNzllZDAyMTliM2MwMjM1Y2UyNDQ1MjZhZjU3NWM1ZmZmNWM2ZDZmYTliODIwYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2318f3b41694aebb52b293af3e1161f",
+      "statement": "app-ci's app-e2e job is gated behind a dorny paths-filter `changes` job scoped to paths that affect app runtime behaviour, so a PR touching only scripts/docs/openwiki renders app-e2e `skipped -> satisfied` and the board goes green without the E2E suite ever executing, making the suite's true failure rate invisible from an all-green streak.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L100-L175",
+          "version": "repo-lines-v1:sha256:618420a5844746266a6601b1038a34583446dc343c5c877aee61372e9d51bce3:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxMzRhNjFlODY4ZTM2OGQ3NmExZTE2NjA0OGUzMDM5Y2EyNTQzMzgwMDMyYjJhNTJmOTQxYTQ4OTBjNmFmODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzOGNjOTZkMjdiNmFiYzU3NzI1NmJkNGExZTUxMmViNmUzODQxMTk5YTA5ZDBjN2ZmNWQ3ZjBlZmNmNDQ0NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhYWUyZDkzOTQxYmM3ZGJiNDFhZjgzYzkwZjhkZGI5NGE0MDUxNDg2NzBlMzA4MjQ3MDAzZDcyYzFhOTYzNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZWJhNzAyYjVmMDUwOWRmMTlmOWY0ZmFiN2NmMDg5Nzg4MzkxMmJmYjYzZmVkZmM3YThlOGQ5MTBmYWRhYjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_264609532be64fb3a0c47709b96a67ee",
+      "statement": "cd-dispatch-gate.mjs (run by app-ci's advisory trigger-cd job) imports scripts/ci-status.mjs to reuse its cancelled/superseded/skipped classification, and that job runs node directly with no pnpm install step and no node_modules, so ci-status.mjs and every module it imports must stay dependency-free (node builtins and repo-local files only); a devDependency import such as the `yaml` package passes local tests but crashes trigger-cd on main with ERR_MODULE_NOT_FOUND, and because trigger-cd is advisory this failure blocks nothing and posts no required-context signal.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1-L60",
+          "version": "repo-lines-v1:sha256:ca4acaa37cd9133aedda82590f637d33e17695a1e60c17bdc32ee4fb94f492fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYzIzZWE0N2I1OTI5NWY3MjJjNTI1ODJhYzg4OGIxOTQ2MGQyMTQ5NDgwOGRhZDkzNDdiZjFiZDBiMGJlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMDYwZDNiNDRmNWQ0MzYwZTYxNGQxNWYyNGExNmUyODgwYmI5NDU4ZmE0YTA5MDVjMmRjNjZjNTA1YmZhNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ZmE0YWEyYjQ5MTMyYzI5YjFhNDQ1ZTkyYjZjMWVjZDQyODU1Yzk5MjlhODRlYzM5ZmZjNTA1ODVhYWJhNTQifQ"
+        },
+        {
+          "resource": "repo://scripts/cd-dispatch-gate.mjs#L1-L39",
+          "version": "repo-lines-v1:sha256:0d37c5441bc18e751a6df311dfe0786b7294049e19099af89f47677bcb882052:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjY2I3ZTM2NTE2Zjc4NTViZTUxODM3OWU4ZGFiODllZWFjMGVkMWI5MmY4ZDAwYzc4YjQ4NzQyNWY3OTMwZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MDI3NDZiMTY2NTUyMWY3MjdlY2QwNGI5OGM1YTc5MzhiMzcyZTVkMTQ5YzE0MWNmYzQ5MzVmZGM5NTQzZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7595c235ca8147a6818a473e2456bc45",
+      "statement": "ci-status.mjs classifies a commit-status context's event from Forgejo's `event` field (push/pull_request/etc, embedded as a suffix like `guardrails / secret-scan (push)`), while a scheduled (cron) run reports `event: push` even though the run's `trigger_event` field is `schedule`; a step gated `if: github.event_name == 'schedule'` follows trigger_event and does run on the cron, so reading the `event` field alone to decide whether a scheduled check ever executed produces a false conclusion that it never ran.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/renovate-health.test.mjs#L219-L256",
+          "version": "repo-lines-v1:sha256:ac8623b8bfe9de124c1ee053c6bec4110b0470b0b225c7819d8b9fc8349215b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZTI5N2JhZGNiNWE3ZjY4Y2ZjZTZlMmFhNjRjYmUxODE5ZWU5MTNjMjlkYzE4YmYwOWZhMzUzMjFlNWNmOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllN2U3NWU4OGUwMDg1ZTRmOWEwYWU4ZWM0N2Y3ZjFiNzdhYjYxNzQxYTkzYzliN2E1MDlkMGYzMGM2ZDk2OWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhZDg0NWZlOWI0NGRjNDliMTZkMmQ4YTM3YmNjNzEwZDZmZGUzYjFmMGZmOGY1ZGJiNDY5M2VlYmIzZThjOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmOWM5N2I3YzEwNTVmMjQ4NWI2Y2IxOTRkNzg1YjRkNDNmZjYwNmE5YzQwZTYxMTdiYjQ5Y2RlNTY5OTFhZjgifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L214-L263",
+          "version": "repo-lines-v1:sha256:ffc7221a059b53cb2f4ea5a70dd3e3cdde866e6ca7f17c39c64a621190b74579:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MDNhMzlkZWUxNTkzZDBmYzI5MTc2NGI0OTdkZGY5NTczMDNiMGVkZDA1MGUzY2Y1MjdlOWE0ZDE2MWIyMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNGM2ZmQyYWIyMjZhNGI4NTg3ZjE1Y2YyNjUzNmIzMzJkYTY4OWRhNzBkNDU4OGJiZjE3MDY5NzY0NmVjM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhZTczMjdlYjU1MDFlMzY1OGNiNGM4YTM3ZTI5NmY2MTVjZmQ2OGIwYWIzOGY3OWU1ZjQ2NTRkZDRjZTY3YTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e5ed1cf70cd24702979c9bed7c93b805",
+      "statement": "Because a branch-protection required-check glob like `guardrails*` or `app-ci / app-e2e*` matches a context regardless of its event suffix, ci-status.mjs separates the whole-commit verdict (which evaluates every context any required glob matches, across all events, the same way branch protection does) from the single-event view chosen by --pr/--event; a verdict that only looked at one event previously reported VERDICT mergeable for a commit whose required context had actually failed on a different event, and the subsequent merge call was rejected by the forge.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-status.mjs#L214-L263",
+          "version": "repo-lines-v1:sha256:ffc7221a059b53cb2f4ea5a70dd3e3cdde866e6ca7f17c39c64a621190b74579:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MDNhMzlkZWUxNTkzZDBmYzI5MTc2NGI0OTdkZGY5NTczMDNiMGVkZDA1MGUzY2Y1MjdlOWE0ZDE2MWIyMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNGM2ZmQyYWIyMjZhNGI4NTg3ZjE1Y2YyNjUzNmIzMzJkYTY4OWRhNzBkNDU4OGJiZjE3MDY5NzY0NmVjM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhZTczMjdlYjU1MDFlMzY1OGNiNGM4YTM3ZTI5NmY2MTVjZmQ2OGIwYWIzOGY3OWU1ZjQ2NTRkZDRjZTY3YTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_542d808cc2d2444ba521542e36ac7a7a",
+      "statement": "bundleJobName() in ci-status.mjs must derive the evidence-bundle-owning job differently depending on context shape: a real Actions check renders as `<workflow> / <job>` with spaces, where the job is the trailing segment, while a job's self-posted narrow status such as `infra-image-scan/weekly` carries no ` / ` separator and the bundle-owning job is the leading segment, not the trailing label; using tail-splitting uniformly on the narrow form produces a confident false '404, bundle not found' for a bundle that exists under the correct name.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-status.mjs#L220-L249",
+          "version": "repo-lines-v1:sha256:b707b9e8cae36cf3212ab623e2dd99f70e6408c506aed181c9093aea29405e82:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMDJhMWMxMDNiYTUxZmQ1NTQxNTQ2ODliMmQ4Njc3MjlmNGE3YzczMjE0Yzc1NWM0Mjk3MmZmZWM4ZGNiMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZGI2ZWZmNWZjZmZmNjYzOWZkMDg1MDljMWI4ODliMGY4M2UzNjExNDcwNWNlMTgzMmNiOGM3MWNiYTQyNjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1e9d793eb64b46d8a67164443668c798",
+      "statement": "ci-log-step.sh records one row per wrapped CI step into a per-run duration sample (step, seconds, exit code, ceiling) on every run, success or failure, and scripts/ci-step-ceilings.tsv is generated from that sample by `ci-status.mjs durations --propose` using the rule max(observed) x 3 (rounded up to a minute, floored at 300s); a step killed at its ceiling is recorded as censored and excluded from the sample specifically to prevent an anti-ratchet failure where each kill would shrink the next calibration's observed maximum and tighten the ceiling until legitimate runs start failing.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L1-L40",
+          "version": "repo-lines-v1:sha256:c5e6a1d0559ecbbb54ceebc2a565902524f12f41b5fca18c6495a0959299c669:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ZWZkNDQ4ZmQyNTAzZWVkOWRkNjA5OWE3NjA1NDM3YWYxYTA5YjIxNDIwMjRlNGQxNGVlZTBhNTcyZjU3OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5NDQ4NjYwODQ2NWMyOGNhMWI0MDE0MjcyMTgyZmQ4ZDUyZWMxOTdkMGY2NGRlYmYwYTA0Zjg5ODIxMDkzZDUifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-step-ceilings.tsv#L1-L10",
+          "version": "repo-lines-v1:sha256:2c543c20768e2570a79125bbe55e2d45d899f69332cecb28d346d66245767258:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNzgwMzNhMmIxZjQ0Y2YyMWFiYWY2NjFhNWEyN2RjNmIxYTg2MmNhMzgzMjM0MjAxZTVjNDgzNGMzMDljNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMTM0YjM1MDVhMWE3NTNiYTdkMTE3Yzg2ZjJkZTgzM2YwZDg2ODQ2YmQ4OTI1YjIxMDAyOTNmYjNmNWUzODgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4YmUxN2NlNTEwZDM5YjRhMGYzNTgzZDQ3OGQ1MGFlNDg3ODIwY2QzZDFjYjgwZGMzNzJiZjI4OGVkZmU5OTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5c4a60323aa490a8b5c2cdc57a7b143",
+      "statement": "Because only app-e2e publishes a counts bundle on an explicit green run, every other CI job's successful run leaves no machine-readable trace of what its steps measured (no bundle, no per-job log endpoint, no commit status by default); the pattern used to recover a measurement from an otherwise-silent green job is to have the step export its value to $GITHUB_OUTPUT and add an always()-gated, continue-on-error step that curls the value onto the commit as its own commit status (state always 'success', with the finding carried in the description, and the context name checked against the live required-check glob list so it cannot accidentally start gating merges).",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1-L60",
+          "version": "repo-lines-v1:sha256:ca4acaa37cd9133aedda82590f637d33e17695a1e60c17bdc32ee4fb94f492fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYzIzZWE0N2I1OTI5NWY3MjJjNTI1ODJhYzg4OGIxOTQ2MGQyMTQ5NDgwOGRhZDkzNDdiZjFiZDBiMGJlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMDYwZDNiNDRmNWQ0MzYwZTYxNGQxNWYyNGExNmUyODgwYmI5NDU4ZmE0YTA5MDVjMmRjNjZjNTA1YmZhNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ZmE0YWEyYjQ5MTMyYzI5YjFhNDQ1ZTkyYjZjMWVjZDQyODU1Yzk5MjlhODRlYzM5ZmZjNTA1ODVhYWJhNTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea57244cc0c24e9986b8e3114b133d3b",
+      "statement": "A pull request opened via an AGit push (HEAD:refs/for/main) has no backing branch, so Forgejo treats the run as untrusted and executes it without Actions secrets, silently emptying every ${{ secrets.* }} rather than failing the job outright; ci-status.mjs detects and prints a DETACHED HEAD warning for this case because the resulting failure (e.g. a rejected remote-cache request) otherwise looks like an unrelated credential or infrastructure fault.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L911-L935",
+          "version": "repo-lines-v1:sha256:590696c7049e250734122d05d310edb6703e894edc6b6ff72a458c1caee5abc7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1YmNmZTFlZDRjMWRiNTY0OTljZWE1NGQxYzBhNzVmNTcwNjc2MTMzNTdlNDEwOTRiYjMwN2FlYTUxYjQyNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjFiNTc2MzhhNmUyY2M2YmU4NGRlNTQ1NzQxZGExMTU5ODU0YWNjMDBmM2U5YjAyOGZjNzZhNDM4OWM5NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YTZlZGNiOTgyNGRiNWVhMGI3Zjg4YzI2OWQwMGYxMDEwY2U4NDcwNTA2OTQ4MDk0MDI4NjNjNTQ4YzVhMDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d81acfe57ce4859961b053bdf91cf81",
+      "statement": "mc-service writes its domain-event log line at the end of a request handler in the same emit as the response, so logs/mc-service.log's line order is completion order rather than start order; reconstructing true temporal (start) order for a bundle's mc-service log requires subtracting each line's own duration_ms from its timestamp rather than trusting file order, and cross-worker or cross-actor race hypotheses built from raw line order should be checked against the subject/preferred_username/authorized_party fields and mc-service's owner_id=token.subject collection scoping before being accepted, since two lines with different subject values cannot be acting on the same collection.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1127-L1181",
+          "version": "repo-lines-v1:sha256:fd71e0d9c53c1cbbaf37a7675f616e4a2072907b1299b22dca2b968361109d87:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OWY0YzVkOGU4MmVhY2I1NzU5NTA5YWY2NmYxN2Q0MTExNzU4NzczMjYyYmM4Y2Q1YzYzNjY1YWVjNjMzMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ODQwNDA3YTNiOGU2ZGNiOTc3NzYzMzQ5NWFmN2RmZWZhMWE0NDQ0YTUyNGIxZWI5ZThiMmMwNDkyODcyMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNzZjYzA5ODE5ZTNkYTA4M2VlMzMwZGJkM2QzYjQyYjUxNGIxYTY2MmUzMTUyOGYxODFiYTg1OTQ0NTJlZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0MjZhNjE0YzQ4Nzc4YjUwNzViOWM2NDQyMzAyOGI5YTUzYjE2ZGY0ZTU1ZGJlYzA0ODMyN2EyZDc0NzkyM2YifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-26T17:09:29.023Z"
+  }
+}
