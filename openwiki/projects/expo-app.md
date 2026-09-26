@@ -4,9 +4,6 @@ title: Expo/React Native universal app
 description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router and Tamagui. Ships as one codebase with its BFF (see BFF page) but this page covers the client-side app shape, design system, settings surface, and client-facing test/build gotchas.
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, frontend]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-22T01:58:43.929Z
 sources:
   - id: openwiki-source-82e76cb56a030095b60d27cd
     resource: repo://frontend/mcm-app/babel.config.js
@@ -18,6 +15,8 @@ sources:
     resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-c8e81d294ad2807a33f05f9b
     resource: repo://frontend/mcm-app/src/app/(app)/settings/_layout.tsx
+  - id: openwiki-source-270d6bd7fa29a88c9a2cfdc4
+    resource: repo://frontend/mcm-app/src/app/(app)/settings/account.tsx
   - id: openwiki-source-fa9ffadc9c0f6cf6a84dd5ff
     resource: repo://frontend/mcm-app/src/app/(app)/settings/backups.tsx
   - id: openwiki-source-c80309c52a299fc12aeafd42
@@ -28,15 +27,22 @@ sources:
     resource: repo://frontend/mcm-app/src/components/register-form.tsx
   - id: openwiki-source-820baf1f5bc3988fd0753bfe
     resource: repo://frontend/mcm-app/src/components/settings/settings-nav.tsx
+  - id: openwiki-source-570a958599bcf5038114a6fc
+    resource: repo://frontend/mcm-app/src/hooks/use-account-deletion.ts
   - id: openwiki-source-3470392bd8be4b3899ff3adb
     resource: repo://frontend/mcm-app/src/hooks/use-backup-consent.ts
   - id: openwiki-source-2bc02f78645afcdb5307ca15
     resource: repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts
   - id: openwiki-source-a2cf9da271335518572da652
     resource: repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx
+  - id: openwiki-source-7d847d9fc555e071868ecb1d
+    resource: repo://frontend/mcm-app/src/utils/api-client.ts
   - id: openwiki-source-f7e16ba323424b9790bca8b9
     resource: repo://packages/design-system/package.json
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T01:58:43.929Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-26T05:36:02.343Z" }
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-26T05:36:02.343Z
 ---
 
 # Expo/React Native universal app
@@ -52,10 +58,18 @@ and renders a screen component, never the other way round.
 The [design system](./design-system.md) is Tamagui-based (`@mcm/design-system`), dark-first by default (theme choice is
 persisted client-side only — no backend involvement), with a compliance test suite enforcing
 design-token usage rules and tracked "sanctioned deviations." All client-side network calls go
-through `src/bff-server/api-client.ts`, which never attaches an `Authorization` header — it relies on
-the browser/RN cookie jar and `withCredentials: true` to carry the BFF's session cookies (see
+through `src/utils/api-client.ts` (an Axios instance with a 401 silent-refresh-and-retry
+interceptor), which never attaches an `Authorization` header — it relies on the browser/RN cookie
+jar and `withCredentials: true` to carry the BFF's session cookies (see
 [Auth chain](../invariants/auth-chain.md)). Login itself uses OAuth2 + PKCE against Keycloak
 directly from the client before handing the resulting code to the BFF.
+
+**`api-client.ts` moved out of `src/bff-server/` (feature 077 / backlog item #566) — do not put it
+back.** It used to live under `src/bff-server/`, a name that described what it talks to rather than
+where it runs; since it runs in the browser/RN runtime carrying the caller's own cookies, that
+misfiling was not cosmetic — it is how a component once imported `backup-run-summary` and shipped
+70 KB of `luxon` into the web bundle. `src/bff-server/**` now means server-only without exception,
+and `scripts/check-no-server-imports.mjs` enforces that a client module never reaches into it.
 
 Directory-vs-file routing choices under `src/app/` are load-bearing in more than one place (the
 `collections/[collectionId]/` collection route and the `settings/` route group both rely on a
@@ -68,9 +82,19 @@ for the canonical rule and rationale; it is not restated here.
 `src/app/(app)/settings/` is a route group with its own `_layout.tsx` that renders a shared
 `SettingsNav` sub-navigation (`src/components/settings/settings-nav.tsx`) above whichever area is
 routed via an Expo Router `Slot` (not a nested `Stack` — the areas are a tab row with no push/pop
-history of their own). Each area is a thin route (`index.tsx`, `assistant.tsx`, `backups.tsx`,
-`admin.tsx`) that reports its own `current_screen` label to the BFF/agent gateway via
-`useReportUiState` and renders a screen component from `src/screens/settings/`:
+history of their own). `SettingsNav` composes the design system's vertical `NavList` rather than a
+horizontal `Tabs` row — that shape was measured on a 320px device and found to put the Admin entry
+off-screen behind an unindicated scroll (backlog item #240), and `Tabs` drew active/hover selection
+as two visually disagreeing states. Selecting an area calls `router.replace`, not
+`router.navigate`/`push`: on this Expo Router version `navigate` pushes a sibling area onto the
+stack instead of swapping it, which left two mounted copies of a screen (a strict-mode/testID
+collision on web) after a few area switches.
+
+Each area is a thin route (`index.tsx`, `assistant.tsx`, `backups.tsx`, `account.tsx`, `admin.tsx`)
+that reports its own `current_screen` label to the BFF/agent gateway via `useReportUiState` and
+renders a screen component from `src/screens/settings/`. The area registry
+(`SETTINGS_AREAS` in `settings-nav.tsx`) is the single source of truth for the row order and
+labels:
 
 - **Profile** (`profile-settings-screen.tsx`) — the landing area, `current_screen: settings`.
 - **Movie Assistant** (`assistant-settings-screen.tsx`) — per-user agent provider/API-key config,
@@ -83,15 +107,60 @@ history of their own). Each area is a thin route (`index.tsx`, `assistant.tsx`, 
   `version-list.tsx`) and the `src/hooks/use-backup-destinations.ts`, `use-backup-jobs.ts`,
   `use-backup-consent.ts` hooks, all of which call the BFF's `bff-api/backups/*` routes through the
   same cookie-authenticated `api-client.ts` as everything else — no destination secret is ever
-  held by the client beyond the moment it is submitted. See [BFF](./bff.md) for the
-  server-side scheduling/storage half of this feature; the backup procedure itself is not restated
-  here.
+  held by the client beyond the moment it is submitted (an edit form always starts with an empty
+  secret field; omitting the field on an update preserves the stored secret server-side). Granting
+  the standing consent is a round trip through the identity provider, not a local toggle: `useBackupConsent().startGrant()`
+  only asks the BFF for an authorization URL, the caller navigates the user there, Keycloak returns
+  them to a BFF-owned callback, and the BFF is what actually records the grant — the client only
+  ever polls the resulting status. `revoke()` mirrors this asymmetry: if the identity provider
+  refuses the revocation the BFF answers 502 and *keeps* the permission, and the hook surfaces an
+  error rather than optimistically clearing it, because telling the user "done" here would be a
+  lie. See [BFF](./bff.md) for the server-side scheduling/storage half of this feature; the backup
+  procedure itself is not restated here.
+- **Account** (`account-settings-screen.tsx`, feature 076) — currently a single destructive
+  action, account deletion, driven by `use-account-deletion.ts`. It sits last among the
+  non-admin rows by design: an area whose only purpose is an irreversible action does not belong
+  beside the ones a user visits routinely. Every user may delete their own account, including an
+  admin who is not the last one — there is no `adminOnly` flag on this row. Deletion always
+  requires a *fresh* re-authentication at Keycloak (`prompt=login`, `max_age=0`, so an existing SSO
+  session cannot be silently reused) before the BFF will act, but the two platforms get there
+  differently: on web the BFF builds the authorization request, holds the PKCE verifier
+  server-side, and receives the callback itself, so the browser only ever sees a URL to navigate
+  to; on native, the BFF cannot redirect a native app, so the device runs the
+  `expo-auth-session` flow itself, mints its own PKCE verifier, and posts the resulting code back
+  to the BFF to complete. Both paths use a deletion-specific callback/deep link, distinct from the
+  login one, and neither mechanism deletes anything client-side — the deletion happens server-side
+  only after the BFF validates the returned proof.
 - **Admin** (`admin.tsx`) — visible in the nav only for an `mc-admin` user, but that filtering is
   presentation only: the route itself carries its own `ProtectedRoute requiredRole="mc-admin"`
   guard, because a hidden nav entry is not access control.
 
 Adding a settings area is meant to be one registry row in `settings-nav.tsx` plus a route and a
 screen — no other area's code should need to change.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Screen as BackupsSettingsScreen
+    participant Hook as useBackupConsent
+    participant BFF
+    participant KC as Keycloak
+
+    User->>Screen: tap "Allow scheduled runs"
+    Screen->>Hook: startGrant()
+    Hook->>BFF: GET /bff-api/backups/consent?start=1
+    BFF-->>Hook: authorizationUrl
+    Hook-->>Screen: authorizationUrl
+    Screen->>User: navigate to authorizationUrl
+    User->>KC: authenticate and consent
+    KC->>BFF: callback with code
+    BFF->>BFF: exchange code, store grant
+    BFF-->>User: redirect back into the app
+    Screen->>Hook: reload()
+    Hook->>BFF: GET /bff-api/backups/consent
+    BFF-->>Hook: granted: true, grantedAt
+```
+The standing-backup-consent grant is a client-initiated, identity-provider-mediated round trip: the client only ever requests a URL and later polls status, never records the grant itself.
 
 ## Gotchas
 

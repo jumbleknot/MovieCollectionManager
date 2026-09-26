@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cbbc4f3a70fe53f6296c922cddbb002d4a77f9e6858b13d443ec223f81bc3ca5",
+  "pageVersion": "sha256:3d67e05388e4bdb68a6c8cce58cb0cb9f9f8748488f0c991d20982afaa692067",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -62,11 +62,11 @@
     },
     {
       "id": "claim_0bf59a5559c84f3a91fc08c616d21b5e",
-      "statement": "The settings sub-navigation is defined by a single SETTINGS_AREAS registry (src/components/settings/settings-nav.tsx) listing Profile, Movie Assistant, Backups, and an admin-only Admin entry; role-based hiding of the Admin entry is presentation only, and access is actually enforced by a separate ProtectedRoute requiredRole=\"mc-admin\" guard on the admin route itself.",
+      "statement": "The settings sub-navigation is defined by a single SETTINGS_AREAS registry (src/components/settings/settings-nav.tsx) listing Profile, Movie Assistant, Backups, Account, and an admin-only Admin entry (Account has no adminOnly flag and is placed last among non-admin rows because it is a purely destructive action); role-based hiding of the Admin entry is presentation only, and access is actually enforced by a separate ProtectedRoute requiredRole=\"mc-admin\" guard on the admin route itself.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/components/settings/settings-nav.tsx#L17-L57",
-          "version": "repo-lines-v1:sha256:d88feabc48cc7fb60c8b27acd2c764c1423dfef591435c7ed2ba537fcb5771ed:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNGI0NDUxYjI3OGUwNWY5MzA2MzRmYjcyOTJhMzNiNTA4MTYwNjAzZmY1ZTkzODY2Mzk2ZjUyYTc4NzRmMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0YjhiYjI1MmFhNmU5NmE3YWJhMzZhOTU0ZmY0NDk0NTI1Nzg5ZjgxMGNjMjcyMzY4ZDk4NmU2ZDI3ZGI5ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3MjZmZGRkMjk1MmY3ZTVlZTRiODMxYWE1YjBjZWZjMzM1MjY1MjJjMDdlZmU5MGFlY2JiYzAwZTFjN2MyM2IifQ"
+          "resource": "repo://frontend/mcm-app/src/components/settings/settings-nav.tsx#L17-L61",
+          "version": "repo-lines-v1:sha256:575878747ffbcb9bb851bbe4bda1d8111d7466722d70ae70bf88b9c1a8cc4be9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNGI0NDUxYjI3OGUwNWY5MzA2MzRmYjcyOTJhMzNiNTA4MTYwNjAzZmY1ZTkzODY2Mzk2ZjUyYTc4NzRmMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0YjhiYjI1MmFhNmU5NmE3YWJhMzZhOTU0ZmY0NDk0NTI1Nzg5ZjgxMGNjMjcyMzY4ZDk4NmU2ZDI3ZGI5ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3MjZmZGRkMjk1MmY3ZTVlZTRiODMxYWE1YjBjZWZjMzM1MjY1MjJjMDdlZmU5MGFlY2JiYzAwZTFjN2MyM2IifQ"
         }
       ]
     },
@@ -90,11 +90,11 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/hooks/use-backup-consent.ts#L1-L29",
-          "version": "repo-lines-v1:sha256:3803970568a0a014b3407b5fb2c8fd7c79b05482847b52c3f22ae0b020cacf50:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwZDM5NmU3ZmZjNDY5NDgxMGQyYzZiNTdiNWMzN2E3N2ZjMDdjNjQzMTQ5MjAzODU4MDQ5ZjliMDU3ZDUzNGYifQ"
+          "version": "repo-lines-v1:sha256:bc09886a6a44ccf957343af36435fe5bd1d8c13a6f0ff2ca83fea36ce8994cc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwZDM5NmU3ZmZjNDY5NDgxMGQyYzZiNTdiNWMzN2E3N2ZjMDdjNjQzMTQ5MjAzODU4MDQ5ZjliMDU3ZDUzNGYifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts#L1-L42",
-          "version": "repo-lines-v1:sha256:324ca01d23520181661c5641527171654078d2bbf884092b060cb5c1d2b619fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZGE3MzEzMzRmZWI3NWNmMDVhM2Y0NDhiNTVjNTU4YWU4YjY4MDZkMDQ3YzBjYzcyZjFlNDkxNWYwMDg3ZmEifQ"
+          "version": "repo-lines-v1:sha256:85d047d256e0b7cd11fe4a751b8e8e9a57bb4cc5f6878fd2438c4fba6ade1163:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZGE3MzEzMzRmZWI3NWNmMDVhM2Y0NDhiNTVjNTU4YWU4YjY4MDZkMDQ3YzBjYzcyZjFlNDkxNWYwMDg3ZmEifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L1-L54",
@@ -104,11 +104,19 @@
     },
     {
       "id": "claim_edc85c1d09a2476ba6e956c198f41d35",
-      "statement": "The Backups settings area's hooks call the BFF's bff-api/backups/* routes through the same cookie-authenticated api-client.ts as the rest of the client, and a destination secret is write-only end to end — the client never receives one back and an edit form starts with an empty secret field by design.",
+      "statement": "The Backups settings area's hooks call the BFF's bff-api/backups/* routes through the same cookie-authenticated src/utils/api-client.ts as the rest of the client, and a destination secret is write-only end to end — the client never receives one back, an edit form starts with an empty secret field by design, and omitting the secret field on an update preserves the stored secret server-side.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts#L1-L30",
-          "version": "repo-lines-v1:sha256:f092190b43bd965fd2069746cc3add1b684d576fc5d69b42a530679d009945d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0N2Q0NGZkYTM1Nzk0NTdlNzdkYTVlZTQ2YTRkYWM0MGVlODMyNGYzNWZlNjQ4MTFjODViYmYyNGYzZWFmZTgifQ"
+          "version": "repo-lines-v1:sha256:c2a51b82956d6c42752dcbe8146070a121ce86f3d57c7ec292eb200dd7c9bb0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0N2Q0NGZkYTM1Nzk0NTdlNzdkYTVlZTQ2YTRkYWM0MGVlODMyNGYzNWZlNjQ4MTFjODViYmYyNGYzZWFmZTgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts#L100-L120",
+          "version": "repo-lines-v1:sha256:c5bb12271d62a7cea5e24ff71499f586cb796a3dc3703e7ebe00fc493caefbfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhMGM3MzJkODkyZjIwNDY3MzE1ZjA0NTI0YzkyM2U2N2NhMWJiNTY4NTJhY2RlOTk1NzdjMmQ1YzAwNzkxZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1MWY0NmY3NTgxZGVmNjkzMmIzNmQ2YjFkZDAzN2ZmZjQzMmE0ZjBlNjJiMTFiNWM2N2JjNzk3ZmM5YmJhYTIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L1-L30",
+          "version": "repo-lines-v1:sha256:7b0a0194db6a58e78b134d360cfa34ce9655c0c6979d34e4b1843ad91633791d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5N2Y0ZDA1MWZkNWYyMDNiODdjMWMyYjZkMmNiNmEwYWUzODA1MjY5OTNlNThiNmQ5NDdiMjJiOWZhY2QxNzAifQ"
         }
       ]
     },
@@ -125,10 +133,54 @@
           "version": "repo-lines-v1:sha256:4360cccc1dcc04b543529d18f6b72a2736f67ba5a7310602b2e4a274427dbda1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZmM5MGFiODUwZDEzNTdiY2ExNWRhZmY1MjM2MDI0NDM0Y2Y1ZjVmMGM0YTc0NjM3YzVmMjc1ZjY4OTQyMWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczN2NlY2Y4MTZkNmE4NjVjYTI1ODExNmE5NTEzODhiNjQ1YWI3NDUyYzE2NDVmMGM5MDQ5MjljZjU4YWQwMzgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_56eef3ccd32a4d51990922432132c0a8",
+      "statement": "src/utils/api-client.ts was relocated out of src/bff-server/ (feature 077 / backlog item #566) because that path named what it talks to rather than where it runs; scripts/check-no-server-imports.mjs now enforces that src/bff-server/** is imported only by server code, preventing a repeat of a prior bug where a client component imported a server-only backup-run-summary module and shipped an unwanted luxon dependency into the web bundle.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L1-L20",
+          "version": "repo-lines-v1:sha256:458c0b66c6796bd1c3e252d9c7f1848cb22f108d7d275f3bfde585dd545ee77b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWYzYTQ2ZmM2YWRlMWFlMWE4NDMyNTlhOTgxOGIxOTM3MWU0NTQ4NTcxYjc3NzlkMjM4MzUwYzNjYWQ1NmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4NjAwZDY5MzkyNWI1Mzg1MDljODViYTY2OTBlYjIzZjFiN2VlYmY0NGIyYTE0NDMwMWJiMDgwMDM3YjEzYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_163fad30abd145cd8c0903b4ebc8925a",
+      "statement": "The Account settings area (feature 076, src/screens/settings/account-settings-screen.tsx backed by src/hooks/use-account-deletion.ts) lets a user delete their own account, but only after a fresh re-authentication at Keycloak (prompt=login, max_age=0) that the BFF verifies server-side; on web the BFF builds the authorization request and owns the callback so the browser only sees a redirect URL, while on native the device runs its own expo-auth-session + PKCE flow (using a deletion-specific redirect distinct from the login callback) and posts the resulting code back to the BFF, and in neither case does the client itself perform the deletion.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/(app)/settings/account.tsx#L1-L16",
+          "version": "repo-lines-v1:sha256:04cf109daaa8c0f761b75d79fc96adbce38d44558d8fd4a609e35bf441831681:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-account-deletion.ts#L1-L98",
+          "version": "repo-lines-v1:sha256:634094cd8c3ffbae318597c2d08ef9a14dfd58de0f069e13d93dc4c9d2e88e80:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YjNkYzI3MzUzODMxOWFkYzBmYjJiY2U0ZWExNDQ1ZmE0MmVhNDZiNzYyYzc2Y2Q5NWExNTUxZGY4NzZmMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_55efb57467ad443aae4a0240d0be0c7f",
+      "statement": "Granting the Backups area's standing scheduled-run consent (src/hooks/use-backup-consent.ts) is a client-initiated, identity-provider-mediated round trip, not a local toggle: startGrant() only asks the BFF for a Keycloak authorization URL, the BFF itself records the grant after the user authenticates and Keycloak calls back, and revoke() surfaces an error and leaves the granted state unchanged (rather than optimistically clearing it) whenever the BFF reports that the identity provider refused the revocation.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-consent.ts#L1-L107",
+          "version": "repo-lines-v1:sha256:6405f748da6f9999d41c9f5d78346cd06903028347b60e833ed7698fdf6dd226:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_56014bf8322f4efcbcf715208888d0bf",
+      "statement": "SettingsNav selects an area via router.replace rather than router.navigate/push because on the app's Expo Router version navigate pushes a sibling settings area onto the navigation stack instead of swapping it, which previously left two mounted copies of the same settings screen (a testID collision on web) after switching areas a few times; the settings area list itself has no back-stack of its own.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/settings/settings-nav.tsx#L92-L112",
+          "version": "repo-lines-v1:sha256:5ffcb984031b5f3ad835bde1465356fe977d14a86dce06ec8d9caedb606735d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0NThjMjZhNTA4M2JhOTc3NWRkZmY3ZmFkNWJlNjQ1NThlMzVkZDMyMTUyODg5ODE3NzI2ZjU4ZmNkZjdkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2YjA2ZTZiNWMzZGQyZTAzOGFlNDE2MmU2NTYwYjlmMzRhNGRkODdmM2Q4OTI1YjlhMjIxNTlmN2IwNDFhMjgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T01:58:43.929Z"
+    "at": "2026-09-26T05:36:02.343Z"
   }
 }

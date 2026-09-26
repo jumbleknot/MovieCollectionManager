@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:48b7f3264698c3aacab1c420b565727e5358808a40b92de03178c33bb11ea57b",
+  "pageVersion": "sha256:fd1e96553cb01f4ccd562f9c1f37d0f4f58439e2db433f0db3d1ded7c97c1278",
   "claims": [
     {
       "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
@@ -47,8 +47,16 @@
           "version": "repo-lines-v1:sha256:d3f2d0af9ce30455c6e4a573f5011c01e11d423cce8722a722ebce32c7cb7dbd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4MjkyNjBhNTRiMWRlNzJjNTQ3YzNhZmY2NjkxNjI5ZGEyNzEyNDVhMzllNTEwZDE5ZTA5N2I3MjM1N2M4NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2M2Y5ZWEwZGRjYWEyNDRiODJmNTExYTNlMDliNzJkMzRlNWZkYzhlZWI1MzIwNThjYTBjOWJlOGY1ZjMwOWUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/config/env.ts#L79-L138",
-          "version": "repo-lines-v1:sha256:ed8453e7570a468b3d7e9f84e92fca367b5cf5b84578e73c971af8bcfa3caa16:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YzgwZjU0ZmUyNjQxZTRjMjM5MzRjZjE4ZmIzM2UzNGM1MDI5NDgzMTJmYWY4ZWNkZmMwNGI3ODUwZTBkZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YmIyN2ZkNDkwZDFkMTI3YzcyMmVkMDJlZDNmMDNhMTQwNmJmMWE2NGUzNmE2Njc3NjIxNjlmZDhiZTJmM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMDcxNzM5NzBiNjEwM2YxYzM2MDhkNjg1MTIxM2Q3NzQ5NmI0YzAzNzMwYmU3MjU4ZmI1OGE4OTFhZTk4MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MTNiYzNmNWQ5ZmRiYjZjMWNmNTAxOGUwYzhlYzA2NGYzY2NhYTZiNTI5ZTI0NzFmYzc3ZTBhZTUzMGUwNTIifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/mongo-client.ts#L138-L154",
+          "version": "repo-lines-v1:sha256:ba0ee4a7b60d6542fedb9679e64995ffaf4f22f7aa3a180b80f1046bd39418b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ZjdkZGZjZTVhYjRkZGJkZjVjNDk0YTAyODBiZDk1ZjA4OTExYzllNjE1MGZjMTg3NDdiNjliYjZhYWU3ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmNDYzZjM0OTU1NmU4NjRlZTM1MDQxODYzNmZhNjI5N2ZjMGE5Mjc5M2U4NWZhOTQ1YzExYWI0N2M5OTRiY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlYTY1ZTNhZmFmYTY0MzIxMDhiM2ZkOTNmNmQ1N2U5MGY4YjI4MzgxZTEzYzgzNjhiM2MxOWYxMGY3ZmFmMzcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L142-L145",
+          "version": "repo-lines-v1:sha256:b6c73927f58a9e7f5d5cd55732efecc987326a3ef4d0b0e4f3996616947e0806:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU1MzYzMDk4Y2E1ZjJlOGRiMjZkNmIyNzFjZTQ1MmJkNDllYWEzMjI5N2U0MjVkNGI0MGYyNWI3N2JjMTliNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdiYjI3ZmQ0OTBkMWQxMjdjNzIyZWQwMmVkM2YwM2ExNDA2YmYxYTY0ZTM2YTY2Nzc2MjE2OWZkOGJlMmYzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjE5ZjYzOWVjZTlmY2IzZmNlODA0NTJiNGFiNDkxYTU0OThmMzA2YjhhMGVkMTkzNjgxNWY1ZDIyMTNmMmJkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQxM2JjM2Y1ZDlmZGJiNmMxY2Y1MDE4ZTBjOGVjMDY0ZjNjY2FhNmI1MjllMjQ3MWZjNzdlMGFlNTMwZTA1MiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L79-L95",
+          "version": "repo-lines-v1:sha256:6dd21f003a42d6ab7e753b8f88b80552dd5cb07ede50e9c2b1de8ac7628de6f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YzgwZjU0ZmUyNjQxZTRjMjM5MzRjZjE4ZmIzM2UzNGM1MDI5NDgzMTJmYWY4ZWNkZmMwNGI3ODUwZTBkZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5M2Q5ZjlkY2M2YzJkMDc0YzMyZDA2ZTM3MTE4ODkzMTY0NTc4M2I0ODA5ZWQzOTJkYmViZWEyZjViZGY3ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMDcxNzM5NzBiNjEwM2YxYzM2MDhkNjg1MTIxM2Q3NzQ5NmI0YzAzNzMwYmU3MjU4ZmI1OGE4OTFhZTk4MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkYTM0ZmFkOWY3OWQzMDVlODMzOGQzYzgxMTE5MDdmOTNjZTNkOTA4MDVkYjVhZjQ1ZTM0ZmY5NjFhOGM3NjcifQ"
         }
       ]
     },
@@ -86,15 +94,19 @@
     },
     {
       "id": "claim_c65ff4c09cf74611a54783366b7b7ca6",
-      "statement": "Feature 073 (scheduled backups) enforces a distinct, inverse-default SSRF-style guard on user-supplied destination hosts (private/loopback/link-local denied by default, opt-in via BACKUP_ALLOWED_DESTINATION_HOSTS) that is separate from and does not supersede the feature 018 Ollama-URL SSRF guard, which instead allows private/loopback addresses by default.",
+      "statement": "Feature 073's backup-destination-url-guard.ts and feature 018's agent-config-ssrf.ts remain two guards with opposite address-classification policies (backup destinations deny private/loopback/link-local by default, opt-in via BACKUP_ALLOWED_DESTINATION_HOSTS; the Ollama guard allows private/loopback by default and only narrows loopback to Ollama's own ports via AGENT_OLLAMA_LOOPBACK_PORTS) — but as of item #542 they no longer differ in mechanism: both resolve the hostname via DNS, check every returned address (not just the first), and pin the outbound connection to that vetted address set using the shared createPinnedAgent helper extracted into pinned-agent.ts, closing the resolve-then-reconnect TOCTOU window a name-only check would leave open.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts#L1-L20",
-          "version": "repo-lines-v1:sha256:3bb3042b3b5aa143f8475cc558dfa098e8c2baadc61e05c0b20207f970572b03:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwY2IzY2Q4YWJmN2NhYTE2MWU1OTQxODJmZjQ3M2FlNDliMmU5MjExYzc4NmFkOTUyMWIyYmM2YjQyZTBlNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZmU0ZmNlYTEyOTM2ZmM1MWY2OWIwOTQ2NmExMTEwZTFjNTA1M2M0YWRiYjBjMTk5ZjliOWQxNjg0ZjhiNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjYmE0N2FkZTZkZDVmNmIzMjNhNjMwMzlhZDEzYTYzMDNhY2I1N2RjYmE4OGYxMGZmYTNkODYzYzEyNDE0YjIifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-config-ssrf.ts#L1-L24",
+          "version": "repo-lines-v1:sha256:3000223b342b182a671f3e04b0e957ab63424a32f181efb96efbe08b40fd09c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NGRiYzJlODU2MGI0ZWUyZGY3YmYzNTI3Y2Q5NTZhMjJmYzc5YjhkOGY4MDU4OWViMTE4YjQxNmUyZGM2NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYmI3YTViYThlOWFjZmY2ZTBmZjhiYTRkMGE4MjQwNjlmZDE4NjE2NWE5NWRiYjIwOGM0MzFkNjNkNzE5YjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMDQ3MWU2Y2JhOWNkNGQ1M2IwYTYyYmRkNDdhOGJkYjNhMjhhZDI5MGNiOTM5ZDM0ZGM3MmY0N2ZiNmJjMTgifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/config/env.ts#L113-L118",
-          "version": "repo-lines-v1:sha256:ddee6d38cca41554a05d82df091f764e57486c2dc4e819adf46536736d2e36a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMzYTk2MmJlM2ViMWM1MDY2MTJlYzMzZGE4MDE0ZjMxOWE4MjJiMjc4MTg2ZDFhN2Q3NGI3MmFhOGM1ZjdlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQ1ZjE5ZGEwOWYyNWQ2YTQ4OGQ4NTQ3OWNkZGEzNTQ5MzljNTFiM2I5NzY2YjdlMmI0YTNkZmY4OTRjZWE1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ4MTQxNTc5YTY0OGJiYzNkNzg1YzY2NThjMDhmMGFlZWE1M2I1YzhkODJlNTQyY2I5YTUwNzUyYmIwNjMwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzViOWQyZmNkMmRkZjFlOGFkN2NkN2VlMGQwNGFiY2Q0YzY1YjljMzM2OTU1ZTFiOTJlYTViMDE0NDMwMzY2NyJ9"
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts#L1-L22",
+          "version": "repo-lines-v1:sha256:a1bca65fb1f3a2f0cd40acf25d360b56a88d07da2e86499edad0b794177d74c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwY2IzY2Q4YWJmN2NhYTE2MWU1OTQxODJmZjQ3M2FlNDliMmU5MjExYzc4NmFkOTUyMWIyYmM2YjQyZTBlNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMzkyNjljZGNlYmE5Njg1ZDQyYmQzMWVkMzg5NjAxMmMwNzcyNjFhODFjYWY3YTRkZGE1MWY3ODNhNzM0YWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMDQ3MWU2Y2JhOWNkNGQ1M2IwYTYyYmRkNDdhOGJkYjNhMjhhZDI5MGNiOTM5ZDM0ZGM3MmY0N2ZiNmJjMTgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/pinned-agent.ts#L1-L13",
+          "version": "repo-lines-v1:sha256:ecc5432766009f4e7f2d5c69e19200d696073803c710b2b9738bfb9eeed09be8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1Y2FiYTExOTAwNTAzMjgyZjNmZTUyMjQwYmMyMWRlNGI0YzYwYjgyM2NjYTNlYjA4ZjAxY2U5OWVhZTRkMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzOWJkZjUyODQ4YWVhODc2MWU2NDViZmU4MmZmMTZiMzMxZjlmNjJiMTA4MWZkYmI0Yzk0OGJkNTliMTE0YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2ZjA2YTFiMGQyNTVjOWNkYTIzMDQwZjFiNjc2OGViYWU3NDQzNDBhYTRjOTIwZTU5NjJkYWY5Yzk3MTFkYTYifQ"
         }
       ]
     },
@@ -139,6 +151,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T01:58:43.929Z"
+    "at": "2026-09-26T05:36:02.343Z"
   }
 }
