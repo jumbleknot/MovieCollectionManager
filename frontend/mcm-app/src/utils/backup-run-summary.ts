@@ -12,8 +12,19 @@
 //
 // NOTHING HERE READS A CLOCK, a device locale or a stored preference. Every input is an
 // argument, which is what makes the awkward cases reachable from a test.
-
-import { DateTime } from 'luxon';
+//
+// WHY THIS IS IN THE UTILS-LAYER (feature 077). It used to live under `src/bff-server/`, and
+// `run-history.tsx` — a client component — imported it. The constitution's BFF-Layer "must run
+// server-side and never be included client-side", so that import shipped this module AND its
+// `luxon` dependency to the browser: 70 KB on every route, for one formatted timestamp. The header
+// above already described a pure function of its arguments, which is the Utils-Layer's definition;
+// only the directory disagreed. `scripts/check-no-server-imports.mjs` now fails on a repeat.
+//
+// `Intl.DateTimeFormat` replaced `luxon` here for the same reason — it is a platform global, so it
+// costs nothing to ship. Verified byte-identical to Luxon's `d LLL yyyy, HH:mm` across DST-on and
+// DST-off London, a negative offset and a half-hour zone (specs/077-web-bundle-diet/research.md R4).
+// `luxon` remains a dependency: `bff-server/backup-schedule.ts` still uses it, server-side, where
+// its cost is nobody's download.
 
 import type { BackupCollectionCount, RunSummary } from '@/types/backups';
 
@@ -59,11 +70,30 @@ export function formatArtifactSize(bytes: number | undefined): string | null {
  */
 export function formatNextRun(nextRunAt: string | undefined, timeZone: string): string {
   if (!nextRunAt) return 'Not scheduled';
-  // `{ zone }` explicitly on every call: omitting it falls back to Luxon's default zone, which
-  // is the DEVICE's — right on a developer's machine and in CI, wrong for everyone else.
-  const dt = DateTime.fromISO(nextRunAt, { zone: timeZone });
-  if (!dt.isValid) return 'Not scheduled';
-  return `${dt.toFormat('d LLL yyyy, HH:mm')} (${timeZone})`;
+  const instant = new Date(nextRunAt);
+  if (Number.isNaN(instant.getTime())) return 'Not scheduled';
+  try {
+    // `timeZone` explicitly on every call: omitting it falls back to the PLATFORM's zone — right on
+    // a developer's machine and in CI, wrong for everyone else. `en-GB` rather than the device
+    // locale for the same reason the zone is explicit: the string must not change with who is
+    // reading it. `hour12: false` because a schedule set at 03:00 must not be shown as 3 AM.
+    const shown = new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(instant);
+    return `${shown} (${timeZone})`;
+  } catch {
+    // An unrecognised zone. Luxon returned an invalid DateTime here, which the old `!dt.isValid`
+    // branch turned into 'Not scheduled'; `Intl.DateTimeFormat` THROWS `RangeError` instead. Without
+    // this catch a stored-but-unknown zone stops being a formatted string and becomes an unhandled
+    // exception inside a settings screen — the one behavioural difference in the swap.
+    return 'Not scheduled';
+  }
 }
 
 /**

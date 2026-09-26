@@ -78,6 +78,80 @@ export function partitionArgs(argv, { accepted, maxPositionals = 0, usage = '' }
 }
 
 /**
+ * Split argv where some flags TAKE A VALUE, still rejecting anything unrecognised.
+ *
+ * THE EXTENSION THE SCOPE NOTE ABOVE ASKED FOR (feature 077). `partitionArgs` treats every flag as
+ * valueless on purpose, because inferring values would let `--target --apply` swallow the second
+ * flag. Two read-only gates then needed real values (`--dist <dir>`, `--budget <bytes>`), and the
+ * alternative was a third hand-rolled parser — which is the exact drift this module exists to end.
+ * So the value case is declared, not inferred: a flag takes a value only by being named in
+ * `withValues`, and everything else about the contract is unchanged.
+ *
+ * Both spellings are accepted (`--dist /tmp/x` and `--dist=/tmp/x`) because both are what people
+ * type. Three things are REFUSED rather than guessed:
+ *
+ *   - an unrecognised flag, as always;
+ *   - a value-taking flag with nothing after it — `--budget` at the end of argv is a typo, and
+ *     defaulting it would run the gate against a number the caller never chose;
+ *   - a value that is itself flag-shaped — `--budget --json` means the caller lost a value, and
+ *     silently reading `--json` as the budget is how a gate ends up asserting `NaN`.
+ *
+ * @param {string[]} argv
+ * @param {{accepted?: string[], withValues?: string[], maxPositionals?: number, usage?: string}} spec
+ * @returns {{flags: Set<string>, values: Map<string, string>, positionals: string[]}}
+ * @throws {ArgvError}
+ */
+export function partitionArgsWithValues(argv, { accepted = [], withValues = [], maxPositionals = 0, usage = '' } = {}) {
+  const all = [...accepted, ...withValues];
+  const args = (argv ?? []).filter((a) => a !== '');
+  const flags = new Set();
+  const values = new Map();
+  const positionals = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const tok = args[i];
+    if (!tok.startsWith('-')) {
+      positionals.push(tok);
+      continue;
+    }
+    const eq = tok.indexOf('=');
+    const name = eq === -1 ? tok : tok.slice(0, eq);
+    if (!all.includes(name)) {
+      throw new ArgvError(
+        `unrecognised argument(s): ${tok}\naccepted: ${all.join(', ')}\n\n${usage}`,
+      );
+    }
+    if (!withValues.includes(name)) {
+      if (eq !== -1) {
+        throw new ArgvError(`${name} does not take a value\n\n${usage}`);
+      }
+      flags.add(name);
+      continue;
+    }
+    if (eq !== -1) {
+      const v = tok.slice(eq + 1);
+      if (v === '') throw new ArgvError(`${name} needs a value\n\n${usage}`);
+      values.set(name, v);
+      continue;
+    }
+    const next = args[i + 1];
+    if (next === undefined || next.startsWith('-')) {
+      throw new ArgvError(`${name} needs a value\n\n${usage}`);
+    }
+    values.set(name, next);
+    i++;
+  }
+
+  if (positionals.length > maxPositionals) {
+    throw new ArgvError(
+      `unexpected positional argument(s): ${positionals.slice(maxPositionals).join(', ')}\n` +
+        `this script takes at most ${maxPositionals} positional argument(s)\n\n${usage}`,
+    );
+  }
+  return { flags, values, positionals };
+}
+
+/**
  * Which accepted flags the usage text fails to mention — `[]` when the help cannot mislead.
  *
  * Used by the guards rather than at runtime. A usage string that omits a real flag is the NEXT

@@ -13,8 +13,13 @@
 //   FR-036 — the next run is shown in the JOB's timezone. The device's zone is not the answer:
 //   a user who set 03:00 in Europe/London and then opens the app in New York must still be told
 //   03:00, or they will think the schedule moved.
-
-import { Settings } from 'luxon';
+//
+// FEATURE 077: the device zone is simulated with `process.env.TZ`, not Luxon's
+// `Settings.defaultZone`. The module no longer uses Luxon (it left the client bundle with 70 KB
+// attached), and a test that moves a setting the subject does not read is a test that cannot
+// fail. `process.env.TZ` moves the PLATFORM zone that `Intl` actually resolves against — verified
+// to shift a zone-less format from 02:00 to 22:00 to 07:30 — so these assertions got stronger in
+// the move, not weaker.
 
 import {
   formatArtifactSize,
@@ -22,7 +27,7 @@ import {
   formatNextRun,
   shouldShowFailureBanner,
   describeCollectionCounts,
-} from '@/bff-server/backup-run-summary';
+} from '@/utils/backup-run-summary';
 import type { RunSummary } from '@/types/backups';
 
 const run = (over: Partial<RunSummary> = {}): RunSummary => ({
@@ -78,16 +83,16 @@ describe('how big the artifact was', () => {
 });
 
 describe('when the next run is due', () => {
-  const savedZone = Settings.defaultZone;
+  const savedTz = process.env.TZ;
   afterEach(() => {
-    Settings.defaultZone = savedZone;
+    process.env.TZ = savedTz;
   });
 
   it("renders in the JOB's zone, whatever the device is set to", () => {
     // 2026-06-15T02:00:00Z is 03:00 BST. The user set 03:00 and must be told 03:00.
     const nextRunAt = '2026-06-15T02:00:00.000Z';
 
-    Settings.defaultZone = 'America/New_York';
+    process.env.TZ = 'America/New_York';
     const shown = formatNextRun(nextRunAt, 'Europe/London');
 
     expect(shown).toContain('03:00');
@@ -95,12 +100,14 @@ describe('when the next run is due', () => {
     expect(shown).toContain('Europe/London');
     // The device's zone must not appear anywhere in it.
     expect(shown).not.toContain('New_York');
+    // Nor may the device's wall clock (22:00 in New York) leak in.
+    expect(shown).not.toContain('22:00');
   });
 
   it('gives the same answer from three different device zones', () => {
     const nextRunAt = '2026-06-15T02:00:00.000Z';
     const answers = ['UTC', 'America/New_York', 'Asia/Kolkata'].map((zone) => {
-      Settings.defaultZone = zone;
+      process.env.TZ = zone;
       return formatNextRun(nextRunAt, 'Europe/London');
     });
     expect(new Set(answers).size).toBe(1);
@@ -108,6 +115,39 @@ describe('when the next run is due', () => {
 
   it('says so plainly when a job has no schedule', () => {
     expect(formatNextRun(undefined, 'Europe/London')).toBe('Not scheduled');
+  });
+
+  // ── Feature 077 (T001): the two cases the Intl replacement can get wrong ──────────────────
+  //
+  // Luxon returned an INVALID DateTime for an unknown zone, which the existing
+  // `if (!dt.isValid)` branch turned into 'Not scheduled'. `Intl.DateTimeFormat` THROWS
+  // `RangeError` instead. Without a catch, a stored-but-unrecognised zone stops being a
+  // formatted string and becomes an unhandled exception inside a settings screen.
+  it('says "Not scheduled" rather than throwing when the zone is not a real zone', () => {
+    expect(() => formatNextRun('2026-06-15T02:00:00.000Z', 'Not/AZone')).not.toThrow();
+    expect(formatNextRun('2026-06-15T02:00:00.000Z', 'Not/AZone')).toBe('Not scheduled');
+  });
+
+  it('says "Not scheduled" rather than throwing when the instant is unparseable', () => {
+    expect(() => formatNextRun('not-a-date', 'Europe/London')).not.toThrow();
+    expect(formatNextRun('not-a-date', 'Europe/London')).toBe('Not scheduled');
+  });
+
+  // Pins the offset handling either side of a DST transition. A formatter built with a fixed
+  // offset rather than a named zone passes the winter case and fails this one.
+  it('uses the offset in force on the day, not a fixed one', () => {
+    // Winter: London is UTC+0, so 03:00Z is 03:00 local.
+    expect(formatNextRun('2026-01-03T03:00:00.000Z', 'Europe/London')).toContain('03:00');
+    // Summer: London is UTC+1, so the same 03:00Z is 04:00 local.
+    expect(formatNextRun('2026-07-03T03:00:00.000Z', 'Europe/London')).toContain('04:00');
+  });
+
+  // The exact shape the screen renders. This is the assertion that catches formatting drift
+  // between Luxon's `d LLL yyyy, HH:mm` and the Intl option set that replaces it.
+  it('renders the exact string the screen shows', () => {
+    expect(formatNextRun('2026-01-03T03:00:00.000Z', 'Europe/London')).toBe(
+      '3 Jan 2026, 03:00 (Europe/London)',
+    );
   });
 });
 
