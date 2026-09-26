@@ -190,6 +190,33 @@ limit and the dock silently renders no messages.
 > Windows host's Ollama (which had 32b) rather than the nested one the gateway actually calls. It
 > printed "stack up" while every agent turn 404'd. Measured 2026-08-03: an hour lost to this.
 
+> **The web client ships in TWO chunks now, and ONE chunk means a regression** (feature 077, item
+> #558). `expo export --platform web` must produce both an `entry-*.js` and an
+> `assistant-panel-*.js` under `dist/client/_expo/static/js/web/`. The assistant runtime — the model
+> client, its schema validator, its GraphQL client and the React Native polyfills
+> `@copilotkit/react-native`'s entry point imports as a side effect — is 2.4 MB that no user needs
+> before a route paints, so it is fetched on browser idle or on the dock being opened. A single chunk
+> means a static import of `@/components/agent/assistant-panel` crept back into the eager graph:
+> nothing breaks, the bundle is just 2.4 MB bigger again.
+>
+> Two things keep that honest, and both name the cause rather than the symptom:
+>
+> - `pnpm nx bundle-budget mcm-app` — asserts the entry chunk against a committed 2,000,000-byte
+>   budget (measured 1,762,630), that no deferred package is back in the entry chunk, and that no
+>   `src/bff-server/**` module or `luxon` is in ANY client chunk. It runs in CI through the
+>   `affected` job. If it reports `deferred-package check: SKIPPED`, the export lost `--source-maps`
+>   and two of its three assertions are not running.
+> - `perf.spec.ts` — measures a cold Slow-3G `/home` and attaches a `perf-metrics` payload with
+>   `jsTransferredKB`, `slow3gColdTtiMs`, `chunksBeforeInteractive` and `deferredChunkStayedDeferred`.
+>   **`deferredChunkStayedDeferred: false` is the specific and easy mistake**: the lazy boundary
+>   placed at the dock's `runnable` gate instead of at the panel. The E2E user's assistant config is
+>   seeded runnable, so a boundary there fetches the chunk at mount, inside the measured window, in
+>   parallel with the route's own bytes — the byte total barely moves and the change reads as merely
+>   disappointing rather than wrong.
+>
+> The ceilings are a budget, not a sanity check: 1,950 KB of JS and 75 s of Slow-3G TTI. A load slower
+> than the TTI ceiling is reported as a measured number naming the chunks, never as a locator timeout.
+
 > **Rebuild the BFF image when you change CLIENT code.** The Expo web bundle is baked into the BFF
 > image, so a change to anything under `frontend/mcm-app/src/` is invisible to a containerized E2E
 > run until `pnpm nx run mcm-app:build` + a container recreate. Measured 2026-08-03: a new Cancel
