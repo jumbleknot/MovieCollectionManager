@@ -39,6 +39,16 @@ name: minio-image
 
 on:
   workflow_dispatch:
+    inputs:
+      promote:
+        description: 'Also repoint the compose refs at what this build publishes (opens a PR)'
+        type: boolean
+        # DEFAULT FALSE, and that is load-bearing. Dispatch is how the build is PROVEN still working
+        # - "does upstream source still fetch, does the pinned toolchain still compile it" - and a
+        # read-only act must stay read-only. A default that ACTS is the measured trap in this repo:
+        # `agent-stack.mjs --help` built and deployed the whole stack. Tick this only when you mean
+        # the image this run publishes to reach the stacks.
+        default: false
   push:
     paths:
       # THE DOCKERFILE ONLY — this workflow file is deliberately NOT in its own filter.
@@ -277,6 +287,52 @@ jobs:
             echo "2026-09-12 — the release tag alone left orphaned manifests, which this registry drops."
           } >> "$GITHUB_STEP_SUMMARY"
           CI_LOG_STEP
+
+      # ── PROMOTION (item #577). Publishing is not the end of the job. ───────────────────────────
+      #
+      # This workflow PUBLISHED and nothing PROMOTED, so a green tick could change nothing that runs
+      # — and did. PR #559 bumped the builder `golang:1.25-alpine -> 1.27-alpine` as a security bump;
+      # it merged, this workflow rebuilt and published it, and all six compose refs still pinned the
+      # pre-#559 image three weeks later. Feature 069's claim that our own builder makes a Go stdlib
+      # CVE a build input rather than a suppression is true of the image AS BUILT; between publish
+      # and promotion it says nothing about the image AS DEPLOYED.
+      #
+      # ONLY ON A DOCKERFILE CHANGE, NEVER ON THE CANARY — the `if:` below is the whole model.
+      # The two automatic triggers do different jobs (see this file's header), and promotion belongs
+      # to exactly one of them:
+      #
+      #   push      the image's INPUTS changed — a Renovate base bump, or a MINIO_TAG bump. That
+      #             publish must reach the stacks or the bump bought nothing. #559 was this.
+      #   schedule  the canary. Its digest changes EVERY Friday whatever happens, because the `apk`
+      #             installs resolve against Alpine's live index (runs 3115/3117 built identical
+      #             source and produced two different digests). Promoting that would open a pull
+      #             request a week whose only content is float, spend ~35 min of app-e2e on it, and
+      #             — the part that actually costs something — train a reader to merge these
+      #             unread, so the next real bump goes through unexamined too.
+      #
+      # It opens a PULL REQUEST rather than pushing to main, unlike cd-deploy's promote step. Two
+      # reasons, both specific to this image: feature 069 deliberately kept a human between a new
+      # MinIO and production, and the ref change must RUN app-e2e. The second is why there is no
+      # `[skip ci]` here — `infrastructure-as-code/docker/**` is in app-ci's `app` paths filter, and
+      # scripts/__tests__/minio-promote.guard.test.mjs fails if that stops being true.
+      #
+      # An unmerged promotion PR sitting in the list IS the stale-pin signal. There is deliberately
+      # no second mechanism: a weekly digest that also reports it would be a second thing to keep
+      # alive, reporting something already visible.
+      - name: Promote the published digest into the compose refs (Dockerfile-triggered builds only)
+        # `inputs.promote == true`, not a bare `inputs.promote` — the cd-deploy idiom. A dispatch
+        # input can arrive as the STRING "false", which is truthy, and an unticked box would then
+        # promote. On a push `inputs` is empty, so that clause is false and the first one carries it;
+        # on the schedule both are false and the step is skipped.
+        if: ${{ github.event_name == 'push' || inputs.promote == true }}
+        env:
+          # Write-scoped repository credential — the cd-deploy promote precedent. DISTINCT from
+          # REGISTRY_TOKEN above: that one pushes images, this one pushes a branch and opens a PR.
+          # Both arrive as env and neither is ever an argument: `-e NAME=$VALUE` (and a token in
+          # argv) publishes to `ps` for every session on this shared host.
+          FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
+          FORGE_API_BASE: ${{ github.server_url }}/api/v1
+        run: bash scripts/ci-log-step.sh minio-image-promote node scripts/promote-minio-digest.mjs --apply
 
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can

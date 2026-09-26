@@ -181,6 +181,13 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     // failure. So rejecting a bad argument non-zero is consistent with the existing contract rather
     // than a violation of it. See the ci-failure-digest tests below for the evidence.
     'ci-failure-digest.mjs': 'guarded',
+
+    // Item #577 — born guarded, and INVERTED like the prune script: the default action reports and
+    // `--apply` is what pushes a branch and opens a pull request. So the fall-through this table
+    // exists to catch is not merely rejected here, it is inert. argv still goes through
+    // partitionArgs, because "nothing was promoted" must never be a typo wearing a verdict's
+    // clothes — the operator would read it as a statement about the image.
+    'promote-minio-digest.mjs': 'guarded',
   };
 
   const scriptsDir = resolve(REPO_ROOT, 'scripts');
