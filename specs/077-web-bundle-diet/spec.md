@@ -48,7 +48,7 @@ Two corrections to item #558's premise, both material:
 | 120 KB | 3.0% | `@tamagui/web` | root — irreducible |
 | **70 KB** | **1.8%** | **`luxon`** | **a server-only module, leaking into the client** |
 
-### Why the polyfills cannot be fixed at application level
+### Why the polyfills need a platform split, not an application-level guard
 
 `src/assistant-polyfills.ts` documents the CopilotKit React Native polyfills as
 "No-ops on web". The *behaviour* no-ops — each polyfill guards at runtime
@@ -61,29 +61,35 @@ point. Any import of `@copilotkit/react-native`, including `CopilotKitProvider`,
 whole polyfill barrel. Measured: a web-only variant of `assistant-polyfills` that skips both
 requires saved **69,207 bytes** and left `text-encoding` (535 KB) fully present.
 
-The polyfills therefore cannot be removed in isolation — but they **leave with the assistant
-runtime**, because that is the only thing that imports `@copilotkit/react-native`. This is the
-central reason the chosen mechanism is deferral rather than shimming.
+They do **not** leave with the assistant runtime, which is the intuitive and wrong conclusion. The
+ROOT layout (`src/app/_layout.tsx`) imports `@/assistant-polyfills` eagerly, so the polyfill graph is
+reachable whether or not the panel ever loads. Measured: deferring the panel alone leaves the entry
+chunk at 2,379,727 B with `text-encoding` fully present.
+
+The fix is the platform split the constitution's file convention already prescribes — the unsuffixed
+`assistant-polyfills.ts` is the web version, and `assistant-polyfills.native.ts` keeps the React
+Native behaviour unchanged. Both changes are required: the split is worth ~600 KB, the deferral
+~1.9 MB.
 
 ### Measured effect of the chosen mechanism
 
 A throwaway probe placed the assistant runtime behind one dynamic-import boundary and
 re-exported:
 
-| Artifact | Baseline | With the boundary | Δ |
+| Artifact | Baseline | Implemented | Δ |
 |---|---:|---:|---:|
-| `entry-*.js` | 4,283,369 | **1,831,422** | **−2,451,947 (−57.2%)** |
-| `assistant-*.js` (deferred) | — | 2,385,019 | — |
+| `entry-*.js` | 4,283,369 | **1,762,630** | **−2,520,739 (−58.8%)** |
+| `assistant-panel-*.js` (deferred) | — | 2,384,406 | — |
 
-`text-encoding`, `zod` and `graphql` are each at **zero modules** in the reduced entry chunk.
-What remains is dominated by framework code that cannot be deferred (`expo-router` 427 KB,
-`react-native-web` 276 KB, `react-dom` 175 KB, `@tamagui/web` 120 KB) — plus `luxon` at
-70 KB, now 4.2% of the entry chunk and its largest non-framework item.
+`text-encoding`, `web-streams-polyfill`, `zod`, `graphql`, `@copilotkit/*`, `@ag-ui/*`, `rxjs`,
+`@bufbuild/protobuf` and `luxon` are each at **zero modules** in the reduced entry chunk. What
+remains is framework code that renders any route: `expo-router` 427 KB, `react-native-web` 276 KB,
+`react-dom` 175 KB, `@tamagui/web` 120 KB, `axios` 65 KB.
 
-The probe establishes that Expo's `splitChunks` emits a real second chunk for a dynamic-import
-boundary in a `web.output: "server"` export, and that the export succeeds. It does **not**
-establish that hydration is correct across that boundary, nor that a running app behaves; both
-are verification obligations of this feature, not assumptions.
+Expo's `splitChunks` emits a real second chunk for a dynamic-import boundary in a
+`web.output: "server"` export. That the export succeeds does **not** establish that hydration is
+correct across the boundary, nor that a running app behaves; both are verification obligations of
+this feature, not assumptions.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -220,7 +226,8 @@ with the measured and permitted numbers named; restore it and confirm it passes.
 - **FR-012**: The repository MUST enforce a stated maximum size for the web entry chunk, and
   that check MUST report the measured size, the budget, and any overage.
 - **FR-013**: The Android/native bundle's contents and behaviour MUST NOT regress: the React
-  Native polyfills MUST still load on native.
+  Native polyfills MUST still load on native. Because the polyfill loader is now split by platform,
+  the native variant MUST keep requiring them and the web variant MUST NOT.
 - **FR-014**: The performance test MUST continue to attach its `perf-metrics` payload, and
   MUST assert the cold time-to-interactive for `/home` against a ceiling that leaves at least
   50% headroom.
@@ -239,16 +246,18 @@ with the measured and permitted numbers named; restore it and confirm it passes.
 
 ### Measurable Outcomes
 
-- **SC-001**: The web entry chunk is at most **2,400,000 bytes**, down from 4,283,369 — a
-  reduction of at least 44%. (The measured probe reached 1,831,422; the budget is set above
-  the measured result to leave the implementation room without inviting drift.)
+- **SC-001**: The web entry chunk is at most **2,000,000 bytes**, down from 4,283,369 — a
+  reduction of at least 53%. The measured result is **1,762,630**, so the budget leaves ~237 KB of
+  room: about one worst-case feature by item #558's own historical measure (+241 KB). That is
+  deliberate — enough that an ordinary change does not trip it, little enough that two of them force
+  a conversation rather than silently spending the win.
 - **SC-002**: Cold time-to-interactive for `/home` under the Slow-3G profile is at most
-  **75,000 ms** — at least 50% headroom against the performance test's 150,000 ms ceiling,
-  against under 5% today.
+  **75,000 ms** — at least 50% headroom against the performance test's previous 150,000 ms ceiling,
+  against under 5% before this feature. The reduced entry chunk is ~35 s of transfer at that profile.
 - **SC-003**: The JS transferred before `/home` becomes interactive excludes the assistant
   runtime chunk entirely.
-- **SC-004**: `zod`, `graphql`, `text-encoding` and `web-streams-polyfill` contribute zero
-  modules to the entry chunk.
+- **SC-004**: `zod`, `graphql`, `text-encoding`, `web-streams-polyfill`, `@copilotkit/*`,
+  `@ag-ui/*`, `rxjs` and `@bufbuild/protobuf` contribute zero modules to the entry chunk.
 - **SC-005**: No module under `src/bff-server/` and no server-only dependency appears in any
   client chunk.
 - **SC-006**: A change that pushes the entry chunk past its budget fails a repository check

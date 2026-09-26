@@ -14,7 +14,6 @@ import { NavigationBar } from '@/components/navigation-bar';
 import { useAuth } from '@/hooks/use-auth';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
 import { AssistantConfigProvider, useAssistantConfig } from '@/hooks/use-assistant-config';
-import { AssistantProvider } from '@/hooks/use-assistant';
 import { AssistantDock } from '@/components/agent/assistant-dock';
 
 const DEV_IDLE_OVERRIDE_MS = parseInt(process.env['EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS'] ?? '', 10);
@@ -42,15 +41,22 @@ function SessionTimeoutHandler(): null {
 // per-user config (enabled + provider credential + TMDB key). A brand-new/disabled/under-
 // configured user sees no dock (FR-001). This is a UX gate; the BFF /run short-circuit is the
 // authoritative server-side enforcement (FR-002).
+// Feature 077: `AssistantProvider` is NOT mounted here any more. It imports CopilotKitProvider from
+// @copilotkit/react-native, so mounting it in this layout kept the whole assistant graph — and the
+// 659 KB of RN polyfills that package's entry imports as a side effect — in the ENTRY chunk, on every
+// authenticated route. It now lives inside the deferred panel module. Re-adding it here would defer
+// nothing while leaving every test passing, so `scripts/check-web-bundle-budget.mjs` asserts those
+// packages contribute zero entry-chunk modules.
+//
+// The boundary is deliberately BELOW this `runnable` gate rather than at it. The E2E test user's
+// config is seeded runnable, so a lazy boundary here would fetch the 2.4 MB chunk AT MOUNT — inside
+// the cold-load window, competing with the route's own bytes on a slow link. The dock's toggle stays
+// eager and cheap; the panel is what defers.
 function AuthedAssistant(): React.JSX.Element | null {
   const { isAuthenticated } = useAuth();
   const { runnable } = useAssistantConfig();
   if (!isAuthenticated || !runnable) return null;
-  return (
-    <AssistantProvider>
-      <AssistantDock />
-    </AssistantProvider>
-  );
+  return <AssistantDock />;
 }
 
 export default function AppLayout(): React.JSX.Element {

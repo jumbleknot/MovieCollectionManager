@@ -63,11 +63,33 @@ a side-effect import inside the package's **own entry point**. `dist/index.mjs` 
 `headless.mjs`, so importing anything from `@copilotkit/react-native` — `CopilotKitProvider`,
 `useAgent` — pulls the whole polyfill barrel. No application-level change can prevent this.
 
-A Metro `resolveRequest` override mapping `text-encoding` to a no-op shim on web (the pattern
-already used for `@segment/analytics-node`) would work, and was rejected as unnecessary: the
-polyfills are reachable **only** through `@copilotkit/react-native`, so deferring the assistant
-runtime removes them from the entry chunk anyway, with no resolver hack to maintain. Should a
-future non-assistant importer appear, the shim remains available.
+### R2 CORRECTION — the conclusion above was wrong, and so was the measurement behind it
+
+The original text concluded: *"deferring the assistant runtime removes them from the entry chunk
+anyway, with no resolver hack to maintain."* **That is false, and it was believed on a contaminated
+measurement.**
+
+`src/app/_layout.tsx` — the ROOT layout — imports `@/assistant-polyfills` eagerly. The polyfill graph
+is therefore reachable without the assistant panel ever loading, so deferring the panel cannot remove
+it. Measured after implementing the boundary alone:
+
+| | Entry chunk | `text-encoding` in entry |
+|---|---:|---:|
+| Boundary alone | 2,379,727 B | **535 KB, present** |
+| Boundary + the platform split below | **1,762,630 B** | 0 |
+
+**Why the original probe said otherwise.** Probe 1 created `src/assistant-polyfills.web.ts`. Probe 2
+was run *without deleting it*, so probe 2 measured **both** changes and its 1,831,422 B entry chunk
+was attributed entirely to the boundary. Both files were removed together at the end, which is why
+the mistake was invisible until the real implementation reproduced neither number. The lesson is
+narrow and mechanical: a probe that changes one thing must be run from a tree that contains only that
+thing, and a second probe on top of a first is measuring their sum.
+
+**The actual fix** is a platform split, which the constitution's file convention already prescribes:
+the unsuffixed `assistant-polyfills.ts` is the WEB version (no CopilotKit polyfill requires), and
+`assistant-polyfills.native.ts` carries the React Native behaviour unchanged. That is cheaper and
+more legible than the Metro `resolveRequest` shim considered here (the pattern used for
+`@segment/analytics-node`), which remains available should a non-assistant importer ever appear.
 
 Incidental false lead, recorded so it is not re-investigated: `@bufbuild/protobuf` appears to
 require `text-encoding`, but it requires its own `./text-encoding.js`.
@@ -77,10 +99,14 @@ require `text-encoding`, but it requires its own `./text-encoding.js`.
 A throwaway probe moved `AssistantProvider` + `AssistantDock` behind
 `React.lazy(() => import(...))` in `(app)/_layout.tsx` and re-exported:
 
-| Artifact | Baseline | With boundary | Δ |
+| Artifact | Baseline | Probe (see the correction in R2) | Δ |
 |---|---:|---:|---:|
-| `entry-*.js` | 4,283,369 | **1,831,422** | **−2,451,947 (−57.2%)** |
+| `entry-*.js` | 4,283,369 | 1,831,422 | −2,451,947 (−57.2%) |
 | `assistant-runtime-*.js` | — | 2,385,019 | deferred |
+
+> **These probe figures conflate two changes** — the boundary *and* probe 1's web-only polyfill
+> variant, which was still in the tree. See the R2 correction. The boundary alone yields 2,379,727 B.
+> The implemented result, with both changes, is **1,762,630 B (−58.8%)** — recorded in R6.
 
 Export exited 0 with no resolution errors. Expo enables `splitChunks` for web export by
 default (`@expo/cli/build/src/export/exportApp.js`, `splitChunks: !env.EXPO_NO_BUNDLE_SPLITTING && … || platform === 'web'`),
@@ -145,3 +171,43 @@ default action running.
   `dependsOn: ["export-server"]` and joins the `affected` job's target list. That keeps it
   inside nx's cache and its affected graph rather than adding an unconditional CI build, and
   it matches the repository's "Nx as the universal task runner" invariant.
+
+
+## R6 — The implemented result
+
+Measured from the real implementation (not a probe), `npx expo export --platform web`:
+
+| Artifact | Bytes |
+|---|---:|
+| `entry-*.js` | **1,762,630** |
+| `assistant-panel-*.js` (deferred) | 2,384,406 |
+
+Against the 4,283,369-byte baseline: **−2,520,739 (−58.8%)**.
+
+Entry-chunk module counts for every package this feature set out to defer — each **0**:
+`text-encoding`, `web-streams-polyfill`, `zod`, `graphql`, `@copilotkit/*`, `@ag-ui/*`, `rxjs`,
+`@bufbuild/protobuf`, `luxon`.
+
+One `src/bff-server/` module remains in the entry chunk by design: `api-client.ts`, the browser's
+axios transport to the BFF, which declares itself `@client-safe` in the module. Relocating it out of
+that directory is item #566.
+
+What is left is framework code that renders any route: `expo-router` 427 KB, `react-native-web`
+276 KB, `react-dom` 175 KB, `@tamagui/web` 120 KB, `axios` 65 KB, `react-native-svg` 46 KB. The
+largest single application file is `src/components/movie-form.tsx` at 16 KB.
+
+## R7 — `React.lazy` cannot satisfy FR-006
+
+The plan's first design used `React.lazy` + `Suspense`. Measured with a throwaway probe: `lazy` calls
+its factory **exactly once** and caches a rejection on the lazy object for the life of the page — the
+factory is not re-invoked even on a fresh mount after an error boundary resets (`factory calls after
+rejection + retry attempt: 1`).
+
+So a failed chunk fetch would disable the assistant until a full page reload, no matter how
+retry-capable the loader beneath it is. FR-006 ("remains openable on a subsequent attempt") is
+unsatisfiable through `React.lazy` with a module-scope lazy component. The dock therefore holds the
+loaded component in state — about twelve lines — and `loadAssistantRuntime` clears its cache on
+rejection so the retry actually re-fetches.
+
+This is worth recording because `React.lazy` is the idiomatic answer and a reviewer will ask why it
+was not used. The answer is a measurement, not a preference.

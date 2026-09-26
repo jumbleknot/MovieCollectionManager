@@ -8,7 +8,7 @@
  */
 import { renderHook, act } from '@testing-library/react-native';
 
-import { useScrollToEndOnChange } from '@/components/agent/assistant-dock';
+import { useScrollToEndOnChange } from '@/components/agent/assistant-panel';
 
 describe('useScrollToEndOnChange', () => {
   beforeEach(() => jest.useFakeTimers());

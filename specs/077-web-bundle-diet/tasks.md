@@ -396,7 +396,7 @@ cd /home/coder/worktrees/077-web-bundle-diet/frontend/mcm-app
 npx expo export --platform web --source-maps --output-dir /tmp/dist-077
 ls -l /tmp/dist-077/client/_expo/static/js/web/*.js
 ```
-**Expected**: **two** JS chunks. The `entry-*.js` is ≤ 2,400,000 B (probe measured 1,831,422 B).
+**Expected**: **two** JS chunks. The `entry-*.js` is ≤ 2,000,000 B (measured 1,762,630 B).
 A single chunk means the boundary did not take — check step 2 first.
 
 ```bash
@@ -576,8 +576,9 @@ node --test scripts/__tests__/check-web-bundle-budget.test.mjs
 
 **Spec reference**: FR-012, SC-001, SC-004, SC-006
 
-**Prerequisite**: T014 complete and verified RED. Set the committed default budget from the size
-T011 actually measured, not from the probe's figure.
+**Prerequisite**: T014 complete and verified RED. The committed default budget is 2,000,000 B, set
+from the 1,762,630 B T011 actually measured — not from the probe's figure, which conflated two
+changes (research.md R2).
 
 Implement `scripts/check-web-bundle-budget.mjs` exactly to
 [contracts/bundle-budget.md](./contracts/bundle-budget.md) — flags, exit codes, **all three**

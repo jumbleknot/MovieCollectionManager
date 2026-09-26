@@ -16,9 +16,16 @@ Put the assistant runtime behind one dynamic-import boundary, leaving the toggle
 Separately, stop a server-only formatting module (and its date library) from shipping to the
 browser, and add two durable guards so neither problem can return quietly.
 
-Measured on a probe: entry chunk 4,283,369 → **1,831,422 bytes (−57.2%)**, with `zod`,
-`graphql` and `text-encoding` at zero modules in the entry chunk. See
-[research.md](./research.md) for the method, so any number here can be re-derived.
+Measured on the implementation: entry chunk 4,283,369 → **1,762,630 bytes (−58.8%)**, with `zod`,
+`graphql`, `text-encoding`, `@copilotkit/*`, `@ag-ui/*`, `rxjs` and `luxon` all at zero entry-chunk
+modules. See [research.md](./research.md) for the method, so any number here can be re-derived.
+
+**Two changes are required, not one — the original plan missed this.** Deferring the panel alone
+leaves the entry chunk at 2,379,727 B, because `src/app/_layout.tsx` imports the CopilotKit polyfill
+loader at the ROOT, eagerly, so that graph is reachable whether or not the panel loads. The loader
+must also be split by platform. R2 of research.md records why the original probe hid this: it was run
+on a tree that still held an earlier probe's change, so one measurement was credited to the wrong
+cause.
 
 ## Technical Context
 
@@ -38,14 +45,15 @@ scheduling only, after this change)
 
 **Project Type**: Universal Expo app with an embedded BFF (`frontend/mcm-app`)
 
-**Performance Goals**: web entry chunk ≤ 2,400,000 bytes (SC-001); Slow-3G cold TTI for
-`/home` ≤ 75,000 ms, i.e. ≥50% headroom against the perf test's 150,000 ms ceiling (SC-002)
+**Performance Goals**: web entry chunk ≤ 2,000,000 bytes (SC-001; measured 1,762,630); Slow-3G cold
+TTI for `/home` ≤ 75,000 ms, i.e. ≥50% headroom against the perf test's previous 150,000 ms ceiling
+(SC-002)
 
 **Constraints**: the assistant's behaviour and capabilities must not change; SSR hydration of
 the authenticated layout must stay correct across the new boundary; native must keep its
 polyfills
 
-**Scale/Scope**: 3 user stories, 14 functional requirements. ~6 source files changed, 1 module
+**Scale/Scope**: 3 user stories, 14 functional requirements. ~8 source files changed, 2 modules
 moved, 2 new gate scripts, 1 new nx target, 2 CI wirings.
 
 ## Constitution Check
@@ -96,6 +104,8 @@ frontend/mcm-app/
 │   │   │   ├── assistant-dock.tsx             # CHANGED: keeps ONLY the toggle + the lazy boundary
 │   │   │   ├── assistant-panel.tsx            # NEW: the panel + tool renderers + AssistantProvider
 │   │   │   └── assistant-panel-fallback.tsx   # NEW: the loading / failed-to-load states
+│   ├── assistant-polyfills.ts                  # NOW THE WEB VARIANT: no CopilotKit polyfill requires
+│   ├── assistant-polyfills.native.ts           # MOVED from assistant-polyfills.ts; behaviour unchanged
 │   │   └── backups/
 │   │       └── run-history.tsx                # CHANGED: imports the util, not the bff-server module
 │   ├── hooks/
@@ -182,12 +192,19 @@ fallback keeps the hook's contract platform-independent). The callback is cancel
 Because the fetch starts only once the browser is idle, it starts **after** `/home` is
 interactive — which is what keeps it out of the perf test's measured window (FR-002, SC-003).
 
-### D4 — The loading and failure states
+### D4 — The loading and failure states, and why NOT `React.lazy`
 
-`React.Suspense` wraps the lazy panel with `assistant-panel-fallback.tsx`, composed from
-`@mcm/design-system`. An error boundary around the same subtree renders the recoverable
-failure state with a retry that clears the loader and re-renders (FR-005, FR-006). The toggle
-stays interactive throughout, so the panel can always be closed.
+This section originally specified `React.lazy` + `Suspense` + an error boundary. **Measured, that
+cannot satisfy FR-006**: `React.lazy` calls its factory exactly once and caches a rejection on the lazy
+object for the life of the page — a probe confirmed the factory is not re-invoked even on a fresh mount
+after the boundary resets. A failed chunk fetch would disable the assistant until a page reload,
+however retry-capable the loader beneath it is (research.md R7).
+
+So the dock holds the loaded component in `useState` and drives three explicit states — loading,
+failed, loaded. `assistant-panel-fallback.tsx` supplies the loading and recoverable-error UI from
+`@mcm/design-system`, with a Retry that re-enters `loadAssistantRuntime` (which cleared its own cache
+on rejection). The toggle stays interactive throughout, so the panel can always be closed. About twelve
+lines of state, in exchange for a Retry that works.
 
 ### D5 — The server-module leak
 

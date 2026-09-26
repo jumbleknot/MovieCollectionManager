@@ -17,7 +17,7 @@ without scanning.
 | Flag | Default | Meaning |
 |---|---|---|
 | `--dist <dir>` | `frontend/mcm-app/dist` | Root of an `expo export` output (the directory containing `client/`). |
-| `--budget <bytes>` | `2400000` | Maximum permitted entry-chunk size. The default is the committed budget; the flag exists for the selftest and for local what-if runs. |
+| `--budget <bytes>` | `2000000` | Maximum permitted entry-chunk size. The default is the committed budget; the flag exists for the selftest and for local what-if runs. |
 | `--json` | off | Emit the report as JSON on stdout instead of human text. |
 | `--selftest` | — | Prove the fail and clean paths against synthetic fixtures. Runs no real export. |
 
@@ -58,7 +58,7 @@ lands, so the subject is every chunk.
 Human form, on success:
 
 ```
-web entry chunk: 1,831,422 B / 2,400,000 B budget (76.3%, 568,578 B spare)
+web entry chunk: 1,762,630 B / 2,000,000 B budget (88.1%, 237,370 B spare)
 deferred-package check: 6/6 absent from the entry chunk
 server-module check:    0 hits across 2 client chunks
 OK
@@ -67,7 +67,7 @@ OK
 On a size failure:
 
 ```
-web entry chunk: 2,551,004 B / 2,400,000 B budget — OVER BY 151,004 B (106.3%)
+web entry chunk: 2,151,004 B / 2,000,000 B budget — OVER BY 151,004 B (107.6%)
   the cold-load path grew. What entered it:
     zod  640 KB  (was absent)
 FAIL
@@ -100,7 +100,7 @@ only when `mcm-app` is affected.
 The committed default is set from an export taken **without local env files present** — the
 condition the CI `affected` job runs in. This matters because `EXPO_PUBLIC_*` values are inlined
 into the bundle, so an export that loaded `frontend/mcm-app/.env.local` differs in size from one
-that did not. The margin (≈568 KB at the measured 1,831,422 B) dwarfs that difference, but the
+that did not. The margin (≈237 KB at the measured 1,762,630 B) dwarfs that difference, but the
 budget is a committed number and the condition that produced it belongs on the record, not in
 someone's shell history.
 

@@ -9,11 +9,15 @@
  */
 import React from 'react';
 import { Text } from 'react-native';
-import { fireEvent, render, screen } from '@/test-support/render';
+import { render, screen } from '@/test-support/render';
 import * as copilot from '@copilotkit/react-native';
 
-import { AssistantDock, buildDockItems } from '@/components/agent/assistant-dock';
-import { AssistantProvider } from '@/hooks/use-assistant';
+// Feature 077: the panel — not the dock — owns generative-UI rendering, and it now lives in its own
+// module (the deferred chunk's root). These tests render it DIRECTLY rather than pressing the dock
+// toggle: opening the dock is an async chunk fetch, which would make every test here wait on a
+// dynamic import to assert something that has nothing to do with loading. The default export already
+// includes AssistantProvider.
+import AssistantRuntime, { buildDockItems } from '@/components/agent/assistant-panel';
 
 jest.mock('@copilotkit/react-native', () => {
   const actual = jest.requireActual('@copilotkit/react-native');
@@ -68,12 +72,7 @@ function mockAgentWithToolCall(
 describe('AssistantDock generative UI', () => {
   it('renders a movie card inline when the agent emits a render_movie_card tool call', () => {
     mockAgentWithToolCall();
-    const { getByTestId } = render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(getByTestId('assistant-dock-toggle')); // open the panel
+    const { getByTestId } = render(<AssistantRuntime />);
 
     expect(getByTestId('render-movie-card')).toBeTruthy();
     expect(getByTestId('render-movie-card-title')).toHaveTextContent('Blade Runner');
@@ -84,12 +83,7 @@ describe('AssistantDock generative UI', () => {
   // spreadsheet-import-button / spreadsheet-export-button are removed.)
   it('shows no always-on import/export buttons when the panel opens', () => {
     mockAgentWithToolCall();
-    const { getByTestId, queryByTestId } = render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(getByTestId('assistant-dock-toggle'));
+    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
     expect(queryByTestId('spreadsheet-import-button')).toBeNull();
     expect(queryByTestId('spreadsheet-export-button')).toBeNull();
   });
@@ -130,12 +124,7 @@ describe('AssistantDock generative UI', () => {
   // permanent placeholder. See specs/066-copilotkit-170-migration/spec.md.
   it('shows the pending state, not a card, while render_movie_card args are still streaming', () => {
     mockAgentWithToolCall({ name: 'render_movie_card', arguments: '{}' });
-    const { getByTestId, queryByTestId } = render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(getByTestId('assistant-dock-toggle'));
+    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
 
     expect(getByTestId('tool-call-pending')).toBeTruthy();
     expect(queryByTestId('render-movie-card')).toBeNull();
@@ -149,12 +138,7 @@ describe('AssistantDock generative UI', () => {
       name: 'render_movie_card',
       arguments: JSON.stringify({ title: 'Blade Runner' }),
     });
-    const { getByTestId, queryByTestId } = render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(getByTestId('assistant-dock-toggle'));
+    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
 
     expect(getByTestId('tool-call-pending')).toBeTruthy();
     expect(queryByTestId('render-movie-card')).toBeNull();
@@ -162,12 +146,7 @@ describe('AssistantDock generative UI', () => {
 
   it('shows the card and NO pending state once the args are complete', () => {
     mockAgentWithToolCall();
-    const { getByTestId, queryByTestId } = render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(getByTestId('assistant-dock-toggle'));
+    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
 
     expect(getByTestId('render-movie-card')).toBeTruthy();
     expect(queryByTestId('tool-call-pending')).toBeNull();
@@ -178,12 +157,7 @@ describe('AssistantDock generative UI', () => {
   // still mount and still fire. Before the gate this navigated to `/collections/undefined`.
   it('renders no navigation effect at all while navigate_to_collection args are incomplete', () => {
     mockAgentWithToolCall({ name: 'navigate_to_collection', arguments: '{}' });
-    const { getByTestId, queryByTestId } = render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(getByTestId('assistant-dock-toggle'));
+    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
 
     expect(queryByTestId('assistant-ui-action-navigate')).toBeNull();
     // Not even the shared pending card — mounting anything here is what fires the effect.
@@ -205,12 +179,7 @@ describe('AssistantDock generative UI', () => {
         confirmLabel: 'Done',
       }),
     });
-    const { getByTestId } = render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(getByTestId('assistant-dock-toggle'));
+    const { getByTestId } = render(<AssistantRuntime />);
 
     expect(getByTestId('multi-select-options')).toBeTruthy();
     expect(getByTestId('multi-select-option-0')).toBeTruthy();
@@ -243,12 +212,7 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
     // So the property is: either take the default (undefined = all three) or list all three.
     // Never a subset.
     mockAgentWithState({});
-    render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+    render(<AssistantRuntime />);
 
     const ALL = ['OnMessagesChanged', 'OnStateChanged', 'OnRunStatusChanged'];
     for (const [args] of mockedUseAgent.mock.calls) {
@@ -263,12 +227,7 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
 
   it('renders the in-place progress line from agent state while an import applies', () => {
     mockAgentWithState({ import_applied: 1300, import_total: 2300, import_run_id: 't-1' });
-    render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+    render(<AssistantRuntime />);
 
     expect(screen.getByTestId('import-progress-label')).toHaveTextContent(
       'Importing 1,300 of 2,300…',
@@ -278,12 +237,7 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
   it('shows no progress surface once the run has finished (FR-014b)', () => {
     // The gateway clears the counters at the end of the run, so the report is what remains.
     mockAgentWithState({ import_applied: 0, import_total: 0, import_run_id: '' });
-    render(
-      <AssistantProvider>
-        <AssistantDock />
-      </AssistantProvider>,
-    );
-    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+    render(<AssistantRuntime />);
 
     expect(screen.queryByTestId('import-progress')).toBeNull();
   });
