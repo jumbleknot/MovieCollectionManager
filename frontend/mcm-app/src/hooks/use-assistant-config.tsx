@@ -13,7 +13,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { AxiosError } from 'axios';
 
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import {
   DISABLED_AGENT_CONFIG_VIEW,
   isViewRunnable,

@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import type { MovieListFilters, MovieCountLine, MovieCountResponse } from '@/types/collection';
 
 function hasActiveFilter(filters: MovieListFilters, search: string): boolean {

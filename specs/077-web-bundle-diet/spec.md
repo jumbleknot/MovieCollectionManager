@@ -270,9 +270,12 @@ with the measured and permitted numbers named; restore it and confirm it passes.
 - **The remaining entry chunk is treated as irreducible for this feature.** `expo-router`,
   `react-native-web`, `react-dom` and `@tamagui/web` total ~1,000 KB and are needed to render
   any route. Reducing them is a separate concern and is out of scope; SC-001 is set
-  accordingly and the constitution's 2-second 3G budget remains unmet after this feature.
-  That residual deviation is tracked as **item #565**, which owns the decision between continuing
-  to close it and amending the principle to a target this stack can meet.
+  accordingly. The constitution's 2-second-on-3G figure is not met after this feature and now
+  carries a bounded **accepted exception** at constitution **v2.5.0** (item #565), granted on this
+  feature's measured evidence: the residue is the cost of rendering any route in a
+  React-Native-Web + Tamagui app, so the figure is unreachable without replacing the stack. The
+  exception is capped by SC-001's committed budget and covers framework weight only — the same
+  principle's "JavaScript bundles must be lazy-loaded" clause is what this feature implements.
 - **Route-level splitting is out of scope.** Measurement puts its ceiling at ~68 KB. If it is
   wanted later for its own sake, it is a separate item.
 - **The assistant remains additive.** Deferring its delivery changes when its code arrives,

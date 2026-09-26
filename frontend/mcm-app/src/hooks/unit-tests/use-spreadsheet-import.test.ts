@@ -4,10 +4,10 @@
 
 import { renderHook, act } from '@testing-library/react-native';
 
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { useSpreadsheetImport } from '@/hooks/use-spreadsheet-import';
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: { post: jest.fn() },
 }));
 

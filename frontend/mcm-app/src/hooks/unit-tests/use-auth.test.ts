@@ -4,10 +4,10 @@
 
 import React from 'react';
 import { renderHook, act } from '@testing-library/react-native';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: { post: jest.fn(), get: jest.fn() },
 }));
 

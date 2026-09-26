@@ -32,7 +32,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import type {
   Movie,
   CreateMovieRequest,

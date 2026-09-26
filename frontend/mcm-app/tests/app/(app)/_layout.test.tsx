@@ -39,7 +39,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: {
     get: jest.fn(async () => ({ data: mockRunnableConfig })),
     put: jest.fn(),

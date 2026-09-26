@@ -21,7 +21,7 @@ import { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { keycloakConfig } from '@/config/keycloak';
 
 const CHALLENGE = '/bff-api/account/delete-challenge';

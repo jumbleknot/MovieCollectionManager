@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 
 export interface RegistrationStatus {
   allowed: boolean;

@@ -21,11 +21,16 @@
 //
 // So a module under `src/bff-server/` may declare itself client-safe with a `@client-safe` marker
 // comment plus a reason, and the gate exempts it. The exemption lives IN THE MODULE, deliberately,
-// rather than in an allowlist here: an allowlist in the gate rots silently and is invisible to
-// anyone reading the module, whereas a marker is in front of every reviewer of the file it excuses,
-// and adding one is an edit to the thing being excused. `api-client.ts` carries the only one today.
-// The directory itself is misnamed; relocating it is tracked separately (item #566) because it
-// touches 18 files and saves zero bytes.
+// rather than in an allowlist here: an allowlist in the gate rots silently and is invisible to anyone
+// reading the module, whereas a marker is in front of every reviewer of the file it excuses, and
+// adding one is an edit to the thing being excused.
+//
+// **No module carries a marker today.** Item #566 relocated `api-client.ts` to the Utils-Layer, where
+// it always belonged, and an audit confirmed every remaining `src/bff-server/**` module is genuinely
+// server-only. The mechanism is kept rather than removed because a future genuine case is likely and
+// its tests document the rule — a guard deleted for being currently unused is the regression it was
+// written to catch. A marker must be paired with an entry in `SERVER_ONLY_EXEMPT` in
+// `check-web-bundle-budget.mjs`, or one of the two gates has an unexplained hole.
 //
 // WHAT IS DELIBERATELY NOT FLAGGED, and why each would make the gate worse:
 //   - `src/bff-server/**` importing its own siblings — correct by definition.

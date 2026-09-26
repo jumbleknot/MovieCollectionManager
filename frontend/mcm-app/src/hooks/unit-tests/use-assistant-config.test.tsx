@@ -13,11 +13,11 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { Text, Pressable } from 'react-native';
 
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { AssistantConfigProvider, useAssistantConfig } from '@/hooks/use-assistant-config';
 import type { AgentConfigView } from '@/types/agent-config';
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: { get: jest.fn(), put: jest.fn(), post: jest.fn() },
 }));
 

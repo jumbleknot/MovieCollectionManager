@@ -6,13 +6,13 @@
  * session/access cookies (web same-origin; native via RN's cookie jar). On a 401 the response
  * interceptor silently refreshes (POST /auth/refresh re-sets the cookies) and retries once.
  *
- * @client-safe: this is the CLIENT's transport TO the BFF, not BFF-server code. It runs in the
- * browser and in the RN runtime — carrying the caller's own cookies is the whole point of it — and
- * 18 hooks and screens import it by design. It sits under `src/bff-server/` only because of that
- * directory's name, which describes the thing it talks to rather than where it runs; relocating it
- * is tracked as item #566. Feature 077's server-import gate reads this marker
- * (scripts/check-no-server-imports.mjs) and exempts the module; the marker is here, rather than in
- * an allowlist inside the gate, so it is visible to whoever reads this file next.
+ * WHY THIS LIVES IN THE UTILS-LAYER (feature 077 / item #566). It used to sit under
+ * `src/bff-server/`, which named the thing it TALKS TO rather than where it RUNS — and it runs in
+ * the browser and in the RN runtime, carrying the caller's own cookies, which is the whole point of
+ * it. That misfiling was not cosmetic: it made the directory useless as a signal, and it is how
+ * `backup-run-summary` came to be imported from a component and shipped 70 KB of `luxon` to every
+ * user. `src/bff-server/**` now means server-only, without exception, and
+ * `scripts/check-no-server-imports.mjs` enforces that.
  */
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';

@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { backupErrorMessage } from '@/hooks/backup-error-message';
 import type { BackupJob, BackupVersion, RunSummary, Schedule } from '@/types/backups';
 

@@ -130,9 +130,22 @@ test('luxon in any client chunk fails', () => {
   assert.match(out, /luxon/, out);
 });
 
-test('api-client in a client chunk is FINE — it is client code by design', () => {
+test('a bff-server module in a client chunk FAILS — item #566 left no exemptions', () => {
+  // `api-client.ts` was exempt while it lived there. Item #566 moved it to the Utils-Layer and an
+  // audit confirmed every remaining bff-server module is genuinely server-only, so the exemption list
+  // is empty and this path has no hole. A future genuine case gets BOTH a `@client-safe` marker in the
+  // module and an entry in SERVER_ONLY_EXEMPT — never one without the other.
   const { code, out } = runGate(
     { 'entry-abc.js': { size: 100, sources: [...CLEAN_SOURCES, '/app/src/bff-server/api-client.ts'] } },
+    ['--budget', '100000'],
+  );
+  assert.equal(code, 1, out);
+  assert.match(out, /bff-server/, out);
+});
+
+test('the relocated api-client, in the Utils-Layer, is fine', () => {
+  const { code, out } = runGate(
+    { 'entry-abc.js': { size: 100, sources: [...CLEAN_SOURCES, '/app/src/utils/api-client.ts'] } },
     ['--budget', '100000'],
   );
   assert.equal(code, 0, out);

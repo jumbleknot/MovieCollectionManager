@@ -37,7 +37,7 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ collectionId: 'col-1', movieId: 'mov-1' }),
 }));
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), put: jest.fn() },
 }));
 const mockUseMovies = jest.mocked(useMovies);

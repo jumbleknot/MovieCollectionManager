@@ -5,6 +5,15 @@
  *   1. Transferred JS bytes before the screen is interactive.
  *   2. Cold time-to-interactive under a Slow-3G network profile (CDP emulation).
  *
+ * THE CONSTITUTION'S 2-SECOND-ON-3G FIGURE DOES NOT APPLY TO THIS PAGE, and that is recorded
+ * rather than tacitly ignored: constitution v2.5.0 carries an **accepted exception** for the
+ * mcm-app web client's cold load (backlog item #565). ~1,000 KB of the remaining entry chunk is
+ * `expo-router` + `react-native-web` + `react-dom` + `@tamagui/web` — the cost of rendering any
+ * route at all in this stack — so the figure is unreachable without replacing the stack. The
+ * exception is bounded by the byte budget below and by
+ * `scripts/check-web-bundle-budget.mjs`, NOT open-ended, and the same principle's "bundles must be
+ * lazy-loaded" clause is in force: that is what the deferred chunk assertion here defends.
+ *
  * FEATURE 077 TURNED THIS FROM A MEASUREMENT INTO A BUDGET. It used to carry deliberately
  * generous ceilings (8,000 KB / 150 s) because the single 4.3 MB chunk left nothing to be
  * strict about, and the file's own header named the remedy: code-splitting. That remedy

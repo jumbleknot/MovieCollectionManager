@@ -20,9 +20,11 @@
 //      lands, so this one reads every chunk's map — a gate reading only the entry chunk would report
 //      clean while `src/bff-server/**` shipped inside the deferred chunk.
 //
-// `src/bff-server/api-client.ts` is exempt from (3): it is the browser's axios transport TO the BFF,
-// client code in a directory named after what it talks to. It declares itself `@client-safe` in the
-// module, which `scripts/check-no-server-imports.mjs` reads; relocating it is item #566.
+// ASSERTION (3) HAS NO EXEMPTIONS, and that is what item #566 bought. `api-client.ts` used to be one:
+// the browser's axios transport TO the BFF, client code sitting in a directory named after what it
+// talks to. It moved to the Utils-Layer, and an audit confirmed every remaining `src/bff-server/**`
+// module is genuinely server-only (mongodb, node:* builtins, crypto, @/config/env, luxon,
+// @ag-ui/client). `src/bff-server/` now means server-only without exception, so this gate has no hole.
 //
 // Usage:
 //   node scripts/check-web-bundle-budget.mjs                      # default dist + committed budget
@@ -71,8 +73,17 @@ export const DEFERRED_PACKAGES = [
 /** Server-only code. None may reach ANY client chunk. */
 export const SERVER_ONLY = ['src/bff-server/', 'luxon'];
 
-/** The one `src/bff-server/` module that is genuinely client code (item #566). */
-export const SERVER_ONLY_EXEMPT = ['src/bff-server/api-client'];
+/**
+ * Modules on a server-only path that are nevertheless client code.
+ *
+ * **Empty by design** since item #566 relocated the only entry. Kept as a named constant rather than
+ * deleted because the mechanism is the honest way to handle a future genuine case — but an entry here
+ * MUST be paired with a `@client-safe: <reason>` marker in the module itself, which
+ * `scripts/check-no-server-imports.mjs` reads. The marker is what a reviewer of that file sees; this
+ * list is only what the bundle check needs. One without the other is an unexplained hole in whichever
+ * gate lacks it.
+ */
+export const SERVER_ONLY_EXEMPT = [];
 
 export const USAGE = [
   'usage: node scripts/check-web-bundle-budget.mjs [--dist <dir>] [--budget <bytes>] [--json] [--selftest]',
@@ -280,11 +291,19 @@ function selftest() {
     return 1;
   }
 
-  write('assistant-panel-bbb.js', 10, ['/app/src/bff-server/api-client.ts']);
+  // The Utils-Layer transport is fine; anything still under src/bff-server/ is not, because #566
+  // emptied the exemption list after confirming every remaining module there is server-only.
+  write('assistant-panel-bbb.js', 10, ['/app/src/utils/api-client.ts']);
   if (!check(root, 1000).ok) {
-    console.error('SELFTEST BROKEN: the @client-safe api-client was flagged');
+    console.error('SELFTEST BROKEN: the Utils-Layer api-client was flagged');
     return 1;
   }
+  write('assistant-panel-bbb.js', 10, ['/app/src/bff-server/api-client.ts']);
+  if (check(root, 1000).ok) {
+    console.error('SELFTEST BROKEN: a bff-server module passed with an empty exemption list');
+    return 1;
+  }
+  write('assistant-panel-bbb.js', 10, ['/app/src/utils/api-client.ts']);
 
   // A map-less tree: a visible skip by default, a FAILURE under --require-maps.
   const bare = mkdtempSync(join(tmpdir(), 'bundle-budget-selftest-nomap-'));
@@ -299,7 +318,7 @@ function selftest() {
     return 1;
   }
 
-  console.log('selftest ok: under budget passes; over budget, a deferred package in entry, and server code in any chunk all fail; api-client exempt; --require-maps rejects a map-less export');
+  console.log('selftest ok: under budget passes; over budget, a deferred package in entry, and server code in any chunk all fail; the Utils-Layer transport passes while any bff-server module fails; --require-maps rejects a map-less export');
   return 0;
 }
 

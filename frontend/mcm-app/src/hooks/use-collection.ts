@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import type { CollectionSummary } from '@/types/collection';
 
 export interface UseCollectionReturn {

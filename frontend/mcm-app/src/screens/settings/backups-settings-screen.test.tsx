@@ -13,7 +13,7 @@ import React from 'react';
 import { render, waitFor } from '@/test-support/render';
 import { BackupsSettingsScreen } from '@/screens/settings/backups-settings-screen';
 
-jest.mock('@/bff-server/api-client', () => ({
+jest.mock('@/utils/api-client', () => ({
   apiClient: {
     get: jest.fn(async () => ({ data: [] })),
     post: jest.fn(async () => ({ data: {} })),

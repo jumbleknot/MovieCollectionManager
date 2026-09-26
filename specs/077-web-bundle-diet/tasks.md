@@ -652,6 +652,91 @@ two-chunk expectation; `pnpm nx okf-governance infrastructure-as-code` still pas
 
 ---
 
+## Phase 4: Folded in at the operator's direction — items #565 and #566
+
+Both were filed as follow-ups during this feature's analysis and then pulled into it by the operator,
+who also decided #565's disposition: the constitution deviation becomes an **accepted exception**
+rather than an open question.
+
+### T018 — Record the accepted exception in the constitution (item #565)
+
+**Type**: Config change (governed document) | **Time**: 40 min | **Risk**: Low
+
+**Spec reference**: plan.md Complexity Tracking; spec.md Assumptions
+
+The constitution's Performance Budgeting principle says *"No page shall exceed a 2-second
+time-to-interactive on simulated 3G networks."* After this feature the mcm-app web cold load is ~35 s,
+and the residue is the cost of rendering any route in a React-Native-Web + Tamagui app — unreachable
+without replacing the stack. The operator's decision is to accept it as a bounded exception.
+
+Amend `.specify/memory/constitution.md` following its own Governance section — MINOR bump, because a
+scoped exception adds guidance without redefining a principle (the precedent is v2.4.0's sanctioned
+exception for the agent golden tier, classified the same way):
+
+1. Version-history entry for **v2.5.0**, moving `[CURRENT]` off v2.4.0.
+2. The exception as a sub-bullet of Performance Budgeting itself, stating four things: that the figure
+   is unachievable and why (with the measured byte breakdown); that it does **not** excuse the same
+   principle's lazy-loading clause, which this feature implements and CI enforces; that it is
+   **bounded** by the committed entry-chunk budget, so growth past it is a failure and not a further
+   exception; and that its scope is the mcm-app web cold load and nothing else.
+3. Governance footer: version and Last Amended.
+
+Do **not** hand-edit `openwiki/process/constitution.md` — it carries `resource: .specify/memory/constitution.md`,
+so it is a derived summary and regenerates.
+
+Then reconcile the artifacts that described the deviation as open: `perf.spec.ts`'s header, plan.md's
+Constitution Check row and Complexity Tracking, spec.md's Assumptions.
+
+**Done when**: the constitution reads v2.5.0 with the exception under the principle it scopes;
+`perf.spec.ts` cites it instead of implying an unmet target; no artifact still describes the gap as an
+undecided question.
+
+---
+
+### T019 — Relocate `api-client.ts` to the Utils-Layer (item #566)
+
+**Type**: Implementation (refactor) | **Time**: 1 h | **Risk**: Medium
+
+**Spec reference**: FR-009, FR-011 — it removes the last exemption from both gates
+
+`src/bff-server/api-client.ts` is the browser's axios transport TO the BFF: `withCredentials` carries
+the caller's own cookies, and 32 files import it, correctly. It sat under a directory named after what
+it talks to rather than where it runs, which is precisely the ambiguity that let `backup-run-summary`
+be imported from a component and ship 70 KB of `luxon` to every user.
+
+1. `git mv` the module and its unit test to `src/utils/`; repoint every importer (32 files, including
+   `tests/app/**` — a `src/`-only search misses those and the suite fails with a jest
+   `moduleNameMapper` error, not an import error).
+2. Delete its `@client-safe` marker and replace it with a comment saying why it lives in the
+   Utils-Layer.
+3. **Audit every remaining `src/bff-server/**` module** and record the finding — the item asks for
+   this rather than an assumption.
+4. Empty `SERVER_ONLY_EXEMPT` in `check-web-bundle-budget.mjs`, keeping the constant and its tests:
+   an unused mechanism with tests documents the rule, whereas a deleted guard is the regression it was
+   written to catch. Update the gate's selftest, which asserted the old exemption.
+5. **Keep the `@client-safe` mechanism** in `check-no-server-imports.mjs` and its five tests, for the
+   same reason.
+
+> **Do not fix the references with a blanket `sed`.** Tried and reverted: it rewrote the two gate
+> fixtures that deliberately name `src/bff-server/api-client` as the case that must now FAIL (making
+> the marker tests vacuous, since a `utils/` path is not under `bff-server/` and would never be
+> flagged), and it rewrote two historical spec records. Repoint importers; leave fixtures and history
+> alone.
+
+**Verify GREEN**:
+```bash
+cd /home/coder/worktrees/077-web-bundle-diet/frontend/mcm-app
+NODE_ENV=test npx jest --watchAll=false && npx tsc --noEmit && npx eslint src --ext .ts,.tsx
+cd .. && node --test scripts/__tests__/check-web-bundle-budget.test.mjs scripts/__tests__/check-no-server-imports.test.mjs
+node scripts/check-no-server-imports.mjs && node scripts/check-web-bundle-budget.mjs --selftest
+pnpm nx bundle-budget mcm-app --skip-nx-cache
+```
+**Expected**: 154 suites / 1577 tests pass; 0 lint errors; 37 gate tests pass; both selftests exit 0;
+the real scan exits 0 with no module relying on a marker; the entry chunk is unchanged within a few
+hundred bytes (the move only changes path strings).
+
+---
+
 ## Platform Parity Table
 
 Mandatory per the constitution's Frontend App Quality Standards. Every scenario, with its web
@@ -706,6 +791,7 @@ Mandatory per the constitution's Frontend App Quality Standards. Every scenario,
 | 1 | US2 (P2) | T001–T005 | T001, T003 | ~3 h |
 | 2 | US1 (P1) | T006–T013a | T006, T008, T010, T012 | ~7 h |
 | 3 | US3 (P3) | T014–T017 | T014 | ~3 h |
+| 4 | items #565, #566 (folded in) | T018–T019 | — (refactor + governed doc; covered by the existing suites and gates) | ~2 h |
 
 **MVP**: Phase 2 alone satisfies SC-001 through SC-004. Phase 1 is a correctness fix worth shipping
 with it; Phase 3 is what stops the win being spent silently.

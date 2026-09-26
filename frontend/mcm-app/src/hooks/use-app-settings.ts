@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { apiClient } from '@/bff-server/api-client';
+import { apiClient } from '@/utils/api-client';
 import { getErrorMessage } from '@/utils/errors';
 import type { AppSettings } from '@/types/app-settings';
 

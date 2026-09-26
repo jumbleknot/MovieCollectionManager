@@ -19,7 +19,8 @@ VERSION HISTORY:
 - v2.1.0: Agent Security — File-Processing Safety control added; no existing principle redefined. (2026-06-14)
 - v2.2.0: Architecture Diagrams — Agent Auth Flow sequence diagram added; Login & Backend auth-flow diagrams hardened to show HttpOnly token cookies + a tokenless session record (illustrative; no principle redefined). (2026-06-14)
 - v2.3.0: Frontend Design System — Tamagui + @mcm/design-system mandated as the UI/styling layer; a Design System principle added under Frontend UI & UX (additive; no principle redefined). (2026-06-14)
-- v2.4.0: Test Type Integrity — sanctioned exception recorded for the agent golden tier (`golden`-marked model-decision tests MAY substitute the LLM dimension via the record/replay cassette seam). Scopes an existing prohibition; does not reverse or weaken it, and no other substitution is permitted anywhere. (2026-08-07) [CURRENT]
+- v2.4.0: Test Type Integrity — sanctioned exception recorded for the agent golden tier (`golden`-marked model-decision tests MAY substitute the LLM dimension via the record/replay cassette seam). Scopes an existing prohibition; does not reverse or weaken it, and no other substitution is permitted anywhere. (2026-08-07)
+- v2.5.0: Performance Budgeting — **accepted exception** recorded for the mcm-app web client's cold load, whose measured Slow-3G time-to-interactive cannot meet the 2-second figure on a React-Native-Web + Tamagui stack. The exception is bounded by a committed byte budget rather than open-ended, and the 2-second rule stands unchanged for every other page and every other app. Adds a bounded exception; does not redefine the principle. (2026-09-26) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -291,6 +292,10 @@ Defines enforced rules for UI/UX consistency, accessibility, usability and perfo
 
 - **Accessibility First:** All interactive elements must meet WCAG 2.2 Level AA compliance. ARIA labels are required for all non-text elements, and focus states must be visible.
 - **Performance Budgeting:** No page shall exceed a 2-second time-to-interactive on simulated 3G networks. Images must be automatically optimized to WebP format, and JavaScript bundles must be lazy-loaded.
+  - **Accepted exception — the mcm-app web client's cold load (v2.5.0, 2026-09-26; backlog item #565).** The 2-second figure is **not achievable** for this app's cold load, and the gap is not a shortfall in diligence: after feature 077 the web entry chunk is 1,762,630 bytes, of which roughly 1,000 KB is `expo-router`, `react-native-web`, `react-dom` and `@tamagui/web` — the irreducible cost of rendering *any* route in a React-Native-Web + Tamagui universal app. At the Slow-3G profile the app's own performance test emulates (400 kbps), that is ~35 seconds of transfer before a line executes. Closing the remaining gap would mean replacing the rendering stack, not optimising within it.
+    - **What the exception does NOT excuse.** The same principle's "JavaScript bundles must be lazy-loaded" clause is **in force and enforced**: feature 077 moved the 2.4 MB assistant runtime behind a dynamic import, and a static import that undoes it fails CI. The exception covers the residual **framework weight only**.
+    - **It is bounded, not open-ended.** `scripts/check-web-bundle-budget.mjs` enforces a committed maximum on the web entry chunk (2,000,000 bytes) through the `bundle-budget` Nx target on every affected change. Growth beyond that budget is a **failure**, not a further exception; raising the budget is a deliberate, justified act. An exception without a ceiling would be a repeal.
+    - **Scope.** This exception applies to the mcm-app **web client's cold load** and to nothing else. Every other page, every other client, and every other budget in this principle are unchanged. Evidence and derivation: `specs/077-web-bundle-diet/` (spec, plan, research.md).
 - **Responsive & Adaptive Design:** Layouts must follow a mobile-first approach, using fluid grids. Components must adapt seamlessly between mobile, tablet, and desktop breakpoints.
 - **Consistency & Feedback:** Use consistent spacing (base-8 system) and color palettes. All actions must provide immediate, clear feedback (e.g., loading spinners, success toast messages).
 - **User-Centric Naming:** Component and property names must reflect user actions (e.g., `SubmitButton` rather than `GenericButton`) to aid in readability and AI comprehension.
@@ -1011,4 +1016,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md) (separate from constitution).
 
-**Version**: 2.4.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-08-07
+**Version**: 2.5.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-09-26
