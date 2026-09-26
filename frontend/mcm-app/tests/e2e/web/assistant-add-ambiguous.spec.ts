@@ -23,11 +23,16 @@
  */
 
 import { test, expect } from './fixtures/worker-session';
-import { type APIRequestContext, type Page } from '@playwright/test';
+import { type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
-import { answerChildrens, answerOwnership } from './setup/assistant-add-flow';
+import {
+  answerChildrens,
+  answerOwnership,
+  findCollection,
+  waitForAddedMovies,
+} from './setup/assistant-add-flow';
 
 const OFFER_TIMEOUT = 150_000;
 const APPROVAL_TIMEOUT = 90_000;
@@ -58,17 +63,6 @@ async function openDock(page: Page): Promise<void> {
 async function send(page: Page, text: string): Promise<void> {
   await page.fill('[data-testid="assistant-dock-input"]', text);
   await page.click('[data-testid="assistant-dock-send"]');
-}
-
-async function findCollection(
-  request: APIRequestContext,
-  name: string,
-): Promise<{ collectionId: string } | undefined> {
-  const res = await request.get('/bff-api/collections');
-  if (!res.ok()) return undefined;
-  const body = await res.json();
-  const items = (body.items ?? body) as { collectionId: string; name: string }[];
-  return items.find((c) => c.name.toLowerCase() === name.toLowerCase());
 }
 
 test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
@@ -123,20 +117,12 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
 
     // Approve → the create-if-missing collection + the chosen movie are applied exactly once.
     await page.click('[data-testid="approval-approve"]');
-    // Wait for the WRITE, not for the model's confirmation wording (item #323). "Done" is the
-    // assistant's phrasing and it is free to vary; the collection appearing is the EFFECT this test
-    // exists to prove, and it is exactly what the assertions below go on to read.
-    await expect
-      .poll(async () => (await findCollection(request, collectionName)) !== undefined, {
-        timeout: DONE_TIMEOUT,
-      })
-      .toBe(true);
-
-    const collection = await findCollection(request, collectionName);
-    expect(collection).toBeDefined();
-    const moviesRes = await request.get(`/bff-api/collections/${collection!.collectionId}/movies`);
-    expect(moviesRes.ok()).toBeTruthy();
-    const movies = ((await moviesRes.json()).items ?? []) as { title: string }[];
+    // Wait for the WRITE, not for the model's confirmation wording (item #323) — and for the write
+    // this test is ABOUT, which is the movie, not the collection that create-if-missing necessarily
+    // makes first (item #568; the ordering and the measured failure are documented on the helper).
+    const { movies } = await waitForAddedMovies(request, collectionName, 1, DONE_TIMEOUT);
+    // Restated rather than implied: "adds exactly one movie" is this test's headline property, and
+    // the helper is only trustworthy for it while the count it was asked for is visible here.
     expect(movies).toHaveLength(1);
     expect(movies[0].title).toContain('Pirates');
   });
