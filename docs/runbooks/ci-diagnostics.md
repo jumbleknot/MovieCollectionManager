@@ -662,6 +662,19 @@ three-way: a cancelled run publishes nothing, a failure publishes the full diges
 success** publishes a small *counts-only* bundle — the `[e2e-gate]` line, the `[e2e-contention]`
 tally, and the `[e2e-turns]` verdict — with no PR comment.
 
+**And it NAMES what it counted (item #568).** The counts alone were not enough: run 4033 was green
+with `flaky=1`, and which test had needed its retry was unrecoverable — counts mode collects only the
+three tally logs, the bundle's own manifest records *"playwright report — not present"*, and this
+forge build **404s `/actions/runs/{id}/jobs`**, so the dot-reporter output survived nowhere a session
+could reach. `[e2e-gate]` now prints the identities of the flaky, skipped and did-not-run tests under
+the counts line, and says so explicitly when a section header outnumbers the identities beneath it
+(a truncated log, where taking the list as complete is worse than printing nothing). Naming a flaky
+test never changes the verdict — it passed on retry.
+
+So on a green run, read the `[e2e-gate]` block and not just its first line. If you find yourself
+wanting to re-run a green job to find out *which* test was flaky, that answer is already in the
+bundle.
+
 ⚠️ **Use `MCM_FORGE_TOKEN` for packages.** The `git credential fill` credential — the one that opens
 pull requests — returns an **empty package list** rather than a 403, which reads as "no bundle was
 published" for a bundle that exists. Measured 2026-08-12: the same query returned 0 versions with one

@@ -50,8 +50,18 @@ const RUN_B = `
 
 test('counts come from the section headers, and every section is read', () => {
   const c = runCounts(RUN_A);
+  // Exhaustive on purpose: a new key must be added HERE too, so the shape cannot drift unnoticed.
+  // Extended (not relaxed) when item #568 made the identities part of the result — the counts it
+  // already pinned are unchanged.
   assert.deepEqual(c, {
     failed: 3, flaky: 2, passed: 171, didNotRun: 1, skipped: 0, failedListed: 3,
+    // The identity drops the `[chromium] ›` project prefix and keeps `file:line:col › title`.
+    flakyTests: [
+      'tests/e2e/web/agent-search.spec.ts:20:7 › Assistant search › finds a movie',
+      'tests/e2e/web/perf.spec.ts:50:7 › bundle + cold TTI › measure transferred JS',
+    ],
+    skippedTests: [],
+    didNotRunTests: [],
   });
 });
 
@@ -177,4 +187,84 @@ Running 177 tests using 6 workers
   const g = gateCounts(failed);
   assert.equal(g.ok, true, 'failed>0 alone must not trip the gate');
   assert.equal(g.counts.failed, 3);
+});
+
+
+// ── Naming what was counted (item #568 follow-up) ────────────────────────────────────────────────
+//
+// The counts alone were not enough, measured on run 4033: a GREEN `app-e2e` reported
+// `failed=0 flaky=1 passed=180`, and which test had needed its retry was **unrecoverable**. Counts
+// mode publishes only the three tally step logs, the bundle's own manifest records "playwright
+// report — not present", and this forge build 404s `/actions/runs/{id}/jobs` — so the dot-reporter
+// output survived nowhere a session could reach. The identities were parsed all along and thrown
+// away one function later.
+//
+// This is the same shape as the defect this script was written for, one level up: that one trusted a
+// green tick over a count, this one trusted a count over an identity.
+
+/** Header says 3 flaky but lists one — the truncation case, which must not read as "1 flaky". */
+const FLAKY_TRUNCATED = `
+  3 flaky
+    [chromium] › tests/e2e/web/assistant-add.spec.ts:90:7 › Assistant add flow › approve creates the collection
+  170 passed (22.0m)
+`;
+
+const WITH_SKIPS = `
+  2 skipped
+    [chromium] › tests/e2e/web/assistant-add-ambiguous.spec.ts:84:7 › Assistant ambiguous add flow › ordinal pick
+    [chromium] › tests/e2e/web/assistant-import.spec.ts:30:7 › Assistant import › applies a workbook
+  171 passed (18.2m)
+`;
+
+test('the FLAKY tests are NAMED — on a green run this is their only record', () => {
+  const { counts: c, notes } = gateCounts(RUN_A);
+  assert.equal(c.flaky, 2);
+  const text = notes.join('\n');
+  assert.ok(text.includes('agent-search.spec.ts:20:7'), `flaky identity missing from notes:\n${text}`);
+  assert.ok(text.includes('perf.spec.ts:50:7'), `flaky identity missing from notes:\n${text}`);
+  // Naming them must not change the verdict. Asserted on a FLAKY-ONLY run: RUN_A also carries
+  // `1 did not run`, so its verdict is legitimately false and would prove nothing about flaky here.
+  const flakyOnly = `
+  2 flaky
+    [chromium] › tests/e2e/web/assistant-add.spec.ts:90:7 › Assistant add flow › approve creates the collection
+    [chromium] › tests/e2e/web/perf.spec.ts:50:7 › bundle + cold TTI › measure transferred JS
+  179 passed (35.1m)
+`;
+  assert.equal(gateCounts(flakyOnly).ok, true, 'a flaky test passed on retry — it must not fail the gate');
+  assert.equal(gateCounts(flakyOnly).notes.length, 3, 'one label line + two identities');
+});
+
+test('a flaky list SHORTER than its header says so — a truncated log must not under-report', () => {
+  const { counts: c, notes } = gateCounts(FLAKY_TRUNCATED);
+  assert.equal(c.flaky, 3);
+  assert.equal(c.flakyTests.length, 1);
+  const text = notes.join('\n');
+  assert.ok(text.includes('assistant-add.spec.ts:90:7'), 'the one known identity should still be named');
+  assert.match(text, /truncated|incomplete/i, `no truncation warning in:\n${text}`);
+});
+
+test('SKIPPED tests are named as well — knowing WHICH gate stopped forwarding is the actionable part', () => {
+  const { counts: c, notes, ok } = gateCounts(WITH_SKIPS);
+  assert.equal(c.skipped, 2);
+  assert.equal(ok, false, 'a skip must still FAIL the gate');
+  const text = notes.join('\n');
+  assert.ok(text.includes('assistant-add-ambiguous.spec.ts:84:7'), `skipped identity missing:\n${text}`);
+  assert.ok(text.includes('assistant-import.spec.ts:30:7'), `skipped identity missing:\n${text}`);
+});
+
+test('a "did not run" count with no identities listed is reported as incomplete, not as zero', () => {
+  // RUN_A carries `1 did not run` with NO identity lines under it — the shape every measured run had.
+  const { counts: c, notes } = gateCounts(RUN_A);
+  assert.equal(c.didNotRun, 1);
+  assert.equal(c.didNotRunTests.length, 0);
+  assert.match(notes.join('\n'), /truncated|incomplete/i);
+});
+
+test('a genuinely clean run produces NO notes — nothing to name, nothing printed', () => {
+  const clean = `
+  181 passed (34.2m)
+`;
+  const { notes, ok } = gateCounts(clean);
+  assert.equal(ok, true);
+  assert.deepEqual(notes, [], `a clean run should print nothing extra, got:\n${notes.join('\n')}`);
 });
