@@ -28,7 +28,7 @@ services:
   # observability stack runs. Deliberately NOT a third-party pull: upstream withdrew minio/minio
   # from Docker Hub on 2026-09-11, which is the whole reason that image exists here.
   mcm-bff-backup-minio:
-    image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
+    image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:780f52e93192261a12920d7f4b255fe63deb460eef97cf462940656e1263851a
     container_name: mcm-bff-backup-minio
     restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9001"]
@@ -68,7 +68,7 @@ services:
   # than production ones, but a new file should not reintroduce a pattern the repository has just
   # ratified against — and the sibling webdav-init below already does it this way.
   mcm-bff-backup-minio-init:
-    image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:34eb9562702736347229a8ae5716d381b0678b08f79c35570be756d72a7123af
+    image: ${REGISTRY_HOST:?set in stacks/mcm.env}/jumbleknot/minio:2025.09.07-161309@sha256:780f52e93192261a12920d7f4b255fe63deb460eef97cf462940656e1263851a
     container_name: mcm-bff-backup-minio-init
     depends_on:
       mcm-bff-backup-minio:
