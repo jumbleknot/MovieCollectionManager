@@ -736,6 +736,87 @@ the same change. `infra-image-scan.test.mjs` asserts both halves.
 whole batched PR unmergeable *and* unsplittable — and Renovate regenerates it weekly, so the routine
 bumps riding with it stay blocked for as long as the migration takes (measured on PR #263).
 
+### A packageRule whose MANAGER does not exist — the rule/extraction gap (item #560)
+
+"Extraction is not grouping" has a sharper sibling: a `packageRule` matching packages that **nothing
+extracts**. The rule resolves, the guard that checks the rule passes, and no update is ever proposed.
+
+Measured 2026-09-25. `renovate.json`'s minio rule says, in its own description:
+
+> "What still needs tracking is the **SOURCE release**, read from the build args in
+> `infrastructure-as-code/docker/minio/Dockerfile` **by the customManager below**."
+
+**There is no such customManager.** All nine are scoped to other files. Renovate's own extraction
+report — the Dependency Dashboard's *Detected Dependencies* — listed that Dockerfile with **two**
+dependencies, `golang` and `alpine`; `MINIO_TAG` and `MC_TAG` were absent. So `MINIO_TAG` sat at
+`RELEASE.2025-09-07T16-13-09Z` for a year with nothing proposing a bump, while the image it builds
+failed its own CVE gate every week on three `amqp091-go` Criticals a newer release would clear.
+
+And the guard was green throughout, because it asserts the **rule** against a *synthetic* dep:
+
+```js
+const sourceDep = (depName) => ({ manager: 'custom.regex', datasource: 'github-releases', depName });
+const versioning = resolvedVersioning(sourceDep('minio/minio'));   // resolves fine — proves nothing
+```
+
+**Read the DASHBOARD, not the config.** The per-file dependency counts under *Detected Dependencies*
+are Renovate telling you what it actually extracted; a rule is only a claim about what it would do if
+it ever saw the dep. `infra-image-scan.test.mjs`'s
+`(412) every compose file carrying an image ref is VISIBLE to Renovate` is the shape a guard needs —
+it asserts visibility, not configuration.
+
+One trap when adding the missing manager: this Dockerfile **verifies each tag resolves to a pinned
+commit and fails the build otherwise**, and a regex manager cannot compute a commit sha. So a naive
+manager trades silence for "a proposal that can never build", which is a new silent failure. Decide
+and record which it is.
+
+### `cmd1 && cmd2` under `bash -e` — the second command's silence is invisible
+
+A step body of two gate commands reports **one** outcome, so "the first crashed and the second never
+ran" is indistinguishable from "both ran and one found something".
+
+Measured on the 2026-09-25 weekly sweep (item #562). `check-sast-findings.mjs --check-expiring`
+crashed on its own **announced** no-report path — it prints that an absent report is fine, then throws
+one frame later because the scope guard demands a field a synthesised report cannot have. The step is
+`bash -e`, so `check-infra-image-findings.mjs --check-expiring` on the next line never ran either:
+feature 057's entire expiry/unmatched tier had been dead since **2026-09-12**, reported as
+`expiry_step=failure` and nothing more.
+
+It hid for two weeks because on 2026-09-18 the red gate **skipped** the step (the item #484 fault), so
+the crash could not surface. Item #484's `always()` is what let it run and expose itself — the fix
+working as designed, one layer down.
+
+> ⚠️ **Run the STEP, not the commands.** The identical defect existed in
+> `check-infra-image-findings.mjs` on `generatedForImages`, and was invisible until the first command
+> stopped aborting. Verifying each command alone would have declared the fix complete. Reproduce a step
+> the way CI runs it:
+> ```bash
+> bash -e -c 'node scripts/check-sast-findings.mjs --check-expiring &&
+>             node scripts/check-infra-image-findings.mjs --check-expiring'
+> ```
+
+> ⚠️ **These two gates PASS in a working tree and fail on a fresh checkout.** Both read a gitignored
+> `reports/findings.json` that a previous local run leaves behind. Only a clean checkout — i.e. every
+> CI run — takes the absent-report path. `git archive origin/main | tar -x -C "$(mktemp -d)"` is the
+> cheapest way to see what CI sees.
+
+### The health digest reads a WEEKLY run, so a fixed `main` still reads red (item #563)
+
+`renovate-health.mjs` used to report the newest **scheduled** sweep as `main`'s posture. On 2026-09-25
+the 04:00 cron was red on one finding, the fix merged at 12:23Z, and the same gate passed on `main` at
+12:33Z — and the digest still answered `❌ main is failure`, for the six days until the next cron.
+
+That is §5's own theme inverted: absence read as health, then a **stale verdict read as live**. It now
+reads the newest run of that workflow **on `main`** by schedule *or* push, names the event, and states
+any superseded verdict rather than dropping it.
+
+- A **push run is an equally authoritative verdict**: the workflow runs the full, un-path-gated sweep on
+  every non-`pull_request` event — the path filter is on the *trigger*, not on the scan's scope. What a
+  push cannot promise is that it fires at all, which is why the cron stays the safety net.
+- **`prettyref` is the branch discriminator.** `head_branch` is **null** on every run this build
+  returns; `prettyref` carries `main`, a branch name, or `#557` for a PR. Without it the same page
+  offers a red push run on a Renovate branch as `main`'s posture.
+
 ---
 
 ## 6. Triage checklist
