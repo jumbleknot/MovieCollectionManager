@@ -29,12 +29,29 @@
  *
  * ── The rule now ──
  *
- * A test deletes only what it declared it owns. Ownership is registered by name, because the names
- * are the only thing that identifies a creator: every worker acts as the SAME `E2E_TEST_USER`, so
- * `owner_id` cannot separate them, and a collection the ASSISTANT creates (create-if-missing, an
- * import's per-tab collections) never passes through the test's own request context, so it cannot be
- * captured at the HTTP layer either. Every spec already names its collections with a unique
- * discriminator, so declaring the name costs one call.
+ * A test deletes only what it declared it owns. Ownership is registered by name, because within one
+ * worker the name is the only thing that identifies a creator: a collection the ASSISTANT creates
+ * (create-if-missing, an import's per-tab collections) never passes through the test's own request
+ * context, so it cannot be captured at the HTTP layer. Every spec already names its collections with a
+ * unique discriminator, so declaring the name costs one call.
+ *
+ * ── CORRECTION (item #568): this is now belt-and-braces ACROSS workers, not the only barrier ──
+ *
+ * The paragraph above used to justify name-scoping with *"every worker acts as the SAME
+ * `E2E_TEST_USER`, so `owner_id` cannot separate them"*. That was true when it was written (item #165,
+ * 2026-08-10) and has been false since **feature 054 US4 (item #169, 2026-08-12)** gave every worker
+ * its own identity — run 4002 carries seven distinct `subject` values. Since mc-service scopes
+ * collections by `owner_id = token.subject` (`api/collections/list.rs`, `delete.rs`), one worker can no
+ * longer see, let alone delete, another worker's collection: the cross-worker hazard this helper was
+ * written for is now prevented twice over, by identity as well as by name.
+ *
+ * Left in place deliberately. The name-scoping is still doing real work WITHIN a worker, where the
+ * whole file's tests share one identity and one teardown could still reach another test's residue, and
+ * it is what covers the assistant-created collections the HTTP layer cannot see. But the stale
+ * justification actively misled a diagnosis: item #568 was filed on the theory that a concurrent
+ * worker's cleanup had deleted a collection mid-agent-turn, which this comment made sound plausible
+ * and which the identity scoping had already made impossible. The real cause was a wait on the wrong
+ * write, entirely inside one worker.
  *
  * The failure mode is deliberately asymmetric: forgetting to declare leaks a collection (bounded,
  * and swept by `resetNonFixtureCollections` at the start of the next run, where nothing is in

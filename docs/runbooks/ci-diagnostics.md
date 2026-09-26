@@ -1046,6 +1046,63 @@ node scripts/ci-status.mjs failure --pr 82 --full
   If failures stop entirely, expired bundles linger until the next failure publishes.
 - `--full` writes the bundle to the scratchpad **and prints the path, not the contents**.
 
+### 🚨 `logs/mc-service.log` line order is NOT event order — reconstruct with `duration_ms` (item #568)
+
+**mc-service logs its domain event at the END of the handler**, in the same emit as the response. So a
+slow request's `collection_created` appears in the file *after* everything that happened during it. The
+line order is completion order; the interesting order is almost always **start** order, and the only
+thing that recovers it is the `duration_ms` on the `request completed` line.
+
+This is not a footnote. Item #568 was filed on a confident, fully-reasoned hypothesis — *"a concurrent
+cleanup deleted a collection 54 ms before a live agent turn tried to add a movie to it"* — built by
+reading four adjacent lines in file order. The proposed fix was per-worker collection isolation, a
+substantial change to the E2E fixtures. Subtracting the durations showed the opposite: the `POST
+/collections` whose `collection_created` line sat *below* the DELETE had taken **265 ms**, so it had
+**started 137 ms before** the delete it appeared to follow, the collection was already visible when the
+assertion read it, and the DELETE was the test's own `afterEach` firing *after* that assertion had
+already failed. There was no concurrent actor and nothing to isolate.
+
+Extract the window as a table rather than reading raw lines — the token payload also drowns the fields
+that matter:
+
+```bash
+# start time = timestamp - duration_ms. Print both, and sort by the START when ordering matters.
+python3 - <<'EOF' < /tmp/mcm-ci-status/<runId>--<job>/logs/mc-service.log
+import sys, json
+for line in sys.stdin:
+    i = line.find('{')
+    if i < 0: continue
+    try: o = json.loads(line[i:])
+    except Exception: continue
+    f, sp = o.get('fields', {}), o.get('span', {})
+    print(o['timestamp'], f"dur={f.get('duration_ms')}", f.get('status'),
+          sp.get('method'), sp.get('path') or sp.get('name'), f.get('message'))
+EOF
+```
+
+Two more fields in that file settle "who did this", and they settle it without inference:
+
+- **`authorized_party` separates the actors** even though every E2E worker acts as the same subject.
+  `movie-collection-manager` is the browser/BFF session (a test or its teardown); `agent-gateway` with
+  `mc-service` in the audience is the agent's downscoped write token. In item #568 the delete was the
+  former and the create the latter — same `subject`, different actor.
+- **`preferred_username` names the WORKER** (`e2e_w3_…` is worker 3), which is what tells a test's own
+  teardown from another worker's. Reliable since **feature 054 US4 (item #169, 2026-08-12)** made setup
+  mint one identity per worker: run 4002 carries **7 distinct `preferred_username` values and 7 distinct
+  `subject` values**, counted from the log.
+
+  That has a consequence worth reaching for before any cross-worker theory, because it usually ends the
+  question outright: **mc-service scopes collections by `owner_id = token.subject`**
+  (`api/collections/list.rs`, `delete.rs`), so one worker cannot list, read or delete another worker's
+  collection at all — a foreign delete is not a race to be narrowed, it is impossible. Whatever the log
+  shows, if two lines carry different `subject` values they cannot be acting on the same collection.
+
+And a corollary worth stating because it also reads as evidence: **sequential ObjectIds prove nothing
+about who created what.** `…aa2`/`…aa3`/`…aa4` differing by one only means concurrent creations in the
+same second. Item #568 cited the sequence as support for a cross-test interaction; it is consistent
+with any number of independent writers.
+
+
 ### It packs `container-logs/` RECURSIVELY, and what it cannot carry it NAMES (item #241)
 
 The packer originally read `~/mcm-ci-last-failure` with one flat `readdirSync` filtered to `*.log`,
