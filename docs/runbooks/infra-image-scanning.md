@@ -405,6 +405,69 @@ consequences for this document:
 
 Full reasoning, measured rather than asserted: `specs/069-minio-from-source/research.md`.
 
+### Publishing is not promoting — how the built image reaches the stacks (item #577)
+
+`minio-image.yml` publishes; **promotion is a separate, deliberately triggered act.** Until
+2026-09-26 it was a *manual* act with no owner, no trigger and no signal, and it degraded exactly as
+that shape always does: PR #559 bumped the builder `golang:1.25-alpine → 1.27-alpine` as a security
+bump, the image rebuilt and published, and every compose ref still pinned the pre-#559 digest three
+weeks later.
+
+That gap matters more here than it would elsewhere, because feature 069's central claim — that
+choosing our own builder makes a Go stdlib CVE *a build input, not a suppression* — is a claim about
+the image **as built**. Between publish and promotion it says nothing about the image **as
+deployed**.
+
+**The model now:** a build triggered by a **Dockerfile change** (or a dispatch with `promote` ticked)
+runs `scripts/promote-minio-digest.mjs`, which repoints every pinned ref it finds in the tree and
+opens — or updates — one always-current pull request. The **weekly canary never promotes**.
+
+| trigger | publishes | promotes | why |
+|---|---|---|---|
+| `push` (Dockerfile) | yes | **yes** | the image's INPUTS moved — a Renovate base bump or a `MINIO_TAG` bump. This publish has to reach the stacks or the bump bought nothing. |
+| `schedule` (weekly) | yes | **no** | the canary. Its digest changes every Friday regardless, because the `apk` installs resolve against Alpine's live index. |
+| `workflow_dispatch` | yes | only if `promote` is ticked | dispatch is also how the build is *proven* still working, which must stay a read-only act. |
+
+**Why the trigger is the right discriminator.** Drift between the published digest and the pinned one
+is *expected* — the build is deliberately not bit-reproducible (runs 3115 and 3117 built identical
+source and produced two different digests). So "published ≠ pinned" is true most weeks and is not by
+itself a defect; a check reporting it would cry wolf every Friday. The trigger is the one signal that
+separates float from a real input change, and the workflow already has it.
+
+**Two alternatives were considered and rejected:**
+
+- *Promote on every successful publish, canary included.* Simplest rule, and wrong: a pull request a
+  week whose only content is float, ~35 minutes of `app-e2e` each time, and — the part that actually
+  costs something — it trains a reader to merge these unread, so the next real bump goes through
+  unexamined too.
+- *Keep promotion manual and add a drift check that reports a stale pin.* Cheapest, and it changes no
+  deploy behaviour, but it needs a second input to tell benign drift from meaningful drift, and it
+  leaves the remembering exactly where it already failed. An unmerged promotion PR reports the same
+  fact in a place an operator already looks, and fixes it in the same gesture.
+
+**The stale-pin signal is the open pull request itself.** There is deliberately no second mechanism:
+a weekly digest reporting "promotion PR #N is still open" would be another thing to keep alive,
+reporting something already visible.
+
+**Two traps the promoter is built around**, both of which have bitten by hand:
+
+- **The digest must be the manifest LIST.** A build exports both a manifest and a manifest list and
+  `buildx` logs them adjacently; the first does not pull. The promoter resolves the digest *from the
+  per-run tag* with `docker buildx imagetools inspect` — measured with docker 29.7.2 / buildx 0.37.1,
+  `.Manifest.MediaType` comes back `application/vnd.oci.image.index.v1+json` — and then **pulls the
+  exact ref it is about to write**, because that tests the property we care about rather than a proxy
+  for it.
+- **The ref count comes from the tree, never from a note.** `specs/070-minio-non-root/tasks.md`
+  records "all **four** refs repointed", correct when written; feature 073 added the backups stack's
+  two, making six, and the note went stale with nothing noticing. `findRefs()` scans on every run and
+  treats an empty result as a hard failure — a promoter that silently matches zero refs is
+  indistinguishable from one that worked.
+
+The promotion PR carries no `[skip ci]`, unlike cd-deploy's promote commit: `app-e2e` running on the
+ref change is what makes proposing it automatically safe, and
+`scripts/__tests__/minio-promote.guard.test.mjs` fails if `infrastructure-as-code/docker/**` ever
+leaves app-ci's `app` paths filter (the item #535 hazard, arriving through a new door).
+
 ### The minio update types are calendar arithmetic, not semantics
 
 The regex versioning maps year→major, month→minor, day→patch. A January release will report **major**
