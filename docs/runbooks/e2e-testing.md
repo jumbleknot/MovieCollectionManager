@@ -385,6 +385,38 @@ container**, and `main` went red on a docs-and-uv merge. Two things follow:
 
 Every one of these produced a confident, wrong answer, and every one was checkable in seconds.
 
+- **NOTHING STATICALLY CHECKS `tests/e2e/**` — a clean `typecheck` is not evidence about a spec.**
+  `frontend/mcm-app/tsconfig.json` carries `exclude: ["tests/e2e", "tests/load", "tests/web-e2e"]`, and
+  the `lint` target runs `eslint src` only. Verified 2026-09-26 the way this section demands — by
+  planting `const __probe: number = "not a number";` in `backups.spec.ts` and watching
+  `tsc --noEmit -p frontend/mcm-app/tsconfig.json` pass, with `--listFiles | grep -c backups.spec.ts`
+  returning **0**. (The instrument itself was confirmed working: the same command under
+  typescript@5.9.3 did surface a real config error, so the clean pass was not a silent no-op.) So
+  **running the spec is the only verification these files have** — do not offer a green typecheck as
+  evidence that one is sound.
+- **AN ASSERTION WHOSE EXPECTED STATE ALREADY HOLDS IS NOT A WAIT (item #564).** The sharpest form of
+  this class, because the test still *reads* as if it waits. `backups.spec.ts`'s three-run retention
+  loop had **two** such waits and therefore none:
+  - the success banner reads `Backed up N movies` after **every** run, so `toContainText` matched the
+    *previous* run's banner the instant the next was clicked;
+  - the version count was polled `.toBe(Math.min(i + 1, 2))` — which is **2 for both `i=1` and `i=2`**,
+    a ceiling already reached, so the poll returned on its first tick.
+
+  Both vacuous, the final assertions raced the run: the two surviving keys were 258ms apart and the
+  third run's key was **absent**, so the test failed reporting "nothing was pruned" when nothing had yet
+  needed pruning. The retention code was never implicated, and the old comment named the very hazard
+  its expression failed to cover.
+
+  **The fix is to wait on something that CHANGES, and to poll a COMPOUND fact when no single one
+  changes.** Capture the key set before the click, then poll `{ fresh, total }` as one object: `fresh`
+  alone is satisfied before the prune, `total` alone is already true before the click, and only the pair
+  pins "this run finished **and** retention ran". Keep a same-text UI assertion if it is worth having,
+  but put it **after** the real wait so it cannot be mistaken for one.
+
+  Two mutations are what make such a fix evidence rather than a hope: an implementation that prunes the
+  **newest** must still fail, and the wait must **time out** if the run never fires. The old predicate
+  passes the second silently — that is the defect, stated as a test.
+
 - **`--grep-invert` is accepted by Playwright 1.60 and does NOTHING here.** `--grep CORS` lists 1
   test; `--grep-invert CORS` lists all 177. The tier split is therefore `E2E_TIER` →
   `grep`/`grepInvert` **in `playwright.config.ts`**, applied by the runner, and a guard pins it there.

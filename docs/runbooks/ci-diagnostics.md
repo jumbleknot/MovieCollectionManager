@@ -450,6 +450,71 @@ curl -s -H "Authorization: token $MCM_FORGE_TOKEN" \
 (run 3521 sat one page deep on 2026-09-19). Treat "not found in the page" as **unknown**, never as a
 pass.
 
+#### A FIFTH quirk: a queued run's `started` is the EPOCH, so any time filter hides it
+
+Measured 2026-09-26. A run with `status: waiting` reports:
+
+```json
+{ "id": 3995, "status": "waiting", "prettyref": "#559", "started": "1970-01-01T00:00:00Z" }
+```
+
+Not `null` — the **epoch**. So the natural narrowing filter silently drops every queued run:
+
+```bash
+jq '.workflow_runs[] | select(.started > "2026-09-25T23:20")'   # ← waiting runs VANISH
+```
+
+Three runs had been created for a push and all three were invisible, which reads exactly like "the push
+triggered nothing". This is the `/actions/tasks` trap in a new place: filter on `status` or `id`, and
+read `started` only **after** you know the run has begun. A sort by `Date.parse(started)` is safe (a
+queued run sorts oldest and so is never picked as "newest"), but a *filter* on it is not.
+
+### A bundle is named after the JOB, which is not always the tail of the context (item #563)
+
+Evidence bundles are versioned `<runId>--<jobName>`. Two shapes of context reach a commit here and they
+nest **differently**:
+
+| context | shape | bundle-owning job |
+|---|---|---|
+| `guardrails / naming` | a real Actions check, `<workflow> / <job>` **with spaces** | the **tail** — `naming` |
+| `infra-image-scan/weekly` | a narrow status a job posts about **itself** by curl (items #418, #485) | the **head** — `infra-image-scan` |
+
+The narrow ones carry **no ` / `** deliberately: branch protection requires
+`infra-image-scan / infra-image-scan*`, and a separator-less context cannot match it, which is the only
+reason posting them is safe. So the tail is a **label** (`weekly`, `expiry`, `mode`), not a job.
+
+Deriving the job with `context.split('/').pop()` is therefore right for one shape and wrong for the
+other, and the wrong answer is not a blank — it is a confident sentence:
+
+```
+$ node scripts/ci-status.mjs failure --run 3946
+no bundle exists for 3946--weekly — the job may have died before the digest step ran.
+```
+
+The bundle existed the whole time as `ci-failures:3946--infra-image-scan`, on the one run that was
+telling you `main` was failing a required gate. `bundleJobName()` now handles both shapes. **List the
+package registry before believing a bundle is absent:**
+
+```bash
+curl -s -H "Authorization: token $MCM_FORGE_TOKEN" \
+  "$FORGE/api/v1/packages/$OWNER?type=generic&q=ci-failures&limit=50" | jq -r '.[] | .version'
+```
+
+### An abbreviated sha returns `[]`, which reads as "no CI ran"
+
+`ci-status.mjs` refuses a short sha outright, and that guard is why it is worth naming what happens when
+you go around it. Querying the statuses endpoint with a **padded** sha — one abbreviated in a
+`git log --oneline` and then typed out to 40 characters — answers:
+
+```
+GET /commits/db5de155cf20c3ebd0e3b0b9a68a3b96e1e0b94e/statuses   →  []
+GET /commits/db5de155cf20c3ebd0e3b0b9a68a3b96e1e0b94e/status     →  { "state": "", "statuses": [] }
+```
+
+An empty array for a commit that does not exist, indistinguishable from a commit with no checks. Paid
+for on 2026-09-26, minutes after reading the guard that exists to prevent it. Always
+`git rev-parse <ref>`; `git cat-file -t <sha>` is the one-command check that the sha is real at all.
+
 ### Where the REQUIRED set comes from (do not hand-maintain it)
 
 The required globs are read **live** from `GET /repos/{owner}/{repo}/branch_protections` for the
