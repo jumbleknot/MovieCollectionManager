@@ -40,7 +40,7 @@ ARG MC_COMMIT=7394ce0dd2a80935aded936b09fa12cbb3cb8096
 # One toolchain for both modules. minio declares `go 1.24.0 / toolchain go1.24.2`, mc declares
 # `go 1.23.0 / toolchain go1.23.10`; a local toolchain newer than both satisfies both. Deliberately the
 # newest available rather than matching upstream — see the stdlib note above.
-FROM golang:1.25-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59 AS build
+FROM golang:1.27-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS build
 
 # git is needed at BUILD time, not just to fetch: upstream's `buildscripts/gen-ldflags.go` shells out
 # to `git log` to stamp the commit id and build time into the binary. A source tarball would compile

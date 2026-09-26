@@ -174,6 +174,46 @@ export function selectNewestScheduledRun(runs, workflowId) {
 }
 
 /**
+ * `main`'s CURRENT sweep posture — the newest run of the workflow ON `main`, by schedule OR push.
+ *
+ * WHY THE SCHEDULED RUN ALONE IS NOT THE ANSWER, measured 2026-09-25. The 04:00 cron (run 3946) went
+ * red on ONE finding; it was allowlisted and merged at 12:23Z, and the same gate then passed on
+ * `main` at 12:33Z (run 3975, a push run, sha 09247f3d). Reading only the scheduled run reports
+ * `❌ main is failure` for the six days until the next cron, on a `main` that is green. That is this
+ * digest's founding fault in mirror image: item #485 was absence read as health, this is a stale
+ * verdict read as live. Both are the digest reporting something other than the posture.
+ *
+ * A PUSH RUN IS AN EQUALLY AUTHORITATIVE VERDICT, which is what makes this sound rather than merely
+ * cheerier. `infra-image-scan.yml` runs the FULL, un-path-gated sweep on every non-`pull_request`
+ * event — the path filter is on the push TRIGGER (whether the workflow starts), not on the scan's
+ * scope. So a green push run scanned the same image set the cron does. What the push trigger cannot
+ * promise is that it ever fires, which is exactly why the cron exists and stays the safety net.
+ *
+ * `prettyref` IS THE BRANCH DISCRIMINATOR, and it is load-bearing. `head_branch` is null on every
+ * run measured on this build; `prettyref` carries `main`, a branch name, or `#557` for a pull
+ * request. Without it this would happily adopt a push run on `renovate/docker-base-images` (run
+ * 3959, red) or on a feature branch (3965, green) as `main`'s posture — reporting some other
+ * branch's verdict as the one every PR inherits, in either direction.
+ *
+ * Fails closed exactly as before: no usable run is `null`, which `sweepVerdict` renders UNKNOWN and
+ * never a pass.
+ *
+ * @param {object[]} runs a page of workflow_runs
+ * @param {string} workflowId the workflow FILE NAME
+ * @param {string} [branch] the default branch as `prettyref` spells it
+ * @returns {object|null} the newest qualifying run on that branch, or null
+ */
+export function selectNewestMainSweepRun(runs, workflowId, branch = 'main') {
+  const matching = (runs ?? []).filter(
+    (r) => r?.workflow_id === workflowId
+      && r?.prettyref === branch
+      && (r?.trigger_event === 'schedule' || r?.trigger_event === 'push'),
+  );
+  if (!matching.length) return null;
+  return matching.sort((a, b) => Date.parse(b.started ?? 0) - Date.parse(a.started ?? 0))[0];
+}
+
+/**
  * Turn that run into a verdict (item #485).
  *
  * `status` carries the TERMINAL verdict on this forge — `conclusion` is undefined on every run
@@ -183,18 +223,28 @@ export function selectNewestScheduledRun(runs, workflowId) {
  * `null` in means the page carried no scheduled run. That is an UNKNOWN, never a pass: a sweep this
  * digest could not find is exactly the silence it exists to break.
  */
-export function sweepVerdict(run) {
+export function sweepVerdict(run, superseded = null) {
   if (!run) {
     return {
       state: 'unknown',
-      text: 'no scheduled run found in the page read — the sweep may not have run, or the page did not reach back far enough',
+      text: 'no run of this workflow found on `main` in the page read — the sweep may not have run, or the page did not reach back far enough',
     };
   }
   const status = String(run.status ?? '').toLowerCase();
-  const where = `run ${run.id} (${run.started ?? 'unknown time'}, ${String(run.commit_sha ?? '').slice(0, 8)})`;
-  if (status === 'failure') return { state: 'failure', text: `${where} is FAILURE`, run };
-  if (status === 'success') return { state: 'success', text: `${where} is success`, run };
-  return { state: 'unknown', text: `${where} reports status=${run.status ?? '<unset>'}`, run };
+  // NAME THE EVENT. A reader must be able to tell the un-path-gated weekly cron from a push run that
+  // happened to touch an infra path, because only the cron is guaranteed to have run at all.
+  const trigger = run.trigger_event === 'schedule' ? 'weekly cron' : `${run.trigger_event ?? 'unknown'} run`;
+  const where = `run ${run.id} (${trigger}, ${run.started ?? 'unknown time'}, ${String(run.commit_sha ?? '').slice(0, 8)})`;
+  // A green push run that SUPERSEDES a red cron is the 2026-09-25 case, and the superseded verdict is
+  // reported rather than dropped: "it was red at 04:00 and a fix landed" is the useful sentence, and
+  // silently replacing one verdict with the other is how a digest starts hiding things again.
+  const supersededText = superseded
+    ? ` — supersedes the ${superseded.trigger_event === 'schedule' ? 'weekly cron' : 'earlier'} run ${superseded.id}`
+      + ` (${superseded.started ?? 'unknown time'}), which was ${String(superseded.status ?? '<unset>').toUpperCase()}`
+    : '';
+  if (status === 'failure') return { state: 'failure', text: `${where} is FAILURE${supersededText}`, run, superseded };
+  if (status === 'success') return { state: 'success', text: `${where} is success${supersededText}`, run, superseded };
+  return { state: 'unknown', text: `${where} reports status=${run.status ?? '<unset>'}`, run, superseded };
 }
 
 export function buildDigest({ problems, branches, budgetInfo, rows, blocked = [], sweep = null, requiredGlobs = null }) {
@@ -217,8 +267,14 @@ export function buildDigest({ problems, branches, budgetInfo, rows, blocked = []
   if (anomalies === 0) {
     lines.push(
       '✅ **Healthy.** No repository problems, no empty-PR or stale `renovate/*` branches, ' +
-        'no open Renovate PR blocked by a required context, and the weekly CVE sweep on `main` is green.',
+        'no open Renovate PR blocked by a required context, and the CVE sweep on `main` is green.',
     );
+    // SAY WHICH RUN THAT WAS. The green verdict may come from a push run rather than the weekly cron
+    // (selectNewestMainSweepRun), and "the WEEKLY sweep is green" would then be a claim stronger than
+    // the evidence — the digest asserting a guarantee only the cron gives. And when a green push run
+    // superseded a RED cron, that is the week's CVE event: it belongs in the digest even though
+    // nothing is wrong now, because dropping it is how this digest started hiding things (item #485).
+    if (sweep?.run) lines.push('', `  Read from ${sweep.text}.`);
   }
 
   if (sweepBad) {
@@ -402,7 +458,14 @@ async function main(command = 'post') {
       'GET',
       `/repos/${owner}/${repo}/actions/runs?workflow_id=${SWEEP_WORKFLOW}&page=1&limit=50`,
     );
-    sweep = sweepVerdict(selectNewestScheduledRun(runs.workflow_runs ?? [], SWEEP_WORKFLOW));
+    const page = runs.workflow_runs ?? [];
+    // `main`'s posture NOW (schedule or push, on `main` only), with the newest CRON kept as context so
+    // a superseded red is reported rather than dropped. See selectNewestMainSweepRun for why a push
+    // run is an equally authoritative verdict and why `prettyref` is the discriminator.
+    const current = selectNewestMainSweepRun(page, SWEEP_WORKFLOW);
+    const cron = selectNewestScheduledRun(page, SWEEP_WORKFLOW);
+    const superseded = current && cron && cron.id !== current.id ? cron : null;
+    sweep = sweepVerdict(current, superseded);
   } catch (err) {
     console.error(`[renovate-health] could not read the weekly sweep: ${err.message}`);
   }
