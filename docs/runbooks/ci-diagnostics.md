@@ -166,6 +166,34 @@ have believed it ran. The forge says `"Has been skipped"` and `"Has been cancell
 | advisory | `failure` on a non-required context | `dast`, `prod-apk`, `trigger-cd` | Either a false "blocked", or a silently dropped regression |
 | `cd-dispatch / trigger-cd` | `success` or `failure`, with the reason as the description | **not a CI result** — the deploy gate's own answer | Reading it as a check; it is the *only* place a declined deploy is visible |
 
+### 🚨 A ⏳ is not a future pass — a context that has not reported has not committed to RUNNING
+
+The table above gets each state right once it exists. The mistake is upstream of it: treating
+`waiting` as *"it will run, and then it will pass"*. It is neither. A pending context can still
+resolve to **`skipped`** (path-gated) or **`superseded`** (cancelled by a newer push), and both are
+non-runs that a green board then presents as satisfied.
+
+Item #568 tripped over this twice in one afternoon, in both directions:
+
+- a second `app-e2e` execution was declared "in flight on main's head" and resolved **`skipped`** —
+  the head was a docs-only merge, correctly path-gated out;
+- the merge commit of the fix itself, and the commit after it, both resolved **`superseded`**.
+
+Three candidate runs, three non-runs, and the verification everyone believed was coming never
+happened. **Derive whether a job will run from the FILTER and the changed paths, never from its
+spinner** — `app-ci.yml`'s `changes` job holds the answer, and it is deterministic:
+
+```bash
+git diff --name-only origin/main...HEAD   # then read the `app:` / `mobile:` filters in app-ci.yml
+```
+
+Worth knowing while reading them: `app` lists **named scripts, not `scripts/**`**, and the rule is
+stated in place — a script that *deploys or configures* what the suite exercises belongs there, one
+that only *reports* on the run does not. And `mobile` is a deliberate strict **subset** of `app`
+(no `infrastructure-as-code/docker/**`, no lockfile), so a PR can run the whole web half while the
+emulator half never fires; the `mobile-e2e` label is the opt-in.
+
+
 ### A skip does not say why it was skipped (item #396)
 
 The payload carries the state, never the cause. `ci-status` used to annotate every skip
