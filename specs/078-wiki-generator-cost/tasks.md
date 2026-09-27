@@ -21,8 +21,7 @@ resolves on this forge.
 ## Status (2026-09-27)
 
 Merge A implemented on `078-wiki-generator-cost`: T001 (baseline 86 → 145 passed, 0 skipped), T002, T003,
-T004 (R10), T005–T015d, T016–T022, T024, T025 done; T015e (0.6.0 regression page) and T026 (gates + PR) in
-progress. Deviations from the plan are recorded in research R11 — notably the backlog shape is unchanged,
+T004 (R10), T005–T015d, T016–T022, T024, T025 done; T015e (research R12, R13 — found and fixed the AGENTS.md blocker) and T026 (preflight 27/27) done. Deviations from the plan are recorded in research R11 — notably the backlog shape is unchanged,
 so T019 holds by construction. T023 and Phase 6 follow merge.
 
 ---

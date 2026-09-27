@@ -161,3 +161,19 @@ The adopted text tells assistants not to preload the wiki at task start and to p
 tools where installed (they are not, here), falling back to `openwiki/quickstart.md`. It sits alongside —
 not in conflict with — this repository's own note outside the markers ("query `openwiki/` before a broad text
 search"): both say consult the wiki when the task needs it.
+
+## R13 — T015e on openwiki 0.6.0, end to end (2026-09-27)
+
+Fireworks / DeepSeek V4.1 Flash, standard tier, concurrency 1, through `wiki-generate.mjs` and the repo's usage
+tap, on the commit carrying the R12 fix. One page asked for; **two written** — the second
+(`runbooks/wiki-maintenance.md`) forced into the plan by its stale Claims, because this branch edited its source
+runbook (openwiki's `addRequiredClaimIssueJobs`; the spec's edge case). Every path written is allowed to the
+generator by the policy; **`AGENTS.md` and `CLAUDE.md` untouched** (R12 confirmed on a real run); `okf-lint`
+green.
+
+| Wall clock | Pages | Calls | Failed calls | Uncached / cached / output tokens | Est. cost |
+|---|---|---|---|---|---|
+| **1,504 s** | 2 | 86 | 0 | 346k / 7.38M / 119k (80k reasoning) | **$0.21** |
+
+About **12 minutes per page at concurrency 1**, planning included — the number Merge B's concurrency
+measurement (T027) has to bring down before the CI budget can be set.
