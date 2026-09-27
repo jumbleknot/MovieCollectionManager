@@ -13,14 +13,14 @@ pre-provisioned; on the host, install it once with the steps below.
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| Node.js | 24.14.1 (LTS) | Frontend + BFF runtime |
-| pnpm | via Corepack (`pnpm@11.17.0`) | JavaScript/TypeScript package manager |
+| Node.js | 24 (LTS) — floor in root `package.json` `engines.node` | Frontend + BFF runtime |
+| pnpm | via Corepack — the version pinned by root `package.json` `packageManager` | JavaScript/TypeScript package manager |
 | Nx | workspace (via `pnpm nx`) | Task runner (JS/TS + Rust + Python) |
 | Rust | stable toolchain | mc-service |
 | Python | 3.13 + `uv` | Agent layer, Specify CLI |
 | Docker Desktop | 24+ | Infrastructure / test stacks |
 | Open JDK | 17 | Android builds (mobile only) |
-| Android Studio | SDK Platform 35 + Build Tools + Emulator | Android builds/emulator (mobile only) |
+| Android Studio | SDK Platform 36 + Build Tools + Emulator (API 34 image) | Android builds/emulator (mobile only) |
 | Keycloak | (containerized) | IAM — runs via the `auth` stack |
 
 ## Installation
@@ -146,18 +146,23 @@ pnpm nx okf-lint infrastructure-as-code
 
 Follow the [React Native environment setup](https://reactnative.dev/docs/set-up-your-environment). This project uses:
 
-- Node.js **24.14.1**
+- Node.js **24** (LTS). CI and every Dockerfile pin a 24.x release; the root `package.json`
+  `engines.node` floor is what `scripts/check-toolchain-consistency.mjs` enforces them against
 - Open **JDK 17**
-- Android Studio with **Android SDK Platform 35**, SDK Build Tools, and Android Emulator
+- Android Studio with **Android SDK Platform 36** (the `compileSdk` React Native's Gradle version
+  catalog sets for the pinned `react-native`), SDK Build Tools, and Android Emulator with an
+  **API 34** system image — the one the dev container bakes (`ANDROID_API` in
+  `.devcontainer/toolchain.Dockerfile`)
 
 Then:
 
-1. **pnpm via Corepack** (bundled with Node):
+1. **pnpm via Corepack** (bundled with Node). Do not `corepack prepare pnpm@latest`: the version is
+   pinned by `packageManager` in the root `package.json`, and Corepack activates exactly that one
+   when run inside the repository:
 
    ```bash
    corepack enable
-   corepack prepare pnpm@latest --activate
-   pnpm --version          # confirms install
+   pnpm --version          # run inside the repo; must print the packageManager version
    pnpm setup              # sets the global bin directory
    ```
 

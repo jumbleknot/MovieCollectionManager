@@ -16,7 +16,8 @@ kept deliberately free of any LLM dependency so it is unit-testable without a li
 - **Dev and test default to self-hosted Ollama** (`qwen2.5` fast tier, `qwen2.5:32b` balanced tier) —
   free, local, no API cost for agent-flow iteration.
 - **The golden test surface and prod use Anthropic Claude** (`claude-haiku-4-5` fast,
-  `claude-sonnet-4-6` balanced) — `MODEL_PROVIDER=anthropic` switches the base provider.
+  `claude-sonnet-5` balanced, which is also the specialist default) — `MODEL_PROVIDER=anthropic`
+  switches the base provider.
 - **The escalation tier is always Claude frontier (`claude-opus-5`), unconditionally** — even when
   the base provider is Ollama. This is a hardcoded exception in `select_model_config`, not an
   env-driven choice: the frontier escape hatch never degrades to a local model.
@@ -58,13 +59,17 @@ kept deliberately free of any LLM dependency so it is unit-testable without a li
   `models.py` now gates the parameter, and **an unrecognised id OMITS it** — omitting never fails,
   sending can. `tests/integration/test_model_invocability.py` calls every resolvable id once so a
   future deprecation fails a test instead of production.
-- **Losing `temperature` costs DETERMINISM, and that decides which tiers may move.** With no
-  `temperature=0` to pin, free-form JSON extraction picks up sampling variance: three runs of one
-  input on Sonnet 5 gave `Inception`, `{}`, `{}`, where Sonnet 4.6 gave `Inception` 3/3. A
-  one-word intent label does not suffer this (6 probes x 3 runs: 0 wrong, 0 flaky). That is why
-  feature 075 moved the supervisor to a newer model and **withdrew** the same move for the
-  specialists — the extraction tier feeds the write-proposal path behind the HITL gate, where a
-  silently dropped field becomes a wrong proposal. Revisit with structured outputs, not an id swap.
+- **On a newer model, "flaky output" is far more likely to be a brittle parser than a worse
+  model.** Feature 075 first blamed lost `temperature` for Sonnet 5 extraction returning
+  `Inception`, `{}`, `{}` and withdrew the specialist move (research R15). That was wrong (R16):
+  the model answered correctly every time, and our code could not read it. A thinking-enabled
+  model returns `.content` as a LIST of blocks, and `str()` of it matched no intent label and
+  failed `json.loads`; independently, the JSON sometimes arrives inside a ```` ```json ```` fence.
+  Both fell into a defensive `except` → `{}`, so a required field arrived as `None` behind the
+  HITL gate. Read model output only through `response_text` / `json_from_response` in
+  `models.py`, and print the RAW text before concluding anything about a model. After the fix the
+  specialist tier moved to `claude-sonnet-5` (51/51 golden pairs); `claude-haiku-4-5` genuinely
+  fails it (11 of 51), so do not "save more" by dropping to it.
 - **A model pin must name its provider.** `ANTHROPIC_SUPERVISOR_MODEL` is read only when that
   provider is active; the bare `SUPERVISOR_MODEL` follows whichever provider is. `app-ci.yml`
   offers `provider: choice [anthropic, ollama]`, so a bare pin at job scope resolves to
@@ -74,5 +79,5 @@ kept deliberately free of any LLM dependency so it is unit-testable without a li
   scoped names are already inert on the wrong provider.)
 
 See [Testing tiers](./testing-tiers.md) for how the golden suite consumes this
-scoping, and `CLAUDE.md`'s "AI Agent Layer" section plus `docs/runbooks/agent-layer.md` for the full
+scoping, and [docs/runbooks/agent-layer.md](../../docs/runbooks/agent-layer.md) for the full
 per-node model configuration reference.

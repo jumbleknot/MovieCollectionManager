@@ -1,6 +1,20 @@
 # Phase 15 — Operator Checklist (bring the full app live + finish 022/023)
 
-Companion to [Phase-15-Work-Order.md](./Phase-15-Work-Order.md). All repo-side authoring is DONE
+> **Historical record — Phase 15 is complete.** This is the working log of the 2026-06/07 bring-up,
+> kept for its step history; it is not a live checklist, and its `[ ]` items and "Remaining" notes
+> describe the state at the time of writing. For the current state read
+> [Server-Setup-Runbook.md](Server-Setup-Runbook.md) (Phase 15 — final CD architecture),
+> [openwiki/projects/ci-cd-pipeline.md](../../openwiki/projects/ci-cd-pipeline.md),
+> [prod-reboot-resilience.md](prod-reboot-resilience.md) and
+> [prod-control-tower.md](prod-control-tower.md). **Superseded detail:** where this log says the
+> prod-mc-service (and BFF) Mongo is unauthenticated with no credential, feature 026 has since enabled
+> SCRAM on both stores — `infrastructure-as-code/komodo/stacks.toml` now supplies
+> `MONGO_MC_APP_PASSWORD` + `MONGO_MC_KEYFILE` (replica-set keyfile) to prod-mc-service and
+> `MONGO_BFF_APP_PASSWORD` to prod-mcm-bff; see [prod-data-tier-auth.md](prod-data-tier-auth.md).
+> Production secrets are Komodo Variables per
+> [ADR-0001](../decisions/ADR-0001-prod-secrets-management.md).
+
+Companion to [Phase-15-Work-Order.md](../proposals/homelab-setup/Phase-15-Work-Order.md). All repo-side authoring is DONE
 (branch `022-prod-public-hostname-auth`, commits `f193c7f` Milestone A + `6fe4e4a` Milestone B). This
 is the operator/runtime work that only you can do (Komodo / Keycloak-admin / prod shell — Claude can't
 drive those SPAs). Work top-to-bottom; each `[ ]` is one action.

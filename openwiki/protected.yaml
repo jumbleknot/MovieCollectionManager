@@ -169,7 +169,12 @@ passages:
     #   move to a cached model while the specialist tier's move had to be re-proved; and a model pin
     #   must name its provider, because a bare one follows whichever provider is active and the
     #   app-e2e job accepts an `ollama` dispatch.
-    fingerprint: "sha256:bf6996a03655d1e918922a49b4e3939e21d3a7b708195989123873fe01d404fa"
+    # Re-fingerprinted 2026-09-27 (item #588) — passage-corrected. The DETERMINISM gotcha above was
+    #   feature 075's research R15, which R16 (commit 2203dd47, same day) refuted: the "flaky"
+    #   Sonnet 5 extraction was two parsing defects of ours (a thinking model's `.content` is a list
+    #   of blocks; JSON sometimes arrives fenced), and the specialist tier DID move to Sonnet 5. The
+    #   passage kept asserting the withdrawn conclusion for six days; it now states R16's lesson.
+    fingerprint: "sha256:bb3be3d811fb93be1147c934ad018e3aa30fd8167487f6287116ebf4ddf5c942"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/nx-task-runner.md"

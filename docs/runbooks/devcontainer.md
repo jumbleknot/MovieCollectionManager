@@ -529,9 +529,13 @@ pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Dock
   sudo FIREWALL_ALLOW_CDN_RANGES=1 /bin/bash .devcontainer/init-firewall.sh
   ```
   It is **off by default** to keep the default-deny meaningful.
-- **`crates.io` is not allowlisted either — `cargo` needs `--offline` here.** Same reflex, different
-  tool: a `cargo` command that hangs or fails to resolve is the firewall, not cargo. The vendored
-  registry index in the image is enough for everything already in `Cargo.lock`:
+- **`crates.io` IS allowlisted — `cargo` resolves online here, and `--offline` is a tool, not a
+  requirement.** `crates.io`, `index.crates.io` and `static.crates.io` are in
+  `.devcontainer/egress-allowlist.json` (group `packages`), so both the in-container firewall and
+  the sandbox's host-side policy admit them. Same reflex as the registries above, though: a `cargo`
+  fetch that stalls on a crate download is most likely a stale ipset on the CDN-rotating
+  `static.crates.io` — re-run `init-firewall.sh` before suspecting cargo. Everything already in
+  `Cargo.lock` and already in the `mcm-cargo-registry` volume also builds with `--offline`:
 
   ```bash
   cargo build   --offline --manifest-path backend/mc-service/Cargo.toml

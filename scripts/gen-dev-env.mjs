@@ -22,11 +22,13 @@
  *      .env.e2e.local carried a stale user/password (the exact fresh-box rot this feature closes, AC2).
  *   4. mcp-servers/web-api-mcp/.env.local (TMDB) — TMDB_API_KEY from the forwarded host env, so the
  *      web-api-mcp container has a key and the agent web E2E can seed a runnable config (dock renders).
+ *   5. backend/mc-service/.env.local (the mc-service integration tier) — created when absent
+ *      (item #227); see MC_SERVICE_ENV_LOCAL below.
  *
  * The 3 realm client secrets the BFF uses (KEYCLOAK_CLIENT_SECRET, KEYCLOAK_SERVICE_CLIENT_SECRET,
  * AGENT_SUBJECT_TOKEN_CLIENT_SECRET) come from auth.env. The BFF-only secrets (COOKIE_SECRET,
  * AGENT_CONFIG_ENC_KEY) are NOT realm-related: reuse the existing .env.docker value if present
- * (session continuity), else mint a fresh one. Nothing is committed (both targets are gitignored).
+ * (session continuity), else mint a fresh one. Nothing is committed (every target is gitignored).
  *
  * Usage:
  *   node scripts/gen-dev-secrets.mjs   # first — mints stacks/auth.env (the realm/client secrets)

@@ -4,7 +4,7 @@
 **Date**: 2026-07-04
 **Feature**: 026-prod-data-auth-vault (Workstream B / US2)
 **Deciders**: Steven Watson
-**Supersedes / relates to**: feature 021 (externalized compose secrets), feature 022 (single-source `.env.prod`, file-secrets removed), feature 025 (dormant prod Vault), constitution §Data Protection → Secrets Management, [PRD-Data-Auth-and-Vault](../proposals/prod-hardening/PRD-Data-Auth-and-Vault.md), [PRD-Vault](../PRD-Vault.md).
+**Supersedes / relates to**: feature 021 (externalized compose secrets), feature 022 (single-source `.env.prod`, file-secrets removed), feature 025 (dormant prod Vault), constitution §Data Protection → Secrets Management, [PRD-Data-Auth-and-Vault](../proposals/prod-hardening/PRD-Data-Auth-and-Vault.md), [PRD-Vault](../proposals/PRD-Vault.md).
 
 ---
 
