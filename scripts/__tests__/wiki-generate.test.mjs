@@ -1,8 +1,8 @@
 // Feature 078 — the launcher the `wiki-update` Nx target runs (plan D2).
 //
 // Drives the REAL launcher against a fake `openwiki` placed first on PATH, which records the argv and
-// environment it was started with. No model is called; the preflight's network call is replaced by a
-// stub through the launcher's --preflight-url test seam (a local HTTP server).
+// environment it was started with. No model is called. The preflight's orchestration is covered in
+// wiki-maintain.test.mjs (preflightGate); the live call itself is verified by hand per tasks T015.
 //
 // What is pinned here, and why each matters:
 //   • the run message reaches the generator as ONE argv element, never through a shell — the

@@ -994,6 +994,96 @@ test('marker: a generator failure holds the marker and records `failed`', () => 
   }
 });
 
+// ── 078 FR-005: the model is proven callable before any paid work ────────────────
+
+test('preflight: runs once, before the first slice, when there is work', () => {
+  const { root } = repoAtHead();
+  try {
+    commitCoveredChange(root);
+    const order = [];
+    mod.runMaintenance({
+      root, bundleRoot: join(root, 'openwiki'), policy: realPolicy(), credential: 'present',
+      preflight: () => { order.push('preflight'); return { ok: true, detail: 'stub' }; },
+      invoke: () => { order.push('invoke'); return { status: 0 }; },
+      maxSlices: 1,
+    });
+    assert.equal(order[0], 'preflight', 'the check comes before any paid slice');
+    assert.equal(order.filter((x) => x === 'preflight').length, 1, 'once per run, not per slice');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('preflight: a failure stops the run with exit 2, starts no slice, and leaves the record alone', () => {
+  const { root, head } = repoAtHead();
+  try {
+    commitCoveredChange(root);
+    let invoked = 0;
+    const result = mod.runMaintenance({
+      root, bundleRoot: join(root, 'openwiki'), policy: realPolicy(), credential: 'present',
+      preflight: () => ({ ok: false, detail: 'fireworks accounts/fireworks/models/x: HTTP 404 (not_found)' }),
+      invoke: () => { invoked++; return { status: 0 }; },
+    });
+    assert.equal(invoked, 0, 'no paid work after a failed preflight');
+    assert.equal(result.exitCode, 2);
+    assert.equal(result.reason, 'preflight-failed');
+    assert.notEqual(result.outcome, 'nothing-to-do');
+    assert.match(result.detail, /HTTP 404/);
+    assert.equal(result.persisted, false);
+    assert.equal(mod.readRunRecord(root).coveredCommit, head, 'the marker must not move');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('preflight: the free path never calls it', () => {
+  const { root } = repoAtHead();
+  try {
+    let called = 0;
+    const result = mod.runMaintenance({
+      root, bundleRoot: join(root, 'openwiki'), policy: realPolicy(), credential: null,
+      preflight: () => { called++; return { ok: true }; },
+      invoke: () => ({ status: 0 }),
+    });
+    assert.equal(result.outcome, 'nothing-to-do');
+    assert.equal(called, 0, 'finding nothing to document needs no model');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('preflight: the CLI --execute path runs the SAME gate, before the proposal branch and any slice', () => {
+  // main() drives executeSlices itself rather than through runMaintenance, so a gate added only to
+  // runMaintenance would never run in CI. Found while implementing 078 T014 — this pins it.
+  const source = readFileSync(SCRIPT, 'utf8');
+  const exec = source.slice(source.indexOf("if (opts.mode === 'execute')"));
+  const gate = exec.indexOf('preflightGate(');
+  assert.ok(gate > 0, 'the CLI execute path must call preflightGate');
+  assert.ok(gate < exec.indexOf('prepareProposalBranch('), 'before the proposal branch is touched');
+  assert.ok(gate < exec.indexOf('executeSlices('), 'and before any slice');
+});
+
+test('preflight: the gate skips dry runs and reports a failure without throwing', () => {
+  assert.equal(mod.preflightGate({ dryRun: true, preflight: () => { throw new Error('must not run'); } }).ok, true);
+  const bad = mod.preflightGate({ dryRun: false, preflight: () => ({ ok: false, detail: 'HTTP 401 (authentication_error)' }) });
+  assert.equal(bad.ok, false);
+  assert.match(bad.detail, /401/);
+  assert.equal(mod.preflightGate({ dryRun: false, preflight: null }).ok, true, 'no preflight configured is not a failure');
+});
+
+test('credentials: the scrub list covers every provider, Anthropic names first and unchanged (#209)', () => {
+  assert.deepEqual(mod.CREDENTIAL_ENV_NAMES.slice(0, 2), ['ANTHROPIC_API_KEY', 'MCM_ANTHROPIC_API_KEY']);
+  assert.ok(mod.CREDENTIAL_ENV_NAMES.includes('FIREWORKS_API_KEY'));
+  assert.ok(mod.CREDENTIAL_ENV_NAMES.includes('MCM_FIREWORKS_API_KEY'));
+});
+
+test('credentials: the credential looked for is the RESOLVED provider\'s', () => {
+  assert.equal(mod.credentialFromEnv({ MCM_WIKI_PROVIDER: 'fireworks', MCM_ANTHROPIC_API_KEY: 'a' }), null,
+    'an Anthropic key does not satisfy a Fireworks run');
+  assert.equal(mod.credentialFromEnv({ MCM_WIKI_PROVIDER: 'fireworks', MCM_FIREWORKS_API_KEY: 'f' }), 'f');
+  assert.equal(mod.credentialFromEnv({ MCM_ANTHROPIC_API_KEY: 'a' }), 'a', 'the default is unchanged');
+});
+
 // ── FR-013/FR-016: the proposal lifecycle ───────────────────────────────────────
 
 /** An in-memory forge. Records every call, so "was a second PR opened?" is directly observable. */

@@ -46,6 +46,7 @@ import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
+import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -70,11 +71,43 @@ export const STATE_FILE = 'openwiki/.maintenance-state.json';
  *
  * Read this constant rather than repeating the names, so the next addition cannot desynchronise.
  */
-export const CREDENTIAL_ENV_NAMES = ['ANTHROPIC_API_KEY', 'MCM_ANTHROPIC_API_KEY'];
+//
+// Feature 078: the generator can run on more than one provider, so this is now EVERY provider's
+// accepted names, derived from the provider table rather than re-listed (the same lesson, one level
+// up). The Anthropic pair stays first and unchanged.
+export const CREDENTIAL_ENV_NAMES = Object.freeze(
+  [...new Set(Object.values(WIKI_PROVIDERS).flatMap((row) => row.credential.accepted))],
+);
 
-/** The credential from the first name that carries one, or null. */
+/**
+ * The credential for the provider this run will actually use (MCM_WIKI_PROVIDER), from the first of
+ * that provider's names that carries one — or null. A key for a DIFFERENT provider does not count.
+ * A malformed selector throws, and is reported by the caller: it is never read as "no credential".
+ */
 export const credentialFromEnv = (env = process.env) =>
-  CREDENTIAL_ENV_NAMES.map((name) => env[name]).find(Boolean) ?? null;
+  resolveWikiProvider(env).credential.accepted.map((name) => env[name]).find(Boolean) ?? null;
+
+/**
+ * One minimal call with the resolved provider/model/tier, before any paid slice (078 FR-005). Spawned
+ * rather than awaited because the orchestrator is synchronous; the launcher owns the provider logic.
+ */
+/**
+ * The one preflight gate, shared by runMaintenance and the CLI's --execute path (which drives
+ * executeSlices itself — a gate in only one of them would not run in CI). Dry runs and a
+ * stubbed generator (preflight: null) pass; a failed check is returned, never thrown.
+ */
+export function preflightGate({ dryRun = false, preflight = defaultPreflight, root = REPO_ROOT } = {}) {
+  if (dryRun || !preflight) return { ok: true, detail: 'skipped' };
+  return preflight({ root });
+}
+
+export function defaultPreflight({ root = REPO_ROOT } = {}) {
+  const r = spawnSync(process.execPath, [join(REPO_ROOT, 'scripts', 'wiki-generate.mjs'), '--preflight'], {
+    cwd: root, encoding: 'utf8', env: process.env,
+  });
+  const detail = `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').pop() ?? '';
+  return { ok: r.status === 0, detail };
+}
 
 // Exactly the three outcomes FR-017 requires distinguishing. A credential, capacity or generator
 // failure must never be classified as `nothing-to-do` — that would make the cheap path look reachable
@@ -899,6 +932,8 @@ export function runMaintenance({
   since = null,
   policy = null,
   invoke = undefined,
+  // A stubbed generator needs no model check; the real one does. Explicit `preflight` wins.
+  preflight = invoke === undefined ? defaultPreflight : null,
   credential = credentialFromEnv(),
   requireCredential = true,
   pageBudget = PAGE_BUDGET,
@@ -930,6 +965,16 @@ export function runMaintenance({
     // Exit 2, and the record is left exactly as it was. Writing anything here would either certify a
     // range nothing examined or invent an outcome for a run that never started.
     return { outcome: 'failed', exitCode: 2, reason: 'missing-credential', plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record, persisted: false };
+  }
+
+  {
+    const check = preflightGate({ dryRun, preflight, root });
+    if (!check.ok) {
+      // Same posture as a missing credential: exit 2, the record untouched, and never nothing-to-do.
+      // A model that cannot be called is found here for the price of one token, not after a slice.
+      return { outcome: 'failed', exitCode: 2, reason: 'preflight-failed', detail: check.detail ?? '', plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record, persisted: false };
+    }
+    if (check.detail !== 'skipped') console.log(`[wiki-maintain] preflight ok — ${check.detail ?? ''}`);
   }
 
   const run = executeSlices({
@@ -1797,8 +1842,15 @@ async function main(argv) {
     // Accepts either name. The dev container supplies only MCM_ANTHROPIC_API_KEY, because exporting
     // the raw ANTHROPIC_API_KEY into the shell makes Claude Code bill the pay-per-token API instead
     // of the subscription (see .devcontainer/devcontainer.json). CI still sets the raw name.
+    let provider;
+    try {
+      provider = resolveWikiProvider();
+    } catch (err) {
+      console.error(`[wiki-maintain] ${err.message}`);
+      return 2;
+    }
     if (!opts.dryRun && !credentialFromEnv()) {
-      console.error(`[wiki-maintain] No Anthropic credential (${CREDENTIAL_ENV_NAMES.join(' / ')}) — --execute needs it.`);
+      console.error(`[wiki-maintain] No ${provider.provider} credential (${provider.credential.accepted.join(' / ')}) — --execute needs it.`);
       console.error('[wiki-maintain] This is a missing credential, NOT "nothing to do". Run --plan for the free path.');
       return 2;
     }
@@ -1836,6 +1888,16 @@ async function main(argv) {
     }
 
     reportPlan(plan, { json: false });
+
+    // 078 FR-005: prove the configured model is callable before touching the proposal branch or
+    // paying for a slice. Exit 2 like a missing credential — never nothing-to-do, record untouched.
+    const check = preflightGate({ dryRun: opts.dryRun, root: REPO_ROOT });
+    if (!check.ok) {
+      console.error(`[wiki-maintain] ✗ preflight failed — ${check.detail}`);
+      console.error('[wiki-maintain] The configured model could not be called; no slice was attempted and the record is unchanged.');
+      return 2;
+    }
+    if (check.detail !== 'skipped') console.log(`[wiki-maintain] preflight ok — ${check.detail}`);
 
     // Reconcile FIRST: if the previous proposal was closed unmerged, its work has to be back in the
     // backlog before this run plans around it, and the marker has to have rolled back (FR-016b).
