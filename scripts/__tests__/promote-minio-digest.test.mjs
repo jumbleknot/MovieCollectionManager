@@ -20,7 +20,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +32,8 @@ import {
   MINIO_REF_RE,
   resolveDigest,
   verifyPullable,
+  registryBase,
+  parseImageRef,
   findRefs,
   rewriteText,
   assertDigest,
@@ -166,36 +168,97 @@ test('assertDigest rejects everything that is not one', () => {
   }
 });
 
-// ── resolveDigest, with the docker call injected ─────────────────────────────────────────────
+// ── resolveDigest / verifyPullable, over the registry HTTP API ────────────────────────────────
 
-test('resolveDigest reads the digest and the media type from the tag', () => {
-  // MEASURED against a real registry (docker 29.7.2 / buildx 0.37.1, alpine:3.22):
-  //   application/vnd.oci.image.index.v1+json sha256:5291449c…
-  // i.e. `.Manifest.Digest` is the INDEX digest — the manifest LIST — which is what a compose
-  // `@sha256:` ref must carry (item #577 criterion 3, PR #576's evidence).
+const OK = (headers) => ({ ok: true, status: 200, headers: new Headers(headers) });
+
+test('registryBase NEVER assumes https — that assumption broke run 4093', () => {
+  // THE REGRESSION TEST FOR THE REAL FAILURE. The first version resolved the digest with
+  // `docker buildx imagetools inspect`, chosen so no scheme decision had to be made; imagetools then
+  // made it and got it wrong:
+  //   ERROR: failed to do request: Head "https://<forge>:3000/v2/…":
+  //          http: server gave HTTP response to HTTPS client
+  // It is a CLIENT-SIDE call and does not read the daemon's insecure-registries, which is why
+  // `docker push` to the same registry succeeded in the same job.
+  assert.equal(registryBase('h:3000', { GITHUB_SERVER_URL: 'http://h:3000' }), 'http://h:3000');
+  assert.equal(registryBase('h:3000', { GITHUB_SERVER_URL: 'https://h' }), 'https://h:3000');
+  assert.equal(registryBase('h:3000', { REGISTRY_SCHEME: 'http' }), 'http://h:3000');
+  // REGISTRY_SCHEME wins over the forge origin, for a registry that is not the forge.
+  assert.equal(registryBase('r:5000', { REGISTRY_SCHEME: 'https', GITHUB_SERVER_URL: 'http://h:3000' }), 'https://r:5000');
+});
+
+test('registryBase FAILS rather than defaulting when it cannot tell', () => {
+  // A wrong default here IS the bug. Silence is not an option; neither is https.
+  assert.throws(() => registryBase('h', {}), /cannot determine the registry scheme/);
+  assert.throws(() => registryBase('h', { REGISTRY_SCHEME: 'ftp' }), /http or https/);
+  assert.throws(() => registryBase('h', { GITHUB_SERVER_URL: 'h:3000' }), /no http\(s\) scheme/);
+});
+
+test('parseImageRef splits host, path and tag', () => {
+  const r = parseImageRef('homelab.example:3000/jumbleknot/minio:2025.09.07-161309-r4093');
+  assert.equal(r.host, 'homelab.example:3000');
+  assert.equal(r.path, 'jumbleknot/minio');
+  assert.equal(r.tag, '2025.09.07-161309-r4093');
+  for (const bad of ['', 'nohost', 'h/ns/repo']) assert.throws(() => parseImageRef(bad), /image ref/);
+});
+
+test('resolveDigest reads Docker-Content-Digest from the TAG, offering list types first', async () => {
   const calls = [];
-  const fake = (args) => { calls.push(args); return `application/vnd.oci.image.index.v1+json ${NEW}\n`; };
-  const got = resolveDigest('reg/ns/minio:t-r1', fake);
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, accept: init.headers.Accept, auth: init.headers.Authorization });
+    return OK({ 'docker-content-digest': NEW, 'content-type': 'application/vnd.oci.image.index.v1+json' });
+  };
+  const got = await resolveDigest('h:3000/jumbleknot/minio:t-r9', {
+    env: { GITHUB_SERVER_URL: 'http://h:3000', REGISTRY_USER: 'u', REGISTRY_TOKEN: 'secret' },
+    fetchImpl,
+  });
   assert.equal(got.digest, NEW);
   assert.equal(got.mediaType, 'application/vnd.oci.image.index.v1+json');
-  // Resolved FROM THE TAG against the registry, never scraped from a build log.
-  assert.deepEqual(calls[0].slice(0, 4), ['buildx', 'imagetools', 'inspect', 'reg/ns/minio:t-r1']);
+  // HTTP, from the tag — not https, not a build log.
+  assert.equal(calls[0].url, 'http://h:3000/v2/jumbleknot/minio/manifests/t-r9');
+  // The INDEX types are offered before the single-manifest ones, or a multi-platform image would
+  // answer with one platform's manifest and the pin would be the wrong one of the two.
+  assert.ok(calls[0].accept.indexOf('index.v1+json') < calls[0].accept.indexOf('manifest.v1+json'));
+  assert.match(calls[0].auth, /^Basic /);
+  // The token is never in a URL — it would reach logs and error text.
+  assert.ok(!calls[0].url.includes('secret'));
 });
 
-test('resolveDigest refuses a garbled answer rather than pinning it', () => {
-  assert.throws(() => resolveDigest('r', () => 'Error: no such manifest'), /digest/i);
-  assert.throws(() => resolveDigest('r', () => ''), /digest/i);
+test('resolveDigest refuses a non-200 and a garbled digest', async () => {
+  const env = { GITHUB_SERVER_URL: 'http://h' };
+  await assert.rejects(
+    () => resolveDigest('h/n/minio:t-r1', { env, fetchImpl: async () => ({ ok: false, status: 404, statusText: 'Not Found', headers: new Headers() }) }),
+    /404/,
+  );
+  await assert.rejects(
+    () => resolveDigest('h/n/minio:t-r1', { env, fetchImpl: async () => OK({ 'docker-content-digest': 'nonsense' }) }),
+    /digest/i,
+  );
+  // A 200 with NO digest header must fail, not pin `null`.
+  await assert.rejects(
+    () => resolveDigest('h/n/minio:t-r1', { env, fetchImpl: async () => OK({}) }),
+    /digest/i,
+  );
 });
 
-test('verifyPullable turns a non-pulling ref into a named failure', () => {
-  // The real check. `docker manifest inspect` exits 1 on a digest the registry cannot resolve —
-  // measured: "manifest verification failed for digest sha256:bbbb…", exit 1 — so a ref taken from
-  // the WRONG one of buildx's two adjacent digests fails here instead of reaching compose.
-  assert.throws(
-    () => verifyPullable('reg/ns/minio:t@' + NEW, () => { throw Object.assign(new Error('boom'), { stderr: 'manifest verification failed' }); }),
+test('verifyPullable fetches BY DIGEST and turns a miss into a named failure', async () => {
+  const env = { GITHUB_SERVER_URL: 'http://h' };
+  const seen = [];
+  await verifyPullable('h/n/minio:t-r1', NEW, { env, fetchImpl: async (u) => { seen.push(u); return OK({}); } });
+  assert.equal(seen[0], `http://h/v2/n/minio/manifests/${NEW}`);
+  await assert.rejects(
+    () => verifyPullable('h/n/minio:t-r1', NEW, { env, fetchImpl: async () => ({ ok: false, status: 404, headers: new Headers() }) }),
     /does not resolve/,
   );
-  assert.doesNotThrow(() => verifyPullable('reg/ns/minio:t@' + NEW, () => '{}'));
+});
+
+test('nothing in the promoter shells out to a docker client any more', () => {
+  // The whole class of failure removed rather than patched: a client-side docker call would
+  // reintroduce the TLS assumption on the next refactor.
+  const src = readFileSync(resolve(REPO_ROOT, 'scripts/promote-minio-digest.mjs'), 'utf8');
+  const code = src.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+  assert.ok(!/execFileSync\(\s*'docker'/.test(code), 'the promoter calls the docker CLI again');
+  assert.ok(!/buildx|imagetools/.test(code), 'the promoter uses buildx/imagetools again — it assumes https');
 });
 
 // ── the argument contract ─────────────────────────────────────────────────────────────────────
