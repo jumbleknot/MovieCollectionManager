@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6c6c37b278716c10056d9a7298a43fc1d6b60ef646af4e320fc83bb9af75e2a5",
+  "pageVersion": "sha256:7d7c56ef5c1eb2237ebea9f2dbac1b9fa071c863d242956d8a1fad77ddff784a",
   "claims": [
     {
       "id": "claim_bcc478242c8643dabbfe30e448e6b1e6",
@@ -14,11 +14,27 @@
     },
     {
       "id": "claim_56e5d718ae014a25b614be6ca38921b6",
-      "statement": "The host toolchain for MovieCollectionManager requires Node.js 24.14.1 (LTS), pnpm 11.17.0 via Corepack, Nx (workspace, via pnpm nx), Rust stable, Python 3.13 with uv, Docker Desktop 24+, OpenJDK 17, and Android SDK Platform 35 with Build Tools and Emulator; these are all pre-provisioned in the devcontainer toolchain image.",
+      "statement": "The host toolchain for MovieCollectionManager requires Node.js (LTS, floor >=22.13 set by root package.json engines.node), pnpm via Corepack (the exact version pinned by root package.json packageManager, currently pnpm@11.25.0), Nx (workspace, via pnpm nx), Rust stable, Python 3.13 with uv, Docker Desktop 24+, OpenJDK 17, and Android SDK Platform 36 (the compileSdk the pinned React Native's Gradle version catalog sets) with Build Tools and an Emulator API 34 system image; these are all pre-provisioned in the devcontainer toolchain image, which bakes Node from a node:24-bookworm base, resolves pnpm from packageManager via Corepack, and installs the android-34 SDK platform/emulator packages for its ANDROID_API=34 build arg. Exact Node/pnpm patch pins otherwise drift independently across CI and Docker contexts in this repo and are reconciled by scripts/check-toolchain-consistency.mjs rather than being fixed values.",
       "evidence": [
         {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile#L182-L212",
+          "version": "repo-lines-v1:sha256:1b22a6439f8e5621f9c100d39e9bbe868b5a9392a3bc63af9d9b27972542e523:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZTQwNmQ1ZDZkMzFiYWEzZGUwODNiYjAzNzBmZDI4MDY5ODJlNGIxMTIxYWI4Njk5MWJhNDNmMmJmNGQwNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMjhjMzM5YTM5ZmU2MTRhZmQ5NjIzMDI1NmNkNzZiMzFmNTRlYTQ1ZGU0MTEzMDk1ZDhmMjA1NmNjNWI0YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkOTQ4MTc0MDkyYTI4MzRiMDcxNjk0OTkzZjdlM2Y5MjkwZTM0NWZlMjJkNTA3NTYzNzU1MmM4OGViNTQzOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4ZTA1MDRkOGZkNDEyYjIyOTQwMWU4ZTI5Nzc2MDdlYWU2ZjcxYmU1MTllMjY3MmViNzhiZTIwZDBkODQ2YTYifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile#L23-L23",
+          "version": "repo-lines-v1:sha256:88c2589053d3694e94312c1634a04735af07c0a488d80cabfa7c588e5167f89c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODhjMjU4OTA1M2QzNjk0ZTk0MzEyYzE2MzRhMDQ3MzVhZjA3YzBhNDg4ZDgwY2FiZmE3YzU4OGU1MTY3Zjg5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhjMjU4OTA1M2QzNjk0ZTk0MzEyYzE2MzRhMDQ3MzVhZjA3YzBhNDg4ZDgwY2FiZmE3YzU4OGU1MTY3Zjg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjdiOTMxNGU3MGVmNWM4Yzc0NDg1ODMwY2JhNjE2NTlkZWJjM2IxMTNkMjQ4M2FhYzNkMDkzODAzOTdjODJmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2FhMTk2MGExMGY4ZjNmN2M3OGU3MDc5OTM0MjBlM2EzNGQzMTg0NGU4YTM3NTBlODUwNTJlMTUwOWQ2ZGE4YSJ9"
+        },
+        {
           "resource": "repo://docs/runbooks/dev-environment-setup.md#L14-L24",
-          "version": "repo-lines-v1:sha256:95c2ef1a0bb494e3f656d64dffa7bcc97b28b23e66a5db595c40b5f8dfa24f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjMTU5OTU0OWVmNDc0NDMxZjU2ZThkZmU0NDgzMDJiZmYxZDU4MmQwYzEyM2UxZDU5NTQ1ODc5YWE4OWI4Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNzA2Njg4ZDFlN2VmMjk5NDEzZWJiMmY0YTU2MzY1NGZkNWRlNjk1OGEzNjBlNzAyNmVhNmEzMDUyMGY0OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ODk0YWViNjJkZmU3YmQyZDBiZWMyZmRkMzcyZmRkOGUzNWQzNDY3ZGEwZjZmYTIxY2UwNWMxYmUxOWNhODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMDAyNGQ5MDc1YjQzOGNmYjljZDU3MDcyNjBiM2IxMTY2ZmNmYmVmMWE3YzcyY2ZiZjUxNzlhNThlZTgzYjQifQ"
+          "version": "repo-lines-v1:sha256:27ceec56da0e0ae81b74dd02510aeda380921e0220c5c6e815c15f09e9d654f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjMTU5OTU0OWVmNDc0NDMxZjU2ZThkZmU0NDgzMDJiZmYxZDU4MmQwYzEyM2UxZDU5NTQ1ODc5YWE4OWI4Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNzA2Njg4ZDFlN2VmMjk5NDEzZWJiMmY0YTU2MzY1NGZkNWRlNjk1OGEzNjBlNzAyNmVhNmEzMDUyMGY0OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ODk0YWViNjJkZmU3YmQyZDBiZWMyZmRkMzcyZmRkOGUzNWQzNDY3ZGEwZjZmYTIxY2UwNWMxYmUxOWNhODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMDAyNGQ5MDc1YjQzOGNmYjljZDU3MDcyNjBiM2IxMTY2ZmNmYmVmMWE3YzcyY2ZiZjUxNzlhNThlZTgzYjQifQ"
+        },
+        {
+          "resource": "repo://package.json#L5-L9",
+          "version": "repo-lines-v1:sha256:c38acfd4dc370f427868d217c7522bb0cccc6704aa22f07f0f55dca54e7f3a52:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE5ODQwNjI0ZjFjOTQ2ZTc5OGRkMWQ4Mzg0ZDMxN2YwNzAzY2RiZDJmMzkxN2EwYThkNWUzZjQxOWFjMjczNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQzNDE2ZDgzYTY2ODA4NTgyNGMwYTE1YWJiYzk4NzkxOTYzMzY0MTg4YTgxMjEwM2UzMzdiODUxMThhNWU2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJhZTYyNTUyNzA2ZTkwNzk2MDkxZTAyOTg2ZmU0N2RlNTJiODRhNWI5MmUyYWE3NmRlMWI1MTI0NDNiNTE2ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L1-L49",
+          "version": "repo-lines-v1:sha256:499bd6a997c241b55ae710323cbe250a82310cb9c89ab667f5465d312ac2d496:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3MTM5ODE0ZWJlZjg5NzM5ZTI1OTM2NDRmMzFiNTY2MTcyNTFhZWUwZDhjNWNjMGViNzE2YmZmNmZlZmI0ZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwNDIzZWJiYmYyOThiNjRhMGU1YjQwMTQ1OWFiY2YxZTZmN2RjNDQ4NGVmZjU3ZGE2YWVhNWQxMzZmMzQ3MmIifQ"
         }
       ]
     },
@@ -85,6 +101,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-20T11:41:17.059Z"
+    "at": "2026-09-27T16:58:28.669Z"
   }
 }

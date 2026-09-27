@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0029fc31766cfe14b99a062eb48111f69c4c4a43c823646481c264cbc27ef156",
+  "claims": [
+    {
+      "id": "claim_55a137e8983d44999848085f7192d594",
+      "statement": "The agent layer call chain routes identity through two successive RFC 8693 token exchanges: the BFF exchanges the user's session token for a short-TTL, run-scoped delegation token handed to the Agent Gateway as a non-checkpointed value, and the gateway's shared MCP client exchanges that again for a further-downscoped, aud=mc-service, short-TTL token attached only to the individual tool call.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L131-L140",
+          "version": "repo-lines-v1:sha256:10a8d69decb2fa50d8b2fe39cd9b6dd6fd10ea75ea8e0d84fe7ee02d88c0d615:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYzdkYWIwYTgyMzA1MzJlYjdmMGY1Y2Y5ZDU0ZDFmMzE2MGU2OGQ1MGVkZDJmMGQxN2ZiYmMxYjIwMDg1MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlOGE4MWEwNmE0MzBkNDEyYTVlNzUzYmZiOWE4NmIxYmI0MjdmNzRjNDgxMjNkM2Q0OGY1MjAwNTI5YTVkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MTlhYmZiMjJkNTA0MzMyNzVkMjYyNmYyMTk3ODFmNDA2Y2MzYzRkMWNmZjA3YTVkYTcyZTE1NDk0MWZjNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNjRkMzQ3YzVjODlkZmFjMjlhYzQ5ZWI5NTllOWQ1MjEyNDZlZTgwNzFiM2IzZjM3M2E3ZDNjZTE5ZjRmMjUifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L1-L10",
+          "version": "repo-lines-v1:sha256:2e373a30df8349944d2beec5d43c90cf6d4e564075a4f05efaccb4c600ed1963:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1OTJkMjI0Zjc1MmMzNGVjYTc1ZDk5NzNjYTM5ZTA4ZTJlZGQ0YjgzZGNiMGE1ZDVkNWJiYWRlNDY3ZWQ1ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNGFmMTc1M2I4Yjk4ZWU1Y2QzM2RmNTAxYWExZmI1ZDE3MjQ5MWExZjgyNjAzZmI3ZWI2NzA3MWI3N2RmNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0Y2VhNTYyMjI5YWI3NjBjMWUwZGFkZTVlMDJkY2MxMzQ5NmU5YmE0MzBiMDExNDJhZmU1YjM1ZmQyYmJiOTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c30c1adaddef47fa9b007ea7fb739cc0",
+      "statement": "The BFF hosts CopilotRuntime plus the AG-UI HttpAgent (from @ag-ui/client) wired to a vendored ExperimentalEmptyAdapter, performing no LLM call or orchestration itself, because the LangGraph runtime already emits AG-UI events natively; using LangGraphHttpAgent instead would 404 because it speaks the LangGraph Platform REST protocol, not AG-UI.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L109-L111",
+          "version": "repo-lines-v1:sha256:8a8e9ee22b0c1ff5c642d3828cf7b4b39d1c7e8a8f75ca17933ae03d2c037adf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcyM2FmMGFmM2NkOWY5ZWZkNjFiNmI5MmIwNTM0ODdkMWM2YmRjMTQyOTVkMzYyODgzNTQ4MWYzZmI5ZTI5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNlNWQ2YzRlMWQ3MWI4NzRkMzBmMjY0ZTg5NmU1MTQwM2ZiMzMzZjQ5NzIwODYyMzE1ZmE2ZWM0MTA4MDllMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTg5ODJjM2QxMGYxNjhmMTliODE5OWI0MTkzZDhkNGQ5YWU4MmY2NzQ3ZDkyNjYxODdjMDI4ODU4ZjRiOTU2OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDY0Y2NhYzJiMzkwZGU1ZDY0MGQwZTYyMTY4MzU2NjFjNTVhMmVkMjkzMDIyMjdmMjkyZjMyMWE3MzM0MzA4YiJ9"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L45-L45",
+          "version": "repo-lines-v1:sha256:169d33371aa46ec73404c52601bb75e8322025ee5104cb34ebf7c0171d5e5e9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY5ZDMzMzcxYWE0NmVjNzM0MDRjNTI2MDFiYjc1ZTgzMjIwMjVlZTUxMDRjYjM0ZWJmN2MwMTcxZDVlNWU5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY5ZDMzMzcxYWE0NmVjNzM0MDRjNTI2MDFiYjc1ZTgzMjIwMjVlZTUxMDRjYjM0ZWJmN2MwMTcxZDVlNWU5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJlNzE2ZTdkZTI4MWI0ZmYwZmQ4YjRkMDJiNThjNGZiNWM1OTc3NmU4Y2IzNzBlNGYxZTVjYjA2MWE4NGFkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTdkMjk1YjFjNGM1ZjUxMzY5N2JhOGU2MmMzNjNiOGZlMWQ4YmQ5NTI5OWM3M2IzNmI4YmQxOWY5MDcwYjI2NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7d8a5f1540c4254a4e84c44b880d9bb",
+      "statement": "A paused HITL run holds no token at all, only checkpointed graph state plus userId/threadId; because every resume is itself an authenticated BFF request, the BFF supplies a fresh subject token on every resume, which is why token lifetime is decoupled from pause duration.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L131-L140",
+          "version": "repo-lines-v1:sha256:10a8d69decb2fa50d8b2fe39cd9b6dd6fd10ea75ea8e0d84fe7ee02d88c0d615:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYzdkYWIwYTgyMzA1MzJlYjdmMGY1Y2Y5ZDU0ZDFmMzE2MGU2OGQ1MGVkZDJmMGQxN2ZiYmMxYjIwMDg1MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlOGE4MWEwNmE0MzBkNDEyYTVlNzUzYmZiOWE4NmIxYmI0MjdmNzRjNDgxMjNkM2Q0OGY1MjAwNTI5YTVkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MTlhYmZiMjJkNTA0MzMyNzVkMjYyNmYyMTk3ODFmNDA2Y2MzYzRkMWNmZjA3YTVkYTcyZTE1NDk0MWZjNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNjRkMzQ3YzVjODlkZmFjMjlhYzQ5ZWI5NTllOWQ1MjEyNDZlZTgwNzFiM2IzZjM3M2E3ZDNjZTE5ZjRmMjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2dd1df7f2af643a7adba5fdd419cc1e3",
+      "statement": "Per-user agent config (feature 018) is off by default, AES-256-GCM-encrypted at rest in the BFF-owned mcm-bff-db (physically separate from mc-db), decrypted only in-memory per run via resolveForRun(userId), and forwarded to the gateway via the X-Agent-Config header; the CopilotKit dock mounts only for a runnable config (enabled + provider credential + TMDB key).",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L142-L152",
+          "version": "repo-lines-v1:sha256:7b6e4c763866ea0dff96416f0faacbe0643abd990a334b032efc28dbce96a172:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2YzA3YjdmYzY5NjY2ZmViNzhkNDg3MWExNjM1OTg5MmZkN2IzZDg5ODk2OGQ1NTU0Yjg3MTQ2NmM4YjcwM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxYjQxMmRmYjIzNjczNDQ2ZGQ5OGUzMmM4NmMxY2VmM2NkMDlmZWEyODAxNmQ1YTMxMTcxZTY2OWQ2NjJkNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZmYxNWJkOGE5Mjg5MjJhYzZiYjI3MjlhZjNmZGEwODFmOTI1NjAzOGM0YWEwMzU2NTc4NjYxOGUzMjU4NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NWIyOTgwYTU5MzgwODc3ZjMzZjhhZWNkNjE0NDU2MjQ2ZWQxZGUwMDE3NzNkN2IyZTEzMDgyYzg1N2ZlZDEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L287-L311",
+          "version": "repo-lines-v1:sha256:eff24e8e3516e50818fe3da7e527ca3aec9c1b0f1af4d007d9b5f20f12f19b8b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYmZjNjM4ZDhjZjRjNzIwZWFlNjkwNmQ0MzhiZDZjMDgzZjZiYjc5YmZhZjFiZDBmZjhmMGE5Mjc0N2JiYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNGYzN2E0MzA5YjcwZTM5NjkzYjgzMTkwN2FhZjVlMDdmYWQ4OWQ4YzlhMDUwODM4NGU0OTNjNzgwY2UxMmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2NjBjZDNlODAzZDExMWJhMjI5MzhlZjZlMDMyZDE3ODUzYWVmZTIyNGYwYjdhZDNmODJkZDEzY2Y0MjBkYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkMjY2YWU2ZTU5MDBlZmEwMWFhNTdmOTdjOWRlMzYxODk1MGRkNGY2YmU0ZmE1OGYxNDVjZGJmNDc5ODFlNzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7f51fa2567b434789480ec2e8679f0c",
+      "statement": "The user-supplied Ollama base URL is SSRF-guarded independently in two processes: the BFF's agent-config-ssrf.ts and the gateway's src/ollama_guard.py (invoked from models.py), because a check made in one process can be stale by the time the other process opens the connection.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/ollama_guard.py#L1-L26",
+          "version": "repo-lines-v1:sha256:2e3f14525771f677a6f9ed5b289cf2d4139e8a96eec8e3ebfc2b5e8be631ef0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMGZkYTMyN2FkYzQ0ZGE5MGNkY2ZjMGJmMDAwMzZkYzJiZTY2Y2JkZTZkZDhiNThjMDc2NDFhNTdkODc0YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L318-L331",
+          "version": "repo-lines-v1:sha256:9f728499e515953a33ddcf2a27e0c9e4a3217f2fa68ad5db58dc77d0ef6657f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViOWI2ODhmNzBmZTAzYWE4MmNhZTRkOTUwZGNjMzZjYjViZjhlYjA4ZDE5ZjQzZmRiNmQwODFiOTYwMjQyY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3N2FjNjdhODhjOTk3Yjc1ODkxNGEwMDZkMGRkN2NjZmQzNzY1MjE4MDJkOTliZTE3OGQyZDE5MmJmZjM3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0YzYxZTI4ZTY3YjRhYjdjMjVlYjliMDM1Yjk4NjY2YzNlOGFjZDEwOWY2YWM4MWU0YzU5YjM4MGE3ZWFiNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwNmI3ZjBjODMxMDQ3NDcxNGUzNDYyY2Y4MGJkMzk5M2U2NDk5MzY0ZWZiYjk0NTU3NjRiMDMwZTliZmJhNzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_36f4d4d4ffbb40598a88ea47ab2eb338",
+      "statement": "Feature 059 extended the add flow's stage chain to awaiting_childrens -> awaiting_ownership -> awaiting_media -> awaiting_ripped -> awaiting_rip_quality -> proposal, placing the children's question first because the 047 media/ripped/rip-quality questions are conditional on ownership and any later placement would skip them for a not-owned add.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L166-L174",
+          "version": "repo-lines-v1:sha256:ea36dd6a551cdf03924c2a12b32c997bd518487e430872726f547b7370bc27b7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmNhZDdlZmRmZjhiZGJjNzcwOGY3N2I4YThkZGZmYjkyMTgwZWIwMDBmZWQzMDcwMjViZGU3MTQxYWUyNGFiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFiNTkzMTJkYjM5YjFlNGUxYWNmMzQyYmU2NDg2ZTA5NDRlNTg3Yzc4OWZjOTY0YzNhYTU5ZGIwMTlmMjAzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2FhZGU4NTFlZTRhZjdmYzUwZDg0NjJmNDkyYzE0ZjhhM2E3YjFhNTlhMTM0Mjg1MDlmNWQ4NTMyNDA2YzU2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTkwYWVmNjMyYmJmZmVjZDBiYTFlNjMzZTEyMTQ1ZWQ4NmM1YmJlNjgzMTY1OGIzMzMwNGJiZjI3MmI0MzQxZiJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L86-L98",
+          "version": "repo-lines-v1:sha256:dc34c7e3ae97dcbd5aed73095d6dd8dfd68a0eae3884617e9e5e6cb0369f4391:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNjkwZTkzZDBlNzc4MWE2NjQ3YWUyY2YzODgwYzU2MmJkNmQ3Y2ZhNDI0YzU4MGFjMGQ3ZDA4YmNmYzI2NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2OWUzNTExNjg0NjJiYzFjNjk5NzdhZjM3YzQ0ZjVhOGZiYTBhYzliNWFhNTk2NzY4MDg0MjdjYTQzYTljYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MzBmOGU2MDMzOGU1OTkyYmJiM2JiMzYxM2RjYTNiMGY4MTZkMjNkMDYxYjdkOTgzYjA5Y2YzNzE3MDA3MDcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-27T16:58:28.669Z"
+  }
+}

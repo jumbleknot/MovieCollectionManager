@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5dc239507969932b2de8506063ee5c535a1e043cf6f33a8d1141f52b2f918f5d",
+  "pageVersion": "sha256:bed5365cd331abb5b24295c7a048eb0e1494628954dffed7a896cc836ed0c99d",
   "claims": [
     {
       "id": "claim_38bde766ef97415d9b05311aeb02e233",
@@ -98,11 +98,15 @@
     },
     {
       "id": "claim_c4f33eafb73e49a6a453aa3e3fe7af9d",
-      "statement": "crates.io is not allowlisted in the devcontainer egress firewall; all cargo commands must use --offline. A failing --offline resolve signals that the change adds a package absent from Cargo.lock — treat it as a lock-discipline check, not an obstacle to work around.",
+      "statement": "crates.io, index.crates.io, and static.crates.io ARE allowlisted in the devcontainer egress firewall (group `packages` in .devcontainer/egress-allowlist.json), so cargo resolves online in the devcontainer; --offline is now a tool, not a requirement. A failing --offline resolve still signals that a change adds a package absent from Cargo.lock and remains a useful lock-discipline check.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L532-L561",
-          "version": "repo-lines-v1:sha256:f08443a077ec407d43b3d758bf044637b8a21a9b43095feff258ba7767a50f59:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNjc1ODAwMjUzZjk2YjI0MjFmMDBmYjBjNTZkZjcyOTk3MmRjZWQ1ZDVkNDk0NjI4NDU5MWE3ODU4OTE1ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwY2FhZmJkNjM1OWVmMzczOTY2MzI4OWE2MTI5N2YzYjUxYmJlYWM4YmRjMzg4NDFlYzk0ZThmOTkzNjIwMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZjA2OWVhNTNmN2NkMGVjYmUyMjRhMjE2YTAzMWVkNzcxOTk3NDVmM2E4YjM2NzRkN2JmZDFiOGFjMWUwMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3ODAwYTJjZDdiMWYyZjA3ZmZmMzBjOTBjYjdmOTczYTE3NGUzYTAxZjM3YmE3Y2I0MjI1MDQyMjQ0N2E0NjIifQ"
+          "resource": "repo://.devcontainer/egress-allowlist.json#L190-L208",
+          "version": "repo-lines-v1:sha256:121ac1daaa7365f1235381816b214dc9ad7c4695a66d55287f958d4f1035159d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YzUyZGYwZTAyYzY5OGE1NTA2ODE5ZjJjMzg0MGYyMTNhZTI3YTY1MGE2ZjI0ODhjZDFiNTAwZjY4ZDRjOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMjcxM2JlNjUxNTgxNTFiNzVkODk1NWM2ZTQ5ZDdjMzdhNDg0MjhmYjZiMjVhYzNjNDU3ZDM0Y2M4NzIwM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkOTRhZDNjZTNjNTRiMTBhN2QyYjUwMjQ1ZmE1ZDljYzMwODQ2OGU1Nzc4YmMyMTgwN2NlM2IyZmRmZGQ2OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MTFkYWY0ZmMxZTAwMjc0Yjc5OWU4YzQ4MDEwM2NmZTgxYzlkNTE4OTg5MTNkNWZjODA5ZDk0OGJjOTUxNDkifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L532-L566",
+          "version": "repo-lines-v1:sha256:499748bb2db06e779335e3fae4bf6ba616379e3482cf59d39c900dff7d26deb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYzJjZjQ5YWNjZTlkMTA2NTRjZmZiNDViODVhODcxNjA1NGZlNDQxYTY4YTcwZTM3OTczNTRmYTc4NjA3ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZjA2OWVhNTNmN2NkMGVjYmUyMjRhMjE2YTAzMWVkNzcxOTk3NDVmM2E4YjM2NzRkN2JmZDFiOGFjMWUwMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhMzA1MTVlMjc4YmU1ZjE5Yzc4ZDc0M2Q5YjQyNWUyZjc2YWVmMjRhYTg5NDJkMDMzMzg1ZDdkYjljNDQxNDEifQ"
         }
       ]
     },
@@ -203,6 +207,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T02:06:41.363Z"
+    "at": "2026-09-27T16:58:28.669Z"
   }
 }

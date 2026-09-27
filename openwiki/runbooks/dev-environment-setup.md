@@ -6,21 +6,40 @@ resource: docs/runbooks/dev-environment-setup.md
 tags: [setup, toolchain, host, runbook]
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-20T11:41:17.059Z
+    at: 2026-09-27T16:58:28.669Z
 sources:
+  - id: openwiki-source-7e1c4d46c53be9bf32311e06
+    resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-8cb0da307c90adb4287997a5
     resource: repo://docs/runbooks/dev-environment-setup.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-20T11:41:17.059Z" }
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
+  - id: openwiki-source-238cf8b88f30f267614313be
+    resource: repo://scripts/check-toolchain-consistency.mjs
+generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
 ---
 
 # Developer environment setup (host toolchain)
 
 Covers provisioning a **host** machine with the toolchain MovieCollectionManager's AI-assisted
-workflow expects: Node.js, pnpm (via Corepack), Nx, Rust (stable), Python 3.13 + `uv`, Docker
-Desktop, and the Android SDK/emulator for mobile builds. Everything here is pre-provisioned in the
-[containerized dev environment](./devcontainer.md) already — this runbook exists
+workflow expects: Node.js (LTS, floor `>=22.13` set by root `package.json` `engines.node`), pnpm
+(via Corepack — the exact version pinned by root `package.json` `packageManager`, currently
+`pnpm@11.25.0`), Nx (workspace, via `pnpm nx`), Rust (stable), Python 3.13 + `uv`, Docker Desktop
+24+, OpenJDK 17, and the Android SDK (Platform 36 as the `compileSdk` the pinned React Native's
+Gradle version catalog sets, with Build Tools and an Emulator API 34 system image) for mobile
+builds. Everything here is pre-provisioned in the
+[containerized dev environment](./devcontainer.md) already — the toolchain image bakes Node from
+a `node:24-bookworm` base, resolves pnpm from `packageManager` via Corepack, and installs Android
+SDK platform/emulator packages for its `ANDROID_API=34` build arg — this runbook exists
 for the case where the containerized path isn't used, or before bringing up
 [local dev infrastructure](./local-dev.md).
+
+> **Don't hardcode exact patch versions here.** Node and pnpm patch pins drift independently across
+> contexts in this repo (for example CI workflows currently pin Node `24.19.0` while the BFF/prod
+> Docker images pin `24.14.1`) and are enforced for internal agreement by
+> `scripts/check-toolchain-consistency.mjs`, not by this page. Point at the source of truth
+> (`engines.node`, `packageManager`, `.devcontainer/toolchain.Dockerfile`) rather than repeating a
+> number that will go stale.
 
 ## Gotchas
 

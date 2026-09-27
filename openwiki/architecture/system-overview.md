@@ -1,10 +1,20 @@
 ---
 type: Architecture
 title: System overview (MCM)
-description: The whole-system map of MovieCollectionManager — core components (mcm-app, mc-service, mc-db, Keycloak), the additive AI Agents layer, and the RBAC/DAC access-control model — distilled from the canonical architecture document.
+description: The whole-system map of MovieCollectionManager — core components (mcm-app/BFF, mc-service, mc-db, Keycloak, Agent Gateway), the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
 tags: [architecture, overview, rbac, dac]
-timestamp: 2026-09-16T09:26:13+00:00
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-27T16:58:28.669Z
+sources:
+  - id: openwiki-source-541e2287bdfb42c605c78f3f
+    resource: repo://docs/MCM-Architecture.md
+  - id: openwiki-source-4042a47526d6016cff835628
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
+  - id: openwiki-source-c1c739d605caccb56fa33851
+    resource: repo://specs/073-scheduled-backups/spec.md
+generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
 ---
 
 # System overview (MCM)
@@ -28,6 +38,13 @@ Core components, per `docs/MCM-Architecture.md`:
 - **Keycloak** — external IAM. Expects a client named `movie-collection-manager` in a realm, and two
   client roles: `mc-admin`, `mc-user`. New self-registrations default to `mc-user`. See
   [Auth chain](../invariants/auth-chain.md) for how a token flows end to end.
+- **Per-user scheduled backups (feature 073)** — the BFF runs an in-process scheduler that copies a
+  user's own collections to an S3-compatible or WebDAV destination *the user owns and supplies*,
+  keeping the last N versions and offering a restore that only ever creates new collections (never
+  overwrites live data). An unattended run authenticates as the user via a Keycloak offline token
+  they explicitly consented to, and destination secrets are sealed under their own encryption key,
+  separate from the agent-config key. This is a BFF-owned capability, not a `mc-service` or
+  `mc-db` concern — see the [backups runbook](../runbooks/backups.md) for the operating detail.
 
 ## Access control: two layers, not one
 
@@ -41,6 +58,23 @@ common source of confusion when reasoning about "why can't this user do X":
   contributors/viewers, recorded in that collection's own ACL entry in `movie_collections`. The
   owner grants/revokes contributor or viewer rights. This is enforced *inside* `mc-service`, not by
   Keycloak — Keycloac has no notion of individual collections.
+
+```mermaid
+flowchart LR
+  user["MCM user"] --> app["mcm-app (web/mobile)"]
+  app --> bff["BFF (Backend for Frontend)"]
+  bff -->|"OAuth2 + PKCE, session cookie"| kc["Keycloak (IAM)"]
+  bff -->|"forwards JWT; RBAC: mc-admin OR mc-user"| mc["mc-service"]
+  mc -->|"validates JWT locally against JWKS"| kc
+  mc -->|"DAC: checks caller against acl[]"| db[("mc-db: movie_collections, movies")]
+  bff -->|"delegation token (agent runs only)"| gw["Agent Gateway"]
+  gw -->|"downscoped, aud=mc-service token via movie-mcp"| mc
+  bff -->|"scheduled/on-demand backup runs"| ext[("user-owned S3 / WebDAV")]
+```
+
+*RBAC gates at the BFF and mc-service tiers by Keycloak role; DAC gates inside mc-service against
+each collection's own ACL; the Agent Gateway and the backup scheduler both reach mc-service through
+the same RBAC/DAC path, never around it.*
 
 ## Gotchas
 

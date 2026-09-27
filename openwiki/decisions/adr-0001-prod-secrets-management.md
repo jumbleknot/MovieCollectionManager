@@ -5,6 +5,14 @@ description: The ratified decision record selecting Komodo Variables (not HashiC
 resource: docs/decisions/ADR-0001-prod-secrets-management.md
 tags: [adr, secrets, komodo, vault, decision-record, security]
 timestamp: 2026-07-04T21:46:33-04:00
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-27T17:17:48.446Z
+sources:
+  - id: openwiki-source-157ea154f0d418e464705985
+    resource: repo://agents/movie-assistant/src/secrets.py
+  - id: openwiki-source-c1146bc275906084150591a5
+    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
 ---
 
 # ADR-0001: Production secrets-management standard

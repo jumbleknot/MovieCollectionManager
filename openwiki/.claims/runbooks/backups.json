@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0bb8ba7bb66a0df2fba65f4d645275ec2989ba9e9a516293da39a9f040ceb91e",
+  "pageVersion": "sha256:38ebe70d959342f5ec9a87c0d687351a813f0fb49d1f8c37a98d7615eec444cf",
   "claims": [
     {
       "id": "claim_5b86a47d89ae4efd9e3852642427292a",
@@ -126,11 +126,19 @@
     },
     {
       "id": "claim_937542fb88994981897059fd44ebb8c5",
-      "statement": "No account-deletion route exists in the app: tearDownUserBackups(userId) is implemented and tested but nothing calls it, since there is no deletion endpoint and no deleteUser path in the Keycloak client.",
+      "statement": "Feature 076 added an account-deletion route (GET/POST /bff-api/account/delete, reachable only after a Keycloak step-up re-authentication) whose runAccountDeletion pipeline in account-deletion.ts calls tearDownUserBackups(userId) as its first step, before deleteCollections, removeAgentConfig, clearTransientState, terminateSessions, logoutIdpSessions, and deleteIdentity (deleteUser in keycloak.ts, always last); account-deletion-order.test.ts pins this step order.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L209-L212",
-          "version": "repo-lines-v1:sha256:093816e2426789f75ef76cf9868c67eaefc249d32dc695c22163c7fc13745409:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU2ZDk5ZDA4MjQ4M2NmZjZhMWFmMjE1M2M5ZDhmMmNiNDZkOTlkNzc5OWJjYWQxYjkwM2Y3N2Y2OWU2MTA4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk5NTc3NmM2MTIxYTA5NGU0MjIzYmRjZmE5ZDllNDMyNGE2YmQ0ODM0MDY3NDU0ZjBkMzEyOThjZjA2ODIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTU2ZmMzNzc0ZWRmYjM1YTcwZmJmMDZmNzQ3NDM5NjY4Y2E2OGQzNTBjYzg2YjdiY2MxMDAwZGNlOGIwYTkwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAyMTk2MmQ5OTU4OWNhNDU2ZDgxYjI0NGRkN2MyNTU4MTZkNzBmN2U1NGRlNjZlNTk1NjE1ZWM2ZmZlYzg2NCJ9"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts#L16-L24",
+          "version": "repo-lines-v1:sha256:8e24f21e123f159cefb3497aaf21a6758c831e67caa04627aec2a58d69d2557d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU3YTdjM2UzZDNiZDJmNTM3MzJjNzJkZjJiZTVjYjkyNGY0Mzk2MDk5M2JjZTY1MjZmN2QyZGU1ZTBmOWFiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmJkNWVkY2ZkZDAxODc3MWVhMjUzNDRlN2FlYWY5MGM2YWRkNGQ4ZmEzZGVjNzM4NTJjZGU4YjZiZDFmZDgzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODdiMDIwZDYxNzc4MTBkOGMxMmM3MTEwYTUxNzczNTYxYWE2NjNiODU5YmUwZDU3NzIzYTNkOWZmMGEzZGIzZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWI1ZmVjODE3NjA3NjcwMWFmOTZkNjNjOTY3M2M4NDQ4NmY2ZjVhZDYzNmY1Njg5NzNhODEyYmViNDk0NTBiNiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L170-L206",
+          "version": "repo-lines-v1:sha256:5c244f81646e90c6d8dd925ce0f4660e3d94710a965fa480b9c1fce15a1c482c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NGM4YTI3YmQwNmFiYzlmZmUwYmU2OGI5NTQyYzBkZTE3OWQ3MGY3NzQzNDBjMzI5OTZkMTIxOGJiNDU3YzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlOTE4YjgwYmE3YzNjYTM4NTk4MzZjYTU5NDcxZWJkMDE5MjgzOTk0M2FmMjU1Y2YwOTI3MWIyMDQ2YTAzMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L28-L56",
+          "version": "repo-lines-v1:sha256:338861ab75bcc2d42ae6e5bd68de7f2d79c3ebe9131dab161b0ca1dfe15b82f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NDI0NDM1NmQ0MDAxYzVkYWYwN2RmZTZmMjgzYzYzMTFiODg3NDQyY2UyYjhlYjFiZGE2NzU0MWM0YWQ4ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwZGI0NWU4MTE1YThiOTNhNjViNjE2NWY2M2FkYTIxOWZlM2YwMmEwNDUzOTA4YTg5ZGE1ODA2NzZmZjRlYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2ODRjYTE5NWExODQxNTc1ZTM5OTk0NzA1ZGU1MzAyMDRmNTJiYjI3ZTJmZGM3ZTQwMTQzNjQ0MjA4ZGEyM2YifQ"
         }
       ]
     },
@@ -147,10 +155,34 @@
           "version": "repo-file-v1:sha256:9c0ea5f2494236e854f37e2ceb33859fd19f078fee6ad558b5cfc187d34e6aab"
         }
       ]
+    },
+    {
+      "id": "claim_36a71238856b4edb8d887d983431fc21",
+      "statement": "tearDownUserBackups (backup-offline-token.ts) revokes the user's backup offline token at Keycloak first, throwing and deleting nothing locally if revocation fails, and only then deletes the user's backup destinations, jobs, and run history in that order; it never deletes the artifacts already stored at the user's own S3/WebDAV destination, since account-deletion.ts never imports the destination driver or retention modules, a fact pinned by account-deletion-no-driver.test.ts.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L16-L26",
+          "version": "repo-lines-v1:sha256:84237cb89253df83b9a53ac6db87b62e548f4d42cd80928f5b0e058f6c582592:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMjVjMGQyNTY1NzgyZDUxN2NlYjA2YjEyMzE3MDBjZjEwOGQzMWUyNDdkMDE3ZmYzNzAwMDZmNDZkNTEwODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2NzU0MzIzZTE3NTBmMTJiNWVlNzQ2NWRhNzcyZDZkYjViNjdiYTlkMjk4OTE5OTA4ODk2OTJhODUyOWM4YWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MzUyMjU5YWEzZjBkMjI1MTg3ZmM0Njg4YjU5N2FjMGZmNDlhMTJmZWE1OGE2MDJkOTVjMDk0MjJkZmFmN2EifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L333-L368",
+          "version": "repo-lines-v1:sha256:fdc34fb2bff7daf9dfe8c8f4cc772b1d569d420f781adfc89fddc09fdbc983a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MmRlNzIwNmQ5ZjUyZGNkMDIwNjVlZTcxNmU0ZGFhMTIyMTgwNTQ3YTVhZDRjZjUxMDgyZWI3NmU4YTc4YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMGQxMzk5Mjg4YmY2ODVhZTgzOWJkNzhmYjhhNGMyYWVmZWRiM2U5MmVjMjRkNDQ1MjE3MGUyODFjODg1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4522726ca6ac4d6eaa8d50f1e1f6d71d",
+      "statement": "runAccountDeletion throws on the first failing step and runs nothing after it, so a partially failed deletion leaves the account intact and reportable as not-deleted; a retry restarts from tearDownUserBackups, and because that step revokes the offline token before any local deletion, a run in flight when its owner is deleted loses its permission and fails rather than retrying (spec FR-034).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L159-L206",
+          "version": "repo-lines-v1:sha256:16f24db1057e793d80301d94f75e6c63ef262f9b1514d30984c5ffa061da20dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlODk0MzM2NmNkYzljNTcxZDUyNzc3YjI3MzUyNTk2ODczZGU3NGNlNDJlOWQ1MTI2ODUwYzY3ZmE4MGU3YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T02:14:04.779Z"
+    "at": "2026-09-27T16:58:28.669Z"
   }
 }

@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4051258949c4f7cb41dc13cfcb592d4c0cd251ff3ddd331c8c6857cad6ccab56",
+  "pageVersion": "sha256:0332be14f3990dfb3e916c183baaed76024ebd16233b85791daef438059480f5",
   "claims": [
     {
       "id": "claim_d7748f9965734f80b8433848368ddbb3",
-      "statement": "The openwiki/runbooks/ directory provides one concept page per live operator document under docs/runbooks/, including a page for per-user scheduled/on-demand collection backups distilling docs/runbooks/backups.md, alongside local dev, devcontainer, CI diagnostics, security scanning, E2E/mobile testing, and production bring-up/reboot/data-tier runbooks.",
+      "statement": "The openwiki/runbooks/ directory provides one concept page per live operator document under docs/runbooks/, now spanning 19 pages: dev-environment-setup, local-dev, devcontainer-sandbox (primary) and devcontainer (retained DinD path), android-emulator, e2e-testing, ci-diagnostics, sast-scanning, dast-scanning, infra-image-scanning, renovate, backlog, backups (per-user scheduled/on-demand collection backups distilling docs/runbooks/backups.md), server-setup, prod-control-tower, prod-data-tier-auth, prod-reboot-resilience, phase-15-operator-checklist, and wiki-maintenance.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:bfa4ccdfba942e9c7f6e8606d7ae5bda7684dcfa5f4d64c5dfd19572f60845b8"
+          "version": "repo-file-v1:sha256:564b41391e2afd70a22e26a0865b19253fbdfafd27864004e7dcc1b7db104381"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T02:14:04.779Z"
+    "at": "2026-09-27T16:58:28.669Z"
   }
 }
