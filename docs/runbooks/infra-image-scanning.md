@@ -453,10 +453,29 @@ reporting something already visible.
 
 - **The digest must be the manifest LIST.** A build exports both a manifest and a manifest list and
   `buildx` logs them adjacently; the first does not pull. The promoter resolves the digest *from the
-  per-run tag* with `docker buildx imagetools inspect` — measured with docker 29.7.2 / buildx 0.37.1,
-  `.Manifest.MediaType` comes back `application/vnd.oci.image.index.v1+json` — and then **pulls the
-  exact ref it is about to write**, because that tests the property we care about rather than a proxy
-  for it.
+  per-run tag* by asking the registry directly — `GET /v2/<ns>/minio/manifests/<tag>` with the index
+  media types offered **before** the single-manifest ones, reading `Docker-Content-Digest` — and then
+  re-fetches **by digest** to prove the exact ref it is about to write is addressable.
+
+  > ⚠️ **Do NOT resolve this with `docker buildx imagetools inspect`.** That was the first
+  > implementation and it failed on run 4093:
+  >
+  > ```
+  > ERROR: failed to do request: Head "https://<forge>:3000/v2/jumbleknot/minio/manifests/…":
+  >        http: server gave HTTP response to HTTPS client
+  > ```
+  >
+  > `imagetools` is a **client-side** operation: it talks to the registry itself and does **not** read
+  > the daemon's `insecure-registries`. That is why `docker push` to this registry succeeds over plain
+  > HTTP in the *same job* while `imagetools` fails — the push goes through the daemon, which knows.
+  > The same applies to `docker manifest inspect` without `--insecure`.
+  >
+  > The deeper lesson, worth more than the flag: **`imagetools` was chosen precisely so that no
+  > scheme decision had to be made.** Choosing a tool to avoid a decision does not remove the
+  > decision — it removes your control over it, and the tool then makes it wrong somewhere you are not
+  > looking. `scripts/promote-minio-digest.mjs`'s `registryBase()` now takes the scheme from
+  > `REGISTRY_SCHEME` or the forge origin and **fails rather than defaulting**, with a regression test
+  > that pins exactly that.
 - **The ref count comes from the tree, never from a note.** `specs/070-minio-non-root/tasks.md`
   records "all **four** refs repointed", correct when written; feature 073 added the backups stack's
   two, making six, and the note went stale with nothing noticing. `findRefs()` scans on every run and

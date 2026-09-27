@@ -185,6 +185,18 @@ export function rewriteText(text, { tag, digest }) {
 
 const DIGEST_RE = /^sha256:[0-9a-f]{64}$/;
 
+/** The media types a TAG resolves to when the image is a manifest list / OCI index. */
+export const LIST_MEDIA_TYPES = [
+  'application/vnd.docker.distribution.manifest.list.v2+json',
+  'application/vnd.oci.image.index.v1+json',
+];
+
+/** Plus the single-manifest types, which a tag may legitimately resolve to for a 1-platform build. */
+export const MANIFEST_MEDIA_TYPES = [
+  'application/vnd.docker.distribution.manifest.v2+json',
+  'application/vnd.oci.image.manifest.v1+json',
+];
+
 /**
  * Accept a digest only in the one shape a compose ref can carry.
  *
@@ -203,49 +215,116 @@ export function assertDigest(value) {
   return trimmed;
 }
 
-const docker = (args) => execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+/**
+ * Split `host[:port]/ns/repo:tag` into its parts.
+ *
+ * The HOST comes from the ref itself rather than from the REGISTRY variable, so the request goes to
+ * whatever registry actually holds the image this run pushed.
+ */
+export function parseImageRef(ref) {
+  const m = /^(?<host>[^/]+)\/(?<path>.+?):(?<tag>[^:/]+)$/.exec(String(ref ?? ''));
+  if (!m) throw new Error(`not a <host>/<ns>/<repo>:<tag> image ref: ${JSON.stringify(String(ref ?? '').slice(0, 160))}`);
+  return { host: m.groups.host, path: m.groups.path, tag: m.groups.tag };
+}
+
+/**
+ * The registry's base URL — SCHEME INCLUDED, and never guessed.
+ *
+ * THIS IS THE BUG THIS FUNCTION EXISTS TO PREVENT, and it cost a run (4093). The first version of
+ * this script resolved the digest with `docker buildx imagetools inspect`, chosen precisely so that
+ * no scheme decision had to be made. `imagetools` then made the decision itself and got it wrong:
+ *
+ *     ERROR: failed to do request: Head "https://<forge>:3000/v2/jumbleknot/minio/manifests/…":
+ *            http: server gave HTTP response to HTTPS client
+ *
+ * `imagetools` is a CLIENT-SIDE operation. It talks to the registry directly and does NOT read the
+ * daemon's `insecure-registries`, which is exactly why `docker push` to this same registry succeeds
+ * in the same job while this failed — the push goes through the daemon, which knows the registry is
+ * plain HTTP on :3000. Choosing a tool to avoid a decision does not remove the decision; it only
+ * removes your control over it.
+ *
+ * So the scheme is taken from something explicit: `REGISTRY_SCHEME` if set, else the scheme of
+ * `GITHUB_SERVER_URL` (this registry IS the forge, so that is the same origin). If neither is
+ * available the function FAILS rather than defaulting — a wrong default here is the whole bug.
+ */
+export function registryBase(host, env = process.env) {
+  const explicit = (env.REGISTRY_SCHEME ?? '').trim().replace(/:$/, '');
+  if (explicit) {
+    if (!/^https?$/.test(explicit)) throw new Error(`REGISTRY_SCHEME must be http or https, got '${explicit}'`);
+    return `${explicit}://${host}`;
+  }
+  const server = (env.GITHUB_SERVER_URL ?? '').trim();
+  if (server) {
+    const m = /^(https?):\/\//.exec(server);
+    if (!m) throw new Error(`GITHUB_SERVER_URL has no http(s) scheme: ${server}`);
+    return `${m[1]}://${host}`;
+  }
+  throw new Error(
+    'cannot determine the registry scheme: set REGISTRY_SCHEME (http|https), or provide\n' +
+      'GITHUB_SERVER_URL so it can be taken from the forge origin. Refusing to assume https —\n' +
+      'assuming it is what broke run 4093 (`http: server gave HTTP response to HTTPS client`).',
+  );
+}
 
 /**
  * What does this tag resolve to in the registry?
  *
- * `imagetools inspect` asks the REGISTRY, by tag, and reports the top-level descriptor — the
- * manifest list where there is one. That is what a `@sha256:` compose ref must carry. The
- * alternative, reading the digest off buildx's `exporting manifest` / `exporting manifest list`
- * log lines, is a coin flip between a ref that pulls and one that does not (PR #576).
+ * A plain `GET /v2/<path>/manifests/<tag>` with the list media types offered first, reading the
+ * `Docker-Content-Digest` response header — which is precisely what item #577's criterion 3 asked
+ * for, and what PR #576 did by hand. No docker client, so no TLS assumption and nothing scraped
+ * from a build log.
  */
-export function resolveDigest(ref, run = docker) {
-  const out = run([
-    'buildx', 'imagetools', 'inspect', ref,
-    '--format', '{{.Manifest.MediaType}} {{.Manifest.Digest}}',
-  ]);
-  const [mediaType, digest] = String(out).trim().split(/\s+/);
-  // The media type is REPORTED, not asserted. Measured with docker 29.7.2 / buildx 0.37.1 against a
-  // public multi-arch image: `.Manifest.MediaType` came back
-  // `application/vnd.oci.image.index.v1+json` — the index, which is what criterion 3 is about. But
-  // a single-platform build legitimately resolves to a plain manifest, and that is also a correct
-  // pin, so refusing one here would reject a valid promotion. What the ref must actually DO is
-  // pull, and verifyPullable() below tests exactly that rather than a proxy for it.
-  return { digest: assertDigest(digest), mediaType: mediaType ?? 'unknown' };
+export async function resolveDigest(ref, { env = process.env, fetchImpl = fetch } = {}) {
+  const { host, path, tag } = parseImageRef(ref);
+  const url = `${registryBase(host, env)}/v2/${path}/manifests/${tag}`;
+  const res = await fetchImpl(url, {
+    method: 'GET',
+    headers: {
+      // Offered in this order so a multi-platform image answers with its INDEX rather than with one
+      // platform's manifest. The single-manifest types are still accepted: a one-platform build
+      // legitimately resolves to a plain manifest, and that is a correct pin too.
+      Accept: [...LIST_MEDIA_TYPES, ...MANIFEST_MEDIA_TYPES].join(', '),
+      ...authHeader(env),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`registry GET manifests/${tag} → ${res.status} ${res.statusText ?? ''} (${url})`);
+  }
+  const digest = assertDigest(res.headers.get('docker-content-digest'));
+  const mediaType = (res.headers.get('content-type') ?? 'unknown').split(';')[0].trim();
+  return { digest, mediaType, url };
 }
 
 /**
- * Prove the ref we are about to WRITE can be pulled.
+ * Prove the digest we are about to WRITE is addressable in the registry.
  *
- * The shape check above says the digest looks right; this says the exact string that lands in
- * compose resolves to an image. It is the only check that tests the property we actually care
- * about, so it runs even on a dry run — a dry run that skipped it would validate nothing.
+ * Fetched BY DIGEST, which is the request a `docker pull` of the compose ref makes first. A digest
+ * taken from the wrong one of buildx's two adjacent log lines fails here instead of reaching a
+ * compose file — the check tests the property we care about rather than a proxy for it.
  */
-export function verifyPullable(ref, run = docker) {
-  try {
-    run(['manifest', 'inspect', ref]);
-  } catch (err) {
-    const detail = (err.stderr || err.stdout || err.message || '').toString().trim().slice(-400);
+export async function verifyPullable(ref, digest, { env = process.env, fetchImpl = fetch } = {}) {
+  const { host, path } = parseImageRef(ref);
+  const url = `${registryBase(host, env)}/v2/${path}/manifests/${digest}`;
+  const res = await fetchImpl(url, {
+    method: 'GET',
+    headers: { Accept: [...LIST_MEDIA_TYPES, ...MANIFEST_MEDIA_TYPES].join(', '), ...authHeader(env) },
+  });
+  if (!res.ok) {
     throw new Error(
-      `the ref this promotion would write does not resolve: ${ref}\n${detail}\n\n` +
-        'A build exports both a manifest and a manifest list; only the list is what a tag resolves\n' +
-        'to. If this failed, the digest came from the wrong one of the two.',
+      `the ref this promotion would write does not resolve: ${path}@${digest} → ${res.status}\n` +
+        'A build exports both a manifest and a manifest list; only what the TAG resolves to can be\n' +
+        'pinned. If this failed, the digest came from the wrong one of the two.',
     );
   }
+  return true;
+}
+
+/** Basic auth, from env only — a credential in argv reaches the process listing on a shared host. */
+function authHeader(env = process.env) {
+  const user = env.REGISTRY_USER;
+  const token = env.REGISTRY_TOKEN;
+  if (!user || !token) return {};
+  return { Authorization: `Basic ${Buffer.from(`${user}:${token}`).toString('base64')}` };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -394,13 +473,13 @@ async function main(argv) {
   const tag = buildTag.replace(/-r\d+$/, '');
   if (tag === buildTag) throw new Error(`BUILD_REF carries no -r<run id> suffix: ${buildRef}`);
 
-  const { digest, mediaType } = resolveDigest(buildRef);
-  const composeRef = `${repoRef}:${tag}@${digest}`;
-  verifyPullable(composeRef);
+  const { digest, mediaType, url } = await resolveDigest(buildRef);
+  await verifyPullable(buildRef, digest);
 
   const refs = findRefs(REPO_ROOT);
   const previousDigest = refs[0].digest;
   console.log(`resolved ${buildRef}`);
+  console.log(`          via ${url}`);
   console.log(`       -> ${digest}`);
   console.log(`          ${mediaType} — and the compose ref was verified pullable`);
   console.log(`found ${refs.length} ref(s) in ${new Set(refs.map((r) => r.file)).size} file(s):`);
