@@ -413,6 +413,46 @@ after a lockfile refresh had already delivered its content.
 > version moves remain unique to this PR" when the two-dot diff showed it would have *downgraded*
 > crates. `git diff main branch` is the honest question.
 
+> ⚠️ **Autoclose needs the bump satisfied for EVERY dependency in the group — a hand-carry that is one
+> version short does not close the PR, it SHRINKS it.** `finalize/prune.js` computes
+> `remainingBranches = renovateBranches.filter((branch) => !branchList.includes(branch))`, and
+> `cleanUpBranches` — the `- autoclosed` path — only ever sees those. A single unsatisfied upgrade keeps
+> the branch in `branchList`, so the PR is never a candidate for closing at all.
+>
+> **Measured 2026-09-26 on PR #557** (renovate@44.115.10's own dist). Commit `3e7d257e` hand-carried
+> the 2026-09-25 `docker base images` window under the heading "The bump (identical to PR #557)" and
+> predicted in its own message that "PR #557 autocloses once this is on `main`". Six of the seven
+> images landed at the digests PR #557 proposed, exactly; **`ollama/ollama` landed on `0.34.2` while
+> PR #557 targeted `0.34.3`** — one patch short, with no rationale recorded anywhere in the commit and
+> no allowlist entry that needed a version key, so it reads as a transcription slip rather than a
+> decision. The dispatched run (4094, `renovate/mode` = LIVE) therefore **rebased** #557 instead of
+> closing it: new head cut from current `main`, one file, `+1 −1`, retitled
+> `chore(deps): update ollama/ollama docker tag to v0.34.3`, `mergeable` false → true, and a full CI
+> cycle queued from scratch. It merged as that one-line PR at 03:17Z on 2026-09-27.
+>
+> **The check, before predicting an autoclose:** `git merge-tree --write-tree main <branch>`. A
+> residual conflict names exactly the lines that still disagree — here it printed
+> `dev-ollama.compose.yaml` and nothing else, which located the mismatch in one command against a
+> 112-file two-dot diff that showed nothing useful. Compare per dependency against the branch: a
+> commit message's claim about its content is not its content. (§2's `--is-ancestor` asks whether a
+> branch is already wholly in `main`; the two-dot note above asks what a non-empty branch would still
+> change; this asks whether a carry you believed was complete actually was.)
+>
+> **When hand-carrying a bot PR's content, derive the lines from the branch, never retype them** —
+> `git diff $(git merge-base main <branch>) <branch>` is the authoritative list, and after the carry
+> every `+` line in it must be findable verbatim on `main` (`git grep -F` each one). A carry is
+> complete when `merge-tree` is clean, not when the commit message says it is.
+
+> ⚠️ **Clearing a conflicted Renovate PR does NOT have to wait for Friday.** §1's "Renovate returns
+> `not-scheduled` *before* branch creation" governs **creation** only. `updateNotScheduled` defaults
+> to **`true`** (`config/options/index.js`) and `update/branch/index.js` bails solely when it is
+> `false`, so an out-of-window run still *updates* a branch that already carries an open PR — and with
+> `rebaseWhen: "conflicted"` a conflicted branch is regenerated from scratch. Run 4094 was dispatched
+> at 23:50Z on a **Saturday**, ran at 00:00Z on the Sunday, and rebased #557 with no tick at all. A
+> `rebase-branch=` tick (§2) is still the deterministic route, and it is the one that leaves a
+> consumed-tick trace to read; this note only records that the window is not the obstacle it looks
+> like.
+
 ---
 
 ## 5. The silent failure modes
