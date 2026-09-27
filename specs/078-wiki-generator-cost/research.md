@@ -139,3 +139,25 @@ pins it) instead of rejecting it as malformed.
   happens at execution instead, so the committed backlog's shape is unchanged and T019 holds by construction.
 - **The usage tap's `tapError` must record the error NAME only**: V8's `JSON.parse` message quotes the text it
   failed on, i.e. response content (proven RED on the first draft).
+
+## R12 — openwiki 0.6.0 rewrites a file the generator may not write (found by T015e)
+
+The 0.6.0 regression run (T015e — Fireworks, concurrency 1, through the new launcher) was cut short at 48 calls
+by a dev-container failure, but not before it had modified **`AGENTS.md`**. openwiki rewrites its managed
+`<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block in `AGENTS.md` and `CLAUDE.md` on every run
+(`dist/ingestion/code-mode.js`, `writeCodeModeAgentSnippets`), and 0.6.0 changed the `AGENTS.md` text (four
+lines about its retrieval tools). `openwiki/policy.yaml` lets only `actor: agent` write `AGENTS.md` —
+checked: `mayWrite(policy, 'AGENTS.md', 'generator')` → not allowed. So on 0.6.0 **every slice would have failed
+verification**, been retried, and returned to the backlog, with the marker never advancing. None of the four
+0.5.2 probes touched `AGENTS.md`, because the committed block already matched 0.5.2's text.
+
+Fix: the committed block now carries 0.6.0's text (an agent-authored edit, which the policy allows), so the
+generator's rewrite is byte-identical and is not a write. A new guard rebuilds both blocks from the installed
+generator's own source and compares byte-for-byte — validated in both directions: it passes against 0.5.2 with
+the old text and fails against 0.6.0 until the block is updated. The next version bump that changes the text
+fails offline, not in every paid run. The `CLAUDE.md` block (`@AGENTS.md`) is unchanged in 0.6.0.
+
+The adopted text tells assistants not to preload the wiki at task start and to prefer openwiki's retrieval
+tools where installed (they are not, here), falling back to `openwiki/quickstart.md`. It sits alongside —
+not in conflict with — this repository's own note outside the markers ("query `openwiki/` before a broad text
+search"): both say consult the wiki when the task needs it.

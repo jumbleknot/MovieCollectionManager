@@ -422,3 +422,54 @@ test('the installed generator still supports the concurrency range the launcher 
   const { MAX_PAGE_CONCURRENCY } = await import('../wiki-provider.mjs');
   assert.equal(Number(max[1]), MAX_PAGE_CONCURRENCY, 'our validation range must match the generator\'s');
 });
+
+// ── feature 078: the generator's managed AGENTS.md / CLAUDE.md block must already match ──────────
+//
+// FOUND BY 078 T015e, the 0.6.0 regression run: openwiki rewrites its managed
+// `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block in AGENTS.md and CLAUDE.md on EVERY run, and
+// 0.6.0 changed the AGENTS.md text. The policy lets only `actor: agent` write AGENTS.md, so on 0.6.0
+// every slice would have failed verification ("AGENTS.md — the run may not write here"), been
+// retried, and gone back to the backlog — the marker never advancing, run after run.
+//
+// The fix is that the COMMITTED block equals what the pinned generator writes, so its rewrite is
+// byte-identical and is not a write at all. This guard rebuilds the block from the installed
+// generator's own source and compares, so the next version bump that changes the text fails HERE,
+// offline, instead of failing every paid run in CI.
+
+const OPENWIKI_CODE_MODE = `${OPENWIKI_ROOT}/dist/ingestion/code-mode.js`;
+
+function generatorSnippet(source, fn) {
+  const body = source.match(new RegExp(`function ${fn}\\(\\) \\{\\n\\s*return \`([\\s\\S]*?)\`;\\n\\}`));
+  assert.ok(body, `${fn} not found in the installed generator — re-verify the managed block by hand`);
+  const start = source.match(/const OPENWIKI_AGENTS_SNIPPET_START = "([^"]+)";/)[1];
+  const end = source.match(/const OPENWIKI_AGENTS_SNIPPET_END = "([^"]+)";/)[1];
+  return body[1]
+    .replaceAll('${OPENWIKI_AGENTS_SNIPPET_START}', start)
+    .replaceAll('${OPENWIKI_AGENTS_SNIPPET_END}', end)
+    .replaceAll('\\`', '`');
+}
+
+function managedBlock(text) {
+  const i = text.indexOf('<!-- OPENWIKI:START -->');
+  const j = text.indexOf('<!-- OPENWIKI:END -->');
+  assert.ok(i >= 0 && j > i, 'the file has no managed OPENWIKI block');
+  return text.slice(i, j + '<!-- OPENWIKI:END -->'.length);
+}
+
+for (const [file, fn] of [['AGENTS.md', 'createCodeModeAgentsSnippet'], ['CLAUDE.md', 'createCodeModeClaudeSnippet']]) {
+  test(`the committed ${file} OPENWIKI block is byte-identical to what the pinned generator writes`, (t) => {
+    let source;
+    try {
+      source = readFileSync(OPENWIKI_CODE_MODE, 'utf8');
+    } catch (error) {
+      t.skip(`openwiki not installed here (${error.code ?? error.message}) — set OPENWIKI_ROOT to a side install`);
+      return;
+    }
+    const expected = generatorSnippet(source, fn);
+    const actual = managedBlock(readFileSync(join(REPO_ROOT, file), 'utf8'));
+    assert.equal(actual, expected,
+      `${file}'s managed block differs from what the installed generator writes. Every run would then ` +
+      `rewrite ${file}, which the policy forbids the generator — failing every slice. Update the block ` +
+      'in the same change as the version bump (an agent-authored edit, which the policy allows).');
+  });
+}
