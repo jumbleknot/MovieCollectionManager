@@ -177,3 +177,17 @@ test('the promotion step takes its credentials from env, never from argv', () =>
   assert.ok(!/\$\{\{\s*secrets\./.test(String(step.run)),
     'a secret is interpolated into the run body — it would reach the process listing and the log');
 });
+
+test('the promotion step can read the registry, and the scheme is EXPLICIT', () => {
+  // RUN 4093's REGRESSION. The digest resolve failed with
+  //   `http: server gave HTTP response to HTTPS client`
+  // because `docker buildx imagetools inspect` assumed TLS. It is a client-side call and ignores the
+  // daemon's insecure-registries, which is why `docker push` succeeds over plain HTTP in the SAME
+  // job. The promoter now reads the registry itself, so it needs the registry credential — and the
+  // scheme must be passed rather than inferred, because inferring it is the entire bug.
+  const env = promoteStep().env ?? {};
+  assert.ok('REGISTRY_TOKEN' in env, 'the promotion step cannot authenticate to the registry');
+  assert.ok('REGISTRY_SCHEME' in env, 'the promotion step does not pass the registry scheme');
+  assert.match(String(env.REGISTRY_SCHEME), /github\.server_url/,
+    'the scheme is hard-coded rather than derived from the forge origin');
+});

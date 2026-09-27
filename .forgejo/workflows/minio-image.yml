@@ -348,6 +348,17 @@ jobs:
           # argv) publishes to `ps` for every session on this shared host.
           FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           FORGE_API_BASE: ${{ github.server_url }}/api/v1
+          # The registry read, for resolving Docker-Content-Digest from the tag. Basic auth, so both
+          # halves are needed; REGISTRY_USER is already job-level env.
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          # THE SCHEME, EXPLICITLY. Run 4093 failed because `docker buildx imagetools inspect` — the
+          # tool originally used here precisely so no scheme had to be chosen — chose https itself:
+          #   `http: server gave HTTP response to HTTPS client`
+          # It is a client-side call and does not read the daemon's insecure-registries, which is why
+          # `docker push` above works over plain HTTP in this very job. The promoter now asks the
+          # registry directly and REFUSES to guess: this registry is the forge, so its origin is the
+          # right answer, and the script fails loudly if neither this nor GITHUB_SERVER_URL is set.
+          REGISTRY_SCHEME: ${{ startsWith(github.server_url, 'https://') && 'https' || 'http' }}
         run: bash scripts/ci-log-step.sh minio-image-promote node scripts/promote-minio-digest.mjs --apply
 
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
