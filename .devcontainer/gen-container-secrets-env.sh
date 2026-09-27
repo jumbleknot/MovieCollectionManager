@@ -35,9 +35,12 @@ set -uo pipefail
 SRC="${MCM_SANDBOX_ENV_FILE:-$HOME/.mcm-sandbox-env}"
 OUT="${MCM_CONTAINER_SECRETS_ENV:-$HOME/.mcm-devcontainer-secrets.env}"
 
-# Exactly the credentials that were in containerEnv. FORGE_REGISTRY_HOST is deliberately NOT here:
-# it is a hostname, not a secret, and stays in containerEnv where it is harmless.
-VARS="MCM_ANTHROPIC_API_KEY TMDB_API_KEY MCM_FORGE_TOKEN MCM_FORGE_ISSUE_TOKEN"
+# The four credentials that were in containerEnv, plus MCM_FIREWORKS_API_KEY (2026-09-27, the
+# OpenWiki provider trial on Fireworks AI — mapped to FIREWORKS_API_KEY only at the point of use, the
+# same rule as MCM_ANTHROPIC_API_KEY). An unprovisioned one is reported below, never fatal.
+# FORGE_REGISTRY_HOST is deliberately NOT here: it is a hostname, not a secret, and stays in
+# containerEnv where it is harmless.
+VARS="MCM_ANTHROPIC_API_KEY MCM_FIREWORKS_API_KEY TMDB_API_KEY MCM_FORGE_TOKEN MCM_FORGE_ISSUE_TOKEN"
 
 # Create it private BEFORE writing, never after: a chmod that follows the write leaves a window in
 # which the credentials are world-readable on a multi-user box.
