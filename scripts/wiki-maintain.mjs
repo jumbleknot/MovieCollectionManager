@@ -46,6 +46,8 @@ import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
+import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
+import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -70,11 +72,43 @@ export const STATE_FILE = 'openwiki/.maintenance-state.json';
  *
  * Read this constant rather than repeating the names, so the next addition cannot desynchronise.
  */
-export const CREDENTIAL_ENV_NAMES = ['ANTHROPIC_API_KEY', 'MCM_ANTHROPIC_API_KEY'];
+//
+// Feature 078: the generator can run on more than one provider, so this is now EVERY provider's
+// accepted names, derived from the provider table rather than re-listed (the same lesson, one level
+// up). The Anthropic pair stays first and unchanged.
+export const CREDENTIAL_ENV_NAMES = Object.freeze(
+  [...new Set(Object.values(WIKI_PROVIDERS).flatMap((row) => row.credential.accepted))],
+);
 
-/** The credential from the first name that carries one, or null. */
+/**
+ * The credential for the provider this run will actually use (MCM_WIKI_PROVIDER), from the first of
+ * that provider's names that carries one — or null. A key for a DIFFERENT provider does not count.
+ * A malformed selector throws, and is reported by the caller: it is never read as "no credential".
+ */
 export const credentialFromEnv = (env = process.env) =>
-  CREDENTIAL_ENV_NAMES.map((name) => env[name]).find(Boolean) ?? null;
+  resolveWikiProvider(env).credential.accepted.map((name) => env[name]).find(Boolean) ?? null;
+
+/**
+ * One minimal call with the resolved provider/model/tier, before any paid slice (078 FR-005). Spawned
+ * rather than awaited because the orchestrator is synchronous; the launcher owns the provider logic.
+ */
+/**
+ * The one preflight gate, shared by runMaintenance and the CLI's --execute path (which drives
+ * executeSlices itself — a gate in only one of them would not run in CI). Dry runs and a
+ * stubbed generator (preflight: null) pass; a failed check is returned, never thrown.
+ */
+export function preflightGate({ dryRun = false, preflight = defaultPreflight, root = REPO_ROOT } = {}) {
+  if (dryRun || !preflight) return { ok: true, detail: 'skipped' };
+  return preflight({ root });
+}
+
+export function defaultPreflight({ root = REPO_ROOT } = {}) {
+  const r = spawnSync(process.execPath, [join(REPO_ROOT, 'scripts', 'wiki-generate.mjs'), '--preflight'], {
+    cwd: root, encoding: 'utf8', env: process.env,
+  });
+  const detail = `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').pop() ?? '';
+  return { ok: r.status === 0, detail };
+}
 
 // Exactly the three outcomes FR-017 requires distinguishing. A credential, capacity or generator
 // failure must never be classified as `nothing-to-do` — that would make the cheap path look reachable
@@ -172,6 +206,63 @@ export const MAX_PAGES_PER_SLICE = 8;
  * a ceiling, not a target, so bounding new-page work below it needs no spec change.
  */
 export const MAX_NEW_PAGES_PER_SLICE = 3;
+
+/**
+ * Pages per GENERATOR INVOCATION, across areas (feature 078, US2).
+ *
+ * Every invocation pays a fixed planning pass whatever its scope — ~$0.33 on Sonnet, 83% of a one-page
+ * run, because openwiki's planner explores the repository before planning (research R5). Slices are
+ * per area, so a run touching N areas used to plan N times. Packing same-kind slices into one
+ * invocation pays that once. Provisional at 8 (the slice cap); research R9 sets it from a measured
+ * multi-area run on openwiki 0.6.0.
+ */
+export const MAX_PAGES_PER_INVOCATION = 8;
+
+/**
+ * Group consecutive same-kind slices of DIFFERENT areas into invocations of at most
+ * `maxPagesPerInvocation` pages.
+ *
+ * The SLICE stays the unit of planning, backlog and carry-forward — so the committed backlog keeps its
+ * shape and a failure narrows to the areas that failed. A group of one IS that slice (identity), so a
+ * one-area run is exactly what it always was: same message, same verification, same report.
+ */
+export function packSlices(slices, { maxPagesPerInvocation = MAX_PAGES_PER_INVOCATION } = {}) {
+  const groups = [];
+  let current = [];
+  let pages = 0;
+  const flush = () => {
+    if (current.length === 1) groups.push(current[0]);
+    else if (current.length > 1) groups.push(invocationOf(current));
+    current = [];
+    pages = 0;
+  };
+  for (const slice of slices) {
+    const n = slice.pages.length;
+    const sameKind = current.length === 0 || current[0].kind === slice.kind;
+    // Two slices of one area exist only because the planner split an area over the slice cap —
+    // re-merging them would undo that decision.
+    const newArea = !current.some((c) => c.area === slice.area);
+    if (!sameKind || !newArea || (current.length > 0 && pages + n > maxPagesPerInvocation)) flush();
+    current.push(slice);
+    pages += n;
+  }
+  flush();
+  return groups;
+}
+
+/** A multi-area invocation. `area`/`pages` are for reporting only; `parts` is what is executed. */
+function invocationOf(parts) {
+  return {
+    parts,
+    kind: parts[0].kind,
+    area: parts.map((p) => p.area).join(' + '),
+    pages: parts.flatMap((p) => p.pages.map((page) => `${p.area}/${page}`)),
+    reason: parts.map((p) => p.reason).filter(Boolean).join('; '),
+  };
+}
+
+/** The slices an invocation stands for — itself, for a one-area slice. */
+export const partsOf = (work) => work.parts ?? [work];
 
 export const DEFAULT_BUNDLE = 'openwiki';
 
@@ -414,6 +505,7 @@ const SHELL_UNSAFE = /["`$\\\n\r]/g;
  * Deterministic for a given slice, for the same reason.
  */
 export function renderRunMessage(slice) {
+  if (slice.parts) return renderMultiAreaMessage(slice.parts);
   const { area, pages, areaExists, subjects = {} } = slice;
   // A filename alone forces the generator to work out what the page should say, and that research is
   // what exhausts its budget: three runs died mid-investigation ("Let me read more context around
@@ -441,6 +533,37 @@ export function renderRunMessage(slice) {
     'Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering.',
   ].join(' ');
 
+  return message.replace(SHELL_UNSAFE, ' ').replace(/ {2,}/g, ' ');
+}
+
+/**
+ * The multi-area form (078 US2). Same instructions as the one-area message, one clause per area, and
+ * a boundary sentence naming every listed area — the one-area wording ("exactly one area") would
+ * contradict the page list. Kept separate so the one-area message stays byte-for-byte what it was.
+ */
+function renderMultiAreaMessage(parts) {
+  const dirs = parts.map((p) => `${DEFAULT_BUNDLE}/${p.area}/`);
+  const list = parts
+    .flatMap((p) => p.pages.map((page) => {
+      const subject = p.subjects?.[page];
+      return subject ? `${DEFAULT_BUNDLE}/${p.area}/${page} (${subject})` : `${DEFAULT_BUNDLE}/${p.area}/${page}`;
+    }))
+    .join('; ');
+  const scope = parts
+    .map((p) => (p.areaExists
+      ? `${DEFAULT_BUNDLE}/${p.area}/ already exists; leave the pages in it that are not listed above exactly as they are.`
+      : `${DEFAULT_BUNDLE}/${p.area}/ does not exist yet, so create it.`))
+    .join(' ');
+  const indexes = parts.map((p) => `${DEFAULT_BUNDLE}/${p.area}/index.md`).join(', ');
+  const message = [
+    `Work on exactly these areas of the knowledge bundle this run: ${dirs.join(', ')}.`,
+    `Write or refresh these pages, each followed by its subject in brackets where given: ${list}.`,
+    scope,
+    `Also update ${indexes} so that every page in each of those directories is listed in its own index, including the ones above — the conformance gate rejects an unlisted page.`,
+    `Do not write anywhere else: no directory of ${DEFAULT_BUNDLE}/ other than ${dirs.join(' and ')}, and nothing outside ${DEFAULT_BUNDLE}/.`,
+    `Follow ${DEFAULT_BUNDLE}/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right.`,
+    'Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering.',
+  ].join(' ');
   return message.replace(SHELL_UNSAFE, ' ').replace(/ {2,}/g, ' ');
 }
 
@@ -899,6 +1022,8 @@ export function runMaintenance({
   since = null,
   policy = null,
   invoke = undefined,
+  // A stubbed generator needs no model check; the real one does. Explicit `preflight` wins.
+  preflight = invoke === undefined ? defaultPreflight : null,
   credential = credentialFromEnv(),
   requireCredential = true,
   pageBudget = PAGE_BUDGET,
@@ -930,6 +1055,16 @@ export function runMaintenance({
     // Exit 2, and the record is left exactly as it was. Writing anything here would either certify a
     // range nothing examined or invent an outcome for a run that never started.
     return { outcome: 'failed', exitCode: 2, reason: 'missing-credential', plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record, persisted: false };
+  }
+
+  {
+    const check = preflightGate({ dryRun, preflight, root });
+    if (!check.ok) {
+      // Same posture as a missing credential: exit 2, the record untouched, and never nothing-to-do.
+      // A model that cannot be called is found here for the price of one token, not after a slice.
+      return { outcome: 'failed', exitCode: 2, reason: 'preflight-failed', detail: check.detail ?? '', plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record, persisted: false };
+    }
+    if (check.detail !== 'skipped') console.log(`[wiki-maintain] preflight ok — ${check.detail ?? ''}`);
   }
 
   const run = executeSlices({
@@ -1104,10 +1239,18 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   //
   // Existence after the run is the checkable deliverable for creation; "nothing needed changing" is
   // an honest outcome for a refresh, reported distinguishably rather than as either success or failure.
-  const missing = (slice.pages ?? []).filter((page) => !existsSync(join(bundleDir, slice.area, page)));
+  // Checked PER PART for a multi-area invocation (078 US2), so a failure names the area/page it is
+  // about and the executor can carry forward only the areas that did not land.
+  const missingParts = [];
+  const missing = [];
+  for (const part of partsOf(slice)) {
+    const gone = (part.pages ?? []).filter((page) => !existsSync(join(bundleDir, part.area, page)));
+    if (gone.length > 0) missingParts.push(part);
+    missing.push(...gone.map((m) => `${part.area}/${m}`));
+  }
   if (missing.length > 0) {
     violations.push(
-      `${missing.length} requested page(s) do not exist after the run: ${missing.map((m) => `${slice.area}/${m}`).join(', ')}. ` +
+      `${missing.length} requested page(s) do not exist after the run: ${missing.join(', ')}. ` +
       'The generator produced nothing usable for them regardless of the status it exited with.',
     );
   }
@@ -1118,14 +1261,21 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   // runbooks/renovate.md. A page left unwritten while its cited source is newer than its stamp is
   // therefore named here, one page at a time, and fails the slice, so the slice is retried, goes
   // back to the backlog, and the marker is held.
-  const stalePages = (slice.pages ?? []).filter((page) =>
-    !missing.includes(page) &&
-    !pagesWritten.includes(`${bundlePrefix}${slice.area}/${page}`) &&
-    sourceNewerThanStamp(root, join(bundleDir, slice.area, page)));
+  // Per part, like `missing`, so a multi-area invocation carries forward only the part that is stale.
+  const staleParts = [];
+  const stalePages = [];
+  for (const part of partsOf(slice)) {
+    const stale = (part.pages ?? []).filter((page) =>
+      !missing.includes(`${part.area}/${page}`) &&
+      !pagesWritten.includes(`${bundlePrefix}${part.area}/${page}`) &&
+      sourceNewerThanStamp(root, join(bundleDir, part.area, page)));
+    if (stale.length > 0) staleParts.push(part);
+    stalePages.push(...stale.map((page) => `${part.area}/${page}`));
+  }
   if (stalePages.length > 0) {
     violations.push(
       `${stalePages.length} requested page(s) were not rewritten although their cited source changed after their stamp: ` +
-      `${stalePages.map((p) => `${slice.area}/${p}`).join(', ')}. "Nothing needed changing" needs the stamp to move; it did not.`,
+      `${stalePages.join(', ')}. "Nothing needed changing" needs the stamp to move; it did not.`,
     );
   }
   const noChange = missing.length === 0 && stalePages.length === 0 && pagesWritten.length === 0;
@@ -1154,7 +1304,11 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
     violations.push(`the bundle is no longer conformant after this slice: ${detail || 'the OKF gate failed'}`);
   }
 
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages };
+  // Only the missing-page and stale-page checks are attributable to a part; a policy or conformance
+  // violation is the whole invocation's, so it carries every part forward.
+  const attributable = (missing.length > 0 ? 1 : 0) + (stalePages.length > 0 ? 1 : 0);
+  const failedParts = violations.length === attributable ? [...new Set([...missingParts, ...staleParts])] : partsOf(slice);
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts };
 }
 
 /**
@@ -1215,17 +1369,42 @@ export function generatorCommand() {
  * touch. A value inside double quotes is not re-parsed for `$` or backticks either, so the message
  * arrives byte-for-byte as one argument.
  */
-export function generatorEnv(runMessage, env = process.env) {
+export function generatorEnv(runMessage, env = process.env, { usageLog = null } = {}) {
   if (SHELL_UNSAFE.test(runMessage)) {
     throw new Error('run message contains a shell metacharacter — renderRunMessage must produce one safe line');
   }
-  return { ...env, [RUN_MESSAGE_ENV]: runMessage };
+  // 078 US4: where the usage tap inside the generator writes this invocation's per-call counts.
+  return { ...env, [RUN_MESSAGE_ENV]: runMessage, ...(usageLog ? { WIKI_USAGE_LOG: usageLog } : {}) };
 }
 
-function defaultInvoke(slice, { root }) {
+function defaultInvoke(slice, { root, usageLog = null }) {
   const message = slice.runMessage ?? renderRunMessage(slice);
   const [cmd, ...args] = generatorCommand();
-  return spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message) });
+  return spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog }) });
+}
+
+const PRICE_TABLE = join(REPO_ROOT, 'scripts', 'wiki-provider-prices.json');
+
+/** Provider, model and tier this run resolves to, plus the dated price table — or null if unresolvable. */
+export function defaultUsageContext(env = process.env) {
+  try {
+    const { provider, modelId, tier } = resolveWikiProvider(env);
+    return { provider, model: modelId, tier, prices: JSON.parse(readFileSync(PRICE_TABLE, 'utf8')) };
+  } catch {
+    return null; // priced as "not captured", never guessed
+  }
+}
+
+/** Price one invocation's usage log; any failure to read or price it is NOT_CAPTURED, never zero. */
+function invocationUsage(logPath, usage) {
+  if (!usage) return NOT_CAPTURED;
+  try {
+    const text = existsSync(logPath) ? readFileSync(logPath, 'utf8') : '';
+    return summarizeUsage(text, usage);
+  } catch (err) {
+    console.error(`[wiki-maintain] usage not priced: ${err.message}`);
+    return NOT_CAPTURED;
+  }
 }
 
 /**
@@ -1256,6 +1435,7 @@ export function executeSlices({
   baseCommit = null,
   clock = () => Date.now(),
   now = () => new Date().toISOString(),
+  usage = defaultUsageContext(),
 } = {}) {
   const runRecord = record ?? readRunRecord(root);
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
@@ -1276,12 +1456,19 @@ export function executeSlices({
   let stoppedAtFailureLimit = false;
   let failed = false;
   let consecutive = 0;
+  const usageSummaries = [];
+
+  // 078 US2: slices are packed into invocations so the generator's fixed planning pass is paid once
+  // per group of areas. Everything carried forward below is expressed in SLICES (the parts), never
+  // in groups, so the committed backlog keeps its shape.
+  const work = packSlices(queue);
+  const remainingParts = (from) => work.slice(from).flatMap(partsOf);
 
   if (dryRun) {
     return {
       outcome: slices.length === 0 ? 'nothing-to-do' : 'dry-run',
       exitCode: 0,
-      results: queue.map((s) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
+      results: work.map((s) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
       pagesWritten: 0,
       elapsedSeconds: elapsed(),
       stoppedAtBudget: false,
@@ -1291,14 +1478,14 @@ export function executeSlices({
     };
   }
 
-  for (const [i, slice] of queue.entries()) {
+  for (const [i, slice] of work.entries()) {
     // Budgets are checked BETWEEN slices, never inside one: interrupting a slice mid-generation would
     // leave a half-written area, which is a conformance failure rather than a saving. The overshoot is
     // therefore bounded at one slice — the declared effective ceiling in the header comment.
     if (i > 0 && (pagesWritten >= pageBudget || elapsed() >= timeBudgetSeconds)) {
       stoppedAtBudget = true;
-      backlog.push(...queue.slice(i));
-      deferred.push(...queue.slice(i));
+      backlog.push(...remainingParts(i));
+      deferred.push(...remainingParts(i));
       break;
     }
 
@@ -1343,10 +1530,13 @@ export function executeSlices({
     // so that write was now "pre-existing", the stub rewrote the same bytes, nothing new appeared —
     // and the slice passed. A retry must never be able to forgive what the previous attempt did.
     const before = snapshotTree(root);
+    // One usage log per invocation, shared by its retries — a retry's tokens are real spend too.
+    const usageDir = mkdtempSync(join(tmpdir(), 'wiki-usage-'));
+    const usageLog = join(usageDir, 'usage.jsonl');
     for (let attempt = 1; attempt <= attemptsPerSlice; attempt++) {
       attempts = attempt;
       try {
-        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt });
+        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog });
       } catch (err) {
         // A thrown invocation is a real failure — but it is NOT `nothing-to-do` (FR-017).
         invocation = { error: err.message };
@@ -1360,16 +1550,25 @@ export function executeSlices({
       }
     }
 
-    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null });
+    const spent = invocationUsage(usageLog, usage);
+    rmSync(usageDir, { recursive: true, force: true });
+    usageSummaries.push(spent);
+    console.log(spent === NOT_CAPTURED
+      ? `[wiki-maintain] usage ${slice.area}/: not captured`
+      : `[wiki-maintain] usage ${slice.area}/: ${spent.calls} call(s), ${spent.uncached} uncached / ${spent.cached} cached / ${spent.output} output tokens, ~$${spent.estCostUsd} (${spent.provider}${spent.tier ? `/${spent.tier}` : ''}, prices ${spent.priceTable})`);
+
+    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null, usage: spent });
 
     if (!verdict.ok) {
       failed = true;
       consecutive += 1;
-      backlog.push(slice);
+      // Only the parts that did not land (a missing-page failure is attributable per area); a policy
+      // or conformance violation carries every part of the invocation forward.
+      backlog.push(...(verdict.failedParts ?? partsOf(slice)));
       if (consecutive >= maxConsecutiveFailures) {
         // Not "this slice is bad" any more — something about the run is.
         stoppedAtFailureLimit = true;
-        backlog.push(...queue.slice(i + 1));
+        backlog.push(...remainingParts(i + 1));
         break;
       }
       continue;
@@ -1379,6 +1578,7 @@ export function executeSlices({
   }
 
   const outcome = failed ? 'failed' : slices.length === 0 ? 'nothing-to-do' : 'completed';
+  const runUsage = sumUsage(usageSummaries);
 
   // The marker advances on every outcome EXCEPT failure. A budget stop still advances, because the
   // remainder is in the backlog and therefore not lost; a failure must not, because the range it
@@ -1390,11 +1590,13 @@ export function executeSlices({
     lastOutcome: outcome,
     backlog,
     lastRunBudget: { pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget },
+    // 078 US4: estimated from the tap's counts and a dated price table; NOT_CAPTURED, never zero.
+    lastRunUsage: runUsage,
   });
 
   const exitCode = failed ? 1 : stoppedAtBudget || backlog.length > 0 ? 3 : 0;
 
-  return { outcome, exitCode, results, pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget, stoppedAtFailureLimit, backlog, deferred, record: persistedRecord, persisted: true };
+  return { outcome, exitCode, results, pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget, stoppedAtFailureLimit, backlog, deferred, usage: runUsage, record: persistedRecord, persisted: true };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1631,7 +1833,7 @@ function selftest() {
     const why = skipped.results.flatMap((r) => r.violations ?? []).join('; ');
     check('verifier fails a slice that skipped a stale page', skipped.outcome === 'failed', `got ${skipped.outcome}`);
     check('the skipped page is named', why.includes('invariants/stale-b.md') && !why.includes('invariants/stale-a.md'), why || 'no violation');
-    check('the skipped page is reported per page', JSON.stringify(skipped.results[0]?.stalePages) === '["stale-b.md"]',
+    check('the skipped page is reported per page', JSON.stringify(skipped.results[0]?.stalePages) === '["invariants/stale-b.md"]',
       `got ${JSON.stringify(skipped.results[0]?.stalePages)}`);
     check('a skipped stale page returns to the backlog', skipped.backlog.some((s) => s.pages.includes('stale-b.md')));
     check('marker does not advance over a skipped stale page', readRunRecord(partial).coveredCommit === 'unchanged-marker');
@@ -1807,6 +2009,14 @@ function reportRun(result, { json }) {
   }
 
   console.log(`[wiki-maintain] outcome=${result.outcome} pages=${result.pagesWritten} elapsed=${result.elapsedSeconds}s`);
+  if (result.usage !== undefined) {
+    const u = result.usage;
+    console.log(u === NOT_CAPTURED || typeof u !== 'object'
+      ? '[wiki-maintain] run usage: not captured'
+      : `[wiki-maintain] run usage: ~$${u.estCostUsd} over ${u.calls} call(s) in ${u.invocations} invocation(s)` +
+        `${u.invocationsNotCaptured ? ` (${u.invocationsNotCaptured} not captured — a PARTIAL total)` : ''}` +
+        `, ${u.provider}${u.tier ? `/${u.tier}` : ''}, prices ${u.priceTable}`);
+  }
   if (result.stoppedAtBudget) {
     console.log(`[wiki-maintain] stopped at the run budget with ${result.deferred.length} slice(s) outstanding — exit 3, NOT a failure.`);
   }
@@ -1892,8 +2102,15 @@ async function main(argv) {
     // Accepts either name. The dev container supplies only MCM_ANTHROPIC_API_KEY, because exporting
     // the raw ANTHROPIC_API_KEY into the shell makes Claude Code bill the pay-per-token API instead
     // of the subscription (see .devcontainer/devcontainer.json). CI still sets the raw name.
+    let provider;
+    try {
+      provider = resolveWikiProvider();
+    } catch (err) {
+      console.error(`[wiki-maintain] ${err.message}`);
+      return 2;
+    }
     if (!opts.dryRun && !credentialFromEnv()) {
-      console.error(`[wiki-maintain] No Anthropic credential (${CREDENTIAL_ENV_NAMES.join(' / ')}) — --execute needs it.`);
+      console.error(`[wiki-maintain] No ${provider.provider} credential (${provider.credential.accepted.join(' / ')}) — --execute needs it.`);
       console.error('[wiki-maintain] This is a missing credential, NOT "nothing to do". Run --plan for the free path.');
       return 2;
     }
@@ -1931,6 +2148,16 @@ async function main(argv) {
     }
 
     reportPlan(plan, { json: false });
+
+    // 078 FR-005: prove the configured model is callable before touching the proposal branch or
+    // paying for a slice. Exit 2 like a missing credential — never nothing-to-do, record untouched.
+    const check = preflightGate({ dryRun: opts.dryRun, root: REPO_ROOT });
+    if (!check.ok) {
+      console.error(`[wiki-maintain] ✗ preflight failed — ${check.detail}`);
+      console.error('[wiki-maintain] The configured model could not be called; no slice was attempted and the record is unchanged.');
+      return 2;
+    }
+    if (check.detail !== 'skipped') console.log(`[wiki-maintain] preflight ok — ${check.detail}`);
 
     // Reconcile FIRST: if the previous proposal was closed unmerged, its work has to be back in the
     // backlog before this run plans around it, and the marker has to have rolled back (FR-016b).

@@ -297,6 +297,22 @@ The wiki result needs care in reading. Sonnet 5 delivered its −33% on identica
 - What the extra output per wiki page under 0.5.2 consists of, and whether the after-period's elevated run count is the #525/#526 backlog or the resumable page-job lifecycle re-running work.
 - The 26 Sep cost/token export mismatch ($7.02 vs $8.89 on the wiki key) — probably export timing; re-pull both files together.
 
+### 5.5 Phase 2 under way as feature 078 (added 27 Sep 2026)
+
+[`specs/078-wiki-generator-cost/`](../../specs/078-wiki-generator-cost/spec.md). Measured before any code, with
+a fetch-tap instrument whose counts reconciled with the Fireworks bill to the cent ([research](../../specs/078-wiki-generator-cost/research.md)):
+
+- **Grounded Claims are not the cost problem** — ~$0.07 per page on first creation, sparse after; they cannot
+  be disabled in 0.4.0–0.6.0 and are worth keeping (backlog #513). The ×4 output per page came with the per-page
+  worker architecture, and **every generator invocation pays a ~$0.33 planning pass** (83% of a one-page run).
+- **DeepSeek V4.1 Flash on Fireworks AI** (US-hosted, operator's choice over DeepSeek's own API): **77–86% cheaper
+  per page** than Sonnet 5, no quality or reliability regression across five runs — but **~3.4× slower**, and
+  the gap is call count, not latency. The priority tier bought no speed at +25%.
+- Merge A of 078: provider as configuration (`MCM_WIKI_PROVIDER`), a preflight before paid work, one planning
+  pass per group of areas, per-run cost in the run record, and openwiki **0.6.0** for parallel page workers.
+  Merge B measures a multi-page run at concurrency 1/2/4, sets the CI time budget with the operator, and flips
+  CI to Fireworks.
+
 ## Sources
 
 - Feature 075 spec/research/tasks under `specs/075-llm-cost-phase-1/`; commits `16f0f0d1`, `e8879fe7`, `f846070b`, `bb12d63e`, `2203dd47`
