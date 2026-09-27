@@ -1,32 +1,8 @@
 {
-  "coveredCommit": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
-  "coveredAt": "2026-09-27T17:20:55.157Z",
+  "coveredCommit": "e01980e11519344cbd3a1cd7d12905f2ee4a4b9d",
+  "coveredAt": "2026-09-27T19:58:17.747Z",
   "lastOutcome": "completed",
   "backlog": [
-    {
-      "area": "invariants",
-      "pages": [
-        "secrets-management.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/decisions/ADR-0001-prod-secrets-management.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/secrets-management.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
-    {
-      "area": "projects",
-      "pages": [
-        "mc-service.md",
-        "mcp-servers.md",
-        "agent-gateway.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/MCM-Architecture.md; source changed: docs/runbooks/agent-layer.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mc-service.md; openwiki/projects/mcp-servers.md; openwiki/projects/agent-gateway.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
     {
       "area": "runbooks",
       "pages": [
@@ -59,39 +35,71 @@
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 591,
-    "headCommit": "bc665328f55c94287edc931442662191a6acc81e",
-    "markerBefore": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
+    "number": 594,
+    "headCommit": "6cb0738e7ea79b9a8abb7621fe321962d928288e",
+    "markerBefore": "e01980e11519344cbd3a1cd7d12905f2ee4a4b9d",
     "slices": [
       {
-        "area": "architecture",
-        "pages": [
-          "system-overview.md",
-          "agent-layer.md"
+        "parts": [
+          {
+            "area": "invariants",
+            "pages": [
+              "secrets-management.md"
+            ],
+            "kind": "refresh",
+            "subjects": {},
+            "areaExists": true,
+            "reason": "source changed: docs/decisions/ADR-0001-prod-secrets-management.md",
+            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/secrets-management.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+          },
+          {
+            "area": "projects",
+            "pages": [
+              "mc-service.md",
+              "mcp-servers.md",
+              "agent-gateway.md"
+            ],
+            "kind": "refresh",
+            "subjects": {},
+            "areaExists": true,
+            "reason": "source changed: docs/MCM-Architecture.md; source changed: docs/runbooks/agent-layer.md",
+            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mc-service.md; openwiki/projects/mcp-servers.md; openwiki/projects/agent-gateway.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+          }
         ],
         "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/MCM-Architecture.md; source changed: docs/runbooks/agent-layer.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/system-overview.md; openwiki/architecture/agent-layer.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "decisions",
+        "area": "invariants + projects",
         "pages": [
-          "adr-0001-prod-secrets-management.md"
+          "invariants/secrets-management.md",
+          "projects/mc-service.md",
+          "projects/mcp-servers.md",
+          "projects/agent-gateway.md"
         ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/decisions/ADR-0001-prod-secrets-management.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/decisions/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/decisions/adr-0001-prod-secrets-management.md. The openwiki/decisions/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/decisions/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/decisions/ADR-0001-prod-secrets-management.md; source changed: docs/MCM-Architecture.md; source changed: docs/runbooks/agent-layer.md"
       }
     ],
-    "updatedAt": "2026-09-27T17:20:55.561Z"
+    "updatedAt": "2026-09-27T19:58:18.145Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 8,
-    "elapsedSeconds": 1350,
+    "pagesWritten": 5,
+    "elapsedSeconds": 1397,
     "stoppedAtBudget": true
+  },
+  "lastRunUsage": {
+    "invocations": 1,
+    "invocationsNotCaptured": 0,
+    "calls": 131,
+    "failedCalls": 0,
+    "uncounted": 0,
+    "uncached": 262,
+    "cached": 8857662,
+    "cacheWrite": 615846,
+    "output": 119125,
+    "reasoning": 41047,
+    "ms": 1208106,
+    "estCostUsd": 4.5029,
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "tier": null,
+    "priceTable": "2026-09-27"
   }
 }
