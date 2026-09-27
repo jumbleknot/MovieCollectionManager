@@ -37,11 +37,11 @@
       "completedRunId": "1ede2c84-d781-49df-a3fa-4af1e509a726"
     },
     "/openwiki/runbooks/ci-diagnostics.md": {
+      "gitHead": "5c7306ed0311bc45a06da342a8d3ee6d655a1975",
+      "sourceFingerprint": "sha256:500e7bc9571b8caf4176186bdbfaa6cdec70a9f37afaaecb0cd4b9ddf54b6a86",
       "pageVersion": "sha256:81ddb4e5ec75a508f6111f34608311f3e83a2fc3d0ac552ce5a30f0b6ddb9daf",
       "completedBy": "openwiki/0.5.2",
-      "completedRunId": "4ccd6417-7942-4f36-8561-0f570e27d735",
-      "gitHead": "5c7306ed0311bc45a06da342a8d3ee6d655a1975",
-      "sourceFingerprint": "sha256:500e7bc9571b8caf4176186bdbfaa6cdec70a9f37afaaecb0cd4b9ddf54b6a86"
+      "completedRunId": "4ccd6417-7942-4f36-8561-0f570e27d735"
     },
     "/openwiki/runbooks/dev-environment-setup.md": {
       "gitHead": "2ee00fddb2f7f8c4393cb1443ad8975ca031b4a6",
@@ -63,6 +63,13 @@
       "pageVersion": "sha256:1069906eb8d796c2b8934990bd952ca19813c6f8c87e86990b6a17cd158886e0",
       "completedBy": "openwiki/0.5.2",
       "completedRunId": "abdfe5e8-5e6a-45ec-84d7-032c73d67800"
+    },
+    "/openwiki/runbooks/infra-image-scanning.md": {
+      "pageVersion": "sha256:b218547c64046e99fcbd677061103343137670c91368bb77f1d8813113f2b027",
+      "completedBy": "openwiki/0.5.2",
+      "completedRunId": "bd678816-ba61-4e3b-b978-85a56dfc2a02",
+      "gitHead": "209d2883cd5b059bec9e0c3500801b2fe493fbcc",
+      "sourceFingerprint": "sha256:398a08fa548ab217228095d75a9b4bd35a6c7cc3894359d13bdcc41330869fa1"
     },
     "/openwiki/runbooks/wiki-maintenance.md": {
       "gitHead": "d7af16265ced3f8c61fb3a98caa6f004f114cf96",

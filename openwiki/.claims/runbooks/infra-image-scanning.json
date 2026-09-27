@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b218547c64046e99fcbd677061103343137670c91368bb77f1d8813113f2b027",
+  "claims": [
+    {
+      "id": "claim_56495de49283417ebfad3252513b4706",
+      "statement": "Publishing a rebuilt MinIO image (via .forgejo/workflows/minio-image.yml) is distinct from promoting it into the compose stacks: a push that edits infrastructure-as-code/docker/minio/Dockerfile both publishes and runs scripts/promote-minio-digest.mjs to promote (repointing every pinned ref found in the tree and opening/updating one pull request); the weekly schedule trigger only publishes (never promotes, since its digest changes every run due to floating apk installs); and a workflow_dispatch run promotes only if its `promote` input is explicitly ticked (default false).",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/minio-image.yml#L40-L51",
+          "version": "repo-lines-v1:sha256:78fe0489aca2f0a9748aac907a0a4b73d08f32036dbb36a43e11440074c277a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ODg1MDMyMjZiZGQ4MzY1MDE2YjViMzU5ZDdjZGE2MmI5MWYxZTc2NTcwZDRjOTNiMGI2NDU1OTE0NjYwM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YmM0OWZhZmI3ZmRlMDAxNTgzZTJlNzhlNTJhZDFmMWMzMDVkYjc5NGM3NDE5ODU1NmVlMGFiNzY0OGQ0NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2MGE3MTIxMzJkNTVhOTY0YTNkMGU4ZjQ2ZTRhNTZkMGRmNmM1ODc2OGI5YjVmMDE4MzJkNGIzNTFlMWMwM2MifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L408-L435",
+          "version": "repo-lines-v1:sha256:8df5d0258d39d968588eb35b9229779452dd00e385e3f5c17e2fa330cce42f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMGU2ZWI1MWQzOTc5NWNmMGY2MzEyYmQzZjMzMTYxMWU3ZmY2ODE5ZjhlZDU5Y2EyMGQ4YTM2MGIxNzg5ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NzE0ZjE0MDZhMWE3MTcxMzU4OGNkNTVmNWIxZTRmOGE3OGViZTlhMGM5YjUzMzExY2U2ZjIyNWJkZGY3ZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyMmMyZjE5ODY3MWMwODI4YmUxNGI1MzM4M2QyMTg3YTViMjQ1MDZiMWQ1ZWJiZmE2NDVmNDAzM2UxNzI3NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4NmM3NDVhNDJlMWUzZGJiODAyMTU1NDViNzFhZWQxNzNiY2JiYWMwMzI2NWVmMzE2MDkzMmZiY2QyNzA3ZjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b42e15ea058443eb35956d818f19361",
+      "statement": "scripts/promote-minio-digest.mjs must resolve the published image's digest by querying the registry directly for the manifest list (GET /v2/<ns>/minio/manifests/<tag> with index media types preferred) rather than via `docker buildx imagetools inspect`, because imagetools is a client-side operation that talks to the registry itself and ignores the Docker daemon's insecure-registries configuration, causing it to fail over plain HTTP even though `docker push` succeeds in the same job via the daemon.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L454-L478",
+          "version": "repo-lines-v1:sha256:c3fb4cdc0cce7c1aeab89584cbe6006cd6cbda18f3aae2f5676963a50ab414ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExN2U1N2JmMDVmZmFkNjY5ZTEwMzczMTE0ODU3NGUwMWM1ZGZmZDk2MWMyMmY0YWNkNjUzMTljNWE4YjY3YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNzUyM2ZlMzZjZjNiZjY3OTg5Y2E3NjRjZGMyYWQyZGNmMWJhMzFmZTVlNWU1ODQwNTE2MzA3YzkwMmE1NDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4NDM1YmUzYmY5NmQxMzY3Mjg2M2Q4OGY0MWViMDg4MWNlMGIyYjZiYmM4ZmE4OWViMDYyZGNmOWYxMmE1YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhNmJkNzlkNjAwYTg1Yjc2YTQ3YTdkMTNmZjUwYzFkYmFiOTM2NjZmYWM1ODJiYjhlZjQ2OWJlM2YxODEwMTYifQ"
+        },
+        {
+          "resource": "repo://scripts/promote-minio-digest.mjs#L250-L250",
+          "version": "repo-lines-v1:sha256:4d95408b945dbfc6df2d569620bc2529030fcdced0d6fe44bfc1948f91940a1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ5NTQwOGI5NDVkYmZjNmRmMmQ1Njk2MjBiYzI1MjkwMzBmY2RjZWQwZDZmZTQ0YmZjMTk0OGY5MTk0MGExYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ5NTQwOGI5NDVkYmZjNmRmMmQ1Njk2MjBiYzI1MjkwMzBmY2RjZWQwZDZmZTQ0YmZjMTk0OGY5MTk0MGExYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWFjM2UxYzUyODk0M2QyMDhkMGNjYjE1MTE1MWZkNjg4ZGY1MmE4ODgxMDVhZjhjMzEwY2ViZGQzODc3MTUzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTNjNTRlZjRmODQxYTMwNjZhNmZkYzgwMDJhZWQ4OThlMTRlNDFkYzJmZTc5MWI2MTUxZTg5YzQyMzdkMmQ5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f95c3105aabe4acb989556ed6cf676fc",
+      "statement": "scripts/promote-minio-digest.mjs computes the count of compose refs to repoint via a live tree scan (findRefs()), which throws on an empty result rather than silently succeeding, instead of trusting a fixed count recorded in a spec/task note — a later feature can add more pinned refs than a stale note remembers.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L479-L483",
+          "version": "repo-lines-v1:sha256:f438aa5980d50e72c37ccb0aebf6a50d65cf795f95e5884abe19ee1585c790a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmU1YmMxOWE1YjJiNmM5MDA1ZTFhODUzNTIyODIwYmI3YmNlZTFjZWZjMzQ3NTU1MTMxODQwNzM2Njg4NGVlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzY2NjFlYTc5N2U5ZGFkMGM1MzU5MTU3NzY3ZjVjY2E0MTJiNzRhNWQ3ZGFiOTY5M2NiOTNjZGRmY2JlYjczZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2NlNTY5MzU1YjEwMmVhYWY0NTZiNGJiOGVhYmNmOTdmNjQ1ODg5OWExODE3NzQ4YjUzMDBkYzYxYzA4YzYwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjkzMTEwODEyZTUyYjUyMWNlZDIxOTIzNDgzNTcxOTcyNWJiNWEwNzM2MjNkZTk3NzI4ZDQxZWVkOGNhZDg5ZCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/promote-minio-digest.test.mjs#L52-L94",
+          "version": "repo-lines-v1:sha256:7e82fe9d7f0d5cd327530aab378ce7926285a8001a4564f1f9c7ea83b40398e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNGNjNTliODAyMTJiODc1MzU1MGMxYjFjMzU1NmE1OWYzMTQxNTJjYzFhMDliMzkyOTRhOGVmOWVhZTAyMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGY2NmYwODNkY2RhZWQwNjNlYjdjNjU2MTgwZTRiZWVlOGY4ZTc1ZmE3NDFmMDQwMzlkYmVhNjEwODA4ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YmIwNmE0YjI2MWU5ZmI5Y2I1M2VhNzBmYmJjZWM4MWYzZTU5Yzg0ZjQ1MDBiMzAzNjYzOTEwYjhkOGEyN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYjM2MmQ2ZTNmNDEzZGExZjlhNjNmYTY4NTFjZWU0YTVhZGI3Y2UyODNjMjUxMjlmMWFkYzE5YTNjMmFjY2IifQ"
+        },
+        {
+          "resource": "repo://scripts/promote-minio-digest.mjs#L136-L136",
+          "version": "repo-lines-v1:sha256:4e389e7518c5bd158a8774003dc274eb10f46410a208db35ed68588bff2e50ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUzODllNzUxOGM1YmQxNThhODc3NDAwM2RjMjc0ZWIxMGY0NjQxMGEyMDhkYjM1ZWQ2ODU4OGJmZjJlNTBjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUzODllNzUxOGM1YmQxNThhODc3NDAwM2RjMjc0ZWIxMGY0NjQxMGEyMDhkYjM1ZWQ2ODU4OGJmZjJlNTBjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2U1NmVjNjIwZjRhMWEzYmQ3ZTE3MWQwYWVhNDUzYzA5OTIzMDRiNDUwMTA2YzZkZDA2YTZkNTg5NjA3MjdiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE1MjY2NTRiZWUzZGU3M2Q2YzA4OTI5YjA1MWEyM2IxZmVmZTNiZTI5ODNkMGQzNGNmZjUyYWZmYjc1NWJjYSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-27T01:36:16.018Z"
+  }
+}
