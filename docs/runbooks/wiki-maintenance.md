@@ -297,6 +297,10 @@ A slice fails when **any** of four things is true, and the generator's exit stat
    checked and keeps that outcome too. A legacy date-only stamp (see *Drift is reported, never
    planned* below) reads a same-day source commit as newer, so such a page is retried until the
    generator restamps it. That errs toward retrying, never toward a silent skip.
+   The stamp read is `generated.at` or `timestamp`, **not** `verified.at`, to match V12. That cannot
+   misfire on a page the generator processed: processing changes the file, so the page counts as
+   written and is never judged stale. Only a page whose bytes did not change at all can fail this
+   way. If a stale failure looks puzzling, check whether the file changed, not its `verified.at`.
 
 The failed slice returns to the backlog and **the marker does not advance**, so the work stays
 outstanding and the next run retries it.

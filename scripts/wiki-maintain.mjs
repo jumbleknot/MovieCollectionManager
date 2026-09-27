@@ -1320,6 +1320,11 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
  *
  * A date-only stamp (`…T00:00:00Z`) reads a same-day source commit as newer, so such a page is
  * retried until the generator restamps it. That errs toward retrying, never toward a silent skip.
+ *
+ * The stamp read is `generated.at`/`timestamp`, NOT `verified.at`, to match V12. That cannot misfire
+ * on a page the generator actually processed: processing changes the file, so the page counts as
+ * written and is never judged here. Only a page whose bytes did not change at all can fail. So when a
+ * stale failure looks puzzling, ask whether the file changed, not what its `verified.at` says.
  */
 function sourceNewerThanStamp(root, pageFile) {
   const fm = frontMatter(pageFile);
