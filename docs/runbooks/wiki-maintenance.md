@@ -19,8 +19,14 @@ The planner decomposes the documentation changes since the last recorded run int
 **8 pages**, exactly **one bundle area** each. It makes no model call and needs no credential, so
 there is never a reason to skip it before spending. Read the plan; then run it.
 
+At execution, consecutive same-kind slices of **different** areas are packed into one generator
+invocation of up to `MAX_PAGES_PER_INVOCATION` pages (feature 078). Every invocation pays a fixed
+planning pass — ~$0.33 on Sonnet, 83% of a one-page run — so a run touching three areas used to plan
+three times. The slice is still the unit of the backlog: a failure carries forward only the areas whose
+pages did not land.
+
 ```bash
-pnpm nx wiki-maintain infrastructure-as-code        # PAID — needs ANTHROPIC_API_KEY
+pnpm nx wiki-maintain infrastructure-as-code        # PAID — needs the selected provider's key (§1a)
 ```
 
 Useful overrides (they go through Nx's `--args`, which is appended to the command line):
@@ -31,6 +37,40 @@ Useful overrides (they go through Nx's `--args`, which is appended to the comman
 | `--args='--max-slices 1'` | Attempt one slice and stop. The cheapest way to sanity-check a change to the machinery |
 | `--args=--dry-run` | Print the exact command per slice and invoke **nothing**. Persists nothing either |
 | `--args=--json` | Machine-readable output |
+
+### 1a. Which model writes the bundle (feature 078)
+
+The provider is **configuration**, not code. `scripts/wiki-provider.mjs` is the single table:
+
+| `MCM_WIKI_PROVIDER` | Model | Key (first non-empty; mapped at the point of use) |
+|---|---|---|
+| unset / `anthropic` (default until the 078 flip) | `claude-sonnet-5` | `ANTHROPIC_API_KEY`, `MCM_ANTHROPIC_API_KEY` |
+| `fireworks` | `accounts/fireworks/models/deepseek-v4p1-flash` | `FIREWORKS_API_KEY`, `MCM_FIREWORKS_API_KEY` |
+
+Two more knobs, both validated before any paid call — a malformed value exits 2, it is never read as
+a default; an empty value is unset (how an Actions repository variable that was never set arrives):
+
+- `MCM_WIKI_PAGE_CONCURRENCY` (1–8, default 1) — openwiki ≥ 0.6.0 writes that many pages in parallel.
+  DeepSeek's wall-clock gap to Sonnet (~3.4×) is **call count**, not latency (078 research R3), so
+  concurrency is the lever that closes it.
+- `MCM_WIKI_SERVICE_TIER=priority` (Fireworks only) — +25% price. Measured on this workload it bought
+  **no** speed (R3), so it is not the default.
+
+**In CI** these are repository **variables** (Settings → Actions → Variables), so switching back to
+Anthropic is a settings change, not a commit; the keys are the secrets `ANTHROPIC_API_WIKI_MAINTAIN`
+and `FIREWORKS_API_WIKI_MAINTAIN`. **Locally**, export the variables and run the Nx target as usual; the
+dev container carries `MCM_FIREWORKS_API_KEY` from `~/.mcm-sandbox-env`.
+
+**Why the Nx target names no provider.** nx builds a target's child env as
+`{ ...process.env, ...targetEnv }` — a provider in the target's `env` would silently overwrite the
+job's choice (078 research R4). The target runs `scripts/wiki-generate.mjs`, which resolves the table,
+gives the generator **only** the selected provider's key, and passes `WIKI_RUN_MESSAGE` as one argv
+element with no shell.
+
+**Preflight.** Before the first paid slice, `wiki-maintain --execute` makes one minimal call to the
+selected model (`node scripts/wiki-generate.mjs --preflight` does the same by hand). A failure exits
+**2** with the record untouched and names the provider's error type — a withdrawn model id, a revoked
+key or a blocked egress host costs one token, not a slice.
 
 ### Sizing a slice, and why the message must carry the SUBJECT
 
@@ -131,6 +171,11 @@ Two things to know before changing it again:
 - **Run the guard first, and read the SKIP COUNT, not just the exit code.** Two of its four cap
   assertions skip when OpenWiki is absent from `/usr/local/lib/node_modules`, and a skip reads as a
   pass. The `claude-sonnet-5` bump was verified at 20 passed / 0 failed / **0 skipped**.
+- **Verifying a generator version bump before the image carries it** (how 0.5.2 → 0.6.0 was done,
+  feature 078): side-install it — `npm install -g --prefix <dir> openwiki@<v> mermaid jsdom`, never
+  over the container's global copy that other sessions are using — and run the guard with
+  `OPENWIKI_ROOT=<dir>/lib/node_modules/openwiki`. The installed-generator assertions then read the
+  new version instead of skipping; count them.
 - **OpenWiki sends no `temperature`**, which is why this bump was safe where the agent gateway's was
   not. Sonnet 5 and Opus 5 reject that parameter with a 400 and the gateway was sending it
   unconditionally — see [`specs/075-llm-cost-phase-1/research.md`](../../specs/075-llm-cost-phase-1/research.md)
@@ -192,7 +237,7 @@ directly.
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
 | `1` | A slice **failed verification** — zero pages written, the bundle became non-conformant, or a write landed where policy forbids it | **Yes** |
-| `2` | Bad usage, unreadable run record, or a missing credential | **Yes** |
+| `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight | **Yes** |
 | `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
 
 **Exit 3 is not a failure.** Same reasoning as `ci-status.mjs` distinguishing runner starvation from a
@@ -208,11 +253,28 @@ ceiling of ≤24 pages / ~37 minutes**. Both are configurable (`--page-budget`, 
 The page count comes from **files that actually appeared in the working tree**. It is not what the
 generator says it wrote, and a stub that claims 99 pages while writing one moves the counter by one.
 
-**Neither budget is a monetary bound.** OpenWiki reports no token or cost figure at all, and nothing
-in this feature claims a spend ceiling. What spend is known comes from the provider's bill, not from
-a run — the 30-day figure quoted under *Why that model* in §1 — so a run cannot tell you what it
-cost. The wall-clock budget bounds *runner occupancy* — there is one CI runner and `app-e2e` is ~35
-minutes on it.
+**Neither budget is a monetary bound.** Nothing in this feature enforces a spend ceiling. Until
+feature 078 a run could not tell you what it cost — the only figure was the provider's bill, such as
+the 30-day figure quoted under *Why that model* in §1. It now records an estimate (below), but that is
+a measurement, not a limit. The wall-clock budget bounds *runner occupancy* — there is one CI runner
+and `app-e2e` is ~35 minutes on it.
+
+### What a run cost (feature 078)
+
+OpenWiki reports no usage itself, so `scripts/wiki-usage-tap.mjs` is loaded into the generator process
+and records per-call **counts** (never content). Each invocation's counts are priced from
+`scripts/wiki-provider-prices.json` — a dated table; update `asOf` with every change — and the run total
+lands in the job log and in `lastRunUsage` in `openwiki/.maintenance-state.json`:
+
+```text
+[wiki-maintain] usage runbooks/: 47 call(s), 183838 uncached / 2801438 cached / 43117 output tokens, ~$0.0883 (fireworks, prices 2026-09-27)
+[wiki-maintain] run usage: ~$0.0883 over 47 call(s) in 1 invocation(s), fireworks, prices 2026-09-27
+```
+
+It is an **estimate** (it reconciled with the Fireworks bill to the cent on the 078 research probes).
+`not captured` means the tap produced nothing — it is never written as $0. A line saying
+`PARTIAL total` means some invocations were not captured. `failedCalls` counts non-200 responses:
+rate limiting under page concurrency shows up there first.
 
 ---
 
