@@ -1,297 +1,160 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the three channels and their cadences, the Friday-only window that the nightly cron is NOT, the budget that binds before the schedule, the silent failure modes that produce absence instead of errors (including the pinDigest/digest collision fixed by item #350, the timestamp-absent ghcr.io/quay.io tags fixed by item #349 with timestamp-optional, the Docker Hub page-11 403 that discards all timestamps fixed by capping dockerMaxPages at 10, the DIGEST-class timestamp trap that kept clickhouse/mongodb/rust unpinned until item #412, and the compose-file basename rule that made dev-ollama.compose.yaml invisible to every manager), the pinned-toolchain table (Rust, semgrep, cargo-audit, python interpreter minor now on 3.14 unified into the python toolchain group by item #366, uv), the Rust devcontainer rebuild gotcha, the python toolchain group position gotcha (after docker base images, before docker digest pins — wrong order silently breaks digest refreshes), and the two-place config validator that catches the unknown-key class the guard test cannot.
+description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/routine channels and their Friday-window-vs-nightly-cron cadences and prPriority ranking (item #486), the weekly CVE sweep that runs three hours before the window on purpose (item #487), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (#308/#350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (#349/#350/#412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (#412/#560), the health digest that used to read only an advisory column and only the newest scheduled sweep (#485/#563), the pinned-toolchain gotchas for Rust (devcontainer rebuild) and Python (packageRules ordering), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-timestamp: 2026-09-12T17:22:00Z
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-27T05:24:24.425Z
+sources:
+  - id: openwiki-source-7bd434a17ed7c27916b1d2ae
+    resource: repo://.forgejo/workflows/infra-image-scan.yml
+  - id: openwiki-source-6e3646982d72c64cb5e2486d
+    resource: repo://.forgejo/workflows/renovate.yml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
+generated: { by: "openwiki/0.5.2", at: "2026-09-27T05:24:24.425Z" }
 ---
 
 # Renovate dependency bot
 
-Renovate opens dependency-update PRs on a defined schedule and budget. The configuration rationale —
-grouping, version locks, cooldowns — lives in `renovate.json` (heavily commented). This page covers
-the operating side: the schedule, how to force a run, reading the dashboard, and the failure modes
-that produce absence instead of errors.
+Renovate opens dependency-update PRs on a defined schedule and budget. The grouping, version locks,
+and cooldown rationale lives in `renovate.json` (heavily commented). This page covers the operating
+side: the schedule, forcing and verifying a run, reading the dashboard, and the failure modes that
+produce absence instead of an error — see `docs/runbooks/renovate.md` for the full procedures,
+measured evidence, and code citations behind every claim below.
 
-## Three channels
+## Four channels, one budget
 
-| channel | trigger | schedule |
+| channel | trigger | cadence / rank |
 | --- | --- | --- |
 | **security** — `vulnerabilityAlerts` + OSV | nightly cron `0 3 * * *` | schedule-exempt, unbudgeted |
-| **lockfile refresh** — `lockFileMaintenance` | the window run | Friday, ranked ahead of routine work (`prPriority: 5`) |
-| **routine** — grouped package rules | the window run | Friday only |
+| **lockfile refresh** — `lockFileMaintenance` (pnpm, cargo-deps, python-deps) | the window run | Friday, `prPriority: 5` |
+| **docker base images** | the window run | Friday, `prPriority: 3` |
+| **routine** — every other grouped package rule | the window run | Friday only, `prPriority` 0 (default) |
 
-Nothing auto-merges. Every group carries `automerge: false`.
+Nothing auto-merges — every group carries `automerge: false`. A tick or a dispatch gets you a PR,
+never a merge.
 
-## Gotchas
+## Scheduling and budget gotchas
 
-- **The nightly cron is NOT the Friday window.** `.forgejo/workflows/renovate.yml` has two crons
-  doing different jobs. The `0 3 * * *` cron runs nightly but is deliberately *outside*
-  `renovate.json`'s permitted window — only schedule-exempt work (security PRs) lands there. The `0
-  7 * * 5` cron is Friday 07:00 UTC, inside the `* 2-4 * * 5` window. "It will sort itself out
-  tonight" is false for anything except a security PR or an explicit dashboard request.
-- **The budget binds before the schedule.** `prHourlyLimit: 4` — measured 2026-08-28: the window run
-  created exactly 4 PRs and deferred everything else a week. `handleConcurrentLimits()` also blocks
-  **branch** creation on the same budget, not just PR creation. Leaving four green Renovate PRs
-  unmerged caps the next window at one new PR. **Merging promptly is a throughput lever.**
-- **`dryRun` defaults to `true` and must be set explicitly when forcing a run.** The default
-  prevents accidents; the cost is that a forced dry run looks exactly like a forced live run —
-  nothing moves, no error. Run 5963 (2026-08-14) was recorded as "the schedule beats a dashboard
-  unlimit tick" when it had simply been a dry run.
-- **A dispatched run now publishes its RESOLVED mode as a commit status — but the empirical check
-  remains mandatory.** Item #268. Every introspective route is dead on this Forgejo build: the step
-  name renders the raw uninterpolated `${{ … }}` expression; `/actions/runs/{id}/jobs` returns 404;
-  there is no log endpoint. The run now posts a `renovate/mode` commit status on the dispatched SHA
-  *before* Renovate runs (`"LIVE"` or `"DRY RUN (creates nothing)"`), built from proven parts (env-var
-  resolution in `run:` blocks and the statuses endpoint). ⚠️ Until the first real dispatch after
-  2026-08-30 has been seen to post it, treat the status as unverified on this forge. The empirical
-  check remains the authority on what the run *did*: `git ls-remote origin 'refs/heads/renovate/*'`
-  before and after, plus checking whether ticks reverted to `- [ ]`. Heads moved AND ticks consumed
-  ⇒ it ran live. **Apply this check only after the run starts — not after the dispatch.** The dispatch
-  returns `HTTP 204` immediately but the run only queues. A queued run is invisible in `/actions/tasks`
-  (that endpoint lists jobs, and a job row does not exist until the job starts); use
-  `/actions/runs?event=workflow_dispatch` instead. Sequence: confirm the run exists → wait for
-  `status` to leave `waiting` → then read heads and ticks. Measured 2026-08-29: a dispatch was
-  written up as "did nothing" because `/actions/tasks` showed nothing new — the run had been waiting
-  24 minutes behind a ~35-minute `app-e2e`. Also: the `dryRun: "false"` string form is confirmed
-  live (run 2285) but is NOT safe by construction — `"false"` is a truthy string under GitHub
-  expression semantics and would select a dry run; it resolved live only because Forgejo coerced it
-  against the input's declared `type: boolean`. The empirical check is mandatory, not advisory.
-- **Never hand-close a Renovate PR — with one measured exception for `lockFileMaintenance`.**
-  Closing an ordinary update PR marks it rejected — Renovate stops proposing it until a human ticks
-  the dashboard to revive it. If the queued CI is in the way, cancel the runs — that frees the
-  runner without signalling rejection. Leave the PR; Renovate autocloses this class itself (retitling
-  it `- autoclosed`) and deletes the branch, provided nobody hand-pushed to it.
+- **The nightly cron is NOT the Friday window.** `.forgejo/workflows/renovate.yml` runs `0 3 * * *`
+  (nightly, outside `renovate.json`'s permitted window — schedule-exempt security work only) and
+  `0 7 * * 5` (Friday 07:00 UTC, inside the `* 2-4 * * 5` window that covers both the EDT and EST
+  offsets). Outside the window Renovate returns `not-scheduled` before branch creation, so "it will
+  sort itself out tonight" is false for routine work — force it instead (see below).
+- **The weekly CVE sweep runs three hours BEFORE the Friday window, on purpose (item #487).**
+  `infra-image-scan.yml`'s sweep fires at `0 4 * * 5`; the Renovate window opens at `0 7 * * 5`. If
+  the two ran together, `main`'s CVE posture would be unknown until after the very PRs the sweep is
+  meant to gate already existed — measured on 2026-09-18, where PR #478 (node/rust/keycloak digest
+  pins) was unmergeable from creation on an unrelated otel-lgtm CVE. Both crons are UTC so the 3h gap
+  is fixed; DST cannot narrow it. **Do not "tidy the crons together"** — a guard test asserts the sweep
+  is strictly earlier than every Renovate window cron.
+- **The budget binds before the schedule.** `prHourlyLimit: 4` and `prConcurrentLimit: 5` in
+  `renovate.json`; the guard test requires `prConcurrentLimit` to stay above `prHourlyLimit` or it
+  becomes the binding constraint instead. Measured 2026-08-28: a window run created exactly 4 PRs and
+  deferred everything else a week. `handleConcurrentLimits()` checks the hourly limit for every key
+  and blocks **branch** creation too, not just PR creation, and open PRs also eat `prConcurrentLimit`
+  headroom — leaving four green Renovate PRs unmerged caps the next window at one new PR. **Merging
+  promptly is a throughput lever.**
+- **Why `docker base images` carries `prPriority: 3` (item #486).** With one in-window run a week,
+  `prHourlyLimit: 4` *is* the weekly throughput, and the three `lockFileMaintenance` channels at
+  `prPriority: 5` already claim three of the four slots every week by construction. Before #486,
+  `docker base images` — the channel carrying the same base-image security bumps the weekly CVE sweep
+  blocks merges over — sorted with every other routine channel and had not received a slot since PR
+  #289, a roughly six-week wait while the sweep kept gating on those images. It now ranks at
+  `prPriority: 3`: ahead of every routine channel, deliberately behind `lockFileMaintenance`'s 5 (which
+  stays first because it is the channel that keeps the gates green). **Any later `packageRules` entry
+  that takes a `groupName` away from `docker base images` must set `"prPriority": 0` explicitly** —
+  Renovate merges rules in order and a later rule overrides only the keys it sets, so an unreset rule
+  silently inherits 3 and competes for the slot this exists to secure (today: `python toolchain` and
+  `docker digest pins`, both reset). A guard test fails if a new claiming rule appears without the
+  reset. This does not remove rate-limiting entirely: if `docker base images` itself carries more than
+  a window's worth, tick its `unlimit-branch=` checkbox rather than waiting for a fourth deterministic
+  slot.
 
-  **MEASURED EXCEPTION (item #290, 2026-08-30, verified against renovate@44.52.0 dist): closing a
-  `lockFileMaintenance` PR does NOT mark the channel rejected.** The suppression is gated on
-  `recreateClosed`, and that flag is `true` for `lockFileMaintenance` (set at `:150` of
-  `workers/repository/updates/generate.js`) — so `check-existing.js` returns `null` before it ever
-  looks for a closed PR, and the channel is unaffected. Keep the blanket rule anyway: knowing which
-  shape a given PR resolved to means reading Renovate's resolution at merge time, which is not a
-  thing to do routinely. Act on the exception only deliberately.
-- **Never hand-push to a Renovate branch.** Renovate detects the branch was modified and can stop
-  managing it. Use `rebase-branch=` + a dispatch instead.
-- **A channel whose toolchain is missing dies silently.** If a lockfile manager's binary is not on
-  PATH, `execa` rejects and Renovate suppresses it to a single "WARN: execa promise rejection
-  suppressed" line under Repository Problems — no PR, no error, nothing to notice. The pep621
-  channel created nothing for weeks until `uv` was added to `renovate.yml` (item #218). A new
-  manager needs a new toolchain step.
-- **The release-age cooldown does not cover transitives.** `minimumReleaseAge: 3 days` gates the
-  package Renovate proposes. It does nothing about what a lockfile regeneration drags in. pnpm 11
-  independently verifies the lockfile against supply-chain policies on install. Measured on PR #263:
-  a compliant `@ag-ui/client` bump resolved `zod@4.5.1` (published 1.7 hours earlier) and reddened
-  six required contexts at `pnpm install` — none of them about the change. **Handling: wait.** The
-  transitive ages past the ~24 h cutoff and a re-run passes. Do NOT add it to
-  `pnpm-workspace.yaml`'s `minimumReleaseAgeExclude` — that list is for security-floor exceptions,
-  not impatience. **DECIDED 2026-08-28 (item #271): this friction is ACCEPTED, not mitigated.** It
-  is infrequent, fails loudly and safely (a red gate, never a silent bad merge), and is a
-  two-minute diagnosis with this runbook. Mitigations were considered and rejected: shifting the
-  window trades a certain constraint for a probabilistic one; pinning the verify-time policy
-  re-opens the cold-`--frozen-lockfile` question feature 034 already settled. Revisit only if it
-  starts blocking multiple PRs a week. See [CI self-serve diagnostics](ci-diagnostics.md) for the
-  board shape this produces.
-- **Extraction is not grouping.** A `customManagers` entry makes Renovate *see* a second copy of a
-  version. It does not make both copies move in one PR — a later broad rule can claim one half and
-  strand the other. Every extracted pair needs a `packageRule` matching both managers, ordered after
-  the broad rules. This has been paid for three times: nx (PRs #141 and #193), the Playwright image
-  tag (#204), and the pnpm/Dockerfile pins (#225). `renovate-workflow.guard.test.mjs` asserts the
-  *resolved* group for each pair.
-- **A pinDigest that collides with a version update on the same branch is DROPPED, silently.**
-  `docker:pinDigests` sat in `renovate.json`'s `extends` and did nothing for `python:3.13-slim` for
-  as long as it had been there — not deferred, discarded every run. Measured 2026-08-30 (item #308):
-  Renovate logged `INFO: Ignoring upgrade collision` eight times, once per reference, and the pin
-  never appeared on the dashboard or in Repository Problems. The mechanism
-  (`workers/repository/updates/branchify.js`): upgrades are de-duplicated per branch on
-  `` `${packageFile}:${depName}:${currentValue}` ``; a second update for the same key with a
-  different `newValue` is dropped outright. `matchDatasources: ["docker"] → groupName: "docker base
-  images"` puts every docker update on one branch, so `3.13-slim → 3.14-slim` (version) and
-  `3.13-slim → 3.13-slim@sha256:…` (pinDigest) collide and the pin loses. The tell: images that
-  already carry no parseable version (`rust:alpine3.21`, `uv:latest`) receive digests in the same
-  PR — they have no competing version update to collide with. **The fix is a separate
-  `docker digest pins` packageRule scoped to `matchUpdateTypes: ["pinDigest"]`, ordered after `docker
-  base images`** — a separate rule is a separate branch, a separate branch is a separate key
-  namespace. Verified: re-running the lookup with the rule present took the collision count from eight
-  to zero (item #308). The guard test asserts both halves.
+## Forcing a run, and verifying what it actually did
 
-  **SUPERSEDED 2026-09-04 (item #350): the rule now claims `["pinDigest", "digest"]`, and the
-  guard's control was reversed.** The scoping above held only while the image was unpinned. Once
-  `python:3.13-slim` carried a digest (feature 063), its weekly refresh became an updateType `digest`
-  and collided with the same `3.14-slim` version update on the same key — eight times per run,
-  measured with the identical lookup, while the version update it lost to sat pending. So the
-  python digest **never refreshed**: the #303 class reopened for python, reported nowhere. A refresh
-  is the one docker update that *always* shares its key with any version update of the same image,
-  so it needs its own namespace as much as the initial pin does. Verified the #308 way: collision
-  count for python 8 → 0 with the widened rule.
-- **A ghcr.io or quay.io tag that has no `releaseTimestamp` is pending FOREVER under any cooldown — and if it shares a group with a non-pending update, it is dropped silently.** Measured 2026-09-04 on PR #347 (`renovate/uv-pin`): the eight github-releases uv sites moved to 0.12.8 and the four `ghcr.io/astral-sh/uv` image tags stayed at 0.12.7 — a half-bump with the group rule in place and correct. The mechanism: `minimumReleaseAgeBehaviour` defaults to `timestamp-required` (added to Renovate 2025-10). The docker datasource only supplies `releaseTimestamp` for Docker Hub (`tag_last_pushed`); every ghcr.io and quay.io tag, and every `pinDigest`, arrives without one. So any cooldown makes those tags permanently pending. In a mixed group, `generate.js` removes pending upgrades when *any* upgrade in the group is not pending (`"Branch is not pending, removing pending upgrades"`) — the non-pending half ships; the pending half is discarded, at DEBUG, on every run. **The fix for the `uv pin` group: set `minimumReleaseAge: null` on the rule that groups both halves.** The guard test asserts both halves resolve to no cooldown. The trade — uv bumps skip the 3-day cooldown — is recorded on the rule.
+Dispatching is `POST .../actions/workflows/renovate.yml/dispatches` with `inputs.dryRun`. Tick
+everything wanted on the dashboard first, then dispatch once — ticks and the dispatch compose, and one
+dispatch is one runner slot.
 
-  **DECIDED 2026-09-04 (items #349, #350), both in `renovate.json`:** registries that cannot supply
-  a timestamp do not wait for one. A packageRule on `matchDatasources: ["docker"]` for `ghcr.io/`
-  and `quay.io/` sets `minimumReleaseAgeBehaviour: "timestamp-optional"` — a release *with* a
-  timestamp is still aged, one *without* proceeds. **Docker Hub deliberately stays
-  `timestamp-required`**: its tags and digests carry `tag_last_pushed`, so the cooldown there is
-  temporal and real; widening the rule to all of docker would silently disable feature 034's control
-  for the images it actually works on. Add a registry to the rule only after checking the datasource
-  still cannot time-stamp it. The guard test asserts both halves. Renovate WARNs once per run under
-  this setting; a top-level `logLevelRemap` demotes that one message to `info` so it does not
-  become a permanent Repository Problem — a *different* WARN still surfaces.
+- **`dryRun` defaults to `true` and must be set explicitly.** The default is correct (an accidental
+  live run is the worse failure) but it means a forced dry run looks exactly like a forced live run —
+  nothing moves, no error. Run 5963 (2026-08-14) was mis-recorded as "the schedule beat a dashboard tick"
+  when it had simply been a dry run.
+- **A dispatch now publishes its resolved mode as a `renovate/mode` commit status before Renovate
+  runs — but the empirical check remains mandatory (item #268).** Every introspective route is dead on
+  this Forgejo build: the step name renders the raw uninterpolated `${{ … }}` expression, `/actions/runs/{id}/jobs`
+  404s, and there is no log endpoint. The status is built only from proven parts (env-var resolution in
+  `run:` blocks plus the statuses endpoint) and reads `"LIVE"` or `"DRY RUN (creates nothing)"`. Read
+  it, then still apply the empirical check — `git ls-remote origin 'refs/heads/renovate/*'` before and
+  after, plus whether dashboard ticks reverted from `- [x]` to `- [ ]`. Heads moved *and* ticks consumed
+  ⇒ it ran live. Note the `dryRun: "false"` string form: it resolves live only because Forgejo coerces
+  it against the input's declared `type: boolean` — under plain GitHub expression semantics a non-empty
+  string is truthy and would select a dry run. That is a property of this forge build, not a guarantee,
+  which is exactly why the empirical check stays mandatory rather than advisory.
+- **A dispatch returns HTTP 204 immediately but only queues — apply the empirical check only after the
+  run starts.** A queued run is invisible in `/actions/tasks` (that endpoint lists jobs, and a job row
+  does not exist until the job starts); use `/actions/runs?event=workflow_dispatch` to confirm the run
+  exists, then poll until `status` leaves `waiting`. Measured 2026-08-29: a dispatch was written up as
+  "did nothing" because `/actions/tasks` showed nothing new, when the run had simply been queued ~24
+  minutes behind a long `app-e2e` job.
 
-  Residuals that remain after #349/#350: `docker digest pins` (all `pinDigest`/`digest`, all
-  timestamp-less even after the widened scoping) still sits under Pending Status Checks permanently
-  — the initial pins can only land from a dashboard tick. **`hub.docker.com` was allowlisted
-  2026-09-05** (`.devcontainer/egress-allowlist.json`; on the sandbox platform the operator must
-  also apply the host-side rule — see `devcontainer-sandbox.md` §4): a local lookup now sees
-  `tag_last_pushed` and the Docker Hub half can be observed locally rather than inferred from CI.
-- **Docker Hub's anonymous tag API returns 403 from page 11, and one 403 discards every timestamp.**
-  `/v2/repositories/<repo>/tags?page_size=100` answers 200 for pages 1–10 and **403 Forbidden** from
-  page 11 (measured 2026-09-05; `page_size=1000` is silently capped to 100). `library/node` has 9080
-  tags. Renovate's default `dockerMaxPages` is 20, so on a cold cache — every CI run — it asks for
-  page 11, gets the 403, and `_getDockerHubTags` returns `null`: the entire timestamped result for
-  that image is discarded and the registry tag list, which has no timestamps, is used instead. Under
-  `timestamp-required` that is pending for ever, for node, python, postgres, redis, mongodb, opa,
-  clickhouse, langfuse, and minio alike — the permanent "Pending Status Checks" on `docker base
-  images` and `docker digest pins`, which read exactly like a 3-day cooldown that never elapsed.
+## Renovate PRs and branches — what not to do
 
-  **Fixed 2026-09-05: `RENOVATE_DOCKER_MAX_PAGES: '10'` on the Run Renovate step** (`dockerMaxPages`
-  is `globalOnly`, so it cannot live in `renovate.json`); the guard test asserts ≤ 10. Ten
-  newest-first pages reached back to 2025-11 for node, so every live candidate has a timestamp.
-  Verified: the same lookup then logged zero "no releaseTimestamp" markings, and the pending members
-  were exactly the ones pushed inside the last three days — temporal, as designed.
-
-  ⚠️ **Reproduction trap**: Renovate keeps a 30-minute package cache at `/tmp/renovate/cache`. A
-  local lookup made right after a failed Docker Hub fetch served the failure from cache and made no
-  Hub requests — the run looked identical to the broken one. Point `RENOVATE_CACHE_DIR` at a fresh
-  directory for any re-measurement.
-- **A DIGEST-class update is aged against a timestamp it often cannot have (item #412).** For
-  `pinDigest` and `digest` updates renovate does **not** age against the tag's own `tag_last_pushed`
-  at all. It ages against **`newestMatchingVersionTimestamp`** — the timestamp of the newest release
-  matching the *current* value, taken from the **version** lookup
-  (`workers/repository/process/lookup/index.js`, `applyMinimumReleaseAgeToDigestUpdate`).
-
-  Two unrelated situations produce the same `undefined`, and both were live here until 2026-09-12:
-
-  | ref | why there is no timestamp |
-  |---|---|
-  | `mongodb/mongodb-community-server:8.0.8-ubi9` (125,788 tags) | the pinned tag is far outside the newest-1000-tag window `dockerMaxPages: 10` allows, so the version lookup has no release for it |
-  | `clickhouse/clickhouse-server:24.3` (2,483 tags) | same |
-  | `rust:alpine3.21` | the tag is not a *versioned* release, so no version matches it — even though the tag itself has a fresh `tag_last_pushed` (page 1) |
-
-  Under the default `timestamp-required` that is `isPending: true` **for ever**, and
-  `generateBranchConfig` then drops the pending upgrade from a branch holding a ready one. Logged at
-  **DEBUG** only. Net effect: `clickhouse` and `mongodb` were never digest-pinned at all, and `rust` —
-  already pinned — never had its digest **refreshed**, which is the item #303 class (advisories a
-  refresh would clear) silently reopened.
-
-  Raising `dockerMaxPages` is **not** the fix: Docker Hub 403s from page 11 anonymously (item #349),
-  and 1,258 pages is not a cap. The fix is a rule scoped to `pinDigest` + `digest` on the docker
-  datasource running `timestamp-optional`. That is not a weakening — a pinDigest adopts **no new
-  content**, it records the digest of the tag we already pull, so there is nothing for a supply-chain
-  cooldown to soak, and the alternative on offer is not "wait 3 days" but "never". Docker Hub
-  **version** updates keep `timestamp-required`, where the timestamp is real;
-  `renovate-workflow.guard.test.mjs` asserts both halves so neither can drift into the other.
-
-  Diagnose it with the local lookup, and read the RESOLVED BEHAVIOUR, not the message:
-
-  ```bash
-  RENOVATE_PLATFORM=local RENOVATE_DRY_RUN=lookup LOG_LEVEL=debug RENOVATE_DOCKER_MAX_PAGES=10 \
-  RENOVATE_CACHE_DIR=$(mktemp -d) RENOVATE_ENABLED_MANAGERS=docker-compose,dockerfile \
-  npx --yes renovate@44 2>&1 | grep -A 4 'no releaseTimestamp to age against'
-  ```
-
-  > ⚠️ **Do not count the `no releaseTimestamp to age against` lines.** That debug line is emitted
-  > under **both** behaviours — it says a timestamp was absent, not that anything stalled. Counting it
-  > reads the fix as a regression: the count here went 3 → 6 *because the fix also made a previously
-  > invisible file visible*. The signal is the `minimumReleaseAgeBehaviour` field in the object logged
-  > beside it — `timestamp-required` stalls for ever, `timestamp-optional` proceeds.
-
-- **A manager that matches no FILES is indistinguishable from one with no work (item #412).**
-  `docker:pinDigests` was in `extends` the whole time `ollama/ollama:0.32.1` sat un-pinned, because
-  the file it lives in was never **extracted**. renovate@44's docker-compose manager defaults to
-  `/(^|/)(?:docker-)?compose[^/]*\.ya?ml$/` — the **basename must start** with `compose` or
-  `docker-compose`. This repository also names compose files `<thing>.compose.yaml`, and all five such
-  files were invisible to every manager: a debug run mentioning clickhouse and mongodb forty-odd times
-  each mentioned `ollama` **zero** times in 7,842 lines.
-
-  This is §5's own shape once more — nothing failed, nothing warned, and the absence read as health.
-  The cheapest check is a grep of a debug run for an image you *know* is referenced; if the count is
-  zero, the question is not "why no update" but "is the file even seen":
-
-  ```bash
-  grep -c 'dev-ollama' renovate.log   # 0 = the manager never looked at it
-  ```
-
-  Fixed in `renovate.json` under the top-level `docker-compose` key, **not** by renaming the files —
-  a rename moves the trap to the next file someone names naturally. Widening what Renovate *sees* also
-  widens what it *rewrites*, so check the blast radius: here it newly matched two `docs/proposals/**`
-  documents carrying deliberately stale refs, which is why `docs/proposals/**` joined `ignorePaths` in
-  the same change. `infra-image-scan.test.mjs` asserts both halves.
-
-- **The python interpreter minor is now tracked by the `python toolchain` group (item #366) — raise
-  the ceiling only by moving `.python-version`.** `agents/movie-assistant/.python-version` (currently
-  `3.14`) is the single source of truth. The docker `allowedVersions` ceiling is derived from that
-  pin (`<3.15`); the guard fails when they disagree. PR #362 found this the hard way: an image sweep
-  moved eight `FROM python:3.13-slim` lines to 3.14 while the `.python-version` pin and four
-  `uv.lock` files stayed on 3.13. Item #366 unified the pin and the eight image refs into the
-  `python toolchain` group so future raises travel together. The `requires-python` floors
-  (`>=3.13`) are deliberately outside the group — they are compatibility ranges, not deployment
-  pins. Digest refreshes of the current tag still flow through `docker digest pins`.
-- **`@copilotkit/*` ships breaking API changes in minor bumps.** It is grouped separately behind
-  `dependencyDashboardApproval`, like the `cargo 0.x` rule. One breaking member makes a whole
-  batched PR unmergeable and unsplittable — and Renovate regenerates it weekly, so routine bumps
-  riding with it stay blocked for as long as the migration takes.
-- **Re-read the dashboard before ticking — section and checkbox names change between runs.** The
-  same update moved from `unlimit-branch=` under Rate-Limited to `unschedule-branch=` under
-  Awaiting Schedule to `other-branch=` under Other Branches across three runs on one day. Ticking a
-  name from memory writes a box Renovate does not read.
-- **A surviving `renovate/*` branch is not evidence of pending work — check ancestry before
-  ticking.** `default_delete_branch_after_merge` was false until 2026-08-29 (item #290), so merged
-  Renovate PRs left their branches behind and Renovate kept listing them. Ticking `unschedule-branch`
-  for an already-merged branch opens an empty PR that queues a full CI cycle. Before ticking any
-  listed branch, run `git merge-base --is-ancestor origin/renovate/<branch> main && echo "EMPTY"`.
-  Do NOT substitute `git diff --stat main...branch` — for an already-merged branch it prints nothing,
-  and blank output reads as "no changes" rather than "already in main". Why it happens: `renovate.json`
-  sets `rebaseWhen: "conflicted"`, which causes `shouldReuseExistingBranch` (in
-  `workers/repository/update/branch/reuse.js`) to skip the `isBranchBehindBase` guard entirely. An
-  ancestor branch is not conflicted, so control falls through to `reuseExistingBranch: true` and
-  Renovate opens a PR from the stale commit verbatim. A reused branch also bypasses the branch
-  budget limit, because the budget gate is conditioned on `!branchExists`. Renovate does NOT need
-  the branch to survive — proven by symmetry: when PR #276 merged and deleted its branch, the python
-  channel still appeared on the dashboard under Awaiting Schedule. Surviving branches buy nothing
-  and cost empty PRs.
-- **`renovate/lock-file-maintenance` is hard-exempt from Renovate's own pruning — by exact name.**
-  `finalize/prune.js` filters it out before `cleanUpBranches` ever sees it, so Renovate will never
-  clean it up and after a merge it lingers forever. `default_delete_branch_after_merge` (enabled
-  2026-08-29) is therefore the *only* mechanism that removes it; the one stale copy predating the
-  setting had to be deleted by hand. The comparison is `!==` on the exact name: the suffixed group
-  branches this repository produces (`renovate/lock-file-maintenance-cargo-deps`,
-  `renovate/lock-file-maintenance-python-deps`) are **not** exempt — they are prunable by autoclose.
-  Deleting a branch that is an open PR's head closes that PR — treat it as hand-closing for ordinary
-  updates (marks the channel rejected). It is safe for `lockFileMaintenance`: the `recreateClosed`
-  exception (see the Never hand-close gotcha above) means the channel is unaffected. Assume it is
-  not safe for anything else without reading the renovation code. Only a stale branch with no open
-  PR is unconditionally safe to remove.
-- **Merging past a pending `renovate/stability-days` check is only acceptable when three conditions
-  all hold (item #298).** Branch protection treats the check as advisory, so the forge permits
-  merging past it — this rule says when that is acceptable. **Default: HOLD.** The three conditions
-  are: (1) the wait *cannot* satisfy it — the pending state is structural, not temporal (temporal: the
-  release ages past a knowable date and goes green — wait; structural: something resets the clock
-  faster than it can run down); (2) the posture has been measured first with the gate's own criteria
-  and recorded on the PR (for images, the `--severity CRITICAL --ignore-unfixed` recipe in
-  [infra-image-scanning](infra-image-scanning.md); for packages, the SAST/audit gates on the PR); and
-  (3) the update has security value now — it clears a live finding or unblocks a red gate on `main`.
-  Impatience does not qualify. Post-#297 the structural case should no longer arise for the docker
-  group (images are version-tagged); if `stability-days` settles unaided on the next docker PR, criterion
-  1 should essentially never hold again and the rule collapses to **wait**. ⚠️ Use a two-dot diff
-  (`git diff main branch`, not `git diff main...branch`) to ask what a PR would still change —
-  the three-dot form is against the merge base and will list changes `main` already has by another
-  route.
-- **The weekly health digest (item #311) goes and looks so you do not have to.** `scripts/renovate-health.mjs`
-  runs every Friday at 11:00 UTC (after the window run finishes) via `.forgejo/workflows/renovate-health.yml`
-  and posts a comment on item #311. It classifies every `renovate/*` branch by ancestry, reports budget
-  consumption, surfaces Repository Problems warnings, and flags pending `stability-days` states. Always
-  exits 0 — the comment is the report. **A week of silence means the job itself died.** Dispatchable
-  for on-demand verification. Close item #311 to stop the digest permanently.
+- **Never hand-close a Renovate PR** — it marks the update rejected and Renovate stops proposing it
+  until a dashboard tick revives it. If queued CI is in the way, cancel the runs instead; leave the PR
+  for Renovate's own autoclose.
+  **Measured exception, narrow: closing a `lockFileMaintenance` PR does NOT mark the channel rejected**
+  (item #290, verified against renovate@44.52.0's dist) — `recreateClosed` is `true` for that class
+  (`workers/repository/updates/generate.js`), so `check-existing.js` never looks for a closed PR. Act on
+  this exception only deliberately; it does not generalize to any other channel.
+- **Never hand-push to a Renovate branch.** Renovate detects the modification and can stop managing the
+  branch. Use a `rebase-branch=` tick plus a dispatch instead.
+- **A surviving `renovate/*` branch is not evidence of pending work — check ancestry before ticking.**
+  `renovate.json` sets `rebaseWhen: "conflicted"`, which skips the `isBranchBehindBase` guard entirely;
+  an already-merged branch is not conflicted either, so Renovate reuses it and opens a PR from the stale
+  commit verbatim — and a reused branch also bypasses the branch budget, which is gated on
+  `!branchExists`. Verify with `git merge-base --is-ancestor origin/renovate/<branch> main`, **not**
+  `git diff --stat main...branch`, which prints nothing for an already-merged branch and reads as "no
+  changes" rather than "already in main". `default_delete_branch_after_merge` (enabled 2026-08-29,
+  item #290) removes most stale branches now, but only for merges through the UI button — an API-driven
+  merge that omits `delete_branch_after_merge: true` can still leave one behind.
+- **`renovate/lock-file-maintenance` is hard-exempt from Renovate's own pruning, by exact name** —
+  `finalize/prune.js` filters it out before `cleanUpBranches` ever sees it, so
+  `default_delete_branch_after_merge` is the only thing that removes it (the one stale copy predating
+  that setting had to be deleted by hand). The comparison is exact-name, so the **suffixed** group
+  branches this repository actually produces — `renovate/lock-file-maintenance-cargo-deps`,
+  `renovate/lock-file-maintenance-python-deps` — are **not** exempt; they are prunable by autoclose like
+  any other branch.
+- **Merging past a pending `renovate/stability-days` check needs all three conditions, and defaults to
+  HOLD (item #298).** Branch protection treats the check as advisory, so the forge permits merging past
+  it — this rule says when that is acceptable: (1) the wait *cannot* satisfy it (the pending state is
+  structural — something resets the clock faster than it can run down — not temporal, where waiting
+  works); (2) the posture has been measured first with the gate's own criteria and recorded on the PR
+  (images: the `--severity CRITICAL --ignore-unfixed` recipe in
+  [infra-image-scanning](infra-image-scanning.md); packages: the SAST/audit gates on the PR); and (3)
+  the update has security value now — it clears a live finding or unblocks a red gate on `main`.
+  Impatience does not qualify. Use a **two-dot** diff (`git diff main branch`, not `git diff
+  main...branch`) to see what a PR would still change — the three-dot form is against the merge base and
+  lists changes `main` already has by another route.
+- **Autoclose needs every dependency in a group satisfied — a hand-carry that is one version short does
+  not close the PR, it silently shrinks or rebases it instead.** `finalize/prune.js` only ever considers
+  a branch for the `- autoclosed` path once every upgrade in it is satisfied on `main`; a single
+  unsatisfied member keeps the branch alive. Measured on PR #557 (2026-09-26): a hand-carry landed six
+  of seven images at the exact digests proposed but left `ollama/ollama` one patch short with no
+  recorded rationale, so the next dispatch **rebased** #557 into a fresh one-line PR instead of closing
+  it. Verify a predicted autoclose with `git merge-tree --write-tree main <branch>` — a residual conflict
+  names exactly the lines that still disagree — never by trusting a commit message's claim about its own
+  content.
+- **Clearing a conflicted Renovate PR does not have to wait for Friday.** `updateNotScheduled` (default
+  `true`) gates **branch creation** only; `update/branch/index.js` bails on it solely there. An
+  out-of-window run still *updates* a branch that already carries an open PR, and with `rebaseWhen:
+  "conflicted"` a conflicted branch regenerates from scratch on that same out-of-window run. A
+  `rebase-branch=` tick is still the deterministic route (it leaves a consumed-tick trace to read), but
+  the window is not the obstacle it looks like.
 
 ## Dashboard checkbox reference (item #29)
 
@@ -308,133 +171,163 @@ close it — ticking a checkbox is the one sanctioned interaction.
 | Other Branches | `other-branch=` | forces a PR for a branch that has none |
 | Repository Problems | — | **read this** — Renovate reporting its own errors; the toolchain-missing warning appears here |
 
-A tick is a one-character edit. Read the body immediately before writing, assert the target checkbox
-appears exactly once and is untenanted, and assert the resulting body differs by exactly the number
-of characters you intended.
+**Re-read the dashboard immediately before ticking — section and checkbox names change between runs.**
+The same update has moved from `unlimit-branch=` under Rate-Limited to `unschedule-branch=` under
+Awaiting Schedule to `other-branch=` under Other Branches across three runs in one day. A tick is a
+one-character edit: read the body first, assert the target checkbox appears exactly once and is
+untenanted, and assert the resulting body differs by exactly the number of characters intended.
 
 ## Pinned toolchains (item #307)
 
-Item #303's principle restated: a floating reference means no version, no classification, and no
-reproducibility; a pin with nothing maintaining it trades a floating reference for a rotting one.
-Every pin below is exact, the same at every site, and tracked by something that will move it.
+A floating reference means no version, no classification, no reproducibility; a pin with nothing
+maintaining it just trades a floating reference for a rotting one. Every pin below is exact, the same
+at every site, and tracked by something that will move it.
 
 | tool | the pin lives in | how Renovate sees it | grouped? |
 | --- | --- | --- | --- |
-| **Rust** | `rust-toolchain.toml` (`channel`) + devcontainer `--default-toolchain` arg | built-in `rust-toolchain` manager + a customManager for the devcontainer half (same depName and datasource — one dependency, not two) | **yes** — `rust toolchain` |
+| **Rust** | `rust-toolchain.toml` (`channel`) + devcontainer `--default-toolchain` arg | built-in `rust-toolchain` manager + a customManager for the devcontainer half (same depName/datasource) | yes — `rust toolchain` |
 | **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | customManager, `pypi` | no |
-| **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image (`cargo-audit@X`) | customManager, `crate` | no |
-| **python** (the interpreter minor) | `agents/movie-assistant/.python-version` (3.14) — the images are held to it by a docker `allowedVersions` ceiling derived from that pin (`<3.15`) | **1 pin + 8 image refs + 4 `requires-python` floors + 4 lockfiles** — pyenv and docker emit the **same depName AND the same datasource**, so `docker base images` used to claim the whole thing (and did, on PR #362); pep621 floors ride the *python-version* datasource and are **out** of the group; locks ride `lockFileMaintenance`; the guard derives the ceiling from the pin and fails when they disagree | **yes** — `python toolchain` (feature 067, item #366) |
-| **uv** | one version string repeated at every site (3 install-script URLs + 5 `setup-uv` inputs + 4 image tags) | customManager (`github-releases`) for script/action shapes; built-in docker manager for image tags | **yes** — `uv pin` |
+| **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image | customManager, `crate` | no |
+| **python** (interpreter minor) | `agents/movie-assistant/.python-version` — docker `allowedVersions` ceiling is derived from it | 1 pin + 8 image refs share depName/datasource with pyenv; `requires-python` floors and 4 lockfiles ride other paths | yes — `python toolchain` (item #366) |
+| **uv** | one version string repeated at every site (3 install-script URLs + 5 `setup-uv` inputs + 4 image tags) | customManager (`github-releases`) for script/action shapes; built-in docker manager for image tags | yes — `uv pin` |
 
-**Grouping rule**: a group is needed when a *second* manager sees the other half of the same
-dependency. Trivy covers two files with one depName and has no group — one dependency, one branch.
-Rust and uv each need one because the built-in manager claims a half under a different depName.
-**Python's reason is different**: pyenv and docker emit the same depName *and* datasource, so `docker
-base images` claimed both halves already — but it put them in the wrong PR (PR #362 sent the
-interpreter minor into an infra-images title). The `python toolchain` group fixes the *destination*,
-not the drift.
+**Rust: the devcontainer needs an image rebuild after any toolchain bump.** `cargo`, `rustc`, and
+`nx test mc-service` fail in the dev container immediately after a bump lands, because rustup keys
+toolchains **by name** — the image installs one named `stable-…`, and a file naming an exact version
+asks for a different toolchain, even though the underlying compiler bytes are identical — and
+`static.rust-lang.org` is not on the dev container's egress allowlist, so the resulting fetch cannot
+succeed. The fix ships automatically: the same Renovate `rust toolchain` PR moves `rust-toolchain.toml`
+**and** `.devcontainer/toolchain.Dockerfile` together (that is what the grouping rule is for), and
+`devcontainer-image.yml` is path-triggered on the Dockerfile, so merging the PR rebuilds the image with
+a matching toolchain name. **The only manual step is pulling the rebuilt image.** CI is unaffected — it
+installs rustup fresh with `--default-toolchain none` on a runner with open egress.
 
-### Rust: the devcontainer must be rebuilt after a toolchain bump
+**Python: the `python toolchain` rule's POSITION in `packageRules` is load-bearing.** It must sit
+**after** `docker base images` and **before** `docker digest pins`. Measured across local dry-run
+lookups: placed after `docker digest pins`, all eight digest refreshes silently migrate onto
+`renovate/python-toolchain`, sharing a branch and upgrade key with the eight minor updates — the
+`#308/#350` silent-drop shape, which left the python base-image digest never refreshing. The
+`requires-python` floors (`>=3.13`) are deliberately excluded from the group: they are compatibility
+ranges the code already supports, not deployment pins, and joining them would turn a range into a
+decision. A guard test asserts both the ordering and the exclusion.
 
-All three workflows install rustup with `--default-toolchain none`. The first `cargo` call inside
-the repository resolves the channel and its components from `rust-toolchain.toml`.
+**uv: one version string, one source of truth, deliberately not a shared file.** The string is
+repeated at every site (install-script URL path, five `setup-uv` inputs each marked with a
+`# uv-version` comment so the manager's matchString claims only that key, and four image tags), held
+together by one customManager plus the `uv pin` packageRule, and asserted equal across every site by
+`renovate-workflow.guard.test.mjs`. It is not a shared file because `astral-sh/setup-uv`'s `version:`
+input is an Actions expression and cannot read a repository file — a file would leave the five action
+sites unpinned, reproducing the exact drift the pin exists to prevent.
 
-> ⛔ **A Rust bump needs the devcontainer image REBUILT before local `cargo` works again — and
-> until it is, `cargo`/`rustc`/`nx test mc-service` FAIL in the dev container.** This is inherent
-> to pinning an exact version, not to which version was chosen. Measured 2026-08-30, immediately
-> after adding the file:
->
-> ```
-> $ rustup show active-toolchain
-> info: syncing channel updates for 1.98.0-x86_64-unknown-linux-gnu
-> error: could not download … https://static.rust-lang.org/dist/channel-rust-1.98.0.toml.sha256
->        dns error: No address associated with hostname
-> ```
->
-> Two facts combine. **rustup keys toolchains by NAME**: the image installs one called
-> `stable-x86_64-unknown-linux-gnu`, and a file naming `1.98.0` asks for a *different* toolchain —
-> so rustup tries to fetch it even when the bytes on disk are the same compiler. And
-> **`static.rust-lang.org` is not on the dev container's egress allowlist**, so that fetch cannot
-> succeed.
->
-> The fix is automatic: the Renovate `rust toolchain` PR moves `rust-toolchain.toml` **and**
-> `.devcontainer/toolchain.Dockerfile` together — that is what the grouping rule is for — and
-> `devcontainer-image.yml` is path-triggered on `.devcontainer/toolchain.Dockerfile`, so merging
-> one rebuilds the image with a toolchain named `1.98.0`, which the file then resolves locally with
-> no download at all. **The only manual step is pulling the rebuilt image.** CI is unaffected
-> throughout: it installs rustup fresh with `--default-toolchain none` on a runner with open egress.
+## Silent failure modes
 
-### python toolchain: rule position is load-bearing
+None of these produce a red build or a searchable error. They produce absence, and absence reads as
+"nothing to do."
 
-> ⛔ **The `python toolchain` rule's POSITION in `packageRules` is load-bearing.** It must sit **after**
-> `docker base images` and **before** `docker digest pins`. Measured 2026-09-07 across three local
-> `RENOVATE_DRY_RUN=lookup` runs differing only in that rule: placed *after* `docker digest pins`, all
-> eight digest refreshes migrate off `renovate/docker-digest-pins` (branch tally 37 → 29) onto
-> `renovate/python-toolchain` (9 → 17), sharing a branch and the
-> `${packageFile}:${depName}:${currentValue}` key with the eight minor updates — the #308/#350 silent
-> drop, which left the python base image digest never refreshing at all. The rule's neighbours say
-> "ordered last", meaning last among the *grouping* rules; both also precede `docker digest pins`.
-> `renovate-workflow.guard.test.mjs` asserts the digest track still resolves to `docker digest pins`,
-> so a reorder reddens the gate rather than going quiet — nothing else would catch it.
+- **A channel whose toolchain is missing dies silently.** Renovate shells out via `execa` to
+  regenerate a lockfile; if the binary is not on PATH, `execa` rejects and Renovate suppresses it to one
+  `WARN: execa promise rejection suppressed` line under Repository Problems — no PR, ever. Measured
+  2026-08-28 (item #218): the `pep621` channel created nothing for weeks until `uv` was added to
+  `renovate.yml`'s toolchain steps. Rule out "nothing to refresh" by running the tool by hand
+  (`uv lock --upgrade --dry-run`, `cargo update --dry-run`) before believing a channel is idle.
+- **The health digest used to read "Healthy" from the wrong signal, twice (items #485, #563, now
+  folded together).** It originally read only the advisory `renovate/stability-days` column, which
+  missed both red **required** PRs (2026-09-04) and a red main CVE sweep (2026-09-18: the digest posted
+  Healthy while `main` had been failing the weekly sweep for five hours and PR #478 was unmergeable on
+  exactly that failure). It now also checks branch protection for any open Renovate PR blocked by a
+  required context, and the CVE posture of `main`. A second defect (#563) then surfaced: it read only
+  the newest **scheduled** sweep run, so a fix that merged and passed on `main` between crons still read
+  as red for up to six days. It now reads the newest run of that workflow on `main` by schedule **or**
+  push, names which event it read, and uses `prettyref` (not `head_branch`, which is `null` on every run
+  this build returns) as the branch discriminator so a red push run on a Renovate branch is never
+  offered as `main`'s posture.
+- **The release-age cooldown does not cover transitives dragged in by a lockfile regen.**
+  `minimumReleaseAge: 3 days` gates the package Renovate proposes, not what pnpm 11 independently
+  verifies at install. Measured on PR #263: a compliant dependency bump resolved a transitive published
+  1.7 hours earlier and reddened six required contexts at `pnpm install`, none about the actual change.
+  **Handling: wait** — the transitive ages past the cutoff and a re-run passes. **Decided (item #271):
+  this friction is accepted, not mitigated** — it is infrequent, fails loudly and safely, and is a
+  two-minute diagnosis with this runbook.
+- **Extraction is not grouping.** A `customManagers` entry makes Renovate *see* a second copy of a
+  version; it does not make both copies move in one PR. Paid for three times: nx, the Playwright image
+  tag, and the pnpm/Dockerfile pins — each needed its own `packageRule` matching both managers, ordered
+  after the broad rules. The guard test asserts the *resolved* group for each pair, since a rule that
+  merely mentions the package passes a weaker check.
+- **A pinDigest colliding with a version update on the same branch is DROPPED, silently (item #308,
+  widened by #350).** `branchify.js` de-duplicates upgrades per branch on
+  `${packageFile}:${depName}:${currentValue}`; a second update for that key with a different `newValue`
+  is dropped outright, at INFO, with no dashboard trace. Every docker update shared one branch, so a
+  version bump and a digest pin of the same image collided and the pin lost. Fixed with a separate
+  `docker digest pins` packageRule scoped to `pinDigest` — then widened to `["pinDigest", "digest"]`
+  once a routine `digest` **refresh** was found colliding the same way (a refresh always shares its key
+  with any version update of the same image, so it needs the same separate namespace as the initial
+  pin).
+- **A release with no `releaseTimestamp` is pending FOR EVER under any cooldown, and a mixed group
+  drops it silently.** `minimumReleaseAgeBehaviour` defaults to `timestamp-required`; the docker
+  datasource supplies a real timestamp only for Docker Hub, so every ghcr.io/quay.io tag and every
+  `pinDigest` is permanently pending under a cooldown. When a group mixes a non-pending half with a
+  pending one, Renovate ships the ready half and silently strands the rest every run. **Fixed for `uv
+  pin` via `minimumReleaseAge: null`** on the rule that groups both halves; **fixed for ghcr.io/quay.io
+  generally via `minimumReleaseAgeBehaviour: "timestamp-optional"`** (items #349/#350). **Docker Hub
+  deliberately keeps `timestamp-required`**, since its timestamps are real and widening the rule there
+  would silently disable the cooldown for the one registry it actually works on.
+- **Docker Hub's anonymous tag API 403s from page 11, and one 403 discards every timestamp for that
+  image.** Renovate's default `dockerMaxPages` (20) reaches page 11 on any image with enough tags on a
+  cold cache, gets a 403, and the entire timestamped result is discarded in favor of the (timestamp-less)
+  registry tag list — permanent "Pending Status Checks" that reads exactly like a cooldown that never
+  elapses. **Fixed by capping `RENOVATE_DOCKER_MAX_PAGES: '10'`** on the Run Renovate step (`dockerMaxPages`
+  is `globalOnly`, so it cannot live in `renovate.json`; a guard test asserts ≤ 10). **Reproduction trap:**
+  Renovate keeps a 30-minute package cache — a local re-check right after a failed fetch can serve the
+  stale failure from cache and hide the fix; point `RENOVATE_CACHE_DIR` at a fresh directory for any
+  re-measurement.
+- **A DIGEST-class update ages against the wrong timestamp entirely (item #412).** `pinDigest` and
+  `digest` updates are aged against `newestMatchingVersionTimestamp` — the timestamp of the newest
+  release matching the *current* value from the **version** lookup — not the tag's own
+  `tag_last_pushed`. Images with tags far outside the newest-1000-tag window `dockerMaxPages` allows, or
+  tags that are not versioned releases at all, never get a timestamp from that lookup and so never get
+  their digest refreshed. Diagnose by reading the resolved `minimumReleaseAgeBehaviour` in a debug run's
+  logged object, not by counting `no releaseTimestamp to age against` lines — that line fires under
+  both `timestamp-required` and `timestamp-optional` and says only that a timestamp was absent, not that
+  anything stalled.
+- **A manager that matches no FILES is indistinguishable from one with no work (item #412).**
+  `docker:pinDigests` sat in `extends` while a family of compose files went un-pinned for a year, because
+  the docker-compose manager's basename regex requires the file to start with `compose` or
+  `docker-compose` — this repository's `<thing>.compose.yaml` files never matched. Diagnosable by
+  grepping a debug run for a known image reference from that file: zero hits means the file was never
+  seen, which is a different question from "why no update." Fixed by adding a top-level `docker-compose`
+  key, not by renaming the files (a rename just moves the trap).
+- **A packageRule can target packages that NOTHING EXTRACTS (item #560).** A rule can resolve cleanly
+  and its guard test can pass against a synthetic dependency while the rule proves nothing, because no
+  customManager exists to feed it real data — the minio `MINIO_TAG`/`MC_TAG` case sat unbumped for a
+  year with a green guard the whole time, because the guard asserted the rule's resolution, not whether
+  Renovate had ever extracted the dependency. The fix is to read the Dependency Dashboard's *Detected
+  Dependencies* counts, not the config, and a guard needs to assert visibility, not configuration.
+- **`cmd1 && cmd2` under `bash -e` hides the second command's failure-to-run (item #562).** A step body
+  of two gate commands reports one outcome; if the first throws, `bash -e` never runs the second, and
+  that looks identical to "both ran and found nothing." This hid an entire expiry-check tier for two
+  weeks. Reproduce a CI step exactly (`bash -e -c 'cmd1 && cmd2'`), not each command in isolation, and
+  test against a clean checkout — gitignored local state can mask the defect that only a fresh checkout
+  exposes.
 
-**The `requires-python` floors are deliberately NOT in the group.** `>=3.13` is a range, not a pin,
-and it already admits 3.14: it states what the code *supports*, and joining it to the group would
-turn that into a deployment decision. It is excluded by the datasource difference alone, which is
-exactly why the guard asserts the exclusion — a rule that excludes something by accident is one edit
-to `matchDatasources` away from not excluding it.
+## The config validator — a different failure class than the guard test
 
-**Does an interpreter minor need the four `uv.lock` files regenerated? No — and no check needs
-adding.** A uv lock is universal across its `requires-python` range, and that range already admits
-the new minor, so the existing lock resolves unchanged. The check that fails if the interpreter and
-the locks ever disagree already runs: `uv sync --frozen --no-dev` inside all four image builds via
-`scripts/agent-stack.mjs` under `pnpm nx up-agents-prod` in `app-ci`. Verified 2026-09-07 on the
-3.13 → 3.14 move: all four images built cleanly. Do not check this with `docker build -q` — it
-suppresses output and leaves exit 0 as the only evidence, unable to distinguish "uv resolved N
-packages" from "a cached layer replayed". Use `--progress=plain`, and `--no-cache` when layers are
-warm.
+`renovate-config-validator` catches unknown or renamed keys — the class no guard test can, because
+nothing has fired yet to enumerate. It only catches that class with **both** `--strict` and
+`--no-global`: without `--no-global` the file validates as a *global self-hosted* config (the wrong
+shape entirely), and without `--strict` a needed migration is a warning, exit 0, on precisely the class
+the check exists to catch. It runs in two places on the same `renovate@44` major the live run uses: a
+required, unconditional job in `guardrails.yml` on every `renovate.json` edit, and a pre-run step in
+`renovate.yml` that catches a key deprecated by a minor bump between Friday windows when nothing in the
+repo changed. It does not replace the guard test — the two catch different failure classes: the
+validator catches a key Renovate does not know at all; the guard test catches a key Renovate knows but
+ignores depending on where it is written (for example, `prPriority` set inside `lockFileMaintenance`
+instead of at the packageRule level).
 
-### uv: one version string, many sites
+## Related
 
-uv's single source of truth is **one version string, repeated at every site**, held together by one
-Renovate customManager plus the `uv pin` packageRule, and asserted equal across every site by
-`renovate-workflow.guard.test.mjs`. It is deliberately not a file that every site reads — `astral-sh/setup-uv`'s
-`version:` input is an Actions expression and cannot read a repository file, so a file would leave
-the five action sites unpinned. The install-script URL carries the version in its path
-(`https://astral.sh/uv/<version>/install.sh`), which also stops fetching the moving script. Each
-`setup-uv` input carries a `# uv-version` marker so the manager's matchString does not claim any
-other `version:` key added to those workflows later.
-
-## Accepted residuals (decided, not overlooked)
-
-Recorded from the 2026-08-30 latent-issue audit so the next reader knows each was seen and decided,
-rather than rediscovering it as a suspected defect.
-
-- **`engines.node: ">=22.13"` is a floor, not a pin, and it stays one.** Every pin runs 24.x; the
-  floor states compatibility, not reality. `check-toolchain-consistency.mjs` checks satisfaction,
-  deliberately. Raise the floor only when a tool requires it.
-- **Node rides two Renovate groups.** Workflow `node-version` entries ride `ci actions`
-  (github-actions manager); Dockerfile `FROM node` rides `docker base images`. A Node bump can
-  arrive as two PRs, and the pins already differ. Accepted **while the gate floor-checks** — none of
-  this can merge unsafe. If Node drift ever bites, the fix is the nx/playwright/pnpm pattern: one
-  group, one guard.
-- **`runs-on: ubuntu-latest` is extracted** by the github-runners manager (15 refs). On act_runner
-  the label maps to a runner-side container and a "bump" would be meaningless — if such a proposal
-  appears, close it as not applicable (this is not a `lockFileMaintenance` PR; the hand-close rule
-  marks only that one label rejected, which is the intent here).
-- **`npx --yes renovate@44` is major-pinned and Renovate cannot see it** — documented in
-  `renovate.yml` as a deliberate residual with its own bump procedure.
-- **`curl https://sh.rustup.rs | sh` remains an unversioned script piped to sh**, in three workflows
-  and the toolchain image. This is item #307's criterion 5 met for uv and **not** met for rustup,
-  deliberately. What that script installs is `rustup` (a bootstrapper), and the thing that decides
-  which compiler runs — the toolchain — is now pinned by `rust-toolchain.toml`, so a change in
-  rustup cannot change the compiler. The pinnable alternatives both cost more than they buy: the
-  archive binary hard-codes the architecture (breaks a non-amd64 devcontainer build); the archive
-  script path could not be verified from the dev container (`static.rust-lang.org` is not on the
-  egress allowlist). Revisit only if rustup itself is ever implicated.
-- **`backend/mc-service/Dockerfile` still builds `FROM rust:alpine3.21@sha256:…`** — a version-less
-  tag, so Renovate can only churn its digest and can never propose a classified update. Re-tagging
-  it is a change under `backend/`, which is SDD-gated, so it is an accepted divergence recorded in
-  `rust-toolchain.toml` and in the `rust toolchain` packageRule (item #307, criterion 1). A guard
-  test asserts the toolchain group does **not** claim it — the failure that would matter is Renovate
-  proposing a Rust release number as a docker tag.
-- **`renovate-config-validator` catches the unknown-key class that the guard test cannot — but only with both `--strict --no-global` flags.** Measured 2026-08-30 against this repo's own `renovate.json` on renovate@44.52.0: without `--no-global` the file is validated as a *global self-hosted* config (not the repo config Renovate actually reads), and without `--strict` a renamed key is a warning not a failure — exit 0 on precisely the class the check exists to catch. Since item #309 the validator runs in two places, both on renovate@44: (1) `guardrails/renovate-config` in `.forgejo/workflows/guardrails.yml` — required, unconditional, catches an edit to `renovate.json` before it merges; (2) a step in `renovate.yml` before `Run Renovate` — catches a key deprecated by a minor bump between Friday windows when nothing in the repo changed. It is deliberately NOT path-gated: a cold run measured 27 s; a path filter buys seconds and costs the guarantee that a green board means the validator ran. The guard test (`renovate-workflow.guard.test.mjs`) asserts the job carries no `if:` and no `needs:`, and that all three `renovate@44` references agree. The validator does not replace the guard test — the guard test catches a key Renovate knows but ignores depending on where it is written (the `prPriority`-inside-`lockFileMaintenance` case).
+- [CI self-serve diagnostics](ci-diagnostics.md) — reading a CI failure without log access
+- [The agent-driven backlog](backlog.md) — item #29 and the `status/bot-managed` dashboard convention
+- [Infra image scanning](infra-image-scanning.md) — the weekly CVE sweep whose timing this page's
+  scheduling gotchas are built around, and the scan recipe used to satisfy stability-days criterion 2
+- [Devcontainer sandbox](devcontainer-sandbox.md) — the egress allowlist that governs whether a local
+  Renovate lookup can see Docker Hub timestamps at all

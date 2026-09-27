@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:158856f7ca724f3f12e58e46d199d8defcbfe36e23006388505aacad490788ab",
+  "claims": [
+    {
+      "id": "claim_94a0d6be0c1a4e3bba57983d05c67f77",
+      "statement": "Renovate's four channels rank by prPriority within the single Friday window: security (vulnerabilityAlerts + OSV) is schedule-exempt and unbudgeted on the nightly 0 3 * * * cron; lockFileMaintenance (pnpm, cargo-deps, python-deps) carries prPriority 5; docker base images carries prPriority 3; every other routine packageRule defaults to prPriority 0 — and every group sets automerge: false so nothing merges without review.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml#L32-L46",
+          "version": "repo-lines-v1:sha256:d07f1a54ea996a8c83976ca1b820740f9cc7efdf663ee59c0f3bd334af38960f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWRjOTlkNzkwNGMzMWMwMmU0N2NiYzg5OTA5Y2VhMTViODkwMTE3NDVkOGJjMThhMTY1ZThhNTM3ODc1MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYmIwZjlkZmYyMDZjMDhhMTQ1YWY3NjEzNDJlN2EzZWEyN2ZiNDJjYTJlY2Q5NDgxZGIzNjVhMGQ5YjJmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MThmZTE2NzE0YjY2MTQzZTBhYzA1YTM3NjcyMTk3NzRiYWU3ZTkxMDFhYWI0NTJmYjk2MzkxOTdkMTc5NjMifQ"
+        },
+        {
+          "resource": "repo://renovate.json#L1106-L1115",
+          "version": "repo-lines-v1:sha256:c0272db3563b8fdc8d1eb3777fafb74eade9d4a6252f32bf687ac6d27af9dffe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmOGY1MTdmYzIxNWU3OWIzY2RjOTNlOTQ3NDBiMDEyNzA5ZTBlMmJjOWMwYWQ4ZGFlNzdhZjMxZjNiNWJlNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzYzVlMWE2NWI1ZjM0M2VlNDIyYjk2MzIxMmFlNjcxYjY3NWJjOTg5ZjExYTJmMDgzZTQxYjBmMzRkYzY0M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZGM4ZWIxYWFkOTBhOTNkZGE4YjUyNWU0NThhNWRhYTRlOTBhNTBmYjk1ZTYzOWRjOTQ0MjFhZDg5MWJkNzIifQ"
+        },
+        {
+          "resource": "repo://renovate.json#L441-L450",
+          "version": "repo-lines-v1:sha256:5f8106ac8e1e6c69cd9f1c0b974adce084fc29777cf8fb1d79ec5083fa63db81:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZGYyNzM3MDg2MWYzYjMzMGFiYjkyZDc3ODE4ZjMxYjNiYzQ1ZGNiN2JjZmQ4NzA4YmEwZjg1NTEwODM1MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YmMxZGU2NzE2ZWZmZjk2MjkzN2E5ZjljYjU0MTRmZDY5ZDBjMzNiYTYxMTE0NTU3ODg1YTdlMzljNWIzZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0ZTRjZTJjMTMyOWJlYjQzYjk1ODQ4Nzc0MzU5MjMxZmUzZWY1ZTM1N2QzYmU3MjU4MWU4ZWVlZTU2ODVjOTkifQ"
+        },
+        {
+          "resource": "repo://renovate.json#L586-L595",
+          "version": "repo-lines-v1:sha256:761e4b100d9a5915ff3e86bf7f32172ee86184f585a3f357e487bc79ddeeab25:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MWUyNDA5NjM3NTk0NGQyNDUwOWNhMDY5Y2I3ZDJmMjNlNTVmNDI3MzIyN2U5YjIyNzk5MDBiYzMzZGY3NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiMGY5NTM5MmNiODhiNTk3YjgyZDg2ZDU5NGMyODE5NjQ4ZDI3MmFlZDhhOGFlZWZiMzA4NmEzN2ZlOGFmOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4NTM1NzhjMWY0YzEyY2Y2NjZjY2Y2OWQ2ZDJhZTA0ZTJjYThmOGZkZjgzZDcwZWZmYmUzZTA3OWQyNzI0NWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cbafc350ce384b609f6c1b3d75c5c485",
+      "statement": "The weekly infra-image-scan CVE sweep is scheduled at 0 4 * * 5, three hours before renovate.yml's Friday window cron at 0 7 * * 5, deliberately, so that main's CVE posture is known before Renovate opens the PRs the sweep would otherwise need to gate retroactively; a guard test asserts the sweep cron stays strictly earlier than every Renovate window cron.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L26-L61",
+          "version": "repo-lines-v1:sha256:2d4be505dde47854d83a60e523195cab904d2097e736812e8babe6efe884d28d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZWFlMDI0MWMxZTIxODcyM2E2ODk3ZTc1MDY2ZDgzZGZmMmIyNDMwMWI2MWNkZjg5NDk3ZWRkZmY3OGI0M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyNGQ4NTkyYzE3NDFhMmI2OGE2NjhlZWZmMWQzNTE5ZTYzN2JjMTBlOTY1OGIwNWUzMGNhOWNjNTJiMzc3NmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwOTEzMjc2MTViMWE2NDQyODIzYmViOTA0MmQzNmJjNmYyY2NjMjFmY2I1NGU4ZjM4MjY0YTg2YTM1MzAxMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MGZjMGFiOGE0ODNlMzliZmFhODg5NWExYTk2YjE0YzZmMWFmNjA1N2VkNjIwM2I0N2VhMWJmM2YzNjNmZmMifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml#L32-L46",
+          "version": "repo-lines-v1:sha256:d07f1a54ea996a8c83976ca1b820740f9cc7efdf663ee59c0f3bd334af38960f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWRjOTlkNzkwNGMzMWMwMmU0N2NiYzg5OTA5Y2VhMTViODkwMTE3NDVkOGJjMThhMTY1ZThhNTM3ODc1MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYmIwZjlkZmYyMDZjMDhhMTQ1YWY3NjEzNDJlN2EzZWEyN2ZiNDJjYTJlY2Q5NDgxZGIzNjVhMGQ5YjJmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MThmZTE2NzE0YjY2MTQzZTBhYzA1YTM3NjcyMTk3NzRiYWU3ZTkxMDFhYWI0NTJmYjk2MzkxOTdkMTc5NjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe90d1f441b24152bda0fd909268373a",
+      "statement": "docker base images was raised to prPriority: 3 (item #486) because with prHourlyLimit: 4 and one in-window run a week, the three lockFileMaintenance channels at prPriority 5 already consume three of the four weekly PR slots by construction, previously starving docker base images (the channel carrying the same security-relevant base-image bumps the weekly CVE sweep blocks merges over) of a window slot for roughly six weeks; any later packageRules entry that takes over its groupName must explicitly reset prPriority to 0 or it silently inherits 3, and a guard test enforces this.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L1100-L1115",
+          "version": "repo-lines-v1:sha256:ee84a4101d499d5023141002155aa5c0ca4f57ba72c815b661418a521514c095:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmI0ZmJlMDg1YzViZDQzYzBkMWI4MDNjMjUyODBjM2UyYmRiYmI4MWRmNWRjYThkMjEzNDhjNmEwMjgwYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkZWY1MDUzYTUwNWY3OTc3MTU0MmM1Y2M4N2U1OWEyZGU1NDQ4MzljMDZiYjRhMDMxZDUwYjY0NWFiYzZkNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZGM4ZWIxYWFkOTBhOTNkZGE4YjUyNWU0NThhNWRhYTRlOTBhNTBmYjk1ZTYzOWRjOTQ0MjFhZDg5MWJkNzIifQ"
+        },
+        {
+          "resource": "repo://renovate.json#L580-L595",
+          "version": "repo-lines-v1:sha256:92e8665dfd0455423ea521e0cd02b785dd2a0d5773b7805bda7a134b7192173d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYWI1Y2Q2OTgwNjU4ODg3YmU1MGQ0ZmQ4OThiZmUwM2JlYTI3MzQ3Nzc1NTg2ZTE2OGZjMTg2NzliMDAzM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNDE4YTczYWU3Y2UzYzkxNjE5NjVjYmE3MDBhNzdhMjdjNjcwYjgyYzMzNjlkYjI5OTIxZGZmYTA2NmE3NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4NTM1NzhjMWY0YzEyY2Y2NjZjY2Y2OWQ2ZDJhZTA0ZTJjYThmOGZkZjgzZDcwZWZmYmUzZTA3OWQyNzI0NWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_433a5aea56f345d8b2bead4165aaad37",
+      "statement": "Renovate's workflow_dispatch dryRun input defaults to true, and the run's job-level env resolves RENOVATE_DRY_RUN via a GitHub Actions expression evaluated once at the job level so the Publish-dispatch-mode status step and the Renovate run step read an identical resolved value rather than risking drift between two separate evaluations.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml#L47-L84",
+          "version": "repo-lines-v1:sha256:f0d5b368e9aa04daf7ceca53148c096a07d7847a659f9115e5552e6b46dd87f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMmZhNzNmMDcwNDg5ZDk3MjRhMDI5ZGZiNTAyYWEwODg1MDdkMDg1NzliYmJjYzk0ZWQ5MzVjMWEwNTMzMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5OTEwYmU2OTYzOWUzNDA1MDNiYzQwMmMxYmFiZDIyZTFjMWVjYzZmZGQwYmFlMDRiMDU4NDcwYmM5ZTdhNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2OGU1NDQyMWI0NWZmMDc5N2JjYmI5MGYwNGUzMTk1OTU5ZDQyZjJiOTE4MjMwZGUyOTNlMWNjOWNlNWRiNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxODZmYTVhZjkwNWMzNjg4NmUzMWJkZWJiZTAwNWY2NTI2NjI1YjhjNzY0Nzg2N2FmZmE0M2M2ZjJmMDY0MWQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-27T05:24:24.425Z"
+  }
+}
