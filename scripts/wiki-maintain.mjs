@@ -47,6 +47,7 @@ import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
+import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -1320,17 +1321,42 @@ export function generatorCommand() {
  * touch. A value inside double quotes is not re-parsed for `$` or backticks either, so the message
  * arrives byte-for-byte as one argument.
  */
-export function generatorEnv(runMessage, env = process.env) {
+export function generatorEnv(runMessage, env = process.env, { usageLog = null } = {}) {
   if (SHELL_UNSAFE.test(runMessage)) {
     throw new Error('run message contains a shell metacharacter — renderRunMessage must produce one safe line');
   }
-  return { ...env, [RUN_MESSAGE_ENV]: runMessage };
+  // 078 US4: where the usage tap inside the generator writes this invocation's per-call counts.
+  return { ...env, [RUN_MESSAGE_ENV]: runMessage, ...(usageLog ? { WIKI_USAGE_LOG: usageLog } : {}) };
 }
 
-function defaultInvoke(slice, { root }) {
+function defaultInvoke(slice, { root, usageLog = null }) {
   const message = slice.runMessage ?? renderRunMessage(slice);
   const [cmd, ...args] = generatorCommand();
-  return spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message) });
+  return spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog }) });
+}
+
+const PRICE_TABLE = join(REPO_ROOT, 'scripts', 'wiki-provider-prices.json');
+
+/** Provider, model and tier this run resolves to, plus the dated price table — or null if unresolvable. */
+export function defaultUsageContext(env = process.env) {
+  try {
+    const { provider, modelId, tier } = resolveWikiProvider(env);
+    return { provider, model: modelId, tier, prices: JSON.parse(readFileSync(PRICE_TABLE, 'utf8')) };
+  } catch {
+    return null; // priced as "not captured", never guessed
+  }
+}
+
+/** Price one invocation's usage log; any failure to read or price it is NOT_CAPTURED, never zero. */
+function invocationUsage(logPath, usage) {
+  if (!usage) return NOT_CAPTURED;
+  try {
+    const text = existsSync(logPath) ? readFileSync(logPath, 'utf8') : '';
+    return summarizeUsage(text, usage);
+  } catch (err) {
+    console.error(`[wiki-maintain] usage not priced: ${err.message}`);
+    return NOT_CAPTURED;
+  }
 }
 
 /**
@@ -1361,6 +1387,7 @@ export function executeSlices({
   baseCommit = null,
   clock = () => Date.now(),
   now = () => new Date().toISOString(),
+  usage = defaultUsageContext(),
 } = {}) {
   const runRecord = record ?? readRunRecord(root);
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
@@ -1381,6 +1408,7 @@ export function executeSlices({
   let stoppedAtFailureLimit = false;
   let failed = false;
   let consecutive = 0;
+  const usageSummaries = [];
 
   // 078 US2: slices are packed into invocations so the generator's fixed planning pass is paid once
   // per group of areas. Everything carried forward below is expressed in SLICES (the parts), never
@@ -1454,10 +1482,13 @@ export function executeSlices({
     // so that write was now "pre-existing", the stub rewrote the same bytes, nothing new appeared —
     // and the slice passed. A retry must never be able to forgive what the previous attempt did.
     const before = snapshotTree(root);
+    // One usage log per invocation, shared by its retries — a retry's tokens are real spend too.
+    const usageDir = mkdtempSync(join(tmpdir(), 'wiki-usage-'));
+    const usageLog = join(usageDir, 'usage.jsonl');
     for (let attempt = 1; attempt <= attemptsPerSlice; attempt++) {
       attempts = attempt;
       try {
-        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt });
+        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog });
       } catch (err) {
         // A thrown invocation is a real failure — but it is NOT `nothing-to-do` (FR-017).
         invocation = { error: err.message };
@@ -1471,7 +1502,14 @@ export function executeSlices({
       }
     }
 
-    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null });
+    const spent = invocationUsage(usageLog, usage);
+    rmSync(usageDir, { recursive: true, force: true });
+    usageSummaries.push(spent);
+    console.log(spent === NOT_CAPTURED
+      ? `[wiki-maintain] usage ${slice.area}/: not captured`
+      : `[wiki-maintain] usage ${slice.area}/: ${spent.calls} call(s), ${spent.uncached} uncached / ${spent.cached} cached / ${spent.output} output tokens, ~$${spent.estCostUsd} (${spent.provider}${spent.tier ? `/${spent.tier}` : ''}, prices ${spent.priceTable})`);
+
+    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null, usage: spent });
 
     if (!verdict.ok) {
       failed = true;
@@ -1492,6 +1530,7 @@ export function executeSlices({
   }
 
   const outcome = failed ? 'failed' : slices.length === 0 ? 'nothing-to-do' : 'completed';
+  const runUsage = sumUsage(usageSummaries);
 
   // The marker advances on every outcome EXCEPT failure. A budget stop still advances, because the
   // remainder is in the backlog and therefore not lost; a failure must not, because the range it
@@ -1503,11 +1542,13 @@ export function executeSlices({
     lastOutcome: outcome,
     backlog,
     lastRunBudget: { pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget },
+    // 078 US4: estimated from the tap's counts and a dated price table; NOT_CAPTURED, never zero.
+    lastRunUsage: runUsage,
   });
 
   const exitCode = failed ? 1 : stoppedAtBudget || backlog.length > 0 ? 3 : 0;
 
-  return { outcome, exitCode, results, pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget, stoppedAtFailureLimit, backlog, deferred, record: persistedRecord, persisted: true };
+  return { outcome, exitCode, results, pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget, stoppedAtFailureLimit, backlog, deferred, usage: runUsage, record: persistedRecord, persisted: true };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1865,6 +1906,14 @@ function reportRun(result, { json }) {
   }
 
   console.log(`[wiki-maintain] outcome=${result.outcome} pages=${result.pagesWritten} elapsed=${result.elapsedSeconds}s`);
+  if (result.usage !== undefined) {
+    const u = result.usage;
+    console.log(u === NOT_CAPTURED || typeof u !== 'object'
+      ? '[wiki-maintain] run usage: not captured'
+      : `[wiki-maintain] run usage: ~$${u.estCostUsd} over ${u.calls} call(s) in ${u.invocations} invocation(s)` +
+        `${u.invocationsNotCaptured ? ` (${u.invocationsNotCaptured} not captured — a PARTIAL total)` : ''}` +
+        `, ${u.provider}${u.tier ? `/${u.tier}` : ''}, prices ${u.priceTable}`);
+  }
   if (result.stoppedAtBudget) {
     console.log(`[wiki-maintain] stopped at the run budget with ${result.deferred.length} slice(s) outstanding — exit 3, NOT a failure.`);
   }

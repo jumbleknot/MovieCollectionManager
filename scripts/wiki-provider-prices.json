@@ -1,0 +1,13 @@
+{
+  "$comment": "USD per million tokens, used ONLY to ESTIMATE a wiki run's cost in the run record (feature 078 FR-010). Not a bill. Fireworks figures supplied by the operator from the Fireworks console on 2026-09-27; Anthropic figures are Claude Sonnet 5 list prices (5-minute cache writes). Update asOf with every change. Validation: the first two Fireworks probes priced from these figures ($0.178) matched the Fireworks bill ($0.178025) — specs/078-wiki-generator-cost/research.md R0.",
+  "asOf": "2026-09-27",
+  "providers": {
+    "anthropic": {
+      "standard": { "uncached": 2.0, "cached": 0.2, "cacheWrite": 2.5, "output": 10.0 }
+    },
+    "fireworks": {
+      "standard": { "uncached": 0.22, "cached": 0.007, "cacheWrite": 0, "output": 0.66 },
+      "priority": { "uncached": 0.275, "cached": 0.00875, "cacheWrite": 0, "output": 0.825 }
+    }
+  }
+}

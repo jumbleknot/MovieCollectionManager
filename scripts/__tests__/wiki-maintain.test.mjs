@@ -1132,6 +1132,61 @@ test('execute: when one area of a group fails, ONLY that area is carried forward
   }
 });
 
+// ── 078 US4 / FR-010: every run records what it cost ────────────────────────────
+
+const PRICES_FIXTURE = { asOf: '2026-09-27', providers: { fireworks: { standard: { uncached: 0.22, cached: 0.007, cacheWrite: 0, output: 0.66 } } } };
+const USAGE_CTX = { provider: 'fireworks', model: 'm', tier: null, prices: PRICES_FIXTURE };
+
+test('usage: each invocation gets its own log, and the run record carries the priced total', () => {
+  const root = twoAreaRepo();
+  try {
+    const logs = [];
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root), usage: USAGE_CTX,
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])],
+      invoke: (work, ctx) => {
+        logs.push(ctx.usageLog);
+        writeFileSync(ctx.usageLog, `${JSON.stringify({ kind: 'page', status: 200, ms: 10, uncached: 1_000_000, cached: 0, cacheWrite: 0, output: 0, reasoning: 0 })}\n`, { flag: 'a' });
+        writingStub(root, 'invariants', ['one.md'])();
+        writingStub(root, 'gotchas', ['two.md'])();
+        return { status: 0 };
+      },
+    });
+    assert.equal(logs.length, 1);
+    assert.ok(logs[0], 'the invocation was handed a usage log path');
+    assert.equal(result.results[0].usage.calls, 1);
+    assert.equal(result.usage.estCostUsd, 0.22);
+    const rec = mod.readRunRecord(root);
+    assert.equal(rec.lastRunUsage.estCostUsd, 0.22);
+    assert.equal(rec.lastRunUsage.priceTable, '2026-09-27');
+    assert.ok(!existsSync(logs[0]), 'the per-invocation log is temporary');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('usage: a generator that reported nothing is recorded as NOT CAPTURED, never as $0', () => {
+  const root = twoAreaRepo();
+  try {
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root), usage: USAGE_CTX,
+      slices: [sl('invariants', ['one.md'])],
+      invoke: () => { writingStub(root, 'invariants', ['one.md'])(); return { status: 0 }; },
+    });
+    assert.equal(result.results[0].usage, 'not captured');
+    assert.equal(mod.readRunRecord(root).lastRunUsage, 'not captured');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('usage: the real invocation carries the log path to the generator', () => {
+  const env = mod.generatorEnv('a message', { PATH: '/bin' }, { usageLog: '/tmp/x.jsonl' });
+  assert.equal(env.WIKI_USAGE_LOG, '/tmp/x.jsonl');
+  assert.equal(env.WIKI_RUN_MESSAGE, 'a message');
+  assert.equal(mod.generatorEnv('a message', { PATH: '/bin' }).WIKI_USAGE_LOG, undefined);
+});
+
 // ── 078 FR-005: the model is proven callable before any paid work ────────────────
 
 test('preflight: runs once, before the first slice, when there is work', () => {
