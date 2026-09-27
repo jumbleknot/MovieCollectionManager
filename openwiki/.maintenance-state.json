@@ -1,31 +1,97 @@
 {
-  "coveredCommit": "f60d2f4e45c53b0186eba6b8dead4b917e1c84d2",
-  "coveredAt": "2026-09-27T12:36:06.931Z",
-  "lastOutcome": "nothing-to-do",
-  "backlog": [],
+  "coveredCommit": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
+  "coveredAt": "2026-09-27T17:20:55.157Z",
+  "lastOutcome": "completed",
+  "backlog": [
+    {
+      "area": "invariants",
+      "pages": [
+        "secrets-management.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/decisions/ADR-0001-prod-secrets-management.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/secrets-management.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "projects",
+      "pages": [
+        "mc-service.md",
+        "mcp-servers.md",
+        "agent-gateway.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/MCM-Architecture.md; source changed: docs/runbooks/agent-layer.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mc-service.md; openwiki/projects/mcp-servers.md; openwiki/projects/agent-gateway.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "phase-15-operator-checklist.md",
+        "server-setup.md",
+        "android-emulator.md",
+        "backups.md",
+        "dev-environment-setup.md",
+        "devcontainer.md",
+        "e2e-testing.md",
+        "local-dev.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/Phase-15-Operator-Checklist.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/backups.md; source changed: docs/runbooks/dev-environment-setup.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/e2e-testing.md; source changed: docs/runbooks/local-dev.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/phase-15-operator-checklist.md; openwiki/runbooks/server-setup.md; openwiki/runbooks/android-emulator.md; openwiki/runbooks/backups.md; openwiki/runbooks/dev-environment-setup.md; openwiki/runbooks/devcontainer.md; openwiki/runbooks/e2e-testing.md; openwiki/runbooks/local-dev.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "wiki-maintenance.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/wiki-maintenance.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 585,
-    "headCommit": "92ec7c832d2c69c145ab97a62f4d0598031c8437",
-    "markerBefore": "233190ad977f8bfd257e624f6d06bf627e24d892",
+    "number": 591,
+    "headCommit": "bc665328f55c94287edc931442662191a6acc81e",
+    "markerBefore": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
     "slices": [
       {
-        "area": "runbooks",
+        "area": "architecture",
         "pages": [
-          "renovate.md"
+          "system-overview.md",
+          "agent-layer.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/renovate.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/MCM-Architecture.md; source changed: docs/runbooks/agent-layer.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/system-overview.md; openwiki/architecture/agent-layer.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "decisions",
+        "pages": [
+          "adr-0001-prod-secrets-management.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/decisions/ADR-0001-prod-secrets-management.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/decisions/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/decisions/adr-0001-prod-secrets-management.md. The openwiki/decisions/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/decisions/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-27T05:33:03.183Z"
+    "updatedAt": "2026-09-27T17:20:55.561Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
-    "stoppedAtBudget": false
+    "pagesWritten": 8,
+    "elapsedSeconds": 1350,
+    "stoppedAtBudget": true
   }
 }
