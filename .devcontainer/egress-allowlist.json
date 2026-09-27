@@ -28,6 +28,12 @@
       "cdnRotating": false
     },
     {
+      "domain": "api.fireworks.ai",
+      "group": "agent",
+      "reason": "Fireworks AI serverless inference (OpenAI-compatible, base https://api.fireworks.ai/inference/v1) — the OpenWiki generator provider trial of 2026-09-27 (docs/proposals/MCM-LLM-Cost-Analysis-1.md §3 Phase 2), running DeepSeek V4.1 Flash on a US-hosted provider instead of DeepSeek's own API, by operator decision. Model traffic only, authenticated by MCM_FIREWORKS_API_KEY mapped to FIREWORKS_API_KEY at the point of use. The fireworks.ai website (pricing, docs) is a different FQDN and is deliberately NOT covered.",
+      "cdnRotating": false
+    },
+    {
       "domain": "platform.claude.com",
       "group": "agent",
       "reason": "Claude Code SUBSCRIPTION AUTHENTICATION. Signing in with a Claude.ai subscription (rather than an API key) fails with `getaddrinfo ENOTFOUND platform.claude.com` without this — and the failure happens AFTER the browser flow on the host reports success, so it reads as a broken login rather than a blocked host. Measured 2026-08-17. This is the same front-door-vs-second-host split this list documents for registries, now on the auth path: api.anthropic.com is the model API and does not cover sign-in.",
