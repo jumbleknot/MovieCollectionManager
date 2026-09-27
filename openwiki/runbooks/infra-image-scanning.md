@@ -4,7 +4,19 @@ title: Infra-image CVE scanning
 description: Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code, but NOT MinIO which is now built from source and scanned by its own builder) — the coverage gap left by SAST/SCA and the built-image scanners, gated on fixable Critical findings only, and how to verify the weekly allowlist-expiry step actually ran.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
-timestamp: 2026-09-19T18:00:00Z
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-27T01:36:16.018Z
+sources:
+  - id: openwiki-source-c950e0aee079c6db1d918078
+    resource: repo://.forgejo/workflows/minio-image.yml
+  - id: openwiki-source-7c76000f237dd683a4fb0536
+    resource: repo://docs/runbooks/infra-image-scanning.md
+  - id: openwiki-source-8bd5c4ede704298934afbfaa
+    resource: repo://scripts/__tests__/promote-minio-digest.test.mjs
+  - id: openwiki-source-c130384127d992848d2ee4d2
+    resource: repo://scripts/promote-minio-digest.mjs
+generated: { by: "openwiki/0.5.2", at: "2026-09-27T01:36:16.018Z" }
 ---
 
 # Infra-image CVE scanning
@@ -88,6 +100,21 @@ now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`),
   asserting a count of 2. Tests `(fd1)`–`(fd4)` assert the classifier's behaviour directly and do not
   depend on the count. A count of 0 with an empty declared list is passing; a count of 0 where the
   declared list is non-empty is the failure.
+- **Publishing a rebuilt MinIO image is not the same as promoting it into the stacks.** A push that
+  edits the Dockerfile both publishes **and** promotes — `scripts/promote-minio-digest.mjs` runs,
+  repoints every pinned ref it finds in the tree, and opens (or updates) one always-current pull
+  request. The weekly canary publishes **only** — its digest changes every Friday regardless, since
+  the `apk` installs float, so promoting it would mean a no-content PR most weeks. A
+  `workflow_dispatch` run promotes only when its `promote` input is explicitly ticked; the default is
+  false, because dispatch is also how the build is proven still working and that must stay read-only.
+  Two measured traps in the promoter itself: (1) the digest it writes must be resolved from the
+  registry as the **manifest list**, by asking `GET /v2/<ns>/minio/manifests/<tag>` directly — not via
+  `docker buildx imagetools inspect`, which is a **client-side** operation that talks to the registry
+  itself and ignores the daemon's `insecure-registries` config, so it fails over plain HTTP even
+  though `docker push` succeeds in the same job; (2) the count of refs to repoint must come from a
+  **live scan of the tree** (`findRefs()`, which throws rather than reporting an empty promotion), never
+  from a stale count recorded in a spec note — a later feature can add more pinned refs than the note
+  remembers.
 - **MinIO's date-based update types are calendar arithmetic, not semantic versioning.** The regex
   versioning scheme maps year→major, month→minor, day→patch. A January release reports **major** because
   the year advanced, not because anything broke. Do not read the label as a risk signal the way you
