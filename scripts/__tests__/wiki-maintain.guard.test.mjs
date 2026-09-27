@@ -270,6 +270,26 @@ const LANGCHAIN_FALLBACK_TOKENS = 4096;
 // it has been rebuilt (078 T015a), without overwriting the global install other sessions are using.
 const OPENWIKI_ROOT = process.env.OPENWIKI_ROOT ?? '/usr/local/lib/node_modules/openwiki';
 const OPENWIKI_CONSTANTS = `${OPENWIKI_ROOT}/dist/config/constants.js`;
+
+/**
+ * Skip reason when the installed generator is not the PINNED one, else null. Checks that describe the
+ * pinned version's behaviour cannot be judged against a different installed version — and between a
+ * pin bump and the toolchain image rebuild that carries it, every dev container has the old one.
+ * Failing there would break every session's preflight for a reason none of them can fix; the skip
+ * names both versions, so it is never mistaken for a pass. Point OPENWIKI_ROOT at a side install of
+ * the pinned version to run them (078 T015a).
+ */
+function pinMismatch() {
+  let installed;
+  try {
+    installed = JSON.parse(readFileSync(`${OPENWIKI_ROOT}/package.json`, 'utf8')).version;
+  } catch (error) {
+    return `openwiki not installed here (${error.code ?? error.message}) — set OPENWIKI_ROOT to a side install`;
+  }
+  const pinned = generatorInstall(readFileSync(join(REPO_ROOT, '.devcontainer', 'toolchain.Dockerfile'), 'utf8'))?.version;
+  return installed === pinned ? null
+    : `installed openwiki ${installed} is not the pinned ${pinned} — rebuild the toolchain image, or set OPENWIKI_ROOT to a side install of ${pinned}`;
+}
 const LANGCHAIN_CHAT_MODELS = `${OPENWIKI_ROOT}/node_modules/@langchain/anthropic/dist/chat_models.js`;
 const OPENWIKI_AGENT = `${OPENWIKI_ROOT}/dist/agent/index.js`;
 
@@ -408,13 +428,9 @@ test('the explicit output cap reaches the generator for EVERY provider', () => {
 });
 
 test('the installed generator still supports the concurrency range the launcher validates', async (t) => {
-  let source;
-  try {
-    source = readFileSync(OPENWIKI_CONSTANTS, 'utf8');
-  } catch (error) {
-    t.skip(`openwiki not installed here (${error.code ?? error.message}) — set OPENWIKI_ROOT to a side install`);
-    return;
-  }
+  const mismatch = pinMismatch();
+  if (mismatch) { t.skip(mismatch); return; }
+  const source = readFileSync(OPENWIKI_CONSTANTS, 'utf8');
   assert.match(source, /export function resolvePageConcurrency\(/,
     'the installed generator has no resolvePageConcurrency — it predates 0.6.0 and would ignore MCM_WIKI_PAGE_CONCURRENCY');
   const max = source.match(/export const MAX_PAGE_CONCURRENCY = (\d+);/);
@@ -458,13 +474,9 @@ function managedBlock(text) {
 
 for (const [file, fn] of [['AGENTS.md', 'createCodeModeAgentsSnippet'], ['CLAUDE.md', 'createCodeModeClaudeSnippet']]) {
   test(`the committed ${file} OPENWIKI block is byte-identical to what the pinned generator writes`, (t) => {
-    let source;
-    try {
-      source = readFileSync(OPENWIKI_CODE_MODE, 'utf8');
-    } catch (error) {
-      t.skip(`openwiki not installed here (${error.code ?? error.message}) — set OPENWIKI_ROOT to a side install`);
-      return;
-    }
+    const mismatch = pinMismatch();
+    if (mismatch) { t.skip(mismatch); return; }
+    const source = readFileSync(OPENWIKI_CODE_MODE, 'utf8');
     const expected = generatorSnippet(source, fn);
     const actual = managedBlock(readFileSync(join(REPO_ROOT, file), 'utf8'));
     assert.equal(actual, expected,
