@@ -119,3 +119,23 @@ separately as backlog #513 (adopt).
 - The Anthropic cap resolver still lives in `dist/agent/index.js`, where the guard reads it.
 
 _(The budget decision record for FR-008/FR-016 is §R9, written in T028 after T027 measures 0.6.0 at concurrency; the `vars` probe answer is §R10, from T004.)_
+
+## R10 — `${{ vars.* }}` resolves on this forge (T004)
+
+Answered from the repository rather than a scratch workflow: `cd-deploy.yml` and `devcontainer-image.yml`
+already depend on `${{ vars.REGISTRY }}` / `${{ vars.NS }}` and run green, so repository variables resolve.
+An unset variable renders as `''`, which is why `wiki-provider.mjs` treats an empty value as unset (a test
+pins it) instead of rejecting it as malformed.
+
+## R11 — Design corrections found while implementing Merge A
+
+- **`main()` drives `executeSlices` itself**, not through `runMaintenance`. A preflight added only to
+  `runMaintenance` would never have run in CI; the gate is one shared `preflightGate`, and a structural test
+  pins that the CLI path calls it before the proposal branch and before any slice.
+- **Packing re-merged a deliberately split area.** The planner only emits two same-kind slices for one area
+  when the area exceeds the slice cap; packing now never groups two slices of the same area. This also kept
+  every pre-existing budget/resume/failure test valid without modification.
+- **The slice stays the backlog unit** (plan D4 proposed a new `parts` shape plus a back-compat reader). Packing
+  happens at execution instead, so the committed backlog's shape is unchanged and T019 holds by construction.
+- **The usage tap's `tapError` must record the error NAME only**: V8's `JSON.parse` message quotes the text it
+  failed on, i.e. response content (proven RED on the first draft).

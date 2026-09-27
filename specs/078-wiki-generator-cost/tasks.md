@@ -18,6 +18,13 @@ code — a pattern that matches nothing exits 0.
 `FIREWORKS_API_WIKI_MAINTAIN` (before T033); set the repository variable `MCM_WIKI_PROVIDER` if T004 shows `vars`
 resolves on this forge.
 
+## Status (2026-09-27)
+
+Merge A implemented on `078-wiki-generator-cost`: T001 (baseline 86 → 145 passed, 0 skipped), T002, T003,
+T004 (R10), T005–T015d, T016–T022, T024, T025 done; T015e (0.6.0 regression page) and T026 (gates + PR) in
+progress. Deviations from the plan are recorded in research R11 — notably the backlog shape is unchanged,
+so T019 holds by construction. T023 and Phase 6 follow merge.
+
 ---
 
 ## Phase 1 — Setup
