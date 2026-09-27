@@ -104,3 +104,18 @@ Options considered:
 First-time Claims on a page cost ~$0.07 on Sonnet (about a quarter of the page worker, ~11% of the run);
 later refreshes submit only stale/revised/new Claims. Claims cannot be disabled in 0.4.0–0.6.0. Tracked
 separately as backlog #513 (adopt).
+
+## R8 — What `openwiki@0.6.0` changes for this repository (read from the published package)
+
+- **Prompts**: `dist/agent/repository-prompts.js` is byte-identical to 0.5.2 — planner (explore-before-plan) and
+  page-worker instructions, and the Claims guidance, are unchanged. Output shape should therefore match 0.5.2;
+  T0xx verifies on a real run rather than assuming it.
+- **Dependencies**: none added, removed or bumped (`package.json` differs only in `version`). Node engine
+  `>=22.22.0`; the container runs v24.20.0.
+- **New**: `OPENWIKI_PAGE_CONCURRENCY` (default 1, max 8) runs repository page workers in parallel, staggering
+  worker starts by 1 s and holding `/openwiki/quickstart.md` back to run last and alone. Planning is still a single
+  serial pass. With concurrency > 1 the default provider retry count rises to 5.
+- Also new, not used here: wiki workspace linking (`openwiki link`) and retrieval tools for the MCP integration.
+- The Anthropic cap resolver still lives in `dist/agent/index.js`, where the guard reads it.
+
+_(The budget decision record for FR-008/FR-016 is §R9, written in T028 after T027 measures 0.6.0 at concurrency; the `vars` probe answer is §R10, from T004.)_

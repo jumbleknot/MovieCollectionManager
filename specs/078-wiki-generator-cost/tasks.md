@@ -11,7 +11,7 @@ code — a pattern that matches nothing exits 0.
 **Merges** (per `openwiki/process/pull-request-batching.md` — batch by default):
 - **Merge A** (T001–T026): all code, with the default provider still `anthropic`. Behaviour on `main` is
   unchanged except that runs plan fewer times and record usage.
-- **Merge B** (T027–T034): the R8 measurement and decision record, the budget/timeout constants, and the flip of the
+- **Merge B** (T027–T034): the R9 measurement and decision record, the budget/timeout constants, and the flip of the
   CI default to Fireworks.
 
 **Operator actions** (cannot be done from a session): create the Forgejo Actions secret
@@ -44,7 +44,7 @@ allowed set, and no other new secret is.
 ### T004 — Probe whether this Forgejo resolves `${{ vars.* }}`
 **Type**: Research | **Risk**: Low
 Read the forge version's Actions docs / a throwaway workflow on a scratch branch (never `main`). Record the answer
-in research.md §R9. If `vars` does not resolve, D6 uses a literal default in the workflow and the switch becomes a
+in research.md §R10. If `vars` does not resolve, D6 uses a literal default in the workflow and the switch becomes a
 one-line commit.
 
 ---
@@ -133,6 +133,45 @@ env -u MCM_FIREWORKS_API_KEY MCM_WIKI_PROVIDER=fireworks node scripts/wiki-gener
 
 ---
 
+## Phase 2b — US5: generator 0.6.0 and parallel pages (P2)
+
+### T015a — Side-install `openwiki@0.6.0` for local verification
+**Type**: Setup | **Risk**: None
+`npm install -g --prefix <scratchpad>/ow060 openwiki@0.6.0 mermaid jsdom` — never over the container's global
+0.5.2, which other sessions in this container use until the image refreshes. Every later local run and the guard's
+installed-generator assertions select it with `OPENWIKI_ROOT=<prefix>/lib/node_modules/openwiki` and the prefix's
+`bin` first on `PATH`.
+
+### T015b — Test: the pin is 0.6.0 everywhere, and the guard can target a side install
+**Type**: Test | **Risk**: Low | **Spec**: FR-015 | **File**: `wiki-maintain.guard.test.mjs`
+The pin-agreement test expects `0.6.0` in both the toolchain Dockerfile and the workflow; `OPENWIKI_ROOT` from the
+environment overrides the default install path; with it set to the side install, the installed-generator
+assertions run (count them — they must NOT skip) and pass: cap resolver found, `resolvePageConcurrency` exists,
+`MAX_PAGE_CONCURRENCY` is 8.
+**Verify RED**: `node --test --test-name-pattern "pin|installed" scripts/__tests__/wiki-maintain.guard.test.mjs`
+**Expected RED**: the pin assertion reads `0.5.2`.
+
+### T015c — Bump the pins and make the guard's install path overridable
+**Type**: Implementation | **Prerequisite**: T015b RED
+`.devcontainer/toolchain.Dockerfile` and `wiki-maintain.yml` → `openwiki@0.6.0`; guard's `OPENWIKI_ROOT` =
+`process.env.OPENWIKI_ROOT ?? '/usr/local/lib/node_modules/openwiki'`.
+**Verify GREEN**: T015b command with `OPENWIKI_ROOT` set to the side install — pass count includes the
+installed-generator assertions, 0 skipped.
+
+### T015d — Test + implement: page concurrency is configuration, validated before paid work
+**Type**: Test + Implementation | **Spec**: FR-016, US5-AC1 | **File**: `wiki-provider.test.mjs`
+RED first: `MCM_WIKI_PAGE_CONCURRENCY` unset → 1; `4` → 4 and exported as `OPENWIKI_PAGE_CONCURRENCY`; `0`, `9`,
+`2.5`, `x` → throw naming the 1–8 range. Then implement in `wiki-provider.mjs` / `wiki-generate.mjs`.
+**Verify**: `node --test --test-name-pattern "concurrency" scripts/__tests__/wiki-provider.test.mjs`
+
+### T015e — Regression run on 0.6.0 at concurrency 1 (paid, ~$0.10)
+**Type**: Verification | **Spec**: US5-AC3
+One-page probe of `runbooks/android-emulator.md` on the side install, Fireworks, concurrency 1, through
+`wiki-generate.mjs`: page + index written, Claims submitted, `okf-lint` green, usage record present; front matter and
+sidecar shape compared with the 0.5.2 probe output (no new fields beyond R8's list).
+
+---
+
 ## Phase 3 — US2: plan once per run (P2)
 
 ### T016 — Test: slices pack pages across areas
@@ -204,14 +243,16 @@ research). Then `pnpm nx okf-lint infrastructure-as-code` and `pnpm nx okf-gover
 
 ## Phase 6 — US3: measure the budget, then flip the default (Merge B)
 
-### T027 — Measure a multi-area invocation on the chosen tier (paid, ~$0.30)
-**Type**: Research | Locally, a 4-page slice across 2 areas with `MCM_WIKI_PROVIDER=fireworks` (tier per T002):
-record wall clock, the planner's fixed time, per-page slope, cost, and pages landed. Repeat once on Sonnet for the
-same slice.
+### T027 — Measure a multi-area invocation on 0.6.0, by concurrency (paid, ~$1)
+**Type**: Research | **Spec**: US3, US5, SC-007 | Locally on the 0.6.0 side install, one 4-page slice across 2
+areas with `MCM_WIKI_PROVIDER=fireworks` (standard tier, T002) at concurrency 1, 2 and 4: record wall clock, the
+planner's fixed time, per-page slope, cost, non-200 calls (rate limiting) and pages landed. Repeat once on Sonnet
+at the concurrency Fireworks wins on.
 
-### T028 — Write the budget decision record (R8)
+### T028 — Write the budget decision record (R9)
 **Type**: Docs | **Spec**: FR-008, US3-AC1
-In research.md §R8: the per-page slope and fixed cost for each candidate; the chosen `PAGE_BUDGET`,
+In research.md §R9: the per-page slope and fixed cost for each candidate and concurrency; the chosen
+`MCM_WIKI_PAGE_CONCURRENCY` default, `PAGE_BUDGET`,
 `TIME_BUDGET_SECONDS`, `MAX_PAGES_PER_SLICE`; the effective ceiling including one-invocation overshoot;
 `timeout-minutes` above it; the runner-minutes committed per run. **Needs operator sign-off** — present the options
 (e.g. fewer pages per run at today's timeout vs more pages at a longer runner hold) and record the choice.
@@ -219,8 +260,8 @@ In research.md §R8: the per-page slope and fixed cost for each candidate; the c
 ### T029 — Test: timeout exceeds the budget's effective ceiling
 **Type**: Test | **Spec**: US3-AC2, SC-004 | **File**: `wiki-maintain.guard.test.mjs`
 Parse `timeout-minutes` from the workflow and assert it exceeds `TIME_BUDGET_SECONDS` plus the measured worst-case
-single-invocation duration recorded in R8 (a constant in the test with a comment citing R8).
-**Verify RED**: fails with today's 45 min if R8's ceiling is higher; if R8 keeps the ceiling under 45, the test is
+single-invocation duration recorded in R9 (a constant in the test with a comment citing R9).
+**Verify RED**: fails with today's 45 min if R9's ceiling is higher; if R9 keeps the ceiling under 45, the test is
 written against the new constants first and fails until they land.
 
 ### T030 — Set the budget constants and the workflow timeout
@@ -249,7 +290,7 @@ item with the failing runs.
 
 ## Dependencies
 
-T001 → everything. T005→T006→T007→T008. T009, T012 → T013 → T014 → T015. T010 → T011 (independent of T005–T009).
+T001 → everything. T015a → T015b → T015c; T006 → T015d; T013 + T015c + T015d → T015e. T005→T006→T007→T008. T009, T012 → T013 → T014 → T015. T010 → T011 (independent of T005–T009).
 T016–T019 → T020 (independent of Phase 2 except T013 for end-to-end runs). T021 → T022 (needs T011). T003+T004 →
 T024. T024+T025 → T026 (Merge A). T026 → T027 → T028 → T029 → T030 → T031; T033 needs T028 + the operator secret;
 T034 last.

@@ -17,7 +17,7 @@ decision record exists (FR-002).
 ## Technical Context
 
 **Language/Version**: Node 24 ESM scripts (`scripts/*.mjs`), `node --test` suites in `scripts/__tests__/`
-**Primary Dependencies**: `openwiki@0.5.2` (pinned in the toolchain image and the CI job — unchanged), `nx@22.7.8`
+**Primary Dependencies**: `openwiki@0.6.0` (upgraded from 0.5.2 — D7; pinned in the toolchain image and the CI job), `nx@22.7.8`
 **Storage**: `openwiki/.maintenance-state.json` (committed run record; shape extended, old shape still read)
 **Testing**: `node --test "scripts/__tests__/wiki-*.test.mjs"` (glob, flags BEFORE the path — the
 `--test-name-pattern` trap in CLAUDE.md), `pnpm nx okf-lint` / `okf-governance` for bundle gates; paid probes
@@ -56,14 +56,11 @@ R0–R7 are measured. Two decisions remain that the spec requires be taken from 
 2. **Budget and timeout (FR-008)** — from a measured **multi-page** invocation on the chosen provider/tier
    (R3 measured one page per invocation; with multi-area slices the planner is paid once and page workers
    dominate). Task T030 measures a 4-page, 2-area invocation and records the per-page slope and fixed planning
-   cost; the decision record in `research.md` §R8 then sets `PAGE_BUDGET`, `TIME_BUDGET_SECONDS`,
+   cost; the decision record in `research.md` §R9 then sets `PAGE_BUDGET`, `TIME_BUDGET_SECONDS`,
    `MAX_PAGES_PER_SLICE` and `timeout-minutes`, and states the runner-minutes committed.
 
-**Open option for the operator (not in scope unless approved)**: `openwiki@0.6.0` adds
-`OPENWIKI_PAGE_CONCURRENCY` (page workers in parallel). Because DeepSeek's slowness is call count, not latency
-(R3), concurrency attacks the cause directly and could make the budget question moot. It is a generator upgrade
-with its own risk surface (the 0.2.3→0.5.2 upgrade quadrupled output per page), so it is recorded here as a
-follow-up, not folded in.
+**Generator upgrade to 0.6.0 — in scope (operator decision 2026-09-27).** See research R8 and D7. The budget
+measurement (T027) is taken on 0.6.0 at the chosen concurrency, since that is what CI will run.
 
 ## Phase 1 — Design
 
@@ -127,10 +124,25 @@ failure → `usage: "not captured"`, never zeros (FR-010, SC-005).
 
 - Job env: `MCM_WIKI_PROVIDER: ${{ vars.MCM_WIKI_PROVIDER || 'anthropic' }}`, `MCM_WIKI_SERVICE_TIER:
   ${{ vars.MCM_WIKI_SERVICE_TIER }}`, `FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_WIKI_MAINTAIN }}` alongside
-  the existing Anthropic secret. Flipping the default to `fireworks` is a separate one-line commit after the R8
+  the existing Anthropic secret. Flipping the default to `fireworks` is a separate one-line commit after the R9
   decision (FR-002). Whether this Forgejo version resolves `vars` is verified in T004 before relying on it; the
   fallback is the literal default in the workflow.
-- `timeout-minutes` set from R8. CI runner egress to `api.fireworks.ai` verified by the preflight's first real run.
+- `timeout-minutes` set from R9. CI runner egress to `api.fireworks.ai` verified by the preflight's first real run.
+
+### D7. Generator upgrade and page concurrency
+
+- Pin `openwiki@0.6.0` in `.devcontainer/toolchain.Dockerfile` and `.forgejo/workflows/wiki-maintain.yml` (the
+  guard's pin-agreement test enforces both). The dev-container image picks it up on its next refresh; until then,
+  local runs and the guard's installed-generator assertions use a side install selected by `OPENWIKI_ROOT`
+  (the guard's hard-coded `/usr/local/lib/node_modules/openwiki` becomes the default, not the only value).
+- `resolveWikiProvider` gains `pageConcurrency` from `MCM_WIKI_PAGE_CONCURRENCY` (integer 1–8, validated with the
+  same rule as openwiki's `resolvePageConcurrency`, so a bad value fails in our launcher before any paid call);
+  the launcher exports it as `OPENWIKI_PAGE_CONCURRENCY`. Default 1 until R9 records the chosen value.
+- The installed-generator guard checks gain: `resolvePageConcurrency` still exists and still caps at 8, and the
+  Anthropic cap resolver is still found (in 0.6.0 it lives in `dist/agent/index.js`, where the guard already looks).
+- Rate limits under concurrency: 0.6.0 raises provider retries to 5 when concurrency > 1 unless
+  `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` is set; we leave it unset and record retries seen in the usage log (a
+  non-200 status per call).
 
 ### Project Structure
 
@@ -148,7 +160,8 @@ scripts/
     ├── wiki-maintain.test.mjs       # EDIT  multi-area plan/render/verify, record back-compat, usage
     └── wiki-maintain.guard.test.mjs # EDIT  Fireworks cap assertion, secret allowlist, target command
 infrastructure-as-code/project.json  # EDIT wiki-update command/env
-.forgejo/workflows/wiki-maintain.yml # EDIT D6
+.forgejo/workflows/wiki-maintain.yml # EDIT D6, D7 pin
+.devcontainer/toolchain.Dockerfile   # EDIT D7 pin
 docs/runbooks/wiki-maintenance.md    # EDIT FR-013
 openwiki/invariants/model-provider-scoping.md  # EDIT FR-013 (canonical concept)
 docs/proposals/MCM-LLM-Cost-Analysis-1.md      # EDIT FR-013 §5

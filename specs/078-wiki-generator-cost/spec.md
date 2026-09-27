@@ -142,6 +142,30 @@ table — and that a run with the instrument unavailable says so rather than rep
 
 ---
 
+### User Story 5 - Pages are written in parallel, so the cheaper model is not a slower wiki (Priority: P2)
+
+As the operator, I want a maintenance run to write several pages at once, so that DeepSeek's higher call count per
+page — the whole of its 3.4× wall-clock gap (research R3) — does not translate into fewer pages per run or a longer
+hold on the CI runner.
+
+**Why this priority**: R3 shows DeepSeek's slowness is call count, not latency, so parallel page workers attack the
+cause directly; it is what makes Story 3's budget a comfortable number rather than a painful trade.
+
+**Independent Test**: Run the same multi-page slice at concurrency 1 and at the chosen concurrency on the chosen
+provider; confirm wall clock falls, every page lands and verifies, and cost per page does not rise by more than
+the declared tolerance.
+
+**Acceptance Scenarios**:
+
+1. **Given** the generator is upgraded and concurrency is configured, **When** a multi-page slice runs, **Then**
+   page workers run in parallel and every page is verified exactly as at concurrency 1.
+2. **Given** concurrency causes provider rate limiting, **When** a page's calls are throttled, **Then** the
+   generator's retries absorb it or the page is reported as not landed — never as written.
+3. **Given** the upgrade, **When** the Anthropic configuration runs at concurrency 1, **Then** its behaviour and
+   the output-cap guard are unchanged from 0.5.2.
+
+---
+
 ### Edge Cases
 
 - The Fireworks model id is withdrawn or renamed → the pre-flight invocability check fails the job before any
@@ -196,6 +220,10 @@ table — and that a run with the instrument unavailable says so rather than rep
 - **FR-013**: Documentation MUST be updated at the canonical sources: the wiki-maintenance runbook (provider
   switch, budget derivation, reading the usage record), the model-provider scoping invariant (the wiki's
   provider is now configurable and differs from the gateway's), and the cost analysis proposal §5.
+- **FR-015**: The generator MUST be pinned at `openwiki@0.6.0` in every place it is installed (the toolchain image
+  and the CI job), with the existing pin-agreement guard enforcing that they match.
+- **FR-016**: Page concurrency MUST be a configured value (1–8) with an explicit default recorded in the budget
+  decision record; an out-of-range value MUST fail before any paid work.
 - **FR-014**: The output of every run MUST remain a proposal PR for human review; this feature MUST NOT introduce
   auto-merge.
 
@@ -220,6 +248,8 @@ table — and that a run with the instrument unavailable says so rather than rep
 - **SC-004**: No run is killed by the platform timeout; every over-budget run ends as "stopped at budget" with its
   remainder carried forward.
 - **SC-005**: The estimated cost in the run record is within 5% of the provider's billed amount for the same runs.
+- **SC-007**: At the chosen concurrency, a multi-page slice on the chosen provider finishes at least 40% faster
+  than the same slice at concurrency 1, with the same pages landed.
 - **SC-006**: Switching the provider back to Anthropic takes one configuration change and no code change, and the
   next run uses it.
 
@@ -227,8 +257,9 @@ table — and that a run with the instrument unavailable says so rather than rep
 
 - Fireworks prices as supplied by the operator on 2026-09-27: standard $0.22 / $0.007 / $0.66 per M
   uncached / cached / output; priority $0.275 / $0.00875 / $0.825.
-- The generator stays pinned at `openwiki@0.5.2`; its planner behaviour (explore-before-plan) and mandatory Claims
-  are taken as given. Upgrading it is out of scope.
+- The generator is upgraded `openwiki@0.5.2` → `0.6.0` in this feature (operator decision 2026-09-27) for one
+  capability: parallel page workers (`OPENWIKI_PAGE_CONCURRENCY`, 1–8). 0.6.0's planner and page prompts are
+  byte-identical to 0.5.2 and it adds no dependency; its planner behaviour and mandatory Claims are taken as given.
 - The CI runner remains capacity-1; the operator accepts some extra runner time for the wiki job in exchange for
   the saving, with the amount fixed by the Story 3 decision record.
 - Data residency: DeepSeek V4.1 Flash served by Fireworks AI (US-hosted) was chosen by the operator over
