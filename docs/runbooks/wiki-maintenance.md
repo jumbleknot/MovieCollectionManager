@@ -218,7 +218,7 @@ minutes on it.
 
 ## 3. Reading a failure
 
-A slice fails when **any** of three things is true, and the generator's exit status is not one of them:
+A slice fails when **any** of four things is true, and the generator's exit status is not one of them:
 
 1. **No concept page appeared.** An `index.md` refresh counts as zero pages — that is precisely what
    feature 043's false-green run produced: 12 minutes of paid work, one `index.md`, exit 0, reported
@@ -226,6 +226,15 @@ A slice fails when **any** of three things is true, and the generator's exit sta
 2. **The bundle stopped being conformant** (`check-openwiki-okf.mjs`, rules V1–V15).
 3. **A written path was not permitted** by `openwiki/policy.yaml` — including a write into
    `docs/runbooks/`, which is `regenerate` but governed by an *agent*, not the generator.
+4. **A requested page was left stale** (item #587). A requested page that already exists, was not
+   rewritten, and cites a `resource` whose last **commit** is newer than the page's stamp
+   (`generated.at`, else `timestamp`) is named in the failure one page at a time. A multi-page slice
+   no longer passes because *some* of its pages were written. A page whose source has **not** moved
+   since its stamp may still honestly write nothing: that is the `✅ … nothing needed changing` line,
+   not a failure. A page with no stamp, an external resource, or an untracked source cannot be
+   checked and keeps that outcome too. A legacy date-only stamp (see *Drift is reported, never
+   planned* below) reads a same-day source commit as newer, so such a page is retried until the
+   generator restamps it. That errs toward retrying, never toward a silent skip.
 
 The failed slice returns to the backlog and **the marker does not advance**, so the work stays
 outstanding and the next run retries it.
@@ -435,12 +444,16 @@ it takes a hand-seeded sweep (`--since <ref>`, or pages put in the run record's 
 Known ways a concept falls behind, each tracked:
 
 - **#526** — the general gap: nothing re-plans a concept once the marker has passed its source change.
-- **#587** — a refresh slice that writes nothing for one of its requested pages still verifies,
-  because for a refresh the check is that the requested pages *exist*, and an existing page that was
-  not rewritten counts toward `noChange`. The marker then advances past the change. Measured on
-  `openwiki/runbooks/renovate.md`, 2026-09-26.
-- **#525** — the drift-driven sweep that clears the current V12 list, blocked on #587 and on the
-  canonical documents being corrected first (#588), so it does not regenerate from wrong sources.
+- **#587 (fixed)** — a refresh slice that wrote nothing for one of its requested pages used to
+  verify, because the only check was that the requested pages *exist*. An existing page that had not
+  been rewritten counted toward `noChange`, and the marker advanced past the change. Measured on
+  `openwiki/runbooks/renovate.md`, 2026-09-26. `verifySlice` now fails the slice for such a page when
+  its source is newer than its stamp (§3, cause 4), so the page returns to the backlog and the marker
+  holds. This closes the route by which a *planned* page fell behind; #526 remains for pages that were
+  never planned.
+- **#525** — the drift-driven sweep that clears the current V12 list. It was blocked on #587 and on
+  the canonical documents being corrected first (#588, done), so that it does not regenerate from
+  wrong sources.
 
 **Read a V12 line with its stamp in mind.** The comparison is the source's last **commit** date
 against the page's stamp (`generated.at`, else `timestamp`). Several pages still carry a legacy

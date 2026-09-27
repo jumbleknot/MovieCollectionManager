@@ -1076,11 +1076,12 @@ const isConceptPage = (relPath) => relPath.endsWith('.md') && !RESERVED_BUNDLE_F
 /**
  * Judge a slice by what actually landed.
  *
- * Success requires ALL THREE, and the generator's exit status is not among them (contract C1):
+ * Success requires ALL FOUR, and the generator's exit status is not among them (contract C1):
  *   1. at least one CONCEPT page appeared or changed — an `index.md` refresh is not work, which is
  *      exactly what 043's false-green run produced;
  *   2. the bundle still passes the OKF conformance gate;
- *   3. every written path was permitted by openwiki/policy.yaml (FR-026e).
+ *   3. every written path was permitted by openwiki/policy.yaml (FR-026e);
+ *   4. no requested page was left unwritten while its cited source is newer than its stamp (#587).
  */
 export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy = null, before = new Map(), actor = 'generator' } = {}) {
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
@@ -1110,7 +1111,24 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
       'The generator produced nothing usable for them regardless of the status it exited with.',
     );
   }
-  const noChange = missing.length === 0 && pagesWritten.length === 0;
+  // ...but "nothing needed changing" is only honest for a page whose source has NOT moved since the
+  // page was stamped (item #587). Without this check, a slice was judged as a whole: a generator
+  // that rewrote two of three pages and silently skipped the third passed, the marker moved past
+  // the source change, and the skipped page was never planned again. Measured on 2026-09-26 with
+  // runbooks/renovate.md. A page left unwritten while its cited source is newer than its stamp is
+  // therefore named here, one page at a time, and fails the slice, so the slice is retried, goes
+  // back to the backlog, and the marker is held.
+  const stalePages = (slice.pages ?? []).filter((page) =>
+    !missing.includes(page) &&
+    !pagesWritten.includes(`${bundlePrefix}${slice.area}/${page}`) &&
+    sourceNewerThanStamp(root, join(bundleDir, slice.area, page)));
+  if (stalePages.length > 0) {
+    violations.push(
+      `${stalePages.length} requested page(s) were not rewritten although their cited source changed after their stamp: ` +
+      `${stalePages.map((p) => `${slice.area}/${p}`).join(', ')}. "Nothing needed changing" needs the stamp to move; it did not.`,
+    );
+  }
+  const noChange = missing.length === 0 && stalePages.length === 0 && pagesWritten.length === 0;
 
   if (policy !== null) {
     for (const p of written) {
@@ -1136,7 +1154,29 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
     violations.push(`the bundle is no longer conformant after this slice: ${detail || 'the OKF gate failed'}`);
   }
 
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations };
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages };
+}
+
+/**
+ * Is the page's cited source's last commit newer than the page's stamp? The same comparison the OKF
+ * gate's V12 makes (commit date, never mtime; `generated.at` before `timestamp`), resolved against
+ * the checkout being verified. Anything it cannot check (no stamp, an external or absent resource,
+ * an untracked source) returns false: an unknowable page keeps the honest no-change outcome rather
+ * than failing a slice on a guess.
+ *
+ * A date-only stamp (`…T00:00:00Z`) reads a same-day source commit as newer, so such a page is
+ * retried until the generator restamps it. That errs toward retrying, never toward a silent skip.
+ */
+function sourceNewerThanStamp(root, pageFile) {
+  const fm = frontMatter(pageFile);
+  const stamp = [fm.generated?.at, fm.timestamp].find((v) => typeof v === 'string' && v.trim() !== '');
+  const resource = typeof fm.resource === 'string' ? fm.resource.trim().split('#')[0].split('?')[0] : '';
+  if (stamp === undefined || resource === '' || /^[a-z][a-z0-9+.-]*:/i.test(resource)) return false;
+  const stampMs = Date.parse(stamp.trim());
+  if (Number.isNaN(stampMs)) return false;
+  const r = spawnSync('git', ['log', '-1', '--format=%cI', '--', resource], { cwd: root, encoding: 'utf8' });
+  const out = r.status === 0 ? r.stdout.trim() : '';
+  return out !== '' && Date.parse(out) > stampMs;
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1555,6 +1595,61 @@ function selftest() {
     rmSync(scratch, { recursive: true, force: true });
   }
 
+  // ── verifier: the generator that skips some of a slice's pages (item #587) ─────
+  // Measured 2026-09-26: a 3-page refresh slice selected because docs/runbooks/renovate.md changed
+  // came back with renovate.md untouched, was counted as "nothing needed changing", and the marker
+  // moved past the change for good. A stale page left unwritten must fail, BY NAME; a page whose
+  // source has not moved since its stamp may still honestly write nothing.
+  const partial = mkdtempSync(join(tmpdir(), 'wiki-selftest-'));
+  try {
+    const bundle = join(partial, DEFAULT_BUNDLE);
+    cpSync(join(fixtures, 'conformant-bundle'), bundle, { recursive: true });
+    // `README.md` because the OKF gate resolves `resource` against the real checkout; the scratch
+    // commit below is what gives the source a commit date newer than the stale stamps.
+    writeFileSync(join(partial, 'README.md'), 'source\n');
+    const page = (title, stamp) =>
+      `---\ntype: Convention\ntitle: ${title}\ndescription: Written by --selftest.\nresource: README.md\ntimestamp: ${stamp}\n---\nBody.\n`;
+    writeFileSync(join(bundle, 'invariants', 'stale-a.md'), page('Stale A', '2020-01-01T00:00:00Z'));
+    writeFileSync(join(bundle, 'invariants', 'stale-b.md'), page('Stale B', '2020-01-01T00:00:00Z'));
+    writeFileSync(join(bundle, 'invariants', 'fresh.md'), page('Fresh', '2099-01-01T00:00:00Z'));
+    writeFileSync(join(bundle, 'invariants', 'index.md'),
+      '# Invariants\n- [Auth Chain](auth-chain.md)\n- [Stale A](stale-a.md)\n- [Stale B](stale-b.md)\n- [Fresh](fresh.md)\n');
+    for (const args of [['init', '-q'], ['config', 'user.email', 'selftest@example.invalid'], ['config', 'user.name', 'selftest'], ['add', '-A'], ['commit', '-qm', 'baseline']]) {
+      spawnSync('git', args, { cwd: partial, encoding: 'utf8' });
+    }
+
+    const skipped = executeSlices({
+      root: partial,
+      slices: [{ area: 'invariants', pages: ['stale-a.md', 'stale-b.md'], kind: 'refresh', areaExists: true, reason: 'source changed: README.md' }],
+      record: { ...readRunRecord(partial), coveredCommit: 'unchanged-marker' },
+      baseCommit: 'advanced-marker',
+      invoke: () => {
+        writeFileSync(join(bundle, 'invariants', 'stale-a.md'), page('Stale A', '2099-01-01T00:00:00Z'));
+        return { status: 0 };
+      },
+    });
+    const why = skipped.results.flatMap((r) => r.violations ?? []).join('; ');
+    check('verifier fails a slice that skipped a stale page', skipped.outcome === 'failed', `got ${skipped.outcome}`);
+    check('the skipped page is named', why.includes('invariants/stale-b.md') && !why.includes('invariants/stale-a.md'), why || 'no violation');
+    check('the skipped page is reported per page', JSON.stringify(skipped.results[0]?.stalePages) === '["stale-b.md"]',
+      `got ${JSON.stringify(skipped.results[0]?.stalePages)}`);
+    check('a skipped stale page returns to the backlog', skipped.backlog.some((s) => s.pages.includes('stale-b.md')));
+    check('marker does not advance over a skipped stale page', readRunRecord(partial).coveredCommit === 'unchanged-marker');
+
+    const accurate = executeSlices({
+      root: partial,
+      slices: [{ area: 'invariants', pages: ['fresh.md'], kind: 'refresh', areaExists: true, reason: 'carried forward' }],
+      record: readRunRecord(partial),
+      baseCommit: 'advanced-marker',
+      invoke: () => ({ status: 0 }),
+    });
+    check('a refresh whose source did not move may write nothing', accurate.outcome === 'completed' && accurate.results[0]?.noChange === true,
+      `got ${accurate.outcome}: ${accurate.results.flatMap((r) => r.violations ?? []).join('; ')}`);
+    check('marker advances over an honest no-change', readRunRecord(partial).coveredCommit === 'advanced-marker');
+  } finally {
+    rmSync(partial, { recursive: true, force: true });
+  }
+
   // ── policy ────────────────────────────────────────────────────────────────────
   try {
     const policy = loadPolicy(REPO_ROOT);
@@ -1570,7 +1665,7 @@ function selftest() {
     console.error('✗ wiki-maintain --selftest FAILED:\n  ' + fails.join('\n  '));
     return 1;
   }
-  console.log('✓ wiki-maintain --selftest passed (planner bounds and area derivation, shell-safe run message, zero-page detection, conformance regression, marker advance/hold, policy write scope)');
+  console.log('✓ wiki-maintain --selftest passed (planner bounds and area derivation, shell-safe run message, zero-page detection, per-page stale-skip detection, conformance regression, marker advance/hold, policy write scope)');
   return 0;
 }
 
