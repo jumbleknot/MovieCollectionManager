@@ -1132,6 +1132,42 @@ test('execute: when one area of a group fails, ONLY that area is carried forward
   }
 });
 
+test('execute: a stale page left unwritten in ONE area fails only that area, by area/page (#587)', () => {
+  const root = twoAreaRepo();
+  try {
+    // Both pages cite a source committed AFTER their stamp, so both are stale going in. `README.md`
+    // because the OKF gate resolves `resource` against the real checkout.
+    const stale = (title) =>
+      `---\ntype: Convention\ntitle: ${title}\ndescription: Stale.\nresource: README.md\ntimestamp: 2020-01-01T00:00:00Z\n---\nBody.\n`;
+    writeFileSync(join(root, 'README.md'), 'source\n');
+    writeFileSync(join(root, 'openwiki', 'invariants', 'one.md'), stale('one'));
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), stale('two'));
+    writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'), '# Invariants\n- [Auth Chain](auth-chain.md)\n- [one](one.md)\n');
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'stale pages'], { cwd: root });
+
+    const good = sl('invariants', ['one.md']);
+    const skipped = sl('gotchas', ['two.md']);
+    const calls = [];
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [good, skipped], attemptsPerSlice: 1,
+      // Rewrites one area's page and silently skips the other's: the 2026-09-26 renovate.md shape.
+      invoke: (work) => { calls.push(work); writingStub(root, 'invariants', ['one.md'])(); return { status: 0 }; },
+    });
+    assert.equal(calls.length, 1, 'one generator run for both areas');
+    assert.equal(result.outcome, 'failed');
+    assert.deepEqual(result.results[0].stalePages, ['gotchas/two.md']);
+    const why = result.results[0].violations.join('\n');
+    assert.match(why, /gotchas\/two\.md/);
+    assert.doesNotMatch(why, /invariants\/one\.md/, 'the area that was rewritten is not blamed');
+    assert.deepEqual(result.backlog, [skipped], 'only the stale area is carried forward');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ── 078 US4 / FR-010: every run records what it cost ────────────────────────────
 
 const PRICES_FIXTURE = { asOf: '2026-09-27', providers: { fireworks: { standard: { uncached: 0.22, cached: 0.007, cacheWrite: 0, output: 0.66 } } } };
