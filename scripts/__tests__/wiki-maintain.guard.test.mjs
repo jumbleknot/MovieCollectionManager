@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 
 import { shouldDeferMaintenance, MAX_DEFERRAL_SECONDS, DEBOUNCE_SECONDS } from '../wiki-maintain.mjs';
+import { WIKI_PROVIDERS, buildGeneratorEnv } from '../wiki-provider.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const WORKFLOW_PATH = join(REPO_ROOT, '.forgejo', 'workflows', 'wiki-maintain.yml');
@@ -120,6 +121,8 @@ test('the workflow installs the generator, pinned to the dev container version',
   assert.ok(pinned, 'the dev container pins a version');
   assert.equal(install.version, pinned.version,
     'CI and the dev container must run the SAME generator version — otherwise they silently differ on the thing whose output is gated');
+  // 078 FR-015: 0.6.0 is the first version with parallel page workers (OPENWIKI_PAGE_CONCURRENCY).
+  assert.equal(pinned.version, '0.6.0', 'the generator is pinned at 0.6.0 (feature 078, research R8)');
 });
 
 test('CI and the dev container both install the Mermaid parser, or neither validates diagrams', () => {
@@ -182,11 +185,16 @@ test('only pre-existing secrets are referenced, and they stay distinct', () => {
   // was provisioned by the product owner before this change landed.
   // Note the ENV VAR name is deliberately unchanged (048 FR-015) — only the secret behind it moved,
   // which is why the FR-025 distinctness assertions below still read `ANTHROPIC_API_KEY:`.
-  const allowed = new Set(['ANTHROPIC_API_WIKI_MAINTAIN', 'CD_PUSH_TOKEN', 'CI_DIGEST_TOKEN']);
+  //
+  // Updated 2026-09-27 (feature 078 FR-003): `FIREWORKS_API_WIKI_MAINTAIN` joins, provisioned by the
+  // product owner before this change landed — the same rule, a second model credential scoped to
+  // this job alone.
+  const allowed = new Set(['ANTHROPIC_API_WIKI_MAINTAIN', 'FIREWORKS_API_WIKI_MAINTAIN', 'CD_PUSH_TOKEN', 'CI_DIGEST_TOKEN']);
   for (const name of referenced) {
     assert.ok(allowed.has(name), `${name} is not one of the secrets this feature promised not to add to`);
   }
   assert.ok(referenced.includes('ANTHROPIC_API_WIKI_MAINTAIN'), 'the model credential');
+  assert.ok(referenced.includes('FIREWORKS_API_WIKI_MAINTAIN'), 'the Fireworks model credential (078)');
   assert.ok(referenced.includes('CD_PUSH_TOKEN'), 'the write credential');
   // 048 FR-017: the retired shared key must not linger here once the split has landed.
   assert.ok(!referenced.includes('ANTHROPIC_API_KEY'),
@@ -194,6 +202,10 @@ test('only pre-existing secrets are referenced, and they stay distinct', () => {
   // FR-025: the model credential and the write credential must never stand in for one another.
   assert.doesNotMatch(raw, /ANTHROPIC_API_KEY:\s*\$\{\{\s*secrets\.CD_PUSH_TOKEN/);
   assert.doesNotMatch(raw, /(FORGE_TOKEN|GIT_TOKEN):\s*\$\{\{\s*secrets\.ANTHROPIC_API_KEY/);
+  // 078: each model credential lands under its OWN provider's name, never under the other's.
+  assert.match(raw, /FIREWORKS_API_KEY:\s*\$\{\{\s*secrets\.FIREWORKS_API_WIKI_MAINTAIN\s*\}\}/);
+  assert.doesNotMatch(raw, /ANTHROPIC_API_KEY:\s*\$\{\{\s*secrets\.FIREWORKS/);
+  assert.doesNotMatch(raw, /FIREWORKS_API_KEY:\s*\$\{\{\s*secrets\.(ANTHROPIC|CD_PUSH)/);
 });
 
 test('no credential literal appears in the file', () => {
@@ -253,7 +265,31 @@ const PROJECT_JSON = join(REPO_ROOT, 'infrastructure-as-code', 'project.json');
 const MIN_OUTPUT_TOKENS = 16_384;
 const LANGCHAIN_FALLBACK_TOKENS = 4096;
 
-const OPENWIKI_ROOT = '/usr/local/lib/node_modules/openwiki';
+// The toolchain image's global install is the default. `OPENWIKI_ROOT` points the installed-generator
+// assertions at a side install instead — how a version bump is verified BEFORE the image that carries
+// it has been rebuilt (078 T015a), without overwriting the global install other sessions are using.
+const OPENWIKI_ROOT = process.env.OPENWIKI_ROOT ?? '/usr/local/lib/node_modules/openwiki';
+const OPENWIKI_CONSTANTS = `${OPENWIKI_ROOT}/dist/config/constants.js`;
+
+/**
+ * Skip reason when the installed generator is not the PINNED one, else null. Checks that describe the
+ * pinned version's behaviour cannot be judged against a different installed version — and between a
+ * pin bump and the toolchain image rebuild that carries it, every dev container has the old one.
+ * Failing there would break every session's preflight for a reason none of them can fix; the skip
+ * names both versions, so it is never mistaken for a pass. Point OPENWIKI_ROOT at a side install of
+ * the pinned version to run them (078 T015a).
+ */
+function pinMismatch() {
+  let installed;
+  try {
+    installed = JSON.parse(readFileSync(`${OPENWIKI_ROOT}/package.json`, 'utf8')).version;
+  } catch (error) {
+    return `openwiki not installed here (${error.code ?? error.message}) — set OPENWIKI_ROOT to a side install`;
+  }
+  const pinned = generatorInstall(readFileSync(join(REPO_ROOT, '.devcontainer', 'toolchain.Dockerfile'), 'utf8'))?.version;
+  return installed === pinned ? null
+    : `installed openwiki ${installed} is not the pinned ${pinned} — rebuild the toolchain image, or set OPENWIKI_ROOT to a side install of ${pinned}`;
+}
 const LANGCHAIN_CHAT_MODELS = `${OPENWIKI_ROOT}/node_modules/@langchain/anthropic/dist/chat_models.js`;
 const OPENWIKI_AGENT = `${OPENWIKI_ROOT}/dist/agent/index.js`;
 
@@ -263,9 +299,14 @@ function wikiUpdateEnv() {
   return project.targets['wiki-update'].options.env;
 }
 
-/** The id the generator will actually run with. */
+/**
+ * The Anthropic id the generator runs with when the Anthropic provider is selected. Since feature 078
+ * it lives in the provider table, not the target's env: nx lets a target's env OVERWRITE the job's
+ * (research R4), so the target must not name a provider or model at all. The cap resolver checks below
+ * are Anthropic-specific, so they read the Anthropic row.
+ */
 function pinnedModelId() {
-  return wikiUpdateEnv().OPENWIKI_MODEL_ID;
+  return WIKI_PROVIDERS.anthropic.modelId;
 }
 
 /**
@@ -364,3 +405,83 @@ test('the pinned generator model does NOT fall back to the 4096-token per-turn c
       `"${resolved.matched}"), below the ${MIN_OUTPUT_TOKENS} a page-writing turn needs.`,
   );
 });
+
+// ── feature 078: the provider is resolved in-process, and the cap still reaches every provider ─────
+
+test('the target names NO provider or model — nx would let it overwrite the job\'s choice (R4)', () => {
+  const env = wikiUpdateEnv();
+  assert.ok(!('OPENWIKI_PROVIDER' in env), 'OPENWIKI_PROVIDER in the target env silently overrides MCM_WIKI_PROVIDER');
+  assert.ok(!('OPENWIKI_MODEL_ID' in env), 'OPENWIKI_MODEL_ID in the target env silently overrides the provider table');
+  assert.ok(!('OPENWIKI_PAGE_CONCURRENCY' in env), 'concurrency is resolved and validated by wiki-provider.mjs');
+});
+
+test('the explicit output cap reaches the generator for EVERY provider', () => {
+  // FR-004: the 4096-fallback lesson is provider-independent. The cap lives in the target env (one
+  // value, applies to all providers); the launcher must pass it through untouched for each of them.
+  const cap = wikiUpdateEnv().OPENWIKI_MAX_OUTPUT_TOKENS;
+  for (const provider of Object.keys(WIKI_PROVIDERS)) {
+    const [credential] = WIKI_PROVIDERS[provider].credential.accepted;
+    const child = buildGeneratorEnv({ MCM_WIKI_PROVIDER: provider, [credential]: 'x', OPENWIKI_MAX_OUTPUT_TOKENS: cap });
+    assert.equal(child.OPENWIKI_MAX_OUTPUT_TOKENS, cap, `${provider}: the cap must reach the generator`);
+    assert.ok(Number(child.OPENWIKI_MAX_OUTPUT_TOKENS) >= MIN_OUTPUT_TOKENS, provider);
+  }
+});
+
+test('the installed generator still supports the concurrency range the launcher validates', async (t) => {
+  const mismatch = pinMismatch();
+  if (mismatch) { t.skip(mismatch); return; }
+  const source = readFileSync(OPENWIKI_CONSTANTS, 'utf8');
+  assert.match(source, /export function resolvePageConcurrency\(/,
+    'the installed generator has no resolvePageConcurrency — it predates 0.6.0 and would ignore MCM_WIKI_PAGE_CONCURRENCY');
+  const max = source.match(/export const MAX_PAGE_CONCURRENCY = (\d+);/);
+  assert.ok(max, 'MAX_PAGE_CONCURRENCY not found — re-verify the range by hand');
+  const { MAX_PAGE_CONCURRENCY } = await import('../wiki-provider.mjs');
+  assert.equal(Number(max[1]), MAX_PAGE_CONCURRENCY, 'our validation range must match the generator\'s');
+});
+
+// ── feature 078: the generator's managed AGENTS.md / CLAUDE.md block must already match ──────────
+//
+// FOUND BY 078 T015e, the 0.6.0 regression run: openwiki rewrites its managed
+// `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block in AGENTS.md and CLAUDE.md on EVERY run, and
+// 0.6.0 changed the AGENTS.md text. The policy lets only `actor: agent` write AGENTS.md, so on 0.6.0
+// every slice would have failed verification ("AGENTS.md — the run may not write here"), been
+// retried, and gone back to the backlog — the marker never advancing, run after run.
+//
+// The fix is that the COMMITTED block equals what the pinned generator writes, so its rewrite is
+// byte-identical and is not a write at all. This guard rebuilds the block from the installed
+// generator's own source and compares, so the next version bump that changes the text fails HERE,
+// offline, instead of failing every paid run in CI.
+
+const OPENWIKI_CODE_MODE = `${OPENWIKI_ROOT}/dist/ingestion/code-mode.js`;
+
+function generatorSnippet(source, fn) {
+  const body = source.match(new RegExp(`function ${fn}\\(\\) \\{\\n\\s*return \`([\\s\\S]*?)\`;\\n\\}`));
+  assert.ok(body, `${fn} not found in the installed generator — re-verify the managed block by hand`);
+  const start = source.match(/const OPENWIKI_AGENTS_SNIPPET_START = "([^"]+)";/)[1];
+  const end = source.match(/const OPENWIKI_AGENTS_SNIPPET_END = "([^"]+)";/)[1];
+  return body[1]
+    .replaceAll('${OPENWIKI_AGENTS_SNIPPET_START}', start)
+    .replaceAll('${OPENWIKI_AGENTS_SNIPPET_END}', end)
+    .replaceAll('\\`', '`');
+}
+
+function managedBlock(text) {
+  const i = text.indexOf('<!-- OPENWIKI:START -->');
+  const j = text.indexOf('<!-- OPENWIKI:END -->');
+  assert.ok(i >= 0 && j > i, 'the file has no managed OPENWIKI block');
+  return text.slice(i, j + '<!-- OPENWIKI:END -->'.length);
+}
+
+for (const [file, fn] of [['AGENTS.md', 'createCodeModeAgentsSnippet'], ['CLAUDE.md', 'createCodeModeClaudeSnippet']]) {
+  test(`the committed ${file} OPENWIKI block is byte-identical to what the pinned generator writes`, (t) => {
+    const mismatch = pinMismatch();
+    if (mismatch) { t.skip(mismatch); return; }
+    const source = readFileSync(OPENWIKI_CODE_MODE, 'utf8');
+    const expected = generatorSnippet(source, fn);
+    const actual = managedBlock(readFileSync(join(REPO_ROOT, file), 'utf8'));
+    assert.equal(actual, expected,
+      `${file}'s managed block differs from what the installed generator writes. Every run would then ` +
+      `rewrite ${file}, which the policy forbids the generator — failing every slice. Update the block ` +
+      'in the same change as the version bump (an agent-authored edit, which the policy allows).');
+  });
+}

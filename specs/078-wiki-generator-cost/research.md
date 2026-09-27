@@ -1,0 +1,179 @@
+# Research: 078 — cheaper wiki maintenance
+
+Every finding below was obtained by **executing** something on 2026-09-27, not by reading. Raw per-call
+usage logs, run logs, diffs and Claims sidecars for every probe are kept with the session scratchpad; the
+figures here are copied from them.
+
+## The instrument (R0)
+
+A Node `--import` preload wraps `globalThis.fetch`, tees every Anthropic `/v1/messages` and OpenAI-shaped
+`/chat/completions` response, and appends one JSON line per model call: agent kind (planner / page worker,
+from the tool list in the request), status, usage, duration, and output characters per content block
+(including the Claims payload inside `submit_page`). It never records prompt or file content.
+
+**Validated against the bill**: the two first Fireworks probes, priced from the tap's counts at the operator's
+standard rates, total **$0.178**; the operator's Fireworks bill for them is **$0.178025**. The instrument is
+trusted to the cent.
+
+Probe harness: the pinned `openwiki@0.5.2`, the exact env of the `wiki-update` Nx target (explicit 16,384 output
+cap, telemetry off), and the run message `renderRunMessage` produces for a one-page slice. Only the provider
+changes between probes.
+
+## R1 — Cost per page, by provider (measured)
+
+| Page | Sonnet 5 | DeepSeek V4.1 Flash @ Fireworks, standard | priority |
+|---|---|---|---|
+| `gotchas/keycloak-service-account.md` (no prose change needed) | $0.39 | $0.090 | — |
+| `runbooks/android-emulator.md` (69 changed source lines, first Claims) | $0.62, $0.69 | $0.088, $0.124 | see R3 |
+
+Fireworks prices (operator, 2026-09-27): standard $0.22 / $0.007 / $0.66 per M uncached / cached / output;
+priority $0.275 / $0.00875 / $0.825. DeepSeek is **77–86% cheaper per page** at standard.
+
+The cost shape differs: DeepSeek makes 47–73 calls per page against Sonnet's 12–20, re-reading a growing
+context each time, so ~95% of its input is cache reads — cheap only because Fireworks bills cached input at
+$0.007/M. **If that price rises, re-measure before trusting R1**: at an undiscounted cached rate DeepSeek would
+cost more than Sonnet.
+
+## R2 — Quality and reliability (measured)
+
+- 5 DeepSeek probes, 5 × exit 0, every assigned page and its `index.md` written, Claims submitted,
+  `okf-lint` green. Zero tool-call failures across all calls.
+- Four factual statements in a DeepSeek-written page spot-checked against source, all correct:
+  `deleteUser` URL-encodes the id and treats 404 as success; `countUsersInClientRole` throws 502 rather than
+  returning 0; the service account's realm roles are exactly `view-users`, `manage-clients`, `manage-users`.
+- DeepSeek's rewrite picked up feature 076's account-deletion paths; the Sonnet run of the same page judged no
+  change was needed and missed them.
+- DeepSeek drops the page's `timestamp:` and adds `generated: {by, at}` — **not a DeepSeek behaviour**: OpenWiki
+  itself removes `timestamp` on any page whose body changed. `check-openwiki-okf.mjs` already reads
+  `generated.at` first (V12 drift keeps working).
+
+## R3 — Speed, and what the priority tier buys (measured)
+
+Timed runs of the same page, same harness:
+
+| Run | Wall clock | Model calls | Avg call latency | Model time share |
+|---|---|---|---|---|
+| Sonnet 5 | **214 s** | 20 | 8–12 s | 99% |
+| DeepSeek, standard | **637 s, 727 s** | 47, 65 | 9.6–13.9 s | 99% |
+| DeepSeek, priority | **872 s** | 56 | 14.0–16.1 s | 99% |
+
+Wall clock is ~99% model time; tool execution is negligible. DeepSeek's per-call latency is only ~15–20% above
+Sonnet's — **the 3.4× wall-clock gap is call count**, which is model behaviour, not queueing. Priority admission
+can shorten each call's wait; it cannot reduce the number of calls — and on the measured run it did not even do
+that: priority calls averaged 14.0 s (planner) and 16.1 s (page worker) against 13.9 s and 9.6 s on standard,
+at $0.129 against $0.125 for the same page priced at standard rates. One run per tier, on a Sunday, so admission
+queueing was probably minimal; the result says priority buys nothing measurable here, not that it never could.
+
+**Tier decision (FR-009): standard.** Priority is not adopted. Whether the `service_tier` field was actually
+applied was not confirmed by billing; that verification becomes necessary only if priority is reconsidered. `service_tier: "priority"` is a request-body
+field (operator-confirmed); `openwiki@0.5.2` exposes no way to send it, so R6 applies.
+
+## R4 — A CI variable cannot override the Nx target's provider today (measured in source)
+
+`nx@22.7.8` `run-commands` builds the child env as `{ ...process.env, ...envOptionFromExecutor }`
+(`dist/src/executors/run-commands/running-tasks.js`, `processEnv`). The `wiki-update` target's `env` block sets
+`OPENWIKI_PROVIDER=anthropic` and `OPENWIKI_MODEL_ID=claude-sonnet-5`, so **anything the workflow exports is
+silently overwritten**. A provider switch must therefore be resolved inside the command (or by
+`wiki-maintain.mjs` before spawning it), not by exporting `OPENWIKI_*` from the job.
+
+## R5 — Where the money goes inside a run (measured)
+
+On Sonnet, a one-page invocation spends **$0.33 on planning** (83% of a no-change page's run): OpenWiki's planner
+prompt instructs it to "explore before submitting the plan … map manifests, major directories, entrypoints"
+regardless of how narrowly the run message scopes the work. `wiki-maintain` invokes the generator once per slice
+and builds slices per wiki area (`renderRunMessage`: "Work on exactly one area"), so a run touching N areas
+plans N times. On DeepSeek the planner is ~45% of a run's calls and time — consolidation saves time there as
+well as money.
+
+`MAX_PAGES_PER_SLICE = 8` and per-area slicing were sized for 0.2.3, where one agent loop wrote every page and a
+long run risked the zero-page failure. In 0.5.x each page is a fresh worker with its own context and a durable
+queue (`openwiki/.run.json`), so a multi-page invocation no longer compounds per-page risk the same way.
+
+## R6 — Sending `service_tier` without forking the generator (design, to verify in implementation)
+
+Options considered:
+
+| Option | Verdict |
+|---|---|
+| Ask OpenWiki upstream for a provider-options passthrough | Right long-term; does not unblock this feature. File it. |
+| Patch `openwiki` in `node_modules` | Rejected — invisible, lost on every install, and the CI job installs globally. |
+| A repo-owned `--import` preload loaded by the `wiki-update` target, doing exactly two things: add `service_tier` to Fireworks chat-completions bodies when configured, and record per-call usage (Story 4) | **Chosen.** It is the R0 instrument promoted into the repo. It must be provably inert when unconfigured and must never alter any other byte of a request — a guard test asserts both. |
+
+## R7 — Grounded Claims are not the cost problem (measured; out of scope)
+
+First-time Claims on a page cost ~$0.07 on Sonnet (about a quarter of the page worker, ~11% of the run);
+later refreshes submit only stale/revised/new Claims. Claims cannot be disabled in 0.4.0–0.6.0. Tracked
+separately as backlog #513 (adopt).
+
+## R8 — What `openwiki@0.6.0` changes for this repository (read from the published package)
+
+- **Prompts**: `dist/agent/repository-prompts.js` is byte-identical to 0.5.2 — planner (explore-before-plan) and
+  page-worker instructions, and the Claims guidance, are unchanged. Output shape should therefore match 0.5.2;
+  T0xx verifies on a real run rather than assuming it.
+- **Dependencies**: none added, removed or bumped (`package.json` differs only in `version`). Node engine
+  `>=22.22.0`; the container runs v24.20.0.
+- **New**: `OPENWIKI_PAGE_CONCURRENCY` (default 1, max 8) runs repository page workers in parallel, staggering
+  worker starts by 1 s and holding `/openwiki/quickstart.md` back to run last and alone. Planning is still a single
+  serial pass. With concurrency > 1 the default provider retry count rises to 5.
+- Also new, not used here: wiki workspace linking (`openwiki link`) and retrieval tools for the MCP integration.
+- The Anthropic cap resolver still lives in `dist/agent/index.js`, where the guard reads it.
+
+_(The budget decision record for FR-008/FR-016 is §R9, written in T028 after T027 measures 0.6.0 at concurrency; the `vars` probe answer is §R10, from T004.)_
+
+## R10 — `${{ vars.* }}` resolves on this forge (T004)
+
+Answered from the repository rather than a scratch workflow: `cd-deploy.yml` and `devcontainer-image.yml`
+already depend on `${{ vars.REGISTRY }}` / `${{ vars.NS }}` and run green, so repository variables resolve.
+An unset variable renders as `''`, which is why `wiki-provider.mjs` treats an empty value as unset (a test
+pins it) instead of rejecting it as malformed.
+
+## R11 — Design corrections found while implementing Merge A
+
+- **`main()` drives `executeSlices` itself**, not through `runMaintenance`. A preflight added only to
+  `runMaintenance` would never have run in CI; the gate is one shared `preflightGate`, and a structural test
+  pins that the CLI path calls it before the proposal branch and before any slice.
+- **Packing re-merged a deliberately split area.** The planner only emits two same-kind slices for one area
+  when the area exceeds the slice cap; packing now never groups two slices of the same area. This also kept
+  every pre-existing budget/resume/failure test valid without modification.
+- **The slice stays the backlog unit** (plan D4 proposed a new `parts` shape plus a back-compat reader). Packing
+  happens at execution instead, so the committed backlog's shape is unchanged and T019 holds by construction.
+- **The usage tap's `tapError` must record the error NAME only**: V8's `JSON.parse` message quotes the text it
+  failed on, i.e. response content (proven RED on the first draft).
+
+## R12 — openwiki 0.6.0 rewrites a file the generator may not write (found by T015e)
+
+The 0.6.0 regression run (T015e — Fireworks, concurrency 1, through the new launcher) was cut short at 48 calls
+by a dev-container failure, but not before it had modified **`AGENTS.md`**. openwiki rewrites its managed
+`<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block in `AGENTS.md` and `CLAUDE.md` on every run
+(`dist/ingestion/code-mode.js`, `writeCodeModeAgentSnippets`), and 0.6.0 changed the `AGENTS.md` text (four
+lines about its retrieval tools). `openwiki/policy.yaml` lets only `actor: agent` write `AGENTS.md` —
+checked: `mayWrite(policy, 'AGENTS.md', 'generator')` → not allowed. So on 0.6.0 **every slice would have failed
+verification**, been retried, and returned to the backlog, with the marker never advancing. None of the four
+0.5.2 probes touched `AGENTS.md`, because the committed block already matched 0.5.2's text.
+
+Fix: the committed block now carries 0.6.0's text (an agent-authored edit, which the policy allows), so the
+generator's rewrite is byte-identical and is not a write. A new guard rebuilds both blocks from the installed
+generator's own source and compares byte-for-byte — validated in both directions: it passes against 0.5.2 with
+the old text and fails against 0.6.0 until the block is updated. The next version bump that changes the text
+fails offline, not in every paid run. The `CLAUDE.md` block (`@AGENTS.md`) is unchanged in 0.6.0.
+
+The adopted text tells assistants not to preload the wiki at task start and to prefer openwiki's retrieval
+tools where installed (they are not, here), falling back to `openwiki/quickstart.md`. It sits alongside —
+not in conflict with — this repository's own note outside the markers ("query `openwiki/` before a broad text
+search"): both say consult the wiki when the task needs it.
+
+## R13 — T015e on openwiki 0.6.0, end to end (2026-09-27)
+
+Fireworks / DeepSeek V4.1 Flash, standard tier, concurrency 1, through `wiki-generate.mjs` and the repo's usage
+tap, on the commit carrying the R12 fix. One page asked for; **two written** — the second
+(`runbooks/wiki-maintenance.md`) forced into the plan by its stale Claims, because this branch edited its source
+runbook (openwiki's `addRequiredClaimIssueJobs`; the spec's edge case). Every path written is allowed to the
+generator by the policy; **`AGENTS.md` and `CLAUDE.md` untouched** (R12 confirmed on a real run); `okf-lint`
+green.
+
+| Wall clock | Pages | Calls | Failed calls | Uncached / cached / output tokens | Est. cost |
+|---|---|---|---|---|---|
+| **1,504 s** | 2 | 86 | 0 | 346k / 7.38M / 119k (80k reasoning) | **$0.21** |
+
+About **12 minutes per page at concurrency 1**, planning included — the number Merge B's concurrency
+measurement (T027) has to bring down before the CI budget can be set.

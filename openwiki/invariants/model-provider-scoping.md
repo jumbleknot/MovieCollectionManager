@@ -3,7 +3,7 @@ type: Convention
 title: Model-provider environment scoping
 description: Why the agent gateway's LLM provider is env-scoped rather than a single global choice — Ollama for dev/test, Claude for the golden test surface and prod, with escalation always pinned to Claude regardless of the base provider.
 tags: [agents, models, ollama, anthropic, environment]
-timestamp: 2026-07-26T20:11:56+00:00
+timestamp: 2026-09-27T18:00:00+00:00
 ---
 
 # Model-provider environment scoping
@@ -81,3 +81,24 @@ kept deliberately free of any LLM dependency so it is unit-testable without a li
 See [Testing tiers](./testing-tiers.md) for how the golden suite consumes this
 scoping, and [docs/runbooks/agent-layer.md](../../docs/runbooks/agent-layer.md) for the full
 per-node model configuration reference.
+
+## The knowledge-bundle generator is scoped separately
+
+The OpenWiki generator that maintains `openwiki/` is **not** the agent gateway and does not read
+`MODEL_PROVIDER` or any of the gateway's pins. Since feature 078 (2026-09-27) its provider is chosen by
+**`MCM_WIKI_PROVIDER`** (`anthropic` → `claude-sonnet-5`, `fireworks` → DeepSeek V4.1 Flash), resolved in
+`scripts/wiki-provider.mjs` and applied by `scripts/wiki-generate.mjs`, which the `wiki-update` Nx
+target runs. The two surfaces are scoped independently on purpose: the gateway serves members and is
+bound by BYOK and the golden gate; the generator writes a reviewed proposal PR and is chosen on cost per
+verified page.
+
+- **The Nx target names no provider or model, and must not.** nx builds a target's child env as
+  `{ ...process.env, ...targetEnv }`, so a provider in the target's `env` silently overwrites whatever
+  the workflow exports — the CI job could "switch" and the generator would never see it (078 research
+  R4). The same trap applies to any Nx target whose behaviour a job is meant to configure.
+- **The same credential rule as the gateway.** The Fireworks key is carried as
+  `MCM_FIREWORKS_API_KEY` and mapped to `FIREWORKS_API_KEY` only inside the generator's own process;
+  the launcher also removes every other provider's key from that process.
+
+Operating detail — switching provider, tier, page concurrency, and reading a run's recorded cost — is in
+[docs/runbooks/wiki-maintenance.md](../../docs/runbooks/wiki-maintenance.md).

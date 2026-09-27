@@ -114,7 +114,7 @@ jobs:
         run: bash scripts/ci-log-step.sh maintain-install-js-dependencies pnpm install --frozen-lockfile
 
       # The generator is a GLOBAL npm binary, not a workspace dependency: the dev container bakes it
-      # into its toolchain image (`npm install -g openwiki@0.5.2`), so it is simply absent on the CI
+      # into its toolchain image (`npm install -g openwiki@0.6.0`), so it is simply absent on the CI
       # runner. The first real run on `main` died with `/bin/sh: 1: openwiki: not found` — the
       # orchestrator did everything right, planned two slices, and then had nothing to invoke.
       #
@@ -129,7 +129,7 @@ jobs:
         # the real parser a diagram that fails only the strict check is rewritten in place into a
         # plain `text` fence, the run still exits 0, and every gate still passes. The scheduled run
         # is the one that writes the bundle, so a silent downgrade here is the one that ships.
-        run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.5.2 mermaid jsdom
+        run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.6.0 mermaid jsdom
 
       # ── property 1 + 2: debounce, with a git-derived ceiling ────────────────────
       - name: Wait out the quiet period unless the maximum deferral is reached
@@ -167,6 +167,16 @@ jobs:
           # Per-surface secret (048 US4): wiki-maintenance spend must be separable from CI spend in
           # the Anthropic console. Variable name unchanged (FR-015) — wiki-maintain.mjs keys on it.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_WIKI_MAINTAIN }}
+          # Feature 078: the second model credential, for the Fireworks provider. Per-surface like the
+          # Anthropic one, so wiki spend is separable on the Fireworks console. The launcher hands the
+          # generator ONLY the credential of the provider it resolved (wiki-provider.mjs).
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_WIKI_MAINTAIN }}
+          # Which model writes the bundle, and how. Repository variables, so switching provider is a
+          # settings change, not a commit (078 SC-006); unset means the defaults in wiki-provider.mjs.
+          # A malformed value FAILS the preflight before any paid work — it is never read as a default.
+          MCM_WIKI_PROVIDER: ${{ vars.MCM_WIKI_PROVIDER }}
+          MCM_WIKI_SERVICE_TIER: ${{ vars.MCM_WIKI_SERVICE_TIER }}
+          MCM_WIKI_PAGE_CONCURRENCY: ${{ vars.MCM_WIKI_PAGE_CONCURRENCY }}
           # The write credential, kept distinct from the model credential (FR-025).
           FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           FORGE_API_BASE: ${{ github.server_url }}/api/v1
