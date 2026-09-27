@@ -90,8 +90,8 @@ not.** The cause, found on 2026-08-01, was a fixed and silent per-turn output-to
 
 - OpenWiki never sets `maxTokens`, so `@langchain/anthropic` picks a default by prefix-matching the
   model id against a hard-coded table, **falling back to 4096** on a miss.
-- `claude-sonnet-5`, which the `wiki-update` target pinned, is **absent from that table**. Every turn
-  was capped at 4096 output tokens.
+- `claude-sonnet-5`, which the `wiki-update` target pinned at the time (feature 043), was **absent
+  from that table**. Every turn was capped at 4096 output tokens.
 - A turn truncated at the cap *before* it opens a `tool_use` block yields an assistant message with
   **zero tool calls** — precisely LangGraph's ReAct stop condition. The graph exits cleanly, OpenWiki
   exits 0, Nx prints `Successfully ran target`, and no page is written.
@@ -110,10 +110,16 @@ call. Full write-up and reproduction steps:
 it in one line, and the symptom is a green build with an empty diff. `wiki-update` therefore sets
 **`OPENWIKI_MAX_OUTPUT_TOKENS=16384`** explicitly, which OpenWiki reads ahead of everything else — so
 that value, not any vendor table, is the one that reaches the model. The model is pinned at
-**`claude-sonnet-5`**.
+**`claude-sonnet-5`** (`OPENWIKI_MODEL_ID` in `infrastructure-as-code/project.json`).
 
-**Why that model** (feature 075, 2026-09-21). It was `claude-sonnet-4-6` until then. The move is
-purely a cost one: same vendor, same credential, same workflow, same Deep Agents caching middleware
+**The pin has made a round trip, and both moves were deliberate.** Feature 043 (2026-07-27) pinned
+`claude-sonnet-5`. The 2026-08-01 fix above moved it to `claude-sonnet-4-6` — an id the vendor table
+*did* match, which was the only way to escape the 4096 fallback before an explicit cap existed.
+Feature 075 (2026-09-21) moved it back to `claude-sonnet-5`, which is safe now because the explicit
+`OPENWIKI_MAX_OUTPUT_TOKENS` no longer depends on any table. A reference to `claude-sonnet-4-6` in an
+older document or commit is that middle period, not a conflicting pin.
+
+**Why that model** (feature 075, 2026-09-21). The move back is purely a cost one: same vendor, same credential, same workflow, same Deep Agents caching middleware
 — only the id changes. Sonnet 5 lists at $2/$10 per MTok against Sonnet 4.6's $3/$15, with cache
 reads at $0.20/MTok against $0.30. Generation is the single largest line on the model bill (53% of
 $74.89 over the 30 days to 2026-09-20) and is already ~92% cache reads, so list *input* price is the
@@ -202,10 +208,11 @@ ceiling of ≤24 pages / ~37 minutes**. Both are configurable (`--page-budget`, 
 The page count comes from **files that actually appeared in the working tree**. It is not what the
 generator says it wrote, and a stub that claims 99 pages while writing one moves the counter by one.
 
-**Neither budget is a monetary bound.** OpenWiki reports no token or cost figure at all, this
-repository has no cost measurements, and nothing in this feature claims a spend ceiling. The
-wall-clock budget bounds *runner occupancy* — there is one CI runner and `app-e2e` is ~35 minutes on
-it.
+**Neither budget is a monetary bound.** OpenWiki reports no token or cost figure at all, and nothing
+in this feature claims a spend ceiling. What spend is known comes from the provider's bill, not from
+a run — the 30-day figure quoted under *Why that model* in §1 — so a run cannot tell you what it
+cost. The wall-clock budget bounds *runner occupancy* — there is one CI runner and `app-e2e` is ~35
+minutes on it.
 
 ---
 
@@ -216,7 +223,7 @@ A slice fails when **any** of three things is true, and the generator's exit sta
 1. **No concept page appeared.** An `index.md` refresh counts as zero pages — that is precisely what
    feature 043's false-green run produced: 12 minutes of paid work, one `index.md`, exit 0, reported
    as success.
-2. **The bundle stopped being conformant** (`check-openwiki-okf.mjs`, rules V1–V13).
+2. **The bundle stopped being conformant** (`check-openwiki-okf.mjs`, rules V1–V15).
 3. **A written path was not permitted** by `openwiki/policy.yaml` — including a write into
    `docs/runbooks/`, which is `regenerate` but governed by an *agent*, not the generator.
 
@@ -415,6 +422,34 @@ drift is NOT checked for these:
 If that count climbs, drift coverage is falling — investigate the generator's provenance pass rather
 than the pages. A silent loss of coverage is precisely the failure this counter exists to make loud.
 
+### Drift is reported, never planned
+
+V12 is **warn-only** — it never touches the exit code — and it is **not an input to the planner**.
+`planSlices` in `scripts/wiki-maintain.mjs` takes only the paths changed since the run-record marker
+and the carried-forward backlog; its header says so deliberately, because one edit to a widely cited
+file would fan out across every concept citing it and never clear. The consequence is that a concept
+which falls behind the marker — its source changed, but the slice that should have refreshed it did
+not — is **not re-planned automatically**. The V12 list is the only place it shows up, and clearing
+it takes a hand-seeded sweep (`--since <ref>`, or pages put in the run record's `backlog`).
+
+Known ways a concept falls behind, each tracked:
+
+- **#526** — the general gap: nothing re-plans a concept once the marker has passed its source change.
+- **#587** — a refresh slice that writes nothing for one of its requested pages still verifies,
+  because for a refresh the check is that the requested pages *exist*, and an existing page that was
+  not rewritten counts toward `noChange`. The marker then advances past the change. Measured on
+  `openwiki/runbooks/renovate.md`, 2026-09-26.
+- **#525** — the drift-driven sweep that clears the current V12 list, blocked on #587 and on the
+  canonical documents being corrected first (#588), so it does not regenerate from wrong sources.
+
+**Read a V12 line with its stamp in mind.** The comparison is the source's last **commit** date
+against the page's stamp (`generated.at`, else `timestamp`). Several pages still carry a legacy
+date-only stamp — `timestamp: 2026-08-08T00:00:00+00:00` on `openwiki/runbooks/backlog.md`, twelve
+such pages at the time of writing — so a source commit made later **the same day** reads as drift
+even when the page was generated from it. `backlog.md` is exactly that case: its source's last
+commit is `2026-08-08T19:38:20+00:00`. Compare the dates before queuing such a page; the warning
+clears for good once the page is regenerated and gains a full `generated.at`.
+
 ### Diagrams need their parser installed, or they degrade silently
 
 From 0.5.0 OpenWiki embeds Mermaid diagrams by default and validates every fence after a run. The
@@ -427,3 +462,33 @@ Both are therefore installed beside the generator in `.devcontainer/toolchain.Do
 `.forgejo/workflows/wiki-maintain.yml`, and a guard in `scripts/__tests__/wiki-maintain.guard.test.mjs`
 asserts the two lists match — if only one environment has the parser, the two disagree about what a
 valid diagram is, and the one that writes the bundle wins.
+
+---
+
+## 9. Claims sidecars (`openwiki/.claims/`)
+
+OpenWiki 0.5.2 records **Claims** for the pages it writes: atomic, evidence-backed propositions that
+the page body relies on. They live beside the bundle, one JSON sidecar per page, mirroring the page's
+path — `openwiki/.claims/runbooks/backups.json` belongs to `openwiki/runbooks/backups.md`. Twelve
+exist at the time of writing, all written by the generator since 2026-09-20, and each of the twelve
+pages carries a matching `verified:` entry (`by: openwiki/0.5.2`, `at: <ISO time>`) in its front
+matter.
+
+A sidecar holds `schemaVersion`, a `pageVersion` hash of the page, a `verification: {by, at}` event,
+and a `claims` array. Each claim has a stable `id`, a `statement`, and one or more `evidence` entries,
+each a `repo://<path>` resource (optionally with a `#Lx-Ly` line range) plus a resolver-computed
+`version` hash of that source as it stood when the claim was made. On a later refresh OpenWiki marks
+a claim `stale` when its evidence's version no longer matches (or `unresolved` when the evidence
+cannot be resolved), and the generator must then confirm, revise or retract it — the installed
+package's `dist/claims/guidance.js` states those rules.
+
+What this repository does with them today:
+
+- **Policy.** `openwiki/policy.yaml` has no rule of its own for `.claims/`; the sidecars are permitted
+  only by the `openwiki/**` catch-all (`regenerate`, `actor: generator`).
+- **Gates.** `okf-lint` does not read the sidecars. Its only contact with Claims is V5 validating the
+  ISO-8601 shape of a page's `verified.at`.
+- **Decision.** The operator decided on 2026-09-27 that Claims are required and valuable (item
+  **#513**). The decision's details, and any gates or lifecycle rules that follow from it, are being
+  recorded under #513 — none exist yet, so do not treat a sidecar as checked by anything here beyond
+  the generator itself.

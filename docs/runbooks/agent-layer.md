@@ -6,7 +6,9 @@
 
 Additive conversational assistant: a LangGraph supervisor graph served over AG-UI (the **Agent
 Gateway**), reached only through the BFF; two stateless MCP servers (movie-mcp → mc-service,
-web-api-mcp → TMDB). Python 3.13 + `uv`, run via Nx (`@nxlv/python`).
+web-api-mcp → TMDB). Python (`requires-python >=3.13`; the images build on `python:3.14-slim`) +
+`uv`, run via Nx (`@nxlv/python`). The gateway and all three MCP servers are on the **MCP Python
+SDK 2.x** (`mcp>=2,<3`).
 
 > **Feature 014 — spreadsheet import/export** added a THIRD scoped MCP server
 > **`mcp-servers/spreadsheet-mcp`** (file processing only: `parse_spreadsheet`/`build_workbook`
@@ -51,7 +53,29 @@ pnpm nx lint movie-assistant                              # ruff + mypy   (same 
 ```
 
 **Models are env-scoped (research R1): Ollama (`qwen2.5`/`qwen2.5:32b`) for dev/test/iterative
-E2E; Anthropic Claude for the golden gate + production** (`MODEL_PROVIDER=anthropic`). The host
+E2E; Anthropic Claude for the golden gate + production** (`MODEL_PROVIDER=anthropic`). The model ids
+are **code defaults** in `select_model_config` (`agents/movie-assistant/src/models.py`) — on
+Anthropic: supervisor `claude-haiku-4-5`, specialists `claude-sonnet-5`, escalation `claude-opus-5`
+(always Claude, whatever the base provider). What an operator needs to hold (the reasoning and the
+measurements are in [model-provider scoping](../../openwiki/invariants/model-provider-scoping.md)):
+
+- **Production pins no model.** `compose.prod.yaml` sets neither `SUPERVISOR_MODEL` nor
+  `SPECIALIST_MODEL`, so a code-default change ships with the image. Keep it that way.
+- **CI's `app-e2e` job and the dev container pin a CACHED supervisor, production deliberately does
+  not (feature 075).** Both set `ANTHROPIC_SUPERVISOR_MODEL=claude-sonnet-5`, and the supervisor
+  marks its static classifier prefix `cache_control: ephemeral` (`nodes/supervisor.py`). In a burst
+  of back-to-back classifications that prefix is read from cache; real user turns arrive too far
+  apart to hit the 5-minute entry and would pay the cache write instead, so do not copy the pin
+  into production.
+- **A pin must name its provider.** Use `ANTHROPIC_SUPERVISOR_MODEL` / `ANTHROPIC_SPECIALIST_MODEL`
+  (and `OLLAMA_*`), not the bare names: `_pin` resolves `<PROVIDER>_<NAME>` first, and a bare
+  `SUPERVISOR_MODEL` follows whichever provider is active — a Claude id sent to Ollama.
+- **A newer model id is not a drop-in.** Several current Claude models reject `temperature` with a
+  hard 400; `anthropic_accepts_temperature` sends it only to ids known to accept it, and
+  `tests/integration/test_model_invocability.py` calls every resolvable id once so a deprecation
+  fails a test rather than production.
+
+The host
 gateway runs on the Metro loopback `127.0.0.1:8123` with production nodes when `WEB_API_MCP_URL`
 + `MOVIE_MCP_URL` are set (see HANDOFF "How to bring the agent stack up"); the full containerised
 stack is `docker compose --profile agents up -d` (needs the `movie-assistant-store-postgres-data`
@@ -290,7 +314,21 @@ flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
   mc-service's `mc-db`, no `directConnection`) — see [local-dev.md](local-dev.md#environment-variables). The shared
   `MODEL_PROVIDER`/`OLLAMA_BASE_URL`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY` are removed from the
   user-facing runtime (kept only for the keyless golden gate). The committed-tree secret-scan guard
-  (`scripts/secret-scan.mjs`, `secret-scan.yml`) fails the build on any leaked key (SC-006).
+  (`scripts/secret-scan.mjs`, the `secret-scan` job in `.forgejo/workflows/guardrails.yml`) fails the build on any leaked key (SC-006).
+- **The user-supplied Ollama base URL is SSRF-guarded in BOTH processes (item #542).** The BFF
+  (`agent-config-ssrf.ts`) resolves the name, checks every answer, and probes over a socket pinned
+  to those answers; the gateway re-resolves and re-checks before `ChatOllama` connects
+  (`src/ollama_guard.py`, called from `models.py`), because the BFF's check was made in another
+  process and possibly days earlier. Private/LAN addresses are allowed (that is the ordinary
+  homelab Ollama); link-local, cloud-metadata, multicast/reserved and unspecified addresses are
+  refused. Two operator knobs: `AGENT_OLLAMA_LOOPBACK_PORTS` (default `11434`; read by the BFF and
+  the gateway alike) narrows loopback to Ollama's own port — inside a container loopback is *this
+  server*, not the user's machine — and an empty value denies loopback outright;
+  `AGENT_OLLAMA_ALLOWED_HOSTS` (BFF, default empty) restricts Ollama URLs to a named host list for a
+  hardened multi-user deployment. The gateway validates but does not pin, which leaves a
+  sub-second rebinding window — the residual risk and the policy table are in
+  [the SSRF-guard gotcha](../../openwiki/gotchas/agent-config-ssrf-guard.md). This is **not** the
+  backup-destination guard (feature 073), whose policy is the inverse.
 
 ## Containerized agent E2E
 
@@ -301,13 +339,17 @@ the **dev-container BFF + containerized production gateway + containerized MCP**
 builds the 3 images, creates the `movie-assistant-mcp-network` (`docker network create movie-assistant-mcp-network` is now a
 first-time-setup step), fetches the gateway client secret from Keycloak admin (`kc_admin`), and
 verifies production nodes. Default provider is Ollama; **`MODEL_PROVIDER=anthropic node
-scripts/agent-stack.mjs`** deploys the gateway against Claude instead (haiku-4-5 / sonnet-4-6
-defaults, key from env or `.env.local`; don't pass the Ollama model IDs or they 404 at Anthropic).
+scripts/agent-stack.mjs`** deploys the gateway against Claude instead (the `models.py` code
+defaults, key from env or `.env.local`; don't pass the Ollama model IDs or they 404 at Anthropic —
+an `ANTHROPIC_SUPERVISOR_MODEL` in the environment, as the dev container sets, is forwarded as the
+supervisor pin).
 **Three durable gotchas it codifies (all were real blockers — see
 `specs/012-multi-agent-mvp/quickstart.md` "Containerized production-agent stack"):** (1) the MCP
-SDK 421-rejects a Docker service-name `Host` (DNS-rebinding protection) — both MCP servers set
-`transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`, **without
-which the `--profile agents` stack never worked end-to-end**; (2) `production_nodes_enabled` needs
+SDK 421-rejects a Docker service-name `Host` (DNS-rebinding protection) — all three MCP servers
+pass `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`, **without
+which the `--profile agents` stack never worked end-to-end**. On MCP SDK 2.x that setting is a
+`streamable_http_app()` parameter, no longer an `MCPServer()` constructor kwarg, so `build_app()`
+passes it explicitly — a bare `streamable_http_app()` silently re-enables the protection; (2) `production_nodes_enabled` needs
 BOTH `WEB_API_MCP_URL` + `MOVIE_MCP_URL` or the gateway silently serves the tool-free graph — and
 **rebuild `agent-gateway:latest` after any agent-source change** (a stale image runs old code,
 e.g. without `runtime_nodes.py` → tool-free); (3) run agent specs **isolated per file**, not the
@@ -318,13 +360,15 @@ gate an agent-flow run).
 
 ## Observability (Control Tower, SC-008) — opt-in `--profile observability`
 
-LangFuse v3
-(per-turn cost/latency), `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana), and a
-**dev-mode Vault** stand up via `docker compose --profile observability up -d` (LangFuse :3030, Grafana
-:3002, OTLP :4317/:4318, Vault :8200). (Vault is not an observability component — it is the
-**production operator-secret store** for shared infra secrets only: the gateway's Keycloak OAuth
-client secret + the BFF master encryption key; **no** user/model/TMDB keys, which are per-user. The
-dev container just rides this profile for convenience. See [PRD-Vault.md](../proposals/PRD-Vault.md).) **OPA** (agent authz — token-exchange + ui-action policies
+LangFuse v4 (feature 072 — with ClickHouse 25; the gateway's SDK ingestion over OTLP was
+unchanged by the upgrade)
+(per-turn cost/latency) and `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana) stand up
+via `pnpm nx up-observability infrastructure-as-code` (LangFuse :3030, Grafana :3002, OTLP
+:4317/:4318). A **dev-mode Vault** is NOT part of this profile: it lives in the `auth` stack under
+`--profile vault`, and exists only to exercise the gateway's optional, fail-open Vault reader. It is
+not the production secret store — Komodo Variables are, and production Vault is deployed dormant
+([ADR-0001](../decisions/ADR-0001-prod-secrets-management.md)); per-user model/TMDB keys are never
+centralized anywhere (see [PRD-Vault.md](../proposals/PRD-Vault.md)). **OPA** (agent authz — token-exchange + ui-action policies
 in `infrastructure-as-code/opa/policies/`, served with `--watch`; env `OPA_URL`; unset = fall
 back to allow / TS authorizer) and **Unleash** (feature flags `mcm.agent.kill-switch`,
 `mcm.agent.frontier-escalation`, `mcm.agent.degrade`, all default-off; SDK URL =
@@ -368,8 +412,10 @@ Not part of the normal dev stack — config-deployable only.
   dependency under integration); CI cassettes **only** the LLM dimension (T032).
 - **E2E for agent flows must navigate IN-APP, never deep-load a collection before driving the
   dock** (a fresh deep-load of a non-home route resets the CopilotKit agent — research R15).
-- CI: `.github/workflows/agent-gates.yml` runs lint + unit (leak-scan) + golden replay on every
-  push/PR touching the agent or MCP source.
+- CI: the `agent-gates` job in `.forgejo/workflows/guardrails.yml` runs lint + unit (leak-scan) +
+  golden replay (keyless). The live-model golden gate is `pnpm nx test:golden-live movie-assistant`
+  (`MCM_REQUIRE_LIVE_MODEL=1`, so a missing key fails rather than skips), run by
+  `.forgejo/workflows/cd-deploy.yml` and blocking promotion.
 - **Mobile agent E2E runs in CI, not locally** — see [android-emulator.md](android-emulator.md).
 - **A node-level test passing does NOT mean the graph-level path works (047 PR A).** Calling a node
   function directly bypasses every supervisor guard and every stage-continuation check — the

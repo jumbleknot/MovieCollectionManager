@@ -166,8 +166,13 @@ limit and the dock silently renders no messages.
 > `globalSetup` dies on `browserType.launch: Executable doesn't exist`. In the dev container run the
 > specs through the Playwright image instead (recipe in the
 > [devcontainer runbook](./devcontainer.md)); `agent-stack.mjs` itself works fine and is still how
-> you bring the stack up. Note `agent-stack.mjs` needs `KEYCLOAK_SERVICE_CLIENT_SECRET` exported
-> from `stacks/auth.env` first, or it fails with `service-account admin token failed (401)`.
+> you bring the stack up. It fetches the gateway client secret through `kc_admin.py`, whose `cfg()`
+> reads `KEYCLOAK_SERVICE_CLIENT_SECRET` from the process env first and then from
+> `frontend/mcm-app/.env.local` (then `.env.e2e.local`) — so after `node scripts/gen-dev-env.mjs`
+> nothing needs exporting. A `service-account admin token failed (401)` means that file is absent
+> or stale against the realm: re-run `gen-dev-env.mjs` rather than exporting by hand, and unset any
+> exported copy, which wins over the file. Setting `AGENT_GATEWAY_CLIENT_SECRET` skips the lookup
+> entirely.
 
 > **"Sorry — I couldn't complete that just now." usually means a MISSING OLLAMA MODEL, not a code
 > bug.** The gateway makes two model calls per add turn — `SUPERVISOR_MODEL` to classify, then

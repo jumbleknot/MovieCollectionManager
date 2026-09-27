@@ -8,19 +8,34 @@
 
 | Mobile flows | Where to run | Why |
 |---|---|---|
-| **Agent flows** (`agent-*.yaml`, `assistant-*.yaml` — anything that drives the dock → `/bff-api/agent/run`) | **CI: `android-e2e.yml`** (`gh workflow run android-e2e.yml`) | The local Windows path runs them against the **Metro dev server, which OOM-crashes after ~1–2 agent `/run` calls** (V8 heap dump in Metro's log → the app then shows a black screen / `status 0` "RN networking issue"). That instability — not the app — has burned entire sessions. The CI job removes Metro and Windows entirely. |
+| **Agent flows** (`agent-*.yaml`, `assistant-*.yaml` — anything that drives the dock → `/bff-api/agent/run`) | **CI: the `app-e2e` job of `.forgejo/workflows/app-ci.yml`** | The local Windows path runs them against the **Metro dev server, which OOM-crashes after ~1–2 agent `/run` calls** (V8 heap dump in Metro's log → the app then shows a black screen / `status 0` "RN networking issue"). That instability — not the app — has burned entire sessions. The CI job removes Metro and Windows entirely. |
 | **Non-agent flows** (login, collection/movie CRUD, sort, browse — no `/run`) | **Local emulator** (the ritual below) | These don't hit the agent route, don't hammer Metro, and iterate fast locally. |
 
-**The CI job (`.github/workflows/android-e2e.yml`) is the supported harness for mobile agent E2E.**
-It is **Metro-less**: it builds a **standalone embedded-bundle APK** (`APK_VARIANT=release` →
-`pnpm nx run mcm-app:build-apk`, JS baked in, `EXPO_PUBLIC_BFF_NATIVE_URL=10.0.2.2:8082` inlined),
-runs it against the **containerized dev BFF (:8082) + containerized production gateway + MCP**, on a
-**Linux KVM emulator** (where `10.0.2.2` works — no `adb reverse`), and seeds fixtures by reusing
-the web `global-setup`. Trigger: `gh workflow run android-e2e.yml --ref <branch>` (needs repo
-secrets `ANTHROPIC_API_KEY`, `E2E_TEST_USER`, `E2E_TEST_PASSWORD`). Watch: `gh run watch <id>
---exit-status`; on failure it uploads the `maestro-debug` artifact (screenshots + hierarchy).
-> Status: the workflow is committed but must go green once via `workflow_dispatch` before the
-> `pull_request` trigger is uncommented (it has not yet had a successful CI run).
+**The `app-e2e` job of the Forgejo `app-ci` workflow is the supported harness for mobile agent E2E.**
+It is **Metro-less**: it builds a **standalone embedded-bundle APK** (`APK_VARIANT=release`,
+`APK_ABI=x86_64` → `pnpm nx run mcm-app:build-apk`, JS baked in, with
+`EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082` and `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099`
+inlined), runs it against the **containerized dev BFF (:8082) + containerized production gateway +
+MCP** on a **KVM emulator on the `kvm` host runner**, `adb reverse`s 8082/8099 (Keycloak's issuer is
+pinned to `localhost`, so `10.0.2.2` would break login — see
+[below](#which-address-for-which-service--10022-for-metro-adb-reverse-for-keycloakbff)), and runs
+the flows per-file through `scripts/ci-mobile-agent-flows.sh`.
+
+- **When it runs:** every push to `main` and every `workflow_dispatch`. On a `pull_request` the
+  mobile half runs only when the PR touches a path in the job's `mobile` filter (`frontend/**`,
+  `agents/**`, `mcp-servers/**`, `backend/**`, `packages/**`, the workflow itself, or the two Maestro
+  scripts) **or** carries the `mobile-e2e` label; otherwise the PR gets the web E2E and integration
+  tiers from the same job and skips the ~35-min emulator half.
+- **Trigger on a branch without a PR:** `POST …/actions/workflows/app-ci.yml/dispatches` with
+  `{"ref":"<branch>","inputs":{"provider":"anthropic"}}` and the `git credential fill` credential —
+  the full recipe, and why a dispatched run posts **no commit status**, is in
+  [ci-diagnostics.md](ci-diagnostics.md#verifying-a-branch-without-opening-a-pull-request).
+- **Watch / diagnose:** for a PR or `main` push, `node scripts/ci-status.mjs watch --pr <n>` (or
+  `--sha`), then `node scripts/ci-status.mjs failure … --job app-e2e` for the published failure
+  digest; for a dispatched run read `/actions/tasks` as described in ci-diagnostics.md. The job also
+  uploads a `maestro-debug` artifact (screenshots + hierarchy) on failure, but this forge exposes no
+  artifact API, so only a human in the web UI can retrieve it; `ci-mobile-agent-flows.sh` also leaves
+  the emulator logcat on the runner.
 
 **If you must run an agent mobile flow locally (debugging the flow itself, not the app):** point the
 app at the **dev-container BFF (:8082)** instead of Metro's BFF so the OOM-prone server is the
@@ -30,12 +45,18 @@ always means Metro died, not a code bug.
 
 ## Android emulator in the dev container (Linux KVM — feat devcontainer-android-emulator)
 
-**The dev container now runs the emulator natively — no Windows host needed.** The full Android SDK
+**Which dev container:** since feature 060 the daily dev container runs on a **Docker Sandbox
+microVM**, which cannot provide `/dev/kvm` — so **the emulator does not run there**. The Docker
+Desktop dev container (privileged Docker-in-Docker) is retained **solely for this emulator** — see
+[devcontainer-sandbox.md](devcontainer-sandbox.md) and [devcontainer.md](devcontainer.md). Everything
+in this section applies to that Docker Desktop container.
+
+**That dev container runs the emulator natively — no Windows host needed.** The full Android SDK
 + an `android-34` `google_apis` `x86_64` system image are **baked into the toolchain image**
 (`.devcontainer/toolchain.Dockerfile`), so nothing downloads per-open (build-time fetch, before the
 egress firewall exists — no `dl.google.com` allowlist entry, same model as the Rust/uv toolchains).
-The privileged DinD dev container already exposes the host `/dev/kvm`, so the emulator boots with
-hardware accel. Proven live 2026-07-22 (headless, `boot_completed=1`, API 34).
+The privileged Docker Desktop (DinD) dev container exposes the host `/dev/kvm`, so the emulator boots
+with hardware accel. Proven live 2026-07-22 (headless, `boot_completed=1`, API 34).
 
 ```bash
 scripts/devcontainer-android.sh boot     # grant /dev/kvm + ensure AVD + headless boot + adb-reverse 8082/8099
@@ -49,8 +70,11 @@ creates the AVD) on every start — cheap and idempotent. The ~4 GB **boot** is 
 subcommand), not automatic, so a normal session pays nothing. On a host without nested KVM the
 script no-ops cleanly (the emulator would be unusably slow — use CI).
 
-**`adb reverse`, not `10.0.2.2`:** `boot` tunnels the dev BFF (`:8082`) + Keycloak (`:8099`) via
-`adb reverse` because `10.0.2.2` is unreliable under nested-DinD (the same choice CI makes). Point
+**`adb reverse`, not `10.0.2.2`, for the BFF and Keycloak:** `boot` tunnels the dev BFF (`:8082`) +
+Keycloak (`:8099`) via `adb reverse` because Keycloak's issuer and cookies are pinned to `localhost`
+(`KC_HOSTNAME=http://localhost:8099`), so login only completes when the app reaches both at
+`localhost` — the same choice CI makes, and the same reason as on the Windows host
+([below](#which-address-for-which-service--10022-for-metro-adb-reverse-for-keycloakbff)). Point
 the app at the **containerized dev BFF (`:8082`)**, not Metro — see [e2e-testing.md](e2e-testing.md).
 
 ### ★ You can EMULATE in the dev container, but you cannot BUILD the APK there
@@ -100,19 +124,18 @@ local ritual is for non-agent flows and for the rare local agent-flow debug.)**
 
 ### Which address for which service — `10.0.2.2` for Metro, `adb reverse` for Keycloak/BFF
 
-> **CORRECTION (measured 2026-08-23).** This section previously said "QEMU networking (10.0.2.2) is
-> broken on this Windows 11/HyperV machine — the emulator cannot reach the host". **That is not true,
-> and acting on it wasted a session.** From the emulator, `10.0.2.2` both pings the host and completes
-> TCP connections to it. Verified with a negative control (a port with no listener returns `rc=1`
-> while real ports return `rc=0`), because "nothing answered" alone never distinguishes a broken
-> gateway from an empty port:
->
-> ```text
-> adb shell 'nc -w 4 10.0.2.2 8082 </dev/null >/dev/null 2>&1; echo rc=$?'   # rc=0
-> adb shell 'nc -w 4 localhost 59999 </dev/null >/dev/null 2>&1; echo rc=$?' # rc=1  (control)
-> ```
+**QEMU's `10.0.2.2` host alias works on this Windows 11/Hyper-V machine** (measured 2026-08-23). From
+the emulator, `10.0.2.2` both pings the host and completes TCP connections to it. An older claim that
+it was broken wasted a session; it was refuted with a negative control (a port with no listener
+returns `rc=1` while real ports return `rc=0`), because "nothing answered" alone never distinguishes
+a broken gateway from an empty port:
 
-The two transports are not interchangeable, and each is required for a *different* reason.
+```text
+adb shell 'nc -w 4 10.0.2.2 8082 </dev/null >/dev/null 2>&1; echo rc=$?'   # rc=0
+adb shell 'nc -w 4 localhost 59999 </dev/null >/dev/null 2>&1; echo rc=$?' # rc=1  (control)
+```
+
+So `adb reverse` is not a workaround for a broken `10.0.2.2`. The two transports are not interchangeable, and each is required for a *different* reason.
 
 **Metro → `10.0.2.2:8081`, and `adb reverse` cannot change that.** An RN 0.85 debug build resolves its
 dev server to `10.0.2.2:8081` by default, **not** `localhost`, so a `adb reverse tcp:8081` tunnel is
@@ -177,8 +200,10 @@ grep -c '10\.0\.2\.2:8082' /tmp/b.js   # expect 0
 & "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_7-35 -no-snapshot-load
 # Wait for the emulator to fully boot (home screen visible before continuing).
 
-# 2. Establish ADB reverse tunnel (must repeat after every emulator start)
-adb reverse tcp:8081 tcp:8081
+# 2. Establish the ADB reverse tunnels for the BFF + Keycloak (repeat after every emulator start).
+#    Metro needs none — the debug build reaches it at 10.0.2.2:8081 (see "Which address" above).
+adb reverse tcp:8082 tcp:8082
+adb reverse tcp:8099 tcp:8099
 
 # 3. Start Metro from frontend/mcm-app — NOT from repo root.
 #    Starting from the repo root produces doubled-path errors:
@@ -195,15 +220,12 @@ adb shell am start -n com.grumpyrobot.mcmapp/.MainActivity
 
 **FIRST — do you even need to rebuild? (feature 012 lesson.)** The APK only needs rebuilding when the **native layer** changes: a native dependency in `frontend/mcm-app/package.json` (a module with android/iOS code or an `expo-module.config.json`), anything under `frontend/mcm-app/android/`, `app.json`, or an `expo prebuild`. **Pure JS/Metro changes never need a rebuild** — Metro serves the new JS bundle to the *installed* APK (TS, React/RN components, BFF routes, even a new pure-JS dep). A JS-only dep can still be checked: if its package ships no `android/`/`ios/` dir and no `expo-module.config.json`, autolinking adds nothing native. (012's CopilotKit was pure-JS at the app's usage — the whole integration was Metro-config + polyfills, see `specs/012-multi-agent-mvp/HANDOFF.md`.)
 
-So before triggering a ~20 min CI build, check whether the **last successful CI APK is already native-compatible with HEAD**:
+So before rebuilding, check whether the **APK already installed is native-compatible with HEAD** — diff
+the native layer against the commit that APK was built from:
 
 ```bash
-gh run list --workflow=android-apk.yml -L 5            # find the latest successful run-id + its commit
-SHA=$(gh run view <run-id> --json headSha -q .headSha)
-git diff "$SHA" HEAD -- frontend/mcm-app/package.json frontend/mcm-app/android frontend/mcm-app/app.json
-#   EMPTY diff  → that artifact is native-identical to HEAD; SKIP the rebuild. Just download + install:
-gh run download <run-id> -n app-debug-apk -D <dir>     # → app-debug.apk
-adb install -r app-debug.apk
+git diff <apk-build-sha> HEAD -- frontend/mcm-app/package.json frontend/mcm-app/android frontend/mcm-app/app.json
+#   EMPTY diff  → the installed APK is native-identical to HEAD; SKIP the rebuild.
 #   NON-EMPTY (native deps / android / app.json changed) → rebuild via one of the paths below.
 ```
 
@@ -216,12 +238,18 @@ adb install -r app-debug.apk
 
 **Supported build paths (feature 006) — when a rebuild IS needed:**
 
-- **CI (recommended — use this for APKs):** the `android-apk` GitHub Actions workflow (`.github/workflows/android-apk.yml`) builds the APK on an `ubuntu-latest` runner (~20 min) and publishes it as the `app-debug-apk` artifact (universal/all-ABI debug APK, ~75 MB). A Linux runner has no Windows `CMAKE_OBJECT_PATH_MAX` wall, so it needs none of the workarounds below. **When:** after any native-layer change (Expo SDK/RN bump, new native module, `expo prebuild`) when you need an installable APK — and as the default over the local Windows build. **CI builds the APK only — it runs no test suites.**
-  - **Trigger:** `gh workflow run android-apk.yml --ref <branch>` (or `workflow_dispatch` in the Actions UI), or it auto-runs on pushes touching `frontend/mcm-app/android/**`, `app.json`, `package.json`, `frontend/mcm-app/scripts/build-apk.mjs`, or the workflow file.
-  - **Watch / download:** `gh run watch <run-id> --exit-status`; then `gh run download <run-id> -n app-debug-apk` → `app-debug.apk`. Install with `adb install -r app-debug.apk`.
-  - **Disk-free step is REQUIRED, do not remove it:** the workflow frees ~10–15 GB of preinstalled toolchains before building. Without it the RN 0.85 C++ build (worklets/screens) + SDK/NDK + Gradle caches exhaust the runner disk and the build is **killed mid-compile** (no clean error, step stuck `in_progress`, job fails ~39 min in). This was hit and fixed during feature 006.
+- **CI builds release APKs only — there is no CI debug (Metro-attached) APK.** Both Forgejo builds use
+  `APK_VARIANT=release` (JS embedded): `app-ci`'s `app-e2e` builds an `x86_64` APK with `localhost`
+  BFF/Keycloak URLs for its own emulator run and does not publish it; `cd-deploy`'s `prod-apk` bakes
+  the public hosts and publishes to the package registry (above). To build **only** the prod APK,
+  dispatch `cd-deploy.yml` with `{"ref":"main","inputs":{"build_apk":"true"}}` — the dispatch recipe
+  is in [ci-diagnostics.md](ci-diagnostics.md#verifying-a-branch-without-opening-a-pull-request).
+  (The GitHub-era `android-apk.yml` debug-APK workflow was ported into `prod-apk` and no longer exists.)
+- **A Linux build container with its own egress** — the path the dev-container section above
+  recommends for a local APK; a Linux build has no Windows `CMAKE_OBJECT_PATH_MAX` wall, so it needs
+  none of the workarounds below.
 - **Local (Nx target):** `pnpm nx run mcm-app:build-apk` wraps `expo prebuild --platform android --clean` + `gradlew :app:assembleDebug` (cross-platform via `frontend/mcm-app/scripts/build-apk.mjs`; set `APK_ABI=x86_64` for an emulator-only build). On Windows this still hits the path wall below — use the wrapper next.
-- **Local on Windows (path-wall wrapper — fragile fallback):** `scripts/build-apk-short-path.ps1` sets up the short-root + flat-`node_modules` recipe, invokes the Nx target, then **always reverts** (`-Install` also `adb install`s). This automates the manual recipe documented below. **Prefer CI** — this local path is slow and has hung mid-run; if you do run it, capture output to a file (not a buffered `Select-Object`) so a failure is visible, and verify `.npmrc`/node_modules are restored afterward (`git status .npmrc`; `pnpm install`).
+- **Local on Windows (path-wall wrapper — fragile fallback):** `scripts/build-apk-short-path.ps1` sets up the short-root + flat-`node_modules` recipe, invokes the Nx target, then **always reverts** (`-Install` also `adb install`s). This automates the manual recipe documented below. **Prefer a Linux build** — this local path is slow and has hung mid-run; if you do run it, capture output to a file (not a buffered `Select-Object`) so a failure is visible, and verify `.npmrc`/node_modules are restored afterward (`git status .npmrc`; `pnpm install`).
 
 Maestro launches the **installed APK** via `am start` — it does NOT rebuild. After anything that changes the native layer (an Expo SDK / React Native bump, adding a native module, `expo prebuild`), you MUST rebuild and reinstall the APK, or the old native binary runs against the new JS bundle and crashes at startup (e.g. SDK 55→56 produced a RedBox `ReferenceError: Property 'MessageQueue' doesn't exist` — old RN 0.83 bridge vs new RN 0.85 bridgeless JS). `expo prebuild --clean` + `gradlew clean` regenerate/clean native *source* but do not build or install — the build+install step is separate.
 
@@ -261,14 +289,14 @@ After install, run Metro from `frontend/mcm-app` (default layout) and Maestro as
 
 ### After `pm clear` / `clearState: true` in Maestro
 
-`clearState: true` wipes the app's SharedPreferences, including the `debug_http_host` entry that tells React Native where Metro is. The app will fall back to QEMU 10.0.2.2 (unreachable) and show "open debugger to view warnings". Fix:
+`clearState: true` wipes the app's SharedPreferences, including the `debug_http_host` entry that tells React Native where Metro is. The app falls back to its default dev server, `10.0.2.2:8081` — which reaches Metro on the host as long as Metro holds host port 8081 (see [Which address for which service](#which-address-for-which-service--10022-for-metro-adb-reverse-for-keycloakbff)). If it instead shows "open debugger to view warnings", relaunch it:
 
 ```powershell
 adb shell am force-stop com.grumpyrobot.mcmapp
 adb shell am start -n com.grumpyrobot.mcmapp/.MainActivity
 ```
 
-On the next launch RN resolves `localhost:8081` correctly through the `adb reverse` tunnel — no Metro restart needed. The APK itself is unaffected; only SharedPreferences is cleared.
+On the next launch RN reconnects to Metro — no Metro restart needed. The APK itself is unaffected; only SharedPreferences is cleared.
 
 ### Metro cache reset (if Metro was started from wrong directory)
 

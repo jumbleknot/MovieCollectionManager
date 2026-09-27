@@ -28,6 +28,7 @@ Browse and manage your movie collection from a web browser or mobile app
 - `mc-service` stores movie collection data on a mongodb server named `mc-db` in a single mongodb database named `mc_db` with shared collections across all users
   - The `movie_collections` shared collection stores identifiers along with Access Control Lists (ACLs) for all movie collections
   - The `movies` shared collection stores data about the movies in the collections
+- `mcm-app`'s BFF runs **per-user collection backups** (feature 073): scheduled and on-demand copies of a user's collections to S3-compatible or WebDAV storage the *user* owns, with keep-last-N retention and a restore that only ever creates new collections. The scheduler ticks in-process in the BFF (disabled when `BACKUP_TICK_SECRET` is unset); every read and restore write goes through `mc-service` as the user, so DAC applies unchanged, and an unattended run acts on a Keycloak offline token the user consented to. Destination secrets are AES-256-GCM-sealed under their own key (`BACKUP_CREDENTIAL_ENC_KEY`, separate from `AGENT_CONFIG_ENC_KEY`) in the BFF-owned store — see [runbooks/backups.md](runbooks/backups.md)
 - This software is dependent on Keycloak, an external IAM service
   - This software expects Keycloak to be set up with a client named `movie-collection-manager` in a realm named `grumpyrobot`
   - This software expects Keycloak to have the following client roles: `mc-admin`, `mc-user`
@@ -125,7 +126,7 @@ mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject to
 - The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
 - `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), supplies the per-run subject token, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`. For feature 014 it also bridges an uploaded import file into the run (multipart `agent/import-upload` → transient single-use store → `X-Import-File` header) and streams the ownership-scoped, single-use export download (`agent/export-download`).
 - **The Control Tower (LangFuse + OpenTelemetry/Grafana observability, OpenSearch audit, OPA + Unleash) is config-gated and additive (SC-005).** Every piece is **no-op when unconfigured** and falls back to a safe in-code default: OPA token-exchange/UI-action authz falls back to the in-code allowlist when `OPA_URL` is unset; Unleash flags fall back to env flags (kill-switch, frontier-escalation, degrade); the observability + policy services are opt-in (`--profile observability`); and the OpenSearch append-only audit sink is **config-deployable on its own `--profile audit`** (the audit always logs, and additionally writes to OpenSearch only when `OPENSEARCH_URL` is set). So the agent layer runs in dev without the Control Tower, and each control is enabled by configuration in the environments that need it.
-- **Vault is the production operator-secret store** — a foundational platform service (peer to Keycloak), not a Control Tower component. It holds ONLY shared *infrastructure* secrets: the gateway's Keycloak OAuth client secret (RFC 8693 token exchange) and the BFF master encryption key (`AGENT_CONFIG_ENC_KEY`). It deliberately holds **no** user, model-provider, or TMDB credentials, which are per-user and never shared (see [PRD-Vault.md](PRD-Vault.md)). Production runs a real Vault; in dev/test `VAULT_ADDR`/`VAULT_TOKEN` are typically unset and secret resolution falls back to the environment (the dev-mode Vault container ships under `--profile observability` for local testing only).
+- **Komodo Variables are the production operator-secret store** ([ADR-0001](decisions/ADR-0001-prod-secrets-management.md)). Shared *infrastructure* secrets — among them the gateway's Keycloak OAuth client secret (`AGENT_GATEWAY_CLIENT_SECRET`, RFC 8693 token exchange) and the BFF master encryption key (`AGENT_CONFIG_ENC_KEY`) — live in Komodo's masked variable store and are injected at deploy into each stack's gitignored `.env.prod` (`infrastructure-as-code/komodo/stacks.toml`). **No** user, model-provider, or TMDB credential is ever stored there: those are per-user and never shared (see [PRD-Vault.md](proposals/PRD-Vault.md) §3.3). HashiCorp Vault is deployed in production **dormant** (the `prod-vault` stack — uninitialized and sealed, feature 025) and is not a secret source for any core stack. The gateway keeps an optional, fail-open Vault reader (`agents/movie-assistant/src/secrets.py`) that is active only when `VAULT_ADDR` + `VAULT_TOKEN` are set; they are unset in production, so every agent secret resolves from the Komodo-injected environment. Locally, a dev-mode Vault ships in the `auth` stack under `--profile vault` for exercising that reader only.
 
 ### Token Custody & Propagation for Agent Runs
 
@@ -148,7 +149,7 @@ Custody of these credentials is a **BFF responsibility** (the BFF-Layer principl
 |---|---|---|---|
 | `mcm-bff-db` | BFF | `user_agent_config` | Per-user assistant config (`_id = userId`): enabled flag, provider, Ollama base URL, **encrypted** Anthropic/TMDB credentials (`*Enc`), personal cost limit, `updatedAt` |
 
-`mcm-bff-db` is a **plain standalone `mongod`** (no replica set, no `directConnection`) — the BFF store does single-document upserts only, so it needs neither (unlike `mc-db`, whose replica set exists for mc-service's cascade-delete transaction). The BFF connects via `MONGO_URL` (`mcm-bff-db:27017` in-container / `localhost:27018` from host), never mc-service's `MC_DB_URL`. The AES-256-GCM master key (`AGENT_CONFIG_ENC_KEY`) is held separately (Vault/env), never alongside the data.
+`mcm-bff-db` is a **plain standalone `mongod`** (no replica set, no `directConnection`) — the BFF store does single-document upserts only, so it needs neither (unlike `mc-db`, whose replica set exists for mc-service's cascade-delete transaction). The BFF connects via `MONGO_URL` (`mcm-bff-db:27017` in-container / `localhost:27018` from host), never mc-service's `MC_DB_URL`. The AES-256-GCM master key (`AGENT_CONFIG_ENC_KEY`) is held separately — injected into the BFF's environment (from Komodo Variables in production, from the file `scripts/gen-dev-env.mjs` generates in dev) — never alongside the data.
 
 ### Three Agent-UI Capabilities (MCM examples)
 
@@ -382,7 +383,7 @@ graph LR
       end
     end
 
-    vault["`**Vault** *(production)*<br/>*Operator secrets ONLY:<br/>gateway OAuth client secret,<br/>BFF master encryption key.<br/>NO user / model / TMDB keys.*`"]
+    vault["`**Komodo Variables** *(production)*<br/>*Operator secrets ONLY, injected at deploy:<br/>gateway OAuth client secret,<br/>BFF master encryption key.<br/>NO user / model / TMDB keys.<br/>(HashiCorp Vault deployed dormant)*`"]
     keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
     llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(per-user credentials — no shared key)*`"]
 
@@ -421,7 +422,7 @@ graph LR
     gw_runtime -->|Traces| observ
     gw_runtime -->|Audit events| audit
     gw_runtime -->|Policy + kill switch| policy
-    gw_runtime -->|"Gateway OAuth client secret<br/>(RFC 8693 token exchange)"| vault
+    gw_runtime -.->|"Gateway OAuth client secret<br/>(deploy-time injection)"| vault
     mcm_bff -.->|"Master encryption key<br/>(deploy-time injection)"| vault
   end
 
@@ -584,14 +585,14 @@ pnpm nx up-mcm infrastructure-as-code     # --profile app
 
 | Component | Image / Runtime | Purpose |
 |-----------|-----------------|---------|
-| `movie-assistant-gateway` | Custom Python image (`agents/movie-assistant/Dockerfile` — `python:3.13-slim` + uvicorn) | FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI via `ag_ui_langgraph`; emits AG-UI natively (NOT the stock LangGraph Platform server) |
-| `movie-assistant-store-postgres` | `postgres:18.3-alpine3.23` | LangGraph checkpoints (isolated from `mc-service-store-mongo`) |
+| `movie-assistant-gateway` | Custom Python image (`agents/movie-assistant/Dockerfile` — `python:3.14-slim` + uvicorn) | FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI via `ag_ui_langgraph`; emits AG-UI natively (NOT the stock LangGraph Platform server) |
+| `movie-assistant-store-postgres` | `postgres:18.6-alpine3.23` | LangGraph checkpoints (isolated from `mc-service-store-mongo`) |
 | `movie-assistant-mcp-movie` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
 | `movie-assistant-mcp-webapi` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |
 | `langfuse-*` + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/Loki) | Official images | LLM per-turn cost/latency traces (LangFuse) + OTel traces/metrics/logs |
 | `agent-audit-opensearch` | `opensearchproject/opensearch` | Immutable audit log (`audit` stack) |
 | `opa-service` + `unleash-service` | Official images | Policy enforcement + kill switch |
-| `vault-service` | `hashicorp/vault` | **Production operator-secret store** (foundational service, peer to Keycloak): the gateway's Keycloak OAuth client secret (RFC 8693 token exchange) and the BFF master encryption key (`AGENT_CONFIG_ENC_KEY`). **No** user/model/TMDB keys — those are per-user (see [PRD-Vault.md](PRD-Vault.md)). Relocated to the `auth` stack (feature 020), gated behind `--profile vault`; env-fallback when absent. |
+| `vault-service` | `hashicorp/vault` | **Not a production secret source** — Komodo Variables are ([ADR-0001](decisions/ADR-0001-prod-secrets-management.md)). Locally a dev-mode Vault in the `auth` stack (feature 020), gated behind `--profile vault`, for exercising the gateway's optional fail-open Vault reader; in production the `prod-vault` stack runs it **dormant** (uninitialized + sealed, feature 025). It would never hold user/model/TMDB keys — those are per-user (see [PRD-Vault.md](proposals/PRD-Vault.md)). Every consumer falls back to the environment when it is absent. |
 
 The Agent Gateway also requires Keycloak indirectly: `movie-assistant-mcp-movie` calls `mc-service` with the user's JWT, so the full chain (Keycloak → mc-service → movie-assistant-mcp-movie → movie-assistant-gateway → mcm-bff-service-*) must be running for end-to-end agent flows.
 

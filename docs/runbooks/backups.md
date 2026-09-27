@@ -206,10 +206,18 @@ Grep for the secret **values**, not the field names: a log that never prints the
 
 ## Known gaps
 
-- **No account-deletion path exists in the app.** `tearDownUserBackups(userId)` is written,
-  tested and ready; nothing calls it, because there is no route, no `deleteUser` in
-  `keycloak.ts`, and nothing outside the E2E teardown helper. Whoever builds account deletion
-  must call it.
+- **Account deletion tears backups down first, and leaves the artifacts where they are
+  (feature 076).** `runAccountDeletion` in `account-deletion.ts` calls
+  `tearDownUserBackups(userId)` as its first step, before collections, agent config, sessions or
+  the identity (`deleteUser` in `keycloak.ts`, always last). The teardown revokes the offline
+  token at Keycloak and only then deletes the user's destinations, jobs and runs, in that order;
+  a failed revocation throws having deleted nothing, the pipeline stops there, the user is told
+  the account still exists, and a retry starts again from the teardown. A run in flight when its
+  owner is deleted loses its permission and must fail rather than retry (spec FR-034). What
+  deletion never touches is the **artifacts** at the user's destination — their property, at
+  storage they pay for (FR-023): no destination driver is constructed during deletion, and
+  `account-deletion-no-driver.test.ts` pins that. An operator asked to "remove a deleted user's
+  backups" has nothing to remove on this side.
 - **Streaming snapshots** are not implemented; the size ceiling stands in for them.
 - **Failure notification is in-app only.** No email — `email-service.ts` only triggers Keycloak
   account flows, so this would mean building a real outbound channel.

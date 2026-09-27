@@ -902,7 +902,7 @@ Keycloak `quay.io/keycloak/keycloak:26.5.5`, deployed as Komodo Stack **`prod-au
 
 - **Komodo Stack in Git Repo mode.** Put the git config on the Stack itself (provider/account/repo/branch) — a separate Repo resource isn't needed. Run directory `infrastructure-as-code/docker/keycloak`, file `compose.prod.yaml`, Server `Local` (prod rootless daemon). Register the Forgejo PAT under **Settings → Providers → Git** for `server.tailnet.ts.net:3000` (repo is private) and add `"insecure-registries": ["server.tailnet.ts.net:3000"]` to the prod (and ci) rootless `~/.config/docker/daemon.json` for plain-HTTP image pulls.
 - **Secrets via the Stack's Environment field, not files.** Komodo clones into its own run dir each deploy, so gitignored files (`.env.prod`) aren't present. Put `KC_DB_PASSWORD` (+ initial `KC_BOOTSTRAP_ADMIN_PASSWORD`) in the Stack **Environment** field (mask via Komodo secret variables) and set **Env File Path = `.env.prod`** so Komodo materializes them where `env_file: - .env.prod` expects. The Docker-secret file was dropped — DB password lives in `.env.prod` only, and Postgres reads `POSTGRES_PASSWORD: ${KC_DB_PASSWORD}`.
-- **Hostname (v2 semantics).** `KC_HOSTNAME=https://auth.${BASE_DOMAIN}`, `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`, `KC_HTTP_ENABLED=true`, `KC_PROXY_HEADERS=xforwarded`, `command: start`. Admin isolated to the tailnet: `KC_HOSTNAME_ADMIN=http://server.tailnet.ts.net:8099` with the host port bound to the tailscale IP only (`<ts-ip>:8099:8080`). Attach `keycloak-service` to **`edge-network`** so cloudflared resolves it by name.
+- **Hostname (v2 semantics).** `KC_HOSTNAME=https://auth.${BASE_DOMAIN}`, `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`, `KC_HTTP_ENABLED=true`, `KC_PROXY_HEADERS=xforwarded`, `command: start`. Admin isolated to the tailnet: originally `KC_HOSTNAME_ADMIN=http://server.tailnet.ts.net:8099` with the host port bound to the tailscale IP only (`<ts-ip>:8099:8080`); since features 028/029 it is `19099`, bound `0.0.0.0` and kept tailnet-only by ufw (Phase 17). Attach `keycloak-service` to **`edge-network`** so cloudflared resolves it by name.
 - **Realm import (the gap, now closed).** The `grumpyrobot` realm is committed as `prod-realm.json` (carrying the `${BASE_DOMAIN}` placeholder), rendered at deploy to the gitignored `prod-realm.rendered.json` that `--import-realm` mounts (kept separate from the throwaway `ci-realm.json`; `PROD_REALM_FILE` points at the rendered file). Sanitize before committing: strip dev redirect URIs (`localhost:*`, `10.0.2.2`, the old `app.` host), real client secrets, dev SMTP, **all users**, and the embedded signing keys (`components."org.keycloak.keys.KeyProvider"` — so prod mints fresh keys).
   > **Gotcha — `${BASE_DOMAIN}` is rendered by hand right now** on the host: `sed 's|${BASE_DOMAIN}|<domain>|g' prod-realm.json > prod-realm.rendered.json` (sed, not envsubst — it touches ONLY the literal `${BASE_DOMAIN}` and leaves Keycloak's `${role_*}`/`${client_*}` i18n placeholders intact).
   > **Gotcha — removing a client means removing ALL its references.** Dropping a client from the export (e.g. the test-only `mcm-bff-test`) requires deleting its `roles.client[<id>]` entry (and any `scopeMappings`) too — not just the client object. A dangling reference makes `--import-realm` abort in production mode with `App doesn't exist in role definitions: <id>` and crash-loop `keycloak-service`.
@@ -910,15 +910,15 @@ Keycloak `quay.io/keycloak/keycloak:26.5.5`, deployed as Komodo Stack **`prod-au
   > **Gotcha — the admin console needs the public auth route reachable.** The console served on the tailnet still sends its OIDC + session-check ("3rd party check") iframe to `KC_HOSTNAME` (`auth.${BASE_DOMAIN}`). Until that route resolves, opening `http://homelab…:8099` fails with *"Timeout when waiting for 3rd party check iframe message."* If Chrome third-party-cookie blocking keeps it flaky after the route is up (console on http-tailnet, iframe on https-public), serve admin over HTTPS on the tailnet (`tailscale serve --bg http://localhost:8099`) and set `KC_HOSTNAME_ADMIN=https://server.tailnet.ts.net`.
 - **Admin hardening.** `KC_BOOTSTRAP_ADMIN_*` is first-boot only. Log in once, create a named admin with **2FA**, and delete the bootstrap `admin` user. After that the bootstrap creds are **inert** (Keycloak only consults them when no admin exists) — but **keep them** in the committed compose + Komodo env: they're a managed secret (never in git), the `${…:?}` fail-fast form requires the value on every redeploy, and a **fresh DB deploy needs them to create the first admin** (removing the lines would lock you out of a rebuilt Keycloak). For extra hygiene, *rotate* the Komodo value to a fresh random string rather than removing the mechanism. SMTP stays stubbed (Mailpit removed) — wire a real provider before opening registration.
 
-### 11.B BFF prod — `mcm.${BASE_DOMAIN}` (pending Phase 15)
+### 11.B BFF prod — `mcm.${BASE_DOMAIN}` (DONE — shipped in Phase 15)
 
-The BFF is a CI-built image (`mcm-bff`); the prod container `mcm-bff-service` listens on **3000** (the dev `:8082` is a host port). It can't deploy until Phase 15 produces an image. Author now, deploy after:
+The BFF is a CI-built image (`mcm-bff`), deployed by Komodo ResourceSync as stack **`prod-mcm-bff`** from `infrastructure-as-code/docker/bff/compose.prod.yaml`, pinned by the digest `cd-deploy` promotes into `bff/.env.deploy`. The prod container `mcm-bff-service` listens on **3000** with no published port (the dev `:8082` is a host port). What the bring-up required:
 
 1. **Build the prod APK against the public host.** The production `build-apk.mjs` run must bake `mcm.${BASE_DOMAIN}` (HTTPS) as the BFF URL — not an IP, not `:8082`.
 2. **BFF config.** Set the BFF `ROOT_URL`/issuer to the public `auth.` origin, and the session-cookie domain to `mcm.${BASE_DOMAIN}` with `Secure`+`HttpOnly`. CORS allows the app origin only. Wire the Redis session store; attach to `edge-network` (cloudflared reaches `mcm-bff-service:3000` by name); no public port mapping.
 3. **Client redirect URIs.** On the `movie-collection-manager` client, add the production **valid redirect URIs**: the web origin (`https://mcm.${BASE_DOMAIN}/*`) and the **mobile app link / custom-scheme deep link** for the OAuth callback. Without the mobile entry, on-device login fails after the browser redirect.
 4. **Cloudflare route.** Add the second published application: `mcm.${BASE_DOMAIN}` → `http://mcm-bff-service:3000`. These two (`auth.` + `mcm.`) are the **only** public hostnames; everything else stays tailnet / Cloudflare Access.
-5. **Off-network device login test**, then **re-export the final realm** and park client secrets in **Komodo/Vault**, never git.
+5. **Off-network device login test**, then **re-export the final realm** and park client secrets as masked **Komodo Variables** ([ADR-0001](../decisions/ADR-0001-prod-secrets-management.md)), never git.
 
 ---
 
@@ -941,7 +941,7 @@ Beyond Phases 2–5:
 - **Gate admin UIs.** Forgejo, Komodo, Grafana, Cockpit → tailnet-only or behind **Cloudflare Access**. Never expose Keycloak admin or **any** CI-daemon service publicly — only `mcm.` and `auth.` face the internet.
 - **CrowdSec** (container) — modern fail2ban with shared blocklists; wire it to the reverse proxy to auto-ban scanners on the public hostnames.
 - **2FA** on Forgejo, Cloudflare, Komodo.
-- **Secrets in Vault.** Use the stack's Vault for prod secrets instead of env files; CI secrets live in Forgejo Actions secrets. No clear-text secret reaches git — EVER (features 021/022/023): tracked-compose credentials are fail-fast `${VAR:?}` refs (no inline literal, no `:-literal` default), real dev values minted by `node scripts/gen-dev-secrets.mjs` into gitignored `stacks/*.env`, and the rule extends to scripts/tests/docs (read env, skip-if-unset). Two CI gates enforce it on every push/PR: `naming-gate.yml` (`check-no-inline-secrets.mjs`) and `secret-scan.yml` (`secret-scan.mjs`, whole tree) — port both to the Forgejo pipeline.
+- **Secrets in Komodo Variables, not Vault.** Prod secrets are masked **Komodo Variables** (`[[NAME]]` in `infrastructure-as-code/komodo/stacks.toml`), materialized into each stack's gitignored `.env.prod` at deploy — the sanctioned mechanism per [ADR-0001](../decisions/ADR-0001-prod-secrets-management.md); the `prod-vault` stack stays deployed **dormant** and agent-layer-scoped only. CI secrets live in Forgejo Actions secrets. No clear-text secret reaches git — EVER (features 021/022/023): tracked-compose credentials are fail-fast `${VAR:?}` refs (no inline literal, no `:-literal` default), real dev values minted by `node scripts/gen-dev-secrets.mjs` into gitignored `stacks/*.env`, and the rule extends to scripts/tests/docs (read env, skip-if-unset). Two jobs of `.forgejo/workflows/guardrails.yml` enforce it on every push/PR: `naming` (`check-no-inline-secrets.mjs`) and `secret-scan` (`secret-scan.mjs`, whole tree) — ported from the GitHub-era `naming-gate.yml` / `secret-scan.yml`.
 - **Image hygiene.** Pin images by digest; **Trivy**-scan images in CI (fail on criticals); run **Renovate** (Forgejo-compatible) to keep base images patched.
 - **NTP/chrony.** Keep the clock tight — JWT `exp`/`nbf` validation breaks on clock skew.
 - **Performance isolation.** Set CPU/memory limits on the CI compose stacks (especially the KVM Android emulator) so a runaway build can't starve prod. (Rootless daemons isolate *security*; cgroup limits isolate *performance*.)
@@ -965,7 +965,7 @@ Scrutiny        → SMART health on the single NVMe (your biggest hardware SPOF)
 Uptime Kuma is the one that actually pages you (Telegram/Discord/email) when the public app or `/health` goes down. If you'd rather not run the full Prometheus stack, **Beszel** is an excellent all-in-one lightweight alternative (host + container metrics + alerts).
 
 > **Deployed 2026-07-05 (as-built — differs from the plan above).** All on the prod rootless daemon, published on the **tailnet IP only** (`<ts-ip>:port`):
-> - **Uptime Kuma** (`<ts-ip>:3011`) — HTTP-keyword probes of the public BFF health path (`ok`) and the Keycloak well-known (`issuer`); **Gmail app-password SMTP** alerts. This is the pager. (Port 3011 because the pre-existing `otel-lgtm` Grafana already holds the host's 3002.)
+> - **Uptime Kuma** (`<ts-ip>:3011`) — HTTP-keyword probes of the public BFF health path (`ok`) and the Keycloak well-known (`issuer`); **Gmail app-password SMTP** alerts. This is the pager. (Port 3011 because the `otel-lgtm` Grafana held the host's 3002 at the time; Grafana has since moved to **19002** — see the appendix.)
 > - **Beszel** hub + agent (`<ts-ip>:8090`) — chosen over the node-exporter/cAdvisor/Prometheus/Grafana assembly: rootless-friendly, host + container metrics + built-in threshold alerting. Hub↔agent communicate over a shared **unix socket** (`/beszel_socket/beszel.sock`), so there's no host-networking friction under rootless.
 > - **Dozzle** (`<ts-ip>:8081`) — live per-container log viewer.
 > - **otel-lgtm** already runs for app/agent telemetry (Grafana/Prometheus/Loki/Tempo).
@@ -976,6 +976,14 @@ Uptime Kuma is the one that actually pages you (Telegram/Discord/email) when the
 ## Phase 14 — Backups, disaster recovery & UPS
 
 **The most important phase — one 1 TB SSD is a single point of failure.**
+
+> **Not the same thing as the in-app backups.** This phase is the **operator's host-level disaster
+> recovery**: a restic snapshot of every service's data (Forgejo, Komodo, Keycloak, agent-db and both
+> Mongos) to a remote the operator controls. Feature 073's **per-user collection backups**
+> ([backups.md](backups.md)) are an application feature: each user exports their own collections to
+> S3-compatible or WebDAV storage *they* own, scheduled by the BFF and restorable only as new
+> collections. Neither replaces the other — a user's own backup does not protect the host, and the
+> host snapshot cannot be restored per user.
 
 - **Backups (restic or Borg), scheduled + encrypted + offsite (3-2-1):**
   - `mongodump` the replica set; `pg_dump` each Postgres (Forgejo, Keycloak, agent-db, Komodo).
@@ -1007,7 +1015,8 @@ Uptime Kuma is the one that actually pages you (Telegram/Discord/email) when the
 ## Phase 15 — Wire the pipeline
 
 > **✅ CD architecture — final hardened state (2026-07-03).** Phase 15 is complete; the pipeline below
-> was hardened during bring-up. The current shape (authoritative — see also the CLAUDE.md CI/CD section):
+> was hardened during bring-up. The current shape (authoritative — see also
+> [openwiki/projects/ci-cd-pipeline.md](../../openwiki/projects/ci-cd-pipeline.md)):
 >
 > - **Trigger is event-driven, not polled.** `cd-deploy.yml` is **`workflow_dispatch`-only** (no `push`
 >   trigger, no `ci-gate`). `app-ci.yml`'s **`trigger-cd`** job `needs:` its CI jobs and dispatches
@@ -1025,9 +1034,12 @@ Uptime Kuma is the one that actually pages you (Telegram/Discord/email) when the
 > - **`app-e2e` is path-gated** (a `changes` dorny/paths-filter job) so Komodo/deploy-config-only changes
 >   skip the ~23-min suite; `trigger-cd` tolerates a *skipped* app-e2e but blocks on a *failed* one.
 > - Branch protection on `main`: required checks `guardrails*` + `app-ci*` (globs). Operator runbook +
->   Step A–E history: `docs/runbooks/Phase-15-Operator-Checklist.md`.
+>   Step A–E history (a completed historical log): [Phase-15-Operator-Checklist.md](Phase-15-Operator-Checklist.md).
+>
+> The subsections below (15.1–15.4) are the original bring-up plan, kept as a record of how the
+> pipeline was stood up.
 
-### 10.1 Provision the Keycloak realm (unblocks the stack — PRD §4.3)
+### 15.1 Provision the Keycloak realm (unblocks the stack — PRD §4.3)
 
 1. From your working local stack, export the realm with users + secrets:
 
@@ -1037,12 +1049,14 @@ docker exec keycloak-service /opt/keycloak/bin/kc.sh \
   export --realm grumpyrobot --users realm_file --file /tmp/realm.json
 ```
 
-2. Copy it out, sanitize anything you don't want committed, and commit as `infrastructure-as-code/docker/keycloak/ci-realm.json` (throwaway CI secrets are fine to commit; **not** prod secrets). The whole-tree `secret-scan.yml` gate will fail the build if a real credential is left in it.
+2. Copy it out, sanitize anything you don't want committed, and commit as `infrastructure-as-code/docker/keycloak/ci-realm.json` (throwaway CI secrets are fine to commit; **not** prod secrets). The whole-tree `secret-scan` job of `guardrails.yml` will fail the build if a real credential is left in it.
 3. Wire Keycloak with `--import-realm` + a mount in the CI bring-up, and add a "provision env" workflow step that materializes the secrets (features 021/022/023): run `node scripts/gen-dev-secrets.mjs` to mint the gitignored per-stack `stacks/*.env` files (`auth.env` — now incl. `KC_DB_PASSWORD`, feature 022: single source for both Postgres + Keycloak, no more `keycloak_db_password.txt`/`.env.local`; `mcm.env`, plus `audit.env`/`observability.env` if those stacks run) from the committed `*.env.example` templates, and `node scripts/gen-ci-env.mjs` to write `frontend/mcm-app/.env.docker` from the Forgejo Actions secrets. Do **not** commit any of these generated files.
 
-### 10.2 Port `android-e2e.yml` → Forgejo Actions
+### 15.2 Port `android-e2e.yml` → Forgejo Actions
 
-Copy `.github/workflows/android-e2e.yml` to `.forgejo/workflows/android-e2e.yml` and adjust:
+*Landed (feature 023) as the `app-e2e` job of `.forgejo/workflows/app-ci.yml`, on the `kvm` host
+runner; the prod APK build landed as `cd-deploy.yml`'s `prod-apk` job. `.github/` no longer exists.
+The original plan:* copy `.github/workflows/android-e2e.yml` to `.forgejo/workflows/android-e2e.yml` and adjust:
 
 - `runs-on:` → your runner labels (`ubuntu-latest`; add `kvm` for the emulator job).
 - Swap any GitHub-marketplace `uses:` steps for `act_runner`-compatible equivalents (most `actions/checkout`, `actions/cache`, `setup-*` work; verify niche ones).
@@ -1050,11 +1064,11 @@ Copy `.github/workflows/android-e2e.yml` to `.forgejo/workflows/android-e2e.yml`
 - Add a final step: build + push images, then `curl -XPOST <komodo-stack-webhook>` to trigger prod redeploy.
 - Trigger on `push` to a working branch first; flip to `pull_request` only after first green.
 
-### 10.3 Migrate secrets
+### 15.3 Migrate secrets
 
 Set in **Forgejo → repo → Settings → Actions → Secrets**: `ANTHROPIC_API_KEY`, `E2E_TEST_USER`, `E2E_TEST_PASSWORD`, `FORGEJO_REGISTRY_TOKEN`, `NX_CACHE_*`, `KEYCLOAK_*` client secrets, `COOKIE_SECRET`. Prod-only secrets live in **Komodo**, not git.
 
-### 10.4 First run + expected iteration
+### 15.4 First run + expected iteration
 
 Push to the working branch and watch the run in Forgejo. Expect to clear the known first-time failure points in order (each a few minutes apart): `assembleRelease` signing/bundle, fixture-seeding via `global-setup` at `:8082`, then the first Maestro agent flow on the KVM emulator. Then add the image-push + Komodo trigger and confirm prod redeploys.
 
@@ -1085,32 +1099,32 @@ Push to the working branch and watch the run in Forgejo. Expect to clear the kno
 
 ## Phase 17 — Reboot resilience, as-built fixes & deferred repo work (2026-07-05)
 
-A kernel-upgrade reboot on 2026-07-05 hard-killed the rootless containers and exposed several issues. Root causes + fixes below. The graceful-shutdown and backup fixes are in **Phase 14**; the items under "Deferred" are **repo/Komodo-side** so they persist across deploys.
+A kernel-upgrade reboot on 2026-07-05 hard-killed the rootless containers and exposed several issues. Root causes + fixes below. The graceful-shutdown and backup fixes are in **Phase 14**; the items under "Repo / Komodo-side fixes" are **config-as-code** so they persist across deploys — all have landed (features 028–030), and [prod-reboot-resilience.md](prod-reboot-resilience.md) is the current reboot runbook.
 
 ### Fixed on the host
 
 - **DB corruption on reboot** → the drain unit (Phase 14, *Graceful shutdown*).
 - **App-DB backup gap** → `backup.sh` now dumps every app DB (Phase 14, *Backups*).
-- **Monitoring UIs unreachable after reboot (tailnet-IP bind race).** ROOT CAUSE: the rootless Docker daemon starts at boot **before `tailscaled`**, so rootlesskit never learns the tailnet IP and cannot bind published ports to it (`docker ps` shows the container `Up` but with an **empty Ports** column; `ss` shows nothing listening). `0.0.0.0` binds work — that's why Forgejo (`0.0.0.0:3000`) stayed reachable but every `<ts-ip>:port`-bound UI did not. A container restart does **not** fix it (the daemon's host-IP view is stale); only `0.0.0.0` or a full rootless-daemon restart. **Fixed** on the host by rebinding the three standalone monitoring composes (`/home/prod/{uptime-kuma,dozzle,beszel}/compose.yaml`) to `0.0.0.0` (ufw still keeps them tailnet-only). The durable, box-wide fix is under *Deferred*.
+- **Monitoring UIs unreachable after reboot (tailnet-IP bind race).** ROOT CAUSE: the rootless Docker daemon starts at boot **before `tailscaled`**, so rootlesskit never learns the tailnet IP and cannot bind published ports to it (`docker ps` shows the container `Up` but with an **empty Ports** column; `ss` shows nothing listening). `0.0.0.0` binds work — that's why Forgejo (`0.0.0.0:3000`) stayed reachable but every `<ts-ip>:port`-bound UI did not. A container restart does **not** fix it (the daemon's host-IP view is stale); only `0.0.0.0` or a full rootless-daemon restart. **Fixed** on the host by rebinding the three standalone monitoring composes (`/home/prod/{uptime-kuma,dozzle,beszel}/compose.yaml`) to `0.0.0.0` (ufw still keeps them tailnet-only). The durable, box-wide fix is under *Repo / Komodo-side fixes*.
 
 ### Reboot-recovery playbook (if a future reboot leaves services down)
 
 - **Forgejo Postgres crash-loop** (`could not locate a valid checkpoint record`) = WAL corruption → restore from backup (Phase 14 restore procedure). The repos/registry volume is unaffected.
-- **mc-service Mongo crash-loop** (`/tmp/mongo-keyfile: Permission denied`) = the `0400` replica-set keyfile persisted in the container's `/tmp` across a *restart*, and the entrypoint can't overwrite a read-only file. Fix = **recreate**, not restart: `docker rm -f mc-service mc-service-store-mongo` then Komodo redeploy. (Permanent fix is repo-side — see *Deferred*.)
-- **Keycloak lost its `backend-network` attachment** → mc-service can't resolve `keycloak-service` for OIDC (`dns error … Try again`) → the app shows *"failed to load collections."* Quick fix: `docker network connect backend-network keycloak-service` then `docker restart mc-service`. Durable fix = Komodo `prod-auth` redeploy (see *Deferred*).
+- **mc-service Mongo crash-loop** (`/tmp/mongo-keyfile: Permission denied`) = the `0400` replica-set keyfile persisted in the container's `/tmp` across a *restart*, and the entrypoint can't overwrite a read-only file. Fix = **recreate**, not restart: `docker rm -f mc-service mc-service-store-mongo` then Komodo redeploy. (The permanent repo-side fix has landed — see *Repo / Komodo-side fixes*; this should no longer occur.)
+- **Keycloak lost its `backend-network` attachment** → mc-service can't resolve `keycloak-service` for OIDC (`dns error … Try again`) → the app shows *"failed to load collections."* Quick fix: `docker network connect backend-network keycloak-service` then `docker restart mc-service`. Durable fix = Komodo `prod-auth` redeploy (see *Repo / Komodo-side fixes*).
 - **Services that depend on Keycloak** (BFF / agents / mc-service) may crash-loop until Keycloak is healthy; they self-heal via their restart policy once it is.
 
-### Deferred to Claude Code (repo / Komodo-side)
+### Repo / Komodo-side fixes (all landed)
 
-These require changes in the `jumbleknot/mcm` repo (config-as-code) or a Komodo redeploy, so they survive future deploys:
+These were originally deferred as repo changes (config-as-code) or a Komodo redeploy, so they survive future deploys. Each is now done:
 
-1. **Tailnet-IP bind survivability, box-wide.** Either bind all prod-stack published ports to `0.0.0.0` (not `<ts-ip>:port`) in the repo composes, **or** add systemd ordering so the rootless `docker`/user-manager starts **after `tailscaled`**. Only the 3 standalone monitoring composes are patched so far (host-side, non-durable). Also affects Keycloak admin `:8099`.
-2. **Grafana / otel-lgtm** unreachable after reboot — bind `0.0.0.0` in `infrastructure-as-code/docker/observability/compose.prod.yaml` (Komodo `prod-observability`).
-3. **mc-service Mongo keyfile idempotency** — make `mongo-entrypoint.sh` `rm -f /tmp/mongo-keyfile` before writing (or generate it fresh) so a plain restart doesn't crash-loop.
-4. **Keycloak `backend-network` durability** — ensure the `prod-auth` compose declares `backend-network`; redeploy via Komodo so the attachment replaces the manual `docker network connect`.
-5. **Renovate** — the planned scheduled `.forgejo/workflows/renovate.yml` + `renovate.json` (needs a least-privilege `renovate` PAT stored as the `RENOVATE_TOKEN` Actions secret).
+1. ✅ **Tailnet-IP bind survivability, box-wide** (feature 028, ports moved by feature 029). Every published prod port in `infrastructure-as-code/docker/*/compose.prod.yaml` binds `0.0.0.0` (plain `HOST:CONTAINER`, tailnet-only via ufw default-deny) and sits in the prod-reserved 19000–19099 range: Keycloak admin **19099** (was 8099), LangFuse **19030**, Grafana **19002**. Ordering the rootless user manager after `tailscaled` is optional defense-in-depth only — see [prod-reboot-resilience.md](prod-reboot-resilience.md) Part 1.
+2. ✅ **Grafana / otel-lgtm** — `infrastructure-as-code/docker/observability/compose.prod.yaml` binds `"19002:3000"` (Komodo `prod-observability`).
+3. ✅ **mc-service Mongo keyfile idempotency** — `infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh` runs `rm -f "$KEYFILE_PATH"` before writing the keyfile (feature 028), covered by `mongo-entrypoint.test.sh`.
+4. ✅ **Keycloak `backend-network` durability** — the `prod-auth` compose declares `backend-network` (and `edge-network`) on `keycloak-service`; the re-attach is a Komodo `prod-auth` redeploy, not a manual `docker network connect` ([prod-reboot-resilience.md](prod-reboot-resilience.md) Part 3).
+5. ✅ **Renovate** — `.forgejo/workflows/renovate.yml` + `renovate.json` are live, authenticating with the least-privilege `renovate` PAT stored as the `RENOVATE_TOKEN` Actions secret; operated per [renovate.md](renovate.md).
 
-After 1–4 land, do a single **validation reboot** to confirm the box comes back fully clean, hands-off (Phase 16).
+The first **validation reboot** (2026-07-08) did not come back clean and exposed two further root causes, fixed by feature 030 (`restart: always` on every prod service, a parallel drain unit). The validation-reboot checklist and both rounds of fixes are in [prod-reboot-resilience.md](prod-reboot-resilience.md) Parts 4–5.
 
 ---
 
@@ -1127,7 +1141,7 @@ After 1–4 land, do a single **validation reboot** to confirm the box comes bac
 | Public app (BFF) | prod | `https://mcm.${BASE_DOMAIN}` (Cloudflare Tunnel) |
 | Public auth (Keycloak) | prod | `https://auth.${BASE_DOMAIN}` (Cloudflare Tunnel) |
 | Caddy (reverse proxy/TLS) | prod | internal ingress — not directly exposed |
-| otel-lgtm (Grafana/Prom/Loki/Tempo) | prod | `http://server.tailnet.ts.net:3002` (app telemetry) |
+| otel-lgtm (Grafana/Prom/Loki/Tempo) | prod | `http://server.tailnet.ts.net:19002` (app telemetry; prod-reserved range, feature 029) |
 | Beszel (host + container metrics) | prod | `http://server.tailnet.ts.net:8090` |
 | Uptime Kuma (alerts) | prod | `http://server.tailnet.ts.net:3011` |
 | Dozzle (container logs) | prod | `http://server.tailnet.ts.net:8081` |

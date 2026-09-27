@@ -157,7 +157,9 @@ individual signal supported it — the stack was up, the tests were untouched, t
 the live stack". It was still wrong. The cause was **one absent gitignored file**, and one command
 fixed it: the suite went from 13 passed / 38 errors to **51 passed, 0 failed**.
 
-**The mechanism.** `scripts/gen-dev-env.mjs` writes four env files. `frontend/mcm-app/.env.local` is
+**The mechanism.** `scripts/gen-dev-env.mjs` writes five env files — `frontend/mcm-app/.env.docker`,
+`frontend/mcm-app/.env.local`, `frontend/mcm-app/.env.e2e.local`, `mcp-servers/web-api-mcp/.env.local`
+and `backend/mc-service/.env.local`. `frontend/mcm-app/.env.local` is
 *surgically synced* so a developer's own Metro keys survive — and, before feature 048, `syncEnvFile`
 returned early when that file did not exist. So the three realm client secrets landed in `.env.docker`
 but never in `.env.local`, which is the file `kc_admin.cfg()` actually reads. The generator then
