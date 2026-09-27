@@ -65,11 +65,18 @@
       "completedRunId": "abdfe5e8-5e6a-45ec-84d7-032c73d67800"
     },
     "/openwiki/runbooks/infra-image-scanning.md": {
+      "gitHead": "209d2883cd5b059bec9e0c3500801b2fe493fbcc",
+      "sourceFingerprint": "sha256:398a08fa548ab217228095d75a9b4bd35a6c7cc3894359d13bdcc41330869fa1",
       "pageVersion": "sha256:b218547c64046e99fcbd677061103343137670c91368bb77f1d8813113f2b027",
       "completedBy": "openwiki/0.5.2",
-      "completedRunId": "bd678816-ba61-4e3b-b978-85a56dfc2a02",
-      "gitHead": "209d2883cd5b059bec9e0c3500801b2fe493fbcc",
-      "sourceFingerprint": "sha256:398a08fa548ab217228095d75a9b4bd35a6c7cc3894359d13bdcc41330869fa1"
+      "completedRunId": "bd678816-ba61-4e3b-b978-85a56dfc2a02"
+    },
+    "/openwiki/runbooks/renovate.md": {
+      "pageVersion": "sha256:158856f7ca724f3f12e58e46d199d8defcbfe36e23006388505aacad490788ab",
+      "completedBy": "openwiki/0.5.2",
+      "completedRunId": "d0a15892-f9a5-46ec-af1a-c0c590948c64",
+      "gitHead": "233190ad977f8bfd257e624f6d06bf627e24d892",
+      "sourceFingerprint": "sha256:3e3a55c09b7ad90e006e3cc73f0fa14b5891d0dc5ac92289134b5a0459232ed2"
     },
     "/openwiki/runbooks/wiki-maintenance.md": {
       "gitHead": "d7af16265ced3f8c61fb3a98caa6f004f114cf96",
