@@ -994,6 +994,144 @@ test('marker: a generator failure holds the marker and records `failed`', () => 
   }
 });
 
+// ── 078 US2 / FR-007: one generator run per group of areas, not one per area ─────────
+//
+// Every generator invocation pays a fixed planning pass (~$0.33 on Sonnet, research R5) whatever its
+// scope, and slices are per area. Packing same-kind slices into one invocation pays it once. The
+// per-area SLICE stays the unit of planning, backlog and carry-forward, so the committed backlog's
+// shape does not change and a failure still narrows to the areas that actually failed.
+
+const ONE_AREA_MESSAGE = 'Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/backups.md (scheduled backups). The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering.';
+
+const sl = (area, pages, kind = 'refresh', extra = {}) => ({ area, pages, kind, areaExists: true, reason: `r:${area}`, subjects: {}, ...extra });
+
+test('packing: same-kind slices across areas share one invocation, up to the page cap', () => {
+  const a = sl('runbooks', ['x.md', 'y.md']);
+  const b = sl('gotchas', ['z.md', 'w.md']);
+  const c = sl('projects', ['v.md']);
+  const groups = mod.packSlices([a, b, c], { maxPagesPerInvocation: 8 });
+  assert.equal(groups.length, 1, '3 areas, 5 pages → ONE invocation');
+  assert.deepEqual(groups[0].parts, [a, b, c], 'the original slices, in plan order');
+
+  const many = [sl('runbooks', ['1', '2', '3', '4', '5']), sl('gotchas', ['6', '7', '8', '9']), sl('projects', ['10', '11', '12'])];
+  const packed = mod.packSlices(many, { maxPagesPerInvocation: 8 });
+  for (const g of packed) {
+    const n = mod.partsOf(g).reduce((k, p) => k + p.pages.length, 0);
+    assert.ok(n <= 8 || mod.partsOf(g).length === 1, `an invocation holds at most 8 pages unless one slice alone is larger (got ${n})`);
+  }
+  assert.deepEqual(packed.flatMap(mod.partsOf), many, 'nothing lost, nothing reordered');
+});
+
+test('packing: refreshes and creations are never mixed in one invocation', () => {
+  const groups = mod.packSlices([sl('runbooks', ['a.md']), sl('gotchas', ['new.md'], 'create'), sl('projects', ['b.md'])], { maxPagesPerInvocation: 8 });
+  for (const g of groups) assert.equal(new Set(mod.partsOf(g).map((p) => p.kind)).size, 1, 'one kind per invocation');
+});
+
+test('packing: two slices of the SAME area are never re-merged — the planner split them on purpose', () => {
+  // planSlices only produces two same-kind slices for one area when that area exceeds the slice cap;
+  // packing them back together would undo that decision.
+  const a1 = sl('runbooks', ['1.md', '2.md']);
+  const a2 = sl('runbooks', ['3.md']);
+  const groups = mod.packSlices([a1, a2], { maxPagesPerInvocation: 8 });
+  assert.deepEqual(groups, [a1, a2]);
+});
+
+test('packing: a group of one is the slice itself, so a one-area run is unchanged', () => {
+  const only = sl('runbooks', ['a.md']);
+  const [g] = mod.packSlices([only], { maxPagesPerInvocation: 8 });
+  assert.equal(g, only, 'identity: invoke, verify and report see exactly what they always did');
+});
+
+test('message: a one-area slice renders byte-for-byte as before', () => {
+  assert.equal(
+    mod.renderRunMessage({ area: 'runbooks', pages: ['ci-diagnostics.md', 'backups.md'], areaExists: true, subjects: { 'backups.md': 'scheduled backups' } }),
+    ONE_AREA_MESSAGE,
+  );
+});
+
+test('message: a multi-area invocation names every page, every index, and bounds writes to those areas', () => {
+  const [g] = mod.packSlices([
+    sl('runbooks', ['ci-diagnostics.md'], 'refresh', { subjects: { 'ci-diagnostics.md': 'CI triage' } }),
+    sl('gotchas', ['env-files.md']),
+  ], { maxPagesPerInvocation: 8 });
+  const m = mod.renderRunMessage(g);
+  assert.match(m, /openwiki\/runbooks\/ci-diagnostics\.md \(CI triage\)/);
+  assert.match(m, /openwiki\/gotchas\/env-files\.md/);
+  assert.match(m, /openwiki\/runbooks\/index\.md/);
+  assert.match(m, /openwiki\/gotchas\/index\.md/);
+  assert.match(m, /no directory of openwiki\/ other than openwiki\/runbooks\/ and openwiki\/gotchas\//);
+  assert.doesNotMatch(m, /exactly one area/, 'the one-area wording would contradict the page list');
+  assert.doesNotMatch(m, /["`$\\\n\r]/, 'one safe line');
+});
+
+/** conformant-bundle plus a second existing area, committed. */
+function twoAreaRepo() {
+  const root = tmpGitRepo('conformant-bundle');
+  mkdirSync(join(root, 'openwiki', 'gotchas'), { recursive: true });
+  writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n');
+  writeFileSync(join(root, 'openwiki', 'index.md'),
+    '---\nokf_version: "0.1"\n---\n# Knowledge Bundle (fixture)\n- [invariants](invariants/index.md)\n- [gotchas](gotchas/index.md)\n');
+  spawnSync('git', ['add', '-A'], { cwd: root });
+  spawnSync('git', ['commit', '-qm', 'second area'], { cwd: root });
+  return root;
+}
+
+test('verify: a page missing from the SECOND area is reported by area/page', () => {
+  const root = twoAreaRepo();
+  try {
+    const [g] = mod.packSlices([sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], { maxPagesPerInvocation: 8 });
+    const before = mod.snapshotTree(root);
+    writingStub(root, 'invariants', ['one.md'])();
+    const v = mod.verifySlice({ root, bundleRoot: join(root, 'openwiki'), slice: g, before });
+    assert.equal(v.ok, false);
+    assert.ok(v.violations.some((x) => /gotchas\/two\.md/.test(x)), v.violations.join('\n'));
+    assert.ok(!v.violations.some((x) => /invariants\/one\.md/.test(x)), 'the part that landed is not blamed');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute: three areas are written by ONE invocation (SC-003), and every page is verified', () => {
+  const root = twoAreaRepo();
+  try {
+    const calls = [];
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md', 'three.md'])],
+      invoke: (work) => {
+        calls.push(work);
+        writingStub(root, 'invariants', ['one.md'])();
+        writingStub(root, 'gotchas', ['two.md', 'three.md'])();
+        return { status: 0 };
+      },
+    });
+    assert.equal(calls.length, 1, 'one generator run for both areas');
+    assert.equal(result.outcome, 'completed', JSON.stringify(result.results.map((r) => r.violations)));
+    assert.equal(result.pagesWritten, 3);
+    assert.deepEqual(result.backlog, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute: when one area of a group fails, ONLY that area is carried forward', () => {
+  const root = twoAreaRepo();
+  try {
+    const good = sl('invariants', ['one.md']);
+    const bad = sl('gotchas', ['two.md']);
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [good, bad], attemptsPerSlice: 1,
+      invoke: () => { writingStub(root, 'invariants', ['one.md'])(); return { status: 0 }; },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.deepEqual(result.backlog, [bad], 'the landed area is not redone next run');
+    assert.ok(existsSync(join(root, 'openwiki', 'invariants', 'one.md')), 'and its page is kept');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ── 078 FR-005: the model is proven callable before any paid work ────────────────
 
 test('preflight: runs once, before the first slice, when there is work', () => {

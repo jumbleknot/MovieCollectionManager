@@ -206,6 +206,63 @@ export const MAX_PAGES_PER_SLICE = 8;
  */
 export const MAX_NEW_PAGES_PER_SLICE = 3;
 
+/**
+ * Pages per GENERATOR INVOCATION, across areas (feature 078, US2).
+ *
+ * Every invocation pays a fixed planning pass whatever its scope — ~$0.33 on Sonnet, 83% of a one-page
+ * run, because openwiki's planner explores the repository before planning (research R5). Slices are
+ * per area, so a run touching N areas used to plan N times. Packing same-kind slices into one
+ * invocation pays that once. Provisional at 8 (the slice cap); research R9 sets it from a measured
+ * multi-area run on openwiki 0.6.0.
+ */
+export const MAX_PAGES_PER_INVOCATION = 8;
+
+/**
+ * Group consecutive same-kind slices of DIFFERENT areas into invocations of at most
+ * `maxPagesPerInvocation` pages.
+ *
+ * The SLICE stays the unit of planning, backlog and carry-forward — so the committed backlog keeps its
+ * shape and a failure narrows to the areas that failed. A group of one IS that slice (identity), so a
+ * one-area run is exactly what it always was: same message, same verification, same report.
+ */
+export function packSlices(slices, { maxPagesPerInvocation = MAX_PAGES_PER_INVOCATION } = {}) {
+  const groups = [];
+  let current = [];
+  let pages = 0;
+  const flush = () => {
+    if (current.length === 1) groups.push(current[0]);
+    else if (current.length > 1) groups.push(invocationOf(current));
+    current = [];
+    pages = 0;
+  };
+  for (const slice of slices) {
+    const n = slice.pages.length;
+    const sameKind = current.length === 0 || current[0].kind === slice.kind;
+    // Two slices of one area exist only because the planner split an area over the slice cap —
+    // re-merging them would undo that decision.
+    const newArea = !current.some((c) => c.area === slice.area);
+    if (!sameKind || !newArea || (current.length > 0 && pages + n > maxPagesPerInvocation)) flush();
+    current.push(slice);
+    pages += n;
+  }
+  flush();
+  return groups;
+}
+
+/** A multi-area invocation. `area`/`pages` are for reporting only; `parts` is what is executed. */
+function invocationOf(parts) {
+  return {
+    parts,
+    kind: parts[0].kind,
+    area: parts.map((p) => p.area).join(' + '),
+    pages: parts.flatMap((p) => p.pages.map((page) => `${p.area}/${page}`)),
+    reason: parts.map((p) => p.reason).filter(Boolean).join('; '),
+  };
+}
+
+/** The slices an invocation stands for — itself, for a one-area slice. */
+export const partsOf = (work) => work.parts ?? [work];
+
 export const DEFAULT_BUNDLE = 'openwiki';
 
 const RESERVED_BUNDLE_FILES = new Set(['index.md', 'INSTRUCTIONS.md', 'log.md', 'quickstart.md']);
@@ -447,6 +504,7 @@ const SHELL_UNSAFE = /["`$\\\n\r]/g;
  * Deterministic for a given slice, for the same reason.
  */
 export function renderRunMessage(slice) {
+  if (slice.parts) return renderMultiAreaMessage(slice.parts);
   const { area, pages, areaExists, subjects = {} } = slice;
   // A filename alone forces the generator to work out what the page should say, and that research is
   // what exhausts its budget: three runs died mid-investigation ("Let me read more context around
@@ -474,6 +532,37 @@ export function renderRunMessage(slice) {
     'Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering.',
   ].join(' ');
 
+  return message.replace(SHELL_UNSAFE, ' ').replace(/ {2,}/g, ' ');
+}
+
+/**
+ * The multi-area form (078 US2). Same instructions as the one-area message, one clause per area, and
+ * a boundary sentence naming every listed area — the one-area wording ("exactly one area") would
+ * contradict the page list. Kept separate so the one-area message stays byte-for-byte what it was.
+ */
+function renderMultiAreaMessage(parts) {
+  const dirs = parts.map((p) => `${DEFAULT_BUNDLE}/${p.area}/`);
+  const list = parts
+    .flatMap((p) => p.pages.map((page) => {
+      const subject = p.subjects?.[page];
+      return subject ? `${DEFAULT_BUNDLE}/${p.area}/${page} (${subject})` : `${DEFAULT_BUNDLE}/${p.area}/${page}`;
+    }))
+    .join('; ');
+  const scope = parts
+    .map((p) => (p.areaExists
+      ? `${DEFAULT_BUNDLE}/${p.area}/ already exists; leave the pages in it that are not listed above exactly as they are.`
+      : `${DEFAULT_BUNDLE}/${p.area}/ does not exist yet, so create it.`))
+    .join(' ');
+  const indexes = parts.map((p) => `${DEFAULT_BUNDLE}/${p.area}/index.md`).join(', ');
+  const message = [
+    `Work on exactly these areas of the knowledge bundle this run: ${dirs.join(', ')}.`,
+    `Write or refresh these pages, each followed by its subject in brackets where given: ${list}.`,
+    scope,
+    `Also update ${indexes} so that every page in each of those directories is listed in its own index, including the ones above — the conformance gate rejects an unlisted page.`,
+    `Do not write anywhere else: no directory of ${DEFAULT_BUNDLE}/ other than ${dirs.join(' and ')}, and nothing outside ${DEFAULT_BUNDLE}/.`,
+    `Follow ${DEFAULT_BUNDLE}/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right.`,
+    'Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering.',
+  ].join(' ');
   return message.replace(SHELL_UNSAFE, ' ').replace(/ {2,}/g, ' ');
 }
 
@@ -1148,10 +1237,18 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   //
   // Existence after the run is the checkable deliverable for creation; "nothing needed changing" is
   // an honest outcome for a refresh, reported distinguishably rather than as either success or failure.
-  const missing = (slice.pages ?? []).filter((page) => !existsSync(join(bundleDir, slice.area, page)));
+  // Checked PER PART for a multi-area invocation (078 US2), so a failure names the area/page it is
+  // about and the executor can carry forward only the areas that did not land.
+  const missingParts = [];
+  const missing = [];
+  for (const part of partsOf(slice)) {
+    const gone = (part.pages ?? []).filter((page) => !existsSync(join(bundleDir, part.area, page)));
+    if (gone.length > 0) missingParts.push(part);
+    missing.push(...gone.map((m) => `${part.area}/${m}`));
+  }
   if (missing.length > 0) {
     violations.push(
-      `${missing.length} requested page(s) do not exist after the run: ${missing.map((m) => `${slice.area}/${m}`).join(', ')}. ` +
+      `${missing.length} requested page(s) do not exist after the run: ${missing.join(', ')}. ` +
       'The generator produced nothing usable for them regardless of the status it exited with.',
     );
   }
@@ -1181,7 +1278,10 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
     violations.push(`the bundle is no longer conformant after this slice: ${detail || 'the OKF gate failed'}`);
   }
 
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations };
+  // Only the missing-page check is attributable to a part; a policy or conformance violation is the
+  // whole invocation's, so it carries every part forward.
+  const onlyMissing = violations.length === (missing.length > 0 ? 1 : 0);
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, failedParts: onlyMissing ? missingParts : partsOf(slice) };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1282,11 +1382,17 @@ export function executeSlices({
   let failed = false;
   let consecutive = 0;
 
+  // 078 US2: slices are packed into invocations so the generator's fixed planning pass is paid once
+  // per group of areas. Everything carried forward below is expressed in SLICES (the parts), never
+  // in groups, so the committed backlog keeps its shape.
+  const work = packSlices(queue);
+  const remainingParts = (from) => work.slice(from).flatMap(partsOf);
+
   if (dryRun) {
     return {
       outcome: slices.length === 0 ? 'nothing-to-do' : 'dry-run',
       exitCode: 0,
-      results: queue.map((s) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
+      results: work.map((s) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
       pagesWritten: 0,
       elapsedSeconds: elapsed(),
       stoppedAtBudget: false,
@@ -1296,14 +1402,14 @@ export function executeSlices({
     };
   }
 
-  for (const [i, slice] of queue.entries()) {
+  for (const [i, slice] of work.entries()) {
     // Budgets are checked BETWEEN slices, never inside one: interrupting a slice mid-generation would
     // leave a half-written area, which is a conformance failure rather than a saving. The overshoot is
     // therefore bounded at one slice — the declared effective ceiling in the header comment.
     if (i > 0 && (pagesWritten >= pageBudget || elapsed() >= timeBudgetSeconds)) {
       stoppedAtBudget = true;
-      backlog.push(...queue.slice(i));
-      deferred.push(...queue.slice(i));
+      backlog.push(...remainingParts(i));
+      deferred.push(...remainingParts(i));
       break;
     }
 
@@ -1370,11 +1476,13 @@ export function executeSlices({
     if (!verdict.ok) {
       failed = true;
       consecutive += 1;
-      backlog.push(slice);
+      // Only the parts that did not land (a missing-page failure is attributable per area); a policy
+      // or conformance violation carries every part of the invocation forward.
+      backlog.push(...(verdict.failedParts ?? partsOf(slice)));
       if (consecutive >= maxConsecutiveFailures) {
         // Not "this slice is bad" any more — something about the run is.
         stoppedAtFailureLimit = true;
-        backlog.push(...queue.slice(i + 1));
+        backlog.push(...remainingParts(i + 1));
         break;
       }
       continue;
