@@ -1368,10 +1368,17 @@ test('local parity: CI and local drive the identical entry point', () => {
   // passed that way reaches `sh -c` as bare words and the generator runs UNSCOPED — measured, at the
   // cost of a paid run. The quoting has to live in the target's own command string, which nx leaves
   // alone, and the target must still behave exactly as before when the variable is unset.
+  //
+  // Feature 078 moved the generator call out of the target's shell string into wiki-generate.mjs, which
+  // passes the message as ONE argv element with no shell at all (pinned in wiki-generate.test.mjs). The
+  // premise is unchanged — the message travels in WIKI_RUN_MESSAGE, never through nx --args — so that
+  // is what is asserted here.
   const updateCmd = project.targets['wiki-update'].options.command;
-  assert.match(updateCmd, /"\$WIKI_RUN_MESSAGE"/, 'the target must quote the message variable itself');
-  assert.match(updateCmd, /openwiki code --update --print$|openwiki code --update --print;/, 'and fall back to an unscoped refresh when it is unset');
+  assert.equal(updateCmd, 'node scripts/wiki-generate.mjs', 'the target runs the launcher, which owns the generator call');
   assert.doesNotMatch(updateCmd, /--args/, 'the message must not travel through nx --args');
+  const launcher = readFileSync(join(REPO_ROOT, 'scripts', 'wiki-generate.mjs'), 'utf8');
+  assert.match(launcher, /WIKI_RUN_MESSAGE/, 'the launcher reads the message from the environment variable');
+  assert.doesNotMatch(launcher, /shell:\s*true|execSync|\bexec\(/, 'and never hands it to a shell');
   assert.equal(project.targets['wiki-plan'].options.command, 'node scripts/wiki-maintain.mjs --plan');
   assert.equal(project.targets['wiki-maintain'].options.command, 'node scripts/wiki-maintain.mjs --execute');
   for (const t of ['wiki-plan', 'wiki-maintain']) {
