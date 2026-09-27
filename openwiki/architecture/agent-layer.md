@@ -1,13 +1,23 @@
 ---
 type: Architecture
-title: AI Agents layer architecture (features 012/014/018/040/047)
-description: The call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the user's session token.
+title: AI Agents layer architecture (features 012/014/018/040/047/059)
+description: The call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the user's session token, plus the flow-continuation and generative-UI gotchas that have cost real sessions.
 resource: docs/runbooks/agent-layer.md
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
-timestamp: 2026-08-18T00:00:00+00:00
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-27T16:58:28.669Z
+sources:
+  - id: openwiki-source-35511191cab03f67f1e380bd
+    resource: repo://agents/movie-assistant/src/ollama_guard.py
+  - id: openwiki-source-541e2287bdfb42c605c78f3f
+    resource: repo://docs/MCM-Architecture.md
+  - id: openwiki-source-b14f80515626024d557f0448
+    resource: repo://docs/runbooks/agent-layer.md
+generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
 ---
 
-# AI Agents layer architecture (features 012/014/018/040/047)
+# AI Agents layer architecture (features 012/014/018/040/047/059)
 
 This page covers the *architectural shape* of the AI Agents layer — the call chain, its security
 boundary, and how per-user state and config are threaded through it. For the
@@ -18,20 +28,54 @@ where the agent layer sits relative to `mc-service`.
 
 ## Call chain and security boundary
 
-```
-mcm-app (CopilotKit) → mcm-bff (secure proxy; sole OAuth2 client)
-  → agent-gateway → supervisor → specialist agent → shared MCP client
-  → [RFC 8693 token exchange → downscoped, aud=mc-service, short-TTL JWT]
-  → movie-mcp → mc-service (RBAC + DAC unchanged) → mc-db
+<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 13: ... sole OAuth2 client) BFF->>IAM: toke Expecting '()', 'SOLID_OPEN_ARROW', 'DOTTED_OPEN_ARROW', 'SOLID_ARROW', 'SOLID_ARROW_TOP', 'SOLID_ARROW_BOTTOM', 'STICK_ARROW_TOP', 'STICK_ARROW_BOTTOM', 'SOLID_ARROW_TOP_DOTTED', 'SOLID_ARROW_BOTTOM_DOTTED', 'STICK_ARROW_TOP_DOTTED', 'STICK_ARROW_BOTTOM_DOTTED', 'SOLID_ARROW_TOP_REVERSE', 'SOLID_ARROW_BOTTOM_REVERSE', 'STICK_ARROW_TO -->
+```text
+sequenceDiagram
+    participant App as mcm-app (CopilotKit)
+    participant BFF as mcm-bff
+    participant GW as agent-gateway
+    participant Sup as supervisor
+    participant Spec as specialist agent
+    participant MCPClient as shared MCP client
+    participant IAM as Keycloak (RFC 8693)
+    participant MMCP as movie-mcp
+    participant MC as mc-service
+    participant DB as mc-db
+
+    App->>BFF: run request (session cookie; sole OAuth2 client)
+    BFF->>IAM: token exchange: session token to run-scoped delegation token
+    IAM-->>BFF: short-TTL, downscoped delegation token (non-checkpointed)
+    BFF->>GW: start run over AG-UI, attach delegation token
+    GW->>Sup: classify intent, route
+    Sup->>Spec: dispatch to specialist node
+    Spec->>MCPClient: tool call
+    MCPClient->>IAM: token exchange: delegation token to further-downscoped token (aud=mc-service, short-TTL)
+    IAM-->>MCPClient: downscoped token, single call only
+    MCPClient->>MMCP: MCP call, Authorization Bearer
+    MMCP->>MC: REST call with downscoped JWT
+    MC->>MC: validate JWT, apply RBAC + DAC (unchanged)
+    MC->>DB: read/write
+    DB-->>MC: result
+    MC-->>MMCP: response
+    MMCP-->>MCPClient: tool result
+    MCPClient-->>Spec: result
+    Spec-->>GW: AG-UI events
+    GW-->>BFF: stream AG-UI events
+    BFF-->>App: stream assistant response
 ```
 
+*The call chain: identity flows through two successive RFC 8693 token exchanges, and the agent
+process itself never holds the user's session token.*
+
 The defining design choice is **AG-UI-native**: the LangGraph runtime emits AG-UI events natively,
-and `mcm-bff` hosts the CopilotKit runtime bridge (`CopilotRuntime` + the AG-UI `HttpAgent`, a
-vendored `ExperimentalEmptyAdapter` — no LLM call or orchestration in the BFF) rather than a
-hand-rolled per-event translation layer. The Agent Gateway and its `agent-db` (LangGraph checkpoint
-store) are private-network only; only the BFF ever reaches them. See
-[Auth chain](../invariants/auth-chain.md) for how this fits the rest of the system's identity
-flow.
+so `mcm-bff` only needs to host the CopilotKit runtime bridge (`CopilotRuntime` + the AG-UI
+`HttpAgent` from `@ag-ui/client`, wired to a vendored `ExperimentalEmptyAdapter` — no LLM call and
+no orchestration in the BFF) rather than author a hand-rolled per-event translation layer. Using
+`LangGraphHttpAgent` instead of the AG-UI `HttpAgent` is a real mistake to guard against: that
+binding speaks the LangGraph Platform REST protocol and 404s against this AG-UI-native gateway. The
+Agent Gateway and its `agent-db` (LangGraph checkpoint store) are private-network only; only the BFF
+ever reaches them. See [Auth chain](../invariants/auth-chain.md) for how this fits the rest of the
+system's identity flow.
 
 ## Token custody: why a "run-scoped delegation token", not the session token
 
@@ -54,14 +98,31 @@ segment.
 
 The assistant is **off by default** and shares no shared model or TMDB credentials. Each user opts
 in from the Profile screen and supplies their own provider credential (Ollama base URL or an
-Anthropic key) and TMDB key. These are AES-256-GCM-encrypted at rest in the BFF's own
+Anthropic key) and TMDB key. These are **AES-256-GCM-encrypted at rest** in the BFF's own
 `mcm-bff-db` (physically separate from `mc-db` — see
-[Secrets management](../invariants/secrets-management.md)) and decrypted only transiently, in
-memory, per run — never returned to the client, logged, or persisted to a checkpoint. The
-CopilotKit dock only mounts for a config that is actually runnable (enabled + provider credential +
-TMDB key); an un-opted-in user cannot trigger a billable run.
+[Secrets management](../invariants/secrets-management.md)), and the CopilotKit dock mounts only for
+a config that is actually **runnable** (enabled + provider credential + TMDB key) — an un-opted-in
+user cannot trigger a billable run.
 
-## Conversation stages and generative UI (features 040/047)
+Per-run injection happens through `resolveForRun(userId)`: the config is decrypted **in memory
+only**, never returned to the client, logged, persisted to a checkpoint, or written anywhere at
+rest outside `mcm-bff-db` — and it reaches the gateway as the `X-Agent-Config` header on the run
+request, scoped to that one run.
+
+Models are **environment-scoped** (Ollama for dev/test/iterative E2E, Anthropic for the
+golden gate and production) — see [Model-provider scoping](../invariants/model-provider-scoping.md)
+for why, the code-default model ids, and the CI-vs-production supervisor-pin distinction; that page
+is authoritative and owns those details, not this one.
+
+The user-supplied Ollama base URL is a live SSRF surface (a server-side fetch to an
+attacker-influenceable address), and it is guarded in **both** processes: the BFF
+(`agent-config-ssrf.ts`) and the gateway (`src/ollama_guard.py`, called from `models.py`) each
+independently resolve the name and check every answer, because a check made in one process can be
+stale by the time the other process connects. See
+[the SSRF-guard gotcha](../gotchas/agent-config-ssrf-guard.md) for the residual-risk table and the
+policy detail — this page does not restate it.
+
+## Conversation stages and generative UI (features 040/047/059)
 
 Multi-turn flows (navigate, organize, import, add-with-ownership-question) park a `*_stage` value
 on graph state so the *next* turn is guarded back into the owning node — otherwise a bare

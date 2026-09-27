@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1069906eb8d796c2b8934990bd952ca19813c6f8c87e86990b6a17cd158886e0",
+  "pageVersion": "sha256:e7abdb97ea17c095683e13d75ab309d45f6e4ab8c07b108bc74e301f21d3c467",
   "claims": [
     {
       "id": "claim_9a0bfbae84254f9ab28b19990354065b",
@@ -34,15 +34,15 @@
     },
     {
       "id": "claim_56960f66de434976bfde18a0860c9d24",
-      "statement": "app-ci's app-e2e job runs test:integration for all three projects (movie-assistant, mc-service, mcm-app) before the web/APK/emulator legs, with MCM_REQUIRE_LIVE_STACK=1 that escalates a SKIP to a FAILURE; before feature 041 no project's integration tier ran in CI.",
+      "statement": "app-ci's app-e2e job runs test:integration for five projects — agent (movie-assistant), the three MCP servers (movie-mcp, spreadsheet-mcp, web-api-mcp, added by feature 048/059), mc-service, and mcm-app — before the web/APK/emulator legs, with MCM_REQUIRE_LIVE_STACK=1 that escalates a SKIP to a FAILURE; before feature 041 no project's integration tier ran in CI.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1-L15",
-          "version": "repo-lines-v1:sha256:57dda1257174fccf4fbcb070d81afa3a465129533ebfc56c3588bd0d0010aa11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYzIzZWE0N2I1OTI5NWY3MjJjNTI1ODJhYzg4OGIxOTQ2MGQyMTQ5NDgwOGRhZDkzNDdiZjFiZDBiMGJlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwMWJkY2ZmMDg3YTU0MDFmOGUwNjhlOGMyNzIzZTliNmM2NWU2NjNjMzc5MWE0YTI3MjhiMGMxM2E5ODFjNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlNGU4YzAwODEwMzU5NjRmYTc1Y2FlYWQxYmYwNTEyMWM5YTdlNzZlMWYzZmViMmZkOTIwZDYyNTkyYzI2Y2MifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L818-L936",
+          "version": "repo-lines-v1:sha256:6d0c1f184cfca9d2507f0b7c6c64df9875db8e4305833ed5686c65b1a9a20e63:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNzY4ODdlNWQ3OTM2MjU3ZWIzZTUxMDhlYjA0YzEzYjJkMTU3ZDUzYjBkZmUyMjVjZTllMjQ3YzViMmM3MmEyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMzUxYmM3NTY2NjgyMjkyYWM0YTYxYTQ2NjcyNzJhN2VlOTQwZmM1ODdhM2ExMDY3NTEwYTYwODgwMzgxM2ExIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjllNWZjMDg4ODRjYmY0MWJkMTc3MDhlOGNmNTI2OTAxN2VhZjkxMzIxYzY1M2RlZTQ1N2YyNjJlNDcxZjg5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzY2JiNWM4ZDU4OGJiYjE3NTRhNWIyYWNkYWJlOTUwOTA4ZmEzOGM2MTFmMjNlOWFlYzk2YzVjYzg2ZTJkZDZlIn0"
         },
         {
-          "resource": "repo://docs/runbooks/e2e-testing.md#L62-L86",
-          "version": "repo-lines-v1:sha256:0a839eb2707defc5d86d077a81cfd8350dc1aa9275dff48b1ce2784916783f48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OTY4NTVmYTgwMjhjYmYxOGIxYmY4ODQyMWU2NDZkYjhiYTM2YjYwNWQwODMxMzM3MzQyMDg2YzA0MjlhYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzOTU3MWRhMTFhZjdmZTcxYTk3MjM1Yzc3ZWVhNGU1NTJkYTk4NmM3Y2Y2YWVkZTZmYWM0M2E4YzI4NjRmOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNzQ0YjY0YzU3MjExYzUzMTYzNDdhNTQxZGIyMDE4YjU4NGM0NzQyNWZmOTIxNDUwNDNlM2E5ODk4ODVlMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NjM3YTE5MDIzMTI0OGIyODUxOTU0ODdiMWU4ZWNkZDlkYzVkZGE0ODY4NGUwMjA2YjdkMjE4N2M5MzgxYzgifQ"
+          "resource": "repo://docs/runbooks/e2e-testing.md#L69-L97",
+          "version": "repo-lines-v1:sha256:cf3d65d1c04a2087964cb3c794e5a2430da781d95c8dfdf4ce96d05c6fa1e6f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OTY4NTVmYTgwMjhjYmYxOGIxYmY4ODQyMWU2NDZkYjhiYTM2YjYwNWQwODMxMzM3MzQyMDg2YzA0MjlhYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmM2Y1YzlmYjAxN2Q3MDVlNTlhN2ZlYzExM2JhMmY4OGM3NjEyZTQxOGRkZjliNDUwNTZlOTU2MDRmODgxYTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNzQ0YjY0YzU3MjExYzUzMTYzNDdhNTQxZGIyMDE4YjU4NGM0NzQyNWZmOTIxNDUwNDNlM2E5ODk4ODVlMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkODM3OGU5MDVmNjUxZTMzMDQyNWNjNzNjZWJkOWQwODkxNGM1MTM3ZDAxZmZlMzU4NTMzMzIyZjI2NTljZTkifQ"
         }
       ]
     },
@@ -91,8 +91,8 @@
       "statement": "agent-e2e.mjs runs each agent spec file in a fresh nx e2e invocation (isolated per file) and does NOT work inside the dev container because chromium cannot be installed there; agent-stack.mjs itself works fine inside the container.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/e2e-testing.md#L157-L163",
-          "version": "repo-lines-v1:sha256:548fe8d32fe88700a13044393e26e5fd1b266b1160d934b796f914a21c8cd86a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmVkNTg5MzQ4NTA1Y2M3ZjNhZWZiZWI2ZTVlNGNlZTI4NTQxNWYyODQ0NDJlYjFjYmI3M2U5YWRmNDRlZTlmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDlmMzg2ZmI5MDBiZjRlYjNjOThjNzc2N2M0MjZjMmUwZTUzZmY2N2FjZTMwZmYxZWI2OGU1Nzg2NWYwOGVkOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmM1MzY4ZmY4NjliNTk5YzA1YmM1NzEzNWFjZDMwNjExNDRmZmRjNWUzZTI5OTU1MmIxNDQzNTA3OWE5YTQ2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjc2YjIyZjBkYjg5ZmMxNjEwZmU3ODRhOTkyNDZjNjk4ZTE4ZDg5NzdiMDZhNGE5MzJjMTU4MDZjZjM0ZWY5NCJ9"
+          "resource": "repo://docs/runbooks/e2e-testing.md#L154-L169",
+          "version": "repo-lines-v1:sha256:e7d3036060eedb10ec6a402a0c3d1e25c7d8ef7405f8c75a2a580d4bd128537e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZTJmNTMyOGVlNmU4MDUwZThhYWZkOGRjODY5YTA2OWNkOTU4NGVkYWFmNTRmZTU4OWQ3M2MzYjdkY2Q3OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4ODA1MjY0YTlhZmE2ZWQzYmIwMjMwZmE0OGM2MDA0YTBhOGVjMzRhZTkyMzk2OWM3MTIyZjlkYTQwOWQ1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5YmI1YTE1MmRlODMzNTRjOWQ1N2I3YTZlNTZlMzg0MjkyN2YyMTRhMzc0YmRjMDE4ODgyNmNkYzhhM2MxMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjODYzNjM0NTdmYWVjNzFhNDFlM2Y0ZDhjYzUxYmRmMjYwMzI3MTg2MjRkMWYzZjVjODUwMGMzM2ZlYjU2NDYifQ"
         },
         {
           "resource": "repo://scripts/agent-e2e.mjs#L1-L25",
@@ -343,6 +343,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-26T05:36:02.343Z"
+    "at": "2026-09-27T16:58:28.669Z"
   }
 }

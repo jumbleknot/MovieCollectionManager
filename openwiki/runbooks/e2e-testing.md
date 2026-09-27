@@ -6,7 +6,7 @@ resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook, integration]
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-26T05:36:02.343Z
+    at: 2026-09-27T16:58:28.669Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -26,7 +26,7 @@ sources:
     resource: repo://scripts/check-toolchain-consistency.mjs
   - id: openwiki-source-4a5107e668fbfa127e4c2d48
     resource: repo://scripts/e2e-contention-tally.sh
-generated: { by: "openwiki/0.5.2", at: "2026-09-26T05:36:02.343Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -49,12 +49,16 @@ The `X-BFF-Source` header is asserted in `global-setup.ts` to fail-fast on a Met
 the dev-container mode is expected. Full container-mode commands, the complete flakiness-diagnosis
 protocol, and the integration-tier CI enforcement detail: `docs/runbooks/e2e-testing.md`.
 
-## Integration tier CI gate (feature 041)
+## Integration tier CI gate (feature 041, extended by 048/059)
 
-`app-ci`'s `app-e2e` job runs `test:integration` for **all three** projects — agent
-(`movie-assistant`), `mc-service`, `mcm-app` — before the web/APK/emulator legs, so a failure costs
-~5 min instead of burning 25+ min of emulator time. Every step sets `MCM_REQUIRE_LIVE_STACK=1`,
-which escalates a SKIP to a FAILURE: in CI a down dependency is a broken harness, not a pass.
+`app-ci`'s `app-e2e` job runs `test:integration` for **five** projects — agent (`movie-assistant`),
+the three MCP servers (`movie-mcp`, `spreadsheet-mcp`, `web-api-mcp`, added by feature 048/059),
+`mc-service`, and `mcm-app` — before the web/APK/emulator legs, so a failure costs a few minutes
+instead of burning 25+ min of emulator time. Every step sets `MCM_REQUIRE_LIVE_STACK=1`, which
+escalates a SKIP to a FAILURE: in CI a down dependency is a broken harness, not a pass.
+`web-api-mcp` reaches live TMDB using the job's own `TMDB_API_KEY` (no per-user key is involved),
+and `mc-service`'s Rust suite runs inside a `rust:1-bookworm` container via
+`scripts/mc-service-integration-guard.mjs`, which fails a zero-executed/all-`#[ignore]` run.
 
 Before feature 041 no project's integration tier ran anywhere in CI. It had rotted silently for a
 month — the first green run surfaced a month-old contract regression and a credential leak.
@@ -107,8 +111,10 @@ node scripts/agent-e2e.mjs assistant-add  # one spec by basename
 
 `agent-e2e.mjs` sets `E2E_AGENT_PRODUCTION=1` and `E2E_BFF_TARGET=dev-container`, recreates the dev
 BFF with the agent-e2e rate-limit override first, and runs each spec file in isolation (a fresh
-`nx e2e` invocation = fresh login/session). Set `E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run
-to convert a missing stack into a hard failure instead of a skip.
+`nx e2e` invocation = fresh login/session) — deliberately, because the full parallel suite shares
+one test user across workers, which exhausts the per-user rate limit and crosses the access-token
+lifetime. Set `E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run to convert a missing stack into a
+hard failure instead of a skip.
 
 ## Two tiers: what blocks a merge (feature 061)
 

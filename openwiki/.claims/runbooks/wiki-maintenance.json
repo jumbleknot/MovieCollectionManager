@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7f8365698b9132cbaa3830ef248ace77114293987d806614fceb2485b6e6f8f2",
+  "pageVersion": "sha256:89fae51fdf10699b209ea32bfe9f660cbb40a35f1f5644aa804ca68f5eff39bc",
   "claims": [
     {
       "id": "claim_2e510cf3ee1d4ddba5718a1220547924",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d5f86b6a12638ea4e7840c75f411cf8f5fbb330d405383cf4e892cc2e05144e8"
+          "version": "repo-file-v1:sha256:21e987cdfa9e24c47fb3f12f54975d7d1dfcb7a4f26fe90b3456b978e82eb447"
         }
       ]
     },
@@ -67,8 +67,8 @@
       "statement": "The run budget is 16 pages and 20 minutes (checked between slices), giving an effective ceiling of ≤24 pages / ~37 minutes. Exit code 3 signals a clean budget stop with work outstanding, not a failure.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L178-L191",
-          "version": "repo-lines-v1:sha256:d96a35bc2948ac3e5b0d07ece6dea6748110100eecac2ca2eb8bd8fc45eb6d39:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ZWZkNDljMWVlZTA2NWIyNTJjYzJlNTFiNGY1MTY5NjdiNDdjZjg5MWFmZGMyZjNiODZmNGJkOTU4NDgyNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxYTBlYzJiNTM4MjNmN2FmZjZhNzExM2JhNGVmZWUyM2YwNTNmYmQzZmUyZTY4NTJjZWMxNWZjNjEyOTFjN2MifQ"
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L189-L206",
+          "version": "repo-lines-v1:sha256:9843d6c37b9ace3d7b619d37cd11b5d13a5cb4d2dd16c9c8b3fc444d2ac9a242:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiODlhNGVkMGQ2MjUyZWNkOTc3YWM5ZDU5MGFkNmQ4NDQ3MDk4MDk2MjBmZmU5Yjg5NzNlODQ3MWQ3MTMyMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNzI5MWQyNjAwNzgxMDY4ZTY1MzY1YWE3ODA0NTkzMTFlNzZhMzc1YzI4MGRlNTlkZWUyZTdhZTlmMmNjOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlZmUwY2RiYzU0N2I1Njc2MWUxMWEwOTdhMTFmYzBmYjczM2Q1MDEwYmNhODFmODBhOWM0NzUzNWIwMzgyOGEifQ"
         }
       ]
     },
@@ -77,8 +77,8 @@
       "statement": "A slice fails on any of three conditions independent of the generator's own exit status: no concept page appeared (an index.md-only refresh counts as zero pages), the bundle became non-conformant, or a written path was not permitted by openwiki/policy.yaml.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L195-L203",
-          "version": "repo-lines-v1:sha256:90b933fdd6807321646196b414e550b19b9d5f65aad768c14f82d5cfced4e2ed:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNkNjJlOTkzYzhmYWJiNGMwZDU0NjM5ODNhNjkxNTU1ZmE0NmMxZjRjZTJjMDE0ZjFiZTRjOGYxMmVmZjUzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjFhMGVjMmI1MzgyM2Y3YWZmNmE3MTEzYmE0ZWZlZTIzZjA1M2ZiZDNmZTJlNjg1MmNlYzE1ZmM2MTI5MWM3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWNjZWRkNGRiZjY1ZDZmYjVmMjRkOTY2NDg2YmIxN2ZjOTIxOWJlN2YxMThiMWI5YjJmOTg2ODk2NmQwYjdlMCJ9"
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L219-L228",
+          "version": "repo-lines-v1:sha256:8bc1e5b6fcabf02989d8da5292bbf0e892112d99f001c24aa99e75a03083b9f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNWM0Y2FiMGUwM2JlZDdiMGJlZDI0MGU3NmZlOTNlN2I2YWFkODI3NjBmMWI2NTEwYjYyMjliZjI0OTg1YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MzdlMDhmM2NhMTI1MmUxNjJhY2MwZmFjODM2MzNjNjVmMWRjZDg2NmE2MzViNzFkM2Q2NDU5NGE2MjMxNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4YWM2M2NjZGI4YTI3NjdjYTFlZDYxNjBiNmYwNTNjYWI0ZmUyODEzNDY5NWYzMGUzMzZhMGZhZjUzMzE5YjEifQ"
         }
       ]
     },
@@ -185,8 +185,8 @@
       "statement": "The wiki-update generation model pin moved from claude-sonnet-4-6 to claude-sonnet-5 in feature 075 (2026-09-21) purely for cost: same vendor, credential, workflow and Deep Agents caching middleware, only the id changed. Sonnet 5 lists at $2/$10 per MTok versus Sonnet 4.6's $3/$15, with cache reads at $0.20/MTok versus $0.30; generation was ~53% of a measured $74.89 model bill over the 30 days to 2026-09-20 and already ~92% cache reads, so the cached-read rate — not list input price — decided it, yielding roughly a 33% reduction (~$1.72 to ~$1.15 per run-day).",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L105-L121",
-          "version": "repo-lines-v1:sha256:cb0887d32ae8a9019df82db7e3ebf1f852c61e9cf8587bcea1581273b39fddb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZTI5MDA4ODI1ZTUxNWVjNDE5Y2FjODljOGUzNWIxYThhNWNmZWFiMzQwNTc4YTRiNmZhYWNiMzAyMzExNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNzI5YTlmNjBiY2M4YTUxY2JhMTRhYzUyMmJlM2UyNWZjODE4YTI0MGQzMGY1NjYyNTJiMjk1MTI1ZGUzMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzYjg2YTVkZWY1YjM5MTJiN2I5YjQ4YjIyNWMwNTRjOWNhM2YzZWZhNWJiYjNiYjdhYmIyNzM1MzU5MTk3N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MDMwMjg2NzhiNzgxYTZhODJiYjA4OGI0ZTU4NWJiMGZkNWQ0Yzg5Zjc1MDFhODEzZWYzMmZkYzM5MWZlNzIifQ"
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L122-L127",
+          "version": "repo-lines-v1:sha256:70b6eba935539df50331c0875ac2e05cb9a8320458d691be44da34cc12fde9d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJhYmQ5ZWU2MTQ5NTlmMmZkYmRkMjRkNmE3NzViNDNjMDBhNjFlMTdjNWRjMTA2ODlmZTM3N2M0ZTg0ODQzZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTI3MjlhOWY2MGJjYzhhNTFjYmExNGFjNTIyYmUzZTI1ZmM4MThhMjQwZDMwZjU2NjI1MmIyOTUxMjVkZTMzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjc5ZGYzMzUyNTdlZTk2OWRmOTM4Mzk3MGE1NjA5NDYxNDBlMTAwZTAyOGU4N2U1ZDQxMzhhMzUzOGEwYzE5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTkwMzAyODY3OGI3ODFhNmE4MmJiMDg4YjRlNTg1YmIwZmQ1ZDRjODlmNzUwMWE4MTNlZjMyZmRjMzkxZmU3MiJ9"
         },
         {
           "resource": "repo://specs/075-llm-cost-phase-1/research.md#L486-L510",
@@ -225,10 +225,44 @@
           "version": "repo-lines-v1:sha256:fcc49d0a03ab8a3228d6c760eb1565707fbe51f3558874749e3a76fd14f42a1c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NjY2MzJlNDIxZGQ0NGRmNzYzNTZiYWEwYzgzYzg4MjUzMmJmZWYwNzk3NWYzMTUwOWRmMWNkOWZjZGZmMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5YzBlY2QyYjM1NDllODVlZjg1ZWYxYjc2MzJiNWExYjZjODgxZjNlYzNjMzIwNTA1YTYxODljZGU4ZjE1MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_7534fdb6d2bc4502afeeaa2bc5d496be",
+      "statement": "V12 drift detection is warn-only and deliberately excluded as an input to planSlices in scripts/wiki-maintain.mjs, which decomposes work only from paths changed since the run-record marker plus the carried-forward backlog; consequently a concept whose source changed after the marker passed it is not automatically re-planned, a gap tracked as #526, compounded by #587 (a refresh slice verifying as noChange even when it wrote nothing for a requested page, advancing the marker past the change) and #525 (the drift-clearing sweep blocked on #587 and on canonical sources being corrected first, #588).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L425-L451",
+          "version": "repo-lines-v1:sha256:9710ae533548dd07680e3264b4f804e699b4c4dc9984f9e71be19751003708f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NGQ2ZDFhNGVmZDA0NTI4ZDQ4MDdmZjZiODJjNmRhODEyZmM0ZWI1NzFlMzlhYWY0NGRmNDNlYWZhZjEzYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MjU3MGM4MjlmM2I1YzViNmRhNTM3Yzk3NWI1N2JiZTQwMGU5OGMzODc0NTMzZWIyZmYzNzRkZjllZWFmZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzA1Mjk0MWZmZWQ2OWI2MDUxODk0MzZhNWFhNWYxNTQ1ZDFiY2ZiODdiMDc0ODM0ODg4YjBhOTA3NmU2YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwNWU0YzUyMjg5NzlhZWM3ZWVjZDRiYTBiNGU1Njg2MDY3NDMxMTM1NmJkMDhhMWJiZmI2ODY0YjY3NDU5YjIifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L266-L274",
+          "version": "repo-lines-v1:sha256:f710ae9f5bf49cfd29d24d2a3f3ffb3439b52a1059eb0400919a8d5d73148a3f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFlNGM5NWY0ODIwN2M2ZTc5YjJhOWU5MWFmMGU3MDI2YWY2MzQ4OGQwODczNGUxZWFjYThkZTMzYmFlMzgwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2QwMzM4NjVhYTY3NGEzNGVkMjU1NTNjMDJkNWJjNDQ3ZTgxNzA5Njg5M2QwYzJiOTUwMjY3Y2MwMjE0Y2I0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDdmMGVmZmQzNmE3MTA4Mzc0NThjNDU3MzNhMGE3ZWZhZTZiMzYzNjhkZDBkNWY5ZTBjMDAxZmVhYmEyZjk5YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_49bb444477334f7686ba7a8eaf1c3a28",
+      "statement": "OpenWiki 0.5.2 records Claims sidecars under openwiki/.claims/, one JSON file per page mirroring its bundle path, each holding schemaVersion, a pageVersion hash, a verification event, and a claims array whose entries carry an id, a statement, and repo:// evidence with resolver-computed version hashes; a later refresh marks a claim stale or unresolved when its evidence no longer matches or cannot be resolved, requiring the generator to confirm, revise, or retract it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L468-L484",
+          "version": "repo-lines-v1:sha256:f984d36f9e8234a11a8c47d64984f7b887fd5843f77870c1f8f8113f40cf9627:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NzE1NGJiOGEwMzc1NGM3YzAxZWU4ODIwYjkwOWQ3NGY1ZjRjZjY3OTYzMGJkZjhiODU3ZGMzNTM0MTVhZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5ZTkzMDc4MDU3ZjIyOWZiNWNkYjlhZmU0ZTgwZDI2NmIyNDc4MWU5Zjk4NTRjODQ5NjNmMTBiMDdkYjY4YmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1424472cf4d04befb090e05cac584bf5",
+      "statement": "openwiki/policy.yaml has no dedicated rule for the .claims/ sidecar directory (it is permitted only by the openwiki/** catch-all as regenerate/actor:generator), and okf-lint does not read the sidecars themselves — its only contact with Claims is rule V5 validating the ISO-8601 shape of a page's verified.at front-matter field.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L485-L494",
+          "version": "repo-lines-v1:sha256:776973b1423b8955ab195002f41251f82eabebb67de551d3de70af96d9be9617:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NjVlODQzNTc1YTY5MjVmZWY1NjczYmI1OWVmNjhjNDU0NzYxOWYyNzcxMDhjYjNiOTkwZDc2NzdkZTliYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNzc4ZDg4NzE0MDhiOWRhOTdkYWVhOTUwNTY5Mjk3YzY3ZjY2ZTU5MjhkNmVhMzZhOWFiYmI1NjZiM2ZiYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjODdjMGJiZThkOWQ3YzZkNmRkNzAzNWNhOGVjOGJkMjNkZmNjZWU4NzdiNjhiYmVjZTkwZjg4ZTJjZTRmYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-21T01:56:46.322Z"
+    "at": "2026-09-27T16:58:28.669Z"
   }
 }

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a27ef77d5aac5b2ca589c7241acdf1fc80f2a477466100f25ab2951de3d5ff95",
+  "claims": [
+    {
+      "id": "claim_94f7295dbcce46cb93b2185f9b344f90",
+      "statement": "MovieCollectionManager's core components are mcm-app (universal Expo/React Native frontend fronted by the BFF), mc-service (Rust/Axum service owning all movie-collection domain logic and the sole writer to mc-db), mc-db (a single shared MongoDB database mc_db with movie_collections and movies collections), and Keycloak as the external IAM provider expecting a movie-collection-manager client with mc-admin/mc-user client roles (new self-registrations default to mc-user).",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L24-L35",
+          "version": "repo-lines-v1:sha256:7e2fb252bb101e20539e85a1efb5b99531e8db5477b0c99e9ea43e4949676ce8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MzZiOGU4YWMyNTgyMzUxNGQ0OWViMzE2MjA0MGU0OTdiMDBkZDU5Mzc0YWQ0Nzc3MzcwMjgwNDBlZTg1ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZmYxNWNjOTQzNGQwMTllOGVlMWNjYjQxODlmODIyZWUwOTg2NTlmNzFkYTQ0NjQwMTliMTY5NTE1YzMxMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZWUwOGE4YTE0NGU4MzMzNGQ5MDBjYTEzYjJlZWFkZDFkZmQzMjhiZWNlNzhkYjg4ZTUyZmZjMzU5YmVkOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNGE2MWUzMjQzZjZmYzRlMzgxN2IwOGVkODkxOTdlZGQ3YTkwYmI3NGJkYzg0YmJjYzUyOGRiYmQzZGViNmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7909366289a84dac80e620165d50ed05",
+      "statement": "Access control in MCM is split into two independent layers: RBAC (Keycloak client roles mc-admin vs mc-user, enforced before a request reaches domain logic) and DAC (per-collection owner/contributor/viewer rights recorded in each collection's own acl array in movie_collections, enforced inside mc-service, with no notion of individual collections at the Keycloak layer).",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L54-L69",
+          "version": "repo-lines-v1:sha256:f1d97a7dc39f403494f84cbadf5958275cf54da6f884219240cd0d8f73fa3686:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NzViMmVjNGE4MTM4NDZlNWE4Y2YyOGVjYWYxNDYwZjBlNDRkYWZhNzY3ZTY5NjYwYTMwZTljOTM0ODA0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZmJjOGI4OGUyY2Y0ZWUyOTVhOGVmYTAzMDM3OWQ1ODc5NGQ4Y2Y4ODQ1MWU3Mjg2OTY0YjM4MzE0NzQxZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNzU2YTBjOWUxOGRmYTk1M2FlYzMyMGU5OTQ4YTcwMjVhNmFjNTJkZWQzZmE3NTcwMDc2YTgxNWFiMDQxNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwOTRhMTUxYTFhYjYzZDVjYWFlZGNhODAzYWJiNmRhOGQyZmMzN2E2MzBkNGRkZjZmYzNmZWMwZjczNDA3NWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_380814634df047129c8c7da88a9852ed",
+      "statement": "Feature 073 adds a per-user scheduled/on-demand backup capability run in-process by the BFF: it copies a user's own collections to an S3-compatible or WebDAV destination the user owns and supplies, retains the last N versions, and restores only by creating new collections (never overwriting live data); unattended runs authenticate via a Keycloak offline token the user explicitly consented to, and destination secrets are sealed under their own encryption key (BACKUP_CREDENTIAL_ENC_KEY), separate from the agent-config encryption key (AGENT_CONFIG_ENC_KEY). This is a BFF-owned capability, not part of mc-service or mc-db.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L31-L31",
+          "version": "repo-lines-v1:sha256:88a9ad89b28d2ea58c15dbd305e9dad0ce2563d0b5c77d27c93bcf33cbff0bb5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODhhOWFkODliMjhkMmVhNThjMTVkYmQzMDVlOWRhZDBjZTI1NjNkMGI1Yzc3ZDI3YzkzYmNmMzNjYmZmMGJiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhhOWFkODliMjhkMmVhNThjMTVkYmQzMDVlOWRhZDBjZTI1NjNkMGI1Yzc3ZDI3YzkzYmNmMzNjYmZmMGJiNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTdmNWViYThmZjNmN2Y5MzRkZjNjYzNiNmViZTBlODE2ZDg0MGY5MzNkOTY4NjEwMzVjYzFkMDY3ZmQ2Y2FmOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDA3NTAzMzcxMDdjZDE0YWU0YzU0OTY1OGY3MGMzZGFhOGYwMzRiZDVkMzc3NmRiMmRiODM5ODhjOWU4ODBmNSJ9"
+        },
+        {
+          "resource": "repo://specs/073-scheduled-backups/spec.md#L1-L24",
+          "version": "repo-lines-v1:sha256:8fa163c5ac1668b9044daa376df2d94f9c9a0591ad0d47b35d506b8c1bde7e3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMGM5NGZkYTkwODM4OTZkMDlmNWFhYTk3ZTkyMDlkNWU4NTczYWZlOWY2ZjgxYzg1OTA0OTU3ZWMzZjQ5NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYmFjNTE2ZTQ4MGExM2NlYWQ2ZWZiYWNjNTdlNjJjNmQxYTU3NjY5MDNjMzg4MDQwOWFkYWUwOGQ5NTExODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZTM1YTlhMTM5NzQ2ZjBmNDc2YzBhNjRlMjMwYjA3OTI3ZjMwYjA3NDM4NTJkOTZhYjJiNWYxNjE4NTYxNzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_caf2598e6cf245a4b127e2700d28fe75",
+      "statement": "Grant/revoke of contributor/viewer DAC rights is not yet built in the product: mc-service authorizes against the acl array and tests populate non-owner roles, but no UI or endpoint exists to actually grant or revoke a contributor/viewer entry, so every real collection's acl today contains only the owner entry.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L92-L92",
+          "version": "repo-lines-v1:sha256:6b97456b4bf394af62a226fc485f0b71c2e67d90dffa8d8f41f8f4d172b41b68:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI5NzQ1NmI0YmYzOTRhZjYyYTIyNmZjNDg1ZjBiNzFjMmU2N2Q5MGRmZmE4ZDhmNDFmOGY0ZDE3MmI0MWI2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI5NzQ1NmI0YmYzOTRhZjYyYTIyNmZjNDg1ZjBiNzFjMmU2N2Q5MGRmZmE4ZDhmNDFmOGY0ZDE3MmI0MWI2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGI0OTZjMzRiYmQyZmI3NTVhNzBjOTQyYjYzM2ZjMTAwMzM2N2Q1NDQxZjJhYWY1MWVjZTBhN2RiMDJiYmZjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQ4ZDI0YTViODFlYjIwMTM1OWJiYjZmM2ZmM2Y3MTg5YTI1YjQzYmQyMGRiZmJlMzgzNzAwZGUxNDg1MjkxNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_41691b2e4a8d49e28614fc75aa897d2a",
+      "statement": "The AI Agents layer (Agent Gateway, movie-mcp, movie-assistant) is additive: mc-service and existing mcm-app screens are unchanged, and every agent-originated call to mc-service is routed through movie-mcp carrying a downscoped, audience-bound user token, so the existing RBAC (mc-admin/mc-user) and DAC (owner/contributor/viewer) enforcement applies unchanged rather than being bypassed.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L113-L125",
+          "version": "repo-lines-v1:sha256:7e2b19ee5c9d6bb58cfb03a993ba5856a55336317246eacb6fc6fe54d0db5785:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYWJhNDRjNTU3YWY5YmVkZWIxMTQ5M2NjN2Q3NDZiMjJjOWZiYzBiODg3MjdlMzZkOWE3YzIwMzE5NDZmODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlNjdiMGZkZTdlZTA0Y2QwYjk3MTgyYTI2ZTU1OGY1NzYwYjM5YmYyOTY3MmQxYzc5NjhmY2ZmZTIxYTVkNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMTJlYTU1MTQzOTY5MTJkMWRiOWI3NDMwYTIxMTk2N2I0OWRkZmYxZWQ4NDczYWZjOGU4Mjk4NjVkNDUzNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiZDAyNzI4YmE2ZmVhNDlmNGRiNGFhZTJjYzU4MzU3ODUzZWY0MWU0MzBmMTc5NTNlYjc4MmEyNmJlYmMwNzQifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L37-L46",
+          "version": "repo-lines-v1:sha256:51397cb0b1268aa8f3d4d7e405e546ba6a6dfabd87890076800f69509691da58:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMGYyMjhmODU4MDlkZGM3MDk1Mjk1ZTliYmM3ZjJjZjNhOTQwZTE1NTNjYmRiMzUzZjY0OGVkMzE3NDY1NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZDAyMjcyMmFhNTExNzg5ZTVmN2E1YWQ5NmM2ZWNlZGU2ODVjY2U2ZjNhYTkxYTEyYzBlMTI3MTkxMDllZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0ZTNmYWNhMWJlYjIwNzdjMjk5MDZmNjYwYzg0MWNlM2FlNTMxNGFkYzFmOGQyMGRmYWNjMjhhYzYwODRlYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZDQ1ZjM4YjRkMGM0OTYyOGYwNmZiMjVjNzE1MDQ4MTQwNGFiNWRjYzAyNTRkZTUzMzUzNDk0ZDg2ZmQxMGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d8aade9fcf748719d00d93414509d20",
+      "statement": "mc-db must run as a single-member replica set (mongod --replSet rs0, initialised by rs-init, with mc-service connecting via directConnection=true) rather than a plain standalone mongod, because collection_repository.rs's atomic cascade-delete relies on a MongoDB multi-document transaction that only a replica-set-enabled deployment can start.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L107-L107",
+          "version": "repo-lines-v1:sha256:6a7175f72de57f63af70096240248cbecb50e6777d7c9d44b11fa5e7a05e2bb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE3MTc1ZjcyZGU1N2Y2M2FmNzAwOTYyNDAyNDhjYmVjYjUwZTY3NzdkN2M5ZDQ0YjExZmE1ZTdhMDVlMmJiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE3MTc1ZjcyZGU1N2Y2M2FmNzAwOTYyNDAyNDhjYmVjYjUwZTY3NzdkN2M5ZDQ0YjExZmE1ZTdhMDVlMmJiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc3ZTc4NGJjZTdiZjI4YWM1MzVlZmUzNDM3MTFmNzM2YzU3MjRiZTRhZDNiMDQ0ZDc1YTNhMjU0ZDc4MzExMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDc1MTM4MWZkYTE4ZmFkMWIzOTI5Y2VlYjc0ZjI1YjU5MmMyYzRjYmJkOTI2MTZkZGJlNjJmMWNjNmZkNjViNCJ9"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L93-L93",
+          "version": "repo-lines-v1:sha256:fcc22112a1fd5587afa43c2ca87c30119a06ab1f9d2b246245657193e3e7d9ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNjMjIxMTJhMWZkNTU4N2FmYTQzYzJjYTg3YzMwMTE5YTA2YWIxZjlkMmIyNDYyNDU2NTcxOTNlM2U3ZDlmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNjMjIxMTJhMWZkNTU4N2FmYTQzYzJjYTg3YzMwMTE5YTA2YWIxZjlkMmIyNDYyNDU2NTcxOTNlM2U3ZDlmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWI4N2Y1NmUyOWUxYTExMDNiNzg2YzViZjAyODQwMWViNTI0NzJlMTQ2OThhYmYyZWJiMDkyMjY0OWU4MzYyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTM1ZmM1NjkwYWFiNzNlYTFjOTk0ODlmYzdlZDdkMDg5OGY4YzFiOTQxODdmZDkzNjJlMDA0NDA1ZmUyMzdlZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c696a280a8345688c453b15a0893479",
+      "statement": "The dev compose stack for mc-db caps WiredTiger's cache at 1 GB and restores its sweeper defaults (wiredTigerFileHandleCloseIdleTime=30s, wiredTigerFileHandleCloseMinimum=250) because MongoDB's own default sweeper thresholds (closeIdleTime=600s, closeMinimum=2000) never became eligible for sweeping under the integration test harness's per-test database churn, driving open data-handle counts to 65,844 and causing an OOM-kill that surfaced as 'unexpected end of file'/connection-refused errors indistinguishable from a MongoDB consistency bug (item #468).",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L1-L61",
+          "version": "repo-lines-v1:sha256:29b37c4bce4425b0f5d5f185dc5425b381ea5d2efd615aeda5825f0f4ae7fcfc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxOTU4OTQzMTlkMDVjMTRiOWU4MmZhZTI3Yjg0N2FlNWZhYjIyYWI3NjUyMDg3MzYwNDlmNzY1NTk4N2YyZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZWVjNjNjYjhjZjRhYjYyZGUyMzI5YWVmODdiYzQ1NmI2ZDUzZDExMGM2MDIwZWRhNjY4NTlhMTk1ODIxMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkZjhkMzM5ZWU3NTE5OWEzMDAxZGZjMTVjNWE0MTFkZGMwODI3YmFhMzJhMmNlNDRjZmVlMTVkYWE5Y2FjNDMifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-27T16:58:28.669Z"
+  }
+}

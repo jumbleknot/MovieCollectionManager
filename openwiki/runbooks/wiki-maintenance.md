@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: OpenWiki knowledge-bundle maintenance
-description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — including the plan/execute split, slice sizing, the retry-then-backlog model, exit codes, the claude-sonnet-5 model pin and its temperature gotcha, the OKF v0.2 provenance migration, diagram parser installation, and how a lost run record self-heals against the forge's own proposal state.
+description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — including the plan/execute split, slice sizing, the retry-then-backlog model, exit codes, the claude-sonnet-5 model pin and its temperature gotcha, the OKF v0.2 provenance migration, Claims sidecars, diagram parser installation, and how a lost run record self-heals against the forge's own proposal state.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-21T01:56:46.322Z
+    at: 2026-09-27T16:58:28.669Z
 sources:
   - id: openwiki-source-c231cd090281b3129aaf6167
     resource: repo://docs/runbooks/wiki-maintenance.md
@@ -14,9 +14,11 @@ sources:
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
     resource: repo://scripts/check-openwiki-okf.mjs
+  - id: openwiki-source-e3418ba4f663de6f0edbcde6
+    resource: repo://scripts/wiki-maintain.mjs
   - id: openwiki-source-b7fa1c4f46ecc1980211c9d4
     resource: repo://specs/075-llm-cost-phase-1/research.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-21T01:56:46.322Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -95,7 +97,7 @@ never be invoked directly.
   auto-merged.** Closing it without merging returns its work to the backlog and rolls the marker back.
 - **If the run record and the forge disagree about an open proposal, the forge wins.** The record's
   `proposal` pointer is a cache, not the source of truth — a run created a proposal, its marker commit
-  lost a push race against `main`, and the pointer never landed; the next run then tried to open a
+  lost a push race against `main`, and the pointer never landed. The next run then tried to open a
   second proposal and died on `forge POST /pulls → 409`. A run now asks the forge which proposal is
   open for the branch before creating one, adopts it if found, and treats a 409 as "someone beat me to
   it — adopt and update" rather than a fatal error, so a run that lost its record self-heals instead of
@@ -124,6 +126,17 @@ never be invoked directly.
   `generated.at` nor a `timestamp` is silently excluded from drift coverage — the gate counts and
   prints those pages as a warning, never a failure. **If that count climbs, drift coverage is falling;
   investigate the generator's provenance pass, not the pages.**
+- **V12 drift is reported, never planned.** It is warn-only — it never touches the exit code — and it
+  is deliberately not an input to `planSlices` in `scripts/wiki-maintain.mjs`, which decomposes only
+  the paths changed since the run-record marker plus the carried-forward backlog. The reason: one edit
+  to a widely cited file would otherwise fan drift out across every concept citing it and never clear.
+  The consequence is that a concept whose source changed after the marker passed it is **not
+  re-planned automatically** — clearing it takes a hand-seeded sweep (`--since <ref>`, or pages placed
+  in the run record's `backlog`). Tracked gaps: **#526** (nothing re-plans a concept once the marker
+  has passed its source change), **#587** (a refresh slice that writes nothing for one of its requested
+  pages still verifies as `noChange`, so the marker advances past the change anyway — measured on
+  `openwiki/runbooks/renovate.md`, 2026-09-26), and **#525** (the drift-driven sweep that would clear
+  the current V12 list is blocked on #587 and on canonical sources being corrected first, #588).
 - **Mermaid and jsdom are optional peer dependencies — missing them causes diagram fences to be
   silently rewritten to plain text fences while the run exits 0.** From OpenWiki 0.5.0, Mermaid
   diagrams are embedded by default and every fence is validated after a run. Without `mermaid` and
@@ -135,6 +148,20 @@ never be invoked directly.
   `scripts/__tests__/wiki-maintain.guard.test.mjs` asserts that the two lists match: if only one
   environment has the parser, they disagree about what a valid diagram is, and the environment that
   writes the bundle decides.
+- **Claims sidecars (`openwiki/.claims/`) hold the evidence behind a page, one JSON file per page,
+  mirroring the page's path** (e.g. `openwiki/.claims/runbooks/backups.json` for
+  `openwiki/runbooks/backups.md`). A sidecar carries `schemaVersion`, a `pageVersion` hash, a
+  `verification: {by, at}` event, and a `claims` array; each claim has a stable `id`, a `statement`,
+  and one or more `evidence` entries (`repo://<path>`, optionally `#Lx-Ly`, plus a resolver-computed
+  version hash of that source). On a later refresh a claim is marked `stale` when its evidence's
+  version no longer matches, or `unresolved` when the evidence cannot be resolved, and the generator
+  must confirm, revise, or retract it — the rules a page like this one is itself following.
+  `openwiki/policy.yaml` has no dedicated rule for `.claims/`; the sidecars are permitted only by the
+  `openwiki/**` catch-all (`regenerate`, `actor: generator`). `okf-lint` does not read the sidecars —
+  its only contact with Claims is rule V5 validating the ISO-8601 shape of a page's `verified.at`. The
+  operator decided on 2026-09-27 that Claims are required and valuable (item #513); any further gates
+  or lifecycle rules beyond the generator's own confirm/revise/retract cycle are still being decided
+  under that item.
 
 Full plan/execute CLI flags, the exit-code table, the CI workflow's proposal-adoption logic, and the
 self-test/lint/governance verification commands: `docs/runbooks/wiki-maintenance.md`.

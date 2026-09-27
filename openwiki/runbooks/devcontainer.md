@@ -4,15 +4,17 @@ title: Containerized dev environment (devcontainer — Docker Desktop / DinD pat
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container path — kept solely for Android emulator support via /dev/kvm. The primary AI-assisted dev environment is now the Docker Sandbox microVM; see devcontainer-sandbox.md. Documents the two-tier isolation model, default-deny egress firewall, and Windows-host quirks.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-22T02:06:41.363Z
 sources:
   - id: openwiki-source-f7c89635dfc6efb0ecec007f
     resource: repo://.devcontainer/devcontainer.json
+  - id: openwiki-source-0efadc7633f45e85ee45a617
+    resource: repo://.devcontainer/egress-allowlist.json
   - id: openwiki-source-a9fc7285078c8062777b3180
     resource: repo://docs/runbooks/devcontainer.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T02:06:41.363Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-27T16:58:28.669Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -76,12 +78,21 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   ```
   Then fully quit VS Code and every terminal before relaunching.
 - **`api.themoviedb.org` is allowlisted for the shell (OUTPUT chain) but NOT needed for the app — the two chains behave differently, and conflating them is the trap.** Feature 059 added the entry to `init-firewall.sh` so that `nx test:integration web-api-mcp` (pytest, in the shell) can reach TMDB. **Nested containers never needed it**: RUNTIME TMDB paths (BFF validate-on-save probe, web-api-mcp curator enrichment) run nested and travel the FORWARD chain, which `init-firewall.sh` leaves to dockerd. Measured 2026-07-16 with TMDB absent from `ALLOWED_DOMAINS`: a nested container reached a non-allowlisted domain (`example.com` → 200) and the nested BFF reached TMDB (`401` = connected, key rejected). If a runtime path times out, the ruleset is stale — **re-apply `init-firewall.sh` to re-resolve the CDN IPs; do not widen the allowlist** (that is still wrong and still masked the real cause). The old blanket "do NOT add TMDB to the allowlist" instruction is superseded, not reversed: it held for runtime paths and still does — what it did not cover is the test runner in the shell. Measured 2026-08-14 after the entry: `curl https://api.themoviedb.org/3/` from the shell returns `401` (connected); `example.com` still times out, so default-deny is intact.
-- **`crates.io` is not allowlisted — `cargo` commands need `--offline` here.** The same
-  default-deny firewall that blocks npm CDN drift also blocks the Cargo registry. All commands
-  that compile or test mc-service need `--offline --manifest-path backend/mc-service/Cargo.toml`.
-  **A failing `--offline` resolve is not an obstacle to work around — it is a lock-discipline
-  check:** it means the change is pulling a package absent from `Cargo.lock`, which CI will
-  also reject. Do not reach for `--online`; inspect what is being added. See
+- **`crates.io` IS allowlisted now — `cargo` resolves online here, and `--offline` is a tool, not
+  a requirement.** `crates.io`, `index.crates.io`, and `static.crates.io` are in
+  `.devcontainer/egress-allowlist.json` (group `packages`), so both the in-container firewall and
+  the sandbox's host-side policy admit them. A `cargo` fetch that stalls on a crate download is
+  most likely a stale ipset on the CDN-rotating `static.crates.io` — re-run `init-firewall.sh`
+  before suspecting cargo. Everything already in `Cargo.lock` and already cached in the
+  `mcm-cargo-registry` volume also builds fine with
+  `--offline --manifest-path backend/mc-service/Cargo.toml`.
+  **The corollary is the useful half: a *failing* `--offline` resolve is still a real signal, not
+  an obstacle to work around.** It means the change is pulling a package absent from `Cargo.lock`,
+  which CI will also reject. Do not reach for online resolution to make it go away — inspect what
+  is being added (`cargo tree -e features -i <crate> --manifest-path backend/mc-service/Cargo.toml`
+  names the transitive culprit), then confirm the intended outcome with `git diff Cargo.lock`: a
+  dev-dependency edge appearing against an existing package is expected; a new `[[package]]` block
+  is a new dependency and deserves a decision. See
   [cargo fmt formats the WHOLE crate](../gotchas/rust-formatting-scope.md) for the
   companion formatting trap in this crate.
 - **`getaddrinfo ENOTFOUND keycloak-service` running the integration tier here is a missing env
