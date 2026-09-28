@@ -16,11 +16,11 @@
       "completedRunId": "5f8e1b80-2dc1-43c0-ad97-44b479bd8087"
     },
     "/openwiki/decisions/adr-0001-prod-secrets-management.md": {
+      "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
+      "sourceFingerprint": "sha256:47628626aa01ffdfae640ca4265c8da96074f1949d28980f30de0d8755b5975a",
       "pageVersion": "sha256:e6c4728dca3faf462fa2aac8b259833c91bfb256b07e10970917f2b39c1f01e6",
       "completedBy": "openwiki/0.5.2",
-      "completedRunId": "cc6829b2-8371-4481-b4ba-19e220e928c8",
-      "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
-      "sourceFingerprint": "sha256:47628626aa01ffdfae640ca4265c8da96074f1949d28980f30de0d8755b5975a"
+      "completedRunId": "cc6829b2-8371-4481-b4ba-19e220e928c8"
     },
     "/openwiki/projects/bff.md": {
       "gitHead": "b492241a72b0b47e5fe2acccc00639a44c93a426",
@@ -100,11 +100,11 @@
       "completedRunId": "d0a15892-f9a5-46ec-af1a-c0c590948c64"
     },
     "/openwiki/runbooks/wiki-maintenance.md": {
-      "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
-      "sourceFingerprint": "sha256:47628626aa01ffdfae640ca4265c8da96074f1949d28980f30de0d8755b5975a",
-      "pageVersion": "sha256:89fae51fdf10699b209ea32bfe9f660cbb40a35f1f5644aa804ca68f5eff39bc",
-      "completedBy": "openwiki/0.5.2",
-      "completedRunId": "5f8e1b80-2dc1-43c0-ad97-44b479bd8087"
+      "pageVersion": "sha256:d154b9f35f3156ad076756ebb57e98f175cdec14315f5b76027163c7acdb83a6",
+      "completedBy": "openwiki/0.6.0",
+      "completedRunId": "d5e97dfd-2563-4e85-91ff-c277e25f5252",
+      "gitHead": "046d520d7d85f0841356c6714a7c57de779fef62",
+      "sourceFingerprint": "sha256:79400797afc1465d3f2592dbf76228b0a56c238ac36b13d508c6ad770642d0db"
     }
   }
 }
