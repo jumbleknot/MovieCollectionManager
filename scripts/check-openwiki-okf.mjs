@@ -29,6 +29,7 @@ import { parse as parseYaml } from 'yaml';
 // V14/V15 share their scanner with the generator's normalizer — see that module's header for the
 // measurement (POST /api/v1/markup) that establishes why a leading `/` is a dead link here.
 import { bodyLinks, classifyBodyLink, relativeFormFor, splitTarget } from './openwiki-links.mjs';
+import { conceptStamp, stampValues } from './openwiki-stamp.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_BUNDLE = 'openwiki';
@@ -136,39 +137,14 @@ function resolveRelativeResource(value) {
 // Reading only `timestamp` would therefore not fail loudly — it would make V12 quietly stop
 // covering each page as that page was rewritten, until drift detection covered nothing while the
 // gate still printed `✅ conformant`. That is the same silent-green failure the normalizeFields
-// comment above documents, arriving by a different route, so the fallback is written once, here,
-// and every caller goes through it.
+// comment above documents, arriving by a different route, so the rule is written once and every
+// caller goes through it.
 //
 // `timestamp` is still honoured because v0.2 explicitly tolerates it on pages that have not been
 // rewritten yet, and because a hand-authored concept may carry it indefinitely.
 
-/** ISO-8601-valued keys, wherever they appear. Order is preference order, most specific first. */
-const STAMP_FIELDS = [
-  ['generated', 'at'],
-  ['timestamp'],
-];
-
-/** Read a nested front-matter path, returning the string only when it is a non-empty one. */
-function readPath(fields, path) {
-  let cursor = fields;
-  for (const key of path) {
-    if (cursor === null || typeof cursor !== 'object' || Array.isArray(cursor)) return null;
-    cursor = cursor[key];
-  }
-  return isNonEmptyString(cursor) ? cursor : null;
-}
-
-/**
- * The concept's provenance stamp: v0.2 `generated.at` if present, else the v0.1 `timestamp`.
- * Returns the field path too, so a message can name the shape it actually read.
- */
-function conceptStamp(fields) {
-  for (const path of STAMP_FIELDS) {
-    const value = readPath(fields, path);
-    if (value !== null) return { value, field: path.join('.') };
-  }
-  return null;
-}
+// The stamp rule itself — the NEWEST of generated.at, verified.at and timestamp — lives in
+// ./openwiki-stamp.mjs, shared with wiki-maintain's #587 check so the two readers cannot disagree.
 
 // ── drift (V12) — git commit date, NOT mtime ────────────────────────────────────
 // A fresh checkout stamps every file's mtime with the checkout time, so an mtime-based comparison
@@ -329,11 +305,11 @@ function validateBundle(bundleRoot) {
     // V5 — every ISO-8601-valued key must parse, in BOTH the v0.1 and the v0.2 shape. No `.trim()`
     // here: normalizeFields has already done it for every field, nested values included, which is
     // what stops the next validator being written without one (see V12 below).
-    for (const path of [...STAMP_FIELDS, ['verified', 'at']]) {
-      const value = readPath(fields, path);
-      if (value === null) continue;
+    // `verified` is a LIST of events in the shape openwiki writes; stampValues descends it (a plain
+    // path reader did not, so this rule had validated no real `verified.at` at all).
+    for (const { value, field } of stampValues(fields)) {
       if (!ISO_8601.test(value) || Number.isNaN(Date.parse(value))) {
-        add('V5', file, `field \`${path.join('.')}\` is not a valid ISO 8601 value: ${value}`);
+        add('V5', file, `field \`${field}\` is not a valid ISO 8601 value: ${value}`);
       }
     }
 

@@ -172,6 +172,51 @@ test('V12 drift is still reported when the concept is checked out with CRLF endi
   }
 });
 
+function oneConceptBundle(frontMatter) {
+  const dir = mkdtempSync(join(tmpdir(), 'okf-stamp-'));
+  writeFileSync(join(dir, 'index.md'),
+    '---\ntype: Reference\ntitle: Test Bundle\ndescription: Index.\n---\n# Test Bundle\n- [Page](page.md) — a concept.\n');
+  writeFileSync(join(dir, 'page.md'), `---\ntype: Decision\ntitle: Page\nresource: README.md\n${frontMatter}---\nBody.\n`);
+  return dir;
+}
+
+test('V12 a page whose claims were VERIFIED after its source changed is not stale (the adr-0001 shape)', () => {
+  // openwiki re-verified the page's claims and left body, `timestamp` and `generated` alone. Reading
+  // only generated.at/timestamp reported a page the generator had just checked as out of date.
+  const dir = oneConceptBundle('timestamp: 2001-01-01T00:00:00Z\nverified:\n  - by: openwiki/0.5.2\n    at: 2999-01-01T00:00:00Z\n');
+  try {
+    const { code, out } = runGate(['--bundle', dir, '--json']);
+    assert.equal(code, 0, out);
+    assert.deepEqual(JSON.parse(out).warnings, [], 'the newest of generated.at, verified.at and timestamp is the stamp');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('V12 an OLD verification does not hide drift after a newer source change', () => {
+  const dir = oneConceptBundle('timestamp: 2001-01-01T00:00:00Z\nverified:\n  - by: openwiki/0.5.2\n    at: 2002-01-01T00:00:00Z\n');
+  try {
+    const { out } = runGate(['--bundle', dir, '--json']);
+    assert.deepEqual(JSON.parse(out).warnings.map((w) => w.file.split('/').pop()), ['page.md']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('V5 a malformed verified.at in the LIST shape openwiki writes is a finding', () => {
+  // `verified` is a list of events. A path reader that does not descend arrays never saw it, so V5 on
+  // `verified.at` had validated nothing on any real page.
+  const dir = oneConceptBundle('verified:\n  - by: openwiki/0.5.2\n    at: nope\n');
+  try {
+    const { code, out } = runGate(['--bundle', dir]);
+    assert.equal(code, 1, out);
+    assert.match(out, /V5/);
+    assert.match(out, /verified\.at/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // ── Reporting contract ──────────────────────────────────────────────────────────
 // ── V14/V15: body links (item #491) ─────────────────────────────────────────────
 test('V14 a site-root-absolute body link fails, even though every other rule is satisfied', () => {
