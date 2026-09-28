@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-09-27T17:20:54.734Z",
+  "updatedAt": "2026-09-28T01:16:56.053Z",
   "command": "update",
-  "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
-  "model": "claude-sonnet-5",
+  "gitHead": "046d520d7d85f0841356c6714a7c57de779fef62",
+  "model": "accounts/fireworks/models/deepseek-v4p1-flash",
   "status": "complete",
   "language": "en"
 }
