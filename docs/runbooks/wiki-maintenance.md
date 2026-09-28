@@ -236,7 +236,7 @@ directly.
 | Code | Meaning | Is something wrong? |
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
-| `1` | A slice **failed verification** — zero pages written, the bundle became non-conformant, or a write landed where policy forbids it | **Yes** |
+| `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it (§3) | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight | **Yes** |
 | `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
 
@@ -294,9 +294,12 @@ rate limiting under page concurrency shows up there first.
 
 A slice fails when **any** of four things is true, and the generator's exit status is not one of them:
 
-1. **No concept page appeared.** An `index.md` refresh counts as zero pages — that is precisely what
-   feature 043's false-green run produced: 12 minutes of paid work, one `index.md`, exit 0, reported
-   as success.
+1. **A requested page does not exist after the run.** The contract is the pages the slice
+   *requested*, not "some page appeared": a run that wrote unrelated pages while ignoring the request
+   fails, and an `index.md` alone counts as zero pages — feature 043's false-green run was 12 minutes
+   of paid work, one `index.md`, exit 0, reported as success. Writing **nothing** is not by itself a
+   failure: a refresh whose requested pages all exist and none is stale (cause 4) passes as
+   `✅ … nothing needed changing (0 written)`.
 2. **The bundle stopped being conformant** (`check-openwiki-okf.mjs`, rules V1–V15).
 3. **A written path was not permitted** by `openwiki/policy.yaml` — including a write into
    `docs/runbooks/`, which is `regenerate` but governed by an *agent*, not the generator.
