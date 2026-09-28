@@ -14,7 +14,10 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 
-import { shouldDeferMaintenance, MAX_DEFERRAL_SECONDS, DEBOUNCE_SECONDS } from '../wiki-maintain.mjs';
+import {
+  shouldDeferMaintenance, MAX_DEFERRAL_SECONDS, DEBOUNCE_SECONDS,
+  TIME_BUDGET_SECONDS, WORST_INVOCATION_SECONDS, CI_SETUP_SECONDS, CI_EXECUTE_OVERHEAD_SECONDS,
+} from '../wiki-maintain.mjs';
 import { WIKI_PROVIDERS, buildGeneratorEnv } from '../wiki-provider.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -86,8 +89,39 @@ test('the run does not trigger itself', () => {
 
 // ── budget and timeout (C6) ─────────────────────────────────────────────────────
 
-test('the job timeout sits above the declared effective ceiling', () => {
-  assert.equal(job()['timeout-minutes'], 45, '≤24 pages / ~37 min plus checkout and install overhead');
+test('the job timeout sits above the effective ceiling, derived — not a remembered number', () => {
+  // Updated 2026-09-28 (feature 078, research R9). The old assertion pinned 45; the premise it stood
+  // for is that the platform never kills a run the budget would have stopped cleanly (SC-004). The
+  // debounce SLEEPS INSIDE THIS JOB, so it counts against timeout-minutes like everything else.
+  const ceiling = DEBOUNCE_SECONDS + CI_SETUP_SECONDS + TIME_BUDGET_SECONDS + WORST_INVOCATION_SECONDS + CI_EXECUTE_OVERHEAD_SECONDS;
+  const timeout = job()['timeout-minutes'] * 60;
+  assert.ok(timeout >= ceiling + 5 * 60,
+    `timeout-minutes ${job()['timeout-minutes']} leaves less than 5 min of margin over the ${Math.ceil(ceiling / 60)}-min ceiling ` +
+    '(debounce + setup + time budget + one worst-case invocation + publishing)');
+  assert.equal(job()['timeout-minutes'], 60, 'the operator-approved hold on the shared runner (078 R9) — changing it is a decision, not a tidy-up');
+});
+
+test('CI defaults to Fireworks at concurrency 4, and a repository variable switches it back', () => {
+  // 078 FR-002/SC-006. The code default stays Anthropic for LOCAL runs (the dev container carries the
+  // Anthropic key); the job states its own default so switching back is a settings change.
+  assert.match(raw, /MCM_WIKI_PROVIDER:\s*\$\{\{\s*vars\.MCM_WIKI_PROVIDER\s*\|\|\s*'fireworks'\s*\}\}/);
+  assert.match(raw, /MCM_WIKI_PAGE_CONCURRENCY:\s*\$\{\{\s*vars\.MCM_WIKI_PAGE_CONCURRENCY\s*\|\|\s*'4'\s*\}\}/);
+});
+
+test('the job verifies the INSTALLED generator before any paid call, and a skip fails it', () => {
+  // The pinned-version checks skip wherever the pinned openwiki is not installed — which is every
+  // guardrail job. The wiki job is the one place it IS installed, so it runs them there, after the
+  // install and before the plan/execute steps, and treats a skip as a failure (a skip reads as a pass).
+  const names = steps().map((st) => `${st.name ?? ''} ${st.run ?? ''}`);
+  const install = names.findIndex((n) => /npm install -g openwiki@/.test(n));
+  const verify = names.findIndex((n) => /wiki-maintain\.guard\.test\.mjs/.test(n));
+  const execute = names.findIndex((n) => /wiki-maintain\.mjs --execute/.test(n));
+  assert.ok(install >= 0 && verify > install, 'the guard runs after the generator is installed');
+  assert.ok(verify < execute, 'and before any paid work');
+  assert.match(names[verify], /skip/i, 'and it fails on a skip, not only on a failure');
+  // node's TAP summary line is `# skipped N` — NOT `# skip N`. A check for the wrong token matches
+  // nothing and fails EVERY run, correct generator or not (caught simulating this step, 078).
+  assert.match(names[verify], /\^# skipped 0\$/, 'the skip check must read the summary line node actually prints');
 });
 
 // ── the runner has to actually have the generator ───────────────────────────────

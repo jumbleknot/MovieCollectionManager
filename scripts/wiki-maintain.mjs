@@ -1097,17 +1097,33 @@ export function runMaintenance({
 //     the false-green failure this feature exists to eliminate.
 //   * wall-clock — measured by the run itself.
 //
-// Enforced BETWEEN slices, so a slice already under way is never interrupted. The overshoot is
-// therefore bounded at one slice (≤8 pages, ≤~17 min — feature 043's measured worst case), giving a
-// declared EFFECTIVE CEILING of ≤24 pages / ~37 minutes (FR-011a). The workflow's timeout-minutes: 45
-// sits above that plus checkout and install overhead.
+// Enforced BETWEEN invocations (and before a retry), so an invocation already under way is never
+// interrupted: the TIME budget is a deadline for STARTING work, and the overshoot is one invocation.
+//
+// Sized 2026-09-28 from measurement (feature 078, research R9, operator sign-off: "~8 pages per run,
+// timeout 60"). On DeepSeek V4.1 Flash at page concurrency 4, one invocation of up to 8 pages is two
+// waves of page workers and measured 15–23 min; WORST_INVOCATION_SECONDS allows 30. The job timeout has
+// to hold the in-job debounce sleep, setup, the start deadline, one worst-case invocation and the
+// publishing around it; a 4-minute start deadline is what fits that inside 60 minutes with 5 minutes' margin (the
+// guard test's own arithmetic caught a 5-minute first draft at 4). In practice a run is ONE invocation —
+// a second starts only if the first finished inside 4 minutes — and
+// a retry happens only after a fast failure; anything else is carried to the next run. Declared
+// EFFECTIVE CEILING: ≤16 pages / ~34 minutes of generation (FR-011a). The guard test derives the
+// workflow's timeout-minutes from these constants rather than remembering a number.
 //
 // The wall-clock budget bounds RUNNER OCCUPANCY (FR-011c) — there is one CI runner and a paid job
 // must not squat on it. **NEITHER BUDGET IS A MONETARY BOUND** (FR-011d): OpenWiki emits no token or
 // cost data (research R1), this repository has no cost measurements, and no requirement in this
 // feature asserts a spend ceiling. Do not describe these as cost controls, and do not add one back.
 
-export const PAGE_BUDGET = 16;
+export const PAGE_BUDGET = MAX_PAGES_PER_INVOCATION;
+
+/** One worst-case generator invocation (8 pages, concurrency 4): measured ≤23 min, +30% (078 R9). */
+export const WORST_INVOCATION_SECONDS = 30 * 60;
+/** CI time outside the budget, from the forge's step durations (078 R9): checkout, installs, plan, guard. */
+export const CI_SETUP_SECONDS = 2 * 60;
+/** CI time around the generator inside the execute step: preflight, verification, publishing (078 R9). */
+export const CI_EXECUTE_OVERHEAD_SECONDS = 4 * 60;
 
 /**
  * Attempts per slice before it goes back to the backlog.
@@ -1117,7 +1133,7 @@ export const PAGE_BUDGET = 16;
  * not a way of hiding one; every attempt is reported, and the run budget still bounds the total.
  */
 export const ATTEMPTS_PER_SLICE = 3;
-export const TIME_BUDGET_SECONDS = 20 * 60;
+export const TIME_BUDGET_SECONDS = 4 * 60;
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // FR-005/FR-006 — the verifier

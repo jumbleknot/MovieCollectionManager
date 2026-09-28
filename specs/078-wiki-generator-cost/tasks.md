@@ -24,6 +24,11 @@ Merge A implemented on `078-wiki-generator-cost`: T001 (baseline 86 → 145 pass
 T004 (R10), T005–T015d, T016–T022, T024, T025 done; T015e (research R12, R13 — found and fixed the AGENTS.md blocker) and T026 (preflight 27/27) done. Deviations from the plan are recorded in research R11 — notably the backlog shape is unchanged,
 so T019 holds by construction. T023 and Phase 6 follow merge.
 
+**Merge A merged as #593 (2026-09-27). Merge B (2026-09-28):** T027 measured (research R9), T028 signed off by the
+operator ("~8 pages per run, timeout 60"), T029–T031 implemented with the derived-timeout guard, T033 flips the CI
+default in the workflow; added: the wiki job verifies the installed generator and fails on a skip. T032 (upstream
+request) and T034 (score ≥ 10 real runs, SC-005 reconciliation) remain.
+
 ---
 
 ## Phase 1 — Setup

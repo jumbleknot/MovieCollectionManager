@@ -20,7 +20,10 @@
 //
 // Measured basis for the rows: specs/078-wiki-generator-cost/research.md R1-R3.
 
-/** The default until the FR-002 flip, which lands only after the budget decision record (R9). */
+/**
+ * The default for LOCAL runs, which carry the Anthropic key. CI states its own default — Fireworks at page
+ * concurrency 4 — in wiki-maintain.yml (078 FR-002, research R9), overridable by repository variable.
+ */
 export const DEFAULT_WIKI_PROVIDER = 'anthropic';
 
 export const WIKI_PROVIDERS = Object.freeze({
