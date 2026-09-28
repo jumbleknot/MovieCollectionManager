@@ -6,7 +6,7 @@ resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-28T13:01:47.188Z
+    at: 2026-09-28T14:07:07.338Z
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
@@ -38,7 +38,7 @@ sources:
     resource: repo://specs/075-llm-cost-phase-1/research.md
   - id: openwiki-source-9cd940916584e06e676df687
     resource: repo://specs/078-wiki-generator-cost/research.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-28T13:01:47.188Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-28T14:07:07.338Z" }
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -128,7 +128,7 @@ egress host costs one token, not a slice.
 | Code | Meaning | Is something wrong? |
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
-| `1` | A slice **failed verification** — no page written, the bundle became non-conformant, or a write landed where policy forbids it | **Yes** |
+| `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight | **Yes** |
 | `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
 
@@ -139,8 +139,8 @@ re-run it and it continues where it left off.
 
 ```mermaid
 flowchart TD
-    A["Slice finished"] --> B{"New concept page appeared?"}
-    B -->|"no - an index.md-only refresh counts as zero"| F["Slice failed, exit 1"]
+    A["Slice finished"] --> B{"Every requested page present?"}
+    B -->|"no - a requested page is missing"| F["Slice failed, exit 1"]
     B -->|yes| C{"Bundle still conformant, V1 to V15?"}
     C -->|no| F
     C -->|yes| D{"Every written path permitted by policy.yaml?"}
@@ -152,11 +152,18 @@ flowchart TD
     G --> I["Marker advances"]
 ```
 
+The four independent checks a finished slice must clear before its marker may advance, and the two ways
+it can resolve.
+
 Verification never consults the generator's own exit status; it looks only at what landed in the working
-tree and at the bundle's gates. The four ways a slice can fail, and what each one means, are enumerated
-in the gotchas below. The two stamp-reading checks this flow shares with `okf-lint` — the stale-page
-cause here and the gate's V12 drift warning — both go through `scripts/openwiki-stamp.mjs`, so they
-resolve the same page to the same date.
+tree and at the bundle's gates. The contract is the pages the slice *requested*, not "some page
+appeared": a run that wrote unrelated pages while ignoring the request fails, and an `index.md` alone
+counts as zero pages. Writing **nothing** is not by itself a failure — a refresh whose requested pages
+all exist and none is stale (cause 4) passes as `✅ … nothing needed changing (0 written)`. The four
+ways a slice can fail, and what each one means, are enumerated in the gotchas below. The two
+stamp-reading checks this flow shares with `okf-lint` — the stale-page cause here and the gate's V12
+drift warning — both go through `scripts/openwiki-stamp.mjs`, so they resolve the same page to the same
+date.
 
 ## The budget — one invocation per run
 
@@ -265,10 +272,11 @@ page concurrency shows up there first.
   wiki-maintain job — the one place it *is* installed — runs this guard before any paid call and fails
   the step on a skip.
 - **A slice fails when any of four things is true, and the generator's own exit status is not one of
-  them:** no concept page appeared (an `index.md`-only refresh counts as zero pages — this is exactly
-  what produced feature 043's false-green run: 12 minutes of paid work, one `index.md`, exit 0, reported
-  as success), the bundle stopped being conformant (`check-openwiki-okf.mjs`, rules V1–V15), a written
-  path was not permitted by `openwiki/policy.yaml`, or a **requested page was left stale** (item #587):
+  them:** a **requested page does not exist after the run** (an `index.md`-only refresh counts as
+  nothing — this is exactly what produced feature 043's false-green run: 12 minutes of paid work, one
+  `index.md`, exit 0, reported as success), the bundle stopped being conformant
+  (`check-openwiki-okf.mjs`, rules V1–V15), a written path was not permitted by
+  `openwiki/policy.yaml`, or a **requested page was left stale** (item #587):
   a requested page that already exists, was not rewritten, and cites a `resource` whose last **commit**
   is newer than the page's stamp is named in the failure one page at a time, so a multi-page slice no
   longer passes because *some* of its pages were written. That stamp is the **newest** of
@@ -278,7 +286,9 @@ page concurrency shows up there first.
   about which date a page carries. Only a page whose bytes did not change at all can fail this way; a
   page whose source has not moved since its stamp may still honestly write nothing — that is the
   `✅ … nothing needed changing` line, not a failure. A page with no usable stamp, an external
-  `resource`, or an untracked source is unknowable and keeps that honest no-change outcome too. The
+  `resource`, or an untracked source is unknowable and keeps that honest no-change outcome too. A legacy
+  date-only stamp reads a same-day source commit as newer, so such a page is retried until the generator
+  restamps it — that errs toward retrying, never toward a silent skip. The
   comparison is against the cited source's last git **commit** date, never its mtime, because a fresh
   checkout stamps every file's mtime with the checkout time and an mtime read would mark every concept
   stale. The failed slice returns to the backlog and **the marker does not advance**.
@@ -293,8 +303,11 @@ page concurrency shows up there first.
   failure digest like every other job and never gates a merge — see
   [CI self-serve diagnostics](ci-diagnostics.md).
 - **The proposal is one long-lived branch (`openwiki-maintenance`), at most one open pull request, ever,
-  and never auto-merged.** Closing it without merging returns its work to the backlog and rolls the
-  marker back.
+  and never auto-merged.** A run that finds it open continues the *remote* branch, rebases it onto the
+  base and appends — so a review comment's remediation commit survives every later update, and the push
+  refuses outright (`pushing would discard N commit(s) from open proposal`) rather than force-replacing
+  a commit the open proposal holds. Closing it without merging returns its work to the backlog and rolls
+  the marker back.
 - **If the run record and the forge disagree about an open proposal, the forge wins.** The record's
   `proposal` pointer is a cache, not the source of truth — a run created a proposal, its marker commit
   lost a push race against `main`, and the pointer never landed. The next run then tried to open a
@@ -335,7 +348,7 @@ page concurrency shows up there first.
   changed at 16:17Z, which V12 went on reporting as stale while it read only the other two. An older
   verification never drags a newer generation backwards. The helper is imported by **both** readers —
   V12 in `check-openwiki-okf.mjs` and the #587 stale check in `scripts/wiki-maintain.mjs` — precisely
-  so they cannot drift apart, and the comment at `check-openwiki-okf.mjs` L128–L162 now delegates to it
+  so they cannot drift apart, and the provenance comment in `check-openwiki-okf.mjs` now delegates to it
   rather than restating the rule. `verified` is written as a **list** of `{by, at}` events, and **V5
   now validates every entry of that list** (until 2026-09-28 a path reader that did not descend arrays
   meant no real `verified.at` had ever been validated). However, a concept that cites a `resource` but

@@ -100,11 +100,11 @@
       "completedRunId": "d0a15892-f9a5-46ec-af1a-c0c590948c64"
     },
     "/openwiki/runbooks/wiki-maintenance.md": {
-      "pageVersion": "sha256:0f070c564fb042f2705f35dc977234197d20d3c1ee23985227e7d88093f8fe3b",
+      "pageVersion": "sha256:367c6358dfc5f5ec14512d27e1cd0901cf3008e0f13305fb723be03109c7518b",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "c6cb378f-5ce0-4f6f-85f0-35774c22ff40",
-      "gitHead": "b0fe519ea73e63548dc22e91a828ed7a9a81dc27",
-      "sourceFingerprint": "sha256:675b4b439bda893ea5e9b7186ff0bb6e05e545ed9f6a9ab5e0a0f7869f9c66c5"
+      "completedRunId": "73f2fc58-9ad6-481d-83b8-4037e0954758",
+      "gitHead": "15058c4925583324f5e0cf0db76ae226b910fbc9",
+      "sourceFingerprint": "sha256:ac355cf3a7cb95cf483b72800820679a54f748493a1cdb1b0542bb094bb91478"
     }
   }
 }
