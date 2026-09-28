@@ -44,8 +44,8 @@ The provider is **configuration**, not code. `scripts/wiki-provider.mjs` is the 
 
 | `MCM_WIKI_PROVIDER` | Model | Key (first non-empty; mapped at the point of use) |
 |---|---|---|
-| unset / `anthropic` (default until the 078 flip) | `claude-sonnet-5` | `ANTHROPIC_API_KEY`, `MCM_ANTHROPIC_API_KEY` |
-| `fireworks` | `accounts/fireworks/models/deepseek-v4p1-flash` | `FIREWORKS_API_KEY`, `MCM_FIREWORKS_API_KEY` |
+| `anthropic` — the **local** default (unset) | `claude-sonnet-5` | `ANTHROPIC_API_KEY`, `MCM_ANTHROPIC_API_KEY` |
+| `fireworks` — the **CI** default (the workflow sets it, at page concurrency 4) | `accounts/fireworks/models/deepseek-v4p1-flash` | `FIREWORKS_API_KEY`, `MCM_FIREWORKS_API_KEY` |
 
 Two more knobs, both validated before any paid call — a malformed value exits 2, it is never read as
 a default; an empty value is unset (how an Actions repository variable that was never set arrives):
@@ -246,12 +246,24 @@ continues where it left off.
 
 ### The budget
 
-**16 pages** and **20 minutes**, whichever is reached first, checked *between* slices so a slice under
-way is never interrupted. The overshoot is therefore bounded at one slice — a declared **effective
-ceiling of ≤24 pages / ~37 minutes**. Both are configurable (`--page-budget`, `--time-budget`).
+**One 8-page generator invocation per run, in a 60-minute job** (feature 078, research R9 — operator decision,
+2026-09-28). The constants live in `scripts/wiki-maintain.mjs` (C6) and the guard test *derives* the workflow's
+`timeout-minutes` from them, so changing one without the other fails offline:
 
-The page count comes from **files that actually appeared in the working tree**. It is not what the
-generator says it wrote, and a stub that claims 99 pages while writing one moves the counter by one.
+| | Value | Why |
+|---|---|---|
+| Page budget | 8 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`) |
+| Time budget | **4 min** | a deadline for **starting** work — an invocation or retry under way is never interrupted |
+| Worst-case invocation | 30 min | 8 pages at page concurrency 4 is two waves of workers, measured ≤ 23 min |
+| Job timeout | 60 min | 15-min debounce (it sleeps **inside** the job) + setup + 4 + 30 + publishing ≈ 55, plus margin |
+
+So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes, and a retry only
+after a fast failure; everything else carries forward in the backlog. Declared effective ceiling: **≤16 pages / ~34 min
+of generation**. The page count comes from **files that actually appeared in the working tree**, not from what the
+generator says it wrote.
+
+If a run is ever killed at `timeout-minutes` rather than stopping at its budget, the worst-case invocation estimate is
+wrong: re-measure (research R9's method) before raising the timeout, which is a decision about the shared runner.
 
 **Neither budget is a monetary bound.** Nothing in this feature enforces a spend ceiling. Until
 feature 078 a run could not tell you what it cost — the only figure was the provider's bill, such as

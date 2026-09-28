@@ -669,14 +669,23 @@ test('budget: page counts come from the working tree — an over-reporting gener
   }
 });
 
-test('budget: the declared defaults are 16 pages and 20 minutes', () => {
-  assert.equal(mod.PAGE_BUDGET, 16);
-  assert.equal(mod.TIME_BUDGET_SECONDS, 20 * 60);
-  const header = readFileSync(SCRIPT, 'utf8').slice(0, 8000);
+test('budget: the defaults are the 078 R9 decision — one 8-page invocation per run', () => {
+  // Updated 2026-09-28 (feature 078, research R9, operator sign-off): the generator moved to a slower,
+  // far cheaper model at concurrency 4, and one 8-page invocation measures at 15–23 min (two waves of
+  // page workers). The time budget is a START deadline, so it is sized to leave room for one worst-case
+  // invocation inside the job timeout — which makes the run ~one invocation, i.e. ~8 pages.
+  assert.equal(mod.PAGE_BUDGET, mod.MAX_PAGES_PER_INVOCATION, 'one invocation\'s worth of pages per run');
+  assert.equal(mod.MAX_PAGES_PER_INVOCATION, 8);
+  assert.equal(mod.TIME_BUDGET_SECONDS, 4 * 60, 'a start deadline, not a run length');
+  assert.equal(mod.WORST_INVOCATION_SECONDS, 30 * 60, 'measured 23 min worst for two waves, +30%');
+  const header = readFileSync(SCRIPT, 'utf8');
+  const c6 = header.slice(header.indexOf('C6 — the run budget'));
   // FR-011a/FR-011c/FR-011d must be stated where someone changing the numbers will read them.
-  assert.match(header, /24 pages/, 'the effective ceiling must be declared');
-  assert.match(header, /runner occupancy/i, 'and what the wall-clock budget actually bounds');
-  assert.match(header, /NEITHER BUDGET IS A MONETARY BOUND/, 'and that neither is a cost control');
+  const ceilingMin = (mod.TIME_BUDGET_SECONDS + mod.WORST_INVOCATION_SECONDS) / 60;
+  assert.match(c6, new RegExp(`≤${mod.PAGE_BUDGET + mod.MAX_PAGES_PER_INVOCATION} pages / ~${ceilingMin} minutes`),
+    'the effective ceiling must be declared, and must be the one these constants produce');
+  assert.match(c6, /runner occupancy/i, 'and what the wall-clock budget actually bounds');
+  assert.match(c6, /NEITHER BUDGET IS A MONETARY BOUND/, 'and that neither is a cost control');
 });
 
 // ── FR-007: resume ──────────────────────────────────────────────────────────────

@@ -62,8 +62,11 @@ concurrency:
 jobs:
   maintain:
     runs-on: ubuntu-latest
-    # Above the declared effective ceiling (<=24 pages / ~37 min) plus checkout and install overhead.
-    timeout-minutes: 45
+    # Derived, not remembered (078 research R9; wiki-maintain.guard.test.mjs recomputes it): the 15-min
+    # debounce SLEEPS INSIDE this job, then setup, then the generator's 4-min start deadline plus one
+    # worst-case 8-page invocation (30 min at concurrency 4), then publishing — ~55 min, 5 min margin.
+    # 60 is the operator-approved hold on the one shared runner; raising it is a decision.
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -131,6 +134,21 @@ jobs:
         # is the one that writes the bundle, so a silent downgrade here is the one that ships.
         run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.6.0 mermaid jsdom
 
+      # The checks that describe the PINNED generator (its managed AGENTS.md/CLAUDE.md block, its
+      # concurrency range, its output-cap resolver) skip wherever it is not installed — every guardrail
+      # job. This is the one job where it IS installed, so they run here, before any paid call, and a
+      # SKIP fails the step: a skipped check reads as a pass, and a mismatched AGENTS.md block would fail
+      # every slice of the run that follows (078 research R12).
+      - name: Verify the installed generator matches what this repository expects
+        if: steps.self.outputs.skip != 'true'
+        run: |
+          bash scripts/ci-log-step.sh maintain-verify-installed-generator bash -e /dev/stdin <<'CI_LOG_STEP'
+          set -euo pipefail
+          OPENWIKI_ROOT="$(npm root -g)/openwiki" node --test --test-reporter=tap scripts/__tests__/wiki-maintain.guard.test.mjs > /tmp/generator-guard.tap 2>&1 || { cat /tmp/generator-guard.tap; exit 1; }
+          grep -E '^# (tests|pass|fail|skipped)' /tmp/generator-guard.tap
+          grep -qE '^# skipped 0$' /tmp/generator-guard.tap || { echo "::error::a generator check SKIPPED — a skip is not a pass here"; grep -B2 '# SKIP' /tmp/generator-guard.tap; exit 1; }
+          CI_LOG_STEP
+
       # ── property 1 + 2: debounce, with a git-derived ceiling ────────────────────
       - name: Wait out the quiet period unless the maximum deferral is reached
         if: steps.self.outputs.skip != 'true'
@@ -174,9 +192,14 @@ jobs:
           # Which model writes the bundle, and how. Repository variables, so switching provider is a
           # settings change, not a commit (078 SC-006); unset means the defaults in wiki-provider.mjs.
           # A malformed value FAILS the preflight before any paid work — it is never read as a default.
-          MCM_WIKI_PROVIDER: ${{ vars.MCM_WIKI_PROVIDER }}
+          #
+          # 078 FR-002: CI writes with DeepSeek V4.1 Flash on Fireworks at page concurrency 4 — ~85–91%
+          # cheaper per page than Sonnet 5, measured (research R9). Set the repository variable
+          # MCM_WIKI_PROVIDER=anthropic to switch back without a commit (SC-006). The code default stays
+          # Anthropic for LOCAL runs, which carry that key.
+          MCM_WIKI_PROVIDER: ${{ vars.MCM_WIKI_PROVIDER || 'fireworks' }}
           MCM_WIKI_SERVICE_TIER: ${{ vars.MCM_WIKI_SERVICE_TIER }}
-          MCM_WIKI_PAGE_CONCURRENCY: ${{ vars.MCM_WIKI_PAGE_CONCURRENCY }}
+          MCM_WIKI_PAGE_CONCURRENCY: ${{ vars.MCM_WIKI_PAGE_CONCURRENCY || '4' }}
           # The write credential, kept distinct from the model credential (FR-025).
           FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           FORGE_API_BASE: ${{ github.server_url }}/api/v1

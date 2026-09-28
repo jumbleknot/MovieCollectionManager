@@ -118,7 +118,7 @@ separately as backlog #513 (adopt).
 - Also new, not used here: wiki workspace linking (`openwiki link`) and retrieval tools for the MCP integration.
 - The Anthropic cap resolver still lives in `dist/agent/index.js`, where the guard reads it.
 
-_(The budget decision record for FR-008/FR-016 is §R9, written in T028 after T027 measures 0.6.0 at concurrency; the `vars` probe answer is §R10, from T004.)_
+_(The budget decision record for FR-008/FR-016 is §R9; the `vars` probe answer is §R10, from T004.)_
 
 ## R10 — `${{ vars.* }}` resolves on this forge (T004)
 
@@ -177,3 +177,45 @@ green.
 
 About **12 minutes per page at concurrency 1**, planning included — the number Merge B's concurrency
 measurement (T027) has to bring down before the CI budget can be set.
+
+## R9 — Budget decision record (T027/T028; operator sign-off 2026-09-28)
+
+**Measured** on openwiki 0.6.0, one packed invocation of 4 requested pages across 2 areas (`runbooks/local-dev`,
+`runbooks/server-setup`, `gotchas/session-lifecycle-and-eviction`, `gotchas/playwright-testid-mapping`), plus
+`runbooks/wiki-maintenance` forced in by its stale Claims in every run — so 5 pages written each time. Every run:
+exit 0, 0 failed calls, `okf-lint` green, `AGENTS.md`/`CLAUDE.md` untouched, every write allowed by the policy.
+
+| Provider | Concurrency | Wall clock | Planning | Cost | Per page |
+|---|---|---|---|---|---|
+| Fireworks / DeepSeek V4.1 Flash | 1 | 2,187 s | 205 s | $0.31 | $0.06 |
+| Fireworks / DeepSeek V4.1 Flash | 2 | 2,337 s | 320 s | $0.45 | $0.09 |
+| **Fireworks / DeepSeek V4.1 Flash** | **4** | **895 s, 1,391 s** | 116–344 s | **$0.36, $0.40** | **~$0.08** |
+| Anthropic / Sonnet 5 | 4 | 450 s | 187 s | $2.39 | $0.48 |
+| *CI on `main`, Sonnet 5, concurrency 1 (other pages)* | *1* | *1,397 s (budget stop)* | — | *$4.50* | *$0.90* |
+
+- Concurrency 4 overlaps the page workers ~3.2× (1,759 s of model time in ~550 s) at **no extra cost** and **no rate
+  limiting**. The concurrency-2 run was not a trend but a noisier run: 35% more output and slower calls.
+- Same-page, same-concurrency: DeepSeek is **83–85% cheaper** than Sonnet 5, and **~91% cheaper per page than CI pays
+  today** (SC-001's target is 70%). It is 2–3× slower; its time varies ±50% run to run with the amount of work it chooses.
+- The CI step durations (forge `durations`, run 3770): the debounce `sleep 900` **runs inside the job** and counts
+  against `timeout-minutes`; installs ~35 s; the execute step carries ~3.5 min around the generator.
+
+**Decision** (operator: "~8 pages per run, timeout 60"):
+
+| Constant | Value | Derivation |
+|---|---|---|
+| `MCM_WIKI_PROVIDER` (CI default) | `fireworks` | R1/R9; `vars.MCM_WIKI_PROVIDER=anthropic` switches back without a commit |
+| `MCM_WIKI_PAGE_CONCURRENCY` (CI default) | `4` | fastest measured, no rate limiting, no cost penalty |
+| `MAX_PAGES_PER_INVOCATION` | 8 | two waves of four workers — the 5-page runs were already two waves |
+| `WORST_INVOCATION_SECONDS` | 30 min | measured ≤ 23 min for two waves, +30% |
+| `TIME_BUDGET_SECONDS` | **4 min** | a START deadline: 60 − (15 debounce + 2 setup + 30 worst + 4 publishing) − 5 margin |
+| `PAGE_BUDGET` | 8 | = one invocation |
+| `timeout-minutes` | **60** | operator-approved runner hold; the guard recomputes the 55-min ceiling from the constants |
+
+Effective ceiling: **≤16 pages / ~34 min of generation, ~55 min of runner time**. In practice a run is one 8-page
+invocation (~$0.60), a retry happens only after a fast failure, and the rest carries to the next run. A first draft set
+the start deadline at 5 min; the new guard's own arithmetic caught that it left 4 min of margin, not 5.
+
+**Enforcement.** The wiki job now runs `wiki-maintain.guard.test.mjs` right after installing the pinned generator and
+fails on any skip — the one place those pinned-version checks can run. Simulating the step caught that node's TAP
+summary reads `# skipped N`, not `# skip N`: the first draft would have failed every run, correct generator or not.
