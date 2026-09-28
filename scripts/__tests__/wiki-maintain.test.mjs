@@ -1512,6 +1512,129 @@ test('proposal: closing one unmerged returns its work to the backlog and rolls t
   }
 });
 
+// ── The proposal branch across EPHEMERAL runners ──────────────────────────────────────
+//
+// Every test above runs each "run" in ONE repository, where the local proposal branch survives from
+// one run to the next. CI never does: each run is a fresh checkout, so the branch exists only on the
+// remote. Measured 2026-09-27/28 on proposal #594: prepareProposalBranch looked only at refs/heads/,
+// found nothing, started a new branch from main, and --force-with-lease (whose lease is the
+// remote-tracking ref the checkout had just fetched) overwrote the open proposal — twice, discarding
+// a 4-page and an 8-page paid slice while the run record went on listing both as proposed.
+
+/** A bare "forge" remote holding `main`, seeded from the conformant fixture. */
+function bareRemote() {
+  const { root } = repoAtHead();
+  const g = gitIn(root);
+  g('branch', '-M', 'main');
+  g('add', '-A');
+  g('commit', '-qm', 'run record');
+  const bare = mkdtempSync(join(tmpdir(), 'wm-bare-'));
+  spawnSync('git', ['clone', '-q', '--bare', root, bare]);
+  rmSync(root, { recursive: true, force: true });
+  return bare;
+}
+
+/**
+ * A fresh runner checkout, as CI starts every run: `main` checked out, every other branch present ONLY
+ * as a remote-tracking ref (actions/checkout with fetch-depth 0). That tracking ref is what made the
+ * overwrite succeed — it is the lease --force-with-lease compares against.
+ */
+function freshCheckout(bare) {
+  const dir = mkdtempSync(join(tmpdir(), 'wm-ci-'));
+  spawnSync('git', ['clone', '-q', '--branch', 'main', bare, dir]);
+  return dir;
+}
+
+/** One CI-shaped run: fresh checkout, prepare (adopting an open proposal), generate, publish, push. */
+function ciRun(bare, forge, page, { adoptRemote = true } = {}) {
+  const dir = freshCheckout(bare);
+  try {
+    const g = gitIn(dir);
+    mod.prepareProposalBranch({ root: dir, baseBranch: 'main', git: g, remote: 'origin', adoptRemote });
+    dirtyBundle(dir, page);
+    return mod.publishProposal({
+      root: dir, record: mod.readRunRecord(dir), forge, baseBranch: 'main', body: page, git: g,
+      remote: 'origin', returnTo: 'main',
+      slices: [{ area: 'invariants', pages: [page], areaExists: true, reason: 'source changed' }],
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const remoteFiles = (bare) => spawnSync('git', ['ls-tree', '-r', '--name-only', mod.PROPOSAL_BRANCH], { cwd: bare, encoding: 'utf8' }).stdout;
+
+test('proposal (fresh runner): a second run APPENDS to the open proposal on the remote, never replaces it', () => {
+  const bare = bareRemote();
+  try {
+    const forge = stubForge();
+    ciRun(bare, forge, 'first.md');
+    ciRun(bare, forge, 'second.md');
+    assert.equal(forge.state.pulls.length, 1, 'still exactly one proposal');
+    const files = remoteFiles(bare);
+    assert.match(files, /invariants\/second\.md/);
+    assert.match(files, /invariants\/first\.md/, 'the first run\'s paid work must still be on the proposal branch');
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test('proposal (fresh runner): a reviewer commit pushed to the remote branch survives the next run', () => {
+  const bare = bareRemote();
+  try {
+    const forge = stubForge();
+    ciRun(bare, forge, 'first.md');
+
+    const human = mkdtempSync(join(tmpdir(), 'wm-human-'));
+    spawnSync('git', ['clone', '-q', '--branch', mod.PROPOSAL_BRANCH, bare, human]);
+    const h = gitIn(human);
+    writeFileSync(join(human, 'openwiki', 'invariants', 'first.md'),
+      '---\ntype: Convention\ntitle: first.md\ndescription: Corrected by a human reviewer.\n---\nHuman correction.\n');
+    h('commit', '-qam', 'HUMAN: fix the wording in first.md');
+    h('push', '-q', 'origin', mod.PROPOSAL_BRANCH);
+    rmSync(human, { recursive: true, force: true });
+
+    ciRun(bare, forge, 'second.md');
+    const log = spawnSync('git', ['log', mod.PROPOSAL_BRANCH, '--format=%s'], { cwd: bare, encoding: 'utf8' }).stdout;
+    assert.match(log, /HUMAN: fix the wording/);
+    const content = spawnSync('git', ['show', `${mod.PROPOSAL_BRANCH}:openwiki/invariants/first.md`], { cwd: bare, encoding: 'utf8' }).stdout;
+    assert.match(content, /Human correction/);
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test('proposal (fresh runner): a CLOSED-unmerged proposal is not revived — its work went back to the backlog', () => {
+  const bare = bareRemote();
+  try {
+    const forge = stubForge();
+    ciRun(bare, forge, 'first.md');
+    forge.state.pulls[0].state = 'closed';
+    // The caller adopts the remote branch only for a proposal that is still open.
+    ciRun(bare, forge, 'second.md', { adoptRemote: false });
+    const files = remoteFiles(bare);
+    assert.match(files, /invariants\/second\.md/);
+    assert.doesNotMatch(files, /invariants\/first\.md/, 'the rejected content must not reappear in the new proposal');
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test('proposal (fresh runner): publishing REFUSES to push over an open proposal it would truncate', () => {
+  // Defence in depth: whatever prepared the branch, the push is the irreversible step. If the open
+  // proposal on the remote holds a commit the local branch does not, stop before --force-with-lease.
+  const bare = bareRemote();
+  try {
+    const forge = stubForge();
+    ciRun(bare, forge, 'first.md');
+    assert.throws(() => ciRun(bare, forge, 'second.md', { adoptRemote: false }),
+      /would discard 1 commit/, 'a replace-by-accident must fail loudly, not overwrite paid work');
+    assert.match(remoteFiles(bare), /invariants\/first\.md/, 'and the remote is untouched');
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
 test('proposal: a MERGED proposal is cleared without rolling anything back', () => {
   const { root } = repoAtHead();
   try {
@@ -1914,4 +2037,25 @@ test('proposal: findOpenProposal matches on the head branch, not on anything els
 
   // A forge client without the endpoint must degrade, not throw.
   assert.equal(mod.findOpenProposal({ getPull: () => null }, mod.PROPOSAL_BRANCH), null);
+});
+
+test('proposal: a publish that fails after generation holds the marker and returns the work to the backlog', () => {
+  // executeSlices advances the marker before publishing. If the push is then refused, the pages exist
+  // only on a runner about to be discarded — the record must not certify them as dealt with.
+  const { root, head } = repoAtHead();
+  try {
+    const before = mod.readRunRecord(root);
+    const slice = { area: 'invariants', pages: ['first.md'], areaExists: true, reason: 'source changed' };
+    mod.writeRunRecord(root, { ...before, coveredCommit: 'advanced-by-execute', lastOutcome: 'completed', backlog: [], lastRunUsage: { estCostUsd: 0.1 } });
+
+    const held = mod.holdMarkerOnPublishFailure({ root, before, slices: [slice] });
+
+    assert.equal(held.coveredCommit, head, 'the marker is back where the run found it');
+    assert.equal(held.lastOutcome, 'failed');
+    assert.deepEqual(held.backlog.map((s) => s.pages), [['first.md']], 'the run\'s work is outstanding again');
+    assert.deepEqual(held.lastRunUsage, { estCostUsd: 0.1 }, 'the money was still spent — usage is kept');
+    assert.equal(mod.readRunRecord(root).coveredCommit, head, 'persisted');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

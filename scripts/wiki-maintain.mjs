@@ -838,6 +838,11 @@ export function prepareProposalBranch({
   root = REPO_ROOT,
   baseBranch = 'main',
   branch = PROPOSAL_BRANCH,
+  remote = null,
+  // Continue the REMOTE proposal branch when there is no local one. The caller sets this only while a
+  // proposal is open: a closed-unmerged proposal's work has gone back to the backlog, and reviving its
+  // commits would re-propose content a reviewer rejected.
+  adoptRemote = false,
   git = null,
 } = {}) {
   const g = git ?? gitRunner(root);
@@ -849,6 +854,20 @@ export function prepareProposalBranch({
     .filter((f) => f !== '' && f !== STATE_FILE);
   if (dirty.length > 0) {
     throw new Error(`the working tree is dirty (${dirty.slice(0, 3).join(', ')}) — prepare the proposal branch before generating, not after`);
+  }
+
+  // A CI runner is a fresh checkout every run: the proposal branch exists there only on the remote
+  // (a remote-tracking ref at most), never under refs/heads/. Looking only at refs/heads/ therefore
+  // started every CI run from the base branch, and the --force-with-lease push — whose lease is that
+  // very tracking ref — replaced the open proposal wholesale. Measured on proposal #594, 2026-09-27/28:
+  // a 4-page and then an 8-page paid slice discarded while the run record still listed both.
+  if (!branchExists(g, branch) && remote && adoptRemote) {
+    // Explicit, because a single-branch checkout carries no tracking ref at all. Absent on the remote
+    // is a normal answer (no proposal has ever been pushed), so a failed fetch is not an error here.
+    g('fetch', '--quiet', remote, `+refs/heads/${branch}:refs/remotes/${remote}/${branch}`);
+    if (g('rev-parse', '--verify', '--quiet', `refs/remotes/${remote}/${branch}`).status === 0) {
+      gitOrThrow(g, ['checkout', '-b', branch, `refs/remotes/${remote}/${branch}`], 'continuing the open proposal branch');
+    }
   }
 
   if (!branchExists(g, branch)) {
@@ -927,6 +946,22 @@ export function publishProposal({
   if (staged) gitOrThrow(g, ['commit', '-m', `${title}\n\n${body}`.trim()], 'committing the maintenance changes');
   const headCommit = gitOrThrow(g, ['rev-parse', 'HEAD'], 'reading the branch head');
 
+  if (remote && reuse) {
+    // The push is the irreversible step, so it checks for itself rather than trusting whatever prepared
+    // the branch: every commit on the OPEN proposal must have an equivalent here (`git cherry` marks
+    // one that does not with "+"). Commits already merged into the base show as equivalent, so a
+    // clean rebase passes. Refusing costs this run's generation; overwriting cost two paid slices.
+    g('fetch', '--quiet', remote, `+refs/heads/${branch}:refs/remotes/${remote}/${branch}`);
+    const tracking = `refs/remotes/${remote}/${branch}`;
+    if (g('rev-parse', '--verify', '--quiet', tracking).status === 0) {
+      const missing = gitOrThrow(g, ['cherry', 'HEAD', tracking], 'comparing with the open proposal')
+        .split('\n').filter((l) => l.startsWith('+'));
+      if (missing.length > 0) {
+        throw new Error(`pushing would discard ${missing.length} commit(s) from open proposal #${existing.number} on ${remote}/${branch} — refusing; the branch was not continued from the remote`);
+      }
+    }
+  }
+
   if (remote) {
     // A rebase rewrites history, so the push needs force — but --force-with-lease, which REFUSES to
     // clobber a commit that appeared on the remote since we last looked. That is the whole difference
@@ -950,6 +985,24 @@ export function publishProposal({
     slices: [...(runRecord.proposal?.slices ?? []), ...slices],
     updatedAt: now(),
   };
+}
+
+/**
+ * A run whose pages were written but never reached the proposal did NOT deal with its range, so the
+ * record must not say it did: executeSlices has already advanced the marker by this point, and
+ * leaving it there certifies work that exists only on a runner that is about to be thrown away.
+ * Roll the marker back to where the run found it and return the run's slices to the backlog — the
+ * same edge a closed-unmerged proposal takes (FR-016b). The usage stays: that money was spent.
+ */
+export function holdMarkerOnPublishFailure({ root = REPO_ROOT, before, slices = [] } = {}) {
+  const current = readRunRecord(root);
+  return writeRunRecord(root, {
+    ...current,
+    coveredCommit: before.coveredCommit ?? null,
+    coveredAt: before.coveredAt ?? null,
+    lastOutcome: 'failed',
+    backlog: [...(current.backlog ?? []), ...slices],
+  });
 }
 
 /**
@@ -2194,9 +2247,16 @@ async function main(argv) {
       if (reconciled.action !== 'none' && reconciled.action !== 'still-open') {
         console.log(`[wiki-maintain] previous proposal ${reconciled.action} — record reconciled.`);
       }
-      prepareProposalBranch({ root: REPO_ROOT, baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main' });
+      prepareProposalBranch({
+        root: REPO_ROOT,
+        baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main',
+        remote: process.env.FORGE_REMOTE ?? 'origin',
+        // Continue the remote branch only while its proposal is open; see prepareProposalBranch.
+        adoptRemote: reconciled.action === 'still-open' || reconciled.action === 'adopted',
+      });
     }
 
+    const recordBefore = readRunRecord(REPO_ROOT);
     const result = executeSlices({
       root: REPO_ROOT,
       slices: plan.slices,
@@ -2211,15 +2271,25 @@ async function main(argv) {
     reportRun(result, opts);
 
     if (opts.propose && result.pagesWritten > 0) {
-      const proposal = await publishProposalAsync({
-        root: REPO_ROOT,
-        forge,
-        baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main',
-        body: proposalBody(plan, result),
-        slices: result.results.filter((r) => r.ok).map((r) => r.slice),
-        remote: process.env.FORGE_REMOTE ?? 'origin',
-        returnTo: process.env.FORGE_BASE_BRANCH ?? 'main',
-      });
+      const landed = result.results.filter((r) => r.ok).map((r) => r.slice);
+      let proposal;
+      try {
+        proposal = await publishProposalAsync({
+          root: REPO_ROOT,
+          forge,
+          baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main',
+          body: proposalBody(plan, result),
+          slices: landed,
+          remote: process.env.FORGE_REMOTE ?? 'origin',
+          returnTo: process.env.FORGE_BASE_BRANCH ?? 'main',
+        });
+      } catch (err) {
+        console.error(`[wiki-maintain] could not publish the proposal: ${err.message}`);
+        spawnSync('git', ['checkout', process.env.FORGE_BASE_BRANCH ?? 'main'], { cwd: REPO_ROOT, stdio: 'ignore' });
+        holdMarkerOnPublishFailure({ root: REPO_ROOT, before: recordBefore, slices: landed });
+        console.error('[wiki-maintain] marker held and this run\'s slices returned to the backlog — nothing was proposed.');
+        return 1;
+      }
       const record = readRunRecord(REPO_ROOT);
       writeRunRecord(REPO_ROOT, { ...record, proposal });
       console.log(`[wiki-maintain] proposal #${proposal.number} on ${proposal.branch} — awaiting HUMAN review. Never auto-merged.`);
