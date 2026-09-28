@@ -1,17 +1,19 @@
 ---
 type: Runbook
 title: OpenWiki knowledge-bundle maintenance
-description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, V12 drift reported but never planned (#526/#587/#525), the OKF v0.2 provenance migration, the Mermaid/jsdom silent-degradation trap, the AGENTS.md/CLAUDE.md managed-block parity trap, and how a lost run record self-heals against the forge.
+description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, V12 drift reported but never planned (#526/#587/#525), the OKF v0.2 provenance migration and the one shared concept-stamp helper (scripts/openwiki-stamp.mjs) that V12 and the #587 stale check both import, the Mermaid/jsdom silent-degradation trap, the AGENTS.md/CLAUDE.md managed-block parity trap, and how a lost run record self-heals against the forge.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-28T02:52:40.926Z
+    at: 2026-09-28T13:01:47.188Z
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
   - id: openwiki-source-c231cd090281b3129aaf6167
     resource: repo://docs/runbooks/wiki-maintenance.md
+  - id: openwiki-source-cccdf9eddce7e76440d4cd28
+    resource: repo://scripts/__tests__/openwiki-stamp.test.mjs
   - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
   - id: openwiki-source-3cfcbfbe6daeeadc1b4b8cf8
@@ -20,6 +22,8 @@ sources:
     resource: repo://scripts/__tests__/wiki-provider.test.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
     resource: repo://scripts/check-openwiki-okf.mjs
+  - id: openwiki-source-d6ba69382020a933bb1c9de0
+    resource: repo://scripts/openwiki-stamp.mjs
   - id: openwiki-source-f7de3a4f5f1323dd23a0c681
     resource: repo://scripts/wiki-generate.mjs
   - id: openwiki-source-e3418ba4f663de6f0edbcde6
@@ -34,7 +38,7 @@ sources:
     resource: repo://specs/075-llm-cost-phase-1/research.md
   - id: openwiki-source-9cd940916584e06e676df687
     resource: repo://specs/078-wiki-generator-cost/research.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-28T02:52:40.926Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-28T13:01:47.188Z" }
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -150,7 +154,9 @@ flowchart TD
 
 Verification never consults the generator's own exit status; it looks only at what landed in the working
 tree and at the bundle's gates. The four ways a slice can fail, and what each one means, are enumerated
-in the gotchas below.
+in the gotchas below. The two stamp-reading checks this flow shares with `okf-lint` — the stale-page
+cause here and the gate's V12 drift warning — both go through `scripts/openwiki-stamp.mjs`, so they
+resolve the same page to the same date.
 
 ## The budget — one invocation per run
 
@@ -264,12 +270,18 @@ page concurrency shows up there first.
   as success), the bundle stopped being conformant (`check-openwiki-okf.mjs`, rules V1–V15), a written
   path was not permitted by `openwiki/policy.yaml`, or a **requested page was left stale** (item #587):
   a requested page that already exists, was not rewritten, and cites a `resource` whose last **commit**
-  is newer than the page's stamp (`generated.at`, else `timestamp`) is named in the failure one page at
-  a time, so a multi-page slice no longer passes because *some* of its pages were written. The stamp
-  read is `generated.at` or `timestamp`, **not** `verified.at`, to match V12; only a page whose bytes did
-  not change at all can fail this way. A page whose source has not moved since its stamp may still
-  honestly write nothing — that is the `✅ … nothing needed changing` line, not a failure. The failed
-  slice returns to the backlog and **the marker does not advance**.
+  is newer than the page's stamp is named in the failure one page at a time, so a multi-page slice no
+  longer passes because *some* of its pages were written. That stamp is the **newest** of
+  `generated.at`, `verified.at` and `timestamp` — an older verification never drags a newer generation
+  backwards — and the rule lives in exactly one place, `scripts/openwiki-stamp.mjs`, imported by both
+  the OKF gate's V12 drift check and the `sourceNewerThanStamp` check here, so the two cannot disagree
+  about which date a page carries. Only a page whose bytes did not change at all can fail this way; a
+  page whose source has not moved since its stamp may still honestly write nothing — that is the
+  `✅ … nothing needed changing` line, not a failure. A page with no usable stamp, an external
+  `resource`, or an untracked source is unknowable and keeps that honest no-change outcome too. The
+  comparison is against the cited source's last git **commit** date, never its mtime, because a fresh
+  checkout stamps every file's mtime with the checkout time and an mtime read would mark every concept
+  stale. The failed slice returns to the backlog and **the marker does not advance**.
 - **Remediation is always the brief, never an allowlist.** If a page trips the conformance gate, a leak
   scan, or the governance gate, fix `openwiki/INSTRUCTIONS.md` and re-run — the gates have no skip flag
   by design, because an allowlisted leak stays leaked.
@@ -311,12 +323,26 @@ page concurrency shows up there first.
   every page has been regenerated.** OpenWiki 0.5.x replaces the flat `timestamp:` scalar with a
   structured `generated: {by, at}` event. `finalizeGeneratedProvenance` stamps `generated` on every
   page whose body changed in the run and removes that page's `timestamp` field in the same pass; a
-  page whose body did not change keeps its prior stamp untouched. The gate helper that reads the stamp
-  for drift detection (rule V12) prefers `generated.at` and falls back to `timestamp`, so no manual
-  migration is needed. However, a concept that cites a `resource` but carries neither a usable
-  `generated.at` nor a `timestamp` is silently excluded from drift coverage — the gate counts and
-  prints those pages as a warning, never a failure. **If that count climbs, drift coverage is falling;
-  investigate the generator's provenance pass, not the pages.**
+  page whose body did not change keeps its prior stamp untouched. Reading only `timestamp` therefore
+  would not have failed loudly: it would have made V12 cover one fewer page each time a page was
+  rewritten, until drift detection checked nothing while the gate still printed `✅ conformant`. The
+  gate now resolves the stamp through one shared helper, `scripts/openwiki-stamp.mjs`, which takes the
+  **newest** of `generated.at`, `verified.at` and `timestamp` (operator decision 2026-09-28) — newest,
+  because each field is an event and OpenWiki can add one without touching the others. It re-verifies
+  a page's Grounded Claims against its sources and writes `verified` while leaving the body, and so
+  `generated` and `timestamp`, untouched; measured on
+  `openwiki/decisions/adr-0001-prod-secrets-management.md`, verified at 17:17Z against a source that
+  changed at 16:17Z, which V12 went on reporting as stale while it read only the other two. An older
+  verification never drags a newer generation backwards. The helper is imported by **both** readers —
+  V12 in `check-openwiki-okf.mjs` and the #587 stale check in `scripts/wiki-maintain.mjs` — precisely
+  so they cannot drift apart, and the comment at `check-openwiki-okf.mjs` L128–L162 now delegates to it
+  rather than restating the rule. `verified` is written as a **list** of `{by, at}` events, and **V5
+  now validates every entry of that list** (until 2026-09-28 a path reader that did not descend arrays
+  meant no real `verified.at` had ever been validated). However, a concept that cites a `resource` but
+  carries no usable stamp at all is silently excluded from drift coverage — the gate counts and prints
+  those pages as a warning, never a failure. **If that count climbs, drift coverage is falling;
+  investigate the generator's provenance pass, not the pages** — a silent fall in V12 coverage is
+  exactly how the gate could go on printing green while checking less.
 - **V12 drift is reported, never planned.** It is warn-only — it never touches the exit code — and it
   is deliberately not an input to `planSlices` in `scripts/wiki-maintain.mjs`, which decomposes only
   the paths changed since the run-record marker plus the carried-forward backlog. The reason: one edit
@@ -354,10 +380,11 @@ page concurrency shows up there first.
   must confirm, revise, or retract it — the rules a page like this one is itself following.
   `openwiki/policy.yaml` has no dedicated rule for `.claims/`; the sidecars are permitted only by the
   `openwiki/**` catch-all (`regenerate`, `actor: generator`). `okf-lint` does not read the sidecars —
-  its only contact with Claims is rule V5 validating the ISO-8601 shape of a page's `verified.at`. The
-  operator decided on 2026-09-27 that Claims are required and valuable (item #513); any further gates
-  or lifecycle rules beyond the generator's own confirm/revise/retract cycle are still being decided
-  under that item.
+  its contact with Claims is the page's `verified.at` events, which OpenWiki writes as a **list**: V5
+  validates the ISO-8601 shape of every entry, via `stampValues` in `scripts/openwiki-stamp.mjs`, and
+  V12 counts the newest `verified.at` as a candidate stamp. The operator decided on 2026-09-27 that
+  Claims are required and valuable (item #513); any further gates or lifecycle rules beyond the
+  generator's own confirm/revise/retract cycle are still being decided under that item.
 
 Full plan/execute CLI flags, the CI workflow's proposal-adoption logic, the debounce arithmetic, and
 the self-test/lint/governance verification commands (`node scripts/wiki-maintain.mjs --selftest`,
