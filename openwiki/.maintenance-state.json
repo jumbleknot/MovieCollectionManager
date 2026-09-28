@@ -1,24 +1,12 @@
 {
-  "coveredCommit": "8144f92f579d40604a2222d23cb27cc25e97bf34",
-  "coveredAt": "2026-09-27T21:41:38.232Z",
+  "coveredCommit": "046d520d7d85f0841356c6714a7c57de779fef62",
+  "coveredAt": "2026-09-28T01:16:59.958Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "wiki-maintenance.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/wiki-maintenance.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 594,
-    "headCommit": "d53a14e61f2608f382e22f6978a543296b31eb5a",
+    "headCommit": "ab67b55511c7033ebef1b448a7ef3cc990c2d5b2",
     "markerBefore": "e01980e11519344cbd3a1cd7d12905f2ee4a4b9d",
     "slices": [
       {
@@ -75,30 +63,41 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/Phase-15-Operator-Checklist.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/backups.md; source changed: docs/runbooks/dev-environment-setup.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/e2e-testing.md; source changed: docs/runbooks/local-dev.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/phase-15-operator-checklist.md; openwiki/runbooks/server-setup.md; openwiki/runbooks/android-emulator.md; openwiki/runbooks/backups.md; openwiki/runbooks/dev-environment-setup.md; openwiki/runbooks/devcontainer.md; openwiki/runbooks/e2e-testing.md; openwiki/runbooks/local-dev.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "wiki-maintenance.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-27T21:41:38.702Z"
+    "updatedAt": "2026-09-28T01:17:00.841Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 9,
-    "elapsedSeconds": 1486,
-    "stoppedAtBudget": true
+    "pagesWritten": 1,
+    "elapsedSeconds": 924,
+    "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 126,
+    "calls": 50,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 252,
-    "cached": 5245030,
-    "cacheWrite": 639803,
-    "output": 131685,
-    "reasoning": 45290,
-    "ms": 1356749,
-    "estCostUsd": 3.9659,
-    "provider": "anthropic",
-    "model": "claude-sonnet-5",
+    "uncached": 202198,
+    "cached": 2820678,
+    "cacheWrite": 0,
+    "output": 52341,
+    "reasoning": 32353,
+    "ms": 909209,
+    "estCostUsd": 0.0988,
+    "provider": "fireworks",
+    "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
     "priceTable": "2026-09-27"
   }
