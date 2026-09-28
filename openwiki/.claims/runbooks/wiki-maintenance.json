@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d154b9f35f3156ad076756ebb57e98f175cdec14315f5b76027163c7acdb83a6",
+  "pageVersion": "sha256:27b443b3d2407df4432d0d5a6d8e5209d864262091dba98536494f4e0e342064",
   "claims": [
     {
       "id": "claim_2e510cf3ee1d4ddba5718a1220547924",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:87eabd6d6e2eb5d11f82165b920571141f0011e307babd0c19c6b07a645f7707"
+          "version": "repo-file-v1:sha256:ac408ef884264a593541e168e8b00594657da691d855d3d2705ce0146221a645"
         }
       ]
     },
@@ -124,7 +124,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md#L241-L250",
-          "version": "repo-lines-v1:sha256:0b4c93d5766b503fd7cb8e0e8d2b1226d30cd03185ebebf28afa4b5ac8fa4651:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3YTE0M2VlNTM1OWEzZjc5Yzc5OWNiMTNkYThmMDhkYjkwM2YwZGI0YmI2NmEzYTMzNDNjZjY4Y2E4Njk0MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MmZiYjhhYWUxMTdjZTI3MDkwNmVjZGJhMjRjNjk5M2FkNWQwMTk3YzFiN2RlYTUzMTgyNWRhM2UxMWM1YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNDU5MDQ3MjgxNmIxNWUxNGI2MmI0ZmI2N2YxYzQ0MDc0NzE0N2JmYTBjY2Q1ZWEzOGNhYTg2MDU4NzRiNDEifQ"
+          "version": "repo-lines-v1:sha256:9a594d981f610169bee05fed6bea0307793634fc0f47a2cfe031bdf627082bbe:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3YTE0M2VlNTM1OWEzZjc5Yzc5OWNiMTNkYThmMDhkYjkwM2YwZGI0YmI2NmEzYTMzNDNjZjY4Y2E4Njk0MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MmZiYjhhYWUxMTdjZTI3MDkwNmVjZGJhMjRjNjk5M2FkNWQwMTk3YzFiN2RlYTUzMTgyNWRhM2UxMWM1YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNDU5MDQ3MjgxNmIxNWUxNGI2MmI0ZmI2N2YxYzQ0MDc0NzE0N2JmYTBjY2Q1ZWEzOGNhYTg2MDU4NzRiNDEifQ"
         }
       ]
     },
@@ -397,10 +397,28 @@
           "version": "repo-lines-v1:sha256:b5e0bb4b568e34f221dd7da6a0e57ee260190735a2d6d50afa18872bb15960a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyYmNmOTk2ZTM4NjEzZTA4OTFlM2JiYzQyMzkxNTQ0NTI0MTNkNWM5MDRjYjgwNGU4NGIxZjUxMzhmZmI0Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZjI3YjhmZTJhNjU5ZjY2M2UzNDYxMWIzNDFkMzljYzY5M2NiMTc0NDZkYjgwNWUzYWVmNTE0YTA4MWIwYjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2NmY4YzZmNmE2MjRjMmI4ODVhOTllZTI3NzkxYjg3OTE5Zjg0NDRhZWVlOTEzNDgwNmZmOTEyODZjNGI3OTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNzJjYTFlMDM0ZTBmMmNlMjk2NmE0YWE4MDFjODNjZTFhYTRiYjkyZGU3YmI5MzM0Y2VjNjNkYmQzMDBhNTgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_beef7ab5b31341b999e24809cd976ab6",
+      "statement": "OpenWiki rewrites its managed `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block in AGENTS.md and CLAUDE.md on every run, and 0.6.0 changed the AGENTS.md text; because the regeneration policy permits only `actor: agent` to write AGENTS.md, a committed block that differs from what the pinned generator writes makes every slice fail verification ('AGENTS.md — the run may not write here'), so slices are retried and returned to the backlog with the marker never advancing. The fix is that the committed block equals the pinned generator's own text, and scripts/__tests__/wiki-maintain.guard.test.mjs rebuilds both blocks from the installed generator's source and compares them byte-for-byte so a future version bump that changes the text fails offline; the wiki-maintain CI job runs that guard before any paid call and fails the step when any check skips.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L137-L150",
+          "version": "repo-lines-v1:sha256:240e53252433c81fdc463d2eb315def21d0d69e2c6686681dcf9613ffa0a43eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMGJhMDA0NTliM2JlNWE1ZDliYmY4M2RlNTM0MTI4YmUwNTRlYWQ3MTkyNzk4Y2VmZTcyNzQxNDg1OGUzMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYzNlNDQ0Y2I2YWVlZDE3ZWQwNGRiZTM5OWZkOTAwNDQ5ODNhMGMzNjBmZGI1NGNjZGJmNmU5NzVhODU2NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MTI1NjI0NmM0Mzc3NDI2YTU2ZGQ1ODZhZTk3MzlmOGJlMGNkOTVkMGRkODAwMmY3MGRkZmMwZmI5MTYzNDAifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L476-L521",
+          "version": "repo-lines-v1:sha256:775d31f90c90126fa4f0b3317feea9059a1ba602205f54b5b130040854cf22b3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYzU3NmNlNmY2OWY1NWUxZjU3ZDRjODM2MThhNzAwOTdmZDFmODlmNTBhMGRmMTM1M2FjMjA0ZTVmNDg4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYWQ0MGNkMDMwNGU1NjVjNzJjNTdlYjRkNTMyMDJkNTkwM2QzYmEzZjdmYzllZTY4YzkwYTY1Yzc0YmM5MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://specs/078-wiki-generator-cost/research.md#L143-L158",
+          "version": "repo-lines-v1:sha256:b75ecf37dcf28ef4c59f7eb4fde264fecf3b4625f3c656d39cfdca1dd61a9035:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMzVkMzc5NDlhNzk3NjUyZmE3MjNkMWQ3YjM2ZWExM2NhMDg1ZTAwNDc4ZTYyM2Y1NzUwYjk5OTRjMTNlMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MWQwMWE4Yjk5ZGRkMjIwNjY3ZDM4MTE5ZDMwMWJiMTBhMTBjZGVlZDg5MzA2ZTI1MWI4YTU0NzVmMzVmYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZmYwNTdkMDQ5Y2ExNmJmNDRmMzRkNjg1ZjcwNmNjMTEyYzRmMzg0M2Y4MzY0Y2NlZmM5YWJiYWQzMDgwOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmNzM5NzEwZmIyNGI3ZTNjOTc4ZWZkZWZlZTZmYTQxY2ZkZmQ3Yjk2Mjc0ODBjNDE2YmYyMTViMGE0Y2M3ZTkifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-28T01:01:40.708Z"
+    "at": "2026-09-28T02:52:40.926Z"
   }
 }

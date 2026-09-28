@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: OpenWiki knowledge-bundle maintenance
-description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, V12 drift reported but never planned (#526/#587/#525), the OKF v0.2 provenance migration, the Mermaid/jsdom silent-degradation trap, and how a lost run record self-heals against the forge.
+description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, V12 drift reported but never planned (#526/#587/#525), the OKF v0.2 provenance migration, the Mermaid/jsdom silent-degradation trap, the AGENTS.md/CLAUDE.md managed-block parity trap, and how a lost run record self-heals against the forge.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-28T01:01:40.708Z
+    at: 2026-09-28T02:52:40.926Z
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
@@ -32,7 +32,9 @@ sources:
     resource: repo://scripts/wiki-usage.mjs
   - id: openwiki-source-b7fa1c4f46ecc1980211c9d4
     resource: repo://specs/075-llm-cost-phase-1/research.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-28T01:01:40.708Z" }
+  - id: openwiki-source-9cd940916584e06e676df687
+    resource: repo://specs/078-wiki-generator-cost/research.md
+generated: { by: "openwiki/0.6.0", at: "2026-09-28T02:52:40.926Z" }
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -53,6 +55,32 @@ ignores the marker and plans over a range you choose (diagnostics and one-off sw
 `--args='--max-slices 1'` attempts one slice and stops; `--args=--dry-run` prints the exact command per
 slice and invokes nothing, persisting nothing; `--args=--json` is machine-readable. The runbook at
 `../../docs/runbooks/wiki-maintenance.md` carries the full CLI contract.
+
+## The shape of a run
+
+```mermaid
+stateDiagram-v2
+    [*] --> Plan
+    Plan --> NothingToDo: nothing changed since the marker
+    Plan --> Preflight: slices planned, paid start
+    Preflight --> BadUsage: provider error, exit 2
+    Preflight --> Invocation: minimal call answered
+    Invocation --> Verify: pages counted from the working tree
+    Verify --> Proposal: every slice verified
+    Verify --> StoppedAtBudget: deadline passed, work remains
+    StoppedAtBudget --> [*]: exit 3 is not a failure
+    Verify --> Retry: slice failed, attempts remain
+    Retry --> Verify
+    Retry --> Backlog: 3 attempts used
+    Verify --> Backlog: slice failed
+    Backlog --> [*]: marker holds, a later run retries
+    Proposal --> [*]: one proposal created or updated
+    NothingToDo --> [*]
+    BadUsage --> [*]
+```
+
+The states a maintenance run moves through: planning is free, the preflight is the first act that costs
+anything, and only the retry path can return a slice to the committed backlog.
 
 ## The provider is configuration (feature 078)
 
@@ -102,6 +130,27 @@ egress host costs one token, not a slice.
 
 **Exit 3 is not a failure.** A run that correctly stopped at its budget must not be reported as broken:
 re-run it and it continues where it left off.
+
+### How a slice is verified
+
+```mermaid
+flowchart TD
+    A["Slice finished"] --> B{"New concept page appeared?"}
+    B -->|"no - an index.md-only refresh counts as zero"| F["Slice failed, exit 1"]
+    B -->|yes| C{"Bundle still conformant, V1 to V15?"}
+    C -->|no| F
+    C -->|yes| D{"Every written path permitted by policy.yaml?"}
+    D -->|no| F
+    D -->|yes| E{"A requested page left stale?"}
+    E -->|"yes - its source commit is newer than its stamp"| F
+    E -->|no| G["Slice verified"]
+    F --> H["Retried within the run, then back to the backlog; the marker does not advance"]
+    G --> I["Marker advances"]
+```
+
+Verification never consults the generator's own exit status; it looks only at what landed in the working
+tree and at the bundle's gates. The four ways a slice can fail, and what each one means, are enumerated
+in the gotchas below.
 
 ## The budget — one invocation per run
 
@@ -195,6 +244,20 @@ page concurrency shows up there first.
   openwiki@<v> mermaid jsdom`) to make them run; the `claude-sonnet-5` bump was verified at 20 passed /
   0 failed / 0 skipped. The wiki-maintain CI job runs this guard after installing the generator and
   before any paid work, and **fails the step on a skip**, reading node's `# skipped 0` summary line.
+- **The managed `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block is rewritten on every run, so the
+  committed block must already be what the pinned generator writes.** OpenWiki rewrites that block in
+  `AGENTS.md` and `CLAUDE.md` on every run, and 0.6.0 changed the `AGENTS.md` text (four lines about its
+  retrieval tools). `openwiki/policy.yaml` permits only `actor: agent` to write `AGENTS.md`, so on 0.6.0
+  **every slice** would have failed verification (`AGENTS.md — the run may not write here`), been
+  retried, and returned to the backlog with the marker never advancing — run after run, at full cost.
+  The fix is that the committed block *is* the pinned generator's text (an agent-authored edit, which
+  the policy allows), which makes the rewrite byte-identical and therefore not a write at all.
+  `scripts/__tests__/wiki-maintain.guard.test.mjs` now rebuilds both blocks from the installed
+  generator's own source and compares them byte-for-byte, so the next version bump that changes the text
+  fails **offline** instead of failing every paid run in CI: update the block in the same change as the
+  pin. The pinned-version checks skip wherever the pinned generator is not installed, which is why the
+  wiki-maintain job — the one place it *is* installed — runs this guard before any paid call and fails
+  the step on a skip.
 - **A slice fails when any of four things is true, and the generator's own exit status is not one of
   them:** no concept page appeared (an `index.md`-only refresh counts as zero pages — this is exactly
   what produced feature 043's false-green run: 12 minutes of paid work, one `index.md`, exit 0, reported
