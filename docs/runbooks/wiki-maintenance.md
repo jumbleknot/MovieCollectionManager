@@ -302,17 +302,16 @@ A slice fails when **any** of four things is true, and the generator's exit stat
    `docs/runbooks/`, which is `regenerate` but governed by an *agent*, not the generator.
 4. **A requested page was left stale** (item #587). A requested page that already exists, was not
    rewritten, and cites a `resource` whose last **commit** is newer than the page's stamp
-   (`generated.at`, else `timestamp`) is named in the failure one page at a time. A multi-page slice
+   (the **newest** of `generated.at`, `verified.at` and `timestamp`) is named in the failure one page
+   at a time. A multi-page slice
    no longer passes because *some* of its pages were written. A page whose source has **not** moved
    since its stamp may still honestly write nothing: that is the `✅ … nothing needed changing` line,
    not a failure. A page with no stamp, an external resource, or an untracked source cannot be
    checked and keeps that outcome too. A legacy date-only stamp (see *Drift is reported, never
    planned* below) reads a same-day source commit as newer, so such a page is retried until the
    generator restamps it. That errs toward retrying, never toward a silent skip.
-   The stamp read is `generated.at` or `timestamp`, **not** `verified.at`, to match V12. That cannot
-   misfire on a page the generator processed: processing changes the file, so the page counts as
-   written and is never judged stale. Only a page whose bytes did not change at all can fail this
-   way. If a stale failure looks puzzling, check whether the file changed, not its `verified.at`.
+   The stamp rule is `scripts/openwiki-stamp.mjs`, imported by both this check and V12 so the two
+   cannot disagree.
 
 The failed slice returns to the backlog and **the marker does not advance**, so the work stays
 outstanding and the next run retries it.
@@ -503,9 +502,17 @@ part worth knowing:
 V12, the drift warning that reports a concept whose cited source has moved on. Had it kept reading
 only `timestamp`, it would not have failed — it would have gone on printing `✅ conformant` while
 silently covering one fewer page every time a page was regenerated, until drift checked nothing at
-all. The gate now resolves the stamp through a single helper that prefers `generated.at` and falls
-back to `timestamp`, and V5 validates the ISO-8601 shape **inside** the nested `generated.at` and
-`verified.at` events rather than only at the top level.
+all. The gate now resolves the stamp through one shared helper, `scripts/openwiki-stamp.mjs`, which
+takes the **newest** of `generated.at`, `verified.at` and `timestamp` (operator decision 2026-09-28).
+Newest, because each is an event and OpenWiki can add one without the others: it re-verifies a page's
+Claims and adds `verified` while leaving the body — and so `generated` and `timestamp` — untouched.
+Measured on `decisions/adr-0001-prod-secrets-management.md`, verified at 17:17Z against a source that
+changed at 16:17Z, which V12 went on reporting as stale while it read only the other two. An older
+verification never drags a newer generation backwards.
+
+V5 validates the ISO-8601 shape of every one of those values, including each entry of `verified`,
+which OpenWiki writes as a **list** of `{by, at}` events. Until 2026-09-28 V5 read it with a path
+reader that did not descend lists, so no real `verified.at` had ever been validated.
 
 **The number to watch.** A concept that cites a `resource` but carries no usable stamp is one drift
 cannot check. That is not a conformance violation and never fails the build, but the gate now counts
@@ -544,9 +551,9 @@ Known ways a concept falls behind, each tracked:
   wrong sources.
 
 **Read a V12 line with its stamp in mind.** The comparison is the source's last **commit** date
-against the page's stamp (`generated.at`, else `timestamp`). Several pages still carry a legacy
-date-only stamp — `timestamp: 2026-08-08T00:00:00+00:00` on `openwiki/runbooks/backlog.md`, twelve
-such pages at the time of writing — so a source commit made later **the same day** reads as drift
+against the page's stamp (the newest of `generated.at`, `verified.at` and `timestamp`). Several pages
+still carry a legacy date-only stamp — `timestamp: 2026-08-08T00:00:00+00:00` on
+`openwiki/runbooks/backlog.md`, eleven such pages on 2026-09-28 — so a source commit made later **the same day** reads as drift
 even when the page was generated from it. `backlog.md` is exactly that case: its source's last
 commit is `2026-08-08T19:38:20+00:00`. Compare the dates before queuing such a page; the warning
 clears for good once the page is regenerated and gains a full `generated.at`.
@@ -587,8 +594,9 @@ What this repository does with them today:
 
 - **Policy.** `openwiki/policy.yaml` has no rule of its own for `.claims/`; the sidecars are permitted
   only by the `openwiki/**` catch-all (`regenerate`, `actor: generator`).
-- **Gates.** `okf-lint` does not read the sidecars. Its only contact with Claims is V5 validating the
-  ISO-8601 shape of a page's `verified.at`.
+- **Gates.** `okf-lint` does not read the sidecars. Its contact with Claims is the page's
+  `verified.at`: V5 validates its ISO-8601 shape, and V12 counts it as a stamp (the newest of
+  `generated.at`, `verified.at` and `timestamp`).
 - **Decision.** The operator decided on 2026-09-27 that Claims are required and valuable (item
   **#513**). The decision's details, and any gates or lifecycle rules that follow from it, are being
   recorded under #513 — none exist yet, so do not treat a sidecar as checked by anything here beyond

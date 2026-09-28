@@ -46,6 +46,7 @@ import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
+import { conceptStamp } from './openwiki-stamp.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
 
@@ -1382,7 +1383,7 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
 
 /**
  * Is the page's cited source's last commit newer than the page's stamp? The same comparison the OKF
- * gate's V12 makes (commit date, never mtime; `generated.at` before `timestamp`), resolved against
+ * gate's V12 makes (commit date, never mtime; the stamp from ./openwiki-stamp.mjs), resolved against
  * the checkout being verified. Anything it cannot check (no stamp, an external or absent resource,
  * an untracked source) returns false: an unknowable page keeps the honest no-change outcome rather
  * than failing a slice on a guess.
@@ -1390,17 +1391,16 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
  * A date-only stamp (`…T00:00:00Z`) reads a same-day source commit as newer, so such a page is
  * retried until the generator restamps it. That errs toward retrying, never toward a silent skip.
  *
- * The stamp read is `generated.at`/`timestamp`, NOT `verified.at`, to match V12. That cannot misfire
- * on a page the generator actually processed: processing changes the file, so the page counts as
- * written and is never judged here. Only a page whose bytes did not change at all can fail. So when a
- * stale failure looks puzzling, ask whether the file changed, not what its `verified.at` says.
+ * The stamp is the NEWEST of `generated.at`, `verified.at` and `timestamp` — the one rule V12 also
+ * reads, imported rather than restated so the two cannot drift apart. A page the generator left
+ * byte-identical but whose claims it verified after the source moved is therefore not stale here.
  */
 function sourceNewerThanStamp(root, pageFile) {
   const fm = frontMatter(pageFile);
-  const stamp = [fm.generated?.at, fm.timestamp].find((v) => typeof v === 'string' && v.trim() !== '');
+  const stamp = conceptStamp(fm);
   const resource = typeof fm.resource === 'string' ? fm.resource.trim().split('#')[0].split('?')[0] : '';
-  if (stamp === undefined || resource === '' || /^[a-z][a-z0-9+.-]*:/i.test(resource)) return false;
-  const stampMs = Date.parse(stamp.trim());
+  if (stamp === null || resource === '' || /^[a-z][a-z0-9+.-]*:/i.test(resource)) return false;
+  const stampMs = Date.parse(stamp.value);
   if (Number.isNaN(stampMs)) return false;
   const r = spawnSync('git', ['log', '-1', '--format=%cI', '--', resource], { cwd: root, encoding: 'utf8' });
   const out = r.status === 0 ? r.stdout.trim() : '';

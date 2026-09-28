@@ -1177,6 +1177,28 @@ test('execute: a stale page left unwritten in ONE area fails only that area, by 
   }
 });
 
+test('execute: an unwritten page whose claims were verified after its source moved is NOT stale (#587 reads the newest stamp)', () => {
+  const root = twoAreaRepo();
+  try {
+    writeFileSync(join(root, 'README.md'), 'source\n');
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'),
+      '---\ntype: Convention\ntitle: two\ndescription: Verified.\nresource: README.md\ntimestamp: 2020-01-01T00:00:00Z\nverified:\n  - by: openwiki/0.6.0\n    at: 2999-01-01T00:00:00Z\n---\nBody.\n');
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'verified page'], { cwd: root });
+
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: () => { writingStub(root, 'invariants', ['one.md'])(); return { status: 0 }; },
+    });
+    assert.deepEqual(result.results[0].stalePages ?? [], [], 'the same rule as V12 — the two readers must not disagree');
+    assert.notEqual(result.outcome, 'failed');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ── 078 US4 / FR-010: every run records what it cost ────────────────────────────
 
 const PRICES_FIXTURE = { asOf: '2026-09-27', providers: { fireworks: { standard: { uncached: 0.22, cached: 0.007, cacheWrite: 0, output: 0.66 } } } };
