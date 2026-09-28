@@ -1,17 +1,19 @@
 ---
 type: Runbook
 title: OpenWiki knowledge-bundle maintenance
-description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, V12 drift reported but never planned (#526/#587/#525), the OKF v0.2 provenance migration, the Mermaid/jsdom silent-degradation trap, and how a lost run record self-heals against the forge.
+description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, V12 drift reported but never planned (#526/#587/#525), the OKF v0.2 provenance migration and the one shared concept-stamp helper (scripts/openwiki-stamp.mjs) that V12 and the #587 stale check both import, the Mermaid/jsdom silent-degradation trap, the AGENTS.md/CLAUDE.md managed-block parity trap, and how a lost run record self-heals against the forge.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-28T01:01:40.708Z
+    at: 2026-09-28T14:07:07.338Z
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
   - id: openwiki-source-c231cd090281b3129aaf6167
     resource: repo://docs/runbooks/wiki-maintenance.md
+  - id: openwiki-source-cccdf9eddce7e76440d4cd28
+    resource: repo://scripts/__tests__/openwiki-stamp.test.mjs
   - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
   - id: openwiki-source-3cfcbfbe6daeeadc1b4b8cf8
@@ -20,6 +22,8 @@ sources:
     resource: repo://scripts/__tests__/wiki-provider.test.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
     resource: repo://scripts/check-openwiki-okf.mjs
+  - id: openwiki-source-d6ba69382020a933bb1c9de0
+    resource: repo://scripts/openwiki-stamp.mjs
   - id: openwiki-source-f7de3a4f5f1323dd23a0c681
     resource: repo://scripts/wiki-generate.mjs
   - id: openwiki-source-e3418ba4f663de6f0edbcde6
@@ -32,7 +36,9 @@ sources:
     resource: repo://scripts/wiki-usage.mjs
   - id: openwiki-source-b7fa1c4f46ecc1980211c9d4
     resource: repo://specs/075-llm-cost-phase-1/research.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-28T01:01:40.708Z" }
+  - id: openwiki-source-9cd940916584e06e676df687
+    resource: repo://specs/078-wiki-generator-cost/research.md
+generated: { by: "openwiki/0.6.0", at: "2026-09-28T14:07:07.338Z" }
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -53,6 +59,32 @@ ignores the marker and plans over a range you choose (diagnostics and one-off sw
 `--args='--max-slices 1'` attempts one slice and stops; `--args=--dry-run` prints the exact command per
 slice and invokes nothing, persisting nothing; `--args=--json` is machine-readable. The runbook at
 `../../docs/runbooks/wiki-maintenance.md` carries the full CLI contract.
+
+## The shape of a run
+
+```mermaid
+stateDiagram-v2
+    [*] --> Plan
+    Plan --> NothingToDo: nothing changed since the marker
+    Plan --> Preflight: slices planned, paid start
+    Preflight --> BadUsage: provider error, exit 2
+    Preflight --> Invocation: minimal call answered
+    Invocation --> Verify: pages counted from the working tree
+    Verify --> Proposal: every slice verified
+    Verify --> StoppedAtBudget: deadline passed, work remains
+    StoppedAtBudget --> [*]: exit 3 is not a failure
+    Verify --> Retry: slice failed, attempts remain
+    Retry --> Verify
+    Retry --> Backlog: 3 attempts used
+    Verify --> Backlog: slice failed
+    Backlog --> [*]: marker holds, a later run retries
+    Proposal --> [*]: one proposal created or updated
+    NothingToDo --> [*]
+    BadUsage --> [*]
+```
+
+The states a maintenance run moves through: planning is free, the preflight is the first act that costs
+anything, and only the retry path can return a slice to the committed backlog.
 
 ## The provider is configuration (feature 078)
 
@@ -96,12 +128,42 @@ egress host costs one token, not a slice.
 | Code | Meaning | Is something wrong? |
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
-| `1` | A slice **failed verification** — no page written, the bundle became non-conformant, or a write landed where policy forbids it | **Yes** |
+| `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight | **Yes** |
 | `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
 
 **Exit 3 is not a failure.** A run that correctly stopped at its budget must not be reported as broken:
 re-run it and it continues where it left off.
+
+### How a slice is verified
+
+```mermaid
+flowchart TD
+    A["Slice finished"] --> B{"Every requested page present?"}
+    B -->|"no - a requested page is missing"| F["Slice failed, exit 1"]
+    B -->|yes| C{"Bundle still conformant, V1 to V15?"}
+    C -->|no| F
+    C -->|yes| D{"Every written path permitted by policy.yaml?"}
+    D -->|no| F
+    D -->|yes| E{"A requested page left stale?"}
+    E -->|"yes - its source commit is newer than its stamp"| F
+    E -->|no| G["Slice verified"]
+    F --> H["Retried within the run, then back to the backlog; the marker does not advance"]
+    G --> I["Marker advances"]
+```
+
+The four independent checks a finished slice must clear before its marker may advance, and the two ways
+it can resolve.
+
+Verification never consults the generator's own exit status; it looks only at what landed in the working
+tree and at the bundle's gates. The contract is the pages the slice *requested*, not "some page
+appeared": a run that wrote unrelated pages while ignoring the request fails, and an `index.md` alone
+counts as zero pages. Writing **nothing** is not by itself a failure — a refresh whose requested pages
+all exist and none is stale (cause 4) passes as `✅ … nothing needed changing (0 written)`. The four
+ways a slice can fail, and what each one means, are enumerated in the gotchas below. The two
+stamp-reading checks this flow shares with `okf-lint` — the stale-page cause here and the gate's V12
+drift warning — both go through `scripts/openwiki-stamp.mjs`, so they resolve the same page to the same
+date.
 
 ## The budget — one invocation per run
 
@@ -195,18 +257,41 @@ page concurrency shows up there first.
   openwiki@<v> mermaid jsdom`) to make them run; the `claude-sonnet-5` bump was verified at 20 passed /
   0 failed / 0 skipped. The wiki-maintain CI job runs this guard after installing the generator and
   before any paid work, and **fails the step on a skip**, reading node's `# skipped 0` summary line.
+- **The managed `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block is rewritten on every run, so the
+  committed block must already be what the pinned generator writes.** OpenWiki rewrites that block in
+  `AGENTS.md` and `CLAUDE.md` on every run, and 0.6.0 changed the `AGENTS.md` text (four lines about its
+  retrieval tools). `openwiki/policy.yaml` permits only `actor: agent` to write `AGENTS.md`, so on 0.6.0
+  **every slice** would have failed verification (`AGENTS.md — the run may not write here`), been
+  retried, and returned to the backlog with the marker never advancing — run after run, at full cost.
+  The fix is that the committed block *is* the pinned generator's text (an agent-authored edit, which
+  the policy allows), which makes the rewrite byte-identical and therefore not a write at all.
+  `scripts/__tests__/wiki-maintain.guard.test.mjs` now rebuilds both blocks from the installed
+  generator's own source and compares them byte-for-byte, so the next version bump that changes the text
+  fails **offline** instead of failing every paid run in CI: update the block in the same change as the
+  pin. The pinned-version checks skip wherever the pinned generator is not installed, which is why the
+  wiki-maintain job — the one place it *is* installed — runs this guard before any paid call and fails
+  the step on a skip.
 - **A slice fails when any of four things is true, and the generator's own exit status is not one of
-  them:** no concept page appeared (an `index.md`-only refresh counts as zero pages — this is exactly
-  what produced feature 043's false-green run: 12 minutes of paid work, one `index.md`, exit 0, reported
-  as success), the bundle stopped being conformant (`check-openwiki-okf.mjs`, rules V1–V15), a written
-  path was not permitted by `openwiki/policy.yaml`, or a **requested page was left stale** (item #587):
+  them:** a **requested page does not exist after the run** (an `index.md`-only refresh counts as
+  nothing — this is exactly what produced feature 043's false-green run: 12 minutes of paid work, one
+  `index.md`, exit 0, reported as success), the bundle stopped being conformant
+  (`check-openwiki-okf.mjs`, rules V1–V15), a written path was not permitted by
+  `openwiki/policy.yaml`, or a **requested page was left stale** (item #587):
   a requested page that already exists, was not rewritten, and cites a `resource` whose last **commit**
-  is newer than the page's stamp (`generated.at`, else `timestamp`) is named in the failure one page at
-  a time, so a multi-page slice no longer passes because *some* of its pages were written. The stamp
-  read is `generated.at` or `timestamp`, **not** `verified.at`, to match V12; only a page whose bytes did
-  not change at all can fail this way. A page whose source has not moved since its stamp may still
-  honestly write nothing — that is the `✅ … nothing needed changing` line, not a failure. The failed
-  slice returns to the backlog and **the marker does not advance**.
+  is newer than the page's stamp is named in the failure one page at a time, so a multi-page slice no
+  longer passes because *some* of its pages were written. That stamp is the **newest** of
+  `generated.at`, `verified.at` and `timestamp` — an older verification never drags a newer generation
+  backwards — and the rule lives in exactly one place, `scripts/openwiki-stamp.mjs`, imported by both
+  the OKF gate's V12 drift check and the `sourceNewerThanStamp` check here, so the two cannot disagree
+  about which date a page carries. Only a page whose bytes did not change at all can fail this way; a
+  page whose source has not moved since its stamp may still honestly write nothing — that is the
+  `✅ … nothing needed changing` line, not a failure. A page with no usable stamp, an external
+  `resource`, or an untracked source is unknowable and keeps that honest no-change outcome too. A legacy
+  date-only stamp reads a same-day source commit as newer, so such a page is retried until the generator
+  restamps it — that errs toward retrying, never toward a silent skip. The
+  comparison is against the cited source's last git **commit** date, never its mtime, because a fresh
+  checkout stamps every file's mtime with the checkout time and an mtime read would mark every concept
+  stale. The failed slice returns to the backlog and **the marker does not advance**.
 - **Remediation is always the brief, never an allowlist.** If a page trips the conformance gate, a leak
   scan, or the governance gate, fix `openwiki/INSTRUCTIONS.md` and re-run — the gates have no skip flag
   by design, because an allowlisted leak stays leaked.
@@ -218,8 +303,11 @@ page concurrency shows up there first.
   failure digest like every other job and never gates a merge — see
   [CI self-serve diagnostics](ci-diagnostics.md).
 - **The proposal is one long-lived branch (`openwiki-maintenance`), at most one open pull request, ever,
-  and never auto-merged.** Closing it without merging returns its work to the backlog and rolls the
-  marker back.
+  and never auto-merged.** A run that finds it open continues the *remote* branch, rebases it onto the
+  base and appends — so a review comment's remediation commit survives every later update, and the push
+  refuses outright (`pushing would discard N commit(s) from open proposal`) rather than force-replacing
+  a commit the open proposal holds. Closing it without merging returns its work to the backlog and rolls
+  the marker back.
 - **If the run record and the forge disagree about an open proposal, the forge wins.** The record's
   `proposal` pointer is a cache, not the source of truth — a run created a proposal, its marker commit
   lost a push race against `main`, and the pointer never landed. The next run then tried to open a
@@ -248,12 +336,26 @@ page concurrency shows up there first.
   every page has been regenerated.** OpenWiki 0.5.x replaces the flat `timestamp:` scalar with a
   structured `generated: {by, at}` event. `finalizeGeneratedProvenance` stamps `generated` on every
   page whose body changed in the run and removes that page's `timestamp` field in the same pass; a
-  page whose body did not change keeps its prior stamp untouched. The gate helper that reads the stamp
-  for drift detection (rule V12) prefers `generated.at` and falls back to `timestamp`, so no manual
-  migration is needed. However, a concept that cites a `resource` but carries neither a usable
-  `generated.at` nor a `timestamp` is silently excluded from drift coverage — the gate counts and
-  prints those pages as a warning, never a failure. **If that count climbs, drift coverage is falling;
-  investigate the generator's provenance pass, not the pages.**
+  page whose body did not change keeps its prior stamp untouched. Reading only `timestamp` therefore
+  would not have failed loudly: it would have made V12 cover one fewer page each time a page was
+  rewritten, until drift detection checked nothing while the gate still printed `✅ conformant`. The
+  gate now resolves the stamp through one shared helper, `scripts/openwiki-stamp.mjs`, which takes the
+  **newest** of `generated.at`, `verified.at` and `timestamp` (operator decision 2026-09-28) — newest,
+  because each field is an event and OpenWiki can add one without touching the others. It re-verifies
+  a page's Grounded Claims against its sources and writes `verified` while leaving the body, and so
+  `generated` and `timestamp`, untouched; measured on
+  `openwiki/decisions/adr-0001-prod-secrets-management.md`, verified at 17:17Z against a source that
+  changed at 16:17Z, which V12 went on reporting as stale while it read only the other two. An older
+  verification never drags a newer generation backwards. The helper is imported by **both** readers —
+  V12 in `check-openwiki-okf.mjs` and the #587 stale check in `scripts/wiki-maintain.mjs` — precisely
+  so they cannot drift apart, and the provenance comment in `check-openwiki-okf.mjs` now delegates to it
+  rather than restating the rule. `verified` is written as a **list** of `{by, at}` events, and **V5
+  now validates every entry of that list** (until 2026-09-28 a path reader that did not descend arrays
+  meant no real `verified.at` had ever been validated). However, a concept that cites a `resource` but
+  carries no usable stamp at all is silently excluded from drift coverage — the gate counts and prints
+  those pages as a warning, never a failure. **If that count climbs, drift coverage is falling;
+  investigate the generator's provenance pass, not the pages** — a silent fall in V12 coverage is
+  exactly how the gate could go on printing green while checking less.
 - **V12 drift is reported, never planned.** It is warn-only — it never touches the exit code — and it
   is deliberately not an input to `planSlices` in `scripts/wiki-maintain.mjs`, which decomposes only
   the paths changed since the run-record marker plus the carried-forward backlog. The reason: one edit
@@ -291,10 +393,11 @@ page concurrency shows up there first.
   must confirm, revise, or retract it — the rules a page like this one is itself following.
   `openwiki/policy.yaml` has no dedicated rule for `.claims/`; the sidecars are permitted only by the
   `openwiki/**` catch-all (`regenerate`, `actor: generator`). `okf-lint` does not read the sidecars —
-  its only contact with Claims is rule V5 validating the ISO-8601 shape of a page's `verified.at`. The
-  operator decided on 2026-09-27 that Claims are required and valuable (item #513); any further gates
-  or lifecycle rules beyond the generator's own confirm/revise/retract cycle are still being decided
-  under that item.
+  its contact with Claims is the page's `verified.at` events, which OpenWiki writes as a **list**: V5
+  validates the ISO-8601 shape of every entry, via `stampValues` in `scripts/openwiki-stamp.mjs`, and
+  V12 counts the newest `verified.at` as a candidate stamp. The operator decided on 2026-09-27 that
+  Claims are required and valuable (item #513); any further gates or lifecycle rules beyond the
+  generator's own confirm/revise/retract cycle are still being decided under that item.
 
 Full plan/execute CLI flags, the CI workflow's proposal-adoption logic, the debounce arithmetic, and
 the self-test/lint/governance verification commands (`node scripts/wiki-maintain.mjs --selftest`,
