@@ -355,9 +355,19 @@ proposal landing) are both recognised and skipped.
 ### The proposal
 
 One long-lived branch (`openwiki-maintenance`), one open pull request, **ever**. A run that finds it
-open **rebases and appends** rather than opening a second — so a commit you push onto that branch
-survives every subsequent update. It is **never auto-merged**: a human reviews every wiki diff, and
-the proposal is gated by the normal guardrails like any hand-authored change.
+open **continues the remote branch, rebases and appends** rather than opening a second — so a commit
+you push onto that branch survives every subsequent update. It is **never auto-merged**: a human
+reviews every wiki diff, and the proposal is gated by the normal guardrails like any hand-authored
+change.
+
+The runner is a fresh checkout, so the branch exists there only on the remote; the run checks it out
+from there, and only while its proposal is **open** (a closed one's work went back to the backlog and
+is not revived). Until 2026-09-28 it looked only for a *local* branch, found none on every CI run,
+started from `main`, and the `--force-with-lease` push replaced the open proposal — measured on
+proposal #594, where a 4-page and then an 8-page slice were discarded while the run record still
+listed both. The push now also refuses outright (`pushing would discard N commit(s) from open
+proposal`) if the open proposal holds a commit the new head does not: a red run, never a silent
+overwrite.
 
 Closing it **without merging** returns its work to the backlog and rolls the marker back. Without
 that, abandoning a proposal would leave the marker certifying work that never landed.
