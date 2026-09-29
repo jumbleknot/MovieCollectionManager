@@ -1,104 +1,90 @@
 {
-  "coveredCommit": "d8b455f32307a75c83198175f2068c6a395e4faf",
-  "coveredAt": "2026-09-28T14:31:59.288Z",
+  "coveredCommit": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
+  "coveredAt": "2026-09-29T02:31:27.601Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "invariants",
-      "pages": [
-        "secrets-management.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect"
-    },
-    {
-      "area": "projects",
-      "pages": [
-        "mc-service.md",
-        "mcp-servers.md",
-        "agent-gateway.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect"
-    },
-    {
-      "area": "runbooks",
-      "pages": [
-        "phase-15-operator-checklist.md",
-        "server-setup.md",
-        "android-emulator.md",
-        "local-dev.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect"
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 599,
-    "headCommit": "5c2d5c56ed3d890ba22e16989cdc7d4ad9872b01",
-    "markerBefore": "a52d4b5b862d039ca3e82c977b177be10963ab08",
+    "number": 602,
+    "headCommit": "7bb118565916abf375c866a4909574f29d7c5828",
+    "markerBefore": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
     "slices": [
       {
-        "area": "runbooks",
-        "pages": [
-          "wiki-maintenance.md"
+        "parts": [
+          {
+            "area": "invariants",
+            "pages": [
+              "secrets-management.md"
+            ],
+            "kind": "refresh",
+            "subjects": {},
+            "areaExists": true,
+            "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect",
+            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/secrets-management.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+          },
+          {
+            "area": "projects",
+            "pages": [
+              "mc-service.md",
+              "mcp-servers.md",
+              "agent-gateway.md"
+            ],
+            "kind": "refresh",
+            "subjects": {},
+            "areaExists": true,
+            "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect",
+            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mc-service.md; openwiki/projects/mcp-servers.md; openwiki/projects/agent-gateway.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+          },
+          {
+            "area": "runbooks",
+            "pages": [
+              "phase-15-operator-checklist.md",
+              "server-setup.md",
+              "android-emulator.md",
+              "local-dev.md"
+            ],
+            "kind": "refresh",
+            "subjects": {},
+            "areaExists": true,
+            "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect",
+            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/phase-15-operator-checklist.md; openwiki/runbooks/server-setup.md; openwiki/runbooks/android-emulator.md; openwiki/runbooks/local-dev.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+          }
         ],
         "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
+        "area": "invariants + projects + runbooks",
         "pages": [
-          "wiki-maintenance.md"
+          "invariants/secrets-management.md",
+          "projects/mc-service.md",
+          "projects/mcp-servers.md",
+          "projects/agent-gateway.md",
+          "runbooks/phase-15-operator-checklist.md",
+          "runbooks/server-setup.md",
+          "runbooks/android-emulator.md",
+          "runbooks/local-dev.md"
         ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "wiki-maintenance.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect; drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect; drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect"
       }
     ],
-    "updatedAt": "2026-09-28T14:31:59.719Z"
+    "updatedAt": "2026-09-29T02:31:28.040Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 1496,
+    "pagesWritten": 8,
+    "elapsedSeconds": 2546,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 76,
+    "calls": 391,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 214286,
-    "cached": 5953118,
+    "uncached": 2514862,
+    "cached": 32965390,
     "cacheWrite": 0,
-    "output": 101813,
-    "reasoning": 85849,
-    "ms": 1487614,
-    "estCostUsd": 0.156,
+    "output": 460945,
+    "reasoning": 292242,
+    "ms": 6211491,
+    "estCostUsd": 1.0883,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
