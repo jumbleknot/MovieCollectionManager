@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
-  "coveredAt": "2026-09-29T02:31:27.601Z",
+  "coveredCommit": "562a09db0368124d70d5dcb768229968235c9398",
+  "coveredAt": "2026-09-29T03:47:24.515Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 602,
-    "headCommit": "7bb118565916abf375c866a4909574f29d7c5828",
+    "headCommit": "e5ff0c27267d44b93bc73570566d363396ff4387",
     "markerBefore": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
     "slices": [
       {
@@ -63,28 +63,77 @@
           "runbooks/local-dev.md"
         ],
         "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect; drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect; drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect"
+      },
+      {
+        "parts": [
+          {
+            "area": "architecture",
+            "pages": [
+              "system-overview.md"
+            ],
+            "kind": "refresh",
+            "subjects": {},
+            "areaExists": true,
+            "reason": "source changed: docs/MCM-Architecture.md",
+            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/system-overview.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+          },
+          {
+            "area": "projects",
+            "pages": [
+              "mc-service.md",
+              "mcp-servers.md"
+            ],
+            "kind": "refresh",
+            "subjects": {},
+            "areaExists": true,
+            "reason": "source changed: docs/MCM-Architecture.md",
+            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mc-service.md; openwiki/projects/mcp-servers.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+          },
+          {
+            "area": "runbooks",
+            "pages": [
+              "phase-15-operator-checklist.md",
+              "local-dev.md"
+            ],
+            "kind": "refresh",
+            "subjects": {},
+            "areaExists": true,
+            "reason": "source changed: docs/runbooks/Phase-15-Operator-Checklist.md; source changed: docs/runbooks/local-dev.md",
+            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/phase-15-operator-checklist.md; openwiki/runbooks/local-dev.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+          }
+        ],
+        "kind": "refresh",
+        "area": "architecture + projects + runbooks",
+        "pages": [
+          "architecture/system-overview.md",
+          "projects/mc-service.md",
+          "projects/mcp-servers.md",
+          "runbooks/phase-15-operator-checklist.md",
+          "runbooks/local-dev.md"
+        ],
+        "reason": "source changed: docs/MCM-Architecture.md; source changed: docs/MCM-Architecture.md; source changed: docs/runbooks/Phase-15-Operator-Checklist.md; source changed: docs/runbooks/local-dev.md"
       }
     ],
-    "updatedAt": "2026-09-29T02:31:28.040Z"
+    "updatedAt": "2026-09-29T03:47:25.029Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 8,
-    "elapsedSeconds": 2546,
+    "pagesWritten": 5,
+    "elapsedSeconds": 1423,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 391,
+    "calls": 234,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2514862,
-    "cached": 32965390,
+    "uncached": 1791071,
+    "cached": 21281442,
     "cacheWrite": 0,
-    "output": 460945,
-    "reasoning": 292242,
-    "ms": 6211491,
-    "estCostUsd": 1.0883,
+    "output": 272052,
+    "reasoning": 198097,
+    "ms": 3428121,
+    "estCostUsd": 0.7226,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
