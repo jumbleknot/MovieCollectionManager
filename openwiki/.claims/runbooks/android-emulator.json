@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:edb7a0a08015ee9d4c80cb43be6ff766a6710ad15df2085cc55a1a6f5140c69c",
+  "claims": [
+    {
+      "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
+      "statement": "Mobile E2E is split by flow type: flows that drive the assistant dock to POST /bff-api/agent/run must run in CI in the app-e2e job of .forgejo/workflows/app-ci.yml, because the local Windows path runs them against the Metro dev server, which OOM-crashes after a handful of agent /run calls and then presents as a black screen or status 0 networking error; non-agent flows (login, CRUD, sort, browse) run on the local emulator.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1180-L1278",
+          "version": "repo-lines-v1:sha256:4e7887ee64aba559343ff30dec620e9b69e3d9a0c84919fe0a67506c7f2929e0:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDgwNjQ1MjE2MzAxNTI2MjY2NDYxNjBiMjcxZjA0ZWRkZDMzNjJjNGFlNDA2ZWI2Njc0NjAzYTQ5NGM2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0Y2ZhYmVjZWRkMjhhZTAxNWNiNzEyNTRkNWExYmZmMTdjNjdiMTQzZGI3ZThmMWY2YWQ0ZDQ3NTBlNjQzYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODg3NWI2NjFmNGM5OGJiMjk1YmFkY2JkZWFmNTRiNzllODlmMDhkZDlkOTY2NGQ0MTZhYTMzYmJlMzJhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YmVhZTMwMzQ3ODRiMjkwNTI2YTZkYjFlYTBiMDY0YWY3MjNmNzBiNzdhNTUxYjFiZjU0YWJlNDhlMDkzNTEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L5-L44",
+          "version": "repo-lines-v1:sha256:ca4a32154d860b195e82c9ef1fe208655b4ad2c07768ad790cd1f8e78c436616:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYzkwYzgwYmJmMzY2ZGUwMWViMTMwMTkwZDNiODAyZWExMzY4OGIwY2E5Y2Y2ZTNlY2YzMjFjNWY1YTE3OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1NDdlMDk1MzhhMjA5Y2JmYTQzMWY4ZTE5Y2FlMThkYjcwNWVjMDBiMmUxODgyYjlmZmVhZGY0MDAxMWMxMjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MWVkYTA3MDU4NjA4OGM3OWFkZDYyNGYxNTRhZDdjYWJkZWJhOTE1MTA0ZjE3M2RkOWM4ZWNkNGRmMzg0ZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNDk0Y2Q5NTY0NjIyNGExZWYyNTAzYWM0ZDFhNjM2ZjU4MThkMjc2ZGE5OWRmNGFjOGZlNmQ0MmY1YmFmYzQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-mobile-agent-flows.sh#L1-L27",
+          "version": "repo-lines-v1:sha256:dc4e0a232e27f66291e2b4345d95804eb5cbaff437df083b0c8a813d172f6e60:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ZmM2MzM2NjdkMDMwMDczMWJkZDg0NDcyZGM0MjRlMWY5YzY0MTc1ZWEyYmFkYjY2NjQ3MmQ5MWFlYjRlZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1MjM0OTZlNWMyNDQ2YTE4NzY0M2IxNjU1NzI2OGJhNTIwYzlmMTgwNDU0YWVjNjVlNWQ5YmQwOWVjMjg2NjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_98d002d182b849c081b043a7d3ab480a",
+      "statement": "The app-e2e mobile half is Metro-less: it builds a standalone release APK (APK_VARIANT=release, APK_ABI=x86_64) with the JS bundle embedded and EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082 plus EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099 inlined, so the app talks to the containerized dev BFF and gateway rather than to Metro.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1191-L1218",
+          "version": "repo-lines-v1:sha256:18f5c251c3f8fd46f906c0638c5ed6e0368893a82220a33083587b35b1156ca8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMjE1ZjQwNWUxNWEyNjFkOTgwMDc5YzE5NmE2NTRmYzFlYzg4Mzc5YjEwNjMwYzczOGM0OWFmMjRkY2U2NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MjE4YjU2NDBkYjg0MDI5YzViMWQzOWZmYmI1Njk2NDFkZGRkMzhmZDkxODk3MWY5ZmEwNjE3YzRiODQ1NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MDdiMjQ5YzkxZGVmNzY0OTUxYzRmNDRiOTAzNzFlMjBjNjcyMTE0YzRlNWIzNmU3YjIwYTgxNTRiZmQ2MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYzI5ZWNhOWRmMzkyMTM0ZWJlMTMxZjM2MzM3OGM3NTdjZjM0ZDU4NmQxNWQ5ZTQ2NDMxZTcxYTQ5OGUyYTQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/scripts/build-apk.mjs#L70-L92",
+          "version": "repo-lines-v1:sha256:5aeec6e5ef85d37a25fb0cd6e7917753d969f094beb2cc7cb34f724016cca472:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MWFiNzdiMWVhYzQwNThmODdkZDg4NDJkZDQzMzViN2I2OTAwY2ZkMjM3ZWIwMDIzZmZkN2JkNmQ5NjZlODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyODMwOTNkOWRmODczYjNkM2RkZTc2ZjFhMTMwYzRlOWZlNTFiNzgxNjVlOWEyNDk4ZWRmOGZhMjhmZGJhNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MDZkN2RhMTk0N2ZhZWJjOTBlOGM1YzJhNjFjNmJmNDM0MDRhYTAxZjViYTU0MDBhZjIxZTY3OTA0NzFkYzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1e3260c77bd241e5abe0b3427b5b77b4",
+      "statement": "The release APK build is self-guarded two ways: the CI step asserts that the string localhost:8082 appears inside assets/index.android.bundle (a string that is not a source literal, so its presence proves the EXPO_PUBLIC_* env was re-inlined in this build), and the build disables the Gradle daemon because a reused daemon keeps the environment it started with and would bake a stale backend URL.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1196-L1218",
+          "version": "repo-lines-v1:sha256:3e96b5f320f53bcc5e6f1ae11ff0f88e6a3b9f423e1bbbbb89de8419a7077ce3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjVhYWVhZDA3NGM1YWU0OTI0YTlmMWU2YzE4ZTdiMGFmNGI2NDQyMmQ5NmNmMjVjOWU5Y2QyYmE0N2I4ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MjE4YjU2NDBkYjg0MDI5YzViMWQzOWZmYmI1Njk2NDFkZGRkMzhmZDkxODk3MWY5ZmEwNjE3YzRiODQ1NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlZDdhOTJlYWNkNmFhMTdhODZlOTI4ZjI1MzI4NWJmMGRkNzZiYzNhOGZhYTQyYTNhM2IzYTQ2NGYyMWZjNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYzI5ZWNhOWRmMzkyMTM0ZWJlMTMxZjM2MzM3OGM3NTdjZjM0ZDU4NmQxNWQ5ZTQ2NDMxZTcxYTQ5OGUyYTQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/scripts/build-apk.mjs#L34-L59",
+          "version": "repo-lines-v1:sha256:f4c8b797251de5be361eb8180b1b4853f300259006fe7f6fe45aca9489d05eb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MTg0YWMzMDMwODNlMmNlMDRkY2JmZDNiZjU2NTg5N2RlNTM4MWVjNmU0ZjMwODI0N2NmODA4ZDhkMDk1N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MDE3YjA0MmQwOWJiNDNlMmU0OTdjMzY0MjlkNjQxYTU3MDJmNmEyYTA5NzViZmRkYWNhZDA2NjIwNTNjZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4ODc5ZGMzZTAzNjUyODAzMWY3ZDZiNmZmZDA3ZTE3MmQ0ZWEzYTg1NDgzYzU3MGZmYTNhM2MwYjY2ZDY1ZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2700c91527a4e9faf763a297b06c122",
+      "statement": "The CI emulator runs an API-34 google_apis_playstore x86_64 image rather than an AOSP one, because the Play Store image ships Chrome, whose Custom Tabs service hands Keycloak's mcm-app:// custom-scheme redirect to the OS; the AOSP WebView shell drops that redirect so native-auth-callback never mounts and login never completes.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1250-L1268",
+          "version": "repo-lines-v1:sha256:ed4d87120819be2a93c0d7d9c792f8a1f68f56499766430aa713e4a5d5ab0b27:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFmYzk4Y2VmYzNjY2JiMjk1MjI5YjZhMDVlNDMwNzgwZTIwMjkxMWRkOGQ1ZDhmOGU3Zjc0YzIyZGE4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZTNmOTEzMzIwOWE1Y2FhNmRiNmZhMzBlNDA2ZmU2YzExY2FhODg3ZTc5OTIwMmM2OTBjODYyZGM4NWU5MDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNWI5NmM5ZDQ4Mzk1ZmQzMzBmZGY3ZGYzNzY4NTc2MmE3NTQ0NDYzNWNjOGE3ZWYwMzU0OWRhYTc3YmNjYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNWM5MTU1MjZiMmMwMjlkNGQyZjE3ZjhmNGFmODMwODk1MzE2NzFiMzBlMDc3YmRhM2QzM2ViNDYzYjA1NzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a16b7d049bfe4814a74f6db525388817",
+      "statement": "scripts/ci-mobile-agent-flows.sh defines the agent E2E order (assistant-config-gating, assistant-config-enable-anthropic, the agent flows, assistant-config-disable), runs each flow per-file with up to three attempts to absorb flaky Chrome Custom Tab crashes, and lastly runs the non-agent admin-settings-access flow after adb shell pm clear com.android.chrome plus a re-skip of Chrome's first-run experience so it authenticates as the seeded admin rather than the agent flows' user.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-mobile-agent-flows.sh#L146-L191",
+          "version": "repo-lines-v1:sha256:a3a85789217634aa96d96fc5a183de350494ebd814790909ed8bf889f6e20204:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZjA3NzcyMTUwMjUxOGYzZWU0ZWQ1Yjk0MzAyY2JkM2ZiZmE1YjM2MzcyNzViYmM3NzJhYjZjMWQ2MDE0OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkZmFjZDQzY2Q3NTc4N2I2ODg2YWMzODQ2NmE0Y2JkNTkyNjIzNGMzYjQxZTIzZjkwNmQwMWIyNDY3ZTJlZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-mobile-agent-flows.sh#L53-L101",
+          "version": "repo-lines-v1:sha256:0b33f1b697c3eb3e4a9dda3ddad4c8adf0557c1806110548c9f9f0ea7004201e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NjgxN2FkZDZiZDcyODkzM2RiY2RkYWEzZDZmY2JkYzM1Y2FmYmZjMTBjMjdjZjBiNTdiNzJiYTg3ZDUxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MDFhNjNjMjNmZGQxNjZmYzNlNjU3MTAwNzA2Zjg0Y2FkNjRiZjQyYWQ5MjZhMGIwNjliNjgxNTExMWU4MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjNzg5YmY5ZTkxYzUwMjMwOWM3YjM3ODE0ODk1MWRjMTk5ZTFkOWMzZTRiMzI0ODYwY2NkNTJhNTQ2M2RjNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0d463f5d88c14430bfecc83ada40bb68",
+      "statement": "The mobile half of app-e2e is gated by a `mobile` path filter that must remain a strict subset of the job's `app` filter, plus a `mobile-e2e` PR label override; on a pull_request that matches neither, the job still runs the web E2E and integration tiers but skips the ~35-minute emulator half.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1191-L1191",
+          "version": "repo-lines-v1:sha256:fb215f405e15a261d980079c196a654fc1ec88379b10630c738c49af24dce663:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIyMTVmNDA1ZTE1YTI2MWQ5ODAwNzljMTk2YTY1NGZjMWVjODgzNzliMTA2MzBjNzM4YzQ5YWYyNGRjZTY2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIyMTVmNDA1ZTE1YTI2MWQ5ODAwNzljMTk2YTY1NGZjMWVjODgzNzliMTA2MzBjNzM4YzQ5YWYyNGRjZTY2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODgwN2IyNDljOTFkZWY3NjQ5NTFjNGY0NGI5MDM3MWUyMGM2NzIxMTRjNGU1YjM2ZTdiMjBhODE1NGJmZDYzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjI5MjE3N2RjN2VhZmFhMDA5NjAzYWEyMzI2YTJhOTg1YmEyYjc2NTljOTk5MTQ2MjY0ODY4YzgyNzRhYTFjNyJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L166-L197",
+          "version": "repo-lines-v1:sha256:7bb05802ae510f95ef2947f897e06f3b5a4cd02c52fe057338809889724f4bc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZWE4YTBmMmI1ODc0N2M3MWU5Zjg0ZTQ0NDI2NzkyMjhmZWQ4NGE2N2I4OWMzMWNhNzdiOTE0MWJlYmFkYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhZmI2N2YyMGNlMjhmNmFkZjYwMjYxOTVmY2RhYzJkMmI2YWEzMmEwMGQ3NzYyZTk4MWVjOGFiMTc0NGU4ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1NGZmMGRkOTUwNDQwODI0ZmMwOWM1OGMyMGMyNmZhMjBiNWI5MDdlM2E3NjAzNTQyOTQ3ZDZmZmFmMmUxOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_180d39905b1c404d8f01890a915c0e15",
+      "statement": "QEMU's 10.0.2.2 host alias works for TCP from the emulator on this machine; the earlier claim that it was broken was refuted with a negative control on 2026-08-23. The real rule is per-service: an RN 0.85 debug build resolves Metro to 10.0.2.2:8081 and does not consult adb reverse tcp:8081 for the bundle fetch, while Keycloak and the BFF must be reached at localhost through adb reverse tcp:8082 and tcp:8099, re-established after every emulator restart.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L413-L418",
+          "version": "repo-lines-v1:sha256:15636d748427b67b34bd73013c8a077e4545d5995bd442e26a8c99bd231fc19d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdjY2FkNmFmNjdjNWU3MmY0ZmM0Y2JiN2VmZTViMzdhMGMxYTk0ZjI2MWMyZTQ2ZDBkY2M0OTAwYWIwYzY5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U4Y2M1MGE5OTRkZjhlY2VjZjBhMzViOGJhMGY2N2FjNGZiNmQwNTk0Y2RlMzMyYzIxMzY2NjQ3ZjUyMDI2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmY2MzdmZDFjOTFjOGRiMjIwOWZmY2Y1YjVlOWMzZjc4ZjM5NzBjN2ZjOGU2YmFkNzZkZDJmMzMzYzk1ZGIzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZlZjYzMmI1MTBiMGMzNWY0Mzc1ODg5Zjk0OTYzYTBhN2FhNTcyZmQwMzIxYzQwMzAwN2EyZmMxYzE0ZjljYiJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L125-L181",
+          "version": "repo-lines-v1:sha256:fe8e398ec762fed3af04c60bca180cc32440f3ea1d032159c550830c0db321c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiM2NlOTMxYjQ3MWM4ZjM2ZTQ5ZmU0OWU5MmJjOWEzYjc2ZWM2OWU3ZDI3M2U1ZDFmZjBhMWYzYTJkNjkyMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3ZDRlNmNjOTRhMTEzMGRiNzBjOWUzZWQ5MTVhNzI5MWJhZWZkYjc5MjM3MDA3NGUxOTliMGQ3ZjE2YTM0YTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllMmMxYmUyYzExMWJlOGJkOWY3MWNlOWZlM2Y0NTVmNDNjNjVhNWE4YWZhYzgyZTNlZjdjODQ3NjRmMzk3NTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3786eebdb5204368ad4a56feca176f4f",
+      "statement": "Keycloak is pinned with KC_HOSTNAME=http://localhost:8099, so it issues its issuer and session cookies for localhost; reaching the same server at 10.0.2.2:8099 loses the cookies and login dies mid-flow with cookie_not_found and an app-side no-code-param abort. CI bakes localhost URLs and tunnels both ports for exactly this reason.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L413-L418",
+          "version": "repo-lines-v1:sha256:15636d748427b67b34bd73013c8a077e4545d5995bd442e26a8c99bd231fc19d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdjY2FkNmFmNjdjNWU3MmY0ZmM0Y2JiN2VmZTViMzdhMGMxYTk0ZjI2MWMyZTQ2ZDBkY2M0OTAwYWIwYzY5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U4Y2M1MGE5OTRkZjhlY2VjZjBhMzViOGJhMGY2N2FjNGZiNmQwNTk0Y2RlMzMyYzIxMzY2NjQ3ZjUyMDI2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmY2MzdmZDFjOTFjOGRiMjIwOWZmY2Y1YjVlOWMzZjc4ZjM5NzBjN2ZjOGU2YmFkNzZkZDJmMzMzYzk1ZGIzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZlZjYzMmI1MTBiMGMzNWY0Mzc1ODg5Zjk0OTYzYTBhN2FhNTcyZmQwMzIxYzQwMzAwN2EyZmMxYzE0ZjljYiJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L160-L169",
+          "version": "repo-lines-v1:sha256:d53ee493e6c396ba10a0fc70b157a1ce4db1b168029f2c60dacdf10e12a5e60f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiY2NmM2U2MWJiZDNlZTE5ZDg5ZjY4NDNjM2U5ZWRmMmQyYzhmMzZmODVjYzM1N2NlZmJjOGMzMWZiMzg3OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyOTMxZDQwMzBjZTczNDY4ZDYyNTdmY2VkODliMzFmZDJmMDkxMmI2ZWMxN2FhMGJlMmE1MmM0ZDI5ZWJjODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlODZmMjE1NGQ4ZDg0Y2U4YjE1MDdjMjkwMGY1ZjM3ZTkwOTFlNTU5MDU3YzRjZGNiNDdmNmY2ZWQ2NTI1ZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a01ded1128564f29a3eba8ad42dbfe47",
+      "statement": "If something else already holds host port 8081 (a stale VS Code dev-container forward is the common case), the app hangs on the splash screen forever with no redbox and no error because the handshake succeeds and no response arrives; diagnosis is to identify the listener's owning process rather than to test reachability.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L149-L158",
+          "version": "repo-lines-v1:sha256:810065447729f10525556c74ac3dadd2115370cd55ca35fb9504884adf2d943e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZjY0NDNhMDFkYTIxOTMxYTFiNzY5MmM5ODkzYzE1MzNlMGJkOGQ0YjA0NjU1MzQ5MDZiM2RjYTgwYWQ3ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4NDdmYjU1MzczMDI0MzI4ZDEzY2RlNzJlMzFjM2NjM2ZkMzZlNzhmNDNiNDk1YTc3ODUwYzcxZGE5NjI4YWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0N2U1OTkyOThjMzAxMmU4MDE0NGI5MTU3MDAzMjg4NjdjYjAwMzIwN2Y2MTkzYTU5MmIyZDhiYjVmZTVlMTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d953c1861874823aaf53425c0a89cb4",
+      "statement": "Inlined EXPO_PUBLIC_* values are not part of Metro's transform-cache key, so changing the BFF or Keycloak native URL requires restarting Metro with --reset-cache; build-apk.mjs additionally wipes the temp Metro/metro-file-map cache directories for release builds, and the way to verify is to grep the bundle Metro actually serves.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L171-L180",
+          "version": "repo-lines-v1:sha256:b5f6d4c13597027d48e3af619480f171ad0dc90a8247bdf63306fafb91adcdab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NzU0OTI5MTRkNGQzNWFjZWE3NGQ0NDM0MjY0YTM2Zjk2OTczNTk5ZTYxMGRhZmQ4ZTQ3NzY2MTg1ZmUxOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjOTRhYTYyYWFlOTM4MDY5Yjk4ZTdhMmFlYjZlMzQ2YjFjNGYzNTUxZGUwM2EzZDQwMzA0NWVlMzc4ZGY1ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNTI5MDljZjQ2NzdlMjQxYTJjZmFhMDNiYTFlNDdmNzkxNTM4ODI1YmYzZWZkYzBjNzI4Yjc0MDMxMDYxMjgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/scripts/build-apk.mjs#L34-L59",
+          "version": "repo-lines-v1:sha256:f4c8b797251de5be361eb8180b1b4853f300259006fe7f6fe45aca9489d05eb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MTg0YWMzMDMwODNlMmNlMDRkY2JmZDNiZjU2NTg5N2RlNTM4MWVjNmU0ZjMwODI0N2NmODA4ZDhkMDk1N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MDE3YjA0MmQwOWJiNDNlMmU0OTdjMzY0MjlkNjQxYTU3MDJmNmEyYTA5NzViZmRkYWNhZDA2NjIwNTNjZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4ODc5ZGMzZTAzNjUyODAzMWY3ZDZiNmZmZDA3ZTE3MmQ0ZWEzYTg1NDgzYzU3MGZmYTNhM2MwYjY2ZDY1ZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b171d5a36c6549f78aacb662b587e145",
+      "statement": "The production APK is published by cd-deploy's prod-apk job to the forge's generic package registry as package mcm-app-android, version <expo.version>-<sha7>, with a sha256sum-format sidecar, because this forge exposes no Actions-artifact API (the endpoint is a missing route, not an empty result). publish-apk.mjs prunes at publish time to the newest five versions by created_at and never prunes a version ending in -keep, and it always exits 0 so a registry hiccup cannot fail the non-blocking job.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L497-L521",
+          "version": "repo-lines-v1:sha256:72fc31bc11da6ef458060d08cbec7f9c7f5e1f01b02d660802dd861da2b2996e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1Yzg4ZTM0M2U1ZDA2YmE4YjI0NDQwNjcwNTMyYjczMzllNjE4ZGVjNTgxNGJhNmNiODY4Mzk1MzI1NzhmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZGFmNWYyNTgxMmM3MDViOTA4MzIyNTczOWE1MzFjZmY5NmM4MDE3M2UyMTJmMzAzZWZjYjg5ZWU0MDc3NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2NiMjY2MzU3ZTJlYTZkNDA5NmY1ZjIyZjgwZTdhODE2MTMzN2U5MWM2YTE1MmI3NjA3YzJhYjY3NjQxYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L479-L521",
+          "version": "repo-lines-v1:sha256:80c3d7c29cb7da5276985d182b113d2f84c1f74be6d33c302691fd499caccc4c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMmIzZjlkOWUwODEwMWZhNGNiNDExNzZlNzMxNWI5Y2I4OGRkY2VjYzBiZTg4NmM0ZmE4YjVlNmQ2ZmZmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YjEzNDcwZWEzYzViN2EzMTIyZmMxYTdmYTkxYTM0MmY1MDI4ZDgxNzgxNGE3MGUyODRjOTJmZmM4ZDJiYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMjhhMTY4ZTY1N2Q0MjBjYzAwYWM0YjI5OWRiMjNiMTg0Mjk2NmExMWRiZGUwYjNmYjljMzcxZjk2NjMwZTAifQ"
+        },
+        {
+          "resource": "repo://scripts/cd/publish-apk.mjs#L1-L67",
+          "version": "repo-lines-v1:sha256:149d34e503ab934ccfdf745ff8c6564a212e7da1871123c3d60a0ada3ba4781c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNGMxNWY1MmY5ZTk5MGJmZTlhYjQwNWQxZDU3ZjY1NWRhYjFjODUxNGZmYWUzYWEyZmM2OTBkMTU5ZWQyODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkMjdhYTQwMmY0NDEzMjIxMTdhMTdkY2MzZDdmMTRmYjBkNjhlYWY2MzcxYzM2MWVhMzU5Y2VlZTA4MTNjZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_abd4b794891944c1a804f31ccade26e1",
+      "statement": "Before rebuilding the APK, check whether the installed APK is already native-compatible with HEAD by diffing package.json, android/ and app.json against the APK's build commit: an empty diff means a pure JS/Metro change and no rebuild is needed. Conversely, Maestro launches the installed APK via am start and never rebuilds it, so after any native change the old native binary runs against the new JS bundle and crashes at startup; expo prebuild --clean neither builds nor installs.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L219-L254",
+          "version": "repo-lines-v1:sha256:7df0e5fc69c0cd8073306dcd04ac41507226a5217dfaa9d267be98e94c0a43de:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZjhiMDg0ODU2OGZkYTY2ZWZlYWUxOTdmNzg0ZTQyNDQxNzY5YjBhOTJlMTg1ZTNmOWJhMmYyZThlOTlhZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmZDA2MmViMmY5N2E3M2RhZjBmNDEzMDM0ODM4OGFkZTlhYzRlNTdjMWQ2ZDg5YTE4Y2MyMTExYWU2NWE3MmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMmIxZWJhMTBlMWIyMWZkMWVhMDQ0YjRmYWU2OTdlN2JhZWYzNWJlMzU0YjIwOTBmMzU4ZDNlMjI4MGU2MmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4YjMzNGJiODVlNjZlOWU3MzlhMzdiZDkyZGNiODBmYTZkMTU5OGM5NThlZjVhYmRkYTQ0MDU3OWRhNzYyYWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_473a1702f0f54c0b831f3fa30ab69b61",
+      "statement": "Windows hits a hard CMAKE_OBJECT_PATH_MAX (250 character) wall when building RN >=0.85 native modules, because CMake replicates the full absolute source path under the object directory and this repo's path plus the deep pnpm layout overflows it (worst measured 381 characters); Windows LongPathsEnabled does not help because the cap is internal to CMake, so scripts/build-apk-short-path.ps1 automates a short-root junction plus node-linker=hoisted build and always reverts it, since hoisted breaks Metro/jest module resolution.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L256-L286",
+          "version": "repo-lines-v1:sha256:a5d0c22a2316a9dbea265ad822285d0ca961f311c358d4a3223fc95767ebe856:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ZGExODYzMjI3MWJhM2VkYzhlZDUyMjUwNGRkYTY0OTU3NTVhZmEzNTEyZmY0ZGEyY2VlYWM3YzQ0NGNhODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZGMxMzk2ZjkyNzU3YmNmN2M0ODAxYzcwMTE0OTdkMTE4NDNhZGJjNzU3ZWQ2MDY3ZTZlMTAxZjVkNjA2N2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0OTQzYjE4MzY1ZDBmMTE0M2UxYmIyNTA2YzMwZWQ0YjIwM2I4ZDAzMmMzYWY2MzBmNmY3NGQ2NzJjZjA1OWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZjZmNDJlMmQyZWU2NTJkMDc3NGUzMDNjNDE4ZDM1YTBjM2NmOTVhZjUxYzNmYzIyZjVmZjZiYmRhY2E0NWQifQ"
+        },
+        {
+          "resource": "repo://scripts/build-apk-short-path.ps1#L1-L29",
+          "version": "repo-lines-v1:sha256:dd225e9113ab4f5ac3df622fe1f467ec42ca1af639aef6825f461809027debc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NTRjODcwMjA5OGQwZmVmNmVjMTM1MTlhMDBlNzZkZTc2MDY0MjRkZjZmZDgzODM4YTZiZWMzMTdjMTdjMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTFiZTljZGJkNGJlOWMzNWRhZDVkOTNkMzk3NDA0YzRiYTkyZjYyNGMxZDE2YTM5NGU1OWE5ZGQzYzQ4ZjUifQ"
+        },
+        {
+          "resource": "repo://scripts/build-apk-short-path.ps1#L84-L102",
+          "version": "repo-lines-v1:sha256:d1974d593c09468c60986bafa71a547a78c4ee2ae424d35cad8d261f034cceac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMjkzMTA3YzExNDY2ZDM4ZWNhNzJkODdlOWZkN2FhYjE0MGQ4YzcxYzU3MmQ4YWQzMDkzMjc3NWI0NTUyNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwMTNiNDFhNmFhNDNkZGE0MzAyNDQ1Y2E2NmQ2ZmFhYzczYzQxMzg4ZGFkMjM1MmFlYzU2OTVlZjI2NGNiOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_83a5a509ae4443738d53b85e627afd18",
+      "statement": "CI is the recommended APK build path: both Forgejo builds use APK_VARIANT=release so there is no CI debug/Metro-attached APK, and app-e2e's disk-free step is load-bearing because it reclaims space by pruning the rootless Docker daemon's images (docker image prune -af) rather than by deleting files — without it the native build exhausts runner disk and dies mid-compile.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1193-L1195",
+          "version": "repo-lines-v1:sha256:2ed7a92eacd6aa17a86e928f253285bf0dd76bc3a8faa42a3a3b3a464f21fc6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IwNzg0OGE0MzY2NjU2YjJiYTYxOTdiZTAyYjkyMDgxNDU0NmY5ZDlhZDBiNTMzOWU0YzI2YTJjOTQ2NTExNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmViM2ZkZDY2ZTFhMDEwNTc3YjgzNDNjMzkzZDY2ZDM5ODBjODQ0YjBjODBjNDJkNTQ2NDc3MTAwNTI5ZjA4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzk3MTA4ODVkNDhlNTgyYmRmNzRlYWZhYWU1YTIyNmNjZDhmZWYxNmVjODBmOGYyY2QzODZjN2UxNTJlNzM3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWVlOWIxOGM3NjI1NmQzMzk0NTA2ZjExY2VmNDMxYTE2OGQ1MzhhN2FlYWZiZjljYWFiY2YwOTc3OWNmYzRlYiJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L481-L486",
+          "version": "repo-lines-v1:sha256:fd0847474de7b0d3260509bd1a9e06bf22ba0d2a5a5ac88c1e2d362fab4cb63f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUzYTEzNmZhMTliNWJhOTg5OWU3Y2E4ZWI4MjBjM2FmY2Y3ZjdiNTEwZmY3NTFjY2Y4NzA5ZDY0MDMyZjliYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJlMDQ4NTdhNDg5NmU1ZWZiMGI5Yjg0MmE1NDY2NDFhNWMwZDUzZDIxYmJiNjE4MGFkZTNkZGFiNGU5ZDZjZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmZiYWNmOTkyZmNkNzM1YjQyYjllZTljNWUwZWJiNTIzNjg4NzlkMGUxOTY0MWFiOTJkMzdkOGMyMDEzNDJjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjcwNmY4ZTJiMmNlNzMyMWI2Y2FmMDA3ODY0MWExZGM0M2IxMGEwNzhhNjcyZTc2MmRmMzA4MDdkMGNiYTliOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_99b6c2ad818342309ea8dd88c10abc76",
+      "statement": "The retained Docker Desktop / DinD dev container can run the Android emulator but cannot build the APK there: the Android SDK and an android-34 google_apis x86_64 system image plus the Gradle wrapper distribution are baked into the toolchain image at build time (before the egress firewall), and the privileged container exposes the host /dev/kvm, but Gradle still resolves the Android/Maven plugin graph from the open internet, which the default-deny firewall blocks. The primary Docker Sandbox microVM path cannot run the emulator at all because it offers no nested virtualization, which is the sole reason the Docker Desktop path is retained.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile#L170-L241",
+          "version": "repo-lines-v1:sha256:e7e32e8bb37e8002b45a3cb89779d0798795d1d4826e0fa2b8bdf04a2a36d39b:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2YjBlYWY3NjY2ZDk5OWI1OWFmMjU0NGI3NmZiNzI1YjU3Yjg3YThkNjAwYTllNjY0ZWFhMWE0NWM2YmUyMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMGEwYjI3ZDk1OTZjMjc1NTg3M2Y4M2JkYzQ2MDlhMWJlYTZiYWUwOGYyMjI4NDI1MTYyMjNiMGY5NWY0NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmZWQ2YTdlZTY3MzVmYzY2OGVmYmY5MTc3ZWM1NTliYWE3Y2IzZjBhMjg3Y2MyZjY3ZWI2MDZjOTRlZTU0ZmQifQ"
+        },
+        {
+          "resource": "repo://README.md#L159-L173",
+          "version": "repo-lines-v1:sha256:b330dfa459beec1e0c479fc9f59d43966ecdbbfe9d56b1aa31a376f8411d9315:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNDM1YTdlMDc2MTQyMzYzOGI2YTQ0MGM4ZWQzY2FhYWQ1NzRmYzRmMjI1ZmQ2YWIyZmY0NmVkNGRiZTdiNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDFlZThlZjhmZTgwZDVmZTMwMTgwMGQzYmM2MTYzZGQ3NzVjYzRhNjNkZmRmYWYyYTlmOTgwYWUzOWE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NmZkYjAwMGFjMGFkZmY5M2QxNWE2YjllNmQ3MDc4NzQ5MzM3ZDYyZmY2MjQ2MWZmOGQ1MGQ1YWUxYTk4MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMzhlOGUxMDcxOTFlNDZmZjJhMTI2MGIwY2M2OGRkOGU4OTE1MDhjNDFmOTJkNDBkMzcwOTc5MWVjMzQ2NmQifQ"
+        },
+        {
+          "resource": "repo://scripts/devcontainer-android.sh#L1-L65",
+          "version": "repo-lines-v1:sha256:c84961986ec8aa794699eade1025be571071232c468e245c50d072303064a846:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwNzQyNjY3Nzc0YWE2ZWM3YzRkYjQ1YTA5Y2U2ZDNmNjY0OGU1YWQ3OGMzZTY4ZjNkZTgzZWVlMjc5NzI2ZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e26e375207014c25bc0cdd1a22b95e32",
+      "statement": "scripts/devcontainer-android.sh is the dev-container emulator lifecycle: its default prepare subcommand grants /dev/kvm access and creates the AVD idempotently from postStartCommand, boot starts the AVD headless with KVM and waits for boot_completed (adb-reversing the dev BFF on 8082 and Keycloak on 8099), and on a host with no /dev/kvm it refuses legibly naming both remaining routes rather than failing as if broken.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/devcontainer-android.sh#L12-L33",
+          "version": "repo-lines-v1:sha256:a013c8f2d5abb7812b98c43af7b229d7c334e6360b13320f259e9d41fc02874a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkMjA4MjFmZWYxOGM3ZmI3NjQ0NWQ0OTlhNGI4ZTcwYmEyODg0MmRiODQ1NmJmNzcwM2FhZWY5MzlkOGJmMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkY2E3YmZjMzFlMTQwMDIzYjFkMDQ4NGQ1Y2ZmZDRiMWZmMWM1MjJkNDE4MTY2ZTRhMDkxY2M2OGMyNjBiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmY2EwZmY4YjE3NWIzMzE2ODNjYWYyZWVmMWM5NGMyNzYxN2E0NmQyYWFiNTZhMTZhY2Q4MzI2MGYzMmNmOTkifQ"
+        },
+        {
+          "resource": "repo://scripts/devcontainer-android.sh#L35-L110",
+          "version": "repo-lines-v1:sha256:f47727263cd7bf6e9eed0c48edfb7d89fbdee94de21ee703e7994cb655db80e5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMDg1ZjI1MzE3OGFhMjJjMzY2YTViNGVmZGNmMjczMmEzYmQyOTU4NjFiOWFjOTM0NDgwMzU0NDMyNWJhYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmMzA0NjhlNTliZjc3YTVlZGQ5ZWVjMzQzNGQ1ODU0MTU3MDg1ZmU0MmViYzExMmUzOWNiYzk5OWFiOWVlZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMmQxYjIwZDNjYjJiODMxMjViOWJjN2MyM2NkM2QzZWVjODk0ZWRiMGI2MWY2NjkyNDMxMGY4MDY0YjU0NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkM2ZhODdmNTE1OWI2MGM3ZTA3MTc5NTE2NWVhNzIwODk2OTBhNzBkNjQwYWYxNGEyMjMzOWM1Njc1YTI2MzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_456270ccd69f44c1832d9f032ecaad5c",
+      "statement": "Two emulator-state conditions mimic app bugs: a second installed MCM build (any bundle id) also claims the shared mcm-app:// OAuth scheme, so Android shows an unanswerable Open-with chooser mid-login and the flow times out; and a live Chrome Keycloak SSO session makes the next login submission fail with already_logged_in and redirect back with no code, which scripts/ci-mobile-agent-flows.sh clears via adb shell pm clear com.android.chrome.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L182-L193",
+          "version": "repo-lines-v1:sha256:774b854a5e7bca5908311a38431113fab68ac97bccce9d758bebff184cf16688:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYTA4MDVkZmMyZGJmNzQxYjVkZmQ4YjViYjNhMTNmOGY5NzQ2ZDEwZWZkNzNlNTQ0MTQyYmRkYjQxYjM5NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYjNhNGE2NTAzNDUzNjg0ZTE1NDM1YTc1ZDVmMTViMzk4NGVjYjI5MWIxYmQwYTMxNjE3ZjQ3NmNkOGViYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3YTE2OTM4NzUzOGRjMWRlYmY1NjYwYTg3ZGJiYjk2ZmZjNGZhODY0ZDViYzMwY2E2OTdhOTM3MmRhODJhYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZGVmMGQ2ZDA3YzIxODBmNjAzMGI2MWM5ZGQxNTc1NjkzMDM1M2FhZDU2MTdiYTE1OTZjMjVjZTFkMDEwNmUifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-mobile-agent-flows.sh#L160-L177",
+          "version": "repo-lines-v1:sha256:67e3a03fa0ccc186abca5d1db9ae879984c4be06696d12831bc08a4a1795a765:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlODQ5MjRiY2M5Mzg2MmJmYzU2NmJiMGVjNzAwNzZjZjQ4ZjU5MmJhNjVmMzU3YjFiMzkzNTFiZWNlMGFiM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NjRiZjc4YzIyYTg4ZDIwM2IzNmU4NGM2YTIxOGY3Mjg1YTU4OWFmZjczYTZiZTkyMGU0ZWQ2YWUyYTRiMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlMjI1MGNlMzIwNzAwZGNjMTIxZDdkMDAxYTFlZGUyYjNhZjhiZjZkNWE1MjRkOGNhNmRjOTkwNDc2ODRhMzIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-29T01:49:10.027Z"
+  }
+}

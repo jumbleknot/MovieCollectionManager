@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:db10f47e27542df0e598045e7ab4661e077eb90bae5258580978c09ff5c30999",
+  "claims": [
+    {
+      "id": "claim_07ef00b788fa4e22a1e9fd4e07dee2b1",
+      "statement": "`backend/mc-service` is the sole authority for movie-collection domain logic: the BFF proxies every client request to it (forwarding the caller's JWT), it persists to its own dedicated MongoDB database `mc_db`, and it validates JWTs locally against a Keycloak JWKS cached at startup rather than calling Keycloak per request.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/main.rs#L21-L41",
+          "version": "repo-lines-v1:sha256:441b5d9ee58a03cbf08ac645fe93cfad0e77b2afd43d4d5cbc45f1e46adbb8a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNWZiMzhiMWMyZjQxNjlhYjZhZjI2YzcxMTE1ODhkZDY2YWNjNzNhZWI4YjkxYWRiNDk4N2FlZGQ5ZDVlZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MzE2ZDVjMDUyY2Q2ZDIyODUwZTE0ZDFlYWE3YTkwN2VjNDc4ODVjNmJlMDE1Mzc2NWExYTFmMjhhZmNlODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0NWVjM2VlNzM0ZWMyMWRlZjY4ZmU1Y2JjOWJiZjc0ODExYjhhZTk5NTJhOGEwYTJhMWViOGNmYzkwMWRjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmIzNmYwNDZkNDFlYmExZjMyMzRjOTg0MmFiNGIyZDM0NzUyNmQxNjQ3OTY4YjU4NWU5MGMxMThlYWU1ZGEifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md",
+          "version": "repo-file-v1:sha256:631b7472d3c5671e5be4d023f1a0fbf8b3bfba257850b07ea9b4924930b0e940"
+        }
+      ]
+    },
+    {
+      "id": "claim_feb28c4b3039429694ac37ab34abf630",
+      "statement": "mc-service startup is a fixed fail-fast sequence: JSON tracing subscriber, `Config::from_env()` requiring `MC_DB_URL`, `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID` and a parseable `MC_SERVICE_PORT` (loading `.env.local` then `.env`), MongoDB connect, idempotent index creation, a read-only orphaned-movies `$lookup` warning check, router build, then `axum::serve` on `0.0.0.0:{MC_SERVICE_PORT}`. A missing variable, an unreachable database, or an unreachable Keycloak JWKS endpoint aborts startup rather than degrading.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/indexes.rs#L10-L15",
+          "version": "repo-lines-v1:sha256:84ebbd7542bb77e09f848ff957449b3ff8bfcc7e13d1bbffd27bec74e75cc15b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRiMmZmZGIwY2E4NzBkMzkxNzRlZDVlMjQxZDkwYWJjYmM3YzA5NDI1ZmE5NjY4NjI5ZGIxYjBjMjFhMGUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjAwMmI1OGNmMTQ0MzFiNjIzYTdjZDEwOTg4Y2UwMmRhNTBkZmMzNzFhMzAyMDk0YTlhYzUwZDkwNmJhYmZmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDkxNjJmYTU3ZmE0NjZlZTkzZDAzZWI3NTk4ZTQzNzg5MTEwZDhiN2JkNmU4NzUzODFlZTY4ZmM5ODRmMTIzMyJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/config.rs#L17-L48",
+          "version": "repo-lines-v1:sha256:df236b5a5d3df9eb92e47b8aeb08a5c01a0de0e638e762d6f7fbf378cb466487:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MDc5NGE2MDA2MzNhZTY5ZGFlMWYzOThjYTk3ZTc5Yzg3NDc5ZDFjNjE3MDg0ZTRkMTgyODZmMTlkODFjMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiOWQ2ZGNiZDFkNTk0MjNmNmIxMTA2MDQ3MjAyMGQ0MWYxMGM2N2ViODI5ZDc2NjVkMTc4MDNiZjE0OGY1OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMDg4NDFlYzdkZjVkZTc5MmI2ZmY3ODc4YjIzYzFiNTc0NzliYzQ3MTM1Zjg5NDAzNzI4Y2E2YmJhMGJlYTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/main.rs#L5-L44",
+          "version": "repo-lines-v1:sha256:bc2c4910204730905f648eb2be7f5a9b52a72684edcc4aff06ca8ff682bd9c9e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZDA2ZTA0OGNkMjcyNzM4ZDgzN2IwYzBlYzZhYWIwYjAzMTQ1N2U0NzVmZDQ5YWJiY2JhZmM1ZjczYzAyMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyM2RhM2QxODBhODRiZTU3MTNkMGY5YjliOThjZTlmMjk2ZTNhMTgzNTFhNTIwNTgxYjEwMmYyYmI2MDk1NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxM2I5YTUyOTkwNWUzOGI5YzYwOGNhZmNjZTI1NWVlOTJkN2YyY2QzOGVjZDJjZTllNzA3ODA1ZjdlNmFjOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8cb07a55e21044d097ca5996f9422419",
+      "statement": "mc-service exposes exactly two sub-routers: a public one with unauthenticated `GET /health` and `GET /metrics`, and a `protected` one nested at `/api/v1` carrying every business route (`/collections`, `/collections/{id}`, `/collections/{id}/movies`, `/collections/{id}/movies/filter-options`, `/collections/{id}/movies/count`, `/collections/{id}/movies/{movieId}`, `/movie-metadata`) behind `KeycloakAuthLayer<Role>` plus `require_app_role`.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/health.rs#L4-L9",
+          "version": "repo-lines-v1:sha256:dcd15ca610ead4d22cfcbd4f7b62db71313d31c5a839b9fbbac0b7dc109c8b0a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTlhMDU4MTUxMTA4OGU4YzlkNjVjZTY5YjQ2M2EyNmMzYzZmNTM5MWJkNWUxMmM3MmUyMTdjOTRiZDc2MzRjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjI1YmJlOWI2YjM2NzFmOTE0OGRjN2MyZWFjN2RmZTQ5YjU1ZjM3MTA4OGZiYjRmYjcxNGMzNTUyZmI3OGMxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/metrics.rs#L4-L20",
+          "version": "repo-lines-v1:sha256:7d5466e8e1eeeb3847259c1478d70e34747c1fc7a60ffebfb81e71e93379cb49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMDM5ZWE3MGViMDM0YzA2OGVmMzc3Njc1NzI0MzFjODRlZjYxYzgyZTMzYzliY2U2MTM0NWM3YmRhNTE1MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMTI4MjM5YWNiN2ExM2RiZjQ5MzFiMWQ2MjBjNmEzZDI5ZGU4ZTU3YjBhMTlmNzlkYWI3ODMxMTM1M2VhNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L152-L204",
+          "version": "repo-lines-v1:sha256:cc0ab5390bdf49ca8310a53e679d0ece05ed5795d7b887c9bdd8f124a3c8e217:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2OTIwZWZlYThkNGEzNDk2MDU5NWEwMzJlMzNhOWYwMzQ4MzgxZGMyNDY1N2NjYWFhOTIxZDhiOTYzODE2MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZjEzN2MzOTlhOGY5OGMwNWYzZWNmNTJmNDgwNjEzNTgyNWZlYTFkNzFjZjAwNzY4NGVkMGVlYjA3Y2Q3NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDI0NWZlOWVkYTNjZGVkZTllMGM3OWVjMWU5YjcyNzIzMGRmMDkwMGNhZWVkNDZkOTk4M2VlMjAwZDhkNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bfe2fb1868dc4337b0b4291db32c72b2",
+      "statement": "The literal routes `/collections/{id}/movies/filter-options` and `/collections/{id}/movies/count` are registered BEFORE `/collections/{id}/movies/{movieId}` deliberately, because in the reversed order the parameterised route would shadow them.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L163-L170",
+          "version": "repo-lines-v1:sha256:1bd59026f19b093c52c11eabc990bbedc9ce0d142dc6244ef616a7d083764730:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODY0NGE4YThiNTZjZjY1NmZlZjIwZTZlN2ZiNjQ4MjZjMjNlYzllOTMwZGU0NTNkZmEzNTMyMmI1NjQ4YzE4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU3NWM3MGQ5NDYzNjI1ZTEwNzlmZDhmYzhlZTYyYWQyZTkyYzQyYmVhYWJmZDg1Yjc4ZDhlMGE0OTc5Yjk0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjcwM2M1NDY0YThkMTI1OTMzOTJhMzJhMTUxMmQ3ZDliMjg0NWY4MTQ1ZGI5NjFmMmJhNmJmNDQ4ZTBkNjRhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFmODY3YzkyMmVkZGFkNGUxOTM3M2RkMDE1MzRkZWYyNzA0YzEyNjU5YTRiZjIxYmEzYWRjODhjYWJjMzk3MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7ac3351952ad47f687a8c0a63aac3b27",
+      "statement": "Authorization at mc-service is centralized in a Tower layer on the `protected` sub-router: `KeycloakAuthLayer<Role>` is configured with `PassthroughMode::Block`, `persist_raw_claims(false)` and `expected_audiences` set from `KEYCLOAK_CLIENT_ID`, and a separate `require_app_role` middleware applied inside it enforces the OR-logic `mc-user` OR `mc-admin` check (the layer's own `required_roles` is AND-logic and cannot express it). Per-handler `Extension<KeycloakToken<Role>>` extractors only read already-validated claims and must never be the primary guard.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/auth.rs#L50-L108",
+          "version": "repo-lines-v1:sha256:ba7946bba562aa32434b771468b423563ff9df4e9b192b6a6a607711d69d4bd5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOTAyYWJjMTQ1NmY5MzAyZjE2YTE5OGI2MzI2NjcwNDljOTYyMjI3NzRjOWQ0Y2M3MmZlNjk3YjU4ZjFmYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMWI3OWFkYmVjODg2YjNiZTM4MTNiZTdiYjVlZmEwOTc0OWNhZTQ5MGM4MjRiMTE4YjY3NmEyOThlOGFiZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZTNlNDU0MGZjZDBmNThlNDcyMDk3MmRkYzYxNGRmMjQxNTNmZWUwYzA5NjliOTFhODQxNGRhNDFmMWIwMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L172-L184",
+          "version": "repo-lines-v1:sha256:7cd6727769c0e37e9ffccbeb7acdb52c7598caf26fa54c02925ca83180beda88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YzQ5ZjgzZGY3NGY1ZjMxMWRmYmRhY2U5ZmRiNzc3NTIzZGE2NGEyNTUzNjhhZDU1OTNhM2IwNDllNGQzM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyN2JlYzNkZWFjNzI2MWVlNmVjMWJjNjRkODM3NDQ0YzAxZDlkZjA2MjVhNzk2NmQ3ZTMxZDcwZThiODA4ZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjYTVlNmExZGJkYTc4MjMzOWY0ZGMyMmNiNGY2YWE3ZjUzZjgwZTJiOGFmMTMyYjRjZGVjOWQ2MzAxMjNiZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNzBmNTc5YjQ3YjkzY2E3MGZmMWQ4YzU4OWJkMTk1MGYxMzY1OTczZTZlNTI1NDg1MGUwYzIwOTU3YjM4ZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_007df74430a0475fb4a20b6d27716811",
+      "statement": "Per-collection DAC is enforced in the application layer by the shared `authorize_collection_access` helper, which every movie command and query calls first: it loads the parent collection, applies the role hierarchy owner ⊇ contributor ⊇ viewer, and reports both a missing collection and an unauthorized caller as `DomainError::CollectionNotFound` (HTTP 404) so the API never leaks whether a collection exists.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/access_control.rs#L1-L30",
+          "version": "repo-lines-v1:sha256:8fa3038c8579b639a76c5f84132d4421e16031e67f9295dd199e62375e8cede7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2OGU4ZTllNjI5NDhkODI5NzM4Zjc0NTY3NmIzMzA5MWU1ODgyMjcxNzkwOGMwYmZjNzNlMWEzMmZiNDgwMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/queries/list_movies.rs#L32-L45",
+          "version": "repo-lines-v1:sha256:3cbe8bfddfab70a8cd1bfa283f05b5d49597c17c85dc3d2c59705a0834bb1b71:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2OGRlNWVkMGZhZjY4MzliMTc5ZDRmNWExZmQzOTM1OWI4MzI2NTRiOWVjMGE5MWNjZmIxNWYyOTliMDEyOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MjE2MDRiMzVmYzQwYWYwMGNiYTRlZWEyZmQ1ZTJjM2FmMTg2M2IzOTExODVkN2JmNGJiMDllNzJkMGM4YjMifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/collection.rs#L66-L77",
+          "version": "repo-lines-v1:sha256:7cbf071b4b75061d58cdc5495e95a74e5e3750132128ec605e20b48e3cd43521:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkNjJlMjMxOGU4YWZiNTEyNzVjY2JiMDZkNDZhMDA1ZjI3MmM1NmJmYWVjMzVjN2UzNTJjMzkxNjI5YWY1ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8da1a819013c4535a7f58790a49af49b",
+      "statement": "A collection's ACL is seeded at creation with exactly one entry, `{ userId: ownerId, role: owner }`; the authorization seam is exercised by the product and by tests, but no UI or endpoint to grant or revoke a contributor/viewer entry exists yet, so every real collection today has only its owner entry.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/domain/collection.rs#L47-L66",
+          "version": "repo-lines-v1:sha256:e1b221f9046303c97ef781eec37c4460ec54955bb93af0171a709819e7b72dbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjZlYWVhZWE5ZjNkNjkwOTJkYzkzZWM2ODI0M2Y5OTlhYTk2MWVmYzIyM2Q2NWNlYWQ3MjJiNzc0M2JjZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiZWIxYmU0MmE5ZDY0ZDE0MzUxODIzOGE0YmE2ZDA4YmI2OWI4Y2MyNGYwYWMzN2QzNWQzODBjMTIzZWJlY2QifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L92-L92",
+          "version": "repo-lines-v1:sha256:6b97456b4bf394af62a226fc485f0b71c2e67d90dffa8d8f41f8f4d172b41b68:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI5NzQ1NmI0YmYzOTRhZjYyYTIyNmZjNDg1ZjBiNzFjMmU2N2Q5MGRmZmE4ZDhmNDFmOGY0ZDE3MmI0MWI2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI5NzQ1NmI0YmYzOTRhZjYyYTIyNmZjNDg1ZjBiNzFjMmU2N2Q5MGRmZmE4ZDhmNDFmOGY0ZDE3MmI0MWI2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGI0OTZjMzRiYmQyZmI3NTVhNzBjOTQyYjYzM2ZjMTAwMzM2N2Q1NDQxZjJhYWY1MWVjZTBhN2RiMDJiYmZjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQ4ZDI0YTViODFlYjIwMTM1OWJiYjZmM2ZmM2Y3MTg5YTI1YjQzYmQyMGRiZmJlMzgzNzAwZGUxNDg1MjkxNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e823cab718cd4a2a9a255984d17336f6",
+      "statement": "mc-service is organized into four Clean Architecture layers under a strict outer-to-inner import rule (`src/domain/` never imports from `application`, `adapters` or `api`): domain (entities, `DomainError`, specifications), application (commands, queries, repository trait ports, DTOs, DAC helper), adapters (`src/adapters/mongodb/` repository implementations, BSON↔domain DAOs, indexes) and api (Axum handlers, middleware, router assembly, `AppState`).",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/lib.rs#L1-L8",
+          "version": "repo-lines-v1:sha256:48725b348de9e5cbf6b84718869f19c0aec11c4507299c80dc6ae28887e90430:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEzYWI0OTE1OWI5OWE4YzcwMThhMTQ2YTliZmE4M2I5MjRmNGE3MDkyNTk5YmQ5OWMxMWZlZWYxZjQ1ZDhiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UzMjk2NDk4MmUxYWE5OWMzZDFjZDczODFhZDMxOWNlMzlkNDg5NzEwOTRlMmUzMDFlOTA3NWE2MTRlOGUxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2NhYTk1Y2U0Zjk2MjdlYjFmZDZhN2U1MDI5MmU4OGIwMDc1ZWIzYTcwYjAyNmZhYTViOTJmMjAxZDZlYTMxNyJ9"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L71-L81",
+          "version": "repo-lines-v1:sha256:400e24e226ce00068b5cbe15882179980a75a3a362ecc458a7ad07c559f24c3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiMmQxNzNkZDQ4ZGRkZDc4YzU3ZjFmMzNhMzI1NTAyYTMyZWMzMGQ3YWM3NGFhNDk4MjdiYmY3MDQyNDQ2MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyMGUwNThhMzYzYmJjYjg2OTQ3YWZiMmY5MDE0OWEwOTg3NTJjZmQ3ZDc0YzI2MDkxZDRkZTcyNTRlOGVjMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2YWIxNGNhNmNlNGNiYzkxMDczM2RlNTQ2NGI1ZTlhMGFkMmI5NWYxYjVlZjIxNGI0N2IzMWY1MGNhMjkyOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0706336393d047aab4b10e93da06f213",
+      "statement": "mc-service follows CQRS with one file per command (`application/commands/`) and per query (`application/queries/`), each defining its own command/query struct and handler. Handlers depend only on repository trait objects (`Arc<dyn CollectionRepository>`, `Arc<dyn MovieRepository>`) and never the concrete Mongo adapter — the property that makes them unit-testable with `mockall`.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L78-L123",
+          "version": "repo-lines-v1:sha256:ce0381935e72dd4b9b4a794749a6b89dcaf06e47db303003a5e4bf17650a2f85:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiZTA4Y2YwYWM4NmIxMzBiNzlkMTRkMjljNTJkYTA2OTU2OGJlN2VjMWI4NGMyN2FmOTRhZmI1OTllZjcyNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkYjY4NWQwYjg5ODQzMDA2ODU4MDU3MjQ3ZDM5M2ZlYmFiNDFhMTFlY2QxZjhjMjI1M2MyZjM3NjQwMmE1MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjZGM1MDE4ZmE5ZDdmZGE3OTRkMWJlNzRmNjVmNTZiZWNlODgyOWE1OTgzM2E0MmQ1MTExMTMzYTgwYjI5Y2QifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_collection.rs#L9-L33",
+          "version": "repo-lines-v1:sha256:30842da799437f0b5733856e6745a590cb6087a0da402d91ad7c8fffae8a58e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4OWU5ODQ3ODY3OGNlNGE0M2RhOTg3ZGQ5MzZiNzBlYzlhNjZkNThmNDk4NThmOGU3NjE0ZjUxMWY1ZDgyODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkYTA5NjRkMDQxOWJiZjQ5NjU0NjBmZTBiNjE4MjQ4OWI0YmU5ZDY5MTcwNjkxZmI5ZDRlNTE3MTI3MzY4MGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MjE2MDRiMzVmYzQwYWYwMGNiYTRlZWEyZmQ1ZTJjM2FmMTg2M2IzOTExODVkN2JmNGJiMDllNzJkMGM4YjMifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/ports/collection_repository.rs#L9-L46",
+          "version": "repo-lines-v1:sha256:a1987f307deabbaf403bd2317a91cc5ecd88083be82e368f2678194af7f7e2f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyY2RkMWNmYjYxNWVhZjliYWRlZTk3MjIyOGJlN2FjNDIyMTgzYTY4MWI4NGU0YzBiMTViN2JjMTEyYzQwZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2N2Q4NzBhNWQ0ZmNjMzhjYTA0NjA4NjdkNDI5MjZlYjM1ZmU4NmEyZWY4YmIzYWYwZTE4YjA0ZDAzZTQzY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c11e33c056e41dfa31516b5ec00996c",
+      "statement": "Business-rule validation uses the Specification pattern: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by`) with `AndSpec`, `OrSpec` and `NotSpec` combinators, and concrete rules are evaluated by command handlers in the application layer before the repository is touched — validation is not delegated to the database.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_collection.rs#L23-L33",
+          "version": "repo-lines-v1:sha256:bcfb6daa4d9230e1753ac68c0f552e00c67fe87e61507723e1cbeffad38a09ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZDMyZmMyYjQ4Y2QxOTEyYjE1MDM3YThlOTFhNWM1YzExMzNlYWVlMmFlZjIwYjM4MjIxY2RhZGEyNTI3YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2YjgyYzEyNDEwMTg2YTYzZWVjOGZiZWY0OGVjMTc3M2ZlYWVjNjBkNGU2ZGJkOWFjNzQ0NzI0MWRkOTYxNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MjE2MDRiMzVmYzQwYWYwMGNiYTRlZWEyZmQ1ZTJjM2FmMTg2M2IzOTExODVkN2JmNGJiMDllNzJkMGM4YjMifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/spec.rs#L1-L116",
+          "version": "repo-lines-v1:sha256:070cc9a46e933fd1ac2a7e1c53b6bf46aca8a9f3843bfddf2fa6a03e67a75703:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNmNiMDIzNGY1NDA0MjRhNWE4MTMyMTQ4YzgyYmMxMDkxMDU5MGEzZDIzYmM2MGQyNWMyNjBjYTgyNGExNWYyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3YmM5OGQ2YjBkYzQ5MmM1MDE2ZGYxMDgwNWEzYTU0ZWI5YzE4NGE1YTYxMzdlN2Y0YmVjZmEwYzIyMDU1MGQwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_460cccc70941427ba7a9d8a1dc9bca61",
+      "statement": "Handler wiring is direct and has no mediator crate in the request path: `router::build()` constructs the concrete Mongo repositories, coerces them to `Arc<dyn Trait>` trait objects, builds one handler per operation, packs them all into a single `AppState` injected as `State<Arc<AppState>>`, and Axum handlers call the matching `AppState` field's `handle()` method. (`docs/MCM-Architecture.md`'s \"CQRS via `medi-rs`\" phrasing describes the intent, not the shipped dispatch.)",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L78-L123",
+          "version": "repo-lines-v1:sha256:ce0381935e72dd4b9b4a794749a6b89dcaf06e47db303003a5e4bf17650a2f85:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiZTA4Y2YwYWM4NmIxMzBiNzlkMTRkMjljNTJkYTA2OTU2OGJlN2VjMWI4NGMyN2FmOTRhZmI1OTllZjcyNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkYjY4NWQwYjg5ODQzMDA2ODU4MDU3MjQ3ZDM5M2ZlYmFiNDFhMTFlY2QxZjhjMjI1M2MyZjM3NjQwMmE1MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjZGM1MDE4ZmE5ZDdmZGE3OTRkMWJlNzRmNjVmNTZiZWNlODgyOWE1OTgzM2E0MmQ1MTExMTMzYTgwYjI5Y2QifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/state.rs#L13-L35",
+          "version": "repo-lines-v1:sha256:6678965fa2aec667e707b13e7de0700c0f05af365562652365514475f5d94a07:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3Mzk2YmYxMDViMzc3OWRiZmU0Zjc4MjE0ZTJlZTc4MzFmZDY5MjAwMmNlZmZlNzZkMzc4MjljYzYwYjdlNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzMzNGZkZGE5ZWUzYTlmM2I0NzMwNTlmODg2ZTljYjY1ZjYxYWYxMzFiNjNiZDQ4NGNmMmU1MzUyOTE5ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_collection.rs#L23-L33",
+          "version": "repo-lines-v1:sha256:bcfb6daa4d9230e1753ac68c0f552e00c67fe87e61507723e1cbeffad38a09ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZDMyZmMyYjQ4Y2QxOTEyYjE1MDM3YThlOTFhNWM1YzExMzNlYWVlMmFlZjIwYjM4MjIxY2RhZGEyNTI3YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2YjgyYzEyNDEwMTg2YTYzZWVjOGZiZWY0OGVjMTc3M2ZlYWVjNjBkNGU2ZGJkOWFjNzQ0NzI0MWRkOTYxNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MjE2MDRiMzVmYzQwYWYwMGNiYTRlZWEyZmQ1ZTJjM2FmMTg2M2IzOTExODVkN2JmNGJiMDllNzJkMGM4YjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eb6400defdce4d99a2ef9fb742192205",
+      "statement": "mc-service maps typed `DomainError` variants to RFC 9457 `application/problem+json` responses through the API-layer `problem_response` / `domain_error_to_response` helpers, never a stack trace; the `type` field is a non-resolvable `.example` namespace URI and `detail` is a fixed per-variant client-safe message while internal detail is logged server-side only.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/error_handler.rs#L9-L96",
+          "version": "repo-lines-v1:sha256:093b56b3d9818091354a605cefb94c981c52f74532b637f82cdc0c3462ce60e8:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMDdhZmQyMjIwMzU1NzgxM2UzYjA1YzNiMmQxYmFiMWI2NGZhOWU2ZGNiOTZiYTA1NWMyY2U2ZTU5ZjI2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyNWI4NTg5MmZmZWY2MGU2MDUwZWU4Y2Q2ZmJlODhjNWI0NTIyOWI1ODAzMjdhZmE3Y2ZhYmJlNDQyYTE2YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/errors.rs#L1-L31",
+          "version": "repo-lines-v1:sha256:e28af44f19b7c58ca692316c6b444c94f7d7724620a43f0f326517f867798fe3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxMjU1MDQ3MjY5YzFhMTFlN2M5OTU4NDc1OWJhNmJlZGJlNTk0YmI1MGEwZTY1MmIyYjUyNmUyOTVhOGFmNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_62a91f7e8a5a490cafaff98b1f23bbae",
+      "statement": "Cascade delete of a collection and its movies runs inside one MongoDB multi-document transaction in `MongoCollectionRepository::delete()`, so mc-service requires a replica-set-enabled MongoDB (a bare standalone `mongod` cannot serve it); a misconfigured single-member replica set that advertises an internal-only hostname also breaks host-side tests.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/collection_repository.rs",
+          "version": "repo-file-v1:sha256:444aff50e27482ad2dc93dffabb0ad5037d84008b6505581d60b0c5f1a9be4ea"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L51-L61",
+          "version": "repo-lines-v1:sha256:4d8d198848990727a6c70d363c11830654a4e7243da292b599c7a66a96466f44:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNmJhNDI1NWQwMWM2ZDJjMDEyNWZkN2ExYWIxNmE3MWZmN2EwYjk4ZGFmYjU0MWMzYjMwOGIyMTdkODJjNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZWVjNjNjYjhjZjRhYjYyZGUyMzI5YWVmODdiYzQ1NmI2ZDUzZDExMGM2MDIwZWRhNjY4NTlhMTk1ODIxMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxYzU1ZWJlYTFmYWM3MmQ1MjYxYWRkZTUwMWMyZGE4MDM3NzExOTM4MGJkNmEwYTE2NTYxNDhiMTkyNzg1YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkZjhkMzM5ZWU3NTE5OWEzMDAxZGZjMTVjNWE0MTFkZGMwODI3YmFhMzJhMmNlNDRjZmVlMTVkYWE5Y2FjNDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b62ab2e0f824af1a73318b8464106b9",
+      "statement": "The dev mc-service MongoDB service is started with `--wiredTigerCacheSizeGB 1` plus `--setParameter wiredTigerFileHandleCloseIdleTime=30 --setParameter wiredTigerFileHandleCloseMinimum=250` (MongoDB's own WiredTiger sweeper defaults) to stop the heap growth that OOM-killed mongod mid-run: with MongoDB's raised thresholds (`closeIdleTime=600 s`, `closeMinimum=2000`) nothing was ever eligible for sweeping, so data handles reached 65,844 for 2 live collections. These WiredTiger parameters are startup-only — `setParameter` at runtime is refused — and `compose.prod.yaml` carries its own `command` and is unaffected.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L28-L35",
+          "version": "repo-lines-v1:sha256:94b3a0af49debe9c2750b910f6129701453540c9d10ca2677dc7331b03d35222:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2VhNzQzNDdlMmMxNWMzNzlkNTA5MmI5M2U3YWRkY2ViNWZjMzhjZjU5MjM4MWU3ZjA1Mzc2M2M0OTgwMGUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0MmI4ZTA4ZjYwY2NiYjVmM2VmN2NjZmY5ZmQxNTdmMzY1NjU0NjY1YWJiNWUyMmFiZWUwY2ZiZDkwYjU2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBlMWQ4NTQ3OTUyODVkY2NiZmI1YWEyYzllMjJmNjU0MGU1MmFlZGM2NmNkYmY2NmZkYTY1OWZiZDdhOTUwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRhZjdiOTgxY2UyM2RiNGFkYmIzYzVjMzI1MDhjMTE2NjI5ZGNiMWNkODVkOGRmZTU2OTMyMzNhNzRhNDgzMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L11-L61",
+          "version": "repo-lines-v1:sha256:9ec26768bf57f9b261544bd23b161b46aa321d6825c5e5e806e71d1cb120ce00:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMTFiZGRiNDE2NDc0ZDJiM2FmMGE1ZDlmYjQyYTRkMzAxODcwYTQwMmQzYjIxZTExNjM1MGQxYzAxM2E5NDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZWVjNjNjYjhjZjRhYjYyZGUyMzI5YWVmODdiYzQ1NmI2ZDUzZDExMGM2MDIwZWRhNjY4NTlhMTk1ODIxMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzMDcyZWFkZWY5ZmM2ZTFiNGQwNTdjZTFlNTY4ZmQyYmE0MzRjNGQ4MmU3YTE1MmUwMDdhNWQ5N2I0NzQyMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkZjhkMzM5ZWU3NTE5OWEzMDAxZGZjMTVjNWE0MTFkZGMwODI3YmFhMzJhMmNlNDRjZmVlMTVkYWE5Y2FjNDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_464c3a342d2f41f9aac7b8f340466c3f",
+      "statement": "The mc-service integration harness no longer mints a unique database per test: `common::test_db()` leases a bounded pool slot named `mc_test_s<slot>` (≤64 slots, tracked in the `mc_test_pool.leases` collection), resets the leased database on ACQUIRE rather than on release, and `cleanup_db` is a deliberate no-op. Cleaning on acquire is what makes a panicking test harmless, since a test that dies never reaches its own cleanup; `tests/integration/pool_test.rs` exists to pin the pool properties a green suite cannot show.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L171-L198",
+          "version": "repo-lines-v1:sha256:e733ef85b4360254f0363ff7089e56072de41e1234a722224125251616f6b8bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlOTI0MGE4MGQwMWM1ZjBiZTQxNTFhNjViYTllYTc5ODQ2YzhhYjQ5NWEzMTQyMWVhOTRhYTViYmM5MzY3MjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjYzdhMTNmOGE1NmQ4YzI3YWUwZGU3Yzc1MmQ0NjE3MTk5MzMzYjhkY2MxNGQyMGMwNzMwNzM5YTE3OTNiNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyOTEyMDUzZWQxMDBlOWEwMWJjYWZmZDg5ZWQ2NWZjZjVjODBiN2ZmZjc3ZmViYTc1OTRmMzE1MmNhMzAxMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkYzU1NTM4ZjA4MjRmZjVhZGQ5YTU0OGM0OTc3OGU5NzhjNDNhYjI3MjE5ODE4YjA2ZTQxMTExY2E1OTI3NjYifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L30-L58",
+          "version": "repo-lines-v1:sha256:4391c4dd712b6eca696d0027b6d39ac24abf4f826452c07432196736c7708489:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NDQwNWI3YjliNjc1OGQyNDk3NjM5NzRjZDZmZTE4MWM5YTZlY2RlZWM2NDA2YzhmNTk1MmUxNGYxMGE2NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNTJkNTc3OWE2ZDc4YTM4YjUyZTg0MzE5M2FlMTEzYzNmNTUxOWYzNWY2NGNiMGE0NmZlNDIzNjU1NzJjOWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlZjMzMGVjOTY0MGIyNGFhMTkyZTcwNGZhOWM3YWMxMTY1ZTIxZjQ2NGYwYmQxY2I1MjRkMmQzNDFhNGE5NmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzNGZlODBmMTc4ZmE2NDA4NzVkOTQ1ZTdhNmY5NzI5ODQ2MDE3ZGM4YWNhOTI5N2YwMGMyZjM3NDU4NzM3MGEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L424-L441",
+          "version": "repo-lines-v1:sha256:37a242d3d4a90bf470829e748c3803fd5d8537fd01fd801a0e69595bc81b17bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNTQ5NzFmZWVlYjc2ODU4YzNhODhkMTczMDZjZTY2NDliOGIxMzdjYzJlYTE0Mjc1ZDAzNmMyNTBjZmUzNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlN2VhNTlkZTdmMjFmYTIyZDI0NWM3YzcxODUxYWY3MGRkMDQ4ZjEwODExMjg5OGM2N2IxMzFlMGZkNzM5MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/pool_test.rs#L1-L43",
+          "version": "repo-lines-v1:sha256:81e493f15e6924ce7846a49e38561d825f6ea471fc291733ede6026f8119ce7b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NjE0MTA1OGZlYjVmNWVhNDg1YWI1YjBkM2ZjOTUyMjI1NGMxMjYxOTUxNGE3NGVlYmU2ODI0ODhjODY2NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjZDJmYTgxODIzMmIyNWRmZWExZjZiYWYzZTJjZTcxN2FmNDc3MWY2N2JjZTZjOGU0NmE1YjQwYzk5YTRhZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_64211c71a70d405aa103c0c38822e6c1",
+      "statement": "`nx test mc-service` and `nx test:integration mc-service` now run the integration binaries identically: the `test` target declares `dependsOn: [test:unit, test:integration]` and executes no cargo of its own, so `--test-threads=1` is decided in exactly one place — `scripts/mc-service-integration-guard.mjs`. This reconciliation exists because a developer-facing `nx test` at default parallelism disagreed with the CI gate, hiding a flake that failed ~2 runs in 3 locally while staying green in CI for months. Measured after the fix, from a clean MongoDB: 2 failures in 29 runs at default parallelism (always in `movies::large_collection_test`, as an index-creation failure or a `MovieNotFound` read-your-own-writes miss), versus 180/180 serial — so the pin must not be flipped to parallel without first fixing the contention.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/project.json#L8-L36",
+          "version": "repo-lines-v1:sha256:ebe6536728fee99edacd13d50341c4c445b2a89f0ca857498817bafc98fed3d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MWRiYmUzOTQ3NjI2NjNlY2FmYTZiMDA3NzkyNjA3NDA1NmZiMWU4MzQ3YTAwODJjZDkxYjEyNTQxMzFlZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwYzYyZDk5ODBkNDM2ZDkxMmRlNTU5NTgwNGEyODJlMGFlODE1ZDYxOTQxNjQxYzI1YTA2YzhlZjYyMGI1N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MzdmZjkyZWUxZjNiODcxNDc1OTdhNmMxODJlOGE3YzEyYjZjOTY2OTFiODliYTRmNGZiN2Q5N2RjN2M3NWQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs#L134-L222",
+          "version": "repo-lines-v1:sha256:0d28e18e216c3ccf1bdcec1a0eb4c43c9cf26402e9ee44867da2217f298ccaa6:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwN2YxN2Y4YWM3NTkwOTliMTc1MWE4ZTdiNDVmZGQyZjM3MmJiNzE2YjVlODEyZjZiZDMwOTE5MWJkMTVkNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0OThiM2IwNmJiODUwNTIxMzdmM2VkYzc5OTc0NGIzYTI5NTI2ZmNiNWViMzdlNDViNTU3ZTE1MDdlZjI0ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://scripts/mc-service-integration-guard.mjs#L162-L196",
+          "version": "repo-lines-v1:sha256:4d56b7a75ef3b8c7af8ee8840210e49f8682ba885870649565ad547d29ee311b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiOTA4MTQ5MzhmMmE0NjU5MWFlYTQzNzM4YzZkNGEwOWI5NmNlYzI2NDU1NDBiNGMzMDAyMTMwOTBmOGU4OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzNjA1N2FiODEwZGFlYTA3YjhjMzY4ZWQzNDBmZTY2OTBkNzQ0NWMxOTg3MDhlODQ2NzAzMzE2NGRjMzBjMzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1Y2UzN2ExM2JiYTg2NzFiNDkzZjUyNTgyYmI1NTkwZDAyZmRmMGJiZDVmYmZmYWUwOWM0NTBmYmIyYzJmZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3NTM0ZTFmNGVhZGU2MTQzYjIxMDIzOWVhNjMyMThhZTBhMzVjYzRlNzI0YzZjYjIwNThkNWU0NTc1YmRmYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b80694284e404b819e9b09d6445d1462",
+      "statement": "The fast Rust gate's clippy run uses `--all-targets -- -D warnings`, with the `--all-targets` flag placed before the bare `--`; without it clippy checks lib and bins only and nothing in the fast `mc-service-checks` job compiles `backend/mc-service/tests/**`, which is how a pull request once went green while all three integration test binaries failed to compile.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/project.json#L37-L48",
+          "version": "repo-lines-v1:sha256:d4a67304c3efe105ac3eec3791e809780c6f50b984deb81353ba7d5d52aaf520:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZmY4NjMxMDc2ODE4NTA4MWZjOTYxMzQ2Njc1M2VhOGIyYzNmZmMwMjU2MzhlYWYzYzUyZGM0Y2QwYTU0MjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyYTNhZjAyOWQ3YjhmZWVmMzQyZDRmMzVlMDRhNDBjNmI4MzliZGFiYmI3NzVhNWFhNTM2NmRiYTc4NmVlMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMDE4ZGRlMDBhODkzNzc0YmQxNDRmZGRjYzMxNWU1ZmUzY2VmYzFlNjYyMTI3NDNlZTJiYWE0YmE4NjAwODUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs#L1-L17",
+          "version": "repo-lines-v1:sha256:4946c84742d8a2dee4070d5b7f94fcd8c616774189865ed1798c29f343bcfd26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MTk0MjE5MjQyZTZhNWViMTFjNWY5ZjBhMDgyNTdlNWVjNjA2ODgwYmUxMTRkM2E3ZmZjNjU2Y2RjMzhmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyN2QzYzIwNGZkZGQzMTRmZWRlYjNlODhjMzY1MTQ2NTQzYjI5MDIyMjVjNjllMTE4NDY0NzQxZTVhMDY2YTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjZGVkMzgyZThhMTJmNGUwNjU2NzljZjZiY2EyNDIyODZhNmM4OTVmYWY5OTFkMTc3N2I5YTViY2FkMTQzNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b82fd95d83e401bbdbf7fb0d95f1bfe",
+      "statement": "mc-service's low unit-only coverage (~29%) is by design, not a gap: Clean Architecture pushes the MongoDB adapter and Axum API layers behind integration tests, and the enforced ≥70% line-coverage floor is measured over unit + integration together with `cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov`. `cargo-tarpaulin` is a dev dependency of the crate, not a standalone install.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/Cargo.toml#L59-L67",
+          "version": "repo-lines-v1:sha256:d3a597e90a240bc7a6e6f7ea95a2f72a22169f4245aefbe2cb324053e49bed60:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzMyYTQwYjE2ZTczZDlhNjcwYjYxYTNhYzA4Mjg1MmJmM2Y3M2QwNmVmYjlmZGEwYzYyOTVmYzNjZGYxOWEwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg2ZGZhOGY4ZjRmMzRmNTNiNzRjYTNiYmU1MWNhODc4YjUxZWQ0ZjU1MjIwNGQ2ZDEzOTk4ZGUwN2QxMGRhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ5ZDE5Y2ZhNjZmNGQzOGU2MjBlZmFlZTBkZWUwY2U1ZjM1MWFhMWYxNzliYjQwMmQ5MWEyNzViZmU1Nzg5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDhiMTFlZjFhZjdhNmJmMmJjNjljOTcxODFhYzM4OTg5MTMwZmJhZDYwZjhiNGU0Y2RhNGI3MzUzZjMxZGMzNCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L244-L256",
+          "version": "repo-lines-v1:sha256:55075c18838a7c1f7c97e4befe7a9a5ec0c9bf17d171070a7428ecd3f20d0f0b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMmU0MGI1YjM2NzA0NzA3OWY5M2Q4OTJkODM3ODJiMjcyNWZjMGM4ZTZjYjZiOTMwMWY3NDQ4Yzc1ODg2YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWQyMGNjNGZiNDU4YTI5ODI5MjNiYTEzZWJiYWZhYWQ0N2Y1MWZhZjY3NTA4Y2I2ZDljMTZmMjU3ODU0ZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0MTI5ZjdmMzMwNmVlZjM5NjkwMmM1YjkxODU1MGM3ZTVkYjZlZTk3NGIwNjQ3Y2JjMDUzOGVmNDdhNjBkYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0MmUwMTE5NDYwZWRlMzM1NGExNmI4ODg4YjQ3MDVjMGZkNzkxOWEwMTYxYzdlNGYzOGE3ZjBmOGFiNmM0MzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_47e1315563cc49808902d0ca52fd57c0",
+      "statement": "The vendored OpenSSL dependency is gated behind `[target.'cfg(target_env = \"musl\")'.dependencies]` in `Cargo.toml` because the Alpine/musl Docker build needs statically linked OpenSSL that Alpine's `openssl-dev` does not ship; moving it into the unconditional `[dependencies]` section silently breaks `cargo test` on Windows, where `perl` (required to build OpenSSL from source) is absent.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/Cargo.toml#L52-L57",
+          "version": "repo-lines-v1:sha256:0cb8df89a5d7636ec677a182452424906ed2ab8fda654b9608701d9f1fe9a38c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRiNThhMzkzNWI0MzNhMzBjNmI5N2MyYzhkOTgyMTNlM2MyNTAyYTgxZDk2MzgzY2RkODlkYTdkMjllZjAxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwNWY4ZGIwYzNlOTFhMmU2NzMxMzdlZWM2N2JkYzY1ZDVmOGQ1YWIxYzU5MTdiODU4ODAzNmU1ODY1ZTc5MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTJlYTY2NjEwYzU4ODQ2YTRjNDFjNWJjMjZhYzZiZmVlY2QxNjRkYjJhZjM2M2IwMzRjMGM0NGRlZmU4YjAxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWIxMWQ1ODk3ZDViYjViMTlmZWU5ZTcyYzQ4MjYyOGNhMWQ1MTliYTE4MTc0MDQyZWRiMjJkOWEyZmE1YmIxMCJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/Dockerfile#L1-L23",
+          "version": "repo-lines-v1:sha256:760775ac40a6f81198956c7d012f423959643cc7d219090c136bfbe5024db24e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MTZjZDhjYmI2NzE3M2NlYTNiYzYxYTI1NzU1ZGQ4YTUyM2FmY2YyMWU2ODU1YzAzMWEzYWE0MTYyNGNmMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZGE5OGJhNzcyZjE0YzlmZGY1MjA0ZGRkNGQ2MjFlNjAyNDhiYzhkODZjMWY4MmY5NjQ3NmI0MDEzMDA2NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2N2JhYzVkNDgzMjdhOGZiYzI4MmRmMTQzZGFiYzAwYjg2YzEwYWE1ZWFlYmFiNjkzODY5Yzk0YmJhZWQ3ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f48ff47a9de485f8b2f51acb0fad311",
+      "statement": "Because Keycloak JWKS/discovery is fetched once inside a `tokio::spawn` at router construction, integration tests must await the auth instance reaching operational state before the first request rather than merely yielding: `common::build_test_app_inner()` gates on `wait_until_operational()` (success, not just a completed attempt) and panics on timeout. A failed discovery still flips the instance to \"ready\", so without that gate the whole auth-negative suite would pass green against a dead Keycloak.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L62-L73",
+          "version": "repo-lines-v1:sha256:f62c6a74baedce3d74aedaa1ca44412da231777fe4ba8d86ec81316866577772:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3Y2EwYzk3YWU5MGUyMWVmMDY5YzkyNDkwMzI4NzY0YzgwMjViOWQ3ZmFiNWE3Njg1ZjkzYjllMTljYzhiNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYzA5OTAwMjhiNGQwMTkxNTllODcyOTNhMGU0ODhkNDFkMTNhNDNkZjk1Y2MxODU0YjFhYjUwNGE0ODg5MzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NzVlOTE5YjI3YmQ4NGJkZmFkNjllYzYzZjhiNmQzMzBhNzcxOTFlZDg3ZDQ0ZDIwNjQzNDdiMjk3OTlhYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYzIwOWFlNTg1MmVjOTllNzdlYjYxOWU3NjRmYTJjNTc0ODQ1Y2VjMzdhNDllMjhiMjI1NDlhYTgwMmEyMmUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L60-L139",
+          "version": "repo-lines-v1:sha256:879d505f8e29917f8d99c0d30697f379d58109b00ae685042036926201486dc5:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiOTFhNWIxN2YwNjJmNWFjZGJhMTVlZWFjZDgwZGZiZDc5ZGJjZmViZWRmYjI5ZDExMjJkZmNlNDZjZjc5OTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YzAzMDc0ZWQxNDVlZTMxOTg0ZGZhZDYyMzhjZTYzYjQyNjc4OGMyNGJjMjdjYWNhZGY0ZTkzNjQ0OTM4ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkNDljZjhhMDU0NTNhYTNiN2Q4OGM3YjkxN2JiMGIxNWUyMGNjMDZkMGI4N2NlYjcxMzczNWU5OWVhNmFhYjQifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/health_test.rs#L421-L469",
+          "version": "repo-lines-v1:sha256:1dfa9b141ef7124838bf18c91dd2e518c29c6c5070a76d2b6098dfd499cab918:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmYTI1NmE2ODNmMzNlZDFkMjkzMWM1N2EwZTMxZDE2M2JlYzBlODA1Yzk5MzBlNzAwMTFiZjMzYTIxMTkzZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExYzE2ZTBlY2YyNDkwN2M1YzY3NDY0NTk2MjBmNDIyNTc3ZWY1ZDRiMTBkNWMzZDE4OTY2YTA2NzhiYTYzOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8ee05ba461bf43d1a455560bc64ad40e",
+      "statement": "`/metrics` remains usable when the router is built repeatedly in one process: `router::build()` attempts to install a global Prometheus recorder and, if one is already installed (the integration-test case), falls back to building an isolated recorder whose handle still renders valid Prometheus text, so the endpoint returns 200 rather than panicking.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/metrics.rs#L4-L20",
+          "version": "repo-lines-v1:sha256:7d5466e8e1eeeb3847259c1478d70e34747c1fc7a60ffebfb81e71e93379cb49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMDM5ZWE3MGViMDM0YzA2OGVmMzc3Njc1NzI0MzFjODRlZjYxYzgyZTMzYzliY2U2MTM0NWM3YmRhNTE1MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMTI4MjM5YWNiN2ExM2RiZjQ5MzFiMWQ2MjBjNmEzZDI5ZGU4ZTU3YjBhMTlmNzlkYWI3ODMxMTM1M2VhNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L125-L142",
+          "version": "repo-lines-v1:sha256:17e4ad7a972ec7d3bf37e27d706b40c36086b302932456c17083136ae78f7a94:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNmE3MDIwNTU5ODE5NTk0YzNjMjNiYjdhOWFjMzM3ZTkxZDVhMDFhYjg4YzU4N2E2ODhlNWI0MzIyNTQzYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4YzY4MTE4NDUxMDcxM2I0MzNlNWY5OWZkMmM0Y2RkYmUyOWFhNDlhNTkyNTQyYTIwMDE2NTMzZWI0ZDY0OGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMDI3YzIyNTU0ZmU2NDZiY2QwZTc5MTcxZGViNzZmMjA4ZTI2NzhkNWIxMjRhZjdmYjdjMDhkZmRlMDU1OTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1278b9f7bbf467ead0e13181fa2dd27",
+      "statement": "mc-service ships as an Alpine/musl container built in a two-stage Dockerfile: the build stage installs `musl-dev perl make` and compiles the release binary, and the runtime stage installs only `ca-certificates tzdata`, copies the statically linked binary, runs it as the non-root user `mcservice`, and exposes port 3001.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/Dockerfile#L1-L42",
+          "version": "repo-lines-v1:sha256:4de4aac95bf3d152dac120015ebbf6c97b44422fe62f7f981476de092486b5f0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MTZjZDhjYmI2NzE3M2NlYTNiYzYxYTI1NzU1ZGQ4YTUyM2FmY2YyMWU2ODU1YzAzMWEzYWE0MTYyNGNmMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YTFmN2ZkZDI5NzNlYzFkZGFhY2M1NWE5NzJhMDVkOGVjZDJiM2M0OTIzOGY0MTliYWUxYzNlMmNkMWFlZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ca6b3b5b3bc416ea5715a66dccefec6",
+      "statement": "On startup mc-service runs a read-only orphan check: a `$lookup` aggregate against `movie_collections` matching movies whose parent collection is missing, which only emits `tracing::warn!` with the count (or an info log when zero) and never modifies data; aggregate or cursor failures downgrade to a warning as well.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/main.rs#L27-L31",
+          "version": "repo-lines-v1:sha256:f82e91efbe933eb59d1f35158a985904ad3ab90e1828c3bd60daa5838db3c112:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWZhMmM3ZThiMDY0ZjZjOWI0Y2IyNzZmZTdlMmRmMzczMTE3ZmVhOGM2NTUxYjUwNmEwNGZhNDA0ZTkwMDMwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg0NGJmNzU5NDA0YjNjY2UzMTdiMmY2M2RlNGM3YThjNzgxNGY4YWY3YmUwMGY5ODdhMjY3OWMyNjMwOWQwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU1M2Y0YzcwMDlkNGVhZWFlNzg3YWQyMjVmNzg5NWM2MzI0MGJhN2IwNjY1ZDY1YWFiY2EyNzYyN2YyNDRiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWM3MDgyNmY2YzgzMjZhOGU5MTliMGJmMWIyZmU0OGYyNzliMDU0YWMxOTEyMGNhYmQ3OTA5OGI0MDQ2NmYwNCJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/main.rs#L46-L89",
+          "version": "repo-lines-v1:sha256:d978c9ba00c8d2366c01b527a67fac96212b08cc0d8655ff9d1652beaeaefda9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YWFhM2YxMDU0NDQ3ZDY1NWZmYzY2M2RmZjM4NTAzZWQ5MTU1YzMyZjk0MzU1MjA4ODBiYTg1ZjBlNmI3YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-29T01:49:10.027Z"
+  }
+}
