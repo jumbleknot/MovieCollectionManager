@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3c5f053caa3cceec182a45f8cdb339d6b6fa5bac280db92e553ba3a355a6cdb6",
+  "pageVersion": "sha256:242f5be14f5442fa39e1874f291959003564771982768b4c5f1dc53c259700af",
   "claims": [
     {
       "id": "claim_2c773503f0bb4882ba39eec23031c7f1",
@@ -58,19 +58,23 @@
     },
     {
       "id": "claim_0e5645bfc2ae42ca828cc4b063830fab",
-      "statement": "`node scripts/gen-dev-env.mjs` seeds the dev Keycloak realm on a fresh `keycloak-store-postgres-data` volume via the `keycloak/compose.dev.yaml` overlay's `--import-realm`, whose placeholder-only realm JSON resolves `${…}` client secrets from `stacks/auth.env`; the generator then projects those same secrets into the BFF env files so realm-secret == BFF-secret by construction and a login works on first boot with no manual import, with the import remaining non-destructive on an established volume.",
+      "statement": "It is the `up-auth` Nx target — not `gen-dev-env.mjs` — that seeds the dev Keycloak realm: `up-auth` applies the `keycloak/compose.dev.yaml` overlay as a second `-f` on top of the shared keycloak base, adding `--import-realm` plus a mount of the placeholder-only `dev-realm.json` whose `${…}` client secrets and test-user password Keycloak resolves from `stacks/auth.env` at import, so a from-scratch box gets the realm, its app clients and the seeded test user with no manual import; the import is non-destructive (Keycloak skips a realm that already exists), so an established `keycloak-store-postgres-data` volume is untouched and wiping the volume re-seeds on the next `up-auth`. `gen-dev-env.mjs` then projects those same auth.env secrets into the BFF env files, giving realm-secret == BFF-secret by construction, and because the projector legitimately runs before `up-auth` a first run on a fresh box ends `NOT verified` and is re-run after the realm is up.",
       "evidence": [
-        {
-          "resource": "repo://docs/runbooks/local-dev.md#L41-L47",
-          "version": "repo-lines-v1:sha256:970a5ee7bc151f2fe93d3ad27b996aff77f50e2b389f7d0461964c2671a162a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUyYTFjNGI2YWZmNTIxNmI5MWFmZTRkYTI1YTUxY2ZiZDI1MjY5NzMzOTNiZDE5NTBiM2E4ZTg3YjIwZGEyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYwM2ZlZjhmOWJiZjY4OWRiOTU0ZmQ3YWZkNmY3OTA0ZjBlZTYxN2I1YzJhODkyOTUzNTVmMGRiY2Q2ZTk2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTJmMDg1ZDdlMjlmZGM2ZWZjNWQ3MWEyYTNjOTdlMjgwYWE4Mjg1OTczYjdmODc1Y2Y3YWZhMGE0NTQ1OWUxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWNmYTM3ZTlhZDYzZjFkNTQ3ZTc1ZDNhZjRlNzY0MmY0ZTRkYmUzYjkwOGI4NzJhZGI1YTFmYTllODcyYjA4YSJ9"
-        },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml#L1-L48",
           "version": "repo-lines-v1:sha256:87c2b51cae099d540579f32e1ea4a1a609882b57e98eee18980cea3c6b634532:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwMjI3NDY4MDg0NWI1ZDFmMzE1OGQ3ZDQzOTJkYTRhNDFhMmI5MDdhOWFhNTAzMzAyZWZjNjYxZDhjYjY0YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZWU4MGRiYWYwNTZmY2I4ZWJjMmU0ZjdiMGFkN2NmZmNlMTE2MzI3YzdkMWQwZGEwNmVkNDhiNDEyODU3NzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L1-L42",
-          "version": "repo-lines-v1:sha256:555d1ed7f0a734562af10d1970318336e1d6488b9c120b575778965b42f2968e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMzkyYTRlM2E1ZDEwZjJlZDUxNzBhMjU3YTI0Njc0YzY1NjAwN2FiNjRiMzJlYWFiNmU5MzJkYzU5MDNlYzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxYTZkNDg3OTQzNDVkNWRkY2RmNDVkM2E2ZjJhZDgzMTNkNmJiMDU1Yjg3M2JiZGRmNTI1ZjhlMDRkNDQ0ZGYifQ"
+          "resource": "repo://infrastructure-as-code/project.json#L6-L15",
+          "version": "repo-lines-v1:sha256:fd60dc8136086e7376b3dead6f4a6118e4aab615eadd45035866c46487692d05:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2IyYTE4YzU1MDM2MmE0NjNhZWMyMzcxZGI0ZGViY2M5YWQ1Zjk0MGQzMWEwNDhmZWE2YzNlOTQ1NTBkMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyZmRiOWM3OWY1MmQ2ZDgxNzJjZjdlODdmZmE2ODU5MjJiMzZjZTJlNDNiZjVlMTVkZjI0ZDQxZTUxZTFlYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjMDhjMDg0NDBhZTBhYWEyNzE0OWFjYjZmNzdmMDc1MGZhZmZhMzQ2NWQ0YWNlMTQ2ZGNjZjZhMGIwYWE5NGIifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L1-L43",
+          "version": "repo-lines-v1:sha256:36b233b94f52e3c3e69d69cae2f531eb2f51a6ebc2f79bac3ec3f0fa627fdcd7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNjc3NTEwZWNlYzNhMmM3Yjk2NDg5NjVlMTgwNWYwZDNhZmYxYTUzMDVlNDA5NGE4N2Y0YTk1ZGNmNWRkODIifQ"
+        },
+        {
+          "resource": "repo://verify/verify-fresh-realm-seed.mjs#L1-L30",
+          "version": "repo-lines-v1:sha256:b32691452fba2f195291f9ebe961578da66610e2e9577827d0327a23fe069c42:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMDNhOTFmYmNhMDVmZGUyNTFjMmQ0MTU1OTA5ZWM4YjBiYTE1YzUzYTI4ZGQ3Y2U4MTI4ZGNjZjYxMmI2OGEifQ"
         }
       ]
     },
@@ -108,19 +112,23 @@
     },
     {
       "id": "claim_91042bb2d004416f8395afb92aaa6503",
-      "statement": "`auth` must be brought up before the `mcm` stack's `app` profile because mc-service fetches the Keycloak JWKS endpoint on startup to cache the JWT-validation key, and Docker Compose has no cross-project `depends_on` — the ordering is manual, and `--profile app` without Keycloak already running simply hangs.",
+      "statement": "`auth` must be brought up before the `mcm` stack's `app` profile because Docker Compose has no cross-project `depends_on`, so the ordering is manual — but the failure mode is 401s, not a hang: mc-service does not wait for Keycloak (`axum-keycloak-auth` runs OIDC discovery and the JWKS fetch in a background task while the service binds and serves immediately), so with Keycloak down or unreachable the service still starts and `/health` answers while every protected request is rejected with 401. This is pinned by `unauthenticated_401_is_returned_even_when_keycloak_is_unreachable` in the mc-service integration tier.",
       "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/health_test.rs#L427-L427",
+          "version": "repo-lines-v1:sha256:47a1a711428950bc55ddbdb510b59ba0d4cee0b5d5fc901c5f914d3bdad7ac57:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdhMWE3MTE0Mjg5NTBiYzU1ZGRiZGI1MTBiNTliYTBkNGNlZTBiNWQ1ZmM5MDFjNWY5MTRkM2JkYWQ3YWM1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdhMWE3MTE0Mjg5NTBiYzU1ZGRiZGI1MTBiNTliYTBkNGNlZTBiNWQ1ZmM5MDFjNWY5MTRkM2JkYWQ3YWM1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTNmZmZhZWQ4NmY5YjZhNjA4NzQyYmNhMDZiN2IyOWJkYTEwZDRiOGUyNTg5MjljNDQzOWI1MzcxODhiYjUyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY0MDUwMmMyY2Y4OTg5YzU5MTE1ZjI4OThiYjU1NTk4YTAwOGMzMDY1MzM3YzJiMzRjNjk0M2Q4NTkyNjI2MiJ9"
+        },
         {
           "resource": "repo://compose.yaml#L22-L23",
           "version": "repo-lines-v1:sha256:9ee5d973251c5c7d59050535d6cd5664d72a3a559fe4fdba1b32641609995f8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODYwZjUxNzk0OTA2MjVkNjU2NDg0ZTViZDJmNjlmNzJiYTBiZmY4MTZhYmFiOWJjMTdjNzQ5OWQzNjkzODgyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRiNzU5M2IyOTQyYjkzOGY0ODRiMjExOTAzZGZlZGY1NjZhZmQ5MjMzODE0NTI0MTkwYTE4MzRlMGQ3MTkxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzAxMzg2NWQyNDdiNzRhNjBmZmJkODM1Nzg4NzlhMmQ0NTIzNjEyYTY1NmU4NDdiNjBlM2QzNWZlZjc5NmEyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGY2MWMxY2M1Njk1OTg5MGI4YmMwY2Q4MThhYWE5MTJmYmY1NTg5MTcxMDM3ZDE3ODIxY2Q0YzE0ZTljYmZmOSJ9"
         },
         {
           "resource": "repo://docs/runbooks/local-dev.md#L144-L144",
-          "version": "repo-lines-v1:sha256:e746730f32905485b576a24953d0a5956be135a7b2b96261cad43ece3724a9b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0NjczMGYzMjkwNTQ4NWI1NzZhMjQ5NTNkMGE1OTU2YmUxMzVhN2IyYjk2MjYxY2FkNDNlY2UzNzI0YTliNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0NjczMGYzMjkwNTQ4NWI1NzZhMjQ5NTNkMGE1OTU2YmUxMzVhN2IyYjk2MjYxY2FkNDNlY2UzNzI0YTliNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODE2NjA3MmU3ODJlZDFiN2IyZWI4NWMzZTBkN2I1NGQzNzMxNDQxNzBjNTA1ZDk2Yjc2MTJkYWMzZjU1MjQ5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGVhYzA1OWRmOTliMDU5OTQ1MzU2NzZhODNmNGY0Yzk1OWNkNWZjNzFiMjVmNzE3ZTgwZjUyYzYzNjU1MDVmMSJ9"
+          "version": "repo-lines-v1:sha256:ee278475b4a2c99e6ff8636d5687489b04dbdeac9a04934417b07a733dfd277d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUyNzg0NzViNGEyYzk5ZTZmZjg2MzZkNTY4NzQ4OWIwNGRiZGVhYzlhMDQ5MzQ0MTdiMDdhNzMzZGZkMjc3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUyNzg0NzViNGEyYzk5ZTZmZjg2MzZkNTY4NzQ4OWIwNGRiZGVhYzlhMDQ5MzQ0MTdiMDdhNzMzZGZkMjc3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODE2NjA3MmU3ODJlZDFiN2IyZWI4NWMzZTBkN2I1NGQzNzMxNDQxNzBjNTA1ZDk2Yjc2MTJkYWMzZjU1MjQ5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGVhYzA1OWRmOTliMDU5OTQ1MzU2NzZhODNmNGY0Yzk1OWNkNWZjNzFiMjVmNzE3ZTgwZjUyYzYzNjU1MDVmMSJ9"
         },
         {
           "resource": "repo://docs/runbooks/local-dev.md#L64-L64",
-          "version": "repo-lines-v1:sha256:dc3368e1741adf38513caa67c37380161f7e1e02d0bbfdac7ab58f85f8f9f2e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMzMzY4ZTE3NDFhZGYzODUxM2NhYTY3YzM3MzgwMTYxZjdlMWUwMmQwYmJmZGFjN2FiNThmODVmOGY5ZjJlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMzMzY4ZTE3NDFhZGYzODUxM2NhYTY3YzM3MzgwMTYxZjdlMWUwMmQwYmJmZGFjN2FiNThmODVmOGY5ZjJlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTcxNjU2MzJmMzcwNGI3YmM5NDhhODdmM2U1ZTI1NjA1ODgwMjU0NWVhMWQxZGJlYjdjM2RhOGRiNDAzZThiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGY2NzdlZjQ5MzU3NmZjNjE5ODY5NzZmZTdlNWNlNmEyYmQxNTg2M2ZmZDc2MjZiNTYxNGZkNTIwYTYzZDJhOSJ9"
+          "version": "repo-lines-v1:sha256:433f88111600e89c0bb50f06e612f99b95178b84e8382e9ee0002a0aecc1d2f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMzZjg4MTExNjAwZTg5YzBiYjUwZjA2ZTYxMmY5OWI5NTE3OGI4NGU4MzgyZTllZTAwMDJhMGFlY2MxZDJmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMzZjg4MTExNjAwZTg5YzBiYjUwZjA2ZTYxMmY5OWI5NTE3OGI4NGU4MzgyZTllZTAwMDJhMGFlY2MxZDJmOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTcxNjU2MzJmMzcwNGI3YmM5NDhhODdmM2U1ZTI1NjA1ODgwMjU0NWVhMWQxZGJlYjdjM2RhOGRiNDAzZThiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGY2NzdlZjQ5MzU3NmZjNjE5ODY5NzZmZTdlNWNlNmEyYmQxNTg2M2ZmZDc2MjZiNTYxNGZkNTIwYTYzZDJhOSJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L3-L5",
@@ -325,10 +333,58 @@
           "version": "repo-lines-v1:sha256:dadc1fd997636254280eb7da8a5c2786e6e78c6ea52bf6c57224bc38e5eef595:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQxMDU0NTE3ZWYwMzk4NzM0NWI5YmNhNWUzNTcxOTAzMDc4ODk0MWI4ZTViNGQyYjkwYzc2YjVkMDQwM2RiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM3ZTgwNDJiMjVjNWVkOGM2ZjRjMjVkMWU4MTE2YzIyMGFmMTY3M2UyODAzODhjZDBiN2MyODVjNjEyZGFlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWM0MDlhMmE5ODYwNzc3ZGMxMzBlMWZkMTc4Y2NmMjY4ZTNlYjVhNTEzZDJhZGM4NzQ2MDIyYTdjNTU4ZjE5YSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_ecbf283780f94e9ea9217596631f37de",
+      "statement": "`gen-dev-env.mjs` writes five gitignored env files per run — `frontend/mcm-app/.env.docker` (fully regenerated), `frontend/mcm-app/.env.local`, `frontend/mcm-app/.env.e2e.local`, `mcp-servers/web-api-mcp/.env.local` and `backend/mc-service/.env.local` — and its `syncEnvFile` helper distinguishes two classes of line: `sync` keys (realm-derived credentials and projected backup test credentials) are rewritten on every run so they match the seeded realm, while `defaults` keys are seeded only when absent and never rewritten, so a developer's tuned `RUST_LOG` or redirected `MC_DB_URL` survives a re-run. A create-when-absent behavior (`opts.create`) is opted into per file, which is why the frontend `.env.local` and `backend/mc-service/.env.local` are created but `.env.e2e.local` (whose sync set is only the credential half) is left alone and reported loudly.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L418-L457",
+          "version": "repo-lines-v1:sha256:a07adf036b125fbbbe55dee4a9fbe805530843c860070d1a276d2425e96b0b57:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4N2ZiMTE4MmU2NjYwOTBlOThlYmZkNjYwNDAxMGFhNWY1MzY5NTNlZDhkMmI1YWY3YzQ0YjE4MDRlMjliMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhZmIyZDE1NzZkZjAwZmIyYjc2ODY1YWUwYjEyZGUxZjg0YmFiNzdlMjEyNzIzNjcwZDNjZTA1ODE1YjcxNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2OWJmYTliNDRmMTVkMDZjY2RiYTUwMDRkOGMxZDEyMjc1ZDNmNGE0OGEwZjhhZjRkYWUyMmMwYjJlNmJiOGMifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L459-L533",
+          "version": "repo-lines-v1:sha256:a6c6c3718d0f73d6b6e9097fba896ed8f5699b675a2b713a721766f7a0b41668:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYjA1OTI4OTUzOTk2ZTljYjk0Zjg3MTY3N2JmYzhmYmVlOTdjOGMzNDQyZDkzMTJlOTc0Y2JiYjkxNGRjMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3YThlZGY4YjBmZTQ3YWU5MDBhNGNmZTViOTlkZDQ4OTcxYTgwMjVjOTNhMzU0MTkzMGQwMGE4MzQwYjUyZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNDU0MDlkZjFlNTA4MmRmZmMxNjE0ODNjZmU0YWRmYWJkZjczM2ExZDY0ZWFiYmNmMTZhMTExOWMxODc5ZmMifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L547-L591",
+          "version": "repo-lines-v1:sha256:3981ef8eac70d48de5a52cde97f544dfc5bf1343c1f1f1321ebeb2e209a9a39f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxY2U0NGEzM2Q5M2JhZjZkMWZlODhjZjI3YTMxYTdmZTRkMDBhOTViOWMzZGU1NDAwOGYyYWVkZDc1MzNjNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDFjNDkzYjMzYTNkNDk3Y2EwMmJiMzY0ODg1N2VjZGRmYjZkYzZhYmU3NzY3MDVhMjRmMzkzMWI4MDM2ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YWQzMDk2ZjdhODM1MTE2YWJlMTNkYTBjOTBlYzc3MjI5ZWMxNTUzODBhZmYwODNmYTc5ODE0MTU1ZTM3YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0bee038b3fff425da3f5e66864850068",
+      "statement": "`frontend/mcm-app/.env.local` is seeded with host-reachable service URLs (`MONGO_URL`, `BFF_BASE_URL`, `MC_SERVICE_URL`, `KEYCLOAK_URL`, `REDIS_URL`) because a `.env.local` silent on them makes the local integration suites fall back to `.env.docker`'s Docker-internal service names, which no process outside the compose network can resolve — measured 2026-09-20 as `getaddrinfo ENOTFOUND` failures in a suite whose setup comment already documented that the port came from `.env.local`. The backup test destinations are seeded with both spellings for the same reason: host-side suites reach them on loopback while the BFF container must be given the compose service names.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L478-L506",
+          "version": "repo-lines-v1:sha256:47bfa3e0b6c4edaa6c49ed4a46d36ccbf268a0d4f832db2836054604a371d782:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZjFjZDY3MTdkOTAxM2RkMTQ3NDg0ZTYxZTlkMDdmZDJkMjYzM2Y5MDU5NGY2NjUxY2JkNGE4MWY3M2UzMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4Y2ZkOWQ3YjI4ZDYxZjA2MTkyZTgwYzU5NWM5MjcxYTE1OGNlMzc5MTk0N2U2NWY2ZWYxNTRlNzU2MTA5ZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5MWYzZjNlOWMxODZiZjdjNWNhNmM2ZTJlZTQ3OTM1ODg4ZTMxYWJhMzU3NGU3MWEyY2QxNzdhYjYzYWU1MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyOTFlMGI4YjJhYmM3NzQ0N2Q3YmIxNDE5OTYyMGQ4NzhmNTQyZDY4ODRiZDNmNDNjNjg3MjMwYzM3OTVkZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed893414cc72479eb4761088205b13e0",
+      "statement": "Because the containerized BFF and the Metro dev loop run against the same BFF Mongo, `gen-dev-env.mjs` reuses `BACKUP_CREDENTIAL_ENC_KEY` and `BACKUP_TICK_SECRET` from `.env.docker` first and `.env.local` second, and re-mints any prior value whose base64-decoded length is not 32 bytes — reusing a wrong-length legacy key would silently preserve the bug it represents, and differing keys between the two files make a value stored correctly under one undecryptable under the other, surfacing later as an authentication failure.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L120-L174",
+          "version": "repo-lines-v1:sha256:76c0ecb479f8bd75692a2eaad5b17c8b3eb8feef7288b87cbb99619501e86532:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYWMwOWY2NDgwNzY3N2YwYWRlYzVjZDRmM2IyOTMwOGIwZTdjMTI2MThlMDdiMGNkODk0Y2U1ODUxNTg1MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyZTYyMDQwNTIzMTJlZDIzM2Y1MTIzYzU4YTIyYjBhYTQwMmNhMGUzN2VmNDFhZjNmZmE0YzA2ZDgzMDI1ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYWFhMjJiNTE1ZGMyMmEyODc4YzBmMzhhZmYyZDMwNmU3ZThkMGZlZTQ0ZmEwMjA5NGNmOWM2OTBjZjEwYTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a97e3e61d5694074b610698cf497f809",
+      "statement": "`scripts/__tests__/gen-dev-env.guard.test.mjs` pins the generator's coverage by deriving the set of `.env.local` files documented in `docs/runbooks/` and failing if one is neither written by the generator nor an explicitly reasoned exception (`agents/movie-assistant/.env.local`), and it separately asserts that a deliberately skipped file is named in the generator's output — so a documented file that nothing writes is visible in the guard rather than weeks later in someone's `nx affected`.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L425-L492",
+          "version": "repo-lines-v1:sha256:db07347fa0873a2d882dd64c04efc91850a5f85052b3d5c848b7653a18ecb12c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MzczYmExMmE2YzQzMGUzMTlkNTdiMDA3MDc2NjhlNjBlYTA2ZjcwNzE0OWYwZmYzNWY3NjAxMzIzYjA2NmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-29T01:49:10.027Z"
+    "at": "2026-09-29T03:23:45.685Z"
   }
 }

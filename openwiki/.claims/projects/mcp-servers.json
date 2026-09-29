@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:01f9dce41f159255f5ab3759a87c9bace585df640a07131470bcafeef276160d",
+  "pageVersion": "sha256:94f911306aba7e56a23e89ca8233308bceffaf63d5ba8ac7825da3b5ff12a5ff",
   "claims": [
     {
       "id": "claim_bb4afd7234e2497fbeb2f2c50daca580",
@@ -359,10 +359,182 @@
           "version": "repo-lines-v1:sha256:967e66d64bd42664937ece8c2b86337b9cf3c6c2ad3fe946dd84fba2e28dc3ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2M2Q2M2QyODAxMGVjYzdiNDRlMmRhY2FmOTM4NDBlODYxM2EzNzIxNmZjN2IzMWY5YzI0ZWZjYzk2ZWEwMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NGVlYjU3MDRkNzBmNjFjOWJkYzA2YTIyMWM2ZDQ1ZWUwY2MwM2Y1MjBlMWQ2ZDU0MjdiNzhlMWUxOTYwZDgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e85201807f4b4342a08681298ab7c2c6",
+      "statement": "movie-mcp's four write tools forward `idempotencyKey` as a standard `Idempotency-Key` header that mc-service ignores today — at-most-once is actually provided by mc-service's own uniqueness constraints (per-collection movie, per-owner collection name), and the header exists to keep the contract signature and stay forward-compatible.",
+      "evidence": [
+        {
+          "resource": "repo://mcp-servers/movie-mcp/src/tools.py#L162-L248",
+          "version": "repo-lines-v1:sha256:2ccaf2cbd4bed27a121bbb1d5fbb0f1fd30493af33b3be803891e8aa3a5d88b1:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2YmUyOWEyZDc5YzI3YTRjNTE0NGU0M2Q1NWZmYTI2YTUyMjdkMzY4MjQ4MDA1NzhhNjlmNGU5OWFhY2E2OTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhNzRmNDRiNjJmYjRjNDAyNjc0Y2E4NDI4ZmE2NTdiMjQ4MTAxY2NhNWQ3YjNhZmUwZjM0ZjM5NjNiMDkxZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjZjYxNjViYjAzM2JlNTRhMjE1OGY4YjBlNTcyZDg2ZjJjNTU5ODQzNTRkYjI3NDNmZWNhOWNhMjIzYjVkMGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9dc68743f6f3442696d42fe788ce21af",
+      "statement": "Only movie-mcp's write wrappers translate an upstream mc-service failure into the status-bearing `mc-service-status:<code>` sentinel; the read tools let `httpx.HTTPStatusError` propagate raw, so that sentinel should not be expected on a read failure (this was true on MCP SDK 1.x as well).",
+      "evidence": [
+        {
+          "resource": "repo://mcp-servers/movie-mcp/src/server.py#L99-L167",
+          "version": "repo-lines-v1:sha256:f159f8d6280d6c6714c90b978b40ce8bc083f8555d986687ee47082d64f2d5df:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiYWU2ZWZjNjkxMGExNGFjNDhkZGNkYmQ2MzdjZjJiYTZmZmZkM2VmZmRjYzBkOTJkNzBkZjNmOGJiNTQyM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZDRjMzc1ODNmOTU0YTNkYzExODhmMDI0NTM4YWM2NTcyMDlkZWMyZjAwYWNlZDIwZmIzNjZlNTVjMjA5YjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2MTU0YzYxMWUyMTkxOGNhNjkyYjVjNzdjMWZiNGVhZDZmMmUwOTYyMDljNWRmYTU0Yzc2MzkxZTIxZDk5NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1YTQ4NzVhN2E1YTJkNzFiYmQ0NWVjOWViMDMzNDQxNTMyMmUzMjIwODc4N2YzMTA0NTI1Y2Q4MTY3YzkwYzIifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/movie-mcp/tests/integration/test_server.py#L122-L127",
+          "version": "repo-lines-v1:sha256:8ef6192edb95ef34a1c2b4c025255656195460dc2ec5b886c83c575b39bceeff:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjliNDI4ZGZhZDk2MGFhMDU5ZDJiZjY5YmQ4YWU4ZjE0YWJjMGI2Y2QwZGM2ODBjMzQ3N2RkNWU4NTc0ZGYwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODBlMGQ5OTRiOGRiYTJlYTRkNDlkYTdhYTZiZDIwODg2N2YwMmUzZTdmNzIwYzkyY2M0N2I5MDJhY2I4MTAyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzIyZjMyNjkwNGU4YzFmZWViNDhhZDMxZjIwNGQ3MTU3NDkwMDBkNzJmY2ViYmViYTNmMjcwNDY1ZDRhOTI5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIwNTQwNmZlODFiMzFjNzE5ZGJmZjRmYjZmZTE3MWZmMThiNWZiZmFkYmUxY2NjYzY3OGY0ZTY0NmU3Yjk2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f599e562f1ac4b92b18db2b0a652c60d",
+      "statement": "movie-mcp's `get_movie_metadata` returns mc-service's `GET /api/v1/movie-metadata` body unchanged; because that response is not collection-scoped and carries no user data, it is safe for the gateway to cache process-wide, even though the call still forwards the caller's JWT like every other read.",
+      "evidence": [
+        {
+          "resource": "repo://mcp-servers/movie-mcp/src/tools.py#L145-L159",
+          "version": "repo-lines-v1:sha256:5f91dc28f91b7d6cd39e20c08d8ce2b23296a23a7ed28b2bb5cb789e2750c78e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMzkzZmRmMGU3OGU5NDc4NDljZmE4NjhhNmQ5NzYyZGI3NTRjYzdhOWNlNmY0NjFiNDkwMzk0MzM0M2EwYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZjYxNjViYjAzM2JlNTRhMjE1OGY4YjBlNTcyZDg2ZjJjNTU5ODQzNTRkYjI3NDNmZWNhOWNhMjIzYjVkMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkODFlYzY3ODcwNmY3NjcyZDlkZjIyNWIxNzBlYjU5ZjlkZmY1N2MxZTIxYjhiMzEyOTAwZTc0NTEyOTQ2YjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ecce1fa33e44606a62de13194ae4758",
+      "statement": "The declared return annotation determines the structured payload shape across the MCP boundary: a tool declared `dict[str, Any]` puts its mapping into `structured_content` unwrapped, while one declared `list[dict[str, Any]]` is wrapped under a single `result` key — a shape the gateway's result mapping and both server suites unwrap explicitly and must not be \"simplified\" away.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L330-L335",
+          "version": "repo-lines-v1:sha256:89af61b9da7214c0bb275fb9651102c47678d3ab740846b95922c4e22403ec43:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRkOWJhZWNhNTJkMThjYzcwNWE4N2U1MTk1NWMwYTlhNWM2OGJhNzQzNWVkY2Y4YWVhNjAwZTQ4ZWFlMTA2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1MTdkNzQ4YjhlN2M3MGNlMzFjY2MxNjk5ODczYjNkMjBjZDAzMzZhOTJiYTVjMDlmMDQ0ZjQxNzI2NDliNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTdiYzliZGJlN2I1OTNiZGY3NWQxNmU0ZTE4M2UxYzRhYzgzY2YwYjRlMmMxMTkwZDAwNDUyMjcwMjU2MTM4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTMzYzQ0ZTNlZmNiNTZkMWNmMzVmYTExMjNlMWUzM2QxMWMwMDI0NzA0Y2Y2ODg3MGM3ZWU5YmQyYjllOTgxNiJ9"
+        },
+        {
+          "resource": "repo://mcp-servers/movie-mcp/tests/integration/test_server.py#L130-L172",
+          "version": "repo-lines-v1:sha256:1d04af182a4324c513c08a3da504c043b32c2cd21c526a28ebfad48e72d30c9b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NzA2ZjMxY2QxMmI5ZDRjMzdkYmM2MTg0ODA1ODI3NzFhOGRiYWMzM2FhZTYwMDYyYTMxMzY5M2Q3OTc3ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NmJmMGQ4MWZmZTk5NDM3YzY4YjdhZTQ4NzFiOTY4YmIxZTQzYjY3NjZjYzljZjJjNGFhOTU4YjkyNGJjYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkMDlkNWRkMDcxMTg4NDUwZDZmMWM5YzA3NDRmZGRkMGFmZjBhMzg1YjFkZmJiY2I0OGEwY2QyNTZhNTlkMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhYjdiMjcyYWI0ZTI1MTc1YjVmZDI0YzEzY2ZlNTYzNDI1MTRjMDI3OTQ2ZjAzYjUzMDVkZjIwMzM3ODc5ZjkifQ"
+        },
+        {
+          "resource": "repo://specs/068-mcp-2x-migration/contracts/mcp-tool-result.md#L17-L28",
+          "version": "repo-lines-v1:sha256:2f9bdf133d8f00b1cde07bf32f1006fb6a5c6c019555ee37110b93502b623810:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2M3ODMzMTRlMzNkZjAyMjlkYzAyOWQxNzNmZTM5MjkzOGViNzE4YWY3NjdlYzMyMDQ4MTYwMjdkZDU5NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2OTJiMTU5ZDA1YzYxOTllZTkzOWNlMzAwY2FiNGU5NTAxN2ZhZTdiZmIxOWNiYWQ2MDNjNzY4YTU4N2ViMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmZWY3OTU5YTgwMWVjYzE4ODAzNGZhZDM2NWIyNTYzMDJkMzBmZDk5ZjM1ZTRhY2EzYmUwNjdiOGIyY2VkMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwZmRhMzFlM2IzNjlmYWQ4YWJlNmFjOTRmYWRiNTIzYTQ2NDc3ZGI4MDc1MjFjYmIzOWMwNGNmZjBiMzRmN2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_38e0e67dfe3d474aa81e1b378da49b47",
+      "statement": "`scripts/__tests__/mcp-tool-annotations.guard.test.mjs` is the guard that keeps both transport and annotation contracts true for all three servers: it AST-parses each `src/server.py`, fails an imprecise return annotation, fails a `streamable_http_app()` call missing any of `transport_security`, `stateless_http` or `json_response`, and asserts the three servers together expose exactly 15 `@mcp.tool()` functions so the loop cannot pass vacuously after a refactor. It exists because a regex over `@mcp.tool()` + `def` was measured matching only 7 of 9 movie-mcp tools, and because a middleware-wrapped `build_app()` was exactly the call shape the 1.x→2.x migration edit missed.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/mcp-tool-annotations.guard.test.mjs#L1-L78",
+          "version": "repo-lines-v1:sha256:611d2eda8abbae6ba7ccdea1d2a6443e8fc12607f478e0371ded609bac6db2a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2OTllY2VjY2RlYjQ0OGExNzBhZWFkMjU0MjgzYTBjZGJhYjFmZGI0ZWM5ZGVmZjNiOWViYWFiNTcwNzM4ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNTA2NWViNjI3MGI2OGRkYmQyZThmYWZiMTU0OTU4ZTRiOWE2MWM5YmRmNjFmYTU1YTIxYjY4NGRmNzYxYmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mcp-tool-annotations.guard.test.mjs#L97-L152",
+          "version": "repo-lines-v1:sha256:5afcdac8dc9b2b79efe50b7629976b63a9c79d1d7ccb169337244e4c9a19dab6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMTgyM2FlZjlkZjYxNDIzZmY4NTk5Zjk3YTU4NGE3M2VlOGMxMTFjOGY0N2Q1ZjI0ZjZiY2UyZTc4MGUwN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MjVkZTgyZjA2Y2E5YjI1MjFlZDg3ZGUwMmI0YTg1N2Q2ZGRkMjdkZDBiNWNjZmU1NzkyNmZlMjA1NjhhMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlMzJmMDMyYzhjZDVhZDViMGMwNzdlMzQ4YzRlN2JiOTU5Yjc2MmNjOWU0NTg1MGRjZjc4ZDU3NjI0NzQxNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d9e8a52cc9448dcb5bacb218db498c6",
+      "statement": "The missed conversion was web-api-mcp: it wraps its app in `TmdbKeyMiddleware(...)`, which the migration's edit did not match, so it kept a bare `streamable_http_app()` while the other two servers were converted — and no unit or integration tier caught it because those tiers drive the server in-memory and never go through the HTTP app. It surfaced only in CI as `gateway -> web-api-mcp returned 421`; `scripts/agent-stack.mjs` now probes all three servers with an MCP `initialize` and fails on anything other than 200, naming 421 as the DNS-rebinding signature.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/mcp-tool-annotations.guard.test.mjs#L109-L114",
+          "version": "repo-lines-v1:sha256:312eb4e2aba5c74fa997a2b64bd2b9d828eb91da095b9a9ec168816f5cca8b36:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZjNWZjZmU4ZGZlODg0YTQ3MTJlOWVhYWI4NGRhNjJkMmVkYWJhODk0NjIyNzlhZTc4YzY5YjYxNmUwYjRmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc5ZGE2YTBiMTAwY2YxYTA1N2E3NDY1Njk3MmRiYTNiNWFlYTYxZWE1MjdkNDRiOGQ5MDM3YTE0MGM3MjNlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWVmZGFmNDNlOGVlODE5NmRkMGEwZGY4MTE3ZjM3ZDgzODNhNzhiYmE0YmRmNGY5OTI3ZGQ4ODVkYTAxMDc0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmQwM2UxY2U2NGJlY2E2NzBmZDc2OGI3MjJjZmRiMTkzMWQwMDQ5MzNiMzQyMjIwYTM0NjRlN2EwYzQwNDI3YiJ9"
+        },
+        {
+          "resource": "repo://scripts/agent-stack.mjs#L472-L484",
+          "version": "repo-lines-v1:sha256:473ee6204b5d44fa7fe6c33be0d4747fc5fbbe39799e8d7a397e138e02ec9ecb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwMDI2YzZhZTQyNTI2NjUxODYzM2U1MjZhODk3MjY1MDBiM2E2MDI5Y2VmN2ZjYWExYjBhZWUxOTUzM2I5OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjYzk1ZjYxMWJlNjczMmY0ZjBkZWIwNDRmYmE0YjZjNDUzZWQ3MGY4OWRkYWVlYjk4MjE3MDNlY2Q0YWUwMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZTk1MGRkNmFmOGI3M2VhYWRmNDk1NDlmMmM5ZmQxZDdhNjZhNmNjOTRlZGQxZDRkMDcwNGZmNjYzMTkxYzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_48ebe4411b1c40fc8c3518f0d86325aa",
+      "statement": "web-api-mcp's `search_title` derives its `matchConfidence` rather than asserting it (zero results → `none`, exactly one → `exact`, more than one → `ambiguous`), and `get_movie_details` shapes the candidate for the mc-service add payload by deriving the year from `release_date`, building the poster URL from the TMDB image CDN base, and resolving the original language to its English name (falling back to the raw code rather than fabricating one).",
+      "evidence": [
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/src/tools.py#L101-L164",
+          "version": "repo-lines-v1:sha256:f8f358254b8a539ccdffae76526db2fd7b33d2002b48b4a86a0dd35d87887a01:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhOGYwMDE3YmNmMDliNTU5YmVlMDhiNWU5MDNhZmViZjg0OTNkNGI3MWQ2Mzc2ZjU0NWNmNmE5YjY3OWI3ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/src/tools.py#L37-L59",
+          "version": "repo-lines-v1:sha256:0f0bad439f6ee92b98992636107005b2f8f3ab7d0784e644e88ca644c7e5539c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhYTMxNjZlMDI2ZGQ3ZTQ5MDFkMmI2NWUwNGU0ZDhjMzU4YmRkNDRiZjVjY2ZkMTM0OTJlMzc0MzEwN2IxOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGFkZGRiNDQ3ZDUwMGZiNWY5MmIwNjU0NWIwYTI0N2ExNjcxMTIwZWViN2VhZTY5YzA4OWE5MWE0ZmM0MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjZDAzZWFkN2RjYjg2YTM2MjM2YzdhYTRiZjg3MzQ5YzE5MjQ2MTJjMjZmNWE5ZmIwMWI3NTMwOWMwYjY4ZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_28c407d74da34608ba2f9bd46592dc0d",
+      "statement": "spreadsheet-mcp's parser treats every input as untrusted: it picks the format from the filename extension and falls back to content sniffing (an `.xlsx` is a ZIP container), reads workbooks with `read_only=True, data_only=True` so no external entity is resolved, and raises `SpreadsheetParseError` on empty, unreadable or unsupported input with no partial result. Its only semantic judgement is eligibility — a tab is importable iff its headers carry Title, Year and a Content Type alias (`content type`, `video type` or `type`, case-insensitive) — while column order, sampled values and rows are passed through as raw strings with dates coerced to ISO and integral floats to int, and fully-blank rows dropped.",
+      "evidence": [
+        {
+          "resource": "repo://mcp-servers/spreadsheet-mcp/src/parser.py#L23-L50",
+          "version": "repo-lines-v1:sha256:06e0e3638ce270999fce966f810027b84f6a68c7bae2c5c95e82dcd2a1354d70:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ODEyNTZkZmM3MTk2YjdlZWYwOWY3ODdjZTViM2E1NTg4NGIxNjRhN2FlMDM1MGQ5Nzc0NGFlYmQwYmMzNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNTgxZmY0MTJjNDRmNTczNDA1Y2Y1YzZlNTIyYWY4NDNlNzJjMjBkYzc4YmYwMTM0NjgwMDgwMTFjZjE3MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiY2M2OWRmOTE4ZGI4OTE0OWM2NGIwZjQ4ZmQ2YjY2ODNiYjljMWMzNmYzMTU2ZTMzYjc1ZDAzOTAyMzQ4NGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzYTE3NTZkNzY0Nzc1N2JlZTUzOWY4MTMyMDk0MTRhNGE4YjY0NzdkYjc4NGEzNGFiMWViMzc0MTNiMjg4OTUifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/spreadsheet-mcp/src/parser.py#L92-L160",
+          "version": "repo-lines-v1:sha256:e55c1b383c7f263173ab54be01953fb843b9b4664a256dcf9cdda336f01100ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMTNkN2FmZjU0ZWVlYTVlOTU5MTQ0Yzg4YWVkZDFmYTZhMTNmOGYyYjkwNGUwOGEwMzlkZWRjMjBiOTg3YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhYjhmNGY0MTM1OWY2YzBiZjdhYmMwNDdkNGM1Nzc0NTcyMjMzNGY1ZDJkNmU3MmUxNjZhNTViM2EwOTc0NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NTFmM2MxNTJmNzFlN2M0NWU2YTU2MzdlMDlkMWRhZTRhZjYwZWJjMTk5YmQ3ODExYzVkZTJiZmJmZWYzNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b21a878fdadd43599f4946fb5d989d5d",
+      "statement": "web-api-mcp's certification extraction never raises: a missing or malformed `release_dates` block yields `None` rather than failing an otherwise valid add, and the accepted vocabulary is exactly `{G, PG, PG-13, R, NC-17, NR, Unrated}` — the values mc-service accepts.",
+      "evidence": [
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/src/tools.py#L62-L98",
+          "version": "repo-lines-v1:sha256:65e36f1ab9e5fe762ee617c01c75631b62350943b77496dec871ea076e67470b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTRjYmMwZThmYTQ0NGE4ODJhZDEyNTMxZWU4YWMxOGQ3YmY0MjZmODJmNzFlZjMxNjA3YmM2MDM3YjJmYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1OTVhZWM4ODY0Y2NkMGJlMWRlYzYxNTBmZjllNWZiZmJlNTBlMjY0Nzg2NTY1M2Q2OWE1ZGJkYTg1YTQ4NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNmNlNWVlODhlMGMxNzliMzIxYWRhYmQ4MmRiMzAzMWQwMzc1ZGUxNzdlZjRlODRlMDQxMTg1ZjllMjg2YTcifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/tests/unit/test_certification.py#L48-L116",
+          "version": "repo-lines-v1:sha256:c06d71e871f6f51aaa2af652c7925d51cb2842042ccc88ca0778182d827fc019:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjZjBlMmFlMTA2ZDNhNTVkMGY0NjU5NjEyYzM3MjdjNWY2MjIwN2E3NzA0ZWZlNzgxZGVjMDc3NmM2YTNlNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZTc0ZGZjZDg4ZWE4YWZhNjMyODU4YWRmYTdkY2RkZGM3MDVkOTQ3NWQ2YzJkOTIxY2ZhNjdmOWY1OGFlMDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2OTVlZDI2Mzk4ZTNlZjdiMDk1NDI4ZDdjNzIwYmQ1ZDdkYjY0NmI2OTYzMzhmZTlkMDgyOWRiMDkxNzRjNGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7dbf21845b6b444a922e771db8f4d293",
+      "statement": "Deployment wiring differs between the stack compose files and the standalone script: the `mcm` stack `include`s all three per-server compose files (each carrying `profiles: [agents]`, no published host port), the production agent stack pins each MCP image by digest, and `scripts/agent-stack.mjs` is the one deployment where spreadsheet-mcp runs on `movie-assistant-mcp-network` and is attached to the BFF's Redis network at runtime via `docker network connect` instead of declaring both networks.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/agents/compose.prod.yaml#L119-L171",
+          "version": "repo-lines-v1:sha256:9b57fe398435cff107694f67dbc4b1632dadaaf69be92fd3a81b9bfcff45385e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMWNmMmViM2U4NTMzZDNhYTA3NzVhNmNhMzk5M2ZjMzE3MzdlYzExNzVlZjQ2MWNjNWZlNmE0ZDRmNThmOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNjk5MWQwZDIwYjZlMjljZmE1OTA0YTE0NmU2MWJjODk3MzVhN2NjMGU3YzllZDU2ZDQxODBhOTdjNjBmMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMzMwOTk1ZDJhZGJiYTc1OWNiODBhMWQxNTBiNGQzYzlkMjFjZjE0MzRhYWYwMTRjNGNkYTljNjMwMTZmMDIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L37-L46",
+          "version": "repo-lines-v1:sha256:4c03146e6f661395444c080a107b76148893a02d136ce00f0e9162f5ea0f9d99:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MjQ0YWNjZGQ3OWY1N2E3OTY0YmI1ODQ2NWYzMzhmYTIxZTk0NTUwZTkwYjUwMDQwNTg5NGJmMzgwZDg2Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjM2Y3MDZiMmE1NzZkYzUxMDAzODg2ZGQ2ODVhNzlhMTg1NzJlZGM5YjNjMzBiMjI0MDFkMTY0ZjIwOWFjYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiMDU2Zjk3YTFmYTAzYzY4ZTc5MGUyYmZlYjNkNTUwNWVhNzcwYmRlY2EzYWMyNjIzMzgyYzU0MGNiNTM1ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/agent-stack.mjs#L378-L386",
+          "version": "repo-lines-v1:sha256:b352baa9f730e3f0f04f2ab312578cacba4fdca54f5054a19511e3a05163c93c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzgzMmExNGJmOTA2ZGIzYzI5ZGQ3YWI0NzNmNGQxOTdkMTBmYmY5NTE1ZWQ0NDhlODdlZjJjNDIxOTMxZjE1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmJhMWU0MmJiZmVjYTQ0ZDI5NzdhY2YyZWQ4OTUwYjQ5ODc5YjBjODBkMTg2ZmVkNDM2Y2QzMDQzNmIwZWEzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2VjNjhkZDQ1OTA3MzUxMDViYzY0NzdmZDQ1NDE4NDQ3ZDQwMzRjZDNhNmM1NzllMTA3MTIxYzljNzgyYThjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjI5NTVmOWJhZGQyNDAwNjU4N2Y0OTBjNWE4NGEyNDdhZGRiOWU3ZWVlYWJhZDQxZjVjNTJiN2M4NzgzOGJmZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ce4a2fb155824334a6b8529db78e2b57",
+      "statement": "The Agent Gateway is the only container that joins `movie-assistant-mcp-network` on the backend's behalf: it carries both `backend-network` and the isolated MCP network so web-api-mcp is reachable without web-api-mcp itself being granted any backend access.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/agent-gateway/compose.yaml#L30-L49",
+          "version": "repo-lines-v1:sha256:3973f2956fa6478022285e3cb2295f848476142398dff8900b0fe5b7b21dbeba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwZTFlOGVkY2I1MzhkODEzYjI2NDhlZjM4MmJhZjgxZDkxYjhiNmYwNzhhZDU4ZTI1NzI2ZjVlYjU1MjcwMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYWY5NGI3YjEzY2ZiY2ZmYmM5MDQ0MDVjYjNkNjdhMTcxYzA1MTI3NjNmNjQwNjA3M2NlNDI0YTQyOWYxYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YmZhNzJmMDMyMjRhZGRmZTVhMzA5NjVhMTQ3MzZlODkyMjRiMDQ2NjYzZWRhOGMxYTY0NWYzZmJkYjFlOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNjJlMzgxOGM2YTJiODE0ZWM3NzVmY2M3ZmI2ZjBiZjUyNjA4MDI0MjQzZTVhN2Y3NTc4YTlhMTZhMmM2OTEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml#L1-L28",
+          "version": "repo-lines-v1:sha256:d2a4860fbffcf655d241539835d18ba18ca15667a50382bf2492c6ff9309d902:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZTM1NmMyOTEzODAyMzMyOWI1ZTZhZjZkYzIzMzNiZTQ0M2E3NmVhZmY0NjEyNThlOTY5MjFmNGYzNmRlNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYWViNjkzYzRlODcwZmM4OGJkZGI3YWY3YzIwOWFhODliOWE4MzdjZTVkMjkzNDllMzQxMjllYTUwYzE0YTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_794df114e0b04ce383c01865285812e3",
+      "statement": "The two test tiers have non-overlapping jobs and neither replaces the other: the unit tier is the only place the HTTP transport may be stubbed (permitted there and only there) so it can cover branches no real upstream input exhibits, while the integration tier is the only check that the live upstream still returns the documented shape. movie-mcp's integration suite additionally asserts the structured-content contract across the MCP boundary — a mapping tool unwrapped, a sequence tool wrapped under `result`, and a write tool's status sentinel surviving the boundary — and web-api-mcp's suite is the only merge-blocking check of the certification extraction against TMDB's real response shape.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L840-L884",
+          "version": "repo-lines-v1:sha256:4bf0bcedda100e0ddd00b972830c83f4b3841791a2aaf1a20d930b127dab8613:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MGMzMTAyYmJlYzA2ODA3ZmFlNWQ0YmFmNzdlNGVlOGMxMDg4MGU3YThlYjU0M2U5NjA1NmU1MTI0ZTRhZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNmJkMzI3ZDFhMjg2YTAwNGViZTU4ZTZiNjg5MDY1YzVmZWI5NGUzZTc4Mzg1OTliMTg1ODYyOGU0MTIwZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2MDQ2NjM5MDZiMDI3OWU2MjVkZmY1MzIwM2IxZTEwZDgzN2UxM2I2ZjRmOWViZjFlYTRjMGY0NjMzMTU0MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZWZkNjY1YzAxYjQ3NTE3NDBjMjg0NTdjYTk3YTc2ZGFiOWFjNzI3NmJmOGVkNGJkOWY0ZGY4NmUxNDYxMTYifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/movie-mcp/tests/integration/test_server.py#L130-L191",
+          "version": "repo-lines-v1:sha256:e9de2c90370040af2f44f03a7a0f0d2a120ba21f85d12a3b84c249f9087c10a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NzA2ZjMxY2QxMmI5ZDRjMzdkYmM2MTg0ODA1ODI3NzFhOGRiYWMzM2FhZTYwMDYyYTMxMzY5M2Q3OTc3ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkMDlkNWRkMDcxMTg4NDUwZDZmMWM5YzA3NDRmZGRkMGFmZjBhMzg1YjFkZmJiY2I0OGEwY2QyNTZhNTlkMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MGM3Mjg2N2QwOTdlMmU0OGJlMTA3YzgzYjg3NzM1MTczODkwZTIyNDhjNmQyZDljOTI1ZTVlMzhkOTljYjgifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/tests/unit/test_certification.py#L8-L17",
+          "version": "repo-lines-v1:sha256:876173efee1bf1b979a1e6ab872a5c28b437788a9277730a642e39610bfd3ed5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0YTI4NmEyYWQ2NDQwN2ZlZGEwYzQ0ZjM2Mzc4NjM3ZTA3NWFlZjBhYzQ4ZGZjZGM0OWRmN2Q5NzEwMjk3YWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-29T01:49:10.027Z"
+    "at": "2026-09-29T03:23:45.685Z"
   }
 }

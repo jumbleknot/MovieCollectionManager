@@ -1,15 +1,14 @@
 ---
 type: Runbook
 title: Phase 15 operator checklist (bring the full app live)
-description: A completed historical working log of the manual, operator-only steps that took production from BFF-only to the full app — new mc-service and agent-gateway stacks, the agent chain's token exchange verified end to end, the CD deploy=true webhook leg validated with a rollback drill, and the consolidation from hand-made stacks into one config-as-code Komodo ResourceSync.
+description: A completed historical working log of the manual, operator-only steps that took production from BFF-only to the full app — the new prod-mc-service and prod-movie-assistant stacks, the agent chain's token exchange verified end to end, the CD deploy=true webhook leg validated with a rollback drill, and the consolidation from hand-made stacks into one config-as-code Komodo ResourceSync.
 resource: docs/runbooks/Phase-15-Operator-Checklist.md
 tags: [production, komodo, deployment, operator, runbook]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T01:49:10.027Z
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-c1146bc275906084150591a5
+    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
   - id: openwiki-source-15d21023a0d5744ca095edfa
     resource: repo://docs/proposals/volume-network-rename-migration.md
   - id: openwiki-source-318b395038e1943bc8a10f72
@@ -18,6 +17,8 @@ sources:
     resource: repo://docs/runbooks/prod-data-tier-auth.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
+    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-4af9b1718a0206bbe016cb00
     resource: repo://infrastructure-as-code/docker/keycloak/prod-realm.json
   - id: openwiki-source-839571d2c51f49a930537d1b
@@ -26,15 +27,20 @@ sources:
     resource: repo://scripts/cd/health-probe.sh
   - id: openwiki-source-3e6437aecf987ee671b546b4
     resource: repo://scripts/cd/rollback.sh
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T01:49:10.027Z" }
+  - id: openwiki-source-48b430e61b4404a6e7b22c10
+    resource: repo://specs/023-forgejo-cicd/HANDOFF.md
+generated: { by: "openwiki/0.6.0", at: "2026-09-29T03:23:45.685Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-29T03:23:45.685Z
 ---
 
 # Phase 15 operator checklist (bring the full app live)
 
 A one-time operator checklist — Komodo, Keycloak-admin and prod-shell actions an agent cannot drive —
-that took production from BFF-only to the full app: `mc-service` and the agent gateway deployed as two
-new Komodo stacks, the agent chain's token exchange proven end to end, the CD `deploy=true` webhook leg
-validated with a rollback drill, and the eventual consolidation from manually created stacks into one
+that took production from BFF-only to the full app: `prod-mc-service` and `prod-movie-assistant` deployed
+as two new Komodo stacks, the agent chain's token exchange proven end to end, the CD `deploy=true` webhook
+leg validated with a rollback drill, and the eventual consolidation from manually created stacks into one
 config-as-code Komodo ResourceSync.
 
 **Phase 15 is complete, and this is a historical working log, not a live checklist.** Its `[ ]` items
@@ -86,6 +92,9 @@ The historical arc the checklist records: two sequential paths, not an either/or
   [infrastructure-as-code stacks](../projects/infrastructure-stacks.md).
 - **Token hygiene and branch protection were finished here**: the registry push/pull token split, the
   `main` required status checks, the 022 branch merge, and the final smoke against the merged `main`.
+  The two required checks named at the time (`guardrails` + `app-ci`) were the starting pair, not the
+  final list — the current set is a wider glob list, and the per-token inventory and rotation procedure
+  live in the [server-setup runbook](./server-setup.md).
 
 ## Superseded detail
 
@@ -95,6 +104,9 @@ that is no longer true: feature 026 has since enabled SCRAM on both stores, and
 `MONGO_MC_KEYFILE` (the replica-set keyfile) to `prod-mc-service` and `MONGO_BFF_APP_PASSWORD` to
 `prod-mcm-bff`. The checklist's secret map and its "no credential" step A note are historical — the
 current cutover and recovery procedures are in [production data-tier authentication](./prod-data-tier-auth.md).
+The vars the checklist seeds in the Komodo UI are the mechanism later ratified as the standard for every
+core stack: masked Komodo Variables interpolated into each stack's gitignored `.env.prod` — see
+[ADR-0001](../decisions/adr-0001-prod-secrets-management.md).
 
 ## Gotchas
 
@@ -110,10 +122,18 @@ current cutover and recovery procedures are in [production data-tier authenticat
   leaves the others running stale images with silent drift between the promoted digest and the running
   container — the fix that closes this gap is consolidating onto one ResourceSync webhook that
   redeploys every affected stack in dependency order, not adding more per-stack webhooks.
-- **Renaming a live stack in place must preserve its external volumes and networks.** The stack rename
-  performed here removed only the old containers, never the `external: true` volumes/networks backing
-  them, specifically so already-stored per-user data survived the rename — deleting those resources
-  instead of the containers would have been a data-loss mistake.
+- **Renaming a live stack in place must preserve its external volumes and networks.** Komodo overrides a
+  compose file's `name:` with the Komodo Stack name, so the `prod-app → prod-mcm-bff` rename could not be
+  done by editing compose — it took a down-old / up-new cutover, which removed only the old containers,
+  never the `external: true` volumes/networks backing them, specifically so already-stored per-user data
+  survived the rename. Deleting those resources instead of the containers would have been a data-loss
+  mistake.
+- **The stack's Environment block is the source of truth for its env — `.env.prod` on the host is
+  generated and must never be hand-edited.** Komodo writes the interpolated environment (the `[[NAME]]`
+  variables resolved) into that gitignored file on every deploy, so a manual edit on the box is silently
+  overwritten by the next reconcile; change the Komodo Stack Environment, or the `[[stack]]` block's
+  `environment` once config-as-code owns it, and let the deploy write the file. See
+  [Secrets management](../invariants/secrets-management.md).
 - **A validated web login bug does not imply the mobile login is fine, or vice versa** — this checklist
   hit one login defect that only manifested on web (a build-time environment variable that never made
   it into the browser bundle) alongside a second, independent defect in the realm's redirect-URI

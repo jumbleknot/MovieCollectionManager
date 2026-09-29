@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:db10f47e27542df0e598045e7ab4661e077eb90bae5258580978c09ff5c30999",
+  "pageVersion": "sha256:36fc6e705b9694ac45bb0ac34117229af08e5fc94ef828706177ef648bfc24f6",
   "claims": [
     {
       "id": "claim_07ef00b788fa4e22a1e9fd4e07dee2b1",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://docs/MCM-Architecture.md",
-          "version": "repo-file-v1:sha256:631b7472d3c5671e5be4d023f1a0fbf8b3bfba257850b07ea9b4924930b0e940"
+          "version": "repo-file-v1:sha256:a24ce0514ae1f2b2a33a4eebc16eabca01b818124bc94e868ec8e228c18475d6"
         }
       ]
     },
@@ -351,10 +351,208 @@
           "version": "repo-lines-v1:sha256:d978c9ba00c8d2366c01b527a67fac96212b08cc0d8655ff9d1652beaeaefda9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YWFhM2YxMDU0NDQ3ZDY1NWZmYzY2M2RmZjM4NTAzZWQ5MTU1YzMyZjk0MzU1MjA4ODBiYTg1ZjBlNmI3YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e1750cc34f6c4be2a1c6d2cacb2f9d0e",
+      "statement": "mc-service startup is a fixed sequence whose every step up to the bind fails fast: JSON tracing subscriber, `Config::from_env()` requiring `MC_DB_URL`, `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID` and a parseable `MC_SERVICE_PORT` (loading `.env.local` then `.env`), a MongoDB connect that parses the database name from the URL path (defaulting to `mc_db`) and runs an inline `ping` so an unreachable database aborts startup, idempotent index creation plus a `titleSort` backfill and best-effort drops of superseded indexes, a read-only orphaned-movies `$lookup` warning check, then router build and `axum::serve` on `0.0.0.0:{MC_SERVICE_PORT}`. An unreachable Keycloak is the deliberate exception: router build constructs the auth instance without waiting for its JWKS discovery, so the service still starts and serves.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/client.rs#L10-L28",
+          "version": "repo-lines-v1:sha256:f824f673c004d6d60c631f0df5a0287457429811325120e76a1d57beaec95322:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5N2M5MzI1ZDMxNzk1OGYzMGZjOWRjZTZjMGVlY2Q3M2ZjODIyNDU5OTVkMDk4MzIyZWVjNmYwZTE0N2U3ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMWM5YmY0ZDc4MTJlNDYzZTQ5NzJjZmRiMGNmMzM4YThhN2U4MGNlMTA1ODZkMmQ1ZDA1NDE3MzhjMjllY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxNDc5MWJjM2NhZWQxYTNmMWE4MjQwZjAyZjQxOTc3ZTkzNjI1OTUzODlmMDYwMGU5NWRlNmRkODYxMjdlNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/indexes.rs#L10-L15",
+          "version": "repo-lines-v1:sha256:84ebbd7542bb77e09f848ff957449b3ff8bfcc7e13d1bbffd27bec74e75cc15b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRiMmZmZGIwY2E4NzBkMzkxNzRlZDVlMjQxZDkwYWJjYmM3YzA5NDI1ZmE5NjY4NjI5ZGIxYjBjMjFhMGUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjAwMmI1OGNmMTQ0MzFiNjIzYTdjZDEwOTg4Y2UwMmRhNTBkZmMzNzFhMzAyMDk0YTlhYzUwZDkwNmJhYmZmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDkxNjJmYTU3ZmE0NjZlZTkzZDAzZWI3NTk4ZTQzNzg5MTEwZDhiN2JkNmU4NzUzODFlZTY4ZmM5ODRmMTIzMyJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/config.rs#L17-L48",
+          "version": "repo-lines-v1:sha256:df236b5a5d3df9eb92e47b8aeb08a5c01a0de0e638e762d6f7fbf378cb466487:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MDc5NGE2MDA2MzNhZTY5ZGFlMWYzOThjYTk3ZTc5Yzg3NDc5ZDFjNjE3MDg0ZTRkMTgyODZmMTlkODFjMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiOWQ2ZGNiZDFkNTk0MjNmNmIxMTA2MDQ3MjAyMGQ0MWYxMGM2N2ViODI5ZDc2NjVkMTc4MDNiZjE0OGY1OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMDg4NDFlYzdkZjVkZTc5MmI2ZmY3ODc4YjIzYzFiNTc0NzliYzQ3MTM1Zjg5NDAzNzI4Y2E2YmJhMGJlYTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/main.rs#L5-L44",
+          "version": "repo-lines-v1:sha256:bc2c4910204730905f648eb2be7f5a9b52a72684edcc4aff06ca8ff682bd9c9e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZDA2ZTA0OGNkMjcyNzM4ZDgzN2IwYzBlYzZhYWIwYjAzMTQ1N2U0NzVmZDQ5YWJiY2JhZmM1ZjczYzAyMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyM2RhM2QxODBhODRiZTU3MTNkMGY5YjliOThjZTlmMjk2ZTNhMTgzNTFhNTIwNTgxYjEwMmYyYmI2MDk1NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxM2I5YTUyOTkwNWUzOGI5YzYwOGNhZmNjZTI1NWVlOTJkN2YyY2QzOGVjZDJjZTllNzA3ODA1ZjdlNmFjOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_73b27df88cfb48faaf09afbe3a2d8a83",
+      "statement": "A dead Keycloak does not stop mc-service from starting: `KeycloakAuthInstance::new` spawns OIDC discovery/JWKS fetching in the background and router build plus `axum::serve` proceed regardless, so `/health` answers and JWT validation stays fully local (no per-request Keycloak round trip) once the fetch succeeds — but if discovery never succeeds every protected request is rejected 401, producing a working-looking backend that refuses every login. Integration tests must therefore gate on `wait_until_operational()` (success, not merely a completed attempt), because a *failed* discovery still increments `discovery.version()` and flips the instance to ready; `health_test.rs` pins both the false green (`unauthenticated_401_is_returned_even_when_keycloak_is_unreachable`) and the gate (`readiness_gate_reports_not_operational_for_unreachable_keycloak`).",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L62-L73",
+          "version": "repo-lines-v1:sha256:f62c6a74baedce3d74aedaa1ca44412da231777fe4ba8d86ec81316866577772:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3Y2EwYzk3YWU5MGUyMWVmMDY5YzkyNDkwMzI4NzY0YzgwMjViOWQ3ZmFiNWE3Njg1ZjkzYjllMTljYzhiNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYzA5OTAwMjhiNGQwMTkxNTllODcyOTNhMGU0ODhkNDFkMTNhNDNkZjk1Y2MxODU0YjFhYjUwNGE0ODg5MzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NzVlOTE5YjI3YmQ4NGJkZmFkNjllYzYzZjhiNmQzMzBhNzcxOTFlZDg3ZDQ0ZDIwNjQzNDdiMjk3OTlhYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYzIwOWFlNTg1MmVjOTllNzdlYjYxOWU3NjRmYTJjNTc0ODQ1Y2VjMzdhNDllMjhiMjI1NDlhYTgwMmEyMmUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L60-L139",
+          "version": "repo-lines-v1:sha256:879d505f8e29917f8d99c0d30697f379d58109b00ae685042036926201486dc5:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiOTFhNWIxN2YwNjJmNWFjZGJhMTVlZWFjZDgwZGZiZDc5ZGJjZmViZWRmYjI5ZDExMjJkZmNlNDZjZjc5OTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YzAzMDc0ZWQxNDVlZTMxOTg0ZGZhZDYyMzhjZTYzYjQyNjc4OGMyNGJjMjdjYWNhZGY0ZTkzNjQ0OTM4ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkNDljZjhhMDU0NTNhYTNiN2Q4OGM3YjkxN2JiMGIxNWUyMGNjMDZkMGI4N2NlYjcxMzczNWU5OWVhNmFhYjQifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/health_test.rs#L374-L469",
+          "version": "repo-lines-v1:sha256:1243fe5c782e8c64b6a59d39e75be0406be6efeb484938fd74b19b95b71fe6cd:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNDMyNjUzMjA1Yzg0ZjEyMDk0OGQ2ODIyYTE2M2VkYmRiYmZkYjAyMDE0MjA2MTc0MjYxODllZGYxM2Q0MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTM3Njc5MWU2OTQ3NmY3YTA3MTg5NmRjMjViOTEzN2VmODQyM2UzZTk2MzQwY2NmYWMzMzIzZDQyY2E1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L88-L88",
+          "version": "repo-lines-v1:sha256:fa9e0197c09dad40f9c87eee6b485d0b95a510db005f775646b5bd68edd8c8f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE5ZTAxOTdjMDlkYWQ0MGY5Yzg3ZWVlNmI0ODVkMGI5NWE1MTBkYjAwNWY3NzU2NDZiNWJkNjhlZGQ4YzhmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE5ZTAxOTdjMDlkYWQ0MGY5Yzg3ZWVlNmI0ODVkMGI5NWE1MTBkYjAwNWY3NzU2NDZiNWJkNjhlZGQ4YzhmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzI5MjBkNTY5MTAyNjEzN2JjNzMzMTlhMTFhNGQ1YWQyYmJkNTdkYmZkYjgxNzBjMzBhODAzYjE2ZjdkZDI4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGI0OTZjMzRiYmQyZmI3NTVhNzBjOTQyYjYzM2ZjMTAwMzM2N2Q1NDQxZjJhYWY1MWVjZTBhN2RiMDJiYmZjMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e98c1ec717cc47d782691654af80478f",
+      "statement": "`/api/v1/movie-metadata` is nested inside the `protected` sub-router (so it inherits `KeycloakAuthLayer` and `require_app_role` with no per-handler guard) but is not collection-scoped and carries no user data, so no DAC check applies; it publishes the movie option values the domain accepts so the conversational assistant asks the service instead of holding a copy, and because a response leaks nothing a process-wide TTL cache of it is safe.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/movies/movie_metadata.rs#L1-L25",
+          "version": "repo-lines-v1:sha256:ee27a3ea652ded16b966fe3e96a684b7a9d4637c4490e707e3f881e62de67f3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmM2Y2NmY3NDMyNjU5NGMyOGY2NmY5MDVhMDliMDdjYjAxYmQ2ZWQ5ODU0YjFhOTdmMGQ3OTE4ZDJjMTc0M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L175-L184",
+          "version": "repo-lines-v1:sha256:dee208c05eb29a2b5ce71fa53ddd008669be28a79452f0ec7d7f5c346356199a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlOWVkODE5NzBlZjEwMDM2NDA3Mzg3MTJlNDA5ZmIxMjc4YThjYTE3MjhiYWEyNjAzNDFiNDJiYjZkOGIwZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyN2JlYzNkZWFjNzI2MWVlNmVjMWJjNjRkODM3NDQ0YzAxZDlkZjA2MjVhNzk2NmQ3ZTMxZDcwZThiODA4ZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1NzY4ZWFmYjUwMTJkN2RlZWM0MDE5YTNhY2M5YzZkNGVjN2NmNjAwMTRmN2EwMWRhMDNkMDJiMDA2OGM0M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNzBmNTc5YjQ3YjkzY2E3MGZmMWQ4YzU4OWJkMTk1MGYxMzY1OTczZTZlNTI1NDg1MGUwYzIwOTU3YjM4ZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5cc828801c242fb8334c5a515584870",
+      "statement": "The logging middleware is applied to the top-level router, so it covers both the public and protected sub-routers: it generates a UUID `request_id` and puts `request_id`/`method`/`path` on a `request` span, emits a `request completed` event carrying numeric `status` and `duration_ms`, and additionally emits `warn` audit events for 401 (auth failure) and 403 (access denied).",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/logging.rs#L14-L53",
+          "version": "repo-lines-v1:sha256:827e84abe8db9cae715cb5e3b5a7ac20bb0da87de382337a29ba05d0be3fa8f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmN2IxMjJiMjBiOTQyNzJmYjY1NWYwOTYwNDQ3N2ZkOWVmMDIzNjYxODE5MDc5ZTcwMDdkMTQ3NzdkODRkNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3YWUzNzQ0NWRkNjE2Nzc5MzgzYWNhZmVhZjNhZTQ3YTEzOGQwMWQ3NmUxNGYzYzRkN2IzZWE4YjFiYTc0MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyODY1ZjBjYmE5NTQyNDhkYzA5ZjIzYzc3ZWI1YTZlMjU1NWM2ZjEwMjc3MWMyMGIxYmNlNDE1Zjc3YTdhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L194-L204",
+          "version": "repo-lines-v1:sha256:0ee13f9f7b136e5fba2ebd4383e903887eeb973ce8fe32d1be5ba808255b4d7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzZGQ3MDMzOTg3MzQ2NDZiZGNlMGQ1ZThiNjVlN2I5OTc1ODhkYzJiNmJhNjhkMzhkOTYwMjdmNzU5YTk5NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZjEzN2MzOTlhOGY5OGMwNWYzZWNmNTJmNDgwNjEzNTgyNWZlYTFkNzFjZjAwNzY4NGVkMGVlYjA3Y2Q3NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMWY1MjAxYTc5YWUzNTg1NzQxN2UxMWIxM2U5NTRiMzk2NGRjZDY2NGRlYzk1MmQwMDc5YThkMzMxNTM0MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/health_test.rs#L238-L372",
+          "version": "repo-lines-v1:sha256:24547188148be152e6d62283fbee2566976019fa98be5cd489fad110f7d55b55:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNWZjODc0NzFhZjg5OWVlYmExNjA0MjUxOTI3MDA1MjhjY2QyNWIyMjhlNDdhZmVmMmZkOWFiNjk5MWQ4YmViIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjAwMWNlODNhZDE5NzFjY2IyMzUzNWZmNDc0YjQyNzM3YzcwYTI5ODRiNThmZmQwOTkzYzc4MTkwNWVmNjZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMGY2ZTZmNWIzNjZjYzQzZTYxZWQ1ZTQzMDNkZmRhNmVlNzZlOWNlM2FiNjZkYTE1MjRmYmE4NzFmMDYzN2I5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_23618cc34d7b4146898440ed40f49bcf",
+      "statement": "`set_default_collection` is the one `AppState` handler with no route of its own: it is dispatched from the collections PATCH handler when the request body sets `isDefault: true`, and only after the ordinary field update succeeds — so a PATCH rejected for a duplicate name returns before the default is touched and never leaves the default silently switched.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/collections/update.rs#L16-L61",
+          "version": "repo-lines-v1:sha256:05d4d7ca99da994f47c3eec117c41c08ddf59f782b0016b284012e9a2e9e3f8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NWI3OWU1ZTI0ZTg5MWNjMDI2OTAwMTc5MzUzZTlmZGZmNGQ0YzU5ODM4YTNjYTY0MjExNjUyMTFiOTAxZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0MzFmOWI0MWY1ZjYxNzZkYzg0YzJmOGZlODM2Yzk1ZGM3MGQwOWMwYjY4MGRjOGFlYzIxMzQ5YWQ1OTE1ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L155-L170",
+          "version": "repo-lines-v1:sha256:e6f848bee29e1498c95813f402409ebb17f28383cd35cb46212f9e7bfe852a32:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYWU2NzViNjlkNTRkMjc1YTk3NTQ4YWU2N2E3YzM4M2JhMDRkNWY2ZWQ0NThlNGZmZjhhYjc0MDRlOGZmMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNTM0OGUwMDUwMTdhZTE1MjVhOTA1MjYyZTZlZDg3MzdmOWZiMzc2OWU4MGY2NWU1YTRiYzkxODkzM2YwNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZjg2N2M5MjJlZGRhZDRlMTkzNzNkZDAxNTM0ZGVmMjcwNGMxMjY1OWE0YmYyMWJhM2FkYzg4Y2FiYzM5NzMifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/state.rs#L13-L35",
+          "version": "repo-lines-v1:sha256:6678965fa2aec667e707b13e7de0700c0f05af365562652365514475f5d94a07:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3Mzk2YmYxMDViMzc3OWRiZmU0Zjc4MjE0ZTJlZTc4MzFmZDY5MjAwMmNlZmZlNzZkMzc4MjljYzYwYjdlNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzMzNGZkZGE5ZWUzYTlmM2I0NzMwNTlmODg2ZTljYjY1ZjYxYWYxMzFiNjNiZDQ4NGNmMmU1MzUyOTE5ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_13020e41e10f4ecf8866644345a9e5e9",
+      "statement": "Only movie reads are keyset-paginated: `GET /collections/{id}/movies` takes an opaque base64 cursor with a 50-document batch, while `GET /collections/{id}/movies/count` deliberately drops the cursor and the sort (count is order-independent) and shares every other filter with `list` so the two stay parity-consistent when filters are added. `GET /collections` is not paginated at all — it is a flat `find({ ownerId })` returning every collection for the caller, so the `owner_id_list` index exists without the query paging through it.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/collection_repository.rs#L134-L145",
+          "version": "repo-lines-v1:sha256:7fb1ff2f304ac58a988f1e1fd6f631524312f88586f766ae2aefac1de98505d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZjkxNjMxYzYzMzI2MDlmOWE3ZDQ0NWNmMjkwMjE3OTI1ZmJiYjBjNzdlOGMzMDU1NDE1NWU1Yzk1MmU3OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZmUwZDk5ODlmMjVjOWYwNGEwZjI3MTUzMjMwNGRlNWNhZTcyZGZjMTdjNDQ2MGZjNWEzZDAyNWJmNGZlMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjNTc5YmY1ZmZmYmE4ZTEyYzUwNTg0ZWI5NDE4ZTg1OWNlZTY3ZWI0YzVlZjc2NDMxNzE3ZmU2NTMzMzE4MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlMmYyYjU3YjM5ZjQ4NzQzM2E3MjE1ZDNlNWQ1Mjc1OGY0OTEzZTdhZmRkMDcyMDcyOGU5NTRkYzgzMTNmYjMifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs#L602-L602",
+          "version": "repo-lines-v1:sha256:1c9d3ba6a69a7320341ec78897f90218ec1685e33a7384a63b01dd11d5383d52:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM5ZDNiYTZhNjlhNzMyMDM0MWVjNzg4OTdmOTAyMThlYzE2ODVlMzNhNzM4NGE2M2IwMWRkMTFkNTM4M2Q1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM5ZDNiYTZhNjlhNzMyMDM0MWVjNzg4OTdmOTAyMThlYzE2ODVlMzNhNzM4NGE2M2IwMWRkMTFkNTM4M2Q1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTY5MGFlYTY1YWRiNGExMjJmODAxZDBhNjJkNDYzYjQzNmYxZDJhZDUxYWVkYzc5MzlkY2JhM2JlZTFkZDRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTczY2FhNjk4ZGQ5MWU5YWFkNDAwNDIxMGMyN2JjNzUwZjRjY2YxMmI3NThkZGZiMDlhNDdkODAyY2Y5NWQyMyJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/movies/count.rs#L17-L47",
+          "version": "repo-lines-v1:sha256:3c4ca37896fba366a97dcb29dd5759dc0c208452b0b3ce9906ada6ec92ac3d2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNjlkNGVjYjQwZjFlZWYzMzg2YWE4ZWJmYmFlYjQ5YjZmM2ZkZDY4MWExNTU1ZmRkYWIxNDgwMzcxM2M3ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyOTY1OThlOTY2ODhkNWMwMzQwNzY3MTdmOWQyMTU0NzQ0Mzk2NTQ5NmNjNjU0OTQ2YTdmMGMyZTAxNWQ4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1Zjg1NmMyMGU0MzE1MTYzN2IxOGU5YzM5Njc4MTVhMGFjM2U5MzZjOThiNzU0ODAxMGE0ODVhYTBhOTkyMTIifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/movies/list.rs#L18-L18",
+          "version": "repo-lines-v1:sha256:c40dc709fc9c44891e98d26e477859e8784fac02bf495c8f1200a2d1276796cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQwZGM3MDlmYzljNDQ4OTFlOThkMjZlNDc3ODU5ZTg3ODRmYWMwMmJmNDk1YzhmMTIwMGEyZDEyNzY3OTZjYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQwZGM3MDlmYzljNDQ4OTFlOThkMjZlNDc3ODU5ZTg3ODRmYWMwMmJmNDk1YzhmMTIwMGEyZDEyNzY3OTZjYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmVkZDlmYmI4OWQ4ZjUwNTM0YTViZDY3YmMwOTM1Y2IyNmI2Zjc0NzgzNDdjYTNkNDM3OGU4NDMzNTAzZGNjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk1OTQ4MjlkMzE0ZGE3ZDU1MjU1ZjA4MmI0NWM2MWUzMjg3NjJhMTI2YzRmM2M3YjNkM2U5MzBjZGMxZDcxNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_730d16966d2643439b6df764911e4f28",
+      "statement": "`authorize_collection_access` returns the loaded `MovieCollection` (not just a boolean), and callers reuse it: movie create/update stamp `movie.ownerId` with the *collection's* owner id rather than the acting user's subject, keeping `ownerId` uniform across every movie in a collection even when a non-owner contributor writes.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/access_control.rs#L12-L30",
+          "version": "repo-lines-v1:sha256:bb6a3c76e21b00119debd8cfa20dc10b031658eb4774520c54a93db174bab36e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMjVhMWE5MWJjM2Y3ZjFlMTA0ZTNlOWRjNzA1NDZjMmQyMGM5MmVjODM2M2Q0YmQxZmQwNmRiN2M4MDgxZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlNzNkZTgwZmUxN2VjNTZiMzIwOTY2MzcwNGNlZjliOWUwNmI3YWYxYjAwNGM4MmZlMWFhOTUyMmU3NTM1ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_movie.rs#L38-L96",
+          "version": "repo-lines-v1:sha256:b0eb7368875cc8399cce8866fbd6e602a8ae7614d3dd8988d0c98ec32dc6ddc8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMjQzNjIxZmNiZDZmMjVjMDJlODdmOTYwNmUzY2Q1MDhjOGQ2MzVjNGRhODMxNGFlZDMxODlhMmZkOWEyODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxOGFlZWE5MGJhMmVlY2RjNGQxYmY1NDBjNGQzZGY5ODM2NGE1ZDNkNTA5MDM0MTc4Y2I3MWM3MzVlMWJkOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a23a59e03c134cfebac7be4ea78e2e10",
+      "statement": "`backend/mc-service/project.json` is the Nx task surface for the service: `test` (which only delegates to `test:unit` and `test:integration`), `test:unit` (`cargo test --lib`), `test:integration` (the Node guard script), `lint` (clippy), `build` (docker build of the mc-service image), `deploy` and `docker-down` (docker compose against `infrastructure-as-code/docker/mc-service/compose.yaml` with `--profile app`), and `serve`.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/project.json#L7-L79",
+          "version": "repo-lines-v1:sha256:529d35b31fe780d4d47d0c1e123e213f393ebda574a16760c9abe90ad47a90c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4NmMwYzgzYzMxYzgyZTM4YTQyZDEzYjQ4YmU0ZmEzYTI4YmI1ODkxNTlkYjBiNTc2ZTZmYmQ2NmRkNDgwMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxYzhiZjI0MTFjMDQxZmZhY2UwMTFlMTc3NTVhMDMyM2EzNDQ4MWQ2NzU5NGQ4YTVhYjE4YzMwNjdhNGU5YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ed512cccd95494bbc290baba5f1887c",
+      "statement": "The integration tier delegates its no-false-green enforcement to `scripts/mc-service-integration-guard.mjs`: Rust has no skip primitive (a missing Mongo/Keycloak already fails a test via `.expect()`/`.unwrap()`), so the guard closes the two remaining false-green vectors by forbidding a **bare** `#[ignore]` anywhere under `backend/mc-service/tests/` (a documented `#[ignore = \"reason\"]` is allowed) and by requiring every binary declared as a `[[test]]` target to emit a `test result:` line with at least one executed test, treating an all-ignored or zero-executed run as failure rather than success.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/mc-service-integration-guard.mjs#L1-L32",
+          "version": "repo-lines-v1:sha256:6d2b12ac425d12e9a9e6e88151ffe14f1cd2078f525613b0b2871b34e397cdc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViMTQ0ZTViNzY1M2RiMjUwNzE0NDMyZDdiMjA4YmZiYzQ2OTQ5ODdiMjUyNjgzYmFjOWJmYjBjZjg1ZmVlYWEifQ"
+        },
+        {
+          "resource": "repo://scripts/mc-service-integration-guard.mjs#L214-L239",
+          "version": "repo-lines-v1:sha256:482cfc3fb0a743134b5b624ef51d79cc0f161304e1a7d0f9060fbda332f243a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNTYzNTg2Zjc5MzE4NTAyNjg4OThmZDFhZTdmZmQ0NWZmOGQ3YzA4NDEyOGU1NWIzZGRmZDEwNmQ1Y2FkMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYTdjZDU1NjRmY2I3MDNmYmYyMTk2OGY1Yzk3NDIxNDc5NzI2NzNiYTBhODdhZjc1OWY1MWU1ZDM2ODQ3ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiOTY4NTI0ZGEyYWQzOWIyNzhmNmE4Yzk3ZjZkOTMwZDc0Y2JkYTI2NWI4ZTY0YWU2ZmVlMDdiMjRjOWE5YmUifQ"
+        },
+        {
+          "resource": "repo://scripts/mc-service-integration-guard.mjs#L83-L98",
+          "version": "repo-lines-v1:sha256:d27a326a0664879bf72ec8b12db4e800a2dd27795fa01cf8d44e7bdd78dcd124:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YzM4Y2U5Yzk3OGY2ZDM2YjE2MmQ0ODFmM2ZjYmFiZmM1YWFhNDk0MzA1NTA5YzUwNDFjNzc1YTU5NmI2NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3NTM1ZGVjZDE1ZWVlYzJlZjgxZTVlZWRmODc3ZmJlNjM3NmQwOWJkZTdjYTMyMzQ2MWM1ZjMyNTZkM2ZkOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzYjI3ZjJiZWQzODkxNWI5OGIxNzljNjY5YmE2YmY5ZDc3MWNiODc2ZWRiMDZkZDc5YjM4ZjRiZGI5MDBiM2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5a8fe74c9e754b0594d034a27d7c11b3",
+      "statement": "The dev/`app` profile wiring in `infrastructure-as-code/docker/mc-service/compose.yaml` supplies exactly the five env vars `Config::from_env()` requires, brings MongoDB up as a single-member replica set (`--replSet rs0`) with a one-shot `rs-init` sidecar that mc-service waits on, and connects mc-service with `directConnection=true` to bypass replica-set member discovery; the production stack file (`compose.prod.yaml`) is separate and carries its own mongod `command`, so the dev WiredTiger tuning never reaches production.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/config.rs#L23-L43",
+          "version": "repo-lines-v1:sha256:ebea36b0b3072a3b282069d09ca7bfa12bfe82dc3d8fa569dc79cdd9d8e13a73:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjhiYmIxOGNkODM4YTE1NjQxODc2MDkzZTdlODA3MGEzZDY4MmZjMzVmYmRjZjZkM2ExZjc5MWIwMjllZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5NWRmNWY5YjA1NzcxYjM2YTMxMGQyYmQxYWRiNWFkNmQ3MDUyNjJhYmUwZGUxYjljZGJkMGZjOTVmNDkxY2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0OGUzM2ZmZTk0MjZhMTJkODQ0OWU3MWZiMTExYTE5ZDNiMTM2MDczMTA1YTQxOGRhYTg3NzhiMGYwMThiZmQifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L22-L35",
+          "version": "repo-lines-v1:sha256:cdf13eaca4d04be4a33cf67812cf54e01063f32f6c517117dbe203d0db8edf75:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMTk0NzVmNTk2NGE1NDRjYTM5YTZmNGQ5YWFjNjE1MGQwYzEzYTkwMzRhOTk0MjUyMmYxNjk0MjZiODJhZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NDJiOGUwOGY2MGNjYmI1ZjNlZjdjY2ZmOWZkMTU3ZjM2NTY1NDY2NWFiYjVlMjJhYmVlMGNmYmQ5MGI1NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MjNiN2IwODM4NmMzMGJiNTkzMjg2OGExNzFjZjEwMGFhMWIyMzU4YWQzMGNiMTBlOGYwZTFmYzQyM2M3M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkYWY3Yjk4MWNlMjNkYjRhZGJiM2M1YzMyNTA4YzExNjYyOWRjYjFjZDg1ZDhkZmU1NjkzMjMzYTc0YTQ4MzEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L94-L151",
+          "version": "repo-lines-v1:sha256:6a44b6f6fb1dacf41fe969ae03cc977d2fe3ec3caed29fe0b250b530682089dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWEzZGExMjQ1YjYxYWE5YzQzNWM5OTkxZjA1Y2JhOGU4ZTg1ODc5ZjFlOTFhZjJjOTI1NGU0ZGNhMjUxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNGE3OTEwMGE2YjNmY2FhOTBlMGVkOGY0Y2Y4NWI3ZjU5MTY2YWZlMWM2Y2U3MDgwYTVhYjIwYjIxNTQ4YWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwNjIxMTc5N2Q0MDExNjNlYjczMmJmYjMwYzU0ODE0MTEzODZkOWQwYzU5NDhkZDk5MWZhY2UwMDg4ODlmNjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d96bde6301b4f7e908af29ee6590aca",
+      "statement": "The mc-service test-database pool leases a slot for the DURATION OF A TEST, not by thread identity: libtest spawns a new thread per test, so keying slots by `ThreadId` would reproduce one-slot-per-test churn (measured 41 tests → 39 slots). A slot is returned through a thread-local `SlotGuard` destructor so a panicking test costs nothing, a lease whose holder pid has exited on the same host is reclaimable immediately (the three integration binaries run in sequence, so without that the slot space would exhaust within one run), the 600 s staleness window is the backstop for an unjudgeable holder, and if every slot is held by a LIVE process the pool degrades to the old per-call unique name rather than sharing a database with a running test.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L189-L198",
+          "version": "repo-lines-v1:sha256:56e1ccae597d341b86bb0b5568cc954de959b43e79b56551ded93d9b1b316112:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NjQwN2JiNmRiM2U0ZDY2Nzg4NmI2ODgwNGViNmY4YzViNzEwN2YyMTBiMjUyNjJjZGQ1ZjNiYzUzOWFmZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjYzdhMTNmOGE1NmQ4YzI3YWUwZGU3Yzc1MmQ0NjE3MTk5MzMzYjhkY2MxNGQyMGMwNzMwNzM5YTE3OTNiNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0ZDU0YzhkMWQ1YTEwMjQwZjg5ZjBkYmVhMTBlYWI5ZjYwNTU2NTgyOWIzMTIyMThlMTQzMmU3YTMzNzI3MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkYzU1NTM4ZjA4MjRmZjVhZGQ5YTU0OGM0OTc3OGU5NzhjNDNhYjI3MjE5ODE4YjA2ZTQxMTExY2E1OTI3NjYifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L260-L332",
+          "version": "repo-lines-v1:sha256:b2a462792c2737b3690a36bea1e22d77c6a5c5d5ac16059f4d4096f5f50bc773:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZTE3NDk1NjMyNmEwODE1NmNlZDdmMWI1YTdiNWU2NmQ4ZmQxMmUxMDU5MzA2MmQxODUwYjM5N2U0ZjkxYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NmE5ZmExNTc4YTVmNGE2ZmQ0NDQ4NDM1NzM1OTEwODQ5NDQxZjIwMDhkMmVjZDUwNGQzMDZlMmU5YTQxOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5MzA0MDYwYWM0MDkxOWNjYTNjZTU0NDNlYzFiYTU4YmEzNDQ2MWU3ZTJjMGFkM2ZiMmFjZWM0Zjg1NTlhZjEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L363-L422",
+          "version": "repo-lines-v1:sha256:2d2282560036c0479049f1fa5daf1c48288f1bbf8ab7a857ad31246ee8cc54fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4MjIxMzcwMDM1OTM1OWZlZjVhZDFhYmVlMjNmYTMxYmNmNDFhMDJkNjMwMDliNzE2Mzg1ZWM4ZTczOGQxYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyY2RlYTgwZjgyYmI1OGFhMjNhMjllZjRkNWQzNjA1NjNhYjA5ODdkYzk1NjkyZGUwODNlYTNkNzI3NjI1Y2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5ZDY0ZGFmOWUxMmI1MTk5ZGI3ZjIyMzM4MmQ0OTgwODlmMmQzMzljZGFjNDQwZmMyZTg2NDNjZTI0ZTViYmQifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/pool_test.rs#L113-L163",
+          "version": "repo-lines-v1:sha256:886f9ac6cc9ce48dc5dc06ebc3988d163bf34b9831bb403e5adc55392f32ae9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YzNkZGI2YjRlNjc3NDYzYzgzYzIzNTAxNTE3YTdiNWQzMzFiNDdkYWNlODc1ZjdhMDQxMTM4YTg3NjM0OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTM3Njc5MWU2OTQ3NmY3YTA3MTg5NmRjMjViOTEzN2VmODQyM2UzZTk2MzQwY2NmYWMzMzIzZDQyY2E1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-29T01:49:10.027Z"
+    "at": "2026-09-29T03:23:45.685Z"
   }
 }

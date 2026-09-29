@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a27ef77d5aac5b2ca589c7241acdf1fc80f2a477466100f25ab2951de3d5ff95",
+  "pageVersion": "sha256:41ed437d8936998579a2e7de71d7c3ab1e2993422013d6ce5ae50b81556b5ffa",
   "claims": [
     {
       "id": "claim_94f7295dbcce46cb93b2185f9b344f90",
@@ -83,10 +83,92 @@
           "version": "repo-lines-v1:sha256:29b37c4bce4425b0f5d5f185dc5425b381ea5d2efd615aeda5825f0f4ae7fcfc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxOTU4OTQzMTlkMDVjMTRiOWU4MmZhZTI3Yjg0N2FlNWZhYjIyYWI3NjUyMDg3MzYwNDlmNzY1NTk4N2YyZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZWVjNjNjYjhjZjRhYjYyZGUyMzI5YWVmODdiYzQ1NmI2ZDUzZDExMGM2MDIwZWRhNjY4NTlhMTk1ODIxMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkZjhkMzM5ZWU3NTE5OWEzMDAxZGZjMTVjNWE0MTFkZGMwODI3YmFhMzJhMmNlNDRjZmVlMTVkYWE5Y2FjNDMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_8e844d1069a34c6aaa477718a150aa2f",
+      "statement": "The BFF owns its own MongoDB instance (`mcm-bff-db`, holding per-user agent config) that is physically separate from mc-service's `mc-db`, because no component reaches across a service boundary into another service's database; `mcm-bff-db` is a plain standalone `mongod` with no replica set and no directConnection because the BFF does single-document upserts only, unlike `mc-db` whose single-member replica set exists for mc-service's cascade-delete transaction.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L142-L152",
+          "version": "repo-lines-v1:sha256:7b6e4c763866ea0dff96416f0faacbe0643abd990a334b032efc28dbce96a172:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2YzA3YjdmYzY5NjY2ZmViNzhkNDg3MWExNjM1OTg5MmZkN2IzZDg5ODk2OGQ1NTU0Yjg3MTQ2NmM4YjcwM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxYjQxMmRmYjIzNjczNDQ2ZGQ5OGUzMmM4NmMxY2VmM2NkMDlmZWEyODAxNmQ1YTMxMTcxZTY2OWQ2NjJkNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZmYxNWJkOGE5Mjg5MjJhYzZiYjI3MjlhZjNmZGEwODFmOTI1NjAzOGM0YWEwMzU2NTc4NjYxOGUzMjU4NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NWIyOTgwYTU5MzgwODc3ZjMzZjhhZWNkNjE0NDU2MjQ2ZWQxZGUwMDE3NzNkN2IyZTEzMDgyYzg1N2ZlZDEifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L98-L107",
+          "version": "repo-lines-v1:sha256:62ae81e19c05cd81072faf857b30e1d8876de52a511b7f9608d2d52cc0ba6887:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmOGIwNWU1YTM3NmJkYjJmYTEyMWJjZWY5ZGJmYjgyZmRlNTJhMDJkYjMxNzdmYmRiNDFlOTU3OTFiN2U3Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNzE3NWY3MmRlNTdmNjNhZjcwMDk2MjQwMjQ4Y2JlY2I1MGU2Nzc3ZDdjOWQ0NGIxMWZhNWU3YTA1ZTJiYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NGVmMTdlZjUwY2I2OTZiYWYzZDk0NjY2MTU5YWExYmZhNTFiMDJmYTk0NmQ5ODlkMTI5YTUxNzFhMGQxM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3NTEzODFmZGExOGZhZDFiMzkyOWNlZWI3NGYyNWI1OTJjMmM0Y2JiZDkyNjE2ZGRiZTYyZjFjYzZmZDY1YjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_10c9da12199045d593f48a730a1e7e51",
+      "statement": "mc-service runs Keycloak OIDC discovery and the JWKS fetch in a background task at startup, so it binds and serves immediately even when Keycloak is unreachable: /health still answers but every protected request is rejected with 401. A *failed* discovery still marks the auth instance ready, so integration tests must gate on discovery actually succeeding (is_operational) rather than on the attempt completing, otherwise the whole auth-negative suite passes green against a dead Keycloak.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L144-L154",
+          "version": "repo-lines-v1:sha256:1bd5b689ed14bdf20c8d63172b27741cd60cc639cacdbdaa5572924847295af3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNzQzNzFkMjNjOWY3NDlkZGNkYTNjOTYxMmQxNGRjYzU0YzAwYjNiZGM2MGNkMzdkNDM5NjAwZjkyNDEzZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3NmU3YTRiYThlNGU5ODZhYmVhNDQ1ZmFlZjcwMTUzNDA2OTIzZTdkYTA3ZGYxY2EyNzc5MWJiYjBhZTZlYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzN2U3NGE3NDZmM2U0ZmE5OGQ3Y2I5OGRiMDdkMzBiZmY2NWNlZjY3NmYxN2FiMWVhNDkzYWM0ODQ5MDY4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiNDg2NTk0MjA2YjkyMzMxZTEyZDZlMGY0YWRkYTY2NjIxM2M0ZGZjNzMyMzRlMjE0NTY5ZmU5NWY0MmJmZGYifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L57-L77",
+          "version": "repo-lines-v1:sha256:50f0270913c41e7ec29c0f023def3b4ff5261afdf979b2aa7093a5784022fbb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzMmY4YjRlYzJiNDUwYjAwZGI2ZjRlZjJiMjVkMzVjNGRhOTU2NGE4NmE2NGQ5YTk5YzdkZTliOTYwZGU4NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwMzQ2M2NlZmE5OWU2NGYwNzRmODQ0YmM2ODIzZWRmYzFlMzNlN2UzN2JiMThjZWQ2NzUwYTM2MTAwMDBkMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmZTUxZTdhNTFkZTlhZTFkNmJiZjFiOTNlMzNlM2YxZDQxNTRkYzM3YjBkYjdmOWNkNjRmZDgyYmY5NTA0MjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYWRmODZlZjMyMzk2NGQzZTI1M2JlYTFjYzlkZjQxNmEzZDFiNTMxZmI2YmI1YzhlOGQ5YmM2NzA2ZTQwZDEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/health_test.rs#L408-L455",
+          "version": "repo-lines-v1:sha256:164067b6b6c4f513382a4197e37bebfc05e9bb0087fa92ee4a88fdd1827eeb00:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwM2ZmODMyNzg0ODZjZGVlYzJiZmEyOTQ0OWY2ZmI0NGIwMTA3OTI3YmRjNTJjYzc0MzViZDBkMWU5OGQyY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MzM1YTNhYmMwYmI5MjY4ZjRkOTNiOWVjYTU2MjkwN2QwOGIxOTBmY2I2YjFiOTA5MDhhMGU2YmQ0N2MzMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNDVkMjkyMzgyOWNkMGVmMDgzYjY5ODBiMGIxYjViYzc0OWI4ZWNhOWEwNmM2NDE1ODFmNmUzZTFlOWUzYmQifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L582-L582",
+          "version": "repo-lines-v1:sha256:1aef0ad35614db91f0918894df6695d881c005511157f6932aa361ccc0983df0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFlZjBhZDM1NjE0ZGI5MWYwOTE4ODk0ZGY2Njk1ZDg4MWMwMDU1MTExNTdmNjkzMmFhMzYxY2NjMDk4M2RmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFlZjBhZDM1NjE0ZGI5MWYwOTE4ODk0ZGY2Njk1ZDg4MWMwMDU1MTExNTdmNjkzMmFhMzYxY2NjMDk4M2RmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjQxNzg4MGYwZjFjNjM4MzkyZDA1Njk5NjI4MTJlYzVjZjgyNDE0NThiOTllNmZiZGMyY2U4NTNiYzAwMmIzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzE0ZDIwMmFmMzFjOTRhNTgwOGU2MWIyMjkyZGEzNmZlYmJhZWE2ZjQ3ZDNlOTg4MjliMDNkOGMyMjA1YWQyNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2724caf2623d4dd985dafb15d2818b93",
+      "statement": "Feature 073's backup destination containers (the S3-compatible and WebDAV targets the integration tier tests against) live in their own compose file rather than a profile inside the `mcm` stack, because Docker Compose interpolates every service in an included file at parse time regardless of which profiles are selected — a `${REGISTRY_HOST:?}` in a profile-gated service aborted `up` for the whole `mcm` stack, including CI's app-e2e bring-up which sets no registry host. A profile is therefore not isolation from interpolation.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L9-L16",
+          "version": "repo-lines-v1:sha256:5b6109dcd2ab75f94fb629115ebbf1074227f78ab395b735cd06f6bc3b12c5ea:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y1Nzg0ZjRhYTA2Yzk5NmNmYWZkMDUwNjFjMzliMzEwMzFiYWIwZjRhZTBlYzhkMGM1OWMzZjdjOWZiMjliMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjMmZkNDhiZDJhYjA1ZGViYzk5MzNkOTM0MWRmODc4ZDRiNjM0ZmI5NDJmZTIxNmVkMzQxYjZkZmZlMmI5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc1Y2MzNzEzN2U2NDU3NmQ3NWNjZTA5ZDgzYTBlYTI5ZTBjZDNjOWZlMTllZjhiN2U1YTAzZWMzYmI0YjRiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZkMmZlYzlhNDhiODMzYmZmNTdiZWVlNTdiNGIwYWEzODcxZTA2ZTgzMmQyZTdiOGJiZGUzY2YyOTM2YzcxMyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L15-L23",
+          "version": "repo-lines-v1:sha256:5a67a2963fda7eb865b166f98e76de1b9785de685ccabfa16e4422fb0a55bbaa:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkMGQ2ZTYyNjY0Y2ZkNTk1M2Y0NjUwMzQzMDVkZDJlYjE4NmFhYmI2MTVjNzllZWRhYmFlOTg1NTdmZDkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJjNDg1OGUyMmNjMmM5NjdiNDIxNTBmYTU1MDU2MmEyYzgzOWMyY2ViY2FhYjkxY2FiZGY2ZjRkYTAyMDAyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzODFjYWQzNzU2NTUzZGE1YjA3OWY2NWEyNjI5YmM3MjU5ZDQ3NzUyYzNjM2JiNjE4YTY5ODJiMmZmNWM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTM0M2Y5MWFkMWZiNWZkMDNkMzdiOTM3NDVhNWU3MDk0NGFmOWQyNzk5MjU5ZTMxOWE3ZTRiOGUzMTFiZjY5ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3931d840593e40748931e80b0c146129",
+      "statement": "The BFF's backup scheduler is an in-process `setInterval` in `server.js` that POSTs to `/bff-api/backups/tick` over 127.0.0.1 with the tick secret, is disabled outright (announced once at boot) when `BACKUP_TICK_SECRET` is unset, logs only when a job actually ran, and never fires under `pnpm start` because `server.js` does not run under Metro — in dev the tick route must be called directly.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L61-L82",
+          "version": "repo-lines-v1:sha256:8917a10db42c8abca3b843fdd33ddd398802a2c27c64dc732bd8341c161a13ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYzViZGU1MGJkMjU1NmUyYjIyYjdhN2JhNjkxMjYyNzA3YzY1NjJmYTQxZDA2ZmI4MTc3NTU2MTUzYzcyZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1Yjk3ZDhlYWM1MGZhMDcxODY4NjMwNmRjYmNhY2ViMjliYmRhM2U5ZDM4NjFiMDNmZjBkZjBiM2NlYjgxYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjOTNiYzhkMzM5MTVjYTcwMGNmOWQxYzg5NTdkYTVlMTQ4MjA3NmQ2NzM1NDYyMmIwMzRiNWVlMTEyNjc3OTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L100-L148",
+          "version": "repo-lines-v1:sha256:d31a305ef5d0371e89a3818a38e3a6e6a951e9343224a0dee19ceb3b197e881c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2Njg1ZDA3ODc2NmRlNWZjNWViMWY4MTdmYmM1Njk5M2I1MTNiNjcyMzEwMmNlMDk1MDg2Zjc4YTg2ZGE3MDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3OWZjM2EzZjhlYmU0MjAyODg0M2JjYzFjYTJmNTI2MzhiZGJlYWI2MDM1ZjZhNDZjYmM0ODg1NDdhMmYwZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MWM2MzFiMDg2N2E5Y2MxOTcwNDM2OWEzZmI3NzAzZjc0NWQ2YTlmZWJmNDZkOWFjNjkzYWU3ZDBlNzRmZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1Y2FkZTc3YThiM2MwMDQ2MTJmNjkxMjEyZjZkYmE2OGQyZjRjNThlYTlmZWQ3MGYxNGE1ZDE2ZDc1OWY4N2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_30e860bddf454cb4a8242805bb7bce9c",
+      "statement": "The Agent Gateway and its `agent-db` checkpoint store are private-network only and the client never reaches them: only the BFF starts a run (over an AG-UI stream, attaching a run-scoped delegation token as a non-checkpointed value), and the gateway's single shared in-process MCP client re-exchanges that token per identity-bearing tool call, so each `movie-mcp` call carries a downscoped, short-TTL, audience-bound token that mc-service validates exactly like a human request.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L113-L140",
+          "version": "repo-lines-v1:sha256:5fdd7e677487d2d7a3236383eb423e619a79365f8199634950de1b1e96a074a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYWJhNDRjNTU3YWY5YmVkZWIxMTQ5M2NjN2Q3NDZiMjJjOWZiYzBiODg3MjdlMzZkOWE3YzIwMzE5NDZmODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlOGE4MWEwNmE0MzBkNDEyYTVlNzUzYmZiOWE4NmIxYmI0MjdmNzRjNDgxMjNkM2Q0OGY1MjAwNTI5YTVkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMTJlYTU1MTQzOTY5MTJkMWRiOWI3NDMwYTIxMTk2N2I0OWRkZmYxZWQ4NDczYWZjOGU4Mjk4NjVkNDUzNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNjRkMzQ3YzVjODlkZmFjMjlhYzQ5ZWI5NTllOWQ1MjEyNDZlZTgwNzFiM2IzZjM3M2E3ZDNjZTE5ZjRmMjUifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L503-L511",
+          "version": "repo-lines-v1:sha256:9a3bf8ea9466834fbaf45af8d691d7b82b060d7113e06db8d83d1d5b6db74465:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE5NzhiZDM4MjIxMGQyOTQyNGM2ZWRiMzRlMjYyZGQzM2E2MzJjOWVjNzNmYjkwNGNhNDE1MGQyM2VmMWNjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGU2NzA5NDQwOTNhMTU2MDgyY2MxM2Y1OTAxMDU0YWUzNTNjZGY3OTQ2NzA1NTZhOTBmZmE2YzIwZmE5NDYwZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2MxZjEyOWZlYzFhZmE4MDU5OGU2YjExY2FjYjY4MGIwZjAxM2JiNWI2ZDk2Y2U0MmNmNzc1OGJjM2Y1Zjg4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWJmMTBhNTA5MjlkZjRmOGIzMmQ1NTE0ZTA4N2U0NTgzN2RjZTBiNGU2MWQzM2FhZGQ3NjE4ZWYwYzliZTRmYyJ9"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L518-L555",
+          "version": "repo-lines-v1:sha256:23b5fb806a7e1e2dc49352b4b595ac3a09fc4e2770dad532e3df93ebe8ab3cd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjMTM2ZTNiMDJjMWRjMzdiOGMyMTJkNjQxYzAxNDlhNjQ4YjcwNDE4NGE1NGE0NzcyZmVkMTdjYjMxYmVhMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZDkzODY5MjU2NGM3NWUxOTcxMTcwMTAzZTA0YWQzN2ZkMDdiM2Q5N2Q4OGYwODAxZWZlZDQ3NTlkMjZmMWMifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-27T16:58:28.669Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-29T03:23:45.685Z"
   }
 }
