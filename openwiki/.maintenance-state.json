@@ -2,7 +2,43 @@
   "coveredCommit": "d8b455f32307a75c83198175f2068c6a395e4faf",
   "coveredAt": "2026-09-28T14:31:59.288Z",
   "lastOutcome": "completed",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "invariants",
+      "pages": [
+        "secrets-management.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect"
+    },
+    {
+      "area": "projects",
+      "pages": [
+        "mc-service.md",
+        "mcp-servers.md",
+        "agent-gateway.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect"
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "phase-15-operator-checklist.md",
+        "server-setup.md",
+        "android-emulator.md",
+        "local-dev.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 1): V12 stale; lost from proposal #594 by the #596 defect"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 599,
