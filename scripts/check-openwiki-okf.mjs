@@ -24,12 +24,14 @@ import { join, relative, resolve, dirname, basename, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 
 // V14/V15 share their scanner with the generator's normalizer — see that module's header for the
 // measurement (POST /api/v1/markup) that establishes why a leading `/` is a dead link here.
 import { bodyLinks, classifyBodyLink, relativeFormFor, splitTarget } from './openwiki-links.mjs';
 import { conceptStamp, stampValues } from './openwiki-stamp.mjs';
+import { claimsDurabilityFindings } from './openwiki-claims.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_BUNDLE = 'openwiki';
@@ -365,6 +367,14 @@ function validateBundle(bundleRoot) {
     }
   }
 
+  // V16 — every page openwiki has COVERED (a `.page-manifest.json` entry) must still hash to the
+  // `pageVersion` its verified Claims sidecar certifies. openwiki refuses the whole run otherwise
+  // ("Markdown and verified Claims are not durable"), so this is a finding, not a warning: a PR that
+  // hand-edits a verified page must go red here instead of bricking the next paid run (#611, #616).
+  for (const f of claimsDurabilityFindings(bundleRoot)) {
+    add('V16', join(bundleRoot, f.page), f.message);
+  }
+
   findings.sort((a, b) => a.file.localeCompare(b.file) || a.rule.localeCompare(b.rule));
   warnings.sort((a, b) => a.file.localeCompare(b.file));
   return { findings, warnings, unstampable, conceptCount, directoryCount: byDir.size, missingBundle: false };
@@ -586,6 +596,20 @@ function selftest() {
     'b c.md': '---\ntype: R\n---\nb\n',
   }, { clean: true });
 
+  // V16 — a covered page edited after its Claims were verified (#611). The certified hash is the one
+  // of the ORIGINAL bytes; the scenario writes different bytes, which openwiki would refuse to run on.
+  {
+    const original = '---\ntype: R\n---\nb\n';
+    const certified = `sha256:${createHash('sha256').update(original).digest('hex')}`;
+    const covered = (page) => ({
+      'index.md': idx('a.md'), 'a.md': page,
+      '.claims/a.json': JSON.stringify({ pageVersion: certified, verification: { by: 'x', at: '2026-09-29T00:00:00Z' } }),
+      '.page-manifest.json': JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/a.md': { pageVersion: certified } } }),
+    });
+    scenario('v16-durable', covered(original), { clean: true });
+    scenario('v16-edited', covered(`${original}edited\n`), { rule: 'V16' });
+  }
+
   // V13 — a conformant bundle passes.
   scenario('v13', { 'index.md': idx('a.md'), 'a.md': '---\ntype: R\ntitle: A\nresource: README.md\ntags:\n  - t\n---\nb\n' }, { clean: true });
 
@@ -595,7 +619,7 @@ function selftest() {
     console.error('✗ openwiki-okf gate --selftest FAILED:\n  ' + fails.join('\n  '));
     return 1;
   }
-  console.log('✓ openwiki-okf gate --selftest passed (V1–V15: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file)');
+  console.log('✓ openwiki-okf gate --selftest passed (V1–V16: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file, covered pages durable against their verified Claims)');
   return 0;
 }
 
