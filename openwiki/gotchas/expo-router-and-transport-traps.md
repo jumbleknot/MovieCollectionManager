@@ -4,9 +4,6 @@ title: Expo Router server export and agent-transport traps
 description: Two related but distinct runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, and the CopilotKit React Native streaming-fetch path that bypasses the normal token-refresh interceptor.
 resource: frontend/mcm-app/server.js
 tags: [expo-router, react-native, copilotkit, transport, frontend]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T10:29:14.990Z
 sources:
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md

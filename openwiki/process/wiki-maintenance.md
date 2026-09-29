@@ -4,9 +4,6 @@ title: OpenWiki bundle generation and maintenance
 description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan / wiki-maintain / okf-governance around them), the non-scheduled freshness model, and what the conformance gate actually enforces and refuses to enforce.
 resource: infrastructure-as-code/project.json
 tags: [openwiki, okf, documentation, ci]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T10:29:14.990Z
 sources:
   - id: openwiki-source-7e1c4d46c53be9bf32311e06
     resource: repo://.devcontainer/toolchain.Dockerfile

@@ -4,9 +4,6 @@ title: Session ID vs JWT — Redis session lifecycle and concurrent-session evic
 description: Redis-backed BFF sessions track idle/absolute timeout and a per-user concurrent-session cap independently of the Keycloak JWT lifetime; session-manager.ts evicts the oldest session once a user exceeds the cap from env.maxConcurrentSessions, and the client only ever holds the opaque session ID, never a token.
 resource: frontend/mcm-app/src/bff-server/session-manager.ts
 tags: [auth, sessions, redis, bff, keycloak]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T10:29:14.990Z
 sources:
   - id: openwiki-source-7f9b1fa4fc54b7046b359b1f
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/login%2Bapi.ts
