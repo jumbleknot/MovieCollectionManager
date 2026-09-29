@@ -2,7 +2,18 @@
   "coveredCommit": "ecc4f140d89894399896b0b48a10ad86e978050d",
   "coveredAt": "2026-09-29T22:57:24.326Z",
   "lastOutcome": "completed",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "ci-diagnostics.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 3c): V12 stale; re-seeded after #615 closed unmerged (its work was dropped, #619)"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 618,
