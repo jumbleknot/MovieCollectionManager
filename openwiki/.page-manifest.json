@@ -36,29 +36,8 @@
       "gitHead": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
       "sourceFingerprint": "sha256:cbd20599c94dbe1000d010c81316f5ca5cfcbb7665007087f8cddcc4dde61d4e"
     },
-    "/openwiki/gotchas/expo-router-and-transport-traps.md": {
-      "pageVersion": "sha256:4cc7abcc628e3297ed61ce9586045f147fa778cbe3a0d10476fb0310782eb5aa",
-      "completedBy": "openwiki/0.6.0",
-      "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c",
-      "gitHead": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
-      "sourceFingerprint": "sha256:cbd20599c94dbe1000d010c81316f5ca5cfcbb7665007087f8cddcc4dde61d4e"
-    },
-    "/openwiki/gotchas/keycloak-service-account.md": {
-      "pageVersion": "sha256:4e8aeb3b8296d70a50606f41386b3272b425b3a0b85019463bacb597d66b6a6e",
-      "completedBy": "openwiki/0.6.0",
-      "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c",
-      "gitHead": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
-      "sourceFingerprint": "sha256:cbd20599c94dbe1000d010c81316f5ca5cfcbb7665007087f8cddcc4dde61d4e"
-    },
     "/openwiki/gotchas/playwright-testid-mapping.md": {
       "pageVersion": "sha256:a330d97c37ace97aeb773126a25ea019098cdafe99e6a1b5c95bf711036a2358",
-      "completedBy": "openwiki/0.6.0",
-      "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c",
-      "gitHead": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
-      "sourceFingerprint": "sha256:cbd20599c94dbe1000d010c81316f5ca5cfcbb7665007087f8cddcc4dde61d4e"
-    },
-    "/openwiki/gotchas/session-lifecycle-and-eviction.md": {
-      "pageVersion": "sha256:dce76c910f2658beb7ceeb324147979ff232a2d41f132de18fc8ac9f7565a411",
       "completedBy": "openwiki/0.6.0",
       "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c",
       "gitHead": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
@@ -73,13 +52,6 @@
     },
     "/openwiki/process/constitution.md": {
       "pageVersion": "sha256:1acbe160e487698779e58d50f1271ede5269c6963dfd0a7615a78ba764b0739d",
-      "completedBy": "openwiki/0.6.0",
-      "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c",
-      "gitHead": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
-      "sourceFingerprint": "sha256:cbd20599c94dbe1000d010c81316f5ca5cfcbb7665007087f8cddcc4dde61d4e"
-    },
-    "/openwiki/process/wiki-maintenance.md": {
-      "pageVersion": "sha256:8dd0fe2b10df3fac73811e4615fe69a7025e97bb94aa08aea5e1d0c3dc87f270",
       "completedBy": "openwiki/0.6.0",
       "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c",
       "gitHead": "f79bd224696b83d7a8395d5e61f7723603e7eee1",

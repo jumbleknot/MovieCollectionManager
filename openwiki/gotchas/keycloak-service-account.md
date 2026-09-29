@@ -4,9 +4,6 @@ title: Service account vs admin credentials — Keycloak Admin API calls
 description: Keycloak Admin API calls (user lookup, creation, role assignment, forced logout) use a dedicated service account authenticated via the client-credentials grant, never the realm admin password — keycloak.ts's getAdminToken() is that token's minter, duplicated once in email-service.ts to avoid a circular import.
 resource: frontend/mcm-app/src/bff-server/keycloak.ts
 tags: [auth, keycloak, bff, security]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T10:29:14.990Z
 sources:
   - id: openwiki-source-8b28b8f7ca849a6400dddf6f
     resource: repo://frontend/mcm-app/src/bff-server/account-deletion.ts
