@@ -1,59 +1,46 @@
 {
-  "coveredCommit": "0bb8afe52a1946c6f5a3685714208276835e18f3",
-  "coveredAt": "2026-09-29T20:36:11.426Z",
+  "coveredCommit": "5a57e857c2f5e7bdf9a7cf529d76499fcea1c30e",
+  "coveredAt": "2026-09-29T21:27:57.540Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "ci-diagnostics.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525, pass 3b): V12 stale; one large source per run (#613)"
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 612,
-    "headCommit": "4d879741ea0c7c7d72bd92e010e13c57e938cc99",
-    "markerBefore": "0bb8afe52a1946c6f5a3685714208276835e18f3",
+    "number": 615,
+    "headCommit": "d6e7189eb2ca75e038ed8a17b1e95fd3b50db48c",
+    "markerBefore": "5a57e857c2f5e7bdf9a7cf529d76499fcea1c30e",
     "slices": [
       {
-        "area": "projects",
+        "area": "runbooks",
         "pages": [
-          "infrastructure-stacks.md",
-          "keycloak.md",
-          "sast.md"
+          "ci-diagnostics.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "drift sweep (item #525, pass 3): V12 stale",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/infrastructure-stacks.md; openwiki/projects/keycloak.md; openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "drift sweep (item #525, pass 3b): V12 stale; one large source per run (#613)",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-29T20:36:11.845Z"
+    "updatedAt": "2026-09-29T21:27:57.933Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 1436,
+    "pagesWritten": 1,
+    "elapsedSeconds": 1068,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 185,
+    "calls": 91,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1532436,
-    "cached": 12252990,
+    "uncached": 566838,
+    "cached": 7659074,
     "cacheWrite": 0,
-    "output": 179078,
-    "reasoning": 103259,
-    "ms": 2014902,
-    "estCostUsd": 0.5411,
+    "output": 153258,
+    "reasoning": 135797,
+    "ms": 1057354,
+    "estCostUsd": 0.2795,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
