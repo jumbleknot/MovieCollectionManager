@@ -1,21 +1,8 @@
 {
-  "coveredCommit": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
-  "coveredAt": "2026-09-29T11:00:21.119Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "0bb8afe52a1946c6f5a3685714208276835e18f3",
+  "coveredAt": "2026-09-29T20:36:11.426Z",
+  "lastOutcome": "completed",
   "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "infrastructure-stacks.md",
-        "keycloak.md",
-        "sast.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525, pass 3): V12 stale",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/infrastructure-stacks.md; openwiki/projects/keycloak.md; openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
     {
       "area": "runbooks",
       "pages": [
@@ -30,11 +17,49 @@
       "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backlog.md; openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/devcontainer-sandbox.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 612,
+    "headCommit": "4d879741ea0c7c7d72bd92e010e13c57e938cc99",
+    "markerBefore": "0bb8afe52a1946c6f5a3685714208276835e18f3",
+    "slices": [
+      {
+        "area": "projects",
+        "pages": [
+          "infrastructure-stacks.md",
+          "keycloak.md",
+          "sast.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift sweep (item #525, pass 3): V12 stale",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/infrastructure-stacks.md; openwiki/projects/keycloak.md; openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-09-29T20:36:11.845Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 11,
+    "pagesWritten": 3,
+    "elapsedSeconds": 1436,
     "stoppedAtBudget": false
   },
-  "lastRunUsage": "not captured"
+  "lastRunUsage": {
+    "invocations": 1,
+    "invocationsNotCaptured": 0,
+    "calls": 185,
+    "failedCalls": 0,
+    "uncounted": 0,
+    "uncached": 1532436,
+    "cached": 12252990,
+    "cacheWrite": 0,
+    "output": 179078,
+    "reasoning": 103259,
+    "ms": 2014902,
+    "estCostUsd": 0.5411,
+    "provider": "fireworks",
+    "model": "accounts/fireworks/models/deepseek-v4p1-flash",
+    "tier": null,
+    "priceTable": "2026-09-27"
+  }
 }
