@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:002962dcd5fb158e6a28c1fadc923f833af4ab1f71d85759ff5656bf742afb78",
+  "claims": [
+    {
+      "id": "claim_e0fc1f6e4a0a43eab21c4f3498ebd6d8",
+      "statement": "`infrastructure-as-code/` defines every environment's runtime topology as config in two halves: four independently operable local Docker Compose stacks under `infrastructure-as-code/docker/stacks/*.compose.yaml` (auth, mcm, audit, observability), each its own Compose project and a thin `include:`-only aggregator over that stack's component compose files; and production, defined by the Komodo ResourceSync stacks in `infrastructure-as-code/komodo/stacks.toml`.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/audit.compose.yaml",
+          "version": "repo-file-v1:sha256:7660be9b48d9b98850eda5a9aa9e3be3c11c66c3a45210bb51446f304fe4638c"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml",
+          "version": "repo-file-v1:sha256:86d0fa050123c38d0fbee3c9caccf824cce48cddf0df2c722e56353fcd3dea67"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
+          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/observability.compose.yaml",
+          "version": "repo-file-v1:sha256:dc3e9038ae5033637d7577bae5bfefdb214fd38e5f50eb71fa4527299df5b399"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L1-L24",
+          "version": "repo-lines-v1:sha256:4b062bd22ea6fcd113b5247c363812c1cef3c61ef9d0213d345a0dac0e6c03e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNzNiNzViOGZjMjhiZjZiMDY1ZDI5MTU0OGY2OWE2ZTdjNjA0MTdhYzk2M2ZmM2I3MzU2ODRhM2VlYmMwOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlOTY3NGI5NmE3YjVhMWU1MGViMTgzNjI1MjM0ZDM2NjA5MjY5NjJmZTM0NTNkMzRlZjk3YjU3ZDUwYTRiMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYjQ5Mzk0NTFhZTg1ZDM2NDQ3ZmRhNWM0MWEyZTk2N2VjZjcxZGU2ZGE2OWYwZTllNzQwOGU5NDM5ZmFhZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c636f2d4942d4681a8bbcdd0ad0e646a",
+      "statement": "Local stack lifecycle is driven through Nx targets declared in `infrastructure-as-code/project.json` (`up-auth`, `up-mcm`, `up-mcm-agents`, `up-audit`, `up-observability`, `up-all`, and the matching `down-*` targets), which wrap the `docker compose -p <stack> ... --env-file <stack>.env` invocation instead of raw `docker compose` by convention; `up-all` runs auth then mcm serially so Keycloak precedes mc-service.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L6-L113",
+          "version": "repo-lines-v1:sha256:12f015665c61918571bf99434f4157d69dc82c9b77fbdaf30ededed865314611:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxODNiMmExOGM1NTAzNjJhNDYzYWVjMjM3MWRiNGRlYmNjOWFkNWY5NDBkMzFhMDQ4ZmVhNmMzZTk0NTUwZDMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxZjBjZGI5NzJhN2JmYjdlZDI0NmY5ZmY2NzIzODVlNTVmNDk2OGZjMTEwNDNkYzViNjg0ZDUxZGZhMzFkYmNiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3MmZkYjljNzlmNTJkNmQ4MTcyY2Y3ZTg3ZmZhNjg1OTIyYjM2Y2UyZTQzYmY1ZTE1ZGYyNGQ0MWU1MWUxZWMwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyMjA4ODljZmEzNDQ0NzIyNGY3YTJkOTY0YTEzYmM5OWMxMDQyZTczMmY0ZTQ0OGU1ZGZlMDM0ZWRkNmZmY2I4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_431f591218254c3b8964de7c103b1c45",
+      "statement": "Each local stack pins its own gitignored `<stack>.env` as the interpolation source for its included component files via the long `include:` syntax with an `env_file:` key, and the values are minted from committed `<stack>.env.example` templates by `node scripts/gen-dev-secrets.mjs`; every credential in the stacks is a fail-fast `${VAR:?…}` reference with no clear-text value in a tracked compose file.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L1-L14",
+          "version": "repo-lines-v1:sha256:788398f04eb78505a9e48a729324e21a035109dfabf4968674f0a5ddee8059f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzYmRhYjFhMzY4YzNlMDAzZjMzZjU4YTIzNDQ3NTVlZmFlYTk1MjBhZWRmYjYzNTZmZmFlNjk5NWEwZmYwYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NjM3OThlYjM0YzY4NjE1YWY5M2E4OGUxZDRlMWI0Zjc2MzFmZDFkNmNjMDFmYjJlYWVmNGM2MWVkMjRiNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyMzg3OGYyOTFjYWQwNDE2YTRjNjZhNzI2M2Q4ZDU3YzlmMDAwODIzZTk5N2YwY2I3ZTdlMmY0NTUxN2ZjMzEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml#L14-L21",
+          "version": "repo-lines-v1:sha256:cd55289dbca8678d68c424c1654788fe5ea8d562389f48351b4a3f8b83c1cfbc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMyYzIyYjczYWU3YjA2Y2ExNjFlMTZkNjljOWZlOGVjNmQ0ZmNkM2JjNTI0YjY3NWYyNDNmNjVmNWFmN2U1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTNhOTQxNzYxMDUyOGRjZDViZmM0ZDlmODliYjBjYjBkMTgyZGEyYmM5ODA3ZTY1OGZhNDg2OGU1N2E3ZTI3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjJkN2E1Njk0ZjM2NGMyM2IyYWU3MjVhYmFlMTNiYzE0NDlmOGU0MzY0MTA5ZWU4MGY3MzA3NDU5ZmZkNzJjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L37-L46",
+          "version": "repo-lines-v1:sha256:4c03146e6f661395444c080a107b76148893a02d136ce00f0e9162f5ea0f9d99:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MjQ0YWNjZGQ3OWY1N2E3OTY0YmI1ODQ2NWYzMzhmYTIxZTk0NTUwZTkwYjUwMDQwNTg5NGJmMzgwZDg2Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjM2Y3MDZiMmE1NzZkYzUxMDAzODg2ZGQ2ODVhNzlhMTg1NzJlZGM5YjNjMzBiMjI0MDFkMTY0ZjIwOWFjYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiMDU2Zjk3YTFmYTAzYzY4ZTc5MGUyYmZlYjNkNTUwNWVhNzcwYmRlY2EzYWMyNjIzMzgyYzU0MGNiNTM1ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b3de7c9534164e96ae079b5f3898dce6",
+      "statement": "Since feature 039 the per-service `profiles:` assignments live inside each included component compose file rather than being re-declared in the stack aggregator, which removes the include-override merge (`services.<x> conflicts with imported resource`) that only newer Docker Compose accepted and lets the stack parse on any conformant Compose.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L10-L14",
+          "version": "repo-lines-v1:sha256:836e88ffe82f6d636e8bbb3702c6027f5925298cfcf706c3a257431b5ab74bde:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzk4OGY5MWQyMDgwNTljMjkxNzhkMTYzMTUxNjk4ZDAzY2I2NTBkNDM5MDg4OGVmMDAwNzdiNzI2ODRlYTMyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzMWUyNjAzOThhZDYxMDkxNGRmYzI4ZjA0OGQzOTI2NGJhN2Q1MDMyNzhkZDJmOGJiMWM0YzE0YjQ5OWQ5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTJiZjQyNGExOTg3Nzc4YzY4OWQ1MGFjZDA0YjE3Nzc3OGRjYWZhMWNjMDAwMWUwOWNjMjEyZTllMmQ3YmI1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmU5Nzk0NDk2MWUwNThlN2E2MWM3OWYxN2YzOGU5M2E2MDJjYjBhYzZkNWViOTlkZGNjNGE2MTA3OGY1YmYxMiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L127-L134",
+          "version": "repo-lines-v1:sha256:deb47159d48357af9454f1b89d08964388bd3066f505b1d5b394f0ce7ca01b1d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVhYWFiYWEwZGM3ZDhiNTVhMDExZjIyMjViYWI2YWRjNzJlNWViYTAzNjBkYTEzNWIzZDExOTVjNzdjYWQyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzMWUyNjAzOThhZDYxMDkxNGRmYzI4ZjA0OGQzOTI2NGJhN2Q1MDMyNzhkZDJmOGJiMWM0YzE0YjQ5OWQ5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2IwNmRlNDU0NDY5Y2IwNDQyY2Q1Yzc1ZWQ2MDViZTUxMzE0MTVjYWZmNzI2NmUyOGQ3ZDA5N2Q4ZWI1NGM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWNmMWRlN2E4MjdiM2I5YjI1NTViMGMwNDQxODg1M2RiMzkyZjNhYzkyMTk3NjgyZmNmMDdhMmE0MjdmYTYyYiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L27-L32",
+          "version": "repo-lines-v1:sha256:c68dff6b0aee817abd8595e0269929dad45d93cb2b43b0fdeb5be74257c00579:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyMzEwMjdlNTdmOGEyZGE3MjQ0MjExMTBlYTQwNjBhY2VmMGQ0ZjFiZTBiY2I0NzA3M2M0ZTRjZGZhYmQ1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ2OGJhOWEzOGQ2YWYzYzc0MDE1NzNiOTJjOWY1MDdkNDg3NDg3NGNkZmFjMGY3ZmRiNjIzZmM3ZTA5NzEwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM0M2Y5MWFkMWZiNWZkMDNkMzdiOTM3NDVhNWU3MDk0NGFmOWQyNzk5MjU5ZTMxOWE3ZTRiOGUzMTFiZjY5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM1ZjgwYjI2NDE2MzUwYzc2ZWI5MzFiMzIxYzA4NTAwYjEyNjcxMjI1OWZkZjVhNDUxMGJmNTY0ZWRiOTRkYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b2886947d0549a18ff7c1b047929d61",
+      "statement": "`infrastructure-as-code/komodo/stacks.toml` declares seven `[[stack]]` blocks that a Komodo ResourceSync diff-applies and deploys: the four core application stacks `prod-auth`, `prod-mc-service`, `prod-mcm-bff`, `prod-movie-assistant`, plus the three support stacks `prod-audit`, `prod-observability` and `prod-vault` added with the production Control Tower.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L187",
+          "version": "repo-lines-v1:sha256:d959375a0c6bc5dab8caafb176b7a8b9cc6c9e7fd6e2ca4505dda90b3b069053:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMGNhZGQ2MDNiMGRiODQwOTk2NmRlMTY4YTg2OGE0NmRlMDIwNWQ4N2I1YTI3YTFjY2NhODAxMmFiNWUwZDRiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlM2Y5ZDQ2YjJjMmUzN2Q0NjE4NzcwYTJjNWFmYjVmNzEyZmYyMGVkM2YyMzQ0M2I1MzBkZGU0ZThkNjE5NDBkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MmYzYThlOWU3YzhkNTZiZDA2NzJmMDRhNzA2ZmEyNjk5MTBiMThmYjRmNGFiN2Y3Zjk1Zjg1ZGRjMzZkMmYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f33eba0eaf9f49d99fd27d7ccb6b5764",
+      "statement": "Production deploy order is declared by `after` (`deploy = true` makes the sync deploy as well as apply): `prod-mc-service` depends on `prod-auth` because mc-service fetches Keycloak's JWKS, `prod-mcm-bff` depends on `prod-mc-service`, and `prod-movie-assistant` comes last because `spreadsheet-mcp` needs `prod-mcm-bff`'s `mcm-bff-network` and Redis; the support stacks attach as `prod-vault` after `prod-auth`, `prod-observability` after `prod-mcm-bff` for ordering only, and `prod-audit` as an independent root.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/spreadsheet-mcp/compose.yaml#L4-L8",
+          "version": "repo-lines-v1:sha256:5b5873db4732df5a20f1d5d4726735c8bfe3d8ba55f682b9c93de43ef648d0b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlhNTI5YjA1M2Y5NjZmOGQ3ZmIyYjcxNjBkODE0NzYxODljZjdjODY1YjMzM2Q3OGM0ZWQzYTU4Njc3MmVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwNTFhMDMxMzZlMTNlMmVjODQyMjBkMWFlM2M4YThlNGQ3ZTlhMDA2YzdiM2MyNzVhZGE0Y2NmOWRlNjI3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzIwYzZkMDIwOGVlNjc0NWFkNzI3YzRlNDg3NGMzNjNhYjY5YmI3YjExMGJjNjk3MGMzYjZiNmJhMTNkZmViOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjRiNTY0ZWJjOWQwMzFhOWZlYWQ1MDgyZDU1ZjZmMmE1YzJjOWM2NGJhYmMyMTVjOTIwMTE3M2ExZmEwNDFjMCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L129-L147",
+          "version": "repo-lines-v1:sha256:568a0711498c1a8d03ced1a407a14574ec7fc621c48102e10df08120aff6cb9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMzc4YzQ1YmU4MzI0NmY1ZjlhY2VlODljYWE3YjAwNGQ5NGU3ODg5ZDFlM2VhZTM1YmRkOTFlYTNjN2ZmZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmYzBjNThjOWNkNTZkYjdhZTE5MDg5YWE4MTYyNzI1ZGY1ZjBhY2QyMjk5MGY5NTE5OTNmZDAyMTdkZmQ1NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiYmY4MDQzNTEyMjRmMDEyODg3MzhkZWI2ZWE2NjZkOWQ1M2UxNmI0ZmZjNGY1ZWZlYTBkOWI4YjMzNTFhNDYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L176-L179",
+          "version": "repo-lines-v1:sha256:7ec60c68bb05f63db31ae69941a4cdd429c386acaed5256cdc6d700418ef38da:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjYWRkNjAzYjBkYjg0MDk5NjZkZTE2OGE4NjhhNDZkZTAyMDVkODdiNWEyN2ExY2NjYTgwMTJhYjVlMGQ0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU1ZDEwZGFjNDE0NzQ5ODEyMmQ2Mzg1MjFhODIxOWIzYjE0YWZhZGIxYjNmMWYzODljNGFkYjcyNDI3ZTE3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYyYmYzNzAwNjZiOTE5MDk0YzQ5NzA3Y2ZlZmU3MzY5MGU5ZGY3ZDJhNjFjOTA5Y2I2NmNkNmJmYWUxNzljMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWJjZWRiYWQ3YTYxZGJmMmNkOTQzNTEyMTQzYzY2M2ZjN2E3NDdhYmRhOTIxZTYzNDdmNWViYjUyNzJlZGQ2NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L19-L21",
+          "version": "repo-lines-v1:sha256:a7feb898af055c78d516440532c81671d5c9d9a9e7ec2f44a83516714b975da2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc3Y2E5NWMzYzk0N2UyOGJkZmM0ZTdkOTg3NGY0YmUwYjljZjAwMGEyZTJiMGI5MWFmYjNjMWY1NDkzMjBhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjMxYzFmZWU4Yzg0Yzg0YTg0MmI5MGYyYzRiM2YwNjU2MzNhOGNlMjA5YzY4OWFhZDMzMDE1OTU1MzZmMjQxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzA2NDg2OTI4NDVjYTk0Njc2NGVkMmMzNjNjN2IwOGQ1MTJlNTEyMzBmNjhhMWViNGU4MzllOWFiNDg4NjMxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDVjYzNkM2I5ZmIwNmUwYjBhY2RhYTE5OTg3NDU5YjcwM2NmYWNjNTJjMmRiM2FjNTEyNTM2ZDBiNTdmYjg0MyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L47-L49",
+          "version": "repo-lines-v1:sha256:76838b1c707d7501459190bacd9feb4d035160f3a0ffba9572af45d302f82d69:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRjYTVmNjczMmUxNTk1NGYyNDFkODdhMGRiMzA5MDVlYjZhYmZiZTZhODhkNjY1NDk5NjlmYTAwYmU1MWJiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ZiZGI0YTdkMTMwMGEzNGVkODIxMGU5NTE3N2MxNjA5OTk1Yzk4MGFiNzMyMWJhYTYyNjgxZjZhNjhjOTI2MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFiNGQ4NzViMzAzMzhkMTQyZWU3ZmZiN2IxYzZhOTEzYzViM2ExNTViNmI4NzQzYWJhNTk5NDk5NjdkMDlkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2JiZjgwNDM1MTIyNGYwMTI4ODczOGRlYjZlYTY2NmQ5ZDUzZTE2YjRmZmM0ZjVlZmVhMGQ5YjhiMzM1MWE0NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L68-L71",
+          "version": "repo-lines-v1:sha256:109bea6f85731e462ec08f54af4ae8fca66159cf14e056dafb0d151883565f40:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjYWRkNjAzYjBkYjg0MDk5NjZkZTE2OGE4NjhhNDZkZTAyMDVkODdiNWEyN2ExY2NjYTgwMTJhYjVlMGQ0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGU4NWY1ODExNzExNjM2MmI0MzU3YzY4ZjA4NTFkMzhiNGE1MGQyMGMwM2UwODYwYmQzMTFhNzIyMTNiNzhkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJlZDJhYTNkNzZiYjE0NDYxNzVjZjVlNzVmYmM3YWYxMDljZTcyNzU0OWU0OTExYTBkOTVkODAyZWI4ZjgyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2JiZjgwNDM1MTIyNGYwMTI4ODczOGRlYjZlYTY2NmQ5ZDUzZTE2YjRmZmM0ZjVlZmVhMGQ5YjhiMzM1MWE0NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L97-L100",
+          "version": "repo-lines-v1:sha256:6e79327842df1c39230e0a11d5cc510ee38e971cd70e3e7a98fa758a5bdfaa42:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjYWRkNjAzYjBkYjg0MDk5NjZkZTE2OGE4NjhhNDZkZTAyMDVkODdiNWEyN2ExY2NjYTgwMTJhYjVlMGQ0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmE1MzJiZjk3NWUwYTE2NTM2OGU4MmNkMzQ0YWM3OWI5YzA3MGU5MWIwMWEzYThiZWZlMzI0ZmNkNWI0YTgwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmQwOGI4ZjhjNGVmMDVjYWViNGFhNWRlYjBhYjA2OGE1OWNjNGYxMjExNjcxOGQ0NTgwODA3MTc0YWZlYWFlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2JiZjgwNDM1MTIyNGYwMTI4ODczOGRlYjZlYTY2NmQ5ZDUzZTE2YjRmZmM0ZjVlZmVhMGQ5YjhiMzM1MWE0NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a4b296e73ec84bdba1c9cb114778d27d",
+      "statement": "Each production `[stack.config]` block names the Komodo Periphery server, a `linked_repo` + `branch`, a `run_directory` and `file_paths` pointing at that component's `compose.prod.yaml`, an `env_file_path = \".env.prod\"` (gitignored) into which Komodo writes the interpolated `environment`, and an `environment` block whose values are masked Variable tokens `[[NAME]]` resolved at deploy time — the committed TOML carries only references, never a host, domain, IP or secret value.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L30-L44",
+          "version": "repo-lines-v1:sha256:28452f8ed388ec7bf9bded5d7da30b7eb26c1fd1dba6d439d0bd5388de53fcae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MjlmZmMwZjBmZjgwYjhkMTY5MjhiZDUzNGU3NWY1N2E3ODdmZmYyZmVjZWEwMGVjZjBmMWIzMzQyYjFlYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiOTk2ODk1YTFkY2I5Nzk5ZTA2ZTc4ZDIzOWE1MzEyZGFkZDQwOGYzMDYzZjVmYzIyODA5YmZlODE1MTY1YTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYTNhZDVjZGY0N2I0NDg2NzliZmNjZDc0YTRlNWNkNTY5ZTU1M2IxMzAxNzk5NGFiMzYwNDUxZjVmOWMyZGMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L80-L90",
+          "version": "repo-lines-v1:sha256:f54b8be1bd1044d069ef75b3210433e88b5c203153e1d770bce57cb42140c465:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODVlMDVmY2VlZGQyNmExMGVjNjEyZjBmMmY4Y2MwMzBhYTA3MTg4MGY4MzY1YmJjNjQ5MTE0ZDIwZmI1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYTlmMDAzYWFlMmE1OTgwOGJjMmY3OTdiOGM0Njg0OTY4MWQ0NjEyMGVhMDNhYzA1OTE4NWE0ZTJjNDAwODkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d069cb6ce2e8426d99c1b4cb5dd047a6",
+      "statement": "Image digests are not in `stacks.toml`: a tracked, host-free `.env.deploy` beside each component's prod compose carries the bare per-service digest and is passed as `additional_env_files` last, so the digest interpolates from git while `REGISTRY_HOST` and secrets interpolate from `.env.prod`; the compose assembles the pull reference as `${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}`. They are written by CI's digest-by-git promotion step, so editing one by hand defeats the promotion mechanism.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L240-L248",
+          "version": "repo-lines-v1:sha256:2774c4dba6ac884150fab71e2525ebb846d34aba51db7a3fb0bd4bd70694ac8f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIwMmUyMTNkYTdlZjc0NThiODA5MGYzYzg0ZTA4MThjZTkzM2JlNjZkMmFlMDBjZTUwYmQwMjFmZjU2MTU4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MwZDk5MjU2MzljMjFhZmEyZGI5ZWMxMjgxMmQ1ZGJkOGZhZDUyYmVkMTdlZmRiNWQ0OWFjZmUwYzdmNzViMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDkyNGRkOWEwZDRkMjUwMWIwZjhjOGVjMWQ2YmYxNGRmOTA3OTZkY2E4ZjIwYWJiMTI3N2IyOWIyODg4ZGRlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2NhZjdjZmVjYWQ3OGE5ZTdkNDM2OTQyNzc3ZGMyNmE2MzZmMmE3YWY1OTNkM2RiMDE4NzdhMjMxYWU2NjYzYSJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L60-L70",
+          "version": "repo-lines-v1:sha256:9f7ab2302e67977d4ce464a5baccd49fd4f340499f23228ae417937ae4d62fab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MWNiYzY3OTYzMDU3Y2FiYWI2YjM0YjAwNDlhZTJlOGY1ZWMzYzgzZWIxZmEyOTAwZmIyNmM3OGYxOTlmMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZjMzZDVlY2NmMmJlYjgyODBmNjEwZTc5Mzg3ZGRkOWQ2Nzc0YzczNzRhYzI4ODU1MWQ3MzYxMWU4YmYzNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwYzEyNmViZWNlOWMxY2JhNzE5ZDBhNDRkNDQyNzlmYTI1YmJkZmI2OWZhMjRlODgwZTJjNjA0Y2M5NWM5NzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxZWU1MTA1MTM4ZDA4NDE2NTBlYzdjM2IxYTNjNGNiZDU1YzFkZWZjOTdhZWE4MTJkYWNlNzI4YTlkNmJmMWEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L57-L79",
+          "version": "repo-lines-v1:sha256:4c4dc6ea956d9b93b0c0b04484d933145917fdc156acfa8b559f70a428b38121:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5YTdjYzAzMTNjNzk0YTU3NGNjZTAzYzRiOTc1MTQ3NDc3NzRkODE0MWZkMjFjYzU2ZWQxZjEzOWViMmFjM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhM2QzZjczNThhNmRjNjk4YmJmNDU5Y2JlM2E1Mjk3YjdiNzJlNWY4M2YyMjllYzRlMzFkYWFkYzQ1ZDVhZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhOGZjYmQwOGRlZjcxZThhYWRmZWM1MTdkZDg1MGZmZDQxM2QyMTZlOTUxNWE1MDEwZjRkYTFmZTJlNTE1N2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkODcwYmFkYjk2NTVjZmZhNWQ2MjgwZjBiYzAzNWExYzg4OWU1MDE4NDYwOGVkZGQ0MTdhZjBmZTFlNGU1ZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66b43d908a114b8182d13efa9604b629",
+      "statement": "There is no cross-project `depends_on` between the local stacks (deliberate since feature 020), so `auth` must be brought up before `mcm`'s `app` profile manually. The failure mode is not a crash or a hang: mc-service binds and serves immediately while running OIDC discovery in a background task, so with Keycloak unreachable `/health` answers while every protected request is rejected with 401 — a working-looking backend that refuses every login.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/health_test.rs#L421-L455",
+          "version": "repo-lines-v1:sha256:ff0dc32d44156c1236e3de5b042f12a9580ec39037720cb76d24092d0b26aaae:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmYTI1NmE2ODNmMzNlZDFkMjkzMWM1N2EwZTMxZDE2M2JlYzBlODA1Yzk5MzBlNzAwMTFiZjMzYTIxMTkzZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExYzE2ZTBlY2YyNDkwN2M1YzY3NDY0NTk2MjBmNDIyNTc3ZWY1ZDRiMTBkNWMzZDE4OTY2YTA2NzhiYTYzOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNDVkMjkyMzgyOWNkMGVmMDgzYjY5ODBiMGIxYjViYzc0OWI4ZWNhOWEwNmM2NDE1ODFmNmUzZTFlOWUzYmQifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml#L11-L12",
+          "version": "repo-lines-v1:sha256:40c4872fc98edd4dd4ec40093fa7fecb8b6307fbcf0813cefba7aa6ebe2b8aa4:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAxMTQwODM2MTQxYWExZTdlOGYwY2E0ODQ1Nzk0OWI5ZjUwN2NkOTQzNDI4ZjliMmVhMzE2NmY0YzM5MWM3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDI1MTRlMjI3MDViNDU4MjFjYzdmZGU3ZDQ2MzVlZjI2M2YwZjI0OWY5OThhYzVjOGMwOGEyY2YyZmJkNmJlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTU0Y2M1YzdlYTk2MWVjNWI3YTU2OWIxY2UyNGU0NDdmNzc3ZjAwYmQ4OThiNTc3ODA1OGZhNWRmYTEzMzMzZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RlM2QzYWE2MDViNzU3YmY4MDlkMWI0MDE4YjZjNGNjOTYyMWU4MmVlNTlmZDI4MWU0ODM2OWRkZGY1ZTY5NyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L3-L5",
+          "version": "repo-lines-v1:sha256:fd77a88dd800877fd67cd45fd0877ebfe18fce1c8cf8f4e16b7e9f70a15fd789:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWFmNGZiMGYxODUwOGE4OGU1Y2QwYmQwYWRmNjUxM2M4ZWE4YWMxOTM4MzcxNGVmMGUzNTJjNTNkNWRjODg3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQwMTJjMDg2NjBlMzhmZTVjZDMyNDdhYWZiZGY5YTk2ZDc0MjkyOGU1NDk2ZDY2MzdkMWUzNWM4NDM2ODkzNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2UwMjc4ZmUxZDMzYWUwMDg4ZjRmZjdhOGI4NWVkNWExMWRkNzhiYWIxMmYzNDQzMjRlYzljYzQ2NTBhMDg2MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGIzZTQ4OTJjZWUyZjBiNjkyNGJjZTE0ZmQ4NmQzNDhiYzVmNjkxMzVhNDRhMmZlMjdkYzcyOTQzNDdlNGJmZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a46b84c13f524277936ddedb83eefacf",
+      "statement": "A Compose profile is not isolation from interpolation: Compose interpolates every service in an included file at parse time regardless of selected profiles, so a `${REGISTRY_HOST:?}` inside a profile-gated service made `up` fail for the entire `mcm` stack — including CI's app-e2e bring-up, which sets no `REGISTRY_HOST`. That is why the feature-073 backup destinations live in a separate compose file brought up explicitly instead of as another `mcm` profile.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L9-L16",
+          "version": "repo-lines-v1:sha256:5b6109dcd2ab75f94fb629115ebbf1074227f78ab395b735cd06f6bc3b12c5ea:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y1Nzg0ZjRhYTA2Yzk5NmNmYWZkMDUwNjFjMzliMzEwMzFiYWIwZjRhZTBlYzhkMGM1OWMzZjdjOWZiMjliMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjMmZkNDhiZDJhYjA1ZGViYzk5MzNkOTM0MWRmODc4ZDRiNjM0ZmI5NDJmZTIxNmVkMzQxYjZkZmZlMmI5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc1Y2MzNzEzN2U2NDU3NmQ3NWNjZTA5ZDgzYTBlYTI5ZTBjZDNjOWZlMTllZjhiN2U1YTAzZWMzYmI0YjRiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZkMmZlYzlhNDhiODMzYmZmNTdiZWVlNTdiNGIwYWEzODcxZTA2ZTgzMmQyZTdiOGJiZGUzY2YyOTM2YzcxMyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L15-L23",
+          "version": "repo-lines-v1:sha256:5a67a2963fda7eb865b166f98e76de1b9785de685ccabfa16e4422fb0a55bbaa:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkMGQ2ZTYyNjY0Y2ZkNTk1M2Y0NjUwMzQzMDVkZDJlYjE4NmFhYmI2MTVjNzllZWRhYmFlOTg1NTdmZDkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJjNDg1OGUyMmNjMmM5NjdiNDIxNTBmYTU1MDU2MmEyYzgzOWMyY2ViY2FhYjkxY2FiZGY2ZjRkYTAyMDAyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzODFjYWQzNzU2NTUzZGE1YjA3OWY2NWEyNjI5YmM3MjU5ZDQ3NzUyYzNjM2JiNjE4YTY5ODJiMmZmNWM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTM0M2Y5MWFkMWZiNWZkMDNkMzdiOTM3NDVhNWU3MDk0NGFmOWQyNzk5MjU5ZTMxOWE3ZTRiOGUzMTFiZjY5ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_287def3729684aed802ff68851f9cabe",
+      "statement": "Adding a `${VAR:?…}` to a prod compose changes that stack's required inputs, and the only place they are declared is `stacks.toml`; `scripts/__tests__/komodo-stack-env.guard.test.mjs` enforces the coupling by asserting every required variable in a stack's prod compose files is supplied by that stack's `environment` block or its `additional_env_files`.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L1-L20",
+          "version": "repo-lines-v1:sha256:e9166dbf0df72c9d3f3c1dcf7d9f1db1b69f505adea8c81134d1a3d24709f313:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMjMxZGViMzdkZTJiMWU1YjYyYTA3YTE5ZDAzZDRkYTQyYTBjY2E2ZjBjNzg2ZjFlOTliMmE1OTY3ZWM1NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NjdjYTA5YzA3MjIwNTVjMmFjZTA0MzM5YWE0NGE4YzkzNzM2ZjFjOTUxZDkwYTI3MmU5MzdmMWY5ZTc3MWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyYWY0ZWY0OWY1ZWE1MzRjN2U1YjgzNDE3YTA3Y2MxZmQzMTM5ZDI4MzAxMzRlOWY4YzQ4ZmU0ODRkZTAzY2UifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L82-L100",
+          "version": "repo-lines-v1:sha256:272acde3558b2acb2c2013e7a4327ad88f9bd586bed1280e82bc93e08f1f5065:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYzVlNDQxM2FkMjBhYTA5NjVjMDJhNTFiMDIyZWM3MTFmMGI3MmVkMzBkYTdiYjY4OTQwOTI2YWQyZjlkNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZTQ2OGNhOWJjYTVlMmZjMzg5NDZjYmI0NDg2ODlmMGNhNzhkMjQ3MzcwZmQ1ZjBhZjhkN2Y3MzNlNDZmN2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0f85c767f8540bfbb5ba64166e9e30a",
+      "statement": "`scripts/check-komodo-sync.mjs` statically scans `infrastructure-as-code/komodo/**/*.toml` for a `*.ts.net` tailnet host, a Tailscale CGNAT address, or a hardcoded URL authority that is not a `[[var]]` token — including inside comments — so a real host/domain/IP/webhook cannot slip past the `[[var]]` discipline; `scripts/check-topology-scrub.mjs` is the complementary whole-tree guard against a real tailnet host re-entering git.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-komodo-sync.mjs#L1-L37",
+          "version": "repo-lines-v1:sha256:d911a48e1470fb109ed8dba702cb3a1af1e7e62916492995a14b80ba94c38424:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmODg3ZWQxMDhlMTkxZDBhOTk4OTI1MWRlMDA4ZmE3MGE4MzFmMzRhYTY5YjI1YmNkN2Q0NTdjN2ZkZjNkYWUifQ"
+        },
+        {
+          "resource": "repo://scripts/check-topology-scrub.mjs#L1-L20",
+          "version": "repo-lines-v1:sha256:ad2bf5867aaa4ae99b20f56f5922ec23e11c4f3ea6c92f0f82ed172ac5c7d980:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMmJjZTdlNGI4MjljY2FiOWM1NTliMGQwZTg3YWNkZDc1OTk4NDJiNmRhMDM0ZGZiZWZhMzFiZjEyOGJkZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjNjIwMGQ3M2NiM2UxNzhhZjUzODQ2NmQ2MzM1NjFlOTRlN2VmZDk1MmE0YzYxNjRmZTQyMzk5NWUwMjU4MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2d19b60f22346618cb8312feb397342",
+      "statement": "`scripts/check-prod-ci-port-collision.mjs` compares the fixed published host ports of every `infrastructure-as-code/docker/**/compose.prod.yaml` against every other tracked compose file and fails the build on an overlap, because the prod stacks and the CI runner are separate rootless daemons on one host sharing a single host port space; prod admin/UI ports therefore live in the reserved range `19000–19099`, and the gate scans only the compose `ports:` key, not secondary self-referencing URL variables.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L45-L53",
+          "version": "repo-lines-v1:sha256:0e6c3cfc51950e9abe258258e6cf0961e4b42e8b888badc7710511a0e8d6a80e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhMGU3OWRlNzZmNTkyYTRkZmRjNjQzMWM5MzI4MDNkMTRhN2VlODgxYzEyZjljZGRhZTFlMWExNDk0YTViZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjA3NmE0MWVkNzZjNjQxM2FlNTgwM2RlMjYzOTQ5ODg1ZGNjMDRjMTg2YzIxNzk2M2I2NjQ2MzE0ODBlN2VjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE0ZjYyZGIzZTJhNjViNzVlM2E0Nzk4ZjhhNjJhZjJkZTdiZjk2MDZhM2FhMTdiNjY5N2RmYzYwNjBlN2Y4YiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L1-L22",
+          "version": "repo-lines-v1:sha256:0955465d6c30242ff318396853a9e730bd6e8cc6b4c91dda0e04690711e75acb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNmU4NTJhYWM4YjE1OTIwYzNiYmM0YTIwYjg5N2ZjZTEwNGVmNzRkMTRjNDY1OTI1NjBmMWRlMjdhMGFjN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3YTYwZDAzNWEwMjUwMWI4NWJlNTEyOWFmMzcwNTMwZmIxNmRkODRlZGU5Yjk3YzQ0YTkyOThjY2Y1MzUwNDYifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L129-L155",
+          "version": "repo-lines-v1:sha256:7b06e1be9d13f69e3c71d69454a03fe153fd7c807f002d17864c0bb8b7efdeb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNmY4ZGI0NzQzYTI2NTE3ZWFjZDAxZGE4ZDNjMWQ4Yzg4MzU4M2Q4ODBkZDliODVhNWY2YmZmZWU0NjMyNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmM2Q1NjlmZjc2MDFkNDllZGU4ZTIzMjhjODI4NmQ4ZDA1OGZhYTFhMDhiMDA2NDg5M2YxMWI1MjlmMTdmYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhODE2ZDUyODkwZTBhZWExNzBjZWNjYTJhNzY3NWNhNDUzZTQ0YjIxMWE3YmMzZmJiZTQ2MGJiZGM0MGI2ZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c81a792bfe2549eca9fedd41986235e1",
+      "statement": "`scripts/check-prod-restart-policy.mjs` requires every long-running service in `infrastructure-as-code/docker/**/compose.prod.yaml` to declare `restart: always`, forbids `restart: unless-stopped` (which does not return a container after a reboot on this host) and a missing `restart:` (which defaults to `no`), and exempts only genuine one-shot init/seed containers matching `*-init`, `*-seed`, `*-rs-init` or `createbucket`, where `always` would restart-loop.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L1-L23",
+          "version": "repo-lines-v1:sha256:52c8d65b37bf0195a81acf73e8fbded52ffc6adfdb16c349593e1f36d51c4552:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYmIxOTI1MTFjZjc4MTUwNzgxMmVjZDNmMTExNDY5MjdmNDA5NjZmYjlmMTg2MTk0ZDcwYWI4YjgzOTkzYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjkzY2NlYTA1MGJhMDlkMDg1ZjM3YjE2OWQ3NDQwZjNlYWFkOGRiNGNjNDZmNDQ0NGQ2NDIzM2U0OGE1YzMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L33-L56",
+          "version": "repo-lines-v1:sha256:0b0d517271a5ba81886166ab56157817a8af12aa64ca1c7f6f682d04b0ecb962:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZWM0NGM2ZTI2NzMyODMxMzhmNmZhZjI4MDBhNTFlNzc4ZmI2NTc2NzIwZDliYjc0NjE4NzlkM2EyZDM3M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTNlNDBhYjQyMTc3M2M2YjMyOTAxOTQyMDc1ZmY1NzM0ZGFiZWU4MzZlZjQ5MTczMmQ4M2JhZDQxNjFjZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MzFkNDQ3NTc4NTQ0NTEyNmRlY2QwNWNhM2RkMjRjMmYxMGFjZTkxMjZkMmRkMzA5ZmQ3Mjk0OTAzMDQ3NjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8229125dc188471e83c4f07db5eb17b4",
+      "statement": "HashiCorp Vault is deployed both as the `auth` stack's `vault` profile and as the production `prod-vault` stack, but in production it is deliberately dormant — uninitialized and sealed, with no root token in env, and a healthcheck override so a sealed server reads as healthy — so its presence in the stack definitions is not evidence that it is the active secrets backend.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L38-L40",
+          "version": "repo-lines-v1:sha256:c11427d33dd1b3a3fc5ef097e2703b6a4e59c1b272c4bef4aa6614a42ec28b54:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZlMDBjOWUwYmRkMTdkMmY3MjE2MGE0YjAzZGZjMDA4ZTJjOWUyNDAxOTRlM2EzYjFkZjNiZWZmYzJkZDIzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZThkNDc0N2U3MmU3YmY1YmY2ZjY5OGEzMWVmMWNkMDhjNjFkMzBhYTQxYTEzNDBiN2MzOTM4YTJiZDQ0MTZjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDliNDgzZmMxMWYyYWI0NzI0MWI3ZDdkNzQzMjc0NWI2YTA3ZjAwMWI1YzljZjM4Mzc1Y2UwYTk4NDZmYzlkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTIwMjQ0MTUzZGZlNDcxYmM4ZDFhZTQ4YzQwMTY5MjIwOTBkNTE0ODFiMTgyZTQ2ZDUxMTU1NzdkM2MxNjcwZCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml#L7-L9",
+          "version": "repo-lines-v1:sha256:ed13f4f90c253099008d82fefe41e025537006044a0603780d9781d87477f049:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTlhYzRjNzdlYzg0OGU5ODZiODEyOTUxMTY4OTZmMTU2MWE0ZjJkYjgzZjg5MWJkOGViNDc0NGI1ZTI5M2ExZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ4ZTk0MjMwMGI0NWVmOGZmYWFmMGIwNGM0MDk1NzQxNjMwYTk3OTgzNDliMjg4ZWM3YmIyNjM2OGVlNzY3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRjNTk0MjE3ZWVlOTkxY2IzMDA2MmUyYWY4MTZiYThkMWVlNjk0MTNhODllYWRiYzZjYjAwZTZiZGMwMGM2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzIxMGI0NTY4YzkxNWM4MDFiMzkzNzhhOWM1NmU4NWMwYmVlYjI4YWQ0MDQ4MGMzZGFjNDNmYzMyMDM3NGUxZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L176-L187",
+          "version": "repo-lines-v1:sha256:b366239985df7c8c747d37667d5d8fadc21ecbcba176dd8a8ecd2a01b5bc1687:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZjlkNDZiMmMyZTM3ZDQ2MTg3NzBhMmM1YWZiNWY3MTJmZjIwZWQzZjIzNDQzYjUzMGRkZTRlOGQ2MTk0MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmMmJmMzcwMDY2YjkxOTA5NGM0OTcwN2NmZWZlNzM2OTBlOWRmN2QyYTYxYzkwOWNiNjZjZDZiZmFlMTc5YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2775c18ac81b4c2a91f38acce7cc3e32",
+      "statement": "All four core live production stacks were adopted in place rather than created by the ResourceSync: the `prod-app → prod-mcm-bff` rename and the manual creation of `prod-mc-service`/`prod-movie-assistant` were done by hand so the live stacks already carry the canonical names, which means a rename or restructuring in `stacks.toml` is a config diff against a running system and the diff should be previewed before applying.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L66-L95",
+          "version": "repo-lines-v1:sha256:afe92bd2672c97216b132112575597d5b0f49f490eb4770e621c2a5cdb20b85c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOTk5ZDNlMDEzODM5YWM0Njc0NzUzMGNlZDc0NzE1MGExN2YyZjA2NzJkMjgyOTYwOTlkMjBiZjIxZjU3NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxMzdhMDgxNjE5MGJlMTdkNTdlZDM2OWNmYmM0OGJmMzkwZmZkZTdlYjljZTkxNGVhNmVmOTIxY2E4YWExMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjNGI1OGU0MTJmMDhjZjZmZGNhZGU4YTFkODRhNDIxMjZhMWY2NWIwYjE1NTI0NDI4ZDlkOWU4MjMxOTI0YTEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L19-L24",
+          "version": "repo-lines-v1:sha256:3ab73ab5a937ccaf07299d9ce3cb264d136b37da98021d896e45e0eb9c634de6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc3Y2E5NWMzYzk0N2UyOGJkZmM0ZTdkOTg3NGY0YmUwYjljZjAwMGEyZTJiMGI5MWFmYjNjMWY1NDkzMjBhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU5Njc0Yjk2YTdiNWExZTUwZWIxODM2MjUyMzRkMzY2MDkyNjk2MmZlMzQ1M2QzNGVmOTdiNTdkNTBhNGIxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzA2NDg2OTI4NDVjYTk0Njc2NGVkMmMzNjNjN2IwOGQ1MTJlNTEyMzBmNjhhMWViNGU4MzllOWFiNDg4NjMxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTJiNDkzOTQ1MWFlODVkMzY0NDdmZGE1YzQxYTJlOTY3ZWNmNzFkZTZkYTY5ZjBlOWU3NDA4ZTk0MzlmYWFlYyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-29T20:12:19.419Z"
+  }
+}
