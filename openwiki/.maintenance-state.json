@@ -1,7 +1,7 @@
 {
   "coveredCommit": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
   "coveredAt": "2026-09-29T11:00:21.119Z",
-  "lastOutcome": "completed",
+  "lastOutcome": "failed",
   "backlog": [
     {
       "area": "projects",
@@ -13,7 +13,8 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "drift sweep (item #525, pass 3): V12 stale"
+      "reason": "drift sweep (item #525, pass 3): V12 stale",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/infrastructure-stacks.md; openwiki/projects/keycloak.md; openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     },
     {
       "area": "runbooks",
@@ -25,104 +26,15 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "drift sweep (item #525, pass 3): V12 stale"
+      "reason": "drift sweep (item #525, pass 3): V12 stale",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backlog.md; openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/devcontainer-sandbox.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 606,
-    "headCommit": "7c02b702b2d90542bb6857334e1bcfa9aabc0973",
-    "markerBefore": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
-    "slices": [
-      {
-        "parts": [
-          {
-            "area": "architecture",
-            "pages": [
-              "data-model.md"
-            ],
-            "kind": "refresh",
-            "subjects": {},
-            "areaExists": true,
-            "reason": "drift sweep (item #525, pass 2): V12 stale",
-            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/data-model.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-          },
-          {
-            "area": "decisions",
-            "pages": [
-              "adr-0002-stateful-major-upgrades.md"
-            ],
-            "kind": "refresh",
-            "subjects": {},
-            "areaExists": true,
-            "reason": "drift sweep (item #525, pass 2): V12 stale",
-            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/decisions/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/decisions/adr-0002-stateful-major-upgrades.md. The openwiki/decisions/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/decisions/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-          },
-          {
-            "area": "gotchas",
-            "pages": [
-              "expo-router-and-transport-traps.md",
-              "keycloak-service-account.md",
-              "playwright-testid-mapping.md",
-              "session-lifecycle-and-eviction.md"
-            ],
-            "kind": "refresh",
-            "subjects": {},
-            "areaExists": true,
-            "reason": "drift sweep (item #525, pass 2): V12 stale",
-            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/expo-router-and-transport-traps.md; openwiki/gotchas/keycloak-service-account.md; openwiki/gotchas/playwright-testid-mapping.md; openwiki/gotchas/session-lifecycle-and-eviction.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-          },
-          {
-            "area": "process",
-            "pages": [
-              "constitution.md",
-              "wiki-maintenance.md"
-            ],
-            "kind": "refresh",
-            "subjects": {},
-            "areaExists": true,
-            "reason": "drift sweep (item #525, pass 2): V12 stale",
-            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/constitution.md; openwiki/process/wiki-maintenance.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-          }
-        ],
-        "kind": "refresh",
-        "area": "architecture + decisions + gotchas + process",
-        "pages": [
-          "architecture/data-model.md",
-          "decisions/adr-0002-stateful-major-upgrades.md",
-          "gotchas/expo-router-and-transport-traps.md",
-          "gotchas/keycloak-service-account.md",
-          "gotchas/playwright-testid-mapping.md",
-          "gotchas/session-lifecycle-and-eviction.md",
-          "process/constitution.md",
-          "process/wiki-maintenance.md"
-        ],
-        "reason": "drift sweep (item #525, pass 2): V12 stale; drift sweep (item #525, pass 2): V12 stale; drift sweep (item #525, pass 2): V12 stale; drift sweep (item #525, pass 2): V12 stale"
-      }
-    ],
-    "updatedAt": "2026-09-29T11:00:21.548Z"
-  },
+  "proposal": null,
   "lastRunBudget": {
-    "pagesWritten": 8,
-    "elapsedSeconds": 1870,
+    "pagesWritten": 0,
+    "elapsedSeconds": 11,
     "stoppedAtBudget": false
   },
-  "lastRunUsage": {
-    "invocations": 1,
-    "invocationsNotCaptured": 0,
-    "calls": 223,
-    "failedCalls": 0,
-    "uncounted": 0,
-    "uncached": 1434061,
-    "cached": 11087768,
-    "cacheWrite": 0,
-    "output": 249631,
-    "reasoning": 152976,
-    "ms": 3380609,
-    "estCostUsd": 0.5579,
-    "provider": "fireworks",
-    "model": "accounts/fireworks/models/deepseek-v4p1-flash",
-    "tier": null,
-    "priceTable": "2026-09-27"
-  }
+  "lastRunUsage": "not captured"
 }
