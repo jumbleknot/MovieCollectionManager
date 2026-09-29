@@ -54,10 +54,13 @@ authorization-code flow.
   `getAdminToken()` maps any non-OK token response to that error code, so an admin-token failure looks
   the same as Keycloak being down. Check the service-account secret first when Admin-API-backed routes
   (registration, forced logout, role assignment) start failing.
-- **A service account whose `realm-management` roles are missing fails differently — 403, not 503.**
+- **A service account whose `realm-management` roles are missing fails differently — not 503.**
   The realm seeds `service-account-mcm-bff-service` with `view-users`, `manage-clients` and
   `manage-users` from the `realm-management` client; without them the client still authenticates (the
-  503 path above never triggers) and each Admin API call is rejected instead. A realm export does not
+  503 path above never triggers) and Keycloak rejects each Admin API call with 403 — which the BFF
+  never passes through. Each function re-maps it: `deleteUser`, `countUsersInClientRole` and
+  `sendVerificationEmail` answer 502 `KEYCLOAK_UNAVAILABLE`, `createUser` answers 400 `INVALID_INPUT`,
+  and `logoutUserSessions` ignores the failure entirely. Do not look for a 403 in BFF responses. A realm export does not
   carry service-account role mappings, so the export script has to reconstruct them explicitly — a
   partial import can therefore produce a service account that mints tokens and authorizes nothing.
 - **The admin token is minted per call, never cached.** Each Admin API function in `keycloak.ts`

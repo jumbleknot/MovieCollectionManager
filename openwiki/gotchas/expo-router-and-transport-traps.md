@@ -91,10 +91,12 @@ token-refresh interceptor (`utils/token-refresh`). But CopilotKit's React Native
 automatically — but when that short-lived cookie expires (Keycloak's ~5 minute access-token
 lifespan) mid-session, the run 401s with no refresh attempted.
 
-`frontend/mcm-app/src/utils/agent-fetch-refresh.ts` wraps `globalThis.fetch` (installed by
-`assistant-polyfills.ts`, the very first import in `app/_layout.tsx`, after the crypto/streaming
-polyfills but before CopilotKit issues any run) to detect a 401 on the agent run route specifically,
-call `silentRefresh()`, and retry the run once after a short settle delay.
+`frontend/mcm-app/src/utils/agent-fetch-refresh.ts` wraps `globalThis.fetch` (installed by the
+assistant polyfill loader, the very first import in `app/_layout.tsx` — on native
+`assistant-polyfills.native.ts`, after the crypto/streaming polyfills; on web
+`assistant-polyfills.ts`, which installs only the wrapper — and before CopilotKit issues any run) to
+detect a 401 on the agent run route specifically, call `silentRefresh()`, and retry the run once. The
+401 retry is immediate; the 250 ms settle delay applies only to a *thrown* transport error.
 
 - **The cookie is carried by RN's *default* behavior, not an explicit flag.** CopilotKit's polyfill
   itself does not set `init.credentials`; if a future React Native or CopilotKit upgrade changes
@@ -103,8 +105,10 @@ call `silentRefresh()`, and retry the run once after a short settle delay.
   regression net for this.
 
 - **Install order matters.** The refresh wrapper must be installed after the streaming-fetch
-  polyfill but before any CopilotKit run — `assistant-polyfills.ts` is structured specifically to
-  guarantee that ordering; don't reorder its `require()` calls.
+  polyfill but before any CopilotKit run — `assistant-polyfills.native.ts` is structured specifically
+  to guarantee that ordering (crypto, then the polyfills, then the wrapper); don't reorder its
+  `require()` calls. (`app/_layout.tsx`'s comment still points at `assistant-polyfills.ts`, which since
+  feature 077 is the web variant.)
 
 - **A *second*, distinct recovery lives in the same wrapper: the transport-drop retry.** A dropped
   connection mid-stream (a reset adb-reverse tunnel; server-side it surfaces as `Cannot pipe to a

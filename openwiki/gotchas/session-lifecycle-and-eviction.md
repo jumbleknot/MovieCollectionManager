@@ -98,7 +98,7 @@ instead of producing an unhandled `SyntaxError`.
 ```mermaid
 stateDiagram-v2
   [*] --> Active: createSession
-  Active --> Active: touchSession on authenticated request
+  Active --> Active: touchSession on auth/user or auth/refresh
   Active --> IdleExpired: idle beyond env.sessionIdleTimeoutMs
   Active --> AbsoluteExpired: now past expiresAt
   Active --> Terminated: terminateSession on logout
@@ -109,7 +109,7 @@ stateDiagram-v2
   Evicted --> [*]
 ```
 
-Session lifecycle in `session-manager.ts` — expiry is detected lazily on the next request, not by a background reaper.
+Session lifecycle in `session-manager.ts` — expiry is detected lazily, not by a background reaper, and only where a route asks: `auth/user+api.ts` (through `validateSessionTimeout`) and `auth/refresh+api.ts` (`getValidSession` + `touchSession`) are the only callers, so the idle window slides on those two routes alone. Domain routes are gated by the access-token JWT, not by the session; an idle session is caught at the next refresh. The comments in `session-manager.ts` and `session-timeout.ts` that say "every authenticated request" overstate this.
 
 - `getValidSession(sessionId)` is the authority. It loads the session, then deletes and returns `null`
   if either the absolute timeout (`now > expiresAt`) or the idle timeout (`now - lastActivityAt >
@@ -155,12 +155,14 @@ one that never fires.
 ## Who the session belongs to
 
 Nothing in `session-manager.ts` verifies that a session ID belongs to the caller — it is a keyed
-lookup module. Ownership is enforced at the route boundary: `auth/user+api.ts` and
-`auth/logout+api.ts` extract the session ID, load it, and act only when `session.userId ===
+lookup module. Ownership is checked at the route boundary by `auth/user+api.ts` and
+`auth/logout+api.ts`, which extract the session ID, load it, and act only when `session.userId ===
 payload.sub` (the JWT subject). Both are explicit about the reason — an unauthenticated request
 carrying someone else's `X-Session-Id` must not be able to slide, expire, or terminate that victim's
-session (feature 009 finding #9). Any new route that calls `getValidSession()`, `touchSession()`, or
-`terminateSession()` must reproduce that ownership check itself.
+session (feature 009 finding #9). **`auth/refresh+api.ts` does not make that check**: it loads and
+touches the session named in the cookie without comparing `session.userId` to a token subject. Any
+route that calls `getValidSession()`, `touchSession()`, or `terminateSession()` has to carry the
+ownership check itself — nothing below the route does it.
 
 ## The client only ever holds the opaque session ID
 
@@ -176,8 +178,9 @@ The ID reaches the client by two channels on login: the `mcm_session_id` `HttpOn
 cookie built by `buildAuthCookies()` and the `X-Session-Id` response header, which `use-login.ts`
 reads and passes to `storeSession()` (the native callback does the same). Subsequent requests are
 authenticated by the access-token cookie; `extractSessionId()` reads the session cookie only. The
-historical raw-token storage and `Authorization: Bearer` path were removed — the client holds no
-access or refresh token at all.
+client's historical raw-token storage and its `Authorization: Bearer` path were removed — the client
+holds no access or refresh token at all. The BFF itself still **accepts** `Authorization: Bearer`, and
+checks it before the cookie (`extractToken()` in `bff-server/auth.ts`, used by `requireAuth()`).
 
 ## Focused tests
 

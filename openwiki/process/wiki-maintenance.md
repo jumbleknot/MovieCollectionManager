@@ -77,8 +77,9 @@ the file that constrains it.
   [feature validation checklist](../invariants/feature-validation-checklist.md). On `main` it comes
   from `.forgejo/workflows/wiki-maintain.yml` (feature 044), which is **merge-triggered**: a push to
   `main` starts a run once `main` has been quiet for about fifteen minutes. Neither path has a
-  `schedule:` trigger — that was the deliberate scope decision (phases 0–2 only of the adoption plan):
-  no scheduled job, no new CI credential. The workflow is also **never a required context**, so a paid
+  `schedule:` trigger — no scheduled job, by design. (Feature 043's original scope also added no CI
+  credential; that no longer holds: the workflow carries its own keys, `ANTHROPIC_API_WIKI_MAINTAIN`
+  and `FIREWORKS_API_WIKI_MAINTAIN`.) The workflow is also **never a required context**, so a paid
   and occasionally slow documentation job cannot gate an unrelated merge.
 - **Always invoke through the Nx target, never the bare `openwiki` CLI.** See
   [Nx as the task runner](../invariants/nx-task-runner.md) — the target sets
@@ -107,7 +108,8 @@ the file that constrains it.
   steps of the same always-on `okf` CI job, each preceded by its own `--selftest` so a rule that
   silently stopped detecting its case turns the build red.
 - **Drift detection is report-only, never blocking.** If a concept's cited source changed after the
-  concept's own `timestamp`, the gate lists it as a warning but does not fail the build — regenerating
+  concept's stamp — the newest of `generated.at`, `verified.at` and `timestamp`
+  (`scripts/openwiki-stamp.mjs`) — the gate lists it as a warning but does not fail the build — regenerating
   a concept is a manual, model-cost step, so a blocking drift check would gate every unrelated
   documentation edit on a paid run. Two consequences worth knowing: drift is not an input to the
   planner, so nothing re-plans a concept once the run-record marker has passed its source change; and
