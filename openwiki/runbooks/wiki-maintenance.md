@@ -1,17 +1,19 @@
 ---
 type: Runbook
 title: OpenWiki knowledge-bundle maintenance
-description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, V12 drift reported but never planned (#526/#587/#525), the OKF v0.2 provenance migration and the one shared concept-stamp helper (scripts/openwiki-stamp.mjs) that V12 and the #587 stale check both import, the Mermaid/jsdom silent-degradation trap, the AGENTS.md/CLAUDE.md managed-block parity trap, and how a lost run record self-heals against the forge.
+description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table with exit 3 explicitly not a failure, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, the four independent slice-verification causes (a requested page missing, non-conformance V1–V16 including V16's Markdown/Claims durability, a write policy.yaml forbids, and a requested page still stale whether or not it was written — #587/#616), the one shared concept-stamp helper (scripts/openwiki-stamp.mjs) that V5, V12 and the stale check all read, V12 drift reported but never planned (#526/#587/#525), the Claims sidecars under openwiki/.claims/ and the uncover-in-the-same-commit remedy for a hand-edited covered page, the OKF v0.2 provenance migration, the generator's site-root-absolute link form and the three layers that hold the relative-link line, the AGENTS.md/CLAUDE.md managed-block parity trap, the Mermaid/jsdom silent-degradation trap, and how a lost run record self-heals against the forge.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-28T14:07:07.338Z
+    at: 2026-09-29T22:43:26.286Z
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
   - id: openwiki-source-c231cd090281b3129aaf6167
     resource: repo://docs/runbooks/wiki-maintenance.md
+  - id: openwiki-source-d0e241f24a4e0d3e79f47c5f
+    resource: repo://scripts/__tests__/openwiki-claims.test.mjs
   - id: openwiki-source-cccdf9eddce7e76440d4cd28
     resource: repo://scripts/__tests__/openwiki-stamp.test.mjs
   - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
@@ -22,6 +24,8 @@ sources:
     resource: repo://scripts/__tests__/wiki-provider.test.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
     resource: repo://scripts/check-openwiki-okf.mjs
+  - id: openwiki-source-efa55c3a8c70016f55bf6266
+    resource: repo://scripts/openwiki-claims.mjs
   - id: openwiki-source-d6ba69382020a933bb1c9de0
     resource: repo://scripts/openwiki-stamp.mjs
   - id: openwiki-source-f7de3a4f5f1323dd23a0c681
@@ -38,7 +42,7 @@ sources:
     resource: repo://specs/075-llm-cost-phase-1/research.md
   - id: openwiki-source-9cd940916584e06e676df687
     resource: repo://specs/078-wiki-generator-cost/research.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-28T14:07:07.338Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-29T22:43:26.286Z" }
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -77,6 +81,8 @@ stateDiagram-v2
     Retry --> Verify
     Retry --> Backlog: 3 attempts used
     Verify --> Backlog: slice failed
+    Verify --> StoppedAtFailureLimit: two consecutive slices failed
+    StoppedAtFailureLimit --> [*]: exit 1 and the run looks broken
     Backlog --> [*]: marker holds, a later run retries
     Proposal --> [*]: one proposal created or updated
     NothingToDo --> [*]
@@ -84,7 +90,8 @@ stateDiagram-v2
 ```
 
 The states a maintenance run moves through: planning is free, the preflight is the first act that costs
-anything, and only the retry path can return a slice to the committed backlog.
+anything, a failing slice is retried and then returned to the committed backlog, and either budget stop —
+the wall clock or two consecutive failures — ends the run with the remainder carried forward.
 
 ## The provider is configuration (feature 078)
 
@@ -129,7 +136,7 @@ egress host costs one token, not a slice.
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
 | `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it | **Yes** |
-| `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight | **Yes** |
+| `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, a failed preflight, or a policy file that will not load | **Yes** |
 | `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
 
 **Exit 3 is not a failure.** A run that correctly stopped at its budget must not be reported as broken:
@@ -141,14 +148,14 @@ re-run it and it continues where it left off.
 flowchart TD
     A["Slice finished"] --> B{"Every requested page present?"}
     B -->|"no - a requested page is missing"| F["Slice failed, exit 1"]
-    B -->|yes| C{"Bundle still conformant, V1 to V15?"}
+    B -->|yes| C{"Bundle still conformant, V1 to V16?"}
     C -->|no| F
     C -->|yes| D{"Every written path permitted by policy.yaml?"}
     D -->|no| F
     D -->|yes| E{"A requested page left stale?"}
     E -->|"yes - its source commit is newer than its stamp"| F
     E -->|no| G["Slice verified"]
-    F --> H["Retried within the run, then back to the backlog; the marker does not advance"]
+    F --> H["Retried within the run, then back to the backlog - the marker does not advance"]
     G --> I["Marker advances"]
 ```
 
@@ -159,11 +166,16 @@ Verification never consults the generator's own exit status; it looks only at wh
 tree and at the bundle's gates. The contract is the pages the slice *requested*, not "some page
 appeared": a run that wrote unrelated pages while ignoring the request fails, and an `index.md` alone
 counts as zero pages. Writing **nothing** is not by itself a failure — a refresh whose requested pages
-all exist and none is stale (cause 4) passes as `✅ … nothing needed changing (0 written)`. The four
-ways a slice can fail, and what each one means, are enumerated in the gotchas below. The two
-stamp-reading checks this flow shares with `okf-lint` — the stale-page cause here and the gate's V12
-drift warning — both go through `scripts/openwiki-stamp.mjs`, so they resolve the same page to the same
-date.
+all exist and none is stale (cause 4) passes as `✅ … nothing needed changing (0 written)`. Cause 4 is
+judged **after** the run whether or not the page was written (item #616), because "written" only means
+its bytes changed: on proposal #615 a run deleted a `verified:` block from
+`runbooks/ci-diagnostics.md`, left the body and its `generated` stamp alone, and the page counted as
+written — so a check that skipped written pages never looked, and the marker moved past the source
+change exactly as in #587. Cause 2's conformance includes **V16**, the Markdown/Claims durability rule,
+because a bundle that breaks it stops every *later* run. The four ways a slice can fail, and what each
+one means, are enumerated in the gotchas below. The two stamp-reading checks this flow shares with
+`okf-lint` — the stale-page cause here and the gate's V12 drift warning — both go through
+`scripts/openwiki-stamp.mjs`, so they resolve the same page to the same date.
 
 ## The budget — one invocation per run
 
@@ -275,16 +287,25 @@ page concurrency shows up there first.
   them:** a **requested page does not exist after the run** (an `index.md`-only refresh counts as
   nothing — this is exactly what produced feature 043's false-green run: 12 minutes of paid work, one
   `index.md`, exit 0, reported as success), the bundle stopped being conformant
-  (`check-openwiki-okf.mjs`, rules V1–V15), a written path was not permitted by
-  `openwiki/policy.yaml`, or a **requested page was left stale** (item #587):
-  a requested page that already exists, was not rewritten, and cites a `resource` whose last **commit**
+  (`check-openwiki-okf.mjs`, rules V1–V16 — including **V16**, the Markdown/Claims durability rule
+  described under Claims sidecars below, because a bundle that breaks it stops every later run rather
+  than failing one page), a written path was not permitted by
+  `openwiki/policy.yaml` — which includes a write into `docs/runbooks/`, a path that *is* `regenerate`
+  but is governed by an **agent**, not the generator — or a **requested page was left stale** (items
+  #587, #616):
+  a requested page that cites a `resource` whose last **commit**
   is newer than the page's stamp is named in the failure one page at a time, so a multi-page slice no
-  longer passes because *some* of its pages were written. That stamp is the **newest** of
+  longer passes because *some* of its pages were written. **Whether or not the run changed the file**,
+  the page is judged after the run (#616): on proposal #615 a run deleted a `verified:` block from
+  `runbooks/ci-diagnostics.md`, left the body and its `generated` stamp alone, and the page counted as
+  *written* — so the earlier check, which only looked at unwritten pages, never examined it and the
+  marker moved past the source change exactly as in #587. A real rewrite moves `generated.at` past the
+  source's commit, so it is never flagged. That stamp is the **newest** of
   `generated.at`, `verified.at` and `timestamp` — an older verification never drags a newer generation
   backwards — and the rule lives in exactly one place, `scripts/openwiki-stamp.mjs`, imported by both
   the OKF gate's V12 drift check and the `sourceNewerThanStamp` check here, so the two cannot disagree
-  about which date a page carries. Only a page whose bytes did not change at all can fail this way; a
-  page whose source has not moved since its stamp may still honestly write nothing — that is the
+  about which date a page carries. A page whose source has not moved since its stamp may still honestly
+  write nothing — that is the
   `✅ … nothing needed changing` line, not a failure. A page with no usable stamp, an external
   `resource`, or an untracked source is unknowable and keeps that honest no-change outcome too. A legacy
   date-only stamp reads a same-day source commit as newer, so such a page is retried until the generator
@@ -303,11 +324,27 @@ page concurrency shows up there first.
   failure digest like every other job and never gates a merge — see
   [CI self-serve diagnostics](ci-diagnostics.md).
 - **The proposal is one long-lived branch (`openwiki-maintenance`), at most one open pull request, ever,
-  and never auto-merged.** A run that finds it open continues the *remote* branch, rebases it onto the
-  base and appends — so a review comment's remediation commit survives every later update, and the push
-  refuses outright (`pushing would discard N commit(s) from open proposal`) rather than force-replacing
-  a commit the open proposal holds. Closing it without merging returns its work to the backlog and rolls
+  and never auto-merged.** The runner is a fresh checkout, so the branch exists there only on the
+  **remote**: the run checks it out from there, and only while its proposal is **open** (a closed one's
+  work went back to the backlog and is not revived). Until 2026-09-28 it looked only for a *local*
+  branch, found none on every CI run, started from `main`, and the `--force-with-lease` push replaced
+  the open proposal — measured on proposal #594, where a 4-page and then an 8-page slice were discarded
+  while the run record still listed both. A run that finds it open now continues the *remote* branch,
+  rebases it onto the base and appends — so a review comment's remediation commit survives every later
+  update — and the push refuses outright (`pushing would discard N commit(s) from open proposal`) when
+  `git cherry` shows a commit the open proposal holds that the new head lacks: a red run, never a silent
+  overwrite. Closing it without merging returns its work to the backlog and rolls
   the marker back.
+- **A reviewer must not hand-edit a page openwiki has covered — that bricks every later run.** A page
+  with an entry in `openwiki/.page-manifest.json` is certified byte-for-byte by its `.claims` sidecar,
+  so editing it breaks the certification and openwiki then refuses **every** later run, not just that
+  page: measured on 2026-09-29, when four hand-corrected pages on #606 stopped maintenance until #610
+  recovered it, and again on #615 where a run's own output did it. To correct a covered page by hand,
+  **uncover it in the same commit** — remove its manifest entry, delete its sidecar, and delete its
+  front-matter `verified:` event. openwiki then leaves it for full review, and the correction stands
+  until the page is next regenerated. The OKF gate's **V16** fails such a pull request, so this is now
+  caught at review time rather than by the next paid run — the rule itself is the durability contract
+  described under Claims sidecars below.
 - **If the run record and the forge disagree about an open proposal, the forge wins.** The record's
   `proposal` pointer is a cache, not the source of truth — a run created a proposal, its marker commit
   lost a push race against `main`, and the pointer never landed. The next run then tried to open a
@@ -347,7 +384,8 @@ page concurrency shows up there first.
   `openwiki/decisions/adr-0001-prod-secrets-management.md`, verified at 17:17Z against a source that
   changed at 16:17Z, which V12 went on reporting as stale while it read only the other two. An older
   verification never drags a newer generation backwards. The helper is imported by **both** readers —
-  V12 in `check-openwiki-okf.mjs` and the #587 stale check in `scripts/wiki-maintain.mjs` — precisely
+  V12 in `check-openwiki-okf.mjs` and the #587/#616 stale check in `scripts/wiki-maintain.mjs` —
+  precisely
   so they cannot drift apart, and the provenance comment in `check-openwiki-okf.mjs` now delegates to it
   rather than restating the rule. `verified` is written as a **list** of `{by, at}` events, and **V5
   now validates every entry of that list** (until 2026-09-28 a path reader that did not descend arrays
@@ -367,9 +405,13 @@ page concurrency shows up there first.
   refresh slice that wrote nothing for one of its requested pages used to verify as `noChange` and
   advance the marker past the change (measured on `openwiki/runbooks/renovate.md`, 2026-09-26), and
   `verifySlice` now fails the slice for such a page when its source is newer than its stamp (cause 4
-  above), so the page returns to the backlog and the marker holds; and **#525** — the drift-driven
+  above), so the page returns to the backlog and the marker holds — which closes the route by which a
+  *planned* page fell behind, while #526 remains for pages that were never planned at all; **#616
+  (fixed)** — the same gap through a different door, where a page counted as *written* because a
+  front-matter-only edit changed its bytes, so #587's unwritten-only check never examined it; and
+  **#525** — the drift-driven
   sweep that would clear the current V12 list, blocked on #587 and on canonical sources being corrected
-  first (#588). Read a V12 line with its stamp in mind: several pages still carry a legacy date-only
+  first (#588, done). Read a V12 line with its stamp in mind: several pages still carry a legacy date-only
   stamp, so a source commit made later **the same day** reads as drift even when the page was generated
   from it.
 - **Mermaid and jsdom are optional peer dependencies — missing them causes diagram fences to be
@@ -392,12 +434,29 @@ page concurrency shows up there first.
   version no longer matches, or `unresolved` when the evidence cannot be resolved, and the generator
   must confirm, revise, or retract it — the rules a page like this one is itself following.
   `openwiki/policy.yaml` has no dedicated rule for `.claims/`; the sidecars are permitted only by the
-  `openwiki/**` catch-all (`regenerate`, `actor: generator`). `okf-lint` does not read the sidecars —
-  its contact with Claims is the page's `verified.at` events, which OpenWiki writes as a **list**: V5
-  validates the ISO-8601 shape of every entry, via `stampValues` in `scripts/openwiki-stamp.mjs`, and
-  V12 counts the newest `verified.at` as a candidate stamp. The operator decided on 2026-09-27 that
+  `openwiki/**` catch-all (`regenerate`, `actor: generator`). `okf-lint` touches Claims in three
+  places: V5 validates the ISO-8601 shape of the page's `verified.at` events, which OpenWiki writes as
+  a **list** (via `stampValues` in `scripts/openwiki-stamp.mjs`); V12 counts the newest `verified.at`
+  as a candidate stamp; and **V16 reads the sidecars themselves** — see the durability contract below.
+  The operator decided on 2026-09-27 that
   Claims are required and valuable (item #513); any further gates or lifecycle rules beyond the
   generator's own confirm/revise/retract cycle are still being decided under that item.
+- **A sidecar is a durability contract, not a note: V16 is what enforces it.** `openwiki/.page-manifest.json`
+  lists every page openwiki has **covered** (`/openwiki/<page>.md` keys, each with its own `pageVersion`
+  and a `completedBy` generator version). openwiki 0.6.0 re-proves each covered page before a run can
+  advance — the sidecar must exist, carry a `verification`, and record a `pageVersion` equal to the
+  sha256 of the page's **current** bytes — and otherwise throws *"Cannot advance page coverage for
+  /openwiki/<page>; Markdown and verified Claims are not durable"* and fails the **whole** run, every
+  slice, before any generation. That is why a hand edit of a covered page stops maintenance entirely
+  (#611). The rule is defined once in `scripts/openwiki-claims.mjs` (`claimsDurabilityFindings`, the same
+  check openwiki performs in `buildManifestEntry`) and exposed as gate rule **V16**, so a pull request
+  that hand-edits a verified page goes red at review time instead of bricking the next paid run. A page
+  with **no** manifest entry is not checked — openwiki leaves it "uncovered for full review" — and that
+  is the escape hatch: to correct a covered page by hand, uncover it in the same commit (drop its
+  manifest entry, delete its sidecar, delete its front-matter `verified:` event). The same module lets
+  wiki-maintain's link normalization carry a covered page's certified hash across a pure link rewrite,
+  so the harness cannot break the invariant it enforces — and only for a page that was durable *before*
+  the rewrite, never laundering one that was already broken.
 
 Full plan/execute CLI flags, the CI workflow's proposal-adoption logic, the debounce arithmetic, and
 the self-test/lint/governance verification commands (`node scripts/wiki-maintain.mjs --selftest`,
