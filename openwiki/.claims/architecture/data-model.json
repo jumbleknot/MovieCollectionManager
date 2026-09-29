@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:13bed7205dc9d0f74692e818415ec8b3aa9bf49315906105888930599656e416",
+  "claims": [
+    {
+      "id": "claim_79bfa33926ea4e809a1bfb90080f5a5c",
+      "statement": "The mc-service Domain layer (backend/mc-service/src/domain/) is the innermost Clean Architecture layer: plain Rust structs/enums with no MongoDB, Axum, or other outer-layer dependency, exposing two entities (MovieCollection, Movie), the ExternalIdentifier value object, a DomainError enum, and the Specification rule set.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/domain/errors.rs#L1-L31",
+          "version": "repo-lines-v1:sha256:e28af44f19b7c58ca692316c6b444c94f7d7724620a43f0f326517f867798fe3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxMjU1MDQ3MjY5YzFhMTFlN2M5OTU4NDc1OWJhNmJlZGJlNTk0YmI1MGEwZTY1MmIyYjUyNmUyOTVhOGFmNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/mod.rs#L1-L5",
+          "version": "repo-lines-v1:sha256:587572cf347d99ec6fee280ef9321c5684f3145185b4239e3f0ddfd288530a89:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVhMDdhYTc0NjMzNDJmOTMwZDJhYTAxMjg1MmE3NGU2ZDRkNzdmOWZjYjkxYWRiYThkYmE3YmQ5YTA1YjZiYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDAxZmVkNWYzM2RiMThkZmQ1ODlhZDc0MDVlNjIyMjc5NmJlM2M2OWE2ZTQyZmI1NjBlNjU3MDFlMTA2YjBhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_829870b90c2d4677a072d056f547e110",
+      "statement": "MovieCollection::new always seeds the ACL with a single AclEntry granting the owner AclRole::Owner, and MovieCollection::authorizes(user_id, required) grants access when any ACL entry for that user has a rank >= the required role under the hierarchy Owner (3) ⊇ Contributor (2) ⊇ Viewer (1).",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/access_control.rs#L18-L30",
+          "version": "repo-lines-v1:sha256:17719b845c589d7fd96ccd94f015a04d5290c66e85b7d46e45a2cbba8468cad4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNDFhMWJhYmU5OWMyYzAyMGM2ZjE0MmZjZDVmNWMwNTlmMTg1ODNiM2I2NDVhNDM1OTY0ZGNmODk0OWEyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmODQ0MDg1YWQxZTNlMWVhOGQ0Y2FmMGE2NGU4YzQ4YWQ1NzE0ODAyMTU5MjFmNjM5Mzk5OTM3MzJkNjNmOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/collection.rs#L36-L77",
+          "version": "repo-lines-v1:sha256:f203c6000eccf4e15feff751fa3cd27ac30fb395e8d856445decb2fca5e772c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNGZkOGUxYzI4MjFjZjJmMDg4M2E2MDgzNWJhMjY4ZWMyODBhNmI0NTY3MzZhNjM4Yzg4MzJiNGZiYTM3YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliNjM4NmNkMmY3MjEwNGEzZDJmYzM4YTdkMjMwNTZmZGM4ODRlMDUyOGIzOGI0YmFiMjMwN2EzYjUxNzgxMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9f3843dc2d84d05b4f7b4387b8c9a37",
+      "statement": "Movie models 'unknown language' as absence: language is Option<String> (feature 014) rather than an empty string, while title, year, content_type, owned, ripped and childrens are required, and owned_media/rip_quality are cross-field-constrained lists.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_movie.rs#L49-L59",
+          "version": "repo-lines-v1:sha256:d3eede38e2cbba23669122bcd658c1149bb685b1a42473d69a049452aa43a650:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZjJkZTQ1ZDNlOWUyZjQzMmY3ZDg5OThkMDFmNjEyM2VhYmRjMjM3NGI0MjM2ZTRmNTdlNWQ5M2NmMWUzNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NzhlYThjYjYyNDdkOTBmMGE3MGEwZTUxY2JiMWM2MjhiMTk2YzRiZTBlNjk5ZjQ3OThiNDkzMzljMmMzMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMWQ5MmY1MTZjNDk0ZjM0ZDhhNTEzMjkyOTc2ODJjMzYwYWM3N2VkYzU0ODJmZmFkZWJmMzUyZWM3MjQzYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2YWYyNGQ3MjAyNGRjMTNhM2JkNmRhMzJiZWNiNTc2ZmQ3NmU2MzJlM2M2ZTcxODdiYTFkYTRmZWVhNzgyYjQifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/movie.rs#L93-L132",
+          "version": "repo-lines-v1:sha256:9547700ed7849ac86e9d41bf485a12e72c113a18dfaf1a49a45fb50428262a13:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MTA3YmU3YWVjNjlmYjhiNmRkZDAyZDZlMTA4ZWViMTRmYjA4N2UzZWFiNWFkNGFlN2NiNDhiMjJmMTllMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2MWMzZmUyY2VlNWI3Y2I4YWIzMTIwYzIxMjEyNGI2NThhYjkzNjkxYzdiOTQ5NjM0MWZkZTc2NmY2ZWZhMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkMmJhOTc3NGMyMjA5OTE4NzI5NGJhNjZmYTcyM2VkNzc1M2U1YjM5YzI0NDM4YWNiNmVlNjk2NjFmMTAxZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78393d71073749c783e3a7f78ed7744b",
+      "statement": "Movie::set_owned_media and Movie::set_rip_quality silently clear the list when owned/ripped is false instead of rejecting the input, so OwnedMediaWhenOwnedSpec and RipQualityWhenRippedSpec are the enforcing check on the create/update paths — which bypass the setters by assigning movie.owned_media/movie.rip_quality directly from the DTO and then running the specs.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_movie.rs#L68-L86",
+          "version": "repo-lines-v1:sha256:73fb59275d85ae0ac83a891f2d0877a63bb274bef917aa7e00881a67f9ac665f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0MWYwMmFkODllZjk0OGZkZWZmYmY1NDk2OGRkZGMyMDFmMDgwMjU1NDQ5NzVlOTMwMGM5NzU4ZjBkYjlmN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyNzEzNGU5ZTkyOGNmNzkzNjNkMmU0OTc2NWIyNmJhNTllMzExOTY5NTIxZGYzNzdiZTNiOTA1NzM4M2ZhNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMDUwZTAyYTVkOWM4NjExZTFhNWZiNWZiNmZiYWZmMTgxOTlhMTczNTUyODk0ZTYwZmVhZDU0MTM2ODQ2YmIifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/update_movie.rs#L61-L79",
+          "version": "repo-lines-v1:sha256:35ad131ff2dba40d1b099d730c32c6f4d02d100c9897043cbe63f76917dda334:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2M2MwZTVlOGFmYmM0MTQ4MjY2NTA3Y2ViYjc5ZDQ5ZTM3NTMwODIzODI2MjM0Yzc3NWUwNmI2MDFiZWQ5ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2MzE0NzJhYjYyMGY3MjQ3ZjBlMjcxM2YyODhlNmVjZDlkMTE3NDZkZjBlMWJmNThjZTAxOGUxYWViMWZlYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMDUwZTAyYTVkOWM4NjExZTFhNWZiNWZiNmZiYWZmMTgxOTlhMTczNTUyODk0ZTYwZmVhZDU0MTM2ODQ2YmIifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/movie.rs#L175-L185",
+          "version": "repo-lines-v1:sha256:8a852f093e3feb495db5e1703339f6e7387f0546cdd55d50564109f1f7bc9ec4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlN2I5NWY1NDI0MjM0Y2YyOTk3OTY1ZjZiMWIzMmQxMmY2OTk3NTI4NmRlNzE1MGUyMjI1ZjYxNGZmM2JkMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MjE2MDRiMzVmYzQwYWYwMGNiYTRlZWEyZmQ1ZTJjM2FmMTg2M2IzOTExODVkN2JmNGJiMDllNzJkMGM4YjMifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/owned_media.rs#L7-L15",
+          "version": "repo-lines-v1:sha256:3bbce3c9273c8adb7cb075a466aa1799fe5684d5cdc88fcd95daa83cb15697a4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzJkMWUxYjZhNGFjZjM4MWNlNGE5ZjllZTdmYzc2MzY4OTQyMWE0MzMwMWU4YTUwOTIyYTAwMWQ4NjA4MWM4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZjNTY0NTIwMDljYTI0MTI4ZTBjMWQzNzQ5NDQ3YWE2OWE3ZGNiODFiMzQwZjRlOWNiZGJhMTNmZWYwOWVkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjOThkNmIwZGM0OTJjNTAxNmRmMTA4MDVhM2E1NGViOWMxODRhNWE2MTM3ZTdmNGJlY2ZhMGMyMjA1NTBkMCJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/rip_quality.rs#L7-L15",
+          "version": "repo-lines-v1:sha256:6780b19fb706a2570edc9ff45dd172b2261841a33ef701a99b69fadbf07311ec:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdkY2NhODc0ZWY5N2Q5MmM4YjZhMjljNjZkYTU4YTNlMTU2MDRkMTFhNWU1NTk0OWVhZDI5YTdiMzIwZTQ0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGIyMjBiNzhhN2I0ODIyYjQ2N2JkY2NiMjYwYjM4ZTA2ZTBjYjI5NjI2OThjZDVmYTY1NGZmZjM2ZmU2YWRiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjOThkNmIwZGM0OTJjNTAxNmRmMTA4MDVhM2E1NGViOWMxODRhNWE2MTM3ZTdmNGJlY2ZhMGMyMjA1NTBkMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f50e97dd7234d4395240c95064dbfbd",
+      "statement": "Serde deserialization bypasses ExternalIdentifier::new's non-empty checks because the request DTOs hold external_ids: Vec<ExternalIdentifier> directly, so the checks are re-implemented as the free function validate_external_ids (non-empty system/uniqueId, http(s) URL scheme, duplicate (system, uniqueId) pairs) which CreateMovieHandler and UpdateMovieHandler invoke explicitly on the create and update paths.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_movie.rs#L88-L89",
+          "version": "repo-lines-v1:sha256:30fef3d07c32c8a30116f16c179ee88a181e9454ec3c7cb513c548310070dc27:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY4MDc5N2RkNWEwZmNlOGZmZWY4Yjg5ZWFiOTkxYTUwN2U2NGNlMDcyMmY4NWE0ODE1MmIzY2EwZjIyOWJmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY5ZWJlY2Q1ZDBjNWQ1ZDk4YmM0ZWVhNjFlZDQ3MDhiNWRkZGExOWNjMzkzNGUwMTk0NjkxOWY4YzcxYzRlYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE4YTdjZjM1MTUzNDBmMWUyYzBlN2E3Y2QyMTA1MTM5MDViYzFlODJjZjU4ZmFlOTAzNWI5OWIzOWE1NDFlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmUzZTMwODFhZjhjN2IwNjIxZjQxMzUxMmZlOTNkYWEwNGZlNWE1YTgyZWIwZmJlNTk2M2VlMmMyYjU5Y2NmYiJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/update_movie.rs#L81-L82",
+          "version": "repo-lines-v1:sha256:30fef3d07c32c8a30116f16c179ee88a181e9454ec3c7cb513c548310070dc27:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY4MDc5N2RkNWEwZmNlOGZmZWY4Yjg5ZWFiOTkxYTUwN2U2NGNlMDcyMmY4NWE0ODE1MmIzY2EwZjIyOWJmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY5ZWJlY2Q1ZDBjNWQ1ZDk4YmM0ZWVhNjFlZDQ3MDhiNWRkZGExOWNjMzkzNGUwMTk0NjkxOWY4YzcxYzRlYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE4YTdjZjM1MTUzNDBmMWUyYzBlN2E3Y2QyMTA1MTM5MDViYzFlODJjZjU4ZmFlOTAzNWI5OWIzOWE1NDFlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTZiMWJiN2JkODQ4YTdjMDk1YzE3YWJkMDdkMWI2YTlkNGY2MDE4YTAxMzdhMWM0MTZjMTMyNDQ1MDc5YTVmYiJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/dtos/movie_dto.rs#L48-L72",
+          "version": "repo-lines-v1:sha256:68ca6536ab4b3cc3479c52651f59bf161db37e0739c417c90745c9d4af2f2445:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NDBlZTk3ZTE1MGRjMWQwN2MxZTZiMGNhNDMzMTRkODM5N2Y3NDNiM2Y4MzNlYjJjY2NhZjM1YmY4NjA2MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhYTMxMjNjMzgzMDJmNWZkMDdmOWY2MGZmNzNiOWMwNGIxMDgyYzc0MTliNzBlZTJlMDFiYjk3ZjI5MzY2M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NTk1NTdiN2ZlM2E1MjU5YmQ0YmQwYzNmYTllN2NhY2VmZjhmMzJiOGRjMmZlNDEyZjIzZDZiZDkxNmRhNDMifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/external_id.rs#L22-L59",
+          "version": "repo-lines-v1:sha256:f6aa44dc0b79872527460ed5b51ef06233fecba0d8d251b7fed7da6e1587dcf0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyN2NlY2U5M2NhZWNkN2UxYTE5OWFiODc0MTI4ZWEwNTZiODdkMzZhOGY4N2YxYTYyMGM2ZWIwYmJkMDRiYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzYmJjZDA1NWNiNzIyMWEwYmJiOWI4Y2E4MjlmMWQ1MDBlMDlkZWU2MWIxMDMwODlmYmZlM2IzODAxYTQ3NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/http_url.rs#L19-L45",
+          "version": "repo-lines-v1:sha256:7ee8bdabb3ae8f3f9a1348b2ab95a3927d653e253d98a18cd3e1ea50ee0d1923:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMWVmNjRmZmU4M2ZmMTI1MjAwODVkY2Y1MWY5ZTlhMDQ0YjBmNjQ4NDczMGZjYzMzYzQ4YWI4MTE3MjFmMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a794ab1fe5ff42aaa17433bc387b19a5",
+      "statement": "HttpUrlSpec is a security control, not a formatting nicety: it accepts only candidates whose trimmed lowercase form starts with http:// or https://, blocking javascript:, data:, file: and other schemes from being persisted as tappable external-identifier links (feature 009 finding #1).",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/http_url.rs#L5-L17",
+          "version": "repo-lines-v1:sha256:cbc5ca481631895c4db6edcbcf9fac8ab3f78a4c07192dc6012b695f982bb2a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyMTU5Njc3ODRjMGMxYzRkNDBjM2UzMDA5YmJhNjU1ZDJmZTA4ODRmNGZjY2Y3ZjI3YmM0ZmEyNzdjNWI5MDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjYjE4MWIzMGM2YTM5YjgwNWIyMDViMDhkYWEyYjU5ZjJiOTY4NWM1MTg2YzFlNzdmZDQ4ZTYyMTRjMDBlZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMzAwMDM4MDY1ZTgzN2FhYjM4Y2ZjNzdlMDQ3YmY2NTY3NjcxMmY5M2I1NTg3YmYyYWE1ZTkyMWRhM2VmZWQifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/http_url.rs#L66-L74",
+          "version": "repo-lines-v1:sha256:d02abb301ccc119ecadb3a9ab8dfc34a4dcb14573e363e46cd368cb5b0ab2b0f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTJiNWVkZjU5NDljZmVhNjc4MjJjZjY5MTEzMjM2M2Q2OGQ2ZjFlMTY5ZjVlMGQ0ZjdjMTRlNWZhMWU2ZDRlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDEyNDU1MDcxMjhkM2JkMzkyNzY0YTU1NWM4MmQyOTcyM2ZiZjg1NTAxZmIzOTU2YzQ1MDhiMzA4MWZjMDU4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmRlMzlmYzY2ODNjOWEyNWI3ZTEwZDE2ZDg5ZWYxOGRkMjI4ZmViYjcyMjIwNzY2YjcyOTA0NzE5N2IzZWQ0OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f26ea9b69ff4c0e9142d1bdbd81e9fc",
+      "statement": "MovieUniqueInCollectionSpec is a documentation-only placeholder: it is a unit struct with no Specification implementation at all, and per-collection movie uniqueness is actually enforced by a MongoDB compound collation index on {collectionId, title, year, contentType} in the Adapters layer (E11000 → DomainError::DuplicateMovie).",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/domain/errors.rs#L8-L9",
+          "version": "repo-lines-v1:sha256:25df26b4c93f70b6bbcf4f2ce6ec888c7fdc0816939735ad03b13fd571505282:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQxOTcwYThjNzY0MTgxOWU1ZmQwNTA3MTUyMzY4OWQ5NzIyYWU5ODJjYWI2NTU1NDI4MGIwMzE5NWExYzFjOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWMzZDY3ZmFiNDBmODg1MzZlYWQ3ZGQ1NDZmNTBjYmZiOWViNzE0MzgwODg5MDQyMDhmNTc1ZmQ2YWMwZjY4ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWZiMTU2YzgzN2FmODk3ZGRiNjY0OGU3MzJjNjNiZmVmMmI3Zjg4YzgwZmZmZGNiOGUwYWY0ODBkZjkxOTA4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2ExNDdkOTgxMjg0M2MwM2Q1MDVmMzQ3ZTY5YWVkMGZiNGUyZmVlYTZlMjE3MTdlMzQ1NWU2MThkODIxMzE1OCJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/movie_unique.rs#L1-L5",
+          "version": "repo-lines-v1:sha256:10f3052542d2890fe01cb93b22735d1b6a729d82e840643b1a492c5f7decfb15:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWM1YmZmZTVhOTI2YWM5ZTU4M2E4MDcyNDcwNjYyZTI2MzU4OTJhNjVkYjY5NWFkOGY4Nzg3NGJiNTlkMjI1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzNjMzExMDA1YWQ4NWU4ODdkODUwYTg1YjQzZGMxZmUyNjhiOTlmY2JlOWRkMjkwOTJlNzczZGNlMGMwNTgyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f28e870ca38747a59a28ad2d3d4c330e",
+      "statement": "The Specification<T: ?Sized> trait exposes only the predicate is_satisfied_by(candidate) -> bool plus AndSpec/OrSpec/NotSpec combinators; it does not itself raise DomainError — the calling application-layer handler converts a false predicate into an error, as create_movie does for title and the owned/ripped cross-field rules.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_movie.rs#L49-L86",
+          "version": "repo-lines-v1:sha256:51a1dfe4420722b56b7a9c66e7650bdd284cf50cfedbc24a2bf5c8d9257eb5a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZjJkZTQ1ZDNlOWUyZjQzMmY3ZDg5OThkMDFmNjEyM2VhYmRjMjM3NGI0MjM2ZTRmNTdlNWQ5M2NmMWUzNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMWQ5MmY1MTZjNDk0ZjM0ZDhhNTEzMjkyOTc2ODJjMzYwYWM3N2VkYzU0ODJmZmFkZWJmMzUyZWM3MjQzYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMDUwZTAyYTVkOWM4NjExZTFhNWZiNWZiNmZiYWZmMTgxOTlhMTczNTUyODk0ZTYwZmVhZDU0MTM2ODQ2YmIifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/spec.rs#L1-L45",
+          "version": "repo-lines-v1:sha256:895cfb251d405808def0a4d370f19d1e25752709ccc7b44fcc223444d7592eda:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2Y2IwMjM0ZjU0MDQyNGE1YTgxMzIxNDhjODJiYzEwOTEwNTkwYTNkMjNiYzYwZDI1YzI2MGNhODI0YTE1ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwMzQxZGEyODE4ZGZhZWQ1YmJkZDcyMmFjMmU4MTRhNjJhNzYxNjgzMzczOTczNWMxZWFkZGM2MTQxM2JhZTgifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/spec.rs#L47-L116",
+          "version": "repo-lines-v1:sha256:b6e92c2813793bc5feff911492a19f40031e1d3187b517cbd015ba690b363fff:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYWViNmExMTcwYmQ4MmM3YTAxYWRjNjUwYTgzNGQxZjA5Yjk0OTM3MGQ1NzVjZDczMTNmYmUxNjE2NjE4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_defe237862eb4b96afd345409a3951aa",
+      "statement": "ContentTypeValidSpec and MediaFormatValidSpec are tautological specifications (is_satisfied_by always returns true because every enum variant is valid by definition) kept for application-layer composition and referenced by no production caller.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/content_type.rs#L4-L14",
+          "version": "repo-lines-v1:sha256:c58f489166f5ee7eb947833b19bc2a2d015cfd8de23d1529c7fa9a0c8c8de97d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MTZjNDBhYjE4YTRiM2JkMGMyMzZlYTIwYzkyN2JhMDAzYTY4YWY4NGRhNDRmNTc3ODkxN2I0MWQwNDJmOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3M2M2MDg3NWU1NDVmOTAxNTUyMmZiZjBiOWJmYmYwNTNlYTI0ZGE4MzFjNjUzMzkxZDc5NGE2MTliNmM3ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/media_format.rs#L4-L12",
+          "version": "repo-lines-v1:sha256:40fcd33ce36922405960b445e21dd4dbc4a905fff9293a4b8c2b7cb6a37d5000:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQ0OTIxOTM2OWI5MTk4M2Q0YjIwOGJjOTRjZWY4YmY3YTMwMjBhMjUzMWE2NzFiOWY1ODRjZDFkNGUyZDc1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDAwZDRkOGZiYmViMWEzMGU4NDIxODRmNzUzNjJlZGRhNGNkZGE4NzFhYWYyYzJmZmE5ZmIyY2ZlNjkxYzA1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjOThkNmIwZGM0OTJjNTAxNmRmMTA4MDVhM2E1NGViOWMxODRhNWE2MTM3ZTdmNGJlY2ZhMGMyMjA1NTBkMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_977811195fdc46c1a947e0a9ced6b0d6",
+      "statement": "RequiredStringSpec rejects strings empty after trim and CollectionNameLengthSpec enforces a non-empty name of at most 50 characters; they are applied respectively to the movie title in CreateMovieHandler/UpdateMovieHandler and to the collection name in CreateCollectionHandler/UpdateCollectionHandler.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_collection.rs#L23-L30",
+          "version": "repo-lines-v1:sha256:d3ae92c5f787c9451b5551e28efd0f6591656017ba63cc618465f6317a577c71:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVkMzJmYzJiNDhjZDE5MTJiMTUwMzdhOGU5MWE1YzVjMTEzM2VhZWUyYWVmMjBiMzgyMjFjZGFkYTI1MjdiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTZiODJjMTI0MTAxODZhNjNlZWM4ZmJlZjQ4ZWMxNzczZmVhZWM2MGQ0ZTZkYmQ5YWM3NDQ3MjQxZGQ5NjE1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2YxOWU2MzU5ZWU1Zjg3NzJlYmIzYjgzNjcxMjFhOWEzMjFlNTk2YzVhNTc4NTIwNmY1ZjJjMjU0NTZiOWRkNSJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_movie.rs#L49-L54",
+          "version": "repo-lines-v1:sha256:0c8ff906efa7883dcfcbbe1cbf89353ee3c1d3b04725016fc72222fdb32f65fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmMmRlNDVkM2U5ZTJmNDMyZjdkODk5OGQwMWY2MTIzZWFiZGMyMzc0YjQyMzZlNGY1N2U1ZDkzY2YxZTM0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzExZDkyZjUxNmM0OTRmMzRkOGE1MTMyOTI5NzY4MmMzNjBhYzc3ZWRjNTQ4MmZmYWRlYmYzNTJlYzcyNDNiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGNiOWQ5MGMxNzZmZmNmYWJlM2I1ZWVmOThkMjJiZjcxMTQ2ZjY0ODc3YTYxM2U2MjgxZTkxZTg4M2Y5NDA1YyJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/collection_name.rs#L3-L10",
+          "version": "repo-lines-v1:sha256:987bb01b3eb736e24b63989e6ac38a7ccf8ce3aaa8a92f68d9ffc60ee3f4381b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWNkNDc5ZTY3ZDNjY2IzOWZiZjcyMmYwYjA4YWRiZjgyZDI4MDc4YWVlNzAxNjQ4ZGVmZmExZjc1YTVlOTMwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNiNjUzMjA4Y2IyNjYzYTk2YWU0NjRkZjk3NTEwZjRmMTI0N2EyMjFhNGE5OTY1NmVmOWFiNDQyOTY5NWViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjOThkNmIwZGM0OTJjNTAxNmRmMTA4MDVhM2E1NGViOWMxODRhNWE2MTM3ZTdmNGJlY2ZhMGMyMjA1NTBkMCJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/specifications/required_string.rs#L7-L13",
+          "version": "repo-lines-v1:sha256:975e8c5553ed1a550aae2d1e9264a25c8829b444ead3d7106a2f59396638b70f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE1ZGRjOGMzMTZlNmQ4ZWJkZjY0ZTdjZTk2ODQ1MjI4Y2E3ZWNiZjUyNTJhNzAwMTk0NGY0M2UyZTYwMjQ5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2UxNGY1ODFmMjczZmZhYzZjZDlhMjczNzU5NGU0MTc1NDk1N2M1MzM5NzczZDI3ZmExYmQ4OTVhMzg4NTNkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjOThkNmIwZGM0OTJjNTAxNmRmMTA4MDVhM2E1NGViOWMxODRhNWE2MTM3ZTdmNGJlY2ZhMGMyMjA1NTBkMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_385563926fc74856b9c92ec0f2df260b",
+      "statement": "MediaFormat::all() derives the accepted formats from an exhaustive match (so adding an enum variant fails to compile until it is listed) and wire_value() emits the serde wire spelling such as \"Blu-Ray\" rather than the Rust variant name; MovieMetadataDto::from_domain() composes the two to serve GET /api/v1/movie-metadata, guaranteeing the assistant is offered exactly the values ownedMedia/ripQuality accept.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/movies/movie_metadata.rs#L5-L24",
+          "version": "repo-lines-v1:sha256:15caab425df9b7ccedefff14452a169d26a0d348da53f8242a53bf3cc3de5003:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzYjEzYjQwNGMxZjI0NWVlMjAzMTdiZmFmMGU2OTZkODlmMGUwODY5YTUyYzdjZGY3YWQzM2M0NmVjNjU3NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMGUwNWJhZjIyNjJlNzYxOTk1NDhhNzM4NDljZWM2MWQ2YzI5N2YxNjY2ZTU3MzNmNTYyNGVmM2E1ODRkMDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNTJmOTc2NjY5NDkyOTZjNDQyYmUwNTU4MjczYWI5ZDEyZjljNDU0YjY5NTNkMzlkNDU4MWRkZmVjNWRiYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/dtos/movie_dto.rs#L128-L146",
+          "version": "repo-lines-v1:sha256:b3e2b217c46b8c50bbfcf5115628952e94c9adaf321d6bd98c4fbc008f0cf75d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZDhjZDQ3M2EwZThhNTI5MjUxNmJlMGE4Y2NmY2JkZWM0ZGNkNWRlZmU0NmI3ZTgzMTBmMjUxMjliNzUyMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4NjFkODFhZWMxOTM2Zjk5ZjhkZTk2OTZjNjQyYTYyNjJmZDM3ZjYzMmY4OTUyOWFmYjI2YjhlMWYxYjhmNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkZDA5ZGQwMjY0M2Y5ZDg1N2U1NDcxNTdiYjRmYzAyNjcxMDUzYzQ3MjM5ZDg3ZWVmZjA2MDJkYWJkNzQwOTIifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/movie.rs#L26-L77",
+          "version": "repo-lines-v1:sha256:b454df620ad321957dd399552f382bc3782e045a1dcbff44e7a6613cd045b884:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2OTY0MDlkZTgyMGExNjNlMGIwMjI0OGI1OTc1ODIxNmIwMWIxMTRiNTI2MGRlYjBlYTdkNWRkMzZjZmI3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2OWYxOTQ2ZTNlZTI2MDcwM2FhMzNlMGE0MWJkM2ExNDg2NTc0MDI0NDJkNTYyMDQ2N2JlMDAyZDZmZWJkZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhM2I2YWRiYjVhNTg1OWNhYzZkZDUyNWMyMWVmZTQ3OWM3NTU0NmIzZjMwY2YxYzY4MDlhMDE3NmQ1NDQxNWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3021b02f78af46339c72fb46a7827f02",
+      "statement": "The create/update movie handlers normalize an empty or whitespace-only language to None (cmd.dto.language.filter(|s| !s.trim().is_empty())) before building the domain Movie, so absence is never stored as an empty string and the language facet and sort stay consistent (014 US1).",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/create_movie.rs#L56-L59",
+          "version": "repo-lines-v1:sha256:6fa5f443642df478ee65629faefb7287a8d3604b3cf595ca8245b4910ca22b70:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQzZmY3YzA0NjVjN2RmZTFmZGZjNDY1MDIxYzQ2OWI2OGRiNzk3ZjNiMTZhOWQ4Y2Q5MTljNTM5Nzk1YzVlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTg3OGVhOGNiNjI0N2Q5MGYwYTcwYTBlNTFjYmIxYzYyOGIxOTZjNGJlMGU2OTlmNDc5OGI0OTMzOWMyYzMwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI3MTM0ZTllOTI4Y2Y3OTM2M2QyZTQ5NzY1YjI2YmE1OWUzMTE5Njk1MjFkZjM3N2JlM2I5MDU3MzgzZmE3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzZhZjI0ZDcyMDI0ZGMxM2EzYmQ2ZGEzMmJlY2I1NzZmZDc2ZTYzMmUzYzZlNzE4N2JhMWRhNGZlZWE3ODJiNCJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/commands/update_movie.rs#L56-L59",
+          "version": "repo-lines-v1:sha256:6fa5f443642df478ee65629faefb7287a8d3604b3cf595ca8245b4910ca22b70:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQzZmY3YzA0NjVjN2RmZTFmZGZjNDY1MDIxYzQ2OWI2OGRiNzk3ZjNiMTZhOWQ4Y2Q5MTljNTM5Nzk1YzVlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTg3OGVhOGNiNjI0N2Q5MGYwYTcwYTBlNTFjYmIxYzYyOGIxOTZjNGJlMGU2OTlmNDc5OGI0OTMzOWMyYzMwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI3MTM0ZTllOTI4Y2Y3OTM2M2QyZTQ5NzY1YjI2YmE1OWUzMTE5Njk1MjFkZjM3N2JlM2I5MDU3MzgzZmE3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzUzZGIxMTBkM2JkMWYwNjNiZWY2YTgwODMwNTMxZTAxOGM2ZDU0Yzk0MTI5YTBiMmQzM2VlMGVmOWQ0NWY0YSJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/dtos/movie_dto.rs#L19-L21",
+          "version": "repo-lines-v1:sha256:6753c4f54d578908bdd38d8457aec48f79d2783f0a77a7eb45fd70dd4d185994:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNkY2Q4YzA3OWI2Nzc0MGM3ZTNhM2M1ZjI3ODc3N2YwNTU3MjExODhkYzI5NzgwYzMwMjIxYjRmZTQzMTU4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDI1NjJjNTczMGI1NTkzMTllNjA2MmE5NGNhNDQ5MDRkMDgyY2RhZTAyZmRkZjZkYjkxY2I5ODBmZWU3YjBiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM4NjcwZDEwZGY3MDYzNzQ3ZGVmNGRjZDQyOTUxMDM5N2EwMjZkMjNmN2Y0MzI5NmVjODI2NGE2ZWRiMzUyOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWM1NTRiMTExZTY1YjQ0OGZhNzI0MTE5YTFiMGExZmY0ODE5YmQ1NTAyNTBhN2E4MmE0OGM2OThkZTZjMmU0MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_63808c64aec24db59661854204cb6498",
+      "statement": "DomainError is a thiserror-derived, Clone + PartialEq enum whose variants (DuplicateCollectionName, DuplicateMovie, CollectionNotFound, MovieNotFound, ValidationError(String), OwnedMediaWhenNotOwned, RipQualityWhenNotRipped, AccessDenied, Internal(String)) carry human-readable messages that the API layer's error handler translates into RFC 9457 Problem Details responses.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/domain/errors.rs#L1-L31",
+          "version": "repo-lines-v1:sha256:e28af44f19b7c58ca692316c6b444c94f7d7724620a43f0f326517f867798fe3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxMjU1MDQ3MjY5YzFhMTFlN2M5OTU4NDc1OWJhNmJlZGJlNTk0YmI1MGEwZTY1MmIyYjUyNmUyOTVhOGFmNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-29T10:29:14.990Z"
+  }
+}

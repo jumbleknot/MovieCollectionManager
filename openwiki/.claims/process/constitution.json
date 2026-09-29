@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1acbe160e487698779e58d50f1271ede5269c6963dfd0a7615a78ba764b0739d",
+  "claims": [
+    {
+      "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
+      "statement": "`.specify/memory/constitution.md` is the repository's single ratified source of core principles governing Frontend Apps, Backend Services, and AI Agents, and it is versioned semver-style with a change log at the top of the file recording every amendment and rationale.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L1-L28",
+          "version": "repo-lines-v1:sha256:7a85d1b15fe7cd05fb172be803121beba02de102c3b4db9902fe636eaf348ca8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5MWE2ZjU4NzA0ZDU1NmM2NGEyMTBhNjY5Y2Y4ZDhlMGFmNDNjYTFiODgwZjcxMzlhMDU2NmU1ZmUxY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2OTc2NzI3NmM0NThmMDFmYjVjZGI4NDBlODA1YTk3YjNiNTEwNWQxYTA5NmJjNDMwMDA1ZTQ1NDQ0NDNmYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2Mzc2ZWJiNWViNTQ4OTliMmNiZDZmOTk3YjE2NjMyYzJkMTZlMGNhOWU4OWM3YTkwN2Q1OTRiOGQ3YWJiZGIifQ"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md#L1006-L1019",
+          "version": "repo-lines-v1:sha256:5b14e459381ddda85ba9c15fc10e58543101ca8a39f14908720dda7aabd4e47f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MTE1MGIwMDk4ZDg2YTljMjZjMGJmMzE2OTY5ZmI0NDA3NWIxNzhlYTVlMjBjZGZiMzljMmI3MDI3Y2ZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMmIzNGQzMTdiNGFmZjY5ZWMwNTI2ZmExOTc5MzNkMDhmYjcyMWM1ZTE3NWJiZTUyMWIxZTJhM2I2MDRmYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmNhZWYxN2JjOTJlZDZlZmE4ZWYwN2I1NjUzZTFhZmY0N2M2OWI4YmVkNWJjMmI3NmUyZTUzMWU2ZDIxOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8276a6149b28464086b53ffffc85dc99",
+      "statement": "The constitution currently stands at v2.5.0 (ratified 2026-03-08, last amended 2026-09-26), and the `[CURRENT]` marker at the end of the version-history block is the authoritative signal for which amendment is latest.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L1017-L1019",
+          "version": "repo-lines-v1:sha256:ba254719a212bdce97cceb6306782d72eafe0bc44717171f74709869a8f801c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGM4N2M2NWU0ZTJkNjk2MmVjOGFkYjA0OWU3ZWFmMjZiY2ViYmI5Y2RkMWU2OTMwMmQzNDljOTNkOTVhZjJmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAyYjM0ZDMxN2I0YWZmNjllYzA1MjZmYTE5NzkzM2QwOGZiNzIxYzVlMTc1YmJlNTIxYjFlMmEzYjYwNGZiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWE1MDU3NTgwZjg2Y2E2NmUwZmQxZGU3MGI2YmFlOGViYzc2ZDc3ZmJjMzYwM2NkZmEzNDNkNTM1NWVkZmJmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md#L23-L23",
+          "version": "repo-lines-v1:sha256:5d0365e6ee5a7cbf096ef54027fa478cbdde1c8ea0aa168a7d034cbf15833ffb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwMzY1ZTZlZTVhN2NiZjA5NmVmNTQwMjdmYTQ3OGNiZGRlMWM4ZWEwYWExNjhhN2QwMzRjYmYxNTgzM2ZmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwMzY1ZTZlZTVhN2NiZjA5NmVmNTQwMjdmYTQ3OGNiZGRlMWM4ZWEwYWExNjhhN2QwMzRjYmYxNTgzM2ZmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyYmEyODQ1MWNlZGViMTk1MzM5OTM0ZTViNjdiZjJjNDQyOTM2MDA2YzgwMjgzYjU1ZmE3NzJmZGNlY2MwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2YxOTE4NjE2YTk5ODUxMTk2N2ViYjcwNjFkOWRiOTc0NTA5YjUxOWUzNzU2OWQzYzYzZGE2NDQ2ODM1YjRlNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_83543f0a2d714fd7ab3dc7fdca9d2ed7",
+      "statement": "Constitution amendments must follow the file's Governance procedure: a proposal documenting rationale, impact and migration plan; review and formal approval; a version bump where MAJOR signals a principle change, MINOR a guidance addition and PATCH a clarification; and alignment of existing code within one release cycle.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L1006-L1015",
+          "version": "repo-lines-v1:sha256:c4ebf7d0e1f979141e3a794422b0dcfb7b12b8e56011aa1db2f4100d7ee83d20:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MTE1MGIwMDk4ZDg2YTljMjZjMGJmMzE2OTY5ZmI0NDA3NWIxNzhlYTVlMjBjZGZiMzljMmI3MDI3Y2ZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZGQyNzg5Mjk0ODZjYTFmYTg1ODc5Yjk1NDBmNTI1YWVjYTM5M2M0Y2E4NDgxY2Q5NWNmMmJkYWY5ODgyZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmNhZWYxN2JjOTJlZDZlZmE4ZWYwN2I1NjUzZTFhZmY0N2M2OWI4YmVkNWJjMmI3NmUyZTUzMWU2ZDIxOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiYjRkMjVjNTcyZWFhYTBmNDE2OTBkMDg3MTE2ZTg2ZDlmODkwZDhjODQ5ZWExZjU1Mzg0MjA4ZmUwNjhjNjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_841c6fe48f564f848060b0dc702ab88a",
+      "statement": "A deviation from the constitution requires explicit human approval and a documented rationale, whereas a spec or plan may deviate from itself and simply be updated — this is the one asymmetry in the spec-driven lifecycle, so an AI assistant meeting an apparent task/constitution conflict must stop and ask rather than choose silently.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L36-L37",
+          "version": "repo-lines-v1:sha256:e81b225add158ed3d14a54ad5f426eb87e54d0d34e9aeabe53b2856fbac288ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmMyNTBjODM1OTA3OTQ1ZWE4YzAxZWNkYWI3MWI5OGZhMzllYmRlMDk1NzExMDAxMWNkMmUzMGQwZTY4ZjY3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVjZjhkYjA2MmZiNWQyMjU3OWUxNzc3N2RhZjYyYjA1YjZhOTg4M2RkNzVjODdlOTg5NDllN2I2YTMyMDAyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ2MjlkYWJkM2ExYmVlMjU3NmFkMzdmMjIxMTA1OWZiMmY5MmNiZTE3MjUxNDQ3ODJjMWE2MDgxMzY5MDkxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM5OWUxNmU5ZmZkNTMxOTYyNTFiNzcyYWVhOGVhZWYxNjcyODhlNTBkMTM5NDFjMDQ1Yjg4YzdlNThiODI2ZiJ9"
+        },
+        {
+          "resource": "repo://README.md#L189-L191",
+          "version": "repo-lines-v1:sha256:9062aeeb650d7e20bb269127ced9f516be887d91520283a332e59e25eb37f387:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNzUzM2MxZDdmNThmMGU5N2Y0ZmQzMzE3Nzg0ZmRhOWIxNjc1NTEwYzYzZGUyMmQwZmRiMTk3YjJhNDdhYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzI4ODA3OGU5MWI2ZWFhMTY4ZGEwY2RlNGQ3Njk5MjY0NGU5NTZjNzU1OWI1YzIzYzFhOTMwODc3ODI3OWI1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjFhMzJmNDBhOGEzZTZlZWRjMDhhYTYwZDRmMDk3NDliMjM1ZjZhYjM2MTQ5NTRjNjc0MDc0NGVmNzZkMzdmMSJ9"
+        },
+        {
+          "resource": "repo://specs/005-expo-sdk-56-upgrade/plan.md#L45-L51",
+          "version": "repo-lines-v1:sha256:930ca42b506c890603005d862926cbf0e50a0ab7ff37c702fe08e6c6ef91de8e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTkyMzQ5MDIxN2Q0NzI0OGRlOWYwYTZkZmYwM2Q4OWUyYTdiMjhkYWMzMDQ2NTU1MjY4YzQ2MTQyMGVjZDdjOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VlYmY1MTJlMGI5MjUwODIzNWJlMjIyMTg5YjgyZjE2NjA0ZTRjMTEwMDVjZTJmZDU2ZDBhMDI0MDczNjk3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGY0NjA5NjMyYTQzYTJjM2RmYzg1ZGJkZDRhMGI4NGZkNjlkYzUwMTAwZWYwODVhMDAxZjI0OGNlMzMyYTQ1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjAyNGY1NDhjZGZmMGMxMzcxZmQxNzJhZGRiMWRlMjgzOTIzM2RiNDBjZjYxYzZlZTRlMDMzNjZiOWNmMjNjMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_03665b1b11ac49259ed83ae3ca116794",
+      "statement": "\"No Vibe Coding\" is a named AI Assistant Constraint requiring the assistant to always refer to the current `plan.md` and `spec.md` before writing code, with deviations requiring explicit documentation and approval — mirroring the constitution's own amendment discipline.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L36-L37",
+          "version": "repo-lines-v1:sha256:e81b225add158ed3d14a54ad5f426eb87e54d0d34e9aeabe53b2856fbac288ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmMyNTBjODM1OTA3OTQ1ZWE4YzAxZWNkYWI3MWI5OGZhMzllYmRlMDk1NzExMDAxMWNkMmUzMGQwZTY4ZjY3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVjZjhkYjA2MmZiNWQyMjU3OWUxNzc3N2RhZjYyYjA1YjZhOTg4M2RkNzVjODdlOTg5NDllN2I2YTMyMDAyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ2MjlkYWJkM2ExYmVlMjU3NmFkMzdmMjIxMTA1OWZiMmY5MmNiZTE3MjUxNDQ3ODJjMWE2MDgxMzY5MDkxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM5OWUxNmU5ZmZkNTMxOTYyNTFiNzcyYWVhOGVhZWYxNjcyODhlNTBkMTM5NDFjMDQ1Yjg4YzdlNThiODI2ZiJ9"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md#L43-L43",
+          "version": "repo-lines-v1:sha256:6a34164a0908e39ee4eeaede53f879a4486ef4c7e5802de55be6b4e00650e549:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmEzNDE2NGEwOTA4ZTM5ZWU0ZWVhZWRlNTNmODc5YTQ0ODZlZjRjN2U1ODAyZGU1NWJlNmI0ZTAwNjUwZTU0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmEzNDE2NGEwOTA4ZTM5ZWU0ZWVhZWRlNTNmODc5YTQ0ODZlZjRjN2U1ODAyZGU1NWJlNmI0ZTAwNjUwZTU0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDljNWIwMzY1ZWUzNzk4MjM4ZjhkMGI4MDU2ZDNiY2RkZTBiNGRiMWIyZWI3OWM5MDgxYjVkMmUxMGU5NmJmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGVmZDgxMzU4Y2UwMzFlYTlkM2QzMmRlMmQ1ODZlM2IzZjAyZjA1MWRmYzE5NGViZWZkODY5Nzk4MDNiYWNiMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef167eb414894bbd9deaf1cf01038fb6",
+      "statement": "The Identity Provider boundary is a hard trust line: a validated, signed JWT is treated as proof the IdP already evaluated and satisfied Conditional Access and MFA, so the application must never re-implement MFA, CA checks or raw credential verification, and its authentication responsibility is limited to cryptographic token validation (signature and `iss`/`aud`/`azp`/`exp`/`nbf` claims), with authorization remaining the application's own responsibility.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L59-L69",
+          "version": "repo-lines-v1:sha256:f700f142b7b21dab32ef88b8ddffdf7e646746aa7ba965e02829175065c05bf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4ZjVkODlmNjI2OGRjOTcxZGRhZTk1MmU0ZWQyMGRhOTM5NDE0OGU5Mzk4ZThmOWQxYjJlN2Q5MzVhMGM5NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ZWNhZTZiNThlMmE2YWY5OTI5MGIwYjY1YWNlNWM2OGJjNzQxN2FiMGY0MmUzMDg5ZjdlYWY2NTA5MDkxZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZDNlYzNjYWU2OGRjYjI3ZWFjYjBkOTE1YjYzN2Q1MTQ4ODFlZTQ2NmU1YzM5NmM4ZTYyZTNiOGViMGYyNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NTM2YzcyNzFmNjQ4MTUyZjc5OGNlZDg2ODVjODhmNDg2M2RmOGRiMWVlZWFiMzI2MmU3ZDk5YzI1MWI5YjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e03b208c28cb4695b3a1181e188c4d29",
+      "statement": "The Behavior-Descriptive Identifiers principle bans requirement/specification IDs (e.g. `FR-###`, `SC-###`, `T-###`, `US#`) from code identifiers such as files, modules and exported symbols; the IDs belong in a traceability comment on the artifact, which is the one explicit exception to the prohibition on WHAT-comments.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L38-L39",
+          "version": "repo-lines-v1:sha256:407bc20f785ba706c23296fd35e71ca789b3d13241e79a64986c9faa5b3321ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdhYjM0ZjFkYjc3NGI4OGQyM2NjNzIyMDRlMGZhYjBhMGEyYjE4MDg4MGNjMmYwMTM0Mzg4NWZlMmJkOTY2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjM0OWJmZjAyNjUzNjcxNjA4NzI4MTRiMDA0MTJkZGU2MmFmMTBiYjNmOTU5MDYxMDdjOGRhMTA4MjgxYjI3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ1ODMxYWRmZGIzMTI4YjZhMGMwZWNhYmFjMGU0NDIyYTczZWYzZWJkZTlmZGU0MDY5MDc4OWFlM2Y3NWY0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDljNWIwMzY1ZWUzNzk4MjM4ZjhkMGI4MDU2ZDNiY2RkZTBiNGRiMWIyZWI3OWM5MDgxYjVkMmUxMGU5NmJmZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aeec17c12fc947a3bbd4479a2075b33e",
+      "statement": "Constitution v2.5.0 records a scoped, bounded accepted exception to the Frontend performance-budgeting rule (2-second time-to-interactive on simulated 3G) for the mcm-app web client's cold load only; it covers residual framework weight, is capped by a committed entry-chunk byte budget, and leaves the principle's JavaScript-lazy-loading clause in force.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L23-L23",
+          "version": "repo-lines-v1:sha256:5d0365e6ee5a7cbf096ef54027fa478cbdde1c8ea0aa168a7d034cbf15833ffb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwMzY1ZTZlZTVhN2NiZjA5NmVmNTQwMjdmYTQ3OGNiZGRlMWM4ZWEwYWExNjhhN2QwMzRjYmYxNTgzM2ZmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwMzY1ZTZlZTVhN2NiZjA5NmVmNTQwMjdmYTQ3OGNiZGRlMWM4ZWEwYWExNjhhN2QwMzRjYmYxNTgzM2ZmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyYmEyODQ1MWNlZGViMTk1MzM5OTM0ZTViNjdiZjJjNDQyOTM2MDA2YzgwMjgzYjU1ZmE3NzJmZGNlY2MwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2YxOTE4NjE2YTk5ODUxMTk2N2ViYjcwNjFkOWRiOTc0NTA5YjUxOWUzNzU2OWQzYzYzZGE2NDQ2ODM1YjRlNiJ9"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md#L294-L298",
+          "version": "repo-lines-v1:sha256:c85ee81b67477442b76658350da479c56f13321645a0cb9acbe8999a33826a3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDExZTIwMzZjZDkzNTI1ZTY3MTI0YmQ0ZmNlOTc3MTEzOWRjNTUyZjE2N2E5YTQxYjBhMjg5ZjJjMTZiNmE4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODllNTE3YzVlYTM3MGE3ZTE5NmMxZWI4YjdhZWQ1N2QwYTdjYWIxZWE1YmZkZTk1ZGQ4NmJiNzM1MWNiZTM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNlODkxZjdlMmFhYzc0NjBiOTk0NGJiNGRmYWMxYzE0NGVjM2Q5ZTRhZDhlMTg1ZmMxNzQxNzNiMDcxYjljYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDkyZmEwYzQ4OWI1ZDg2ZjM4Yzk2YjMyNmU1NzZkMTZkMzNmOWY4OTk4NzVjMDhhMTdiMDRhYTkxYmZhZTA4MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf259f1b431f4d8eb13f4a0b03e2db57",
+      "statement": "The bounded web cold-load exception is enforced as a byte ceiling on the mcm-app web entry chunk (2,000,000 bytes against a measured 1,762,630) by `scripts/check-web-bundle-budget.mjs`, which also asserts that deferred packages are absent from the entry chunk and server-only code is absent from every client chunk.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L296-L298",
+          "version": "repo-lines-v1:sha256:8392bbc65f068f3ed313d9ce5095e3dd856029c0825f9f4048cfd72651b5161e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY1ZjEwNGM2NTVhNTI3MWQ1MDE2MDljODZhOWQwYWI2NGVmNTU2OGQ1MDFkMzg1MWRjY2Y0NTczNjNlNzdmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODllNTE3YzVlYTM3MGE3ZTE5NmMxZWI4YjdhZWQ1N2QwYTdjYWIxZWE1YmZkZTk1ZGQ4NmJiNzM1MWNiZTM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGVmYTk2ZTNkNWEyOTM5NzJlMzQ2MjFmY2I0OTFkZWMyMTlhM2QxMzhjZGMwM2FhNjI0OTA4ZGE5YWNiMTE1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDkyZmEwYzQ4OWI1ZDg2ZjM4Yzk2YjMyNmU1NzZkMTZkMzNmOWY4OTk4NzVjMDhhMTdiMDRhYTkxYmZhZTA4MyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L1-L59",
+          "version": "repo-lines-v1:sha256:1ec59c81eafbc38b902991cb77b53b3535a21de6c3e3f1e6f11c788f8b5ecfc0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwZTBlY2UxYWE5MGVhNTMwYjE5YjM5ZmY4Yjg5ODQ0OGE2NGUzMTQ3Njg4NDkzYWYzZjJlZTEzN2YxMzg4OGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwODQ2NDAzNzIwYzU1NjRkNzdkZWQxOTBiNTljMTc5YmM4NDJiOGIzMDQwNmU2YTlkZmI1NWRjYjY3YWRhNzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_12d1de961c99441aa050d635c002f78c",
+      "statement": "Beyond principles, the constitution binds per-stack technology baselines and the monorepo directory structure — fixing language, framework, data-access library, container images, Nx-first task invocation, naming conventions and test placement for Backend Services, Frontend Apps and the AI Agents layer — so non-compliance is remedied by a constitution amendment or a scoped exception rather than a local convention.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L234-L271",
+          "version": "repo-lines-v1:sha256:d72e4c00d21da05923cac0d42d83707e4db8d87ec9712fa9ccc7c0efb1b37efc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNWI1NDM1NWY3MGU1YTkxYjQwZGIzYjQyMTc0NDU5ZTJkYzNlMTQzY2NlOGUzNjYwNDFjZjA1OGZjNjRiOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjOWI4MjczNjE3NGJlNGQzZjVkZTA0MjRmYjIyZDFhMDk2NDAzYTVmMzA0NWNjMGYwZDgyNGE3ODg0MTRjYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhZjIxYzA2MTg0YjU3YzI3MzY4M2Y5ZDIzZTg5YjY5ZTJiOTZjNWQ1NGZlZWI5YmQ4NzY2ODJjNzBiMDA1ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiYmFlMDBlZDA3NzE0MDBiNjEwNTYyMmRiYmI2YmMxMWUxZTVmYTU3NGY2OTAyMGI2MmM3NGEyMGY1NTQyMjYifQ"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md#L337-L378",
+          "version": "repo-lines-v1:sha256:be632ea3b24c383355b46ef9fc3a5bf63a570568b84b3cfd1878e0e3c71131b1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmNlMGIxM2I4MTVjYjZjMzQyYWRlMmJiNmVhMGM5ZGIyMTZmOGZjNGUwOGFhYjA5NjdiNTU3MGE1YjE3M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjOWI4MjczNjE3NGJlNGQzZjVkZTA0MjRmYjIyZDFhMDk2NDAzYTVmMzA0NWNjMGYwZDgyNGE3ODg0MTRjYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZGM4NmNlMWM5ZGJkYWE1OTBmMzk3ZTZlZWYyZGY0Mjc1ZDI4YjI4YWQwYjJkNjk0ZDBlZTExNmM1ZmVkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MTFhODczODU1NWIzN2M3ZWY3MGJiZjRhZTQ0ZjBhNDA2NjI5YmUyZjk4NmFmNjc2MzdmNTk5NTM5YzkwYjgifQ"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md#L463-L506",
+          "version": "repo-lines-v1:sha256:289595aeead8b7408098174d2dd1456baa841ff04310dcdb89fe88f10d24b28d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTcwZmMzY2FmYTVkYzAzZTliNDRlZWZkOGY1ZWZhMzg1YTJiY2E1ODVjNmI3YzcyODM3M2I0MGNhNDRmMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMjViYTgyZWYxZjgyODVhM2ViZGMxMjRlYmM0MjFjMTc4YmUxODVlNmU5YmZhM2MyNjc5N2I5NzViNWZlMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMTRiY2EzMDBmMzg1MDU2ZWI2ZThkNjUwNTNlYWVlNWZlYTk0MWY0NDhiNTk1YzRjNzBlOTk2ODMzZGNhZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMjRkNzM1YTJjNmYxNDhmODY3MGZhNWY2YWYxNGUwY2YzODg2YTFmNDUxYzhkYWI0ZjUzZjU5YjlhM2QyMWMifQ"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md#L512-L662",
+          "version": "repo-lines-v1:sha256:02033d9dc1dcd18d9fac64fa3a28c8d7f3af43da2792d240d80d0f086f2b9424:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMzM5Y2ZiZmZhNTAxYzdjODgyOWEzNjA1NDk1OWRmMGE4ZmFlMmQwYzFkNTE0NWFiODY4NzZiZWYzM2JmMDc1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0N2MwNmM1NjFkNWMzMjczNDM2ODUyNjhhNDZiMzM5MWYzOTk4ZWVlODkwZDJiZTUxZjBkMjFjYzRhNTNhZTZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzZGUyOTk4MDhiZjU5YTEwM2VhOGRhZmNkYjMwZjc1YTllNjJiOWY3MDMxMzQ4YTYzZjA4NzYwYjhhZDRiN2QxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2NjdkNjdkN2VjNGZlYzk5OTMzMzZkZGQyODI3MmU2ODFjZmJhMWY3MDk1Njc3NzhhYTg1ZGYzNDI2ZTFlZDlmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_11475398bbb548b08038528da1636f49",
+      "statement": "The constitution's TDD mandate includes a mandatory RED-then-GREEN checkpoint format for every test task, with a Verify RED command whose expected failure output must be non-zero — a test that cannot be verified RED is not a TDD test.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L110-L118",
+          "version": "repo-lines-v1:sha256:c36787fa3a73b92516fa7191991bd17682e18be4ea4e72a5124331bd3120278c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYxMTdmOGMwMGRjNzZhN2VmZDRjYTg4ZGM2ZWMyNjdiZjAzZTQ1MjU3YWYwZWQxM2Y1NTY5ZTQ1N2QzNzZjMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMwZWJmNTI3MDlhMWZkNzUzOTM4YjY0MDY4NGUxYmU0NDk2ZTdlOGZiMTQ4ODBjNjdhMTcxZWUzZDczNGY2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjA2MGZmZTA5NGQ3NzM2NTliYmE4YzQ4NWU5MGI3YTU4NzkxNjIyNDMwNzdiM2I0Mzc4NDZmNmMzNTI3MGU1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmNlODgwNTU3MDFhNjIwZWM3MDhjMGQwNjcwOTEyNDhhMjA4NDU3NWEzYzVkMTJiNjhmMDhlM2UzZDAwYTQyNiJ9"
+        },
+        {
+          "resource": "repo://docs/templates/feature-test-tasks-template.md#L141-L168",
+          "version": "repo-lines-v1:sha256:10e9e7dbf2683fc2d78a509a55a64b73399c28267252c728edfc8cc7def8d0ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZDQ1ZDQ2OGYzZjVkZGEwMmQwOGIzMzU0ZjFjNzgyOGZhZGMyZWIyNDAyMWNmMDE2M2I4ZTZlMjIzOWY4ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NWE1YzlmODRmODZkMDljNWU4NjgxMjFkOTgxYTMwNWJjMWU0MTg0MzhiNTEzZGI0M2I4OWRkYTgwNDY1ZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1NWVhOWRjMGZlYjBmMzYxZWQ4Yjg0OTg2ODFjZjY0ZmI1NmFlOWQ2MTFmNjgyMDYzMTFjMmE0ZDg4YzlmMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiOWE5NDhkYTdmZjAwNzBlMjQ1MGRhYjhjZTcyZDUwNjAyNDVlOTFlODMxMjhhMjQ2MzJiMjVjOTdlYjg1Y2MifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-29T10:29:14.990Z"
+  }
+}
