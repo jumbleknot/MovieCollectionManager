@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:57f7eccc72b6ee98b3b436da9c67b2364afc35715df71961f27f5364b84a6f0b",
+  "claims": [
+    {
+      "id": "claim_8481b1a4a74e482b830aecd6f7e2af89",
+      "statement": "The Phase 15 operator checklist is a completed historical working log (the 2026-06/07 production bring-up), not a live checklist: its unchecked `[ ]` items and \"Remaining\" notes describe the state at the time of writing, and current production state lives in the server-setup runbook, the CI/CD pipeline page, prod-reboot-resilience and prod-control-tower.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L3-L13",
+          "version": "repo-lines-v1:sha256:14f95cf477cc1121bc5195bccd543e56730d73029ac838a004107c9b5670c149:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmYTVlMDZjMmJiMGFkYzg1ZGVlZDE1YTAzYjY3MWIwMGFlYTQ4NDRiZTg5Y2ZjY2NhNTc3OGNiYzhiMmY4ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyYTMwYTZmZDhmODFmNTY2NjAyYzY5NDlmZWVmMjQ5OTRmN2ZmMzZhMWY3NDRmNzZhYmRiY2EwMGU2Y2JlOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMWMxNjRmNGY2MGFlYzA2NTgzNTg3ZDRmMDk5MmIzODY2YTczODQ1ZTlhNGEyMjk3ZDM4NDU3NmViNTQ2MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzYmRjODY0OWEyODhlZDU5MDI0NWVjYzQ4ZWVhZDc4NjBiMDgwYjFhNTFiYTc0NDA5NGQ4Y2Y2YjIwYTI0N2EifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1017-L1037",
+          "version": "repo-lines-v1:sha256:cdfaa8642899c280dfe2e99349bf87845caadc1110fe63562d25e421e99ac24b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYTA1NmMyMmE1NzNjYWI4M2JlMDEyZDE1ZmJkMTczYTMxOGZiZDRmOTM2NDhiMTU5MzdjM2Q1MGRlZTc1OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNTdlYjc5ODMwMDhiNjllMmU4NjMyNWY5YWI1MjU2MDY3ZTFmMGU3OGE4OGZjNjU0MjljN2IyOTYwZjEwNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmOGVlNzRmNzNmMTRiODIzNmZiNGY5MTRmN2JjNjQyMTgzMWZjMjU3OWIzNmE5MjMwMWQ3ODBlNjkwMzEzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGUwMWZmMjVhMGYwOWQ3ZTA4OTIwYjIwMmViOWIxMTNhMDhhNmQ1MjdkNDFhNjZjOGRlZWM2NDI5NGZjMGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4bc56c51978545c4842e3f6e30a9dc10",
+      "statement": "The procedure stands in this wiki because it is a live operator record relocated out of `docs/proposals/` rather than pre-specification ideation — the proposal tree is excluded from the bundle so superseded proposals cannot dilute retrieval, and the runbook tree was moved out of it to keep that exclusion clean.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L3-L15",
+          "version": "repo-lines-v1:sha256:5a3778f473cd542ed3a0a39f4b28e04483662f4b3cc50c3a60933b89901131b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmYTVlMDZjMmJiMGFkYzg1ZGVlZDE1YTAzYjY3MWIwMGFlYTQ4NDRiZTg5Y2ZjY2NhNTc3OGNiYzhiMmY4ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZjhjZDM3ZTg4M2FmNmNhYWRkYzIxYWYzOGRkNjYwYzBmNzA2N2JmN2ZhMzI4MTYwZDg0ZWRhYTVjMTZiZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMWMxNjRmNGY2MGFlYzA2NTgzNTg3ZDRmMDk5MmIzODY2YTczODQ1ZTlhNGEyMjk3ZDM4NDU3NmViNTQ2MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3YTU0MGYxNjE5NzBhOGZiZTBlNzg5OGI3M2U3MDI3NzRiYzI0MDFmMWQ0YTAxMWE2NWY5YjNjOTY2MzYyOWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf7770b3650148a8bcd3fefdfaf49871",
+      "statement": "The checklist took production from BFF-only to the full app by standing up two new stacks manually first: `prod-mc-service` and `prod-movie-assistant` (the agent gateway, its checkpointer Postgres and the three scoped MCP servers), modeled on the then-live BFF stack so the live auth tier was never touched.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L22-L25",
+          "version": "repo-lines-v1:sha256:eeee4411b616ef000ba0b60086a57862873748ce42bb1cbf85406605997d2847:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmIyN2M3ZDU3NThiMGM0MjAzZTg5OTBjYjVkMzczYjg0ZmYwNzY5NzlmNGQ0ODFlY2NmZmEwZWI2NTNmOGZhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjAwOTMwN2ExMzc1M2U5ZGE5N2Q3ZjAzMjg1OTU0YTk1OGVhZmViNDYzOWM3ZjI3NmE1MmRkZGM3MzI2ZDkxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDUxOTdhZDA4ZDAyMDUwZDhjNmI1OGVmMWM2ZDViMWYyN2E0NTMzYTI3NGY1NWJiNGE1ZDE0ZWEyMDFlNTkxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmUzOTRiMTNkYWQ4YThjMjBmMjMzNGJhMTJjYjViZGE2ZGI5NWUxNGNjNzFlNGRlZDNmMzg3MmVmMTcxZDg5NCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L66-L123",
+          "version": "repo-lines-v1:sha256:15d51966822b3f7e72d5e036c9ace11edd4978a9bb4caf130e0143269e7a5a61:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOTk5ZDNlMDEzODM5YWM0Njc0NzUzMGNlZDc0NzE1MGExN2YyZjA2NzJkMjgyOTYwOTlkMjBiZjIxZjU3NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOTZiZDNhYmY5ZWMyOWM0MWNhMzIyMDA5NTY0M2FhM2NmMGM3ZGFjNWRlNWQ2NzcyM2M1YmU5NDUyNGQyNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYjI1ODBjYzA0ODAxY2U1YzQ5NDhhYzQ3MTNmMWZhMmZjNTEzZjI4M2EyNjk5N2FhZDU1NTE5ZDI4MmMyNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ae7e3d1890c4a0aa0d3453aa0a7a375",
+      "statement": "All four live production stacks already carried the canonical `stacks.toml` names when the ResourceSync was first applied, so the sync adopts them in place as a config diff rather than creating them from scratch — the `prod-app → prod-mcm-bff` rename was performed manually beforehand.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L196-L230",
+          "version": "repo-lines-v1:sha256:ef1c86a3eca21a6e7ac28dd13abee8695c1da4526dbf9cbf7626e609e7620f40:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZWEyNzE4ZWNhMWRlZTBlNmY5Nzc1NjJjODc5ZjM4Nzk2ODFhZjk1MzI3MzFjZGU4MzhiODNhNmNjNGMyYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0ODg1ODIyNmYwMjc0ZjhkZTdkMTM5M2ZkMzUyZjNlNTg4ZjZiOTEyMGYwOTdkZmEyZmViNWU0OGZmNTkzZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlMzVmOGU0Y2M4Zjk0N2ZiMzkzOWQ4ZmRmMGMxN2U2Zjg2MTZlMWFmY2EyMDhmMmU3NGVkNTcyOWQ1MTNiNDAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L19-L24",
+          "version": "repo-lines-v1:sha256:3ab73ab5a937ccaf07299d9ce3cb264d136b37da98021d896e45e0eb9c634de6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc3Y2E5NWMzYzk0N2UyOGJkZmM0ZTdkOTg3NGY0YmUwYjljZjAwMGEyZTJiMGI5MWFmYjNjMWY1NDkzMjBhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU5Njc0Yjk2YTdiNWExZTUwZWIxODM2MjUyMzRkMzY2MDkyNjk2MmZlMzQ1M2QzNGVmOTdiNTdkNTBhNGIxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzA2NDg2OTI4NDVjYTk0Njc2NGVkMmMzNjNjN2IwOGQ1MTJlNTEyMzBmNjhhMWViNGU4MzllOWFiNDg4NjMxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTJiNDkzOTQ1MWFlODVkMzY0NDdmZGE1YzQxYTJlOTY3ZWNmNzFkZTZkYTY5ZjBlOWU3NDA4ZTk0MzlmYWFlYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6901b721f5cc47f1aa313d6625038192",
+      "statement": "Production deploy order is declared by the `after` edges in `stacks.toml`: `prod-auth` → `prod-mc-service` → `prod-mcm-bff` → `prod-movie-assistant`, with the agent stack last because `spreadsheet-mcp` needs the BFF's `mcm-bff-network` and Redis, and `prod-mc-service` waiting on Keycloak because it fetches JWKS at startup.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L255-L264",
+          "version": "repo-lines-v1:sha256:aea1c5aed2a14cc6325a8ca99b4ae9885f9cd33f660cf25839979d0e85ad8006:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YmUxZGYyMTQzNzJmNDZlMzE2MDVmMjZiOTA5OGJkNjVmYzdlNzNhYTlmNzJiYmQyNTE3OTg4YjAzMDM0MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMjYwNjVhZDVjZGNjZmEyMTdmOTA5MGJhMDIwNWEwMzhiMmNiN2FlYjFmNmIyYjZhZmEwZWRhNzQwM2Y5ZjgifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L110",
+          "version": "repo-lines-v1:sha256:1c2b1b64d08c23f82be1071ac7a4ae5c7b76b98e240a8ac24c8ba8ef7f4a1e26:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOGUyNGNhODYyOGExMzQxZjFhZjdlMzU2ZjUxODIzNTE1MzMxZjE5MjA0NDFiNDkwNzcyYTllOGE2NTc0NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyZjNhOGU5ZTdjOGQ1NmJkMDY3MmYwNGE3MDZmYTI2OTkxMGIxOGZiNGY0YWI3ZjdmOTVmODVkZGMzNmQyZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MTZhOTQ4OGQ2Yzc5MjM1NWY3Y2VjMmRlNGMxNWYwYmZiMDFlY2I5NDY4NzNiMmJiZTdkZWU2ZWZjMWJmYmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2d359a7d295479f83c673060fdc3431",
+      "statement": "The agent chain was proven end to end in production (subject token minted by the BFF → RFC 8693 token exchange → `movie-mcp` → `mc-service`); before the client secrets were corrected the gateway silently fell back to TMDB-only because a failed exchange yielded no subject token, which short-circuited every `needs_token` tool.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L125-L133",
+          "version": "repo-lines-v1:sha256:6bfbc54e1a0607faf182ee9b8b48e1096dc1b02447bf885c97112f3985b216d3:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjlmNjE0Mjg2N2VmNDQxZmVhYzJlOGUyMGRlMTllMjQ4ZjczMTczNjgwMDJjMDhhODAwNDMzNTE3ZjQ2NzYxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYwMzdmYmYwNzg2MmE2YmI1YTFiZmEyMzEzZjhkOTdkMmY1MGJmZGM1NzhmYmFmNmQ5ZDRjMGFmN2ZiN2I1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2E0MjU1MGNhZWQ0YWNjNDIwM2E4YjkxNzhkZmViYWY1MmQ1YjY3OGVjMWRjOTJlZmE5ZDcwOGNlNmMzYzQ2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM2MzMyYmVkMjc3OTIwNzRiNGNkZTllZjE3MDMyY2JmMTc4YzVkMmYxNjA1NTk4MTJjN2IwYmZhODIwMTcwMSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L76-L87",
+          "version": "repo-lines-v1:sha256:2a2a8762fff8d9264169a675b3b2273cba03cc06a7f064819a5caed2e38453cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMDA2MTAyMDQxMjE0YjYzZGQ2YmUwMTQxMDY2ZTIwZmRhZjMxODQzYTU0NjNmODYyOTYzODkzODFkMzdkMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZTM1NTc2YzY1NTkzMTljMGYzNDRkNDE1MjdlYjgxZDkwYmJjMmNhOGFhNjc4NTNkMjE3NTFiNWYyZmUxYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMjZlZDRhOTdhMTkwYjVmNGE1MTRmOTY4NGE5NjQ3ZWQzYzU3NzYwMmRhMWJiOTUyOGUzY2E2ZDRkMWQ4ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0YTRjYjgxM2M3YzYxMzcwNmM5ODEwM2EwYWIxOTcwOTI2NmVkNWZjZDdlNDU4NWRiZDRlMzQxZjlmY2YwZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f1958d0be84486389d95041c339abfd",
+      "statement": "The `deploy=true` CD leg validates itself with a post-deploy health probe that requires both the realm-qualified OIDC issuer (`https://auth.<base>/realms/grumpyrobot`) and an HTTP 200 from the app, polling for convergence; comparing against a bare auth host fails on a perfectly healthy realm.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L265-L280",
+          "version": "repo-lines-v1:sha256:2a62a8d4e12e47a5a7db92f68b7d20d619153d631eb6ee0a1db34b5c5758c5fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMjQ2ODUzMWFkNTkzZjM1YzM0ZjQ3ZmFiNTg5NjlkMTcyNjgyYTFkZDMxNmRhMTc3MjNmZjBjNDZkMDE4NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMWFkODg1ZDkwOWFjZDZjNDM3NDhkY2MxNmFlZjdkYWQyNTk1ZWRiNWU2MzllOGUyNjhiNzExYzg1OWJmMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwNWEyYTYzNzUxNGU4NjQxOGVhYTJiYmU1MDUzYWYzNDkzYzRkMGUyMzM3YmE3MjJkODI2ZDRjYzgzNmM2YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNTc0MWI1YTgwMDhmNmE2MWFlNmIyN2ZlZjk1ZTU3M2U3ZmYzMjE1NGU0OGViMWY0MTY5MTE5OTkxMTAzMWQifQ"
+        },
+        {
+          "resource": "repo://scripts/cd/health-probe.sh#L6-L22",
+          "version": "repo-lines-v1:sha256:2f32a652d72d2bff46c5d84a0f6370c58676a45704eb1af2b832df3f3d4635ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NGFkOGI3NDIzNmJhZjMyZmE4NjJkNTViM2I0ZDYzOTk1NmJmMGVmNzI0NjNhMzg2ZTRlNzA3YzVkMWVkMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1Mjk0MTA4YTM4NDE4ZjYzMmU4NDE0Mzg4MGM3MDRjMDM4MDIzYTI5ZDlkMTliYjdkY2E5MTA5NWU0Y2FiY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzZTY0MjE3YWRkODQwOGIxNjc4MGNkMThmZGNjNDFiYWMyZWYzMTdkNDU0NzRiMjg4YWU2YWE2MzgwOTA5OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_64e2a9d5228340c6b1a6783033dbb8c4",
+      "statement": "Rollback has no Komodo endpoint: the rollback step git-reverts the digest-promotion commit (restoring the prior `.env.deploy`) and re-fires the signed webhook so Komodo redeploys the last-good digest, then exits non-zero to fail the run for operator attention.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L276-L291",
+          "version": "repo-lines-v1:sha256:eead68d220479fe6cf19a18ecab8af1a67fb2fd4909b17b60b876cf5d4d9f8ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhN2QwZWE3NTljZTNlNjgwYmZhNGNlYzE0MzQxOWExYjhjODMyODAxMTk0MzgxZjdmMWJhOWQwMjVjNjlhNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDE0ZGYyNTVhMjEyZjdlZmVkNzNkZWE4ZmNhMmExMDI2YTUxYzkyOWFkYWU3YjRjYjY5M2JhMjQ0NTk5MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZWJjYzI4YWFiNTc5NmMwN2Y2NTJlYzdlNDE4MDUwMzdhMThjYzAwNTZlY2JkZDgwMmJhZDExOWVlZWE2NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+        },
+        {
+          "resource": "repo://scripts/cd/rollback.sh#L7-L25",
+          "version": "repo-lines-v1:sha256:39822d2462e3a0757f37583e2b78e9dad4963e7eb1f302a6f729811427c646d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZjVlOTYyMGE0MmQ5OTNiZjY4MDMwMTIyYTI0NWRjMTRiOTI0NTVmYWVhZWViMjcxZDY4MGEwMzJhOTJjNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjg2OGMyYzQ0ZjA1MzYxOWNlZjFjYzM4M2UxZDUzMDc0M2I1NzRjYTE5MmFjZTkxNjhhOWNjZjQ2YTg2ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZDc0ZmU4OThkMzA1ZWI1MmM0NzBjM2ExZTU3MzNlZWExYTc5MTJkZWQ5N2M2MzAxZWIxYjMzYTFjZWZlNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a535fd5b62bc493bb0dba1e3e227e860",
+      "statement": "Consolidating onto one ResourceSync webhook replaced per-stack redeploy webhooks, because a webhook attached to only one stack redeploys only that stack while the same CD run promoted new digests into every built-image stack's `.env.deploy` — leaving the others running stale images as silent drift; the single sync webhook reconciles and redeploys every affected stack in `after` order.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L161-L178",
+          "version": "repo-lines-v1:sha256:2c2153b188ad5b082c978d082779785384f5f8586047112aab6295bf67493b62:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxOTgwMzJiMzJiOWVhZGRhMTEzZDYyYzAwZjc1YmVmZmNkMjliMTE4N2YxZGE4NjM4MjVhODhmOTllZGRjNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZDIyYjcwNzk0Zjg4MzU2MTVlYTA5NDE5NjFkMDlmMDg3NDMzOWY0MzcwYTdlNmJiODMzYmRkZjkzNWI1YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2ZmJiODk5YTBmZGIyNWNlN2M4YjU3YTQwNDJmMmIyZDAyM2UwYjQ0YmQ2MTNmMjc0MmYzN2IzODIxMDI0YTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2OGQxNzRjMzkzNTg2NDNlMjgxYjBhOTM3MjM0NjliMWQ0MjYyOGZkZTRhODM1NWMzMjQ5NWQ3OGM1ZTAwYWQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L231-L237",
+          "version": "repo-lines-v1:sha256:ff64252435b68b27ee36f76528642c4ffe4795e68d9746222e56ef37644b96a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWNmMGQxYmE2MDBhN2Q4Nzk4ODMzMDQ2YjRkOTRkZmJiN2JkYzM5YjQyMTVkMGM4YzJkOTQ5YTk0ZTMyZjc4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWU4ZGI5YWI1ZDNjZTRiYTQwMGNmMTkxMGI5ZjhjNTA0Mzk1ZjI2YjNlYjQyNWFmMWU5OGMxZTlkMDJjZWU5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU5ZjU3ZjAzMjVkYWI0MDc3MWFiNzEwMjNkYzk5MDBkMjI1OWUyODBmOGI2ZTg5ZTVhOGQ1YmJhNWYxOTNhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0f9e036f6b64c4bb4f571afc856e4ca",
+      "statement": "A Keycloak confidential client whose secret is not pinned in the realm JSON gets a freshly generated random secret on every realm import, so the consuming Komodo Variable must be copied from the post-import Keycloak console; a stale or placeholder value fails the token exchange with HTTP 401 invalid_client, which presents like a missing-configuration problem rather than a wrong secret.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L321-L322",
+          "version": "repo-lines-v1:sha256:765449cac24b9a6b37d6b58011f4aa0eea350c2850c50692e071d0d0a7d78e33:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzMxODI5NGNiODg1MWE2OWJkZTIyODU4YmFlMjAzMDA1ZWNhOWNiZTA5YjM3NjY0ZjAzZDU3NWYxMDBkZWU3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFjOWYzYjBiNDFkMjQwYTE1MjQ4ZjY1Y2Y5ZTkzZmM2MWE0ZjViOWUyZTZiMWQ3NmI0NzJlZWRjYjM2Mjc4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWRmMDI3NzAxOGIxNjE4NGRmN2M3MmU3NWVkMWIzYzdkYTY1OTU3OTAyNmQxOGQxYmI0NzI1ZGE2MDFjMWMxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L76-L87",
+          "version": "repo-lines-v1:sha256:2a2a8762fff8d9264169a675b3b2273cba03cc06a7f064819a5caed2e38453cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMDA2MTAyMDQxMjE0YjYzZGQ2YmUwMTQxMDY2ZTIwZmRhZjMxODQzYTU0NjNmODYyOTYzODkzODFkMzdkMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZTM1NTc2YzY1NTkzMTljMGYzNDRkNDE1MjdlYjgxZDkwYmJjMmNhOGFhNjc4NTNkMjE3NTFiNWYyZmUxYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMjZlZDRhOTdhMTkwYjVmNGE1MTRmOTY4NGE5NjQ3ZWQzYzU3NzYwMmRhMWJiOTUyOGUzY2E2ZDRkMWQ4ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0YTRjYjgxM2M3YzYxMzcwNmM5ODEwM2EwYWIxOTcwOTI2NmVkNWZjZDdlNDU4NWRiZDRlMzQxZjlmY2YwZjEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/prod-realm.json#L740-L765",
+          "version": "repo-lines-v1:sha256:7b71384976546a62b0c3830f5e7de90b358688411fd21f78547bb9e2fa0b006e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4YjNlNWQwMzcxMzYyMDg5ZWZmNTJmMGQ2OTAzNmYyZjRlMjQ3NDg1OGMzOTFiMjhlZjRjNGZkOTRiMGMwY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmZjU3OGIyMjg3ZWE2NjNhYmE2OGEwYmMzMjAxZWFmNWNjMGQ1Mjg5MzFkZWQ3MDFkY2M1YjAxMGI4NzQ1YTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5d835a3d33084e3ab81740c0574ce869",
+      "statement": "Renaming a live stack in place removed only the old stack's containers and never the `external: true` volumes and networks backing them, so already-stored per-user data (including saved per-user agent keys) survived the `prod-app → prod-mcm-bff` rename; deleting those resources instead of the containers would have been a data-loss mistake.",
+      "evidence": [
+        {
+          "resource": "repo://docs/proposals/volume-network-rename-migration.md#L7-L17",
+          "version": "repo-lines-v1:sha256:b579e98bfe031adbf08db4ce1b1f57d30387ecf0b1c6af29ba1385ecd6261716:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkOTBmNWMwMjIzNmU3NzA1Mjc5ZTA2OTU4Yzk2ZmJhOTA1YmE2NWI1ZDIzYWVhN2U0YjY0MWJmNDBkZTliYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNTdiNTFlMzMzYmQ0ZmY2OTgzNWU3OTcwOTg5YjdmZDRkY2E1OGUwZDBkNTBmNjY3ODc2MTExOWE2MTcyMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyOGYwMjJiNjAzMDVjZTUwY2ZjNzk1MmI5OWM4YmI3N2Q5ZjQxMzgyNjliYWVhZDQ3Y2ZkNGIyZGM4NmJhOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L225-L230",
+          "version": "repo-lines-v1:sha256:c104c4db126a922d1eea852afa19168d7739399fb478434a795cdbc049337996:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE4OTlhMzg1YjNiYzJiM2Q4ZmRjNTE0ODg3NmRhYjkxNzZiMmFiNjJiZmY1MGVjYjlhNTA1M2I1MDFjY2U1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ4ODU4MjI2ZjAyNzRmOGRlN2QxMzkzZmQzNTJmM2U1ODhmNmI5MTIwZjA5N2RmYTJmZWI1ZTQ4ZmY1OTNlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmExZDcyMjIzMjdiOTAwMTU1MDZhMzIwMTdjNjMyMzBhYTM2ODlhZjhiNGE4MGIzYTdkYmQwYzZhY2NmMGFlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2UzNWY4ZTRjYzhmOTQ3ZmIzOTM5ZDhmZGYwYzE3ZTZmODYxNmUxYWZjYTIwOGYyZTc0ZWQ1NzI5ZDUxM2I0MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e963cce9bd9d4520b9959381212222c3",
+      "statement": "Web and mobile login failures are independent: this checklist found a web-only defect where the browser bundle read a non-`EXPO_PUBLIC` Keycloak URL that guaranteed a localhost fallback, plus a second, separate realm redirect-URI defect (the deployed realm imported an unrendered `${BASE_DOMAIN}` placeholder), so a working mobile flow is no evidence about web.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L217-L224",
+          "version": "repo-lines-v1:sha256:0029d786afc2a9c0a6ac60e2f717c79a88c60dc8ec83aa26e1a813f526dc7307:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkzZGU1ODM0YjQ2NjhmOWNlNmNiMTU1NjBmM2Y0NzYzZjFlNmZkNDE0NDUwOGEyNzU2NDYzMzc2NzllNGUyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY2Njk3NzE1NzViNWNmNzE5MmM0MmFhMTNmNjA4YTg5MmI2OGY0ODBiNmQ4YTVlMTkyYjQ0M2VmODNhMWNjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2JiOTI3ZWE3ZDg0Njk0MzNiNGRkY2ZhNTQ1OTAyM2M0NDFiNGVjYTMyNDNhZTBhNWM5MTEwNmI2NDcwNTkyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI2NjdhZjE1MDc4YmY2OTU2MjBiMjAzMDFjOTFmNGFiY2ZmNDY0NzM2NGM4OGJjZGRhNTFhYWRjZTUzZDU0MCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L135-L153",
+          "version": "repo-lines-v1:sha256:f39e5a8cf7aa5208275ec0c53b77b7ad2fd8100070c003510adcbbbe9d8e46b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YWQzYTA4ZTMxMGM0N2JhNDFjMWRlZjY1OTE0NjNmNDAxNzkwMGVkNjg1OTZmNTZhZDQyZWE2MmYwMjBiYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MGMzOTk5MDU0YTM1ZDk5MDU5ZWFlNjc5OTdlNDRiYzM0YzQ1MTlmN2NmMjk5YjBmZmQ0MTJjZjdjM2Y2MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjZGI0ZGVkOThjM2E3OGEzNmMxZWFjMDIzOTkwMGVlODdlNWJhODQxNDNmY2E3ZmYzMDYzZGNlMTkyOWRmYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_03bb8a52c0744d13b2ed3a35b29badec",
+      "statement": "The checklist treats revoking a one-time elevated-privilege token (the `write:repository` token used to dispatch the CD validation) as its own explicit checklist item rather than an implied cleanup step.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L185-L192",
+          "version": "repo-lines-v1:sha256:235625247e598b17a278c6113348251f1ccb37f52ebc3908a3eb7f3c56d434a3:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcyYTk1ZmIyMDJmN2FlMGU5MzdiOWFlYmRjYzIwOWZkOWI2NzFjMjZlOGM1NDFkZGY5MmRiMjZlYTJkZTkzOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUxMzkyODY5NjRjNWIxOGNiZDU3NDc3ZTBmYzY2NTI5MzI3ZmU0MWQ5YThmYzcyNWVjMTJkNTg2NDM3NzAwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2FlZWZlZDkwNmY2YWY0ZTg2YzU3YTdjZWUxMTQ3YzdlMDVjMjdkYjdlMzcyODU4YjE2ZTdjZWM4ODY4ZTNiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L293-L300",
+          "version": "repo-lines-v1:sha256:a5458514c8418bd1998c590b7cd0eaca55c4e4bfb67497baef902beb02322411:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwNWVlNmM3ZGM0ZDBiNmEzMTMwZGJiOWY5ZDE5YzNmOGQ3ZDE0MzU3ZGM4ODZhMWU1MWQ2M2YxOTNhNmJjYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTJiMjg5NDYzNWNmMTQ5NDBjMjliOTliZWU5ZjVhMjFiY2VmZmZmZDYxNWY0YWUwN2IzY2YxMzlkM2FhMTk0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZjZGZkMDViNGVjZDA1ZWNmNzJlNTQ2NDAxYjk0NDBlMWRjNjk0OGQxMzFjMDJhZjdlNjkzNzE1MzdhNDcxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmUxYzA0MGE1MGVjZGJhMGJjZjdkM2U0MTE3YzI3OGJlMTdkYmQwYjUxZDUzZWY5MDE0YTZlMDIyMDU3ZjhlZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_12f02a7da0864387b881e111e3f76586",
+      "statement": "The checklist's statement that production Mongo is unauthenticated with no credential is superseded: feature 026 enabled SCRAM on both stores, and `stacks.toml` now supplies `MONGO_MC_APP_PASSWORD` and `MONGO_MC_KEYFILE` to `prod-mc-service` and `MONGO_BFF_APP_PASSWORD` to `prod-mcm-bff`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L9-L13",
+          "version": "repo-lines-v1:sha256:9e198812c9d5513b81cdf0d26e98594b57e9b926ae49ccfcddfb318f2298b3be:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE5Mzg4YjA2NjVhZTU0ZWU0YmMxZWMwYjZkMzE5OTQzNTZhOWE5YTdiN2U0OTYxZDliODlmNDA4YWIzZWNjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJhMzBhNmZkOGY4MWY1NjY2MDJjNjk0OWZlZWYyNDk5NGY3ZmYzNmExZjc0NGY3NmFiZGJjYTAwZTZjYmU5OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjU1ZmRlMjk3Y2U2NzdmOTIwY2U2MGU1ZTM4MDcyOGNhMjJmNGNmYTY0MWQxMDBkOTRkYjg3MjI5OGE5ZTE1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTNiZGM4NjQ5YTI4OGVkNTkwMjQ1ZWNjNDhlZWFkNzg2MGIwODBiMWE1MWJhNzQ0MDk0ZDhjZjZiMjBhMjQ3YSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L1-L18",
+          "version": "repo-lines-v1:sha256:9bec8321e596e99c99b698b16b2bf42421984258bab1078341e20d26dbd43cd4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0ZDMwNGQ5NzEwNmQ0NDU5M2E4MTdhMTUzMTQ0MDkwNzNlMDFjYzlkMGY0NDczZDJhYjc0YTVkZDMxMzNjYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhOGY3ZGE0OGFjNTUyNjliMWIyOTA2NjI2OGQ3NzI3NDZjOWY5ZTI1ZjA3ZGZmZmEzOGE1OGVkY2ExMGExNjYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L58-L66",
+          "version": "repo-lines-v1:sha256:7875029f737c1bb194f1139f8031b00579781f25f82a4538e8cf9ad013a104ed:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2M2NjBmNmEyODM0NDE0ZGE3MjVlYmY0M2E5YjgyZDdhYmFkNTEwNmFhODAwODlhMDc2ZGZkZDA4MGNiMWI2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDJhOGJmMzFkZGU4NWRiZWM2N2JmYzMzOTg1MjgzNWQ1NGYzMDRiYTQ2NWNiNjIyMjZjZDdkMjg5ZGI1Y2Y1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEzYTFiYTk0Yjk2MWQyNWRiODZlOGZhNzIwOWI5NzJmNjMzNGY5OTZmOTYzODhlMDVlZjQyZDQxMDVhMmJhMiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L89-L92",
+          "version": "repo-lines-v1:sha256:7379c1fb3ddf5183557a5bc5905c8179cfb8b9e9aa669078039027c5ddbd597b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyMTZiZjZlYzJhMGIzNjFiYWFhN2Y5ZTZiZDdjZDg0NDIyMTViMWJhZDMwNWEyOWY4YTIzMDlhYTZkZDVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTUwNzZhNGYwODQ1NjlhZTdhMTRkOTBiZmE1ZDIxNTIzZDg3OTc4NjEwYTY2NGY5MmQ1MTk3MjY1NTA1YjQ4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWZjZGI4N2U4YjViOGY1MzA0Mjc2ZjZkM2ZjZGY3NjEzM2NmZWI4MTgwNzQyMThjMWU0OWQzMjY5MTk1MDIxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTZmYjcxODlhNzViNTQzMjU1YWFiMDViNTc4NmMyYWI2MWJhYTYzNDcyZWFkYzE3NmFjMzFhOWMxMTk1ZGExZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0ca3e4ee61b4872b4078cc4a052e080",
+      "statement": "Komodo overrides a compose file's own `name:` with the Komodo Stack name, so the `prod-app → prod-mcm-bff` rename could not be made by editing the compose file — it required a down-old / up-new cutover (stop the old containers, deploy under the new Stack name, delete the old Stack record), confirmed against the running deployment.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L225-L230",
+          "version": "repo-lines-v1:sha256:c104c4db126a922d1eea852afa19168d7739399fb478434a795cdbc049337996:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE4OTlhMzg1YjNiYzJiM2Q4ZmRjNTE0ODg3NmRhYjkxNzZiMmFiNjJiZmY1MGVjYjlhNTA1M2I1MDFjY2U1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ4ODU4MjI2ZjAyNzRmOGRlN2QxMzkzZmQzNTJmM2U1ODhmNmI5MTIwZjA5N2RmYTJmZWI1ZTQ4ZmY1OTNlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmExZDcyMjIzMjdiOTAwMTU1MDZhMzIwMTdjNjMyMzBhYTM2ODlhZjhiNGE4MGIzYTdkYmQwYzZhY2NmMGFlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2UzNWY4ZTRjYzhmOTQ3ZmIzOTM5ZDhmZGYwYzE3ZTZmODYxNmUxYWZjYTIwOGYyZTc0ZWQ1NzI5ZDUxM2I0MCJ9"
+        },
+        {
+          "resource": "repo://specs/023-forgejo-cicd/HANDOFF.md#L11-L11",
+          "version": "repo-lines-v1:sha256:e95e2ae15fa5830ec5aa9f02caedb2ed490bf79d5662ad6feb306d68d63db073:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk1ZTJhZTE1ZmE1ODMwZWM1YWE5ZjAyY2FlZGIyZWQ0OTBiZjc5ZDU2NjJhZDZmZWIzMDZkNjhkNjNkYjA3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk1ZTJhZTE1ZmE1ODMwZWM1YWE5ZjAyY2FlZGIyZWQ0OTBiZjc5ZDU2NjJhZDZmZWIzMDZkNjhkNjNkYjA3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNiZDQ0MWQ3ZTcwMWNlZGMyNjlkYzcwYzM3NDc0MWI5MTQ3NTZhODU5M2IyN2IwNWRiMGM4YjM0MmI3ZDk4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzEzMDUyZWZkNjIzZTVhYjQzMjdiY2FiMjNhNGI3NWQ3MTQyMWY0YzJmYmZmODk5MmMwMmUyMmJlOTFiM2EyYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5aa36d168fcf4891ad5d1d7101792e18",
+      "statement": "Each Komodo Stack's environment block is the source of truth for that stack's env: Komodo interpolates the masked `[[NAME]]` Variables and writes the result into the stack's gitignored `.env.prod` at deploy time, so that host file is generated and a hand-edit on the box is overwritten by the next reconcile.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L318-L319",
+          "version": "repo-lines-v1:sha256:d37a11a7cba4ce20f31437d6f42b94203a613c0339041a40e23c09de7aec7c89:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIyOGYzZDQ1YzI2NmIxNjNhOGFiZGY3NGRhNmU4ZjE0MjliYzU1ZmNhNDhjZjZjNGRiNzU5YjI0NjJmMWIxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTllYmU2OWI5YTNiODVhYmRhNmYxNzE0M2Y3MTU4ZWZiOTIxNTY2OGJhMzZhZGQ2M2ZlNzViOWQ2OTNjZGIwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE5Mzk4ODIyYmUzNzk0MDc1ODAxOTc3MWVhYWM4ODlhZDY0N2M3OTZlNDQ2ZTc4M2ZmOTQ4YTVhY2IyYWRkNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFjZTU4N2UyMWY5NjI3YTNiYzA3YzJmMDFhOTY5Zjk3YWEwNTIyYzU2NTIyNWMyOTBjMTkzMjZjMjU0NmY5YSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L59-L62",
+          "version": "repo-lines-v1:sha256:ef33ea4a550b7c3fd05a198f1647c5dfeb7f4455cd535858278afa096c16a168:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBmNWIyMjJhMzUxODk1NmRjN2I5ZGY1ODY0ZGE1N2M3YjM2NDYyZTBhZDllMDM2YThmMTgxMDZmZWZiNzhkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc3ZWI0OGI0MDE3ZGJlMjE2M2VmNGFlNmQ1ODA3MjgyMDA3ODkzNDkyYjBmNTU3ZDM3OGJmZmY3YTFmNmUyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTU3MzE4NjUyNjkxNzU4ZmQ2YjEzMjliYmUzZTdmNmI4ODZiYzg5NTMzZWY5OWM2OWM3OGY1ODE5NTI2N2MzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWExNDMyYzIwZWMyMWQyMDI5MjQ3YzY4NmYwNDFlZjAxMmEwOTBhYzBjY2ZkYjk2ODAzODQ3NDJlM2JlZWNhNiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L36-L44",
+          "version": "repo-lines-v1:sha256:8fb849f13a60068d8106956fcee24ceba9d56238e8326de04d3332fc00408788:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA5YTg4ZjYxZTk4NzI0YTZkZTc4ODU1NTg3YjFmODU4YmEzZThmNTFkMmFlN2VkZjMxMTkyZDU5NmNhMmNhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFhNmM2NTEyN2E5YmIwYTdjOTVlZjViMjc3OTgxOTFmNDdjZjg2NTgzYjQ2MGQ5MjkzNWE0MzgwNDhiY2U2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L56-L62",
+          "version": "repo-lines-v1:sha256:2c48fae78c4fa5dc3e2d99b8e69d41f31214da47bd333955cb0e62115cfea1bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBlZTkxNTkyN2IzMzI0ZGMyNjI3ZjBiZWI1MDY0MjI5MWRjZjA0YjVhNmJkOTlkY2NkM2FiZWE3ZTJjOTU0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzhlNmMyMmZiZDBkM2ZhMGFmOTRhNzU1N2IyYzZiZWZmMmI0OWZkY2QzYTAwMWQ5MDMwMGYzNmUxNjk3ZGZjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTVmZmRjMmQ0MTRjN2FiZWQzZmM2ZjQzMGQzMTA4OWNjMGU3NTFhODcwYWI2MzM3NDE5NWI1N2I3Yzc4MThmZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a4d06050e10c4cf382ee12ac5d8e1943",
+      "statement": "The branch-protection state this checklist records (`main` required status checks = `guardrails` + `app-ci`) was the starting pair, not the current set: `main` now carries six required status globs spanning `guardrails`, four `app-ci` jobs and `infra-image-scan`, and the per-token inventory and rotation procedure live in the server-setup runbook rather than in this log.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L402-L412",
+          "version": "repo-lines-v1:sha256:5f8e7dece976e364728acf57fc96871fc088c98825827ea7f13818ecaabc2e55:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyOTNlZTZlYzM5MGViMTEzNjRhNDk4YzM0OWU4ZjY0MDA2NmJlMDJlNzBiM2IxYjE3ZTU2YzJjODE4NzVmMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzZDY1NDU4MWY5NTA4YjczNjg0N2RkMWIxOGYyMDFmMWZkNWVmZDg5ZjkyMjEzNmNhMzJiNzBkYzc3YjgzODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlOTk2NmNiOGRhMmQ2MzUxNTEwY2Q5MmZkNDg3ZDlmNjkwYzA4YzZiMmVjZmIwMDllYWJiZGQyZjE4ZGRmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4MzcwODk3MmRlNDE5YWU3MmZiNmEyOTAwYjRlMmEwODkyZDg2MmM2YjZjM2E5NDNiNDhiMGVhYzEyMTQ5OGYifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L241-L251",
+          "version": "repo-lines-v1:sha256:2541d6fa900b9e2dd1f14171247e717d33851399a65cc6e2189a52df23ca09f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZDc3ZjU0MTk4NWE1ZWMyMDc5YTk0NGUxYTQ5OGZhMWNmZjZhNDJiMzUwMDBkOTRjNzY4ZTdiNTUwZDI1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMmQ1NjBhNzkzYmE4ODdjZGExMjRiODIwODI3YTgyMzg3ODQyNzQ3ZDQ0Y2EwMDY0OWUzMDE3MDcwY2Q5YjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1036-L1037",
+          "version": "repo-lines-v1:sha256:37b8aecaac7c99bb509f8b6e3cd05ee1db29269d1edec1141516d6bfa34da2c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYzOTRkOTBmMTBmZTY4MGU0MzJjMDQzY2Y1ZTc5NGE5MjI5MDlkMmVkMWE0N2Q5YzQwMTBmMWFkNGYyMWZjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU1N2ViNzk4MzAwOGI2OWUyZTg2MzI1ZjlhYjUyNTYwNjdlMWYwZTc4YTg4ZmM2NTQyOWM3YjI5NjBmMTA0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTYyMTFmNWVjOGFlZDFiMGY4ZDQ2MWU3YzYwZWM4M2Y0YmVjZjE2ODNhMjdmY2U3MWJiNjhjMjY3NjIyMjllNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGY4ZTAxZmYyNWEwZjA5ZDdlMDg5MjBiMjAyZWI5YjExM2EwOGE2ZDUyN2Q0MWE2NmM4ZGVlYzY0Mjk0ZmMwZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f1da129c170540f8869e18522aee190c",
+      "statement": "The masked Komodo Variables this checklist seeds as a one-time bootstrap are the same mechanism ADR-0001 later ratified as the sanctioned production secrets standard for every core stack — interpolated into each stack's gitignored `.env.prod` at deploy behind fail-fast `${VAR:?}` compose references — so the checklist's click-ops bootstrap became the permanent secret path.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0001-prod-secrets-management.md#L11-L18",
+          "version": "repo-lines-v1:sha256:b6b5758e572ca99305dc06bf4ed1cdc276562da1683dabf3b6ec2ecc0bfe7dcb:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBlODllYWQzZmQzMjY0NjJlNGU1Yjc0ZjFiNGJmOTQzNWFiZmJiYmFjNzFhM2U5YTNjODRiNzNjNmVkNGJiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwMWQ3YWIzYjAyY2E5OTE5YzQ2NGEwMGZiNDY4NDMzNGI4MGZhYWNhYjZjNjIxNWViNjhiNGRiMzE3NzllMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzZkNTg0ZjFlYTU1ZGZjNDgyNTE2OGFiM2EwNDJlZWI3MjFjZGIxZWY0ODRiNTY5MTQxYzBkZGY0OWIwMTEwNiJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L205-L216",
+          "version": "repo-lines-v1:sha256:567f626a94a856dc0c4e9b13c09515270a0650bf6e8ad6d440c3c04e482e195a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMzE3YjI3N2IwMDY1ZTc2ZjU5M2RmMDdlNTU2ZjBjNDkxYmMwMWEyODhhZTg0ZTk1MGFmYzEyMjdlNmEyYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3NWVjZTAyYTU2NmViMmZkMjUwMDVmMThhYzJkZDZmNjlkMTc5Njc0ZTE2MTFkMzg0NGU5Njc4NDJiNGQxODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZTExMTNlNzZhNjk5M2M5YjUzYmE4NmNmOTk1NTQ1YmFiYTBmZjlhMGY5ZDRiNTY4MTFlMTg5MWE2MDhlNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ZjlhZDA5MTkwMzhiN2RiMzEyMjI3MmZlZTcyOGM2OTM3ZmM2NWFjZTdiOTE2ODFmMDAwYTYyMmVhYmVjNjkifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L8-L17",
+          "version": "repo-lines-v1:sha256:67057378d4a91f96be89d5e222cf9d9614243c1022d66ac97ad3e788eaa430b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4ZjlmZGEwNTU3ODIzYTk0ZTg5YTY3MWQzNDdiNjQ4MWRiNjM0NzkwNTc5ZjM4MzE5Zjk4MWY4NmEzZGVkM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwMWRhZjk0NzA1NGRlMzkwZjgyNWNlODM2M2MyZWRhZjFlMmUzZGJhZTNmYjQ3M2YwYTU0MWM0ODgwYzNlMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwNGIwMGExODZmOGUzZDI2MmRhMzg2MzI4NzM1ZDVjNGI4MzkwNDUyNTVkZjkzNjg1OWVjZDk2MWY1ZjA0N2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiMjY4ZjFhMGJiNmU3NDAyYmYzMzBkNzRhOThjY2NkMDUzZjI3NDk5MTE5NzE2NmE4NDMyNjFkZTc4ZTM5MWQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-29T03:23:45.685Z"
+  }
+}

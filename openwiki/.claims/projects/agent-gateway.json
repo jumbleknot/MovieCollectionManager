@@ -1,0 +1,430 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d0dc97e27cc70f574d2914cea9feb8a4bb15fb84ae54a95c11483fd2f9936bca",
+  "claims": [
+    {
+      "id": "claim_7d3bd91d26e14adca9d54e0d80d60ae3",
+      "statement": "The Agent Gateway is a FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI at /agent/movie-assistant via ag_ui_langgraph + copilotkit.LangGraphAGUIAgent; it performs no end-user authentication, is private-network only, and the BFF is the security boundary and sole caller. `build_app(graph)` is deliberately graph-agnostic so the transport spike and the real run share one code path.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/gateway.py#L1-L107",
+          "version": "repo-lines-v1:sha256:31a5a48102c77f441019ff83c8cdfdc2c3325ea41a37644064d871143cf6504f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzMTI3MDY0NGRmN2IxOGJjZTI3YTJjNzhlNzQxMzE5YTA4MWRhMjMwNWI5MTZiNTY3OWYzZjIzYTVmZTkzMjU4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiZDY3YjQ2NjM3ODc1YzNiYjdmOTAzYjFkYjg3MzRiNGEyOTY2ODVkZjRkYmU2NmE0ZjZjZWY3ZmRjNDExNjNlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOTE4NDVlYjJjOTQ2NDQyZmI4Y2QxNGNjNDlhNzMxODE1YWM3ZjEwZjE2NDQ4MDY1MTg5YjMwMjljZmM1NzhhIn0"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/gateway.py#L15-L15",
+          "version": "repo-lines-v1:sha256:f32c7afc6ce16a3931e413f530e16b1f7792681e1f559b241f9797e4d052ab6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMyYzdhZmM2Y2UxNmEzOTMxZTQxM2Y1MzBlMTZiMWY3NzkyNjgxZTFmNTU5YjI0MWY5Nzk3ZTRkMDUyYWI2YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMyYzdhZmM2Y2UxNmEzOTMxZTQxM2Y1MzBlMTZiMWY3NzkyNjgxZTFmNTU5YjI0MWY5Nzk3ZTRkMDUyYWI2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQzNjBlNmY5OTY4Yzc2ZDUyYTJhNmVjOTJhYWRlMTE2ZGEzYTdlODc2NjM5NjVkNDNlY2IyMDhkMDgxMTdmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGVmZTNmM2Y2NjhmZWYyZDc4YjZiZDY4NDQyYjFkMzczYjNmNGUwMzdmYzg3Y2YwZjVmZDBiNGMwZWNiNTgzZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2abd492056fd41e1b91952da58da2d72",
+      "statement": "All MCP tool calls funnel through the single `tools/mcp_tools.invoke_tool` choke point, ordered deny-by-default per-agent allowlist → rate limiting → identity/token acquisition → the MCP call (retried with backoff on transient/5xx failures, then audit-logged and dead-lettered) → output guardrail validation; the LLM never selects tools or forges arguments.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L383-L499",
+          "version": "repo-lines-v1:sha256:0e37a66722cfa5320a7194be2e4f78fb2d2d66a815e91f7a85cf19d3d9bf4732:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MjEzNDg4ZjA5MjVlYTM4NmY3OTI5ZjcyM2E0ZTBmYzNlMWFkZjVkMzcxMDUyY2VjOGU4MjBmNGFiMzYzNTJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmZjg4NjRiZGVkNTdlMDM1MTQ4ZTc3MzQwYzNhNjczYzk4ODE3OWYzMjVhMDUzZjBlZGQ3NDExM2RhZDZjOTNmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4YjczZmYwZGY1MTgxYzI4Zjg4MmVjMzcxNTgwODdhYzg1Mjc1NDUxN2FjNGY0NDZhN2E1YzhjY2E3MDA1YjdmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1MjMwNmM5OTcyYWQwZDI2MmM0MTk4NjA4ODdjZmExNTU0NWEyNTU0ODNlODQ4NjE3NjIyNDFhZDRjMmZhYjZhIn0"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L502-L513",
+          "version": "repo-lines-v1:sha256:2748ed054f78d05877083d29d12c10edce833fffb9abd5ab8ae8e864250a25e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZDYxN2E2N2JmMjQ0MmUzNjM2YjM1MTc4MWFkYzMyY2RhMTk4Nzk0M2RiMGZjOTA5Y2UwNjBiNWViYmQ1MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MDVmNjc3NzEyODUwYTc0ZGM2ZmMxNzk4MmFmMzJhMDUxYzZlZWRhNjRkYzRhNjJkOGY5ZTBhZjQ4YTRmNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2fa3f0cd7e254364a0e10f142b02b987",
+      "statement": "`production_nodes_enabled` requires BOTH `MOVIE_MCP_URL` and `WEB_API_MCP_URL`; when either is unset the gateway silently compiles the tool-free graph instead of failing, and `build_runtime_graph(..., force=True)` is the test-only override. Missing spreadsheet support and a stale gateway image are both indistinguishable from this expected degradation.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/gateway.py#L110-L157",
+          "version": "repo-lines-v1:sha256:f7a767ccae60a3427852c5d3e347f5099c655ffb825163fb8b701b394c961477:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZDY1ZDg3YjQ0MmNlZTQyYjM2YTk4NThmMmJkODdkMjE3MzgxZDQyNGE2Mzk0YTgxYjUwZjUzYWE4MjI1MjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3OWRmMTFlNWNhMDFmYWVmYmQ1ODgxNjY4ZDI1NWQ5ZTZiNTRlMjA4YTQ4MjBmMDc5ODc0MjI3MDVmM2ZjYmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlZmFjOWE2YjY4ZDA5NDRmZDMzNmRjOGYzOTM4YjhhMTVjZGY2YzQ2ZWJiODViNDk4MzViODIxNGNhMDE5NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py#L1264-L1288",
+          "version": "repo-lines-v1:sha256:c4916fd29b0b84ac5d121ed7aeb362d431defb26bc53849d31b49739a06d3606:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYTcxZWNhZmNiYzQ3ZmE4ODQxZmVmZGE3NTY0NzYzNjFjNmY1OGNlMDFjOTQ4MDhhNWVjMmE3ZjlkMTc1YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmZDVjZDA4YmVlYjFlYTUwZDVkNmI3NmFjOThhYzNmNjU0ZGJjMjFlZDlhZTMzZTNlNGYyODZjZTNkZTgwYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py#L73-L75",
+          "version": "repo-lines-v1:sha256:dc24f6a763e073ec9678d01bbbbc5b1739d52755b19af39d8a30d07c4758e5de:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM3YzY5N2JmNDA5ZmE0ODIxODZjMzVlZmUwZDExMThkYTJlZGY2MTA1MzJlZmE5Y2JjNzBmMGNkYzcwNjY2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI0M2QxY2M5MjcwYTQ5MWQyYWRiZjBlMWQwY2ZmNWQxNTVjZGQ4YjE1YmI0ZjM5ZjdkNmQzM2M5MDc4OTg5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlmOTMwODNjMTk3MTIxYjk4MjcwMGJhOGFmYWJkMTcyMmNmMWQzZTc0MDQ1MDllODBlZmEyNzI0N2Y2MmYwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2U4OWIwZmFkMzY1MWE3MTAxMjZiZGJjOGJkN2NhOTc1ZTJhNWNhMmY1YmJkNWEyYjYwYTY5NzVlOGZhY2ZiYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dcef3cc37a4f4204a2781b84fd2ef9ee",
+      "statement": "Four ASGI middlewares capture BFF-supplied per-request values (X-Agent-Config, X-Import-File, X-UI-Snapshot, Authorization Bearer) into request-local ContextVars, and `IdentityAwareAGUIAgent.prepare_stream` bridges them into `config[\"configurable\"]` because a ContextVar set at the ASGI boundary does not reliably propagate into LangGraph's per-node executor tasks. Raw tokens are never checkpointed.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L151-L157",
+          "version": "repo-lines-v1:sha256:9bb7d43b9ecedac4d33229971b0be124bfa7c5d28ad6bdace54950ea05ff359e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmU5NWQzZmIzNzE0OWRlZWE5ZGViMDY3YWYzMDcyZTJlZTMxOGFhMzM0ZDdlZTY0ZmQ0ZDQ3NTg0M2MwYTI2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJhM2VhZDc0ZTViNmFlYjYwNTdmZjM4MjM0ZjM4ZTVkZDc2MjBmY2JiYzZmZmEwMGE0YjU1ZWU2OTE0NGI5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE2NmU1ZDk4YzQxYjU3YjdmOTgyNTg2N2UxYjY0ZmFmODhkZWE5YTAwNzljMDRkNDMxZTdkNDZkZWNjMDA0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDgyZGY3MDI2N2VhZTdhMjE4NzIyMmQyMDY1NGEzMjQ2MWFiMGE3OWQ3ZjZmMjgwMmY4ZjBhMTU4MWZlOTEwMyJ9"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/gateway.py#L77-L101",
+          "version": "repo-lines-v1:sha256:a62ba74c46b8178663c8e1e9301a430dbc7976ee4f5d35bdb9e046f5ff452236:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmODBhMmI4NGRhMzVhNjg4MTBiNjVjY2ZmMjJhYzljYzVhYWE4MGJkMzUxNjU3ZDU0MDdkODVlOGEzMzU2OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2MTBjYmE0ODdlMmI0MjIzYjI5YTk5YWI3MTA2ZGIxNjkyZmM4NDQ1MTBlOTAzMzU3MmI2YWIzMGE5OWQyNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNmU2N2I5NDdkZDk4ODc0Y2NkZmExODExZWMwZTk2ODgxZGE5YTAwOGUyYTY5ZWNjYzI0YTY1NjBkYjA0N2UifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/state.py",
+          "version": "repo-file-v1:sha256:5d786c76d9b63fe55083de7f71eb8d61d25a6662fb9542e34da54def1d3c31ac"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f67bad27ead4b18b2a897ba61b27e4b",
+      "statement": "`IdentityAwareAGUIAgent.run` catches every exception escaping the graph and yields a terminal `RunErrorEvent` instead of re-raising, because the AG-UI library re-raises into a StreamingResponse whose 200 and headers are already flushed — which aborts the connection mid-chunk and leaves a client waiting on a terminal event hung for its full timeout. It catches `Exception`, deliberately not `BaseException`, so a disconnecting client's CancelledError/GeneratorExit unwinds silently.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L159-L200",
+          "version": "repo-lines-v1:sha256:347b1b13d268ec21ae1ac1a1fbcaccbb1c88b68e5fb6ef561ac51081ee1df1cf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4Y2NmMjE3YmQ5ZTFjNmI5NTJiOGJkYmQyMGMxNjZiZDY3NmM1MmQ0MGM5MWRiNmNkZDg5Y2FiOWJhNTA5NzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxMzNiZTUwYzM5ODU5MzA2NzE1Y2M1MzFlM2Q3MGMwYzFkOTY1NDk1YTI3Njg2NDhhMmIxNTEyMmIwNmE1YmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3OTMzYzQyNTkyMjA3OGU0ODI5NDNkZmNjODIyYzNhZmRmMmYzNWZlOWYzNmE4MDMwMjdmZjczYjIwMWQzNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkYzNmMjY3Yjk2MDA4NzhmZDBkYmNlNjNmY2I1M2NjZmJhNzgxYjA1ZTdlMDZhNzlkYTg3MzQ2ZWFkMjYxZTQifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/integration/test_gateway_provider_error.py#L1-L45",
+          "version": "repo-lines-v1:sha256:7fc3d29eb8037905df9f6992514a4a563f973db1c3872b10410f449a2861ecf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZGNlMDE5ODViZDAyN2YzNjY2OGZhZDYxZDZjM2YxNGFiZWJlZWEyY2Y5NzhhNzYwNTA3YTFkMzBiMzk2YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiZWI1ZTRlMTYzZGMyOTRiNTI0MWExZmJmMjJiOTEzMTE4ZTU4NTZjZWE3ZWE4NTk2NmMwYjJmOTdiZGYwNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMDNmMmVjMGY4N2RhYzhlMWU1MDZmMjI3NGEzNmM5MTg0OTM2YjlhOTViNjI0NGZlNDY3ZWZkODYxNWJlZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_92ae7b945c4a417e958911c6e0f6445f",
+      "statement": "The supervisor classifies intent only when the last message is human, and `route_for_intent` maps a classified label to a node (unknown/ambiguous → `clarify`, `noop` → END). Critically, its per-turn order is kill switch → stage-free search cancel → error-rate breaker → non-human noop check → classifier, so an escape hatch and the breaker short-circuit BEFORE any model call is attempted.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L308-L383",
+          "version": "repo-lines-v1:sha256:007a00536b9867aa83105fda5d8148636907076929720a11bea7fee000e6a1af:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3ZDY4ZDEzNzc0NWY3YzZiOGM4OGRmMzIxMDE2N2YxYzg3OGM5NDJlN2ZiNjk2NzA0ODVkMTdmZTkzYTYyMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5ZjMxYWJiNDZkNTFjODQ5NGY3ZWM1NjU1MDUxZTEzMGY1ZTM0NzBiZTQyMDMyNGExYTI3NmY2ZmRhZjQ2NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NzE0ZTMwZGVlYzNmMDk1MjM5ZjJjOWM0YWE5NWViYTgyZGVhOGFmYjMwNjNmZDhmYmEyNmMyMjY1NjM1ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5ODA5MjFmYjJkY2VmYjYyZmU4MmNiMzhmNDcxN2M0ZGZjODUzODM2MzY5ODg3ZDEwNjI4MDZjM2I1YzY1M2MifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/supervisor.py#L310-L343",
+          "version": "repo-lines-v1:sha256:4eb4dae9525722fe9fc37f879861bc35f8b69ae72fa66ccda2ecec2483bce328:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwOTY2OTdhNWJhOTFkZDc3MDY4OTA1NTI5NTAyMDhmNzZiODg3ZjQ5NDJiYTcxODg2OWQxMzI4ZTRlOTg2NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNWM0NzI1OTkwZTcyYjJkYWI0ZWQ0MDhkYjQ0YTMzYjJkZTBjMWNkMDUxNDkyNjY5NTRkNzBjY2E5ODU4NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YzMzNjM5MWZlNTY1NWZiZjNmNWQ5MDAwNDZjMTdjZGI5YmRjNTZlODk4YzkyYjNiNTYyY2MyOTVjY2Q1ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7fe68185c9f64c2a8cc9966bacb56075",
+      "statement": "Every multi-turn flow parks a `*_stage` value on GraphState (add_stage, search_stage, organize_stage, import_stage, navigate_stage) and the supervisor guards the next turn back into the owning node, each with a matching `_*_STATE_RESET` dict so a finished or abandoned flow cannot leak state into a later turn. A key written by a node but absent from GraphState is dropped silently with no error anywhere.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L152-L243",
+          "version": "repo-lines-v1:sha256:9facb8eea0e016a782db0643220cd07f5a8c46dc61b40f8923e8f71aa3752afd:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NjlkMDBjODgzNjY4NzlkNWI1ZjE3ZWUxMDkxY2UyZTg0NTcwNzA4NjMxOGQyNTdiZGQ0N2YyNzE3YTAzN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmYjM0YWU0MWU2Yjg3ODg3ZTcwZjk5ZDEyMDVjNDc5YmJlNmU4MGRkODRjOTY2ZTBjODVjNDA1MGQ3NjQ1NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwOGNiOGU4YWRiNjNlODVjZTBhYTY3NzcwNWFjNzhmYmZiNWQ0MGExNWYzMjM3YmU1NmFhMDQyY2I3OTllNDcifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L46-L149",
+          "version": "repo-lines-v1:sha256:8db03fe41b2eaa2467defd188e66ec392684750141cc6a73d680bbfee04a30ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyY2NjZGQ0OWFjMWRmNGFiMGQyZTY3ZDQxYjA4Mzc4OTAzYmIyMjk4NmE2YTlmOTdjOTI3OTE0ODVhYWJjODlmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjMmQ5ZjZhYjk0MTEzNDdlOWMwYTRlZWRiMDFlNjEyZTc3NmZjYmFiNjU4ZDE3NWZjNGI4MzYxZmRjMDZlYzY0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MjAwOTdlNGFhNTAwNjhiYTE1N2Y5YTI3MzlmYWQ4Njk5NWUxZTBjZGNjZGFkYzU4OTdjMjAzNGM3NGQzZWZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwZTM4ZGJkOGU5NmQzNGMzNGE2NDQxMzY4ZDY2ZWYxNzY5ODdkNmUzMjBiZDI4YmJjZTRkODRmYzUxNTZkODMwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_ecc38a3f57b24a1a97761cdd8e248fd1",
+      "statement": "The add flow collects every answer before building one Proposal: `awaiting_childrens` → `awaiting_ownership` → `awaiting_media` → `awaiting_ripped` → `awaiting_rip_quality` → proposal. The children's question sits first deliberately because the ownership questions are conditional on owning the film, so any later placement would skip the children's answer for every not-owned add.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L169-L190",
+          "version": "repo-lines-v1:sha256:efc7bf48020f86ba4228d1b34995e586655c1871eae40c894769e1768ac117ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2YTZhYjEyZmQ5ZGQ3ZGMxZDI4MDBiNmFlNDQ3MTg5ZDI4Y2FjMDNlMjkwNWQxYTQxMTk2NjZiZTRkYzMxNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiOTZhMjAxMGE4YzA4Y2ZhMTEyMjNiOTgyNmYyNTlkZTU1Mzg5YWRjNTk4MDMxNjFiMmI4NTU5ODI4ZDllNzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyOTk3MGZiZTViZTg0NzVjZDM0NzEzM2E4ZDE1MDY1MjE5ODIwMDBkMTEyODRjYzAzM2U5ZDEzMGU3MTI4MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNDE0NGQ3YmQyNmE0YjYyMTY3NzYzMzY3MTk3OWY4OGY2Njc1YzI1NjIyN2QwNDc0Y2RjNGRkZDg5MDk0ODAifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L166-L175",
+          "version": "repo-lines-v1:sha256:09f6fce3488c6cbbfb49f0e51beff4bc2f7e64d14afab33719027dc65546fcd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjYWQ3ZWZkZmY4YmRiYzc3MDhmNzdiOGE4ZGRmZmI5MjE4MGViMDAwZmVkMzA3MDI1YmRlNzE0MWFlMjRhYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNTk3MmQ3N2YxMjE3NTYxZjlhMWMwMDcyYmMzYTUwOWJkOWMxOWQ4YzYzMjkzZTRiZWU4Y2QyNDAzYWFiNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhYWRlODUxZWU0YWY3ZmM1MGQ4NDYyZjQ5MmMxNGY4YTNhN2IxYTU5YTEzNDI4NTA5ZjVkODUzMjQwNmM1NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0M2YxNjc0YTNlMDdiMWI2ZTNjYWVmMmM3NDdkZDY4NzEzNTFkNDg0ZjJlNmM4NmZmMjg0ZmUyZWNlYTI3ZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f9d00c3398534051966cf5892b862f7c",
+      "statement": "Adding a multi-turn add stage requires updating BOTH `graph.py`'s stage guard and `curator.py`'s `_OWNERSHIP_STAGES` passthrough set. Without the curator passthrough a bare reply like \"yes\" or \"Selected: DVD, Blu-Ray\" runs entity extraction, finds no movie, clears `candidate`, and drops the member back to \"What movie would you like me to look up?\" mid-flow — silently, on exactly the turn whose stage was missed. Feature 040 added one stage (awaiting_ownership), 047 widened it to three more, and 059 added `awaiting_childrens` at the front.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L172-L190",
+          "version": "repo-lines-v1:sha256:8d0549486cb785a5e7b042ba93732465e7c4938ed74b038189a034d89283c2a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZDBhNGM1YmIyOTA4ZWM3YmYyM2YzZjQwZjcwNjZhMGQ4YTQzNmY5NjNjZmEwNjZkNzU3YWNkYTJiYTY0ZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiOTZhMjAxMGE4YzA4Y2ZhMTEyMjNiOTgyNmYyNTlkZTU1Mzg5YWRjNTk4MDMxNjFiMmI4NTU5ODI4ZDllNzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZmMzOWZhNjM3ZDlmMTk4YTM2YjE3ZDRjMjQwMmIwYTY3ZTU3ODZlYjdiNmEzZjVlNmY1MTRmYTQxMGNiZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNDE0NGQ3YmQyNmE0YjYyMTY3NzYzMzY3MTk3OWY4OGY2Njc1YzI1NjIyN2QwNDc0Y2RjNGRkZDg5MDk0ODAifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/curator.py#L118-L152",
+          "version": "repo-lines-v1:sha256:58c291adc18845215d36f09e859f954ee25a3ab5e35ed18ce256620a9121244d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhYjg5NDBlNmYyYTM5ZmI1ZTZlM2VkZDFiOWE2MDNlNDI5NWRhOGY4M2YyYjZmNzg4NTM5ZGU4ODU1ODk3NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiZjVjOWUyYTc2ZDZjMmE2YTJjZTAyYTFiOWZjOTAxYTBiNTAyNTBhMjZjMGVkZjhhMTEzNjVkM2MyMzU0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NTFlMDE2YTFlNWIwN2E0MjUzMDIyZDI0YTMzM2FjMTg5MzNmMmUxODY3NTAyNWU0ZGRkNzczYmY2M2QyOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhZjdlNWYyNTkyYTk1OGU2NTQyYjIwNDViMTIxMTZmOTYxN2QzODQzN2M1ZmMxOTc2MmYxNWJlNDBjYTg3ZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9c1c3e08643420b982f11a26b8e6dc4",
+      "statement": "The generic degrade reply \"Sorry — I couldn't complete that just now.\" is reachable only through the supervisor's model call (`_degrade_node`, entered when the classifier raises or the breaker is already open); the other three sites (curator, organizer, query) are specialist-model failures reached only if the turn routed to that node. `ErrorRateBreaker` is fed by exactly one signal — `circuit.record(...)` in the supervisor — so a tool failure, MCP outage or rate-limit breach records nothing and an open breaker always means the supervisor's model call is failing.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/circuit_breaker.py#L59-L100",
+          "version": "repo-lines-v1:sha256:c737c2839f4758ffec3f1da624ffa4f0cbf00db146caccd9dd9ca476fcd6b6bd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMGI0NTNmNWUwYzkyZDVmNmMyNTFhNWVhMTk2MGQ3MmYzYmQwNzk1NmFlODU3ZGEyMGUzMWE4OGM1NTk2OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMDQyNGJkZTNhZDkxZmY4ZGFlYTgxYTRhYTUwNGIyZmU5ZDM3OTIzZjU5Mzc5MTUyZDU0M2Q3YjRkZWFmNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlOThmOWRiZTdlZDE3MWEzYTkyMGQxYzM2MTE5ODgxNjA4ZTc1YTI2MTAwZGQzY2UxNjk2Y2ExNWIxYWFlNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L344-L383",
+          "version": "repo-lines-v1:sha256:534dfd954c22648fafd913bd232edb82326230c3ab6ed645540999be0a02a4ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMzc0YjlmMDE2N2I3MTU2ODVhMmFlODhiZjJkNDRhNTQ0ZmYzNGJkZWE3ZmZkZTBiZTJkZDIwM2IxMjVhMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5ZjMxYWJiNDZkNTFjODQ5NGY3ZWM1NjU1MDUxZTEzMGY1ZTM0NzBiZTQyMDMyNGExYTI3NmY2ZmRhZjQ2NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiYTUzOTcyZWUwMGRhYmFiYWRjYWM1NTg5MmMxZWRiODJiZmY1MGQwMGU3ZmZjMDAyNzNkNmIzZWEzMTZjOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5ODA5MjFmYjJkY2VmYjYyZmU4MmNiMzhmNDcxN2M0ZGZjODUzODM2MzY5ODg3ZDEwNjI4MDZjM2I1YzY1M2MifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L513-L521",
+          "version": "repo-lines-v1:sha256:d27ee6dac2582300bc3e7bad765989d622707e9120b3b6fa2b70240218197974:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjk4NzAzYTNhMjE4ODRlODE0OWExNmZkNjhmNzFhNWU0MzE0NzUxYzM3OTA0NWE1NTUxOTNmMzg5MTA1MDg3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZiZDAwOTMxNGJjMjcwODQxNjczNGEwMmFlNWZmMzlhMWU0OGEwNTBiZTkxZjQzYjJmYWE5MjAwMmM2MmJmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWE0MjU1MmM1ZjVhM2YzYjBkN2MzOTkyZjMyN2Q3MDRhNjI2ZmY2YTY0Y2UyOWEwZmE3NjMxZDY4OWYwZDE0OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_17af46e29941472a909c3583fab5c8f1",
+      "statement": "A stage-free cancel control is routed BEFORE `classifier(messages)` in `graph.py`, and its predicate matches the WHOLE message exactly (trimmed, case-folded) — never a substring (which would hijack a real title) and never the bare synonyms like `cancel`/`never mind`, which stay scoped to a live stage where the stage itself establishes intent.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L315-L343",
+          "version": "repo-lines-v1:sha256:dcaf083d8e5aa7a7c71756a31fa7e7cce67d0ef2d4aab9205abe3f20aeba936e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyYTk0MzQ5YzYyNGUyNzU5NjhkZjI5M2FkNGYxZDVmZjMwNmFkYWZkN2I2YmNmNWNmMDU5ZTgyNjUwYjU3Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjYjgwYTdkMzEzOTQxNGJhZjBhYjVlNjM0OTVkMDEzYzU2Zjk2ZGY3MWExZjhlNmUxNDVlYjg2NDkwYzMxMzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhYzcxYzFhZWUzYzQzM2RjNjc0NTJmYTgyZDE5MTY1NjhmMjhlYzZmYjU5ZTllZTFlNTg0NDNhMzQ2M2ZiZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxM2UxNDU0YmUzN2MwOGI5MzEwMjQzM2I3NDIwZGY5YmVlODcyMDY5NjRmYWQwM2ZmODk4NjI3ZTY4NjI1ZjEifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/search.py#L68-L88",
+          "version": "repo-lines-v1:sha256:634d884219ca91474e393f9bf6bd34ec4b39186e0384ccaf3717be65c11ea673:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NTVhNWE4MzBmODI0NTRjZmNlYTIxNjNiMzRlOGE2ZGE4NWJkZTI2OTdlZDZlZTQ1YzQ3ZDNiNzVhNzFhNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMGE1NDJhNTYzZTg3MTI3ZmZlNWM5MWJmYTRhMTY5OWYyMmNmM2VmMGQ3MGIyMzc5ODE2YTNjNDI5Y2VhNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMjY3MjU5YmNiNWNmYzRiYWVhMDUzNTBiOWM1ZGZmMzE3ZTk5YTFlMDVmNjk4MjkzNmI4YjM1MzcwMTQ5M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliN2FiZGE1MjE2NzQyOWQyZTU4ODQ3YzQ1YmU4YzU5MjA5ZTZkMmI5MTMzNDZkZTg5ZjM2ZDE2MDc1YzZlNDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfc0cdb22b0a47609d47bb985c82d4ee",
+      "statement": "Multi-turn stage guards must resolve an answer against the pending question BEFORE consulting the classified intent. Without that ordering a prose-like answer such as \"Selected: none\" classifies as query/search, the escape branch fires and the in-progress flow is silently discarded; the bug is provider-dependent (green on local Ollama, red on Anthropic in CI), so a green local run proves nothing. The import guard already has the safe shape; `navigate_stage` does not.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L193-L205",
+          "version": "repo-lines-v1:sha256:fc53321d0b8a7714d07fb03745bfc751f0e5ef384b6b06f3c6fa4231fc2b807c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYzc0M2NmOTJmYmM0ZDRjMmZjNjU5OThiNjI5MTAxN2QxODZmMDc0OGJjYWU5OGIyYmVkZDhmOTAyYjViZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1OTlmNjk5MTVkMDU4YjUxMWM0NjY3MTRmZjUzMmY3N2I2MmYxMWRkNDI1NjhkYTgyMDYyM2NiNjcxZmY4YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4YzA5N2ExYzJiNzcyMjU1YjNlNWIzNWE4ZDU0MWIyMDQ5YzllMzRhY2U5OGQ2NjFkYWVjMWYzZjQzZTZjYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWUyZDhmNTVlOWIzMzU3YWFjMjYzYTE0MjlkOTQ1MmVmN2Y2YWQ0MDc0ZWZmNWI2ZDc0ZDQzY2JjNmM1MzYifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L404-L423",
+          "version": "repo-lines-v1:sha256:8d99e31e09227c8bb0021b8a2d1ffd8558d0b8a057f6b62bc5535d45267660d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YmQ4YjY4ZmMyNmI4NjM3YjQyOThkYzkxZjM4YWZmMTVlOTk0MWYxNjQyMjc2MDYzN2UyOGE3ZmEwNDI1MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNGNlMzQ0YzlkOWZhY2Y3M2MzMTA0YTQxNTNiOGFhZjE4MDUyMDYxMGQ1OGQ5MTRjZTAzYWIxY2JlY2NjOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5YmMzNTgxNGQ4ZTc5ZGUwMzVlZjlhNDcyYWJlMWY1YWI1OTYyM2U0YmQ5ODRhNTg1M2M1ZWU2NmQ2M2I1ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3ZmFkNzc1YTg1YWM0OTZhNWQ4ZDQ2NzdiYjRiNmJhYzQ2ZTEyMDk5YTI3NDViNmNlYzNjNTEzNzc3YTliODkifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L462-L485",
+          "version": "repo-lines-v1:sha256:080dbd02e75423d12e34cf88bad15f6b829670310a77a50b8bb0e45037edc681:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MjhhN2JmNWRlOTczYTQyNWY2MTM3MjI4OTNkMjg2MDQ4NjY5ZmI5ZDhlMjBhZWZmZDFmMzcwNzE3MWZhNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3Yjk0MThhOTM2NTY3Y2EzYTAxMDAxNzliM2IwMTJlYmYxOTEwYzhiODAyM2RmYzczZDEwZTllMmU0NDIyNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NWZkNjVjZDI0YmI2NzgyNjUyMzg2NDA1Y2I3ZDE4MWY5ZTk4NTE3NjNlYzY5NjIzM2U3NTc1OTAyNmZmNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMDI5MjY4MjQ2NzIxYTY0NTI3YWZmMWM0NGQ5MjU3ZDY5MWY4ZmZkYzZhMmNkNzgwNGU2NjQ3OTliYzY5NDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1bd7abab807541d888bf914b3479227c",
+      "statement": "A control gated on a stage is unreachable from the terminal step of the flow it exits (050 / item #149): the web search card's Cancel button was honoured under `if stage and …`, but `_web_card` returns `_SEARCH_RESET` before rendering the card, so no stage existed, the guard was false by construction, and the canonical `exit search` value fell through as a movie title — answering the member with a failed search, a real `list_movies` read, and `search_stage` left at `awaiting_pick`, which kept them inside the flow they were leaving.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/search.py#L311-L345",
+          "version": "repo-lines-v1:sha256:1a71945069da75e89f82184987417fd8e69d63bc30d8914373c3d70ea28b4cad:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExODJiZTY1MjQxNzY2MjM2ZTQ4ODNhNGE3ZmJkMDgwZGM5NGYxOGRkNGI0OWM3MDQ1Y2ZjY2EzNWE0ZmZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2OGVjM2QzOTNlYTA4NzgxYmZjNTU5NjAyYmU0NDMxNjFiMmZiZjY0NTViOGRhMjI4NjllNzQzMTRlYzE5MjMifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/search.py#L348-L366",
+          "version": "repo-lines-v1:sha256:dc8ba91f376138c6da0c01dfa2ae2ae8c34ef93b03353a15088bc2e294cf8605:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MzBkN2ZmMDIzMmI2ODkwNTdiYWYwNDJhMzRkN2QxZTEzYjU5NjQxOGY1ZGU3MTMwNWE3MzZiZDNkMmIxNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhZjU2Nzc2NzQ2NjBhOTQ0ZGFlZmE5ODkwN2I1ZmEyZTc5NjRiMTMyMGNlYmEyNTJjNjc5MGE2YTQ4MzRhY2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7e6118478f542bc8aaceb43698da794",
+      "statement": "`to_movie_payload` no longer hardcodes \"NR\": it writes the film's real US certification read by `web-api-mcp.get_movie_details` from TMDB `release_dates`, or `None` when unknown. There is no PG-13 → PG13 rename (mc-service's `UsaRating` carries the hyphenated serde rename), and `None` must reach the payload as a PRESENT `\"rated\": null` key because `CreateMovieDto` types `rated` as `Option<T>` without `serde(default)`, so an omitted key 422s the add.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/proposals.py#L239-L244",
+          "version": "repo-lines-v1:sha256:3e2d4e45a59ae39eaae7cf02d4ad35ce7d3cda50ef47454881602c28aef9e36d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWU0OGE3N2FlYTBjOWMwYTg0NDFjNTkzMThiYTc1MDhmZDkxOTYxOGRiNWU1ZGUwZjcwYjEwZTZmOTlkMjExYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2QwNjJiYzg0OTEzMDA1ZWUzOWI3NTQ3MTA4ODNkNTMwZTk0Y2YyMjljN2JiMGU4ZmQ5ODY3MDM4MjgyMTMyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDk3Njc1ZTRmYzRkNGQwZDQyNjNiY2RlZGQwY2I5YTYyOTg0YzNjMjM2NzIzYzg0OGRiYTY3ZmI3NDk3NmM4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY3NTc1MGIyNDBlNmFmY2YyZDk1MmQxZTFjOTY5MzQxMDljNjBmNWRmZTgwYjIxYzI5MTE1ZTFmMTVhNzdmNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f4b073754524534978a97561cf46354",
+      "statement": "In the multi-select resolver `[]` and `None` are different answers: an explicit \"none\" means no formats (a valid answer the member supplied) while an unrelated reply means not answered yet (re-ask). Collapsing them records an ownership the member never gave. The resolver must also hold closure (every returned value is one of the offered mc-service-published options) and canonical casing, and an offered value beats the \"none\" sentinel.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/organizer.py#L733-L800",
+          "version": "repo-lines-v1:sha256:5f2b5c87d2bef48aefbae55f586793de38925f27f034c261aed79ddce3c7b781:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiODVkYzUzMWE5YmIzMzZjOWE1ZGI3MTE3ZDVkMTFjYzhkYzRkMzRiYWUzMTA4MDczZGEzMjUxZDk3ZWY3YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMWJmOTJmNWMwNDFkN2FkNzcxNGUwMDM5ZGI5NzBjMmU4ZDViY2ZmZjFmN2RiMTIwY2YzNDkzODJmNWNlY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlYjYzYzE1NmRkMzYwOWE1MzBkZGNkZWMxNDQwYTcwOTI5YmVjZmZkOTYwZDU4NThlZGY0OTliYzZiY2Q4OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f59f4af8ec554313ba3fba8519b1264b",
+      "statement": "Whitespace in a resolution key is a resolution bug: the import article-loop defect was a raw cell value (trailing space included) used as the key, matched by a substring test that a longer label can never pass, so the question re-asked forever. The fix normalises in the SHARED resolver (`resolve_option` trim+casefold equality before the substring step) rather than per caller, and trims at the source where a value is used as a dictionary key — a per-caller fix would have left search, organize and navigate with the same failure.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/organizer.py#L748-L751",
+          "version": "repo-lines-v1:sha256:c74cf9e80760ec85b3114c013ff4ba1cec75a9e0bed21cbcf65eefbe33a40ee3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWJhMjhhNDNhY2IzMWVjMzgwNWY1NTg2MWFmYzFhMGI5NjUwNGY2NDJkZDVjZWY5ODFiMGVkMDM0Y2U4MWFmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhNzE1MjU3MmVlODRmMTA5MDZjNzRiOWYyYTkyNDM0ZGRhYjBlM2M0MjgxM2IwNGU1OTdlZmNlYzk1MWIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmQ3MDFkZDcyNzU3M2NhM2IzYWU3ZmQxMTA1MDUzOTdjZmY4MGRjYTZiY2M1N2EyZGNmZjU1ZjIxM2RhMGY1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTBhYWI1OGQwNDk0MWNkZGU3YTA2ZTVhZmY3MmM5ZjhiZGM2MWU2YjA3NTgxZWEyZWQ2MjE1YWE5YTM4MTc2OCJ9"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/supervisor.py#L83-L96",
+          "version": "repo-lines-v1:sha256:8e01b4516f5250980dd038accd0eb2d57a7ed5edfc08cb9564a712280b2861de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljN2E4Yzk1NDgxZGYyY2E4YzFmYjEyYjBlYzkzMTI0N2Y0NzU3MWU4MTU4Yjc5ZmYwMWRiMmM2ODA5NGVjNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkMTAwNzFhZjg0ODQyZWZlYjFjMDAyNTY2ZGJlYzYwYmUzMmE2NGE5MDEyZWNkZWZmYzQ5MzJjOGY4NjVkZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2Yjk3NGFiNGE1ODg2YWNlZjQ0ZGVlY2VjZDY2YTFjY2U0NzY5NjBiYjliNjMyMjQwMGQ4MTFmNDA4ODcwMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4YzVlMTZiZTk5ZjFjMTlmZmJkOTc0MTNhYzg2YWFkMzZlMDgyMjIxNjViN2I2MjFiMmM3MmIwZGFlNGY2MjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e83f34511e543908f9b61830baac17a",
+      "statement": "Media-format option values must come from mc-service rather than a hardcoded agent-side list: `GET /api/v1/movie-metadata` is wrapped by movie-mcp as `get_movie_metadata`, and its tool grant is a separate `_METADATA_TOOLS` set held ONLY by the organizer — folding it into `_READ_TOOLS` would silently grant it to curator, navigator, query and search. On a metadata read failure the flow skips the format question rather than offering a fallback list.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L97-L148",
+          "version": "repo-lines-v1:sha256:7d462ec0f8a5900f18be9febb4e159f3cb0b3aa35b4e2f43f0c58438fc167b84:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNDBiNjY4ZDRiMmJiZTM5ZGRiYzMyODY5MTBmMmRhY2M0NTU3YWUwOWRkMzIwMWQwMTBlNmU5Nzk4YzA0MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlNDQwMDFmZjUxN2MyOWY0MDQ1MTdhZjU2ZTZhZWM2NWJlYmQyZjk5NGExNjNhZjQ5M2EwYWVmNTFlNDAwODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjNjZiMDcxMDg2ZWU1NWJhMTViNTE4OWMxOWRhMTU5ODBjYjM2YjFiMmIyMDFlMjYwMmQwYzhkOTU5MmZmNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_93fe43bf4f6a4de4a854b9301186c703",
+      "statement": "A failed own-data read is never collapsed into an empty one: `read_or_raise` raises `ToolReadError` rather than returning an empty list, a zero count or a half-fetched page (each a false claim about the member's library), and the `_answer_read_failures` runtime wrapper turns it into the distinct reply \"Sorry — I couldn't read that just now.\" while deliberately NOT resetting any stage state so a retry resumes the in-progress flow.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py#L1224-L1246",
+          "version": "repo-lines-v1:sha256:eb07ca06588b056f841f75bc6efcb3fd496e638c4a83aec8f67f64977103e8c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiODA4ZGQyZDgxODc1NjY4YWRkODEyMWY1YzRiNTE0ZjI0YmZhZWQxNDg2NzQxYjkyMTNhN2M5MTExMzBlNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NGVkZDZkZGM1YTYwMmIwNDU2NDE4NzMyMzU4NGJhOWE5Y2ViZGE2MTNhZjQ5NzVkNTIzMjk1OWU5NjNkZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwOGIyMzQ0MThmNGRhNmFmNDJmNTRkNDZmYjBjZGVhNWYzYzMyYzU3YjFkZDM4OWE5ZGJhM2FiNDI1YTdjOGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhZTkzZTVjYmMyNjNmZWM0OGU1M2JiOThkZmIwZjFhODZjMDQwYzdiYTE3NjM4NzBkYTVhMDZhOTgxYzY0ODcifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L194-L228",
+          "version": "repo-lines-v1:sha256:7deb23f1ffcdaeccaf07cfda7e48df068b3cae9f20f87fe7abae10195e2db92e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwODAxMmEwZGI4MzQwMmYxMzRhMjk2NGQ2OTFkNmVmZTgwZjA3M2I3YjYzZTBhNzI3NDNmMGYwZTYwNGZmZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4OTkwMjMyYWZhNjFhZjIwMjVlYzA0M2Q2YjQyZjJlZjMzY2QyMjk3NzdmZWViYzI1M2Q4MGRhYjFkZDUyMWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyYjgxMjY3Y2Y3YTkzM2ViZjYxMjFkMzQzNTRhMDA4NTY4MjAzNTE2ZmEyMTJlNGVkOGM2YzFhMjgzYWE2ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1M2Q4ZGM2YmExOWZkN2JmY2QzNTY0OTJkMzA3ODNkY2UyMmE1OGE4ZWMxM2U3ZGM2MmY0ODUxZWJhNGE1NGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b2c23c3780df4a3aa77ba0ddc1badf45",
+      "statement": "The HITL approval-gate apply is deliberately exempt from the per-agent rate limiter (`skip_rate_limit`): its writes are code-orchestrated over a finite item list the member already approved at the preview, and throttling them silently failed the tail of a large import (200 rows → 30 applied). The approval plus the bounded item list is the real safety gate.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L422-L431",
+          "version": "repo-lines-v1:sha256:a5a6239fc6ca5622babe1104205649f3f683bbc0acd90faca0ff178a0183b1be:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MjZhNTA1NjZhMDM5NzgzYmNiM2JkOWQyYTE0ZmU5NjM5MmYzMmNhOWRhZDYzY2U4MTM3ZjUyMGYxNjBkMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNTdhMWRiMDQzOTk4ZWY3NWEyMTNjODg1Zjg2ZjJhOGY4ZDhhNzUyODY1Nzg5ZDcyMWFkYzM3Y2QxZjc4YWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlMDU1MWRjZjRjZmJjNDM4ZWFlYWMwYmIxYjM5ZjdhNjAyZDlmMzBlOTQ4ZDM2ZDE5M2FiNTc0OWFjN2ViNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYTZlODNmMjZjZmVmZTc3ZjUxNGNiNDMxN2Y5NTJkYmM4N2ViNWIzNWQ4MTIyYmYzMzhlMzJjZDhhY2NiZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5dbfbb592924caa9598f842842cf109",
+      "statement": "A wedged gateway can be interrogated: `install_stack_dump_signal` arms `faulthandler.register(SIGUSR1, all_threads=True)` so `docker kill -s USR1` dumps every thread's Python stack to the log. `faulthandler` writes from the C signal handler, which is what lets it work on a spun/gil-starved event loop where a Python-level handler would be starved; it prints frames only (no locals, no environment) so it carries no credential and is safe to leave armed. SIGUSR1 is chosen because uvicorn already owns SIGTERM/SIGINT/SIGHUP.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/gateway.py#L18-L61",
+          "version": "repo-lines-v1:sha256:4fdf332ff5e2f104fd34b74e071a3b48332890777f63262725224a7666eeccb0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkNWJjMTY0OGNlOWQyZGNiMmYwMWExNDQ1MDM1ODA1N2VlYTcwM2RlZDk4ZGIyMGVjNmVkNTQzMGI5YmZjMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyODUyMjU2OTFlNzk4N2IwNzk3YWZmMTcwMTA5NmM3ZDQzOWU0OTFmNjk3MDJkNzFjYTZiOWJiOTFkNWIxNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiNzc3ZmMyMTU4MDIwMmNkNWY5NzE4ZmU1MTg3OGI5OTUyYWVkZTM4MjdiZGYwNmJhNDdlNTg0N2YzOGZmOGUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/unit/test_stack_dump_signal.py#L1-L38",
+          "version": "repo-lines-v1:sha256:cc7ee33c41c55784e11fc82bf781f658b41c08261e94315b8fdcb30a6fbf41d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3OTZhZDg2MzMwOTMzZWIyZGI3OWVmYzJkNTdlYjdhMzcyZmE0Y2JmNTRlNTAxZWIxMDAxYzk2MjQ0ZmIwMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwODZjNjgwNWZhOTJjODYzOTYyOGI4MzJhMjQ5MDhkMjdmNzRlZDY5ZGMwOGExNmEzMjk5OWI0NTNkMTFlYWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d652b9d2eb844fb8c313685895e9b8f",
+      "statement": "Audit emission is off the hot path but NOT fire-and-forget: spawned tasks are tracked in a module-level set and drained once a write burst finishes. The drain must await a SNAPSHOT of that set, never loop on `while _PENDING_AUDITS` — the set is shared by every concurrent turn, so under multi-worker load the condition never became true, the loop held the GIL and livelocked the single-process gateway at 100% CPU while /health timed out and Docker still reported `running`.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L44-L96",
+          "version": "repo-lines-v1:sha256:eb5d88ec2434ce07b3d74086f0d544f61c17798b8b7a8ffc91c62e3eb7ae53f9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MGE1M2I0NjQ4ZDAyYzY1M2NlNjc2MTJkMTU5MTJkYmM3MzMyM2UxMmYzNTgxMmNmN2Y2MzZhMWRkMzZkNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1YzFjNDYyZTJhMzlkNzQ3NTlmNWUxYjEyNmY3NjgzYTJiNzMwMTE4ZTE4ZjUxMjJiMDhjZWRlZWI2NTBlMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhNzRlMDVhMmYxMzI1YzNjMjAxNWRmODVhMzdiMzliYjhjZTQ0NmJkNmEyNGYyZmRlODliNWEwYzYxYjkyNWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f0e515116ef4652975768c3e2d3563c",
+      "statement": "`log_provider_error` exists so a provider refusal is distinguishable from a product outcome: an out-of-credit Anthropic account answers HTTP 400 invalid_request_error, which the classifier's correct `except` degraded to the generic reply while the run reported 200, RUN_FINISHED and zero ERROR lines. It logs status, provider error type, the catching frame (`classifier` or `stream`) and the exception class only — never `str(exc)`, which a provider may echo request content into.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L190-L200",
+          "version": "repo-lines-v1:sha256:ea3fd7b03138104cf8f1878ee4bc051d393971b7ec0ea39336aefb4a573ce699:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NjljYjA5MjgwZWUwNzgxOTQ1ZTQ4ZDQwNDFiZDJkZmFhZTY5MWFkMmVhYmY1ZDNjYmEwODQ2YzcyMTZjYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxMzNiZTUwYzM5ODU5MzA2NzE1Y2M1MzFlM2Q3MGMwYzFkOTY1NDk1YTI3Njg2NDhhMmIxNTEyMmIwNmE1YmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhZmNlYTdlODYxNjQ1NzAyNzgwOWRkYWJhNTc4NGYzM2I3ODUwNjA0NjczMjlkNGFhYzRiMWY5NTVmMWY2ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkYzNmMjY3Yjk2MDA4NzhmZDBkYmNlNjNmY2I1M2NjZmJhNzgxYjA1ZTdlMDZhNzlkYTg3MzQ2ZWFkMjYxZTQifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/provider_errors.py#L1-L26",
+          "version": "repo-lines-v1:sha256:44ad3b294cda33ed5d7dc4f2e81c1b32b955ba673c691a0fa11b6f83bd6486d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4M2MyYzE5OWY0NzRkNjI5NTkzMDIxNTExNDFkMWFkYTdmZDA5NWI2MTlhMTM2OWVhMjE0NWRlODNkOTdkNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/provider_errors.py#L85-L105",
+          "version": "repo-lines-v1:sha256:a51e89f233e2dfde808d22494d84b44c4460619ee3083012b500dd058d6471ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMTBiNzYwMjQ5NDRkNWQyM2Y5YTA1Y2Q5OGQ0ZDY3NWI1ODk4Yjk5ZjcwMGUwM2M5OGVmZjJkYWY4ZGNiMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMjM1OGIyYzliMmY0MTIxNGVmODgzOTFhMWI1YjcyM2RmMzNjNjcxYzMxMmVmOGNhZjQ0YmNlNTYxNWFhYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_51d14995799b4bc1ab61a0c48bd95fd3",
+      "statement": "Model selection is environment-scoped and pure (`select_model_config`: env → ModelSpec, no LLM dependency) with a hard-pinned always-Claude escalation tier that `escalation_or_base` degrades to the base specialist when no `ANTHROPIC_API_KEY` is present in the per-run env, so an Ollama-only user never reaches it on a shared key. On a per-run provider switch `runtime_env` pops only the BARE per-node pin names, because a provider-scoped pin is inert on the wrong provider by construction.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/models.py#L114-L135",
+          "version": "repo-lines-v1:sha256:6dc3fc83164941ac98c07a6042a1147cab379add395d04ec34e303712ec0a75b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0Njk2N2UwMDA0MjMyNzA1OTY4YzdlMGYzNjYzZGZlOTZmNmViZDE5NWI0ZWQ0MTAzODc3N2ZjMDc2ZDM4OTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMDQ0ZjYyMTIxNmFhMjk0ZWUyNTUyNjY4ODU4M2NiNGM1YjYzMDgxNTU5YWJlM2I4ZjcyZWMyNjA0ZTIzZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmYTZiNmM5NGFlNjUwYWM3MTY1MzU5MjgyNjViYjQ0ZjQ0YmY1YzhhNzI0NGQ1YWFjZjFlNDkyMzFjMGE5M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViNTdmNGYxZWVjODgzYTNjNDhlNmVkZTc3Zjg0ZWZkYzQ0ZDM2NTdiZDAwYjQ3MDBkZjJiZjY1YjA5MDU4OTUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/models.py#L155-L197",
+          "version": "repo-lines-v1:sha256:5483665993efc731497c2684e7395b6694dc9c56354aa047d64a79e0f11b3269:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MjNjODRjYWU3NmJkNzViMmZlNTAyMjI1ZTY4YTExZjBkMjg0ZjM3ZmZhOTNlOTJiNzI4MmMxMWNlMDkwNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNGYyZmJiYjcyZmQ0OWVmMmQ3ZWQ5ZWM1YjgxNGQ1MmYwYjJiZWUwYTVlZGFmZmY4MjUzNWY3MDExM2EzNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiNWY3YjYxNjQzOGRhNDlkYWVjM2MzNmU3ZmE4ZTRiMmViN2I1Y2ZlMjJhMjM0YjY3ZDcxZWFkYjc4Y2NlMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYjA4MTk0NGI1OWY1ZTg5OTRhOTQwNmYxZmZlNGQ5YWMyZTgxNmU2ZTBmY2FjNGExNmM3OTAzMTEzOTA4MGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58af7b111d4f4dc7859ef7510b001299",
+      "statement": "The user-supplied Ollama base URL is validated in the gateway process immediately before `ChatOllama` opens the connection (`assert_ollama_url_allowed` from `models._build_real_chat_model`), because the BFF's check happened in another process and possibly days earlier. Every resolved address is checked (not just the first), loopback is narrowed to the configured Ollama port rather than blanket-allowed, and the guard resolves-and-validates but does NOT pin — leaving a documented sub-second TOCTOU window.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/models.py#L305-L322",
+          "version": "repo-lines-v1:sha256:e8ba89ea548dfeb75187ea296e84154835c13423482718639c4a83ff029bed15:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YjU5ODI2ZmU5MDE3ZDE1YzliYzZjMTczNjE2YzZkMjUyZGU1YWFkZmI5MTdiZDM5YjZlNTA1ZjI5ZDM3MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxODY2NjkxNWY3NGI3ZTg1ZGVjZjFlODU4ZTc1NTQ3OTFlZmE4MGRhM2YzMWM3MmFhYzM3ZjcwM2QxN2JiNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwYWJkM2YwMDY4ZTA3ZmU0NDIzYjdhYmVhNjg0ZmI4NThhODdjZjk5Njc5MGYxYzFmNDhkODcyM2JjNmQ3YjEifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/ollama_guard.py#L1-L26",
+          "version": "repo-lines-v1:sha256:2e3f14525771f677a6f9ed5b289cf2d4139e8a96eec8e3ebfc2b5e8be631ef0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMGZkYTMyN2FkYzQ0ZGE5MGNkY2ZjMGJmMDAwMzZkYzJiZTY2Y2JkZTZkZDhiNThjMDc2NDFhNTdkODc0YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/ollama_guard.py#L113-L180",
+          "version": "repo-lines-v1:sha256:a8dd1cba037fadd6e6e34b917d608f5d57dc3ff77f5c6292e9bffad35b81d50f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOTUyNzQ1MzE2YjU3YjZmYmFiNmFkYTI0NzU0NzhlYzk4ODFkYzUzZDVhNmE1NzcyY2M3MTFmOGE0ODVhZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MTczYTJmOWUwMTNiY2M2ZTlkNzYzNTBmNzY4OWRkOWEwOWQ2YWRlYmY0NTRjYjJlNTU2NjBlNDYyYzYwMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYjIxYmY4OTVmYWUyZDczOTIwZDkzMTc4Y2ZkNTg0MWNkZjhmOTUyNDUxNmM4YTU2NTg0MzZhNGFjNDhmM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0fbaecc988d4d4ba95e591e6289f9ae",
+      "statement": "`RuntimeNodeConfig` carries THREE separate model-backed extraction seams — `extract` (curator/search), `plan` (organizer) and `query_extract` (query) — plus an optional `spreadsheet_mcp_url`. A `build_runtime_graph(..., force=True)` test that stubs only `extract` leaves the other two on their real defaults, which raise and degrade the turn before any tool call, so the test passes while exercising nothing; without `spreadsheet_mcp_url` the import/export nodes answer \"isn't available right now\" and never read anything.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py#L1264-L1288",
+          "version": "repo-lines-v1:sha256:c4916fd29b0b84ac5d121ed7aeb362d431defb26bc53849d31b49739a06d3606:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYTcxZWNhZmNiYzQ3ZmE4ODQxZmVmZGE3NTY0NzYzNjFjNmY1OGNlMDFjOTQ4MDhhNWVjMmE3ZjlkMTc1YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmZDVjZDA4YmVlYjFlYTUwZDVkNmI3NmFjOThhYzNmNjU0ZGJjMjFlZDlhZTMzZTNlNGYyODZjZTNkZTgwYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py#L93-L174",
+          "version": "repo-lines-v1:sha256:d31195828b8d0cc6b3f78bcb442728f462af1175bd6618749f0043ae4bda46cc:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxZjRmMTZjOWRkZDVkNTk3MjE0ZjhhNjA3ZGE5MzIzNGNlMjdiMzFkNTcxNWE1MmI1ZjVmMTNhMWRjMDYzNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0ZjM0ZjMzN2M3NzRhMDEzMjI0MzJjMGYwODQwZDA0ZTFhYzI2MGFhMzFjZDI3ZmNlODBiMjgzOWIzNWNjNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzZGI1MzRmNGUwOGQ3ZDFmODEyMWY2MThhZWQ5MjdhMmRkNzVkZWY3MjYzMTY3NTczYjFjNmMwMjczYWEwNDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b50d845118a425490eee6cd2de7cd64",
+      "statement": "A node-level test passing does not establish the graph-level path: calling a node function directly bypasses every supervisor guard and every stage-continuation check, so a change touching routing, a guard or a `*_stage` must be driven through `build_graph(...)`. The zero-rip-quality path was \"verified\" node-level, passed, and still failed through the full graph because a guard escaped the turn before the node was reached.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/tests/unit/test_add_flow_graph.py#L1-L47",
+          "version": "repo-lines-v1:sha256:6a8fc2ba03da846bb2d2a63adcd42713558acc766fe8441023504c47f5073ede:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5ODMyNDdmMzZjNGNjZGZjNTA2NzUzNzg3OTk4Yjk0NWUxY2ZlODk1M2E1N2ZhMjg0YzVkMWVlZDM1NzBhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4ODI5YmU5MDM5YjE0MDM0YThhOGE4NTE4MzQwMDRmYjJlYWUxZWY5YjBiM2ZmOWFkMjlhMWFhYTEyY2YxYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkNmYyMmUwNzA4NmRiZDUyMmU4MjA4NTZlYzJhZjc1MjBlNDM5MTFhMjA3OTJkN2UwNDFhNjZmMjEyZmY0MmQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L420-L425",
+          "version": "repo-lines-v1:sha256:36561aff6363376146c46a02f7de5e12e2f8512cc4042e31036233db1fe100b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODFmODQ3Y2M4ZDI3YzI3NzM1YTBmZWU0N2MzNmUxMmM2YzAwZDA0NmI2ZTQ3MDUxZmY0MzRjN2Y5NDBkMzVlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZThhZGE1NDUxZmE5MGFjMTM1YTdlNTAzNDM4ZmIyNTZkMDY1NGU3MGE2NTIxMjBlMDU1ZTAzMmZjM2M0YjI1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTA2YmMxOWMzMTkzMmVmY2M5YWQ2OTgyMzZjMmE3NzBjNzcwYTBhZGQzODUxNmExZWU5Y2IxNjk5ZWMyNmYxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDExOTBjMjQ5MzkyNmFhZDMxODI4MTcxMDFhMDliYjk3NzRlNTc4OGQ5Y2UyYWVlYmIxYWVmNDU4YWQxMThlZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7e2baef00ab49c189b28531e7cb6577",
+      "statement": "The integration tier skips cleanly when the live stack or credentials are absent, which makes a skipped test read as a pass — so under `MCM_REQUIRE_LIVE_STACK=1` any non-allowlisted skip is escalated to a failure naming the unreachable dependency, with the allowlist explicitly enumerating only env-gated optional profiles and genuine data-dependent conditions. CI sets this so a misconfigured run cannot exit 0 having asserted nothing.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/tests/integration/conftest.py#L51-L80",
+          "version": "repo-lines-v1:sha256:3ee4f36b15a021b417cc4a29f095b4c8e21f4866730483e4ab5051cd8cb34318:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NWE0ZGI2MmMyOTBiM2Y5MDk1ZTA3MzczYTdjNDllOWIzMTBiYTBlNTA2NGQxMjBlYWM4NDYxMGM3OTU2ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NGE3MjNjMTI1YmE5YzNmOGQyNzAyOWFjYTY0MDIwOWU5ZTJhMjAxNTQ3M2JmNDVlNGI5ZTVlMTAzZDA2ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2NmNjNWI5ZDA0MTBlN2I2ODc5MzRlZjFjMTc1MGU5NmMxOTliYTkzNDAyMmJiNjY2N2ViOTFhNmEwM2JiYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhNjQ4NDE4ZTAxNjBjZGZmMzRiMDUzNmJhZWY2ZDBjMzhmZmExMzA1NmVhYmIyMjExZDI5MGQ0Y2E2ZjIzZWMifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L437-L441",
+          "version": "repo-lines-v1:sha256:9a88c587f1fff7db1d2e4395afbbfe2b2c1298d8e99226b553afa73793587c67:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWY0MDgxNTVjM2I0ZDA0MzIwZDZlYWVjZmUxMjAzZjhiMDVhNDY0YWM0ZDNiZDU5NjRmZjdjNGE1MGYzZjdiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTU3MTJmNjJmODExODIwYjUzYWU4YzgyYmMxMDRlMDk4NDY3NjJkODc3YjU4NDg4YzMwN2RkNDU3YzRmM2Q3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzFlMGU4MDFiNjNkNzQxYWFkYmU4MGQ4ZWM1NGZmMjE1NTFlZGI5ZWUzNzdjNmVlOWRhY2E1ODMxZGE0YTE2ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_db6f6b1c24f447ba8678ac68df613859",
+      "statement": "The three MCP servers must set `TransportSecuritySettings(enable_dns_rebinding_protection=False)` on the streamable-HTTP transport, because the MCP SDK otherwise 421-rejects any request whose Host header is a Docker service name — the containerized agent stack does not work end to end without it. On MCP SDK 2.x the setting is a `streamable_http_app()` parameter rather than an MCPServer constructor kwarg, so a bare `streamable_http_app()` silently re-enables the protection.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L346-L353",
+          "version": "repo-lines-v1:sha256:c601dc19cd43a6b0a404f5de51267985112071939581f03787d8311a65d5b823:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmExZjNmMzRiMDg5NDA3NmM1M2I5YmFmMTQxNjdhOTk1YTc2OTNjYTE1NGE2OTZlNjMwZjMxMGVhMTEzMjBkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM1MmZhMjIzMzdlYmU0OGY4ZDk2MmE3ZGY4YTAzOTA2MGNhMDI1NmUyZjRhYmQzMDRkMDU1ZmE2NTUwNzRiZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDJkNDE4ZTkzNTRmZTVjZGQzMTE3OWQ5ODc5M2U0MTIzNjllNWI4OTYxMjhjMzY0NTRkY2YwOGY2MWUxNGQxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWEyNDEzMGM1MGViOWM3NDcwMDJhYjA1ODMzZTllNTkwYjkzMzJkMjlkMGM4MjBiZDAzZTQ4YWE2Njc5OTgxYSJ9"
+        },
+        {
+          "resource": "repo://mcp-servers/movie-mcp/src/server.py#L35-L46",
+          "version": "repo-lines-v1:sha256:97e0fa61ca4e08b11b28ce5c8d1a324bd8825e7bf6d832b0f2382d91f67214d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NmFmNmZlMDNlZDIyNGM0MWE1M2Q4MGVkOGMyYTMxZGE5YTAxMzliMmExZTYxZDI0NjQyYjk5ODM4YjcwN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZTYwOGU4MjFiMDFjNmFjNTFkNzMxZjVkOWYxZTI5YjgwMGEzZTFmNWM5MDQwMDQ4YmQ5ZmNmNWU2ZGM0MjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxYjE4NWY5NWI5NzdlOGQ1YTM5NjZmMmYzYTE5YjFlOGJkY2IzMTkzNmIzYmYxYTFhZWJlM2ExYThmYTYzMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c52804c613834cef8b4fd1fd94833d9c",
+      "statement": "Runtime nodes are wrapped with two shared cross-cutting duties before being injected into the graph: reporting an import that stopped partway exactly once (on whichever turn comes next, by clearing the counters in the same state return), and converting a `ToolReadError` into a truthful member-facing reply — placing that catch at the runtime boundary keeps the pure nodes unaware that a transport exists.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py#L1189-L1246",
+          "version": "repo-lines-v1:sha256:8ba2c5226241d5247a258f5e65d88a65b972f52b723f0a39b1c98ef3c8898afa:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NDNjMDEzZTEzYzk3OWUyOTk3MWZhZmJkYWYyNGYyNDcyY2MxY2U5OWFhM2ZkNzM1MWE3MTMxODFlMzQ4ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NGVkZDZkZGM1YTYwMmIwNDU2NDE4NzMyMzU4NGJhOWE5Y2ViZGE2MTNhZjQ5NzVkNTIzMjk1OWU5NjNkZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhZTkzZTVjYmMyNjNmZWM0OGU1M2JiOThkZmIwZjFhODZjMDQwYzdiYTE3NjM4NzBkYTVhMDZhOTgxYzY0ODcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0475e496186146748f4574948fedb661",
+      "statement": "The import and organizer flows share the same routing into the HITL approval gate (`route_after_organizer` on a pending proposal), while the export node is read-only and has no write gate — it emits a `download_export` UI-action and ends.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L621-L643",
+          "version": "repo-lines-v1:sha256:7d2608da913091349e1ec11925db85a0bdc0fc270f54ab36d503c104bb65a4c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4NWFlYWU0NTU1OTMzZDZhNmY3N2MzODQ2MTU1MDZjMjBmYjE1Yjc3YWExODgxMjNhZWRlMDliMzI0NmE1MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhODY3OTAwNzVkYWVlNjliNzVmYjQ0YTkzZTcxZGQ5YjY4ZDBkMTVmYWFkM2M0NTAwYzEzZThkM2EyM2Y2NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MTg2MDk0ZDE4ZDc0YTQ1MTU3Y2U3MDVjZDIxZmIxMTUzOWY5MmRjOTJkMDdhMGIxNzJhOTkyYjdiMjJiZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4ZmE2MmRmMTZiODA3ZmI4N2RlOWVkNTU1NDUxM2M5YTRlZTVmNWI0MTUzYTY4ZjRkMGUwOTQyNmY3ZGM4MTIifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/supervisor.py#L321-L343",
+          "version": "repo-lines-v1:sha256:db72c27c302cffd1c2efdf50d0753b9d69f5b13d3bc6dfde01cbb4bb8dcd066a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyN2EwMjQ4Y2FhMjVmNGMxNDY0NTQzZGFiMzNkMmNhNmJmY2UwZmJlMzZmZWUwMTQyMDZmZjJiN2E3YjNmMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNWM0NzI1OTkwZTcyYjJkYWI0ZWQ0MDhkYjQ0YTMzYjJkZTBjMWNkMDUxNDkyNjY5NTRkNzBjY2E5ODU4NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0Y2VhOTM4ZThkMzE4MWU2YTQ3NTBiMGY5YjRkOGQ0ZmU0ZTMwNzAwMWUyZjBiOTg3N2ZiMWU0Zjc1MjUzOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-29T01:49:10.027Z"
+  }
+}
