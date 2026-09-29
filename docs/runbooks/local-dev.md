@@ -33,12 +33,12 @@ node scripts/gen-dev-secrets.mjs
 
 Every credential in the four stacks is externalized to a `${VAR:?…}` interpolation reference — no clear-text secret lives in a tracked compose file. The generator mints real per-machine values from the committed `infrastructure-as-code/docker/stacks/<stack>.env.example` templates into gitignored `<stack>.env` files, which Compose reads via each stack's `include` `env_file:` (and the Nx target's `--env-file`).
 
-- **Idempotent**: a second run skips any stack whose `.env` already exists (your running stacks keep their values). `--force` rotates; `--stack=<auth|mcm|audit|observability>` scopes to one.
+- **Idempotent**: a second run leaves every existing value in a stack's `.env` exactly as it is (your running stacks keep their values), and adds only the keys its `.env.example` has gained since the file was written. `--force` rotates; `--stack=<auth|mcm|audit|observability>` scopes to one.
 - **Fail-fast**: if a required value is missing/blank, `docker compose up`/`config` aborts naming the var (e.g. `required variable KC_BOOTSTRAP_ADMIN_PASSWORD is missing a value: set in stacks/auth.env`). Run the generator and retry.
-- **Boundary**: `<stack>.env` is gitignored; `<stack>.env.example` is tracked (a `!*.env.example` carve-out in `.gitignore`). **Never commit a `<stack>.env`.** A CI gate (`scripts/check-no-inline-secrets.mjs`, wired into `naming-gate.yml`) fails the build if any literal credential is re-inlined into a compose file.
+- **Boundary**: `<stack>.env` is gitignored; `<stack>.env.example` is tracked (a `!*.env.example` carve-out in `.gitignore`). **Never commit a `<stack>.env`.** A CI gate (`scripts/check-no-inline-secrets.mjs`, run by `guardrails.yml`) fails the build if any literal credential is re-inlined into a compose file.
 - See `infrastructure-as-code/docker/stacks/README.md` and `specs/021-externalize-compose-secrets/` for the full model.
 
-**Seed the dev Keycloak realm + project the BFF secrets (feature 039 — run once after gen-dev-secrets):**
+**Project the realm's client secrets into the BFF env files (feature 039 — run once after gen-dev-secrets). This does NOT import the realm — `up-auth` does:**
 
 ```bash
 node scripts/gen-dev-env.mjs
@@ -61,7 +61,7 @@ node scripts/gen-dev-env.mjs
 | `audit` | — | `audit` → `agent-audit-opensearch` |
 | `observability` | — | `observability` → LangFuse + otel-lgtm + `opa-service` + `unleash-service` |
 
-> **Bring `auth` up BEFORE the `mcm` `app` profile** — mc-service fetches Keycloak JWKS on startup. There is no cross-project `depends_on` (feature 020); the ordering is manual. `--profile app` without Keycloak running hangs.
+> **Bring `auth` up BEFORE the `mcm` `app` profile** — there is no cross-project `depends_on` (feature 020); the ordering is manual. mc-service does **not** wait for Keycloak: `axum-keycloak-auth` runs OIDC discovery (and the JWKS fetch) in a background task at startup, and the service binds and serves immediately. If discovery fails — Keycloak down or unreachable — mc-service still starts and `/health` answers, but **every protected request is rejected with 401**, so the symptom is a working-looking backend that refuses every login, not a crash or a hang (pinned by `unauthenticated_401_is_returned_even_when_keycloak_is_unreachable` in `backend/mc-service/tests/integration/health_test.rs`).
 
 Via Nx (from repo root):
 
@@ -141,7 +141,7 @@ docker exec mc-db-test mongosh --quiet \
 docker exec mc-service-store-mongo mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
 ```
 
-**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Bring up the `auth` stack before the `mcm` stack's `app` profile.
+**mc-service needs Keycloak to authenticate anything** — bring up the `auth` stack before the `mcm` stack's `app` profile. mc-service does **not** wait for Keycloak: `axum-keycloak-auth` runs OIDC discovery (and the JWKS fetch) in a background task at startup, and the service binds and serves immediately. If discovery fails — Keycloak down or unreachable — mc-service still starts and `/health` answers, but **every protected request is rejected with 401**, so the symptom is a working-looking backend that refuses every login, not a crash or a hang (pinned by `unauthenticated_401_is_returned_even_when_keycloak_is_unreachable` in `backend/mc-service/tests/integration/health_test.rs`).
 
 Typical dev loop: `pnpm nx up-auth infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-mcm infrastructure-as-code`.
 
@@ -411,4 +411,4 @@ with CI about how the suite is run.
 > ```
 > The regex is anchored on purpose — `mc_db` is the real local database and must never match.
 
-**mc-service fails to start if `MC_DB_URL` is unreachable or if Keycloak JWKS endpoint cannot be fetched** (JWKS is cached on startup for JWT validation).
+**mc-service fails to start if `MC_DB_URL` is unreachable** (it connects and creates its indexes before serving). An unreachable Keycloak does **not** stop it starting — it serves and answers 401 to every protected request instead (see above).
