@@ -2,7 +2,32 @@
   "coveredCommit": "f79bd224696b83d7a8395d5e61f7723603e7eee1",
   "coveredAt": "2026-09-29T11:00:21.119Z",
   "lastOutcome": "completed",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "infrastructure-stacks.md",
+        "keycloak.md",
+        "sast.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 3): V12 stale"
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "backlog.md",
+        "ci-diagnostics.md",
+        "devcontainer-sandbox.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 3): V12 stale"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 606,
