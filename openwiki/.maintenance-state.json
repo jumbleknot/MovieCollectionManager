@@ -2,7 +2,52 @@
   "coveredCommit": "562a09db0368124d70d5dcb768229968235c9398",
   "coveredAt": "2026-09-29T03:47:24.515Z",
   "lastOutcome": "completed",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "gotchas",
+      "pages": [
+        "expo-router-and-transport-traps.md",
+        "keycloak-service-account.md",
+        "playwright-testid-mapping.md",
+        "session-lifecycle-and-eviction.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 2): V12 stale"
+    },
+    {
+      "area": "process",
+      "pages": [
+        "constitution.md",
+        "wiki-maintenance.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 2): V12 stale"
+    },
+    {
+      "area": "architecture",
+      "pages": [
+        "data-model.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 2): V12 stale"
+    },
+    {
+      "area": "decisions",
+      "pages": [
+        "adr-0002-stateful-major-upgrades.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 2): V12 stale"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 602,
