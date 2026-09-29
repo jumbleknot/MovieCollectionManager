@@ -47,6 +47,7 @@ import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
 import { conceptStamp } from './openwiki-stamp.mjs';
+import { carryClaimsHash } from './openwiki-claims.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
 
@@ -1209,7 +1210,8 @@ const OKF_GATE = join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs');
 /** Rewrite site-root-absolute body links to file-relative form in the given bundle files.
  *  Returns one entry per file actually changed. Pure text surgery: only the target inside `](…)`
  *  moves, so a page's prose cannot be altered by a normalization pass. */
-export function normalizeBundleLinks({ root = REPO_ROOT, files = [] } = {}) {
+export function normalizeBundleLinks({ root = REPO_ROOT, bundleRoot = null, files = [] } = {}) {
+  const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const changed = [];
   for (const rel of files) {
     const abs = join(root, rel);
@@ -1218,7 +1220,12 @@ export function normalizeBundleLinks({ root = REPO_ROOT, files = [] } = {}) {
     const { text, rewrites } = normalizeLinks(before, abs, root);
     if (rewrites.length === 0) continue;
     writeFileSync(abs, text);
-    changed.push({ path: rel, rewrites });
+    // This runs AFTER the generator has certified the page's bytes in its Claims sidecar and
+    // `.page-manifest.json`. Rewriting a covered page without moving that hash would make openwiki
+    // refuse every later run (item #616), so a pure link-target rewrite carries the hash with it —
+    // only for a page that was durable before the rewrite, never laundering one that was not.
+    const carried = carryClaimsHash(bundleDir, relative(bundleDir, abs).split(sep).join('/'), before, text);
+    changed.push({ path: rel, rewrites, carried });
   }
   return changed;
 }
@@ -1286,7 +1293,9 @@ const isConceptPage = (relPath) => relPath.endsWith('.md') && !RESERVED_BUNDLE_F
  *      exactly what 043's false-green run produced;
  *   2. the bundle still passes the OKF conformance gate;
  *   3. every written path was permitted by openwiki/policy.yaml (FR-026e);
- *   4. no requested page was left unwritten while its cited source is newer than its stamp (#587).
+ *   4. no requested page is left stale — its cited source newer than its stamp — after the run,
+ *      written or not (#587, #616). Conformance (2) includes V16: every page openwiki covers still
+ *      matches its verified Claims, since a bundle that breaks that stops every later run.
  */
 export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy = null, before = new Map(), actor = 'generator' } = {}) {
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
@@ -1332,20 +1341,25 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   // therefore named here, one page at a time, and fails the slice, so the slice is retried, goes
   // back to the backlog, and the marker is held.
   // Per part, like `missing`, so a multi-area invocation carries forward only the part that is stale.
+  //
+  // Judged AFTER the run whether or not the page was written (item #616). "Written" only means its
+  // bytes changed: on proposal #615 the run deleted a `verified:` block from ci-diagnostics.md, left
+  // the body and `generated` stamp alone, and the page counted as written — so a check that skipped
+  // written pages never looked, and the marker moved past the source change exactly as in #587. A
+  // real rewrite moves `generated.at` past the source's commit, so it is never flagged here.
   const staleParts = [];
   const stalePages = [];
   for (const part of partsOf(slice)) {
     const stale = (part.pages ?? []).filter((page) =>
       !missing.includes(`${part.area}/${page}`) &&
-      !pagesWritten.includes(`${bundlePrefix}${part.area}/${page}`) &&
       sourceNewerThanStamp(root, join(bundleDir, part.area, page)));
     if (stale.length > 0) staleParts.push(part);
     stalePages.push(...stale.map((page) => `${part.area}/${page}`));
   }
   if (stalePages.length > 0) {
     violations.push(
-      `${stalePages.length} requested page(s) were not rewritten although their cited source changed after their stamp: ` +
-      `${stalePages.join(', ')}. "Nothing needed changing" needs the stamp to move; it did not.`,
+      `${stalePages.length} requested page(s) are still stale after the run — their cited source changed after their stamp: ` +
+      `${stalePages.join(', ')}. A refresh has to move the stamp; unwritten or front-matter-only changes do not.`,
     );
   }
   const noChange = missing.length === 0 && stalePages.length === 0 && pagesWritten.length === 0;
@@ -1363,7 +1377,7 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   // those paths have just cleared the policy check above. Sweeping the whole bundle here would
   // edit pages the slice never touched and that no policy decision covered, which is the kind of
   // unrequested write the verifier exists to catch.
-  const normalized = normalizeBundleLinks({ root, files: written.filter((p) => p.startsWith(bundlePrefix)) });
+  const normalized = normalizeBundleLinks({ root, bundleRoot: bundleDir, files: written.filter((p) => p.startsWith(bundlePrefix)) });
   for (const { path, rewrites } of normalized) {
     console.log(`[wiki-maintain] normalized ${rewrites.length} site-root-absolute link(s) in ${path}`);
   }
@@ -1976,7 +1990,7 @@ export function proposalBody(plan, result) {
     lines.push('', 'Changed sources no concept covers yet:');
     for (const p of plan.uncovered) lines.push(`- \`${p}\``);
   }
-  lines.push('', 'Review this like any hand-authored documentation change. A commit you push onto this branch survives every subsequent update — the branch is rebased and appended to, never force-replaced.');
+  lines.push('', 'Review this like any hand-authored documentation change. A commit you push onto this branch survives every subsequent update — the branch is rebased and appended to, never force-replaced. Do not edit a Claims-verified page in place (one listed in openwiki/.page-manifest.json): openwiki then refuses every later run. Uncover it in the same commit instead — see docs/runbooks/wiki-maintenance.md, "The proposal".');
   return lines.join('\n');
 }
 

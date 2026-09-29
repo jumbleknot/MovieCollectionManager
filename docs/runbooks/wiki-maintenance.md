@@ -300,14 +300,21 @@ A slice fails when **any** of four things is true, and the generator's exit stat
    of paid work, one `index.md`, exit 0, reported as success. Writing **nothing** is not by itself a
    failure: a refresh whose requested pages all exist and none is stale (cause 4) passes as
    `✅ … nothing needed changing (0 written)`.
-2. **The bundle stopped being conformant** (`check-openwiki-okf.mjs`, rules V1–V15).
+2. **The bundle stopped being conformant** (`check-openwiki-okf.mjs`, rules V1–V16). V16 is the one
+   that protects every *later* run: each page openwiki has covered (an entry in
+   `openwiki/.page-manifest.json`) must still hash to the `pageVersion` its verified Claims sidecar
+   certifies. openwiki refuses the whole run otherwise (`Markdown and verified Claims are not durable`)
+   — see *Claims sidecars* below.
 3. **A written path was not permitted** by `openwiki/policy.yaml` — including a write into
    `docs/runbooks/`, which is `regenerate` but governed by an *agent*, not the generator.
-4. **A requested page was left stale** (item #587). A requested page that already exists, was not
-   rewritten, and cites a `resource` whose last **commit** is newer than the page's stamp
-   (the **newest** of `generated.at`, `verified.at` and `timestamp`) is named in the failure one page
-   at a time. A multi-page slice
-   no longer passes because *some* of its pages were written. A page whose source has **not** moved
+4. **A requested page is still stale after the run** (items #587, #616). A requested page that cites
+   a `resource` whose last **commit** is newer than the page's stamp (the **newest** of
+   `generated.at`, `verified.at` and `timestamp`) is named in the failure one page at a time —
+   **whether or not the run changed the file**. A real refresh moves `generated.at` past the source's
+   commit, so it is never flagged; a page left unwritten, or changed only in front matter, is. (Until
+   2026-09-29 only *unwritten* pages were judged, and on proposal #615 a run that merely deleted a
+   `verified:` block counted as a refresh while the page stayed stale.) A multi-page slice no longer
+   passes because *some* of its pages were written. A page whose source has **not** moved
    since its stamp may still honestly write nothing: that is the `✅ … nothing needed changing` line,
    not a failure. A page with no stamp, an external resource, or an untracked source cannot be
    checked and keeps that outcome too. A legacy date-only stamp (see *Drift is reported, never
@@ -361,6 +368,14 @@ open **continues the remote branch, rebases and appends** rather than opening a 
 you push onto that branch survives every subsequent update. It is **never auto-merged**: a human
 reviews every wiki diff, and the proposal is gated by the normal guardrails like any hand-authored
 change.
+
+**A reviewer commit must not edit a Claims-verified page in place.** A page with an entry in
+`openwiki/.page-manifest.json` is certified byte-for-byte by its `.claims` sidecar; editing it breaks
+that, and openwiki then refuses **every** later run — measured on 2026-09-29, when four hand-corrected
+pages on #606 stopped maintenance until #610 recovered it. The OKF gate's V16 now fails such a PR.
+To correct a covered page by hand, **uncover** it in the same commit: remove its manifest entry,
+delete its sidecar, and delete its front-matter `verified:` event. openwiki then leaves it for full
+review, and the correction stands until the page is next regenerated.
 
 The runner is a fresh checkout, so the branch exists there only on the remote; the run checks it out
 from there, and only while its proposal is **open** (a closed one's work went back to the backlog and
@@ -475,7 +490,7 @@ intended, and `--fingerprint <concept> "<anchor>"` prints the new value.
 
 ```bash
 node scripts/wiki-maintain.mjs --selftest             # planner + verifier, offline, keyless
-pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V15
+pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V16
 pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G1–G12
 node --test scripts/__tests__/wiki-maintain*.test.mjs
 node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and normalizer
@@ -597,9 +612,15 @@ What this repository does with them today:
 
 - **Policy.** `openwiki/policy.yaml` has no rule of its own for `.claims/`; the sidecars are permitted
   only by the `openwiki/**` catch-all (`regenerate`, `actor: generator`).
-- **Gates.** `okf-lint` does not read the sidecars. Its contact with Claims is the page's
-  `verified.at`: V5 validates its ISO-8601 shape, and V12 counts it as a stamp (the newest of
-  `generated.at`, `verified.at` and `timestamp`).
+- **Gates.** `okf-lint` touches Claims in three places. V5 validates the ISO-8601 shape of every
+  `verified.at`, and V12 counts it as a stamp (the newest of `generated.at`, `verified.at` and
+  `timestamp`). **V16 reads the sidecars:** every page with a `.page-manifest.json` entry must have a
+  sidecar with a `verification` whose `pageVersion` equals the sha256 of the page's current bytes —
+  the exact invariant openwiki 0.6.0 enforces before it will run (`buildManifestEntry` in
+  `generation/page-manifest.js`), defined once in `scripts/openwiki-claims.mjs`. A page with no
+  manifest entry is not checked; openwiki leaves it for full review. The same module lets
+  wiki-maintain's link normalization carry a covered page's certified hash across a pure link
+  rewrite, so the harness cannot break the invariant it enforces.
 - **Decision.** The operator decided on 2026-09-27 that Claims are required and valuable (item
   **#513**). The decision's details, and any gates or lifecycle rules that follow from it, are being
   recorded under #513 — none exist yet, so do not treat a sidecar as checked by anything here beyond

@@ -17,6 +17,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCRIPT = join(REPO_ROOT, 'scripts', 'wiki-maintain.mjs');
@@ -28,6 +29,7 @@ const SCRIPT = join(REPO_ROOT, 'scripts', 'wiki-maintain.mjs');
 // not failing; they were never collected, and a suite that silently shrinks looks greener than one
 // that goes red.
 const mod = await import(pathToFileURL(SCRIPT).href);
+const claimsMod = await import(pathToFileURL(join(REPO_ROOT, 'scripts', 'openwiki-claims.mjs')).href);
 
 const FIXTURES = join(REPO_ROOT, 'scripts', '__tests__', 'fixtures', 'wiki-maintain');
 
@@ -1194,6 +1196,77 @@ test('execute: an unwritten page whose claims were verified after its source mov
     });
     assert.deepEqual(result.results[0].stalePages ?? [], [], 'the same rule as V12 — the two readers must not disagree');
     assert.notEqual(result.outcome, 'failed');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute: a requested page changed ONLY in front matter is still stale — not a refresh (#616)', () => {
+  // Measured on #615: the run deleted a `verified:` block from runbooks/ci-diagnostics.md, left the
+  // body and `generated` stamp alone, and reported the page "written" — so #587's check, which only
+  // judged UNwritten pages, never looked. Judge the requested page after the run, written or not.
+  const root = twoAreaRepo();
+  try {
+    writeFileSync(join(root, 'README.md'), 'source\n');
+    const page = (extra) => `---\ntype: Convention\ntitle: two\ndescription: Stale.\nresource: README.md\ntimestamp: 2020-01-01T00:00:00Z\n${extra}---\nBody.\n`;
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), page('tags: [a]\n'));
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'stale page'], { cwd: root });
+
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: () => { writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), page('')); return { status: 0 }; },
+    });
+    assert.equal(result.outcome, 'failed', 'a front-matter-only change must not pass as a refresh');
+    assert.deepEqual(result.results[0].stalePages, ['gotchas/two.md']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute: a slice whose output breaks the Markdown/Claims invariant fails instead of publishing (#616)', () => {
+  // The run itself produced this on #615. openwiki would refuse every later run, so the slice fails
+  // here and nothing is proposed.
+  const root = twoAreaRepo();
+  try {
+    const covered = '---\ntype: Convention\ntitle: two\ndescription: Covered.\n---\nBody.\n';
+    const certified = `sha256:${createHash('sha256').update(covered).digest('hex')}`;
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), covered);
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+    mkdirSync(join(root, 'openwiki', '.claims', 'gotchas'), { recursive: true });
+    writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json'), JSON.stringify({ pageVersion: certified, verification: { by: 'x', at: '2026-09-29T00:00:00Z' }, claims: [] }));
+    writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/two.md': { pageVersion: certified } } }));
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'covered page'], { cwd: root });
+
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      // Rewrites the covered page without re-certifying its Claims.
+      invoke: () => { writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), covered.replace('Body.', 'New body.')); return { status: 0 }; },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.match(result.results[0].violations.join('\n'), /V16|not durable/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('normalize: a link rewrite on a Claims-verified page keeps it durable', () => {
+  const root = twoAreaRepo();
+  try {
+    const covered = '---\ntype: Convention\ntitle: two\ndescription: Covered.\n---\nSee [auth](/openwiki/invariants/auth-chain.md).\n';
+    const certified = `sha256:${createHash('sha256').update(covered).digest('hex')}`;
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), covered);
+    mkdirSync(join(root, 'openwiki', '.claims', 'gotchas'), { recursive: true });
+    writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json'), JSON.stringify({ pageVersion: certified, verification: { by: 'x', at: '2026-09-29T00:00:00Z' }, claims: [] }));
+    writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/two.md': { pageVersion: certified } } }));
+    const changed = mod.normalizeBundleLinks({ root, files: ['openwiki/gotchas/two.md'] });
+    assert.equal(changed.length, 1, 'the site-root link was rewritten');
+    const { claimsDurabilityFindings } = claimsMod;
+    assert.deepEqual(claimsDurabilityFindings(join(root, 'openwiki')), [], 'the rewrite carried the certified hash with it');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -11,7 +11,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -212,6 +213,34 @@ test('V5 a malformed verified.at in the LIST shape openwiki writes is a finding'
     assert.equal(code, 1, out);
     assert.match(out, /V5/);
     assert.match(out, /verified\.at/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('V16 a covered page whose bytes no longer match its verified Claims fails the gate (#611)', () => {
+  // openwiki 0.6.0 refuses to run at all on this state ("Markdown and verified Claims are not
+  // durable"), so a PR that creates it must go red HERE instead of bricking the next paid run.
+  // Measured twice on 2026-09-29: a hand edit (#606) and a run's own output (#615), both CI-green.
+  const dir = oneConceptBundle('timestamp: 2026-09-01T00:00:00Z\n');
+  try {
+    const page = readFileSync(join(dir, 'page.md'));
+    const certified = `sha256:${createHash('sha256').update(page).digest('hex')}`;
+    mkdirSync(join(dir, '.claims'), { recursive: true });
+    writeFileSync(join(dir, '.claims', 'page.json'), JSON.stringify({ pageVersion: certified, verification: { by: 'openwiki/0.6.0', at: '2026-09-29T00:00:00Z' }, claims: [] }));
+    writeFileSync(join(dir, '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/page.md': { pageVersion: certified } } }));
+    assert.equal(runGate(['--bundle', dir]).code, 0, 'consistent: clean');
+
+    writeFileSync(join(dir, 'page.md'), `${page}A hand edit.\n`);
+    const { code, out } = runGate(['--bundle', dir]);
+    assert.equal(code, 1, out);
+    assert.match(out, /V16/);
+    assert.match(out, /page\.md/);
+
+    // The uncovered form is the sanctioned fix: no manifest entry, no sidecar.
+    writeFileSync(join(dir, '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: {} }));
+    rmSync(join(dir, '.claims'), { recursive: true, force: true });
+    assert.equal(runGate(['--bundle', dir]).code, 0, 'uncovered: clean');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
