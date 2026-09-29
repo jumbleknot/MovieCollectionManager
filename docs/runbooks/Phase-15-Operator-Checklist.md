@@ -310,8 +310,9 @@ the realm-generated client secrets (see Step B1 note). Naming has converged with
 
 **Load-bearing gotchas for the next session:**
 
-- **Never commit** the real base domain (`<domain>`) or tailnet host (`<tailnet-host>`) — the
-  topology-scrub + secret-scan gates block them. Real host/domain/IP live only in Komodo Variables /
+- **Never commit** the real base domain (`<domain>`) or tailnet host (`<tailnet-host>`). The
+  topology-scrub gate blocks a real **tailnet host** only; the **domain** cannot be pattern-gated
+  without embedding it, so nothing in CI catches it — the `${BASE_DOMAIN}` convention and review do. Real host/domain/IP live only in Komodo Variables /
   Keycloak, referenced as `[[VAR]]` in `stacks.toml`. Run `node scripts/check-topology-scrub.mjs`
   before committing infra files.
 - **Komodo writes `.env.prod`** from each Stack's Environment block — never hand-edit that file on the host.

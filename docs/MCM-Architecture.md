@@ -85,7 +85,7 @@ Each movie collection has an owner (defaulted to the user who created the movie 
 - **Repository pattern**: `application/ports/` defines trait interfaces (`CollectionRepository`, `MovieRepository`). `adapters/mongodb/` provides the implementations. Handlers depend only on the trait, never on the concrete adapter — enabling unit testing with `mockall`.
 - **Specification pattern**: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by(&T) -> bool`) with `AndSpec`, `OrSpec`, `NotSpec` combinators. Domain validation uses composed specifications, not ad-hoc `if` chains.
 - **Centralized auth via layer**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router. All `/api/v1/` routes are automatically protected — individual handlers never perform auth checks.
-- **JWT validation**: `axum-keycloak-auth` fetches Keycloak's JWKS once on startup and caches the public key. JWT validation is entirely local — no per-request Keycloak round-trip.
+- **JWT validation**: `axum-keycloak-auth` runs OIDC discovery and fetches Keycloak's JWKS in a background task at startup, then validates every JWT locally — no per-request Keycloak round-trip. The service does not wait for that discovery: with Keycloak unreachable it starts and serves, and rejects every protected request with 401.
 - **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50.
 - **RFC 9457 Problem Details**: All error responses use `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details.
 - **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field.
@@ -579,7 +579,7 @@ pnpm nx up-mcm infrastructure-as-code     # --profile app
 
 > `--profile` flags must come **before** `up`/`down` with Docker Compose v2.
 
-**all components require Keycloak running** — services fetch the JWKS endpoint on startup to cache the public key for JWT validation. The cross-project `depends_on` is dropped (feature 020): bring the `auth` stack up before the `mcm` `app` profile manually, or `mc-service` hangs waiting for Keycloak.
+**all components need Keycloak running to authenticate anything.** The cross-project `depends_on` is dropped (feature 020): bring the `auth` stack up before the `mcm` `app` profile manually. mc-service does **not** wait for Keycloak: `axum-keycloak-auth` runs OIDC discovery (and the JWKS fetch) in a background task at startup, and the service binds and serves immediately. If discovery fails — Keycloak down or unreachable — mc-service still starts and `/health` answers, but **every protected request is rejected with 401**, so the symptom is a working-looking backend that refuses every login, not a crash or a hang (pinned by `unauthenticated_401_is_returned_even_when_keycloak_is_unreachable` in `backend/mc-service/tests/integration/health_test.rs`).
 
 ### Agent Layer Infrastructure
 
