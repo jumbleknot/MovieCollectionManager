@@ -1,23 +1,31 @@
 {
-  "coveredCommit": "ecc4f140d89894399896b0b48a10ad86e978050d",
-  "coveredAt": "2026-09-29T22:57:24.326Z",
-  "lastOutcome": "failed",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "backlog.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525, pass 3d): V12 stale"
-    }
-  ],
-  "proposal": null,
+  "coveredCommit": "da2db8b951d621bdd129ef423cdb0a71aed1da69",
+  "coveredAt": "2026-09-30T00:54:55.336Z",
+  "lastOutcome": "completed",
+  "backlog": [],
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 622,
+    "headCommit": "ea94494c65da95da6bb8bbdcffd9537501f271d1",
+    "markerBefore": "da2db8b951d621bdd129ef423cdb0a71aed1da69",
+    "slices": [
+      {
+        "area": "runbooks",
+        "pages": [
+          "backlog.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift sweep (item #525, pass 3d): V12 stale",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backlog.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-09-30T00:54:55.804Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 1367,
+    "pagesWritten": 1,
+    "elapsedSeconds": 1331,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
@@ -26,13 +34,13 @@
     "calls": 97,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 444640,
-    "cached": 7907400,
+    "uncached": 341409,
+    "cached": 9762886,
     "cacheWrite": 0,
-    "output": 170183,
-    "reasoning": 148052,
-    "ms": 1294467,
-    "estCostUsd": 0.2655,
+    "output": 146351,
+    "reasoning": 110925,
+    "ms": 1130573,
+    "estCostUsd": 0.24,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
