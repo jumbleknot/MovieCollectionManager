@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-09-29T22:57:21.896Z",
+  "updatedAt": "2026-09-30T00:54:54.837Z",
   "command": "update",
-  "gitHead": "ecc4f140d89894399896b0b48a10ad86e978050d",
+  "gitHead": "da2db8b951d621bdd129ef423cdb0a71aed1da69",
   "model": "accounts/fireworks/models/deepseek-v4p1-flash",
   "status": "complete",
   "language": "en"
