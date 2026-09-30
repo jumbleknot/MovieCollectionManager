@@ -77,7 +77,7 @@ not been widened; re-run it if either credential is ever re-minted.
 | --- | --- |
 | type | `type/bug` `type/feature` `type/tech-debt` `type/chore` — exactly one |
 | priority | `priority/p1` `priority/p2` `priority/p3` — exactly one |
-| status | `status/blocked` (hint; the dependency graph is the authority) · `status/needs-spec` (the bridge into the SDD lifecycle) · `status/bot-managed` (another automation owns it) |
+| status | `status/blocked` (the dependency graph is the intended authority — but `ready` skips the graph for a labelled item, so a stale label silently hides it; it warns only for an unlabelled item with an open blocker) · `status/needs-spec` (the bridge into the SDD lifecycle) · `status/bot-managed` (another automation owns it) |
 
 **Milestones** map to feature directories (`NNN-slug`). No milestone is normal — that is the free
 backlog. A milestone must exist before it can be used: an unknown name is refused locally, because the
