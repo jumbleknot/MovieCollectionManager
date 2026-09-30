@@ -1,12 +1,12 @@
 ---
 type: Service
 title: Keycloak (Identity and Access Management)
-description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, and the service/network topology rules that keep auth reachable.
+description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
 tags: [auth, keycloak, iam, docker, realm, jwt]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-29T20:12:19.419Z
+    at: 2026-09-30T10:57:51.938Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -28,6 +28,8 @@ sources:
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-d637881fca08f33aeaf4b141
     resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
+  - id: openwiki-source-b95aa0cad6a90f846312a9a6
+    resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
   - id: openwiki-source-34854463fd23e29b106dcb63
     resource: repo://infrastructure-as-code/docker/keycloak/.env.prod.example
   - id: openwiki-source-60cf9a830f0ca275ffed94d7
@@ -74,7 +76,9 @@ sources:
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-921299f3e17b7f9cb4a1254c
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T20:12:19.419Z" }
+  - id: openwiki-source-aa8b20a71f803c01384f8201
+    resource: repo://verify/verify-fresh-realm-seed.mjs
+generated: { by: "openwiki/0.6.0", at: "2026-09-30T10:57:51.938Z" }
 ---
 
 # Keycloak (Identity and Access Management)
@@ -89,7 +93,9 @@ depends on.
 The user-facing login client is `movie-collection-manager`, and its **client** roles `mc-user` and
 `mc-admin` are the platform's RBAC unit. Because they are client roles, a code path reads them from
 `resource_access.<client>.roles` — a *realm*-role assignment of the same name is a no-op, and a user
-carrying only that authenticates and then fails with `login_role_denied`.
+carrying only that authenticates and then fails with `login_role_denied`. The same legacy naming shows
+up one level up: the realm's built-in default role is still `default-roles-jumbleknot`, so a
+`default-roles-*` name that does not match the realm is expected, not drift.
 
 The service exposes the app port as host `8099` → container `8080` (dev and CI, loopback-bound);
 containers on the shared Docker network reach it via `keycloak-service:8080`. Feature 020 unified the
@@ -133,8 +139,9 @@ Each environment imports the `grumpyrobot` realm into the same Postgres volume t
 
 Three details in that picture are load-bearing:
 
-- **Only the overlays add `--import-realm`.** The shared `keycloak/compose.yaml` base is untouched by
-  the dev and CI overlays, so the CI path stayed provably unchanged when dev seeding was added.
+- **The dev and CI overlays add `--import-realm` on top of a base they do not modify.** The shared
+  `keycloak/compose.yaml` base is untouched by both overlays, so the CI path stayed provably unchanged
+  when dev seeding was added (prod declares `--import-realm` in its own file rather than as an overlay).
 - **A relative volume source resolves against the *project* directory, not the overlay file's
   directory.** The dev overlay therefore uses `../keycloak/dev-realm.json` (relative to
   `docker/stacks/`), while CI passes an absolute `${CI_REALM_FILE}` and prod an absolute
@@ -166,7 +173,9 @@ that costs is local coverage of the refresh path, and the substitute is named ra
 the 2-per-30 s bucket, its 429, and the `refresh_rate_limited` audit event are covered by
 `tests/integration/rate-limiter.integration.test.ts`. Production stays at 300 s: no security control
 was relaxed anywhere. **A running Keycloak keeps the old value until the realm is re-imported**, so
-raising the number in JSON changes nothing for a stack already up.
+raising the number in JSON changes nothing for a stack already up. The E2E spec that proves the
+refresh recovery chain does not depend on the number either way: `agent-session-refresh.spec.ts`
+clears the access cookie explicitly instead of waiting for expiry.
 
 ## RFC 8693 token exchange
 
@@ -175,6 +184,22 @@ The realm carries the whole token-exchange wiring: `standard.token.exchange.enab
 `access.token.lifespan` ceilings (60 s for the gateway's exchanged token, 180 s for the run-scoped
 subject token), the audience mappers that make the downscope targets available, and an
 `agent_origin=true` hardcoded claim so `mc-service`/OPA can recognise agent-originated tokens.
+
+```mermaid
+sequenceDiagram
+  participant BFF
+  participant KC as Keycloak realm grumpyrobot
+  participant Gateway as Agent Gateway
+  participant MC as mc-service
+  BFF->>KC: exchange, requester agent-subject-token, subject = user token
+  KC-->>BFF: run-scoped subject token, aud=agent-gateway, TTL 180 s, agent_origin=true
+  BFF->>Gateway: subject token, never the user's session token
+  Gateway->>KC: re-exchange, requester agent-gateway
+  KC-->>Gateway: downscoped token, aud=movie-collection-manager + mc-service, TTL 60 s
+  Gateway->>MC: downscoped token, forwarded unchanged through the MCP
+```
+
+Two exchanges, two requester clients, and the audience mappers that make each one legal.
 
 The wiring is applied (and re-appliable idempotently) by
 `infrastructure-as-code/docker/keycloak/scripts/configure-token-exchange.mjs` against a running Admin
@@ -215,7 +240,10 @@ On the dev side, `node scripts/gen-dev-secrets.mjs` mints the realm/client secre
 files so realm-secret equals BFF-secret by construction — the invariant CI achieves by feeding both
 sides from one set of forge secrets. That projection verifies both credentials against the **running**
 realm before writing anything, and exits without writing if the realm refuses them: writing the files
-proves only that the values reached disk.
+proves only that the values reached disk. The end-to-end proof that a *fresh* volume yields a coherent
+seed is `verify/verify-fresh-realm-seed.mjs`, which provisions from scratch and then asserts with a
+real ROPC grant as `e2e-test-user` — a check that can only pass if the realm, the user and the client
+secrets all agree.
 
 ## Gotchas
 
@@ -239,11 +267,20 @@ Mount the file as `grumpyrobot-realm.json`, supply any non-empty values for the 
 (they resolve from container env at import time), and want `Realm 'grumpyrobot' imported` — the exact
 command is in the [keycloak README](../../infrastructure-as-code/docker/keycloak/README.md).
 
+**The CI runner is persistent, so `app-ci` deletes the realm volume on every run.** `IGNORE_EXISTING`
+means a stale realm would *never* pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks
+E2E idempotency, so a reset step force-removes the app containers and the stateful volumes
+(`keycloak-store-postgres-data` among them) before provisioning — image build caches are preserved, so
+the rebuild stays fast. That is also why a realm change reaches CI at all; without the reset it would
+silently not.
+
 **Removing a client requires removing ALL its references.** Dropping a client from a realm export
-(e.g. the test-only `mcm-bff-test`, which appears in dev/CI but not in prod) requires also deleting
+(e.g. the ROPC client `mcm-bff-test`, which appears in dev/CI but not in prod) requires also deleting
 its `roles.client[<id>]` entry and any `scopeMappings` — not just the client object. A dangling
 reference makes `--import-realm` abort in production mode with `App doesn't exist in role
-definitions: <id>` and crash-loops `keycloak-service`.
+definitions: <id>` and crash-loops `keycloak-service`. Note that `mcm-bff-test` is no longer
+test-only in the "unused" sense: the agent integration suite and the DAST job log in through it, so
+its secret must be identical at realm-import and at scan time.
 
 **The CI realm deliberately drops `passwordPolicy`.** Keycloak 26.6+ enforces the realm password
 policy against *imported user credentials* (26.5 silently skipped it), so a realm that both carries a
@@ -255,7 +292,9 @@ no user credential, so its import is unaffected.
 `sed 's|${BASE_DOMAIN}|<domain>|g'` — `envsubst` would also expand Keycloak's own `${role_*}` /
 `${client_*}` i18n placeholders and corrupt the realm. Verified: 32 such placeholders survive the
 `sed` render intact. The rendered file is gitignored and pointed to by `PROD_REALM_FILE`; the
-committed template keeps the placeholder.
+committed template keeps the placeholder. (`compose.prod.yaml` and `.env.prod.example` still describe
+the restricted-`envsubst` form; the hand-run `sed` is what is actually used, and the two differ in
+exactly the way that matters.)
 
 **`keycloak-service` can lose `backend-network` on reboot (prod).** Confirmed on 2026-07-06: after a
 reboot the container came back attached only to `edge-network` and `keycloak-network`, missing
@@ -274,6 +313,16 @@ disjoint from all CI/dev ports. See [Published-port reservation](../invariants/p
 The admin console is also served under its own `KC_HOSTNAME_ADMIN` — the tailnet admin address, never
 the public host — and the admin bind is `0.0.0.0` by necessity (the rootless daemon starts before
 `tailscaled` at boot, so a tailnet-IP bind silently fails), with exposure limited by the host firewall.
+Because the console's own session-check iframe still points at `KC_HOSTNAME`, the *public* auth route
+must be reachable for the tailnet console to work at all; a console that fails with a third-party-check
+timeout is that route missing, not a broken admin login.
+
+**The prod bootstrap admin credential is first-boot-only — and must stay anyway.**
+`KC_BOOTSTRAP_ADMIN_USERNAME` / `KC_BOOTSTRAP_ADMIN_PASSWORD` create the initial `admin` user only when
+the realm database has no admin. The hardened posture is to log in once, create a named admin with 2FA,
+and delete the bootstrap user, after which those values are inert. Keep them configured regardless:
+they are fail-fast `${VAR:?}` references, so removing them breaks every redeploy, and a fresh database
+deploy needs them to create the first admin at all.
 
 **Pin the issuer, and let the backchannel resolve per-request.** `KC_HOSTNAME` fixes a stable token
 issuer regardless of the host a request arrives on, while `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` lets
@@ -307,5 +356,6 @@ as an agent that answers from TMDB and cannot resolve the user's collection.
 **Client redirect URIs are part of the realm, not the app.** `add-container-redirect-uris.mjs` exists
 because the containerized BFF (dev `:8082`, prod-style TLS `:8443`) needs its callback and
 `login?verified=true` origins allowlisted on `movie-collection-manager`; without them Keycloak rejects
-the callback after login. The mobile deep link is the same kind of entry — its absence breaks
-on-device login only after the browser redirect.
+the callback after login. The mobile deep link is the same kind of entry — `prod-realm.json` carries
+the custom-scheme callback alongside the public web origin — and its absence breaks on-device login
+only after the browser redirect.
