@@ -2,26 +2,51 @@
   "coveredCommit": "19a07ab8558f79df36ec64ae95596db7f2dee636",
   "coveredAt": "2026-09-30T12:32:22.033Z",
   "lastOutcome": "failed",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "sast.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/sast-scanning.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "backlog.md",
+        "sast-scanning.md",
+        "wiki-maintenance.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/backlog.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/wiki-maintenance.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backlog.md; openwiki/runbooks/sast-scanning.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 2125,
+    "elapsedSeconds": 3068,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 89,
+    "calls": 376,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 331786,
-    "cached": 8915782,
+    "uncached": 2597328,
+    "cached": 33954866,
     "cacheWrite": 0,
-    "output": 139187,
-    "reasoning": 119374,
-    "ms": 1917839,
-    "estCostUsd": 0.2273,
+    "output": 609622,
+    "reasoning": 497797,
+    "ms": 7580685,
+    "estCostUsd": 1.2114,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
