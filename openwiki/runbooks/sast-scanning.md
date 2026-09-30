@@ -107,7 +107,7 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   committed entry does not tell you which world you are in. One command does:
   ```bash
   curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
-  node scripts/sast-scan.mjs --scope full --only semgrep            # exit >=2 => registry unreachable
+  node scripts/sast-scan.mjs --scope full --only semgrep            # exit 1 + "[semgrep] scan failed … rules/registry may be unreachable" => unreachable (exit 2 is bad arguments only)
   ```
   A Semgrep result you did not sanity-check this way is the same green either way — which is the
   whole trap. **To test an allowlist entry locally when Semgrep is unreachable, hand the gate a

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: The agent-driven backlog (Forgejo Issues)
-description: How the MCM backlog lives in the repository's own Forgejo tracker and is worked by the coding assistant through scripts/backlog.mjs — the credential whose reach is bounded by a client-side write guard rather than by its scope, the measured API traps that make a filter fail open, and why a present status/blocked label wins over the dependency graph.
+description: How the MCM backlog lives in the repository's own Forgejo tracker and is worked by the coding assistant through scripts/backlog.mjs — the credential bounded server-side by its scope (issues only) and, for this tool, by a client-side guard on which repository it writes, the measured API traps that make a filter fail open, and why a present status/blocked label wins over the dependency graph.
 resource: docs/runbooks/backlog.md
 tags: [backlog, forgejo, issues, tooling, runbook]
 sources:
@@ -86,7 +86,10 @@ consulted only for the items that survive it.
 
 ## Gotchas
 
-- **The write credential's reach is account-wide by decision, so the CLIENT-SIDE guard is the bound.**
+- **Two bounds, of different strength.** The token's **scope** is the server-side bound on *what* it can
+  do: `write:issue` + `read:repository` — no push, no packages, no admin. *Which repository* it writes to
+  is bounded only client-side, and only inside `scripts/backlog.mjs`: any other client holding the token
+  (curl, another script) can write issues in any repository on the account.
   `MCM_FORGE_ISSUE_TOKEN` carries `write:issue` + `read:repository` and is deliberately not restricted to
   this repository. Every write therefore asserts that its target owner/repo matches the origin remote and
   refuses otherwise — checked once against any `--repo` value and again at the request boundary, so a

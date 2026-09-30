@@ -258,7 +258,7 @@ a scan that happened to pass.
   you which world you are in. One command does:
   ```bash
   curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
-  node scripts/sast-scan.mjs --scope full --only semgrep            # exit >=2 => registry unreachable
+  node scripts/sast-scan.mjs --scope full --only semgrep            # exit 1 + "[semgrep] scan failed … rules/registry may be unreachable" => unreachable (exit 2 is bad arguments only)
   ```
   A Semgrep result you did not sanity-check this way is the same green either way, which is the
   whole trap.
@@ -429,8 +429,9 @@ a scan that happened to pass.
   "re-evaluate when `image-size` publishes 2.0.3 AND metro widens its range"; 2.0.3 never shipped, and
   instead a Renovate lockfile-maintenance bump of `metro` dropped `image-size` from the tree entirely,
   so the advisories disappeared with no config change and no human in the loop. The entries were
-  re-checked and deleted rather than renewed at expiry. A suppression that matches nothing is reported
-  as `UNMATCHED` and saturates the weekly signal, and deleting it means a regression re-blocks — which
+  re-checked and deleted rather than renewed at expiry. A suppression that matches nothing only shows
+  as `UNMATCHED` in a normal run's report-only output (the weekly run cannot flag it for SAST — see
+  above), and deleting it means a regression re-blocks — which
   is the convention this file follows everywhere.
 
 - **`mcm-auth-before-authz` firing on a service-layer function is a false positive you must NOT "fix"

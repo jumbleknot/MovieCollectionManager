@@ -1,10 +1,9 @@
 ---
-type: "Reference"
+type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
 description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain, the provider/credential table and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the run-budget and exit-code semantics, the four independent slice-verification causes (missing page, non-conformance including V16, a policy-forbidden write, a page left stale), the single long-lived openwiki-maintenance proposal, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
-openwiki_generated: true
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
@@ -82,7 +81,8 @@ stateDiagram-v2
     Retry --> Backlog: 3 attempts used
     Verify --> Backlog: slice failed
     Verify --> StoppedAtFailureLimit: two consecutive slices failed
-    StoppedAtFailureLimit --> [*]: exit 1 and the run looks broken
+    StoppedAtFailureLimit --> Proposal: pages that landed are still proposed (exit 1)
+    StoppedAtFailureLimit --> [*]: exit 1, nothing landed
     Backlog --> Invocation: the run continues with the next slice
     Backlog --> [*]: no slice left; the failed work waits for a later run
     Proposal --> PublishFailed: push or forge call refused
@@ -162,7 +162,7 @@ flowchart TD
     E -->|"yes - its source commit is newer than its stamp"| F
     E -->|no| G["Slice verified"]
     F --> H["Retried within the run, then back to the backlog - the marker does not advance"]
-    G --> I["Marker advances"]
+    G --> I["Marker may advance — only if no slice in the run failed"]
 ```
 
 The four independent checks a finished slice must clear before its marker may advance, and the two ways
