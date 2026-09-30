@@ -150,8 +150,9 @@
 # in the loop. It worked silently and went unremarked for two days.
 #
 # Entries DELETED rather than left to expire, per this file's convention: a suppression that matches
-# nothing is reported as UNMATCHED and saturates the weekly allowlist-expiry signal, and deleting it
-# means a regression re-blocks. If metro ever reintroduces image-size, the findings return
+# nothing only shows as UNMATCHED in a normal gate run's report-only output (the weekly
+# --check-expiring run cannot flag an unmatched SAST entry: its job produces no SAST report), and
+# deleting it means a regression re-blocks. If metro ever reintroduces image-size, the findings return
 # un-suppressed, which is the intent.
 
 
