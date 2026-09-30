@@ -50,7 +50,8 @@ forge's database, not in git: there is no `git revert` for a mass close.
 
 - `type/bug` · `type/feature` · `type/tech-debt` · `type/chore` — exactly one
 - `priority/p1`…`p3` — exactly one; p1 = do next
-- `status/blocked` — a hint only; the **dependency graph is the authority** and `ready` warns when they disagree
+- `status/blocked` — the dependency graph is the intended authority, but a label that is present always wins: `ready` never fetches the dependency graph for a `status/blocked` item, so a **stale** label silently hides it (no warning). The graph is consulted only for unlabelled items, and `ready` warns when one of those has an open blocker but no label. When an item
+  unexpectedly vanishes from `ready`, check for a leftover label (`list --label status/blocked`)
 - `status/needs-spec` — **the bridge to SDD**: too large to implement directly, so it needs
   `specs/NNN-*/` spec → plan → tasks first. Apply it rather than starting to code
 - `status/bot-managed` — another automation owns this item
