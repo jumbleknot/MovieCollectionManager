@@ -2,7 +2,18 @@
   "coveredCommit": "19a07ab8558f79df36ec64ae95596db7f2dee636",
   "coveredAt": "2026-09-30T12:32:22.033Z",
   "lastOutcome": "completed",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "devcontainer-sandbox.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525, pass 3e): V12 stale; one large source per run (#613)"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 622,
