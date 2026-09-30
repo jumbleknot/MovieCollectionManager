@@ -1,20 +1,8 @@
 {
-  "coveredCommit": "da2db8b951d621bdd129ef423cdb0a71aed1da69",
-  "coveredAt": "2026-09-30T00:54:55.336Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "fa210426764a32a49217d5a7907b0675e5500a3a",
+  "coveredAt": "2026-09-30T11:36:41.730Z",
+  "lastOutcome": "completed",
   "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "sast.md",
-        "keycloak.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: infrastructure-as-code/docker/keycloak/README.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md; openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
     {
       "area": "runbooks",
       "pages": [
@@ -32,7 +20,7 @@
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 622,
-    "headCommit": "ea94494c65da95da6bb8bbdcffd9537501f271d1",
+    "headCommit": "b05bd55a40ad323a2eaa4bb62f453e35f6ecec73",
     "markerBefore": "da2db8b951d621bdd129ef423cdb0a71aed1da69",
     "slices": [
       {
@@ -45,28 +33,40 @@
         "areaExists": true,
         "reason": "drift sweep (item #525, pass 3d): V12 stale",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backlog.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "sast.md",
+          "keycloak.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: infrastructure-as-code/docker/keycloak/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md; openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-09-30T00:54:55.804Z"
+    "updatedAt": "2026-09-30T11:36:42.262Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 760,
+    "pagesWritten": 4,
+    "elapsedSeconds": 2335,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 35,
+    "calls": 292,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 166932,
-    "cached": 3298168,
+    "uncached": 1508965,
+    "cached": 29014354,
     "cacheWrite": 0,
-    "output": 64154,
-    "reasoning": 39367,
-    "ms": 682408,
-    "estCostUsd": 0.1022,
+    "output": 462737,
+    "reasoning": 386758,
+    "ms": 5524173,
+    "estCostUsd": 0.8405,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
