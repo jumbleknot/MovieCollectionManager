@@ -86,11 +86,11 @@
       "completedRunId": "78ba3484-7b1a-4155-be43-0b304dc1e2aa"
     },
     "/openwiki/projects/keycloak.md": {
+      "gitHead": "f78b34c4fd2a4aae7197f1cba4a361b0e1589eea",
+      "sourceFingerprint": "sha256:22e5b8705d6f7ce64e9bbd2fc237eb3cf95215835a325ee6b2b765e756168809",
       "pageVersion": "sha256:3de3369536f23c0fa38a69f5d56d92f7fb24367947bf1b84d2dd27e2933304fe",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "344f6b7a-2b7b-4516-aa10-7a3c8b22043b",
-      "gitHead": "e16cf336566e9e6f95769ffaa23f63cd02b2883e",
-      "sourceFingerprint": "sha256:3dc7495f2e92574308b36c4d4830f7846abcdd321130e2e34eb454a61d471e70"
+      "completedRunId": "344f6b7a-2b7b-4516-aa10-7a3c8b22043b"
     },
     "/openwiki/projects/mc-service.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
@@ -114,11 +114,11 @@
       "completedRunId": "d1e38eaa-fe5c-46e3-8baf-16199a08cec2"
     },
     "/openwiki/projects/sast.md": {
+      "gitHead": "f78b34c4fd2a4aae7197f1cba4a361b0e1589eea",
+      "sourceFingerprint": "sha256:22e5b8705d6f7ce64e9bbd2fc237eb3cf95215835a325ee6b2b765e756168809",
       "pageVersion": "sha256:a2e21aa5d764391a3ada5b0d12b12d31df9dc131ec6cdd3cb5821e65d8d24756",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "344f6b7a-2b7b-4516-aa10-7a3c8b22043b",
-      "gitHead": "e16cf336566e9e6f95769ffaa23f63cd02b2883e",
-      "sourceFingerprint": "sha256:3dc7495f2e92574308b36c4d4830f7846abcdd321130e2e34eb454a61d471e70"
+      "completedRunId": "344f6b7a-2b7b-4516-aa10-7a3c8b22043b"
     },
     "/openwiki/quickstart.md": {
       "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
@@ -135,11 +135,11 @@
       "completedRunId": "284da042-1fa3-40fa-a936-b78473ae6084"
     },
     "/openwiki/runbooks/backlog.md": {
-      "pageVersion": "sha256:0cddf67547ac10988af7e7873b271b4f619d432339130f80b690d20a11905d02",
+      "pageVersion": "sha256:bbbb6930eca6b2c6ae3b3cc3304cf8643d47a5c26f102023cab73b5ff974b4d9",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "344f6b7a-2b7b-4516-aa10-7a3c8b22043b",
-      "gitHead": "e16cf336566e9e6f95769ffaa23f63cd02b2883e",
-      "sourceFingerprint": "sha256:3dc7495f2e92574308b36c4d4830f7846abcdd321130e2e34eb454a61d471e70"
+      "completedRunId": "713bf217-5096-4f22-8179-de8fef317389",
+      "gitHead": "f78b34c4fd2a4aae7197f1cba4a361b0e1589eea",
+      "sourceFingerprint": "sha256:22e5b8705d6f7ce64e9bbd2fc237eb3cf95215835a325ee6b2b765e756168809"
     },
     "/openwiki/runbooks/backups.md": {
       "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
@@ -204,6 +204,13 @@
       "completedBy": "openwiki/0.5.2",
       "completedRunId": "d0a15892-f9a5-46ec-af1a-c0c590948c64"
     },
+    "/openwiki/runbooks/sast-scanning.md": {
+      "pageVersion": "sha256:dddac943907f089a60c1a8079762f1331ebeb05cf4ee023f2142d776ff7e4c8c",
+      "completedBy": "openwiki/0.6.0",
+      "completedRunId": "713bf217-5096-4f22-8179-de8fef317389",
+      "gitHead": "f78b34c4fd2a4aae7197f1cba4a361b0e1589eea",
+      "sourceFingerprint": "sha256:22e5b8705d6f7ce64e9bbd2fc237eb3cf95215835a325ee6b2b765e756168809"
+    },
     "/openwiki/runbooks/server-setup.md": {
       "gitHead": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
       "sourceFingerprint": "sha256:7fe39cb5a08a3c98b78da3269dbe886c362127826123f68fb7538b94576c4269",
@@ -212,11 +219,11 @@
       "completedRunId": "284da042-1fa3-40fa-a936-b78473ae6084"
     },
     "/openwiki/runbooks/wiki-maintenance.md": {
-      "pageVersion": "sha256:1eba97e3991a0c91c835efe47ff388db416bc66b6f9d7def30defb94d8971552",
+      "pageVersion": "sha256:a90feca7463d81d2ab00bf525a67f9905d6ea0655ff7aa8d998fc6d75d93651c",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "344f6b7a-2b7b-4516-aa10-7a3c8b22043b",
-      "gitHead": "e16cf336566e9e6f95769ffaa23f63cd02b2883e",
-      "sourceFingerprint": "sha256:3dc7495f2e92574308b36c4d4830f7846abcdd321130e2e34eb454a61d471e70"
+      "completedRunId": "713bf217-5096-4f22-8179-de8fef317389",
+      "gitHead": "f78b34c4fd2a4aae7197f1cba4a361b0e1589eea",
+      "sourceFingerprint": "sha256:22e5b8705d6f7ce64e9bbd2fc237eb3cf95215835a325ee6b2b765e756168809"
     }
   }
 }

@@ -6,10 +6,12 @@ resource: docs/runbooks/backlog.md
 tags: [backlog, forgejo, issues, tooling, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-30T10:57:51.938Z
+    at: 2026-09-30T11:51:40.481Z
 sources:
   - id: openwiki-source-5d36302c890471f584e749ee
     resource: repo://.claude/skills/forgejo-issues/SKILL.md
+  - id: openwiki-source-6f05dd48779dfbb36df9fa7b
+    resource: repo://.claude/skills/speckit-taskstoissues/SKILL.md
   - id: openwiki-source-f7c89635dfc6efb0ecec007f
     resource: repo://.devcontainer/devcontainer.json
   - id: openwiki-source-c5f31231e7b66af980b8078c
@@ -34,7 +36,7 @@ sources:
     resource: repo://specs/049-forgejo-issue-tracking/research.md
   - id: openwiki-source-677c64386096dcc92b809d21
     resource: repo://specs/049-forgejo-issue-tracking/spec.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-30T10:57:51.938Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-30T11:51:40.481Z" }
 ---
 
 # The agent-driven backlog (Forgejo Issues)
@@ -64,7 +66,9 @@ stateDiagram-v2
     Closed --> Open: reopen
 ```
 
-Open, blocked and closed backlog state, and the closure rule the forge enforces server-side.
+Open, blocked and closed backlog state, and the closure rule the forge enforces server-side. Closing is
+not its own verb — it is a state change on `update`, and the tooling's interface is the exit code rather
+than the wording of the refusal.
 
 ## How `ready` decides
 
@@ -120,11 +124,16 @@ consulted only for the items that survive it.
 - **`ready` answers from at most one page of open items, and says so when it did.** Without that notice the
   genuinely highest-priority item could lie outside the window — and "what should I work on next" is
   exactly the question where a silently partial answer is worse than no answer.
+- **`list` defaults to `--state open`**, so an item that "vanished" from a listing is usually the default
+  filter rather than a deletion.
 - **Closing a blocked item fails with 412** `cannot close this issue because it still has open
   dependencies`, and the tooling surfaces that distinctly from other failures. **The dependency endpoint
   needs `{owner, repo, index}`** — a bare `{index}` answers 404 `IsErrRepoNotExist`, naming the repository
   rather than the missing fields. A dependency cycle is refused before the call, because every item in one
   becomes permanently uncloseable.
+- **A blocking edge is directed, and both directions are readable.** `dep N --blocked-by M` and
+  `dep M --blocks N` record the same edge from either end, and `show` prints `blocked by` and `blocks`
+  separately — so "what is waiting on this item" is answerable without walking the graph by hand.
 - **`status/blocked` is a hint in principle, but a PRESENT label wins in `ready`.** The graph is fetched
   only for the items that survive the label pre-filter, so for a labelled item it is never consulted and
   the label alone decides: a **stale** `status/blocked` label silently hides an item and prints **no
@@ -135,6 +144,11 @@ consulted only for the items that survive it.
 - **`status/needs-spec` is the bridge into the SDD lifecycle.** It means the item is too large to implement
   directly and needs `specs/NNN-*/` spec → plan → tasks first; applying the label *is* the instruction, not
   a prelude to starting to code. See [spec-driven development](../process/spec-driven-development.md).
+- **The task fan-out is the one caller that writes many items in a session.** `/speckit-taskstoissues`
+  files one item per task, encodes the task ordering as blocking edges, and needs `setup-milestone` first —
+  but it is optional by design, because `tasks.md` remains the authoritative in-feature decomposition and a
+  70-task feature becomes 70 items in a shared tracker. The primary flow runs the other way: items feed
+  `/speckit-specify`.
 - **A milestone must exist before it can be used**, which is why `setup-milestone NNN-slug` is what makes
   `create --milestone` usable at all — an unknown milestone name is refused locally, for the same reason a
   label is. No milestone is not an error; it is the free backlog, and the normal case.
@@ -190,6 +204,11 @@ consulted only for the items that survive it.
   or injected fetch/env doubles. The live-forge verification is a one-off manual exercise in the feature's
   quickstart, not a unit test.
 
-Provisioning, the full command surface and the diagnosis table:
-[docs/runbooks/backlog.md](../../docs/runbooks/backlog.md). The bot owning item #29 has its own operating
-page: [Renovate dependency bot](./renovate.md).
+## Where the how lives
+
+`--help` is the full flag reference, exit codes and measured quirks in one screen — deliberately kept out
+of the agent skill so the skill stays inside its token budget. Provisioning, the credential table, the
+label taxonomy and the diagnosis table are in
+[docs/runbooks/backlog.md](../../docs/runbooks/backlog.md). The decision rules for *when* to file, close
+or label are in [.claude/skills/forgejo-issues/SKILL.md](../../.claude/skills/forgejo-issues/SKILL.md).
+The bot owning item #29 has its own operating page: [Renovate dependency bot](./renovate.md).

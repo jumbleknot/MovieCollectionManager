@@ -1,10 +1,13 @@
 ---
 type: "Reference"
 title: "OpenWiki knowledge-bundle maintenance"
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain, the provider/credential table and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the run-budget and exit-code semantics, the four independent slice-verification causes (missing page, non-conformance including V16, a policy-forbidden write, a page left stale), the single long-lived openwiki-maintenance proposal, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
+resource: docs/runbooks/wiki-maintenance.md
+tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 openwiki_generated: true
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-30T10:57:51.938Z
+    at: 2026-09-30T11:51:40.481Z
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
@@ -40,7 +43,7 @@ sources:
     resource: repo://specs/075-llm-cost-phase-1/research.md
   - id: openwiki-source-9cd940916584e06e676df687
     resource: repo://specs/078-wiki-generator-cost/research.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-30T10:57:51.938Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-30T11:51:40.481Z" }
 ---
 
 
@@ -55,13 +58,14 @@ distinct from the tool's own `openwiki/.last-update.json`. See
 [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md) for the underlying
 `wiki-update`/`okf-lint` Nx targets this machinery drives, and
 [Nx as the task runner](../invariants/nx-task-runner.md) for why the bare `openwiki` CLI must never be
-invoked directly.
+invoked directly. The governing rules live in `openwiki/INSTRUCTIONS.md` (the generation brief) and
+`openwiki/policy.yaml` (the regeneration policy); the how — CLI flags, the debounce arithmetic, the
+step-by-step procedure — is `../../docs/runbooks/wiki-maintenance.md`.
 
 Useful overrides go through Nx's `--args` (appended to the command line): `--args='--since <ref>'`
 ignores the marker and plans over a range you choose (diagnostics and one-off sweeps);
 `--args='--max-slices 1'` attempts one slice and stops; `--args=--dry-run` prints the exact command per
-slice and invokes nothing, persisting nothing; `--args=--json` is machine-readable. The runbook at
-`../../docs/runbooks/wiki-maintenance.md` carries the full CLI contract.
+slice and invokes nothing, persisting nothing; `--args=--json` is machine-readable.
 
 ## The shape of a run
 
@@ -140,7 +144,7 @@ egress host costs one token, not a slice.
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
 | `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it — or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, a failed preflight, or a policy file that will not load | **Yes** |
-| `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
+| `3` | Stopped with work outstanding — the run budget was reached, or slices were carried forward in the backlog | **No** — the remainder is in the backlog |
 
 **Exit 3 is not a failure.** A run that correctly stopped at its budget must not be reported as broken:
 re-run it and it continues where it left off.
@@ -188,7 +192,8 @@ one generator invocation of up to `MAX_PAGES_PER_INVOCATION` pages, because ever
 fixed planning pass — ~$0.33 on Sonnet, 83% of a one-page run — and a run touching three areas used to
 plan three times. The **slice** stays the unit of the backlog: a failure carries forward only the areas
 whose pages did not land. The constants live in `scripts/wiki-maintain.mjs` and the guard test *derives*
-the workflow's `timeout-minutes` from them, so changing one without the other fails offline:
+the workflow's `timeout-minutes` from them (asserting the value and that it leaves at least 5 minutes of
+margin), so changing one without the other fails offline:
 
 | | Value | Why |
 |---|---|---|
@@ -343,7 +348,8 @@ page concurrency shows up there first.
   already-advanced marker. Until #619 is fixed, re-seed a closed proposal's pages by hand — a seed
   change that edits `backlog` in `openwiki/.maintenance-state.json`. If the *publishing* step itself
   fails instead (the push or the forge call), the marker is held and this run's slices go back to the
-  backlog, so nothing is certified that never reached a proposal.
+  backlog, so nothing is certified that never reached a proposal; the recorded usage stays, because that
+  money was already spent.
 - **A reviewer must not hand-edit a page openwiki has covered — that bricks every later run.** A page
   with an entry in `openwiki/.page-manifest.json` is certified byte-for-byte by its `.claims` sidecar,
   so editing it breaks the certification and openwiki then refuses **every** later run, not just that
@@ -448,8 +454,10 @@ page concurrency shows up there first.
   a **list** (via `stampValues` in `scripts/openwiki-stamp.mjs`); V12 counts the newest `verified.at`
   as a candidate stamp; and **V16 reads the sidecars themselves** — see the durability contract below.
   The operator decided on 2026-09-27 that
-  Claims are required and valuable (item #513); any further gates or lifecycle rules beyond the
-  generator's own confirm/revise/retract cycle are still being decided under that item.
+  Claims are required and valuable (item #513), and the decision's details, plus any gates or lifecycle
+  rules that follow from it, are recorded under that item. **Nothing yet checks that a sidecar's claims
+  are *true*:** the only gate on sidecars is V16's durability check, so a sidecar records what the
+  generator asserted about a page, not reviewed content.
 - **A sidecar is a durability contract, not a note: V16 is what enforces it.** `openwiki/.page-manifest.json`
   lists every page openwiki has **covered** (`/openwiki/<page>.md` keys, each with its own `pageVersion`
   and a `completedBy` generator version). openwiki 0.6.0 re-proves each covered page before a run can

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0cddf67547ac10988af7e7873b271b4f619d432339130f80b690d20a11905d02",
+  "pageVersion": "sha256:bbbb6930eca6b2c6ae3b3cc3304cf8643d47a5c26f102023cab73b5ff974b4d9",
   "claims": [
     {
       "id": "claim_b05bc8293a19453abeaacbb08d9ed745",
@@ -549,10 +549,66 @@
           "version": "repo-lines-v1:sha256:95040f39543181f20a8b941ebdc37726222b043fd0ad0793b229b466b4a542b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIyYWVjYjFiYjIzNjdkODI3ZjBlYjBmN2Y4MjU5NDk2OTJjNjcyMGQxNWJmM2QyNWU5MTBjOWU2ZjJhMWQzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFlODNhOGIwY2Q1OGVlYzAzMTI5YWYxMzdkN2FjZjdjYjBkYzY3MjlhNzc4MTg5ZTJmMWU4YWEwYTJlNThjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjI0NDliM2ExMjM0Mzk0NDhlYWUzYzM4NmRmNDE0NzBkNDI1NTQ3YWE4MTg4Yjk5YzA3NDg5NDM5MDVmY2MyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ0NmE3NTBhZDY0ZjMwYzg3NzMwNmUxZjdhNWJjZjMyNjgyM2YxYTEyZjA4MzBmOWQ5ZGI1NWE4MGQzYjU2NyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_3b0e952d207c4afb8a9ccb82a9e38098",
+      "statement": "`list` defaults to `--state open` when no state is given, so an item missing from a listing is usually the default filter rather than a deleted or vanished item.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L265-L267",
+          "version": "repo-lines-v1:sha256:bce6a18235b403503ee4ed2b23b757d6521cce7c0e0f1705524928cc8c0f9437:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWNlMTc5ZDJiNDJhZWIzN2UxNzE3NDVjNjBlOWU1MTQ4NzdjM2MyODVmNGQxNGFiMTJhMmE0MmU5ZDllYjk1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGIxYmUzOGQ2OTRlMzY1OTU3MTM1OTcyY2E4ODEyMTg0ZWE2YmI3ODlhNTY5YTgyZmU2ZWY3NDRjMTYxMDJjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ4ZWNiYzhhMTI5MDE0ZGYwZDgxMTY5NzhhNGI1M2ExN2Q2ZjM3YTNlZTZmYzZiOGMxMDdmMWRhOGYyOGY3YyJ9"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L225-L235",
+          "version": "repo-lines-v1:sha256:6bf61a575a85f9dd282edb1ad06cb821764b5a12111e3873438fbbd23c5a1863:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxM2M3MGEzN2M1N2NmYTA0YjNkYTU5ZWNjOWQxODEyMGIzN2UyY2RkNGExZjU0NTgwYjE5M2MxYmM1MWRlMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MTgwODBmMWUxOGMwNWUwM2E5YTU2Yjk0OWVjZmRkNDEzYzFmZGE2YWU4YTQ0ZDFiYmYwN2Y3ODM1YjVhZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMGZiMWJlMDlmOTYyOGU1MTkwNzE4YWEyZmNmNzRjNWIwZjRjNjJhYWZjMzVhNDkyNzBhZThiZDkzMWM1ZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e02f1f2ad84240a087151a0909c827bf",
+      "statement": "A blocking relationship is a directed edge between two items in the same repository and is readable in both directions: `dep N --blocked-by M` and `dep M --blocks N` record the same edge from either end, and `show` reports `blocked by` and `blocks` separately, so what is waiting on an item is answerable without walking the graph by hand.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/backlog.mjs#L782-L812",
+          "version": "repo-lines-v1:sha256:ecc726be3c79aac0b29cd40a6663f25df6511802ec0fbf6a8e6d3b260149cdef:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0OThlMWE5MTc5MjU2YTZhYTVjYWUzZTk2OWZiYzYwYjlmMGEyODBiZDI2NjYyMzMxYmI1NzlkNjU2YTEyNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYzg5NzE4M2NkZWRkNmYyNTU5NWYyMzA2NzE3Nzg3M2Y3YTUxN2I4ZTAxNjllODFhNjNiODM1NDEzZjM4MzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNzhkZDJhOTc5ZDQ3MzkwZmEwMjI4ZDk2NWE0NWM0NTE3Y2U1M2JiNzY4MzU3NjU1Yzk3ZTUxYzg1NTYwZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZDBlMWRkYWRkOThkYjYwYTNjNGZiNTA4NjlmNzU2MGZiMTY5YmQ4NTdjMzI2MDJlOWMyMjE4YTMxMDVkYjYifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/data-model.md#L75-L85",
+          "version": "repo-lines-v1:sha256:70fc21225fe46381bd587db04594fccd1b907cfceb5e655942a848ab4f9ac478:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYTdmNWI5OTFiNTE0NmUwNDAyMmRkMWY0NmMwMWM3N2FlMWRlYmIyODc2MjBhMmVmMzAxZjRkOTgyZjdmYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1M2JjM2M2ZmRjNDM4ODA5NGJmMzM5YzVlNmIyODIzOWQzMzA5MmUwZWJlNGQxNGFmYWJiZWQ4NWEyNTdlYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9f903aa93124427a9fa56e5532e718ca",
+      "statement": "`/speckit-taskstoissues` is the one caller that writes many items in a session: it files one item per task with `create --body-file`, encodes the task ordering as blocking edges, and needs `setup-milestone` first — but the fan-out is optional, because `tasks.md` remains the authoritative in-feature decomposition and the primary flow runs the other way, with backlog items feeding `/speckit-specify`.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/speckit-taskstoissues/SKILL.md#L62-L89",
+          "version": "repo-lines-v1:sha256:75fc6a00e5f8c8882e9ec056066640a23462070a1453a109bd8b79af9a14434c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiYjdlNjM3OTI2OTk0YmJjOWM4OWFiZDU4YjRmYzAwYjk1MDNhZjhjY2FjZTNhNTYxNjc5MGVmYmQxYTI2ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNWQxYjBhYjkwZWRjNDlmMjM1YjFhMDNmMWE0NWViYTdlNjMxMjA5NDE0ZGI3MjZmNjAyYWFhY2JhNGNjNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0YzAzYzZlNGE4NzBmOTRlNzljZWE3NTVhODY1OTMwOTc1ZDM0ZGVjMTI4YjQyODgzOWEyMDEwMjM0ZWUyYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMmJiOTViMTUxZjQ4YjFlMDBkYzllY2M3MGUzMzEyODA5M2YwNzAyOTY4OGM4MzUxNjJhOWY0NGQzMjM5MWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b71efdb01de048c2a0f146887bb73248",
+      "statement": "Responsibility split: `scripts/backlog.mjs` carries what must be right every time, the decision rules for *when* to file, close or label live in `.claude/skills/forgejo-issues/SKILL.md`, and the full flag reference, exit codes and measured quirks live in the script's `--help` — deliberately kept out of the skill so the skill stays inside its token budget.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/forgejo-issues/SKILL.md#L8-L11",
+          "version": "repo-lines-v1:sha256:bbf9218b7b85f8e880f064cf07ea37b552d7e0b3cd3be1fd4632a7c2d9e5b010:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE4NjY2NGU1MTg5YTNlMDVlMDBlZDY5ZTM2ZDA1NTNmMTE1OGEwMjljMzA4YmYyY2U0MWM1YjdkOThiY2YwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjYyYmY1MTNlZmI4YWY5NGJlOWI2ZGIwZDM5M2JjZWYzMzA3NGUwMWRjMWEzNGNkMGQ4YzRjOGQ3MTUxMzFlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTM5NGQxMzE2YzQ2ZjhkZmU0Y2UzMWZiMmNiMGU4YTAxZWFjM2I2ZTQ5NmM4NDQwOWU0ZDQyMjJmODJkODZkNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgyNjM1NzI0ZTNiZjg2MDhjYTVhZDAyYmYwOTE2Njc2OGE1MTIwYTdjNzk2NzcwYzNkODRkMTIyZDcyZWFlOSJ9"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L1-L8",
+          "version": "repo-lines-v1:sha256:01f3ff92b0b683f52266090209e4bb16038525683bade69245af78bb646f9c67:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU5YzQ3ODcyYjcxZjEyNTg5OTQyODkyNDY0ZTc2NGMwZGIzNTBjMjBiNzIyMjg2NDU2MTVjYzM2ZTBhMDcyNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzg5YTY2ZDkwZDA0ZmU4YjFmOGM4MDY1NmE1Y2JlODdjOTBiYmI0MGRhNTVlYmI4NDFhYjJmZDFmODQ5OTVkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmY5NjBkZTM0YmY5ODEwYzc3MDI1Yzc5ZWZlZDE0Mzk2OTQ1OTYwYTk5NjUwYTE0MDNmMzI4NzE3ZjM3YTFkMSJ9"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/contracts/backlog-cli.md#L106-L109",
+          "version": "repo-lines-v1:sha256:203f9e83e6efa471fa18f0bd3557360951704471bb323e2f176f6c0f14a9af4e:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTM3YmJlZDk4ZDk0ZjI5YjRlNmNkYjFiYTBiNzczMWU4M2Q4MmNhYzZmNTcwMjBmYjZmNDE1N2NmMWRkM2EzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWMxZTkxZWIxYzkxMjMyMzIyOWQ2ODU4NDY1ZDRjODEwYWFiMDFmYWY2ZjY5MjkxZmMyOTRkZDRmMjI4ZTI1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWJjZjQ1MmI5MzVhNjI3ZjRjNjk3NjVhNzM0NjRmNzE0YWE5MTBjZmY3Y2ExOGZiMzY1MDgxNmU5ZGVjYTM1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGE1YWM3MDYzMzcyNmViZjNlZjdjYWE4MWM2NTlkMGZhNjM4ZDA4OTAwOTlkMjAzZGUyNzYyZGRmZGFiYWUyYiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-30T10:57:51.938Z"
+    "at": "2026-09-30T11:51:40.481Z"
   }
 }
