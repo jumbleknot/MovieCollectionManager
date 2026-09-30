@@ -151,3 +151,16 @@ test('a stray OPENWIKI_PROVIDER in the caller\'s env cannot override the resolve
   assert.equal(child.OPENWIKI_PROVIDER, 'fireworks');
   assert.equal(child.OPENWIKI_MODEL_ID, 'accounts/fireworks/models/deepseek-v4p1-flash');
 });
+
+// ── a hung request must not eat the job (item #613) ─────────────────────────────────────────────
+
+test('the generator gets an explicit, small provider retry count unless the operator set one', () => {
+  // openwiki gives an OpenAI-compatible provider (Fireworks) no request timeout, so the OpenAI SDK's
+  // 10-minute default applies, and at page concurrency > 1 it retries 5 times: one request that is
+  // accepted but never answered is ~60 silent minutes — the whole job. Measured 2026-09-30, runs
+  // 4385 and 4386, both killed at the job timeout with no record. Two retries bound it at ~30.
+  const child = buildGeneratorEnv({ MCM_WIKI_PROVIDER: 'fireworks', FIREWORKS_API_KEY: 'fw' });
+  assert.equal(child.OPENWIKI_PROVIDER_RETRY_ATTEMPTS, '2');
+  const overridden = buildGeneratorEnv({ MCM_WIKI_PROVIDER: 'fireworks', FIREWORKS_API_KEY: 'fw', OPENWIKI_PROVIDER_RETRY_ATTEMPTS: '4' });
+  assert.equal(overridden.OPENWIKI_PROVIDER_RETRY_ATTEMPTS, '4', 'an explicit operator value wins');
+});

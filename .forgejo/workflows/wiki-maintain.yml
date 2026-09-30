@@ -68,6 +68,16 @@ jobs:
     # 60 is the operator-approved hold on the one shared runner; raising it is a decision.
     timeout-minutes: 60
     steps:
+      # FIRST, before the debounce sleep and setup that count against the same timeout (item #613).
+      # wiki-maintain runs the generator under this deadline (minus a reserve for verify, publish and
+      # the record commit), so a hung model request ends as a failed slice WITH a committed run
+      # record — instead of the platform killing the job with nothing recorded (runs 4385/4386).
+      # The minutes MUST equal timeout-minutes; wiki-maintain.guard.test.mjs asserts it.
+      # ci-log-step-exempt: this step runs BEFORE Checkout, so scripts/ci-log-step.sh does not exist
+      # yet; it is a single arithmetic echo into $GITHUB_ENV with no output to capture.
+      - name: Record the job deadline
+        run: echo "WIKI_JOB_DEADLINE=$(( $(date +%s) + 60 * 60 ))" >> "$GITHUB_ENV"
+
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

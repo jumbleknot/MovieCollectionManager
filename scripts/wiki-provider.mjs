@@ -107,6 +107,8 @@ export function resolveWikiProvider(env = process.env) {
  * every OTHER provider's credential removed. Throws — naming the accepted variables, never a value —
  * when the chosen provider has no credential.
  */
+export const GENERATOR_RETRY_ATTEMPTS = 2;
+
 export function buildGeneratorEnv(env = process.env) {
   const resolved = resolveWikiProvider(env);
   const { accepted, mapTo } = resolved.credential;
@@ -126,5 +128,11 @@ export function buildGeneratorEnv(env = process.env) {
   child.OPENWIKI_MODEL_ID = resolved.modelId;
   child.OPENWIKI_PAGE_CONCURRENCY = String(resolved.pageConcurrency);
   if (resolved.tier) child[TIER] = resolved.tier;
+  // Item #613. openwiki gives an OpenAI-compatible provider (Fireworks) no request timeout, so the
+  // OpenAI SDK's 10-minute default applies; at page concurrency > 1 openwiki retries 5 times. One
+  // request that is accepted and never answered was therefore ~60 silent minutes — the whole job
+  // (runs 4385/4386, 2026-09-30). Two retries bound it at ~30 and still absorb a rate-limit burst.
+  // An explicit operator value wins.
+  if (!env.OPENWIKI_PROVIDER_RETRY_ATTEMPTS) child.OPENWIKI_PROVIDER_RETRY_ATTEMPTS = String(GENERATOR_RETRY_ATTEMPTS);
   return child;
 }

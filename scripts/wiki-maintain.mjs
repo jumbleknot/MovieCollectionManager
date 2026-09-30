@@ -1465,10 +1465,46 @@ export function generatorEnv(runMessage, env = process.env, { usageLog = null } 
   return { ...env, [RUN_MESSAGE_ENV]: runMessage, ...(usageLog ? { WIKI_USAGE_LOG: usageLog } : {}) };
 }
 
-function defaultInvoke(slice, { root, usageLog = null }) {
+// ── the job deadline (item #613) ────────────────────────────────────────────────────────────────
+//
+// A generator that hangs — a model request accepted and never answered — used to run until the CI
+// job timeout killed everything: no run record, no digest, no cost line (runs 4290, 4385, 4386). The
+// workflow's first step records WIKI_JOB_DEADLINE; each invocation gets the time left minus a reserve
+// for verification, publishing and the record commit, and runs under GNU `timeout`, which signals the
+// whole PROCESS GROUP. That matters: nx spawns openwiki as a grandchild, and a plain spawnSync timeout
+// kills only nx and leaves openwiki running and writing into the tree being verified (measured).
+// It relies on nx NOT using a pseudo-terminal, which puts the child in a new session outside the
+// group: nx 22 uses one only when stdout is a TTY (PseudoTerminal.isSupported). In CI stdout is a
+// pipe (ci-log-step), and WIKI_JOB_DEADLINE — the only thing that turns the wrapper on — is set only
+// by the workflow, so an interactive local run is never wrapped.
+
+/** Kept back from the deadline for verify, publish, the run-record commit and the digest. */
+export const DEADLINE_RESERVE_MS = 8 * 60_000;
+/** Below this, starting a generator is paying for work that cannot finish. */
+export const MIN_GENERATOR_MS = 5 * 60_000;
+
+/** The generator argv, wrapped in `timeout` when there is a time limit. */
+export function deadlineCommand(timeoutMs) {
+  if (timeoutMs === null || timeoutMs === undefined) return generatorCommand();
+  return ['timeout', '--kill-after=60s', `${Math.floor(timeoutMs / 1000)}s`, ...generatorCommand()];
+}
+
+/** WIKI_JOB_DEADLINE (epoch seconds) as epoch ms, or null when unset. Malformed is an error, never ignored. */
+export function jobDeadlineMs(env = process.env) {
+  const raw = env.WIKI_JOB_DEADLINE;
+  if (raw === undefined || raw === '') return null;
+  if (!/^\d+$/.test(raw.trim())) throw new Error(`WIKI_JOB_DEADLINE must be epoch seconds, got ${JSON.stringify(raw)}`);
+  return Number(raw.trim()) * 1000;
+}
+
+function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null }) {
   const message = slice.runMessage ?? renderRunMessage(slice);
-  const [cmd, ...args] = generatorCommand();
-  return spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog }) });
+  const [cmd, ...args] = deadlineCommand(timeoutMs);
+  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog }) });
+  if (timeoutMs !== null && (r.status === 124 || r.status === 137)) {
+    console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s — a hung model request, most likely (#613). The slice fails; the run still records itself.`);
+  }
+  return r;
 }
 
 const PRICE_TABLE = join(REPO_ROOT, 'scripts', 'wiki-provider-prices.json');
@@ -1524,8 +1560,11 @@ export function executeSlices({
   clock = () => Date.now(),
   now = () => new Date().toISOString(),
   usage = defaultUsageContext(),
+  deadlineMs = null,
 } = {}) {
   const runRecord = record ?? readRunRecord(root);
+  // Time the generator may still use, or null when there is no deadline (local runs).
+  const generatorAllowance = () => (deadlineMs === null ? null : deadlineMs - clock() - DEADLINE_RESERVE_MS);
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const started = clock();
   const elapsed = () => Math.round((clock() - started) / 1000);
@@ -1570,7 +1609,12 @@ export function executeSlices({
     // Budgets are checked BETWEEN slices, never inside one: interrupting a slice mid-generation would
     // leave a half-written area, which is a conformance failure rather than a saving. The overshoot is
     // therefore bounded at one slice — the declared effective ceiling in the header comment.
-    if (i > 0 && (pagesWritten >= pageBudget || elapsed() >= timeBudgetSeconds)) {
+    const allowance = generatorAllowance();
+    if ((i > 0 && (pagesWritten >= pageBudget || elapsed() >= timeBudgetSeconds))
+      || (allowance !== null && allowance < MIN_GENERATOR_MS)) {
+      if (allowance !== null && allowance < MIN_GENERATOR_MS) {
+        console.error(`[wiki-maintain] ${Math.max(0, Math.floor(allowance / 60_000))} min left before the job deadline's reserve — not starting a generator that cannot finish; carried forward (#613).`);
+      }
       stoppedAtBudget = true;
       backlog.push(...remainingParts(i));
       deferred.push(...remainingParts(i));
@@ -1624,7 +1668,9 @@ export function executeSlices({
     for (let attempt = 1; attempt <= attemptsPerSlice; attempt++) {
       attempts = attempt;
       try {
-        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog });
+        const timeoutMs = generatorAllowance();
+        if (timeoutMs !== null && timeoutMs < MIN_GENERATOR_MS) break;
+        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog, timeoutMs });
       } catch (err) {
         // A thrown invocation is a real failure — but it is NOT `nothing-to-do` (FR-017).
         invocation = { error: err.message };
@@ -2270,8 +2316,16 @@ async function main(argv) {
       });
     }
 
+    let deadlineMs;
+    try {
+      deadlineMs = jobDeadlineMs(process.env);
+    } catch (err) {
+      console.error(`[wiki-maintain] ${err.message}`);
+      return 2;
+    }
     const recordBefore = readRunRecord(REPO_ROOT);
     const result = executeSlices({
+      deadlineMs,
       root: REPO_ROOT,
       slices: plan.slices,
       policy,
