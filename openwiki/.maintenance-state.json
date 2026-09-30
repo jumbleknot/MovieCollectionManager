@@ -1,8 +1,34 @@
 {
   "coveredCommit": "da2db8b951d621bdd129ef423cdb0a71aed1da69",
   "coveredAt": "2026-09-30T00:54:55.336Z",
-  "lastOutcome": "completed",
-  "backlog": [],
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "sast.md",
+        "keycloak.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: infrastructure-as-code/docker/keycloak/README.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md; openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "backlog.md",
+        "sast-scanning.md",
+        "wiki-maintenance.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/backlog.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/wiki-maintenance.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backlog.md; openwiki/runbooks/sast-scanning.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 622,
@@ -24,23 +50,23 @@
     "updatedAt": "2026-09-30T00:54:55.804Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 1331,
+    "pagesWritten": 0,
+    "elapsedSeconds": 760,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 97,
+    "calls": 35,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 341409,
-    "cached": 9762886,
+    "uncached": 166932,
+    "cached": 3298168,
     "cacheWrite": 0,
-    "output": 146351,
-    "reasoning": 110925,
-    "ms": 1130573,
-    "estCostUsd": 0.24,
+    "output": 64154,
+    "reasoning": 39367,
+    "ms": 682408,
+    "estCostUsd": 0.1022,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
