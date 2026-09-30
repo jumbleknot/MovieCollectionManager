@@ -5,9 +5,6 @@ description: The derived summary of how the openwiki/ bundle is planned, generat
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 openwiki_generated: true
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-30T11:51:40.481Z
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
@@ -77,16 +74,17 @@ stateDiagram-v2
     Preflight --> BadUsage: provider error, exit 2
     Preflight --> Invocation: minimal call answered
     Invocation --> Verify: pages counted from the working tree
-    Verify --> Proposal: every slice verified
+    Verify --> Proposal: any page landed, whatever the outcome
     Verify --> StoppedAtBudget: deadline passed, work remains
-    StoppedAtBudget --> [*]: exit 3 is not a failure
+    StoppedAtBudget --> Proposal: pages that landed are still proposed (exit 3, not a failure)
     Verify --> Retry: slice failed, attempts remain
     Retry --> Verify
     Retry --> Backlog: 3 attempts used
     Verify --> Backlog: slice failed
     Verify --> StoppedAtFailureLimit: two consecutive slices failed
     StoppedAtFailureLimit --> [*]: exit 1 and the run looks broken
-    Backlog --> [*]: marker holds, a later run retries
+    Backlog --> Invocation: the run continues with the next slice
+    Backlog --> [*]: no slice left; the failed work waits for a later run
     Proposal --> PublishFailed: push or forge call refused
     PublishFailed --> [*]: exit 1, marker held and the slices are back in the backlog
     Proposal --> [*]: one proposal created or updated
@@ -95,8 +93,9 @@ stateDiagram-v2
 ```
 
 The states a maintenance run moves through: planning is free, the preflight is the first act that costs
-anything, a failing slice is retried and then returned to the committed backlog, and either budget stop —
-the wall clock or two consecutive failures — ends the run with the remainder carried forward. A run that
+anything, a failing slice is retried and then returned to the committed backlog, and a budget stop — pages
+or wall clock — ends the run with the remainder carried forward (exit 3), while two consecutive slice
+failures end it as a failure (exit 1). A run that
 generated pages but could not get them onto a proposal undoes the marker advance rather than certifying
 work that only exists on a runner about to be thrown away.
 

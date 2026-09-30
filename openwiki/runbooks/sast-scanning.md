@@ -5,9 +5,6 @@ description: Keyless, config-as-code static application security testing (Semgre
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.6.0", at: "2026-09-30T11:51:40.481Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-30T11:51:40.481Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -67,8 +64,8 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   `uv.lock` is not registered in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`) — adding a project without
   registering it produces a hard error, not a silent omission; (2) `assertPipAuditAllowlistShape` fails
   the scan if an anchored `locationPattern` (leading `^`) names a surface that does not exist in
-  `PYTHON_SURFACES` — a dead anchor can never match and would silently suppress a real regression once
-  one was written. Drop the leading `^` only when you deliberately mean the suppression to span every
+  `PYTHON_SURFACES` — a dead anchor can never match, so it suppresses nothing: a real finding would
+  still block, and the failure exists so nobody believes a suppression is in force when it is not. Drop the leading `^` only when you deliberately mean the suppression to span every
   Python surface. **Adding a new Python project?** Register it in `PYTHON_SURFACES` and add a `uv sync`
   step to the `sast` CI job.
 - **Keyless and fail-closed.** All advisory data (Semgrep registry, RustSec, npm advisories, OSV) is

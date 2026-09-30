@@ -52,9 +52,7 @@ sources:
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
 generated: { by: "openwiki/0.6.0", at: "2026-09-30T10:57:51.938Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-30T10:57:51.938Z
+
 ---
 
 # SAST & SCA static security scanning
@@ -318,8 +316,8 @@ a scan that happened to pass.
   `uv.lock` is not registered in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`) — adding a project without
   registering it produces a hard error, not a silent omission; (2) `assertPipAuditAllowlistShape` fails
   the scan if an anchored `locationPattern` (leading `^`) names a surface that does not exist in
-  `PYTHON_SURFACES` — a dead anchor can never match and would silently suppress a real regression once
-  one was written. Drop the leading `^` only when you deliberately mean the suppression to span every
+  `PYTHON_SURFACES` — a dead anchor can never match, so it suppresses nothing: a real finding would
+  still block, and the failure exists so nobody believes a suppression is in force when it is not. Drop the leading `^` only when you deliberately mean the suppression to span every
   Python surface. **Adding a new Python project?** Register it in `PYTHON_SURFACES` and add a `uv sync`
   step to the `sast` CI job.
 

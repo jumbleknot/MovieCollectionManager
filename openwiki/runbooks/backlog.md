@@ -4,9 +4,6 @@ title: The agent-driven backlog (Forgejo Issues)
 description: How the MCM backlog lives in the repository's own Forgejo tracker and is worked by the coding assistant through scripts/backlog.mjs — the credential whose reach is bounded by a client-side write guard rather than by its scope, the measured API traps that make a filter fail open, and why a present status/blocked label wins over the dependency graph.
 resource: docs/runbooks/backlog.md
 tags: [backlog, forgejo, issues, tooling, runbook]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-30T11:51:40.481Z
 sources:
   - id: openwiki-source-5d36302c890471f584e749ee
     resource: repo://.claude/skills/forgejo-issues/SKILL.md
@@ -112,8 +109,8 @@ consulted only for the items that survive it.
   as "matched everything". The tooling resolves every label and milestone name against the repository
   first and refuses an unknown one locally. With a real label the filter is correct and fails closed, and
   multiple label values are AND, not OR (measured 2026-08-08).
-- **`q` fails closed while `labels` fails open**, and that inconsistency is what makes a label typo
-  trustworthy: in the same measured run `q=zzz-nonexistent` returned 0 rows because `q` *is* honoured
+- **`q` fails closed while `labels` fails open**, and that inconsistency is what makes a label typo easy
+  to **trust wrongly**: in the same measured run `q=zzz-nonexistent` returned 0 rows because `q` *is* honoured
   server-side, while `labels=no-such-label` returned the whole repository. Resolving the name locally,
   rather than re-filtering after the fetch, is the only form that surfaces the typo instead of masking it.
 - **Pull requests are issues internally**, so a listing without `type=issues` returns them too — 143 rows
