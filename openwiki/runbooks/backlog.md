@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: The agent-driven backlog (Forgejo Issues)
-description: How the MCM backlog lives in the repository's own Forgejo tracker and is worked by the coding assistant through scripts/backlog.mjs — the credential whose reach is bounded by a client-side write guard rather than by its scope, and the measured API traps that make a filter fail open.
+description: How the MCM backlog lives in the repository's own Forgejo tracker and is worked by the coding assistant through scripts/backlog.mjs — the credential whose reach is bounded by a client-side write guard rather than by its scope, the measured API traps that make a filter fail open, and why a present status/blocked label wins over the dependency graph.
 resource: docs/runbooks/backlog.md
 tags: [backlog, forgejo, issues, tooling, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-30T00:32:49.304Z
+    at: 2026-09-30T10:57:51.938Z
 sources:
   - id: openwiki-source-5d36302c890471f584e749ee
     resource: repo://.claude/skills/forgejo-issues/SKILL.md
@@ -34,7 +34,7 @@ sources:
     resource: repo://specs/049-forgejo-issue-tracking/research.md
   - id: openwiki-source-677c64386096dcc92b809d21
     resource: repo://specs/049-forgejo-issue-tracking/spec.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-30T00:32:49.304Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-30T10:57:51.938Z" }
 ---
 
 # The agent-driven backlog (Forgejo Issues)
@@ -42,7 +42,10 @@ generated: { by: "openwiki/0.6.0", at: "2026-09-30T00:32:49.304Z" }
 The backlog is the repository's own Forgejo issue tracker. The operator works it in the web UI; the
 coding assistant works it with `scripts/backlog.mjs` from inside the dev container. There is no second
 source of truth — `tasks.md` stays the *in-feature* decomposition, the tracker is the *cross-feature*
-backlog, and a backlog item is an **input** to `/speckit-specify` rather than a replacement for it.
+backlog, and a backlog item is an **input** to `/speckit-specify` rather than a replacement for it. That
+is not a mandatory gateway: small `type/chore` and small `type/bug` items may be implemented directly
+where the SDD gate permits, and only anything larger is marked `status/needs-spec` and sent through the
+full spec → plan → tasks lifecycle.
 
 No backlog operation produces a commit, branch, pull request or CI run: issue changes are HTTP calls, so
 a one-line backlog edit costs nothing. Ten labels (`type/*`, `priority/*`, `status/*`) carry the
@@ -62,6 +65,23 @@ stateDiagram-v2
 ```
 
 Open, blocked and closed backlog state, and the closure rule the forge enforces server-side.
+
+## How `ready` decides
+
+```mermaid
+flowchart TD
+    A["list open items, one page of at most 50 rows"] --> B{"bot-managed label present?"}
+    B -- yes --> X["excluded from ready"]
+    B -- no --> C{"blocked label present?"}
+    C -- yes --> Y["excluded, no graph call, no warning"]
+    C -- no --> D["fetch blockers for the survivors, concurrency 4"]
+    D --> E{"any blocker still open?"}
+    E -- yes --> W["excluded, with a warning naming the item"]
+    E -- no --> R["ready, ordered by priority then item number"]
+```
+
+Ready-work selection: the label is a pre-filter that wins when it is present, and the dependency graph is
+consulted only for the items that survive it.
 
 ## Gotchas
 
@@ -105,18 +125,21 @@ Open, blocked and closed backlog state, and the closure rule the forge enforces 
   needs `{owner, repo, index}`** — a bare `{index}` answers 404 `IsErrRepoNotExist`, naming the repository
   rather than the missing fields. A dependency cycle is refused before the call, because every item in one
   becomes permanently uncloseable.
-- **`status/blocked` is a hint; the dependency graph is the authority.** Ready-work selection drops an item
-  when the label says blocked or when a blocker is still open, and where the two disagree it prints a
-  warning naming the item and lets the graph win — the label is never silently corrected, because a label
-  quietly diverging from the graph is how the state forks.
+- **`status/blocked` is a hint in principle, but a PRESENT label wins in `ready`.** The graph is fetched
+  only for the items that survive the label pre-filter, so for a labelled item it is never consulted and
+  the label alone decides: a **stale** `status/blocked` label silently hides an item and prints **no
+  warning at all**. The graph decides only for unlabelled items, and that is the single case the tool
+  warns about — an unlabelled item with an open blocker. When an item unexpectedly vanishes from `ready`,
+  look for a leftover label with `list --label status/blocked`. The label is never silently corrected,
+  because a label quietly diverging from the graph is how the state forks.
 - **`status/needs-spec` is the bridge into the SDD lifecycle.** It means the item is too large to implement
   directly and needs `specs/NNN-*/` spec → plan → tasks first; applying the label *is* the instruction, not
   a prelude to starting to code. See [spec-driven development](../process/spec-driven-development.md).
 - **A milestone must exist before it can be used**, which is why `setup-milestone NNN-slug` is what makes
   `create --milestone` usable at all — an unknown milestone name is refused locally, for the same reason a
   label is. No milestone is not an error; it is the free backlog, and the normal case.
-- **The issue form only takes effect from the default branch**, so `validate-form` reports "not configured
-  yet" on a feature branch — expected, not broken.
+- **The issue form only takes effect from the default branch**, so on a feature branch `validate-form`
+  reports that no issue form is in effect — expected, not broken.
 - **`validate-form` decides from the ENUMERATED templates, not from the validator.**
   `issue_config/validate` answers `{"valid": true}` on a repository with zero forms — it validates the issue
   *config*, not the YAML — so treating it as a form parser would have reported a healthy form on a

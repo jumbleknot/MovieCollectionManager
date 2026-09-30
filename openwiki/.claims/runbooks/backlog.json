@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2451de050d05d71d1046846e153271b8e7c5d285ca1f04217cdd42f518ba3c51",
+  "pageVersion": "sha256:0cddf67547ac10988af7e7873b271b4f619d432339130f80b690d20a11905d02",
   "claims": [
     {
       "id": "claim_b05bc8293a19453abeaacbb08d9ed745",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.claude/skills/forgejo-issues/SKILL.md",
-          "version": "repo-file-v1:sha256:94e11b0d15dbf3a34b492db121a1ceca311f3818f97b46a33e766e08ad04121a"
+          "version": "repo-file-v1:sha256:d2c8b43625bec030c8a1079818b91207513a70e86cab48f45102807c1b21b447"
         },
         {
           "resource": "repo://specs/049-forgejo-issue-tracking/spec.md#L386-L412",
@@ -256,7 +256,7 @@
       "evidence": [
         {
           "resource": "repo://.claude/skills/forgejo-issues/SKILL.md#L49-L64",
-          "version": "repo-lines-v1:sha256:4323c8839ca80dd058571b509b6e9d2c8d43cb1cf8dd26742be6ee13a6fb74fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMDQzOGZkOWU3YWZhYTQwODkyMGY3MzgyMGUxMmI2Yjg4YjQ4OTMzMjE5NGMwNTUwNDRlYmVjMWI3YTI0NjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZTgzYThiMGNkNThlZWMwMzEyOWFmMTM3ZDdhY2Y3Y2IwZGM2NzI5YTc3ODE4OWUyZjFlOGFhMGEyZTU4YzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MWU2ZDJkOWZiOTU5ODM3MGUxOTAzYjg4MmJjN2JkYTVmYThhYjE2Y2Y0M2I0NzViMGEwNDQ3MWU0NzhkOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0NDZhNzUwYWQ2NGYzMGM4NzczMDZlMWY3YTViY2YzMjY4MjNmMWExMmYwODMwZjlkOWRiNTVhODBkM2I1NjcifQ"
+          "version": "repo-lines-v1:sha256:2ce2e6c682f73248307469e0a6149b0dd80631d10f4666ab06c91d86ec46a4bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMDQzOGZkOWU3YWZhYTQwODkyMGY3MzgyMGUxMmI2Yjg4YjQ4OTMzMjE5NGMwNTUwNDRlYmVjMWI3YTI0NjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZTgzYThiMGNkNThlZWMwMzEyOWFmMTM3ZDdhY2Y3Y2IwZGM2NzI5YTc3ODE4OWUyZjFlOGFhMGEyZTU4YzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MWU2ZDJkOWZiOTU5ODM3MGUxOTAzYjg4MmJjN2JkYTVmYThhYjE2Y2Y0M2I0NzViMGEwNDQ3MWU0NzhkOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0NDZhNzUwYWQ2NGYzMGM4NzczMDZlMWY3YTViY2YzMjY4MjNmMWExMmYwODMwZjlkOWRiNTVhODBkM2I1NjcifQ"
         },
         {
           "resource": "repo://specs/049-forgejo-issue-tracking/data-model.md#L53-L55",
@@ -507,10 +507,52 @@
           "version": "repo-lines-v1:sha256:0054edee8c39160880bf6b7fbbca53a8b6c18c106789ec131674af63572463f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyNGE5ZGEwMjkyOGVkY2VkMDI4OTQ5YzA2OWEyYWZiOWZiMmE2NjYzNzA1YTMxOTJmNGFkZTNhYTNkOGNjNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxZjNmZjY3NGZiYmRjNjViZDE4Y2UxZTNhMzFjNDcyMWZkNzgyYTExMzY3OTcwMjY5MGViNzU4MTk1ODM3NzYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_ac74dff08f7d438b911a0569bed2d9f7",
+      "statement": "In `ready`, `status/blocked` is a cheap pre-filter that WINS whenever it is present: the dependency graph is fetched only for the items that survive the label filter, so a labelled item is excluded with no graph call and no warning at all, and a stale `status/blocked` label therefore silently hides an item. The dependency graph decides only for unlabelled items — the single warning case is an unlabelled item with an open blocker — and the label is never silently corrected, because a label quietly diverging from the graph is how the state forks.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/forgejo-issues/SKILL.md#L53-L54",
+          "version": "repo-lines-v1:sha256:a4cae83f3e774c4e1ef70dac458ea95aa59412109df7851c86811586fe5355ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2YwYmIwNzA5MTMyM2QzNWI0NDIyOWFhNmY2MTk3MDgyNzIxZWExMWYxNzg3MzQ4MGUwMmY3MTc0ZjM5MDc3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjllY2NiYzk5OTE0OTA1YmJlNTc0OWNiZjdhNjE2NDJmYmZiNzkzMmNjMTYwNDhjNTkyNzE0NTc5ZDlkODFkOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTk1MjljMjA0MzZjMWI0MGY1ZjRlZWZmYjliZWRjMjgxMDkzNTdjMmQ1NzJmZDQ3NjYyNjc0OThlZjkyMzhiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QwYjRhZGIyZjQ1MDgyZmFkYzdlNDI4M2VlMDRhMmJlYjJmOTM1YzM0MWQ1YjNiNWI1MDMwNTY5ZWI5YjY0NiJ9"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L300-L339",
+          "version": "repo-lines-v1:sha256:2c6445273f4bb70ae34f6936f49d3021daca6b309eed09ae22ccee143c73f335:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiOTkyZDE3ZDc4NTVkZWE2NmVmMmU5NmYxMGI1NzIzNWRiNzk0MDU4MGE2MzM3ZTJlODBhZTYxNTBmM2E3OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1ZDI1MzViMTU0ODlmMWZmZWFkNjE0YmQzNjMwNjI5ZmM5MzliZDA1ZDVmYzgzODA3NDYxZjBlY2VkZGEwYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxY2QxMTBmODEwOTkwYjcyMWU1YTRhZGUyZTE3M2JjYTQ1OGE2YmYyNDYxMGQ5ZGVhMDNkYWMyOTkxODZmNWQifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L646-L656",
+          "version": "repo-lines-v1:sha256:80cc521b1c9206afccd8d2d8e3ac000f1b7fd131578a3a3d05c5b437d4000087:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlOTQ2N2MzZDZkZGIxOGI0ZjczN2Y1ZTNiMDg2ODkzYjNjYWRjNzExYWRmNWQwNjVmMTZjNmI2YTU3YjJiYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YzcyZjNiZWFiZDlhYmY5MTRkMmZhODIwZjBjYWQ2ZGM4NWU1YjFiMzQ5MDExOTYyYThhZTk2OTgxN2M0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzMTkwYjgzNmNmNDlhM2FiZTJkZjA5NjNhOTM1OTI1NmQ2MzE2NzExYzk1ZjY5NWE1ZDVkOGZlZGY1NTFlN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyYjIwYjk2YzA5NWQ5ZmNmZDY1NjQ5NjQyMmQ3ODUxMGY5YTJmZjg0OTRiMWQxNGYyY2MyODAyM2M4OTg3ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_07ac983a0dc7430aadabbf207f3106ac",
+      "statement": "`ready` answers \"what can I work on next\" with open items only, excluding those labelled `status/bot-managed` and those that are blocked, ordered by priority label (p1 → p3) and then by item number ascending, with unprioritised items sorting last.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L338-L380",
+          "version": "repo-lines-v1:sha256:ff00ab224b55fdc646917464202cffc111157de872e2186171dc90fd19b32ace:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YTNkOWExNzgxYTMwMDg5OTgzZGQ0OTlmOWI4MzdkMTE0NDY1NjdlNmE0M2JlYzc2ZTk4NTA5ZjhiMDI4ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYjIyNGJmYmJlMzg5Yzg1OWRlZDhiMzM5M2Y4YzIxZjdmMTk1ODk0MjllMGRmZWI0ZjE4YjE5ZDMwYmE0NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMWE2NmQ5MTMzNTQ1ODM1NWQ2OGYyZWYxNjE5NmZiMGVlNGNmZWNmY2MyMjY5NjFjOTE4ZWM5N2UyNzJjZjgifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L312-L339",
+          "version": "repo-lines-v1:sha256:920640c8c6da2d0c4632208dcb65ce7f2f30e2eef8147babdf6b787199ed81da:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MDkzYWJhN2JhZDNjNDdjNGFlMjUwOTk0YzcyNWI3MDIwMGY0NmZhYzI3Zjc0YWZkYjViNTExYzZjYWE1ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwNTdkYjAxOThkNDU2OGZlMmE1NTZjNGRlZjQ5YzIzMzg2NDQ1OTFkNWYyOTA1MTY4Y2QxZWFmYmY2ZTRkYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxY2QxMTBmODEwOTkwYjcyMWU1YTRhZGUyZTE3M2JjYTQ1OGE2YmYyNDYxMGQ5ZGVhMDNkYWMyOTkxODZmNWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a15e2cd84efa40fd97a55620db42c100",
+      "statement": "The backlog feeds the SDD lifecycle without gating every item through it: small `type/chore` and small `type/bug` items may be implemented directly where the SDD gate permits, and only work too large for that is marked `status/needs-spec` and sent through spec → plan → tasks.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/forgejo-issues/SKILL.md#L61-L65",
+          "version": "repo-lines-v1:sha256:95040f39543181f20a8b941ebdc37726222b043fd0ad0793b229b466b4a542b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIyYWVjYjFiYjIzNjdkODI3ZjBlYjBmN2Y4MjU5NDk2OTJjNjcyMGQxNWJmM2QyNWU5MTBjOWU2ZjJhMWQzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFlODNhOGIwY2Q1OGVlYzAzMTI5YWYxMzdkN2FjZjdjYjBkYzY3MjlhNzc4MTg5ZTJmMWU4YWEwYTJlNThjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjI0NDliM2ExMjM0Mzk0NDhlYWUzYzM4NmRmNDE0NzBkNDI1NTQ3YWE4MTg4Yjk5YzA3NDg5NDM5MDVmY2MyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ0NmE3NTBhZDY0ZjMwYzg3NzMwNmUxZjdhNWJjZjMyNjgyM2YxYTEyZjA4MzBmOWQ5ZGI1NWE4MGQzYjU2NyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-30T00:32:49.304Z"
+    "at": "2026-09-30T10:57:51.938Z"
   }
 }

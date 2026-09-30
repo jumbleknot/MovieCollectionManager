@@ -1,12 +1,10 @@
 ---
-type: Runbook
-title: OpenWiki knowledge-bundle maintenance
-description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — covering the offline plan vs paid execute split, slice packing and sizing, the provider as configuration (MCM_WIKI_PROVIDER → claude-sonnet-5 / DeepSeek V4.1 Flash) with its concurrency and tier knobs, the preflight, the exit-code table with exit 3 explicitly not a failure, the one-invocation-per-run budget, per-run cost recording via the usage tap, the retry-then-backlog model, the four independent slice-verification causes (a requested page missing, non-conformance V1–V16 including V16's Markdown/Claims durability, a write policy.yaml forbids, and a requested page still stale whether or not it was written — #587/#616), the one shared concept-stamp helper (scripts/openwiki-stamp.mjs) that V5, V12 and the stale check all read, V12 drift reported but never planned (#526/#587/#525), the Claims sidecars under openwiki/.claims/ and the uncover-in-the-same-commit remedy for a hand-edited covered page, the OKF v0.2 provenance migration, the generator's site-root-absolute link form and the three layers that hold the relative-link line, the AGENTS.md/CLAUDE.md managed-block parity trap, the Mermaid/jsdom silent-degradation trap, and how a lost run record self-heals against the forge.
-resource: docs/runbooks/wiki-maintenance.md
-tags: [openwiki, okf, ci, automation, runbook]
+type: "Reference"
+title: "OpenWiki knowledge-bundle maintenance"
+openwiki_generated: true
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-29T22:43:26.286Z
+    at: 2026-09-30T10:57:51.938Z
 sources:
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
@@ -42,8 +40,9 @@ sources:
     resource: repo://specs/075-llm-cost-phase-1/research.md
   - id: openwiki-source-9cd940916584e06e676df687
     resource: repo://specs/078-wiki-generator-cost/research.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T22:43:26.286Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-30T10:57:51.938Z" }
 ---
+
 
 # OpenWiki knowledge-bundle maintenance
 
@@ -84,6 +83,8 @@ stateDiagram-v2
     Verify --> StoppedAtFailureLimit: two consecutive slices failed
     StoppedAtFailureLimit --> [*]: exit 1 and the run looks broken
     Backlog --> [*]: marker holds, a later run retries
+    Proposal --> PublishFailed: push or forge call refused
+    PublishFailed --> [*]: exit 1, marker held and the slices are back in the backlog
     Proposal --> [*]: one proposal created or updated
     NothingToDo --> [*]
     BadUsage --> [*]
@@ -91,7 +92,9 @@ stateDiagram-v2
 
 The states a maintenance run moves through: planning is free, the preflight is the first act that costs
 anything, a failing slice is retried and then returned to the committed backlog, and either budget stop —
-the wall clock or two consecutive failures — ends the run with the remainder carried forward.
+the wall clock or two consecutive failures — ends the run with the remainder carried forward. A run that
+generated pages but could not get them onto a proposal undoes the marker advance rather than certifying
+work that only exists on a runner about to be thrown away.
 
 ## The provider is configuration (feature 078)
 
@@ -135,7 +138,7 @@ egress host costs one token, not a slice.
 | Code | Meaning | Is something wrong? |
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
-| `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it | **Yes** |
+| `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it — or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, a failed preflight, or a policy file that will not load | **Yes** |
 | `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
 
@@ -326,15 +329,21 @@ page concurrency shows up there first.
 - **The proposal is one long-lived branch (`openwiki-maintenance`), at most one open pull request, ever,
   and never auto-merged.** The runner is a fresh checkout, so the branch exists there only on the
   **remote**: the run checks it out from there, and only while its proposal is **open** (a closed one's
-  work went back to the backlog and is not revived). Until 2026-09-28 it looked only for a *local*
+  commits are not revived — see the #619 gap below). Until 2026-09-28 it looked only for a *local*
   branch, found none on every CI run, started from `main`, and the `--force-with-lease` push replaced
   the open proposal — measured on proposal #594, where a 4-page and then an 8-page slice were discarded
   while the run record still listed both. A run that finds it open now continues the *remote* branch,
   rebases it onto the base and appends — so a review comment's remediation commit survives every later
   update — and the push refuses outright (`pushing would discard N commit(s) from open proposal`) when
   `git cherry` shows a commit the open proposal holds that the new head lacks: a red run, never a silent
-  overwrite. Closing it without merging returns its work to the backlog and rolls
-  the marker back.
+  overwrite. Closing it without merging is *meant* to return its work to the backlog and roll the marker
+  back — without that, abandoning a proposal leaves the marker certifying work that never landed. **It
+  does not do so today (item #619):** the run computes its plan before it reconciles the proposal, so
+  the returned slices are overwritten by the run's own backlog and `markerBefore` records the
+  already-advanced marker. Until #619 is fixed, re-seed a closed proposal's pages by hand — a seed
+  change that edits `backlog` in `openwiki/.maintenance-state.json`. If the *publishing* step itself
+  fails instead (the push or the forge call), the marker is held and this run's slices go back to the
+  backlog, so nothing is certified that never reached a proposal.
 - **A reviewer must not hand-edit a page openwiki has covered — that bricks every later run.** A page
   with an entry in `openwiki/.page-manifest.json` is certified byte-for-byte by its `.claims` sidecar,
   so editing it breaks the certification and openwiki then refuses **every** later run, not just that
