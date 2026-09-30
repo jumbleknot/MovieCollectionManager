@@ -27,7 +27,9 @@ env, per surface). An unsynced surface **fails** the scan; it is never silently 
 Since feature 068 a Python finding's location is **project-qualified** —
 `mcp-servers/web-api-mcp:click@8.5.0`, not `click@8.5.0` — so an allowlist `locationPattern` can, and
 normally should, be anchored to one surface (`^mcp-servers/web-api-mcp:click@.*`). An entry anchored
-to a surface that does not exist fails the scan: it could never match. Drop the leading `^` only when
+to a surface that does not exist fails the scan: it could never match, so it would suppress
+nothing — a real finding on the intended surface would still block. The failure is there to stop you
+believing a suppression is in force when it is not. Drop the leading `^` only when
 you deliberately mean the suppression to span every Python surface.
 
 ```bash
@@ -287,11 +289,14 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
 - **You now get 14 days' notice before an expiry blocks anything.** Both gates report `EXPIRING
   SOON` / `EXPIRED` / `UNMATCHED ENTRIES` on a normal run **without changing their exit code**, and
   `--check-expiring` runs weekly in `infra-image-scan` (schedule-only, never on a pull request) and
-  fails on any of the three. The window is `WARNING_WINDOW_DAYS` in `scripts/allowlist-expiry.mjs`,
+  fails on an expiring or expired entry. For the **SAST** allowlist it cannot fail on an unmatched
+  one: that job produces no SAST report, so unmatched detection is skipped there (the script says
+  so in its log). The window is `WARNING_WINDOW_DAYS` in `scripts/allowlist-expiry.mjs`,
   the single definition both gates import. `UNMATCHED ENTRIES` is the one to read closely: it catches
   the measured trap where an entry keyed on an exact advisory id **does not expire, it just quietly
   matches nothing** once a scanner switches identifier namespace (pip-audit moving from CVE ids to
-  PYSEC aliases). Full detail in [`security/sast/README.md`](../../security/sast/README.md).
+  PYSEC aliases) — and for SAST you only see it in a normal gate run's report-only output, never
+  as a weekly failure. Full detail in [`security/sast/README.md`](../../security/sast/README.md).
 - **A rule that has gone BLIND produces the same output as a remediated one — check the error count,
   not the finding count.** A Semgrep rule it could not RUN is reported in the native output's
   `errors[]`, never in `results[]`, so it contributes zero findings and its allowlist entry lands in

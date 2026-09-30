@@ -103,7 +103,7 @@ Keycloak schema is. So a local parse check proves nothing about whether the real
 Document a realm setting **here**, not in the JSON. `scripts/__tests__/keycloak-realm-schema.test.mjs`
 fails on any `_`-prefixed key at any depth.
 
-### Why `ci-realm.json` sets `accessTokenLifespan: 5400` while `dev-realm.json` keeps `300`
+### Why `ci-realm.json` and `dev-realm.json` set `accessTokenLifespan: 5400` while `prod-realm.json` keeps `300`
 
 Feature 052. Playwright creates a fresh `BrowserContext` per test, each reloading the `storageState`
 snapshot global setup froze at the start of the run. With a 300 s token that snapshot is expired five
@@ -112,8 +112,10 @@ median interval against the BFF's per-session refresh limit of 2 per 30 s, which
 attempts and bounced those tests to the login screen. A token that outlives the job's 75-minute
 timeout removes the driver.
 
-CI only. `dev-realm.json` keeps 300 s so local development still sees realistic expiry, and production
-is untouched — no security control is relaxed. The refresh path keeps deliberate coverage:
+Feature 054 (3f30c456, item #168) extended it to `dev-realm.json`, because a local full-suite E2E run
+hit the same refresh-limit bounce: dev and CI both use 5400 s, and only `prod-realm.json` keeps 300 s.
+Production is untouched — no security control is relaxed. Local development therefore does **not** see
+realistic expiry; exercise it deliberately. The refresh path keeps deliberate coverage:
 `agent-session-refresh.spec.ts` clears the access cookie explicitly rather than waiting for expiry.
 
 ### Proving a realm edit actually imports (one minute, no CI)

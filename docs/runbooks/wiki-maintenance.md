@@ -378,16 +378,23 @@ delete its sidecar, and delete its front-matter `verified:` event. openwiki then
 review, and the correction stands until the page is next regenerated.
 
 The runner is a fresh checkout, so the branch exists there only on the remote; the run checks it out
-from there, and only while its proposal is **open** (a closed one's work went back to the backlog and
-is not revived). Until 2026-09-28 it looked only for a *local* branch, found none on every CI run,
+from there, and only while its proposal is **open** (a closed one's commits are not revived). Until 2026-09-28 it looked only for a *local* branch, found none on every CI run,
 started from `main`, and the `--force-with-lease` push replaced the open proposal — measured on
 proposal #594, where a 4-page and then an 8-page slice were discarded while the run record still
 listed both. The push now also refuses outright (`pushing would discard N commit(s) from open
 proposal`) if the open proposal holds a commit the new head does not: a red run, never a silent
 overwrite.
 
-Closing it **without merging** returns its work to the backlog and rolls the marker back. Without
-that, abandoning a proposal would leave the marker certifying work that never landed.
+Closing it **without merging** is *meant* to return its work to the backlog and roll the marker back
+— without that, abandoning a proposal leaves the marker certifying work that never landed. **It does
+not do so today (item #619):** the run plans before it reconciles, so the returned slices are
+overwritten, and `markerBefore` records the already-advanced marker. Until #619 is fixed, re-seed a
+closed proposal's pages by hand (a seed PR that edits `backlog` in `.maintenance-state.json`).
+
+**When a proposal is created or updated.** Whenever any page landed — including a run that stopped
+at its budget (exit 3) or had a failed slice (exit 1). A failed slice's work goes to the backlog, not
+the proposal, and the run carries on to the next slice; it stops early only after two consecutive
+slice failures.
 
 ### If the run record and the forge disagree, the forge wins
 
@@ -623,5 +630,5 @@ What this repository does with them today:
   rewrite, so the harness cannot break the invariant it enforces.
 - **Decision.** The operator decided on 2026-09-27 that Claims are required and valuable (item
   **#513**). The decision's details, and any gates or lifecycle rules that follow from it, are being
-  recorded under #513 — none exist yet, so do not treat a sidecar as checked by anything here beyond
-  the generator itself.
+  recorded under #513. The only gate on sidecars today is V16's durability check (above); nothing
+  checks that a sidecar's claims are *true*, so do not treat one as reviewed content.

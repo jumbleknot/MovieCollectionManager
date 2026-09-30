@@ -167,9 +167,15 @@ dedicated mode, which runs **weekly** (Friday) in `infra-image-scan` over both a
 deliberately **not** run on pull requests:
 
 ```bash
-node scripts/check-sast-findings.mjs --check-expiring        # exit 1 on any expiring/expired/unmatched entry
+node scripts/check-sast-findings.mjs --check-expiring        # exit 1 on any expiring/expired entry (see below for unmatched)
 node scripts/check-infra-image-findings.mjs --check-expiring
 ```
+
+**The weekly run cannot flag an UNMATCHED SAST entry.** It runs in `infra-image-scan`, which produces
+no SAST report; `check-sast-findings.mjs` announces the missing report and skips unmatched detection
+(it only ever evaluates scanners that produced findings). So for SAST the weekly signal is
+expiring/expired only, and an entry that quietly matches nothing — the CVE→PYSEC trap above — is
+visible solely in the report-only `UNMATCHED ENTRIES` section of a normal gate run. Read it there.
 
 The window is **14 days**, defined in exactly one place — `WARNING_WINDOW_DAYS` in
 [`scripts/allowlist-expiry.mjs`](../../scripts/allowlist-expiry.mjs) — and shared by both gates.
