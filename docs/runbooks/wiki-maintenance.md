@@ -253,7 +253,8 @@ continues where it left off.
 | | Value | Why |
 |---|---|---|
 | Page budget | 8 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`) |
-| Time budget | **4 min** | a deadline for **starting** work — an invocation or retry under way is never interrupted |
+| Time budget | **4 min** | a deadline for **starting** work — checked between invocations and retries |
+| Job deadline | 60 min − 8 | an invocation in CI is **stopped** when it would run into the last 8 minutes of the job (see below) |
 | Worst-case invocation | 30 min | 8 pages at page concurrency 4 is two waves of workers, measured ≤ 23 min |
 | Job timeout | 60 min | 15-min debounce (it sleeps **inside** the job) + setup + 4 + 30 + publishing ≈ 55, plus margin |
 
@@ -262,8 +263,23 @@ after a fast failure; everything else carries forward in the backlog. Declared e
 of generation**. The page count comes from **files that actually appeared in the working tree**, not from what the
 generator says it wrote.
 
-If a run is ever killed at `timeout-minutes` rather than stopping at its budget, the worst-case invocation estimate is
-wrong: re-measure (research R9's method) before raising the timeout, which is a decision about the shared runner.
+**The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` (the same 60 minutes as
+`timeout-minutes`, guard-tested). Each invocation then runs under GNU `timeout` with the time left minus an 8-minute
+reserve for verification, publishing and the run-record commit; a slice with under 5 minutes left is not started and
+carries forward (exit 3). A generator stopped at the deadline fails its slice, and the run **still commits its record,
+usage and digest**. Before this, a hang ran until the platform killed the job with nothing recorded — measured on runs
+4290, 4385 and 4386. `timeout` signals the whole process group, which matters because nx starts openwiki as a
+grandchild; that holds while nx uses no pseudo-terminal, which it does only when stdout is a TTY — never in CI.
+
+**Why a run hung for an hour (2026-09-30).** For an OpenAI-compatible provider (Fireworks) openwiki sets no request
+timeout, so the OpenAI SDK's **10-minute** default applies, and at page concurrency above 1 openwiki retries **5** times:
+one model request accepted and never answered was about 60 silent minutes. The generator's environment now sets
+`OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` (an explicit operator value wins), bounding that at about 30 minutes; the deadline
+above bounds the rest. A merge-triggered run also spends its first 15 minutes in the debounce, so it has about 45
+minutes, not 60 — size the work for that window.
+
+If a run is ever killed at `timeout-minutes` anyway, the deadline arithmetic is wrong: re-measure (research R9's
+method) before raising the timeout, which is a decision about the shared runner.
 
 **Neither budget is a monetary bound.** Nothing in this feature enforces a spend ceiling. Until
 feature 078 a run could not tell you what it cost — the only figure was the provider's bill, such as

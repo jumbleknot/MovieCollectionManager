@@ -1272,6 +1272,70 @@ test('normalize: a link rewrite on a Claims-verified page keeps it durable', () 
   }
 });
 
+// ── the job deadline (item #613) ────────────────────────────────────────────────────────────────
+//
+// A generator that hangs (a model request accepted and never answered) used to run until the CI job
+// timeout killed everything — no run record, no digest, no cost line (runs 4290, 4385, 4386). The
+// generator now runs under a deadline derived from the job's own, so a hang ends as a failed slice
+// and the run still records itself.
+
+test('deadline: the generator is wrapped in `timeout`, which signals the whole process group', () => {
+  assert.deepEqual(mod.deadlineCommand(null), mod.generatorCommand(), 'no deadline, no wrapper');
+  assert.deepEqual(mod.deadlineCommand(90_500), ['timeout', '--kill-after=60s', '90s', ...mod.generatorCommand()]);
+});
+
+test('deadline: `timeout` really kills a grandchild, which a plain spawnSync timeout would orphan', () => {
+  // nx spawns openwiki as a GRANDCHILD; killing only the direct child would leave it running and
+  // writing into the tree while the slice is verified. Measured here, not assumed.
+  // A unique fractional duration marks the grandchild so pgrep can find it (dash has no `exec -a`).
+  const marker = `sleep 30.${process.pid}${Date.now() % 100000}`;
+  const t0 = Date.now();
+  const r = spawnSync('timeout', ['--kill-after=2s', '1s', 'sh', '-c', `${marker} & wait`], { encoding: 'utf8' });
+  assert.ok(Date.now() - t0 < 10_000, 'returned promptly');
+  assert.equal(r.status, 124, 'timeout exit status');
+  const left = spawnSync('pgrep', ['-f', `^${marker}$`], { encoding: 'utf8' });
+  assert.equal(left.stdout.trim(), '', 'no orphaned grandchild survives');
+});
+
+test('deadline: each invocation is given the time left minus the reserve for verify/publish/record', () => {
+  const root = twoAreaRepo();
+  try {
+    const seen = [];
+    const t = 1_000_000;
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1,
+      clock: () => t, deadlineMs: t + 40 * 60_000,
+      invoke: (work, opts) => { seen.push(opts.timeoutMs); writingStub(root, 'invariants', ['one.md'])(); return { status: 0 }; },
+    });
+    assert.equal(result.outcome, 'completed');
+    assert.equal(seen[0], 40 * 60_000 - mod.DEADLINE_RESERVE_MS);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('deadline: a slice with too little time left is not started — carried forward as a budget stop', () => {
+  const root = twoAreaRepo();
+  try {
+    let calls = 0;
+    const t = 1_000_000;
+    const slice = sl('invariants', ['one.md']);
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [slice], attemptsPerSlice: 1,
+      clock: () => t, deadlineMs: t + mod.DEADLINE_RESERVE_MS + mod.MIN_GENERATOR_MS - 1,
+      invoke: () => { calls += 1; return { status: 0 }; },
+    });
+    assert.equal(calls, 0, 'never started a generator that could not finish');
+    assert.equal(result.stoppedAtBudget, true);
+    assert.equal(result.exitCode, 3, 'a budget stop, not a failure');
+    assert.deepEqual(result.backlog, [slice]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ── 078 US4 / FR-010: every run records what it cost ────────────────────────────
 
 const PRICES_FIXTURE = { asOf: '2026-09-27', providers: { fireworks: { standard: { uncached: 0.22, cached: 0.007, cacheWrite: 0, output: 0.66 } } } };
