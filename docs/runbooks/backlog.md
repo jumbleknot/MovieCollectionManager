@@ -59,7 +59,9 @@ path to write capability. Separate tokens, separate revocation.
 > The client-side bound is the tooling's **same-repository write guard**: every write asserts that the
 > owner/repo it is about to address is the one derived from `git remote get-url origin`, and refuses
 > otherwise. It is checked twice — once against any `--repo` value, and again at the request boundary so
-> a mis-built path cannot slip through. **That guard, not the credential, is what keeps writes here.**
+> a mis-built path cannot slip through. **For this tool, that guard is what keeps writes here.** The token's *scope* bounds what
+> any client can do (issues only: no push, packages or admin), not which repository — so the guard exists only in
+> `scripts/backlog.mjs`, and any other client holding the token can write issues in any repository on the account.
 
 Do **not** try to check the token's permissions by reading `permissions` from the repository API: it
 reports what the owning *account* may do with the repository, not what the token may do. An

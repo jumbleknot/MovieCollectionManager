@@ -392,8 +392,9 @@ overwritten, and `markerBefore` records the already-advanced marker. Until #619 
 closed proposal's pages by hand (a seed PR that edits `backlog` in `.maintenance-state.json`).
 
 **When a proposal is created or updated.** Whenever any page landed — including a run that stopped
-at its budget (exit 3) or had a failed slice (exit 1). A failed slice's work goes to the backlog, not
-the proposal, and the run carries on to the next slice; it stops early only after two consecutive
+at its budget (exit 3) or had a failed slice (exit 1). A failed slice is returned to the backlog and the run
+carries on to the next slice — but its written files are **not** reverted, so when another slice in
+the run verified, whatever the failed slice wrote rides along on the proposal: review it as such; it stops early only after two consecutive
 slice failures.
 
 ### If the run record and the forge disagree, the forge wins

@@ -249,7 +249,7 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
 
   ```bash
   curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
-  node scripts/sast-scan.mjs --scope full --only semgrep           # exit >=2 => registry unreachable
+  node scripts/sast-scan.mjs --scope full --only semgrep           # exit 1 + "[semgrep] scan failed … rules/registry may be unreachable" => unreachable (exit 2 = bad arguments)
   ```
 
   A Semgrep result you did not sanity-check this way is the same green either way, which is the
@@ -283,8 +283,9 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
   Renovate produces exactly this mismatch when it proposes a floor raise, so expect bot PRs against
   this map to need their key half fixed by hand.
 - **Remediate, do not re-date.** Deleting or extending an `expiry` is how a time-box becomes
-  permanent. The legitimate exception — no published fix exists — is modelled by the `image-size`
-  pair and requires the evidence written into the justification. Check npm before assuming: on
+  permanent. The legitimate exception — no published fix exists — requires the evidence written into
+  the justification (the `image-size` pair was the example until the dependency left the tree and its
+  entries were deleted). Check npm before assuming: on
   feature 057 both "needs an acceptance" advisories turned out to have published fixes.
 - **You now get 14 days' notice before an expiry blocks anything.** Both gates report `EXPIRING
   SOON` / `EXPIRED` / `UNMATCHED ENTRIES` on a normal run **without changing their exit code**, and

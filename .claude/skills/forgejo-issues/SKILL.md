@@ -92,6 +92,7 @@ because you will read raw API output eventually.
 
 No backlog operation ever creates a commit, branch, pull request or CI run — that is the point of the
 feature. And every write is refused unless it targets the repository this working copy's origin points
-at: the write credential can reach other repositories, so that guard is what keeps writes here.
+at: the write credential can reach other repositories, so that guard is what keeps writes here — for this
+tool only. The token's scope (issues only) is the server-side bound; any other client holding it is unguarded.
 
 Details, provisioning and the credential model: `docs/runbooks/backlog.md`.
