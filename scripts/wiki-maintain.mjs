@@ -266,6 +266,15 @@ function invocationOf(parts) {
 /** The slices an invocation stands for — itself, for a one-area slice. */
 export const partsOf = (work) => work.parts ?? [work];
 
+/**
+ * What a run's proposal carries: every verified invocation, plus the LANDED parts of an invocation
+ * that failed only on other parts (verifySlice's `landedParts`). Run 4399 proposed only `r.ok`
+ * results, so a group that failed on one part lost the rest — not proposed, and no longer queued.
+ */
+export function proposableSlices(result) {
+  return (result.results ?? []).flatMap((r) => (r.ok ? [r.slice] : (r.landedParts ?? [])));
+}
+
 export const DEFAULT_BUNDLE = 'openwiki';
 
 const RESERVED_BUNDLE_FILES = new Set(['index.md', 'INSTRUCTIONS.md', 'log.md', 'quickstart.md']);
@@ -1392,7 +1401,13 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   // violation is the whole invocation's, so it carries every part forward.
   const attributable = (missing.length > 0 ? 1 : 0) + (stalePages.length > 0 ? 1 : 0);
   const failedParts = violations.length === attributable ? [...new Set([...missingParts, ...staleParts])] : partsOf(slice);
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts };
+  // The parts that DID land, when the failure is attributable to other parts only: the bundle is
+  // conformant (V16 included) and policy-clean, so these are safe to propose. Without this, a group
+  // that failed on one part lost the others' paid work — run 4399 dropped runbooks/backlog.md.
+  const landedParts = violations.length > 0 && violations.length === attributable
+    ? partsOf(slice).filter((part) => !failedParts.includes(part))
+    : [];
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts, landedParts };
 }
 
 /**
@@ -1699,6 +1714,10 @@ export function executeSlices({
       // Only the parts that did not land (a missing-page failure is attributable per area); a policy
       // or conformance violation carries every part of the invocation forward.
       backlog.push(...(verdict.failedParts ?? partsOf(slice)));
+      // The parts that landed are proposed (see proposableSlices), so they count as written work.
+      const landedPages = new Set((verdict.landedParts ?? []).flatMap((part) =>
+        (part.pages ?? []).map((page) => `${part.area}/${page}`)));
+      pagesWritten += (verdict.pagesWritten ?? []).filter((p) => landedPages.has(p.split('/').slice(-2).join('/'))).length;
       if (consecutive >= maxConsecutiveFailures) {
         // Not "this slice is bad" any more — something about the run is.
         stoppedAtFailureLimit = true;
@@ -2339,7 +2358,7 @@ async function main(argv) {
     reportRun(result, opts);
 
     if (opts.propose && result.pagesWritten > 0) {
-      const landed = result.results.filter((r) => r.ok).map((r) => r.slice);
+      const landed = proposableSlices(result);
       let proposal;
       try {
         proposal = await publishProposalAsync({

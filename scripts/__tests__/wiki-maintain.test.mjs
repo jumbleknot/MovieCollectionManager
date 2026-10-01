@@ -1143,6 +1143,58 @@ test('execute: when one area of a group fails, ONLY that area is carried forward
   }
 });
 
+test('execute: the LANDED part of a failed group is counted and proposable, not just left on the runner', () => {
+  // Measured 2026-10-01, run 4399: runbooks/backlog.md verified, projects/sast.md was still stale when
+  // the deadline stopped the generator. The group failed, so main() proposed nothing (it proposed only
+  // r.ok results) — and the backlog carried only the failed part, so the landed page was LOST: not
+  // proposed, not re-queued, and its source change was already behind the marker. A failure
+  // attributable to a part (missing/stale; conformance and policy clean) must leave the landed parts
+  // proposable.
+  const root = twoAreaRepo();
+  try {
+    const good = sl('invariants', ['one.md']);
+    const bad = sl('gotchas', ['two.md']);
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [good, bad], attemptsPerSlice: 1,
+      invoke: () => { writingStub(root, 'invariants', ['one.md'])(); return { status: 0 }; },
+    });
+    assert.equal(result.outcome, 'failed', 'the run still reports the failure');
+    assert.deepEqual(result.backlog, [bad], 'only the failed part is redone');
+    assert.deepEqual(result.results[0].landedParts, [good]);
+    assert.equal(result.pagesWritten, 1, 'the landed page counts, so a proposal is published');
+    assert.deepEqual(mod.proposableSlices(result), [good], 'and it is what the proposal carries');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute: a whole-invocation failure (conformance/policy) proposes nothing and re-queues every part', () => {
+  const root = twoAreaRepo();
+  try {
+    const good = sl('invariants', ['one.md']);
+    const other = sl('gotchas', ['two.md']);
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [good, other], attemptsPerSlice: 1,
+      // Lands both pages but leaves the bundle non-conformant (an unlisted page fails V9).
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        writingStub(root, 'gotchas', ['two.md'])();
+        writeFileSync(join(root, 'openwiki', 'gotchas', 'orphan.md'), '---\ntype: R\n---\nb\n');
+        writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.deepEqual(result.results[0].landedParts ?? [], [], 'nothing is proposable from a non-conformant tree');
+    assert.deepEqual(mod.proposableSlices(result), []);
+    assert.deepEqual(result.backlog, [good, other], 'every part is redone');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('execute: a stale page left unwritten in ONE area fails only that area, by area/page (#587)', () => {
   const root = twoAreaRepo();
   try {
