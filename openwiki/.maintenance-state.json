@@ -2,7 +2,18 @@
   "coveredCommit": "9f7dca720367b3eab58d1718001026b43ce2e024",
   "coveredAt": "2026-10-01T10:32:33.724Z",
   "lastOutcome": "nothing-to-do",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "sast.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
+    }
+  ],
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
