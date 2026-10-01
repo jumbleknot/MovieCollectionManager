@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "e4ad55c08cdd280cb5f9cd77878033498f620bc2",
-  "coveredAt": "2026-09-30T12:32:22.033Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "9f7dca720367b3eab58d1718001026b43ce2e024",
+  "coveredAt": "2026-10-01T10:32:33.724Z",
+  "lastOutcome": "nothing-to-do",
   "backlog": [],
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 2178,
+    "elapsedSeconds": 0,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
