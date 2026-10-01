@@ -4,9 +4,6 @@ title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four independently operable local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, and the ordering, interpolation and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T20:12:19.419Z
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml

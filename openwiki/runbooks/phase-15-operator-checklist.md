@@ -30,9 +30,7 @@ sources:
   - id: openwiki-source-48b430e61b4404a6e7b22c10
     resource: repo://specs/023-forgejo-cicd/HANDOFF.md
 generated: { by: "openwiki/0.6.0", at: "2026-09-29T03:23:45.685Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T03:23:45.685Z
+
 ---
 
 # Phase 15 operator checklist (bring the full app live)

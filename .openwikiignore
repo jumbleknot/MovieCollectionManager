@@ -1,0 +1,11 @@
+# Paths openwiki must never read or cite as Claims evidence.
+#
+# CD's digest-promote commit ("chore(cd): promote … image digest(s)") rewrites every .env.deploy on
+# every deploy — 36 times in September 2026. A Claim citing their lines cannot be relocated after the
+# next deploy, goes "unresolved", and openwiki then FORCES the citing page into every update run
+# (addRequiredClaimIssueJobs) — measured on invariants/secrets-management.md, item #525/#613.
+# Cite infrastructure-as-code/komodo/stacks.toml or the compose files instead.
+#
+# Adding a path here while any .claims sidecar still cites it CRASHES openwiki's claims preflight
+# (EvidenceResourceError, measured): uncover the citing pages in the same change.
+**/.env.deploy
