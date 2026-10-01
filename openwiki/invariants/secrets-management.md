@@ -4,9 +4,6 @@ title: Secrets management posture
 description: The no-clear-text-secrets-in-git rule, the dev / production / CI / per-user credential channels, why Vault is deployed but dormant, and the CI gates that enforce all of it.
 resource: docs/decisions/ADR-0001-prod-secrets-management.md
 tags: [secrets, security, komodo, vault, ci-gates]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T01:49:10.027Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml

@@ -43,13 +43,6 @@
       "completedBy": "openwiki/0.6.0",
       "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c"
     },
-    "/openwiki/invariants/secrets-management.md": {
-      "gitHead": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
-      "sourceFingerprint": "sha256:7fe39cb5a08a3c98b78da3269dbe886c362127826123f68fb7538b94576c4269",
-      "pageVersion": "sha256:6c94b6ccfa39d8f7ace7804afe42799c2270d96705452505b97c1bc83589d5f6",
-      "completedBy": "openwiki/0.6.0",
-      "completedRunId": "284da042-1fa3-40fa-a936-b78473ae6084"
-    },
     "/openwiki/process/constitution.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
       "sourceFingerprint": "sha256:cf680f372b4da6fc5bb0c7076c84c4cf792f1b17786b5c37b882eac5e2e8dcbd",
@@ -77,13 +70,6 @@
       "pageVersion": "sha256:3d67e05388e4bdb68a6c8cce58cb0cb9f9f8748488f0c991d20982afaa692067",
       "completedBy": "openwiki/0.5.2",
       "completedRunId": "abdfe5e8-5e6a-45ec-84d7-032c73d67800"
-    },
-    "/openwiki/projects/infrastructure-stacks.md": {
-      "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
-      "sourceFingerprint": "sha256:cf680f372b4da6fc5bb0c7076c84c4cf792f1b17786b5c37b882eac5e2e8dcbd",
-      "pageVersion": "sha256:002962dcd5fb158e6a28c1fadc923f833af4ab1f71d85759ff5656bf742afb78",
-      "completedBy": "openwiki/0.6.0",
-      "completedRunId": "78ba3484-7b1a-4155-be43-0b304dc1e2aa"
     },
     "/openwiki/projects/keycloak.md": {
       "gitHead": "f78b34c4fd2a4aae7197f1cba4a361b0e1589eea",
@@ -173,13 +159,6 @@
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
       "sourceFingerprint": "sha256:cf680f372b4da6fc5bb0c7076c84c4cf792f1b17786b5c37b882eac5e2e8dcbd",
       "pageVersion": "sha256:242f5be14f5442fa39e1874f291959003564771982768b4c5f1dc53c259700af",
-      "completedBy": "openwiki/0.6.0",
-      "completedRunId": "1f88b926-ba1c-4987-a817-ce9df84284b8"
-    },
-    "/openwiki/runbooks/phase-15-operator-checklist.md": {
-      "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
-      "sourceFingerprint": "sha256:cf680f372b4da6fc5bb0c7076c84c4cf792f1b17786b5c37b882eac5e2e8dcbd",
-      "pageVersion": "sha256:57f7eccc72b6ee98b3b436da9c67b2364afc35715df71961f27f5364b84a6f0b",
       "completedBy": "openwiki/0.6.0",
       "completedRunId": "1f88b926-ba1c-4987-a817-ce9df84284b8"
     },

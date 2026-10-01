@@ -1502,7 +1502,7 @@ function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null }) {
   const [cmd, ...args] = deadlineCommand(timeoutMs);
   const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog }) });
   if (timeoutMs !== null && (r.status === 124 || r.status === 137)) {
-    console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s — a hung model request, most likely (#613). The slice fails; the run still records itself.`);
+    console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s. openwiki prints nothing until it exits, so this alone does not say whether it was slow or hung — the usage line below counts the model calls it made (#613). The slice fails; the run still records itself.`);
   }
   return r;
 }

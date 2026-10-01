@@ -1,5 +1,5 @@
 {
-  "coveredCommit": "19a07ab8558f79df36ec64ae95596db7f2dee636",
+  "coveredCommit": "e4ad55c08cdd280cb5f9cd77878033498f620bc2",
   "coveredAt": "2026-09-30T12:32:22.033Z",
   "lastOutcome": "failed",
   "backlog": [
@@ -11,21 +11,17 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "drift sweep (item #525): small batch after the claims-churn fix; sast-scanning and wiki-maintenance follow one per run (#613)"
     },
     {
       "area": "runbooks",
       "pages": [
-        "backlog.md",
-        "sast-scanning.md",
-        "wiki-maintenance.md"
+        "backlog.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/backlog.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/wiki-maintenance.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backlog.md; openwiki/runbooks/sast-scanning.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "drift sweep (item #525): small batch after the claims-churn fix; sast-scanning and wiki-maintenance follow one per run (#613)"
     }
   ],
   "proposal": null,
