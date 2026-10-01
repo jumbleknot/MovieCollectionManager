@@ -11,38 +11,29 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "drift sweep (item #525): small batch after the claims-churn fix; sast-scanning and wiki-maintenance follow one per run (#613)"
-    },
-    {
-      "area": "runbooks",
-      "pages": [
-        "backlog.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525): small batch after the claims-churn fix; sast-scanning and wiki-maintenance follow one per run (#613)"
+      "reason": "drift sweep (item #525): small batch after the claims-churn fix; sast-scanning and wiki-maintenance follow one per run (#613)",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 3068,
+    "elapsedSeconds": 2178,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 376,
+    "calls": 124,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2597328,
-    "cached": 33954866,
+    "uncached": 718027,
+    "cached": 11338464,
     "cacheWrite": 0,
-    "output": 609622,
-    "reasoning": 497797,
-    "ms": 7580685,
-    "estCostUsd": 1.2114,
+    "output": 202914,
+    "reasoning": 166386,
+    "ms": 2902793,
+    "estCostUsd": 0.3713,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
