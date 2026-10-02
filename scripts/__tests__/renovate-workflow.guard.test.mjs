@@ -2099,8 +2099,8 @@ test('the Run Renovate step caps Docker Hub tag paging at 10 pages, or every Doc
   // fresh cache the same lookup logged zero "no releaseTimestamp" markings and pending became temporal.
   // `dockerMaxPages` is globalOnly, so it cannot live in renovate.json — the env var on this step is
   // the only place it can be set, and this is what keeps it from being tidied away.
-  const run = steps.find((s) => typeof s?.run === 'string' && /npx --yes renovate@\d+\s*$/.test(s.run.trim()));
-  assert.ok(run, 'renovate.yml has no `npx --yes renovate@<major>` step to carry the env');
+  const run = steps.find((s) => typeof s?.run === 'string' && /npx --yes renovate@\d+(\.\d+\.\d+)?\s*$/.test(s.run.trim()));
+  assert.ok(run, 'renovate.yml has no `npx --yes renovate@<major or exact version>` step to carry the env');
   const raw = String(run.env?.RENOVATE_DOCKER_MAX_PAGES ?? '');
   assert.match(raw, /^\d+$/, `RENOVATE_DOCKER_MAX_PAGES is ${JSON.stringify(raw)} on the Run Renovate step — unset means Renovate's default of 20, which walks into Docker Hub's page-11 403`);
   const pages = Number(raw);
