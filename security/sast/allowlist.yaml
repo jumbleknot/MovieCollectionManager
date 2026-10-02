@@ -207,3 +207,26 @@
   locationPattern: "frontend/mcm-app/src/bff-server/account-deletion\\.ts:.*"
   justification: "Pipeline step that takes an already-authenticated step-up access token. requireAuth + requireMcUser run in both account-deletion route handlers before runAccountDeletion is called, followed by verifyStepUpProof requiring a fresh authentication at the identity provider; the step is not reachable without all three. Deletes are performed AS THE USER so mc-service applies its own DAC."
   addedBy: "steve"
+
+# ── 2026-10-02: node-forge GHSA-86w9-cpqp-85rv (no patched version exists) ───────────────────────
+# RSA PKCS#1 v1.5 signature VERIFICATION accepts extra nested DigestAlgorithm elements; affected
+# range `<= 1.4.0`, first patched: none. Published 2026-09-03, it reached the audit data on
+# 2026-10-02 and turned the required `sast` check red on every PR (first seen on #632).
+#
+# Reachability, checked rather than assumed: node-forge arrives ONLY through Expo tooling —
+# `@expo/cli` and `@expo/code-signing-certificates` (expo-updates code signing). The audit counts it
+# as runtime solely because `expo` lists `@expo/cli` as a production dependency. The app uses
+# neither expo-updates nor code signing (no `expo-updates` / `codeSigning` in app.json, eas.json,
+# package.json or src/), and the CLI is build/dev-server tooling that ships in neither the web nor
+# the server bundle — so the vulnerable verification path is not exercised by anything we run in
+# production.
+#
+# Pinned to the exact vulnerable version and SHORT-dated: a different node-forge version re-blocks
+# for a fresh assessment, and the entry stops suppressing on the expiry. Removal is tracked on the
+# backlog (patched node-forge, or Expo dropping the dependency).
+- scanner: "pnpm-audit"
+  id: "GHSA-86w9-cpqp-85rv"
+  locationPattern: "^node-forge@1\\.4\\.0$"
+  justification: "No patched node-forge exists (<= 1.4.0). Reached only via Expo CLI tooling (@expo/cli, @expo/code-signing-certificates); the app uses neither expo-updates nor code signing, and the CLI is not shipped in the web or server bundle, so the vulnerable PKCS#1 v1.5 verification path is not exercised at runtime. Operator-approved 2026-10-02."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-01"
