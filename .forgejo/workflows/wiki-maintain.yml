@@ -65,18 +65,29 @@ jobs:
     # Derived, not remembered (078 research R9; wiki-maintain.guard.test.mjs recomputes it): the 15-min
     # debounce SLEEPS INSIDE this job, then setup, then the generator's 4-min start deadline plus one
     # worst-case 8-page invocation (30 min at concurrency 4), then publishing — ~55 min, 5 min margin.
-    # 60 is the operator-approved hold on the one shared runner; raising it is a decision.
-    timeout-minutes: 60
+    # 60 was the operator-approved hold on the one shared runner. RAISED TO 120 on 2026-10-02 (operator
+    # decision, items #525/#613): at the measured 70-80 tok/s one uncovered page can need 60-75 min.
+    # 120 is the HARD CEILING and only a dispatched run may use it — the deadline step below still holds
+    # a merge-triggered run to 60, so raising this cannot lengthen the runs every merge starts.
+    timeout-minutes: 120
     steps:
       # FIRST, before the debounce sleep and setup that count against the same timeout (item #613).
       # wiki-maintain runs the generator under this deadline (minus a reserve for verify, publish and
       # the record commit), so a hung model request ends as a failed slice WITH a committed run
       # record — instead of the platform killing the job with nothing recorded (runs 4385/4386).
-      # The minutes MUST equal timeout-minutes; wiki-maintain.guard.test.mjs asserts it.
+      # The window is PER EVENT: a dispatched run may use the whole job (DISPATCH_MINUTES must equal
+      # timeout-minutes); a merge-triggered run keeps the 60-minute shared-runner hold. The guard test
+      # wiki-maintain.guard.test.mjs asserts both.
       # ci-log-step-exempt: this step runs BEFORE Checkout, so scripts/ci-log-step.sh does not exist
       # yet; it is a single arithmetic echo into $GITHUB_ENV with no output to capture.
       - name: Record the job deadline
-        run: echo "WIKI_JOB_DEADLINE=$(( $(date +%s) + 60 * 60 ))" >> "$GITHUB_ENV"
+        run: |
+          PUSH_MINUTES=60
+          DISPATCH_MINUTES=120
+          MINUTES=$PUSH_MINUTES
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then MINUTES=$DISPATCH_MINUTES; fi
+          echo "WIKI_JOB_DEADLINE=$(( $(date +%s) + MINUTES * 60 ))" >> "$GITHUB_ENV"
+          echo "job deadline: ${MINUTES} min (${{ github.event_name }})"
 
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

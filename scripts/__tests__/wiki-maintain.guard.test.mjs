@@ -98,18 +98,28 @@ test('the job timeout sits above the effective ceiling, derived — not a rememb
   assert.ok(timeout >= ceiling + 5 * 60,
     `timeout-minutes ${job()['timeout-minutes']} leaves less than 5 min of margin over the ${Math.ceil(ceiling / 60)}-min ceiling ` +
     '(debounce + setup + time budget + one worst-case invocation + publishing)');
-  assert.equal(job()['timeout-minutes'], 60, 'the operator-approved hold on the shared runner (078 R9) — changing it is a decision, not a tidy-up');
+  // Raised from 60 to 120 by operator decision on 2026-10-02 (item #525/#613): at the measured
+  // 70-80 tok/s, one uncovered page can need 60-75 minutes. 120 is the hard ceiling for DISPATCHED
+  // runs only; merge-triggered runs are still held to 60 by the deadline step (asserted below).
+  assert.equal(job()['timeout-minutes'], 120, 'the operator-approved ceiling (2026-10-02) — changing it is a decision, not a tidy-up');
 });
 
-test('the job records a deadline in its FIRST step, from the same minutes as timeout-minutes (#613)', () => {
+test('the job records a deadline in its FIRST step: dispatch = timeout-minutes, push held to 60 (#613)', () => {
   // wiki-maintain runs the generator under this deadline so a hang ends as a failed slice with a
-  // committed run record, instead of the platform killing the job with nothing recorded. It has to
-  // be the first step: the debounce sleep and setup count against the same job timeout.
+  // committed run record. It has to be the first step: the debounce sleep and setup count against
+  // the same job timeout. The WINDOW is per event (2026-10-02): a dispatched run may use the whole
+  // job; a merge-triggered run keeps the 60-minute hold on the one shared runner, so raising the
+  // ceiling cannot quietly lengthen the runs every merge starts.
   const first = job().steps[0];
   assert.match(first.name, /deadline/i);
-  const m = String(first.run).match(/WIKI_JOB_DEADLINE=\$\(\( *\$\(date \+%s\) *\+ *(\d+) *\* *60 *\)\)/);
-  assert.ok(m, `first step must export WIKI_JOB_DEADLINE from date +%s, got: ${first.run}`);
-  assert.equal(Number(m[1]), job()['timeout-minutes'], 'deadline minutes must equal timeout-minutes');
+  const run = String(first.run);
+  const push = run.match(/PUSH_MINUTES=(\d+)/);
+  const dispatch = run.match(/DISPATCH_MINUTES=(\d+)/);
+  assert.ok(push && dispatch, `first step must set PUSH_MINUTES and DISPATCH_MINUTES, got: ${run}`);
+  assert.match(run, /workflow_dispatch/, 'the dispatch window must be chosen by event');
+  assert.match(run, /WIKI_JOB_DEADLINE=\$\(\( *\$\(date \+%s\) *\+ *MINUTES *\* *60 *\)\)/, 'exported from date +%s and the chosen window');
+  assert.equal(Number(dispatch[1]), job()['timeout-minutes'], 'a dispatched run may use exactly the whole job');
+  assert.equal(Number(push[1]), 60, 'a merge-triggered run keeps the 60-minute shared-runner hold');
 });
 
 test('CI defaults to Fireworks at concurrency 4, and a repository variable switches it back', () => {
