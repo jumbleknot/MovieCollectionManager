@@ -23,11 +23,11 @@
       "completedRunId": "1f88b926-ba1c-4987-a817-ce9df84284b8"
     },
     "/openwiki/decisions/adr-0001-prod-secrets-management.md": {
-      "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
-      "sourceFingerprint": "sha256:47628626aa01ffdfae640ca4265c8da96074f1949d28980f30de0d8755b5975a",
-      "pageVersion": "sha256:e6c4728dca3faf462fa2aac8b259833c91bfb256b07e10970917f2b39c1f01e6",
-      "completedBy": "openwiki/0.5.2",
-      "completedRunId": "cc6829b2-8371-4481-b4ba-19e220e928c8"
+      "pageVersion": "sha256:d4f388427cd8d84c1f04724aebcf7b321b7cd67189f2ff52eaae6c08ebc6f7e3",
+      "completedBy": "openwiki/0.6.0",
+      "completedRunId": "401d9486-0691-4d70-92d9-a210da7e9412",
+      "gitHead": "22878fc601c1b0f1a966c50889b315f186f23f5e",
+      "sourceFingerprint": "sha256:13110498a5ac4cadd9e5dbde21a344849cbb5e5f90576c8cfd03bbca191b312a"
     },
     "/openwiki/decisions/adr-0002-stateful-major-upgrades.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
