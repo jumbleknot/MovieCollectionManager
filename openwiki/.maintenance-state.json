@@ -1,38 +1,46 @@
 {
-  "coveredCommit": "9f7dca720367b3eab58d1718001026b43ce2e024",
-  "coveredAt": "2026-10-01T10:32:33.724Z",
-  "lastOutcome": "failed",
-  "backlog": [
-    {
-      "area": "decisions",
-      "pages": [
-        "adr-0001-prod-secrets-management.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
-    }
-  ],
-  "proposal": null,
+  "coveredCommit": "22878fc601c1b0f1a966c50889b315f186f23f5e",
+  "coveredAt": "2026-10-02T03:15:05.656Z",
+  "lastOutcome": "completed",
+  "backlog": [],
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 635,
+    "headCommit": "15e8ae7d79940d03aaa2a2b4bee543de64479d79",
+    "markerBefore": "22878fc601c1b0f1a966c50889b315f186f23f5e",
+    "slices": [
+      {
+        "area": "decisions",
+        "pages": [
+          "adr-0001-prod-secrets-management.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/decisions/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/decisions/adr-0001-prod-secrets-management.md. The openwiki/decisions/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/decisions/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-10-02T03:15:06.303Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 2262,
+    "pagesWritten": 1,
+    "elapsedSeconds": 959,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 105,
+    "calls": 58,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 679058,
-    "cached": 10025660,
+    "uncached": 181723,
+    "cached": 3366328,
     "cacheWrite": 0,
-    "output": 170995,
-    "reasoning": 145326,
-    "ms": 1973494,
-    "estCostUsd": 0.3324,
+    "output": 73969,
+    "reasoning": 59309,
+    "ms": 909350,
+    "estCostUsd": 0.1124,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
