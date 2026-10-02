@@ -59,6 +59,17 @@ on:
     # `renovate-workflow.guard.test.mjs` asserts this cron is strictly earlier than every
     # `renovate.yml` window cron, so the ordering cannot be undone silently.
     - cron: '0 4 * * 5'
+    # ── A MID-WEEK SWEEP, Tuesday 04:00 UTC (added 2026-10-02, item #642). ─────────────────────────
+    # Friday 04:00 orders the sweep before the window, but it leaves THREE HOURS to triage what it
+    # finds. GHSA-vcvr-r3jv-pc5j (next, on the unchanged langfuse:4 pins) was published 09-22, was NOT
+    # in the trivy DB for the 09-25 sweep (run 3946 blocked only on keycloak's freemarker), and first
+    # surfaced at 04:00 on 10-02 — so the window's PRs and every other PR inherited a red that nobody
+    # had seen. A Tuesday run makes an advisory published early in the week visible with three days
+    # in hand. Tuesday 04:00 is hour-of-week 52, far before the window, so the item #487 ordering
+    # guard (latest sweep strictly before the earliest window) still compares against Friday 04:00.
+    # It runs the same steps as Friday's, including the allowlist expiry check and the
+    # `infra-image-scan/weekly` verdict, which Friday's run then overwrites before the window.
+    - cron: '0 4 * * 2'
   push:
     # push keeps its paths filter — a non-infra merge to main need not re-scan (the PR already did,
     # and the weekly cron is the safety net). Only the PR trigger must be un-path-gated (branch
