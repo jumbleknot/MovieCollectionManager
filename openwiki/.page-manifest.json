@@ -23,11 +23,11 @@
       "completedRunId": "1f88b926-ba1c-4987-a817-ce9df84284b8"
     },
     "/openwiki/decisions/adr-0001-prod-secrets-management.md": {
+      "gitHead": "22878fc601c1b0f1a966c50889b315f186f23f5e",
+      "sourceFingerprint": "sha256:13110498a5ac4cadd9e5dbde21a344849cbb5e5f90576c8cfd03bbca191b312a",
       "pageVersion": "sha256:d4f388427cd8d84c1f04724aebcf7b321b7cd67189f2ff52eaae6c08ebc6f7e3",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "401d9486-0691-4d70-92d9-a210da7e9412",
-      "gitHead": "22878fc601c1b0f1a966c50889b315f186f23f5e",
-      "sourceFingerprint": "sha256:13110498a5ac4cadd9e5dbde21a344849cbb5e5f90576c8cfd03bbca191b312a"
+      "completedRunId": "401d9486-0691-4d70-92d9-a210da7e9412"
     },
     "/openwiki/decisions/adr-0002-stateful-major-upgrades.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
@@ -163,11 +163,11 @@
       "completedRunId": "1f88b926-ba1c-4987-a817-ce9df84284b8"
     },
     "/openwiki/runbooks/renovate.md": {
-      "gitHead": "233190ad977f8bfd257e624f6d06bf627e24d892",
-      "sourceFingerprint": "sha256:3e3a55c09b7ad90e006e3cc73f0fa14b5891d0dc5ac92289134b5a0459232ed2",
-      "pageVersion": "sha256:158856f7ca724f3f12e58e46d199d8defcbfe36e23006388505aacad490788ab",
-      "completedBy": "openwiki/0.5.2",
-      "completedRunId": "d0a15892-f9a5-46ec-af1a-c0c590948c64"
+      "pageVersion": "sha256:1e037dc4ce6accc0222d3650b9f403c44614d9ac1007f525a75d30bcd33ab89e",
+      "completedBy": "openwiki/0.6.0",
+      "completedRunId": "26ac73d9-e87a-468c-b8a6-be8d4b8171c1",
+      "gitHead": "e5ab1a048e2ae818a942cde45ebece295ce27431",
+      "sourceFingerprint": "sha256:cb54e97ee14bfb09a553d7134268b9227809cdbbaba784e81a1b858639dbf969"
     },
     "/openwiki/runbooks/server-setup.md": {
       "gitHead": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
