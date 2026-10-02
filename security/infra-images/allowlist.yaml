@@ -473,14 +473,15 @@
 # but adds a new fixable Critical, CVE-2026-102992 (piscina 5.3.0, fix 5.3.2), in the web image.
 # 14 minors with Postgres/ClickHouse migrations on a prod stack is a deliberate upgrade (ADR-0002),
 # not a window side-effect — item #642 — and these entries buy the time for it.
-# Digest-keyed, not tag-keyed: `:4` floats, so a tag key could never be discharged; any digest
-# change re-blocks and forces a fresh scan.
-- image: '^langfuse/langfuse:4@sha256:a5d8d2457702'
+# Keyed to version AND digest. The pin moved from the floating `:4` to `4.35.0` (same digests,
+# verified against Docker Hub 2026-10-02) so Renovate can age each release on its own tag; any
+# version or digest change re-blocks and forces a fresh scan.
+- image: '^langfuse/langfuse:4\.35\.0@sha256:a5d8d2457702'
   id: 'GHSA-vcvr-r3jv-pc5j'
   justification: 'next 16.3.3 RCE in the Node `next/og` ImageResponse (satori), exploitable only when an app renders attacker-controlled values into SVG. NOT REACHABLE here, measured in this exact image 2026-10-02: the built server (/app/web/.next/server) contains NO satori, @vercel/og or resvg code at all, and its one `next/og` string is Next''s own `next/server` shim that THROWS "ImageResponse moved … import from next/og" — Langfuse has no OG-image route. Prod exposure is a tailnet-only operator UI (19030, host ufw default-deny). Digest-keyed so the Langfuse upgrade (item #642) re-blocks; delete on that upgrade, do not renew.'
   addedBy: 'renovate-window-2026-10-02'
   expiry: '2026-10-23'
-- image: '^langfuse/langfuse-worker:4@sha256:5e35e625a214'
+- image: '^langfuse/langfuse-worker:4\.35\.0@sha256:5e35e625a214'
   id: 'GHSA-vcvr-r3jv-pc5j'
   justification: 'next 16.3.3 RCE in the Node `next/og` ImageResponse (satori). NOT REACHABLE here, measured in this exact image 2026-10-02: `next` is present only as an unused transitive under /app/worker/node_modules/.pnpm, and the worker''s own code (/app/worker/dist) has ZERO references to next/og or ImageResponse — it is a queue consumer with no HTTP rendering path. Ships and deploys as one unit with the web image (they share one database), so it moves with the web entry. Digest-keyed so the Langfuse upgrade (item #642) re-blocks; delete on that upgrade, do not renew.'
   addedBy: 'renovate-window-2026-10-02'

@@ -49,8 +49,9 @@ single CI runner.
 
 ### The budget binds before the schedule does
 
-`prConcurrentLimit: 5`, `prHourlyLimit: 4`. Measured 2026-08-28: the window run created **exactly 4**
-PRs — the hourly limit, precisely. Everything else deferred a week.
+`prConcurrentLimit: 6`, `prHourlyLimit: 5` (raised from 5/4 on 2026-10-02 — see the end of the next
+section). Measured 2026-08-28: the window run created **exactly 4** PRs — the hourly limit at the
+time, precisely. Everything else deferred a week.
 
 `handleConcurrentLimits()` checks the hourly PR limit for *every* key, so spending it also blocks
 **branch** creation, not just PR creation. And open PRs consume concurrency: leaving four green
@@ -86,6 +87,21 @@ above it would trade one starvation for another.
 > keys it *sets*, so an unreset rule silently inherits 3 and competes for the very slot this exists to
 > secure. Today that is `python toolchain` and `docker digest pins`.
 > `renovate-workflow.guard.test.mjs` fails if a new one appears without the reset.
+
+**A fifth slot, 2026-10-02.** At four slots the allocation was 3 lockfile + 1 `docker base images`,
+which left **`docker digest pins` no slot at all**: the 2026-10-02 dashboard listed it under
+Rate-Limited while it carried the caddy rebuild for its curl/c-ares Highs. `prHourlyLimit` is now 5
+and `docker digest pins` carries `prPriority: 2` — still below `docker base images` (3) and
+`lockFileMaintenance` (5), so the ranking above is unchanged; the extra slot goes to the lowest-risk
+security fix there is (an upstream rebuild of a version already running) ahead of routine work. The
+cost is one more PR's CI per week on the capacity-1 runner.
+
+**Floating tags and the cooldown treadmill.** A pin on a floating tag (`langfuse/langfuse:4@sha256`,
+`node:24-bookworm`) can only be offered `:4`'s *current* digest, aged against `:4`'s own
+`tag_last_pushed`. An upstream that repushes more often than every 3 days never clears
+`minimumReleaseAge` at a Friday window, so no bump is ever proposed — Langfuse repushed `:4` six times
+between 09-23 and 10-01 while a Critical sat on our pin. Pin by full version (`4.35.0@sha256`) so each
+release ages on its own tag and Renovate offers the newest one past the cooldown.
 
 **The Friday step this does not remove.** `docker base images` can still be rate-limited when it
 carries more than a window's worth. If the weekly sweep is blocking on an image that channel holds,
