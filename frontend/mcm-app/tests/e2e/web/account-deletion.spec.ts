@@ -103,6 +103,13 @@ test.describe('@gate account deletion', () => {
 
   test('confirming re-authenticates at Keycloak and destroys the account', async ({ page }) => {
     await loginAs(page, user!.username, user!.password);
+    // `auth_time` has ONE-SECOND resolution and the BFF requires the step-up's auth_time to be
+    // STRICTLY greater than the session's (account-step-up.ts, `advanced`) — the check that tells a
+    // real re-authentication from a token minted off the original login. On a fast runner this whole
+    // flow takes 160-460 ms, so login and re-login landed in the same second and a genuine step-up
+    // was rejected as `stale_auth` (runs 4526, 4529 on 2026-10-03; passed whenever it happened to
+    // straddle a second boundary). Recorded here, enforced before the password is submitted below.
+    const loggedInBy = Date.now();
 
     await page.goto(`${BASE}/settings/account`);
     await page.getByTestId('account-delete-button').click();
@@ -119,6 +126,12 @@ test.describe('@gate account deletion', () => {
     const usernameField = page.locator('input[name="username"]');
     if (await usernameField.count()) await usernameField.fill(user!.username);
     await page.fill('input[name="password"]', user!.password);
+    // Submit only once the wall clock is in a LATER whole second than the login, plus a margin for
+    // the browser-to-Keycloak hop — so the re-login's auth_time is guaranteed to exceed the floor.
+    // Deterministic, not a fixed sleep: on a slow run that is already past the boundary it waits 0.
+    const submitNotBefore = (Math.floor(loggedInBy / 1000) + 1) * 1000 + 250;
+    const wait = submitNotBefore - Date.now();
+    if (wait > 0) await page.waitForTimeout(wait);
     await page.press('input[name="password"]', 'Enter');
 
     await expect(page.getByTestId('account-deleted-confirmation')).toBeVisible({

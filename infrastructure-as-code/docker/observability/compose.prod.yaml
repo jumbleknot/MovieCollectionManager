@@ -136,6 +136,11 @@ services:
     # #PROD hard memory cap (R5) — ClickHouse is the biggest RAM consumer; 24.3 is cgroup-aware, so a
     # container mem_limit bounds its internal max_server_memory_usage (default 0.9 ratio of the limit).
     mem_limit: 4g
+    # No swap beyond the cap (Docker's default memswap is 2x mem_limit), and a CPU ceiling: prod
+    # observability shares the physical host with CI, and on 2026-10-02 this container at ~725% CPU
+    # with swap full slowed every CI job 2-3x. Observability may run slow; it may not starve the host.
+    memswap_limit: 4g
+    cpus: 2
     environment:
       CLICKHOUSE_USER: clickhouse
       CLICKHOUSE_PASSWORD: "${LANGFUSE_CLICKHOUSE_PASSWORD:?set in .env.prod}"
@@ -143,6 +148,9 @@ services:
     volumes:
       - langfuse-clickhouse-data:/var/lib/clickhouse
       - langfuse-clickhouse-logs:/var/log/clickhouse-server
+      # Bounds ClickHouse's OWN diagnostic tables (trace_log/text_log off, 3-day TTL on the rest) —
+      # unbounded, they reached 160 GiB in prod and starved the shared host (ops hotfix 2026-10-03).
+      - ../../clickhouse/config.d/mcm-system-logs.xml:/etc/clickhouse-server/config.d/mcm-system-logs.xml:ro
     ulimits:
       nofile:
         soft: 262144
@@ -266,7 +274,11 @@ services:
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8181/health || exit 1"]
+      # The -debug image's busybox has NO wget (nor curl/nc), so the previous `wget …` check failed every
+      # run — "unhealthy" since ~2026-09-10 (FailingStreak 130247 on 2026-10-03) while OPA itself served
+      # fine. The opa binary makes the request itself via http.send; exec form, so no shell is needed.
+      # Measured on this digest: healthy when serving, exit 1 when nothing listens on 8181.
+      test: ["CMD", "/opa", "eval", "--fail", "--format=raw", "http.send({\"method\": \"get\", \"url\": \"http://localhost:8181/health\", \"timeout\": \"3s\"}).status_code == 200"]
       interval: 15s
       timeout: 5s
       retries: 10
