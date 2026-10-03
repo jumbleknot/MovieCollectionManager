@@ -461,3 +461,28 @@
   justification: 'New advisory (org.freemarker:freemarker below 2.3.35; GHSA-27j2-h3m2-8237) on an image we pull but do not build. NO UPSTREAM TAG CLEARS IT, measured directly 2026-09-25 rather than inferred: both the current pin 26.7.3 and 26.7.4 — the newest release (2026-09-16) and what Renovate offers — were scanned with aquasec/trivy:0.74.0 under the gate criterion (--severity CRITICAL --ignore-unfixed) and BOTH ship freemarker 2.3.32; 26.7.4 reports three fixable Criticals of which this is one, the other two already carrying entries here. Remediation is an upstream Keycloak rebuild against 2.3.35. FreeMarker renders Keycloak theme templates, which are OPERATOR-supplied: this deployment sets no custom theme (no loginTheme/accountTheme/emailTheme/adminTheme in dev-realm.json or ci-realm.json) and mounts no theme directory or provider jar in either compose file, so only the templates shipped inside the image are rendered. Not internet-facing: prod publishes 19099 on the tailnet behind the host ufw default-deny (features 028/029), dev binds 127.0.0.1:8099. Surfaced by PR #553 because infra-image-scan is path-filtered and that PR touched infrastructure-as-code/; the pin itself is unchanged. Version-keyed so the pending base-image bump re-blocks and forces a fresh scan. Time-boxed; delete on upstream rebuild, do not renew. RE-KEYED 2026-09-25 from 26.7.3 to 26.7.4, because the `docker base images` bump LANDED and did not discharge this entry — the re-block this key exists to force, with the scan it demands already on record above: 26.7.4@sha256:82a77884 was measured directly and still carries the vulnerable jar. Keyed to 26.7.4 alone, never a span, per `infra-image-scan.test.mjs`''s version-keying guard.'
   addedBy: 'keycloak-freemarker-2026-09-25'
   expiry: '2026-12-01'
+
+# ── langfuse:4 next/og RCE GHSA-vcvr-r3jv-pc5j (triaged 2026-10-02, item #642) ─────────────────────
+# Published 2026-09-22 against next 16.2.0-16.3.5 (fix 16.3.6) on the UNCHANGED 4.35.0 pins, so it
+# reddened `infra-image-scan` for every PR it ran on (including wiki-only #635) and the 2026-10-02 window.
+# WHY NOT THE BUMP: Renovate never proposed one — `:4` was repushed 2026-09-23/24/25/29/30 and 10-01,
+# so the global 3-day minimumReleaseAge never expired at a Friday window (the floating-tag cooldown
+# treadmill, same shape as node:24-bookworm on #360). And the bump does NOT go green by itself:
+# 4.49.0 (web a9d1951e, worker 40df08a1) scanned locally 2026-10-02 under the gate criterion
+# (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors) clears THIS advisory
+# but adds a new fixable Critical, CVE-2026-102992 (piscina 5.3.0, fix 5.3.2), in the web image.
+# 14 minors with Postgres/ClickHouse migrations on a prod stack is a deliberate upgrade (ADR-0002),
+# not a window side-effect — item #642 — and these entries buy the time for it.
+# Keyed to version AND digest. The pin moved from the floating `:4` to `4.35.0` (same digests,
+# verified against Docker Hub 2026-10-02) so Renovate can age each release on its own tag; any
+# version or digest change re-blocks and forces a fresh scan.
+- image: '^langfuse/langfuse:4\.35\.0@sha256:a5d8d2457702'
+  id: 'GHSA-vcvr-r3jv-pc5j'
+  justification: 'next 16.3.3 RCE in the Node `next/og` ImageResponse (satori), exploitable only when an app renders attacker-controlled values into SVG. NOT REACHABLE here, measured in this exact image 2026-10-02: the built server (/app/web/.next/server) contains NO satori, @vercel/og or resvg code at all, and its one `next/og` string is Next''s own `next/server` shim that THROWS "ImageResponse moved … import from next/og" — Langfuse has no OG-image route. Prod exposure is a tailnet-only operator UI (19030, host ufw default-deny). Digest-keyed so the Langfuse upgrade (item #642) re-blocks; delete on that upgrade, do not renew.'
+  addedBy: 'renovate-window-2026-10-02'
+  expiry: '2026-10-23'
+- image: '^langfuse/langfuse-worker:4\.35\.0@sha256:5e35e625a214'
+  id: 'GHSA-vcvr-r3jv-pc5j'
+  justification: 'next 16.3.3 RCE in the Node `next/og` ImageResponse (satori). NOT REACHABLE here, measured in this exact image 2026-10-02: `next` is present only as an unused transitive under /app/worker/node_modules/.pnpm, and the worker''s own code (/app/worker/dist) has ZERO references to next/og or ImageResponse — it is a queue consumer with no HTTP rendering path. Ships and deploys as one unit with the web image (they share one database), so it moves with the web entry. Digest-keyed so the Langfuse upgrade (item #642) re-blocks; delete on that upgrade, do not renew.'
+  addedBy: 'renovate-window-2026-10-02'
+  expiry: '2026-10-23'

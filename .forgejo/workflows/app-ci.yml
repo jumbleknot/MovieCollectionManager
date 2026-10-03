@@ -1372,9 +1372,12 @@ jobs:
         if: ${{ always() }}
         run: |
           bash scripts/ci-log-step.sh app-e2e-tear-down-ci-stacks bash -e /dev/stdin <<'CI_LOG_STEP'
+          # Base file ONLY (item #645): the compose.ci.yaml overlay's `${VAR:?}` secrets and CI_REALM_FILE
+          # exist only in the bring-up step's shell, so passing it here failed interpolation and this
+          # `down` silently did nothing — leaving the auth stack running after the job. `down` acts on
+          # the PROJECT (`-p auth`), so the overlay adds nothing to what it removes.
           docker compose -p auth \
-            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
-            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml down -v --remove-orphans || true
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml down -v --remove-orphans || true
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure down -v --remove-orphans || true
           # Feature 073: a separate compose FILE in the same project, so the `down` above does not
@@ -1578,24 +1581,46 @@ jobs:
       - name: Gate on un-allowlisted High findings
         run: bash scripts/ci-log-step.sh dast-gate-un-allowlisted-high node scripts/check-dast-findings.mjs --report security/zap/reports/report.json --allowlist security/zap/allowlist.yaml
 
+      # Item #645. This step used to run `docker compose … -f keycloak/compose.ci.yaml logs`, which
+      # dies in interpolation (the overlay's `${VAR:?}` secrets and CI_REALM_FILE exist only inside the
+      # bring-up step's shell) — `|| true` hid it, so a DAST failure captured NO container log at all.
+      # Worse, the failure digest then read ~/mcm-ci-last-failure, which only app-e2e writes, and
+      # presented the LAST app-e2e failure's logs as this job's (2026-10-02: a 09-30 Keycloak log on
+      # run 4445). So: capture per-container with `docker logs`/`docker inspect`, which need no
+      # interpolation, in the same layout app-e2e's collect step uses, and OVERWRITE the bundle with
+      # this job's own evidence, stamped with the run and job that wrote it.
       - name: Dump container logs on failure
         if: failure()
         run: |
           bash scripts/ci-log-step.sh dast-dump-container-logs-failure bash -e /dev/stdin <<'CI_LOG_STEP'
-          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
-            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml logs --tail=150 || true
-          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
-            --profile app --profile bff-nonsecure logs --tail=150 || true
-          docker logs movie-assistant-gateway --tail=100 || true
+          rm -rf container-logs && mkdir -p container-logs
+          for c in keycloak-service keycloak-store-postgres keycloak-mailpit \
+                   mc-service mc-service-store-mongo mc-service-store-mongo-rs-init \
+                   mcm-bff-service-nonsecure mcm-bff-store-mongo mcm-bff-cache-redis \
+                   movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
+                   movie-assistant-mcp-spreadsheet movie-assistant-store-postgres; do
+            docker logs -t "$c" > "container-logs/$c.log" 2>&1 || echo "container absent: $c" > "container-logs/$c.log"
+            docker inspect --format '{{json .State.Health}}' "$c" > "container-logs/$c.health.json" 2>/dev/null || true
+          done
+          docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}' > container-logs/_ps.txt 2>&1 || true
+          echo "run=${GITHUB_RUN_ID:-?} job=dast sha=${GITHUB_SHA:-?} written=$(date -u +%FT%TZ)" > container-logs/_bundle-owner.txt
+          rm -rf "$HOME/mcm-ci-last-failure" && cp -r container-logs "$HOME/mcm-ci-last-failure" 2>/dev/null || true
+          echo "::group::container status + health"; cat container-logs/_ps.txt
+          for h in container-logs/*.health.json; do [ -s "$h" ] && { echo "-- $h --"; cat "$h"; echo; }; done
+          echo "::endgroup::"
+          echo "::group::keycloak-service log (tail 200)"; tail -200 container-logs/keycloak-service.log; echo "::endgroup::"
           CI_LOG_STEP
 
       - name: Tear down CI stacks (always)
         if: ${{ always() }}
         run: |
           bash scripts/ci-log-step.sh dast-tear-down-ci-stacks bash -e /dev/stdin <<'CI_LOG_STEP'
+          # Base file ONLY (item #645): the compose.ci.yaml overlay's `${VAR:?}` secrets and CI_REALM_FILE
+          # exist only in the bring-up step's shell, so passing it here failed interpolation and this
+          # `down` silently did nothing — leaving the auth stack running after the job. `down` acts on
+          # the PROJECT (`-p auth`), so the overlay adds nothing to what it removes.
           docker compose -p auth \
-            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
-            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml down -v --remove-orphans || true
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml down -v --remove-orphans || true
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure down -v --remove-orphans || true
           pnpm nx down-agents-prod infrastructure-as-code || true

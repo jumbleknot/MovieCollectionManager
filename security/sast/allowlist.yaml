@@ -230,3 +230,26 @@
   justification: "No patched node-forge exists (<= 1.4.0). Reached only via Expo CLI tooling (@expo/cli, @expo/code-signing-certificates); the app uses neither expo-updates nor code signing, and the CLI is not shipped in the web or server bundle, so the vulnerable PKCS#1 v1.5 verification path is not exercised at runtime. Operator-approved 2026-10-02."
   addedBy: "claude (operator-approved, steve)"
   expiry: "2026-11-01"
+
+# ── 2026-10-03: braces GHSA-vfj7-8cjw-p6xm (no patched version exists) ──────────────────────────────
+# Stack-exhaustion DoS through deeply nested brace patterns; affected range `<= 3.0.3`, first patched:
+# none, and 3.0.3 is still `latest` on npm. Published 2026-09-18, it reached the audit data in the
+# early hours of 2026-10-03 — `sast` passed on #639 at 23:30 on 10-02 and failed on the same
+# dependencies hours later — turning the required check red on every PR, the same shape as node-forge.
+#
+# Reachability, checked rather than assumed: braces arrives ONLY through micromatch@4.0.8, whose every
+# dependent is build or test tooling — Metro's file watcher (`metro-file-map`, `@expo/metro-file-map`)
+# and Jest (`@jest/core`, `@jest/transform`, `jest-haste-map`, `jest-config`, `jest-message-util`).
+# The audit counts it as runtime only because `expo` is a production dependency that pulls in its CLI
+# and bundler. No first-party code imports braces or micromatch, nothing depends on them directly, and
+# the glob patterns these tools expand come from repository configuration, never from a request — the
+# attacker-controlled nested pattern the advisory needs has no route in.
+#
+# Pinned to the exact vulnerable version and SHORT-dated, as node-forge above: a different braces
+# version re-blocks for a fresh assessment, and the entry stops suppressing on the expiry.
+- scanner: "pnpm-audit"
+  id: "GHSA-vfj7-8cjw-p6xm"
+  locationPattern: "^braces@3\\.0\\.3$"
+  justification: "No patched braces exists (<= 3.0.3; 3.0.3 is latest). Reached only via micromatch@4.0.8 in build/test tooling (Metro file map, Jest); counted as runtime solely because expo is a prod dependency. No first-party import, and the expanded globs come from repo config, never from a request, so the nested-pattern DoS has no input path."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-01"
