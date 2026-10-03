@@ -128,7 +128,16 @@ jobs:
           fi
           CI_LOG_STEP
       - name: Free daemon disk space
-        run: bash scripts/ci-log-step.sh build-deploy-free-daemon-disk-space docker image prune -af || true
+        run: |
+          bash scripts/ci-log-step.sh build-deploy-free-daemon-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
+          docker image prune -af || true
+          # Build cache too, not just images (2026-10-03): `image prune` never touches it, and on the ci daemon it
+          # had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk. --reserved-space keeps the most
+          # recent 50 GB so warm layers still hit; the flag is valid on the docker 27.5.1 CLI these jobs install
+          # (checked — `|| true` must not be allowed to turn a bad flag into a silent no-op).
+          docker builder prune -f --reserved-space 50GB || true
+          docker system df || true
+          CI_LOG_STEP
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       # Node >= 22.13 (package.json `engines.node`) — pnpm 11 refuses to run below it. This job was
