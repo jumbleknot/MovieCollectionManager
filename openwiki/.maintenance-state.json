@@ -1,23 +1,12 @@
 {
-  "coveredCommit": "24d3968c78d0ae97c54036aa63edf850139443f5",
-  "coveredAt": "2026-10-04T19:19:21.509Z",
-  "lastOutcome": "nothing-to-do",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "android-emulator.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
-    }
-  ],
+  "coveredCommit": "c2e8f2744c07dbbd4fcd420321bcc5cd562cf165",
+  "coveredAt": "2026-10-04T20:46:06.829Z",
+  "lastOutcome": "completed",
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 660,
-    "headCommit": "a8ccd8e7ab1389680433bda5d999729980ef22d9",
+    "headCommit": "602f6df633503ac027d83476ca4dd9a85016a2c5",
     "markerBefore": "b4dd11803c536a0115010b75a3d4ca8d78acdabe",
     "slices": [
       {
@@ -30,28 +19,39 @@
         "areaExists": true,
         "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "android-emulator.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-04T18:44:21.479Z"
+    "updatedAt": "2026-10-04T20:46:07.251Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 1,
+    "elapsedSeconds": 1239,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 211,
+    "calls": 56,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1101409,
-    "cached": 21510310,
+    "uncached": 200464,
+    "cached": 3726586,
     "cacheWrite": 0,
-    "output": 294576,
-    "reasoning": 247827,
-    "ms": 6523569,
-    "estCostUsd": 0.5873,
+    "output": 65651,
+    "reasoning": 46522,
+    "ms": 1204178,
+    "estCostUsd": 0.1135,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
