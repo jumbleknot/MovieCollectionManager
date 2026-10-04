@@ -1,7 +1,7 @@
 {
   "coveredCommit": "8c09e4fe57655d92caed7bd9d820f6cd10bae4fc",
   "coveredAt": "2026-10-04T10:18:44.271Z",
-  "lastOutcome": "nothing-to-do",
+  "lastOutcome": "failed",
   "backlog": [
     {
       "area": "projects",
@@ -11,58 +11,29 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
+      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 635,
-    "headCommit": "225de8f01dbf8983b891cf6ef6c9de5615bd4958",
-    "markerBefore": "22878fc601c1b0f1a966c50889b315f186f23f5e",
-    "slices": [
-      {
-        "area": "decisions",
-        "pages": [
-          "adr-0001-prod-secrets-management.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/decisions/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/decisions/adr-0001-prod-secrets-management.md. The openwiki/decisions/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/decisions/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "renovate.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/renovate.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      }
-    ],
-    "updatedAt": "2026-10-02T23:05:35.703Z"
-  },
+  "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "elapsedSeconds": 6677,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 75,
+    "calls": 314,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 374106,
-    "cached": 6708660,
+    "uncached": 1814678,
+    "cached": 28468276,
     "cacheWrite": 0,
-    "output": 125332,
-    "reasoning": 79343,
-    "ms": 1480828,
-    "estCostUsd": 0.212,
+    "output": 547605,
+    "reasoning": 442923,
+    "ms": 11494005,
+    "estCostUsd": 0.9599,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
