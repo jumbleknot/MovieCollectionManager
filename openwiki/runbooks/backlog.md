@@ -15,6 +15,8 @@ sources:
     resource: repo://.forgejo/issue_template/backlog-item.yaml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-cfc5a272113a96dbb839cafe
+    resource: repo://docs/runbooks/backlog.md
   - id: openwiki-source-13a568ffa4d99e7c6a3420ca
     resource: repo://scripts/__tests__/backlog.test.mjs
   - id: openwiki-source-f427d95b17f165c773f59e07
@@ -31,9 +33,10 @@ sources:
     resource: repo://specs/049-forgejo-issue-tracking/data-model.md
   - id: openwiki-source-89e71edf5b903065a91bc051
     resource: repo://specs/049-forgejo-issue-tracking/research.md
-  - id: openwiki-source-677c64386096dcc92b809d21
-    resource: repo://specs/049-forgejo-issue-tracking/spec.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-30T11:51:40.481Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-04T21:27:12.854Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-10-04T21:27:12.854Z
 ---
 
 # The agent-driven backlog (Forgejo Issues)
@@ -94,7 +97,10 @@ consulted only for the items that survive it.
   this repository. Every write therefore asserts that its target owner/repo matches the origin remote and
   refuses otherwise — checked once against any `--repo` value and again at the request boundary, so a
   mis-built path cannot slip through. Comparing the derived slug against itself would be a tautology that
-  protects nothing; the guard only means something against a target that came from elsewhere.
+  protects nothing; the guard only means something against a target that came from elsewhere. The
+  credential channels themselves — host `setx`, the `${localEnv}` passthrough, and the no-clear-text rule
+  that governs them — belong to [the secrets-management posture](../invariants/secrets-management.md) and
+  [the dev container](./devcontainer.md); nothing about them is restated here.
 - **Reads prefer the write credential, on purpose.** The write token is used for reads whenever it is
   present, and the read-only fallback exists only for its absence — falling back on every read would keep
   the tool working while the write credential is broken, hiding the breakage until the first write. With
@@ -108,6 +114,12 @@ consulted only for the items that survive it.
   scopes (`/user` → 403, no `read:user`), so the scope split is proven behaviourally: the write sequence
   succeeds under the write token and the same four write verbs return 403 under `MCM_FORGE_TOKEN`. That
   negative half is the only check that the read-only diagnostics token has not been widened.
+- **A bare 401/403 is never surfaced.** The endpoint family is mapped to the permission it actually needs
+  (`write:issue` for issues, labels and milestones; `read:repository` for `issue_config`), and the message
+  names both the token used and the permission missing, states that this is granular scope rather than
+  expiry — the same credential can return 200 on another endpoint in the same second — and says that
+  nothing was retried and nothing was downgraded. Exit 4. A bare status code is indistinguishable from an
+  expired credential, and this project has already paid once for that ambiguity.
 - **An unknown label name in a filter is silently ignored and returns the UNFILTERED set** — a typo reads
   as "matched everything". The tooling resolves every label and milestone name against the repository
   first and refuses an unknown one locally. With a real label the filter is correct and fails closed, and
@@ -151,7 +163,9 @@ consulted only for the items that survive it.
   `/speckit-specify`.
 - **A milestone must exist before it can be used**, which is why `setup-milestone NNN-slug` is what makes
   `create --milestone` usable at all — an unknown milestone name is refused locally, for the same reason a
-  label is. No milestone is not an error; it is the free backlog, and the normal case.
+  label is. Both setup commands are idempotent and never re-create an entry that already exists, so a
+  colour or description the operator adjusted in the web UI is left alone rather than reverted. No
+  milestone is not an error; it is the free backlog, and the normal case.
 - **The issue form only takes effect from the default branch**, so on a feature branch `validate-form`
   reports that no issue form is in effect — expected, not broken.
 - **`validate-form` decides from the ENUMERATED templates, not from the validator.**
@@ -181,8 +195,9 @@ consulted only for the items that survive it.
   operator's newer intent is never discarded. The check is skipped when this invocation has already written
   labels itself, because its own write moves the timestamp.
 - **A duplicate is refused rather than filed twice.** `create` reports an existing open item whose title
-  matches after trimming, lowercasing and whitespace collapsing. That is exact-after-normalisation, not
-  fuzzy: a reworded duplicate still gets through, which is what the guidance to look before filing covers.
+  matches after trimming, lowercasing and whitespace collapsing; `--allow-duplicate` overrides when the
+  work really is separate. That is exact-after-normalisation, not fuzzy: a reworded duplicate still gets
+  through, which is what the guidance to look before filing covers.
 - **The API base is derived from the git remote, and the port is the trap.** Only
   `git remote get-url origin` carries scheme, host and the port the API is served on; a base built from the
   registry hostname alone fails as a transport error that reads exactly like a blocked firewall. That is
