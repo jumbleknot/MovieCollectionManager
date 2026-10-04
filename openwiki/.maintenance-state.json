@@ -1,68 +1,46 @@
 {
-  "coveredCommit": "c2e8f2744c07dbbd4fcd420321bcc5cd562cf165",
-  "coveredAt": "2026-10-04T20:46:06.829Z",
+  "coveredCommit": "cccdda42617219735a5d3210b9d963f0fb0955f1",
+  "coveredAt": "2026-10-04T22:04:52.579Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "backlog.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 660,
-    "headCommit": "602f6df633503ac027d83476ca4dd9a85016a2c5",
-    "markerBefore": "b4dd11803c536a0115010b75a3d4ca8d78acdabe",
+    "number": 663,
+    "headCommit": "95b46ec8d79e34bb83462d9f2969ee4435a22e19",
+    "markerBefore": "cccdda42617219735a5d3210b9d963f0fb0955f1",
     "slices": [
-      {
-        "area": "projects",
-        "pages": [
-          "sast.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
       {
         "area": "runbooks",
         "pages": [
-          "android-emulator.md"
+          "backlog.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
         "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backlog.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-04T20:46:07.251Z"
+    "updatedAt": "2026-10-04T22:04:52.916Z"
   },
   "lastRunBudget": {
     "pagesWritten": 1,
-    "elapsedSeconds": 1239,
+    "elapsedSeconds": 2264,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 56,
+    "calls": 68,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 200464,
-    "cached": 3726586,
+    "uncached": 269631,
+    "cached": 5155466,
     "cacheWrite": 0,
-    "output": 65651,
-    "reasoning": 46522,
-    "ms": 1204178,
-    "estCostUsd": 0.1135,
+    "output": 112046,
+    "reasoning": 90729,
+    "ms": 2114643,
+    "estCostUsd": 0.1694,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
