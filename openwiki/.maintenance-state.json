@@ -2,7 +2,18 @@
   "coveredCommit": "8c09e4fe57655d92caed7bd9d820f6cd10bae4fc",
   "coveredAt": "2026-10-04T10:18:44.271Z",
   "lastOutcome": "nothing-to-do",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "sast.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 635,
