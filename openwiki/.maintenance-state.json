@@ -1,81 +1,46 @@
 {
-  "coveredCommit": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
-  "coveredAt": "2026-10-04T15:00:26.631Z",
+  "coveredCommit": "b4dd11803c536a0115010b75a3d4ca8d78acdabe",
+  "coveredAt": "2026-10-04T18:44:21.109Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "sast.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 656,
-    "headCommit": "bfbdd08d22e517f8a863f46d1450a54288008985",
-    "markerBefore": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
+    "number": 660,
+    "headCommit": "a8ccd8e7ab1389680433bda5d999729980ef22d9",
+    "markerBefore": "b4dd11803c536a0115010b75a3d4ca8d78acdabe",
     "slices": [
       {
-        "parts": [
-          {
-            "area": "projects",
-            "pages": [
-              "agent-gateway.md",
-              "keycloak.md"
-            ],
-            "kind": "refresh",
-            "subjects": {},
-            "areaExists": true,
-            "reason": "drift sweep (item #525): clear the three pages openwiki forces into every run (operator, 2026-10-04)",
-            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/agent-gateway.md; openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-          },
-          {
-            "area": "runbooks",
-            "pages": [
-              "android-emulator.md"
-            ],
-            "kind": "refresh",
-            "subjects": {},
-            "areaExists": true,
-            "reason": "drift sweep (item #525): clear the three pages openwiki forces into every run (operator, 2026-10-04)",
-            "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-          }
+        "area": "projects",
+        "pages": [
+          "sast.md"
         ],
         "kind": "refresh",
-        "area": "projects + runbooks",
-        "pages": [
-          "projects/agent-gateway.md",
-          "projects/keycloak.md",
-          "runbooks/android-emulator.md"
-        ],
-        "reason": "drift sweep (item #525): clear the three pages openwiki forces into every run (operator, 2026-10-04); drift sweep (item #525): clear the three pages openwiki forces into every run (operator, 2026-10-04)"
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-04T15:00:26.985Z"
+    "updatedAt": "2026-10-04T18:44:21.479Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 3210,
+    "pagesWritten": 1,
+    "elapsedSeconds": 6683,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 181,
+    "calls": 211,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 779862,
-    "cached": 13440462,
+    "uncached": 1101409,
+    "cached": 21510310,
     "cacheWrite": 0,
-    "output": 246417,
-    "reasoning": 191490,
-    "ms": 5050693,
-    "estCostUsd": 0.4283,
+    "output": 294576,
+    "reasoning": 247827,
+    "ms": 6523569,
+    "estCostUsd": 0.5873,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
