@@ -1,20 +1,36 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/routine channels and their Friday-window-vs-nightly-cron cadences and prPriority ranking (item #486), the weekly CVE sweep that runs three hours before the window on purpose (item #487), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (#308/#350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (#349/#350/#412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (#412/#560), the health digest that used to read only an advisory column and only the newest scheduled sweep (#485/#563), the pinned-toolchain gotchas for Rust (devcontainer rebuild) and Python (packageRules ordering), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
+description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-vs-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the weekly CVE sweep that runs three hours before the window on purpose (item #487), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (#308/#350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (#349/#350/#412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (#412/#560), the health digest that used to read only an advisory column and only the newest scheduled sweep (#485/#563), the pinned-toolchain gotchas for Rust (devcontainer rebuild) and Python (packageRules ordering), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-27T05:24:24.425Z
+  - by: openwiki/0.6.0
+    at: 2026-10-02T22:36:21.093Z
 sources:
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
+  - id: openwiki-source-eca7c5325f14a686c18a7c8a
+    resource: repo://.forgejo/workflows/renovate-health.yml
   - id: openwiki-source-6e3646982d72c64cb5e2486d
     resource: repo://.forgejo/workflows/renovate.yml
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
-generated: { by: "openwiki/0.5.2", at: "2026-09-27T05:24:24.425Z" }
+  - id: openwiki-source-b7793decf9d7c9ba48e57e0f
+    resource: repo://rust-toolchain.toml
+  - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
+    resource: repo://scripts/__tests__/infra-image-scan.test.mjs
+  - id: openwiki-source-083be07d2570a758cc6c0b74
+    resource: repo://scripts/__tests__/renovate-health.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-3b90cb16e95306cae75aac45
+    resource: repo://scripts/renovate-health.mjs
+generated: { by: "openwiki/0.6.0", at: "2026-10-02T22:36:21.093Z" }
 ---
 
 # Renovate dependency bot
@@ -25,17 +41,33 @@ side: the schedule, forcing and verifying a run, reading the dashboard, and the 
 produce absence instead of an error — see `docs/runbooks/renovate.md` for the full procedures,
 measured evidence, and code citations behind every claim below.
 
-## Four channels, one budget
+## Channels, one budget
 
 | channel | trigger | cadence / rank |
 | --- | --- | --- |
 | **security** — `vulnerabilityAlerts` + OSV | nightly cron `0 3 * * *` | schedule-exempt, unbudgeted |
 | **lockfile refresh** — `lockFileMaintenance` (pnpm, cargo-deps, python-deps) | the window run | Friday, `prPriority: 5` |
 | **docker base images** | the window run | Friday, `prPriority: 3` |
+| **docker digest pins** — `pinDigest` + `digest` updates | the window run | Friday, `prPriority: 2` |
 | **routine** — every other grouped package rule | the window run | Friday only, `prPriority` 0 (default) |
 
 Nothing auto-merges — every group carries `automerge: false`. A tick or a dispatch gets you a PR,
 never a merge.
+
+```mermaid
+flowchart TD
+    A[Friday window run starts] --> B{Is it security-class work}
+    B -- yes --> C[Schedule-exempt and unbudgeted, lands on the nightly cron]
+    B -- no --> D["Sorted by prPriority — lockfile 5, base images 3, digest pins 2, routine 0"]
+    D --> E{Is the hourly PR budget still unspent}
+    E -- no --> F[No branch and no PR, nothing left behind to resume later]
+    E -- yes --> G[Branch created inside the window]
+    G --> H[PR opens and holds concurrent-limit headroom until it merges]
+```
+
+How one update is decided inside the Friday window: security-class work bypasses the window
+entirely, everything else is sorted by `prPriority` and then gated by the hourly budget *before* a
+branch exists.
 
 ## Scheduling and budget gotchas
 
@@ -51,28 +83,44 @@ never a merge.
   pins) was unmergeable from creation on an unrelated otel-lgtm CVE. Both crons are UTC so the 3h gap
   is fixed; DST cannot narrow it. **Do not "tidy the crons together"** — a guard test asserts the sweep
   is strictly earlier than every Renovate window cron.
-- **The budget binds before the schedule.** `prHourlyLimit: 4` and `prConcurrentLimit: 5` in
-  `renovate.json`; the guard test requires `prConcurrentLimit` to stay above `prHourlyLimit` or it
-  becomes the binding constraint instead. Measured 2026-08-28: a window run created exactly 4 PRs and
-  deferred everything else a week. `handleConcurrentLimits()` checks the hourly limit for every key
-  and blocks **branch** creation too, not just PR creation, and open PRs also eat `prConcurrentLimit`
-  headroom — leaving four green Renovate PRs unmerged caps the next window at one new PR. **Merging
-  promptly is a throughput lever.**
-- **Why `docker base images` carries `prPriority: 3` (item #486).** With one in-window run a week,
-  `prHourlyLimit: 4` *is* the weekly throughput, and the three `lockFileMaintenance` channels at
-  `prPriority: 5` already claim three of the four slots every week by construction. Before #486,
-  `docker base images` — the channel carrying the same base-image security bumps the weekly CVE sweep
-  blocks merges over — sorted with every other routine channel and had not received a slot since PR
-  #289, a roughly six-week wait while the sweep kept gating on those images. It now ranks at
-  `prPriority: 3`: ahead of every routine channel, deliberately behind `lockFileMaintenance`'s 5 (which
-  stays first because it is the channel that keeps the gates green). **Any later `packageRules` entry
-  that takes a `groupName` away from `docker base images` must set `"prPriority": 0` explicitly** —
+- **The budget binds before the schedule.** `prHourlyLimit: 5` and `prConcurrentLimit: 6` in
+  `renovate.json` (raised from `prHourlyLimit` 4 / `prConcurrentLimit` 5 on 2026-10-02, when the
+  in-window budget grew to a fifth slot); the guard test requires `prConcurrentLimit` to stay above
+  `prHourlyLimit` or it becomes the binding constraint instead. Measured 2026-08-28: a window run
+  created exactly 4 PRs — the hourly limit at
+  the time, precisely — and deferred everything else a week. `handleConcurrentLimits()` checks the
+  hourly limit for every key and blocks **branch** creation too, not just PR creation, and open PRs
+  also eat `prConcurrentLimit` headroom — leaving four green Renovate PRs unmerged caps the next
+  window at one new PR. **Merging promptly is a throughput lever.**
+- **Why `docker base images` carries `prPriority: 3` (item #486), and why the ranking must not be
+  inverted.** With one in-window run a week, `prHourlyLimit` *is* the weekly throughput, and the three
+  `lockFileMaintenance` channels at `prPriority: 5` already claim three of the slots every week by
+  construction. Before #486, `docker base images` — the channel carrying the same base-image security
+  bumps the weekly CVE sweep blocks merges over — sorted with every other routine channel and had not
+  received a slot since PR #289, a roughly six-week wait while the sweep kept gating on those images.
+  It now ranks at `prPriority: 3`: ahead of every routine channel, deliberately behind
+  `lockFileMaintenance`'s 5. That ordering is not an accident to be tidied — lockfile refresh is first
+  precisely because it is the channel that clears a CVE finding the manifest range already permits,
+  and raising docker above it would trade one starvation for another. **Any later `packageRules` entry
+  that takes a `groupName` away from `docker base images` must set an explicit `prPriority`** —
   Renovate merges rules in order and a later rule overrides only the keys it sets, so an unreset rule
-  silently inherits 3 and competes for the slot this exists to secure (today: `python toolchain` and
-  `docker digest pins`, both reset). A guard test fails if a new claiming rule appears without the
-  reset. This does not remove rate-limiting entirely: if `docker base images` itself carries more than
-  a window's worth, tick its `unlimit-branch=` checkbox rather than waiting for a fourth deterministic
-  slot.
+  silently inherits 3 and competes for the slot this exists to secure. Today that is `python toolchain`
+  and `langfuse` (explicit 0) and `docker digest pins` (explicit 2, see below). A guard test fails if a
+  new claiming rule appears without one. This does not remove rate-limiting entirely: if
+  `docker base images` itself carries more than a window's worth, tick its `unlimit-branch=` checkbox
+  rather than waiting for a deterministic slot.
+- **The fifth slot, and `docker digest pins` at 2 (amended 2026-10-02).** At four slots the allocation
+  was 3 lockfile + 1 `docker base images`, which left `docker digest pins` no slot at all — the
+  2026-10-02 dashboard listed it under Rate-Limited while it carried the caddy rebuild for its
+  curl/c-ares Highs. `prHourlyLimit` is now 5 (`prConcurrentLimit` 6, kept above it) and
+  `docker digest pins` carries `prPriority: 2` — still below `docker base images` (3) and
+  `lockFileMaintenance` (5), so the ranking above is unchanged; the extra slot goes to a digest
+  refresh, i.e. an upstream rebuild of a version already running, the lowest-risk security fix there
+  is, ahead of every routine channel. The cost is one more PR's CI per week on the capacity-1 runner.
+  Note what changed about the *reset* role: this rule is no longer a reset-to-0 — it carries its own
+  explicit number, which is what still stops the last rule in the file (docker datasource,
+  `pinDigest`/`digest`, no `groupName` and no `prPriority`) from carrying `docker base images`' 3
+  through.
 
 ## Forcing a run, and verifying what it actually did
 
@@ -94,7 +142,9 @@ dispatch is one runner slot.
   ⇒ it ran live. Note the `dryRun: "false"` string form: it resolves live only because Forgejo coerces
   it against the input's declared `type: boolean` — under plain GitHub expression semantics a non-empty
   string is truthy and would select a dry run. That is a property of this forge build, not a guarantee,
-  which is exactly why the empirical check stays mandatory rather than advisory.
+  which is exactly why the empirical check stays mandatory rather than advisory. The status step is
+  `always()`-guarded, so a dispatch whose toolchain setup dies still records its mode — an unrecorded
+  dispatch mode is the same absence item #268 exists to end.
 - **A dispatch returns HTTP 204 immediately but only queues — apply the empirical check only after the
   run starts.** A queued run is invisible in `/actions/tasks` (that endpoint lists jobs, and a job row
   does not exist until the job starts); use `/actions/runs?event=workflow_dispatch` to confirm the run
@@ -318,10 +368,14 @@ shape entirely), and without `--strict` a needed migration is a warning, exit 0,
 the check exists to catch. It runs in two places on the same `renovate@44` major the live run uses: a
 required, unconditional job in `guardrails.yml` on every `renovate.json` edit, and a pre-run step in
 `renovate.yml` that catches a key deprecated by a minor bump between Friday windows when nothing in the
-repo changed. It does not replace the guard test — the two catch different failure classes: the
-validator catches a key Renovate does not know at all; the guard test catches a key Renovate knows but
-ignores depending on where it is written (for example, `prPriority` set inside `lockFileMaintenance`
-instead of at the packageRule level).
+repo changed. Both references currently pin the exact patch `renovate@44.131.0`, because every
+`renovate >= 44.131.1` pulls a `@yarnpkg/core` published with a Yarn-only dependency spec that npm
+cannot install — under `npx` it exits 1 with no message — and a guard test asserts all three
+`renovate@` invocations agree on the major, so the validator can never certify a config against a
+grammar the run does not use. It does not replace the guard test — the two catch different failure
+classes: the validator catches a key Renovate does not know at all; the guard test catches a key
+Renovate knows but ignores depending on where it is written (for example, `prPriority` set inside
+`lockFileMaintenance` instead of at the packageRule level).
 
 ## Related
 
@@ -331,3 +385,9 @@ instead of at the packageRule level).
   scheduling gotchas are built around, and the scan recipe used to satisfy stability-days criterion 2
 - [Devcontainer sandbox](devcontainer-sandbox.md) — the egress allowlist that governs whether a local
   Renovate lookup can see Docker Hub timestamps at all
+- [CI/CD pipeline](../projects/ci-cd-pipeline.md) — where a Renovate PR's gates run once it exists
+- [Pull-request batching](../process/pull-request-batching.md) — why the three lockfile channels are
+  split rather than grouped into one PR, which is what leaves three of the five slots spoken for
+- [ADR-0002: stateful major upgrades](../decisions/adr-0002-stateful-major-upgrades.md) — why
+  `langfuse` takes its own `groupName` (and its explicit `prPriority` reset) rather than riding
+  `docker base images`
