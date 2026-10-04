@@ -47,7 +47,7 @@ import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
 import { conceptStamp } from './openwiki-stamp.mjs';
-import { carryClaimsHash } from './openwiki-claims.mjs';
+import { carryClaimsHash, CLAIMS_DIR } from './openwiki-claims.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
 
@@ -1287,6 +1287,45 @@ const sha = (file) => {
 };
 
 /** Snapshot dirty paths and their content, so a file that was already dirty is not double-counted. */
+/**
+ * After a DEADLINE stop, restore what the slice did not ask for (item #613, run 4606).
+ *
+ * openwiki forces pages whose Claims went stale into every update run, whatever was requested. When
+ * the deadline stops the generator part-way through one of those, its half-written bytes break V16 —
+ * a whole-invocation conformance failure that discards the requested pages too, even ones that
+ * landed. So everything the run changed is put back to its committed state, or deleted if new,
+ * EXCEPT the requested pages, their .claims sidecars and the requested areas' index.md. That keeps
+ * V16 sound: it compares a page with its own sidecar, and requested pages keep both; a restored
+ * .page-manifest.json entry merely lags and openwiki refreshes it. A path that was already dirty
+ * before the run is left alone — its pre-run bytes are not in git. Returns the paths it reverted.
+ *
+ * Only for a deadline stop: a run that ENDS on its own is judged on everything it wrote.
+ */
+export function revertUnrequested({ root = REPO_ROOT, bundleRoot = null, slice, before = new Map() } = {}) {
+  const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
+  const prefix = `${relative(root, bundleDir).split(sep).join('/')}/`;
+  const keep = new Set();
+  for (const part of partsOf(slice)) {
+    keep.add(`${prefix}${part.area}/index.md`);
+    for (const page of part.pages ?? []) {
+      keep.add(`${prefix}${part.area}/${page}`);
+      keep.add(`${prefix}${CLAIMS_DIR}/${part.area}/${page.replace(/\.md$/u, '.json')}`);
+    }
+  }
+  const reverted = [];
+  for (const path of detectWrittenPaths(root)) {
+    if (keep.has(path) || before.has(path)) continue;
+    const tracked = spawnSync('git', ['cat-file', '-e', `HEAD:${path}`], { cwd: root }).status === 0;
+    if (tracked) {
+      if (spawnSync('git', ['checkout', '--', path], { cwd: root }).status !== 0) continue;
+    } else {
+      rmSync(join(root, path), { force: true });
+    }
+    reverted.push(path);
+  }
+  return reverted;
+}
+
 export function snapshotTree(root = REPO_ROOT) {
   const paths = detectWrittenPaths(root);
   return new Map(paths.map((p) => [p, sha(join(root, p))]));
@@ -1686,6 +1725,12 @@ export function executeSlices({
         const timeoutMs = generatorAllowance();
         if (timeoutMs !== null && timeoutMs < MIN_GENERATOR_MS) break;
         invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog, timeoutMs });
+        if (timeoutMs !== null && (invocation?.status === 124 || invocation?.status === 137)) {
+          const reverted = revertUnrequested({ root, bundleRoot: bundleDir, slice, before });
+          if (reverted.length > 0) {
+            console.error(`[wiki-maintain] deadline stop: restored ${reverted.length} path(s) this slice did not request (openwiki's forced or unfinished pages): ${reverted.slice(0, 6).join(', ')}${reverted.length > 6 ? ' …' : ''}`);
+          }
+        }
       } catch (err) {
         // A thrown invocation is a real failure — but it is NOT `nothing-to-do` (FR-017).
         invocation = { error: err.message };
