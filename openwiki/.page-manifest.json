@@ -51,11 +51,11 @@
       "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c"
     },
     "/openwiki/projects/agent-gateway.md": {
+      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
+      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423",
       "pageVersion": "sha256:d2eeeec59478e2b298ce0e1141ce3a75c90260c94e5fc742bc4561001455f065",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "81dffdfc-4e15-4083-8d3a-315fdcb117b8",
-      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
-      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423"
+      "completedRunId": "81dffdfc-4e15-4083-8d3a-315fdcb117b8"
     },
     "/openwiki/projects/bff.md": {
       "gitHead": "b492241a72b0b47e5fe2acccc00639a44c93a426",
@@ -72,11 +72,11 @@
       "completedRunId": "abdfe5e8-5e6a-45ec-84d7-032c73d67800"
     },
     "/openwiki/projects/keycloak.md": {
+      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
+      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423",
       "pageVersion": "sha256:f50f3742597712c93e6715260ab404ec2619fa1216c851f5f8cf8bf3b0bd16a5",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "81dffdfc-4e15-4083-8d3a-315fdcb117b8",
-      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
-      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423"
+      "completedRunId": "81dffdfc-4e15-4083-8d3a-315fdcb117b8"
     },
     "/openwiki/projects/mc-service.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
@@ -107,11 +107,11 @@
       "completedRunId": "5f8e1b80-2dc1-43c0-ad97-44b479bd8087"
     },
     "/openwiki/runbooks/android-emulator.md": {
-      "pageVersion": "sha256:514ea532e190354bdf67e16992b97753a8c62da123fa75d1e39feef0c1421276",
+      "pageVersion": "sha256:483ba10716360ffdc10ebefaaf3db369ee19a73d29c10b5068d3d4c64c662847",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "81dffdfc-4e15-4083-8d3a-315fdcb117b8",
-      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
-      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423"
+      "completedRunId": "95114b96-0efa-4307-b7bf-3d3cef89e160",
+      "gitHead": "f56019ca402274daa74b3f4cef42bb06ccad542e",
+      "sourceFingerprint": "sha256:bda46881728741b2a811d535dfa947827c606549ffb8ccf384de0ad54919a4f9"
     },
     "/openwiki/runbooks/backups.md": {
       "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",

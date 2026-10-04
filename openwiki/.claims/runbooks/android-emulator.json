@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:514ea532e190354bdf67e16992b97753a8c62da123fa75d1e39feef0c1421276",
+  "pageVersion": "sha256:483ba10716360ffdc10ebefaaf3db369ee19a73d29c10b5068d3d4c64c662847",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -186,19 +186,19 @@
     },
     {
       "id": "claim_83a5a509ae4443738d53b85e627afd18",
-      "statement": "CI is the recommended APK build path: both Forgejo builds use APK_VARIANT=release so there is no CI debug/Metro-attached APK, and app-e2e's disk-free step is load-bearing because it reclaims space by pruning the rootless Docker daemon rather than by deleting files. It has two halves — `docker image prune -af` and (added 2026-10-03) `docker builder prune -f --reserved-space 50GB` — because image prune never touches the build cache, which had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk; `--reserved-space` retains the most recent 50 GB so warm layers still hit. The `|| true` on both lines is deliberate but not a licence to be wrong: the flag was checked against the docker 27.5.1 CLI these jobs install so a bad flag cannot become a silent no-op. Without the reclamation the native build exhausts runner disk and dies mid-compile.",
+      "statement": "CI is the recommended APK build path: both Forgejo builds use APK_VARIANT=release so there is no CI debug/Metro-attached APK, and app-e2e's disk-free step is load-bearing because it reclaims space by pruning the rootless Docker daemon rather than by deleting files. It has two halves — `docker image prune -af` and (added 2026-10-03) `docker builder prune -f --reserved-space 50GB` — because image prune never touches the build cache, which had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk; `--reserved-space` retains the most recent 50 GB so warm layers still hit. The `|| true` on both lines is deliberate but not a licence to be wrong: the flag was checked against the docker 27.5.1 CLI this host-runner job's setup step installs, so a bad flag cannot become a silent no-op. Without the reclamation the native build exhausts runner disk and dies mid-compile.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1186-L1205",
-          "version": "repo-lines-v1:sha256:403312d527270c087baf3740fbea9eaecadbf062a593e02bc764053d552c143c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDgwNjQ1MjE2MzAxNTI2MjY2NDYxNjBiMjcxZjA0ZWRkZDMzNjJjNGFlNDA2ZWI2Njc0NjAzYTQ5NGM2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ODlhNjNlYTg2MjM3ZTBmZDM3YzlkYTE5ZmQ3OGYwZmM2YTQ5Njk5NGMwNWQ0YjU5NWNmMGQxNTZlNzA1MjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODg3NWI2NjFmNGM5OGJiMjk1YmFkY2JkZWFmNTRiNzllODlmMDhkZDlkOTY2NGQ0MTZhYTMzYmJlMzJhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3YTI3MGU1M2RkNDZkNGRmZGI0ZmY3MjQ3NDhmMTlhZGE0YmM2YjEzYjhiNjQ1Mzc3OTQwZmZhMGM5OTNiNDEifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1189-L1205",
+          "version": "repo-lines-v1:sha256:30c0f27cac21bc5ec732fa79749f27ae131ad7f0f59bc7ebe9a9cb5f4cae68c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDgwNjQ1MjE2MzAxNTI2MjY2NDYxNjBiMjcxZjA0ZWRkZDMzNjJjNGFlNDA2ZWI2Njc0NjAzYTQ5NGM2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjVhYWVhZDA3NGM1YWU0OTI0YTlmMWU2YzE4ZTdiMGFmNGI2NDQyMmQ5NmNmMjVjOWU5Y2QyYmE0N2I4ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODg3NWI2NjFmNGM5OGJiMjk1YmFkY2JkZWFmNTRiNzllODlmMDhkZDlkOTY2NGQ0MTZhYTMzYmJlMzJhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNDhmYjJkNGIyNjZmMmU4NWU5Y2RkYmQ2MDk2MjhmM2RhY2I1OTIyNDA5OGYwM2ViODIyZDYzOGY4NTlkZTAifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L465-L479",
-          "version": "repo-lines-v1:sha256:30b057aa24e9a79869ec0b820ce66b0e65f7fc73d9e65f1cd95e55d4d3be2f6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzOTExZjIxMDUxZWIzMGQ2ZjUyNGE3NTk3ZTM3MzhhN2ZkNWFhMWIyMWIwNGNlNDNhZWU3MzcxNjcwMzkwZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlM2VkNDExY2QyMjU1N2M1YjcyYjViNDBlYjMwNmIyNDQ5ZTVhY2U1NWQ2YTc1MzE1Y2RjNjYyMDU1OTE0MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYjNjYTkwZjEyZGNlYzYwZGJkOThiYmE1NzdjZjk4MGZhMTA3YWM1MDZlNzhmZjhiOWVjMTg4ZGU4NDI5NzQifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L467-L481",
+          "version": "repo-lines-v1:sha256:a26f03215b8a6e5cd6c1075507259b4143a364f9c397e906d186df7f336733b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwM2EzYjZlOWRkZDcxOThmMDdjYjcxZDlmYjAxZGRkMzU2MTI5ZDc5YTA3YWZhOWIxY2JhODhlNmQwNGVlMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4YjlhYjU3YWU5MWM1ODk0ZDE5NmJkZjRmZDFhNjI0ZDQ4ZWU4ZGFlNzYxOGE3NDUzODM2ZTM1OTA2NTBmMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYjNjYTkwZjEyZGNlYzYwZGJkOThiYmE1NzdjZjk4MGZhMTA3YWM1MDZlNzhmZjhiOWVjMTg4ZGU4NDI5NzQifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L481-L492",
-          "version": "repo-lines-v1:sha256:45a01404d54d2695f18f17540731cda1ee7b966c957b43cd1de4f2ba41497d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlM2ExMzZmYTE5YjViYTk4OTllN2NhOGViODIwYzNhZmNmN2Y3YjUxMGZmNzUxY2NmODcwOWQ2NDAzMmY5YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYmFjZjk5MmZjZDczNWI0MmI5ZWU5YzVlMGViYjUyMzY4ODc5ZDBlMTk2NDFhYjkyZDM3ZDhjMjAxMzQyYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MDZmOGUyYjJjZTczMjFiNmNhZjAwNzg2NDFhMWRjNDNiMTBhMDc4YTY3MmU3NjJkZjMwODA3ZDBjYmE5YjkifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L483-L494",
+          "version": "repo-lines-v1:sha256:45a01404d54d2695f18f17540731cda1ee7b966c957b43cd1de4f2ba41497d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlM2ExMzZmYTE5YjViYTk4OTllN2NhOGViODIwYzNhZmNmN2Y3YjUxMGZmNzUxY2NmODcwOWQ2NDAzMmY5YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYmFjZjk5MmZjZDczNWI0MmI5ZWU5YzVlMGViYjUyMzY4ODc5ZDBlMTk2NDFhYjkyZDM3ZDhjMjAxMzQyYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwNzJjZTA2NDNjNjI0YjIzZmQ5MGZhODU2OGE5NGRkMWU1MzE1MGI1MjIxMTk2ZGVmYTY1ZGI0ZDg5NjIwN2QifQ"
         }
       ]
     },
@@ -250,21 +250,35 @@
     },
     {
       "id": "claim_ad2e1f7c7de647d9bc633a3cd048823b",
-      "statement": "app-e2e verifies /dev/kvm is present in the job container and exits 1 with an ::error:: naming the runner-config fix if it is not, rather than letting the mobile suite skip silently; /dev/kvm is provided by the runner config's `container.options: --device /dev/kvm` (plus the ci user's kvm group membership), not by a udev rule, because the GitHub-host-VM approach does not apply inside a container.",
+      "statement": "app-e2e runs ON the ci host rather than in a job container: it declares `runs-on: kvm`, the name of a host-type runner label defined as `kvm:host`, precisely because the web-E2E leg's `localhost:8082` and the emulator leg's `10.0.2.2:8082` must resolve like a single host, and because KVM and the ci user's Docker daemon are both unavailable from a rootless job container. `/dev/kvm` is therefore the host's own device, and the invariants that matter are host state — KVM enabled on the host (kvm_intel/kvm_amd loaded), the ci user in the `kvm` group (`/dev/kvm` group kvm, mode 660), and the runner still registering the `kvm:host` label. The job verifies `/dev/kvm` before the emulator step and exits 1 with an `::error::` naming those host fixes if it is absent, rather than letting the mobile suite skip silently. The earlier statement that `/dev/kvm` came from the runner config's `container.options: --device /dev/kvm` described the pre-235f2f4c job-container setup; the workflow itself records that correction (2026-10-04).",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L494-L507",
-          "version": "repo-lines-v1:sha256:787f79031e76b37e95e35a3fa65b63c433226f1734f53fa5bb1fde12b8c43595:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZjQ1NzJmYTI0MDM1NzRmMDIzZjZlYTAxMGIzNmM4MmZiZTc2Zjg4MTlmMjAyMGQxZGE1NzAxZjRkNzU4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMzQ4MTgwMjY1ZjgyMmFmYzk3ZmY2MzJhY2ExYWFmZmFlNzczMDNkZmQxODFlMDU1ZmZlZmMxNDkyMjQwZTYifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L346-L357",
+          "version": "repo-lines-v1:sha256:446638a7050d8644aef8ebd81ac3355a96ac5145cd717c3f47158a599eff000a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNDFhNzExOTM0MGViODdhM2Q4MzZhOTg3ODdlMDZkYjk2NmZmYzQ3OTdhNzNhYzJkYzRhOTcwNGNiMmM4ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NmY5ZDhlMzYxNjhmODE2NDE0OGY5MjNiZGE1OGI0NjM2YWZjYTNhOTZlYWEzNWEyMzUwMjQwOTAwYjc2NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwODRjODBmMzc0NGIzOGEyMmQ0ZGU0MjRlNDMzNThiMjI4NjE1ZTQxMjJkZDNmOGM2NjZkNmY3MzU5YjI5OTcifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L612-L623",
-          "version": "repo-lines-v1:sha256:bccfb8b8d68ea5ebe6f2166256fcdac7a9ab13c2a8bdf9319713eec52dd53588:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZTkxZDNhODNhZWZhNWJhNWM5NjlkNDI3MmQwYzg4OTZhY2RmYzBkZTRkNjA3MTZhNzMwM2E0NWI2ZGViNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlZTFhMDc1ZjQ0OTJiNzMxNjM2OTFkYjgyYjI1OGVhYzY5NDg5ZDJkNWI3MGUwMmFjOWFhNDk5NThkMjc2ZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkNGNiNzZkZjc1MzJlNjhiNWViYWVmMTdkYzQxOTg1MTY2NmIzZTE1YjY4MjUyMGY2NzFiN2M2OWNlZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYWM3NDFlMjA5NThhYzRiYjIwNDM2N2RhOTc5ZWIxMjMzNWI4MzM5OGQwOGZiMDU1NTg3NmNiZjQwMDM1M2EifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L496-L510",
+          "version": "repo-lines-v1:sha256:fe1d9d020d94301f275300b0c95dc5c5724b422796294b37bd728d1eeb56a85c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMzQ4MTgwMjY1ZjgyMmFmYzk3ZmY2MzJhY2ExYWFmZmFlNzczMDNkZmQxODFlMDU1ZmZlZmMxNDkyMjQwZTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b8be1d965404d719736799a6ffc9837",
+      "statement": "Because app-e2e executes on the ci host and has no job container to supply a working Docker, its first step installs the Docker CLI only if the host lacks one (`command -v docker`; otherwise the static docker-27.5.1 tarball into /usr/local/bin) and then asserts that `docker info` actually reaches the ci user's rootless daemon at the job's `DOCKER_HOST` (`unix:///run/user/<uid>/docker.sock`). A CLI that is present but cannot reach that daemon exits 1 with an `::error::` naming the daemon and the socket — there is no fallback to another socket or to a container-provided daemon — so a container stack that did not come up on the expected daemon cannot read as a passing run. This is the same never-skip-loudly principle as the KVM check and the APK bundle guard.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L411-L412",
+          "version": "repo-lines-v1:sha256:ec8d581daad38d7af2a946f62e0384d27628d1970e0b67cd6a2e6091f592aede:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg4ZGFlYWIyNTYxMDBmOWNmOTgyM2NjN2Q3MWYyOTI4NjQyMDlmYjc3Mjk5ZWUwOWRjOTcyZGU1MmVmOGI0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTAyZmM2Njc1YjM0Y2Y2ZWE4YTE5OGQxOTgwYjhjNmM3ZWYyOWYyNWQ3ZTY3ODE4ZjZlZjk4MDMyYWQxZGY3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdiZjI4YWFmODdlMTVkNzAxYmNlMmNkYWNiMjJmNDFhZmM0ZGQ3NDIwMzJjMjRmMDY5MDg3ZjRkMDdiNjY3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmYyNjdiZDQwNmI3MGM0ZDVkZWY0MTgwODc0NDJmY2RjMmYzZjM4OGVmOTlhZGU3MWM5MWVmYTBlYjQ3NDVmNSJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L462-L481",
+          "version": "repo-lines-v1:sha256:205f8473f7685cbf8d8eb3d3e830c45697f9764831db01a95aec313cf4570832:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZTBhZWE4YTU2ZWJhMWJkYTExZTA1ODQ3NTc5ZjRlZDc0ZjlhOWIwMjFiYjk5Nzc5YWI3ZTUyZDE4OTYzNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1YjNkODkzNDgxYTdkNDdkNTlmOWE1OTE2MTEzYmMzMjhlZmJlYzY4MzA2MjkzZjAxOWI1MzY2MDIzMmEzZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYjNjYTkwZjEyZGNlYzYwZGJkOThiYmE1NzdjZjk4MGZhMTA3YWM1MDZlNzhmZjhiOWVjMTg4ZGU4NDI5NzQifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-10-04T14:07:00.171Z"
+    "at": "2026-10-04T20:25:31.907Z"
   }
 }

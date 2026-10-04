@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: Android emulator & APK builds (mobile E2E)
-description: The decision rule for where to run mobile E2E flows (CI for agent flows, local emulator for everything else), the devcontainer-native Linux KVM emulator that can emulate but not build the APK, and the Windows CMAKE_OBJECT_PATH_MAX wall that blocks a native rebuild on this workstation.
+description: The decision rule for where to run mobile E2E flows (agent flows in CI's app-e2e job on the kvm host runner, everything else on a local emulator), the Metro-less standalone APK and its in-bundle localhost:8082 guard, why the job runs on the ci host rather than in a job container, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-10-04T14:07:00.171Z
+    at: 2026-10-04T20:25:31.907Z
 sources:
   - id: openwiki-source-7e1c4d46c53be9bf32311e06
     resource: repo://.devcontainer/toolchain.Dockerfile
@@ -30,7 +30,7 @@ sources:
     resource: repo://scripts/ci-mobile-agent-flows.sh
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
-generated: { by: "openwiki/0.6.0", at: "2026-10-04T14:07:00.171Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-04T20:25:31.907Z" }
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -40,7 +40,8 @@ Mobile E2E has a hard split by flow type. **Agent flows** (anything driving the 
 **`app-e2e` job of [`.forgejo/workflows/app-ci.yml`](../../.forgejo/workflows/app-ci.yml)** — the job
 ported from the GitHub-era `android-e2e.yml`, a filename that no longer exists in this repository.
 `app-e2e` builds a **Metro-less, standalone embedded-bundle APK** (`APK_VARIANT=release`,
-`APK_ABI=x86_64`), runs it on a KVM emulator on the `kvm` runner, and drives the flows per-file through
+`APK_ABI=x86_64`), runs it on a KVM emulator on the `kvm` runner label (which executes the job
+directly on the ci host — see below), and drives the flows per-file through
 `scripts/ci-mobile-agent-flows.sh`. The reason for the split is not the emulator: the local Windows
 path runs agent flows against the **Metro dev server**, which OOM-crashes after only a handful of agent
 `/run` calls and then shows a black screen / `status 0` "RN networking issue" that reads as an app bug.
@@ -83,11 +84,27 @@ disable, followed last and specially by the non-agent `admin-settings-access` fl
   the failure surfaces much later, at login. The build therefore disables the Gradle daemon
   (`GRADLE_OPTS=-Dorg.gradle.daemon=false`), because a reused daemon keeps the env it started with.
 - **A missing KVM capability fails the job; it never skips the mobile suite.** The job verifies
-  `/dev/kvm` is present in the job container before the emulator step and exits 1 with an `::error::`
-  naming the fix if it is not. The rationale is the same one that makes the bundle guard worth having:
-  a silently skipped mobile half is indistinguishable from a passing one. `/dev/kvm` comes from the
-  runner config's `container.options: --device /dev/kvm` (plus the `ci` user's membership in the `kvm`
-  group), **not** from a udev rule — the GitHub-host-VM approach does not apply inside a container.
+  `/dev/kvm` exists before the emulator step and exits 1 with an `::error::` naming the fix if it does
+  not. The rationale is the same one that makes the bundle guard worth having: a silently skipped mobile
+  half is indistinguishable from a passing one. **`/dev/kvm` is the host's own device, not something
+  handed to a container.** `app-e2e` declares `runs-on: kvm` — the *name* of a host-type runner label
+  defined as `kvm:host` — so the job executes **on the ci host**, the way the GitHub-era VM did. What
+  must therefore hold is host state: KVM enabled on the host (`kvm_intel`/`kvm_amd` loaded), the `ci`
+  user in the `kvm` group (`/dev/kvm` group `kvm`, mode 660), and the runner still registering the
+  `kvm:host` label. An earlier version of this page said `/dev/kvm` came from the runner config's
+  `container.options: --device /dev/kvm`; that described the pre-`235f2f4c` job-container setup and is
+  wrong. The workflow's own comment carries the correction (2026-10-04), and the host is required rather
+  than convenient: the job's web-E2E leg reaches the dev BFF at `localhost:8082` while the emulator leg
+  reaches the host at `10.0.2.2:8082`, and those two only resolve like one host when the job *is* on the
+  host — a rootless job container gets neither that, nor KVM, nor the ci Docker daemon.
+- **Being a host job, it provisions its own Docker CLI and then proves it reaches the daemon.** With no
+  job container to supply a working Docker, the first step installs the CLI **only if the host has
+  none** (`command -v docker`; otherwise the static `docker-27.5.1` tarball into `/usr/local/bin`) and
+  then asserts `docker info` actually reaches the `ci` user's rootless daemon at the job's `DOCKER_HOST`
+  (`unix:///run/user/<uid>/docker.sock`). A CLI that is present but cannot reach that daemon exits 1
+  with an `::error::` naming the daemon and the socket — there is **no fallback** to another socket or
+  to a container-provided one. Same principle as the KVM check and the bundle guard: a container stack
+  that came up somewhere else, or did not come up at all, must not read as a passing mobile run.
 
 ## Gotchas
 
@@ -141,8 +158,8 @@ disable, followed last and specially by the non-agent `admin-settings-access` fl
   recent 50 GB so warm layers still hit and rebuilds stay fast. Without the reclamation the native build
   exhausts runner disk and dies mid-compile with no clean error. The `|| true` on both lines is
   deliberate — a prune that finds nothing must not fail the step — but it is **not a licence to be
-  wrong**: `--reserved-space` was checked against the **docker 27.5.1** CLI these jobs install,
-  precisely so a bad flag could not become a silent no-op.
+  wrong**: `--reserved-space` was checked against the **docker 27.5.1** CLI the job's host-runner setup
+  installs, precisely so a bad flag could not become a silent no-op.
 - **Windows hits a hard `CMAKE_OBJECT_PATH_MAX` (250-char) wall building RN ≥0.85 native modules.** The
   real cause is CMake replicating the full absolute source path under the object directory; this repo's
   path plus the deep pnpm layout (`node_modules/.pnpm/<pkg>@<ver>_<hash>/node_modules/<pkg>/…`)
