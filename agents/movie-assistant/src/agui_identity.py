@@ -22,7 +22,7 @@ import os
 from collections.abc import AsyncGenerator, Mapping
 from typing import Any
 
-from ag_ui.core import EventType, RunErrorEvent
+from ag_ui.core import EventType, RunErrorEvent, RunStartedEvent
 from copilotkit import LangGraphAGUIAgent
 
 from src.provider_errors import log_provider_error
@@ -141,6 +141,37 @@ def inject_observability(config: dict[str, Any], env: Mapping[str, str]) -> None
             config["callbacks"] = [handler]
 
 
+class SanitisedRunErrorEvent(RunErrorEvent):
+    """A `RUN_ERROR` built by THIS module — provider facts and exception class only (065 FR-010).
+
+    No extra fields, so it serialises exactly as a `RunErrorEvent`. It exists so `run()` can tell
+    its own terminal events from the runtime's by type rather than by matching message text (079).
+    """
+
+
+# 079 FR-003 — what a RUN_ERROR this repository did not build is rewritten to. Fixed text: the
+# original came from `str(exc)` or an upstream `error` event, and either can echo member content.
+FOREIGN_RUN_ERROR_MESSAGE = "agent run failed: upstream error"
+
+
+def _sanitised_run_error(exc: Exception) -> SanitisedRunErrorEvent:
+    """Log the ONE facts-only record and build the terminal event from the same description."""
+    described = log_provider_error(logger, exc, frame="stream")
+    return SanitisedRunErrorEvent(
+        type=EventType.RUN_ERROR,
+        message=(
+            f"provider call failed: status={described.status or 'unknown'} "
+            f"type={described.type or 'unknown'} exc={type(exc).__name__}"
+            if described.kind == "provider_http"
+            else f"agent run failed: {type(exc).__name__}"
+        ),
+        code=described.kind,
+    )
+
+
+_TERMINAL = (EventType.RUN_ERROR, EventType.RUN_FINISHED)
+
+
 class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
     """AG-UI agent that bridges the per-request subject token into `config["configurable"]`.
 
@@ -186,22 +217,69 @@ class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
         The message carries the provider FACTS and the exception class only — never `str(exc)`.
         This one crosses the network to a client, and a provider echoes request content in some
         error messages (FR-010).
+
+        SINCE ag-ui-langgraph 0.0.46 (079, item #641) the runtime's own `run()` catches the
+        exception first and yields `RUN_ERROR(message=str(exc))` — the very leak FR-010 forbids —
+        so the conversion that keeps the provider facts now happens one level in, in
+        `_handle_stream_events` below. What stays here:
+
+        * the OUTBOUND GUARD (079 FR-003): any `RUN_ERROR` this module did not build — the
+          runtime's `str(exc)` one, or one built from an upstream `error` event — leaves with a
+          fixed message and no raw event. It cannot recover the facts, but it cannot leak either,
+          so a runtime that stops calling `_handle_stream_events` degrades to "less specific", not
+          to "leaks again";
+        * this `except`, for an exception raised outside the stream on a runtime that still lets
+          it escape (0.0.45).
         """
+        terminal = False
         try:
             # `LangGraphAGUIAgent.run` carries no annotations, which mypy --strict reports as an
             # untyped call. The same reason `add_langgraph_fastapi_endpoint` is imported under
             # `type: ignore[import-untyped]` in gateway.py — the library ships no type information.
             async for event in super().run(input):  # type: ignore[no-untyped-call]
+                if getattr(event, "type", None) == EventType.RUN_ERROR and not isinstance(
+                    event, SanitisedRunErrorEvent
+                ):
+                    event = event.model_copy(
+                        update={"message": FOREIGN_RUN_ERROR_MESSAGE, "raw_event": None}
+                    )
+                terminal = terminal or getattr(event, "type", None) in _TERMINAL
                 yield event
         except Exception as exc:  # noqa: BLE001 — the terminal event is the whole point
-            described = log_provider_error(logger, exc, frame="stream")
-            yield RunErrorEvent(
-                type=EventType.RUN_ERROR,
-                message=(
-                    f"provider call failed: status={described.status or 'unknown'} "
-                    f"type={described.type or 'unknown'} exc={type(exc).__name__}"
-                    if described.kind == "provider_http"
-                    else f"agent run failed: {type(exc).__name__}"
-                ),
-                code=described.kind,
-            )
+            if terminal:  # 079 FR-005 — clients reject every event after a terminal
+                raise
+            yield _sanitised_run_error(exc)
+
+    async def _handle_stream_events(self, input: Any) -> AsyncGenerator[Any]:  # noqa: A002
+        """Convert a stream failure HERE, inside the runtime's own handler (079, item #641).
+
+        ag-ui-langgraph 0.0.46 wrapped this generator, in `LangGraphAgent.run()`, with an
+        `except Exception` that yields `RUN_ERROR(message=str(exc))` and calls
+        `logger.exception` — which writes the provider's echo of member text to the log through
+        the traceback. Catching one level in means that handler never sees the exception: the
+        client gets the facts-only event, and the log gets only `log_provider_error`'s record.
+
+        The runtime's rules are kept: nothing is yielded after a terminal event (re-raise, as the
+        runtime does), a run that never started gets its `RUN_STARTED` first (the protocol
+        requires one before a terminal), and `CancelledError`/`GeneratorExit` pass through
+        (`except Exception`, 065 FR-008).
+
+        This overrides a PRIVATE method. If a future runtime stops calling it, `run()`'s outbound
+        guard still stops the leak, and the integration test's facts assertion goes red.
+        """
+        started = False
+        terminal = False
+        try:
+            async for event in super()._handle_stream_events(input):
+                kind = getattr(event, "type", None)
+                started = started or kind == EventType.RUN_STARTED
+                terminal = terminal or kind in _TERMINAL
+                yield event
+        except Exception as exc:  # noqa: BLE001 — the terminal event is the whole point
+            if terminal:
+                raise
+            if not started:
+                yield RunStartedEvent(
+                    type=EventType.RUN_STARTED, thread_id=input.thread_id, run_id=input.run_id
+                )
+            yield _sanitised_run_error(exc)
