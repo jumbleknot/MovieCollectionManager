@@ -1,12 +1,9 @@
 ---
 type: Service
 title: Agent Gateway (LangGraph)
-description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI by a FastAPI app and reachable only from the BFF. Orchestrates tool calls to three scoped MCP servers through one code-driven chokepoint; owns no domain data and authenticates no end user.
+description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI by a FastAPI app, reachable only from the BFF, orchestrating tool calls to three scoped MCP servers through one code-driven chokepoint, owning no domain data, authenticating no end user, and turning any escaping exception into a sanitised terminal RUN_ERROR event rather than an aborted stream.
 resource: docs/runbooks/agent-layer.md
-tags: [langgraph, python, mcp, agent, ai]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T01:49:10.027Z
+tags: [langgraph, python, mcp, agent, ai, ag-ui]
 sources:
   - id: openwiki-source-bdd810ca95fc763a63b0c693
     resource: repo://agents/movie-assistant/src/agui_identity.py
@@ -44,13 +41,22 @@ sources:
     resource: repo://agents/movie-assistant/tests/integration/test_gateway_provider_error.py
   - id: openwiki-source-9a152503fae111dd82baefd4
     resource: repo://agents/movie-assistant/tests/unit/test_add_flow_graph.py
+  - id: openwiki-source-972c980a0d2b30dd23d46f8c
+    resource: repo://agents/movie-assistant/tests/unit/test_agui_identity.py
   - id: openwiki-source-00fb8109e6ce263b6fed0621
     resource: repo://agents/movie-assistant/tests/unit/test_stack_dump_signal.py
+  - id: openwiki-source-727718aa0491359cbdbb97c7
+    resource: repo://agents/movie-assistant/uv.lock
   - id: openwiki-source-b14f80515626024d557f0448
     resource: repo://docs/runbooks/agent-layer.md
   - id: openwiki-source-50ecbcb468aa9333b7ffa0fe
     resource: repo://mcp-servers/movie-mcp/src/server.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T01:49:10.027Z" }
+  - id: openwiki-source-8402614feddf4612babe005b
+    resource: repo://specs/079-run-error-sanitiser/plan.md
+generated: { by: "openwiki/0.6.0", at: "2026-10-04T14:07:00.171Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-10-04T14:07:00.171Z
 ---
 
 # Agent Gateway (LangGraph)
@@ -99,10 +105,74 @@ propagate into LangGraph's per-node executor tasks. Nothing bridged this way is 
 `state.forbid_token_fields` rejects a state key whose name looks like a credential
 ([Auth chain](../invariants/auth-chain.md)).
 
-`IdentityAwareAGUIAgent.run` is the other seam: any exception escaping the graph is turned into a
-terminal `RunErrorEvent` carrying provider facts, rather than re-raised. This is the one place every
-node's failure passes through, and it is what keeps a provider failure from aborting a chunked
-response mid-stream to a client that is waiting for a terminal event.
+The terminal-error seam is the other half of the boundary, and it is no longer a single method. An
+escaping exception must leave the stream as a terminal `RunErrorEvent`, never as an aborted socket:
+the runtime's stream handler re-raises hard exceptions "for the existing run-level error handling",
+which does not exist — `endpoint.py` hands the generator to a `StreamingResponse` whose 200 and
+headers are already flushed, so the connection is aborted mid-chunk with no terminal AG-UI event and a
+client waiting on one hangs for its full timeout. `IdentityAwareAGUIAgent` splits that duty across two
+overrides, and with the `ag-ui-langgraph` version this lock pins (0.0.46) the split is what keeps it
+working:
+
+- `_handle_stream_events` is where the conversion happens. The runtime wraps its own stream in an
+  `except Exception` that yields `RUN_ERROR(message=str(exc))` — the exact leak 065 FR-010 forbids —
+  and that handler sits *inside* the `run()` this repository overrides, so an outer `except` never
+  sees the exception again. Catching one level in is what preserves the provider facts: the terminal
+  event names the provider status and the provider error type when the failure is a provider HTTP
+  error, and the exception class in every case.
+- `run()` keeps the outbound guard: any `RUN_ERROR` this repository did not build — the runtime's
+  `str(exc)` one, or one built from an upstream `error` event — leaves with a fixed, content-free
+  message and no raw event. `SanitisedRunErrorEvent` (a `RunErrorEvent` subclass with no extra
+  fields, so it serialises identically) is what lets the guard tell its own terminal events apart by
+  type rather than by matching message text. `run()`'s own `except Exception` stays as well: on a
+  runtime whose `run()` still lets the exception escape, it is what converts it.
+
+What each half buys: the inner seam keeps the provider facts, and the outer guard means a runtime
+that stops calling `_handle_stream_events` degrades to "less specific", never to "leaks again".
+
+Both seams must hold the same protocol rules, because they are what a later edit breaks: nothing is
+yielded after a terminal event (a failure after one re-raises, since clients reject every event after
+a terminal); a failure before `RUN_STARTED` emits one first, because the protocol requires a started
+run before a terminal; and the catch is `except Exception`, never `BaseException`, because
+`CancelledError`/`GeneratorExit` inherit from the latter and a disconnecting client must unwind
+silently.
+
+The conversion is also the log-side guarantee. The runtime's handler calls `logger.exception`, whose
+traceback carries `str(exc)` — the provider's echo of member text — so catching one level in is what
+keeps the never-log list intact on the error path. The single permitted record is
+`log_provider_error`'s, carrying the status, the provider error type and the exception class only
+([logging and audit](../invariants/logging-and-audit.md)).
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant Endpoint as AGUI endpoint
+  participant Run as run override
+  participant Runtime as agent runtime
+  participant Stream as stream override
+  participant Graph as graph node
+  Client->>Endpoint: POST the run
+  Endpoint->>Run: clone the agent and stream
+  Run->>Runtime: delegate the run
+  Runtime->>Stream: iterate the stream
+  Stream->>Graph: execute the turn
+  Graph-->>Stream: raises a provider 400
+  Stream-->>Runtime: RUN_STARTED, then the sanitised RUN_ERROR
+  Note over Stream: status, error type and exception class only
+  Runtime-->>Run: events pass through, its own except never fires
+  Run-->>Endpoint: rewrite a RUN_ERROR this repo did not build
+  Endpoint-->>Client: terminal RUN_ERROR, the stream closes
+```
+
+*The failure path across the two seams: the inner override converts the exception before the
+runtime's own handler can turn it into `str(exc)`, and the outer override guards what leaves.*
+
+The integration test drives the real `build_app` under a real uvicorn server and pins the end-to-end
+guarantees — a terminal `RUN_ERROR` within a fail-fast bound, a non-provider bug terminating the
+stream too, a successful run still ending `RUN_FINISHED`, and the message carrying the provider facts
+(`status=400`, `type=invalid_request_error`) while containing no member text, so a "fix" that merely
+blanked the message fails it. It also captures the log and asserts no record contains the leaked
+text. The unit tests pin each seam's protocol rules by patching the base `_handle_stream_events`.
 
 ## Graph, intents and multi-turn stages
 
@@ -216,15 +286,25 @@ specialist rather than making an unauthenticated Claude call.
   leave armed). One real instance was `drain_audit_tasks` refilling its own loop — the drain must
   await a **snapshot** of the pending set, never loop on `while _PENDING_AUDITS`, because that set is
   module-level and shared by every concurrent turn.
-- **An escaping exception must become a terminal RUN_ERROR, not a mid-chunk abort.** `ag_ui_langgraph`
-  re-raises hard exceptions "for the existing run-level error handling", which does not exist: the
-  response's 200 and headers are already flushed, so the connection is aborted mid-body with no
-  terminal AG-UI event and a client waiting for one hangs for its full timeout. Measured: HTTP 200,
-  four SSE lines, then `RemoteProtocolError: peer closed connection without sending complete message
-  body`. `IdentityAwareAGUIAgent.run` is the right seam because it is the one place every node's
-  failure passes through — wrapping nodes individually means the next node added is the one that gets
-  forgotten. Catch `Exception`, never `BaseException`: `CancelledError` and `GeneratorExit` inherit
-  from the latter, and a disconnecting client must unwind silently.
+- **An escaping exception must become a terminal RUN_ERROR, not a mid-chunk abort — and since 079
+  (item #641) `IdentityAwareAGUIAgent.run` is no longer the only seam.** `ag_ui_langgraph` re-raises
+  hard exceptions "for the existing run-level error handling", which does not exist: the response's
+  200 and headers are already flushed, so the connection is aborted mid-body with no terminal AG-UI
+  event and a client waiting for one hangs for its full timeout. Measured: HTTP 200, four SSE lines,
+  then `RemoteProtocolError: peer closed connection without sending complete message body`.
+  `run()` was the seam that fixed it because it is the one place every node's failure passes through —
+  wrapping nodes individually means the next node added is the one that gets forgotten. **ag-ui-langgraph
+  0.0.46 broke that assumption**: it wraps its stream in its own `except Exception` yielding
+  `RUN_ERROR(message=str(exc))` — the exact leak 065 FR-010 forbids — from *inside* the `run()` this
+  repository overrides, so the facts-preserving conversion now happens one level in, in
+  `_handle_stream_events`. `run()` keeps the outbound guard (079 FR-003): any `RUN_ERROR` this
+  repository did not build is replaced by a fixed content-free message with `raw_event` cleared, so a
+  runtime that stops calling `_handle_stream_events` degrades to "less specific", never to "leaks
+  again". `SanitisedRunErrorEvent` exists so the guard tells its own terminal events apart by type
+  rather than by matching message text. Catch `Exception`, never `BaseException`: `CancelledError` and
+  `GeneratorExit` inherit from the latter, and a disconnecting client must unwind silently. Nothing
+  may be yielded after a terminal event, and a failure before `RUN_STARTED` must emit one first,
+  because the protocol requires a started run before a terminal.
 - **A provider refusal must be distinguishable from a product outcome.** An out-of-credit Anthropic
   account answers HTTP 400 `invalid_request_error` — not 402, not 429 — and the classifier's
   `except` correctly degraded it to "I couldn't complete that", leaving a run that reported 200,

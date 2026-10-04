@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:edb7a0a08015ee9d4c80cb43be6ff766a6710ad15df2085cc55a1a6f5140c69c",
+  "pageVersion": "sha256:514ea532e190354bdf67e16992b97753a8c62da123fa75d1e39feef0c1421276",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -186,15 +186,19 @@
     },
     {
       "id": "claim_83a5a509ae4443738d53b85e627afd18",
-      "statement": "CI is the recommended APK build path: both Forgejo builds use APK_VARIANT=release so there is no CI debug/Metro-attached APK, and app-e2e's disk-free step is load-bearing because it reclaims space by pruning the rootless Docker daemon's images (docker image prune -af) rather than by deleting files — without it the native build exhausts runner disk and dies mid-compile.",
+      "statement": "CI is the recommended APK build path: both Forgejo builds use APK_VARIANT=release so there is no CI debug/Metro-attached APK, and app-e2e's disk-free step is load-bearing because it reclaims space by pruning the rootless Docker daemon rather than by deleting files. It has two halves — `docker image prune -af` and (added 2026-10-03) `docker builder prune -f --reserved-space 50GB` — because image prune never touches the build cache, which had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk; `--reserved-space` retains the most recent 50 GB so warm layers still hit. The `|| true` on both lines is deliberate but not a licence to be wrong: the flag was checked against the docker 27.5.1 CLI these jobs install so a bad flag cannot become a silent no-op. Without the reclamation the native build exhausts runner disk and dies mid-compile.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1193-L1195",
-          "version": "repo-lines-v1:sha256:2ed7a92eacd6aa17a86e928f253285bf0dd76bc3a8faa42a3a3b3a464f21fc6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IwNzg0OGE0MzY2NjU2YjJiYTYxOTdiZTAyYjkyMDgxNDU0NmY5ZDlhZDBiNTMzOWU0YzI2YTJjOTQ2NTExNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmViM2ZkZDY2ZTFhMDEwNTc3YjgzNDNjMzkzZDY2ZDM5ODBjODQ0YjBjODBjNDJkNTQ2NDc3MTAwNTI5ZjA4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzk3MTA4ODVkNDhlNTgyYmRmNzRlYWZhYWU1YTIyNmNjZDhmZWYxNmVjODBmOGYyY2QzODZjN2UxNTJlNzM3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWVlOWIxOGM3NjI1NmQzMzk0NTA2ZjExY2VmNDMxYTE2OGQ1MzhhN2FlYWZiZjljYWFiY2YwOTc3OWNmYzRlYiJ9"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1186-L1205",
+          "version": "repo-lines-v1:sha256:403312d527270c087baf3740fbea9eaecadbf062a593e02bc764053d552c143c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDgwNjQ1MjE2MzAxNTI2MjY2NDYxNjBiMjcxZjA0ZWRkZDMzNjJjNGFlNDA2ZWI2Njc0NjAzYTQ5NGM2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ODlhNjNlYTg2MjM3ZTBmZDM3YzlkYTE5ZmQ3OGYwZmM2YTQ5Njk5NGMwNWQ0YjU5NWNmMGQxNTZlNzA1MjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODg3NWI2NjFmNGM5OGJiMjk1YmFkY2JkZWFmNTRiNzllODlmMDhkZDlkOTY2NGQ0MTZhYTMzYmJlMzJhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3YTI3MGU1M2RkNDZkNGRmZGI0ZmY3MjQ3NDhmMTlhZGE0YmM2YjEzYjhiNjQ1Mzc3OTQwZmZhMGM5OTNiNDEifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L481-L486",
-          "version": "repo-lines-v1:sha256:fd0847474de7b0d3260509bd1a9e06bf22ba0d2a5a5ac88c1e2d362fab4cb63f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUzYTEzNmZhMTliNWJhOTg5OWU3Y2E4ZWI4MjBjM2FmY2Y3ZjdiNTEwZmY3NTFjY2Y4NzA5ZDY0MDMyZjliYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJlMDQ4NTdhNDg5NmU1ZWZiMGI5Yjg0MmE1NDY2NDFhNWMwZDUzZDIxYmJiNjE4MGFkZTNkZGFiNGU5ZDZjZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmZiYWNmOTkyZmNkNzM1YjQyYjllZTljNWUwZWJiNTIzNjg4NzlkMGUxOTY0MWFiOTJkMzdkOGMyMDEzNDJjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjcwNmY4ZTJiMmNlNzMyMWI2Y2FmMDA3ODY0MWExZGM0M2IxMGEwNzhhNjcyZTc2MmRmMzA4MDdkMGNiYTliOSJ9"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L465-L479",
+          "version": "repo-lines-v1:sha256:30b057aa24e9a79869ec0b820ce66b0e65f7fc73d9e65f1cd95e55d4d3be2f6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzOTExZjIxMDUxZWIzMGQ2ZjUyNGE3NTk3ZTM3MzhhN2ZkNWFhMWIyMWIwNGNlNDNhZWU3MzcxNjcwMzkwZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlM2VkNDExY2QyMjU1N2M1YjcyYjViNDBlYjMwNmIyNDQ5ZTVhY2U1NWQ2YTc1MzE1Y2RjNjYyMDU1OTE0MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYjNjYTkwZjEyZGNlYzYwZGJkOThiYmE1NzdjZjk4MGZhMTA3YWM1MDZlNzhmZjhiOWVjMTg4ZGU4NDI5NzQifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L481-L492",
+          "version": "repo-lines-v1:sha256:45a01404d54d2695f18f17540731cda1ee7b966c957b43cd1de4f2ba41497d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlM2ExMzZmYTE5YjViYTk4OTllN2NhOGViODIwYzNhZmNmN2Y3YjUxMGZmNzUxY2NmODcwOWQ2NDAzMmY5YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYmFjZjk5MmZjZDczNWI0MmI5ZWU5YzVlMGViYjUyMzY4ODc5ZDBlMTk2NDFhYjkyZDM3ZDhjMjAxMzQyYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MDZmOGUyYjJjZTczMjFiNmNhZjAwNzg2NDFhMWRjNDNiMTBhMDc4YTY3MmU3NjJkZjMwODA3ZDBjYmE5YjkifQ"
         }
       ]
     },
@@ -243,10 +247,24 @@
           "version": "repo-lines-v1:sha256:67e3a03fa0ccc186abca5d1db9ae879984c4be06696d12831bc08a4a1795a765:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlODQ5MjRiY2M5Mzg2MmJmYzU2NmJiMGVjNzAwNzZjZjQ4ZjU5MmJhNjVmMzU3YjFiMzkzNTFiZWNlMGFiM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NjRiZjc4YzIyYTg4ZDIwM2IzNmU4NGM2YTIxOGY3Mjg1YTU4OWFmZjczYTZiZTkyMGU0ZWQ2YWUyYTRiMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlMjI1MGNlMzIwNzAwZGNjMTIxZDdkMDAxYTFlZGUyYjNhZjhiZjZkNWE1MjRkOGNhNmRjOTkwNDc2ODRhMzIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_ad2e1f7c7de647d9bc633a3cd048823b",
+      "statement": "app-e2e verifies /dev/kvm is present in the job container and exits 1 with an ::error:: naming the runner-config fix if it is not, rather than letting the mobile suite skip silently; /dev/kvm is provided by the runner config's `container.options: --device /dev/kvm` (plus the ci user's kvm group membership), not by a udev rule, because the GitHub-host-VM approach does not apply inside a container.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L494-L507",
+          "version": "repo-lines-v1:sha256:787f79031e76b37e95e35a3fa65b63c433226f1734f53fa5bb1fde12b8c43595:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZjQ1NzJmYTI0MDM1NzRmMDIzZjZlYTAxMGIzNmM4MmZiZTc2Zjg4MTlmMjAyMGQxZGE1NzAxZjRkNzU4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMzQ4MTgwMjY1ZjgyMmFmYzk3ZmY2MzJhY2ExYWFmZmFlNzczMDNkZmQxODFlMDU1ZmZlZmMxNDkyMjQwZTYifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L612-L623",
+          "version": "repo-lines-v1:sha256:bccfb8b8d68ea5ebe6f2166256fcdac7a9ab13c2a8bdf9319713eec52dd53588:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZTkxZDNhODNhZWZhNWJhNWM5NjlkNDI3MmQwYzg4OTZhY2RmYzBkZTRkNjA3MTZhNzMwM2E0NWI2ZGViNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlZTFhMDc1ZjQ0OTJiNzMxNjM2OTFkYjgyYjI1OGVhYzY5NDg5ZDJkNWI3MGUwMmFjOWFhNDk5NThkMjc2ZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkNGNiNzZkZjc1MzJlNjhiNWViYWVmMTdkYzQxOTg1MTY2NmIzZTE1YjY4MjUyMGY2NzFiN2M2OWNlZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYWM3NDFlMjA5NThhYzRiYjIwNDM2N2RhOTc5ZWIxMjMzNWI4MzM5OGQwOGZiMDU1NTg3NmNiZjQwMDM1M2EifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-29T01:49:10.027Z"
+    "at": "2026-10-04T14:07:00.171Z"
   }
 }

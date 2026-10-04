@@ -1,12 +1,12 @@
 ---
 type: Service
 title: Keycloak (Identity and Access Management)
-description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, and the realm guards plus service/network topology rules that keep auth reachable.
+description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
 tags: [auth, keycloak, iam, docker, realm, jwt]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-30T10:57:51.938Z
+    at: 2026-10-04T14:07:00.171Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -78,16 +78,16 @@ sources:
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-09-30T10:57:51.938Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-04T14:07:00.171Z" }
 ---
 
 # Keycloak (Identity and Access Management)
 
 Keycloak is the identity provider for the entire MCM platform. It runs as `keycloak-service` in the
 `auth` Compose project — alongside its own Postgres (`keycloak-store-postgres`) and a Mailpit SMTP
-stand-in in dev — and is deployed under the Komodo `prod-auth` stack in production. It is the only
-authority for user identities, OAuth2 token issuance, and the RFC 8693 token exchange the agent layer
-depends on.
+stand-in in dev — and is deployed under the Komodo `prod-auth` stack in production, whose `after = []`
+puts it at the root of the deploy order (every other prod stack waits on it). It is the only authority
+for user identities, OAuth2 token issuance, and the RFC 8693 token exchange the agent layer depends on.
 
 **Realm:** `grumpyrobot`, stable across every environment and deliberately not the organization name.
 The user-facing login client is `movie-collection-manager`, and its **client** roles `mc-user` and
@@ -96,6 +96,24 @@ The user-facing login client is `movie-collection-manager`, and its **client** r
 carrying only that authenticates and then fails with `login_role_denied`. The same legacy naming shows
 up one level up: the realm's built-in default role is still `default-roles-jumbleknot`, so a
 `default-roles-*` name that does not match the realm is expected, not drift.
+
+## The service head
+
+The `keycloak-service` block in `infrastructure-as-code/docker/keycloak/compose.yaml` is small and
+carries four facts worth reading directly, because none of them is visible in a realm file:
+
+- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.0@sha256:…`, the
+  identical pin in `compose.prod.yaml`. A version bump has to move both files, and the digest is the
+  unit the image-scan allowlist is keyed to.
+- **`depends_on: keycloak-store-postgres: condition: service_healthy`.** Keycloak is not started until
+  its own Postgres answers `pg_isready -U keycloak -d keycloak`, so a Keycloak that is up but cannot
+  reach its database is a Postgres problem, not a Keycloak one.
+- **The command differs by environment.** The base, dev and CI files run `command: start-dev`; only
+  `compose.prod.yaml` runs `start` (production mode) plus `--import-realm` declared in its own file.
+- **Prod runs `restart: always` on both Keycloak and its Postgres** (feature 030), not the base file's
+  `unless-stopped`. The host's shutdown drain stops every container to `Exited (0)`, and
+  `unless-stopped` then declines to bring a stopped container back when the daemon returns — so on this
+  host `always` is what actually makes a reboot hands-off.
 
 The service exposes the app port as host `8099` → container `8080` (dev and CI, loopback-bound);
 containers on the shared Docker network reach it via `keycloak-service:8080`. Feature 020 unified the
@@ -265,7 +283,12 @@ fails on any `_`-prefixed key at any depth. **Document realm settings in the REA
 the guard catches `_`-prefixed keys, but only Keycloak can tell you the realm truly deserializes.
 Mount the file as `grumpyrobot-realm.json`, supply any non-empty values for the `${VAR}` placeholders
 (they resolve from container env at import time), and want `Realm 'grumpyrobot' imported` — the exact
-command is in the [keycloak README](../../infrastructure-as-code/docker/keycloak/README.md).
+command is in the [keycloak README](../../infrastructure-as-code/docker/keycloak/README.md). Treat a
+green run as a schema/deserialisation check, **not** a version-parity check: the README's one-minute
+proof pins a Keycloak image a version behind the deployed one (`26.7.0` in the command against the
+`26.8.0` compose pin), so a realm can import under the proof image and still meet a stricter schema on
+the deployed pin. That is the same class of change that made 26.6+ enforce the realm password policy
+against imported credentials.
 
 **The CI runner is persistent, so `app-ci` deletes the realm volume on every run.** `IGNORE_EXISTING`
 means a stale realm would *never* pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks
@@ -340,10 +363,10 @@ crashed — pinned by `unauthenticated_401_is_returned_even_when_keycloak_is_unr
 `backend/mc-service/tests/integration/health_test.rs`.
 
 **Stale-password recovery wipes the DB volume — but no longer drops you into an empty Keycloak.**
-After wiping `keycloak-store-postgres-data` and restarting, `up-auth` re-imports the `grumpyrobot`
-realm automatically (feature 039). Full recovery: force-remove containers first (or the attached
-volume silently blocks the wipe), then wipe the volume, then re-run `gen-dev-secrets.mjs` +
-`gen-dev-env.mjs`, then `pnpm nx up-auth`. See [Local dev](../runbooks/local-dev.md).
+Wiping `keycloak-store-postgres-data` and restarting is still the fix for a
+`password authentication failed for user "keycloak"` crash, and since feature 039 the next
+`pnpm nx up-auth` re-imports the `grumpyrobot` realm automatically; force-remove the containers that
+mount the volume first, or the wipe silently no-ops. See [Local dev](../runbooks/local-dev.md).
 
 **Any confidential Keycloak client whose secret isn't pinned in the realm JSON gets a fresh random
 secret on import.** After a new volume import, read the generated client secrets from the Keycloak

@@ -6,7 +6,7 @@ resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-29T01:49:10.027Z
+    at: 2026-10-04T14:07:00.171Z
 sources:
   - id: openwiki-source-7e1c4d46c53be9bf32311e06
     resource: repo://.devcontainer/toolchain.Dockerfile
@@ -30,7 +30,7 @@ sources:
     resource: repo://scripts/ci-mobile-agent-flows.sh
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T01:49:10.027Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-04T14:07:00.171Z" }
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -82,6 +82,12 @@ disable, followed last and specially by the non-agent `admin-settings-access` fl
   build; a stale Metro transform cache on a persistent runner otherwise silently bakes an older URL and
   the failure surfaces much later, at login. The build therefore disables the Gradle daemon
   (`GRADLE_OPTS=-Dorg.gradle.daemon=false`), because a reused daemon keeps the env it started with.
+- **A missing KVM capability fails the job; it never skips the mobile suite.** The job verifies
+  `/dev/kvm` is present in the job container before the emulator step and exits 1 with an `::error::`
+  naming the fix if it is not. The rationale is the same one that makes the bundle guard worth having:
+  a silently skipped mobile half is indistinguishable from a passing one. `/dev/kvm` comes from the
+  runner config's `container.options: --device /dev/kvm` (plus the `ci` user's membership in the `kvm`
+  group), **not** from a udev rule — the GitHub-host-VM approach does not apply inside a container.
 
 ## Gotchas
 
@@ -128,9 +134,15 @@ disable, followed last and specially by the non-agent `admin-settings-access` fl
   startup**, not at test time. `expo prebuild --clean` alone neither builds nor installs.
 - **CI is the recommended APK build path, not the local Windows build.** A Linux CI runner has no
   Windows path-length wall, and both Forgejo builds use `APK_VARIANT=release` (JS embedded) — there is
-  no CI debug/Metro-attached APK. In `app-e2e` the disk-free step is required, not cosmetic: it prunes
-  the rootless daemon's images (`docker image prune -af`), and without it the native build exhausts
-  runner disk and dies mid-compile with no clean error.
+  no CI debug/Metro-attached APK. In `app-e2e` the disk-free step is required, not cosmetic, and it has
+  **two halves**: `docker image prune -af` and, added 2026-10-03, `docker builder prune -f
+  --reserved-space 50GB`. `image prune` never touches the build cache, which had reached **375 GB
+  (355 GB reclaimable) of a shared 914 GB disk** on the ci daemon; `--reserved-space` keeps the most
+  recent 50 GB so warm layers still hit and rebuilds stay fast. Without the reclamation the native build
+  exhausts runner disk and dies mid-compile with no clean error. The `|| true` on both lines is
+  deliberate — a prune that finds nothing must not fail the step — but it is **not a licence to be
+  wrong**: `--reserved-space` was checked against the **docker 27.5.1** CLI these jobs install,
+  precisely so a bad flag could not become a silent no-op.
 - **Windows hits a hard `CMAKE_OBJECT_PATH_MAX` (250-char) wall building RN ≥0.85 native modules.** The
   real cause is CMake replicating the full absolute source path under the object directory; this repo's
   path plus the deep pnpm layout (`node_modules/.pnpm/<pkg>@<ver>_<hash>/node_modules/<pkg>/…`)

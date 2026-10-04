@@ -51,11 +51,11 @@
       "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c"
     },
     "/openwiki/projects/agent-gateway.md": {
-      "gitHead": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
-      "sourceFingerprint": "sha256:7fe39cb5a08a3c98b78da3269dbe886c362127826123f68fb7538b94576c4269",
-      "pageVersion": "sha256:d0dc97e27cc70f574d2914cea9feb8a4bb15fb84ae54a95c11483fd2f9936bca",
+      "pageVersion": "sha256:d2eeeec59478e2b298ce0e1141ce3a75c90260c94e5fc742bc4561001455f065",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "284da042-1fa3-40fa-a936-b78473ae6084"
+      "completedRunId": "81dffdfc-4e15-4083-8d3a-315fdcb117b8",
+      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
+      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423"
     },
     "/openwiki/projects/bff.md": {
       "gitHead": "b492241a72b0b47e5fe2acccc00639a44c93a426",
@@ -72,11 +72,11 @@
       "completedRunId": "abdfe5e8-5e6a-45ec-84d7-032c73d67800"
     },
     "/openwiki/projects/keycloak.md": {
-      "gitHead": "f78b34c4fd2a4aae7197f1cba4a361b0e1589eea",
-      "sourceFingerprint": "sha256:22e5b8705d6f7ce64e9bbd2fc237eb3cf95215835a325ee6b2b765e756168809",
-      "pageVersion": "sha256:3de3369536f23c0fa38a69f5d56d92f7fb24367947bf1b84d2dd27e2933304fe",
+      "pageVersion": "sha256:f50f3742597712c93e6715260ab404ec2619fa1216c851f5f8cf8bf3b0bd16a5",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "344f6b7a-2b7b-4516-aa10-7a3c8b22043b"
+      "completedRunId": "81dffdfc-4e15-4083-8d3a-315fdcb117b8",
+      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
+      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423"
     },
     "/openwiki/projects/mc-service.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
@@ -107,11 +107,11 @@
       "completedRunId": "5f8e1b80-2dc1-43c0-ad97-44b479bd8087"
     },
     "/openwiki/runbooks/android-emulator.md": {
-      "gitHead": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
-      "sourceFingerprint": "sha256:7fe39cb5a08a3c98b78da3269dbe886c362127826123f68fb7538b94576c4269",
-      "pageVersion": "sha256:edb7a0a08015ee9d4c80cb43be6ff766a6710ad15df2085cc55a1a6f5140c69c",
+      "pageVersion": "sha256:514ea532e190354bdf67e16992b97753a8c62da123fa75d1e39feef0c1421276",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "284da042-1fa3-40fa-a936-b78473ae6084"
+      "completedRunId": "81dffdfc-4e15-4083-8d3a-315fdcb117b8",
+      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
+      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423"
     },
     "/openwiki/runbooks/backups.md": {
       "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
@@ -163,11 +163,11 @@
       "completedRunId": "1f88b926-ba1c-4987-a817-ce9df84284b8"
     },
     "/openwiki/runbooks/renovate.md": {
+      "gitHead": "3559342b0cf77fe4d8c0e248c442da7885c94de1",
+      "sourceFingerprint": "sha256:3fd202938a844c281c50357d4ff98293b95101d66f38ec6f6d2f23563a089423",
       "pageVersion": "sha256:1e037dc4ce6accc0222d3650b9f403c44614d9ac1007f525a75d30bcd33ab89e",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "26ac73d9-e87a-468c-b8a6-be8d4b8171c1",
-      "gitHead": "e5ab1a048e2ae818a942cde45ebece295ce27431",
-      "sourceFingerprint": "sha256:cb54e97ee14bfb09a553d7134268b9227809cdbbaba784e81a1b858639dbf969"
+      "completedRunId": "26ac73d9-e87a-468c-b8a6-be8d4b8171c1"
     },
     "/openwiki/runbooks/server-setup.md": {
       "gitHead": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
