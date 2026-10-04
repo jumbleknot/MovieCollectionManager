@@ -163,7 +163,8 @@ finding in the run, so a skipped, failed or clean scanner never flags its whole 
 
 **Where you actually see it.** On a normal gate run these three sections are printed and change
 nothing — no pull request is ever newly blocked by them. The signal that is allowed to fail is the
-dedicated mode, which runs **weekly** (Friday) in `infra-image-scan` over both allowlists and is
+dedicated mode, which runs **twice weekly** (Tuesday and Friday, 04:00 UTC) in `infra-image-scan` over
+both allowlists and is
 deliberately **not** run on pull requests:
 
 ```bash

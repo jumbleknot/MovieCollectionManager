@@ -48,7 +48,8 @@ iteration. `--emit-allowlist` writes `reports/allowlist.proposed.yaml` (baseline
 ## The CI gate
 
 The blocking **`sast`** job in [.forgejo/workflows/guardrails.yml](../../.forgejo/workflows/guardrails.yml)
-runs on every push/PR (auto-covered by the `guardrails*` branch-protection glob). Keyless — no
+runs on every pull request and on every push to `main` (the `push:` trigger is branch-scoped; the
+required contexts come from `pull_request`, auto-covered by the `guardrails*` branch-protection glob). Keyless — no
 `${{ secrets }}`. Steps: install uv + Rust/cargo-audit fresh + `pnpm install` + `uv sync` the agent
 venv → `check-sast-findings.mjs --selftest` → `sast-scan.mjs` (`--scope changed` on PRs, `--scope full`
 on push; **SCA always full**) → `check-sast-findings.mjs` (the gate) → upload the `sast-report` artifact
@@ -289,7 +290,8 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
   feature 057 both "needs an acceptance" advisories turned out to have published fixes.
 - **You now get 14 days' notice before an expiry blocks anything.** Both gates report `EXPIRING
   SOON` / `EXPIRED` / `UNMATCHED ENTRIES` on a normal run **without changing their exit code**, and
-  `--check-expiring` runs weekly in `infra-image-scan` (schedule-only, never on a pull request) and
+  `--check-expiring` runs twice weekly — Tuesday and Friday 04:00 UTC — in `infra-image-scan`
+  (schedule-only, never on a pull request) and
   fails on an expiring or expired entry. For the **SAST** allowlist it cannot fail on an unmatched
   one: that job produces no SAST report, so unmatched detection is skipped there (the script says
   so in its log). The window is `WARNING_WINDOW_DAYS` in `scripts/allowlist-expiry.mjs`,
