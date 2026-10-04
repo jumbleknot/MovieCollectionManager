@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:cb88be03a21b23a164461ac6ec93d18ca138a78a3f2ed37821debf7d97159107",
+  "claims": [
+    {
+      "id": "claim_877c2fb9d170433d8565daf6b7070703",
+      "statement": "The MCM backlog lives in the repository's own Forgejo issue tracker and is worked by the coding assistant through scripts/backlog.mjs from inside the dev container; no backlog operation produces a commit, branch, pull request or CI run, because issue changes are HTTP calls. A backlog item is an input to /speckit-specify, not a replacement for the SDD lifecycle: tasks.md stays the in-feature decomposition while the tracker is the cross-feature backlog.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/forgejo-issues/SKILL.md#L61-L65",
+          "version": "repo-lines-v1:sha256:95040f39543181f20a8b941ebdc37726222b043fd0ad0793b229b466b4a542b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIyYWVjYjFiYjIzNjdkODI3ZjBlYjBmN2Y4MjU5NDk2OTJjNjcyMGQxNWJmM2QyNWU5MTBjOWU2ZjJhMWQzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFlODNhOGIwY2Q1OGVlYzAzMTI5YWYxMzdkN2FjZjdjYjBkYzY3MjlhNzc4MTg5ZTJmMWU4YWEwYTJlNThjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjI0NDliM2ExMjM0Mzk0NDhlYWUzYzM4NmRmNDE0NzBkNDI1NTQ3YWE4MTg4Yjk5YzA3NDg5NDM5MDVmY2MyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ0NmE3NTBhZDY0ZjMwYzg3NzMwNmUxZjdhNWJjZjMyNjgyM2YxYTEyZjA4MzBmOWQ5ZGI1NWE4MGQzYjU2NyJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/backlog.md#L1-L13",
+          "version": "repo-lines-v1:sha256:8b113f06f6de66355fdccf6d6784b82623bedf648c5094ab21772d5d23b69231:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5OWQ0ZTA3NjczZGU0YTQ2ZmVmYTU4YTMwNzI4NzZjM2VjOTcwNzU0NjU3NzI2YWYyMGE1MGQ1NTQ3ZDU3MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0YTVhMTJkZjEyNDAwYzA3YzlhMzZkNjNmOTg0ODIxOGEyODEyZTJlNzdjNGU3MzJhZTZlNTBjZWMxMjkxOWEifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L1-L20",
+          "version": "repo-lines-v1:sha256:f321f80ec4f4f9e1e25c2f67d04170cf3b6d0e395dc0bf425a8196181d5da269:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmM2UyYTQ3MTljMDczMGJlZmZlMWViY2Q2Njc2ZTRiMjM4ZjE4ZDY3ZjZkOTYyZDg4YmIyOTliYWE3NmNjZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5Yjk3YjBkMDc1NTllN2IyNjAyZGQ2N2MwNTUyMTMzZmQwOGMwZWRkNDY4NjBiNGNlYzBiZTliNjg4YjdkOTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1fbdc2028501479fb9fa58d315a4d896",
+      "statement": "selectToken prefers MCM_FORGE_ISSUE_TOKEN for reads and requires it for writes, falling back to the read-only MCM_FORGE_TOKEN only for reads; a whitespace-only value counts as absent. Preferring the write token for reads is deliberate — falling back on every read would keep the tool working while the write credential is broken, hiding the breakage until the first write.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L91-L124",
+          "version": "repo-lines-v1:sha256:ae028f13369c1a9a86bcd1c30d27fb7864fce16688bbf6248643e678b12cd112:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDI5ZGQwYmQzZmQzNzM5OWNhNDgxYzFjMGE3YWM5MmU4ZDc5YzdkOGRmYTgzNzYxYmJmYTE4YzZkZWU3Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlM2ZiOWEwYzc5YTYwMDE4YjE2YzAxOWEwZTYyNzcxOTE3M2ZiMDg0MTUwODE4ZTFiMDkyMDg5Mjc0Njk0ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4OWNiMDRlOGI2ZTU1NjY1MjBmMTMzMTQxYjQwMWQ4Mzk4YzI1NTU5N2ExODk1M2VmNmQ1MTZhYzdhZDdkMzgifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L65-L96",
+          "version": "repo-lines-v1:sha256:5b1e891cb6b87b6afc9e4c3847b9c4a1507ef461ecf32aab26bfd97ad3dad948:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjOGVlMDJhZWYzMjZjNzEyOWFmZDcxOTg1ZTc1ZDUzZGExMmNiOWNkM2FkZTI0YmMzMWMyOGFjYWZkYmYwZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZmY4OWMzMjBjYzU2MmY2NDU0YzgyZTBjNWMxM2NkNmI2ODY4NWUyMGI1NzU3ZTc2OTgyOTA0Y2FkZDZmN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYmY3NzA5MWIwNDdkNmMyNGFmMmI0YzAzZGIxNjNiNDg5ZjMzNTZmOTlkNDZjZTc0OGJlNTkyOTIyNDk0MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7f09a9d01114495a209ff8df5336a3d",
+      "statement": "A missing write credential is refused with exit 3, naming MCM_FORGE_ISSUE_TOKEN, the remedy (setx then fully quit VS Code, because a reload keeps the old environment so ${localEnv} resolves empty and the token is silently absent) and the read-only consequence; reads still work and the container still starts.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/devcontainer.json#L190-L217",
+          "version": "repo-lines-v1:sha256:9dc64b24daea4453ae5f08657826f64256a38e0a63349b6c06270c9958823845:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MzMyYjJmMjYxODU0MWI3MjhhZWFiNTAyYmI1NTg3NGM4MTE2YjBmMmNjMzc2Y2U0OGE2YzhiYmE3YWVjZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NDM1YjU5NGU4OTE1ZDcwMTg3MWQyMmY5ZjgyMDhjOGNjMzE1ODI2ZmQ5MTQ3ZGJmNGIyMWEyYmViNWJhNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjOGQ2YTU5YzM0NzhhZmJmNjc5OTViZTlmMWNiMmFlYTY5YzNmNWE3MmJlODZmMDhjODIxOWU0Y2U3NWU3NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NWEzODc0MDEyYmI3NTA4MmM0ODhhZThjYTVhYjg2Y2RhY2U2OWRkNzI0ODI5YmRhODY5NDU4ODk1MzYyODMifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L69-L96",
+          "version": "repo-lines-v1:sha256:0ed905f2524480aee9a41519d478bd4b78fe1d2407f1f31a236541c701ef1f03:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5YWVjMzY5ODUyNmQ2OWQ1M2VhY2YwMDI5NGU0YWZmN2Y1OWNmMDM5YmQxNjU0YzMxM2M3OWIzNjQ1ODgxNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZTQ3ZTM3Y2M4NmEyNjg5MWU5NmZlN2M3Y2U4NDRhOGRmNzk4MGQwMDJmN2JiYTc3MmEyMTc1NGYxNjMxZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYmY3NzA5MWIwNDdkNmMyNGFmMmI0YzAzZGIxNjNiNDg5ZjMzNTZmOTlkNDZjZTc0OGJlNTkyOTIyNDk0MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_51937bc5330e49d69dace3e1235a19e4",
+      "statement": "The write credential's scope (write:issue + read:repository) is the server-side bound on what it can do; which repository it writes to is bounded only client-side by the same-repository write guard inside scripts/backlog.mjs. The guard is asserted twice — once against any --repo value in connect(), and again at the request boundary for every non-GET path — so a mis-built path cannot route a write at another repository. Any other client holding the token is unguarded.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L151-L172",
+          "version": "repo-lines-v1:sha256:9136cd450932b42566b1e86dab65104096b1fcfa2d47fe49bd394282f21ee0c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZjhlMTQxN2M1NjA0NGJjZWVlMzE4ZjlmNmRmMmE3ZDEwMWM2OTc2ZTE4ZTk2Zjc0MzQ0ZTc0YWMxNzNkOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4ZWI2MTAxODRmYWEzNTg0MDc0ZDg3NWZiNDVlOTMyNTdhMTNjYzIzNzgwYWY2YmY1NmZiYmM3ZWUwMWMzNjgifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L126-L159",
+          "version": "repo-lines-v1:sha256:b7561f188c2503a38c683c10b2a1f799028496b3c5f87fd71092ba14d003ca68:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2YWU1YmNmMTQyOTUxYzE2YjQyYzdkYjZkZjNjYTU1NzBlNjZkYTU1OGNlNDMzZTkwYzJkYzU4MzhiOGZjOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ODZlODcwYTIyMDcyOTAwNmE1MjZiNzMyYzRhNzVhMjc2YWRhYjM0ZDJlMTgxY2E4Yjc1YmE0MmUyNTQ2YjkifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L550-L574",
+          "version": "repo-lines-v1:sha256:01d90cebfcb7a814a1924cdec9e7a3db899898acf3a1c499035f59a78370dddc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlYTc4ODM1NTM1YjQ3MWU1ZDY4OWYwYTU1ZmMwNTUwNzNkZDU4NWY0NTk2OGRhYWNiNGM2NGYxMDE2NmM2NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYTA4ZjQyMTMzYjY2YzA0ZTRkNjIwNTIyNzNkMjg5Y2U3ZmUwMzBkZTQwMjNiNDU1ZDc1MjI2NDFhMGI0ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_23bc30c78de547f9bd63407454ace9a2",
+      "statement": "The repository payload's `permissions` block is not a scope check — it reports what the owning account may do with the repository, not what the token may do — and no endpoint the token can reach reports its own scopes (/user returns 403 with no read:user). The scope split is therefore proven behaviourally: the write sequence succeeds under MCM_FORGE_ISSUE_TOKEN and the same write verbs return 403 under MCM_FORGE_TOKEN.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/devcontainer.json#L200-L205",
+          "version": "repo-lines-v1:sha256:026ea133eed0f95e823592d8d4a934dcd9b0df71b3142ae042318ffbc46eeca8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI1MzQyYzFkNTdhYmIxZWRiZmQ4ZTgxNmZlMWMyNTEzYzlmZWU2OTBhMmU4NjdkNmQzZjE5MTQ3ZmY1NzMxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTk0YzdjMDgzYjBlYTQyNThhYWU4OGNjYTE2ZTllMWI1MThiYWYwOGE2NzE3N2JhNDc1NjkxNTM2NjViMTlhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWUzN2U0MDZiMjk1MzU4NjM4YjE5ZmI4YjI4N2EwNzhhYTA5OWNhMDgwMTg4ZTdiZWViMGFkM2E5MjFlMTk0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWE4MDk3Nzc0ZGZjMDNiN2MwMDY1MDI2NjAzZDIwYWZiN2Q0MzAzNjgyN2IwYzE0MjBhMTc2MDQzM2RjYzJlOSJ9"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L106-L124",
+          "version": "repo-lines-v1:sha256:52c74065b4fd96e40724b90c9215d2ca69d5ce41bb7900602128833b33f3627d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlZTQyOGFlMmU4NGMyZmIwZmZjYTBmZTY4OTZkY2VmNDhlYzViYTEwZDFkNGViN2M4MmM1YjcwZDVjNGVjZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1YzAwYjUzNzNhYTA0YTRiMzA2MzVmZTkyNjU5MjhiZTgxODMzZjQ5YzgyYTFjY2QyNTdjMzY2YWRlOGQ1YTQifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/research.md#L300-L317",
+          "version": "repo-lines-v1:sha256:c8039dc56cd28e0b53904ff810d8e06a1ab2e5d259c5e635886573ee041b027d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjNGM3OTJkZjQ5NDE3OGY0YjAwZjUzYTM4YjU2MzJiMmQ5YTY2NTNiNDkyMmYwZTg1MjQyYjQ2MTIzODRiNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwOTI2YTJiMGQ0NzZmZTEzOTgwOTgwZWIzNTMyNjU3ZDE2ZjlhY2YwZGZiMDEzYWZkYTk2MDY1MzhlYWQ0MTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4722613b33f34e88a3975b60ff2ae972",
+      "statement": "A 401/403 is never surfaced bare: the endpoint family is mapped to the permission it needs (write:issue for issues, labels and milestones; read:repository for issue_config) and the message names the token used and the permission missing, states that this is granular scope rather than expiry, and says nothing was retried or downgraded. It exits 4, distinct from a transport failure's exit 5.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L126-L149",
+          "version": "repo-lines-v1:sha256:b9e0f2d25a7d84479518849686b2cd1116b1481eb329106bb22fd2157c45bc31:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3NTBmMmUyMGZmMGYyNTk3YjQ2ODkzMGNhMWYyMzY3NzQwMGE4MTNjYTk1NzZiYTQ0YzNiYmM1YTdlMzdmMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiYzZkNGUxYzkxMzA0YzEzNjQ5YjkyNDI0MWE2ODgwYzYxMzdmMGUzZWZhODIyNzIxODIzMTM0NWVmMDNhNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MDA0ZDA0MmI5Yzg1ZDA1MDQ2MjA2ZmFhMzc4NWI5NTEzNTk1ZTExN2ZjNzc3MDI3YmFiZWNmOGIxMjk3ODkifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L194-L196",
+          "version": "repo-lines-v1:sha256:9d3cc28a5eea4a14356813c2e607f84b9984a0544a3e7f4367f1f6df0a70ab44:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRiZmE2NTQzNmYyMDI2MzdlZjM4MTJiNTkyYTc5ODFiOWQyOTQ1NGFjODYxOTNlMDg5YjY5MTVkMDQ5OGMwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGEzZmQyNWJjNTZmODhiNTYwNTIzNGVlNDgwZTkzMDRhNzQ1YzBkOTg4NjRkNDg0MDk0ODA4NDNjZDgyNzViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjUwNjkzMzkxZmI0MGExM2JjODZlYjBiNmY5OWM4YThmZDA0ZTFiODJhYjYwYzJiYWJkYzEyNjhmM2E0MjIxZSJ9"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L98-L124",
+          "version": "repo-lines-v1:sha256:38b16117631b2d3a6a44492d1ae731a3c0520b0637fb95dd3f2c432278dcf107:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMGFkZmRiNjJhYjM1MWFhNzUwZmZiYzNiMGY4MjZjNTBiOTZiNTg0Y2M2MTE5YzQzOGZiOTU3MTE0NDZlNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1YzAwYjUzNzNhYTA0YTRiMzA2MzVmZTkyNjU5MjhiZTgxODMzZjQ5YzgyYTFjY2QyNTdjMzY2YWRlOGQ1YTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e90bac2a0614d1f873fdea1b2d114a5",
+      "statement": "The API base and repository slug are derived from `git remote get-url origin`, never from an env var or literal, because only the remote carries the port the API is served on; a base built without it fails as a transport error that reads like a blocked firewall. That is why an unreachable forge (exit 5) is kept distinct from an authorization refusal (exit 4).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L51-L75",
+          "version": "repo-lines-v1:sha256:94aa6453d31291798e102d27fb2df9bc8338b7ce75367a64fe0bc883269ccaca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZGFlNzVkMDQ2OWM2MmEzMWNiMTc0MjAzNGFmNTg3NTdkZDUyOWY4NjU0ZmE0YzQ4ZDU4NDQ4YmU3MThkOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzMGRjMWEwYzdiNTg3NDk0YTEwNjhkMjM5NGUyZjhjNjhlMjI2YjZkMzY0OWU5N2ZhZTJlMWRhMDc0NzNlNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiZjM2YTlmMTUwYjgzMGI2ZDA3MjUzN2Y4NmJlMGM0OWVkNTc5ZjZmYWZkNWE4Njk4ZjViYzViOGUzZjcwZmMifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L184-L193",
+          "version": "repo-lines-v1:sha256:92adeb6060f85a5de08b6d070a137a84692a67330c1bf380cb04e40c4e932307:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczODEyMTJmNmNmYjRiNWE1YmMzNzcwMDYwMmY3NTE1NmFmNWE2OTFmMzZhYzRiNmVmMzY0YTczYTk1M2Q0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxM2UzYzc2MWQwM2NmNjIxM2I3OTI4YWQxMTNiZmZhZjcwNTQ1ZTE1MTk5MGQ1N2I0NjVjYjJkYTQxMTNjYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkM2NjMjhhNWVlYTRhMTQzNTY4MTNjMmU2MDdmODRiOTk4NGEwNTQ0YTNlN2Y0MzY3ZjFmNmRmMGE3MGFiNDQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L939-L952",
+          "version": "repo-lines-v1:sha256:acaa631088aea3abb00f1b8e9bcfc249dfcdcd3ca8d206e59564f593530564b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1MDMzOTdlYmJkYWM1NDgxMjQ5YWE3NGNkY2I4ZWM3YTQ4NjdmNzMyYmIzODA1MmEzNDVjN2U5NDYwNDk5ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4ZjJiNDlhNjQ4ZjQxM2U1NGRkZDAxMWZkYmQzYjMwYThiN2I2NTI3OWZmM2I3MTJjM2RkMWI5MWY3YzU1ZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_05d64efd465943b79db3399a6b3c4097",
+      "statement": "Every emitted line passes through redactForPublication plus control-character stripping, so the forge host renders as <forge> and a hostile issue title cannot inject terminal escapes; distillation omits dependency and comment fields it did not fetch rather than defaulting them to empty arrays (an empty array would read as \"no blockers\" when the truth is \"nobody asked\"), surfacing the API's own comment count instead.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L398-L426",
+          "version": "repo-lines-v1:sha256:a338862b9299b1465cbb8982377af8afed5a32bb142dab03f9ad056de8e2b909:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NzJiM2VmYjU3MTJiZGUyZTMwM2UyZDE0N2ZhMmE3MzY1MmViMTc1MGY3MzVlNGM5NjllZjMwMjA5YWFkNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2Njc5NzUxYjQ5MmYyZTY2MjE5ZGI4MmU3OWY4MmMxODQxMDEzMWQzMDNhNzdlY2MxY2FjYzY4MGI4NTIwYjIifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L341-L370",
+          "version": "repo-lines-v1:sha256:160efde754a73885860f8d38796589007be79f1f34e53b5e731a2021696fcf38:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMmMxNGEzNWMyZjkwNjVlYzc1MTk0OTMzMmY2NDdkZjcwOWE5YmQ4NWFiOWJiZDcyNWIwZDQ4NzFhOWE5MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MzQxYjdlZjZjZWU4OWI5OGNkYjgxZjhjYTI0ZTdlMGJhMjczZGYzNWZlOTBmY2I3MmYxMjgxNzA1ZDA1NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2MjQzNjY1YWRhZjI3ZGU5NzdjODFlM2Q0MDAxZGRmYmQ1ODEyY2E2ODZjZTM0MWE4ZWE4M2JmNzcyNzM2Y2EifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L41-L44",
+          "version": "repo-lines-v1:sha256:02f6db2afad4934d3884d6e19a8128f5abe130c0e27b8945cd9e8bc85500e1ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjVkZDhmNDc2ZTJiZTI2YWRlZDQxN2NmMzg4YmRjZWQ2Y2ExODBkMTUzYWQzNWEwMmVhODg0Njc5OGVjYWZjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVmZGRiNzk2NmM3ZGNmNmMwNzNjYWI4MzU2NDE5MDY0MTNjZjE3YjYwZWNhZWNkMmM1YTk4YmNhMWUwNTQxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE5YzYwODEyMmI2NDhhNzgzODdkNDgyNjAzNWQwMDZlNmE5OTZhYmM0NWYxZmRjZjJlNmRjZDE0NDNkMmRjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTU3ODcwNDQ2MzViNjE3NDExM2ZlNGY3MDhlNDE2NDJiMzIwY2JhNjYyNzFhNjU3NDNiNWNmOWJjNDRlY2RjNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf39778987bc42a3b487a7769c43a170",
+      "statement": "buildIssueQuery always sends type=issues (without it pull requests interleave — 143 rows where 1 is correct on this repository) and always pairs page with limit, clamping limit to the measured hard cap of 50; totals come from the x-total-count header via readTotalCount and describeTruncation never infers a total from the row count.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L238-L289",
+          "version": "repo-lines-v1:sha256:9b754b9e75a790e158659e821cb8aa69f8b8521984edfc74e9223929a5fc720d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZWFhY2M2YTBiNGI2MzIzY2I5YmQzOWQ5Yjk5ODEwN2Y5MzQyMzMwYmYxMzlmZGM5ZjM3OGJjMzYxOGNkMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5Nzg0NzRhZjc3NjZjMzA0ZmZjNzc4ZmJlYzZlYWExYzI5ODFjZGFkNTRlYTc1OTY0ZjIyZGEwM2QyZDZlYmEifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L215-L247",
+          "version": "repo-lines-v1:sha256:5e00447f8817a0cd5974695c6c10699a912015079c8736ba80c2a6d56617c2a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYTgzZmY3MGQ2NmRhYTRjNWYwODNiM2M5YTllNmNlZDIxZWEyNzI0ZGRjOTJhNjRjZjk0MzI4ZDliYjRlYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODYzOWJiZTM4MjkzZmQxYzFjNDBmNTRhZDJjMjA3MGY3MzQxODdmZGY0MDRmZjdmNDAwZGRiMjlkZmI3ZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MzAzMzM3Y2Y2ZTI2MWNjODBjZTAwODFkZGQ1YjQ1Y2E1ZWNhNTZlOTEyNzUyOWM3ZWU2YmY3ZGFmZmJmZDIifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/research.md#L42-L76",
+          "version": "repo-lines-v1:sha256:ab27b90c7778d97a0b1c7ef1270ec4c3e8a7e488ee8a5fd72a427327509fa2bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhYjNiMDZmZmM2Y2RkNjc2ZGE1Njc5ZjU0OWZhMmM1NzU0ZjJhY2JhOTA3NGJkNDkwY2E0MTRkOTMyNTZjMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZTM4Y2I5MDFiZTE3M2IyZTgxNjNiMzUzYTY4OWEzNjViMzUwYzZhZmMyZGNkZWY3ZGJjZmMyMDU2NjYxMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2db5c0f17f5b47658e0e12e29687dc57",
+      "statement": "Every label and milestone name is resolved against the repository's own list before use and an unknown name is refused locally with exit 2, because the forge silently ignores an unknown `labels=` filter and returns the unfiltered set — a typo reads as \"matched everything\". This matters doubly because `q` fails closed in the same run, so the inconsistency makes a label typo easy to trust wrongly; client-side re-filtering after the fetch would mask the typo rather than surface it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L291-L326",
+          "version": "repo-lines-v1:sha256:d8366a0bc067fa2395868319bbd56b0ba38b738416c5000ece60b208fea0b28a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NjFmNmVkZmU3ZWQyZDU2ZDBhZTNhOTJkYTNjM2FiM2M0Yjk0YjEwMTU3YjBmNTM5MzdiNmE5MzNmZTMwNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNmY2ZjM1ZDkxMjhkZWNiNDZjNTFiYTU5ZDc5MGE2ZWUxNmViZDA5MzY5NTk2YmM3YWQ2NmVjNDYyNjY1NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMTRkNmZlNmUxZTg5MTllMjI3NmRkMWY0NjRiOTkxODQ2MmQ2MmI3OWQ0YjU1MWZiOGEyZmY1ODc4NTY2ZDUifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L249-L274",
+          "version": "repo-lines-v1:sha256:fa244d031858cb79a0b8b9005494fa5794001d845d30f56e985166670a06fa35:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlNWRhNjM0MzM2MjEyNjY0ZGQ0MmRjMTJhNTVmODM0OWY3N2ZjY2FhYjVjZWRkOWIzNDI3ZDJmZGYzNTdmZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OTk0ZmRmY2Q5ZTc4MWQ0ZjZjZjFkM2QyNzIxYTUwYzczMjRmNjk3MmY4NDc1NTA1MzU4ODZjMDdjZGM2NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YzQzYjExZDA1MGU2Njk3YTNmY2VhMzk1NWVjMzZlZTRlNGE0MjhmZjg1ZTZiZDg5NWRlMTJlZThjOGYyZGIifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/research.md#L80-L107",
+          "version": "repo-lines-v1:sha256:4a974f7089d4ec8ef0abd409a6c894f0230f42cbc299f8dc2bdecbee80afcf4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MzUxMDRjM2U5ZmZjNzM0Mzk5NDQ1ZWM4NjkzNTFhZjYyYzk2MGIwMWMzZmMxY2QzNmNmNDBlNjJkZTZkZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNzIzMmJhYWYzOTcwNGI5MDU4N2UyZjg0NWQ1ODczNmNjOGU0YWM0NmFhMmIzYWMxZTQ1MmFjODE5NTYwYWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b13b520fb7148f5a9d2384ec84e55b9",
+      "statement": "ready-work selection treats the status/blocked label as a cheap pre-filter and the dependency graph as the authority only where the graph was consulted: when a blockers entry exists for an item the graph decides and any label/graph disagreement is printed as a warning; when it does not, the label alone decides, so a stale status/blocked label silently hides an item with no warning at all. Bot-managed items are excluded outright, and candidates are ordered by priority label then item number.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L328-L380",
+          "version": "repo-lines-v1:sha256:954661e84369c391b5b0cd85b376ac0b2ad7c1f4a6425a1334ff7bbff3fb9036:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNDc4YzY2ODkwN2E1ZWY2OWE3YzEyYTY5ODJhNjUyYzg1YmFiMjU1NGRkNTg0ODgzYmYwMTA5ZTcxNjk0MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiNDkyM2VhOTgxZDliYTljZTY2NTA1YTA1NTRmOTBiYzRiNmJkMWI3ZjE2MjIzZGI1ZjA2YmU3MjFhYTFkYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMWE2NmQ5MTMzNTQ1ODM1NWQ2OGYyZWYxNjE5NmZiMGVlNGNmZWNmY2MyMjY5NjFjOTE4ZWM5N2UyNzJjZjgifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L300-L339",
+          "version": "repo-lines-v1:sha256:2c6445273f4bb70ae34f6936f49d3021daca6b309eed09ae22ccee143c73f335:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiOTkyZDE3ZDc4NTVkZWE2NmVmMmU5NmYxMGI1NzIzNWRiNzk0MDU4MGE2MzM3ZTJlODBhZTYxNTBmM2E3OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1ZDI1MzViMTU0ODlmMWZmZWFkNjE0YmQzNjMwNjI5ZmM5MzliZDA1ZDVmYzgzODA3NDYxZjBlY2VkZGEwYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxY2QxMTBmODEwOTkwYjcyMWU1YTRhZGUyZTE3M2JjYTQ1OGE2YmYyNDYxMGQ5ZGVhMDNkYWMyOTkxODZmNWQifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/data-model.md#L117-L128",
+          "version": "repo-lines-v1:sha256:52bb695ab93c551f3e2a517acae3db962d23d05c9f95516eb1eb0430ff4c9998:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NjVkMzNhZjQ0YjhjMzA3NGVjZGRiN2UxZDJjYWRiNmRhY2M1NmE3MGYwYWI0YjE5MTI4MjNlMTBmOTU3YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZmNhMmFkZTY1NzVmNGQwNjM0OTgyNGMyYWI1N2ZkYjQwZmFjYzJiMmFlY2M0N2U4NjY4MGViYWRlYmNkZmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_725bc0ebde6f4ef2ac7c51acea3dcaad",
+      "statement": "The `ready` command answers from at most one page of open items (limit clamped to 50), pre-filters bot-managed and blocked items before fetching dependencies (concurrency 4, so only survivors cost a dependency call), and prints an explicit truncation notice when the page is partial — because \"what should I work on next\" is exactly the question where a silently partial answer is worse than no answer.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backlog.md#L109-L118",
+          "version": "repo-lines-v1:sha256:fd61389f59c9a065b1697277be83a2910082fb1aeb328ab955ebfd1a5c314d4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NGU4MjUyY2ExYzI3NTgwZDQ2ZTIwMmQ4MDIxOGJiNjI1YWE4MDQ4NzM0MTViMjcyMDBjODI5NmVjNDg5YTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZDJmZDJjNGRjNTg1YmVkMjQ0YjY3YmYxZTQ0ZGE2NTIzY2U1NjEyZmVhZWY3YWQ3Y2JmZjZkNDRjY2UxYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzOGNlMGI5ZGU3ZmQ1NWNkNjlmYjMzY2YxMzUwYjAwMjBkNGIwZWU1NTBkZTU1MTdmNjI2OTA0ODJhZDY4M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L621-L667",
+          "version": "repo-lines-v1:sha256:600a6d3b4e29371b035cace72024c667c4a4447895e1b509caf964b7ebe8d818:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2MDNiMzQ3NTQ5NjdlZjE4N2Q5MjYwMzVhMjA3NmM0M2Y2NDc3OWQ5MTY1NDQ4NDBkZGMzNzQ4ODVhODM2MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNTdmNmQ2MDY1YzIyNmI4NmY3YmViMGQ2NWZiMzZhZjg3NTAxNjk5NmViNzQ1NzdjM2YzMjJlMGE1YTBiNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2N2YzYTZhZjk3N2U1YjZkMjQ3NGZmYjY4MGU5ZTcxYTNhYjk1Y2MwYjgzZDBkZjUzZjZmOWZiMmI2ZjRiNjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96e0ce4b06bb4cc08b55b47c8e799cfb",
+      "statement": "A dependency edge is directed and readable from both ends: `dep N --blocked-by M` and `dep M --blocks N` record the same edge, `show` prints `blocked by` and `blocks` separately, and the request body must be an IssueMeta `{owner, repo, index}` — a bare `{index}` makes the forge answer 404 IsErrRepoNotExist, naming the repository rather than the missing fields. An edge that would close a cycle is refused before the call, because every item in a cycle becomes permanently uncloseable.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L610-L633",
+          "version": "repo-lines-v1:sha256:9f054fcd4394b7bd36057a3ca9d65d091c3e22940ac972384aa10d9cbbfdcb54:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNzBkYzU2OTA1NDhlNTQxYTFhNDdlNGE0NDM5OGY1NDE5YWRhNzEwMDk1YzExMWMzYWY2NDExYzNmNDMyMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzYjkyMGVhNmI0MzE2NTNjZDRlZWZkMGRiMTViYWJkZWZmOWNmOGZhY2UxNzJjMTVlMzM0ZGE0ZDNmYzAzNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiM2VkNWRkYjMyOTA1MTU3ODRlNWQ3YzE3YmU4NWY0MmI4NzQxNDJiZjBjOWU3NzFlZjI5ZDdmOGE3ZTg4M2IifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L669-L695",
+          "version": "repo-lines-v1:sha256:dfee4430dd2ce1ba11a8361e57214f5ffdd9c73cc4830c9133cdd11034e23b16:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiZmQxZmEyZjZjYTk4MmNlYTBlYjgyYzIwNDQzNzNjNzk0Mzk0YjcwNmEyMGFjM2IyNWFiZDUzNWYzZjMzNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjYzMwOTI2YTc0MzAyYWFjN2I1NmU5MDhhODA4MjM0Mjg2MWQxNzU5MTNiZjQxZjdjYWQyOTBmZThhMDEwNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjOGVkYmFmMTAxYmRkMzM0MWEyMjI1MWFhNThhYzhmYmMzNDU3MTBmZjA1MWVlYmM0YmY1YTIwMjdhNzBjMDkifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L782-L813",
+          "version": "repo-lines-v1:sha256:937ae279d4c2f7407786198cf17c24520cf4e569f5b1cda4b7fe6f6a7866658a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0OThlMWE5MTc5MjU2YTZhYTVjYWUzZTk2OWZiYzYwYjlmMGEyODBiZDI2NjYyMzMxYmI1NzlkNjU2YTEyNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNzhkZDJhOTc5ZDQ3MzkwZmEwMjI4ZDk2NWE0NWM0NTE3Y2U1M2JiNzY4MzU3NjU1Yzk3ZTUxYzg1NTYwZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljNmI0YjdkY2VmN2M1YTBlNTRhMzQzOGQ5ODg5YWZiM2UwYzlhYzE3NmVkZmY3NjU1ZmY3ZWRkOThmM2JlY2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8468918072654c75aa405ecda186f367",
+      "statement": "Closing is a state change on `update`, not its own verb, and the forge's refusal to close an item with open dependencies (measured: 412 `cannot close this issue because it still has open dependencies`) is classified distinctly from every other failure: the message says BLOCKED, names the item, states the item is unchanged, preserves the original response, and exits 2. The match stays broad on the message rather than keying on 412 alone, and the classifier is asserted against the captured live fixture rather than a predicted shape.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L574-L608",
+          "version": "repo-lines-v1:sha256:4e01f9e80bab6eea83d2c3aaa5e9864f5011b08aba0a3573948f304720d7cd92:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3OGJiYWQ0Y2UyMzFkYzI4ZDdmMDZmYTNlM2IzNzdmYmVlMDgwMmUzNjE1NDRmYmExN2ZhNTY5MzdlYzI0NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxOGJlY2FkMmZlOGNlYjM0ODBiYTg1MDRmMTUwYTU0YWFmODEyNTc5YjYxMTg5NmEzMmNlZjkyYmU4ZDhhMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYzg0ZDA4NWFmZDJlM2NhMzM3ZTY2ZGNlMTcxMTY1ZmY5MTU3ZDYyOGVjMjkxYzE0YjM5ZWQxN2M1ZjRmMmIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/fixtures/backlog/blocked-close-412.json",
+          "version": "repo-file-v1:sha256:a72f6f48be8e48894a74c84cde55c4e5cbd8152b72e415fe9e5fd1792a5623e0"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L853-L871",
+          "version": "repo-lines-v1:sha256:8671573969fa1b83efef094bc835670a8396f6788d2af036327d3b04427acaf8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhMzhlZTljYzczYzlmMWYyYzhmOGM1NmQwMGJkMDBkZTViMDczNjlmMTJlMDgwYWJiZDc5YzhjNDM3NTZjMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NTk0YTgzMmFiNWEzNzEyZThkYWI5ZGUyMjJkNjE5MDAwOTQzMWMyNGQyOTBkMTQ5YzRhZjQ3Mzk3ZGFlYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc415c9cb65a45e8a3f1233bd9ba1c76",
+      "statement": "An update whose item changed on the forge between the read and the write is reported with both timestamps and aborted rather than overwritten, so the operator's newer intent is never discarded; the check is skipped when the same invocation already wrote labels, because its own write moved the timestamp and the comparison would report a concurrent change that never happened.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L635-L654",
+          "version": "repo-lines-v1:sha256:2403f36ebddac8daa1f89c297d3ebd6059251c11cc61ffd89703e9266d3bc4bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YzBjYjA2NjlkNDk5ZDAxZjM1N2NkMjU1Y2EzNThkOTZlNGJjNDhhYmE5ZmIwNzg4M2E0NjdlMmNiNDM2NjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMGMzNzRjMTZkNDVmNWUxNDgzZGJiNjYxYjAwYTc4NzJkY2UyNDBjM2YzOTg1YzY0YzQ0NWNlY2UwM2UyOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L401-L412",
+          "version": "repo-lines-v1:sha256:509ede6cc0244857074b7ce26dbcb0d7fc206ec49bd618026ff7772573b0597f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4MmQxNzFhYWRhNjIzN2RhNjI1Y2NlMjE3MjY3NDM5MzJjNmMxZjM2OGM0OGJlZTllOThjZTYzNmRlZTY3ZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNDVjYTI2NDQxZGE2NDU3OGViY2FmNGI3ZjNhODJjNDE4OTdhNjFiMDhkYjQyNjgzMDU0OGU1OWY1ODMxNTAifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L752-L764",
+          "version": "repo-lines-v1:sha256:87e92be4624bb58517043fbb73f7ca743d595a0cce612850e24a58a45b756cbe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyODJkYWNiMjUxZTUwODdlZDhhNzRiMDMxMjYzMTIxNzM3NjVlMzgzNGUzYWNkMTQzOWRkNTIwY2Q4ODAyMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxOTY0ZDA2MThiMDI2MWMwNTZhYzNjNDc3NGE3YTkzMDEwODQ5ZWEyY2RmZDM2MjJhMDM3MDkwOWI4Njc2NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYjQ2MDQzYmU2MGY1MDZjNDMwYzY0ZDUyOTVhMDM0YzYzZTU5MGJmMTI0N2MwMmEyNTlmYzY5MmI5N2Q0NTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c59c981ab08b42ceb89cea06c9a5656c",
+      "statement": "`create` refuses to file a duplicate by reporting an existing open item whose title matches after trimming, lowercasing and collapsing whitespace; `--allow-duplicate` overrides when the work really is separate. The match is exact-after-normalisation, not fuzzy, so a reworded duplicate still gets through — which is what the guidance to look before filing covers.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/backlog.mjs#L414-L422",
+          "version": "repo-lines-v1:sha256:38a5e734c9b4eed848a24b87fb95e7f8fa17af2d05d24e880a49bb9ac22b9137:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFjMWRiN2U1NjNmYzU3N2Y5MzQxMjZhMTMwMDI3NTQ2MmFkOGQzMjRiYTYxZDFjMjgyM2U1MzcxMDE4ZTRlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDk0ZmMwYzE3M2QxZWMzZmM1MDFkN2RmYTkyODU1MDFjNTI3Y2ZiNDcxMjU4M2RhM2NjMzYxODA1NjZiNGJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2MwNTcxZGZlMDFlMzcwZmQzZDBkZTE1NzM2YjRkYTZiODA2YWEzMjgwZTVkNjI5YWQyNjRkZTYzNmI4Mzg3YiJ9"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L697-L714",
+          "version": "repo-lines-v1:sha256:de3538dcaab36097c6667131cb82e7a16aed1c37d2eef520d723cd8e22d1f4af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4OWI1NDAwMWI5NDNjYzQ0MTBkYWZmMDUwZDVjNTA2MzRhZjk4ZGZjMGYzMWJkNmJhZTk5N2U0MDY2OTc0YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiODlhZDA5ZDQwYzNkZTQwMWY3Yjg3ZGNmNjk0ODQ3Njc0OWE5MmMzYjIxNmRhMDA2OTQwMDJmZWNmNGEwZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMThjMmNlYzlmOWU0NjViZmJmZjZjMTE2N2E1MDAyNjE3MmMzMjM5ODkxNDBiMmUwNGQ2ODhhYmI2Yjk1MDAifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/contracts/backlog-cli.md#L55-L62",
+          "version": "repo-lines-v1:sha256:b4b206871148b20ff54d810c0b5c26b5909bc10641d994e7684fd2df6916fee6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM1Nzk3ZGYzZjk1MmIwMzM4NzEwZTQ2ZTg0ZjQyOGZkNzExNDc2NGE2MjViZWQ4NzczZjVlZDViNjdlYzNlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDcyZjFmMWRlMWU1YWI5NWQwODYzYmExZWYxZTlmZTRjYjNjMDU0Mzc0NjE4MDliNDkzZTg5MDQ2NGM1NmUzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzAzYmY5MDU4OWJiMTc5NDQ3ZWQ1NDFkODJjN2JkM2E1NGMwYWYxY2ViNTFiZDEwOTYwNTFiNjFhODQyNGU0YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2d391de60274e0bab0e772a77ece447",
+      "statement": "Bodies and comments are read from a file or stdin only — there is deliberately no `--body \"text\"` argv flag, because argv is visible in shell history and in a process listing. A missing file is refused by name, an empty body is refused (an item with no context is not a backlog item) and anything over the 64 KB cap is refused rather than truncated.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L428-L455",
+          "version": "repo-lines-v1:sha256:793adcd8a78a799402ed08cbbb39b7f03488732f541d2ec7f455d2d31673c544:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhYzkyYzczNDkwZTc2ZGFmNTQ1NGYyNDdkMWMwNWJiYzJiMWQ1MWIzZjlmNjkyMzcxNmQ4NDJjY2Q1ZTdhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2OWEyMjJlOWM4MWNmMjhjZjI1MmE0ZDhhNDc0ZTgzNjFjMGFhODU0MTk2M2QwY2U1OGQ5NGYzOWVjYmJjMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwMDhhYmYwYjI0Njk1MTM2MjNmMTk0ZGU0ZTQ2OWY0NjdlNzgxMWJiMDk3NGIxNzlkOTVjMmY0MjE5MTcwNzAifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L372-L399",
+          "version": "repo-lines-v1:sha256:6e2ee79e873b86ff1dce6651da34e2e011d39c1bea1f68b5a37134d6133a69bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YWI1MGZlMzFmNDI1NjYxZmFlYTc1YTNjOWQ4NThlNzgyYTFkZDIwMWRlZTRlNmViM2FlNWM0MDFlZDM2YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2YzU1ODJiMDVmNjc1Y2U0MzdkMzQ4MzNkN2VmMTg4MmZkZTIyZWEyMjhiMjZiZGM1Nzc5MmQxMTQ2YzNlZWMifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L507-L508",
+          "version": "repo-lines-v1:sha256:919afb9af09484033c7058d0a34351f88a2b9cb49e9483b8d3efe77689778163:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBkNmFkZTg2NGQwYzRlODQ2M2NkZWQyNGUzOTNmOTMzNDM3ZTM4MGUzMTdjZDZkZTFmZjM2YmIyNTI5NzEyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYThjMTA3ZGQ3ODg3ZThlOGQ1N2E0NWY5ZmYzNzI3NmU0Zjk2NDhkMDg3MTBlNjgyOTRjZmM3NDc0NWM3NmNhMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAyN2RiMGZjMTFlOTg4M2Q4YzgxZGVkNmM0Mjc5MjUzZGI4YzNlMDhiMWJjMjljOWI3N2FmY2MzMDBkOTlkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2UzN2NiZmU0ZTBjZjA5NDFhNzFmM2VjNjg0ZWRiODU4MDQ1NTA1YTM0NzBjMWRiN2I4NTBiNjljMjM3YTllMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_035ecfdde4e744489e96aa2dd29168d5",
+      "statement": "`validate-form` decides from the ENUMERATED `issue_templates` rather than from `issue_config/validate`, which answers `{\"valid\":true}` on a repository with zero forms because it validates the issue config and not the YAML — the same fail-open shape as the label filter. The report lists the field ids that actually collect input (filtered by block type, since the markdown intro carries a truthy id of \"0\"), and states that the forge reads templates from the default branch only.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L514-L551",
+          "version": "repo-lines-v1:sha256:1af1f06a7fd73287e25e1c87a5c015fe60ce5067e6cd4dca2e1084c61e2b6c29:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1Nzg4OTRkMWEzNWUxMDViZjlmOGNmMDAyMGExYjhjZDEyZGRiNDAwZjE3MDYzMTE2OWU3OWQ0YjAxYjE4NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3Zjg2NDQ2OWIxZGU2Nzk2MzhmN2I3ZjllYWI0Mzk5YzA4N2UwYjZmNjllNDQxY2Y0M2U4YmJhMWEzYTc0ZjIifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L436-L471",
+          "version": "repo-lines-v1:sha256:cd8ef867d56485e16cc4659f6b3ca76acdbe607f78b087ecc4e3b10f2344258a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhOWZiOTM2MTBlOThjNWMwNmVhYjIwMjAxNDdhODUyNmIzNDM2OWM2M2I4YzczNjAyMWRkZTBlMjMwNGIzMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNTIyMDQyMWViODZhMWJkYzBmN2FjMjkyZThiYjAxNGM4OTgxMjliNDQxMzljZGRmNWMwYzhlM2U5NTZiM2MifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/research.md#L245-L264",
+          "version": "repo-lines-v1:sha256:a5e008d0c8b8002225d1d0182807a992f9211b3f54795ac45985bc8092e9b6a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDFhN2E3NWRjZWYzYTMwODIwNWQwMDhjYWZhNWQzNzlhNjFhMzRlZjU1MDhkZjY5ZDM5YmU4MzUwNmM1NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhOTg5MDE2YzFjM2M5ZDJjYjY2MTVkM2I1NWI5MmI4NzY5YWJhNTQxZGI2NDhmZmU3Yjc2N2ZjZDc0NWMzYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzNDNlMWQ3YTExNjQwYTkwZDI3NmNlMGI5OGViZTUwNWMwNzQzNTQwNmVhMzA1ZWVjNGViZGQ1MGU2YTA1YTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhYjU3NjZmOTk2YTdkNThkMjAzNjRhNzk1ZDQ1ZDc0NWQzYmZhM2UzMDNlMjE1YmQzNmFiZGE3OTA5MTVjMTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2acf3a207c3d4ab5ac0f1f4e00d95803",
+      "statement": "The issue form at .forgejo/issue_template/backlog-item.yaml fixes four sections — context, acceptance criteria, affected components, discovered-during — plus type and priority dropdowns, so an operator-filed item and an assistant-filed item are structurally identical and neither has to guess at the other's intent.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/issue_template/backlog-item.yaml#L1-L67",
+          "version": "repo-lines-v1:sha256:55ef617e63ffbce2ca86d94a4f13a2a56c46c258d08679e655e1d26f3be474a1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyODI4ODY5ZGY0NzYyOTlkMmMwODlhNzc1M2Q0MWRhNDg0ZThjNjBjZmEwODNhZTNhYzQ2MGFlMDc0NGU0YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZDU3MTM4NTIwOTY5YTcxMWQyNWFmNWEzOGI4ZjVkY2Y2ODI1M2JlODQ3MzM4NGIyZTMzMjZlYTJiMzRhZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/data-model.md#L28-L41",
+          "version": "repo-lines-v1:sha256:83bcc2a4214f210f7adc193fdad9adfa96110be3bb6a17cafe21fbab89cdfef9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ZjdmNDlhZTVjNzAxZGRjODIxMjNjMDUzZGE0N2VjZGEwZTY5ZDVlM2U4M2Y2NGViMWRiNjJkZGFjMWY0MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmYTc3YjZjYzIyMmMyMzdmODM2ZTc1MDc1MjVkMzU4MDZkNDRmZWFmZjNmNTQxNmJlM2MzZTZmMjZmMWQ1ZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjZmY2NTllYWVmMzI2Yzc4MDMwYmM3ODZlYWY3OTBhM2M2N2FmN2YwNmE4ODY3Y2E2YjdlMmU0MzQyNDZlNGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d3b8675722434ece95c6cbf82b28f397",
+      "statement": "Ten labels across the type, priority and status families carry the machine-readable state; setup-labels and setup-milestone are idempotent and never re-create an existing entry, so an operator's colour or description adjustment is not reverted. setup-milestone is what makes --milestone usable at all, because resolveNames refuses an unknown milestone name; an absent milestone is the free backlog, not an error.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/backlog.mjs#L424-L433",
+          "version": "repo-lines-v1:sha256:38d83ab91075dffcaa52074da04bcd506707ba7fd7907610a859dce9e3ae6c4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzFkNmYyZDk4YTY0NjI2OWJjYjZhOWIwMGQ5MTU0MDZkODE5ODE5YTIwZTg2MDZlODgyZTUzNDFiMGM5NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWI4NWRhMThkNWQwZDIwN2U3ZGE2MDFkMTcxMzljZjZjY2E4Y2UzYTM4MGNjYzQ3YTJlNDhhMjRiMmJjYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MjkzMjk2OGIzYjZmYTQwNWFiMDc2MzY5ZmQzNjlhNjM0Yjg5ZmIwMzc1MTAxNjgzMmFjYmNmZTU1OWY3ZTAifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L46-L63",
+          "version": "repo-lines-v1:sha256:707060a8a588374007896f8b85826f24c54b247e34eb6c0a48c4cca455466e79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZDA0Mjc2YTkzNTU4ODBhY2JiMTAxNGI3YjAwNmQ1NjIzMjM5MmYxMGZhZmZiYWRmNDEzMmM4NjZhMzE1MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyNTdkODM5Zjc1ZDBiZDRhNjE0Y2YxMDEwMjA4NzY0OTA5NDE2MTY3NTUzZWQ3MWY3MWQ1OWU1ZTRkZjg3ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxN2Q1ZmI0Y2QxMGNkODhkNTM5OGQzMmQ3Zjg4MDYxN2M2ZTZlNzU5MWUyODU2NjE1MTE3NTU0YWM5MTcxMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMzYwY2NlMGEzOTkyOWMyZWRhY2RhMTNiMTMwZjFiN2JkZmFmNDZmOTFhN2FhOWIwZmY0ZmQxODExMjc4YzcifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L815-L843",
+          "version": "repo-lines-v1:sha256:6e6bc129902c8fbdb5f4fabae78005b18b0a37ab15c9bac026069a15eafdc421:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZjI1MmE0Nzk2MzkyM2RhYWE4MmE0ZWJhYzAwNzE0MzM1Y2NhOGRhY2IyOGRiYmFjYWQ1YTE3MDMwZjlmYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyOTM0Y2I2OTY0MDIzYTNkM2QxMmFmYjNmZDViZmJlZjUwN2NlNWJhOTU4ZjQ3ZWFjOGJhNjE3YjU3ZWI2NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNjE2ZDZjMzQ0NTZkNmRlZjU5MzY2ZjZjNjcxMzM5YTI2NDRmZjE1NzU5ZGUwZGE0NzQwM2UyM2U4YTU2NjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab844a9a333b4759bdbeaebdbdd553d6",
+      "statement": "status/needs-spec is the bridge marker into the SDD lifecycle — it means the item is too large to implement directly and needs specs/NNN-*/ spec → plan → tasks first, so applying the label is the instruction rather than a prelude to starting to code; status/bot-managed marks items another automation owns (today Renovate's Dependency Dashboard, item #29), which are never edited, closed or swept.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/forgejo-issues/SKILL.md#L37-L59",
+          "version": "repo-lines-v1:sha256:dce894306a953572b9a436d6b50678d1f6b49ae423ca02a68e874aa3ec27f8bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYTg1OWFmZDg1M2UxM2E3YjAwNjBiMmEwOTM2NjViZWE5Mzg1MGIzODFhYjM5NDMxNmYxZTk3NzE2MDFjNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMjJmOWM4ZjY0ZTRkYjNjNzhmNzc2ODJhZmM3NmVjNTE4MTQzNTJlNzlkZmMyYzkwMmQ1MTA1NWRlOGNlMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxZjc4N2ZiZTM1Y2M5Y2ViZDIzYTBiNzc3YWM1ODE2YTAwNzQ2NGIwZDhlODBlNGQ5NzIyMjhkNzlmZDM0YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxYjhlYzg0OGQ1MTM3Yzc4ZGVjNGQxNTdhOTVkZmE0ZDVjMjk1MGQyOTE0YTVmM2ZlODg5YTllOTIxNmQzZTIifQ"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L46-L63",
+          "version": "repo-lines-v1:sha256:707060a8a588374007896f8b85826f24c54b247e34eb6c0a48c4cca455466e79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZDA0Mjc2YTkzNTU4ODBhY2JiMTAxNGI3YjAwNmQ1NjIzMjM5MmYxMGZhZmZiYWRmNDEzMmM4NjZhMzE1MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyNTdkODM5Zjc1ZDBiZDRhNjE0Y2YxMDEwMjA4NzY0OTA5NDE2MTY3NTUzZWQ3MWY3MWQ1OWU1ZTRkZjg3ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxN2Q1ZmI0Y2QxMGNkODhkNTM5OGQzMmQ3Zjg4MDYxN2M2ZTZlNzU5MWUyODU2NjE1MTE3NTU0YWM5MTcxMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMzYwY2NlMGEzOTkyOWMyZWRhY2RhMTNiMTMwZjFiN2JkZmFmNDZmOTFhN2FhOWIwZmY0ZmQxODExMjc4YzcifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/research.md#L110-L132",
+          "version": "repo-lines-v1:sha256:44b6b017ca088ec5dd7ab9ef16a166ba0a9c8d5eff8e2b1c27b0bb771f35ab2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0N2U2MjlhMTY5YWEwYjQxOWM5MjU2NGM2MDY4NWFkMjZhNzkxYTQ1ZjZjMTMxNTZiM2ZmMzZmOGU2ZGEyNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNjUwOWMyZWQ3MDdiYWRmZTNhZmVjYjVjNDU3NzBlMzlhN2I0NGEwNGVkNzgyNmQ5MGVlZjg2YjdhNTFkNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43519a9565ff4aa6b0b55e78c37cb2bc",
+      "statement": "The command surface is one item per invocation by design — no command accepts a set of item numbers — and bulk operations require an explicit operator instruction, because item history lives in the forge's database rather than in git, so there is no `git revert` for a mass close. Projects boards expose no API in this build, so labels are the shared truth and treating the board as authoritative would silently fork the state.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backlog.md#L96-L107",
+          "version": "repo-lines-v1:sha256:4336246535a0351d81695e3c440e15b03fd4a88cbc446bf3a5b6298d11d5329c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhYjhhMGIwYjg4MjQ4ZGJmMWI5ODRmMDhjZmNkOTlmZGMxZDQyNmE4NGIxOGY1Yzc1YzAwZGZmYmQ3NDQ2MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMWNmMjI3ZTYyYzNkNGVmOWI0MWMwZDk0YTdkMGNkYjY1M2UxMWE0YzM4NDdkNWQ0NWI3ZjQ0NWM2MjI4OGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5OTg4YzYwNGE0YzQ3ODViYzU1NjE4NjhjNmUzMzM0N2E4OWNiMjRhOTI1MjAzZTU1ZDZhZDI0ZTlkZTNhYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MTk2MTVkMmY5MjcwMmJiZDU0NmVmNjBjYjAyZWVkNzc5MzNjMDRjZWI2MGU4NWY1M2QyMmIyYWZhZmQ0NzMifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/contracts/backlog-cli.md#L11-L29",
+          "version": "repo-lines-v1:sha256:e771c1db98728c17750b6421d8a29bec7087cf3462ff8c3d772fdafe929ecdff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMTkxYzFiYTUwNTc0ZDc4NDcxMmRhNWM4MmNhYmY2NmRkYWVlM2RjYmE2MTNlYWUwNDYwM2ZjNzcxZmE2NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1YmMyMzMwY2JmZTM3ZTNkODg1NThmZWEyMWJjMTk3ZmY2MTAxMGQxZDQ1NDg1ZmIwOTkxMTg2NzEzNDkxMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkY2Y1NTMyY2YzZDY5NGE1OTM0NGU2OTA5MTcxYmVlYWM5OWFlOTQ5MjkwMTExNmQxMjA4ODVjMDczNjIyYmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZGNkN2VkMjVjOGFkOWI0NzA4ODE3MzE5N2NmNjhlNzNiOGU2NWNkN2E3YzZmYzA2MTg2MjYwMWZiYjNiZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0f38466b709f4336ab0fcb6a96f89d97",
+      "statement": "/speckit-taskstoissues is the one caller that writes many items in a session: it files one item per task, encodes the task ordering as blocking edges and requires setup-milestone first, but it is optional by design because tasks.md remains the authoritative in-feature decomposition and a 70-task feature becomes 70 items in a shared tracker.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/speckit-taskstoissues/SKILL.md#L62-L89",
+          "version": "repo-lines-v1:sha256:75fc6a00e5f8c8882e9ec056066640a23462070a1453a109bd8b79af9a14434c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiYjdlNjM3OTI2OTk0YmJjOWM4OWFiZDU4YjRmYzAwYjk1MDNhZjhjY2FjZTNhNTYxNjc5MGVmYmQxYTI2ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNWQxYjBhYjkwZWRjNDlmMjM1YjFhMDNmMWE0NWViYTdlNjMxMjA5NDE0ZGI3MjZmNjAyYWFhY2JhNGNjNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0YzAzYzZlNGE4NzBmOTRlNzljZWE3NTVhODY1OTMwOTc1ZDM0ZGVjMTI4YjQyODgzOWEyMDEwMjM0ZWUyYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMmJiOTViMTUxZjQ4YjFlMDBkYzllY2M3MGUzMzEyODA5M2YwNzAyOTY4OGM4MzUxNjJhOWY0NGQzMjM5MWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b3310d7aa3e64899868c1f8567f17261",
+      "statement": "Exit codes are the interface — 0 ok, 1 unexpected, 2 usage/validation, 3 missing credential, 4 authorization, 5 transport — so a caller branches without parsing prose, and both the blocked-close refusal and an unknown label name arrive as 2.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/backlog.mjs#L27-L28",
+          "version": "repo-lines-v1:sha256:d9cf59ebfde693976238c896b239c5dfcc9f601e24225f98953700edcd793f28:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJiNDYwNDk4YmQ2MDJiOTc3NWQyMDFlOGI5NjYzZDc2MTdjMDZhM2Q0ODQ1ZjEwN2QzMTkzZGQ2YmFmNmVmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI0OTVkM2ZjZTgyNzljNGE4YzhjZDEyZDdjYTFjZTFiM2QxMTRhMzY0MzVjMDZkMzA2ZGQ0M2RlZWU4ZGJkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTMzMTJiYjJkM2MzMjdiZTNmN2FhYmRiZDZlZWE4OWEwYWFmZTI0MWVjN2Q5ZmI5YmMyMzYzNmE5ZmNlMWE4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGJmY2M3NmJkNTcyMTRlNmFlODRlN2ZjYTgxOWRkZTE2OTg4ZWIxNzJiMzVkMDFlZDI5ZWRkZDZiZDU2MGZjYSJ9"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs#L873-L898",
+          "version": "repo-lines-v1:sha256:5bd8aad45721b3f3f49a547512cb437b59a9ae7474ef31a8bacc6bb28d2291ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlYjlmZGMwNmI3Yjg2MDUwODNhZmEzN2JiMjFiODc2MmY3ZDMyMGM4ZjgxZGViYzE4ZmUxZDQyMWQ2ZmZkY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlZTdhNzA1NDgzYTdmOGY5NjM5M2M3NzkwODU3NjM3NTE0ZTNkOTQ5YTBjZDYzYzgzNWUyNjE5ZTQ4Mjg4YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://specs/049-forgejo-issue-tracking/contracts/backlog-cli.md#L28-L29",
+          "version": "repo-lines-v1:sha256:8ca48bd66491c879b4207d7001cfd86f999b42d90818177cba872cb9ecda73dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjVkMTdhMmFjZGMzNzIwZTVmMzk0MzAzNmUxZTdlMTRlZmFjZTFmYmQ0NWNhNjE5MTc5YWYxMjljODFlNTRhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjViYzIzMzBjYmZlMzdlM2Q4ODU1OGZlYTIxYmMxOTdmZjYxMDEwZDFkNDU0ODVmYjA5OTExODY3MTM0OTExZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDkwZWNkOGNkOWY3NGU1ODkwNjBjMTNkZTI3YWU5NDI4MzhiZTY5MjljZTg1MmVlMTIwNzVjYjc5MmU4MWU3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGNkY2Q3ZWQyNWM4YWQ5YjQ3MDg4MTczMTk3Y2Y2OGU3M2I4ZTY1Y2Q3YTdjNmZjMDYxODYyNjAxZmJiM2JkYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bad0e195ad4444f6bba059bf053c256e",
+      "statement": "scripts/backlog.mjs is deliberately not an Nx target (~60 s per Nx invocation against ~0.09 s direct), but its unit tests still run under Nx via preflight and in CI's guardrails `naming` job as `node --test scripts/__tests__/*.test.mjs`. That job runs in a container with no forge access and no token, so the tests must stay deterministic, offline and token-free, driving exported pure functions or injected fetch/env doubles; live-forge verification is a one-off manual exercise in the feature quickstart.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L170-L176",
+          "version": "repo-lines-v1:sha256:ca133cf65df8a111686fd253aba3b59d2a4861fa8273d6e2501a5f9354ba49fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3ZDQ0MWFmODA1NDg1NGJlZGUwYzgxOTRmNWZiNDYxNTRjMWVjZTRlZDZmOWRlODRkYTRlNDY4MzMzOTRhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RiNGVhYzlhZmY5NWUyNzc3ZjhmY2U5YmFlZjg4OWRjY2EwMzQ5OGM4ZjE4NWE2ZTY0NTdkNjkwNDVmMGM1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU4NmU2NjdkNmQxOWI1ZDQwNjA4MmY5Mjk4MzJhYTcyMWMwNWZkM2Y5NmNmNDAxZjlhYmYxNDMxYTQ5OGZiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI3MGRkNGFkNjNhZGZjMTI0ZTgxZDMyZDBiYjFiZWM4NzA0NzJlYmQyNzg1ZmZkMWVhODkwYzhhY2UyNWI3MiJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/backlog.md#L30-L33",
+          "version": "repo-lines-v1:sha256:bdf9d8a939c08efbcf78eb88f1c5091eb10e0ad46b634326b23b166cd2e6fce9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc1MTViYjg2ODc2NjkxMTA1NmI3NWI0ZmUxMTdiNDY5OGZiMTMxZWZkYjJjNzc1ZGIwNWQ0NzQzZmFiYzRlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMThhZDBkNTM3MTQ1NTlkZDhiYmRhNTE1NWU1ZWE2ODU2YWQ0MmZlODM2ZGY1YWU4ODNjYjk1N2QwM2U4ZDk0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGJhZWFhNzljZjAwNmMwMjkyNjY1ODc5ODg4ZjQ0N2NlNzRkM2Y4ZTA4NGM4NTM4OTMxZmFjZGNiODgxYjM0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjY5NmJhOTk0YWZmODEwMDdiNDFjODA2YjU0Y2NlYTM2YjdkNTkzY2FmZDJhODUxZGNlYjYzMzcwNTY0YTdhYyJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backlog.test.mjs#L1-L6",
+          "version": "repo-lines-v1:sha256:63ba51e512cf4d346b1d13447a542f0fd4b1fe1cc3cef18eb7296a54beb1c0bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmM1OWJjZjU0NzE4YWVjYjVkN2ZmOWZmN2I0OGJiMTllMTk3YjA2YTE2OTg0M2IwYzc5ODJkYTNkNjM2Y2ExZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVmY2IwYzQ5OWU5MDBmYTExODZiOTYzNDYxNzcxNTlhYTJkY2FiMmQ3NDljZWM0NThkNTI5ZGNlZTM3OWZiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThiZmE3MjhmYWY5Y2QyZDVkNWM0OTU0YWVlNWRiNTY0YWE5OGJiMjM2NmVhYjIzYWUxMjQ0ZGEzMWFhOTZhNyJ9"
+        },
+        {
+          "resource": "repo://scripts/preflight.mjs#L75-L83",
+          "version": "repo-lines-v1:sha256:318d50e3d34f525e36f47a72805af200bb3f3bd20e52e7a79b61fc7c136e0ecb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDU2YTU2MGQ4ZDkwYmIxYTQ5YTViZGE3MmY4NWQ4M2RmZDBjNWE0YWM4YjZhNzczOTAxYjE1YWY1ZjM2YTdmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDkyZDIwNDYwNjQzNDQwNTg4ZjVkN2YwNWZjZmRhZjk0Y2NiODgzN2JkZWE2MmM4Mjc0YjVhOTg1YTk4MGVlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmM0NjI4Yzg2MDJmOWRiYjhmZGUwMDdlNzA0YjczN2UyNDhlNjhhZTU3NDgyNzllOWJhY2I3OTZkNThmYzBiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzYyYmRmNGU3OTE5NDliNzNhN2E5NWMxYzAzOTYwYTYyYTkxMmIxODhmNzQxOWIyMDhlYWZmYjg2ODIxYmRiYiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-10-04T21:27:12.854Z"
+  }
+}
