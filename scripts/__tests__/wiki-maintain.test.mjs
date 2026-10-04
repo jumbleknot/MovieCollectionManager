@@ -1388,6 +1388,93 @@ test('deadline: a slice with too little time left is not started — carried for
   }
 });
 
+// ── a deadline stop must not let an UNREQUESTED page sink the requested ones ───────────────────
+//
+// Measured 2026-10-04, run 4606: projects/sast.md was requested; openwiki also forced three covered
+// pages whose Claims evidence had moved. The job deadline stopped the generator part-way through one
+// of those (projects/keycloak.md), whose half-written bytes broke V16 — a whole-invocation
+// conformance failure, so nothing was proposed, although sast.md itself had landed. After a deadline
+// stop, what the slice did not ask for is restored before verification.
+
+/** A covered (Claims-verified, manifest-listed) page in the gotchas area, committed. */
+function coveredPageRepo() {
+  const root = twoAreaRepo();
+  const body = '---\ntype: Convention\ntitle: forced\ndescription: Covered.\n---\nOriginal.\n';
+  const certified = `sha256:${createHash('sha256').update(body).digest('hex')}`;
+  writeFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), body);
+  writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [forced](forced.md)\n');
+  mkdirSync(join(root, 'openwiki', '.claims', 'gotchas'), { recursive: true });
+  writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'forced.json'), JSON.stringify({ pageVersion: certified, verification: { by: 'x', at: '2026-10-01T00:00:00Z' }, claims: [] }));
+  writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/forced.md': { pageVersion: certified } } }));
+  spawnSync('git', ['add', '-A'], { cwd: root });
+  spawnSync('git', ['commit', '-qm', 'covered page'], { cwd: root });
+  return root;
+}
+
+test('revertUnrequested restores unrequested writes and keeps the requested page, its sidecar and its index', () => {
+  const root = coveredPageRepo();
+  try {
+    const before = mod.snapshotTree(root);
+    writingStub(root, 'invariants', ['one.md'])(); // requested page + its index
+    mkdirSync(join(root, 'openwiki', '.claims', 'invariants'), { recursive: true });
+    writeFileSync(join(root, 'openwiki', '.claims', 'invariants', 'one.json'), '{"pageVersion":"x"}');
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), 'half-written');            // unrequested, tracked
+    writeFileSync(join(root, 'openwiki', '.page-manifest.json'), '{"changed":true}');            // shared bookkeeping
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'brand-new.md'), 'x');                     // unrequested, new
+    const reverted = mod.revertUnrequested({ root, bundleRoot: join(root, 'openwiki'), slice: sl('invariants', ['one.md']), before });
+    assert.match(readFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), 'utf8'), /Original\./, 'tracked page restored');
+    assert.ok(!existsSync(join(root, 'openwiki', 'gotchas', 'brand-new.md')), 'new unrequested file removed');
+    assert.doesNotMatch(readFileSync(join(root, 'openwiki', '.page-manifest.json'), 'utf8'), /changed/, 'manifest restored');
+    assert.ok(existsSync(join(root, 'openwiki', 'invariants', 'one.md')), 'requested page kept');
+    assert.ok(existsSync(join(root, 'openwiki', '.claims', 'invariants', 'one.json')), 'its sidecar kept');
+    assert.match(readFileSync(join(root, 'openwiki', 'invariants', 'index.md'), 'utf8'), /one\.md/, 'its index kept');
+    assert.ok(reverted.includes('openwiki/gotchas/forced.md') && reverted.includes('openwiki/gotchas/brand-new.md'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute: after a DEADLINE stop, a half-written forced page is restored and the requested page is proposable', () => {
+  const root = coveredPageRepo();
+  try {
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1,
+      clock: () => 1_000_000, deadlineMs: 1_000_000 + 60 * 60_000,
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        writeFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), '---\ntype: Convention\ntitle: forced\ndescription: Half.\n---\nHalf-writ');
+        return { status: 124 }; // `timeout` stopped it
+      },
+    });
+    assert.equal(result.outcome, 'completed', 'the requested page landed; the unfinished forced page no longer sinks it');
+    assert.equal(result.pagesWritten, 1);
+    assert.deepEqual(mod.proposableSlices(result).map((s) => s.pages), [['one.md']]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute: on a NORMAL exit, a broken forced page still fails the slice — nothing is silently reverted', () => {
+  const root = coveredPageRepo();
+  try {
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1,
+      clock: () => 1_000_000, deadlineMs: 1_000_000 + 60 * 60_000,
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        writeFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), 'broken but finished');
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.match(result.results[0].violations.join('\n'), /V16/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ── 078 US4 / FR-010: every run records what it cost ────────────────────────────
 
 const PRICES_FIXTURE = { asOf: '2026-09-27', providers: { fireworks: { standard: { uncached: 0.22, cached: 0.007, cacheWrite: 0, output: 0.66 } } } };
