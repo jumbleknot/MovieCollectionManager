@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3de3369536f23c0fa38a69f5d56d92f7fb24367947bf1b84d2dd27e2933304fe",
+  "pageVersion": "sha256:f50f3742597712c93e6715260ab404ec2619fa1216c851f5f8cf8bf3b0bd16a5",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -16,7 +16,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L32-L38",
-          "version": "repo-lines-v1:sha256:0b7b192829e0624665c73b38e3436155f5ab627fef48485b6dee05700dbdb9a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E2M2I0N2EwMjFkMTcwMmJkMjdjZjIzOTUxZDY1ZDBiMGIyNmYxODE0ODJmYjMzYWY2ZDczZTVkMjg1NDUzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzMWUyNjAzOThhZDYxMDkxNGRmYzI4ZjA0OGQzOTI2NGJhN2Q1MDMyNzhkZDJmOGJiMWM0YzE0YjQ5OWQ5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRkNjFjZDFmMmIzZDMxYjBjMGMwM2ZhOTQwY2Y5NTg4NTE1OGNhYzkwMzljYTdlNDQ3NWExYjRkNTExM2I1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGE2ZDNhZWNkM2NlYzdlM2ViZWYyYzUyZDc2ODI4NjQ4YzE1OGFlODZjNGE0ZmZkNjNmZWE4ZDMzZDZmMTdiMCJ9"
+          "version": "repo-lines-v1:sha256:fa88a012c938950dc34a25f462ae62d64dbe6bdfdc590ac835f396f021d90cea:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E2M2I0N2EwMjFkMTcwMmJkMjdjZjIzOTUxZDY1ZDBiMGIyNmYxODE0ODJmYjMzYWY2ZDczZTVkMjg1NDUzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzMWUyNjAzOThhZDYxMDkxNGRmYzI4ZjA0OGQzOTI2NGJhN2Q1MDMyNzhkZDJmOGJiMWM0YzE0YjQ5OWQ5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRkNjFjZDFmMmIzZDMxYjBjMGMwM2ZhOTQwY2Y5NTg4NTE1OGNhYzkwMzljYTdlNDQ3NWExYjRkNTExM2I1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGE2ZDNhZWNkM2NlYzdlM2ViZWYyYzUyZDc2ODI4NjQ4YzE1OGFlODZjNGE0ZmZkNjNmZWE4ZDMzZDZmMTdiMCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L44",
@@ -505,10 +505,76 @@
           "version": "repo-lines-v1:sha256:0faa65402b8eb69a77bd8eabbff348a559e4787124e445e785f0bfec7e345257:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGU2NTcxNDFkZjhlYjNkZmE4NWRiZGYzODA2NTE1MTcwNGEwZWJiZWQ2MmUzODAyNzliZjY0ODEyNWIxZTJhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjVjYTQ5NTgwMDFhNzE0ODZhODE1M2IzNDY2MjJkNTgzZmE5Yzc0ZTg5OGRkYzJiYTQ5MTIzNzcwNmQzMjE5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTA1NWRiMDcwNmQ2NWRiZWY3OTY4NzMyNTdmMWVkMGI4ZDlkMWUzZGM0YTIyZmJlZjk4MTNkODVkNGE5NmRkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjRmMDQwNjE4YzU4ZjQ2MzhjODI5MTkzMTBlN2M4YWIxMjg3MjBlMmNjODhmNzRjMDdjMjUyMDBiMjYzOWRlNyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_8b84a6471c2c422fa9c760d88b19d86a",
+      "statement": "The `keycloak-service` service head pins its image by tag AND digest (`quay.io/keycloak/keycloak:26.8.0@sha256:b0f60d48…`), identically in the dev/base `infrastructure-as-code/docker/keycloak/compose.yaml` and in `compose.prod.yaml`, and declares `depends_on: keycloak-store-postgres: condition: service_healthy` — so the container is not started until its own Postgres answers the `pg_isready -U keycloak -d keycloak` healthcheck, and a Keycloak that is up but cannot reach its database is a Postgres problem rather than a Keycloak one.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L38-L42",
+          "version": "repo-lines-v1:sha256:ac5ceb55555f9f4ccd16216edb25dec55aa9c7b98a41f05c708004d695f3e9c2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E2M2I0N2EwMjFkMTcwMmJkMjdjZjIzOTUxZDY1ZDBiMGIyNmYxODE0ODJmYjMzYWY2ZDczZTVkMjg1NDUzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWYyNmE4NjM5MDgwOTVjOWVmMjViOGM4MGFjMGIxNGIyOTg4YzI1ZWQwYWY0M2I1NDIyMzYxOTVkYzI2NmQwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRkNjFjZDFmMmIzZDMxYjBjMGMwM2ZhOTQwY2Y5NTg4NTE1OGNhYzkwMzljYTdlNDQ3NWExYjRkNTExM2I1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWNmNDVjMmVjZDE5Y2IzYjkxOTNlYzYzZDBmMDA5ZjVjYTE2MjExMDE5YmQ0ZjkwNWRjOTVkYjBkYTExNDMzOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L25-L30",
+          "version": "repo-lines-v1:sha256:ae80d2c7ed1fa4774fce0e491c744184256bfd05b89b1f1a06412b1a3a1e32a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGZkZTc2ZjIxOTlmMTBiMGFiZGI0MDI1NGY4OWJjMjljYWE3NTk2NWE1Y2MxMThhZGVmMDcxZjhkMGQxMzYyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTJlZGQ4NTMxMzZlOWI5NmJiZjg5MjAyNWMzNzc3MmEwNDFlYTY0YWU0ZjczZWJiMTZhMTAzNTU5MjEzZTNkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ0N2Y0MjVlNTgxNGNmN2I4MzRkNDZkM2NmZjQxOGNhN2Q4M2VlMWFiNTM3NzcwOWJmZjViMGNkZmRkNWMxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2Q2YTM5MjAwYmMyZTBkNjIxNWY1NDNlMmZjNjY3Yzg0ODM0NmQ2YjkwNDc0OGYwN2JjYjkxY2EwZDdjY2JlZSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L32-L36",
+          "version": "repo-lines-v1:sha256:ac5ceb55555f9f4ccd16216edb25dec55aa9c7b98a41f05c708004d695f3e9c2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E2M2I0N2EwMjFkMTcwMmJkMjdjZjIzOTUxZDY1ZDBiMGIyNmYxODE0ODJmYjMzYWY2ZDczZTVkMjg1NDUzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWYyNmE4NjM5MDgwOTVjOWVmMjViOGM4MGFjMGIxNGIyOTg4YzI1ZWQwYWY0M2I1NDIyMzYxOTVkYzI2NmQwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRkNjFjZDFmMmIzZDMxYjBjMGMwM2ZhOTQwY2Y5NTg4NTE1OGNhYzkwMzljYTdlNDQ3NWExYjRkNTExM2I1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjliZjhlZDM0MjRjZTM2NzQwMzdmMDIwMjcwODFlYzkxNGQyY2EyODg5ZThkZWQ1NzZhYWU0N2Y1OWViZWUzMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f1e5362d0a14368afeab9cfc9e54b79",
+      "statement": "The Keycloak container's command diverges by environment: `start-dev` in the base `compose.yaml` and in both the dev and CI overlays, but `start` (production mode) plus `--import-realm` declared in `compose.prod.yaml` itself. Relatedly, prod runs `restart: always` on both `keycloak-service` and `keycloak-store-postgres` where the base file uses `unless-stopped`, because the host's shutdown drain stops every container to `Exited (0)` and `unless-stopped` declines to restart a container that was stopped when the daemon returns — so on this host `always` is what actually makes a reboot hands-off.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L110-L110",
+          "version": "repo-lines-v1:sha256:f87b1e6141b7e96d6689d29df26d0126c92e31e1113a85128b8beffd5165a46a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg3YjFlNjE0MWI3ZTk2ZDY2ODlkMjlkZjI2ZDAxMjZjOTJlMzFlMTExM2E4NTEyOGI4YmVmZmQ1MTY1YTQ2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg3YjFlNjE0MWI3ZTk2ZDY2ODlkMjlkZjI2ZDAxMjZjOTJlMzFlMTExM2E4NTEyOGI4YmVmZmQ1MTY1YTQ2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTcxMTM2NjQ5NzQwZDEyOTRhMGQ3YjY4ODE5NjRjZGM3ZmMxMmI2MWMwNTIwODBmYWU2MTZiN2U2MTExY2ZhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWIwYzBkYjJkM2MzY2U5NjQ0MTY5Nzc0N2ZjYzg0NzU1ZGNhYTk2NjY4NTY0ODRkYzU5NTRmNGQ3ZDI3YjM3MSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.ci.yaml#L26-L28",
+          "version": "repo-lines-v1:sha256:b0441a3bf0e253c99a69596c34550e717a54d3d8b9bfe2bb539bbb11f6487e85:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2YmE0MjU1ZDAxYzZkMmMwMTI1ZmQ3YTFhYjE2YTcxZmY3YTBiOThkYWZiNTQxYzNiMzA4YjIxN2Q4MmM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmZmNzM1MWE2NWYxMTVkYzg1NDIyYTlhZGYzZDNkNjI2Yjk2YTIzOTg0ZDc1NzlkZmU1YjE1ZTFhNmE4YmIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTk4NjNmNzU1MTE4OTQ1OGVhYzdmYThjOTRkYzJmOWZkMmRiMjVlYmQyNDk3OGMzMjQwMzA5ZTAyYzk0Yjc5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjllOWM0ZDM1NTBlMDA1NGI3ZGMyNWUzNzQ4YTE0Nzg1NmEzNjliZmI5NWRjMjFhY2Q4NzI3OGZlMGRjMWI0NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml#L30-L32",
+          "version": "repo-lines-v1:sha256:b0441a3bf0e253c99a69596c34550e717a54d3d8b9bfe2bb539bbb11f6487e85:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2YmE0MjU1ZDAxYzZkMmMwMTI1ZmQ3YTFhYjE2YTcxZmY3YTBiOThkYWZiNTQxYzNiMzA4YjIxN2Q4MmM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmZmNzM1MWE2NWYxMTVkYzg1NDIyYTlhZGYzZDNkNjI2Yjk2YTIzOTg0ZDc1NzlkZmU1YjE1ZTFhNmE4YmIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTk4NjNmNzU1MTE4OTQ1OGVhYzdmYThjOTRkYzJmOWZkMmRiMjVlYmQyNDk3OGMzMjQwMzA5ZTAyYzk0Yjc5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTk4Y2YyMTk4OTg5NjlkZjNlODg4MTcxMWE1NzFkMWE4ZTQyYzU5NzE0MzRhMmJmZTMzOTgyNWJmNWIxODY0YSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L14-L14",
+          "version": "repo-lines-v1:sha256:e7a4d536512c5e8fed47605b4dab735e65cba56c02460d8250fb238708de9f13:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdhNGQ1MzY1MTJjNWU4ZmVkNDc2MDViNGRhYjczNWU2NWNiYTU2YzAyNDYwZDgyNTBmYjIzODcwOGRlOWYxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdhNGQ1MzY1MTJjNWU4ZmVkNDc2MDViNGRhYjczNWU2NWNiYTU2YzAyNDYwZDgyNTBmYjIzODcwOGRlOWYxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIyOTBhYTM4ZGZkNmY4YmZmZjVjYjNmZjYzYmMwYjRiOTQ0Y2Q5ODM2NjcwNzAxMTMxYTZkNzdhZTdlMWEyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWY4NmFhOGQwYzgwN2JiNDE0N2Y5N2QwMjQ1ZjM5YTMxMWFkOGJhN2RlMzExZWM4NmJkYzZmZmE2NWE3MmNjMyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L94-L96",
+          "version": "repo-lines-v1:sha256:24f040618c58f4638c82919310e7c8ab128720e2cc88f74c07c25200b2639de7:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2YmE0MjU1ZDAxYzZkMmMwMTI1ZmQ3YTFhYjE2YTcxZmY3YTBiOThkYWZiNTQxYzNiMzA4YjIxN2Q4MmM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM4MzUxYjc3Y2I1NDU4NjEyZjJhYzRlNmU4YzU1MDk3MzY0OTI1YWZhZjkyN2JjZDZkOTQyYjVmNWQyNWE4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWU5ZDRmM2MxMmNjYzIzN2U0YTQ5NDZkM2RmZTA3NGIwMGI2OThkNTcyMjRhNGQyNmIzNzUyMDNmZjUzYWE2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQyMzVlYzIwMjE0ZjI2MWVkNzM5M2YzODA3MmI0YmQ5NjViN2NjNjZmNDc3MGVhMzJiNjExMmNhZTU5YWY4NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L75-L76",
+          "version": "repo-lines-v1:sha256:8bc47c20ff2707883d99b2de2c024fdb33e6fbdf96854a6ac05af8163785d3db:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2YmE0MjU1ZDAxYzZkMmMwMTI1ZmQ3YTFhYjE2YTcxZmY3YTBiOThkYWZiNTQxYzNiMzA4YjIxN2Q4MmM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM0MTIwOGUxNmZjYjM2OTlmNmEzMzNmYzZjZDZhZWIyZDMzOWE1MDE5M2Y3ZTVjYzg1MjFlZGM1ZThhMjYwZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI2MTViMDg1ZjE5NDYyYmQ3NGU4ZjZmMDEyMjZkNzQ5ZjRiYTU2YmJjMTcxY2ZmZjNmZDQyYTY0NWQ0YTQxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQyMzVlYzIwMjE0ZjI2MWVkNzM5M2YzODA3MmI0YmQ5NjViN2NjNjZmNDc3MGVhMzJiNjExMmNhZTU5YWY4NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6cf76e20a9a34ffdac533f58488f2ef2",
+      "statement": "The keycloak README's one-minute `--import-realm` proof runs the importer against `quay.io/keycloak/keycloak:26.7.0` while the deployed compose pin is `26.8.0`, so a successful proof is a schema/deserialisation check and NOT a version-parity check: a realm can import under the proof image and still meet a stricter schema on the deployed pin — the same class of change that made Keycloak 26.6+ enforce the realm password policy against imported user credentials.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/README.md#L121-L138",
+          "version": "repo-lines-v1:sha256:52fa7c373692044effe179e914e23286ee94ff307dfb6717ec8abeaacda99211:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ODcyYjBjNGVjZTFhZDQ5YmIwZWEyMjJmYmNmMWQ0MGZmYzdiZThiOGU2OWRlNTM2M2M4YjhkMTljYzBiMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YzM1NTY3MDllNTFjYWJiNTlhNWI2YWY3N2M5YzEzYzRjYWY2ZjIyMzczMmZhNjI0Zjk2YTc5NWUwMGI5NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYTBkZGY1MDFjNmJhOGRlOWQzNTFhZWNmY2I5NzI2MjIxMTk4MGNmMjNiNWNhMDg3YWEzOGI1M2Q4YjhjZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L36-L36",
+          "version": "repo-lines-v1:sha256:ef26a863908095c9ef25b8c80ac0b14b2988c25ed0af43b542236195dc266d0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWYyNmE4NjM5MDgwOTVjOWVmMjViOGM4MGFjMGIxNGIyOTg4YzI1ZWQwYWY0M2I1NDIyMzYxOTVkYzI2NmQwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWYyNmE4NjM5MDgwOTVjOWVmMjViOGM4MGFjMGIxNGIyOTg4YzI1ZWQwYWY0M2I1NDIyMzYxOTVkYzI2NmQwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWY2NTYyOTdkODg2ODg3OGYwM2ViYmUxMTBhMWU4NjkxODgyOTA5Y2NkZjhlNDI5ODQ2MjM4MjhhNGQzNGMyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjliZjhlZDM0MjRjZTM2NzQwMzdmMDIwMjcwODFlYzkxNGQyY2EyODg5ZThkZWQ1NzZhYWU0N2Y1OWViZWUzMyJ9"
+        },
+        {
+          "resource": "repo://scripts/export-ci-realm.mjs#L129-L136",
+          "version": "repo-lines-v1:sha256:147b3042a9c767b423bf65f23e5718bbd67a505c57a11ee2f1b036930d18f836:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRhYmE0OTVkNDdhN2E1N2VhYzZkMzI5ODRlYWQ0NWUzNDI5NGM1Nzc3ZWMzNzBhNGEyNmQ2M2I4NTc2MjBlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJlNTM0NGNlYTEyYWFlODJjNDMxN2ZjNWMyMzI0M2ZkMDI2NjQwZDQ1YTAwMTc1NDZmZGY2MzRlZDQ2YzlkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTliMWVlZDFjZDE1NmE5OGI1MTFkZDcwOGJiYzQ0MTM1MTkwNmQ2NDk2NzgwMjZiM2ZiNGEzZWY2OWNmYmRjZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc0YmYxMWY2ZjMyYmMzMTlmNDVlMDc2Yjg1ZmUzZjM4YzczMGQ3YTY3MDU5ZjhjMTkzNTYwMGM0MWUyOGI4MSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-30T10:57:51.938Z"
+    "at": "2026-10-04T14:07:00.171Z"
   }
 }

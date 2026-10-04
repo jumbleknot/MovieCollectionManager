@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d0dc97e27cc70f574d2914cea9feb8a4bb15fb84ae54a95c11483fd2f9936bca",
+  "pageVersion": "sha256:d2eeeec59478e2b298ce0e1141ce3a75c90260c94e5fc742bc4561001455f065",
   "claims": [
     {
       "id": "claim_7d3bd91d26e14adca9d54e0d80d60ae3",
@@ -68,15 +68,15 @@
     },
     {
       "id": "claim_6f67bad27ead4b18b2a897ba61b27e4b",
-      "statement": "`IdentityAwareAGUIAgent.run` catches every exception escaping the graph and yields a terminal `RunErrorEvent` instead of re-raising, because the AG-UI library re-raises into a StreamingResponse whose 200 and headers are already flushed — which aborts the connection mid-chunk and leaves a client waiting on a terminal event hung for its full timeout. It catches `Exception`, deliberately not `BaseException`, so a disconnecting client's CancelledError/GeneratorExit unwinds silently.",
+      "statement": "`IdentityAwareAGUIAgent` turns an escaping exception into a terminal `RunErrorEvent` across two overrides, because re-raising aborts a chunked response whose 200 and headers are already flushed — leaving a client waiting on a terminal event hung for its full timeout. `_handle_stream_events` performs the facts-preserving conversion (the runtime's own `except Exception` inside `run()` would otherwise yield `RUN_ERROR(message=str(exc))`), while `run()` keeps an outbound guard that rewrites any `RUN_ERROR` this repository did not build, plus its own `except Exception` for a runtime whose `run()` still lets the exception escape. Both catch `Exception`, deliberately not `BaseException`, so a disconnecting client's CancelledError/GeneratorExit unwinds silently.",
       "evidence": [
         {
-          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L159-L200",
-          "version": "repo-lines-v1:sha256:347b1b13d268ec21ae1ac1a1fbcaccbb1c88b68e5fb6ef561ac51081ee1df1cf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4Y2NmMjE3YmQ5ZTFjNmI5NTJiOGJkYmQyMGMxNjZiZDY3NmM1MmQ0MGM5MWRiNmNkZDg5Y2FiOWJhNTA5NzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxMzNiZTUwYzM5ODU5MzA2NzE1Y2M1MzFlM2Q3MGMwYzFkOTY1NDk1YTI3Njg2NDhhMmIxNTEyMmIwNmE1YmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3OTMzYzQyNTkyMjA3OGU0ODI5NDNkZmNjODIyYzNhZmRmMmYzNWZlOWYzNmE4MDMwMjdmZjczYjIwMWQzNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkYzNmMjY3Yjk2MDA4NzhmZDBkYmNlNjNmY2I1M2NjZmJhNzgxYjA1ZTdlMDZhNzlkYTg3MzQ2ZWFkMjYxZTQifQ"
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L175-L285",
+          "version": "repo-lines-v1:sha256:5f92cd8fa944ab7297df7962a3a20274a96741cc2fcfd32d7d0ed95b4619b2e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNGI4OGIwM2RmYWVkODhhMjA5YjcyY2VlNmIzMGQ0ODYxMmUxNjA4MDY4NzgxMzQ4MTliMGFmMDIyMTdlMDJkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2MTFmNmU4NDIzODJiMTc0NTIyZjEwY2ViN2JhMGU1OTIxODg4YTU2NTRjZjA3ZjUyZWJiNDYyNzg0MzI5OGE1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MGVkOTUyYjE0NjFhZGUxMDVlMjhhNzkzMWI5ZWUwMWNkOGMzOTc3MzU4ODUyOGZiMTc0OGYwY2ViYWNhODg4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         },
         {
           "resource": "repo://agents/movie-assistant/tests/integration/test_gateway_provider_error.py#L1-L45",
-          "version": "repo-lines-v1:sha256:7fc3d29eb8037905df9f6992514a4a563f973db1c3872b10410f449a2861ecf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZGNlMDE5ODViZDAyN2YzNjY2OGZhZDYxZDZjM2YxNGFiZWJlZWEyY2Y5NzhhNzYwNTA3YTFkMzBiMzk2YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiZWI1ZTRlMTYzZGMyOTRiNTI0MWExZmJmMjJiOTEzMTE4ZTU4NTZjZWE3ZWE4NTk2NmMwYjJmOTdiZGYwNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMDNmMmVjMGY4N2RhYzhlMWU1MDZmMjI3NGEzNmM5MTg0OTM2YjlhOTViNjI0NGZlNDY3ZWZkODYxNWJlZTIifQ"
+          "version": "repo-lines-v1:sha256:641e74d854d7da3d47353e343ea94b42f614c80a37e34ab972b415a08bb43eab:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZGNlMDE5ODViZDAyN2YzNjY2OGZhZDYxZDZjM2YxNGFiZWJlZWEyY2Y5NzhhNzYwNTA3YTFkMzBiMzk2YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZTk1YWIxMmFlYmNjOGNkYjQxYzEwZWE5ODE2MTM4MTRjYmY3YjdiYzEwYTlhMjUyNjgzMjlkNzg0MWNiZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkMWUzNWI5ZThjNTU0Mjg5OTEwNDljMjc5ZjI5ZTg1ODBkY2Q0OWVlM2JmZWNiZDE3MDAyZWE2NjUxZTM0YTMifQ"
         }
       ]
     },
@@ -294,11 +294,15 @@
     },
     {
       "id": "claim_8f0e515116ef4652975768c3e2d3563c",
-      "statement": "`log_provider_error` exists so a provider refusal is distinguishable from a product outcome: an out-of-credit Anthropic account answers HTTP 400 invalid_request_error, which the classifier's correct `except` degraded to the generic reply while the run reported 200, RUN_FINISHED and zero ERROR lines. It logs status, provider error type, the catching frame (`classifier` or `stream`) and the exception class only — never `str(exc)`, which a provider may echo request content into.",
+      "statement": "`log_provider_error` exists so a provider refusal is distinguishable from a product outcome: an out-of-credit Anthropic account answers HTTP 400 invalid_request_error, which the classifier's correct `except` degraded to the generic reply while the run reported 200, RUN_FINISHED and zero ERROR lines. It logs status, provider error type, the catching frame (`classifier` or `stream`) and the exception class only — never `str(exc)`, which a provider may echo request content into. It returns the description so a caller can branch on it without describing the exception twice.",
       "evidence": [
         {
-          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L190-L200",
-          "version": "repo-lines-v1:sha256:ea3fd7b03138104cf8f1878ee4bc051d393971b7ec0ea39336aefb4a573ce699:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NjljYjA5MjgwZWUwNzgxOTQ1ZTQ4ZDQwNDFiZDJkZmFhZTY5MWFkMmVhYmY1ZDNjYmEwODQ2YzcyMTZjYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxMzNiZTUwYzM5ODU5MzA2NzE1Y2M1MzFlM2Q3MGMwYzFkOTY1NDk1YTI3Njg2NDhhMmIxNTEyMmIwNmE1YmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhZmNlYTdlODYxNjQ1NzAyNzgwOWRkYWJhNTc4NGYzM2I3ODUwNjA0NjczMjlkNGFhYzRiMWY5NTVmMWY2ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkYzNmMjY3Yjk2MDA4NzhmZDBkYmNlNjNmY2I1M2NjZmJhNzgxYjA1ZTdlMDZhNzlkYTg3MzQ2ZWFkMjYxZTQifQ"
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L157-L169",
+          "version": "repo-lines-v1:sha256:7f27e1e396d1b0be3ba6d483166a0fa8721e22cf96b83d61a493087b628a7ac1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2M2Q3NGFhODBlNGJhOGMwOWRkMTc3MDhjNjBmYjMxNTJiMGQxYjU1ZDI4ZTNhYWY0ZjA0NmZmMjVkNDJhMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0NzE5MDdhNGUxYWE5OGNmYzllMmI1N2I5NjE5N2ZlOTVmMGUzYjg2ZGFkOTUyNmM0OGUzMGYyMjI3N2JlY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NzM5ZmNhZTczMTc3NTI2YWFmNTJlZTY4NTlmZTYxMWE5Mjg4MjA4M2RkYWVlNDJkNGQyMDdlZDcyYTgwNmEifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py#L361-L379",
+          "version": "repo-lines-v1:sha256:55681206264fdb3223d56ff85067f1c4afb551e548a855097886b050e8d7efc3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NjljYjA5MjgwZWUwNzgxOTQ1ZTQ4ZDQwNDFiZDJkZmFhZTY5MWFkMmVhYmY1ZDNjYmEwODQ2YzcyMTZjYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyODk1M2ZhMjUxODdhOGQ5OGZkYmEzZjAyNWQwZDVjNmQ2YzUzM2U0MWZmNDEyNTA3MTAzMGRkOWJjZDZlOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3M2YyMTk4MzNhZGFjZjc3NWRhYmIwYzRiYjllMTA1YjdhYTI0ODMwMTk0ODU0MDNhOTNjYmNhYmJkNGY0ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhZjI5OTI5ZTkxZTUwYWRiMDBhYWNiMDc2OTA0NzU0YmIxNGU1OTczMmUyNTJjOWEwOWViMjllZGQ3MzQxZWUifQ"
         },
         {
           "resource": "repo://agents/movie-assistant/src/provider_errors.py#L1-L26",
@@ -421,10 +425,100 @@
           "version": "repo-lines-v1:sha256:db72c27c302cffd1c2efdf50d0753b9d69f5b13d3bc6dfde01cbb4bb8dcd066a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyN2EwMjQ4Y2FhMjVmNGMxNDY0NTQzZGFiMzNkMmNhNmJmY2UwZmJlMzZmZWUwMTQyMDZmZjJiN2E3YjNmMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNWM0NzI1OTkwZTcyYjJkYWI0ZWQ0MDhkYjQ0YTMzYjJkZTBjMWNkMDUxNDkyNjY5NTRkNzBjY2E5ODU4NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0Y2VhOTM4ZThkMzE4MWU2YTQ3NTBiMGY5YjRkOGQ0ZmU0ZTMwNzAwMWUyZjBiOTg3N2ZiMWU0Zjc1MjUzOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2fb67622fce04f6c9b1605b3624690ed",
+      "statement": "Since ag-ui-langgraph 0.0.46 (the version `agents/movie-assistant/uv.lock` pins) the runtime wraps its own stream in `LangGraphAgent.run()` with an `except Exception` that yields `RUN_ERROR(message=str(exc))` — the leak 065 FR-010 forbids — and that handler sits inside the `run()` this repository overrides, so a sanitiser placed only at `run()` never sees the exception again. `IdentityAwareAGUIAgent._handle_stream_events` therefore converts one level in, which is what preserves the provider facts (status and provider error type, plus the exception class) in the terminal event; the unit tests replace the base `_handle_stream_events` so the override is what runs over it.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L253-L285",
+          "version": "repo-lines-v1:sha256:ffe44f197e67147a752c8454099da28c86ac405937af738af8834a466806d8ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NWU0OTJhNDg2YTUwOGRmOWIwY2RhYzE1OTIxZTNjZTIzZjI0MWRkYzNhZjI0YmI0MmNkNGVlYTc3YzRhNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMWY2ZTg0MjM4MmIxNzQ1MjJmMTBjZWI3YmEwZTU5MjE4ODhhNTY1NGNmMDdmNTJlYmI0NjI3ODQzMjk4YTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5NDQ2MWFjYjU5NzBmZjMxYWY4MWU3ODg4ZjNiN2RlNjgyZTNjMjQ0ODE2NDVlNDRmN2U0MTFmYzU5NWVhN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/unit/test_agui_identity.py#L212-L338",
+          "version": "repo-lines-v1:sha256:4a3e0a3b0ef6c3959e8fd495c84f23d45705ee6f28cceea4d3932c1d54647543:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MzA5NmM3MTZhMTc0ZDQ1MTBiYTUyOWNlZGFlMTkxM2M5NDdkNjRmNWE1OTI4NTNiMzk4MmNiNGVmYjA0YmUwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MTc0NDE3Y2Y3OTU5NWIxMmIzMDI3NzliODA1M2YwNGIyYzhmMmIwMjQwNDFkMDI4OTQ2ZmNlYWQ0OGY1ZTc2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2Y2JjNTY4YWQ1NGFkZDdjNDIyNTViOWJmNTQ3MDhjMjEzYzc2YWQ4YTQ0OGJmMWU4NjRmZGZjNDMyM2NhZDk1In0"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/uv.lock#L19-L21",
+          "version": "repo-lines-v1:sha256:33e6ccc913386cbb1afad39fb73e796d0c6700ef4ad79efc863cea570a6c466c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE1M2E1MGIxMzFjOGMzMzc2NmY5YTY2NTg2MTBlNjhhZjU1Mzk5ZjhjNmI2OTgxOGYxYjYyY2NkMGE3ZDgwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RhM2JkYmM3ZTdhNzZjMDU0MTNlNDk5MTc5OTBlN2RhNzlhYjQ0MjUwZWVkODU4ODcwMzBmMGVmYTdmYjI4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc5MGFhNTc4MWYzYTQzZDAwNzkxZmM4MmIxN2RiZGRmYTI5MGJjOGExOWZkZjMyYzQzNmY3ZTVkOTY5NTk5YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTljOWM0MjI4ZDZmYWVjNmQwNzUzZTllMmQxOGEwN2IzNzhiYzExN2M5ODI4MmQ0YmE5YmQyMWQ1MWJmODgxNiJ9"
+        },
+        {
+          "resource": "repo://specs/079-run-error-sanitiser/plan.md#L23-L53",
+          "version": "repo-lines-v1:sha256:ed3c586aed1710013053cc88a0a6a0e52419993180f2bf049afd82f5517d38fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxMDdkNTAxZjdkMzQxMTBjNmVmNjc2NGNkOTBmM2YxOWVlZDZjZjg0OTU2OWE0ZTc2Y2RkNjU1MWE3YTc3YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzN2NlMzE0NDdhNjkwNmY5MTQ4YTJjOTU3YmI5NGExMTAzOGE1ZjU1MzkwMzcxNzE0NmYxNjlhMmI5NjA1YmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NGQ0ZTE5ZDk0ZWQ2N2VlNjZjYWMzYWQzMzU2NTNkYzIyMTE2Y2JjZThhNzA0MDdiYzBjOWE3ZjA2OWRkM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzYzNlZGMyNGEyZDkxMGJjZmZlOGUxNGQ0ZjdjNTIxOWJmOTJhYjg4YjVjOTU0YWU3YzNlNjcwNmNiODBlZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e62a7ebcae424d068cf53d35e10e3070",
+      "statement": "`run()` keeps an outbound guard (079 FR-003) against the runtime's own `str(exc)` event and against one built from an upstream `error` event: every `RUN_ERROR` that is not a `SanitisedRunErrorEvent` is replaced by a copy carrying the fixed content-free message `agent run failed: upstream error` and `raw_event=None`. `SanitisedRunErrorEvent` is a `RunErrorEvent` subclass with no extra fields, so it serialises identically, and it exists so the guard tells its own terminal events apart by type rather than by matching message text. The guard cannot recover the facts, but it cannot leak either — a runtime that stops calling `_handle_stream_events` degrades to a less specific message, never back to leaking.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L144-L169",
+          "version": "repo-lines-v1:sha256:5c7bbdffec6b4ebf72cbd706400dffbecd8084c7cf16871e0d3564e2e21754b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MDNlMGI0MTI0ZDc0Y2Q3YTk5OWMwYTY0M2IxYzkxZWVhNmYwNDA1ZTc0NmQyNWQxMTYyZjQxOTMwMGUyMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1YThjYjUxZjQ0MDE2MTQxYzc3YWRhYjU2YzM5ODgwMjdiYjAyMDEwZDY4ZjVkMmI3ZGM4ZDVjNTIxNDcyOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NzM5ZmNhZTczMTc3NTI2YWFmNTJlZTY4NTlmZTYxMWE5Mjg4MjA4M2RkYWVlNDJkNGQyMDdlZDcyYTgwNmEifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L234-L251",
+          "version": "repo-lines-v1:sha256:1462d165571b9b92c133515edb979afabd108d5d92f56fe7c7f44d166d2be287:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxY2Q4Mzc1YTYxZjUyNzY0YzIwNDk4YjA1MTUyNDQ0MTQ4ZTVmYTVkYjU2YjE1YTQ5ODQ1NTM5NmQ2NTQzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMWY2ZTg0MjM4MmIxNzQ1MjJmMTBjZWI3YmEwZTU5MjE4ODhhNTY1NGNmMDdmNTJlYmI0NjI3ODQzMjk4YTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxY2ZhOGNiZWI1NjdmMzYyM2Q1M2Q0M2RjYmMzOWQzZGM5MzhmZjU0NDEyZmFkMWFiMGNmMGFiYjY5NmQwYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwNTA5ZTI4NmU5YTkzMjdhZWQ1YzQxZjZiY2JiYjI4ODMxY2UxMzU3NDk3NGEyYzg1NTA0Y2EzMzU5NDFiZTcifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/unit/test_agui_identity.py#L257-L278",
+          "version": "repo-lines-v1:sha256:90578d4ffbd30ba483832ee681d61df8e41c2d90f29225c79f528b7d944b5e7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMjA0NzEzNjE4MDI4ZDUxMGRjYTRiNjJmMjlhYjJmMWQ0YWZjZDBmZWU0YzBiOTg2NDFkYjRlNTIxMjE3ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2NTdmN2FhODA0NTg1NTc4NWQ2NzUyMmJiMTZmN2Q5MTg2ZWY5MjEzMWI0MGUwNTU3ZDk0OTc3Yzk0OTNlM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNWRhNGRkODAwOWU2ZjY2NWE4YzQ1Nzg4N2Q5ZjlhY2ZmM2E5ZDAzMWU2MzRlMTkzOWRiODFhNzJkNmEwYzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f87b90ea2b64f4494b1d15dd7a540fe",
+      "statement": "Both terminal-error seams hold the same AG-UI protocol rules, and they are what a later edit breaks: nothing is yielded after a terminal event (a failure after one re-raises, because clients reject every event after a terminal); a failure before `RUN_STARTED` emits one first, since the protocol requires a started run before a terminal; and the catch is `except Exception`, never `BaseException`, because `CancelledError` and `GeneratorExit` inherit from the latter and a disconnecting client must unwind silently rather than raise `RuntimeError: async generator ignored GeneratorExit`.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L234-L251",
+          "version": "repo-lines-v1:sha256:1462d165571b9b92c133515edb979afabd108d5d92f56fe7c7f44d166d2be287:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxY2Q4Mzc1YTYxZjUyNzY0YzIwNDk4YjA1MTUyNDQ0MTQ4ZTVmYTVkYjU2YjE1YTQ5ODQ1NTM5NmQ2NTQzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMWY2ZTg0MjM4MmIxNzQ1MjJmMTBjZWI3YmEwZTU5MjE4ODhhNTY1NGNmMDdmNTJlYmI0NjI3ODQzMjk4YTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxY2ZhOGNiZWI1NjdmMzYyM2Q1M2Q0M2RjYmMzOWQzZGM5MzhmZjU0NDEyZmFkMWFiMGNmMGFiYjY5NmQwYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwNTA5ZTI4NmU5YTkzMjdhZWQ1YzQxZjZiY2JiYjI4ODMxY2UxMzU3NDk3NGEyYzg1NTA0Y2EzMzU5NDFiZTcifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L270-L285",
+          "version": "repo-lines-v1:sha256:d6cd231b0d4502a82f09f8adee793e4c3d045b1b25072c960e942dfbdcb77f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NWNjNGVhM2YxNDU5OWZlMzU5ODcxYjE2N2I4Yzg3YTdjN2VmMTdiMGQxZTI0ZGFhZGM0ZWQwMWNhYTkwMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMWY2ZTg0MjM4MmIxNzQ1MjJmMTBjZWI3YmEwZTU5MjE4ODhhNTY1NGNmMDdmNTJlYmI0NjI3ODQzMjk4YTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwMWExODZkMzhjMjUzOWE0NTFhMmVlYTI4ZGQzN2RkYzI2MjJlODFjY2MyZDVlODgyOTNlY2Q2ODkwM2VlZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/unit/test_agui_identity.py#L280-L350",
+          "version": "repo-lines-v1:sha256:0b874166bea25d34fc64db5a8c29776e655c2b015eac6a05406f7bc42ea5edeb:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YmEzN2M2YTM3OTcwZWFiYzFkNzI2ZmY3M2FjYWJjNzUxY2RjYzQwNjFjYTM2MDFlMGQ5Mzg0ZjkwMGU4Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxODk0ZGMzZjQ4NmI0YzU4MTE5MTY0NmY4YjRlOTBmNjhmMjU0NDliNTUzODU0NjU1ZTljNDhjZWU3ZjMzNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZDcwM2I3ZGYzMzk0MjRmZTEyYzc5ZDcxZjJmNTk0MjNlY2FmNWFiMDk4YmUyYzliZDQxYTc1ZjM5ODI3MzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b3888680f898401c95d7354550c407ee",
+      "statement": "Catching the exception one level in is also the log-side guarantee: the runtime's handler calls `logger.exception`, whose traceback carries `str(exc)` — the provider's echo of member text — so preventing that handler from firing is what keeps the never-log list intact on the error path. The single permitted record is `log_provider_error`'s, carrying status, provider error type and exception class only; an integration test asserts on `caplog.text` (formatted output, tracebacks included, not `record.message`) that no record contains the leaked member text while the facts record is present.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L253-L269",
+          "version": "repo-lines-v1:sha256:6ca3dda2ab25ed0e7fac8738c6ec883ef214f0679b0eb8f600ef06b2d41af522:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NWU0OTJhNDg2YTUwOGRmOWIwY2RhYzE1OTIxZTNjZTIzZjI0MWRkYzNhZjI0YmI0MmNkNGVlYTc3YzRhNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5NDQ2MWFjYjU5NzBmZjMxYWY4MWU3ODg4ZjNiN2RlNjgyZTNjMjQ0ODE2NDVlNDRmN2U0MTFmYzU5NWVhN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZDUxZDdkOWNlODY3MjFjZGMxYzI0YjQ5ZDJhNjM3NTU3Y2E0MTgyZmEzMjcyZTRmODVkMGUyYWNhYjJlYzcifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/provider_errors.py#L85-L105",
+          "version": "repo-lines-v1:sha256:a51e89f233e2dfde808d22494d84b44c4460619ee3083012b500dd058d6471ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMTBiNzYwMjQ5NDRkNWQyM2Y5YTA1Y2Q5OGQ0ZDY3NWI1ODk4Yjk5ZjcwMGUwM2M5OGVmZjJkYWY4ZGNiMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMjM1OGIyYzliMmY0MTIxNGVmODgzOTFhMWI1YjcyM2RmMzNjNjcxYzMxMmVmOGNhZjQ0YmNlNTYxNWFhYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/integration/test_gateway_provider_error.py#L239-L262",
+          "version": "repo-lines-v1:sha256:d6f921f882de6f8b4509910b7964156da237d844c166b4705a9d146f7b7847b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyMzc2MjE3NjMyNWFmNmRiZTFlZGI3ZjEwZWRkZGRkMjYyZTQ0ZmUyMzFlODA4OGU0YjY2YWNmMDdhMDBkOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYWY0NWVhNGZmNDJmZWU1YjdiM2EyODk2NTRiYjU4YmZiYWNmNjZlNjIxZjBhMzQyZTY3ODI5YjFiOGMwMDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxM2EyNDUwZTgyYWFhZjk5NmI5M2IxODUyZTE2OWU0MGEwZTAyNDFmZmM0NTU4ZTZmODcxOTdkNDZmYTA1Y2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_643d50f54375464f8fc51465195cc4b6",
+      "statement": "The provider-error integration test drives the real `build_app` under a real uvicorn server on loopback (not `TestClient`, because the defect is how an exception raised mid-body interacts with an already-started chunked response) and asserts the sanitised terminal event is FACTS-PRESERVING, not merely blanked: the `RUN_ERROR` must contain `status=400` and `type=invalid_request_error` while containing no member text, so a fix that only substituted a generic message fails it. The same file pins a non-provider bug terminating the stream, a successful run still ending `RUN_FINISHED` with no `RUN_ERROR`, and a latency bound against the UI timeout.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/tests/integration/test_gateway_provider_error.py#L13-L46",
+          "version": "repo-lines-v1:sha256:72d529079504d786f3658299d35976d182bb83310b16393461372855bfe7c708:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlMmVkMTk1YWYzMTY0Zjg5Y2M2MThiYzM0Mjc3N2Q1NDMwMjlhYmNhOTNmMWJjMzAyY2Q1NjAyMzI0OTE2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmNTA1ZTMyZjU2YWFjYmNhNDY1NDA5NTExYjE3N2U3NzIzZjczNWY1NjU4NjM4NjhkZDVjZjJmZTk0NTFiNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmMGQ1MDM1OTI2OGFlMjczMjg4YjJkZGMxNTc2YTE5MjEyMjhhOTYxYTEyNzk0ZTdmNDVkY2NkODg5ODk3MWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhOGQ2ZjU2N2Q2OGEzMDY3OWFmMTc5ZWI5N2JmNWYzODlhNzA2YWE3NDFkOWU3ZWIwOGQ4ODViZTllNmE1OGUifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/integration/test_gateway_provider_error.py#L139-L237",
+          "version": "repo-lines-v1:sha256:9e354ac7bef50cff8fe6d87a1179d7bd59768a04def08261cd7494b23dc7c8d7:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMDBhNmEzOTA0Y2IxNDhiMjg4YTY3ZWU2ZjFkOTI4N2NhMDQyZGIzNjE0ZmQ3ZTYxM2I2ZGRhY2IyMGI5NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NzNiYzAyZGNhM2QyZGY5OGY5ZDJjMDU2M2YxMzcyMmRjY2NmMjIyYzBjYTAwMWU4ZGQzOWM0YTIyYTQ2MWUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-29T01:49:10.027Z"
+    "at": "2026-10-04T14:07:00.171Z"
   }
 }
