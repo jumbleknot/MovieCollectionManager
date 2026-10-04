@@ -2,7 +2,29 @@
   "coveredCommit": "a3527612aa2685a374170f10ad8c8c3dad364287",
   "coveredAt": "2026-10-04T13:35:36.060Z",
   "lastOutcome": "nothing-to-do",
-  "backlog": [],
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "agent-gateway.md",
+        "keycloak.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525): clear the three pages openwiki forces into every run (operator, 2026-10-04)"
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "android-emulator.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift sweep (item #525): clear the three pages openwiki forces into every run (operator, 2026-10-04)"
+    }
+  ],
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
