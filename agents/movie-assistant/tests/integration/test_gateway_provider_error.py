@@ -21,6 +21,7 @@ behind a live-model marker is a guarantee that stops running the moment that tie
 
 from __future__ import annotations
 
+import logging
 import socket
 import threading
 import time
@@ -29,6 +30,7 @@ from contextlib import contextmanager
 from typing import Any
 
 import httpx
+import pytest
 import uvicorn
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
@@ -228,3 +230,33 @@ async def test_the_terminal_error_message_leaks_no_member_text() -> None:
     assert any("RUN_ERROR" in line for line in result["lines"]), result["lines"]
     assert "Nosferatu" not in stream
     assert "Horror" not in stream
+    # 079 US1-AC2 — sanitised, not blanked. The provider FACTS still reach the client; a fix that
+    # only replaced the message with a generic one would pass the two lines above and fail these.
+    assert "status=400" in stream, result["lines"]
+    assert "type=invalid_request_error" in stream, result["lines"]
+
+
+async def test_the_gateway_log_carries_no_member_text(caplog: pytest.LogCaptureFixture) -> None:
+    """079 US2. ag-ui-langgraph 0.0.46's own `except` in `run()` calls `logger.exception`, and the
+    traceback it writes carries `str(exc)` — the provider's echo of member text. The never-log list
+    has no exemption for the error path; the ONE record is `log_provider_error`'s, facts only."""
+
+    def node(_state: Any) -> dict[str, Any]:
+        import anthropic
+
+        leaked = "rejected: add Nosferatu to my Horror collection"
+        body = {"type": "error", "error": {"type": "invalid_request_error", "message": leaked}}
+        request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+        raise anthropic.BadRequestError(
+            leaked, response=httpx.Response(400, request=request, json=body), body=body
+        )
+
+    with caplog.at_level(logging.DEBUG), _serving(_graph(node)) as url:
+        result = await _run_turn(url, "no-log-leak")
+
+    assert any("RUN_ERROR" in line for line in result["lines"]), result["lines"]
+    # `caplog.text` is the FORMATTED output, tracebacks included — `record.message` alone would
+    # miss exactly the leak this pins.
+    assert "Nosferatu" not in caplog.text
+    assert "Horror" not in caplog.text
+    assert "provider call failed: status=400 type=invalid_request_error" in caplog.text

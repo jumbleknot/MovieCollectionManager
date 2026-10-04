@@ -1,0 +1,36 @@
+<!--
+  Langfuse ClickHouse — bound ClickHouse's OWN diagnostic tables (ops hotfix, 2026-10-03).
+
+  WHY. With the image defaults, prod langfuse-clickhouse grew system.trace_log to 128 GiB / 6.2 billion
+  rows and system.text_log to 28 GiB between 2026-09-13 and 2026-10-03, against 84 KiB of actual Langfuse
+  data. Background merges of 73 GiB parts then ran the shared homelab at ~725% CPU and ~32% iowait with
+  swap full, and every CI job on the same host slowed 2-3x (Keycloak bring-up failures in DAST/app-e2e,
+  a 401 in the agent import scale test). The operator truncated the tables by hand; this file stops the
+  regrowth.
+
+  WHAT.
+  * trace_log / text_log are REMOVED: the sampling profiler and the server log mirrored into a table are
+    the two that grew without bound, and nothing here reads them (the server log is still written to
+    /var/log/clickhouse-server, and docker logs).
+  * Every other system log table that EXISTS on this server gets a 3-day TTL. Only those: in ClickHouse,
+    DECLARING a <*_log> section ENABLES that table, so listing one that was off would add a new writer.
+    A changed TTL makes ClickHouse rename the old table to <name>_0 and create a fresh one; the _0 copy
+    is inert and may be dropped by hand.
+  * EXCEPT a table whose default section defines a full <engine> (opentelemetry_span_log): ClickHouse
+    refuses a separate <ttl> there and the server FAILS TO START ("If 'engine' is specified for system
+    table, TTL parameters should be specified directly inside 'engine'") — measured on the 25.12 image
+    before this shipped. It held 20 MiB; it is left at its default.
+-->
+<clickhouse>
+    <trace_log remove="1"/>
+    <text_log remove="1"/>
+
+    <query_log><ttl>event_date + INTERVAL 3 DAY DELETE</ttl></query_log>
+    <part_log><ttl>event_date + INTERVAL 3 DAY DELETE</ttl></part_log>
+    <metric_log><ttl>event_date + INTERVAL 3 DAY DELETE</ttl></metric_log>
+    <asynchronous_metric_log><ttl>event_date + INTERVAL 3 DAY DELETE</ttl></asynchronous_metric_log>
+    <processors_profile_log><ttl>event_date + INTERVAL 3 DAY DELETE</ttl></processors_profile_log>
+    <error_log><ttl>event_date + INTERVAL 3 DAY DELETE</ttl></error_log>
+    <query_metric_log><ttl>event_date + INTERVAL 3 DAY DELETE</ttl></query_metric_log>
+    <background_schedule_pool_log><ttl>event_date + INTERVAL 3 DAY DELETE</ttl></background_schedule_pool_log>
+</clickhouse>

@@ -69,8 +69,8 @@
   ],
   "schedule": ["* 2-4 * * 5"],
   "timezone": "America/New_York",
-  "prConcurrentLimit": 5,
-  "prHourlyLimit": 4,
+  "prConcurrentLimit": 6,
+  "prHourlyLimit": 5,
   "labels": ["dependencies"],
   "rebaseWhen": "conflicted",
   "osvVulnerabilityAlerts": true,
@@ -582,11 +582,19 @@
         "carries the same amqp091-go v1.12.0, so PR #483 allowlisted instead. The harm was nil; the",
         "SHAPE is the finding, and it will not stay nil.",
         "",
+        "AMENDED 2026-10-02: A FIFTH SLOT. prHourlyLimit 4 -> 5 (prConcurrentLimit 5 -> 6, kept above it).",
+        "The rejected alternative above is taken now, for a reason that did not exist at #486: with 3",
+        "lockfile + 1 base-images, `docker digest pins` had NO slot at all, and the 2026-10-02 dashboard",
+        "showed it Rate-Limited while carrying the caddy rebuild for its curl/c-ares Highs. The cost is",
+        "one more PR's CI per week on the capacity-1 runner; the ranking above is NOT changed \u2014",
+        "digest pins is 2, below this rule's 3, so the fifth slot goes to it ahead of routine work.",
+        "",
         "THE PRIORITY MUST BE RESET TO 0 ON EVERY LATER RULE THAT TAKES A DIFFERENT groupName. Renovate",
         "merges packageRules in order and a later rule only overrides keys it SETS, so an unreset later",
         "docker rule would inherit 3 and compete with this channel for the very slot this change exists",
-        "to secure. Today that is `python toolchain` and `docker digest pins`; both carry an explicit",
-        "prPriority 0 and a pointer back here. `renovate-workflow.guard.test.mjs` asserts the ranking."
+        "to secure. Today that is `python toolchain` and `langfuse` (explicit prPriority 0) and `docker",
+        "digest pins` (explicit 2, see that rule), each with a pointer back here.",
+        "`renovate-workflow.guard.test.mjs` asserts the ranking."
       ],
       "matchDatasources": ["docker"],
       "groupName": "docker base images",
@@ -895,6 +903,27 @@
     },
     {
       "description": [
+        "LANGFUSE IS PINNED BY VERSION, NOT BY `:4` \u2014 the floating-tag cooldown treadmill (2026-10-02, item #642).",
+        "On `:4@sha256` Renovate can only offer the CURRENT digest of `:4`, aged against `:4`'s own",
+        "tag_last_pushed. Langfuse re-pushed `:4` on 2026-09-23, 09-24, 09-25, 09-29, 09-30 and 10-01, so the",
+        "3-day minimumReleaseAge never expired at a Friday window and no bump was ever proposed \u2014 while",
+        "GHSA-vcvr-r3jv-pc5j sat on the 4.35.0 pin and reddened `infra-image-scan` for every PR. Same shape",
+        "as node:24-bookworm on #360. With `4.35.0@sha256` each release ages on its OWN tag, and Renovate",
+        "offers the newest one that has cleared the cooldown (4.47.0, pushed 09-29, had by 10-02).",
+        "OWN GROUP, deliberately out of `docker base images`: a Langfuse minor runs Postgres and ClickHouse",
+        "migrations on a prod stack (ADR-0002), and riding inside the base-image security channel would",
+        "make that channel unmergeable whenever the migration needs a slower look. Web and worker stay one",
+        "group \u2014 they are one deployment sharing one database.",
+        "prPriority 0 is the item #486 reset: this rule takes a groupName away from `docker base images`",
+        "and must not inherit its 3."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["langfuse/langfuse", "langfuse/langfuse-worker"],
+      "groupName": "langfuse",
+      "prPriority": 0
+    },
+    {
+      "description": [
         "pnpm MOVES AS ONE UNIT \u2014 item #225, the same requirement as the nx and Playwright rules above and",
               "for the same reason. pnpm's version lives in package.json's `packageManager` (built-in `npm`",
               "manager) and in frontend/mcm-app/Dockerfile's corepack pins (the customManagers entry above, whose",
@@ -1156,11 +1185,19 @@
         "slot that change exists to secure. It is also what stops the LAST rule in this file",
         "(matchDatasources docker + matchUpdateTypes digest, which sets no groupName and no",
         "prPriority) from carrying 3 through: it inherits this 0 instead, being the later of the two.",
-        "See the `docker base images` rule for the whole allocation."
+        "See the `docker base images` rule for the whole allocation.",
+        "RAISED 0 -> 2 on 2026-10-02 \u2014 STILL BELOW `docker base images` (3) AND lockFileMaintenance (5), so",
+        "the item #486 ranking is untouched. What changed is that this channel now has a slot to rank for:",
+        "prHourlyLimit went 4 -> 5 the same day. At 4 the allocation was 3 lockfile + 1 base images, which",
+        "left digest refreshes NO slot at all \u2014 the 2026-10-02 dashboard listed `docker digest pins`",
+        "(alpine, caddy, httpd, node, postgres, redis, rust) under Rate-Limited, carrying the caddy rebuild",
+        "that clears its curl/c-ares Highs. A digest refresh is an upstream REBUILD of the version we already",
+        "run, i.e. the lowest-risk security fix there is; it should not wait behind every routine channel.",
+        "Still an explicit number, so the reset role above (nothing later inherits 3) is unchanged."
       ],
       "matchUpdateTypes": ["pinDigest", "digest"],
       "groupName": "docker digest pins",
-      "prPriority": 0,
+      "prPriority": 2,
       "automerge": false
     },
     {

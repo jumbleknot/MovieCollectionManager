@@ -207,3 +207,163 @@ async def test_events_already_streamed_before_the_failure_are_preserved() -> Non
     assert events[2].type == EventType.RUN_ERROR
     # FR-003 — a bug of ours is not dressed up as a provider status.
     assert events[2].code == "unexpected"
+
+
+# ── 079 / item #641: the seam moved INWARD, and a guard on the way OUT ─────────────────────────
+#
+# ag-ui-langgraph 0.0.46 added its own `except Exception` inside `LangGraphAgent.run()` that yields
+# `RUN_ERROR(message=str(exc))`. It sits inside the `run()` this module overrides, so the override
+# above never saw the exception again. The conversion now happens one level in, in
+# `_handle_stream_events` (which the runtime still lets raise), and `run()` rewrites any RUN_ERROR
+# it did not build.
+
+LEAKED = "rejected: add Nosferatu to my Horror collection"
+
+
+def _provider_400() -> Exception:
+    import anthropic
+    import httpx
+
+    body = {"type": "error", "error": {"type": "invalid_request_error", "message": LEAKED}}
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    return anthropic.BadRequestError(
+        LEAKED, response=httpx.Response(400, request=request, json=body), body=body
+    )
+
+
+def _bare_agent():
+    import src.agui_identity as agui_identity
+
+    return agui_identity.IdentityAwareAGUIAgent.__new__(agui_identity.IdentityAwareAGUIAgent)
+
+
+def _patch_stream(monkeypatch: pytest.MonkeyPatch, stream_body) -> None:
+    """Replace the BASE `_handle_stream_events`, so the override is what runs over it."""
+    import src.agui_identity as agui_identity
+
+    monkeypatch.setattr(agui_identity.LangGraphAGUIAgent, "_handle_stream_events", stream_body)
+
+
+def _input():
+    from types import SimpleNamespace
+
+    return SimpleNamespace(thread_id="t-1", run_id="r-1")
+
+
+async def _drain_stream(agent) -> list:
+    return [event async for event in agent._handle_stream_events(_input())]
+
+
+async def test_a_foreign_run_error_is_rewritten_on_the_way_out() -> None:
+    """079 FR-003 — a RUN_ERROR this repository did not build (0.0.46's `str(exc)` one, or an
+    upstream `error` event's) leaves with a fixed message and no raw event."""
+    from ag_ui.core import EventType, RunErrorEvent
+
+    async def foreign(self, input):  # noqa: A002, ARG001
+        yield RunErrorEvent(
+            type=EventType.RUN_ERROR, message=LEAKED, raw_event={"data": {"message": LEAKED}}
+        )
+
+    agent, base, original = _agent_over(foreign)
+    try:
+        events = await _drain(agent)
+    finally:
+        base.run = original
+
+    assert len(events) == 1
+    assert events[0].type == EventType.RUN_ERROR
+    assert events[0].message == "agent run failed: upstream error"
+    assert events[0].raw_event is None
+    assert "Nosferatu" not in events[0].model_dump_json()
+
+
+async def test_a_stream_failure_before_the_run_started_yields_started_then_the_facts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """079 FR-001/FR-002/FR-005 — converted INSIDE the runtime's handler, so the facts survive, and
+    the protocol's started-before-terminal order is kept."""
+    from ag_ui.core import EventType
+
+    async def failing(self, input):  # noqa: A002, ARG001
+        raise _provider_400()
+        yield  # pragma: no cover - makes this an async generator
+
+    _patch_stream(monkeypatch, failing)
+    events = await _drain_stream(_bare_agent())
+
+    assert [e.type for e in events] == [EventType.RUN_STARTED, EventType.RUN_ERROR]
+    assert (events[0].thread_id, events[0].run_id) == ("t-1", "r-1")
+    assert "status=400" in events[1].message
+    assert "type=invalid_request_error" in events[1].message
+    assert "exc=BadRequestError" in events[1].message
+    assert "Nosferatu" not in events[1].message
+    assert events[1].code == "provider_http"
+
+
+async def test_a_stream_failure_after_the_run_started_emits_no_second_started(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ag_ui.core import EventType, RunStartedEvent
+
+    async def failing(self, input):  # noqa: A002, ARG001
+        yield RunStartedEvent(type=EventType.RUN_STARTED, thread_id="t-1", run_id="r-1")
+        raise ValueError("a bug of ours")
+
+    _patch_stream(monkeypatch, failing)
+    events = await _drain_stream(_bare_agent())
+
+    assert [e.type for e in events] == [EventType.RUN_STARTED, EventType.RUN_ERROR]
+    assert events[1].code == "unexpected"
+    assert events[1].message == "agent run failed: ValueError"
+
+
+async def test_a_stream_failure_after_a_terminal_is_not_given_a_second_terminal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """079 FR-005 — clients reject every event after a terminal; the runtime's rule is to raise."""
+    from ag_ui.core import EventType, RunFinishedEvent, RunStartedEvent
+
+    async def failing(self, input):  # noqa: A002, ARG001
+        yield RunStartedEvent(type=EventType.RUN_STARTED, thread_id="t-1", run_id="r-1")
+        yield RunFinishedEvent(type=EventType.RUN_FINISHED, thread_id="t-1", run_id="r-1")
+        raise ValueError("after the end")
+
+    _patch_stream(monkeypatch, failing)
+    seen: list = []
+    with pytest.raises(ValueError):
+        async for event in _bare_agent()._handle_stream_events(_input()):
+            seen.append(event)
+    assert [e.type for e in seen] == [EventType.RUN_STARTED, EventType.RUN_FINISHED]
+
+
+async def test_a_cancelled_stream_is_not_converted(monkeypatch: pytest.MonkeyPatch) -> None:
+    """079 FR-006 — the same rule as the `run()` override, at the new seam."""
+    import asyncio
+
+    async def cancelled(self, input):  # noqa: A002, ARG001
+        raise asyncio.CancelledError()
+        yield  # pragma: no cover - makes this an async generator
+
+    _patch_stream(monkeypatch, cancelled)
+    with pytest.raises(asyncio.CancelledError):
+        await _drain_stream(_bare_agent())
+
+
+async def test_run_adds_no_second_terminal_after_one_was_sent() -> None:
+    """079 FR-005 at the OUTER seam — `_handle_stream_events` re-raises after a terminal, and the
+    runtime lets that escape `run()`; this `except` must not answer it with a second terminal."""
+    from ag_ui.core import EventType, RunFinishedEvent
+
+    async def late_failure(self, input):  # noqa: A002, ARG001
+        yield RunFinishedEvent(type=EventType.RUN_FINISHED, thread_id="t-1", run_id="r-1")
+        raise ValueError("after the end")
+
+    agent, base, original = _agent_over(late_failure)
+    seen: list = []
+    try:
+        with pytest.raises(ValueError):
+            async for event in agent.run(None):
+                seen.append(event)
+    finally:
+        base.run = original
+    assert [e.type for e in seen] == [EventType.RUN_FINISHED]

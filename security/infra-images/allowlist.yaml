@@ -351,67 +351,17 @@
   justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final / 4.2.17.Final) on an image we pull; 6 findings. RE-VERIFIED 2026-09-14 by a full local Trivy sweep (aquasec/trivy:0.74.0, DB stamped 07:14 UTC that morning): STILL PRESENT and still CRITICAL, all six findings, on both netty copies feature 071 measured — netty-handler 4.2.16.Final in lib and 4.1.133.Final bundled inside security-analytics-commons-1.0.0.jar. No bump clears it: the pinned digest IS what `3`, `3.8.0` and `latest` all resolve to (Docker Hub checked 2026-09-14, newest 3.x is 3.8.0 of 2026-08-04), so the remediation is an upstream rebuild. RE-KEYED 2026-09-13 from the 2.x digest to the 3.x one by feature 071 / item #439, because the OpenSearch 3 upgrade DID NOT discharge it — netty is present on BOTH majors and 3.x introduces nothing new. Deleting it would un-suppress a live finding and leaving it on the 2.x digest key would report it UNMATCHED, so re-keying was the only correct move. Keyed to the DIGEST, not to `opensearch:3`, so an upstream rebuild discharges it (feature 063 / item #297). Its sibling CVE-2025-14813 (bcprov-jdk15to18 1.79) WAS discharged and its seed entry deleted in the same change — 3.x ships bc-fips-*.jar and the old provider jar is gone. Internal-only (audit stack). Time-boxed; delete on rebuild, do not renew.'
   addedBy: 'item-406'
   expiry: '2026-12-01'
-- image: 'quay\.io/keycloak/keycloak:26\.7\.4'
-  id: 'CVE-2026-75595'
-  justification: 'New advisory (io.netty:netty-handler below 4.1.137.Final / 4.2.17.Final) on an image we pull. RE-VERIFIED 2026-09-14 by a full local Trivy sweep (aquasec/trivy:0.74.0, DB stamped 07:14 UTC that morning): STILL PRESENT and still CRITICAL — netty-handler 4.1.136.Final, one blocking finding. No bump clears it: quay lists 26.7.3 (2026-08-31) as the newest release and it IS `latest` (checked 2026-09-14), so the remediation is an upstream rebuild against 4.1.137.Final. NARROWED 2026-09-14 from the transitional `26\.7\.[23]` span to a single version, now that PR #362 has landed and 26.7.2 is no longer referenced anywhere in infrastructure-as-code/ — same rule already applied to the otel-lgtm and postgres keys, and the reason the span existed for exactly one merge. That narrowing also RETIRES the inference the span carried: 26.7.2 was never scanned (it was established affected from both release tags declaring quarkus.version 3.33.3.1), and it no longer needs to be, because the only ref this key now covers is the one measured directly. Internal-only (identity provider). Time-boxed; delete on rebuild, do not renew. RE-KEYED 2026-09-25 from 26.7.3 to 26.7.4, because the `docker base images` bump LANDED and did not discharge this entry — the re-block this key exists to force, with the scan it demands already on record above: 26.7.4@sha256:82a77884 was measured directly and still carries the vulnerable jar. Keyed to 26.7.4 alone, never a span, per `infra-image-scan.test.mjs`''s version-keying guard.'
-  addedBy: 'item-406'
-  expiry: '2026-12-01'
 
-# ── NEW advisory on an unchanged pinned image, triaged 2026-09-18 (Renovate window; PR #478) ──────
-# Three CRITICALs in github.com/rabbitmq/amqp091-go v1.12.0 (fix 1.13.0), all published 2026-09-16:
-#   CVE-2026-77405  missing explicit TLS minimum version in the URI parser
-#   CVE-2026-77408  silent data truncation / state corruption via shortstr integer overflow
-#   CVE-2026-77411  protocol desynchronization and frame injection via integer overflow in readLongstr
-#
-# HOW IT SURFACED, and why the weekly cron earned its keep here. Nothing in the repository changed:
-# `grafana/otel-lgtm:0.32.1` has been pinned since 2026-09-04 and the 2026-09-11 scheduled sweep was
-# green (run 3073). The advisories landed on the 16th, so the 2026-09-18 sweep (run 3521) went red on
-# an image no pull request had touched — the exact case the un-path-gated weekly sweep exists for.
-# It then blocked Renovate's digest-pin PR #478, whose diff (node, rust, keycloak digests) has no
-# relation to it: branch protection requires `infra-image-scan / infra-image-scan*`, so an infra CVE
-# with no bearing on a PR's content makes that PR unmergeable. Same shape as the 2026-08-29 keycloak
-# case recorded above.
-#
-# NO BUMP CLEARS IT — measured, not inferred. Docker Hub lists 0.33.0 (2026-09-11) and 0.33.1
-# (2026-09-18T09:08Z, published while this was being triaged) as newer than our 0.32.1. The newest,
-# 0.33.1@sha256:d6c52678, was scanned DIRECTLY with the gate's own criterion
-# (`aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed`, ghcr DB mirrors, dev container):
-# **the same three advisories, the same amqp091-go v1.12.0**. So this satisfies the rule this file
-# states for itself — an entry is right only when no fix exists upstream. Remediation is an upstream
-# rebuild: otelcol-contrib must take amqp091-go 1.13.0 and Grafana must ship an otel-lgtm built on it.
-# (The `docker base images` group already proposes the otel-lgtm bump; it was rate-limited out of this
-# window. Taking it will NOT discharge these entries, and by design must not appear to — see below.)
-#
-# WHY THE RISK IS ACCEPTED. All three findings are in ONE binary, `otel-lgtm/otelcol-contrib`, and all
-# three are reachable only through the collector's AMQP client path (the rabbitmq receiver/exporter
-# vendored into the contrib distribution). This deployment configures no RabbitMQ component and runs
-# no AMQP broker, so nothing drives that code. otel-lgtm is internal-only besides: its :4317/:4318
-# OTLP ports stay unpublished and it is reached by internal DNS (`otel-lgtm:4318`).
-#
-# KEYED TO 0.32.1 DELIBERATELY, AND THE RE-BLOCK IS THE POINT. The version key means the pending
-# `docker base images` bump discharges these entries mechanically: the moment the ref leaves 0.32.1
-# they stop matching, the gate re-blocks, and they come back re-keyed WITH a scan of whatever tag
-# actually landed. A span (`0\.3[23]\.`) would suppress the advisory on a version nobody has scanned,
-# which is what `infra-image-scan.test.mjs`'s version-keying guard forbids. Per item #303, DELETE
-# these when an upstream rebuild clears them rather than letting the date pass.
-#
-# EXPIRY 2026-12-01 joins the existing cohort rather than starting a new date, so the next re-triage
-# stays one sitting. The date is a backstop here, not the primary discharge — the version key is.
-- image: 'grafana/otel-lgtm:0\.33\.1'
-  id: 'CVE-2026-77405'
-  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — missing explicit TLS minimum version in the URI parser) on an image we pull but do not build; surfaced by the 2026-09-18 weekly sweep (run 3521) on an unchanged pin, and blocked the unrelated Renovate PR #478. No upstream tag clears it: the newest release, 0.33.1@sha256:d6c52678 published 2026-09-18T09:08Z, was scanned directly with the gate criterion (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors) and carries the SAME amqp091-go v1.12.0 and the same three advisories, so remediation is an upstream rebuild of otelcol-contrib against 1.13.0. Reachable only via the collector AMQP client path (rabbitmq receiver/exporter in the contrib distribution); this deployment configures no RabbitMQ component and runs no AMQP broker, and otel-lgtm is internal-only with :4317/:4318 unpublished. Version-keyed on purpose so the pending `docker base images` bump re-blocks and forces a fresh scan. Time-boxed; delete on rebuild, do not renew. RE-KEYED 2026-09-25 from 0.32.1 to 0.33.1, because the `docker base images` bump LANDED and did not discharge this entry — which is the version key working as designed, not a surprise: the 0.32.1 entry was written on 2026-09-18 with 0.33.1@sha256:d6c52678 ALREADY scanned directly under the gate criterion, and that is the exact digest the bump took. So the re-block was expected and the fresh scan it forced had already been done; nothing is being suppressed on an unmeasured version. Keyed to 0.33.1 alone rather than a `0\.3[23]\.` span, per `infra-image-scan.test.mjs`''s version-keying guard.'
-  addedBy: 'renovate-window-2026-09-18'
-  expiry: '2026-12-01'
-- image: 'grafana/otel-lgtm:0\.33\.1'
-  id: 'CVE-2026-77408'
-  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — silent data truncation and state corruption via a shortstr integer overflow) on an image we pull but do not build; surfaced by the 2026-09-18 weekly sweep (run 3521) on an unchanged pin, and blocked the unrelated Renovate PR #478. No upstream tag clears it: the newest release, 0.33.1@sha256:d6c52678 published 2026-09-18T09:08Z, was scanned directly with the gate criterion (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors) and carries the SAME amqp091-go v1.12.0 and the same three advisories, so remediation is an upstream rebuild of otelcol-contrib against 1.13.0. Reachable only via the collector AMQP client path (rabbitmq receiver/exporter in the contrib distribution); this deployment configures no RabbitMQ component and runs no AMQP broker, and otel-lgtm is internal-only with :4317/:4318 unpublished. Version-keyed on purpose so the pending `docker base images` bump re-blocks and forces a fresh scan. Time-boxed; delete on rebuild, do not renew. RE-KEYED 2026-09-25 from 0.32.1 to 0.33.1, because the `docker base images` bump LANDED and did not discharge this entry — which is the version key working as designed, not a surprise: the 0.32.1 entry was written on 2026-09-18 with 0.33.1@sha256:d6c52678 ALREADY scanned directly under the gate criterion, and that is the exact digest the bump took. So the re-block was expected and the fresh scan it forced had already been done; nothing is being suppressed on an unmeasured version. Keyed to 0.33.1 alone rather than a `0\.3[23]\.` span, per `infra-image-scan.test.mjs`''s version-keying guard.'
-  addedBy: 'renovate-window-2026-09-18'
-  expiry: '2026-12-01'
-- image: 'grafana/otel-lgtm:0\.33\.1'
-  id: 'CVE-2026-77411'
-  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — protocol desynchronization and frame injection via an integer overflow in readLongstr) on an image we pull but do not build; surfaced by the 2026-09-18 weekly sweep (run 3521) on an unchanged pin, and blocked the unrelated Renovate PR #478. No upstream tag clears it: the newest release, 0.33.1@sha256:d6c52678 published 2026-09-18T09:08Z, was scanned directly with the gate criterion (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors) and carries the SAME amqp091-go v1.12.0 and the same three advisories, so remediation is an upstream rebuild of otelcol-contrib against 1.13.0. Reachable only via the collector AMQP client path (rabbitmq receiver/exporter in the contrib distribution); this deployment configures no RabbitMQ component and runs no AMQP broker, and otel-lgtm is internal-only with :4317/:4318 unpublished. Version-keyed on purpose so the pending `docker base images` bump re-blocks and forces a fresh scan. Time-boxed; delete on rebuild, do not renew. RE-KEYED 2026-09-25 from 0.32.1 to 0.33.1, because the `docker base images` bump LANDED and did not discharge this entry — which is the version key working as designed, not a surprise: the 0.32.1 entry was written on 2026-09-18 with 0.33.1@sha256:d6c52678 ALREADY scanned directly under the gate criterion, and that is the exact digest the bump took. So the re-block was expected and the fresh scan it forced had already been done; nothing is being suppressed on an unmeasured version. Keyed to 0.33.1 alone rather than a `0\.3[23]\.` span, per `infra-image-scan.test.mjs`''s version-keying guard.'
-  addedBy: 'renovate-window-2026-09-18'
-  expiry: '2026-12-01'
+# ── otel-lgtm amqp091-go CVE-2026-77405 / -77408 / -77411: ALL THREE ENTRIES DELETED 2026-10-02 ────────
+# Discharged by the 2026-10-02 `docker base images` bump (PR #639) to 0.34.0@sha256:b966ea10, exactly
+# as the version key was designed to force. That digest was scanned directly the same day under the
+# gate criterion (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors, 25
+# targets): ZERO fixable Criticals, so upstream's otelcol-contrib rebuild landed and nothing is left to
+# suppress. Deleted rather than re-keyed (item #303): a re-keyed entry would match nothing and fail
+# --check-expiring, and deleting is the direction that restores blocking if the advisories return.
+# The rationale that stood here — how it surfaced on run 3521, why the risk was accepted, why it was
+# version-keyed — is in git history at this file's 2026-09-25 revision.
+
 # ── NEW advisory on an unchanged pinned image, triaged 2026-09-19 (item #486) ────────────────────
 # WHY IT APPEARED ON A PIN NOBODY TOUCHED. CVE-2026-8763 was published to NVD on 2026-08-03 but was
 # only reviewed into the GitHub advisory database at 2026-09-18T17:35:38Z, so Trivy's DB began
@@ -419,11 +369,6 @@
 # run 3619 (01:38Z) green, run 3632 (02:2xZ) blocking. That is the sweep working exactly as intended
 # — "a newly-published advisory can render an UNCHANGED pinned image vulnerable" — and it is the
 # second such event in two days, after the otel-lgtm cohort immediately above.
-- image: 'quay\.io/keycloak/keycloak:26\.7\.4'
-  id: 'CVE-2026-8763'
-  justification: 'New advisory (org.bouncycastle:bcprov-jdk18on below 1.85 — Name Constraints bypass via a trailing dot in rfc822Name and URI, CWE-295 improper certificate validation; GHSA-9pwp-9qqc-pr26) on an image we pull but do not build. Published to NVD 2026-08-03 but only GitHub-reviewed 2026-09-18T17:35:38Z, so it reached Trivy overnight and blocked an unchanged pin — infra-image-scan run 3619 (01:38Z) was green and run 3632 the same morning was not, on identical code. NO UPSTREAM TAG CLEARS IT, measured directly 2026-09-19 rather than inferred: both the current pin 26.7.3@sha256:29be7252 AND 26.7.4@sha256:82a77884 — the newest version Renovate offers, waiting in the rate-limited `docker base images` channel — were pulled from quay.io and inspected, and BOTH ship bcprov-jdk18on-1.84.jar. The bump moves the tag and the digest and leaves the vulnerable jar untouched, so remediation is an upstream Keycloak rebuild against bcprov 1.85 (the same shape as the otel-lgtm entries above, one day apart). The defect is in X.509 certificate CHAIN validation, and that path is not exercised here: no client in the prod, dev or ci realm sets clientAuthenticatorType to x509 (checked, zero in each), the only non-DISABLED x509 execution is the built-in `clients:client-x509=ALTERNATIVE` that ships in every Keycloak realm export and is unreachable unless a client opts into it, no custom truststore or name-constrained CA is configured, and both realms use the stock `browser` and `direct grant` flows. Keycloak is not internet-facing: prod publishes 19099 on the tailnet behind the host ufw default-deny (feature 028/029) and dev binds 127.0.0.1:8099. Version-keyed on purpose so the pending `docker base images` bump re-blocks and forces a fresh scan rather than inheriting this suppression. Time-boxed; delete on upstream rebuild, do not renew. RE-KEYED 2026-09-25 from 26.7.3 to 26.7.4, because the `docker base images` bump LANDED and did not discharge this entry — the re-block this key exists to force, with the scan it demands already on record above: 26.7.4@sha256:82a77884 was measured directly and still carries the vulnerable jar. Keyed to 26.7.4 alone, never a span, per `infra-image-scan.test.mjs`''s version-keying guard.'
-  addedBy: 'keycloak-bcprov-2026-09-19'
-  expiry: '2026-12-01'
 
 # ── NEW advisory on an unchanged pinned image, triaged 2026-09-25 (surfaced by PR #553) ──────────
 # CVE-2026-84939 — org.freemarker:freemarker 2.3.32 (fix 2.3.35), GHSA-27j2-h3m2-8237.
@@ -456,8 +401,37 @@
 #
 # Version-keyed on purpose, so the pending `docker base images` bump re-blocks and forces a fresh
 # scan rather than inheriting this suppression. Time-boxed; delete on upstream rebuild, do not renew.
-- image: 'quay\.io/keycloak/keycloak:26\.7\.4'
-  id: 'CVE-2026-84939'
-  justification: 'New advisory (org.freemarker:freemarker below 2.3.35; GHSA-27j2-h3m2-8237) on an image we pull but do not build. NO UPSTREAM TAG CLEARS IT, measured directly 2026-09-25 rather than inferred: both the current pin 26.7.3 and 26.7.4 — the newest release (2026-09-16) and what Renovate offers — were scanned with aquasec/trivy:0.74.0 under the gate criterion (--severity CRITICAL --ignore-unfixed) and BOTH ship freemarker 2.3.32; 26.7.4 reports three fixable Criticals of which this is one, the other two already carrying entries here. Remediation is an upstream Keycloak rebuild against 2.3.35. FreeMarker renders Keycloak theme templates, which are OPERATOR-supplied: this deployment sets no custom theme (no loginTheme/accountTheme/emailTheme/adminTheme in dev-realm.json or ci-realm.json) and mounts no theme directory or provider jar in either compose file, so only the templates shipped inside the image are rendered. Not internet-facing: prod publishes 19099 on the tailnet behind the host ufw default-deny (features 028/029), dev binds 127.0.0.1:8099. Surfaced by PR #553 because infra-image-scan is path-filtered and that PR touched infrastructure-as-code/; the pin itself is unchanged. Version-keyed so the pending base-image bump re-blocks and forces a fresh scan. Time-boxed; delete on upstream rebuild, do not renew. RE-KEYED 2026-09-25 from 26.7.3 to 26.7.4, because the `docker base images` bump LANDED and did not discharge this entry — the re-block this key exists to force, with the scan it demands already on record above: 26.7.4@sha256:82a77884 was measured directly and still carries the vulnerable jar. Keyed to 26.7.4 alone, never a span, per `infra-image-scan.test.mjs`''s version-keying guard.'
-  addedBy: 'keycloak-freemarker-2026-09-25'
-  expiry: '2026-12-01'
+
+# ── langfuse:4 next/og RCE GHSA-vcvr-r3jv-pc5j (triaged 2026-10-02, item #642) ─────────────────────
+# Published 2026-09-22 against next 16.2.0-16.3.5 (fix 16.3.6) on the UNCHANGED 4.35.0 pins, so it
+# reddened `infra-image-scan` for every PR it ran on (including wiki-only #635) and the 2026-10-02 window.
+# WHY NOT THE BUMP: Renovate never proposed one — `:4` was repushed 2026-09-23/24/25/29/30 and 10-01,
+# so the global 3-day minimumReleaseAge never expired at a Friday window (the floating-tag cooldown
+# treadmill, same shape as node:24-bookworm on #360). And the bump does NOT go green by itself:
+# 4.49.0 (web a9d1951e, worker 40df08a1) scanned locally 2026-10-02 under the gate criterion
+# (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB mirrors) clears THIS advisory
+# but adds a new fixable Critical, CVE-2026-102992 (piscina 5.3.0, fix 5.3.2), in the web image.
+# 14 minors with Postgres/ClickHouse migrations on a prod stack is a deliberate upgrade (ADR-0002),
+# not a window side-effect — item #642 — and these entries buy the time for it.
+# Keyed to version AND digest. The pin moved from the floating `:4` to `4.35.0` (same digests,
+# verified against Docker Hub 2026-10-02) so Renovate can age each release on its own tag; any
+# version or digest change re-blocks and forces a fresh scan.
+- image: '^langfuse/langfuse:4\.35\.0@sha256:a5d8d2457702'
+  id: 'GHSA-vcvr-r3jv-pc5j'
+  justification: 'next 16.3.3 RCE in the Node `next/og` ImageResponse (satori), exploitable only when an app renders attacker-controlled values into SVG. NOT REACHABLE here, measured in this exact image 2026-10-02: the built server (/app/web/.next/server) contains NO satori, @vercel/og or resvg code at all, and its one `next/og` string is Next''s own `next/server` shim that THROWS "ImageResponse moved … import from next/og" — Langfuse has no OG-image route. Prod exposure is a tailnet-only operator UI (19030, host ufw default-deny). Digest-keyed so the Langfuse upgrade (item #642) re-blocks; delete on that upgrade, do not renew.'
+  addedBy: 'renovate-window-2026-10-02'
+  expiry: '2026-10-23'
+- image: '^langfuse/langfuse-worker:4\.35\.0@sha256:5e35e625a214'
+  id: 'GHSA-vcvr-r3jv-pc5j'
+  justification: 'next 16.3.3 RCE in the Node `next/og` ImageResponse (satori). NOT REACHABLE here, measured in this exact image 2026-10-02: `next` is present only as an unused transitive under /app/worker/node_modules/.pnpm, and the worker''s own code (/app/worker/dist) has ZERO references to next/og or ImageResponse — it is a queue consumer with no HTTP rendering path. Ships and deploys as one unit with the web image (they share one database), so it moves with the web entry. Digest-keyed so the Langfuse upgrade (item #642) re-blocks; delete on that upgrade, do not renew.'
+  addedBy: 'renovate-window-2026-10-02'
+  expiry: '2026-10-23'
+
+
+# ── keycloak 26.7.4 entries CVE-2026-75595 / CVE-2026-8763 / CVE-2026-84939: DELETED 2026-10-02 ─────────
+# Discharged by PR #639's bump to quay.io/keycloak/keycloak:26.8.0@sha256:b0f60d48 — the version key
+# doing its job. Measured on that digest the same day: trivy 0.74.0 (gate criterion, ghcr DB + Java DB
+# mirrors) reports ZERO fixable Criticals, and the jars themselves are past every fix line —
+# netty-handler 4.1.138.Final (fix 4.1.137), bcprov-jdk18on 1.86 (fix 1.85), freemarker 2.3.35 (fix
+# 2.3.35). Deleted rather than re-keyed (item #303): they would match nothing and fail --check-expiring.
+# The comment blocks above each former entry are kept as the record of why they existed.
