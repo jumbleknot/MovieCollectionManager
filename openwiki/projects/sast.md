@@ -4,6 +4,7 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml.
 tags: [security, sast, sca, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
+timestamp: 2026-10-04T16:53:01Z
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -13,12 +14,20 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
+  - id: openwiki-source-7b223ba4df7203eeb5667fa8
+    resource: repo://docs/runbooks/devcontainer-sandbox.md
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
+    resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
   - id: openwiki-source-1813b4b5c82e84caead4e177
     resource: repo://scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs
+  - id: openwiki-source-08ab4a1d1f3934b68be3d4ae
+    resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
   - id: openwiki-source-b24a848c671edad8616a78b0
     resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
@@ -69,9 +78,10 @@ normalized report; one `sast` gate in [CI/CD pipeline](./ci-cd-pipeline.md)
 | SCA | **pnpm audit** | JS deps (`pnpm-lock.yaml`) |
 | SCA | **pip-audit** | Python deps — **all four** surfaces: `agents/movie-assistant`, `mcp-servers/{movie-mcp,spreadsheet-mcp,web-api-mcp}` |
 
-Rust *code* is outside Semgrep's scope — clippy (`pnpm nx lint mc-service`) owns Rust patterns;
-cargo-audit covers only Rust *deps*. Config tree: `security/sast/`; full operator procedures in
-`docs/runbooks/sast-scanning.md`.
+Rust *code* is outside Semgrep's scope — clippy (`pnpm nx lint mc-service`) owns Rust patterns, so Rust
+participates here only through cargo-audit on its *deps* (see
+[testing tiers](../invariants/testing-tiers.md) for which tier blocks a merge). Config tree:
+`security/sast/`; full operator procedures in `docs/runbooks/sast-scanning.md`.
 
 ```mermaid
 flowchart TD
@@ -202,6 +212,12 @@ every PR the moment an entry entered the window, and the failure would be *sched
 immediate. Unmatched detection is not part of the SAST half of that weekly signal (see below).
 
 ## The `sast` job and the two commands that matter
+
+Two local entry points, and both are static — no running app stack is required. The Nx target
+`pnpm nx sast infrastructure-as-code` (defined in `infrastructure-as-code/project.json`) runs
+`node scripts/sast-scan.mjs --scope full`; `node scripts/check-sast-findings.mjs` is the gate.
+`--only <scanner,...>` restricts the run — that is how you get the SCA half when Semgrep's registry
+host is unreachable.
 
 `guardrails.yml`'s `sast` job is keyless (no `${{ secrets }}`), has **no `paths:` filter**, and runs
 on every push/PR. In order: install uv + Rust/cargo-audit + `pnpm install`, `uv sync` each of the
@@ -434,6 +450,18 @@ a scan that happened to pass.
   above), and deleting it means a regression re-blocks — which
   is the convention this file follows everywhere.
 
+  **The "no patched version exists" exception has a shape, and the committed file shows it twice.** An
+  advisory whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3` — the
+  latter still `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the exact
+  vulnerable version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin means
+  a *different* version of the package re-blocks for a fresh assessment rather than inheriting an
+  acceptance written for the old one; the short expiry means it stops suppressing on its own. Both of
+  those entries also state reachability **checked rather than assumed**: the audit classifies them as
+  runtime only because `expo` lists its CLI as a production dependency, while the code paths involved
+  are build/test tooling that ships in neither bundle and, in `braces`' case, expand globs from
+  repository configuration rather than from a request. Removal is tracked on the backlog (a patched
+  release, or the dependency leaving the tree) — the entry is a dated holding position, not a fix.
+
 - **`mcm-auth-before-authz` firing on a service-layer function is a false positive you must NOT "fix"
   by adding the guard — the correct response is a file-pinned allowlist entry.** The rule's structural
   limit (a guard textually earlier in the same function) means it cannot see authorization performed in
@@ -445,7 +473,8 @@ a scan that happened to pass.
   upstream client anywhere else still fails the gate. That pinning is the whole reason a file-scoped
   `locationPattern` is the right shape here, and the entries record which route layer performs the check.
 
-- **`p/secrets` stays off.** `secret-scan.mjs` is the sole owner of credential detection (FR-006).
+- **`p/secrets` stays off.** `secret-scan.mjs` is the sole owner of credential detection (FR-006), as
+  part of the wider [secrets management posture](../invariants/secrets-management.md).
   Do not double-gate with Semgrep's `p/secrets` ruleset. It is absent from
   `security/sast/semgrep.yaml` by design, and Semgrep runs with `--metrics=off
   --disable-version-check` so telemetry stays off by configuration rather than by network policy.
