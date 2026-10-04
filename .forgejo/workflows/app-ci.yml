@@ -460,9 +460,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # Agent images + Android SDK/NDK + Gradle caches exhaust the default runner disk. Free first.
-      # Jobs run in a node:22-bookworm container on the ci rootless daemon — install the Docker CLI
-      # (the image has none) and confirm it can reach the daemon socket the runner mounts.
-      - name: Set up Docker CLI (job container talks to the runner's daemon socket)
+      # This job runs ON THE ci HOST (`runs-on: kvm`, a `kvm:host` runner label — see the job header),
+      # not in a job container. Install the Docker CLI only if the host lacks one, and confirm it reaches
+      # the ci user's rootless daemon via DOCKER_HOST (set in this job's env). Corrected 2026-10-04: these
+      # comments and error texts still described the pre-235f2f4c job-container setup.
+      - name: Set up Docker CLI (host runner talks to the ci rootless daemon)
         run: |
           bash scripts/ci-log-step.sh app-e2e-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
           if ! command -v docker >/dev/null 2>&1; then
@@ -471,9 +473,9 @@ jobs:
           fi
           docker version --format 'client {{.Client.Version}}' || true
           if docker info >/dev/null 2>&1; then
-            echo "docker daemon reachable from job container"
+            echo "docker daemon reachable at $DOCKER_HOST"
           else
-            echo "::error::Docker CLI installed but the daemon is not reachable from the job container. Mount the ci rootless socket into job containers: in the runner config.yaml set container.options to include  -v /run/user/1001/docker.sock:/var/run/docker.sock  (alongside --device /dev/kvm), then restart the runner."
+            echo "::error::Docker CLI present but the ci rootless daemon is not reachable at DOCKER_HOST=$DOCKER_HOST. This job runs on the ci HOST (kvm:host label), not in a container: check the daemon as the ci user (systemctl --user status docker) and that DOCKER_HOST in this job's env matches its socket."
             exit 1
           fi
           CI_LOG_STEP
@@ -491,17 +493,18 @@ jobs:
           df -h || true
           CI_LOG_STEP
 
-      # On the homelab runner the job runs inside a node:22-bookworm container on the ci rootless
-      # daemon, so /dev/kvm is provided by the runner config (`container.options: --device /dev/kvm`),
-      # NOT by a udev rule (that GitHub-host-VM approach doesn't apply in a container). Fail LOUD if
-      # KVM is missing — never silently skip the mobile suite (spec Edge Cases, research R1).
+      # The job runs ON THE ci HOST (`runs-on: kvm`, a `kvm:host` runner label), so /dev/kvm is the
+      # host's own device: KVM enabled on the host and the ci user in the `kvm` group (/dev/kvm group
+      # kvm, mode 660). There is no job container and no container.options here — that was the setup
+      # before 235f2f4c. Fail LOUD if KVM is missing — never silently skip the mobile suite (spec Edge
+      # Cases, research R1).
       - name: Verify KVM is available
         run: |
           bash scripts/ci-log-step.sh app-e2e-verify-kvm-available bash -e /dev/stdin <<'CI_LOG_STEP'
           if [ -e /dev/kvm ]; then
             ls -l /dev/kvm
           else
-            echo "::error::/dev/kvm not present in the job container — add 'container.options: --device /dev/kvm' to the runner config (Server-Setup-Runbook Phase 7) and ensure the ci user is in the kvm group"
+            echo "::error::/dev/kvm not present on the ci host (this job runs on the host via the kvm:host runner label, not in a container). Check KVM is enabled on the host (kvm_intel/kvm_amd loaded), that the ci user is in the kvm group (as root on the host: usermod -aG kvm ci; /dev/kvm group kvm, mode 660), and that the runner still registers the kvm:host label."
             exit 1
           fi
           CI_LOG_STEP
