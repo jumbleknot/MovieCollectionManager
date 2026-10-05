@@ -4,7 +4,6 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml.
 tags: [security, sast, sca, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-timestamp: 2026-10-04T16:53:01Z
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -14,22 +13,16 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
-  - id: openwiki-source-7b223ba4df7203eeb5667fa8
-    resource: repo://docs/runbooks/devcontainer-sandbox.md
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
-    resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
   - id: openwiki-source-1813b4b5c82e84caead4e177
     resource: repo://scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs
   - id: openwiki-source-08ab4a1d1f3934b68be3d4ae
     resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
-  - id: openwiki-source-b24a848c671edad8616a78b0
-    resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-be4449db5d1cd6939f816b1e
@@ -52,22 +45,22 @@ sources:
     resource: repo://security/sast/rules/mcm-auth-before-authz.yaml
   - id: openwiki-source-d7ba5b8b7daf5b7b6fcb0f5a
     resource: repo://security/sast/rules/mcm-ci-curl-pipe-shell.yaml
-  - id: openwiki-source-2f9e6a413d6fe437ec94e8f5
-    resource: repo://security/sast/rules/mcm-no-jwt-payload-tracing.yaml
   - id: openwiki-source-5bfacc731db8fdb56be7df9d
     resource: repo://security/sast/rules/mcm-no-token-logging.yaml
   - id: openwiki-source-9372ce7270e3121a73a61934
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
-generated: { by: "openwiki/0.6.0", at: "2026-09-30T10:57:51.938Z" }
-
+generated: { by: "openwiki/0.6.0", at: "2026-10-05T00:12:37.851Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-10-05T00:12:37.851Z
 ---
 
 # SAST & SCA static security scanning
 
 Keyless, config-as-code security scanning that runs on every PR. Four scanners cover the full
-first-party surface at rest — no SaaS account, no CI secret. All findings funnel into one
+first-party surface at rest — no SaaS account, no scanner credential. All findings funnel into one
 normalized report; one `sast` gate in [CI/CD pipeline](./ci-cd-pipeline.md)
 (`guardrails.yml`) decides pass or fail.
 
@@ -205,11 +198,16 @@ cannot move an entry between `expiring` and `expired`.
 
 The window length is defined **once** in `scripts/allowlist-expiry.mjs`
 (`WARNING_WINDOW_DAYS = 14`) and imported by both gates. A dedicated `--check-expiring` mode runs
-**weekly** (Friday) in the `infra-image-scan` workflow, `always()`-guarded and pinned to
-`github.event_name == 'schedule'`, and fails on any expiring or expired entry. This mode is **never**
+**twice weekly — Tuesday and Friday, 04:00 UTC** — in the `infra-image-scan` workflow,
+`always()`-guarded and pinned to `github.event_name == 'schedule'`, and fails on any expiring or
+expired entry. One step invokes it twice, once per allowlist (SAST and infra-image), and a guard test
+pins both invocations so a dropped one cannot leave half the signal dead. The Tuesday sweep
+(item #642) runs the same steps as Friday's, this check included: Friday alone leaves only the hours
+before the Renovate window to triage what it finds, so an advisory published early in the week now
+gets three days in hand. This mode is **never**
 run on pull requests — `infra-image-scan` also serves `pull_request`, so a wrong `if:` would block
 every PR the moment an entry entered the window, and the failure would be *scheduled* rather than
-immediate. Unmatched detection is not part of the SAST half of that weekly signal (see below).
+immediate. Unmatched detection is not part of the SAST half of that signal (see below).
 
 ## The `sast` job and the two commands that matter
 
@@ -219,8 +217,10 @@ Two local entry points, and both are static — no running app stack is required
 `--only <scanner,...>` restricts the run — that is how you get the SCA half when Semgrep's registry
 host is unreachable.
 
-`guardrails.yml`'s `sast` job is keyless (no `${{ secrets }}`), has **no `paths:` filter**, and runs
-on every push/PR. In order: install uv + Rust/cargo-audit + `pnpm install`, `uv sync` each of the
+`guardrails.yml`'s `sast` job has **no `paths:` filter** and runs on every pull request and every
+push to `main`. No scanner uses a credential: the only `${{ secrets }}` reference in the job belongs
+to the shared failure-digest step every job in the workflow carries, never to scanning. In order:
+install uv + Rust/cargo-audit + `pnpm install`, `uv sync` each of the
 four Python surfaces, `check-sast-findings.mjs --selftest`, `sast-scan.mjs --test-rules`,
 `sast-scan.mjs` (`--scope changed` on PRs, `--scope full` on push), `check-sast-findings.mjs` (the
 gate), then upload the `sast-report` artifact always. Reports land in `security/sast/reports/`
@@ -346,9 +346,9 @@ a scan that happened to pass.
   positional key (`<index>:<scanner>:<id>`), not the advisory id, because one id can appear in
   several entries.
 
-  **For SAST, the weekly run cannot flag an unmatched entry at all.** `--check-expiring` executes
+  **For SAST, the scheduled run cannot flag an unmatched entry at all.** `--check-expiring` executes
   inside `infra-image-scan`, which produces no SAST report, so unmatched detection is skipped there
-  (the script says so in its log). The weekly signal covers expiring/expired only; a SAST entry that
+  (the script says so in its log). That signal covers expiring/expired only; a SAST entry that
   quietly matches nothing is visible **solely** in the report-only `UNMATCHED ENTRIES` section of a
   normal gate run. Read it there whenever an advisory you thought was accepted re-blocks.
 
@@ -363,8 +363,9 @@ a scan that happened to pass.
   2026-09-25 weekly sweep, run 3946). The exemption is keyed on the explicit `reportAbsent` marker,
   never on a missing field, because "a report exists and omits its scope" is the fault the guard was
   written for. (2) The step sat behind a bare `if: github.event_name == 'schedule'`, and a failed step
-  skips every later step that is not `always()`-guarded — so on any week the CVE gate above went red,
-  the weekly expiry warning did not run, which is the week it is most likely to have something to say.
+  skips every later step that is not `always()`-guarded — so on any scheduled run where the CVE gate
+  above went red, the expiry warning did not run, which is the run it is most likely to have something
+  to say.
   Measured on run 3521 (the 2026-09-18 cron, three `amqp091-go` CRITICALs): the recorder posted
   `event_name=schedule expiry_step=skipped`, proving the `if:` evaluated true and only the upstream
   failure could have caused the skip. `always()` alone would run the check on every PR and block them
@@ -438,7 +439,10 @@ a scan that happened to pass.
 - **Remediate, do not re-date.** Deleting or extending an `expiry` converts a time-box into a
   permanent suppression. The legitimate exception — no published fix exists — requires the evidence
   written into the `justification`. Check npm/crates/PyPI before assuming: on feature 057 both
-  "needs an acceptance" advisories turned out to have published fixes.
+  "needs an acceptance" advisories turned out to have published fixes. The rule that follows from
+  that check: **a fixable High (a patched version exists) must be bumped, never allowlisted** —
+  allowlisting a fixable High is the wrong call, and it is the one this file's history shows being
+  made. Reach for an entry only when **no** fix exists yet.
 
   The committed file also records the inverse lesson: **a time-boxed acceptance can be discharged by a
   route its own justification did not anticipate.** The `image-size` entries were written as
@@ -446,7 +450,7 @@ a scan that happened to pass.
   instead a Renovate lockfile-maintenance bump of `metro` dropped `image-size` from the tree entirely,
   so the advisories disappeared with no config change and no human in the loop. The entries were
   re-checked and deleted rather than renewed at expiry. A suppression that matches nothing only shows
-  as `UNMATCHED` in a normal run's report-only output (the weekly run cannot flag it for SAST — see
+  as `UNMATCHED` in a normal run's report-only output (the scheduled run cannot flag it for SAST — see
   above), and deleting it means a regression re-blocks — which
   is the convention this file follows everywhere.
 
@@ -628,5 +632,5 @@ See [CI/CD pipeline](./ci-cd-pipeline.md) for how the `sast` job sits in the
 allowlist this one shares the expiry mechanism and the retry module with,
 [SAST scanning](../runbooks/sast-scanning.md) for the operator triage playbook when `main` goes red on
 an advisory you never touched, and [Renovate](../runbooks/renovate.md) for the lockfile-refresh
-schedule that clears most `OVERRIDE LEVERS` advice. `security/sast/README.md` is the full config
-reference and the home of the custom MCM rule definitions.
+schedule that clears most `OVERRIDE LEVERS` advice. [`security/sast/README.md`](../../security/sast/README.md)
+is the full config reference and the home of the custom MCM rule definitions.
