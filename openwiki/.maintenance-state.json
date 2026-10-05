@@ -4,17 +4,6 @@
   "lastOutcome": "failed",
   "backlog": [
     {
-      "area": "projects",
-      "pages": [
-        "sast.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
-    {
       "area": "runbooks",
       "pages": [
         "sast-scanning.md"
@@ -26,25 +15,44 @@
       "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/sast-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 666,
+    "headCommit": "580410f47c17bd4c4fd7136e44345800db422e6f",
+    "markerBefore": "cccdda42617219735a5d3210b9d963f0fb0955f1",
+    "slices": [
+      {
+        "area": "projects",
+        "pages": [
+          "sast.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-10-05T01:25:19.596Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 2179,
+    "pagesWritten": 1,
+    "elapsedSeconds": 4365,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 111,
+    "calls": 204,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 782892,
-    "cached": 10720670,
+    "uncached": 1123204,
+    "cached": 24926136,
     "cacheWrite": 0,
-    "output": 110961,
-    "reasoning": 87203,
-    "ms": 2529590,
-    "estCostUsd": 0.3205,
+    "output": 288881,
+    "reasoning": 233780,
+    "ms": 6280394,
+    "estCostUsd": 0.6122,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
