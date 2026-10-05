@@ -1,23 +1,12 @@
 {
-  "coveredCommit": "a099db4e674bafcfcaa380d99df23c713484bf0e",
-  "coveredAt": "2026-10-05T15:41:28.996Z",
+  "coveredCommit": "74a9281bee6a6a0a2dd90a3975fabae7054f8325",
+  "coveredAt": "2026-10-05T17:01:39.991Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "sast-scanning.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 671,
-    "headCommit": "8c09a7a47333e932dc7c799d93000bed61e7e0cd",
+    "headCommit": "c0b974c0533ad8b9c3e5c05771c87116c8ba6be1",
     "markerBefore": "a099db4e674bafcfcaa380d99df23c713484bf0e",
     "slices": [
       {
@@ -30,32 +19,43 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/wiki-maintenance.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "sast-scanning.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/sast-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-05T15:41:29.343Z"
+    "updatedAt": "2026-10-05T17:01:40.405Z"
   },
   "lastRunBudget": {
     "pagesWritten": 1,
-    "elapsedSeconds": 1940,
+    "elapsedSeconds": 959,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 82,
+    "calls": 55,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 275202,
-    "cached": 8611038,
+    "uncached": 224704,
+    "cached": 4452718,
     "cacheWrite": 0,
-    "output": 152340,
-    "reasoning": 132471,
-    "ms": 1930816,
-    "estCostUsd": 0.2214,
+    "output": 79156,
+    "reasoning": 48435,
+    "ms": 897693,
+    "estCostUsd": 0.1328,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-09-27"
   }
 }
