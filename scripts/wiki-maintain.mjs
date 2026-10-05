@@ -26,9 +26,9 @@
 //     pages + wall-clock and why neither is a monetary bound.
 //
 // ── The budget, declared (FR-011a, FR-011c, FR-011d) ────────────────────────────────────────────
-// 16 pages and 20 minutes per run, whichever is reached first, enforced BETWEEN slices so a slice
-// under way is never interrupted. The overshoot is therefore bounded at one slice, giving a declared
-// effective ceiling of **<=24 pages / ~37 minutes**.
+// Feature 044 declared 16 pages and 20 minutes per run; feature 078 (research R9) replaced that with
+// one 8-page invocation and a 4-minute STARTING budget — see the constants below (C6). Neither budget
+// interrupts work under way; in CI the job deadline (#613) does, by stopping the generator.
 //
 // The wall-clock budget bounds runner occupancy (FR-011c): there is one CI runner, app-e2e is ~35
 // minutes on it, and a paid documentation job must not squat on that queue.
@@ -1161,8 +1161,9 @@ export function runMaintenance({
 //     the false-green failure this feature exists to eliminate.
 //   * wall-clock — measured by the run itself.
 //
-// Enforced BETWEEN invocations (and before a retry), so an invocation already under way is never
-// interrupted: the TIME budget is a deadline for STARTING work, and the overshoot is one invocation.
+// Enforced BETWEEN invocations (and before a retry), so this budget never interrupts an invocation
+// already under way: the TIME budget is a deadline for STARTING work, and the overshoot is one
+// invocation. What DOES interrupt one is the CI job deadline (#613, `deadlineCommand`).
 //
 // Sized 2026-09-28 from measurement (feature 078, research R9, operator sign-off: "~8 pages per run,
 // timeout 60"). On DeepSeek V4.1 Flash at page concurrency 4, one invocation of up to 8 pages is two
@@ -1556,7 +1557,7 @@ function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null }) {
   const [cmd, ...args] = deadlineCommand(timeoutMs);
   const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog }) });
   if (timeoutMs !== null && (r.status === 124 || r.status === 137)) {
-    console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s. openwiki prints nothing until it exits, so this alone does not say whether it was slow or hung — the usage line below counts the model calls it made (#613). The slice fails; the run still records itself.`);
+    console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s. openwiki prints nothing until it exits, so this alone does not say whether it was slow or hung — the usage line below counts the model calls it made (#613). The slice is judged on what landed — a stopped generator usually leaves a requested page stale, which fails it; the run still records itself.`);
   }
   return r;
 }
