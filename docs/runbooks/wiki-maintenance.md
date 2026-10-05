@@ -254,17 +254,21 @@ continues where it left off.
 |---|---|---|
 | Page budget | 8 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`) |
 | Time budget | **4 min** | a deadline for **starting** work — checked between invocations and retries |
-| Job deadline | 60 min − 8 | an invocation in CI is **stopped** when it would run into the last 8 minutes of the job (see below) |
+| Job deadline | window − 8 | an invocation in CI is **stopped** when it would run into the last 8 minutes of its window (see below) |
 | Worst-case invocation | 30 min | 8 pages at page concurrency 4 is two waves of workers, measured ≤ 23 min |
-| Job timeout | 60 min | 15-min debounce (it sleeps **inside** the job) + setup + 4 + 30 + publishing ≈ 55, plus margin |
+| Window (push) | 60 min | 15-min debounce (it sleeps **inside** the job) + setup + 4 + 30 + publishing ≈ 55, plus margin |
+| Window (dispatch) | 120 min | the whole job — a dispatched run has no debounce and may need it (see below) |
+| Job timeout | 120 min | the hard ceiling (operator decision, 2026-10-02); a push run is held to its 60-minute window by the deadline, not by this |
 
 So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes, and a retry only
 after a fast failure; everything else carries forward in the backlog. Declared effective ceiling: **≤16 pages / ~34 min
 of generation**. The page count comes from **files that actually appeared in the working tree**, not from what the
 generator says it wrote.
 
-**The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` (the same 60 minutes as
-`timeout-minutes`, guard-tested). Each invocation then runs under GNU `timeout` with the time left minus an 8-minute
+**The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` from a window chosen **per
+event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), `push` gets `PUSH_MINUTES=60` — so the runs
+every merge starts keep the shared-runner hold, and raising the ceiling cannot lengthen them. The guard test pins both
+(`DISPATCH_MINUTES` equals `timeout-minutes`, `PUSH_MINUTES` is 60). Each invocation then runs under GNU `timeout` with the time left minus an 8-minute
 reserve for verification, publishing and the run-record commit; a slice with under 5 minutes left is not started and
 carries forward (exit 3). A generator stopped at the deadline fails its slice, and the run **still commits its record,
 usage and digest**. Before this, a hang ran until the platform killed the job with nothing recorded — measured on runs
@@ -277,6 +281,14 @@ one model request accepted and never answered was about 60 silent minutes. The g
 `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` (an explicit operator value wins), bounding that at about 30 minutes; the deadline
 above bounds the rest. A merge-triggered run also spends its first 15 minutes in the debounce, so it has about 45
 minutes, not 60 — size the work for that window.
+
+**Why dispatched runs get 120 minutes (operator decision, 2026-10-02).** An *uncovered* page — one with no
+`.page-manifest.json` entry, left by openwiki "for full review" — needs about 1.65× the output per call and over 1.6× the
+calls of a covered one. Generation speed on Fireworks also varies by the hour: measured 45–145 tok/s across a few days,
+and latency per call is roughly output tokens ÷ that speed. At 70–80 tok/s, `projects/sast` stopped at the old 51-minute
+deadline after 93 calls of ~29.5 s each, while a covered page finished in 58 calls. Process uncovered pages **one per
+dispatched run**: seed the page through a pull request that edits `backlog` in `.maintenance-state.json`, merge it (the
+merge run then has nothing to do), and dispatch.
 
 If a run is ever killed at `timeout-minutes` anyway, the deadline arithmetic is wrong: re-measure (research R9's
 method) before raising the timeout, which is a decision about the shared runner.
@@ -412,6 +424,23 @@ at its budget (exit 3) or had a failed slice (exit 1). A failed slice is returne
 carries on to the next slice — but its written files are **not** reverted, so when another slice in
 the run verified, whatever the failed slice wrote rides along on the proposal: review it as such; it stops early only after two consecutive
 slice failures.
+
+**One invocation can carry several slices, and a failure in one part no longer discards the others.** When an
+invocation's failure is attributable only to *other* parts — a requested page missing or still stale — while
+conformance (V16 included) and policy are clean, `verifySlice` reports the parts that verified as `landedParts`, and
+they are proposed (`proposableSlices`: verified invocations plus landed parts); only the failed parts return to the
+backlog. Before this, run 4399 (2026-10-01) verified `runbooks/backlog.md` but proposed nothing because `projects/sast.md`
+in the same invocation was still stale at the deadline — and since the backlog page's source change was already behind
+the marker, nothing would have planned it again. A **whole-invocation** failure (conformance or policy) still proposes
+nothing and returns every part.
+
+**After a deadline stop, the slice keeps only what it requested.** openwiki forces every page with a Claims issue into
+a run, so a generator stopped part-way (GNU `timeout` exit 124, or 137 after `--kill-after`) can leave a page it was
+never asked for half-written — on run 4606 (2026-10-04) that broke V16 on `projects/keycloak.md`, a whole-invocation
+failure, and the requested page's $0.96 regeneration was lost. `revertUnrequested` now restores every path the run
+changed to its committed state (or deletes it if new) **except** the requested pages, their `.claims` sidecars and the
+requested areas' `index.md`; paths that were dirty before the run are left alone. It applies **only** to a deadline stop:
+a generator that exits on its own is judged on everything it wrote.
 
 ### If the run record and the forge disagree, the forge wins
 
