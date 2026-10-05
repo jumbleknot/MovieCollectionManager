@@ -1,49 +1,43 @@
 {
   "coveredCommit": "2036c013ccac72555cc01235bf1c4bca19956ecf",
   "coveredAt": "2026-10-05T10:59:34.664Z",
-  "lastOutcome": "completed",
-  "backlog": [],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 668,
-    "headCommit": "38ba26dc91e7a64ce0cc28229af2245bb767c972",
-    "markerBefore": "2036c013ccac72555cc01235bf1c4bca19956ecf",
-    "slices": [
-      {
-        "area": "runbooks",
-        "pages": [
-          "wiki-maintenance.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      }
-    ],
-    "updatedAt": "2026-10-05T10:59:34.997Z"
-  },
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "wiki-maintenance.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/wiki-maintenance.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
+  "proposal": null,
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 1525,
+    "pagesWritten": 0,
+    "elapsedSeconds": 2182,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 109,
+    "calls": 103,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 349751,
-    "cached": 11692402,
+    "uncached": 290303,
+    "cached": 9221026,
     "cacheWrite": 0,
-    "output": 129925,
-    "reasoning": 91543,
-    "ms": 1347843,
-    "estCostUsd": 0.2445,
+    "output": 189163,
+    "reasoning": 168950,
+    "ms": 2164307,
+    "estCostUsd": 0.2533,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
+    "reasoningEffort": null,
     "priceTable": "2026-09-27"
   }
 }
