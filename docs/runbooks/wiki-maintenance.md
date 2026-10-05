@@ -246,14 +246,14 @@ continues where it left off.
 
 ### The budget
 
-**One 8-page generator invocation per run, in a 60-minute job** (feature 078, research R9 — operator decision,
+**One 8-page generator invocation per run, in a 60-minute window (120 when dispatched)** (feature 078, research R9 — operator decision,
 2026-09-28). The constants live in `scripts/wiki-maintain.mjs` (C6) and the guard test *derives* the workflow's
 `timeout-minutes` from them, so changing one without the other fails offline:
 
 | | Value | Why |
 |---|---|---|
 | Page budget | 8 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`) |
-| Time budget | **4 min** | a deadline for **starting** work — checked between invocations and retries |
+| Time budget | **4 min** | a deadline for **starting** work — checked between invocations and retries; it never stops an invocation, the job deadline does |
 | Job deadline | window − 8 | an invocation in CI is **stopped** when it would run into the last 8 minutes of its window (see below) |
 | Worst-case invocation | 30 min | 8 pages at page concurrency 4 is two waves of workers, measured ≤ 23 min |
 | Window (push) | 60 min | 15-min debounce (it sleeps **inside** the job) + setup + 4 + 30 + publishing ≈ 55, plus margin |
@@ -270,8 +270,10 @@ event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), `push`
 every merge starts keep the shared-runner hold, and raising the ceiling cannot lengthen them. The guard test pins both
 (`DISPATCH_MINUTES` equals `timeout-minutes`, `PUSH_MINUTES` is 60). Each invocation then runs under GNU `timeout` with the time left minus an 8-minute
 reserve for verification, publishing and the run-record commit; a slice with under 5 minutes left is not started and
-carries forward (exit 3). A generator stopped at the deadline fails its slice, and the run **still commits its record,
-usage and digest**. Before this, a hang ran until the platform killed the job with nothing recorded — measured on runs
+carries forward (exit 3). A deadline stop does **not** by itself fail the slice: after the revert below, the slice is
+judged like any other, by what landed. In practice a stopped generator leaves a requested page unwritten or stale, so
+the slice fails (exit 1); a slice whose requested pages all landed fresh before the stop verifies. Either way the run
+**still commits its record, usage and digest**. Before this, a hang ran until the platform killed the job with nothing recorded — measured on runs
 4290, 4385 and 4386. `timeout` signals the whole process group, which matters because nx starts openwiki as a
 grandchild; that holds while nx uses no pseudo-terminal, which it does only when stdout is a TTY — never in CI.
 
@@ -617,6 +619,12 @@ Known ways a concept falls behind, each tracked:
   its source is newer than its stamp (§3, cause 4), so the page returns to the backlog and the marker
   holds. This closes the route by which a *planned* page fell behind; #526 remains for pages that were
   never planned.
+- **#616 (open; its guards are in place)** — a run that only stripped a page's `verified:` block counted as a
+  refresh, and left Markdown and Claims inconsistent (proposal #615). The cause is openwiki's own restore path when a
+  worker exits without submitting. Both guards shipped in #617: a requested page changed only in front matter is
+  judged stale (§3, cause 4), and V16 fails a non-durable bundle. The item stays **open** for its last criterion, a
+  real refresh of `runbooks/ci-diagnostics.md`, which the current Fireworks model cannot generate (see #589). Do not
+  describe #616 as fixed.
 - **#525** — the drift-driven sweep that clears the current V12 list. It was blocked on #587 and on
   the canonical documents being corrected first (#588, done), so that it does not regenerate from
   wrong sources.
