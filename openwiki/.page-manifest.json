@@ -183,6 +183,13 @@
       "completedBy": "openwiki/0.6.0",
       "completedRunId": "26ac73d9-e87a-468c-b8a6-be8d4b8171c1"
     },
+    "/openwiki/runbooks/sast-scanning.md": {
+      "pageVersion": "sha256:ddf5f24a04f2184bcfc3de9e8b732cefe4da0685a4312b87900fdd5bb219241f",
+      "completedBy": "openwiki/0.6.0",
+      "completedRunId": "aada24ad-1e94-431b-bac7-68221315a904",
+      "gitHead": "16523a6bbfed46c433b2d259ff415675745e7b73",
+      "sourceFingerprint": "sha256:70fe21304b5ad6c43e79ef8bb10ad808fe8b494f8c6d2c1468cab1b403475549"
+    },
     "/openwiki/runbooks/server-setup.md": {
       "gitHead": "1c4297c23f5ae8a90e80fafbdf6f6c2b7402c08e",
       "sourceFingerprint": "sha256:7fe39cb5a08a3c98b78da3269dbe886c362127826123f68fb7538b94576c4269",
@@ -191,11 +198,11 @@
       "completedRunId": "284da042-1fa3-40fa-a936-b78473ae6084"
     },
     "/openwiki/runbooks/wiki-maintenance.md": {
-      "pageVersion": "sha256:c94b1ce20a733712dda45ccf032d8dcecf1907abc3c44e536b3ed94d056d7801",
+      "gitHead": "16523a6bbfed46c433b2d259ff415675745e7b73",
+      "sourceFingerprint": "sha256:70fe21304b5ad6c43e79ef8bb10ad808fe8b494f8c6d2c1468cab1b403475549",
+      "pageVersion": "sha256:cf179ce606f90ba914b69d2699cc5ccb2e03ceb29752088a64494aef1ace3128",
       "completedBy": "openwiki/0.6.0",
-      "completedRunId": "fbe08479-65a5-429c-92d5-ff75f9626111",
-      "gitHead": "2036c013ccac72555cc01235bf1c4bca19956ecf",
-      "sourceFingerprint": "sha256:a3a66fdb47f497b9c3f1bb045bb22f5cf3a1fbd4fbe456ea6cb49fc67d4ab67c"
+      "completedRunId": "30e75ad0-545f-48fd-806e-1a2180a1dd83"
     }
   }
 }

@@ -4,20 +4,30 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate that must distinguish a scanner outage from a finding — and a finding on a file the pull-request scan never received from a clean one.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.6.0", at: "2026-09-30T11:51:40.481Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-05T16:45:44.972Z" }
 sources:
+  - id: openwiki-source-0efadc7633f45e85ee45a617
+    resource: repo://.devcontainer/egress-allowlist.json
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-7b223ba4df7203eeb5667fa8
     resource: repo://docs/runbooks/devcontainer-sandbox.md
+  - id: openwiki-source-7c76000f237dd683a4fb0536
+    resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
+  - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
+    resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
+  - id: openwiki-source-77ddbc35c89ae8b3053caaaf
+    resource: repo://scripts/__tests__/check-sast-findings.test.mjs
   - id: openwiki-source-08ab4a1d1f3934b68be3d4ae
     resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
+  - id: openwiki-source-b24a848c671edad8616a78b0
+    resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-be4449db5d1cd6939f816b1e
@@ -36,6 +46,9 @@ sources:
     resource: repo://security/sast/README.md
   - id: openwiki-source-9372ce7270e3121a73a61934
     resource: repo://security/sast/semgrep.yaml
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-10-05T16:45:44.972Z
 ---
 
 # SAST & SCA static scanning
@@ -116,7 +129,9 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
 - **…but "the tier cannot run here" is the wrong conclusion — `--only` gets you the SCA half.**
   The vacuous pass above is a fact about **Semgrep**, not about the gate. Only Semgrep needs
   `semgrep.dev`; `pnpm-audit`, `cargo-audit` and `pip-audit` resolve their advisory data from sources
-  the egress allowlist already permits. So the whole SCA half runs to completion locally:
+  the egress allowlist already permits (pip-audit's OSV host, `api.osv.dev`, is itself allowlisted —
+  item #394, and it was another merge-gating tier retired to CI-only by accident until then). So the
+  whole SCA half runs to completion locally:
   ```bash
   node scripts/sast-scan.mjs --scope full --only pnpm-audit   # 55 findings, 2 blocking — a real report
   node scripts/check-sast-findings.mjs
@@ -135,7 +150,10 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   inclusive lower bound` on every pull request, scoped to keys carrying an `@<range>` suffix (the
   plain pins `react-dom`, `postcss`, `@expo/dom-webview` have no key half and are out of scope).
   Renovate produces exactly this mismatch when it proposes a floor raise, so expect bot PRs against
-  this map to need their key half fixed by hand.
+  this map to need their key half fixed by hand. Note also **where** these live: the map is in
+  `pnpm-workspace.yaml`, not `package.json`'s `pnpm` field — pnpm 11 stopped reading that field and
+  says so with an "ignored keys" warning, which is a security event rather than cosmetics, because
+  every entry in the map exists to force a vulnerable transitive to a patched version.
 - **Unmatched allowlist entries are reported but do not block.** An entry that matches nothing this
   run is listed under `UNMATCHED ENTRIES`. The trap: pip-audit switched from CVE ids to PYSEC
   aliases; entries keyed on the old CVE ids silently matched nothing rather than expiring — an entry
@@ -147,15 +165,20 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   surface `EXPIRING SOON` warnings for the 14 days before the date, then re-block when expired; both
   window boundaries are inclusive. The window length is defined once in `scripts/allowlist-expiry.mjs`
   (`WARNING_WINDOW_DAYS = 14`) and imported by both gates. A dedicated `--check-expiring` mode runs
-  **weekly** (Friday) in the `infra-image-scan` workflow and fails on any expiring or expired entry;
-  this mode is never run on pull requests. **For the SAST allowlist it cannot fail on an unmatched
-  entry** — that job produces no SAST report, so unmatched detection is skipped there, and an entry
-  that quietly matches nothing (the CVE→PYSEC trap above) is visible *only* in the report-only output
-  of a normal gate run. Read it there. Two properties of that weekly step are load-bearing: a missing
-  report is **announced** rather than assumed clean (a report that exists but will not parse is still
-  exit 2 on both paths), and the report-absent path must not throw — when it did, the step aborted
-  and `bash -e` skipped the infra-image expiry check on the next line, so **both** expiry tiers were
-  dead from 2026-09-12 until the 2026-09-25 weekly sweep's own output exposed it.
+  **twice weekly — Tuesday and Friday, 04:00 UTC** — in the `infra-image-scan` workflow and fails on
+  any expiring or expired entry; this mode is never run on pull requests. **For the SAST allowlist it
+  cannot fail on an unmatched entry** — that job produces no SAST report, so unmatched detection is
+  skipped there, and an entry that quietly matches nothing (the CVE→PYSEC trap above) is visible
+  *only* in the report-only output of a normal gate run. Read it there. Three properties of that
+  scheduled step are load-bearing. First, a missing report is **announced** rather than assumed clean
+  (a report that exists but will not parse is still exit 2 on both paths), and the report-absent path
+  must not throw — when it did, the step aborted and `bash -e` skipped the infra-image expiry check on
+  the next line, so **both** expiry tiers were dead from 2026-09-12 until the 2026-09-25 weekly
+  sweep's own output exposed it. Second, the step is `always()`-guarded *inside* its schedule guard
+  (item #484): a red CVE gate earlier in the same job used to skip it entirely, so the week the gate
+  was red — the week the warning mattered most — it did not run at all. Third, a superseded
+  (cancelled) run is skipped from inside the step body via `job.status` rather than in the `if:`, so a
+  cancelled run cannot be turned into a failure for a commit that was never broken.
 - **Remediate, do not re-date.** Deleting or extending an `expiry` is how a time-box becomes
   permanent. The legitimate exception — no published fix exists — requires the evidence written into
   the justification; a time-boxed acceptance can also be discharged by a route its own justification
@@ -171,7 +194,9 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
       • hono 4.12.29 — the override `>=4.12.25` ALREADY PERMITS 4.12.34; the lockfile is what pins
         4.12.29. The override needs no edit — refresh the lockfile: `pnpm update hono --lockfile-only`.
   ```
-  **This distinction cost ten days of red once already.** `fast-uri`'s override `>=3.1.4 <4` already
+  The same section carries the opposite verdict — `RAISE THE FLOOR (both halves)`, naming the exact
+  key/value pair to write — for a finding the current range cannot reach. **This distinction cost ten
+  days of red once already.** `fast-uri`'s override `>=3.1.4 <4` already
   permitted the published fix 3.1.5; the lockfile pinned 3.1.4. The fix predated the advisory by three
   days. A four-week allowlist acceptance was written for something `pnpm update fast-uri --lockfile-only`
   would have cleared. `nanoid` repeated it eight days later. If the section says *refresh the lockfile*,
@@ -238,7 +263,9 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   `--scope` entirely, so a lockfile finding cannot be scope-asymmetric) and changed-scope reports
   (every file there was by definition a target); and a report with no usable `generatedAtScope` is a
   **hard error**, because a missing field must not be able to switch off the guard the way a missing
-  file class switched off the thing it guards. The remedy it names is to widen the changed-scope
+  file class switched off the thing it guards. The one exemption is keyed on the explicit
+  `reportAbsent` marker the gate synthesises when no report exists at all, never on a missing field.
+  The remedy it names is to widen the changed-scope
   filter — **an allowlist entry does not fix this**, it is what concealed the Dockerfile case for a
   merge cycle. The residual is a snapshot and is named: a pack update that raised a Medium rule on the
   two still-invisible classes (`renovate.json`, `pnpm-workspace.yaml`) to ERROR would reopen the gap
@@ -268,10 +295,13 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   learned from one scanner's outage is exactly the one the other needs next. Both narrowings were
   measured, and both are the same defect: a bare `Service Unavailable` / `Bad Gateway` / `Too Many
   Requests` matched the advisory *title* `net/http: HTTP/2 server does not limit Service Unavailable
-  responses`, and a bare `Read timed out` matched ordinary English in an OpenSSL advisory title — so a
-  genuine finding would have been retried three times and then reported anyway, slower, with a retry
-  line misdescribing it as a blip. The classifier is handed `stderr + stdout`, so finding titles
-  really do reach it on the cargo-audit and pip-audit paths.
+  responses` (item #495), and a bare `Read timed out` matched ordinary English in an OpenSSL advisory
+  title (item #499) — so a genuine finding would have been retried three times and then reported
+  anyway, slower, with a retry line misdescribing it as a blip. The classifier is handed
+  `stderr + stdout`, so finding titles really do reach it on the cargo-audit and pip-audit paths. The
+  module also owns the shared **tail**-truncation helper: the captured failure output must keep its
+  last lines, where the status code is, not its first — truncating the head is what once left a
+  Trivy digest ending mid-URL, unable to name a 403, a 429 or a 500 (item #495).
 
 ## Outage or finding? — the retry decision
 

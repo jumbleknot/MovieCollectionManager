@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain, the provider/credential table and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the run budget with its per-event job deadline and exit-code semantics, the four independent slice-verification causes (missing page, non-conformance including V16, a policy-forbidden write, a page left stale after the run), the single long-lived openwiki-maintenance proposal that proposes per part and reverts unrequested writes after a deadline stop, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain, the provider/credential table with its per-provider knobs (page concurrency, service tier, and the Fireworks-only reasoning effort of item #525) and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the run budget with its per-event job deadline and exit-code semantics, the four independent slice-verification causes (missing page, non-conformance including V16, a policy-forbidden write, a page left stale after the run), the single long-lived openwiki-maintenance proposal that proposes per part and reverts unrequested writes after a deadline stop, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -37,10 +37,14 @@ sources:
     resource: repo://scripts/wiki-maintain.mjs
   - id: openwiki-source-238c6bb3246fc134ab159b1e
     resource: repo://scripts/wiki-provider.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-10-05T10:34:13.063Z" }
+  - id: openwiki-source-b06e5457680691b00528f189
+    resource: repo://scripts/wiki-usage-tap.mjs
+  - id: openwiki-source-cc0e84ce24c43bdaff14a3c1
+    resource: repo://scripts/wiki-usage.mjs
+generated: { by: "openwiki/0.6.0", at: "2026-10-05T15:09:13.400Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-10-05T10:34:13.063Z
+    at: 2026-10-05T15:09:13.400Z
 ---
 
 
@@ -104,7 +108,8 @@ stateDiagram-v2
 
 The states a maintenance run moves through: planning is free, the preflight is the first act that costs
 anything, a failing slice is retried and then returned to the committed backlog, and a budget stop — pages
-or wall clock, including the job deadline — ends the run with the remainder carried forward (exit 3),
+or wall clock, or a job deadline that leaves too little time to *start* a generator — ends the run with
+the remainder carried forward (exit 3),
 while two consecutive slice failures end it as a failure (exit 1). A run that
 generated pages but could not get them onto a proposal undoes the marker advance rather than certifying
 work that only exists on a runner about to be thrown away. Two of those edges are the newer machinery: a
@@ -123,12 +128,29 @@ Which model writes the bundle is not code: `scripts/wiki-provider.mjs` is the si
 | `fireworks` — the **CI** default (the workflow sets it, at page concurrency 4) | `accounts/fireworks/models/deepseek-v4p1-flash` | `FIREWORKS_API_KEY`, `MCM_FIREWORKS_API_KEY` |
 
 The chosen credential is mapped to the name the generator reads **only** in the generator's own
-environment, and every other provider's key is removed from it. Two more knobs are validated before any
-paid call:
+environment, and every other provider's key is removed from it. Three more knobs are validated before any
+paid call, and each is per-provider: setting one on a provider that does not take it is an error, never
+something quietly ignored.
 
 - `MCM_WIKI_PAGE_CONCURRENCY` (1–8, default 1) — openwiki ≥ 0.6.0 writes that many pages in parallel.
 - `MCM_WIKI_SERVICE_TIER=priority` (Fireworks only) — +25% price; measured on this workload it bought
   **no** speed, so it is not the default.
+- `MCM_WIKI_REASONING_EFFORT` (Fireworks only: `none`, `low`, `high`, `max`; unset = the model's own
+  default) — the item-#525 trial knob described next.
+
+**The reasoning-effort knob (item #525).** `scripts/wiki-provider.mjs` rejects any value Fireworks does
+not document for this model, so a bad value fails before any paid work. It cannot travel as openwiki's own
+`OPENWIKI_REASONING_EFFORT`, because openwiki 0.6.0 refuses an effort for its `fireworks` provider: the
+**usage tap** (`scripts/wiki-usage-tap.mjs`), loaded into the generator process, sets `reasoning_effort`
+on the Fireworks chat-completions request bodies instead — exactly the route `MCM_WIKI_SERVICE_TIER`
+already uses. The preflight sends it too, so a value the provider rejects fails before paid work. The
+run's usage line and its record carry `effort=<value>` when it is set, and the effort changes no price
+row, because Fireworks bills reasoning as output tokens. **It is under trial:** latency is roughly output
+tokens ÷ generation speed, and a lower effort means fewer reasoning tokens per call — but possibly a
+weaker page. In CI it is the `reasoning-effort` **input of a dispatched run**, and a push run has no
+inputs, so it falls through to the repository variable — which stays unset, the model default. That is
+what keeps a trial from changing what a merge-triggered run sends; do not set the repository variable
+until a trial's page has been reviewed.
 
 The launcher also *imposes* one variable the operator never sets: it puts
 `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` into the generator's environment unless an explicit operator value
@@ -158,7 +180,7 @@ egress host costs one token, not a slice.
 | Code | Meaning | Is something wrong? |
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
-| `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it — or the generator was stopped at the job deadline, or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
+| `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it (a stopped generator usually leaves a requested page stale, which fails it the same way) — or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value or `WIKI_JOB_DEADLINE`, a failed preflight, or a policy file that will not load | **Yes** |
 | `3` | Stopped with work outstanding — the run budget was reached, the job deadline left too little time to start a generator, or slices were carried forward in the backlog | **No** — the remainder is in the backlog |
 
@@ -241,8 +263,11 @@ chosen **per event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole
 cannot lengthen them. The guard test pins both (`DISPATCH_MINUTES` equals `timeout-minutes`,
 `PUSH_MINUTES` is 60). Each invocation then runs under GNU `timeout` with the time left minus an
 8-minute reserve for verification, publishing and the run-record commit; a slice with under 5 minutes
-left is not started and carries forward (exit 3). A generator stopped at the deadline fails its slice,
-and the run **still commits its record, usage and digest** — before this a hang ran until the platform
+left is not started and carries forward (exit 3). A deadline stop does **not** by itself fail the slice:
+after the revert below, the slice is judged like any other, by what landed — in practice a stopped
+generator leaves a requested page unwritten or stale, which fails it (exit 1), while a slice whose
+requested pages all landed fresh before the stop verifies. Either way the run **still commits its record,
+usage and digest** — before this a hang ran until the platform
 killed the job with nothing recorded. `timeout` signals the whole process group, which matters because
 nx starts openwiki as a grandchild; that holds while nx uses no pseudo-terminal, which it does only when
 stdout is a TTY — never in CI. Only the workflow sets `WIKI_JOB_DEADLINE`, so an interactive local run
@@ -280,7 +305,10 @@ lands in the job log and in `lastRunUsage` in `openwiki/.maintenance-state.json`
 It is an **estimate** (it reconciled with the Fireworks bill to the cent on the 078 research probes).
 `not captured` means the tap produced nothing — it is never written as $0. A line saying `PARTIAL total`
 means some invocations were not captured. `failedCalls` counts non-200 responses: rate limiting under
-page concurrency shows up there first.
+page concurrency shows up there first. When the reasoning-effort knob is set, both the per-invocation and
+the run line carry `effort=<value>` after the provider (and tier, if any), and the value is recorded in
+`lastRunUsage.reasoningEffort` — it changes no price row, because Fireworks bills reasoning tokens as
+output tokens.
 
 ## Gotchas
 
@@ -381,9 +409,10 @@ page concurrency shows up there first.
   checkout stamps every file's mtime with the checkout time and an mtime read would mark every concept
   stale. The failed work returns to the backlog and **the marker does not advance** — for causes 1 and 4
   only the failed parts of a packed invocation do, while causes 2 and 3 carry the whole invocation back.
-  A generator the job deadline stopped counts as a failure of its slice: the stop is recorded, the run
-  **still commits its record, usage and digest**, and nothing about the generator's own exit status
-  changes the verdict.
+  A generator the job deadline stopped is judged on what landed, like any other: the stop is recorded,
+  the run **still commits its record, usage and digest**, and nothing about the generator's own exit
+  status changes the verdict — a stopped generator usually leaves a requested page stale, which fails
+  the slice.
 - **Remediation is always the brief, never an allowlist.** If a page trips the conformance gate, a leak
   scan, or the governance gate, fix `openwiki/INSTRUCTIONS.md` and re-run — the gates have no skip flag
   by design, because an allowlisted leak stays leaked.
@@ -507,8 +536,13 @@ page concurrency shows up there first.
   `verifySlice` now fails the slice for such a page when its source is newer than its stamp (cause 4
   above), so the page returns to the backlog and the marker holds — which closes the route by which a
   *planned* page fell behind, while #526 remains for pages that were never planned at all; **#616
-  (fixed)** — the same gap through a different door, where a page counted as *written* because a
-  front-matter-only edit changed its bytes, so #587's unwritten-only check never examined it; and
+  (open — its guards are in place)** — the same gap through a different door, where a page counted as
+  *written* because a front-matter-only edit changed its bytes, so #587's unwritten-only check never
+  examined it, and Markdown and Claims were left inconsistent (proposal #615); the cause is openwiki's own
+  restore path when a worker exits without submitting. **Both guards shipped in #617** — a requested page
+  changed only in front matter is judged stale (cause 4 above), and V16 fails a non-durable bundle — but
+  the item stays **open** for its last criterion, a real refresh of `runbooks/ci-diagnostics.md`, which the
+  current Fireworks model cannot generate (see #589). Do not describe #616 as fixed. And
   **#525** — the drift-driven
   sweep that would clear the current V12 list, blocked on #587 and on canonical sources being corrected
   first (#588, done). Read a V12 line with its stamp in mind: several pages still carry a legacy date-only
