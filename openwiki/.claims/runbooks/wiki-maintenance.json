@@ -1,0 +1,662 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:c94b1ce20a733712dda45ccf032d8dcecf1907abc3c44e536b3ed94d056d7801",
+  "claims": [
+    {
+      "id": "claim_20c43d7793fd4c2f9b478778ec76ae93",
+      "statement": "OpenWiki bundle maintenance is split into a free, offline, keyless planning target (`pnpm nx wiki-plan infrastructure-as-code`, which decomposes documentation changes since the last recorded run into slices of at most 8 pages, each exactly one bundle area) and a paid execution target (`pnpm nx wiki-maintain infrastructure-as-code`) that needs the selected provider's credential; the run record lives at `openwiki/.maintenance-state.json`, committed because CI runners are ephemeral, and is distinct from the tool's own `openwiki/.last-update.json`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L11-L26",
+          "version": "repo-lines-v1:sha256:15f7a9ecc5172b58c322dbe62b27ccd4fa9356f33df2655b34f96f3cf95707f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNTJmNjIxYzg0NGRlMDAyYWUwOTk5ZTQ1YjgzYzgzNjczYjI2Yzg5MzA4NWNmODA4YmUwNTBiMjY3MTg2OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkMjQxNDRhNTY2MmViMjliNTZmZjc5NmZiOGI1YmQ0Y2JmMGUyMjRmYWJjZjI3OTIxYTRhZTJlYWQ4NjlkMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzMzZjNzM2NjZkODJkZDlhNGZhYzM4Y2I4MmVkMDdhZGI4NWQwZWRhMzNhY2NlOWJjYjhkYjc0ZTMxMTg0YzYifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L457-L466",
+          "version": "repo-lines-v1:sha256:03bc5d036f4ecbfd42fb257b0e70ca9ee5a2e7cf5281570b688b2666656452ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZjFjODk0YTk1MWFiNGUwYWM3Y2Y4MGUwZGI5OTJmYTY2MWM3NGY0MDQ3ZmEzNDBlYWVhMGMzYWIwZTM2OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZjNlNTY2MDg4YWQ3OTRmNDI1OTQ5MTE3YzcxNjkxNTllNzMxZGQ1YjRiNGE2ZDY1NmIyMGQ1Nzg5NDFlMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkOWVlMTc5YTE5MzcxMmMxZDJjOWJjMmYxZWM0Y2Y5OTgyYzJiZTlhOTY5NjVhYTkzMTYzNDQxZmZmOGY2OTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L195-L195",
+          "version": "repo-lines-v1:sha256:2f740e8ec69d9675b40a04091c7244305e0911d9082a691685dcc47b547adee9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY3NDBlOGVjNjlkOTY3NWI0MGEwNDA5MWM3MjQ0MzA1ZTA5MTFkOTA4MmE2OTE2ODVkY2M0N2I1NDdhZGVlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY3NDBlOGVjNjlkOTY3NWI0MGEwNDA5MWM3MjQ0MzA1ZTA5MTFkOTA4MmE2OTE2ODVkY2M0N2I1NDdhZGVlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjNlOGQwY2Q5NDY0Y2NhNzUwOTAzZjY3OTA4ODcwNDY0MjMwMWJlMGNmOTNiYjZjNzMxOWY5ZGJkNjFlMzI1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBhNjAxMjdjMjQxMTc4ZDAyYzMzMTZiZDFkODhhZmY1ZmYyZDgzZmZlOTQ0YzZiYWFkMzRhYWNmOThiNjNhNSJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L61-L61",
+          "version": "repo-lines-v1:sha256:fded75b9fad6b74f9f1ab2155d82c2ce5c54c47612045210046627920101fd69:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRlZDc1YjlmYWQ2Yjc0ZjlmMWFiMjE1NWQ4MmMyY2U1YzU0YzQ3NjEyMDQ1MjEwMDQ2NjI3OTIwMTAxZmQ2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRlZDc1YjlmYWQ2Yjc0ZjlmMWFiMjE1NWQ4MmMyY2U1YzU0YzQ3NjEyMDQ1MjEwMDQ2NjI3OTIwMTAxZmQ2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDZjNmYwOTdmZjlkZTRmM2FhZjU0YTJhMmZkMWExZjg5MTZiMjVmNTFjNWIyNmJlZWEzYmJhYzI4NjBiNzBjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjI5MTUzYTU1YTM2ZmI5OGVlNTUzMGEyZmJkMWY4YTk5YzEzNjQwYjk1MjQxZmU0YzYxM2QzNDBiYjk1MzMxZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf57dbbadb954900995f9aa8e5c03ad4",
+      "statement": "Which model writes the bundle is configuration rather than code: `scripts/wiki-provider.mjs` is the single table resolved in one pure place from `MCM_WIKI_PROVIDER`, with `anthropic`/`claude-sonnet-5` as the local default (unset) and `fireworks`/`accounts/fireworks/models/deepseek-v4p1-flash` as the CI default at page concurrency 4; any malformed value throws (exit 2) and is never read as a default, while an empty value counts as unset.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L213-L223",
+          "version": "repo-lines-v1:sha256:f13ce3e94c29b6bd0472ab42963dcce8335683b01a96ecd6fd4f28050d7ecf25:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhOWRhOGFmYWUyMGJiNGNhZGRlMGUwYWQ4YzIxNTY4YjcyZGMxOWM0MmNiZGY4ZmRkMTY0ZDJiMjBhODQxMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNjkwOTc2M2RiMTY2YWQzYjYwMmY0NWY4NjU3MTkxNjExODAzZjM5OGVlMDc1NmZkNGM1MWVjZWQzYzVhNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0ZDljMjQyZmNkZDM0MjNiNjExOTBlYjlmNmYxMDQ0ZjMyMWFiMzYyNDE0YmQ2NGYzY2E4NDUyYTZjMGQ4ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1ZmRmZGQ0ZmEwY2QzNWEzYjkzYTU4M2Q0ZDc2Mjg2ZmRhZDgyNjYzNWNiNmU3YzM0YmQzODYzMzQwODZkYzUifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-provider.mjs#L27-L70",
+          "version": "repo-lines-v1:sha256:119e20d939da1c401c2ace13b94deb2cbe17eaa7e4c655d76f83e4ee8a9d8d53:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3YmZiZmQ2OTJmYmQzNzNmNmVjOTY2MDczNjhiMDY3YTY3ZmVkMzBkOTk4NzYzMWI4MjMxZGYxMGE1MmExZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhZDQ2YjcxNzJkMTEzYzUyZTM1NDZlNzgyNjkxMmZhZDU5MjEzYTRlZGFmYjRlZDRhZmZlYmU0OWY4OWUzOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NmY5YmNmMTg3OTczMGI2ZWM5YWY1MDUwNTIwN2NmOGNiZGY4ZTA2OWJhY2YwNzY0OWZkN2I5YWE3YzdiZTgifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-provider.mjs#L80-L102",
+          "version": "repo-lines-v1:sha256:1a8f3fd5caeed1ea55464c7755b6b681c070744e9e4ee42a643e76e6edde0560:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiNjhhMGJiYmRhNGI0NjA0NjE3MWMyNWQwN2NhNjczNDEwYjg2Njc0OWQ4OWU0M2MyZWZmZGU5MzQ1ZDI5MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZTdlZmNjNTM1MDMwMDc3ZGZlZjkyOThiYTQwM2NmMzJkNTAyZTVhYTkyOTczM2FlNTVlYjg5NDAyYzgzNDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f3dad36c8994785a64580bf22617ba5",
+      "statement": "The Nx `wiki-update` target deliberately names no provider or model, because Nx builds a target's child env as `{ ...process.env, ...targetEnv }` and a provider in the target's `env` would silently overwrite the job's choice; the target instead runs `scripts/wiki-generate.mjs`, which resolves the table, hands the generator only the selected provider's credential (every other provider's key is deleted from the child env), and passes `WIKI_RUN_MESSAGE` as a single argv element with no shell.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L194-L201",
+          "version": "repo-lines-v1:sha256:0248b593bfbd431aed4933d0adfc64697c77f85de6ae05524772e9b809a6306a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZhOTRiYWIxZGI5NjVhYjI4NWQzMWNlYWQ5MjE4ODcwNjMwOTJkZGIxMTIzNjFhZDVhZjI0ZDYyYWQ0MmY2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjA2MTFiMWFkZjkyYTIyYmQ0NzNhZDM4OWM3Mzc0MjhhNmUwNDlmMzhlMmU4NjBiZjJlNDhjZGE0NmJiZGU5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDVhZjc2YjdkMDNlMGUyYzI4MWUxMTk4ZmFkNzk3Y2M1OWRiZDA3MDMyNmU4OTJhNmRjYzkwZDJhYjE5ODg1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmIzYzJlODFjNTg3YmVlY2MyMTY2NDg2MWQ4OGM3NjA5M2ViOTBhMWFhMzNiZTIyNDYyZjU1NGJlMmZkNGE4MCJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1497-L1520",
+          "version": "repo-lines-v1:sha256:b0e7f099203485e3c4d76ac03d88bdb35b1590028122b6f76a77efecb4192525:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1OTNkZmI1NjQ3M2VmNmNkZGQxYjY2NWExMjgyMmQ1ZjFmOTllNTFhYTRiN2E2MmQzNDEwMzFkOGEwYzYyZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxMDZlNWJmYTk4MjkxNGFhOTg1YTk4MWVmOGU4MTdkNDRjNGU0OGFlMDI5MDBlNWY0MDEzMjkzMzlmNjg1NzcifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-provider.mjs#L104-L137",
+          "version": "repo-lines-v1:sha256:52f7085196f5bc8601ff0e02ca032c0c6f9138dce6fc56a5b138da9de1536d4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNzUzYjEyN2YzMjAwMTczMGQyZDE4ZTRmMTg1Y2ZmMTVkZjVmM2ExNTI2NDFhMjhkYjQxNzMwZDJiMmJkMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3eb181f1b34b4e4ab1dccee7cbfdf7bb",
+      "statement": "The workflow's first step records `WIKI_JOB_DEADLINE` (epoch seconds) from a window chosen per event: `workflow_dispatch` gets `DISPATCH_MINUTES=120`, pinned equal to the job's `timeout-minutes`, and `push` gets `PUSH_MINUTES=60`, so a merge-triggered run keeps the shared-runner hold and raising the ceiling cannot lengthen the runs every merge starts; the guard test asserts both values.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L74-L90",
+          "version": "repo-lines-v1:sha256:2c4819bf77bcdde283cc15c4438c275b758b47a339cad1d9cb008d0cd89edf34:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NWFkMTY5NzM1MDgxMDM5MjcyNWU4OWYxMzgwYWYzZWViMWViOGI4M2NhNWI4NjUyMzk2ZDQ5ZmI5N2M5YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1OWQ0YTk5YWIwZDM0YzM1MzFjYjg4ZjhlOWE0MjI2MzhhYjU1MzU1NjExNmEyZTIwOWNkYTI3NmM0MzMxMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmNmI2NmVkNTBkNDgzMzQ4NWIwZjViMjI4ZTBmNzUwYjY2MzlmODk4MGMzYmUwNjhkOWQ3MDhjMzg1Zjg0OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1N2M5YThhZDkxMGI2YTFmMmM2OTNhZjdjYzhhYjUyMTc2NTQ0ZjA1YjM0NGFmNjQxYWU3ZWZkMzljY2RjODkifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L107-L123",
+          "version": "repo-lines-v1:sha256:f2a435f67660137ecb66b943b54595039651e268bb69ae2b9d4a271b91ed9095:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4NWI4YTY5MWUyNjQ5NjNkNThmNjc3OWQwZTM0MTlhMjcyNmRjYTUyOGMwOTc1YTVhMDk0NWQ0MWE5NTk3YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxYjRjMjI2NWIzM2UxYmUwM2NmNTlmNTYyMzhlOTE5MWI4MzcwOWZhOGRmZmIxMGUwODFiMjgwMzJiOTdmNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzMjNjMmM1NTIzNDc0MmVkZDg4NmEwODExM2M1OGI2YjllMzlkMDA0ZDgxYmFjYzI4YWE2NzRiMWU1MWQyNWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_77ccef0723ac4fb18d83555c0bd42a76",
+      "statement": "Each generator invocation runs under GNU `timeout --kill-after=60s` with the time left before the job deadline minus an 8-minute reserve (`DEADLINE_RESERVE_MS`) held back for verification, publishing and the run-record commit, and a slice with under 5 minutes of allowance (`MIN_GENERATOR_MS`) is not started at all but carried forward as a budget stop at exit 3.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs#L1370-L1389",
+          "version": "repo-lines-v1:sha256:72fafb5cc1210729aad001fc593faee16f88a4ef7433040daa7f5a760f6b3004:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMWFhOTg5NTI2ZmRkMTNkYmYwMjg5NWE2Y2MyNWJkOGVjODEzZDYxNTZiZjMyM2I0OGUwNWFiYWU5YzNmMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMzMxMWE0YzhiNGM4YTJiZTlkODhjZGMwNzNjMGMzNDZlOTkyMGIzZThhZDZjYTY5OTk0NDMxZjRiZjJlZGMifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1535-L1552",
+          "version": "repo-lines-v1:sha256:9d41ba4bffba0903e3bc9899b232c91399bc96e5968f0c497d9d898ab5316d6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2OTc1YTZiNzk1NDU0NGRkODc5Mjc0OTk4NmNmMjk4ZGUwZTFkY2I2OWZhNTQ3YjQxMWZmMjRjYzI0NjAyZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNmJhZDQyY2RiNjAyZjE3YTE4ODVmYzUzMjkyYjZjNTYzODA5ZTNhOTJkMzIzZmQ4ZjJmNDc1YzFiOWQ2NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMDdmYTY5N2UxNjc3MTQxYWFkYmU5ODExNzMyMzU3NWZhMzMwZDRlMjYxZjBhNzliYWZjOTYxOTk2MDQ5ZGUifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1662-L1680",
+          "version": "repo-lines-v1:sha256:3a170187da67bd285a77ef519b920eb4706363f1f6c37d00699c1b3008ec1b9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNjY0YjgzOThmYjBmYjE3MTc5Yjg2NmY0ZmQyNjQxOGIwNTRiYTdiNTk4ZTIzMGE5YWQyYjZlNTViMTdkNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOWE0MzM5NDQ3N2E3YzA1ZjUyYmM3YTNjMjZmZjk1MTQ5ZjRkYmRjN2MwM2NlODBkMGM4ODg3OGExMThmYmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4NzQyZDExYjAwYmQ1ZWM5NGM3MTgxMTZkNjMyYzI0ZjcxYjRmNjI3OTBhZjk5MDkzMmYxYzA5M2RkOTRlNzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b376148df704b8a828fd3c03907446f",
+      "statement": "A generator stopped at the job deadline fails its slice (the run's exit code is 1) but the run still commits its run record, usage and failure digest, so a hang is recorded rather than dying with the job; a malformed `WIKI_JOB_DEADLINE` is an error (exit 2) and is never ignored, and because only the workflow sets the variable an interactive local run is never wrapped.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L281-L322",
+          "version": "repo-lines-v1:sha256:bf24c52d6f08a2cf4741f2dc5df9b4a546982db122759f55868c734c79ca4ad2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NmU4MGFiNzdlY2M2YTI2ZWE3NGMwNjllMzA4YTkxMjMxOWUwY2NkZjliNWE2OWMxOTFlYTIzNDM4NDVjZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlYTZmZDU2ZjU1ZmUyZjY2NWVkZTNhNWIxYzMyZmM2OWYxZDVjZWEzNjZkYzBmNjQ3MGE5NGRlOTgwZjEyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYmUzYTFjNzY3OWY0MmQ5ZTA0NDk0ZGM1N2UwNDZiYWMxODc4NWJiNDQ3YTZhODJmOTFjMTFmNzdiZTUzNmYifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L331-L344",
+          "version": "repo-lines-v1:sha256:749696e39d3803e29b8a0dd97c9c3e4a85cf7a1db2d727de42de79e3da4536de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNDNiM2Q2ZmFlNDVmZjY3NjBiYzJiNmQxNThjOTU4NDQxY2YxMGI1NDViZGZkYWYyY2I1MDk0ZTIxNjk2NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjNzgyZTA3NzRjZGJlZWVlMjE2NjAxOGQ0YTFhNjdjZWIxZWE0ZTJlYTc2OWJlZGNlYmQ0Yjc0NmMyMDk3MWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1546-L1562",
+          "version": "repo-lines-v1:sha256:c8313bd4af65abb7d732a93820f12ce582444a2d3acacc36236ef0279ae755cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMDY2YzQ2NjJiZGZjNWZjMjk1NjUxMzdkODUzMWY4MWQxN2NhYmRjNGM2NDc2OWVmMjVhNjU5MTc5YThjZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjNmRiNTlhMWRkZWRhNTYzOWJjYzA4NWQ2NjdkNDkzMzYxMGQ3Nzk5OTU5M2ZkNGQzNGNmNWIzODgwMjJmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwZmYxYmQxNTU4NGEwZWEwMmFhYjQ1NWNkNmI4MDI2MWY0ZDQ4ZjBkNWMzODA2MzdjMDFmNTNhOGY2Y2EwNjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfcfb97bd2d0434bbed50566ff8e85da",
+      "statement": "`timeout` signals the whole process group, which is load-bearing because Nx spawns openwiki as a grandchild and a plain `spawnSync` timeout would kill only Nx and leave the generator writing into the tree being verified; this holds while Nx uses no pseudo-terminal, and Nx uses one only when stdout is a TTY, which never happens in CI (stdout is piped through `ci-log-step.sh`).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs#L1339-L1350",
+          "version": "repo-lines-v1:sha256:2c1699d3d1c8a89d44ed296428b868d6cdab7497662e2dd9ad771c042d478762:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMWFjYzIzNjFmNGY2MjJiZGFhOGE0MjEzZDYxNWE5MGY4OGMxZjQ5NmU0ZTI0MTViNzkyOGU3MWMxMjRlMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjYzA4MTJiZTAxNjAzYTA4ZjU5YWEwZjZhY2Q1Nzc0MjE3NTNmNzQxNmU0NWFlNGRhMjk4NTAzMTBiMmQ0ZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4MTIyYTI0NWQ3ZDkyYWMwOTIwMDM3MDA3ZThjNTk0MmE4ZGRjMWY1ZDA5NTg1MGI1NDcyY2Q5ZmI1Yzc3MGQifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1522-L1544",
+          "version": "repo-lines-v1:sha256:b9585442a222d4a42dba56b23a8857004eb6008ddecd7f856435e625f1c250fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZWFjZmVhNWM1MGI5NGZiZmIzZTVjNzM0M2YwZDQwZGUxYzQxNTAxOTFmOGY2MGJlMTViM2QwYzM0YTFmOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlZTMxZDFhYmRmNzU5NDZkOWU4OGEyZjUxNTYyMzE5NGYzN2M3NjA0OTc3Yzk4MmI1MWVmYmI5YjVhNjlhNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYjAyYmNlMzE0MWQyODlhMzk0MjQxMGJhNGM2M2JhZTY2NTBmZmQyNGE4ZGU4M2EyNzE2YTI2YjQ4M2Q4NTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_946ff079b6334c04bfdcb460bbb4da88",
+      "statement": "For an OpenAI-compatible provider such as Fireworks openwiki sets no request timeout, so the OpenAI SDK's 10-minute default applies, and at page concurrency above 1 openwiki retries 5 times — one model request accepted and never answered was about 60 silent minutes; the launcher now injects `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` into the generator's environment unless an explicit operator value is already present, bounding that at roughly 30 minutes, and a merge-triggered run also spends its first 15 minutes in the debounce so it has about 45 minutes rather than 60.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L174-L188",
+          "version": "repo-lines-v1:sha256:6acf08e144c8b02eb5a04b9f67e056857af482b78ace2b1b8954be5251daf549:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMzFhYTMyMDdlNGRiZjVjNjhlYjBlZDBhYWFkYjVmNGI4NGY2MTA0ZTY1ZGY2ZTFmNzg1YzNjZTYzYTJkY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5OGFlZDIxNmViNDZlZDRlYjg3ZjI2YTExM2ZiNmNhZGE4NTk1ZjdmYTc3NGY0YTE3NzZlODQzNTE3NjBhZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmMGU5NDQ0ODcxMzQ4NTQ2NTUyODA0ZDIzMTg5YTYwMGEyMjFlMTQyYTU1NTExNTRmZWIwN2Q5Y2VjMzc1ZjAifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-provider.test.mjs#L160-L166",
+          "version": "repo-lines-v1:sha256:073539024b1ce3f5878fdef23f91db2491232914bac4faa3af272ad7b85e19e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNjZmQxNjM3Nzk1YzMzY2UwYWM0MDJjMDU0YTBlOTY4MmEyNzEwMDk2NWM1N2UyODU3ZGUwMjdhZjg5YmI4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTk3ZGJjZjljOTQxOWU2ZWU5NDU2ZTlhMTM2MWRlYWZlYWQ1NGU2NDJmYjJhZjNmZTk1MzM1NDg1MDU1ZmE5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-provider.mjs#L110-L137",
+          "version": "repo-lines-v1:sha256:7caecf34aa3f7a2060dd017cbf88568512bad2fa6135bd5dc53b0588b7bc50bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MTE1OTQ0MGI3ZGE0ZGNmMjhhZjljOWRmNDhmYmRjNmI3OGFhOWRhMWZlNWYyMTZhN2UyMDk0ODU2M2IxMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNzUzYjEyN2YzMjAwMTczMGQyZDE4ZTRmMTg1Y2ZmMTVkZjVmM2ExNTI2NDFhMjhkYjQxNzMwZDJiMmJkMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxZjBiNWU0OTlkYTJiNzFjMWViYjUxZWQwZjRhNmI4NzRkZGZkNDNkNDI2MmI2MDVmOGEwNzU4YjgzOTlhZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7c0a5120668425799a4eb7a110dc787",
+      "statement": "Dispatched runs get the full 120-minute window because an uncovered page (no `.page-manifest.json` entry, left by openwiki for full review) needs about 1.65x the output per call and over 1.6x the calls of a covered one, Fireworks generation speed varies hourly (measured 45-145 tok/s), and at 70-80 tok/s a page stopped at the old 51-minute deadline after 93 calls of ~29.5s each; uncovered pages are therefore processed one per dispatched run by seeding `backlog` in `openwiki/.maintenance-state.json` through a pull request, merging it, and dispatching.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L65-L72",
+          "version": "repo-lines-v1:sha256:d5d00dcd9737f3c15b65e65ea936d2a467f18cca240ae06aa707eb75914900e6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTk3MzJhZjI0ZTkwMGIxNjQ5OWIxYTVjNzI0Zjk3MTRjYTMxOGQzYWU3ZjMxNWVhOTVkMDA3ZjdjZTljNDc2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZkNmM5NjgxNDFlYWZkYjBmMDI0YTc0ZjVmZGRjYzU2NjgwMjNmZDhhMzI1NjA5MmIwM2RiYWFhNDk3YTUxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgwYmUwMjljZTQ4MGNmOTFkN2U3ZWQyYjA5YzAyYTlkZjczYzdjY2VmNGYwNTdiN2ZhYWRlOWI0MjVhYWFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGYwNTM5YTM2OWYyYWJmOWM1MDY2NzJjZjA2MjUxNjYxZGQyYjNkODI0MjhhNTZlYzI2OTdkZmE4ZTI0ZjhlNyJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L285-L291",
+          "version": "repo-lines-v1:sha256:f6ad7c98246f10c2ce86ed25de3072b5b7848a1b6798c3d3f8b363bd63a42fac:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDk2ZDM3NDhlMzYzYzhkMzkwYzRlZjg4ZTBmN2E0YTIwMDRkZjY0ODNlMDBlOWQzODhlOTdjZWM3OGIxOWU3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWMyMjdmYWM1OTMxYjg2NzUwMDRmNzllZTAyYjNjYzdjN2Y2YmI3YzFjZGFhMmU3OWU0Y2EyNDgxNjkxNjJkZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRmYWIxYWRkODVlMzQ1ZTc4ZGE5MjRmYmU0MWExMDk1NzQ2OTAxYjg2NDVjZDI3ZGJjZTg3YTJjNmM1MDUyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzY5YjgzNWU2OTEzMGIyMTEwOWI4OGZkNTEyYzU2NWY4MDJlNjliOTlmZmZlZjMzNzBiMDQ5MzkyOTM0MzhiOCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L92-L105",
+          "version": "repo-lines-v1:sha256:0cd160b7d83e999f6c946db16204fec8a1f27c8408559fb84c85c0a6e7144bff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NjFmZWYxNDUzMWM5MDk4MDZkNTc5YjkxNTRiMTRhNTUzN2VkYmY3MWM3MzJmODU1Yzk5M2M4ZDhjM2M5YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4M2M1ZGMwZTNjNDkxYmE0ZDg0ZWZiNjBkZTYzNDU5NjZkOWI1YmFkMDRjZWZiMjAxOGY4N2MxYWJjYzkzMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyOGUwMzdkODJiMTdjODJlZGNkMjc4NDYxZjgyYjQ5MjlmZDg3Nzk2ZjU2YWQxNzgyZjQ5OTdiZWJiY2EwNDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ee6c257aaca34a06857bd3bae3244f31",
+      "statement": "The budget constants live in `scripts/wiki-maintain.mjs` — `PAGE_BUDGET`/`MAX_PAGES_PER_INVOCATION` of 8 pages, `TIME_BUDGET_SECONDS` of 4 minutes as a deadline for *starting* work, `WORST_INVOCATION_SECONDS` of 30 minutes for two waves of page workers at concurrency 4 — and the guard test derives the workflow's `timeout-minutes` from them, asserting the value and at least 5 minutes of margin, so changing one without the other fails offline; neither budget is a monetary bound (the wall-clock budget bounds runner occupancy).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L92-L105",
+          "version": "repo-lines-v1:sha256:0cd160b7d83e999f6c946db16204fec8a1f27c8408559fb84c85c0a6e7144bff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NjFmZWYxNDUzMWM5MDk4MDZkNTc5YjkxNTRiMTRhNTUzN2VkYmY3MWM3MzJmODU1Yzk5M2M4ZDhjM2M5YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4M2M1ZGMwZTNjNDkxYmE0ZDg0ZWZiNjBkZTYzNDU5NjZkOWI1YmFkMDRjZWZiMjAxOGY4N2MxYWJjYzkzMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyOGUwMzdkODJiMTdjODJlZGNkMjc4NDYxZjgyYjQ5MjlmZDg3Nzk2ZjU2YWQxNzgyZjQ5OTdiZWJiY2EwNDMifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs#L682-L686",
+          "version": "repo-lines-v1:sha256:dfac97db1ed88d220bf69ab4b252703ba3f6d9729700b89cfe5b653b7bef0e1b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODE5YjkwYzFiNGRlMDMzZjYzNmMzOGZlZjU3MGQ2YWU0ODBiZjRkZGNjMTUxNzEyMWJlMDc3MDMzMzNkNTc1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDZhZWQ0NjhjZjc3MzE2NDM4YjUyMTZjOWRhNWE4YTQ4MWNkOGViYWIzNGJjNzA5ZGJhYjI1Mzg5NWY2ZDMyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2FiNTc1ZWFiNDQ0YjM5NmUyZDQ1Zjc3MTY3ZDdlMmY5N2YzMWRlMjk5NThlZTVjOTNhMjkxZTllYWUwNjExNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGExNGJlMjcxNGJlOTliODRkMWRlMTAyM2VmMThlMDU4YTNkZDhjNTVmZGJmYzFjMTljM2U1YjQ5MzcxZGViMCJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1153-L1200",
+          "version": "repo-lines-v1:sha256:a8f9f55b3730c3a214831e6d9b39d1618b16a6fab91d36f8944b123de2406579:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZDEyODc0NzI5M2VlZTNjODg5OGZkMjBlZDZjY2QzNTkwYmQxN2FjN2YwMTAyZmMzN2Y0YmJlNDIzZDI1MjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NzQzNDRlM2I4NDg2MDQyMjJmYTliNzNjNGE3OGJhZmRmZjgwZGVhM2FhOGY4MWFkYzQzOTdiYmNkYjIxZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2ZGNmMDBhM2RjMWI0Y2ZmNjgwYzZhM2E5MmViOWU3NWMwZWUxOGM4Mjc2MGNkZmIyZDFkZjBiZWE0MzRiMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjOWE2OTVlN2I4OTE1MjIzZDMwMTdlZmQ3ZDMyMGJjYTJlZDViOTUyNjE4OWU0MjZkMzZjMzg0MTgwNWUxNzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5398a3061c2a43ac9324bade346323a9",
+      "statement": "Exit codes are: 0 for a plan produced or every attempted slice verified or nothing to do; 1 for a slice that failed verification, a generator stopped at the job deadline, or work that could not be published (marker held, slices returned to the backlog); 2 for bad usage, an unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value or `WIKI_JOB_DEADLINE`, a failed preflight or a policy file that will not load; and 3 for stopping with work outstanding — which is explicitly not a failure because the remainder is in the backlog.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L265-L279",
+          "version": "repo-lines-v1:sha256:2d316e9164b7ef2dfff32accdad67283c56526079e308f2f5661244c9e52385b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YzY0YWY0ZTA2MGZjNmIxOGRkNjJmN2E1MDc2NmFmMWJmYjg5NDdkYTY4MzVkNTMwOThiN2JmMWVmMzRlODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3MzgwZjJkMDVmODQxY2JmNTA3Y2VhMGMxY2FiN2IxYzM4OTdkZWVjNjMwMjBmYzZkMzc3MjM5YmIyZmQ1MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4MGVkOTcwMTc0NDkxNmI2YmZjMzNmYTkwZTliMmVmY2M4NzczZjgwMmI1NTZiNDE5MTdmODgwYjc1NjVjMjMifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L234-L245",
+          "version": "repo-lines-v1:sha256:4e61d1ef87775649a83e9ac728407ec5fb061133b082e5b07137a2360f7bbe68:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiODlhNGVkMGQ2MjUyZWNkOTc3YWM5ZDU5MGFkNmQ4NDQ3MDk4MDk2MjBmZmU5Yjg5NzNlODQ3MWQ3MTMyMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ODE0MjU4YzMzNDliOTIwNzU0NDExMmY5NDRhYWI0NWQ1NTYwMzM1MzU1OTk3NTczNzBiNWJjNGYzYTY1MzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlZTZjOWM2ZGI3ZGI3MzY1Yjg5MDM2M2YwNDVkODZiNjE3YzcyMTNhY2RjZmUzZTgzNzY0MTE3ZTdkODg3YTYifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1778-L1797",
+          "version": "repo-lines-v1:sha256:b5e0bb4b568e34f221dd7da6a0e57ee260190735a2d6d50afa18872bb15960a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyYmNmOTk2ZTM4NjEzZTA4OTFlM2JiYzQyMzkxNTQ0NTI0MTNkNWM5MDRjYjgwNGU4NGIxZjUxMzhmZmI0Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZjI3YjhmZTJhNjU5ZjY2M2UzNDYxMWIzNDFkMzljYzY5M2NiMTc0NDZkYjgwNWUzYWVmNTE0YTA4MWIwYjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2NmY4YzZmNmE2MjRjMmI4ODVhOTllZTI3NzkxYjg3OTE5Zjg0NDRhZWVlOTEzNDgwNmZmOTEyODZjNGI3OTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNzJjYTFlMDM0ZTBmMmNlMjk2NmE0YWE4MDFjODNjZTFhYTRiYjkyZGU3YmI5MzM0Y2VjNjNkYmQzMDBhNTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c5a280821734ffe8f62cfc5bc7ddc20",
+      "statement": "A finished slice is judged by what actually landed in the working tree, and fails when any of four things is true — a requested page does not exist after the run (an `index.md`-only refresh counts as zero pages), the bundle stopped being conformant under `check-openwiki-okf.mjs` rules V1-V16 (V16 included, since breaking it stops every later run), a written path was not permitted by the regeneration policy, or a requested page is still stale because its cited source's last git commit is newer than its stamp — and the generator's own exit status is not one of them.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L321-L356",
+          "version": "repo-lines-v1:sha256:d65b20c1d345ebd46e0048723f228ec726729be14e0e7725cc40d46045c5a286:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNWM0Y2FiMGUwM2JlZDdiMGJlZDI0MGU3NmZlOTNlN2I2YWFkODI3NjBmMWI2NTEwYjYyMjliZjI0OTg1YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0M2Q3NWZmYWRjNTZiYzM2ZGU4MTJhZGUzMjY1NDFkNWUyODJjN2FkNDI3ZWQ2ZWZlNjQ3YTA4NzQ5MmJmNDcifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1336-L1450",
+          "version": "repo-lines-v1:sha256:79def254d7ded9ceba5873953dce99e25a12c3cfcf2a17c8e9bddc21d20d4239:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhZDYzMzhiNDYzNDEwZjNmMzFiNzNlY2FiODAwNzE2MDQ2YWRkMDM4N2M2MzUyYWQxNGVlYWMyZDc3NzJlMmU2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MjQxM2EyMjhhNmIxMmE5YmZjYTdkYjdmYWQ1NTQ4ZjFmZTU5ZWE4YzQ4ZWY5M2ZmMWI2NzgwNDEzMGZhOGM2In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8b8db785254471bb6a4bb08610c452e",
+      "statement": "The stale-page cause is judged after the run whether or not the page was written (items #587 and #616), because 'written' only means the bytes changed: on proposal #615 a run deleted a `verified:` block, left the body and its `generated` stamp alone, the page counted as written, and a check that skipped written pages never examined it, so the marker advanced past the source change exactly as in #587.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L338-L352",
+          "version": "repo-lines-v1:sha256:6b0b426a7711735389958e8d21423dd8fcab186b409d481fb4ab0a02772f9cbe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxY2Y3OGNiYTAzNmQ2ZDJhN2FjNmVkNmI3ZTA2ZjgyNTIyMTY3N2NhZmMxYmU3NjNmMzFlMjRlZDc3Yzc5MTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3OGQxNDk4NGUyODVkZGExYWU1ZThjMDE5NTEwNTZjNzUwMTkwN2QzNzBkZGI1NTBlZDQ5Y2EzNmZiOGEwODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MDAwZmU1YjI5NDU0ZGY2MmJjMTQ5NjYxNjlmNWZlMWI0MzdkZGE0NDY0OTBjMGY2NGE4ZWFhYzk3ZDhjNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4YWM2M2NjZGI4YTI3NjdjYTFlZDYxNjBiNmYwNTNjYWI0ZmUyODEzNDY5NWYzMGUzMzZhMGZhZjUzMzE5YjEifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1384-L1412",
+          "version": "repo-lines-v1:sha256:d783eab47dc85d04b0e0857870c28665114043ef4b61e751ac77b971c91fadf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3ZmVmN2I0NmI0OWNjZjRiZmNjZGRlMzAxMDIxNzRlY2UxYmI3NWRkOWMwZGZkNzU0N2E2MmIyNTEyM2MzODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMzY0NGViMTE5N2E2MzU4NWExODYwNDRhNDE4ZTNmMTIxYjgyODIyOTY4YzA5ZjM0NDI0YTBkMjc5MmZlOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5ZGFkYmMwNTFjODVkNWM1Y2I2MWEwNGI2YjBlNTIxMmIzOWQzMzY3Y2Q5NjlhZjI4MzQ2YjA1OTY4MWE2YzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c91a1f10c5c41ba8770b6a1f03d4d5e",
+      "statement": "Only the missing-page and stale-page causes are attributable to a *part* of a multi-area invocation: `verifySlice` then reports `landedParts`, and `proposableSlices` proposes the verified invocations plus those landed parts while only the failed parts return to the backlog (measured on run 4399, where a landed `runbooks/backlog.md` was otherwise lost); a whole-invocation failure such as a conformance or policy violation proposes nothing and returns every part.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs#L1146-L1196",
+          "version": "repo-lines-v1:sha256:ce21b0b54f1e5641eeeb6c6e4ecd4d36abe2b32666575d56cdb56e275d80c921:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZDY5Yzg3NDYwOGJkZTM4OGRjM2Q5NGEzY2Y1MzRjMzliMzNhOWNhODUxZDdmZjEzMjcwZGNiZWY2ZGQ1NzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NmNiOThiMzQzNDQxMmM2Mzg1YjU2ODY1N2NhMDU1NWMwZjUwM2M1ZGY0MDM4ZGFkZDRkNjBjMmZkYTlkYzMifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1439-L1449",
+          "version": "repo-lines-v1:sha256:1d7aa39be163af0f695fc5221a6057d9c8db3e525bb3b7eee93f786893ee8402:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkOGFhZDIxNGUyODE4NGE4M2Y5MTAwOTFmNGY4OTQzNjcwNzcwNDNkYmNlYWI5OWJmMWJhY2FlMWYxZTJmY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMGFjY2EyYTQyZTM4NzNiOWZhZGUzZDhjODVmOGUwNzNjNzQxNjZjNTNjNzNlYmJhZDk5YjgxODc5ZjZiZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmMzZiZTBlNjkwZWZjMDJlZGIzYzE0YzBjMzg1MWVhMjlkNTYyZjFiYzczOTcyMWQ5MDY5NWZmYTRhZjM0ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L269-L276",
+          "version": "repo-lines-v1:sha256:841002f2df6fd599a9787aaded978a1ded0589fea40a7108260d7758cde5125c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQyNGQ1ZWJkMDc5MzA3MmM3MmJiZDg2NzliYzNkZTNmYWI2MjBhMmI5NWVmYzdjYTEwMjU1MTkxZjE2NzEwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk1Zjc0OTA4YjE1MzI2MWM4ZjIxNDBhOWMwNjhlYTA3OGIzNWVhZWY3MjdmOGFjZTY5NTE4NGY5OWUxZDc1YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b65d92e81ee40f59dc43e2c4034e298",
+      "statement": "After a deadline stop the run restores every path it changed to its committed state (or deletes it if newly created) EXCEPT the requested pages, their `.claims` sidecars and the requested areas' `index.md`, leaving paths that were dirty before the run alone; this exists because openwiki forces every page with a stale Claims issue into a run, so a generator killed part-way (GNU `timeout` exit 124 or 137) can leave a page it was never asked for half-written and break V16 — which on run 4606 discarded the requested page's paid regeneration.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L437-L443",
+          "version": "repo-lines-v1:sha256:94e04de556a4c651783b324c2493a9ce9b595f3af7954156e07cd53e800c9ffb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTIzYmI2YWNmZjQxZjI2NjNjYTdlMDZjZDc4ZTcxODNiZjNkMDEyOWMzZDVjNzM1ZWMyOWJiMzA0OTJmZjUxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjExYmQ0ZmMzOWQ4MjZlYzg5NTA5YzhlYmViZjMwYWEwMDY5ZDQxYjFlYWE3YzkwNjM1MGQ5Y2NkYmRmMDViOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzQzNWRiMTI0YmU1YzFlZGQ5MmY5ZGVmZTEyY2I5MmE0YTFkODY2MjBlMGU1MTEzY2NkZTI4ZGJkOTZhZmYxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWI0NTkwNDcyODE2YjE1ZTE0YjYyYjRmYjY3ZjFjNDQwNzQ3MTQ3YmZhMGNjZDVlYTM4Y2FhODYwNTg3NGI0MSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs#L1414-L1456",
+          "version": "repo-lines-v1:sha256:89bb9667a4ad7ecadf8b58f1f278c713821c30356009ccd1fcca5d27542a4a4c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNmMwNmM1MDRhNTQ0Y2QxNTkyMzk0NWI0NmVhZGYzZGYxMzI0ZDM3YmMyNTNmZDAyNDA5YzVkNDI5NjEwNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxMmUyMWI4NjY2OWI0ZmVlYTkwYjg0ZWZiZmVjYzgzZDY5NWZiMzY5ODlkZjFhMzMyNjU1ZGJmY2JkZmVhYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0MzBhYjRmZmRjMmE1MzZhMGMwZWRkNjMyN2I0NWE3Njg0MWViNjU5Mzg5MTJkYjBjNzU2YzMzNzFlNTIzYzUifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1290-L1327",
+          "version": "repo-lines-v1:sha256:42408261967f9416d4f68af042c980b248c41404da3d587430634ed16c7f84eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmMWQ2YTQ4NzJjZDY2NjY0NzgwOTdhYzAyYWM3ZWNiZmE1Zjk3YTc1YzUxYTZhNTI5Y2Q5ZWE3NTA1OTM4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMDQ5Y2UyNzM0NTY0MWU4ZWQ5YzQyOGMzMzBjOWU1ODliNjg1YjNjMDliZmE3NDc0MDdkZjNmNGE4MjcyOTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_326d880872aa46de816546555231661a",
+      "statement": "The deadline-stop revert applies only when the generator was stopped by the deadline; a generator that exits on its own is judged on everything it wrote, so a broken unrequested page on a normal exit still fails the slice rather than being quietly reverted.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs#L1458-L1472",
+          "version": "repo-lines-v1:sha256:07e97ea39cf5a52ddc8e6bcc55e07d2ab1336bb348b5c5216964fa282e5a0cec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiOGMwNGVjZTA4MjcxZGEzMDRhNjgxMzllZTkxOGJjZmY4YTc1YzNlODIyODYzNGEzMzRmNmNiMjUwZDgwMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ZWJjZGFhYjZiMWI4ZTY2Y2I3N2IxYTdmMjNiM2U1YTlhMTI3OTlhOGQ5NzljNDk0ZTI2NjkwZDFjZGE5NTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmNDFlN2VkNzgwMzRkNWQ1NGMwNjM5YjFhYTc4ZWJmZTUzNzliNzc3NjA0YWI0Y2MyNWJhNzZiMzY0YmY5N2MifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1296-L1302",
+          "version": "repo-lines-v1:sha256:7a3e45aa3b40f105b9138cdf6054156f32d2e7e6ff32a6111eb978a391eaf325:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzMwZDY3NjQzZDUyNzgxMGE2ZGQwYWQ1YjQ0OGY3OThhZjY4OGIxMTU2MDc0YzUwZDk0ZWIyN2Q3ZTMxZjhjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODAyZjM4OWFjOTBiZjI0NjNlNTQwN2RhYTMzZmI4ZDMwNDAxNDFhNzZiMzkxNzY3YjQ5OTZhZTEwYzViM2FhNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ5NzRhODhiZGJjMWQ3NjUzODg0MzIwZTRmMjNjMjgxODhhZjE3MDhkOTM2NWI0MGI3NDc2MDJjOWIxNTA5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDVjZjc5NmEwNGY1MzE1MmNiZTM4NmU3YzJjMjVlNTMwM2VjMzI3MzNkYjI4OTMyNWNkMmNmMTdmOWY2NzRhNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad9a97a8d0d24369aa239596219019b6",
+      "statement": "A slice is retried up to 3 times within one run before returning to the backlog, and the working tree is snapshotted once before the first attempt so a retry can never forgive what an earlier attempt did (re-snapshotting per attempt laundered a policy violation into a success); the allowance before the job deadline is recomputed per attempt, so a retry is never started with under 5 minutes left.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1199-L1199",
+          "version": "repo-lines-v1:sha256:7ba90ca8dc4080ad09f51fe4505f1cb8a86f5c2b74f20016d19a7944cc0b96dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JhOTBjYThkYzQwODBhZDA5ZjUxZmU0NTA1ZjFjYjhhODZmNWMyYjc0ZjIwMDE2ZDE5YTc5NDRjYzBiOTZkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JhOTBjYThkYzQwODBhZDA5ZjUxZmU0NTA1ZjFjYjhhODZmNWMyYjc0ZjIwMDE2ZDE5YTc5NDRjYzBiOTZkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc3MjkyNDllNmUzNTJmNzNlY2NjZDI4NmY0NmY5MjczZWI4YjYyMTNhNmI1MmEyMjBiM2ExNWFhNDQ4ZDEyOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjY2NDEyZWNhN2E0ZTc1ODAyZjQxNTJkZWZkMGNhMzg3NzIyYzNiMjNkOTFmOTA2ZjM4NzYxNzM1NTZlZGQ5ZSJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1705-L1745",
+          "version": "repo-lines-v1:sha256:e0ca0b2c7b086e4c523b3275ba19c00f2fb113ce859af913a7dd6f74f024fd3a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MTNlMWE5NWQxMTM1OWQzYmMzNDAzYWQ4OWNmN2QxYjQ1YjVhYWUwZjhhNWVkOTUzM2QwNDJkZGQwODY4Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ZGI2MWFjMGY3ZTUwZTkzNzc5ODVmNmVlOGUzMWYzZTYxZjY5ZTE0NDBkMmNlMjkxNjlhNzEyMDdhMmJkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjZWY1ZmIyN2Q5MmFhM2I2MDVjZTUyMzI0ZjNkYzhjYjEyNDc0N2YzMDRkNzU4YWM3NWJiOWRkZTdlNzhjN2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0a75ff00b7ea4cb7a8b129f5d4602939",
+      "statement": "The backlog is committed, so it outlives the policy that produced it, and is re-validated against the current policy on every plan — a slice that can never succeed is dropped and reported as `carried-forward page(s) dropped` rather than starving the queue — and a failed slice no longer blocks the next one, because the run stops only after two consecutive failures.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1588-L1599",
+          "version": "repo-lines-v1:sha256:f3ca7778f0f870571c5263c3de1b1be27c02dc396e9f42c1d40b76e101650e58:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNjk0NDliZGM5OTY4ODg1NWQ5YzM4ODhiNWQzMTRhNmJhMzM0OWIxYmQ5OTZkODNkM2E4ZWQwNjAwODRhNjYifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1885-L1900",
+          "version": "repo-lines-v1:sha256:c0a65fc4d54bc7b7597c78e196f8db77ed9872ebf55d35279953c79653ec1e19:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMDhjOGI2NGJjZGIzMDQ5NzIxZTU1MTNmNTFjMDBlMTMyZmMzYjZiNTc1ZTUxOTUwZmI0ZGEyMzk5MDI4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMWI1NzIzOTI2ZWY2NzIzMWU4ZDAyYzc0NGY4ZTBjN2E5YWY0YmZjMmRlMzQ4M2ZkOGY5NTdlMWUwODk0NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmNWZkOTRhZjg1OTdmNTQyNzA2ZDA5MWQwY2Q0NGEyMDkxYjkzYTYyNTJkZGY4MTVjMWRiNGZjMzNkNWMyMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3323d54e3ab9465fbf4139b2b87dcea6",
+      "statement": "Claims sidecars live under `openwiki/.claims/`, one JSON file per page mirroring the page's path, and carry `schemaVersion`, a `pageVersion` hash, a `verification: {by, at}` event and a `claims` array whose entries each have a stable `id`, a `statement` and one or more `evidence` entries (`repo://<path>` optionally with `#Lx-Ly`, plus a resolver-computed version hash); on a later refresh a claim is marked `stale` when its evidence version no longer matches or `unresolved` when the evidence cannot be resolved, and the generator must confirm, revise or retract it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L647-L663",
+          "version": "repo-lines-v1:sha256:f984d36f9e8234a11a8c47d64984f7b887fd5843f77870c1f8f8113f40cf9627:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NzE1NGJiOGEwMzc1NGM3YzAxZWU4ODIwYjkwOWQ3NGY1ZjRjZjY3OTYzMGJkZjhiODU3ZGMzNTM0MTVhZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5ZTkzMDc4MDU3ZjIyOWZiNWNkYjlhZmU0ZTgwZDI2NmIyNDc4MWU5Zjk4NTRjODQ5NjNmMTBiMDdkYjY4YmUifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs#L19-L33",
+          "version": "repo-lines-v1:sha256:153ba9342d808b5e7747e45bb806224aa8f299fd7e5828a660d2d79bf5750bb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5OWEyNDVkZDZhNDM4YmNhZWIwMTJlZDkxMGFhN2Y1ODViYjFmZjc1NzEwOTc4MmVhZjI5ZjgyYWM0NzhhOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MDBjZjYxYzhmMzc3MDA4YzUzNDBhZDFkMTBjZmRjZDk2ZmY1ZWE1MWUwN2U2ZDVmZDExZWI1OTNjOTI3ZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NWFjNDYwMWE2MDdkZjFhY2Y1NTZkMjQyYjkzOTZlN2E5OWMwNmEzODcwOTY1ZjJlMWZmMmRjZjE5ZWUyZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0NDVlYmZjOTBkNzUzOWUwYTY4YTAxYWFkMzM2Mjk3N2QyNGM1MDk2ODA5MGI3ZGM3MjM0YzU3N2ZhMzQ0ZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a454932ee95a4fbc9dbc5856ca2a53b7",
+      "statement": "`openwiki/.page-manifest.json` lists every page openwiki has covered, and V16 (implemented by `claimsDurabilityFindings` in `scripts/openwiki-claims.mjs`, the same check openwiki performs in `buildManifestEntry`) requires each covered page's sidecar to exist, carry a `verification`, and record a `pageVersion` equal to the sha256 of the page's current bytes; otherwise openwiki throws 'Markdown and verified Claims are not durable' and fails the whole run before any generation, which is why a hand edit of a covered page bricks every later run, and a pull request that does so now goes red at review time.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L395-L406",
+          "version": "repo-lines-v1:sha256:0d4c1a2791cf065fac36748634033e3a55c100f18909f3ef298c8db5670d56e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZWVmOTJhOGYxYWZhZGY1ZjBlMjk4ZTNkMTc0NGExOWZlNDQwOWU2MWZhMDM4MGJmMTI0M2QzMDg3ZjY0NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxOWFlMDg5MDNhNjQzODE2OGQ5OTM3YWQxNmMwNmZlMGUyODgxNmY3M2NiZWM2OTBlYmRkYmE5MTQwYzhlYzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwMGYxZDZlOTFiZWFiZGE2ZmJiODBkOTIwMzg5Y2M3ODYzNzczZTM2Mjk0ZjRlNzdjMDA5Mjk5Y2E1ZDM4NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2MjZiYjc0NGRjNTVhYjVjNzcyNmM2NjQ3ZmM5ZWMzMWNkMGJjZWM4YjI4YmRhMDQzN2M5YmUwZDI0OGE5NDMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L370-L375",
+          "version": "repo-lines-v1:sha256:73d640316cc4e24527fb4913ef716371b90f4620f73079993530d6395cf7edb6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM0YmQzMzU2ODI3YzJjZmRjM2RlMDM0NmE3ODE1YTA4MjAxMDdhNThkYTlkMzYyYjlmYjk3N2M3YzU2NDE0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQwNWY3M2ExNzk5NGVjOGFiZGY0NWJjYmVkODNhZjJjYmE3MTZhODhiZTM1Mzg3ZGRkZTM0MmYwNDEyY2M4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzVmYTA1OTk2ODEzNzQ4ODJlZWEzZWY4N2IxZGE3YjIyOGQ5MmY5NjNlMmM1MWI1OGFjZjRiMjk5ZWRkODdhMSJ9"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs#L1-L80",
+          "version": "repo-lines-v1:sha256:b6701d2ae2b333f84a07db695306552ecb43a0e74039f9143339841d1eb7f97f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMmU0ZmUzOTg0MWE1Y2MwMmJlMGI5NmIxMTY2ODJlNGEzOWFkMjY5ZjNhYjY5NjNkMWM5N2RhZDg2Zjg4MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMjQ2NDliNjljZTQwNmQ2MTRiNzNkMzNjMGU0YTVhNDExY2U1ZjE2ZmFiZDg5N2IxMDk3MTMyZGVkZTFjNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4MWNiOGQwY2JlNTJjMDczNTY0Zjg1NmQ2MjY4MDg1NmI4MWQ4NzUyNjJiODc2ODQ1OGI5MjAxMGI5MzViZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4bea48ff58874ff889333a10e4e50e0e",
+      "statement": "Uncovering a page is the escape hatch for correcting a covered page by hand: with no `.page-manifest.json` entry openwiki leaves the page for full review and V16 does not check it, so the correction is made by removing the manifest entry, deleting the sidecar and deleting the front-matter `verified:` event in the same commit; the same module's `carryClaimsHash` lets link normalization move a covered page's certified hash across a pure link rewrite, but only for a page that was durable before the rewrite, never laundering an already-broken one.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/openwiki-claims.test.mjs#L72-L101",
+          "version": "repo-lines-v1:sha256:9cba7e5590e6215d685c87fe67097c5a374ac725872ce2d9bd1045c3b0264df3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MzMxZjEwZTk3YzM2MTFmMTgzYTc5YjhkMzkxNzUwMDQ1Mzg3OWJjYWQ0ZTFiZGRmMGRlOGY0MWVmOTZjYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YjkwNDA2ZmZlNzI1MzdiNmY0MWQ1YTBiOGUwY2Y2NzA5NzQ5MzlhNDQ2MzRkMWM3YWQxNmMwZWY2NWVmN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODMzZjQ1N2UzYjU0NDQ4OTI1NjcxMTAyY2ZmOGJhY2Q4ZmRlODRhZDBhN2VmZjRhYTQyZTlkN2RlMzAwYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1YjBiNzgzMTBjN2I0MTMzNjA1ZjQwMjljNzg5NDQyNGQzZDg0OWUxZjljZGEyYzQ5NDdkMmE5MGU4ZjUzNmEifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs#L31-L33",
+          "version": "repo-lines-v1:sha256:0d09aa6797afe884360d27ab87126b5102da2f12989fe52e323034778bd57211:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE3NzFlNmViMzBlMDI4M2M2N2ZjNTQ3MGYzM2JkZWFmMWEwNWQ1OTQ0MDFkZDQ1YzM5MDNjM2ZiZjliYjczMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTkwMGNmNjFjOGYzNzcwMDhjNTM0MGFkMWQxMGNmZGNkOTZmZjVlYTUxZTA3ZTZkNWZkMTFlYjU5M2M5MjdkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmE4OWQ4OWMyNjEwZTQ5MTQ3MzNkZDg0NmU1ZjE3ODk0NzgwMWFlNWY3ZGQ2YTdiYzNjZDYwNDQwOTk3OGU5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQ0NWViZmM5MGQ3NTM5ZTBhNjhhMDFhYWQzMzYyOTc3ZDI0YzUwOTY4MDkwYjdkYzcyMzRjNTc3ZmEzNDRmNiJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1230-L1239",
+          "version": "repo-lines-v1:sha256:4fb4ee78dc94f1b210ee1aeb1376072db742c53b505446583271a826a1b9fb70:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNGQyMTcyYjhhNGQ3NDE4M2M3YTY0ZGZhOWM2NmExYzM2YTJjZmM2NmJhZGMxYmRiZGRhZDIyZmMzYmJjOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZmI0NWQ3NGY4NDVhMjhkNWMyZTkwMmQxODg2OTNmNDU0YTVmYTRkM2JjMmIxYmUyZGYxMDgxMTU1MTZlZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NTI5MDIxNzJmMzYzNjBlYTY0MGQ5NTRjMjcwMDNjYWE2Y2E0Zjc2NzdmZDY4NmE2YTBhMDZkNmUzODI3ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2Nzk1NmY2YTZhZDc1NGI5NjQ4YzJiNmM3NzNjMTBmZjAzZTFkNTEyMzBmNWIzNWNjYzQ5NGFkOWFiODQ4NjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9f00449284f4755813397108495d306",
+      "statement": "Nothing yet checks that a sidecar's claims are true — V16's durability check is the only gate on sidecars — so a sidecar records what the generator asserted about a page rather than reviewed content, and the operator's 2026-09-27 decision (item #513) is that Claims are required and valuable.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L677-L680",
+          "version": "repo-lines-v1:sha256:0a93c0acd4b0b00600ae7e7e61353f5db38baac12b2497262c1ee95c22e243fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjUxMzZkMDVjODA5NmE3OGVkM2U1Y2I5ZDZhMDk4YzgzMTA3MmM0ZDhlZGE2NTZhMWJhMGY4ZTI5ZjEyOWVkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjE2MWY1OGNkZjgyZGUyZThlMTQxMmE5MTBjNTMwZDE0NWY4MDlkYWM0MjMxZWY1NGU1ZTNmYzY1YmIxYTYyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzIwYmNlYjljZGRlYTc4NzQxMjQzMDQyZTViZDUxMmMxYzliODAzNDFkZWVlZjJkZDBkOWZmMTBiODA0ZWNmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c596b07d18d948b1baf25c7746650523",
+      "statement": "The proposal is one long-lived branch (`openwiki-maintenance`) carrying at most one open pull request ever, and it is never auto-merged; because the CI runner is a fresh checkout the branch exists only on the remote, so a run that finds the proposal open continues the *remote* branch, rebases it onto the base and appends, and the push refuses outright when `git cherry` shows a commit the open proposal holds that the new head lacks — a red run rather than a silent overwrite.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L392-L414",
+          "version": "repo-lines-v1:sha256:3ffbf13eecbfc35f7b2b6a83bfaa6f7573e5e27bb2a7a484e593ce87dddb1377:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTQ3YmZhZmFhYzA3MzgwNmJjN2VhYzJmOTllNzNkYTdlOTJjYjBhMDliZDhkM2JlMjJmMDU1ZDk2YmVhMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0MjMxMzM3YTgzYTE4YjkwOWYyZTQ4NzVmZWZjM2JlMjM4Nzc2YzgyMWY3NDJjMGRmOGRjMzU0MjYyOTlmMTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3MjdlZmVjMmQ1YzEzZDRkYjNjNTlmNTUxNWI2NTI3YTk5MjE5ZmRjY2FmYjdjZjUwN2UyYTVmYmYxMDViN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2NWFhNTNlYjk3OWYyYjk5YWFjZGU2YWE5MWFhYTUwYTIxNDZjYWUyYmNmOGM5MGVkMTNhMGEwYjliZWUzNzkifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L2405-L2428",
+          "version": "repo-lines-v1:sha256:fc8efd17988b81332c1eeab937129b10bb5c2e9af70163b25dc7dc84d498fa75:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NTkwZjA3ZjhkOTAyMTNiYzMyZTQ2NjA3NjE3YmI5YjE5NjYwY2NiNWY2OTk5ZWMxYmRiZWIwZmFiZmNlOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwNzQwODkzMjQ3MTEyZjZlMzc5MGM0MTMzMjMwYWRmNmI3ZWJmOTVjNTUxYzk1ODQzODYyMWIwNzhiMjdlM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkZDEzNjYxNDU1NDg4YzY4MjQwYzQ3ZjQwOTE2MzQ2NTcyZTQ3MGU0NDdkYWJjMzk1MmZmYzBjMTRiYjQ0YzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c38a5e5e824a4de6a29ca7ebabefc17b",
+      "statement": "When the run record and the forge disagree about an open proposal the forge wins: the record's `proposal` pointer is a cache, so a run asks the forge which proposal is open for the branch before creating one, adopts it if found, and treats a 409 from `forge POST /pulls` as 'someone beat me to it — adopt and update' rather than a fatal error, which makes a run that lost its record self-healing.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L445-L455",
+          "version": "repo-lines-v1:sha256:027f2af59625a60191f8977fbdaf306d7e7499908b332e7ae28932c7cda5e025:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmNzFhMDVmNzIwYzFiOGU4NTI5NGViM2JhNjI4MDdjZWMyMzY2ZmQwMTM0YmYwNTc2ODI0Y2U5NTYzNDNjZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1Yzg5ZWZmYjViY2MwNzY5ZmJmZmIyMzc5MDI5MjIwNWY1ZjBlODk3N2QxZDIwMjIyMTI3YWY0Y2RjYWEzMDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhZDQxYjdiMjU1YzNhODBjNjE0YTY2NTI1YTg1OWI0ZDNhYzFjYjJjMzdhNDM4ZjAzNjRhOTdmYjVmODNiMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZjFhNzU3ZWJiY2IzYzg5NGY2Y2M5ZGFkYjYyOGMzOTRmZDdkNDBmZjA0NTA0NWRiNjllMjNkNTg0MGE4YmEifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L2360-L2381",
+          "version": "repo-lines-v1:sha256:3cc8cdff59e7adb732500ad4aeadb72ceef69823538da87d10aa243397db9bef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0MjNjYjJlMWY5NzM4MWE3NDk1YzFmODFkYjgzOGMzODZhMGZhMWU5ZDMzYzQ1ZWVmODkwYzNkMjdiNmE5YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNDkzNDlkMWQ3M2RiYjdkNTE2NzJjMDljNDYzODY5Y2QwYTAxNDU1M2UxMzU3NDZjZGNkZDQ3MzY2MDQyZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyYjY3ODdmMjJjNTA4ODY1NmEwZGM0NTNiN2M0Y2MwM2QyOTA0MzM3OWY5ZDBlODE3NmJhOTYxYWUxMDNiMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f9e7cf56bb654dd7847511e3f88693cc",
+      "statement": "The CI run debounces with `concurrency` + `cancel-in-progress: true` plus an initial 15-minute sleep so a burst of merges produces exactly one run, but never defers past a git-derived 6-hour maximum deferral because the waiting run is cancelled and any in-memory timer dies with it; `workflow_dispatch` bypasses the wait entirely, and the run does not trigger itself (`[skip ci]` marker commit or a bundle-only change).",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L56-L60",
+          "version": "repo-lines-v1:sha256:586de9865a1b0769d634254e215d3fe5d31a2bb7b08aa125b4f21b6bb8077b99:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNlZTdiMjE1ZTQ1NGFhYjA2MDQ1OGYzNzZiOGE5ZTY4YmZmNmU2MDMxMDhkZmNiNGE3YmUxZmU5NzM3N2MyMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzRhNzk2YTAxZjg0NThjODk5ZDViMjI4OTBlNWRmNDQ4MDNjYTRkODAxN2MzODc4ZDdmODc5NDQ0OTEyMGM4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODk4MWUxYmFlMDJiNzQ2MTZlYTBhYTYyZDJlMGNiZjQ1YmJlM2U5ODQ4MTE3OGE4YmI0YjU5NWNiMWI4OWJhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjI0Yzc4NWVjMDcwODMzMTQzMWNkOGU0MzljMzNiYTYxNTMzMzhjMDYxM2MwMTg0Y2M3NGJjNjc5NmRmZjZkNiJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L9-L24",
+          "version": "repo-lines-v1:sha256:cf44438407ab52faf9d274ff5391de4890880766bbfd35189abd5a076b04201d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MWRmOWVmOWY5MzI3YTFmMjZhZmY4ZWFiYTY1NmE0MzRmYmRlZjA4YjkyNjM3ZjhkYmU1Y2ViYTFlMmZkYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZjY0NThjOWZlODkzZWIxZjM4ZmZiZDBmNmFiYjFmYWVkMDg4MTFkMzc0YmQ4YmUxOWRlZjIzYTA0ODU0YmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMGY1ZmUzNDQ5MWY4YjBlNTJmNDg5MDI5NzNiMWQ0ODA3NjJiYjMxZmU4Y2IzZTBhNTNlMTlhNjVkMmEzNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMGU0M2ZjOWM2YjQwZjhiZTM5NTAwYjRmNTU1MWUyZGJjNTU0MDAxODM2NTIwYWFlYmYyYWRmODQ2YzdiYzEifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L689-L689",
+          "version": "repo-lines-v1:sha256:a0cfb63e7aa09d19b95d2b0bbe6bc7b44ea0cb15dc7e46b30706f81b7be307a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTBjZmI2M2U3YWEwOWQxOWI5NWQyYjBiYmU2YmM3YjQ0ZWEwY2IxNWRjN2U0NmIzMDcwNmY4MWI3YmUzMDdhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTBjZmI2M2U3YWEwOWQxOWI5NWQyYjBiYmU2YmM3YjQ0ZWEwY2IxNWRjN2U0NmIzMDcwNmY4MWI3YmUzMDdhNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1NDI3NTI5MDY0Y2E2YzVjZGFiMGZmYTAwMWIwOWI0MzYxYTZjNzNiNTQ3OWFlZGEzMzcyNGVlYjk2YTJhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk0N2FkYzcxNWFiMmI5YjQ0NTM0OTYwNTBmZTQzYjQwYmQyMzc3M2ViNmMwMDQ0MDUyZTg1NWVlNGQ1NWY1NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_15f6156ad8d44d018a8c247958a3674f",
+      "statement": "Closing a proposal without merging is meant to return its work to the backlog and roll the marker back, but does not do so today (item #619): the run computes its plan before it reconciles the proposal, so the returned slices are overwritten by the run's own backlog and `markerBefore` records the already-advanced marker; until that is fixed a closed proposal's pages are re-seeded by hand through a change that edits `backlog` in `openwiki/.maintenance-state.json`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L416-L420",
+          "version": "repo-lines-v1:sha256:a3668bd6c62a523ca284506adc5471c474789ca28b7183cf2996deb415e1927e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y2NmYyYWQ5MmQ1ZTM4YjAxZGIwYTg4MmI4MjU5ODIyMTBiZGNkYzJmOTA5MWVjNzMzMDUwN2I4OTg5NDI5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWY4YzA5OTgwMzg2MmM1YTM4MmViZjcxMjk5ZTYyYWIxNjE1ODY2M2ZkZmY0ZDM0MGIwYWJmNTNiMDIwYThjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjcyMWRmY2E0M2UyZjNiNWIzMmZmZmU3NzZkNWZjYTllNjZlNmI4NWQyMzU2YzA4M2JjMmFjOWZkMWFhNTZiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ5MzA4MzVhYWFjZjc4NWFiNTAxOGI4YTU5ODMwNWZlZWFlMDgyMTIwNzkzZWYxMjBmODkzM2FkNjhjMTI1OSJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L2390-L2401",
+          "version": "repo-lines-v1:sha256:595080683f0f75f51cfbfa17d7d0760d9cc7a28bdc5336ce092922ae4020744d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YzgzNDhlM2NlYTVjMWU4ZTYxNTJiNTUxYzc4ZDAxZTQzNWFiZDI1ZTE1MTQ1OWU0YzFkOGFiYTY5ZTUxNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkMDJiZDU4MDkyMmFiNDNjMjJkOTgyYTQxMGJjMTg3MTFhNmM1NWMyMjU1ZGVjNTYwMjNjOWE1ZTZkMmJiODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwNzQwODkzMjQ3MTEyZjZlMzc5MGM0MTMzMjMwYWRmNmI3ZWJmOTVjNTUxYzk1ODQzODYyMWIwNzhiMjdlM2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b2d29e67e824048bc998d7687db8936",
+      "statement": "When publishing itself fails (the push or the forge call), the marker is held and the run's slices go back to the backlog so nothing is certified that never reached a proposal, while the recorded usage stays because that money was already spent; the run exits 1.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L390-L394",
+          "version": "repo-lines-v1:sha256:18406cc172aa07c8e65d4c4f899774472a3a9633a6f7188aae6a3ee37cb01f51:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI3ZGE0YTJiYzVjY2E4MDIzM2MxNjRlYzRiOWJiNjI2YzdlNGM3YTdkNzY5ZjI0YWRmNDA1ZDRjMzI1Mzk4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU2MmJlNTA0MGU2YzNjNGEzNWI5NmYzYmU5M2ZlZjE2Y2U3NmVjMzM5MjlkNmMwMmFjM2M5YTAwZDJmZjc5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2I4OGMzZjkzM2M2Yjk3ZjlmMmI0MjVkMDEyOWNiNmI3NjA0MjQwNDJlMWM1NTJjNGE3MDVlMmY0NWE3NDU1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTRkOWU2MWYyNDhjYjIyNWI5ZmQwZWNmMjhhNDlkNTI0M2RmOTliNDRhYTRjNTIyMjVhMTEyYWZjNjU5YTU1OSJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L2418-L2424",
+          "version": "repo-lines-v1:sha256:67dbb146b2a60cc266cb84bafed9e4721a8a6a03f9d61afb8c40c0eef571a35e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTIyYjg4ZGMwYjQ0YmYyYjljZDM5NmE4ZDk1ZWI0MGRmNzJmNzUxYjJiMWMzYjI0NmVmOTM2YjAzZGQ2Mzg3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI2MmY2MGQ4NTkwYTU3OWNmNDZmOGQ2NzM3OGM0YzU3MmI5NjJjZWNjZGI5MGM3YTVmN2I0MmI5NjA3ODJhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWNmMTcxYWZmNmY0ZTExYWU2MDY2OGI4OWQzNmQ0OWRiY2FjOGY1NzVkOTcxMWU3NTA1MDk1OGY4NjY4MGQxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzFkMjRmN2Q0ZjlmNTk1MmQ0YjYyNTMyNTU4MzZlMmFjYjUzZWI2ZjNhOWExZThjZWY0YTBmYzZlZWQ1ZDllYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8eb6c621caca4f66b8fa9ed578fdacf1",
+      "statement": "The generator writes site-root-absolute body links (`](/openwiki/...)`) that are dead on this forge because a leading `/` resolves against the site root, and three layers hold the line: `openwiki/INSTRUCTIONS.md` §6 states the convention, `verifySlice` deterministically normalizes whatever the slice wrote before the OKF gate reads it, and `okf-lint` rules V14 (site-root-absolute) and V15 (does not resolve from its own file's directory) fail the build for anything arriving by another route; a bundle-wide sweep is `node scripts/wiki-maintain.mjs --normalize-links`, which is offline, needs no credential and skips code fences and code spans.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L510-L538",
+          "version": "repo-lines-v1:sha256:8b5bb1e9cc58d9592d61b9dfafbf5d74a7fe74dccb691c75629a54ba421b3fcc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhM2M3OTdiMzc0MzdiNGViZjc5OGM2NWU4YzNhNWNiMzBjMzI0MDUzNmQ3OTBiYjUwMjExNTE4ZmRmZjI5NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlOTM2YjkxZDhhOGFmYWIyMmJlNjNjMWVhZGY4MGM5MmEyZDcxZmY0ZTNjYTQ4M2E0OGZjNjE2YjNhNGFlZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L244-L254",
+          "version": "repo-lines-v1:sha256:ed18ac63b2a8bec2cbd0a6cc0b834ee70d18e14a4ad1585f879513785135d5dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNWQ1NmRiZTYzYjAwYWUwNzJmNDE4OWFkN2Y5NTYzNGFlYTNiY2E0OWRmZDM4YjU2ZWY3NzlkNjFhNDg4M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMDNhN2VhZTgwYTQwNmYwYWZjNWYwY2NhN2E0ZGQyOGNkY2FhNDgxZTcwY2RiMzFjYmQxMDI2MGQxNmE4OGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzNWI4M2Y0YjM0ZThkYmQ0ZWU3NjY3MDhiZTRiZGViZTUwYjYzY2Q3ZWIwYWE1NTJkYWZhZDUwNWNjYWQxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNjYyZmVkOWI0ZGEyMWE5MjZhYjhmMzdjMjQ3NGZlYTUyMDZiYTQzZDcwMDAyMWY2NTE2NzUyYjRmZDI1MDcifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1206-L1240",
+          "version": "repo-lines-v1:sha256:5fd59775428b2caf5c234389b02ec3eeb306057da6a93b0d9e990b6bf15e34cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNGMxZjE2ZTA5ZjEyYTNlNjVjNjlkZmVhOWI2NjExY2JjZDRkZWQxNWNjZWJkMDU1OWFjNWZkY2RlMmE4OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyZDBmZTc4NTMyMTU3YzE4ODZhNWEyNmE3YTc1NmI5Y2NlYjg0NDc4MGE5Nzg1MzJkMmE2Nzk1ZjJhNzUxNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNjhlY2I2NDM2YTA2OTRmNTVhZDdlMTA4MDZhNWM2ZDgwMWEwOTc4NjdiYTE2YzNlZjY1ZDVkOTJjN2QxZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf185af4b845495c947f91436b47e691",
+      "statement": "The page stamp is the newest of `generated.at`, `verified.at` and `timestamp`, resolved in exactly one place (`scripts/openwiki-stamp.mjs`, `conceptStamp`), which is imported by both the OKF gate's V12 drift check and wiki-maintain's `sourceNewerThanStamp` check so the two cannot disagree about which date a page carries; an older verification never drags a newer generation backwards, and the comparison is against the cited source's last git *commit* date, never its mtime.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/openwiki-stamp.test.mjs#L19-L32",
+          "version": "repo-lines-v1:sha256:d8d1b88427cb9025ff314d57dae14498d49dd9330e5e0f59fb662f4bab6f97ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMDg1ZGM4ZDczYmJhMjZmZGYzMWFjZDRlZWZjZDZkNTMwZDE2ZWUzZWZhZTRiOWEzODAyMWY3YjVmNzU5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzZDU4MjRmMjQxZThkYTM5YzgzZGYyZjg3MWVmYTYwM2VlMWExMTRkNTQ3ZWI0MjIwODIwZWQ3ZDY1ZDQ0NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5YThlNzkyNWI0NzZjNDRkYzhlNzAxNjQ1NDE4ZGFmNGFmNWFiODdmNThkZWE1MDYzZDBjMmU5ZjVmYmQ1NDcifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-stamp.mjs#L34-L60",
+          "version": "repo-lines-v1:sha256:4f4ee6fbbd1cd18057a46c2a5eb14a47932232983d31acc5b4a81a213a27374a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMDBkMmVkM2E3NDQ5MzQ4MTJmMTk0MmMxYTY4OWNlMDc2MGQxYjY3ZjU2YjJkY2Q1YWM2YjgwNmQxMmMxN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmYmQxZTk1M2M4NTg1MzYxMjIwOWI3NTg4MWRhM2FkYWUwYWUwZjViNTY4YWQxY2ZhODZmZGM3OGRmNDVhNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1ZTRmNGJlODFiNzYzNmMxZWE1MjJjMzUyOTcyM2QyNzgzNDVkMjhhMzJhNWVlZDJiYzNmYjEwMTc5Y2ZhOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyNGU5ZWNhMGIyNzcwOGVkOTE5MTcxZWFlYzY2ODc5ZmJlMTMzYmVlZWJiMWFjMmVjZDExY2E4YzBjNmE1Y2UifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1452-L1476",
+          "version": "repo-lines-v1:sha256:0cbfcf0d3c5e48cac3fbca1c5524ed48b2fffc9e27340f9ad4a101082eecbb59:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5MzFiZDgyZTA3MDgwNjM2NzQ0MTIyNWZhMTAxMjYyMWJmYmIyOWY3NTk5NzJkY2MyNzAzN2YwMjBmYzBmMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjZDdjZTgyMTE3ODEwMzJjYzA1ODI4NDI4MDM2ZjJlMDEzYWM2ZDNkZGQ0OTI3YTdmZjZmZGQ5OWY5MmRmZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a153e0b97b1b40d5a59e597c42a606a4",
+      "statement": "V12 drift is warn-only and is deliberately not an input to `planSlices`, which decomposes only the paths changed since the run-record marker plus the carried-forward backlog, so a concept whose source changed after the marker passed it is not re-planned automatically and clearing it takes a hand-seeded sweep (`--since <ref>`, or pages placed in the run record's `backlog`).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L600-L623",
+          "version": "repo-lines-v1:sha256:0388808434667eaec66c6418ed230e91eaa702202e538049b2be45410ae51351:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NGQ2ZDFhNGVmZDA0NTI4ZDQ4MDdmZjZiODJjNmRhODEyZmM0ZWI1NzFlMzlhYWY0NGRmNDNlYWZhZjEzYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzA1Mjk0MWZmZWQ2OWI2MDUxODk0MzZhNWFhNWYxNTQ1ZDFiY2ZiODdiMDc0ODM0ODg4YjBhOTA3NmU2YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmMzdkN2ZjYWE0MzZlZTMxYWIwZWQyOWFjMWVjNTcxMWI2Zjc5ZDllMjc3MTYwN2Y5OWYwOWM0ZTZkZTVlZTYifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L376-L376",
+          "version": "repo-lines-v1:sha256:e1e4c95f48207c6e79b2a9e91af0e7026af63488d08734e1eaca8de33bae380b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFlNGM5NWY0ODIwN2M2ZTc5YjJhOWU5MWFmMGU3MDI2YWY2MzQ4OGQwODczNGUxZWFjYThkZTMzYmFlMzgwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFlNGM5NWY0ODIwN2M2ZTc5YjJhOWU5MWFmMGU3MDI2YWY2MzQ4OGQwODczNGUxZWFjYThkZTMzYmFlMzgwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzhiZDY3OTJmZDYxZDgwMWMwMjM2MmUzOThkYjQ2OTMwOTViZDk3YTI0MjE4NDk2Y2IxODQwYzY3MTFkOTgwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDdmMGVmZmQzNmE3MTA4Mzc0NThjNDU3MzNhMGE3ZWZhZTZiMzYzNjhkZDBkNWY5ZTBjMDAxZmVhYmEyZjk5YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_82399388913c45c6a838e1622298be3a",
+      "statement": "`mermaid` and `jsdom` are optional peer dependencies of the generator, and without them OpenWiki falls back to a weaker built-in diagram check that silently rewrites failing fences into plain `text` fences while the run still exits 0 and every gate still passes; both are therefore installed in `.devcontainer/toolchain.Dockerfile` and in the wiki-maintain workflow, and a guard asserts the two lists match.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile#L86-L86",
+          "version": "repo-lines-v1:sha256:062195918cb46bb0aac9df2c8497dd13755c42bf0c6419ab437ea9ff355bfab6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDYyMTk1OTE4Y2I0NmJiMGFhYzlkZjJjODQ5N2RkMTM3NTVjNDJiZjBjNjQxOWFiNDM3ZWE5ZmYzNTViZmFiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDYyMTk1OTE4Y2I0NmJiMGFhYzlkZjJjODQ5N2RkMTM3NTVjNDJiZjBjNjQxOWFiNDM3ZWE5ZmYzNTViZmFiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM0NjZhYmVlMjBmOTEwYTRmZDFhMTI5ZjNlMDVlMTY2MjEzODg2MTlkZGY0ODY0OGUwOThmZWMwNDBmMjZmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI0ODQwNmQyMWY2NGU4MzYzNWVlMDY1Zjc5ZmRkNjUwYWQ0YmI3NGE4MDYwNmVkNzljYmEwODhkYzVhNDlkOCJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L147-L156",
+          "version": "repo-lines-v1:sha256:2d3ee28739fedb165647597a48a37dc301bb1aec858578c7478ab4b8684c86b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlMDFkNGViZDk0YTA1ZjZmMzAyYTY1MGQ1YjBkMmZlNDQ1OGI5NmZkMWY4OTMxMjNhOWZlZjk0Nzk1NWQ2ZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzNzhiNmNmNGMwMzY0MGEyYWFkMDFmZTIzNDFlYjUxZTY0ZTk2ZGZmMDBkOTEwYmQ5NmMwNWE4ZDFiNzg1MWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2NmI4NDdlYWVkNjg2ZDNkZDU0NDQ5YzEwYTlkNzU3NGQ0NWExMTZlNjY1NDNkNjQ4ZWJmZGM1NzgxZmUxZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwNTA5NjAzMTI2ZDVhZDkwODJkOTQ4MGFiZGVkYmIwY2ZmMjljNTRhMWI3NzQ2NjI1ZDBmMGE0N2UwNWExYTcifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L632-L643",
+          "version": "repo-lines-v1:sha256:aa96bac9b1a397490f2dcbbf3a97d3aae9e2a27f4199361998755a892143b396:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYTg4Nzk5ZWE1NGVkY2I4N2Q4MDUwNDlhNjQ2ZWE3MGM3YTNjODk1ODNmZjA2ZmMwYWIyM2JlZGExZmMyMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlOGU4NzkxYmZmZTg5ZjQyMTNhMjRiZDA5MDdjODliNTkyZThjYmM1Y2M3NzQyODM2Yjk4NDI4MjdkZTljMDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNTJjOTVlYmYxYmQwNmM2YzczZmZmN2VkZmYxN2Q5NTQ3MGZjZGQwMGM4ZDg4NDE5Mjc4Yzg2MTg3ZjUzOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_87ba633f7c814f16bbc2cfab82a0817c",
+      "statement": "The per-turn output cap is load-bearing and set explicitly: the `wiki-update` target sets `OPENWIKI_MAX_OUTPUT_TOKENS=16384` rather than trusting OpenWiki's or the vendor SDK's own resolution, because a turn truncated at a too-small cap before it opens a `tool_use` block yields zero tool calls — LangGraph's ReAct stop condition — and the run exits 0 having written nothing; the guard test fails an unset or too-small cap, a model id OpenWiki's resolver does not match, and any id that would land on the 4096 fallback.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L185-L188",
+          "version": "repo-lines-v1:sha256:03b2804832ca05e791268456e54a163d028421f1c5e302fa26e86a70e872c7e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI0MDBhYTBkMjQ3ZDAxMmNkNGRhYmNjMTBhMjZjZDc4MTc5NTRiNjQ2YzBmYjk1MjQ4MDUzOTVlOGZmYzkzZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjViZGQ5YTQ5ZDAwNGU3N2I3M2M0MTVjOWNjYTc4N2E2NGMyOGY3NTIyMzAzYWU0NTUwNWUzZWZkY2M4OWZlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWIwZjE1NzY3ZjI1Mzk0ZTZhYWJhMzFiMDk4M2FjYWExZmNkNDg1MzQzYTkwOGJiNTVhMGJhMDZmYTFiODUzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3MTljYjJjMzc5NzUyYjczOTY2OTBiNGRiZjI2YjliZGMzMTc3N2E4ZDBhZWMxZGQ4MjFhNTRiMGQ0MGNjZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L194-L194",
+          "version": "repo-lines-v1:sha256:efa94bab1db965ab285d31cead921887063092ddb112361ad5af24d62ad42f6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZhOTRiYWIxZGI5NjVhYjI4NWQzMWNlYWQ5MjE4ODcwNjMwOTJkZGIxMTIzNjFhZDVhZjI0ZDYyYWQ0MmY2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZhOTRiYWIxZGI5NjVhYjI4NWQzMWNlYWQ5MjE4ODcwNjMwOTJkZGIxMTIzNjFhZDVhZjI0ZDYyYWQ0MmY2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDVhZjc2YjdkMDNlMGUyYzI4MWUxMTk4ZmFkNzk3Y2M1OWRiZDA3MDMyNmU4OTJhNmRjYzkwZDJhYjE5ODg1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODNiZGY0NmNkMjQxYWZjNWIyNjgzZTI1NmRmMTQ4MGRhOTIxMzVmNWI2NWVmZGU1YjQyNjAwYjA4MWFiYzQyMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d507102cfde4623bbadb454e75d4f43",
+      "statement": "Two of the guard's four cap-related tests skip when the pinned generator is absent from `/usr/local/lib/node_modules` or when the installed version differs, and a skip misleadingly reads as a pass, so the wiki-maintain CI job — the one place the pinned generator is installed — runs the guard after installing it and before any paid work and fails the step on a skip by reading node's `# skipped 0` TAP summary line.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L163-L171",
+          "version": "repo-lines-v1:sha256:7d32393b0f01c73389aa96f0d2cac53b28c7a845323d5eaafb5dfe82b01b6499:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDEyNDFkZDI3MmQxNzQ5YzEzMGU3YTVmYjJiYzhiMzFjZWNjNzA2ZDk1NTU2MDFkZWVlZjNhNTU4ODdlODE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJlMDQ4NTdhNDg5NmU1ZWZiMGI5Yjg0MmE1NDY2NDFhNWMwZDUzZDIxYmJiNjE4MGFkZTNkZGFiNGU5ZDZjZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGM5NWI4YmZkZTUzY2FhMDkzZWEyOTRiM2E2NWM5M2QxNTE3MmRiODZkMzk1MzllMTk1MzcxMTI1YmJiY2FlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjcxMjU2MjQ2YzQzNzc0MjZhNTZkZDU4NmFlOTczOWY4YmUwY2Q5NWQwZGQ4MDAyZjcwZGRmYzBmYjkxNjM0MCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L132-L146",
+          "version": "repo-lines-v1:sha256:a35fc0e1bf06fc01071683d9d78dd26c1e1c4d8f5e59ee8462f8eae94dcab142:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZmIzNDQxMGRiYjYzYTk3N2IwZjdkMTY0YzM0MmJmNzNhZDA2MDIwYjM0MTQ0MWEzYmVhYjk4OGMwMzA5NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5YjEzZmFiOGMyZTk2NGQyN2M3N2JlYWEyNjQ3MGE3Y2JmYWYwMDc4MTE3ZDgwNjRkODQyNTlhMmQ2ZmZjOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiZTgyNzgzZWRiOTkxYTFhYzQ5ZWNiNjFhMjNkNzQwMTE1N2FkMmRlZjkzNjQ2ZDY1NmZiOTA5YjcyZTA4MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff74874163ea4144855b897bbf13639f",
+      "statement": "The managed `<!-- OPENWIKI:START -->...<!-- OPENWIKI:END -->` block is rewritten in `AGENTS.md` and `CLAUDE.md` on every run, and the regeneration policy permits only `actor: agent` to write `AGENTS.md`, so the committed block must already be byte-identical to what the pinned generator writes; the guard rebuilds both blocks from the installed generator's source and compares them byte-for-byte, so a version bump that changes the text fails offline instead of failing every paid slice.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L158-L163",
+          "version": "repo-lines-v1:sha256:cb7a06340563200086284105f7565e8926062cc0d6d12b5231a950e91e1515d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY4Nzg3ZDQ4ZDI1Y2EyZmI0ZWFlZWRiMDQ2MjcwZjVmNWU3NDdlM2RjZTFjYmE2NDgxOWE3ODNhMTRhOWEwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIxZjY2YjZkZDlhNjQwNTNiMjQ4YmI0MTFjYjVjMzUwZDBmNzliNWE0N2RhMjBhOTgxNTNjMzIzMDcwZWUxNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNkNDg1OWM4MGQ1YjA1MjA4NGU3NWYwODUzMDY3MjU0NDVlZGNkYjBkZmEwODM2M2EwOTg0MjdlMWQwNDk2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmJiYTRlZjNmM2FiY2VjZGU1MDczODk5YmEwNjdlY2IzOTAzMGViYmE0ZDZjMDI1NWFjMjc1OTRmYzI2ZjM2MCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L500-L530",
+          "version": "repo-lines-v1:sha256:e407cb4b8fed6b43cc4f3bd0e7a45d063c60decb6ca58111d02dbfd1acf965b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNGRmMWE5M2E3ODU5MzhjYThmYTMzMTQ2MWE2MDNiNWE1ZjA0ZjUwYjBiZjdiNDE4YzBjNDMwZDZmNTE2OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NzlkOThhZGNjMTg3ZTA5ZmE2MzQyODQ0ZTQ1ZGNkZDcyZmI2MzllM2QzM2Q2ZTYyNmQ1Y2JlOWY0NDM1Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0NzlhMjBmMTE0ZTJjMjNhM2JhN2Y4MWQ1NmY5MDdjNmM0ZDdkMzJhMDI3MGQwNDhiYzEyZGVmMzY3YmM4ODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MzNiNDE0NGRlODFkNGJhNWRkZmJkNjU1OTI0MGJmMzM3MTIwYjQyYTU1NGNiYmZlZDc5YTIyMDc2NzE0YjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f22c60f7e97e46958663c0d2a9bd5bfb",
+      "statement": "A protected passage may only live on a concept that carries no `resource`, because freezing a derived summary against the document it summarizes would fail every legitimate refresh; changing such a passage requires updating its text and its fingerprint in the same change via `node scripts/check-openwiki-governance.mjs --fingerprint <concept> \"<heading>\"`, and the governance gate fails a refresh that silently rewords a load-bearing passage.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L493-L506",
+          "version": "repo-lines-v1:sha256:94162b4927977dc4167c439e3f6e3983a4ad48ba50e5161615426d5159008f1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZDdkMTRiNjY5YmZkNDY3OTMyYzNlMTFjOGY0YjdjYjk4YTlmZTkyOWU5OTQ5MWI5YjJjODU0ZmNlODVmZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZTVhM2ZlZTljMTcyYjQ0YjZhZTBkNGQ3NTQ5NDkwZTQ2ODI1YTkwM2Y1NjkxZDkzOWMyNzY1NmQwYTJkMmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliNTViNjhmNTJkMzAxNGE0MTNhNDE1ZmEzNjhlNjdkYWRjNjNjZjA2NTI4MjczMjlkNmNkYzQzMzMyY2E3ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L23-L23",
+          "version": "repo-lines-v1:sha256:7f51d348671a6daeac3c7a0fe3f858ea3c1640d935e666d30d4574104d96ca6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y1MWQzNDg2NzFhNmRhZWFjM2M3YTBmZTNmODU4ZWEzYzE2NDBkOTM1ZTY2NmQzMGQ0NTc0MTA0ZDk2Y2E2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y1MWQzNDg2NzFhNmRhZWFjM2M3YTBmZTNmODU4ZWEzYzE2NDBkOTM1ZTY2NmQzMGQ0NTc0MTA0ZDk2Y2E2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDNiNjAwYzljMzY4OWVhODNmMjRmMzhiN2RmZjMzYjNlZTRlYjBmZjBiNWEzYWU4NjEzYzgyYmYwMWYzOTExNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGU0M2M3MjZmMTA2NTRkMDJlNzY4MzNmNmJmODI0YWYzYzA3NmEwOGZlZWRiMDI2MmFiNjJiYWM0ZDMxOGZjYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d79a25f3c5e41cd8aa9fc14967d3559",
+      "statement": "Remediation for a page that trips the conformance gate, a leak scan or the governance gate is always the brief — fix `openwiki/INSTRUCTIONS.md` and re-run — never an allowlist, because the gates deliberately have no skip flag and an allowlisted leak stays leaked.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L368-L372",
+          "version": "repo-lines-v1:sha256:092c85fb68e416ab1c1526dea3e5ec3451ec0beb2d246e4a3c6beab51902d01e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y5ZTFiMzg0ZDgxNWIzNzMwNGU4ZmVmYjYzMWE1YzQwYmZmOWY3NDJmZTQzMTFmOThkNzc4OWI0ZDU1Mjc1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2IwNjE1MDA3OGUxNmE2ZjM3Zjc5NTVlMTY1NzUwYzQ4MzM4MWRkMDhmODAxODJiMTY5ZjQyOGY1MjU4YjBjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmY4YTY3MTZhMjJhZjUzODRmMjJiMjczZjc5OWI5NjU3MDFkYzRkYTE2NmM3N2ExYWE5OWRkMTg2ODU0OGRmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a3d184c89e04a738e0d09c50fe2509b",
+      "statement": "A filename is not a specification: the run message carries a one-line subject per page, and measured across the feature-044 relocation that single change was the difference between 0 pages in 643s and 3 pages in 367s; the planner asks for at most 8 pages when refreshing existing concepts but only 3 when creating new ones (`MAX_NEW_PAGES_PER_SLICE`) and never mixes the two kinds in one slice, with the creation cap of 3 explicitly unverified because it was calibrated while every turn was silently capped at 4096 output tokens.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L75-L96",
+          "version": "repo-lines-v1:sha256:50481b1c01995f33c962fd5327d98d335f2967570f85b4e19d1be32744c21553:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MDk2MzhmZGUxNjU5MDVjMWMyYzg0MWNjYmVkYjVmMzkxZTQzMmY0ZjY5ZDk1ZWQzMDg3YzJiYWU1NWYzYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZDJhYTFiMDJhMWM2MjAyMDQ3ZDU3OWU5YzVkZGJkMTMzYzE3MWE3M2EzZDBlZGM1NmI4YTc5YTE3OGNhYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3NThiNjVmZDg4MGExYzBjMDUzMjgzMmMwNmFiOTU2Y2NmMjg1YmJiZTYyZjJkMWQ3ZjFhOTc3N2MyZWNjYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MzBmYzMwYjg2OGFlNjYwOTM5ZjBkMmI2N2FjYWQxYmU4YzJhNDFiMjMwZTEwNGI0MzAwMDY3MzU4Y2QxMjgifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L210-L210",
+          "version": "repo-lines-v1:sha256:dfadfc7bf5311eced89552d6344c920506c76ec2fe03a581f8f6f877fcf33524:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZhZGZjN2JmNTMxMWVjZWQ4OTU1MmQ2MzQ0YzkyMDUwNmM3NmVjMmZlMDNhNTgxZjhmNmY4NzdmY2YzMzUyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZhZGZjN2JmNTMxMWVjZWQ4OTU1MmQ2MzQ0YzkyMDUwNmM3NmVjMmZlMDNhNTgxZjhmNmY4NzdmY2YzMzUyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzY4ZjcxNjNhZWI5MTU0NzM1MTcwMGI1M2VhNmMwY2JiMjZjZGRiNzcxY2ZhNWRhZGE2NTU0N2UyYzVkNDY2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjM3MmQ2ZDhkNWQ0NTgxZGIzYTNkZmQ1ZjY4MDZjNzk3ZjhhZWVlYjZkZTYxYmU5MmZhNDU5MDM1OTQwMDBjZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0907b1be101643b3b012f8e077de6f92",
+      "statement": "A usage tap (`scripts/wiki-usage-tap.mjs`) loaded into the generator process records per-call counts — never content — which are priced from the dated table `scripts/wiki-provider-prices.json` and reported in the job log and as `lastRunUsage` in the run record; the figure is an estimate, `not captured` is never written as $0, `PARTIAL total` means some invocations were not captured, and `failedCalls` counts non-200 responses so rate limiting under page concurrency shows up there first.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L302-L317",
+          "version": "repo-lines-v1:sha256:47ea2b848bba6694d22223f21fedb5a1194b8ca470c27a2ad8e9c58ffd890467:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiMWFlMzEzMTBkMzE2OGY1MDFmMjNhYmQ0Y2FkMjI4NWUyNzMxOTMzZWI2OWZkMDU0NzU4OTMyNjZlMjY1M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkY2MwOTg4NWYxNDkxNjI2YzExZmE1ZDRkMmRjZTI2ZmMwOTJjYmNlNTVmNTg2OWI2YWQxOWE2ZTE2ZjhhMWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhNWJlNzc2NjUxNjBkYWQ0NGI3N2RlNzliOTY3MDdjYTg4YzEwMGQ4YWVlMjQ4NzE5MjZjOGU4Mjc2MzY0YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1564-L1586",
+          "version": "repo-lines-v1:sha256:8ca9294f13f0b938e771df7f1f41591080d54bc24c99bcb67de545ec6017aa90:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2ZiMjNmMWJjZjc4MTE1MmIxNTljNzFiYzk4ZWQwZGJiZTA1ZWQyZmEyZTYyNjUyMjE4ZDM5NDRjYzg3NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzZmY5YjVhZjhkMTMwZWY2ZmE4Zjc0OWY5MTMwNWEyNTViM2M0NThmNzQ4ZGExZGQ5YWJlMGExMTExNDc4NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4ZWI4MjI4NzIyNmI2NDA2YWE2ZWJmZjc4ZmIxOWIyZWFmYmM0NWVmNjRhYmZlZmNkMjU1ZTU4NzRiY2UwNTUifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1779-L1793",
+          "version": "repo-lines-v1:sha256:45cfc4068002c480bb5a0cd324b0f380b500b6201b15654940f21cc6d26b82b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYzgyMjdhMzVjMjdmN2E5ZmZhYjY1ZjM1YzVlYzNhYWQ2NTQxMzRlODY2NzRiNDFlZjk5OWNkMWJhNjQwNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MzhkNTI1Yjc3MDY3ZGE5OTVjMDA5ZWQxM2RjYzQwMDJkZjJlYmE2NWIzOWVlYjdhNGFhZjllMWY4NjQ2NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4NzkwZGVkYWEzNGVjZjg4ZTUyZjdjNmUxZGJlYWUzNmEyYTczMGViMTE4ZjExYjcyNzQ0OTYwZDEyOTY0MDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e0e21da70dc747bd875c6be952b292e7",
+      "statement": "Before the first paid slice, `wiki-maintain --execute` makes one minimal call to the selected model (`node scripts/wiki-generate.mjs --preflight` does the same by hand), and a failure exits 2 with the run record untouched and names the provider's error type, so a withdrawn model id, a revoked key or a blocked egress host costs one token rather than a slice.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L70-L73",
+          "version": "repo-lines-v1:sha256:3d8cbacb72aa241262c38a44f53dc93828d6bb3d1eccdf780a0cce1b4630dd34:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUzNzk5OTJkMWIzOGQ0M2UyMTU0Yzc4NTBlODgzMWJiNWEwNTI1NjViMGUwMTFmYWM4MTEzZTUwNmNhYjA4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhMTc0NTE3OThlNWI5MTk2YmIzZjk0YTZhODIzY2QwNDJjZjhhYzBiYTM5ZGJmMDg2MDk2YmIwNzc3NWIyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2UzMjQ2OTJlYzg2NDE0ODJkZmIzZjA3MzQ5ZDE0MGZjNWI2NjQ4Mjg1YTQ3N2M2MjAyNjQ1NWUyM2NiZjYwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmU1OGVmOWIzOWFkZWQ4ZGFmZDFhNmI1MWRjMTgxMzdmMTdmZmY5OGQyMDA0ZDc1MmU3N2VmZGZiZDUyYjNhZSJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-generate.mjs#L76-L101",
+          "version": "repo-lines-v1:sha256:3e4d5f3bda43520261c62767075a7e0ca3f35159315958d951e31bda635da40f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZTMzMDU5ZTkyMzJjYjYxMTg5Mzc4Yzk2OWVhMGZkZDUyNTJjZDhjMmRkMDEzOTY0ZjNkNTUwNjY2Zjc1YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZjNkZmNlMGNiOWE2MWRjMmY3ODc0M2NmZjdmYzVkMzk0ZjJhNGY3YTc3MjRiMzgzMzgzOWZiNTA1NDU4N2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwNDQ2ODQ1ODYxM2Y5MDRiYTEwZTNjZmU4NmFkZGFkM2EwOGQzZTExMTdkY2FhODhjNjI0MjUxOWRlMTExZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwYWYxNTQxNTAwNWNhODAzM2FlNTAxZTljZGMzZGY4Y2FhYTg5ZTAwOGE2ZGY2YjcwMGFhMjhmOTY4MzM0ZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_252ae208fbd9433d9198937431c4b46f",
+      "statement": "Verification also normalizes body-link form only over the paths the current slice wrote, after those paths have cleared the policy check, because sweeping the whole bundle there would edit pages the slice never touched and no policy decision covered — the kind of unrequested write the verifier exists to catch.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1424-L1431",
+          "version": "repo-lines-v1:sha256:4dbf99b88cb7ae567e58196c71ee2ef649d94d4bfa4e8508828fd7dc6eac67cd:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGEzYzc2NjkxNGIxZTFmMTYwMWM2MDFkZjNmMDRlZjQzNmM4YzA2OTIzZDA0ZThhZGM1NTYxNDAyZTNlNjY5MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGFlZDMzYmVlMzA3ZGViNzg3ODA0ODY0YTMxMDZhZTUwOTZhZDI2YmI2ZjM2N2QxZDFkYzVjZTcyOGQwNjM1MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a835a68180a246a592cfd9cebabd9305",
+      "statement": "The `--selftest` mode proves the planner and verifier offline and keyless against fixtures plus a deliberately sabotaged generator that exits 0 having written nothing, and the verifier must fail that zero-page slice, return it to the backlog, hold the marker, and still pass a slice that genuinely wrote its page — so a clean verdict there means the zero-page detector is broken.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L542-L554",
+          "version": "repo-lines-v1:sha256:28ebbb051444a3fc1d6f27d9003e2fd3fbd4a7319ea121c129eff3818df97009:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzY2VkNWRjNmEwNzFmNjhkZDkwOGU0ODVhMDE3NGVhM2QzMTU1YzAzMjFjMDM4M2RhNWUzNmY2OWM0ZWEyM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MDIyOWRiNzQ2NzljNWFiYjk0NzA3NzhkYWYzMzAwMTY3MjE2YzM5NmNiNjZlNzg2ZDhjNmQ1MDU3MTVkMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1903-L1960",
+          "version": "repo-lines-v1:sha256:f5b89e114179947c0919c3c7c96eca8e729fe74814a2fb0d1f804da796f630ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMjE1Y2IxNWIwZDc3MmE2MmVmYTQ1NTg4MjZiMGRlZjUyZjVlYTBmYmQxOWViMDkwYWY4MmUzZmRiYjVkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YzUxOTQzZGQyMzBjNGU1YmJjZmQwZjFhNTI5ZTAzMTA1ZjBjNThiYTM5MTI3NTQwY2JlZDU2OWUxZTZhODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwZDRlNjM0NjBlZTkxZTBjNTQ5ZWM5MDE3YzBhY2IwOTA2NDNlNWM5NWM4NWFmNmVlYmRiM2IzZTYwY2RlYTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_52912bb5e309456681711c0c940295d1",
+      "statement": "The generator is always invoked through the Nx target and never as a bare `openwiki` CLI, because the target carries `OPENWIKI_TELEMETRY_DISABLED=1` and the raised Node heap — a bare call skips the telemetry opt-out and OOMs — and `wiki-maintain` shells out to `pnpm nx wiki-update infrastructure-as-code --output-style=stream` for exactly that reason, with the streaming output style putting the generator's own account of the run into the CI failure digest.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L220-L231",
+          "version": "repo-lines-v1:sha256:1c31a931a5efa2a85d466bd1bb35f33f452d02b0837dff1e559aa7f50d1f6636:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMDE3NGRlYzNkYjg3ODI0MTJjMDJkZWEwOTQwNTYxZjUzMTg0ZmZjOTYzMGYwZDIwZDQ2YjE5N2RhMzZmYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljZjYwOTNhODA3MjdhOGVmOTgzZmU0N2QxMjIzNzMzNDVmNDA1ZjhhYTg5MDJkZmFkMWRlNzcxOGFhNjM5ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0Y2NiMThjZmIyYTQ5MzE0OTBlNjU0OTc2ZGVjYWJhNjJhMzFiMmJiNTgyMWY2M2JlN2YxMmI2MzQ3ZTE0Y2MifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1482-L1495",
+          "version": "repo-lines-v1:sha256:3d54ec900467fdf5066ef50d8b43aa0576b63081ccdd8651263b8044e8331fb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2MzQ3ZmUyZWU4ZDIyZmY1OTQ2ZjlkZDkyNGJhMDFhZmZjZmZlODZmZmE1N2IxZDhjZmNjMjFlNjc2OTZjMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzMDkwMTRmYWY0OGI2YjNmNTk1ZjExYTk4YWRlM2NjOGQxNTY2YzIzOTBjNWZlYzk4NWYwMTMxNjg2Zjg5NWQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-10-05T10:34:13.063Z"
+  }
+}
