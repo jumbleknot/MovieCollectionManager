@@ -1567,8 +1567,8 @@ const PRICE_TABLE = join(REPO_ROOT, 'scripts', 'wiki-provider-prices.json');
 /** Provider, model and tier this run resolves to, plus the dated price table — or null if unresolvable. */
 export function defaultUsageContext(env = process.env) {
   try {
-    const { provider, modelId, tier } = resolveWikiProvider(env);
-    return { provider, model: modelId, tier, prices: JSON.parse(readFileSync(PRICE_TABLE, 'utf8')) };
+    const { provider, modelId, tier, reasoningEffort } = resolveWikiProvider(env);
+    return { provider, model: modelId, tier, reasoningEffort, prices: JSON.parse(readFileSync(PRICE_TABLE, 'utf8')) };
   } catch {
     return null; // priced as "not captured", never guessed
   }
@@ -1750,7 +1750,7 @@ export function executeSlices({
     usageSummaries.push(spent);
     console.log(spent === NOT_CAPTURED
       ? `[wiki-maintain] usage ${slice.area}/: not captured`
-      : `[wiki-maintain] usage ${slice.area}/: ${spent.calls} call(s), ${spent.uncached} uncached / ${spent.cached} cached / ${spent.output} output tokens, ~$${spent.estCostUsd} (${spent.provider}${spent.tier ? `/${spent.tier}` : ''}, prices ${spent.priceTable})`);
+      : `[wiki-maintain] usage ${slice.area}/: ${spent.calls} call(s), ${spent.uncached} uncached / ${spent.cached} cached / ${spent.output} output tokens, ~$${spent.estCostUsd} (${spent.provider}${spent.tier ? `/${spent.tier}` : ''}${spent.reasoningEffort ? ` effort=${spent.reasoningEffort}` : ''}, prices ${spent.priceTable})`);
 
     results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null, usage: spent });
 
@@ -2214,7 +2214,7 @@ function reportRun(result, { json }) {
       ? '[wiki-maintain] run usage: not captured'
       : `[wiki-maintain] run usage: ~$${u.estCostUsd} over ${u.calls} call(s) in ${u.invocations} invocation(s)` +
         `${u.invocationsNotCaptured ? ` (${u.invocationsNotCaptured} not captured — a PARTIAL total)` : ''}` +
-        `, ${u.provider}${u.tier ? `/${u.tier}` : ''}, prices ${u.priceTable}`);
+        `, ${u.provider}${u.tier ? `/${u.tier}` : ''}${u.reasoningEffort ? ` effort=${u.reasoningEffort}` : ''}, prices ${u.priceTable}`);
   }
   if (result.stoppedAtBudget) {
     console.log(`[wiki-maintain] stopped at the run budget with ${result.deferred.length} slice(s) outstanding — exit 3, NOT a failure.`);

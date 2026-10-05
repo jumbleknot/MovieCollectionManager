@@ -25,7 +25,7 @@ function priceRow(prices, provider, tier) {
  * Summarize one invocation's usage log text. Returns NOT_CAPTURED when there are no lines.
  * Throws when the price table does not cover the provider/tier — an unpriced figure is not reported.
  */
-export function summarizeUsage(text, { provider, model, tier = null, prices }) {
+export function summarizeUsage(text, { provider, model, tier = null, reasoningEffort = null, prices }) {
   const lines = (text ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
   if (lines.length === 0) return NOT_CAPTURED;
   const row = priceRow(prices, provider, tier);
@@ -41,7 +41,7 @@ export function summarizeUsage(text, { provider, model, tier = null, prices }) {
     for (const f of [...TOKEN_FIELDS, 'reasoning']) total[f] += call[f] ?? 0;
   }
   const estCostUsd = round4(TOKEN_FIELDS.reduce((sum, f) => sum + (total[f] * row[f]) / 1e6, 0));
-  return { provider, model, tier, ...total, estCostUsd, priceTable: prices.asOf };
+  return { provider, model, tier, reasoningEffort, ...total, estCostUsd, priceTable: prices.asOf };
 }
 
 /** Sum invocation summaries into a run total. Partial totals say how many invocations are missing. */
@@ -56,6 +56,7 @@ export function sumUsage(summaries) {
   out.provider = captured[0].provider;
   out.model = captured[0].model;
   out.tier = captured[0].tier;
+  out.reasoningEffort = captured[0].reasoningEffort ?? null;
   out.priceTable = captured[0].priceTable;
   return out;
 }

@@ -31,6 +31,7 @@ export const WIKI_PROVIDERS = Object.freeze({
     openwikiProvider: 'anthropic',
     modelId: 'claude-sonnet-5',
     tiers: Object.freeze([]),
+    reasoningEfforts: Object.freeze([]),
     credential: Object.freeze({ accepted: Object.freeze(['ANTHROPIC_API_KEY', 'MCM_ANTHROPIC_API_KEY']), mapTo: 'ANTHROPIC_API_KEY' }),
   }),
   fireworks: Object.freeze({
@@ -39,6 +40,11 @@ export const WIKI_PROVIDERS = Object.freeze({
     // Fireworks bills `service_tier: "priority"` at +25% for a faster admission path. Measured on this
     // workload it bought no speed (R3), so it is supported but not the default.
     tiers: Object.freeze(['priority']),
+    // Fireworks' `reasoning_effort` for DeepSeek V4.1: low (~50), high (~75, the model's default), max,
+    // none. openwiki 0.6.0 refuses OPENWIKI_REASONING_EFFORT for its `fireworks` provider, so the usage
+    // tap sets the body key instead, the same way it sets `service_tier`. Opt-in; unset sends nothing
+    // (item #525 trial, operator 2026-10-05).
+    reasoningEfforts: Object.freeze(['none', 'low', 'high', 'max']),
     credential: Object.freeze({ accepted: Object.freeze(['FIREWORKS_API_KEY', 'MCM_FIREWORKS_API_KEY']), mapTo: 'FIREWORKS_API_KEY' }),
   }),
 });
@@ -50,6 +56,7 @@ export const MAX_PAGE_CONCURRENCY = 8;
 const SELECTOR = 'MCM_WIKI_PROVIDER';
 const TIER = 'MCM_WIKI_SERVICE_TIER';
 const CONCURRENCY = 'MCM_WIKI_PAGE_CONCURRENCY';
+const EFFORT = 'MCM_WIKI_REASONING_EFFORT';
 
 /**
  * An empty string is UNSET: `${{ vars.X }}` renders a repository variable that was never set as ''.
@@ -81,6 +88,18 @@ export function resolveWikiProvider(env = process.env) {
     tier = tierRaw;
   }
 
+  const effortRaw = setting(env, EFFORT);
+  let reasoningEffort = null;
+  if (effortRaw !== undefined) {
+    if (row.reasoningEfforts.length === 0) {
+      throw new Error(`${EFFORT} is set, but the ${provider} provider takes no reasoning effort — unset it rather than have it ignored.`);
+    }
+    if (!row.reasoningEfforts.includes(effortRaw)) {
+      throw new Error(`${EFFORT}=${JSON.stringify(effortRaw)} is not a ${provider} reasoning effort. Expected one of: ${row.reasoningEfforts.join(', ')}.`);
+    }
+    reasoningEffort = effortRaw;
+  }
+
   const concurrencyRaw = setting(env, CONCURRENCY);
   let pageConcurrency = MIN_PAGE_CONCURRENCY;
   if (concurrencyRaw !== undefined) {
@@ -96,6 +115,7 @@ export function resolveWikiProvider(env = process.env) {
     openwikiProvider: row.openwikiProvider,
     modelId: row.modelId,
     tier,
+    reasoningEffort,
     pageConcurrency,
     credential: row.credential,
   };
@@ -122,12 +142,14 @@ export function buildGeneratorEnv(env = process.env) {
     for (const name of [...row.credential.accepted, row.credential.mapTo]) delete child[name];
   }
   delete child[TIER];
+  delete child[EFFORT];
 
   child[mapTo] = secret;
   child.OPENWIKI_PROVIDER = resolved.openwikiProvider;
   child.OPENWIKI_MODEL_ID = resolved.modelId;
   child.OPENWIKI_PAGE_CONCURRENCY = String(resolved.pageConcurrency);
   if (resolved.tier) child[TIER] = resolved.tier;
+  if (resolved.reasoningEffort) child[EFFORT] = resolved.reasoningEffort;
   // Item #613. openwiki gives an OpenAI-compatible provider (Fireworks) no request timeout, so the
   // OpenAI SDK's 10-minute default applies; at page concurrency > 1 openwiki retries 5 times. One
   // request that is accepted and never answered was therefore ~60 silent minutes — the whole job

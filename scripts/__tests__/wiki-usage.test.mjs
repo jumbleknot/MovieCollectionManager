@@ -64,6 +64,16 @@ test('a price table that does not know the provider/tier refuses to guess', () =
   assert.throws(() => summarizeUsage(line({ uncached: 1 }), { provider: 'fireworks', model: 'm', tier: 'bogus', prices: PRICES }), /price/i);
 });
 
+test('the reasoning effort is carried into the summary and the run total, and does not change the price', () => {
+  const text = line({ uncached: 1_000_000 });
+  const plain = summarizeUsage(text, { provider: 'fireworks', model: 'm', tier: null, prices: PRICES });
+  const low = summarizeUsage(text, { provider: 'fireworks', model: 'm', tier: null, reasoningEffort: 'low', prices: PRICES });
+  assert.equal(plain.reasoningEffort, null);
+  assert.equal(low.reasoningEffort, 'low');
+  assert.equal(low.estCostUsd, plain.estCostUsd, 'Fireworks bills reasoning as output tokens; the effort has no price row');
+  assert.equal(sumUsage([low]).reasoningEffort, 'low');
+});
+
 test('summing across invocations keeps "not captured" honest', () => {
   const a = summarizeUsage(line({ uncached: 1_000_000 }), { provider: 'fireworks', model: 'm', tier: null, prices: PRICES });
   const total = sumUsage([a, NOT_CAPTURED]);

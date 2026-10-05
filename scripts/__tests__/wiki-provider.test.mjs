@@ -73,6 +73,21 @@ test('a service tier applies to fireworks only, and only known values are accept
     'a tier on a provider that has none must fail, not be ignored');
 });
 
+// ── reasoning effort (#525 trial, operator 2026-10-05) ─────────────────────────────────────────
+
+test('a reasoning effort applies to fireworks only, and only the values Fireworks documents are accepted', () => {
+  assert.equal(resolveWikiProvider({ MCM_WIKI_PROVIDER: 'fireworks' }).reasoningEffort, null, 'unset leaves the model default');
+  for (const v of ['none', 'low', 'high', 'max']) {
+    assert.equal(resolveWikiProvider({ MCM_WIKI_PROVIDER: 'fireworks', MCM_WIKI_REASONING_EFFORT: v }).reasoningEffort, v);
+  }
+  assert.equal(resolveWikiProvider({ MCM_WIKI_PROVIDER: 'fireworks', MCM_WIKI_REASONING_EFFORT: '' }).reasoningEffort, null,
+    'an unset repository variable / dispatch input arrives as the empty string');
+  assert.throws(() => resolveWikiProvider({ MCM_WIKI_PROVIDER: 'fireworks', MCM_WIKI_REASONING_EFFORT: 'medium' }), /MCM_WIKI_REASONING_EFFORT/,
+    'a value Fireworks does not document for this model must fail, not be sent');
+  assert.throws(() => resolveWikiProvider({ MCM_WIKI_REASONING_EFFORT: 'low' }), /anthropic/i,
+    'an effort on a provider that has none must fail, not be ignored');
+});
+
 // ── page concurrency (T015d: FR-016, US5-AC1) ──────────────────────────────────────────────────
 
 test('concurrency defaults to 1 and accepts 1..8', () => {
@@ -140,6 +155,15 @@ test('concurrency and tier reach the child under the names the generator and the
   const plain = buildGeneratorEnv({ MCM_WIKI_PROVIDER: 'fireworks', MCM_FIREWORKS_API_KEY: 'k' });
   assert.equal(plain.OPENWIKI_PAGE_CONCURRENCY, '1', 'explicit, never inherited from a vendor default');
   assert.equal(plain.MCM_WIKI_SERVICE_TIER, undefined);
+});
+
+test('a reasoning effort reaches the child under the name the tap reads — and only when set', () => {
+  const child = buildGeneratorEnv({ MCM_WIKI_PROVIDER: 'fireworks', MCM_FIREWORKS_API_KEY: 'k', MCM_WIKI_REASONING_EFFORT: 'low' });
+  assert.equal(child.MCM_WIKI_REASONING_EFFORT, 'low');
+  assert.equal(child.OPENWIKI_PROVIDER, 'fireworks', 'the generator stays on its own fireworks provider');
+  assert.equal(child.OPENWIKI_REASONING_EFFORT, undefined, 'openwiki rejects an effort for its fireworks provider — the tap sends it instead');
+  const plain = buildGeneratorEnv({ MCM_WIKI_PROVIDER: 'fireworks', MCM_FIREWORKS_API_KEY: 'k', MCM_WIKI_REASONING_EFFORT: '' });
+  assert.equal(plain.MCM_WIKI_REASONING_EFFORT, undefined, 'an empty value is not passed through');
 });
 
 test('a stray OPENWIKI_PROVIDER in the caller\'s env cannot override the resolved choice', () => {
