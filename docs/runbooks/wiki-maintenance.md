@@ -47,7 +47,7 @@ The provider is **configuration**, not code. `scripts/wiki-provider.mjs` is the 
 | `anthropic` — the **local** default (unset) | `claude-sonnet-5` | `ANTHROPIC_API_KEY`, `MCM_ANTHROPIC_API_KEY` |
 | `fireworks` — the **CI** default (the workflow sets it, at page concurrency 4) | `accounts/fireworks/models/deepseek-v4p1-flash` | `FIREWORKS_API_KEY`, `MCM_FIREWORKS_API_KEY` |
 
-Two more knobs, both validated before any paid call — a malformed value exits 2, it is never read as
+Three more knobs, all validated before any paid call — a malformed value exits 2, it is never read as
 a default; an empty value is unset (how an Actions repository variable that was never set arrives):
 
 - `MCM_WIKI_PAGE_CONCURRENCY` (1–8, default 1) — openwiki ≥ 0.6.0 writes that many pages in parallel.
@@ -55,6 +55,14 @@ a default; an empty value is unset (how an Actions repository variable that was 
   concurrency is the lever that closes it.
 - `MCM_WIKI_SERVICE_TIER=priority` (Fireworks only) — +25% price. Measured on this workload it bought
   **no** speed (R3), so it is not the default.
+- `MCM_WIKI_REASONING_EFFORT` (Fireworks only: `none`, `low`, `high`, `max`; unset = the model's own
+  default, `high`) — sent as `reasoning_effort` by the usage tap, because openwiki 0.6.0 refuses an effort
+  for its `fireworks` provider. The preflight sends it too, so a value Fireworks rejects fails before paid
+  work. A run's usage line and record carry `effort=<value>` when it is set. **Under trial** (item #525):
+  latency is roughly output tokens ÷ generation speed, and a lower effort means fewer reasoning tokens
+  per call — but possibly a weaker page. In CI it is the `reasoning-effort` input of a **dispatched** run,
+  so a trial never changes what a merge-triggered run sends; do not set the repository variable until a
+  trial's page has been reviewed.
 
 **In CI** these are repository **variables** (Settings → Actions → Variables), so switching back to
 Anthropic is a settings change, not a commit; the keys are the secrets `ANTHROPIC_API_WIKI_MAINTAIN`

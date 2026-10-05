@@ -2,18 +2,21 @@
 //
 // Loaded by `wiki-generate.mjs` through `NODE_OPTIONS=--import=<this file>`. openwiki 0.5.x/0.6.x
 // reports no token usage and has no way to send a provider's `service_tier` (research R6), so this
-// does exactly two things, each only when asked:
+// does exactly three things, each only when asked:
 //
 //   WIKI_USAGE_LOG=<path>        append one JSON line of COUNTS per model call (Anthropic /v1/messages,
 //                                OpenAI-shaped /chat/completions): agent kind, status, duration,
 //                                uncached / cached / cache-write / output / reasoning tokens.
 //   MCM_WIKI_SERVICE_TIER=<tier> set `service_tier` on Fireworks chat-completions request bodies.
+//   MCM_WIKI_REASONING_EFFORT=<e> set `reasoning_effort` on the same bodies — openwiki refuses an
+//                                effort for its fireworks provider, so this is the only route.
 //
-// With neither set it is inert: the real fetch receives the caller's arguments by identity.
+// With none set it is inert: the real fetch receives the caller's arguments by identity.
 //
 // The negative properties are the load-bearing ones and are pinned by wiki-usage-tap.test.mjs:
 //   • no prompt, response, error text or header is ever recorded — counts, status and timing only;
-//   • a tier changes exactly one key of a Fireworks body and nothing else, and no other request;
+//   • a tier or an effort changes exactly its own key of a Fireworks body and nothing else, and no
+//     other request;
 //   • nothing here throws into the generator — a failure to read usage is itself a recorded line.
 //
 // This is the instrument of research R0, whose counts reconciled to the Fireworks bill to the cent.
@@ -83,7 +86,8 @@ function usageFrom(text) {
 export function wrapFetch(realFetch, env = process.env) {
   const log = env.WIKI_USAGE_LOG || null;
   const tier = env.MCM_WIKI_SERVICE_TIER || null;
-  if (!log && !tier) return realFetch;
+  const effort = env.MCM_WIKI_REASONING_EFFORT || null;
+  if (!log && !tier && !effort) return realFetch;
 
   return async function tappedFetch(input, init) {
     const url = urlOf(input);
@@ -92,10 +96,11 @@ export function wrapFetch(realFetch, env = process.env) {
     if (!isAnthropic && !isChat) return realFetch(input, init);
 
     let sendInit = init;
-    if (tier && FIREWORKS_CHAT.test(url) && typeof init?.body === 'string') {
+    if ((tier || effort) && FIREWORKS_CHAT.test(url) && typeof init?.body === 'string') {
       try {
         const body = JSON.parse(init.body);
-        body.service_tier = tier;
+        if (tier) body.service_tier = tier;
+        if (effort) body.reasoning_effort = effort;
         sendInit = { ...init, body: JSON.stringify(body) };
       } catch {
         sendInit = init; // not JSON: send exactly what the caller built
@@ -121,6 +126,6 @@ export function wrapFetch(realFetch, env = process.env) {
   };
 }
 
-if (process.env.WIKI_USAGE_LOG || process.env.MCM_WIKI_SERVICE_TIER) {
+if (process.env.WIKI_USAGE_LOG || process.env.MCM_WIKI_SERVICE_TIER || process.env.MCM_WIKI_REASONING_EFFORT) {
   globalThis.fetch = wrapFetch(globalThis.fetch.bind(globalThis), process.env);
 }

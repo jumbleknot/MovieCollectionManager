@@ -52,6 +52,10 @@ on:
         description: Override the run-record marker (a git ref) — diagnostics and one-off sweeps
         required: false
         default: ''
+      reasoning-effort:
+        description: "Fireworks reasoning_effort for THIS run only (none, low, high, max); empty = the model default. Validated before any paid work."
+        required: false
+        default: ''
 
 # The debounce. Keyed per branch so a dispatch and a push do not fight, and cancelling is the whole
 # mechanism: the newest trigger wins and restarts the quiet period.
@@ -221,6 +225,11 @@ jobs:
           MCM_WIKI_PROVIDER: ${{ vars.MCM_WIKI_PROVIDER || 'fireworks' }}
           MCM_WIKI_SERVICE_TIER: ${{ vars.MCM_WIKI_SERVICE_TIER }}
           MCM_WIKI_PAGE_CONCURRENCY: ${{ vars.MCM_WIKI_PAGE_CONCURRENCY || '4' }}
+          # Item #525 trial (operator 2026-10-05): a per-dispatch reasoning effort, so a trial run never
+          # changes what a merge-triggered run sends. A push run has no inputs, so it falls through to the
+          # repository variable, which is unset — the model default. wiki-provider.mjs rejects any value
+          # Fireworks does not document, and the preflight sends it, so a bad value fails before paid work.
+          MCM_WIKI_REASONING_EFFORT: ${{ github.event.inputs.reasoning-effort || vars.MCM_WIKI_REASONING_EFFORT }}
           # The write credential, kept distinct from the model credential (FR-025).
           FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           FORGE_API_BASE: ${{ github.server_url }}/api/v1

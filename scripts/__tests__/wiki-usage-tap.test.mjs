@@ -137,6 +137,36 @@ test('tier set: an Anthropic request is left exactly as the caller built it', as
   assert.equal(calls[0].init, init);
 });
 
+// ── (c2) reasoning_effort: exactly one key, Fireworks only ─────────────────────────────────────
+
+test('effort set: a Fireworks body gains reasoning_effort and differs in NO other key', async () => {
+  const { fn, calls } = stubFetch(fwResponse);
+  const original = fwBody({ temperature: 0.2 });
+  await wrapFetch(fn, { MCM_WIKI_REASONING_EFFORT: 'low' })(FW_URL, { method: 'POST', body: original });
+  const sent = JSON.parse(calls[0].init.body);
+  assert.equal(sent.reasoning_effort, 'low');
+  delete sent.reasoning_effort;
+  assert.deepEqual(sent, JSON.parse(original), 'every other key must be the caller\'s');
+});
+
+test('effort and tier together: exactly those two keys change', async () => {
+  const { fn, calls } = stubFetch(fwResponse);
+  const original = fwBody();
+  await wrapFetch(fn, { MCM_WIKI_REASONING_EFFORT: 'low', MCM_WIKI_SERVICE_TIER: 'priority' })(FW_URL, { method: 'POST', body: original });
+  const sent = JSON.parse(calls[0].init.body);
+  assert.equal(sent.reasoning_effort, 'low');
+  assert.equal(sent.service_tier, 'priority');
+  delete sent.reasoning_effort; delete sent.service_tier;
+  assert.deepEqual(sent, JSON.parse(original));
+});
+
+test('effort set: an Anthropic request is left exactly as the caller built it', async () => {
+  const { fn, calls } = stubFetch({ usage: {} });
+  const init = { method: 'POST', body: JSON.stringify({ messages: [] }) };
+  await wrapFetch(fn, { MCM_WIKI_REASONING_EFFORT: 'low' })(ANT_URL, init);
+  assert.equal(calls[0].init, init);
+});
+
 // ── (d) never throws into the generator ────────────────────────────────────────────────────────
 
 test('a malformed response body records {tapError} and the response still reaches the generator', async () => {

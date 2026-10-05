@@ -65,10 +65,10 @@ const PREFLIGHT = {
     // generator itself sends, so it cannot fail for a reason a real run would not.
     body: { model, max_tokens: 1, messages: [{ role: 'user', content: 'ok' }] },
   }),
-  fireworks: (child, model, tier) => ({
+  fireworks: (child, model, tier, effort) => ({
     url: `${child.FIREWORKS_BASE_URL ?? 'https://api.fireworks.ai/inference/v1'}/chat/completions`,
     headers: { authorization: `Bearer ${child.FIREWORKS_API_KEY}`, 'content-type': 'application/json' },
-    body: { model, max_tokens: 1, messages: [{ role: 'user', content: 'ok' }], ...(tier ? { service_tier: tier } : {}) },
+    body: { model, max_tokens: 1, messages: [{ role: 'user', content: 'ok' }], ...(tier ? { service_tier: tier } : {}), ...(effort ? { reasoning_effort: effort } : {}) },
   }),
 };
 
@@ -76,7 +76,7 @@ const PREFLIGHT = {
 export async function preflight(env = process.env, fetchImpl = fetch) {
   const resolved = resolveWikiProvider(env);
   const child = buildGeneratorEnv(env);
-  const req = PREFLIGHT[resolved.provider](child, resolved.modelId, resolved.tier);
+  const req = PREFLIGHT[resolved.provider](child, resolved.modelId, resolved.tier, resolved.reasoningEffort);
   let res;
   try {
     res = await fetchImpl(req.url, { method: 'POST', headers: req.headers, body: JSON.stringify(req.body) });
@@ -106,7 +106,7 @@ async function main(argv) {
   let child;
   try { child = launchEnv(process.env); } catch (error) { fail(error.message); }
   const resolved = resolveWikiProvider(process.env);
-  console.log(`[wiki-generate] provider=${resolved.provider} model=${resolved.modelId} concurrency=${resolved.pageConcurrency}${resolved.tier ? ` tier=${resolved.tier}` : ''}`);
+  console.log(`[wiki-generate] provider=${resolved.provider} model=${resolved.modelId} concurrency=${resolved.pageConcurrency}${resolved.tier ? ` tier=${resolved.tier}` : ''}${resolved.reasoningEffort ? ` effort=${resolved.reasoningEffort}` : ''}`);
   const r = spawnSync('openwiki', generatorArgs(process.env[RUN_MESSAGE_ENV]), { stdio: 'inherit', env: child });
   if (r.error) fail(`could not start openwiki: ${r.error.code ?? r.error.message}`);
   process.exit(r.status ?? 1);
