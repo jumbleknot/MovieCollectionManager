@@ -1,7 +1,7 @@
 {
   "coveredCommit": "4d8e9d4ac8eccd9ea69489c4061f5e6d19e0000a",
   "coveredAt": "2026-10-06T02:44:52.894Z",
-  "lastOutcome": "completed",
+  "lastOutcome": "failed",
   "backlog": [
     {
       "area": "runbooks",
@@ -11,7 +11,8 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
+      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
@@ -57,23 +58,23 @@
     "updatedAt": "2026-10-06T02:44:53.264Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 2,
-    "elapsedSeconds": 1119,
+    "pagesWritten": 0,
+    "elapsedSeconds": 379,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 101,
+    "calls": 31,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 485975,
-    "cached": 8024014,
+    "uncached": 181462,
+    "cached": 1621960,
     "cacheWrite": 0,
-    "output": 180715,
-    "reasoning": 145747,
-    "ms": 1548064,
-    "estCostUsd": 0.2824,
+    "output": 63642,
+    "reasoning": 47402,
+    "ms": 340078,
+    "estCostUsd": 0.0933,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
