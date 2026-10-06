@@ -199,6 +199,26 @@ touched. This is the gate working, not a defect — and it recurs. The playbook 
    Then `pnpm install`, and re-verify `pnpm audit` reports zero High for the package. Only when **no**
    fix exists yet is a justified allowlist entry (with `expiry` for an imminent bump) correct.
 
+   **The third case — a fix exists, but only outside the range its consumers declare.** Before
+   writing an override, check what every package on the advisory's path asks for:
+   `npm view <consumer>@latest dependencies.<pkg>` (the paths are in `pnpm audit --json` → `advisories.<id>.findings[].paths`).
+   If even the consumers' **latest** releases still declare a range that excludes the patched version
+   (2026-10-06: `@graphql-tools/utils` fixed only in 12.0.1, while `graphql-yoga` and
+   `@graphql-yoga/plugin-defer-stream` still require `^11.2.0`), the "pinned within the major" override
+   above is impossible — the only bump forces a major the consumer does not support. This is **not**
+   "fixable" in the sense of this step, and it is **never** decided by the reader alone: stop and put
+   both options to the operator.
+   - **(a) Cross-major override** — `pkg@<fixed: '>=fixed <next-major'` in `pnpm-workspace.yaml`,
+     accepted only with the full required set green, including `app-e2e` when the consumer is on the
+     app's runtime path.
+   - **(b) Time-boxed acceptance** — an allowlist entry that says *"no fix within the range its
+     consumers declare"* (not "no fix exists"), with the **reachability evidence written into the
+     justification** (which consumer, which entry point, and why the vulnerable function is or is not
+     on a request path — checked in the installed package, not assumed), pinned to the **exact**
+     vulnerable version, a **short** expiry, and a backlog item whose acceptance criteria delete the
+     entry rather than renew it. Worked example: the `@graphql-tools/utils` entry in
+     `security/sast/allowlist.yaml` and backlog item #674 (operator chose (b), 2026-10-06).
+
 5. **Note the local limit.** semgrep + cargo-audit + pip-audit aren't on the Windows dev box or the
    dev container, so the *full* gate is CI-authoritative; `pnpm audit` locally confirms only the
    pnpm-SCA portion. Push and let CI confirm.
@@ -286,7 +306,8 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
   Renovate produces exactly this mismatch when it proposes a floor raise, so expect bot PRs against
   this map to need their key half fixed by hand.
 - **Remediate, do not re-date.** Deleting or extending an `expiry` is how a time-box becomes
-  permanent. The legitimate exception — no published fix exists — requires the evidence written into
+  permanent. The legitimate exceptions — no published fix exists, or a fix exists only outside the
+  range its consumers declare (step 4's third case, operator-approved) — require the evidence written into
   the justification (the `image-size` pair was the example until the dependency left the tree and its
   entries were deleted). Check npm before assuming: on
   feature 057 both "needs an acceptance" advisories turned out to have published fixes.
