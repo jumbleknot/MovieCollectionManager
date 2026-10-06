@@ -29,7 +29,7 @@
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 29,
+    "elapsedSeconds": 19,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
@@ -38,13 +38,13 @@
     "calls": 7,
     "failedCalls": 3,
     "uncounted": 0,
-    "uncached": 36445,
-    "cached": 76664,
+    "uncached": 30637,
+    "cached": 68614,
     "cacheWrite": 0,
-    "output": 1517,
-    "reasoning": 951,
-    "ms": 17268,
-    "estCostUsd": 0.0096,
+    "output": 870,
+    "reasoning": 355,
+    "ms": 7835,
+    "estCostUsd": 0.0078,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
