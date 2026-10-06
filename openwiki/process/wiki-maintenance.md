@@ -1,12 +1,10 @@
 ---
 type: Process
 title: OpenWiki bundle generation and maintenance
-description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan / wiki-maintain / okf-governance around them), the non-scheduled freshness model, and what the conformance gate actually enforces and refuses to enforce.
+description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan / wiki-maintain / okf-governance around them), the event-driven freshness model, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), and what the conformance and governance gates enforce versus deliberately refuse to enforce.
 resource: infrastructure-as-code/project.json
-tags: [openwiki, okf, documentation, ci]
+tags: [openwiki, okf, documentation, ci, maintenance]
 sources:
-  - id: openwiki-source-7e1c4d46c53be9bf32311e06
-    resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-36295b95c290f53e6f6e79a7
@@ -21,23 +19,18 @@ sources:
     resource: repo://scripts/check-openwiki-governance.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
     resource: repo://scripts/check-openwiki-okf.mjs
-  - id: openwiki-source-d6ba69382020a933bb1c9de0
-    resource: repo://scripts/openwiki-stamp.mjs
+  - id: openwiki-source-efa55c3a8c70016f55bf6266
+    resource: repo://scripts/openwiki-claims.mjs
   - id: openwiki-source-f7de3a4f5f1323dd23a0c681
     resource: repo://scripts/wiki-generate.mjs
   - id: openwiki-source-e3418ba4f663de6f0edbcde6
     resource: repo://scripts/wiki-maintain.mjs
-  - id: openwiki-source-e328f529714691b0e8346a1c
-    resource: repo://specs/043-openwiki-okf/contracts/check-openwiki-okf-cli.md
   - id: openwiki-source-8591439162d997daf59a1ac6
     resource: repo://specs/043-openwiki-okf/data-model.md
-  - id: openwiki-source-219168cc26e2918922e603f9
-    resource: repo://specs/043-openwiki-okf/spec.md
-  - id: openwiki-source-d84a0e2ffc6b200e673e575c
-    resource: repo://specs/044-openwiki-automation-migration/data-model.md
-  - id: openwiki-source-636b4e73e33915c86a84ab68
-    resource: repo://specs/044-openwiki-automation-migration/spec.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-06T04:53:02.015Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-10-06T04:53:02.015Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -55,15 +48,34 @@ is offline, keyless and free: it decomposes the documentation changes since the 
 bounded slices (at most 8 pages, one bundle area each) and prints them, so a paid run is reviewable
 before it happens. `pnpm nx wiki-maintain infrastructure-as-code` is the paid execution path. `pnpm nx
 okf-governance infrastructure-as-code` runs the second, newer gate
-(`scripts/check-openwiki-governance.mjs`) over the regeneration policy, the protection fingerprints and
-the index. The operator runbook for all of it is `docs/runbooks/wiki-maintenance.md`; this page is the
-summary of what the machinery guarantees and where it is easy to be misled.
+(`scripts/check-openwiki-governance.mjs`, rules G1–G12) over the regeneration policy, the protection
+fingerprints and the index. The operator runbook for all of it is `docs/runbooks/wiki-maintenance.md`;
+this page is the summary of what the machinery guarantees and where it is easy to be misled. The
+exhaustive machinery detail — the provider and credential table, the budgets, the exit codes, the four
+slice-verification causes and the Claims sidecars — belongs to the runbook, not here; for the
+distilled version of that half see [OpenWiki knowledge-bundle maintenance](../runbooks/wiki-maintenance.md).
 
 Scope and redaction rules for generation are hand-authored in `openwiki/INSTRUCTIONS.md`, which the
 tool reads on every run but never rewrites. Two sibling files beside it are in the same position —
 `openwiki/policy.yaml` (the per-path regeneration policy) and `openwiki/protected.yaml` (the protection
 manifest) — and all three are declared `never-written`, because a process must not be able to rewrite
 the file that constrains it.
+
+```mermaid
+flowchart TD
+    Plan["wiki-plan, offline and free"] --> Maintain["wiki-maintain, paid"]
+    Maintain --> Generate["wiki-update, runs scripts/wiki-generate.mjs"]
+    Generate --> Cli["openwiki code --update --print"]
+    Cli --> Verify["verifySlice: pages landed, conformance, policy"]
+    Verify --> Proposal["one long-lived proposal, human reviewed"]
+    Verify --> Backlog["failed slice back to the committed backlog"]
+    Proposal --> Lint["okf-lint, V1 to V16, fail closed"]
+    Lint --> Gov["okf-governance, G1 to G12, fail closed"]
+    Gov --> Review["human review, never auto-merged"]
+```
+
+The paid path runs from the free planner through the generator to slice verification and one reviewed
+proposal, and the always-on gates sit after it rather than inside it.
 
 ## Gotchas
 
@@ -119,6 +131,22 @@ the file that constrains it.
   concept pages outside an OpenWiki run unless explicitly asked; prefer updating the source
   documentation or code and letting the next `wiki-update` regenerate the affected pages. Hand-editing
   a derived summary is how a concept starts becoming a drifting copy of its source.
+- **A page openwiki has covered is byte-certified, and hand-editing it bricks every later run.** Every
+  page with an entry in `openwiki/.page-manifest.json` must still hash to the `pageVersion` its
+  verified Claims sidecar certifies — conformance rule V16, defined once in
+  `scripts/openwiki-claims.mjs` and enforced by openwiki itself before it will start. Measured on
+  2026-09-29: four hand-corrected pages on one proposal stopped maintenance until a follow-up
+  recovered it. To correct a covered page by hand, **uncover** it in the same commit — drop its
+  manifest entry, its sidecar and its front-matter `verified:` event. The sidecar's own lifecycle is
+  the runbook's subject, not this page's.
+- **The pinned generator's managed block must already be committed.** OpenWiki rewrites its
+  `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block in `AGENTS.md` and `CLAUDE.md` on **every**
+  run, and `openwiki/policy.yaml` lets only an `actor: agent` write `AGENTS.md`. If the committed block
+  is not byte-identical to what the pinned generator writes, every slice fails verification
+  ("AGENTS.md — the run may not write here"), is retried, and returns to the backlog with the marker
+  never advancing. A guard test rebuilds the block from the installed generator's own source and
+  compares, so a version bump that changes the text fails offline instead of failing every paid run in
+  CI.
 - **A durable learning goes to the canonical home of its subject.** Find the concept covering the
   subject, then read its front matter: **carrying a `resource`** means it is a derived summary, and the
   learning belongs in the cited source (runbook, decision record, architecture document); **no
@@ -154,7 +182,8 @@ the file that constrains it.
 
 Full CLI contract and the conformance gate's rule set: `specs/043-openwiki-okf/contracts/` and
 `specs/043-openwiki-okf/data-model.md` (rules V1–V15, the last two added for item #491 after `resource`
-verification alone proved insufficient); the maintenance machinery's contract is
-`specs/044-openwiki-automation-migration/contracts/`. Day-to-day
-invocation notes live in `docs/runbooks/devcontainer.md`, the operator runbook is
+verification alone proved insufficient; V16 followed for item #611 to hold a covered page's bytes to
+its verified Claims sidecar); the maintenance machinery's contract is
+`specs/044-openwiki-automation-migration/contracts/`. Day-to-day invocation notes live in
+`docs/runbooks/devcontainer.md`, the operator runbook is
 `docs/runbooks/wiki-maintenance.md`, and the corrections note is in `CLAUDE.md`'s OpenWiki section.

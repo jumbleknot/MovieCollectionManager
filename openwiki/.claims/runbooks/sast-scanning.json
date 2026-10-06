@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ddf5f24a04f2184bcfc3de9e8b732cefe4da0685a4312b87900fdd5bb219241f",
+  "pageVersion": "sha256:a634bb338fdb51ec23e55f9771b5c472b75e6664ccc96b9eeb8a3ec204ffeb02",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -537,10 +537,106 @@
           "version": "repo-lines-v1:sha256:b01352a6a294d9aa78db53681494becf55742b77b714ba81483758eb805e5149:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTI5YTY3ZGQ1NzUxZjdiYzdkNTAyMWEyM2QwZGJiYWYwYmZjYmExMzc2ZDVjM2M0YmQwOWZjNzQyNmU0NzM5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjgyZjliYTJiYWFiZTc5NGIwZmZmMmQwYWQzYjkxN2NmNWM4ZWEyZmFhMGY0NjViMzVkOGEwNzc2ZTk2NTRhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZmMzk2NGMyZjk3ZDU3YjIyNjcyYWE0Njg4ZWI1OWNkZTkwNTU3MzFlOTM2NTYzMjA5OWZhNjgzMWJlOGMxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGNmMDY3NzhiMzY2OTVhZGYxMjkxNTFhNzM1NGQzYWJjODc4MTllNGYwNDI0NDIyN2FjMzQ5MWU0ZGNmM2NmZCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_defeb1397e07473ca5556aa0094e68cf",
+      "statement": "The SCA `runtime` tag answers whether the whole-workspace `--prod` audit sees the package, not whether the vulnerable code path is exercised; two of the three current no-fix acceptances (node-forge, braces) are tagged runtime solely because `expo` declares `@expo/cli` a production dependency while the vulnerable code sits in Expo CLI / code-signing tooling and in micromatch under Metro's file watcher and Jest, so reachability must be checked separately and written into the justification.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L202-L206",
+          "version": "repo-lines-v1:sha256:91c7df156e8c1444316f9daf29f4503611baa29d855d30f968c602fd3b2d87eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZkYjBkOWY3NDllNDNhNjhiNzE3ZDM1YTg4YmU0YzQ5ZGJkMjEwMDQ2ZTlkMjAwMGVjNjM3ZTI1MTc4Y2IwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQwM2Q0ZDU0MzBjMmExNzYyZjcyZDJlYTEyZDRhYjUxNzRkOTBhM2VjMzQ1YzU3ZDBkZGIzNTZiMGI4ZmRjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWM1NjU4NThjYjY1ODk4MjU5MmM5ZmYxZjg5MDE3N2ZjNjBkMjA3MGUyOTQ1NDQ0ODg3YWQ5NThkZjZiMmI2YyJ9"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L467-L485",
+          "version": "repo-lines-v1:sha256:1b2b943a953ebadcb31bef7cd271d93f136940146061d4f708c58a0294adf568:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMjQyOThiMGQ5MzEyMDczYWQzZTQyMGIzYmRjMjQ5ZjEyMzIxODFiMmIwOGYxMGM4NmU5YzM5ZmRhMjUwNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjNmQyNTkyOTk0YWU2ZTA5NGM2ZTkyOGMzZjEwNmU3MzhmMWQwNTllN2RhZmFhMzA2MjE3Y2Y1NzI1MTE4NzMifQ"
+        },
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L211-L255",
+          "version": "repo-lines-v1:sha256:b4ad41638aefb2c164a0bbb9d43e75ad378a2c6fa701be91378c521eeaec3651:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxODE0ZDU2YmNjMDdlZGJhZDk1MThiOGMzYTNlYzk0OWEwZTJhMTBjM2UyYjQyYWEwYmQ2MGFlNTA4ZTM2MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyZTYyMDNlMWQ0Zjc0ZWZlNjdjYmM3NGM3YzczZWZiMTNlY2Q5MWIzNDk0MTllYWZkMDkyZDg1N2JlMDVhY2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4dbf5093ced042e186e387e7a41742ff",
+      "statement": "A custom rule's documented limitation is triaged into the allowlist rather than worked around: `mcm-auth-before-authz` only recognizes a guard call textually earlier in the same function, so the backups reader/writer and the account-deletion pipeline — all of which receive an already-authenticated (or step-up) token from a route wrapper — carry entries pinned to those individual files, so a new unguarded upstream client anywhere else still fails the gate, and pushing a `requireMcUser` call down into those functions would contradict the role-enforcement-is-a-layer rule by reintroducing the per-call-site check that rule exists to prevent.",
+      "evidence": [
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L159-L209",
+          "version": "repo-lines-v1:sha256:ff7ca2e26657e0a5efccf54301832ede3eff87fa67562c4f265428203a38cc46:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZjhmZWQyMGIyNDQxZjEzOTAzMzExZDk4ODZiZTYzYzJkMGE0MDAxODRkYTkxZGIzYWI2ZTJhYmE3Yjc1ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlOGVjNjdlMGI4YmYwZWVmNDczNmYwMmRiNTc1YzhlZTJjNTc0ZTgxNWY1YThkMDIyMjM1YmEwOTUyYTEwMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYmU2Y2NmNzM4NTRhZTVjMjg4Njk5NGIwNzg0MGYyNWRiZGFlMGEwODMwM2FmYzY3ZGY4ODIzNzE5MDM1MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZjZmYjRkMDQ5NWE3NGRjMTU2NWZlNTY2MjdiY2M0NzFiMmIxOGFlMjg3ZmZmNGRhOTNiMmM5ZmM5ODVhYzUifQ"
+        },
+        {
+          "resource": "repo://security/sast/rules/mcm-auth-before-authz.yaml",
+          "version": "repo-file-v1:sha256:8215a861fc748047ea831de03d6d278f081998400f856869dbb5fcd7334b7c40"
+        }
+      ]
+    },
+    {
+      "id": "claim_d86ebd4745ee4983bc78b0ce7b4c1d98",
+      "statement": "Where no patched version exists, the allowlist convention is to pin `locationPattern` to the exact vulnerable version and short-date the entry, so a different version re-blocks for a fresh assessment and the entry stops suppressing on its own — with the reachability check that was actually performed recorded in the justification.",
+      "evidence": [
+        {
+          "resource": "repo://security/sast/README.md#L136-L139",
+          "version": "repo-lines-v1:sha256:0d6b0d2cf4075f5624c87392a519b1db19395e720f56d667857346a434153716:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjZWVjMDFlNmIyMjhkYzFmOWJiOTllNzBjZmE0OWEwNGFmZTVlNTExNjQzOGEyNDRiMzNiMGUxNGFjOWI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIwYzJiYWIyMzM2ZDdiZWU2ODk3MjcxYWRmMzgzMGUwNDQ3Mzc2YzExNjI3YWJmODVlNmM1ZjVmM2M2NmUxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRkMDU2N2Q4MTMyZjFkNTY0NTVmOTVmNWYwZjM1OWEwZDZlZWQ4YmNjYzk0ZWQ3NjY0NTA1N2JjMzIzZWVmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgwMTcxYTI2YmFhMmIxZDhkNTJjNmNlMWJiMTUwY2FhMzYzZjYyZjgxZTc3M2Q3NzEwY2IzNmIxMTA5MjcyNCJ9"
+        },
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L211-L279",
+          "version": "repo-lines-v1:sha256:2c4559b8d820a1c9e22558869dcbb6676a496f156fb8abb4eb2ab743af0b8eff:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzhkMjc0Y2U5NDUyOTI0MTFkYTUxNDhiZmU3MWE4NGE5NWZjZDg3NDI2YjQwNDVhNWQyNGQzNmU2N2Q4YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_81467c960fe84bb78e7d690b0e8ae125",
+      "statement": "A suppression that matches nothing is deleted rather than renewed or re-anchored, because a dead entry would silently absorb a genuine regression on that package until its expiry; the retired click entry and the feature-034 remediations were all discharged this way.",
+      "evidence": [
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L135-L156",
+          "version": "repo-lines-v1:sha256:8fdd90ddfd9dbd55f175d4ab95320e6745e864d70be57bb9530928a781543c21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTY5YjE1M2RhZDg1ZmIzZDk2MjNlZWQ1ZjEwMTNmNDliYjVhMjhiNzRmZTk1MzAxYmNhNmZjMWFjODU2NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMzZjNTRjMWJiYjgwYjlkOGE3YjM3ZThiYjFkM2ZlNTU3NGY2N2JiMmM5OWJhNzE3ZGUxODQzZjJmN2I3YTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjhhMjhiMWQxMTI3NTc2MzFlYWZhYjY1OGI2MTJhNWE3ZGM4MzY1NjI1YWVmNmUyMzg3ZjUyY2VmNDEwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNGY5Y2I3ZTJmYmY5MWZiZGEzMmZkNzhiOTRmZGJjNDhmNjg5YjM2MzkwMzdiOTI5ODdmZjc1NmI5MzEyZWUifQ"
+        },
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L43-L87",
+          "version": "repo-lines-v1:sha256:18aad2054190dd8ec5c3aad4ecbb4d9c64167781fc0518db85883dd93c5dd223:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYmY4ZmE4YWI1Njc5YTliZDA3NTg0NmNkMGRiNTRhMGYxM2IyY2M4MzYwYWE5ZTY5YzFhYTdhMWNhOGViZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNmU5NDg3OGVkNDU5ODUwNTcxY2IzNDYzZTMyNDIzMDZmMGY2YTU0OTFiOTMxZjk5MDYzNzk5M2NkYjhmY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0NDUyNWNiM2ViNWU5ODllODg0ZTEwZjdhNzhkNzg2OGFlZTJhNzM3YWZhYTZhMzNlZGM2NDcyODg2YjhkN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExYTUzZTc2YTU2Y2Y5NTAyYjcwMWViZDU5YjBkYmUwMTg2NGNhOGNiOWE5N2FkOWIxMGI0ZTAzMWM3MmE3YTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66da9f8c745746a6ad04a4c892ed497b",
+      "statement": "The `OVERRIDE LEVERS` advice is emitted only for an SCA finding whose `fixAvailable` yields a parseable floor and whose resolved version sits inside a KEYED override's range (plain pins produce nothing), is deduped per package plus resolution plus action, is printed for non-blocking findings as well as blocking ones, and an unreadable or absent `pnpm-workspace.yaml` is swallowed to an empty override map outside `gate()` so the gate's result can never depend on it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-sast-findings.mjs#L247-L265",
+          "version": "repo-lines-v1:sha256:8bc5b1cfd09b7bbd1ed5ea5039158ef01045e5c66ef3ad8b52a36a56fa90a30b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2YWRhYjllZDM5NWI2ZDg0OWE1ZmEzMmRiZTY3YzlmMzEyYTAwYTg3M2JjOTNiMGRjOTMwZmQ4Mjg1MjdkZjEifQ"
+        },
+        {
+          "resource": "repo://scripts/check-sast-findings.mjs#L610-L619",
+          "version": "repo-lines-v1:sha256:d254bd1eeb7e57027163719c2f5bd795a4b5dffbd4dacad1d717ef0c0cab4ac2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4MDc5NTNmYzM1ZWRjYzU5YjJiM2IyNzQ5NmQ4OTQ4MWQ4YjRjODZhMTk0YWM3Y2Y2NjhmMTEwM2M1OGM5YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MThlODZkODJhN2VlNjg2MzM5MmI3NTE5ODMzNjgyYjExZmQ4YmJlMzA1NDU4OGY1ZjY5YzMzNDZlYjA2M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhODI2M2YyYTNlNWJlNjkyNjExMDk5MDZhNGYyZmY2YmQzNDMxZjNiNzUxZTdiYWY2ZjhkMmExZTk5ZWE5NjgifQ"
+        },
+        {
+          "resource": "repo://scripts/override-lever.mjs#L141-L175",
+          "version": "repo-lines-v1:sha256:4817214ea04488e2feaa320e363950f19294424d97dd1267c1525e3bcbe11425:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMzc3YzVjMDI1MDMxYTQ1MmIzOWNiZThlOTAyOGIzNGQzYjJiMTRiMGYxZjk3YWI2ZTNiY2FkMDZhODA5OWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://scripts/override-lever.mjs#L78-L110",
+          "version": "repo-lines-v1:sha256:3cd455aec3f60ddf4372499026283a8543e856294675b4040186984a529f3b33:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMDc0NTdjZDI1YWRiMWFlYzJlNDQ0ZDExNGZjMTIwODU4MjRiMDgzMTQ2MTIzOGNiYThkYTA5MzNjNDdiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2YTQzMjAxYjkwMDIzZTQ3ZWFkNjBhMTZlNTFlYmUzZTExOGJiYjU3NDlmMjRmYjhhMDI5MjVmM2MwNjBlYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4NGFiMDMwN2E3ZTY3OTk1ZTEzZGVmOGZmMzhkOWMwYjc2OWZiODE2MDY4NmJlZTJlM2Q4ZDQ5ZTVhZGIxMjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_640cf0aa297f4531b54d9691456675e4",
+      "statement": "The expiry-check and gate-scope wiring is pinned statically: exactly one step in the `infra-image-scan` job invokes `--check-expiring`, it must cover both allowlists, its `if:` must contain the schedule guard, and no other workflow may invoke `--check-expiring` at all — because a wrong guard is green today and blocks every pull request a fortnight later, while an absent override-consistency step looks identical to a passing one.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L322-L339",
+          "version": "repo-lines-v1:sha256:4822b989dced2cbcea58347896b342b52f403a3ecaee470d7bb982365d44bfe3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiMjc2ZjFiNmRkMmFiYzg5NTgwMDNjMzE5OWQ3ODI1ODk0MmE2NzNlYmE4Nzk4NmZjMzgzNGU2NTM3ODZhMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5Mjk0YWY1NjU2OTM0NDRmMTk1M2I3MDUyOGMwZDFkMmZkZTZkMWUzMTkxNjJhNzNkYzlkNGVmNGY2MDk0YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4OTI5N2QxNjBkN2U0MTBiMDk5ODc2ZmI5ZDBjMzM3MjEwNzNkNjc5ODkwNjk5OGYyOTdhMzU0YWI4MzEzYWUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs#L39-L113",
+          "version": "repo-lines-v1:sha256:68fd6c4260746a1930709aa8a999c2591cedab5eb8dd6ede07a9d36099383587:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNWZkZGNmODYxNzEyMWZiMjlhNTY0NzNlMTI1YjEzMTA3YWZkNzE2MTZjZTkzYjk3YzdkZGI1ODBkYWY1MjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2YzViN2IxODlmYjY4ZWFiMzllYTdlNGNhZWJjMmY3YWJjZTcyMjMxZTY0MTQ2ZTU1YTlkMjVjYzI1OGFmNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxMjgyZjlhZWYyOGVjNjc4ZDMzYWEyMmYxN2Q0MDI1M2ZiNjc4MjE5ZTdiYTQ4OGFhMDI2ODBiOThmMjQ0MzAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-10-05T16:45:44.972Z"
+    "at": "2026-10-06T02:26:18.087Z"
   }
 }
