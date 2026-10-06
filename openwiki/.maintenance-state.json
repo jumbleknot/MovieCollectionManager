@@ -1,23 +1,12 @@
 {
-  "coveredCommit": "4d8e9d4ac8eccd9ea69489c4061f5e6d19e0000a",
-  "coveredAt": "2026-10-06T02:44:52.894Z",
-  "lastOutcome": "failed",
-  "backlog": [
-    {
-      "area": "process",
-      "pages": [
-        "wiki-maintenance.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
-    }
-  ],
+  "coveredCommit": "751f52df636bb54b097040f49ede75757bb7a9c1",
+  "coveredAt": "2026-10-06T04:59:33.979Z",
+  "lastOutcome": "completed",
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 676,
-    "headCommit": "79d02150cb316fb5ff3546a2052612a2acaf7b13",
+    "headCommit": "6a4b94ae99cef61aa64843f12044135015b84ea3",
     "markerBefore": "4d8e9d4ac8eccd9ea69489c4061f5e6d19e0000a",
     "slices": [
       {
@@ -52,28 +41,39 @@
           "runbooks/sast-scanning.md"
         ],
         "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/sast-scanning.md"
+      },
+      {
+        "area": "process",
+        "pages": [
+          "wiki-maintenance.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/wiki-maintenance.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-06T02:44:53.264Z"
+    "updatedAt": "2026-10-06T04:59:34.411Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 557,
+    "pagesWritten": 1,
+    "elapsedSeconds": 396,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 73,
+    "calls": 50,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 273275,
-    "cached": 6303608,
+    "uncached": 179657,
+    "cached": 2706288,
     "cacheWrite": 0,
-    "output": 78317,
-    "reasoning": 55356,
-    "ms": 547334,
-    "estCostUsd": 0.1559,
+    "output": 56040,
+    "reasoning": 35603,
+    "ms": 388111,
+    "estCostUsd": 0.0955,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
