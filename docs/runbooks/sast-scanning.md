@@ -186,13 +186,15 @@ touched. This is the gate working, not a defect — and it recurs. The playbook 
 
    Only when the section says **raise the floor** — or says nothing, because there is no override yet —
    does the rest of this step apply. A **fixable** High (a patched version exists) MUST be bumped, not
-   allowlisted — allowlisting a fixable High is the wrong call. For a transitive dep, add a
-   `pnpm.overrides` entry in `package.json` in the existing `pkg@<vuln: >=fixed` form, **pinned within
-   the major** so nothing jumps a version:
-   ```jsonc
-   // package.json → pnpm.overrides  (matches form used for form-data/hono/undici)
-   "brace-expansion@>=3.0.0 <5.0.7": ">=5.0.7",
-   "axios@>=1.15.2 <1.18.0":         ">=1.18.0 <2"
+   allowlisted — allowlisting a fixable High is the wrong call. For a transitive dep, add an entry
+   under `overrides:` in **`pnpm-workspace.yaml`** (not `package.json`: the pnpm 10.33 → 11 bump silently
+   dropped every override left there — see the comment above `overrides:` in that file) in the existing
+   `pkg@<vuln: '>=fixed'` form, **pinned within the major** so nothing jumps a version:
+   ```yaml
+   # pnpm-workspace.yaml → overrides  (matches the form used for form-data/brace-expansion/axios)
+   overrides:
+     brace-expansion@<5.0.9: '>=5.0.9'
+     axios@>=1.15.2 <1.18.0: '>=1.18.0 <2'
    ```
    Then `pnpm install`, and re-verify `pnpm audit` reports zero High for the package. Only when **no**
    fix exists yet is a justified allowlist entry (with `expiry` for an imminent bump) correct.
