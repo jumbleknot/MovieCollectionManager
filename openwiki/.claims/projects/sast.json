@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:46a8a829d3201db0e875b441d3b8b4f22f0f04f96cb65de867ad04bc31a9ca84",
+  "pageVersion": "sha256:19648b011dcfc1238248848edb32925a6cdc52386408cb3d083bab4afb24e202",
   "claims": [
     {
       "id": "claim_8dae93c0934d4f8da3e82f0eb70b444c",
@@ -354,33 +354,45 @@
     },
     {
       "id": "claim_7e604cf1205843f5a6c32c4d6011cc3d",
-      "statement": "Remediation is preferred over re-dating: deleting or extending an `expiry` converts a time-box into a permanent suppression, and a fixable High with a published patch must be bumped rather than allowlisted. The legitimate exception — no published fix exists — requires the evidence written into the justification and takes a specific shape in the committed file: the entry is pinned to the exact vulnerable version so a different version re-blocks for a fresh assessment, and short-dated so it stops suppressing on its own, as with the node-forge and braces entries.",
+      "statement": "Remediation is preferred over re-dating: deleting or extending an `expiry` converts a time-box into a permanent suppression, and a fixable High with a published patch must be bumped rather than allowlisted. The legitimate exception — no published fix exists — requires the evidence written into the justification and takes a specific shape in the committed file: the entry is pinned to the exact vulnerable version so a different version re-blocks for a fresh assessment, and short-dated so it stops suppressing on its own. The committed file shows that shape three times — the node-forge and braces entries (no patched version exists at all) and the @graphql-tools/utils entry (a fix exists but sits outside the range its consumers declare, so forcing it would cross a major they do not support) — each stating reachability checked rather than assumed and each removal tracked on the backlog rather than renewed at expiry.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L187-L198",
-          "version": "repo-lines-v1:sha256:c3cb7eeab4b7609633abe79909f7f7f9d88eb60aec157f5aea9c41b1a8e824a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyYWZmZTg0MjgzNGYwMzQyZTk2M2YwZWM4OGZkZTk3ODUwNTFiZGE1ZjY4NjM4ZmRmODk0ODk0NzRlZTYzNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMTk4NWE2OGM5YTY2ODViMzVjYTFhNWQwZTk4ZWMwNTY5YTU5ZGJiNTk2N2QwN2JiMjlhN2E0MzRjYzlmZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMDQ1MTQ2OWU1OWVlYjU0ZTZiMmVmMDY1NzExY2Q4ZjZkYjQ5MmI1ODQ3NjQ5OTQ2ODQ4ZmFiZTE3ZWRiOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
+          "resource": "repo://docs/runbooks/sast-scanning.md#L187-L200",
+          "version": "repo-lines-v1:sha256:5a3d26e5da0e04e559545f22ab3665456eb93c65bbcdcfb81cd88ee7126d6ba1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyYWZmZTg0MjgzNGYwMzQyZTk2M2YwZWM4OGZkZTk3ODUwNTFiZGE1ZjY4NjM4ZmRmODk0ODk0NzRlZTYzNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMTk4NWE2OGM5YTY2ODViMzVjYTFhNWQwZTk4ZWMwNTY5YTU5ZGJiNTk2N2QwN2JiMjlhN2E0MzRjYzlmZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMDQ1MTQ2OWU1OWVlYjU0ZTZiMmVmMDY1NzExY2Q4ZjZkYjQ5MmI1ODQ3NjQ5OTQ2ODQ4ZmFiZTE3ZWRiOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L211-L255",
-          "version": "repo-lines-v1:sha256:b4ad41638aefb2c164a0bbb9d43e75ad378a2c6fa701be91378c521eeaec3651:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxODE0ZDU2YmNjMDdlZGJhZDk1MThiOGMzYTNlYzk0OWEwZTJhMTBjM2UyYjQyYWEwYmQ2MGFlNTA4ZTM2MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://docs/runbooks/sast-scanning.md#L288-L292",
+          "version": "repo-lines-v1:sha256:e963cc8fbe4c44bab1cb30e6a48597a24305b58166eb38d0b3e958dddb4700e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRmYWZmNjNlZmY3Mjk3ODA2YjhlOGMxODg5NDBmM2FkZTViMDYzNDEzYjU3NjliMDkyZjM4MTg3ZDdkOTU3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI5MjM4YTQ0NTkwZDQxNDEzZTU3Y2NmMDBlNjY1MjNjNDRkYzI4YmQwNDY0ZDVkNGE1MWExMGE3MTNjZDg3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjBmNjA0ZGJlMWQ3ZGRiZjFiZDM0MGI0NzY1ZjA1ZjFmNTAwZjViZmJmMWI3N2YyNzQzYzQ5ZTFlOTE3Njk1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDBkYjM0ODlhYTg3MjYzZDM2NTBlODdlZjMwMWM1NzY1OGMxYjAzNGZkOGVkNWY1NjViMmYyMDNlZTY3NjNiNSJ9"
+        },
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L211-L279",
+          "version": "repo-lines-v1:sha256:2c4559b8d820a1c9e22558869dcbb6676a496f156fb8abb4eb2ab743af0b8eff:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzhkMjc0Y2U5NDUyOTI0MTFkYTUxNDhiZmU3MWE4NGE5NWZjZDg3NDI2YjQwNDVhNWQyNGQzNmU2N2Q4YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_d1701191f10e42408abadbeb98f7d866",
-      "statement": "When the gate reports `OVERRIDE LEVERS` for a finding whose package already carries an override in pnpm-workspace.yaml, the two halves of the section point at different levers: `Already permitted by an existing override — REFRESH THE LOCKFILE` means the override range is already correct and the lockfile is what pins the vulnerable version, while `Not reachable by the current override — RAISE THE FLOOR` means the override itself must move. The section is advisory only, never changes the exit code, and prints for non-blocking findings too; the lever logic lives in scripts/override-lever.mjs, which returns nothing rather than guessing when the override map or a version cannot be read.",
+      "statement": "When the gate reports `OVERRIDE LEVERS` for a finding whose package already carries an override in pnpm-workspace.yaml, the two halves of the section point at different levers: `Already permitted by an existing override — REFRESH THE LOCKFILE` means the override range is already correct and the lockfile is what pins the vulnerable version, while `Not reachable by the current override — RAISE THE FLOOR` means the override itself must move — and its message names the two-halves invariant the move must honour (the key's exclusive upper bound equal to the value's inclusive lower bound), which scripts/check-override-consistency.mjs enforces on every pull request. The section is advisory only, never changes the exit code, and prints for non-blocking findings too; the lever logic lives in scripts/override-lever.mjs, which is pure and returns nothing rather than guessing when the override map or a version cannot be read, and the gate reads the override map in a try/catch so an unreadable manifest costs the advice and nothing else.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L163-L198",
-          "version": "repo-lines-v1:sha256:ce3c34bd4c0b43535cb7b22300b0c556f754c1a21162f545a25c6e96a717b4a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YThkYWJhNDI0OWRjYjBkYzI5NWE0MjZhNTZjMWVhM2Y4NzM1YWMyMTFmZmZmYjgzNWNmYzQwNmE5NjhmMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMTk4NWE2OGM5YTY2ODViMzVjYTFhNWQwZTk4ZWMwNTY5YTU5ZGJiNTk2N2QwN2JiMjlhN2E0MzRjYzlmZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4ZmUwMWY5NjQxN2IyMzVlNmZkODFjZjA4YjFmZDQyNTU1ZjdiYjMxMTc0MzZhZTllM2ViMWQ2YjcxNTdkYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
+          "resource": "repo://docs/runbooks/sast-scanning.md#L163-L185",
+          "version": "repo-lines-v1:sha256:c5e05b030e31a61d0c5bd9411569d9718d08031603c8dce9d504c87b8f237c17:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YThkYWJhNDI0OWRjYjBkYzI5NWE0MjZhNTZjMWVhM2Y4NzM1YWMyMTFmZmZmYjgzNWNmYzQwNmE5NjhmMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmNjODk0ZTgwY2ZjZjg4YWRiZDFlNmU3OWIwN2IyNTUwMjgxZTk2ZmRlMWJjNGIxMmE4YmY0MjkxZWU0YjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4ZmUwMWY5NjQxN2IyMzVlNmZkODFjZjA4YjFmZDQyNTU1ZjdiYjMxMTc0MzZhZTllM2ViMWQ2YjcxNTdkYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0N2E3ZDBjM2MyZWY1ZGQ3YTM5NGY5NTQ0MmFlNTY1N2U0YzI5NjZkMDMwNDcxYWVlMjNhYjAzOGU3NzNkM2EifQ"
         },
         {
-          "resource": "repo://scripts/check-sast-findings.mjs#L260-L261",
-          "version": "repo-lines-v1:sha256:a108c8af655a741da21c904f2acd60df9bcb40489bd83e39ddf9e7fc3b8cf6fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVlZGI2ZDUzM2NjOWZhODUxYzA3ZGVkOWMxNjkwODg4ZGFmZjE2NTkxMGViODIzNmM5MmY5MWNkZTg4ODFiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODNkZmUzMzcwZmQxOTVlYzkxYmJlMTE1YzZlMzY0ZGZjNTg0YzdhYWVlOTRjNDRjNzEzMjE5ZGY1ZmRmY2QwZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWY4ZGM5MmM4YmM5MGJiMmMzZWY4ZjI2ZjRjMjVmODVjYWI3OTkyNjYyNWRiNGExMDUxMzhjNDg1NmRiZjA2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzMzYmE3Y2QzOTljMjI1N2FjYjE1OTllNDBhZWJjODU1Y2MxZGE1OTY2OTBhZWFlZjlhNjMzMTM5OWY5YjI2MiJ9"
+          "resource": "repo://scripts/check-sast-findings.mjs#L260-L265",
+          "version": "repo-lines-v1:sha256:8f83626fbb67929488ebcc106c3151e5319740e7368e38be5ade56a57f47c36e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVlZGI2ZDUzM2NjOWZhODUxYzA3ZGVkOWMxNjkwODg4ZGFmZjE2NTkxMGViODIzNmM5MmY5MWNkZTg4ODFiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWY4ZGM5MmM4YmM5MGJiMmMzZWY4ZjI2ZjRjMjVmODVjYWI3OTkyNjYyNWRiNGExMDUxMzhjNDg1NmRiZjA2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzZhZGFiOWVkMzk1YjZkODQ5YTVmYTMyZGJlNjdjOWYzMTJhMDBhODczYmM5M2IwZGM5MzBmZDgyODUyN2RmMSJ9"
         },
         {
-          "resource": "repo://scripts/override-lever.mjs",
-          "version": "repo-file-v1:sha256:8e7c7bf89b6a0c01619bf1121ce8fa0cce12a96aae8e1ed82df21d4d8be840e1"
+          "resource": "repo://scripts/check-sast-findings.mjs#L610-L619",
+          "version": "repo-lines-v1:sha256:d254bd1eeb7e57027163719c2f5bd795a4b5dffbd4dacad1d717ef0c0cab4ac2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4MDc5NTNmYzM1ZWRjYzU5YjJiM2IyNzQ5NmQ4OTQ4MWQ4YjRjODZhMTk0YWM3Y2Y2NjhmMTEwM2M1OGM5YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MThlODZkODJhN2VlNjg2MzM5MmI3NTE5ODMzNjgyYjExZmQ4YmJlMzA1NDU4OGY1ZjY5YzMzNDZlYjA2M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhODI2M2YyYTNlNWJlNjkyNjExMDk5MDZhNGYyZmY2YmQzNDMxZjNiNzUxZTdiYWY2ZjhkMmExZTk5ZWE5NjgifQ"
+        },
+        {
+          "resource": "repo://scripts/override-lever.mjs#L115-L138",
+          "version": "repo-lines-v1:sha256:338d52bbf39c7443e863432ffdf166a85f9d86d02352324ee94f03df730ed7a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OWNlNjkzZTA1MWM2ZmIxZjY4NmIyMGFjOGUwODk4MjBhZjU3MDZjODU3ZmZmMTA2MDkyMjhmZGRmNjIxYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3YTc1NzU3OTQ0ZGU5ZTMwMzM3NThkNzUyYzg4MTM4ZmMxYWI4MzNkNWY5ZWRmN2FiYzMwNTIxNjZlNTg2MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://scripts/override-lever.mjs#L21-L29",
+          "version": "repo-lines-v1:sha256:556c3955776bcf6a6d0365b9a5d3389aa3075427c7a9cfd0b04c7b58b3f98540:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ0NjMyMzE1MWVjNjg2MjdmNjM2NmU1MDJlZDBiMWYzZmJlMjc3YzU5ODMyM2IzNDEzYWYzMjE4Yzg5MGZiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM4YjE4MmYzNGY0MDVkY2ViMTJjZDYzMzQ1ZGU1N2FmMTkxNjhkNTVlYWQyMTljMDQ1YzVkYmZhNmZhZWY0ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTMwODVlYmU0NWRkY2ZmNDMwYjUwZGE1MWM1ZjAyMjNkZDliNDBlOGIzZmE3YWU5NTFjNGI2MTBlNjA1YjA0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTg3OTYxNWQyOTJiMmI1Zjg5OGRmZmY5MzM4MjdiOWE5M2UwMGU1ZGE5MWRiNTU3NDRhZWZjZDUyN2Y4Nzc3YiJ9"
         }
       ]
     },
@@ -595,6 +607,6 @@
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-10-05T00:12:37.851Z"
+    "at": "2026-10-06T02:26:18.087Z"
   }
 }

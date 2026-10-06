@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate that must distinguish a scanner outage from a finding — and a finding on a file the pull-request scan never received from a clean one.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.6.0", at: "2026-10-05T16:45:44.972Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-06T02:26:18.087Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -44,11 +44,13 @@ sources:
     resource: repo://security/sast/allowlist.yaml
   - id: openwiki-source-dc4b183eb81f4bf37332aff8
     resource: repo://security/sast/README.md
+  - id: openwiki-source-a19234abfb32b98f346a6d4f
+    resource: repo://security/sast/rules/mcm-auth-before-authz.yaml
   - id: openwiki-source-9372ce7270e3121a73a61934
     resource: repo://security/sast/semgrep.yaml
 verified:
   - by: openwiki/0.6.0
-    at: 2026-10-05T16:45:44.972Z
+    at: 2026-10-06T02:26:18.087Z
 ---
 
 # SAST & SCA static scanning
@@ -93,6 +95,17 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   reachable from a runtime path across the whole workspace, not just the root package — checking scope
   by hand requires a recursive, workspace-spanning query, not a root-only one; getting this wrong has
   previously produced a false "gate bug" report.
+- **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
+  when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
+  package", which is a different question from "is the vulnerable code path exercised". Two of the
+  three current no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
+  production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces
+  only through micromatch in Metro's file watcher and Jest. Neither is imported by first-party code,
+  neither ships in the web or server bundle, and the glob patterns those tools expand come from
+  repository configuration rather than a request. (The third, `@graphql-tools/utils`, is tagged
+  runtime through `@copilotkit/runtime` but is only listed as a dependency, never reached on a request
+  path.) That reasoning has to be **checked and written into the justification**, because the tag
+  alone would have said the opposite.
 - **`pnpm why <pkg> --prod` without `-r` reports the wrong scope.** Without `-r` the command runs at
   the repo root only and prints nothing for a dep that is runtime-reachable via a sub-package (e.g.
   `mcm-app > @copilotkit/runtime > … > fast-uri`). That empty output is **not** "dev-only" — it is
@@ -101,6 +114,16 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   wrongly accused the gate of a bug on 2026-07-21; the gate was right.
 - **A fixable High must be bumped, never allowlisted.** The allowlist is for findings with no fix
   yet; suppression is gate-only and the finding stays visible in the report regardless.
+- **A rule's documented limitation is triaged into the allowlist, never "fixed" by working around it.**
+  `mcm-auth-before-authz` only recognizes a `requireAuth`/`requireMcUser` call textually earlier in the
+  *same function*, so service-layer modules that receive an already-authenticated jwt from a route
+  wrapper are false positives by construction — the backups reader/writer and the account-deletion
+  pipeline are exactly that shape, and the account-deletion entry is additionally guarded by a
+  step-up proof. The entries are pinned to individual files, so a new unguarded upstream client
+  anywhere else still fails the gate, and the residual risk is stated in each justification rather
+  than implied. Pushing a `requireMcUser` call down into those functions would contradict the
+  constitution's [role-enforcement-is-a-layer rule](../gotchas/role-enforcement-is-a-layer.md) by
+  reintroducing the per-call-site check that rule exists to prevent.
 - **`p/secrets` is deliberately OFF.** `secret-scan.mjs` owns credential detection, so enabling it here
   would double-gate and split the allowlist across two owners.
 - **Rust source itself is out of Semgrep's scope** — clippy covers Rust source patterns and
@@ -166,7 +189,8 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   window boundaries are inclusive. The window length is defined once in `scripts/allowlist-expiry.mjs`
   (`WARNING_WINDOW_DAYS = 14`) and imported by both gates. A dedicated `--check-expiring` mode runs
   **twice weekly — Tuesday and Friday, 04:00 UTC** — in the `infra-image-scan` workflow and fails on
-  any expiring or expired entry; this mode is never run on pull requests. **For the SAST allowlist it
+  any expiring or expired entry (and, where the run has a report to judge against, on an entry that
+  matched nothing); this mode is never run on pull requests. **For the SAST allowlist it
   cannot fail on an unmatched entry** — that job produces no SAST report, so unmatched detection is
   skipped there, and an entry that quietly matches nothing (the CVE→PYSEC trap above) is visible
   *only* in the report-only output of a normal gate run. Read it there. Three properties of that
@@ -179,32 +203,51 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   was red — the week the warning mattered most — it did not run at all. Third, a superseded
   (cancelled) run is skipped from inside the step body via `job.status` rather than in the `if:`, so a
   cancelled run cannot be turned into a failure for a commit that was never broken.
-- **Remediate, do not re-date.** Deleting or extending an `expiry` is how a time-box becomes
-  permanent. The legitimate exception — no published fix exists — requires the evidence written into
-  the justification; a time-boxed acceptance can also be discharged by a route its own justification
-  did not anticipate (the `image-size` pair was cleared when the dependency left the tree entirely,
+- **Remediate, do not re-date — and a no-fix acceptance is pinned to the exact vulnerable version and
+  short-dated.** Deleting or extending an `expiry` is how a time-box becomes permanent. The
+  legitimate exception — no published fix exists — requires the evidence written into the
+  justification; a time-boxed acceptance can also be discharged by a route its own justification did
+  not anticipate (the `image-size` pair was cleared when the dependency left the tree entirely,
   not by the fix its entry predicted). Check npm before assuming: on feature 057 both "needs an
-  acceptance" advisories turned out to have published fixes.
+  acceptance" advisories turned out to have published fixes. Where no patched version exists at all,
+  the convention the file has settled into is: pin the `locationPattern` to the **exact vulnerable
+  version** (`^node-forge@1\.4\.0$`, `^braces@3\.0\.3$`) and date the entry shortly ahead, so a
+  *different* version re-blocks for a fresh assessment and the entry stops suppressing on its own.
+  The justification then carries the reachability check that was actually done — which tree the
+  package arrives through, whether any first-party code imports it, and whether the input path the
+  advisory needs exists at all — because the audit's runtime tag alone is not evidence (see the
+  runtime-scope gotcha above).
+- **A suppression that matches nothing is not harmless, so delete rather than re-anchor it.** The
+  retired click entry and the feature-034 remediations were deleted, not renewed, for the same
+  reason: a dead entry would have absorbed a genuine regression on that package, silently, until its
+  expiry date. Deleting it means a regression re-blocks. This is the same reasoning whether the
+  premise fell away (the deep transitive cap freed, so click resolves clean everywhere), the fix
+  landed, or the dependency left the tree.
 - **Before raising a floor, check whether the lockfile is the lever, not the override.** Since
-  feature 058 the gate prints an `OVERRIDE LEVERS` advisory section for any finding whose package
-  already carries an override in `pnpm-workspace.yaml`. Example output:
+  feature 058 the gate prints an `OVERRIDE LEVERS` advisory section for an SCA finding whose
+  `fixAvailable` names a floor and whose resolved version sits inside a keyed override's range. Example
+  output:
   ```
   OVERRIDE LEVERS (advisory — does not affect this gate's result)
     Already permitted by an existing override — REFRESH THE LOCKFILE:
       • hono 4.12.29 — the override `>=4.12.25` ALREADY PERMITS 4.12.34; the lockfile is what pins
         4.12.29. The override needs no edit — refresh the lockfile: `pnpm update hono --lockfile-only`.
   ```
-  The same section carries the opposite verdict — `RAISE THE FLOOR (both halves)`, naming the exact
-  key/value pair to write — for a finding the current range cannot reach. **This distinction cost ten
-  days of red once already.** `fast-uri`'s override `>=3.1.4 <4` already
+  The same section carries the opposite verdict — `Not reachable by the current override — RAISE THE
+  FLOOR (both halves):`, naming the exact key/value pair to write — for a finding the current range
+  cannot reach. Four properties are load-bearing. It is **advisory only and never changes the exit
+  code**; it **prints for non-blocking findings too**, deliberately, because a finding in this state
+  is cheap to clear before its severity promotes it into a merge blocker; it is computed **per
+  *resolution*, not per package**, so a second resolution the override does not govern gets no advice
+  rather than wrong advice; and an unreadable or absent `pnpm-workspace.yaml` costs the advice and
+  nothing else — the map is read outside `gate()` and swallowed to an empty object, because the gate's
+  result must never depend on this file. **This distinction cost ten days of red once already.**
+  `fast-uri`'s override `>=3.1.4 <4` already
   permitted the published fix 3.1.5; the lockfile pinned 3.1.4. The fix predated the advisory by three
   days. A four-week allowlist acceptance was written for something `pnpm update fast-uri --lockfile-only`
   would have cleared. `nanoid` repeated it eight days later. If the section says *refresh the lockfile*,
-  editing the override is wasted work — the range is already correct. The advice is computed per
-  *resolution*, not per package, so a second resolution the override does not govern gets no advice
-  rather than wrong advice. The section is advisory only and never changes the gate's exit code; it
-  also prints for non-blocking findings, so a cheap fix can be made before severity promotes it into a
-  blocker. Most of these are now cleared weekly by Renovate's `lockFileMaintenance` (see
+  editing the override is wasted work — the range is already correct. Most of these are now cleared
+  weekly by Renovate's `lockFileMaintenance` (see
   [Renovate](./renovate.md)) without anyone reading an advisory.
 
   **Two gotchas about Renovate `lockFileMaintenance` (feature 058, 2026-08-13):**
@@ -319,6 +362,31 @@ The decision that separates a red gate meaning "re-run it" from one meaning "rea
 other two ways this scan goes green while proving nothing — an empty `findings.json` from a registry
 that could not be reached, and a rule that could not RUN — are invisible unless you read the finding
 count and the error count instead of the exit code.
+
+## `main` went red on a dependency nobody touched — the lever decision
+
+The SCA half runs full every time, so a freshly published advisory legitimately reds the gate against
+a tree nobody changed. The playbook that keeps a green from lying here is to read the **`OVERRIDE
+LEVERS`** section before reaching for a floor raise, because the fix may already be permitted and only
+the lockfile is stale.
+
+```mermaid
+flowchart TD
+  A["main is red on a dependency nobody changed"] --> B["Read the blocker digest for the sast job"]
+  B --> C["Read the OVERRIDE LEVERS section FIRST"]
+  C --> D{"Which verdict does it give?"}
+  D -->|"refresh the lockfile"| E["the range already permits the fix - pnpm update pkg --lockfile-only"]
+  D -->|"raise the floor, both halves"| F["move the key and the value together, then pnpm install"]
+  D -->|"no advice printed"| G{"Is a patched version published?"}
+  G -->|yes| H["bump it or add an override - a fixable High is never allowlisted"]
+  G -->|no| I["time-boxed entry pinned to the exact vulnerable version, with expiry"]
+```
+
+`pnpm why <pkg> --prod -r` (recursive, workspace-spanning) is the by-hand cross-check; the digest's
+tag is authoritative for what the gate saw. Only when the section says *raise the floor* — or says
+nothing because there is no override yet — does the override edit apply, and then both halves move
+together or `check-override-consistency.mjs` fails the PR by name. A time-boxed acceptance is the last
+resort, never the first.
 
 Full scanner matrix, local invocation, the CI gate steps, the triage/allowlist workflow, and the
 step-by-step "gate went red on an untouched dep" playbook:

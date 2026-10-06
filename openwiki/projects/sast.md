@@ -51,10 +51,10 @@ sources:
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
-generated: { by: "openwiki/0.6.0", at: "2026-10-05T00:12:37.851Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-06T02:26:18.087Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-10-05T00:12:37.851Z
+    at: 2026-10-06T02:26:18.087Z
 ---
 
 # SAST & SCA static security scanning
@@ -388,6 +388,11 @@ a scan that happened to pass.
       • nanoid 3.3.17 — … Raise the floor, and BOTH HALVES move together: `nanoid@<3.3.18: '>=3.3.18 <4'`
         (currently `nanoid@>=3.0.0 <3.3.18: '>=3.3.18 <4'`). …
   ```
+  The raise-floor half names the invariant it is honouring rather than just the new version: the
+  key's **exclusive upper bound must equal** the value's **inclusive lower bound**, and
+  `scripts/check-override-consistency.mjs` enforces that on every pull request, failing a half-moved
+  pair by name (the fuller treatment is in the next bullet).
+
   Advice is deduped on **package + resolution + action**, so `hono@4.12.29` carrying four advisories
   produces one line rather than four, while a second resolution of the same package still reports.
   **This distinction cost ten days of red once already.** `fast-uri`'s override `>=3.1.4 <4` already
@@ -454,15 +459,17 @@ a scan that happened to pass.
   above), and deleting it means a regression re-blocks — which
   is the convention this file follows everywhere.
 
-  **The "no patched version exists" exception has a shape, and the committed file shows it twice.** An
-  advisory whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3` — the
-  latter still `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the exact
-  vulnerable version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin means
-  a *different* version of the package re-blocks for a fresh assessment rather than inheriting an
-  acceptance written for the old one; the short expiry means it stops suppressing on its own. Both of
-  those entries also state reachability **checked rather than assumed**: the audit classifies them as
-  runtime only because `expo` lists its CLI as a production dependency, while the code paths involved
-  are build/test tooling that ships in neither bundle and, in `braces`' case, expand globs from
+  **The "no patched version exists" exception has a shape, and the committed file shows it three
+  times.** An advisory whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3`
+  — the latter still `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the
+  exact vulnerable version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin
+  means a *different* version of the package re-blocks for a fresh assessment rather than inheriting an
+  acceptance written for the old one; the short expiry means it stops suppressing on its own. The third,
+  `@graphql-tools/utils@11.2.2`, is the same shape for a slightly different reason — a fix exists
+  (12.0.1) but sits outside the range its consumers declare, and forcing it would cross a major they do
+  not support. All three state reachability **checked rather than assumed**: the audit classifies the
+  npm pair as runtime only because `expo` lists its CLI as a production dependency, while the code paths
+  involved are build/test tooling that ships in neither bundle and, in `braces`' case, expand globs from
   repository configuration rather than from a request. Removal is tracked on the backlog (a patched
   release, or the dependency leaving the tree) — the entry is a dated holding position, not a fix.
 
