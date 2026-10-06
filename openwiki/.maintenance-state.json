@@ -11,7 +11,8 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)"
+      "reason": "drift sweep (item #525): one uncovered page per run (operator, 2026-10-01)",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
@@ -58,22 +59,22 @@
   },
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 379,
+    "elapsedSeconds": 557,
     "stoppedAtBudget": false
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 31,
+    "calls": 73,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 181462,
-    "cached": 1621960,
+    "uncached": 273275,
+    "cached": 6303608,
     "cacheWrite": 0,
-    "output": 63642,
-    "reasoning": 47402,
-    "ms": 340078,
-    "estCostUsd": 0.0933,
+    "output": 78317,
+    "reasoning": 55356,
+    "ms": 547334,
+    "estCostUsd": 0.1559,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
