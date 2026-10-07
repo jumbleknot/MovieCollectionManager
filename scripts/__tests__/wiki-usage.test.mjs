@@ -16,7 +16,21 @@ import { fileURLToPath } from 'node:url';
 import { summarizeUsage, sumUsage, NOT_CAPTURED } from '../wiki-usage.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const PRICES = JSON.parse(readFileSync(join(REPO_ROOT, 'scripts', 'wiki-provider-prices.json'), 'utf8'));
+// The arithmetic tests price from a FROZEN fixture: their premise is "a run is priced from a dated table",
+// not "the table holds these rates". They used to read the real table, so correcting a rate (T023a: the
+// 2026-09-27 Fireworks rates under-priced the bill by 1.43×) would have broken tests that never cared
+// which rates were in force. What the real table must satisfy is the reconciliation guard at the end.
+const PRICES = {
+  asOf: '2026-09-27',
+  providers: {
+    anthropic: { standard: { uncached: 2.0, cached: 0.2, cacheWrite: 2.5, output: 10.0 } },
+    fireworks: {
+      standard: { uncached: 0.22, cached: 0.007, cacheWrite: 0, output: 0.66 },
+      priority: { uncached: 0.275, cached: 0.00875, cacheWrite: 0, output: 0.825 },
+    },
+  },
+};
+const TABLE = JSON.parse(readFileSync(join(REPO_ROOT, 'scripts', 'wiki-provider-prices.json'), 'utf8'));
 
 const line = (o) => JSON.stringify({ kind: 'page', status: 200, ms: 1000, uncached: 0, cached: 0, cacheWrite: 0, output: 0, reasoning: 0, ...o });
 
@@ -84,9 +98,22 @@ test('summing across invocations keeps "not captured" honest', () => {
 
 test('the price table is dated and covers every provider row', async () => {
   const { WIKI_PROVIDERS } = await import('../wiki-provider.mjs');
-  assert.match(PRICES.asOf, /^\d{4}-\d{2}-\d{2}$/);
+  assert.match(TABLE.asOf, /^\d{4}-\d{2}-\d{2}$/);
   for (const [name, row] of Object.entries(WIKI_PROVIDERS)) {
-    assert.ok(PRICES.providers[name]?.standard, `${name}: standard prices`);
-    for (const tier of row.tiers) assert.ok(PRICES.providers[name][tier], `${name}: ${tier} prices`);
+    assert.ok(TABLE.providers[name]?.standard, `${name}: standard prices`);
+    for (const tier of row.tiers) assert.ok(TABLE.providers[name][tier], `${name}: ${tier} prices`);
   }
+});
+
+// SC-005 / T023a: the real table must price a billed window to within 5% of the bill. The window is
+// 2026-10-01 00:00 → 10-07 23:59 UTC: 24 CI runs whose recorded tokens matched the Fireworks console
+// day by day (research R14, "SC-005 reconciled"), against a console bill of ≈ $10.08. The 2026-09-27
+// rates priced it at $7.03 (−30%); the operator's corrected standard rates at $9.997 (−0.8%). If
+// Fireworks changes a rate, re-measure a window against the console and update both this and the table.
+test('the real Fireworks standard rates reconcile the R14 billed window within 5% (SC-005)', () => {
+  const window = line({ uncached: 12_226_337, cached: 231_915_448, output: 4_114_894 });
+  const u = summarizeUsage(window, { provider: 'fireworks', model: 'm', tier: null, prices: TABLE });
+  const bill = 10.08;
+  const delta = Math.abs(u.estCostUsd - bill) / bill;
+  assert.ok(delta <= 0.05, `estimate $${u.estCostUsd} is ${(delta * 100).toFixed(1)}% from the $${bill} bill`);
 });

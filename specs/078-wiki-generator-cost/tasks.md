@@ -236,9 +236,12 @@ list prices), per-slice `WIKI_USAGE_LOG`, `lastRunUsage` in the run record, one 
 the Fireworks console for the same window; record the delta in research.md. Target ≤ 5%.
 **Status 2026-10-07: reconciled (research R14, "SC-005 reconciled").** Tokens match the console per day. The
 2026-09-27 rates under-priced by 1.43×. At the operator's corrected standard rates ($0.30 / $0.006 / $1.20), the
-window prices at $9.997 against ≈ $10.08 (−0.8%), so SC-005 is met. **Remaining:** update
-`scripts/wiki-provider-prices.json` (with the priority row). Move the arithmetic tests onto a fixture, and add the
-window-reconciliation guard (T023a).
+window prices at $9.997 against ≈ $10.08 (−0.8%), so SC-005 is met. **DONE (T023a):**
+- `scripts/wiki-provider-prices.json` carries the corrected standard rates. The priority row is kept and flagged
+  as not re-verified (unused).
+- The arithmetic tests now price from a frozen fixture.
+- A new guard re-prices the R14 window and fails beyond 5% of the bill. Verified RED (1/1 failing at the old rates,
+  30.3% off) then GREEN. The wiki suites show 177 passed, 0 skipped.
 
 ---
 
