@@ -324,7 +324,8 @@ window was the #525 drift sweep.
   too slow for the window, 7 were OpenWiki worker exits (item #682), 2 were provider 429s and 2 were openwiki state
   errors.
 - Since #626 gave the job its own deadline, no run has been killed by the platform timeout.
-- Whether to keep Fireworks is an open operator decision. The estimate-vs-bill check (SC-005) is pending.
+- **The operator kept Fireworks on cost.** The speed failures are being addressed by escalating to low reasoning
+  effort after a deadline failure (078 US6). The estimate-vs-bill check (SC-005) is pending.
 
 ## Sources
 

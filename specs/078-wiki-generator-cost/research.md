@@ -261,6 +261,7 @@ Two findings change what #525's closing comment implies:
 | **SC-004** | no platform-timeout kill | **3 kills** (4290, 4385, 4386; 29–30 Sep). **0** kills in the **25 runs since #626** (merged 2026-09-30 21:04) gave the job its own deadline. The longest run since then was 6,683 s, inside the 120-min dispatch window (#640). `ci-status durations --job maintain` reports `cens 0`, but it only sees runs that published a bundle, and a killed run publishes none. That is exactly how the kills would be missed. | **Not met** over the window; **held** since #626. Also, an over-budget *invocation* ends as `failed` with its remainder carried forward. Only the start deadline produces "stopped at budget". |
 | **SC-005** | estimate within 5% of the bill | Estimate for 2026-10-01 00:00 → 2026-10-07 23:59 UTC: **$7.0291 over 24 CI runs**. No CI run straddles either edge, and the window excludes the three unrecorded kills. | **Pending** the operator's Fireworks console figure (T023). |
 
-**Per the T034 rule, SC-002's regression is the operator's call.** The options are to flip `MCM_WIKI_PROVIDER` back
-to `anthropic` (SC-006), or to keep Fireworks and re-score SC-002 on routine merge-triggered runs now that the
-sweep is closed. The provider was not changed by this scoring.
+**SC-002 decision (operator, 2026-10-07): keep Fireworks; do not flip back to Anthropic.** The reason is cost: Sonnet
+is about 6× more per page. SC-002 is recorded as an accepted deviation, not as met. The speed failures are handled
+with an automatic escalation to `reasoning_effort: low` after a deadline failure (US6). Worker exits stay with
+item #682.
