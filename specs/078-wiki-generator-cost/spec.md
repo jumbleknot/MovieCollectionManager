@@ -4,7 +4,10 @@
 
 **Created**: 2026-09-27
 
-**Status**: Draft
+**Status**: Draft. **Amended 2026-10-07** (operator), after scoring 45 real runs (research R14/R15):
+- US5 is extended to OpenWiki **0.7.1**;
+- US6 (escalate to `reasoning_effort: low` after a deadline failure) is added;
+- FR-015 is updated, and FR-017 to FR-023, SC-008 and SC-009 are added.
 
 **Input**: User description: "Phase 2 of the LLM cost work (docs/proposals/MCM-LLM-Cost-Analysis-1.md §3 Phase 2, §5.3). Move the OpenWiki generator in the CI wiki job to DeepSeek V4.1 Flash hosted by Fireworks AI (operator choice over DeepSeek's own API), cut the per-invocation planning cost, and size the job's time budget from the measured cost-vs-speed trade-off — increasing it if needed."
 
@@ -163,6 +166,62 @@ the declared tolerance.
    generator's retries absorb it or the page is reported as not landed — never as written.
 3. **Given** the upgrade, **When** the Anthropic configuration runs at concurrency 1, **Then** its behaviour and
    the output-cap guard are unchanged from 0.5.2.
+4. **(Amended 2026-10-07)** **Given** the generator is bumped to 0.7.1, **When** the guard runs against the
+   installed generator, **Then**:
+   - every installed-generator assertion runs (0 skipped) and passes;
+   - the committed managed `AGENTS.md`/`CLAUDE.md` blocks are byte-identical to 0.7.1's;
+   - one single-page Fireworks probe through the launcher lands its page with `okf-lint` green and `AGENTS.md`
+     untouched.
+
+   0.7.1 retries a worker that exits without submitting (upstream #913), scopes planning to the named pages
+   (#865), and keeps Claims line references in sync (#936). Research R15 lists what the bump changes here.
+
+---
+
+### User Story 6 - A page that ran out of time is retried at low reasoning effort, without the operator (Priority: P2)
+
+As the operator, I want a page whose generation was stopped by the job deadline to be retried at
+`reasoning_effort: low` on the next run automatically. That way a slow page stops costing a failed run every time
+until I notice it and dispatch by hand.
+
+**Why this priority**: 10 of the 21 failed runs in the first 45 on Fireworks were speed failures: 7 deadline stops
+and 3 timeout kills (research R14). The operator keeps Fireworks for cost (SC-002 is an accepted deviation), so the
+speed failures need a remedy that does not go back to the dearer provider. Dispatching with `low` (#670) cured a
+deadline failure, at about a quarter of the cost. Today that takes a person.
+
+**Evidence caveat**: the evidence that `low` helps is a single success on one page. The same page later failed at
+`low` by a worker exit (R14). This story guarantees that the escalation happens and is visible. It does NOT promise
+that an escalated page lands.
+
+**Independent Test**: With a stub generator that exits 124 under a deadline, one run tags the requested pages. The
+next run (re-planned from both the backlog and drift) invokes those pages alone with effort `low`, and invokes the
+other pages at the default. A stub that exits 0 without writing (a worker exit) tags nothing.
+
+**Acceptance Scenarios**:
+
+1. **Given** a run whose generator is stopped at the job deadline (exit 124 or 137) and whose slice then fails
+   verification, **When** the run records itself, **Then** each requested page that did not land is tagged for
+   `low`, with reason `deadline`.
+2. **Given** a slice failure of any other kind, **When** the run records itself, **Then** no page is tagged. Other
+   kinds: the worker exits without submitting, a provider 429/5xx, an openwiki state error, or a policy or
+   conformance violation. A start-deadline carry-forward is not a failure, and also tags nothing.
+3. **Given** tagged pages, **When** the next run plans, **Then**:
+   - the tagged pages are executed in invocations of their own at effort `low`;
+   - untagged pages run at the default effort, in separate invocations;
+   - the `low` work goes first.
+
+   This holds whether the pages came back through the backlog or through the drift the held marker re-plans.
+4. **Given** an explicit effort, from the `reasoning-effort` dispatch input or the repository variable, **When** a
+   run executes, **Then** the explicit effort applies to every invocation and the tags are kept for later runs.
+5. **Given** a tagged page lands, **When** the run records itself, **Then** its tag is removed.
+6. **Given** a tagged page fails again at `low`, for any reason, **When** the run records itself, **Then**:
+   - the tag stays;
+   - its count of failures at `low` increments;
+   - the run log and the failure digest carry a line naming the page as escalated and still failing, with the
+     count;
+   - nothing is parked automatically.
+7. **Given** a provider with no reasoning effort (`anthropic`), **When** a run executes with tags present, **Then**
+   the tags are ignored for that run and kept.
 
 ---
 
@@ -181,6 +240,15 @@ the declared tolerance.
   does today.
 - The operator switches provider mid-backlog → pages already written stay; the remainder is written by the newly
   configured provider; the run record names the provider per invocation.
+- (US6) A deadline stop on a packed invocation where some parts landed → only the parts that did not land are
+  tagged. The landed parts are proposed as today.
+- (US6) A tagged page is parked by the operator, i.e. removed from the backlog → its tag is removed in the same edit.
+  An orphan tag for a page not in this run's plan is kept but has no effect. A tag whose page no longer exists is
+  dropped when the run records itself.
+- (US6) The job is killed by `timeout-minutes` before it can record itself → there is no record, so nothing is
+  tagged. That is the same as today for every other field, and SC-004 makes it rare.
+- (US6) Both the `low` invocation and the default invocation are due, and the window cannot hold both → the default
+  one is carried forward by the existing start deadline. That is not a failure.
 
 ## Requirements *(mandatory)*
 
@@ -220,12 +288,29 @@ the declared tolerance.
 - **FR-013**: Documentation MUST be updated at the canonical sources: the wiki-maintenance runbook (provider
   switch, budget derivation, reading the usage record), the model-provider scoping invariant (the wiki's
   provider is now configurable and differs from the gateway's), and the cost analysis proposal §5.
-- **FR-015**: The generator MUST be pinned at `openwiki@0.6.0` in every place it is installed (the toolchain image
-  and the CI job), with the existing pin-agreement guard enforcing that they match.
+- **FR-015**: The generator MUST be pinned at **one** version in every place it is installed (the toolchain image
+  and the CI job), with the existing pin-agreement guard enforcing that they match. That was `openwiki@0.6.0` at
+  Merge A; it is **`openwiki@0.7.1`** from the 2026-10-07 amendment. A bump MUST re-check the upstream gaps listed
+  in research R15.
 - **FR-016**: Page concurrency MUST be a configured value (1–8) with an explicit default recorded in the budget
   decision record; an out-of-range value MUST fail before any paid work.
 - **FR-014**: The output of every run MUST remain a proposal PR for human review; this feature MUST NOT introduce
   auto-merge.
+- **FR-017** (US6): A page MUST be tagged for escalation only when its invocation was stopped by the job deadline
+  (generator exit 124/137 with a deadline in force) **and** the page did not land. The classification MUST use the
+  exit status, never the generator's text output.
+- **FR-018** (US6): Escalation tags MUST be persisted in the run record, keyed by page, in a field separate from
+  the backlog. The backlog's committed shape MUST NOT change, and a record without the field MUST load as "no
+  tags".
+- **FR-019** (US6): A run MUST execute tagged pages in invocations containing only tagged pages, at effort `low`,
+  before the untagged work. It MUST NOT change the effort of any untagged invocation.
+- **FR-020** (US6): An explicitly configured effort MUST take precedence over tags for the whole run. A provider
+  without reasoning effort MUST ignore tags. In both cases the tags MUST be kept.
+- **FR-021** (US6): A tag MUST be removed when its page lands. A failure at `low` MUST keep the tag and increment
+  its count. Each such failure MUST be reported in the run log and the failure digest.
+- **FR-022** (US6): The effort each invocation actually used MUST appear in its usage line and in the run record.
+- **FR-023** (US6): Escalation MUST NOT park, drop or reorder any page beyond what FR-019 requires. Parking stays an
+  operator action.
 
 ### Key Entities
 
@@ -234,6 +319,9 @@ the declared tolerance.
   from.
 - **Budget decision record**: the measured per-page cost and duration for each candidate provider/tier, the
   chosen budget and timeout, and the runner-minutes they commit.
+- **Escalation tag** (US6): one per page. It holds the page (`area/page`), the effort (`low`), the reason
+  (`deadline`), the run that set it, and the count of failures at `low`. It lives in the run record beside the
+  backlog, never inside it.
 
 ## Success Criteria *(mandatory)*
 
@@ -252,6 +340,12 @@ the declared tolerance.
   than the same slice at concurrency 1, with the same pages landed.
 - **SC-006**: Switching the provider back to Anthropic takes one configuration change and no code change, and the
   next run uses it.
+- **SC-008** (US6): After a run fails by a deadline stop, the next run attempts the unlanded pages at effort `low`
+  with no operator action. This is proven offline by the scenario tests, and observed at least once in a real CI
+  run record (`reasoningEffort: "low"` on an invocation whose pages carried a `deadline` tag).
+- **SC-009** (US6): No failure other than a deadline stop ever produces a tag. This is proven by a trigger-table
+  test that covers every failure type R14 observed (worker exit, 429, openwiki state error, policy and conformance
+  violation, start-deadline carry-forward).
 
 ## Assumptions
 
