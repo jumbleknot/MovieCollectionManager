@@ -219,3 +219,48 @@ the start deadline at 5 min; the new guard's own arithmetic caught that it left 
 **Enforcement.** The wiki job now runs `wiki-maintain.guard.test.mjs` right after installing the pinned generator and
 fails on any skip — the one place those pinned-version checks can run. Simulating the step caught that node's TAP
 summary reads `# skipped N`, not `# skip N`: the first draft would have failed every run, correct generator or not.
+
+## R14 — Scoring 45 real CI runs against SC-001…SC-005 (T034, 2026-10-07)
+
+**Window.** Every `maintain` job that ran the generator on Fireworks, from the flip (run 4200, 2026-09-28) to run 4801
+(2026-10-07): **45 runs, 24 completed, 21 failed.** Sources: the run records in
+`git log -p origin/main -- openwiki/.maintenance-state.json` (42; three later commits that only carry a record forward
+are excluded), the forge's `/actions/tasks` rows (which also show the 3 runs that left no record), and the 18 failure
+bundles `<run id>--maintain`, which name each failure's cause. Most of the window was the item #525 drift sweep, a
+deliberate pass over the hardest stale pages, so it is a harder workload than the Sonnet baseline's.
+
+**Every failure, by type.** The type matters because the fix differs for each (item #682; #525's closing comment):
+
+| Type | Runs (UI run number) | n | What the record shows |
+|---|---|---|---|
+| Deadline stop: too slow for the window | 4392, 4398, 4412, 4605, 4675, 4686, 4716 | 7 | outcome `failed`, 93–376 calls, stopped at 2,178–6,677 s, remainder carried |
+| Killed by `timeout-minutes` (before #626) | 4290, 4385, 4386 | 3 | **no record, no bundle, no cost line**; task row lasted exactly 60 min |
+| Worker exited without submitting | 4326, 4377, 4424, 4679, 4766, 4774, 4801 | 7 | page restored, slice stale; at default effort **and** at `low` |
+| Provider 429 (rate limit) | 4798, 4800 | 2 | 7 calls, 3 failed, 19–29 s |
+| openwiki state (not the model) | 4283 (Claims "not durable"), 4348 ("a different persisted plan") | 2 | 0 or 35 calls |
+
+The killed runs were the deadline type before the job could stop itself. #613's correction shows they were slow,
+not hung. So **10 of 21 failures are speed failures.** DeepSeek is 2–3× slower than Sonnet (R3, R9), so these are the
+cost of the cheaper provider under a fixed window, not chance.
+
+Two findings change what #525's closing comment implies:
+- **Worker exits are not only a large-source problem.** Of the 7, three are on `runbooks/sast-scanning` or `projects/sast`.
+  Both cite `docs/runbooks/sast-scanning.md`, which is **26 KB**. Meanwhile `runbooks/wiki-maintenance` (source 47 KB)
+  landed. #682 frames the cause as the 110 KB and 78 KB sources; the size explanation does not cover these three.
+- **The evidence that `low` cures deadline failures is one page, once.** `sast-scanning`'s two default-effort
+  failures were one deadline stop (4686) and one **worker exit** (4679). After `low` landed it (run 4729), a later
+  `low` run on the same page exited its worker (4801). Any auto-escalation design should start from this.
+
+### Verdicts
+
+| SC | Target | Measured | Verdict |
+|---|---|---|---|
+| **SC-001** | median cost/page ≥ 70% below $0.90 | median **$0.150** over the 24 completed runs (range $0.065–$0.587) = **−83%**. All-in, counting the $6.24 spent by failed runs: $14.35 / 54 pages landed = **$0.266, −70.4%**. The 3 killed runs' spend is unrecorded, so the true all-in figure is a little worse. | **Met** on the criterion as written (median). The all-in figure is at the threshold. |
+| **SC-002** | landed share ≥ Sonnet's | Fireworks: **24/45 runs completed (53%)**, 54 pages landed. Sonnet 5, 1–27 Sep: **61/62 (98%)**, 116 pages, 0 kills (the one failure, 2026-09-20, recorded itself). | **Not met.** The workloads differ: Sonnet never ran the sweep's pages in CI. That limits how far the comparison goes, but it does not reverse it. The 10 speed failures are a property of the provider. |
+| **SC-003** | invocations < areas on a multi-area run | 1 invocation each covering 3 areas (run of 2026-09-29 02:31, 8 pages), 3 areas (03:47, 5 pages), **4 areas** (11:00, 8 pages), 2 areas (2026-10-04 15:00; 2026-10-06 02:44) | **Met** — five completed runs |
+| **SC-004** | no platform-timeout kill | **3 kills** (4290, 4385, 4386; 29–30 Sep). **0** kills in the **25 runs since #626** (merged 2026-09-30 21:04) gave the job its own deadline. The longest run since then was 6,683 s, inside the 120-min dispatch window (#640). `ci-status durations --job maintain` reports `cens 0`, but it only sees runs that published a bundle, and a killed run publishes none. That is exactly how the kills would be missed. | **Not met** over the window; **held** since #626. Also, an over-budget *invocation* ends as `failed` with its remainder carried forward. Only the start deadline produces "stopped at budget". |
+| **SC-005** | estimate within 5% of the bill | Estimate for 2026-10-01 00:00 → 2026-10-07 23:59 UTC: **$7.0291 over 24 CI runs**. No CI run straddles either edge, and the window excludes the three unrecorded kills. | **Pending** the operator's Fireworks console figure (T023). |
+
+**Per the T034 rule, SC-002's regression is the operator's call.** The options are to flip `MCM_WIKI_PROVIDER` back
+to `anthropic` (SC-006), or to keep Fireworks and re-score SC-002 on routine merge-triggered runs now that the
+sweep is closed. The provider was not changed by this scoring.
