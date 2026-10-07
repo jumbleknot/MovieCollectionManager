@@ -31,7 +31,7 @@ request) and T034 (score ≥ 10 real runs, SC-005 reconciliation) remain.
 
 **2026-10-07:** T034 scored 45 real runs (research R14). SC-001 and SC-003 are met. SC-002 is **not met**: 53%
 of runs completed against Sonnet's 98%. SC-004 is not met over the window (3 kills before #626) but has held
-since. SC-005 waits on the operator's bill figure (T023). T032 is done: kept internal (R15). Feature stays open pending
+since. SC-005 is not met: the bill is 1.43× the estimate, and the price table needs correcting (T023). T032 is done: kept internal (R15). Feature stays open pending
 US6 (auto-escalation, added 2026-10-07). SC-002 decision: keep Fireworks, recorded as an accepted
 deviation.
 
@@ -234,8 +234,10 @@ list prices), per-slice `WIKI_USAGE_LOG`, `lastRunUsage` in the run record, one 
 ### T023 — Reconcile the estimate with a bill (SC-005)
 **Type**: Manual verification | After the first real CI runs on Fireworks, compare `lastRunUsage.estCostUsd` with
 the Fireworks console for the same window; record the delta in research.md. Target ≤ 5%.
-**Status 2026-10-07:** estimate side done (R14): $7.0291 over 24 CI runs, 2026-10-01 → 10-07 UTC. Waiting for the
-operator's console figure for the same window.
+**Status 2026-10-07: reconciled, NOT within 5%.** See research R14, "SC-005 reconciled". The estimate is $7.03;
+the bill is ≈ $10.08 (1.43×). Tokens match per day, so there was no missing or local usage; the price table is
+wrong. **Open:** confirm the true per-token rates from the console's token-type breakdown or the model's price
+card, then correct `scripts/wiki-provider-prices.json` and its `asOf` date.
 
 ---
 
