@@ -48,9 +48,6 @@ sources:
     resource: repo://security/sast/rules/mcm-auth-before-authz.yaml
   - id: openwiki-source-9372ce7270e3121a73a61934
     resource: repo://security/sast/semgrep.yaml
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-06T02:26:18.087Z
 ---
 
 # SAST & SCA static scanning
