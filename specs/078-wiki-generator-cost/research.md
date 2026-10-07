@@ -255,11 +255,11 @@ Two findings change what #525's closing comment implies:
 
 | SC | Target | Measured | Verdict |
 |---|---|---|---|
-| **SC-001** | median cost/page ≥ 70% below $0.90 | median **$0.150** over the 24 completed runs (range $0.065–$0.587) = **−83%**. All-in, counting the $6.24 spent by failed runs: $14.35 / 54 pages landed = **$0.266, −70.4%**. The 3 killed runs' spend is unrecorded, so the true all-in figure is a little worse. **The bill is 1.43× these estimates (SC-005), so the billed figures are a $0.215 median (−76%) and $0.38 all-in (−58%).** | **Met** on the criterion as written (median), including at billed prices. All-in is not. |
+| **SC-001** | median cost/page ≥ 70% below $0.90 | median **$0.150** over the 24 completed runs (range $0.065–$0.587) = **−83%**. All-in, counting the $6.24 spent by failed runs: $14.35 / 54 pages landed = **$0.266, −70.4%**. The 3 killed runs' spend is unrecorded, so the true all-in figure is a little worse. **At the corrected rates (SC-005) these are a $0.214 median (−76%) and $0.375 all-in (−58%).** | **Met** on the criterion as written (median), including at billed prices. All-in is not. |
 | **SC-002** | landed share ≥ Sonnet's | Fireworks: **24/45 runs completed (53%)**, 54 pages landed. Sonnet 5, 1–27 Sep: **61/62 (98%)**, 116 pages, 0 kills (the one failure, 2026-09-20, recorded itself). | **Not met.** The workloads differ: Sonnet never ran the sweep's pages in CI. That limits how far the comparison goes, but it does not reverse it. The 10 speed failures are a property of the provider. |
 | **SC-003** | invocations < areas on a multi-area run | 1 invocation each covering 3 areas (run of 2026-09-29 02:31, 8 pages), 3 areas (03:47, 5 pages), **4 areas** (11:00, 8 pages), 2 areas (2026-10-04 15:00; 2026-10-06 02:44) | **Met** — five completed runs |
 | **SC-004** | no platform-timeout kill | **3 kills** (4290, 4385, 4386; 29–30 Sep). **0** kills in the **25 runs since #626** (merged 2026-09-30 21:04) gave the job its own deadline. The longest run since then was 6,683 s, inside the 120-min dispatch window (#640). `ci-status durations --job maintain` reports `cens 0`, but it only sees runs that published a bundle, and a killed run publishes none. That is exactly how the kills would be missed. | **Not met** over the window; **held** since #626. Also, an over-budget *invocation* ends as `failed` with its remainder carried forward. Only the start deadline produces "stopped at budget". |
-| **SC-005** | estimate within 5% of the bill | Estimate for 2026-10-01 00:00 → 2026-10-07 23:59 UTC: **$7.03 over 24 CI runs**. Bill (Fireworks console, UTC, read off the daily cost chart, ±$0.05 per day): **≈ $10.08**. That is the "Last 7 days" total of $14.93 less Sep 30's ≈ $4.9. **The estimate is 30% low.** | **Not met.** See "SC-005 reconciled" below. |
+| **SC-005** | estimate within 5% of the bill | Estimate for 2026-10-01 00:00 → 2026-10-07 23:59 UTC: **$7.03 over 24 CI runs**. Bill (Fireworks console, UTC, read off the daily cost chart, ±$0.05 per day): **≈ $10.08**. That is the "Last 7 days" total of $14.93 less Sep 30's ≈ $4.9. At the 2026-09-27 table the estimate was 30% low. **Re-priced at the corrected rates: $9.997, −0.8%.** | **Met once the price table is corrected.** See "SC-005 reconciled" below. |
 
 ### SC-005 reconciled (T023, operator's console screenshots, 2026-10-07)
 
@@ -277,7 +277,7 @@ Two findings change what #525's closing comment implies:
   Oct 03, with no CI run, has no usage at all. **There was no local or other use in the window:** the CI run
   records account for all of it. That also rules out missed calls. The bill is **1.43× the estimate on every
   day**, which is a per-token price gap, not missing usage.
-- **Which rate is wrong cannot be told from these charts.** The cached share barely varies (94–97% of input), so
+- **Which rate was wrong could not be told from these charts.** The cached share barely varies (94–97% of input), so
   every single-rate explanation fits about as well as a flat 1.43× markup. Each of these alone would close the
   gap: cached input at **$0.020/M** instead of $0.007; uncached input at $0.47/M instead of $0.22; or output at
   $1.40/M instead of $0.66. The price table (`scripts/wiki-provider-prices.json`, operator figures from
@@ -285,9 +285,16 @@ Two findings change what #525's closing comment implies:
   long multi-call runs are billed differently from those probes. The console's per-token-type breakdown or the
   model's price card would settle it. The Fireworks website is not reachable from the dev container, whose egress
   allowlist admits only the API.
-- **Consequences for SC-001**, scaling every figure by the measured 1.43:
-  - median **$0.215 per page, −76%**: still **met**;
-  - all-in **$0.38 per page, −58%**: below the 70% bar.
+- **Settled by the operator from the Fireworks website (2026-10-07): standard is $0.30 uncached / $0.006 cached /
+  $1.20 output per M.** The 2026-09-27 table had $0.22 / $0.007 / $0.66. Re-pricing the same recorded tokens gives
+  **$9.997 against ≈ $10.08, −0.8%** for the window. Per day, the gap is 0.1–3.7%, within chart-reading precision.
+  **SC-005 is met with the corrected table.** The table and its tests are corrected under T023. A guard now
+  re-prices this window's tokens and fails if the result drifts more than 5% from the bill.
+- **Consequences for SC-001**, re-priced run by run from the recorded tokens at the corrected rates:
+  - median **$0.214 per page, −76%**: still **met**;
+  - all-in **$0.375 per page, −58%** ($20.27 over 41 recorded runs, 54 pages): below the 70% bar.
+
+  The operator's judgement: the savings are still significant.
 - The console also shows **100% standard tier**, so the priority tier was never used (R3). Its serverless rate
   limits were **lowered during the window**: total input from ≈ 4.5M to 3.6M tokens/min, output from 70k to ≈ 36k
   tokens/min. Peak cached input on Oct 04–06 reached ≈ 1M/min. That is the backdrop to the two 429 failures

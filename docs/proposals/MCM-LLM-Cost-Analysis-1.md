@@ -318,14 +318,17 @@ a fetch-tap instrument whose counts reconciled with the Fireworks bill to the ce
 Scored from 2026-09-28 to 10-07 ([research R14](../../specs/078-wiki-generator-cost/research.md)). Most of the
 window was the #525 drift sweep.
 
-- **Cost met the target.** The median is **$0.15 per page against $0.90 (−83%)**. Counting the spend of failed
-  runs, it is **$0.27 (−70%)**.
+- **Cost met the target.** At the billed rates, the median is **$0.21 per page against $0.90 (−76%)**. Counting
+  the spend of failed runs, it is **$0.375 (−58%)**.
+- **The price table was wrong.** Fireworks' standard rates are $0.30 / $0.006 / $1.20 per M (uncached / cached /
+  output), not $0.22 / $0.007 / $0.66. With the corrected rates, the run records reconcile to the bill within 1%
+  (SC-005).
 - **Reliability did not.** 53% of runs completed, against Sonnet's 98% in September. Of the 21 failures, 10 were
   too slow for the window, 7 were OpenWiki worker exits (item #682), 2 were provider 429s and 2 were openwiki state
   errors.
 - Since #626 gave the job its own deadline, no run has been killed by the platform timeout.
 - **The operator kept Fireworks on cost.** The speed failures are being addressed by escalating to low reasoning
-  effort after a deadline failure (078 US6). The estimate-vs-bill check (SC-005) is pending.
+  effort after a deadline failure (078 US6).
 
 ## Sources
 
