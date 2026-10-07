@@ -184,6 +184,11 @@ Two things to know before changing it again:
   over the container's global copy that other sessions are using — and run the guard with
   `OPENWIKI_ROOT=<dir>/lib/node_modules/openwiki`. The installed-generator assertions then read the
   new version instead of skipping; count them.
+- **On every generator bump, re-check the gaps we work around.** The table is in
+  [`specs/078-wiki-generator-cost/research.md`](../../specs/078-wiki-generator-cost/research.md) R15: request-body
+  options (`service_tier`), reasoning effort for `fireworks`, local token usage, and the managed `AGENTS.md`
+  block. For each, the table says which file to grep and which upstream issue or PR to watch. If a gap has
+  closed, retire that part of `scripts/wiki-usage-tap.mjs` or the R12 guard in the same change, and update R15.
 - **OpenWiki sends no `temperature`**, which is why this bump was safe where the agent gateway's was
   not. Sonnet 5 and Opus 5 reject that parameter with a 400 and the gateway was sending it
   unconditionally — see [`specs/075-llm-cost-phase-1/research.md`](../../specs/075-llm-cost-phase-1/research.md)

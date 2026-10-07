@@ -265,3 +265,30 @@ Two findings change what #525's closing comment implies:
 is about 6× more per page. SC-002 is recorded as an accepted deviation, not as met. The speed failures are handled
 with an automatic escalation to `reasoning_effort: low` after a deadline failure (US6). Worker exits stay with
 item #682.
+
+## R15 — Gaps in OpenWiki we work around, re-checked on every generator bump (T032, 2026-10-07)
+
+**Not filed upstream (operator decision).** These gaps are kept here and re-checked whenever the generator pin
+moves. The procedure is in `docs/runbooks/wiki-maintenance.md` §1a. Each was verified against 0.6.0's installed
+source and the latest release, **0.7.1** (2026-10-06), where all three are unchanged. GitHub issues and PRs were
+searched on 2026-10-07.
+
+| # | Gap | Our workaround | On a bump, the workaround can go when… | Upstream |
+|---|---|---|---|---|
+| G1 | No way to add request-body fields, e.g. Fireworks `service_tier`. `createModel` builds `ChatOpenAI` with `modelKwargs` = `{reasoning_effort}` only. | `scripts/wiki-usage-tap.mjs` rewrites Fireworks bodies | a generic model-kwargs / request-options key exists. Grep `dist/agent/index.js` for `modelKwargs` sources and `config/constants.js` for a new env key. | none filed; provider-specific siblings #945, #834, #256/#265, #910/#928 |
+| G2 | `OPENWIKI_REASONING_EFFORT` **throws** for `fireworks` (`dist/config/reasoning.js`). `REASONING_CAPABILITIES` is keyed by provider **and model**, with no Fireworks rows. | the same tap sets `reasoning_effort` (#670) | `fireworks` gains a provider-level opt-in. **An alternative exists today:** provider `openai-compatible` at `https://api.fireworks.ai/inference/v1` with `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED=true` (#686/#788, in 0.5.2). It cannot send `service_tier`, changes transport behaviour, and is untested here. | #771 (same throw, OpenRouter) |
+| G3 | No local token usage: `dist` never reads `usage_metadata`. LangSmith tracing carries it (#972 threads it per run, 0.7.0), but needs an external account and egress from CI. | the tap's `WIKI_USAGE_LOG` counts | a persisted per-run usage summary appears (e.g. in `.openwiki/.last-update.json`). Note that `.run.json` is deleted on success. | none filed; context #51, #934 |
+| G4 | The managed `AGENTS.md`/`CLAUDE.md` block is rewritten on **every** run (twice when headless, and on `chat`). Removing the markers re-appends it. | commit each release's exact text; the guard rebuilds the block and compares byte for byte (R12) | #557 merges (`codeMode.agentFiles.policy: preserve`). 0.7.1's text is unchanged from 0.6.0. | **#556** (open issue), **#557** (open PR) |
+
+### What 0.6.1 → 0.7.1 change for this pipeline (read from the release notes and the unpacked 0.7.1 `dist`)
+
+| Change | Relevance here |
+|---|---|
+| #913 (0.7.1): a page worker that exits without submitting is **retried once** (`PAGE_WORKER_ATTEMPT_LIMIT = 2`, page and Claims restored between attempts) | Directly targets the 7 worker-exit failures (R14, item #682). Cost: a page that never submits now takes up to two workers' time and money, which raises deadline-stop risk on exactly those pages. |
+| #865 (0.7.1): when the planning context names pages, the planner treats it as a **hard scoped mandate** and does not refresh `quickstart.md` by default | Our run message names every page, so plans should stay narrower (less time and cost). Code-forced Claims pages are unaffected: `addRequiredClaimIssueJobs` is unchanged. |
+| #936 (0.6.1): claim evidence line references follow cited blocks that move | Fewer unresolved Claims, so fewer forced pages (the #613 class). |
+| #979 (0.7.1): concurrent file operations on one page are serialised | Safety at our page concurrency of 4. |
+| #888 (0.6.1): host shell restricted to an allowlist; reads go through the gated tools | Hardening. May change call counts per page, so measure it. |
+| #840 (0.6.1): atomic `.last-update.json`; #989 (0.7.1): vulnerable dependencies updated | Hygiene. |
+| #906 (0.6.1): "keep generation running when a planner submits a different plan" | Might cover run 4348's `already has a different persisted plan`. **Not confirmed:** the throw is still in `submitRepositoryPlan`. Verify on the bump. |
+| #933 (0.6.1): code mode no longer creates `CLAUDE.md` | No effect; ours exists. |

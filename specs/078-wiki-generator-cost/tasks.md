@@ -31,7 +31,7 @@ request) and T034 (score ≥ 10 real runs, SC-005 reconciliation) remain.
 
 **2026-10-07:** T034 scored 45 real runs (research R14). SC-001 and SC-003 are met. SC-002 is **not met**: 53%
 of runs completed against Sonnet's 98%. SC-004 is not met over the window (3 kills before #626) but has held
-since. SC-005 waits on the operator's bill figure (T023). T032 is drafted, not filed. Feature stays open pending
+since. SC-005 waits on the operator's bill figure (T023). T032 is done: kept internal (R15). Feature stays open pending
 US6 (auto-escalation, added 2026-10-07). SC-002 decision: keep Fireworks, recorded as an accepted
 deviation.
 
@@ -294,13 +294,9 @@ Update `PAGE_BUDGET`, `TIME_BUDGET_SECONDS`, `MAX_PAGES_PER_SLICE`, the header c
 ### T032 — File the upstream request
 **Type**: Chore | Open an OpenWiki issue asking for provider request options (e.g. `service_tier`) and per-run usage
 output, citing R6. Record the link in research.md.
-**Status 2026-10-07:** drafted and fact-checked against 0.6.0 source and the latest release (0.7.1, unchanged on all
-three points), plus an upstream search. Not filed; posting is the operator's call.
-- Ask 1 is narrowed to a generic request-body passthrough for `service_tier`. Reasoning effort already has a route
-  through `openai-compatible` plus `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED` (upstream #686 / #788).
-- Ask 2 is a local usage summary. It acknowledges that LangSmith tracing exists.
-- Ask 3 (R12) duplicates upstream #556 and PR #557. It becomes a supporting comment there, not a new issue.
-Record both links here once posted.
+**DONE 2026-10-07 — kept internal, not filed (operator decision).** The fact-checked gaps G1–G4 and the 0.7.1
+review are in research R15. The runbook's version-bump procedure now says to re-check them on every generator
+bump. G4 is already upstream as #556 / PR #557.
 
 ### T033 — Flip the CI default to Fireworks (FR-002)
 **Type**: Implementation | **Prerequisite**: operator created `FIREWORKS_API_WIKI_MAINTAIN`; T028 recorded
