@@ -243,8 +243,9 @@ other pages at the default. A stub that exits 0 without writing (a worker exit) 
 - (US6) A deadline stop on a packed invocation where some parts landed → only the parts that did not land are
   tagged. The landed parts are proposed as today.
 - (US6) A tagged page is parked by the operator, i.e. removed from the backlog → its tag is removed in the same edit.
-  An orphan tag for a page not in this run's plan is kept but has no effect. A tag whose page no longer exists is
-  dropped when the run records itself.
+  An orphan tag for a page not in this run's plan is kept but has no effect. A tag whose page is in neither the
+  resulting backlog nor the bundle is dropped when the run records itself. A page that does not exist yet but is
+  still queued for creation keeps its tag.
 - (US6) The job is killed by `timeout-minutes` before it can record itself → there is no record, so nothing is
   tagged. That is the same as today for every other field, and SC-004 makes it rare.
 - (US6) Both the `low` invocation and the default invocation are due, and the window cannot hold both → the default
