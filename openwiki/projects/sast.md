@@ -51,10 +51,10 @@ sources:
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
-generated: { by: "openwiki/0.6.0", at: "2026-10-06T02:26:18.087Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-10-07T00:12:01.561Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-10-06T02:26:18.087Z
+    at: 2026-10-07T00:12:01.561Z
 ---
 
 # SAST & SCA static security scanning
@@ -298,12 +298,18 @@ a scan that happened to pass.
   the package names and versions it is auditing and receives advisories back.
 
 - **…but SCA still works inside the devcontainer — `--only` gets you the half that matters.**
-  `pnpm-audit`, `cargo-audit`, and `pip-audit` resolve from sources the egress allowlist already
-  permits. Use `node scripts/sast-scan.mjs --scope full --only pnpm-audit` to verify a floor
-  remediation before pushing. Measured on feature 057: a full-scope run left a 0-finding report the
-  gate passed vacuously, while `--only pnpm-audit` proved the advisory was genuinely suppressed
-  (then gone). **Check the finding COUNT, not just the exit code** — a 0-finding report and a
-  0-blocking-finding report both print green.
+  Only Semgrep needs `semgrep.dev`; `pnpm-audit`, `cargo-audit`, and `pip-audit` resolve their advisory
+  data from hosts the egress allowlist already permits — `pip-audit`'s OSV host, `api.osv.dev`, carries
+  its own entry for exactly this reason (item #394) — so the whole SCA half runs to completion locally.
+  Use `node scripts/sast-scan.mjs --scope full --only pnpm-audit` to verify a floor remediation before
+  pushing — the runbook records that invocation producing a real, non-empty report (`55 findings,
+  2 blocking`). Measured on feature 057: the full-scope run fail-closed on Semgrep and left a 0-finding
+  report the gate passed vacuously, while `--only pnpm-audit` proved both target advisories were
+  genuinely suppressed beforehand and genuinely gone afterwards. **Check the finding COUNT, not just
+  the exit code** — a 0-finding report and a 0-blocking-finding report both print green. When the entry
+  you want to exercise is a *Semgrep* one, the runbook's fallback is to hand `check-sast-findings.mjs`
+  a **synthetic** `findings.json` carrying the exact `scanner`/`id`/location triples, plus a negative
+  control the entry must *not* suppress — otherwise push and let CI answer.
 
   Why a *failed* Semgrep run leaves a **0**-finding report rather than a partial one: the orchestrator
   runs the scanners in order (`semgrep`, `cargo-audit`, `pnpm-audit`, `pip-audit`) and **breaks out of
@@ -442,12 +448,16 @@ a scan that happened to pass.
   about ignored keys, **migrate them**.
 
 - **Remediate, do not re-date.** Deleting or extending an `expiry` converts a time-box into a
-  permanent suppression. The legitimate exception — no published fix exists — requires the evidence
-  written into the `justification`. Check npm/crates/PyPI before assuming: on feature 057 both
-  "needs an acceptance" advisories turned out to have published fixes. The rule that follows from
-  that check: **a fixable High (a patched version exists) must be bumped, never allowlisted** —
+  permanent suppression. There are two legitimate exceptions, and both require the evidence written
+  into the `justification`: **no published fix exists at all**, and **a fix exists only outside the
+  range the package's consumers declare** (step 4's third case in
+  [`docs/runbooks/sast-scanning.md`](../../docs/runbooks/sast-scanning.md), and an operator decision
+  rather than a reader's).
+  Check npm/crates/PyPI before assuming: on feature 057 both "needs an acceptance" advisories turned
+  out to have published fixes. The rule that follows from that check: **a fixable High (a patched
+  version exists within the consumers' range) must be bumped, never allowlisted** —
   allowlisting a fixable High is the wrong call, and it is the one this file's history shows being
-  made. Reach for an entry only when **no** fix exists yet.
+  made. Reach for an entry only when **no** fix is reachable.
 
   The committed file also records the inverse lesson: **a time-boxed acceptance can be discharged by a
   route its own justification did not anticipate.** The `image-size` entries were written as
@@ -472,6 +482,18 @@ a scan that happened to pass.
   involved are build/test tooling that ships in neither bundle and, in `braces`' case, expand globs from
   repository configuration rather than from a request. Removal is tracked on the backlog (a patched
   release, or the dependency leaving the tree) — the entry is a dated holding position, not a fix.
+
+- **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
+  when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
+  package", which is a different question from "is the vulnerable code path exercised". Two of the
+  three current no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
+  production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces
+  only through micromatch in Metro's file watcher and Jest. Neither is imported by first-party code,
+  neither ships in the web or server bundle, and the glob patterns those tools expand come from
+  repository configuration rather than a request. (The third, `@graphql-tools/utils`, is tagged
+  runtime through `@copilotkit/runtime` but is only listed as a dependency, never reached on a request
+  path.) That reasoning has to be **checked and written into the justification**, because the tag
+  alone would have said the opposite.
 
 - **`mcm-auth-before-authz` firing on a service-layer function is a false positive you must NOT "fix"
   by adding the guard — the correct response is a file-pinned allowlist entry.** The rule's structural
