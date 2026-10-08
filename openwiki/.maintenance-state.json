@@ -1,47 +1,40 @@
 {
   "coveredCommit": "c498cec64acaa792c3fb39bd0b8f9d12dd9095ec",
   "coveredAt": "2026-10-08T03:25:00.422Z",
-  "lastOutcome": "completed",
-  "backlog": [],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 689,
-    "headCommit": "3072ada1349089c1c5fd78ca4433373efe78b508",
-    "markerBefore": "c498cec64acaa792c3fb39bd0b8f9d12dd9095ec",
-    "slices": [
-      {
-        "area": "runbooks",
-        "pages": [
-          "wiki-maintenance.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      }
-    ],
-    "updatedAt": "2026-10-08T03:25:00.830Z"
-  },
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "devcontainer-sandbox.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/devcontainer-sandbox.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
+  "proposal": null,
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 2862,
+    "pagesWritten": 0,
+    "elapsedSeconds": 1196,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 305,
+    "calls": 111,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1927180,
-    "cached": 33164000,
+    "uncached": 719025,
+    "cached": 8367542,
     "cacheWrite": 0,
-    "output": 534706,
-    "reasoning": 461197,
-    "ms": 4230935,
-    "estCostUsd": 1.4188,
+    "output": 221545,
+    "reasoning": 182227,
+    "ms": 1643686,
+    "estCostUsd": 0.5318,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -51,11 +44,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/wiki-maintenance.md"
+        "runbooks/devcontainer-sandbox.md"
       ],
       "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 1.4188
+      "estCostUsd": 0.5318
     }
   ]
 }
