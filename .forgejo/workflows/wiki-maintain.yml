@@ -142,7 +142,7 @@ jobs:
         run: bash scripts/ci-log-step.sh maintain-install-js-dependencies pnpm install --frozen-lockfile
 
       # The generator is a GLOBAL npm binary, not a workspace dependency: the dev container bakes it
-      # into its toolchain image (`npm install -g openwiki@0.6.0`), so it is simply absent on the CI
+      # into its toolchain image (`npm install -g openwiki@0.7.1`), so it is simply absent on the CI
       # runner. The first real run on `main` died with `/bin/sh: 1: openwiki: not found` — the
       # orchestrator did everything right, planned two slices, and then had nothing to invoke.
       #
@@ -157,7 +157,7 @@ jobs:
         # the real parser a diagram that fails only the strict check is rewritten in place into a
         # plain `text` fence, the run still exits 0, and every gate still passes. The scheduled run
         # is the one that writes the bundle, so a silent downgrade here is the one that ships.
-        run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.6.0 mermaid jsdom
+        run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.7.1 mermaid jsdom
 
       # The checks that describe the PINNED generator (its managed AGENTS.md/CLAUDE.md block, its
       # concurrency range, its output-cap resolver) skip wherever it is not installed — every guardrail

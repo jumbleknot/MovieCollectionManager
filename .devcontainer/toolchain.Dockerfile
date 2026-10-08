@@ -83,7 +83,7 @@ RUN corepack enable \
 # text. With the parser present, validation matches exactly what the forge renders, so a broken
 # diagram never ships. Kept in step with .forgejo/workflows/wiki-maintain.yml, which installs the
 # same three packages for the same reason.
-RUN npm install -g openwiki@0.6.0 mermaid jsdom
+RUN npm install -g openwiki@0.7.1 mermaid jsdom
 
 # --- US1 (T013): gh (GitHub CLI) from the official apt repo [root, pre-user] --------------
 RUN export DEBIAN_FRONTEND=noninteractive \

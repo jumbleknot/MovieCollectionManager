@@ -176,8 +176,9 @@ test('the workflow installs the generator, pinned to the dev container version',
   assert.ok(pinned, 'the dev container pins a version');
   assert.equal(install.version, pinned.version,
     'CI and the dev container must run the SAME generator version — otherwise they silently differ on the thing whose output is gated');
-  // 078 FR-015: 0.6.0 is the first version with parallel page workers (OPENWIKI_PAGE_CONCURRENCY).
-  assert.equal(pinned.version, '0.6.0', 'the generator is pinned at 0.6.0 (feature 078, research R8)');
+  // 078 FR-015: 0.6.0 was the first version with parallel page workers (OPENWIKI_PAGE_CONCURRENCY);
+  // 0.7.1 (amendment 2026-10-07) adds the worker retry (#913) and scoped planning (#865), research R15.
+  assert.equal(pinned.version, '0.7.1', 'the generator is pinned at 0.7.1 (feature 078 amendment, research R15)');
 });
 
 test('CI and the dev container both install the Mermaid parser, or neither validates diagrams', () => {

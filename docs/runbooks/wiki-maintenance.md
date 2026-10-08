@@ -179,8 +179,8 @@ Two things to know before changing it again:
 - **Run the guard first, and read the SKIP COUNT, not just the exit code.** Two of its four cap
   assertions skip when OpenWiki is absent from `/usr/local/lib/node_modules`, and a skip reads as a
   pass. The `claude-sonnet-5` bump was verified at 20 passed / 0 failed / **0 skipped**.
-- **Verifying a generator version bump before the image carries it** (how 0.5.2 → 0.6.0 was done,
-  feature 078): side-install it — `npm install -g --prefix <dir> openwiki@<v> mermaid jsdom`, never
+- **Verifying a generator version bump before the image carries it** (how 0.5.2 → 0.6.0 and
+  0.6.0 → 0.7.1 were done, feature 078): side-install it — `npm install -g --prefix <dir> openwiki@<v> mermaid jsdom`, never
   over the container's global copy that other sessions are using — and run the guard with
   `OPENWIKI_ROOT=<dir>/lib/node_modules/openwiki`. The installed-generator assertions then read the
   new version instead of skipping; count them.
