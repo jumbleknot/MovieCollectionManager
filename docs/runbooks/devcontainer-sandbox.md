@@ -84,7 +84,7 @@ looks entirely correct while running somewhere else.
 | list sandboxes and their state | `sbx ls` |
 | start an existing, stopped sandbox | **`sbx run --name mcm -d`** |
 | stop without destroying | `sbx stop mcm` |
-| destroy | `sbx rm mcm` |
+| destroy | `sbx rm mcm --force` (v0.45.0+ prompts, and a non-interactive prompt answers *No*) |
 | shell in | `ssh mcm.sbx` |
 
 ⚠️ **`sbx start` DOES NOT EXIST.** It is not an error — the invocation silently prints the root
@@ -219,7 +219,21 @@ A check keyed to one refusal signature reports a hole when the mechanism merely 
 | dev container | `rc=6` — NXDOMAIN (DNS-layer refusal); `curl` also writes `000` |
 | sibling container | `rc=6` — NXDOMAIN (DNS-layer refusal) |
 | raw IP from a sibling | `rc=35` — TLS terminated mid-handshake |
-| VM shell | HTTP **403** with `Blocked by network policy` |
+| VM shell, <= v0.43.0 | HTTP **403** with `Blocked by network policy` |
+| VM shell, v0.47.0 | HTTP **403** with `Approval required for <host>:<port>.` / `Review and respond with:  sbx policy approval ls` |
+
+🔴 **v0.47.0 changed the VM-shell refusal body — and the change read as a breach.** The first
+harness run after the upgrade reported `example.com is REACHABLE — deny-by-default is NOT
+enforcing`. It was not reachable: the proxy still answered 403, but with the new body, and the
+check's marker no longer matched, so it took the 403 for the origin's. Both verify scripts now
+accept both bodies (2026-10-08).
+
+The new body also means **a refusal now queues a pending approval** (`sbx policy approval ls`
+lists every refused host, with `no matching allow rule (default deny)` and `allow`/`dismiss`
+options). Nothing is let through until a person answers one, so default-deny holds — but
+`sbx policy approval respond … allow` is now a second way to widen egress that bypasses
+`egress-allowlist.json`. **Never use it**: add the destination to the canonical file and apply the
+generated rule (§4), or the next recreate silently loses it. Use `dismiss` to clear the queue.
 
 ⚠️ **`nc -z <ip> 443` reports OPEN against a blocked destination.** The proxy accepts the TCP
 connection and refuses at TLS. A connect-only probe will tell you egress is wide open when it is
@@ -959,10 +973,36 @@ sbx exec <name> sh -c 'lsblk | grep ^vd; df -h /var/lib/docker /'
 ### Changing a size — creation-time only, so it means recreate
 
 ```powershell
-[Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_DOCKER_SIZE','100GB','User')
+[Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_DOCKER_SIZE','150GB','User')
 [Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_ROOT_SIZE','40GB','User')
 # then a NEW shell, so sbx and the daemon inherit them
 ```
+
+Current values: **Docker 150 GB, root 40 GB** (Docker raised from 100 GB on 2026-10-08, when it
+stood at 91 % — 85 GB used, 8.5 GB free — with the root volume at 38 %).
+
+⚠️ **A User-scope variable reaches neither the current shell nor a daemon that is already
+running.** Which of the CLI and the daemon reads it has not been isolated; the 2026-10-08 resize
+sidestepped the question by giving both the value before creating — then verified from the host
+(below), which is the check that matters:
+
+```powershell
+$env:DOCKER_SANDBOXES_DOCKER_SIZE = '150GB'; $env:DOCKER_SANDBOXES_ROOT_SIZE = '40GB'
+sbx daemon stop; sbx ls        # sbx ls restarts the daemon, from THIS environment
+```
+
+The full recreate, in order: back up (§8b), `sbx rm mcm --force`, then
+`sbx create --name mcm -m 16g --skills=off shell C:\Users\<you>\sbx-workspaces\mcm-vm`, then apply
+the egress policy (§7b) **before** anything pulls, then the three §8b steps, a fresh clone into
+`/workspaces/mcm`, the restored `.env` files, a `sbx stop`, and `devcontainer up`.
+
+⚠️ **A CLI `devcontainer up` installs no personal layer**, and `sbx rm` took the `~/.claude` volume
+that held it — so the harness's `personal-layer` check FAILS with `RTK not found`. VS Code applies
+`dotfiles.repository` on its own; the CLI needs it passed (`--dotfiles-repository <url>`). Then run
+`bash .devcontainer/ensure-rtk-hook.sh` in the container: `postCreateCommand` runs it **before**
+the dotfiles pass, when RTK does not exist yet, and a dotfiles `install.sh` that dies on any later
+step never reaches `rtk init -g` — measured 2026-10-08, when an upstream-renamed plugin aborted it
+and left RTK built but not hooked. Expect to log in to Claude Code and `gh` again.
 
 Set them at **User scope, not `$env:`**. A later `sbx` upgrade makes this load-bearing: **v0.42.0
 drops the default Docker volume from 50 GB to 10 GB**, so any future recreate that forgets the
@@ -1309,9 +1349,44 @@ one that passes unsafe here:
 
 ## 10b. The `sbx` version, and the ritual before upgrading it (R5)
 
-**Pinned and proven at: `v0.43.0` (`79805a6e3c6667520dc2da4f6bdeddae9b700969`), upgraded from
-v0.39.0 on 2026-09-19.** Most of this page was originally measured against v0.38.0; where a
-behaviour was re-checked on v0.43.0 it says so. Record the version whenever you report a problem —
+**Pinned at: `v0.47.0` (`0411f50ee4700fe7bd37e6e7e3aced563e850ca9`), upgraded from v0.43.0 on
+2026-10-08** (`winget upgrade Docker.sbx`, after `sbx daemon stop`). Most of this page was
+originally measured against v0.38.0; where a behaviour was re-checked on a later version it says
+so.
+
+**v0.44–v0.47, the release-note items that touch this environment** (there is no v0.44.0; v0.45.0
+follows v0.43.0):
+
+- **Removal commands prompt (v0.45.0)**, and declining returns non-zero — `sbx rm` needs `--force`
+  in any script or agent shell.
+- **Egress is stricter (v0.45.0–v0.47.0)**: DNS resolution is refused when no rule permits it, PTR
+  lookups only for already-authorized IPs, policy evaluation failures fail **closed**, and raw TCP to
+  a denied hostname is no longer let through by an allow rule for its resolved IP. All narrow; none
+  widens egress.
+- **`secret set --command` helpers run from a fresh temp dir (v0.46.0)** — unused here (`sbx secret
+  ls` is empty), noted in case that changes.
+- Still **no `--disk` flag** on `sbx create` (checked on v0.47.0); sizes remain §8's variables.
+
+Upgrade itself, 2026-10-08: the `E:` junction, both size variables, both `.img` volumes and the
+sandbox all survived. The sandbox was then **recreated** for the §8 resize, so the policy-UUID
+continuity checked on v0.43.0 was not re-tested. Created with `--skills=off` — the previous
+sandbox predated v0.43.0's `readonly` default and never had the host skills store mounted. The
+recreated sandbox carries **only** the 51 generator rules; the kit-provisioned `openrouter.ai` rule
+the old sandbox had was not re-provisioned by the `shell` kit.
+
+**Verification for v0.47.0 + the 150 GB recreate, 2026-10-08:**
+
+| Check | Result |
+| --- | --- |
+| `run-harness.sh`, first run | **9/12** — three FAILs, none a regression: `sandbox-egress` (the refusal-body change, §3 — an instrument fault), `personal-layer` (no dotfiles on a CLI `devcontainer up`, §8), `firewall-allowlist` (the known first-run case below; passed on a re-run) |
+| `run-harness.sh`, after the marker fix + dotfiles + `ensure-rtk-hook.sh` | **12/12 PASS**, `reproducible-recreate` included |
+| G5 sibling-egress refusal | **PASS** — sibling blackholed; default-deny intact |
+| `verify-sandbox-egress.sh --audit-check` | **PASS** — refusal in the audit log, all 50 canonical destinations live |
+| `verify-engine-seam.sh --host-check` | **PASS** against a **running** engine (`server=29.7.2`), probe kept, `MCM_SANDBOX_CONTAINER` set |
+| Volumes, from the host | `mcm-docker.img` **150.0 GB**, `rwlayer.img` **40.0 GB**; `/var/lib/docker` 147 G in the VM |
+
+> Previous pin: `v0.43.0` (`79805a6e3c6667520dc2da4f6bdeddae9b700969`), upgraded from v0.39.0 on
+> 2026-09-19 — the notes and table below record that upgrade. Record the version whenever you report a problem —
 several behaviours here are version-specific and undocumented.
 
 Re-checked on v0.43.0 and **unchanged**: `sbx start` still does not exist; there is still no

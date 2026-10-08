@@ -150,7 +150,9 @@ else
   # curlimages/curl is tiny and has no shell, so the probe is exactly one request.
   sib_out="$(docker run --rm curlimages/curl:latest \
       -s -i --max-time 15 "https://${BLOCKED_HOST_SIBLING:-example.com}/" 2>&1 || true)"
-  if printf '%s' "$sib_out" | grep -q 'Blocked by network policy'; then
+  # Both proxy refusal bodies: <= v0.43.0, and v0.47.0's approval-queue form (see the header of
+  # verify-sandbox-egress.sh, trap 1).
+  if printf '%s' "$sib_out" | grep -qE 'Blocked by network policy|sbx policy approval ls'; then
     ok "sibling container REFUSED ${BLOCKED_HOST_SIBLING:-example.com} (refusal came from the sandbox policy)"
   elif [ -z "$(printf '%s' "$sib_out" | tr -d '[:space:]')" ]; then
     ok "sibling container could not reach ${BLOCKED_HOST_SIBLING:-example.com} (no response — blackholed)"

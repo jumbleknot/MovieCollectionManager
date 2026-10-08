@@ -24,6 +24,15 @@
 #    sandbox layer as a pass. Both shapes are therefore accepted, and the proxy's own marker string
 #    is preferred because it is unambiguous — a bare 403 could equally come from the origin server.
 #
+#    🔴 THE BODY CHANGED IN sbx v0.47.0 (measured 2026-10-08). A refusal now reads
+#        Approval required for example.com:443.
+#        Review and respond with:  sbx policy approval ls
+#    and queues a pending approval (`no matching allow rule (default deny)`) that stays refused
+#    until a human answers it. The old literal no longer matched, so a REFUSED probe was reported
+#    as "example.com is REACHABLE" — an instrument fault that read as a broken firewall. Both
+#    bodies are accepted; the new one is matched on its `sbx policy approval` instruction, which
+#    no origin server sends.
+#
 # 2. A TCP CONNECT PROVES NOTHING HERE. Measured: `/dev/tcp/gateway.docker.internal/11434` and
 #    `/dev/tcp/<forge>/443` both "succeed" while no service answers — the gateway accepts TCP on
 #    arbitrary ports without forwarding. Every probe below is therefore APPLICATION-level (HTTP).
@@ -42,8 +51,8 @@ TIMEOUT="${MCM_EGRESS_TIMEOUT:-15}"
 
 # A destination that must never be allowlisted, used as the refusal probe.
 BLOCKED_HOST="example.com"
-# The proxy's own refusal marker — see trap 1 above.
-BLOCK_MARKER="Blocked by network policy"
+# The proxy's own refusal markers (an ERE) — <= v0.43.0 and >= v0.47.0 bodies; see trap 1 above.
+BLOCK_MARKER="Blocked by network policy|sbx policy approval ls"
 
 failures=0
 ok()  { printf '  ✓ %s\n' "$*"; }
@@ -125,7 +134,7 @@ status() {
 # Only consulted for a 403, whose body is small, so this never downloads a real page. The marker
 # is what distinguishes a policy refusal from an origin server's own 403.
 is_policy_block() {
-  curl -s --max-time "$TIMEOUT" "$@" 2>/dev/null | grep -q "$BLOCK_MARKER"
+  curl -s --max-time "$TIMEOUT" "$@" 2>/dev/null | grep -qE "$BLOCK_MARKER"
 }
 
 # refused <url> [curl-args…] — 0 when REFUSED, by either enforcement shape.
