@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain, the provider/credential table with its per-provider knobs (page concurrency, service tier, and the Fireworks-only reasoning effort of item #525) and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the run budget with its per-event job deadline and exit-code semantics, the four independent slice-verification causes (missing page, non-conformance including V16, a policy-forbidden write, a page left stale after the run), the single long-lived openwiki-maintenance proposal that proposes per part and reverts unrequested writes after a deadline stop, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain, the provider/credential table with its per-provider knobs (page concurrency, service tier, and the Fireworks-only reasoning effort of item #525) and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the run budget with its per-event job deadline and exit-code semantics, the four independent slice-verification causes (missing page, non-conformance including V16, a policy-forbidden write, a page left stale after the run), the deadline-stop escalation that tags the pages a GNU timeout stopped and retries them first and alone at low reasoning effort (feature 078 US6), the single long-lived openwiki-maintenance proposal that proposes per part and reverts unrequested writes after a deadline stop, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -17,6 +17,8 @@ sources:
     resource: repo://scripts/__tests__/openwiki-claims.test.mjs
   - id: openwiki-source-cccdf9eddce7e76440d4cd28
     resource: repo://scripts/__tests__/openwiki-stamp.test.mjs
+  - id: openwiki-source-1ec987a43e345e6cfd96dd77
+    resource: repo://scripts/__tests__/wiki-escalation.test.mjs
   - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
   - id: openwiki-source-3cfcbfbe6daeeadc1b4b8cf8
@@ -31,6 +33,8 @@ sources:
     resource: repo://scripts/openwiki-claims.mjs
   - id: openwiki-source-d6ba69382020a933bb1c9de0
     resource: repo://scripts/openwiki-stamp.mjs
+  - id: openwiki-source-8f2b3cd6a24d68c4abe301fb
+    resource: repo://scripts/wiki-escalation.mjs
   - id: openwiki-source-f7de3a4f5f1323dd23a0c681
     resource: repo://scripts/wiki-generate.mjs
   - id: openwiki-source-e3418ba4f663de6f0edbcde6
@@ -41,16 +45,21 @@ sources:
     resource: repo://scripts/wiki-usage-tap.mjs
   - id: openwiki-source-cc0e84ce24c43bdaff14a3c1
     resource: repo://scripts/wiki-usage.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-10-05T15:09:13.400Z" }
+  - id: openwiki-source-9cd940916584e06e676df687
+    resource: repo://specs/078-wiki-generator-cost/research.md
+  - id: openwiki-source-7086f8288aa6f7e1f4ff5e4e
+    resource: repo://specs/078-wiki-generator-cost/spec.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-08T02:37:22.749Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-05T15:09:13.400Z
+  - by: openwiki/0.7.1
+    at: 2026-10-08T02:37:22.749Z
 ---
 
 
 # OpenWiki knowledge-bundle maintenance
 
-**Feature 044** (with the cost/provider work of feature 078 and the deadline work of item #613).
+**Feature 044** (with the cost/provider work of feature 078, the deadline work of item #613 and the
+deadline-stop escalation of 078 US6).
 `pnpm nx wiki-plan infrastructure-as-code`
 decomposes the documentation changes since the last recorded run into **slices** — at most 8 pages,
 exactly one bundle area each — offline and free, so there is never a reason to skip it before spending
@@ -58,7 +67,11 @@ on `pnpm nx wiki-maintain infrastructure-as-code` (paid, needs the selected prov
 run is bounded three ways: a page budget, a start deadline, and a per-event **job deadline** that a
 merge-triggered run and a dispatched run are each given differently. The run
 record lives at `openwiki/.maintenance-state.json`, committed because runners are ephemeral; it is
-distinct from the tool's own `openwiki/.last-update.json`. See
+distinct from the tool's own `openwiki/.last-update.json`. **A run that finds nothing to document is
+free and still advances the marker** — the record's `coveredCommit` moves to the planned base commit
+with `lastOutcome: nothing-to-do` and no model is invoked, so the next run over the same tree is free
+too. A `--dry-run` persists nothing, here as everywhere: asking "what would this do?" must not certify
+the range as covered. See
 [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md) for the underlying
 `wiki-update`/`okf-lint` Nx targets this machinery drives, and
 [Nx as the task runner](../invariants/nx-task-runner.md) for why the bare `openwiki` CLI must never be
@@ -79,6 +92,8 @@ stateDiagram-v2
     Plan --> NothingToDo: nothing changed since the marker
     Plan --> Preflight: slices planned, paid start
     Preflight --> BadUsage: provider error, exit 2
+    Preflight --> Escalated: pages a previous deadline stop tagged
+    Escalated --> Invocation: alone, at low reasoning effort, before the rest
     Preflight --> Invocation: minimal call answered
     Invocation --> DeadlineStop: GNU timeout fires, status 124 or 137
     DeadlineStop --> RevertUnrequested: restore what the slice did not ask for
@@ -94,6 +109,8 @@ stateDiagram-v2
     Retry --> Verify
     Retry --> Backlog: 3 attempts used
     Verify --> Backlog: slice failed
+    Backlog --> Tag: only a deadline stop tags the pages that did not land
+    Tag --> [*]: the next run retries them first, at low effort
     Verify --> StoppedAtFailureLimit: two consecutive slices failed
     StoppedAtFailureLimit --> Proposal: pages that landed are still proposed (exit 1)
     StoppedAtFailureLimit --> [*]: exit 1, nothing landed
@@ -112,10 +129,11 @@ or wall clock, or a job deadline that leaves too little time to *start* a genera
 the remainder carried forward (exit 3),
 while two consecutive slice failures end it as a failure (exit 1). A run that
 generated pages but could not get them onto a proposal undoes the marker advance rather than certifying
-work that only exists on a runner about to be thrown away. Two of those edges are the newer machinery: a
-generator the job deadline stops is first cleaned of everything the slice never asked for, and an
+work that only exists on a runner about to be thrown away. Four of those edges are the newer machinery: a
+generator the job deadline stops is first cleaned of everything the slice never asked for, an
 invocation that fails only on *some* of its parts proposes the parts that verified instead of discarding
-them with the failed ones.
+them with the failed ones, a deadline stop is also what tags the pages that did not land, and the next run
+takes those tagged pages first and alone at a lower reasoning effort.
 
 ## The provider is configuration (feature 078)
 
@@ -136,12 +154,14 @@ something quietly ignored.
 - `MCM_WIKI_SERVICE_TIER=priority` (Fireworks only) — +25% price; measured on this workload it bought
   **no** speed, so it is not the default.
 - `MCM_WIKI_REASONING_EFFORT` (Fireworks only: `none`, `low`, `high`, `max`; unset = the model's own
-  default) — the item-#525 trial knob described next.
+  default, which is `high` for this model) — the item-#525 trial knob described next, and the effort
+  078 US6 imposes per invocation on a page a deadline stopped.
 
 **The reasoning-effort knob (item #525).** `scripts/wiki-provider.mjs` rejects any value Fireworks does
 not document for this model, so a bad value fails before any paid work. It cannot travel as openwiki's own
-`OPENWIKI_REASONING_EFFORT`, because openwiki 0.6.0 refuses an effort for its `fireworks` provider: the
-**usage tap** (`scripts/wiki-usage-tap.mjs`), loaded into the generator process, sets `reasoning_effort`
+`OPENWIKI_REASONING_EFFORT`, because openwiki refuses an effort for its `fireworks` provider — true in
+0.6.0 and still true in the pinned 0.7.1 (078 research R15) — so the **usage tap**
+(`scripts/wiki-usage-tap.mjs`), loaded into the generator process, sets `reasoning_effort`
 on the Fireworks chat-completions request bodies instead — exactly the route `MCM_WIKI_SERVICE_TIER`
 already uses. The preflight sends it too, so a value the provider rejects fails before paid work. The
 run's usage line and its record carry `effort=<value>` when it is set, and the effort changes no price
@@ -150,7 +170,8 @@ tokens ÷ generation speed, and a lower effort means fewer reasoning tokens per 
 weaker page. In CI it is the `reasoning-effort` **input of a dispatched run**, and a push run has no
 inputs, so it falls through to the repository variable — which stays unset, the model default. That is
 what keeps a trial from changing what a merge-triggered run sends; do not set the repository variable
-until a trial's page has been reviewed.
+until a trial's page has been reviewed. The one other writer is the escalation machinery, which overrides
+the effort for a single invocation when the page it is retrying was stopped at the job deadline.
 
 The launcher also *imposes* one variable the operator never sets: it puts
 `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` into the generator's environment unless an explicit operator value
@@ -169,6 +190,18 @@ runs `scripts/wiki-generate.mjs`, which resolves the table, hands the generator 
 provider's key, and passes `WIKI_RUN_MESSAGE` as one argv element with no shell. See
 [Model-provider environment scoping](../invariants/model-provider-scoping.md) for the analogous
 env-scoping rule on the agent side.
+
+**The generator itself is pinned, and the two environments must agree.** Both `.devcontainer/toolchain.Dockerfile`
+and the wiki-maintain workflow install `openwiki@0.7.1` **plus `mermaid` and `jsdom`**, and the guard
+test reads both real command lines and asserts they name the same version and the same peer-dependency
+set — an unpinned or divergent generator means CI and a developer's container silently differ on the
+thing whose output is gated, and a missing parser silently downgrades diagrams. 0.6.0 was the first
+version with parallel page workers (`OPENWIKI_PAGE_CONCURRENCY`); the 2026-10-07 amendment moved the pin
+to 0.7.1, which adds the worker retry (upstream #913) — a page worker that exits without submitting is
+retried once, with the page and its Claims restored between attempts, at the cost of up to two workers'
+time and money for a page that never submits, which raises the deadline-stop risk on exactly those pages
+— and scoped planning (upstream #865), where a run message that names pages is treated as a hard mandate
+rather than a hint (078 research R15; a page with a Claims issue is still forced into the run).
 
 **Preflight.** Before the first paid slice, `wiki-maintain --execute` makes one minimal call to the
 selected model (`node scripts/wiki-generate.mjs --preflight` by hand). A failure exits **2** with the
@@ -229,7 +262,9 @@ Two refinements the diagram shows that the four causes alone do not. A failure t
 *only* to other parts — a requested page missing or still stale, with conformance and policy clean — is
 recorded per part (`landedParts`), so the parts that verified are proposed and only the failed parts
 return to the backlog. And a generator the job deadline stopped is first cleaned up: everything the run
-changed is restored, or deleted if new, except what the slice actually requested.
+changed is restored, or deleted if new, except what the slice actually requested. That same stop is what
+feeds the escalation machinery described under **Escalation after a deadline stop** below — the pages
+that did not land are tagged and retried first and alone at a lower reasoning effort on the next run.
 
 ## The budget — one invocation per run
 
@@ -290,6 +325,80 @@ a covered page finished in 58 calls. Process uncovered pages **one per dispatche
 through a pull request that edits `backlog` in `openwiki/.maintenance-state.json`, merge it (the merge
 run then has nothing to do), and dispatch.
 
+## Escalation after a deadline stop (feature 078 US6)
+
+The cheapest provider is slower than the one it replaced, so a page can be too slow for the window rather
+than wrong. The escalation machinery retries such a page at a **lower reasoning effort** on the next run,
+without an operator noticing and re-seeding anything. `scripts/wiki-escalation.mjs` is pure: it decides
+two things and nothing else — which pages carry a tag, and which effort one invocation overrides.
+
+```mermaid
+flowchart TD
+    A["GNU timeout stops the generator - exit 124, or 137 after --kill-after, with a deadline in force"] --> B["Every requested page that did not land is tagged in escalations"]
+    B --> E{"Explicit effort set, or the provider takes none?"}
+    E -->|yes| F["Tags kept for later, this run unchanged"]
+    E -->|no| G["Tagged pages run first, alone, at reasoning_effort low"]
+    G --> H{"Did the page land?"}
+    H -->|yes| I["Tag cleared - including a page that landed inside a part that failed"]
+    H -->|no| J["failuresAtLow increments and the run reports it"]
+    J --> K["Nothing is parked - parking removes the backlog slice and the escalations entry together"]
+    C["Any other failure - worker exit, 429, state error, policy or conformance"] --> D["Nothing is tagged - low does not cure these"]
+    B --> L["A tag for a page neither queued nor present is dropped by the next run"]
+```
+
+The escalation tag lifecycle: what creates a tag, what the next run does with it, and what clears one.
+
+**Only a deadline stop tags, and the test is the exit status.** A page is tagged when GNU `timeout`
+stopped its generator — exit **124**, or **137** after `--kill-after` — *with a deadline in force*. Nothing
+reads openwiki's own text to decide this. A worker that "exited without submitting", a provider 429, an
+openwiki state error and a policy or conformance violation all end as a **normal exit**, and `low` does not
+cure any of them (item #682), so none of them tags. A start-deadline carry-forward — a slice never started
+because under 5 minutes were left — is not a failure either, and does not tag.
+
+**Where the tags live.** `escalations` in `openwiki/.maintenance-state.json`, keyed `area/page`, beside
+the backlog and never inside it, so the committed backlog keeps its shape:
+
+```json
+"escalations": { "runbooks/sast-scanning.md": { "effort": "low", "reason": "deadline", "since": "…", "failuresAtLow": 0 } }
+```
+
+**Tagged pages run first, and alone.** They are split out of the queue, packed among themselves, and run
+at `reasoning_effort: low` **before** any default-effort work — because effort is per generator
+*process*, so packing never mixes the two. A slice that is only partly tagged is narrowed into two, one
+per effort. The override travels the same route as the job-level knob: `generatorEnv` sets
+`MCM_WIKI_REASONING_EFFORT` for that one child process, and the usage tap writes `reasoning_effort` onto
+the Fireworks request bodies. Everything else runs at the job's effort.
+
+**Precedence.** An explicit effort — the `reasoning-effort` dispatch input, or the
+`MCM_WIKI_REASONING_EFFORT` repository variable — governs the whole run, and the existing tags are merely
+kept for later (a *fresh* deadline stop still records a tag, it just does not change what this run
+sends). A provider that takes no reasoning effort (`anthropic`) ignores them and keeps them. Either way
+the split is skipped rather than applied.
+
+**Clearing.** A tag clears when its page **lands** — including a page that landed inside a part that
+failed, because tags are per page, not per invocation. A page of a failed part that did land is cleared,
+never tagged.
+
+**A repeat failure at low.** The tag stays and `failuresAtLow` counts up, and the run says so:
+
+```text
+[wiki-maintain] ⚠ escalated to low and still failing (2): runbooks/sast-scanning.md — consider parking it (078 US6)
+```
+
+Nothing is parked automatically. **Parking means removing the backlog slice AND the `escalations` entry
+in the same commit.** An orphan tag for a page that is neither queued nor present is dropped by the next
+run; one for a page that still exists is kept, and does nothing until the page is planned again.
+
+**What the record shows.** `lastRunInvocations` lists each invocation with its pages, `effort`,
+`deadlineStop` and `estCostUsd`, and `lastRunUsage.reasoningEffort` reads `mixed` when invocations differ
+— naming the first one's effort would misattribute the whole run's tokens to it.
+
+**Caveat, and it is the reason this is a retry and not a promise.** The evidence that `low` lands a slow
+page is **one success on one page** (078 research R14): `sast-scanning` failed twice at default effort —
+one deadline stop and one worker exit — landed once at `low`, and a later `low` run on the same page
+exited its worker again. Escalation guarantees that the retry happens and that a repeat failure is
+visible. It does not guarantee the page lands.
+
 ## What a run cost (feature 078)
 
 OpenWiki reports no usage itself, so `scripts/wiki-usage-tap.mjs` is loaded into the generator process
@@ -298,17 +407,26 @@ and records per-call **counts** (never content). Each invocation's counts are pr
 lands in the job log and in `lastRunUsage` in `openwiki/.maintenance-state.json`:
 
 ```text
-[wiki-maintain] usage runbooks/: 47 call(s), 183838 uncached / 2801438 cached / 43117 output tokens, ~$0.0883 (fireworks, prices 2026-09-27)
-[wiki-maintain] run usage: ~$0.0883 over 47 call(s) in 1 invocation(s), fireworks, prices 2026-09-27
+[wiki-maintain] usage runbooks/: 47 call(s), 183838 uncached / 2801438 cached / 43117 output tokens, ~$0.0883 (fireworks, prices 2026-10-07)
+[wiki-maintain] run usage: ~$0.0883 over 47 call(s) in 1 invocation(s), fireworks, prices 2026-10-07
 ```
 
-It is an **estimate** (it reconciled with the Fireworks bill to the cent on the 078 research probes).
+It is an **estimate**, and the two halves have different track records. The *token counts* are the
+trustworthy half: on the 078 probes they reconciled with the Fireworks bill to the cent, and across the
+45-run scoring window they matched the console to chart-reading precision. The *rates* were wrong once —
+the 2026-09-27 table priced every day of 2026-10-01…07 at 1.43× under the bill — so the operator settled
+the standard rates from the Fireworks website on 2026-10-07, after which the same tokens re-price to
+−0.8% of the bill. A guard re-prices that window and fails beyond 5% of the bill, so a rate change is a
+code change to `scripts/wiki-provider-prices.json` and its `asOf` date, never a quiet drift.
+
 `not captured` means the tap produced nothing — it is never written as $0. A line saying `PARTIAL total`
 means some invocations were not captured. `failedCalls` counts non-200 responses: rate limiting under
 page concurrency shows up there first. When the reasoning-effort knob is set, both the per-invocation and
 the run line carry `effort=<value>` after the provider (and tier, if any), and the value is recorded in
 `lastRunUsage.reasoningEffort` — it changes no price row, because Fireworks bills reasoning tokens as
-output tokens.
+output tokens. When an escalated invocation runs at `low` beside default-effort work, the run total reads
+`reasoningEffort: "mixed"` rather than misattributing every token to the first invocation's effort, and
+`lastRunInvocations` names each invocation's own `effort` and `deadlineStop`.
 
 ## Gotchas
 
@@ -367,7 +485,8 @@ output tokens.
 - **The managed `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block is rewritten on every run, so the
   committed block must already be what the pinned generator writes.** OpenWiki rewrites that block in
   `AGENTS.md` and `CLAUDE.md` on every run, and 0.6.0 changed the `AGENTS.md` text (four lines about its
-  retrieval tools). `openwiki/policy.yaml` permits only `actor: agent` to write `AGENTS.md`, so on 0.6.0
+  retrieval tools; 0.7.1 leaves it unchanged). `openwiki/policy.yaml` permits only `actor: agent` to write
+  `AGENTS.md`, so on a generator whose text differs
   **every slice** would have failed verification (`AGENTS.md — the run may not write here`), been
   retried, and returned to the backlog with the marker never advancing — run after run, at full cost.
   The fix is that the committed block *is* the pinned generator's text (an agent-authored edit, which
@@ -464,6 +583,16 @@ output tokens.
   areas' `index.md`; paths that were dirty before the run are left alone. It applies **only** to a
   deadline stop: a generator that exits on its own is judged on everything it wrote, so a broken forced
   page on a normal exit still fails the slice rather than being quietly reverted.
+- **A deadline stop is also what feeds the escalation tags — and only a deadline stop does.** The pages
+  that did not land are recorded in `escalations` in `openwiki/.maintenance-state.json` and retried
+  first, alone, at `reasoning_effort: low` on the next run. The decision is made on `timeout`'s **exit
+  status** (124, or 137 after `--kill-after`) with a deadline in force, never on openwiki's own text, so
+  a worker that exited without submitting, a 429, an openwiki state error and a policy or conformance
+  violation all end normally and tag nothing — `low` does not cure any of them (item #682). **Parking a
+  page means removing its backlog slice AND its `escalations` entry in the same commit**; nothing is
+  parked automatically. The full rules — precedence, clearing, `failuresAtLow` and the one-page evidence
+  behind the whole idea — are under
+  [Escalation after a deadline stop](#escalation-after-a-deadline-stop-feature-078-us6).
 - **A reviewer must not hand-edit a page openwiki has covered — that bricks every later run.** A page
   with an entry in `openwiki/.page-manifest.json` is certified byte-for-byte by its `.claims` sidecar,
   so editing it breaks the certification and openwiki then refuses **every** later run, not just that
@@ -579,7 +708,7 @@ output tokens.
   generator asserted about a page, not reviewed content.
 - **A sidecar is a durability contract, not a note: V16 is what enforces it.** `openwiki/.page-manifest.json`
   lists every page openwiki has **covered** (`/openwiki/<page>.md` keys, each with its own `pageVersion`
-  and a `completedBy` generator version). openwiki 0.6.0 re-proves each covered page before a run can
+  and a `completedBy` generator version). openwiki 0.6.0 and later re-prove each covered page before a run can
   advance — the sidecar must exist, carry a `verification`, and record a `pageVersion` equal to the
   sha256 of the page's **current** bytes — and otherwise throws *"Cannot advance page coverage for
   /openwiki/<page>; Markdown and verified Claims are not durable"* and fails the **whole** run, every

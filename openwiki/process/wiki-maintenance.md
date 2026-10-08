@@ -5,6 +5,8 @@ description: How this openwiki/ knowledge bundle is generated, refreshed and gat
 resource: infrastructure-as-code/project.json
 tags: [openwiki, okf, documentation, ci, maintenance]
 sources:
+  - id: openwiki-source-7e1c4d46c53be9bf32311e06
+    resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-36295b95c290f53e6f6e79a7
@@ -27,10 +29,10 @@ sources:
     resource: repo://scripts/wiki-maintain.mjs
   - id: openwiki-source-8591439162d997daf59a1ac6
     resource: repo://specs/043-openwiki-okf/data-model.md
-generated: { by: "openwiki/0.6.0", at: "2026-10-06T04:53:02.015Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-08T02:37:22.749Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-06T04:53:02.015Z
+  - by: openwiki/0.7.1
+    at: 2026-10-08T02:37:22.749Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -170,9 +172,13 @@ proposal, and the always-on gates sit after it rather than inside it.
   by default and every fence is validated after a run; the real `mermaid` parser and `jsdom` are
   optional peer dependencies, and without them a diagram that fails the strict check is rewritten in
   place into a plain `text` fence while the run still exits 0 and every gate still passes. Both are
-  installed beside the generator in the toolchain image *and* in the wiki workflow, and a guard test
-  asserts the two lists match — if only one environment has the parser, the two disagree about what a
-  valid diagram is and the one that writes the bundle wins.
+  installed beside the generator in `.devcontainer/toolchain.Dockerfile` and in
+  `.forgejo/workflows/wiki-maintain.yml`, at the same pinned generator version (`openwiki@0.7.1`), and
+  guard tests in `scripts/__tests__/wiki-maintain.guard.test.mjs` assert that both the version and the
+  parser list match — an environment that is missing the parser, or running a different generator,
+  disagrees about what a valid diagram is, and the one that writes the bundle wins. The downgrade is
+  not invisible after the fact: the rewritten fence keeps an `openwiki: mermaid parse failed` comment
+  naming the parser error, so a diagram that never rendered can be found and repaired by hand.
 - **Rejected content is fixed in the brief, never allowlisted.** If a page trips the conformance gate,
   the governance gate or a leak scan, the surface that changes is `openwiki/INSTRUCTIONS.md`, followed
   by a regeneration. The gates deliberately have no skip flag and no allowlist, because an allowlisted
