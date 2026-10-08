@@ -998,11 +998,15 @@ the egress policy (§7b) **before** anything pulls, then the three §8b steps, a
 
 ⚠️ **A CLI `devcontainer up` installs no personal layer**, and `sbx rm` took the `~/.claude` volume
 that held it — so the harness's `personal-layer` check FAILS with `RTK not found`. VS Code applies
-`dotfiles.repository` on its own; the CLI needs it passed (`--dotfiles-repository <url>`). Then run
-`bash .devcontainer/ensure-rtk-hook.sh` in the container: `postCreateCommand` runs it **before**
-the dotfiles pass, when RTK does not exist yet, and a dotfiles `install.sh` that dies on any later
-step never reaches `rtk init -g` — measured 2026-10-08, when an upstream-renamed plugin aborted it
-and left RTK built but not hooked. Expect to log in to Claude Code and `gh` again.
+`dotfiles.repository` on its own; the CLI needs it passed (`--dotfiles-repository <url>`).
+
+The RTK **hook** is a separate trap. `postCreateCommand` runs `ensure-rtk-hook.sh` **before** the
+dotfiles pass, when RTK does not exist yet, so it wires nothing; and a dotfiles `install.sh` that
+calls plain `rtk init -g` wires nothing either — it prompts, a non-interactive run answers *No*,
+and it exits 0. Measured 2026-10-08: the dotfiles log said `RTK active` with no hook in
+`settings.json`. A dotfiles script must use `rtk init -g --auto-patch` and check the hook landed;
+if yours does not, run `bash .devcontainer/ensure-rtk-hook.sh` in the container afterwards.
+Expect to log in to Claude Code and `gh` again.
 
 Set them at **User scope, not `$env:`**. A later `sbx` upgrade makes this load-bearing: **v0.42.0
 drops the default Docker volume from 50 GB to 10 GB**, so any future recreate that forgets the
