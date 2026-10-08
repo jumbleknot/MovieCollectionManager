@@ -2517,3 +2517,16 @@ test('US6 run: the usage summary carries the effort actually used (FR-022)', () 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('US6 env: generatorEnv overrides the effort only when asked', () => {
+  const base = { PATH: '/bin', MCM_WIKI_REASONING_EFFORT: '' };
+  assert.equal(mod.generatorEnv('m', base, { reasoningEffort: 'low' }).MCM_WIKI_REASONING_EFFORT, 'low');
+  assert.equal(mod.generatorEnv('m', base, {}).MCM_WIKI_REASONING_EFFORT, '');
+  assert.equal(mod.generatorEnv('m', base, { reasoningEffort: null }).MCM_WIKI_REASONING_EFFORT, '');
+});
+
+test('US6 env: the CLI path hands executeSlices the escalation policy (structural, like the preflight pin)', () => {
+  const src = readFileSync(SCRIPT, 'utf8');
+  const main = src.slice(src.indexOf('async function main'));
+  assert.match(main, /effortPolicy:\s*escalationPolicy\(process\.env\)/);
+});

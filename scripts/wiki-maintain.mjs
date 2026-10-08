@@ -1525,12 +1525,18 @@ export function generatorCommand() {
  * touch. A value inside double quotes is not re-parsed for `$` or backticks either, so the message
  * arrives byte-for-byte as one argument.
  */
-export function generatorEnv(runMessage, env = process.env, { usageLog = null } = {}) {
+export function generatorEnv(runMessage, env = process.env, { usageLog = null, reasoningEffort = null } = {}) {
   if (SHELL_UNSAFE.test(runMessage)) {
     throw new Error('run message contains a shell metacharacter — renderRunMessage must produce one safe line');
   }
   // 078 US4: where the usage tap inside the generator writes this invocation's per-call counts.
-  return { ...env, [RUN_MESSAGE_ENV]: runMessage, ...(usageLog ? { WIKI_USAGE_LOG: usageLog } : {}) };
+  // 078 US6: an escalated invocation overrides the effort; anything else inherits the job's setting.
+  return {
+    ...env,
+    [RUN_MESSAGE_ENV]: runMessage,
+    ...(usageLog ? { WIKI_USAGE_LOG: usageLog } : {}),
+    ...(typeof reasoningEffort === 'string' ? { MCM_WIKI_REASONING_EFFORT: reasoningEffort } : {}),
+  };
 }
 
 // ── the job deadline (item #613) ────────────────────────────────────────────────────────────────
@@ -1565,10 +1571,10 @@ export function jobDeadlineMs(env = process.env) {
   return Number(raw.trim()) * 1000;
 }
 
-function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null }) {
+function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null, reasoningEffort = null }) {
   const message = slice.runMessage ?? renderRunMessage(slice);
   const [cmd, ...args] = deadlineCommand(timeoutMs);
-  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog }) });
+  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog, reasoningEffort }) });
   if (timeoutMs !== null && (r.status === 124 || r.status === 137)) {
     console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s. openwiki prints nothing until it exits, so this alone does not say whether it was slow or hung — the usage line below counts the model calls it made (#613). The slice is judged on what landed — a stopped generator usually leaves a requested page stale, which fails it; the run still records itself.`);
   }
@@ -2447,6 +2453,7 @@ async function main(argv) {
       maxSlices: opts.maxSlices,
       dryRun: opts.dryRun,
       baseCommit: plan.baseCommit,
+      effortPolicy: escalationPolicy(process.env),
     });
 
     reportRun(result, opts);
