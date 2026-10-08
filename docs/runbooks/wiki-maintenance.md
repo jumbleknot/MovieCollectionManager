@@ -388,6 +388,34 @@ gates have no skip flag and no allowlist by design, because an allowlisted leak 
 
 ---
 
+### Escalation after a deadline failure (078 US6)
+
+When the job deadline stops the generator (it exits 124 or 137 from `timeout`), every requested page that did not
+land is **tagged**. The next run, whether merge-triggered or dispatched, gives the tagged pages invocations of their
+own at `reasoning_effort: low`, before any other work. Everything else runs at the default effort.
+
+- **Only a deadline stop tags.** A worker that "exited without submitting", a provider 429, an openwiki state error
+  and a policy or conformance violation never tag: those are normal exits, and `low` does not cure them (item
+  #682). A start-deadline carry-forward is not a failure either.
+- **Where the tags live:** `escalations` in `openwiki/.maintenance-state.json`, keyed `area/page`, beside the
+  backlog:
+  ```json
+  "escalations": { "runbooks/sast-scanning.md": { "effort": "low", "reason": "deadline", "since": "…", "failuresAtLow": 0 } }
+  ```
+- **Precedence:** an explicit effort, from the `reasoning-effort` dispatch input or the `MCM_WIKI_REASONING_EFFORT`
+  repository variable, applies to the whole run. The tags are kept for later. A provider without reasoning effort
+  (`anthropic`) ignores them.
+- **Clearing:** a tag goes when its page lands.
+- **When `low` also fails:** the tag stays and `failuresAtLow` counts up. The run logs, and the failure bundle
+  carries:
+  `[wiki-maintain] ⚠ escalated to low and still failing (N): area/page — consider parking it (078 US6)`.
+  Nothing is parked automatically.
+- **Parking a tagged page:** remove its backlog slice **and** its `escalations` entry in the same commit. A tag left
+  behind for a page that is neither queued nor present is dropped by the next run. One for a page that exists is
+  kept, and does nothing until the page is planned again.
+- **Caveat:** the evidence that `low` lands a slow page is one success on one page (spec 078 research R14). Escalation
+  guarantees the retry happens, and that a repeat failure is visible. It does not guarantee the page lands.
+
 ## 4. What CI does, and why it waits
 
 Merge-triggered on `main`, with a **~15-minute quiet period**: `concurrency` +

@@ -8,8 +8,10 @@
 //                                OpenAI-shaped /chat/completions): agent kind, status, duration,
 //                                uncached / cached / cache-write / output / reasoning tokens.
 //   MCM_WIKI_SERVICE_TIER=<tier> set `service_tier` on Fireworks chat-completions request bodies.
-//   MCM_WIKI_REASONING_EFFORT=<e> set `reasoning_effort` on the same bodies — openwiki refuses an
-//                                effort for its fireworks provider, so this is the only route.
+//   MCM_WIKI_REASONING_EFFORT=<e> set `reasoning_effort` on the same bodies. openwiki refuses an
+//                                effort for its `fireworks` provider; its `openai-compatible`
+//                                provider could carry one, but cannot send `service_tier`, so the
+//                                tap stays (078 research R15, G1/G2).
 //
 // With none set it is inert: the real fetch receives the caller's arguments by identity.
 //
