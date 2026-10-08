@@ -29,6 +29,9 @@ operator ("~8 pages per run, timeout 60"), T029–T031 implemented with the deri
 default in the workflow; added: the wiki job verifies the installed generator and fails on a skip. T032 (upstream
 request) and T034 (score ≥ 10 real runs, SC-005 reconciliation) remain.
 
+**2026-10-08:** Merge C is implemented: T023a, T032, T034–T048. All that remains is T049 (open the PR) and T050
+(post-merge observation of SC-008 and of 0.7.1 on real runs).
+
 **2026-10-07:** T034 scored 45 real runs (research R14). SC-001 and SC-003 are met. SC-002 is **not met**: 53%
 of runs completed against Sonnet's 98%. SC-004 is not met over the window (3 kills before #626) but has held
 since. SC-005 is met once the price table carries the corrected rates (T023/T023a). T032 is done: kept internal (R15). Feature stays open pending
@@ -325,6 +328,7 @@ Operator decision 2026-10-07: keep Fireworks, no flip back (cost). SC-002 is an 
 in one branch with one PR (batching rule). T050 follows the merge.
 
 ### T035 — Side-install 0.7.1 and point the guard at it (RED)
+**DONE 2026-10-08.** RED: the pin assertion fails. The installed-generator checks SKIP when installed ≠ pinned, which is a deliberate guard, so 0 skipped moved to T036 (ledgered ruling).
 **Type**: Test | **Risk**: Low | **Spec**: US5-AC4, FR-015 | **File**: `scripts/__tests__/wiki-maintain.guard.test.mjs`
 ```bash
 S="${TMPDIR:-/tmp}/ow-bump"; mkdir -p "$S"   # a scratch prefix, never the container's global one
@@ -343,6 +347,7 @@ managed-block byte comparison. If the byte comparison fails, STOP: 0.7.1's snipp
 recorded, and `AGENTS.md`/`CLAUDE.md` need the R12 treatment first.
 
 ### T036 — Bump both pins (GREEN)
+**DONE 2026-10-08.** The guard on the 0.7.1 side install passes 28/28 with 0 skipped. On the container's global 0.6.0 it shows 25 passed and 3 skipped, each naming the mismatch, until the image is rebuilt.
 **Type**: Implementation | **Prerequisite**: T035 RED
 - `.devcontainer/toolchain.Dockerfile:86` → `RUN npm install -g openwiki@0.7.1 mermaid jsdom`
 - `.forgejo/workflows/wiki-maintain.yml:160` → `… npm install -g openwiki@0.7.1 mermaid jsdom`. Also update the
@@ -357,6 +362,7 @@ reads the installed generator's version would be the one to differ. Name any suc
 treating it as a pass.
 
 ### T037 — One paid single-page probe on 0.7.1 (paid, ~$0.10–0.30; operator approval BEFORE running)
+**DONE 2026-10-08 (operator-approved).** Research R16: passed. It cost **$1.01**, not $0.10–0.30, because openwiki forced 3 extra pages. The probe needed the `wiki-update` target's environment, which the command below omits (ledgered ruling).
 **Type**: Verification | **Spec**: US5-AC4 | **Risk**: Low
 In a **scratch clone** (never the worktree): `git clone -q --shared /workspaces/mcm "$S/probe071" && cd "$S/probe071"`
 and check out this branch's head. Run one covered page through the launcher. The page is
@@ -378,6 +384,7 @@ git status --short; pnpm nx okf-lint infrastructure-as-code
 Record wall clock, calls, tokens and cost (at the corrected rates) as research **R16**. Delete the scratch clone.
 
 ### T038 — Record the bump
+**DONE 2026-10-08.** The R15 table carries the measured notes, and R16 has the probe.
 **Type**: Docs | Research R15's "what 0.6.1 → 0.7.1 change" table gains a "measured" column from T037. Mark US5-AC4
 done here.
 
@@ -399,6 +406,7 @@ done here.
    counted. Pinned in T039.
 
 ### T039 — Test: the pure escalation rules (new file)
+**DONE 2026-10-08.** RED: module not found.
 **Type**: Test | **Risk**: Medium | **Spec**: FR-017, FR-019–FR-021, SC-009 | **File**: `scripts/__tests__/wiki-escalation.test.mjs`
 ```js
 // Feature 078 US6 — retry a page that ran out of time at low reasoning effort (plan D9).
@@ -525,6 +533,7 @@ test('invocationEffort: low only for escalated work, never over an explicit effo
 **Expected RED**: the file fails to import `../wiki-escalation.mjs` (module not found).
 
 ### T040 — Implement `scripts/wiki-escalation.mjs` (GREEN)
+**DONE 2026-10-08.** 13/13. The review fix pass added page-level tagging (+1 test).
 **Type**: Implementation | **Prerequisite**: T039 RED
 ```js
 // wiki-escalation.mjs — feature 078 US6: a page the job deadline stopped is retried at LOW reasoning
@@ -615,6 +624,7 @@ export function stillFailing(prior = {}, next = {}) {
 **Verify GREEN**: same command. All tests pass, 0 skipped; note the count.
 
 ### T041 — Test + implement: the record carries `escalations` (FR-018, Review Focus 4)
+**DONE 2026-10-08.** RED 2/2. The pre-existing round-trip test was updated at the cause to expect the documented default (ledgered ruling).
 **Type**: Test + Implementation | **File**: `scripts/__tests__/wiki-maintain.test.mjs`, `scripts/wiki-maintain.mjs`
 RED first. Append to `wiki-maintain.test.mjs`:
 ```js
@@ -662,6 +672,7 @@ at the end of `assertRecordShape`:
 A record written by any run now carries `escalations: {}`, which is additive.
 
 ### T042 — Test: `executeSlices` escalates, isolates, and reports (AC1–AC7, FR-019–FR-022)
+**DONE 2026-10-08.** RED 6/7. AC2 passed by construction, as anticipated.
 **Type**: Test | **Risk**: Medium | **File**: `scripts/__tests__/wiki-maintain.test.mjs`
 ```js
 // ── 078 US6: escalation inside a run ─────────────────────────────────────────────
@@ -801,6 +812,7 @@ nearly all failing. `executeSlices` ignores `effortPolicy` and the record's tags
 `invoke`, and writes no tags. AC2 and AC7 may already pass by construction; say which ones did.
 
 ### T043 — Implement the escalation wiring in `executeSlices` (GREEN)
+**DONE 2026-10-08.** The wiki suite passes 199/199 with 0 skipped on 0.7.1.
 **Type**: Implementation | **Prerequisite**: T040, T041, T042 RED | **File**: `scripts/wiki-maintain.mjs`
 1. Import:
    `import { isDeadlineStop, splitByEscalation, escalationPolicy, invocationEffort, nextEscalations, stillFailing } from './wiki-escalation.mjs';`
@@ -848,6 +860,7 @@ nearly all failing. `executeSlices` ignores `effortPolicy` and the record's tags
 T023a's 177 + T039 + T041 + T042, with 0 skipped. Pre-existing tests stay unmodified.
 
 ### T044 — Test + implement: the effort reaches the generator, and `main` passes the policy
+**DONE 2026-10-08.** RED 2/2, then GREEN. The wiki suite passes 201/201.
 **Type**: Test + Implementation | **File**: `wiki-maintain.test.mjs`, `wiki-maintain.mjs`
 RED first:
 ```js
@@ -876,6 +889,7 @@ test('US6 env: the CLI path hands executeSlices the escalation policy (structura
 **Verify GREEN**: same command, 2 pass. Then the whole wiki suite, with 0 skipped.
 
 ### T045 — Docs at the canonical sources (FR-013)
+**DONE 2026-10-08.** The runbook subsection is written, and both comments are corrected.
 **Type**: Docs
 - `docs/runbooks/wiki-maintenance.md`: a new subsection under §3 "Reading a failure", **"Escalation after a deadline
   failure (078 US6)"**. It covers:
@@ -896,15 +910,26 @@ Then run `pnpm nx okf-lint infrastructure-as-code` and `pnpm nx okf-governance i
 real `CI=true pnpm install --frozen-lockfile` in the worktree, per the CLAUDE.md worktree gate.
 
 ### T046 — Preflight and the affected tiers
+**DONE 2026-10-08.**
+- `okf-lint` and `okf-governance` are green.
+- `preflight --gates-only` passes 24/24. App tiers are not touched by this diff (ledgered ruling).
+- Scripts tier: 1542/1542 with 0 skipped on 0.7.1, after the review fixes.
 `pnpm nx preflight infrastructure-as-code` (or the cheap-checks target its `project.json` names). Also run
 `node --test "scripts/__tests__/*.test.mjs"` for the whole scripts tier. Watch the SKIP count, and name every skip
 with its reason.
 
 ### T047 — Self-review of the branch
+**DONE 2026-10-08.**
+- A fresh reviewer found 0 Critical, 2 Important and 6 Minor issues, and confirmed all five Review Focus items.
+- Both Important findings were fixed RED→GREEN:
+  - I1: tags are now per page, not per part (FR-017);
+  - I2: the record has a per-invocation effort list (`lastRunInvocations`), and the run total reads `mixed` when invocations differ (FR-022).
+- The minors are deferred and listed in the PR.
 `git diff origin/main...HEAD` read end to end. Check it against spec FR-017–FR-023 and US5-AC4, and against this
 phase's Review Focus list. Run one fresh-reviewer pass over the whole branch.
 
 ### T048 — Close out 078's task list
+**DONE 2026-10-08.**
 Mark T023, T032, T034–T047 done with their evidence. The Status block names what remains post-merge (T050).
 
 ### T049 — Open the close-out PR

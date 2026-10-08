@@ -331,3 +331,34 @@ searched on 2026-10-07.
 | #840 (0.6.1): atomic `.last-update.json`; #989 (0.7.1): vulnerable dependencies updated | Hygiene. |
 | #906 (0.6.1): "keep generation running when a planner submits a different plan" | Might cover run 4348's `already has a different persisted plan`. **Not confirmed:** the throw is still in `submitRepositoryPlan`. Verify on the bump. |
 | #933 (0.6.1): code mode no longer creates `CLAUDE.md` | No effect; ours exists. |
+
+**Measured on the probe (R16):**
+- #865 did not stop Claims-forced pages: 3 were forced into a 1-page request.
+- The guard passed 28/28 with 0 skipped against 0.7.1, including the byte-for-byte `AGENTS.md`/`CLAUDE.md` blocks.
+- #913, #906 and #979 were not observable in one run.
+
+
+## R16 — T037: the 0.7.1 probe (2026-10-08, operator-approved, paid)
+
+One page was asked for (`runbooks/android-emulator.md`), through `wiki-generate.mjs`, on a side install of
+**openwiki 0.7.1**: Fireworks / DeepSeek V4.1 Flash, standard tier, page concurrency 4. It ran in a scratch clone of
+the branch head with the `wiki-update` target's environment.
+
+| Wall clock | Pages written | Calls (plan / page) | Failed calls | Uncached / cached / output (reasoning) tokens | Cost at the corrected rates |
+|---|---|---|---|---|---|
+| **1,106 s** | **4** | 199 (34 / 165) | 0 | 1.58M / 12.93M / 380k (328k) | **$1.01**, ≈ $0.25 per page |
+
+- **Pass on US5-AC4:**
+  - exit 0, and the requested page and `runbooks/index.md` were written;
+  - `AGENTS.md` and `CLAUDE.md` were untouched;
+  - `okf-lint` was conformant (69 concepts), with V12 warnings only for `ci-diagnostics`, `devcontainer-sandbox` and
+    `spec-driven-development`, all known.
+- **openwiki still forces pages with Claims issues,** as R15 predicted: #865 changed the planner's prompt, not
+  `addRequiredClaimIssueJobs`. Three extra pages were written: `runbooks/wiki-maintenance` (the branch edited its
+  source), plus `runbooks/sast-scanning` and `process/wiki-maintenance`, both stale on `main`. That is why the probe cost $1.01
+  against the $0.10–0.30 estimated for one page. The estimate should have counted forced pages; T015e had already
+  shown one.
+- **One observation for #913, not evidence of it.** `runbooks/sast-scanning`, whose worker exited without submitting
+  at `low` in CI run 4801, landed here at the default effort, on 0.7.1, as one of four parallel pages. openwiki
+  prints nothing per attempt, so whether the new worker retry fired cannot be told. T050 watches real runs.
+- The probe's output was discarded unreviewed. CI regenerates those pages after merge.
