@@ -405,7 +405,10 @@ own at `reasoning_effort: low`, before any other work. Everything else runs at t
 - **Precedence:** an explicit effort, from the `reasoning-effort` dispatch input or the `MCM_WIKI_REASONING_EFFORT`
   repository variable, applies to the whole run. The tags are kept for later. A provider without reasoning effort
   (`anthropic`) ignores them.
-- **Clearing:** a tag goes when its page lands.
+- **Clearing:** a tag goes when its page lands. Tags are per page, so a page that landed inside a part that failed
+  is cleared, not tagged.
+- **Which effort each invocation used:** `lastRunInvocations` in the run record (pages, `effort`, `deadlineStop`,
+  `estCostUsd`). `lastRunUsage.reasoningEffort` reads `mixed` when invocations differ.
 - **When `low` also fails:** the tag stays and `failuresAtLow` counts up. The run logs, and the failure bundle
   carries:
   `[wiki-maintain] ⚠ escalated to low and still failing (N): area/page — consider parking it (078 US6)`.

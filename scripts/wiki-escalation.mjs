@@ -64,7 +64,11 @@ export function nextEscalations({ prior = {}, outcomes = [], backlog = [], pageE
   for (const o of outcomes) {
     for (const key of keysOf(o.ok ? o.parts : o.landedParts)) delete next[key];
     if (o.ok) continue;
-    for (const key of keysOf(o.failedParts)) {
+    // Page-level when the verifier names the pages: a failed PART can hold pages that landed, and
+    // those are cleared, never tagged or counted (review I1). Without it, every page of a failed part.
+    const failed = new Set(o.failedPages ?? keysOf(o.failedParts));
+    for (const key of keysOf(o.failedParts)) if (!failed.has(key)) delete next[key];
+    for (const key of failed) {
       if (next[key]) {
         if (o.effortUsed === ESCALATED_EFFORT) next[key].failuresAtLow += 1;
       } else if (o.deadlineStop) {

@@ -117,3 +117,20 @@ test('invocationEffort: low only for escalated work, never over an explicit effo
   assert.equal(invocationEffort({ explicit: 'high', supportsLow: true }, true), null);
   assert.equal(invocationEffort({ explicit: null, supportsLow: false }, true), null);
 });
+
+test('page-level: only the pages that did not land in a failed part are tagged or counted; a landed page in it is cleared (FR-017, review I1)', () => {
+  const part = sl('runbooks', ['a.md', 'b.md']);
+  const next = nextEscalations({
+    prior: { 'runbooks/a.md': tag(1) },
+    outcomes: [outcome({ parts: [part], failedParts: [part], failedPages: ['runbooks/b.md'], deadlineStop: true })],
+    backlog: [part], pageExists: () => true, now: NOW,
+  });
+  assert.deepEqual(next, { 'runbooks/b.md': { effort: 'low', reason: 'deadline', since: NOW, failuresAtLow: 0 } },
+    'a.md landed (fresh) so its tag goes; only b.md is tagged');
+  const counted = nextEscalations({
+    prior: { 'runbooks/a.md': tag(1), 'runbooks/b.md': tag(1) },
+    outcomes: [outcome({ parts: [part], failedParts: [part], failedPages: ['runbooks/b.md'], effortUsed: 'low' })],
+    backlog: [part], pageExists: () => true, now: NOW,
+  });
+  assert.deepEqual(counted, { 'runbooks/b.md': tag(2) });
+});

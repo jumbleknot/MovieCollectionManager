@@ -2530,3 +2530,35 @@ test('US6 env: the CLI path hands executeSlices the escalation policy (structura
   const main = src.slice(src.indexOf('async function main'));
   assert.match(main, /effortPolicy:\s*escalationPolicy\(process\.env\)/);
 });
+
+test('US6 run: a deadline stop tags only the unlanded page of a multi-page part (review I1)', () => {
+  const root = twoAreaRepo();
+  try {
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root), slices: [sl('invariants', ['one.md', 'three.md'])],
+      attemptsPerSlice: 1, effortPolicy: FIREWORKS_POLICY, ...DEADLINE,
+      invoke: () => { writingStub(root, 'invariants', ['one.md'])(); return { status: 124 }; },
+    });
+    assert.deepEqual(Object.keys(mod.readRunRecord(root).escalations), ['invariants/three.md']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 run: the record lists each invocation with the effort it ran at (FR-022, review I2)', () => {
+  const root = twoAreaRepo();
+  try {
+    const stub = ownPagesStub(root);
+    const record = { ...mod.readRunRecord(root), escalations: { 'gotchas/two.md': TAG() } };
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record, effortPolicy: FIREWORKS_POLICY,
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], invoke: (work) => stub(work),
+    });
+    assert.deepEqual(mod.readRunRecord(root).lastRunInvocations.map(({ pages, effort, deadlineStop }) => ({ pages, effort, deadlineStop })), [
+      { pages: ['gotchas/two.md'], effort: 'low', deadlineStop: false },
+      { pages: ['invariants/one.md'], effort: null, deadlineStop: false },
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

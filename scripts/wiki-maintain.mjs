@@ -186,6 +186,9 @@ function assertRecordShape(record) {
   if (record.proposal !== null && (typeof record.proposal !== 'object' || Array.isArray(record.proposal))) {
     throw new Error(`${STATE_FILE}: proposal must be an object or null`);
   }
+  if (record.lastRunInvocations !== undefined && !Array.isArray(record.lastRunInvocations)) {
+    throw new Error(`${STATE_FILE}: lastRunInvocations must be an array (078 FR-022)`);
+  }
   const esc = record.escalations;
   if (esc === null || typeof esc !== 'object' || Array.isArray(esc)) {
     throw new Error(`${STATE_FILE}: escalations must be an object keyed by area/page (078 US6)`);
@@ -1460,7 +1463,13 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   const landedParts = violations.length > 0 && violations.length === attributable
     ? partsOf(slice).filter((part) => !failedParts.includes(part))
     : [];
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts, landedParts };
+  // 078 US6 (review I1): the PAGES that did not land, as `area/page`. A failed part can hold pages
+  // that did land; escalation must tag only the ones that did not. A policy or conformance failure
+  // is not attributable to a page, so it names every page of the invocation.
+  const failedPages = violations.length === 0 ? []
+    : violations.length === attributable ? [...missing, ...stalePages]
+      : partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`));
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts, landedParts, failedPages };
 }
 
 /**
@@ -1677,6 +1686,7 @@ export function executeSlices({
   ];
   const remainingParts = (from) => plan.slice(from).flatMap((p) => partsOf(p.work));
   const outcomes = [];
+  const invocationRecords = [];
 
   if (dryRun) {
     return {
@@ -1794,8 +1804,16 @@ export function executeSlices({
       ok: verdict.ok,
       landedParts: verdict.landedParts ?? [],
       failedParts: verdict.ok ? [] : (verdict.failedParts ?? partsOf(slice)),
+      failedPages: verdict.ok ? [] : verdict.failedPages,
       deadlineStop: stopped,
       effortUsed,
+    });
+    // 078 FR-022 (review I2): the record names each invocation's effort, not only the run total's.
+    invocationRecords.push({
+      pages: partsOf(slice).flatMap((p) => (p.pages ?? []).map((page) => `${p.area}/${page}`)),
+      effort: effortUsed,
+      deadlineStop: stopped,
+      estCostUsd: spent === NOT_CAPTURED ? null : spent.estCostUsd,
     });
 
     if (!verdict.ok) {
@@ -1842,6 +1860,7 @@ export function executeSlices({
     lastOutcome: outcome,
     backlog,
     escalations,
+    lastRunInvocations: invocationRecords,
     lastRunBudget: { pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget },
     // 078 US4: estimated from the tap's counts and a dated price table; NOT_CAPTURED, never zero.
     lastRunUsage: runUsage,

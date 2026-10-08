@@ -117,3 +117,13 @@ test('the real Fireworks standard rates reconcile the R14 billed window within 5
   const delta = Math.abs(u.estCostUsd - bill) / bill;
   assert.ok(delta <= 0.05, `estimate $${u.estCostUsd} is ${(delta * 100).toFixed(1)}% from the $${bill} bill`);
 });
+
+// 078 US6 / FR-022 (review I2): a run whose invocations ran at different efforts must not report
+// the first one's effort for the whole run's tokens.
+test('a run total over invocations at different efforts says "mixed"', () => {
+  const a = summarizeUsage(line({ uncached: 1 }), { provider: 'fireworks', model: 'm', tier: null, reasoningEffort: 'low', prices: PRICES });
+  const b = summarizeUsage(line({ uncached: 1 }), { provider: 'fireworks', model: 'm', tier: null, prices: PRICES });
+  assert.equal(sumUsage([a, b]).reasoningEffort, 'mixed');
+  assert.equal(sumUsage([a, a]).reasoningEffort, 'low');
+  assert.equal(sumUsage([b, b]).reasoningEffort, null);
+});
