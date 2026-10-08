@@ -50,6 +50,7 @@ import { conceptStamp } from './openwiki-stamp.mjs';
 import { carryClaimsHash, CLAIMS_DIR } from './openwiki-claims.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
+import { isDeadlineStop, splitByEscalation, escalationPolicy, invocationEffort, nextEscalations, stillFailing } from './wiki-escalation.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -124,6 +125,9 @@ const EMPTY_RECORD = Object.freeze({
   backlog: [],
   proposal: null,
   lastRunBudget: null,
+  // 078 US6: pages a job deadline stopped, to retry at low effort — keyed `area/page`, beside the
+  // backlog and never inside it, so the backlog's committed shape is unchanged (FR-018).
+  escalations: {},
 });
 
 const statePath = (root) => join(root, STATE_FILE);
@@ -181,6 +185,18 @@ function assertRecordShape(record) {
   }
   if (record.proposal !== null && (typeof record.proposal !== 'object' || Array.isArray(record.proposal))) {
     throw new Error(`${STATE_FILE}: proposal must be an object or null`);
+  }
+  if (record.lastRunInvocations !== undefined && !Array.isArray(record.lastRunInvocations)) {
+    throw new Error(`${STATE_FILE}: lastRunInvocations must be an array (078 FR-022)`);
+  }
+  const esc = record.escalations;
+  if (esc === null || typeof esc !== 'object' || Array.isArray(esc)) {
+    throw new Error(`${STATE_FILE}: escalations must be an object keyed by area/page (078 US6)`);
+  }
+  for (const [key, t] of Object.entries(esc)) {
+    if (!t || typeof t.effort !== 'string' || !Number.isInteger(t.failuresAtLow) || t.failuresAtLow < 0) {
+      throw new Error(`${STATE_FILE}: escalations[${JSON.stringify(key)}] needs a string effort and a non-negative integer failuresAtLow`);
+    }
   }
 }
 
@@ -1447,7 +1463,13 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   const landedParts = violations.length > 0 && violations.length === attributable
     ? partsOf(slice).filter((part) => !failedParts.includes(part))
     : [];
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts, landedParts };
+  // 078 US6 (review I1): the PAGES that did not land, as `area/page`. A failed part can hold pages
+  // that did land; escalation must tag only the ones that did not. A policy or conformance failure
+  // is not attributable to a page, so it names every page of the invocation.
+  const failedPages = violations.length === 0 ? []
+    : violations.length === attributable ? [...missing, ...stalePages]
+      : partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`));
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts, landedParts, failedPages };
 }
 
 /**
@@ -1512,12 +1534,18 @@ export function generatorCommand() {
  * touch. A value inside double quotes is not re-parsed for `$` or backticks either, so the message
  * arrives byte-for-byte as one argument.
  */
-export function generatorEnv(runMessage, env = process.env, { usageLog = null } = {}) {
+export function generatorEnv(runMessage, env = process.env, { usageLog = null, reasoningEffort = null } = {}) {
   if (SHELL_UNSAFE.test(runMessage)) {
     throw new Error('run message contains a shell metacharacter — renderRunMessage must produce one safe line');
   }
   // 078 US4: where the usage tap inside the generator writes this invocation's per-call counts.
-  return { ...env, [RUN_MESSAGE_ENV]: runMessage, ...(usageLog ? { WIKI_USAGE_LOG: usageLog } : {}) };
+  // 078 US6: an escalated invocation overrides the effort; anything else inherits the job's setting.
+  return {
+    ...env,
+    [RUN_MESSAGE_ENV]: runMessage,
+    ...(usageLog ? { WIKI_USAGE_LOG: usageLog } : {}),
+    ...(typeof reasoningEffort === 'string' ? { MCM_WIKI_REASONING_EFFORT: reasoningEffort } : {}),
+  };
 }
 
 // ── the job deadline (item #613) ────────────────────────────────────────────────────────────────
@@ -1552,10 +1580,10 @@ export function jobDeadlineMs(env = process.env) {
   return Number(raw.trim()) * 1000;
 }
 
-function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null }) {
+function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null, reasoningEffort = null }) {
   const message = slice.runMessage ?? renderRunMessage(slice);
   const [cmd, ...args] = deadlineCommand(timeoutMs);
-  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog }) });
+  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog, reasoningEffort }) });
   if (timeoutMs !== null && (r.status === 124 || r.status === 137)) {
     console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s. openwiki prints nothing until it exits, so this alone does not say whether it was slow or hung — the usage line below counts the model calls it made (#613). The slice is judged on what landed — a stopped generator usually leaves a requested page stale, which fails it; the run still records itself.`);
   }
@@ -1616,6 +1644,7 @@ export function executeSlices({
   now = () => new Date().toISOString(),
   usage = defaultUsageContext(),
   deadlineMs = null,
+  effortPolicy = escalationPolicy(),
 } = {}) {
   const runRecord = record ?? readRunRecord(root);
   // Time the generator may still use, or null when there is no deadline (local runs).
@@ -1643,14 +1672,27 @@ export function executeSlices({
   // 078 US2: slices are packed into invocations so the generator's fixed planning pass is paid once
   // per group of areas. Everything carried forward below is expressed in SLICES (the parts), never
   // in groups, so the committed backlog keeps its shape.
-  const work = packSlices(queue);
-  const remainingParts = (from) => work.slice(from).flatMap(partsOf);
+  //
+  // 078 US6: pages a job deadline stopped last time run first, alone, at low effort. Packing never
+  // mixes them with default-effort work, because effort is per generator PROCESS. With an explicit
+  // effort, or a provider without one, the split is skipped and the tags are simply kept (FR-020).
+  const lowEffort = invocationEffort(effortPolicy, true);
+  const { escalated, normal } = lowEffort === null
+    ? { escalated: [], normal: queue }
+    : splitByEscalation(queue, runRecord.escalations ?? {});
+  const plan = [
+    ...packSlices(escalated).map((work) => ({ work, effort: lowEffort })),
+    ...packSlices(normal).map((work) => ({ work, effort: null })),
+  ];
+  const remainingParts = (from) => plan.slice(from).flatMap((p) => partsOf(p.work));
+  const outcomes = [];
+  const invocationRecords = [];
 
   if (dryRun) {
     return {
       outcome: slices.length === 0 ? 'nothing-to-do' : 'dry-run',
       exitCode: 0,
-      results: work.map((s) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
+      results: plan.map(({ work: s }) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
       pagesWritten: 0,
       elapsedSeconds: elapsed(),
       stoppedAtBudget: false,
@@ -1660,7 +1702,7 @@ export function executeSlices({
     };
   }
 
-  for (const [i, slice] of work.entries()) {
+  for (const [i, { work: slice, effort }] of plan.entries()) {
     // Budgets are checked BETWEEN slices, never inside one: interrupting a slice mid-generation would
     // leave a half-written area, which is a conformance failure rather than a saving. The overshoot is
     // therefore bounded at one slice — the declared effective ceiling in the header comment.
@@ -1709,6 +1751,7 @@ export function executeSlices({
     let verdict;
     let invocation;
     let attempts = 0;
+    let stopped = false; // 078 US6: was this invocation stopped by the job deadline?
     // Snapshotted ONCE, before the first attempt — the slice is judged against the state it started
     // from, not against the state its own previous attempt left behind.
     //
@@ -1725,8 +1768,9 @@ export function executeSlices({
       try {
         const timeoutMs = generatorAllowance();
         if (timeoutMs !== null && timeoutMs < MIN_GENERATOR_MS) break;
-        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog, timeoutMs });
-        if (timeoutMs !== null && (invocation?.status === 124 || invocation?.status === 137)) {
+        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog, timeoutMs, reasoningEffort: effort });
+        stopped = isDeadlineStop(invocation, timeoutMs);
+        if (stopped) {
           const reverted = revertUnrequested({ root, bundleRoot: bundleDir, slice, before });
           if (reverted.length > 0) {
             console.error(`[wiki-maintain] deadline stop: restored ${reverted.length} path(s) this slice did not request (openwiki's forced or unfinished pages): ${reverted.slice(0, 6).join(', ')}${reverted.length > 6 ? ' …' : ''}`);
@@ -1745,14 +1789,32 @@ export function executeSlices({
       }
     }
 
-    const spent = invocationUsage(usageLog, usage);
+    // 078 FR-022: the usage line and record name the effort this invocation actually ran at.
+    const spent = invocationUsage(usageLog, usage ? { ...usage, reasoningEffort: effort ?? usage.reasoningEffort ?? null } : usage);
     rmSync(usageDir, { recursive: true, force: true });
     usageSummaries.push(spent);
     console.log(spent === NOT_CAPTURED
       ? `[wiki-maintain] usage ${slice.area}/: not captured`
       : `[wiki-maintain] usage ${slice.area}/: ${spent.calls} call(s), ${spent.uncached} uncached / ${spent.cached} cached / ${spent.output} output tokens, ~$${spent.estCostUsd} (${spent.provider}${spent.tier ? `/${spent.tier}` : ''}${spent.reasoningEffort ? ` effort=${spent.reasoningEffort}` : ''}, prices ${spent.priceTable})`);
 
-    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null, usage: spent });
+    const effortUsed = effort ?? effortPolicy.explicit ?? null;
+    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null, usage: spent, effortUsed, deadlineStop: stopped });
+    outcomes.push({
+      parts: partsOf(slice),
+      ok: verdict.ok,
+      landedParts: verdict.landedParts ?? [],
+      failedParts: verdict.ok ? [] : (verdict.failedParts ?? partsOf(slice)),
+      failedPages: verdict.ok ? [] : verdict.failedPages,
+      deadlineStop: stopped,
+      effortUsed,
+    });
+    // 078 FR-022 (review I2): the record names each invocation's effort, not only the run total's.
+    invocationRecords.push({
+      pages: partsOf(slice).flatMap((p) => (p.pages ?? []).map((page) => `${p.area}/${page}`)),
+      effort: effortUsed,
+      deadlineStop: stopped,
+      estCostUsd: spent === NOT_CAPTURED ? null : spent.estCostUsd,
+    });
 
     if (!verdict.ok) {
       failed = true;
@@ -1779,6 +1841,15 @@ export function executeSlices({
   const outcome = failed ? 'failed' : slices.length === 0 ? 'nothing-to-do' : 'completed';
   const runUsage = sumUsage(usageSummaries);
 
+  // 078 US6: retag what a deadline stopped, clear what landed, count failures at low — and say so.
+  const escalations = nextEscalations({
+    prior: runRecord.escalations ?? {}, outcomes, backlog, now: now(),
+    pageExists: (key) => existsSync(join(bundleDir, key)),
+  });
+  for (const { key, failuresAtLow } of stillFailing(runRecord.escalations ?? {}, escalations)) {
+    console.error(`[wiki-maintain] ⚠ escalated to low and still failing (${failuresAtLow}): ${key} — consider parking it (078 US6)`);
+  }
+
   // The marker advances on every outcome EXCEPT failure. A budget stop still advances, because the
   // remainder is in the backlog and therefore not lost; a failure must not, because the range it
   // covered was examined and NOT dealt with (data-model E3).
@@ -1788,6 +1859,8 @@ export function executeSlices({
     coveredAt: failed ? runRecord.coveredAt : now(),
     lastOutcome: outcome,
     backlog,
+    escalations,
+    lastRunInvocations: invocationRecords,
     lastRunBudget: { pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget },
     // 078 US4: estimated from the tap's counts and a dated price table; NOT_CAPTURED, never zero.
     lastRunUsage: runUsage,
@@ -2399,6 +2472,7 @@ async function main(argv) {
       maxSlices: opts.maxSlices,
       dryRun: opts.dryRun,
       baseCommit: plan.baseCommit,
+      effortPolicy: escalationPolicy(process.env),
     });
 
     reportRun(result, opts);

@@ -144,6 +144,99 @@ failure → `usage: "not captured"`, never zeros (FR-010, SC-005).
   `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` is set; we leave it unset and record retries seen in the usage log (a
   non-200 status per call).
 
+### D8. Generator bump to 0.7.1 (amendment 2026-10-07; US5 AC4, FR-015)
+
+- The same procedure as D7 (0.5.2 → 0.6.0):
+  - side-install `openwiki@0.7.1 mermaid jsdom` under a scratch prefix;
+  - point the guard at it with `OPENWIKI_ROOT`, and require **0 skipped**;
+  - then move both pins: `.devcontainer/toolchain.Dockerfile:86` and `.forgejo/workflows/wiki-maintain.yml:160`.
+- The guard's version assertion (`wiki-maintain.guard.test.mjs:179-180`) changes from `'0.6.0'` to `'0.7.1'`. This is
+  an update at the cause: FR-015 now names 0.7.1. Its comment keeps the 0.6.0 history.
+- **Read from the unpacked 0.7.1 `dist` (research R15), to be confirmed by the guard:**
+  - `MAX_PAGE_CONCURRENCY` is still 8 and `resolvePageConcurrency` still exists;
+  - the managed `AGENTS.md`/`CLAUDE.md` snippet text is unchanged from 0.6.0, so the R12 byte-for-byte guard passes
+    without editing `AGENTS.md`;
+  - `OPENWIKI_REASONING_EFFORT` still throws for `fireworks`, so the tap stays the route for effort (US6 relies on it).
+- **One paid probe (~$0.10–0.30, operator approval first)**, the T015e shape:
+  - one covered page through `wiki-generate.mjs` on the side install, Fireworks, concurrency 4;
+  - run in a **scratch clone**, never the worktree, so the generator's writes cannot reach the branch;
+  - pass when the page and its index are written, `okf-lint` is green, `AGENTS.md`/`CLAUDE.md` are untouched, and a
+    usage record exists.
+- **Behaviour to observe after merge, not assumed:**
+  - #913, the worker retry: does a page that used to exit now land, or now take twice as long?
+  - #906: is run 4348's "different persisted plan" absorbed?
+  - #865: are plans narrower?
+
+  These are recorded with T050's observation.
+
+### D9. Escalate to low reasoning effort after a deadline failure (US6; FR-017–FR-023)
+
+**A new pure module, `scripts/wiki-escalation.mjs`,** with one responsibility: deciding effort and tags. It does no
+I/O beyond what it is handed, so it can be tested without a repo fixture. Exports:
+
+| Export | Signature | Rule |
+|---|---|---|
+| `ESCALATED_EFFORT` | `'low'` | the only escalation step |
+| `pageKey` | `(area, page) → 'area/page'` | the tag key; always built from a slice PART's `area` and one page, never from an invocation's display `pages` (those are already `area/page`) |
+| `isDeadlineStop` | `(invocation, timeoutMs) → boolean` | `timeoutMs !== null && (status === 124 \|\| status === 137)`; the same condition `executeSlices` already uses to call `revertUnrequested` (FR-017) |
+| `splitByEscalation` | `(slices, escalations) → { escalated, normal }` | a slice with no tagged page passes through **unchanged** (identity, so a run with no tags is byte-for-byte today's). A slice whose pages are all tagged moves to `escalated` unchanged. A slice with both kinds is split into two copies, each holding only its pages and their `subjects`; **only these split copies drop `runMessage`**, so `renderRunMessage` re-renders it from the narrowed pages. A carried backlog slice's stored message names every original page, and reusing it would tell the low invocation to write the untagged pages. Order is preserved. |
+| `escalationPolicy` | `(env) → { explicit: string\|null, supportsLow: boolean }` | from `resolveWikiProvider(env)`: `explicit` = its `reasoningEffort`; `supportsLow` = the provider row's `reasoningEfforts` includes `'low'`. If resolution throws → `{ explicit: null, supportsLow: false }` (the preflight has already failed the run loudly). |
+| `invocationEffort` | `({ explicit, supportsLow }, escalated) → string\|null` | the effort to **override** for one invocation. `null` means "leave the env as it is". Explicit set → `null` (the env already carries it; FR-020). Escalated and `supportsLow` → `'low'`. Otherwise → `null`. |
+| `nextEscalations` | `({ prior, outcomes, backlog, pageExists, now }) → escalations` | the new map (rules below) |
+| `stillFailing` | `(prior, next) → [{ key, failuresAtLow }]` | the tags whose `failuresAtLow` rose this run; each one gets the flag line |
+
+`nextEscalations` rules. Each **outcome** is `{ parts, ok, landedParts, failedParts, deadlineStop, effortUsed }`, one
+per invocation, where `parts` is `partsOf(work)`:
+1. Start from a deep copy of `prior` (`{}` if absent). The input is never mutated.
+2. For every page in `parts` when `ok`, or in `landedParts` otherwise: delete its tag (FR-021).
+3. For every page in `failedParts` (only when not `ok`):
+   - if it is already tagged: increment `failuresAtLow` when `effortUsed === 'low'`, otherwise leave it alone. A run
+     at an explicit `high` neither resets nor counts.
+   - if it is not tagged and `deadlineStop`: set `{ effort: 'low', reason: 'deadline', since: now, failuresAtLow: effortUsed === 'low' ? 1 : 0 }` (FR-017).
+
+   Any other failure leaves the map unchanged for that page (SC-009).
+4. Drop any tag whose page is in neither `backlog` (as `pageKey` of each backlog part) nor `pageExists(key)`. A page
+   queued for creation keeps its tag.
+
+**Run record** (`scripts/wiki-maintain.mjs`):
+- `EMPTY_RECORD` gains `escalations: {}`, so an older record without the field loads as no tags (FR-018).
+- `assertRecordShape` rejects an `escalations` that is not a plain object, or an entry without a string `effort`
+  and a non-negative integer `failuresAtLow`.
+- The backlog is untouched.
+
+**`executeSlices`:**
+- New parameter `effortPolicy = escalationPolicy()`.
+- Before packing: `const { escalated, normal } = splitByEscalation(queue, runRecord.escalations ?? {})`.
+- When `invocationEffort(effortPolicy, true)` is `null` (explicit set, or the provider has no effort), the split is
+  **not** applied: every slice is treated as normal, so tags have no effect but are kept (FR-020, AC7).
+- Otherwise the run's invocation list is
+  `[...packSlices(escalated).map(w => ({ work: w, effort: 'low' })), ...packSlices(normal).map(w => ({ work: w, effort: null }))]`.
+  This packs low work separately and runs it first (FR-019). `remainingParts` and the dry-run report iterate this
+  list.
+- Each invocation calls `invoke(work, { ..., reasoningEffort: effort })`. Its usage is summarised with
+  `{ ...usage, reasoningEffort: effort ?? usage?.reasoningEffort ?? null }`, so the usage line and record show the
+  effort actually used (FR-022).
+- Each result gains `effortUsed` and `deadlineStop`.
+- After the loop: `escalations = nextEscalations({ prior: runRecord.escalations, outcomes, backlog, pageExists, now })`,
+  where `pageExists = (key) => existsSync(join(bundleDir, key))`. The map is written with the record.
+- Every page whose `failuresAtLow` rose gets one `console.error` line:
+  `[wiki-maintain] ⚠ escalated to low and still failing (N): area/page — consider parking it (078 US6)`.
+  The execute step's log is what the failure bundle captures (its `logs/step:wiki-maintain-execute`), so the
+  digest carries it (FR-021).
+- No page is dropped or parked (FR-023).
+
+**`defaultInvoke` / `generatorEnv`:**
+- `generatorEnv(runMessage, env, { usageLog, reasoningEffort })` sets `MCM_WIKI_REASONING_EFFORT` only when
+  `reasoningEffort` is a string.
+- `wiki-generate.mjs` already resolves and validates it, and the tap already sends it; no change there.
+
+**`main()`** passes `effortPolicy: escalationPolicy(process.env)` into `executeSlices`.
+
+**Documentation (FR-013):**
+- the runbook gains "Escalation after a deadline failure": what tags, what does not, where the map lives, how to
+  park (remove the backlog slice **and** its tag), and the flag line;
+- `wiki-usage-tap.mjs`'s header loses the claim that the tap is "the only route" for effort (R15, G2).
+
 ### Project Structure
 
 ```text
@@ -153,8 +246,10 @@ scripts/
 ├── wiki-generate.mjs            # NEW  D2 — launcher the Nx target runs; --preflight
 ├── wiki-usage-tap.mjs           # NEW  D3 — inert-unless-configured fetch preload
 ├── wiki-provider-prices.json    # NEW  D5 — dated price table
-├── wiki-maintain.mjs            # EDIT D4/D5 — multi-area slices, usage aggregation, preflight call, budget constants
+├── wiki-maintain.mjs            # EDIT D4/D5 — multi-area slices, usage aggregation, preflight call, budget constants; D9 wiring
+├── wiki-escalation.mjs          # NEW  D9 — pure: deadline trigger, split, effort choice, tag map
 └── __tests__/
+    ├── wiki-escalation.test.mjs     # NEW  D9 — trigger table (SC-009), split, policy, tag rules
     ├── wiki-provider.test.mjs       # NEW
     ├── wiki-usage-tap.test.mjs      # NEW
     ├── wiki-maintain.test.mjs       # EDIT  multi-area plan/render/verify, record back-compat, usage

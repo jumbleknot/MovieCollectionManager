@@ -56,7 +56,10 @@ export function sumUsage(summaries) {
   out.provider = captured[0].provider;
   out.model = captured[0].model;
   out.tier = captured[0].tier;
-  out.reasoningEffort = captured[0].reasoningEffort ?? null;
+  // 078 FR-022: invocations at different efforts (an escalated one beside default ones) are 'mixed';
+  // naming the first one's effort would misattribute the whole run's tokens to it.
+  const efforts = new Set(captured.map((s) => s.reasoningEffort ?? null));
+  out.reasoningEffort = efforts.size > 1 ? 'mixed' : (captured[0].reasoningEffort ?? null);
   out.priceTable = captured[0].priceTable;
   return out;
 }

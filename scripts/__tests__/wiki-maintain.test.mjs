@@ -82,7 +82,10 @@ test('run record round-trips through openwiki/.maintenance-state.json', () => {
     assert.ok(statSync(onDisk).isFile(), 'the record must live at openwiki/.maintenance-state.json');
 
     const read = mod.readRunRecord(root);
-    assert.deepEqual(read, record);
+    // Every field written comes back unchanged. The one addition is a documented default: 078 US6's
+    // `escalations` reads as `{}` when a record has none (FR-018), so the expectation names it rather
+    // than loosening the comparison.
+    assert.deepEqual(read, { ...record, escalations: {} });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -2353,6 +2356,208 @@ test('proposal: a publish that fails after generation holds the marker and retur
     assert.deepEqual(held.backlog.map((s) => s.pages), [['first.md']], 'the run\'s work is outstanding again');
     assert.deepEqual(held.lastRunUsage, { estCostUsd: 0.1 }, 'the money was still spent — usage is kept');
     assert.equal(mod.readRunRecord(root).coveredCommit, head, 'persisted');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── 078 US6: escalation tags in the run record ──────────────────────────────────
+
+test('US6 record: the committed record has no escalations and loads as none (FR-018)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wiki-esc-'));
+  try {
+    mkdirSync(join(root, 'openwiki'), { recursive: true });
+    cpSync(join(REPO_ROOT, mod.STATE_FILE), join(root, mod.STATE_FILE));
+    assert.deepEqual(mod.readRunRecord(root).escalations, {});
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 record: a malformed escalations map never reaches disk (Review Focus 4)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wiki-esc-'));
+  try {
+    for (const bad of [[], 'x', { 'a/b.md': { effort: 'low', failuresAtLow: -1 } }, { 'a/b.md': { failuresAtLow: 0 } }, { 'a/b.md': null }]) {
+      assert.throws(() => mod.writeRunRecord(root, { escalations: bad }), /escalations/, JSON.stringify(bad));
+    }
+    assert.deepEqual(mod.writeRunRecord(root, { escalations: { 'a/b.md': { effort: 'low', reason: 'deadline', since: 't', failuresAtLow: 0 } } }).escalations['a/b.md'].failuresAtLow, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── 078 US6: escalation inside a run ─────────────────────────────────────────────
+
+const DEADLINE = { clock: () => 1_000_000, deadlineMs: 1_000_000 + 60 * 60_000 };
+const FIREWORKS_POLICY = { explicit: null, supportsLow: true };
+const TAG = (n = 0) => ({ effort: 'low', reason: 'deadline', since: 't0', failuresAtLow: n });
+// Writes exactly the invocation's own pages, so a split run never writes outside its boundary.
+const ownPagesStub = (root) => (work) => {
+  for (const p of mod.partsOf(work)) writingStub(root, p.area, p.pages)();
+  return { status: 0 };
+};
+
+test('US6 run: a deadline stop that lands nothing tags the requested pages (AC1)', () => {
+  const root = twoAreaRepo();
+  try {
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root), slices: [sl('invariants', ['one.md'])],
+      attemptsPerSlice: 1, effortPolicy: FIREWORKS_POLICY, ...DEADLINE, invoke: () => ({ status: 124 }),
+    });
+    assert.equal(result.outcome, 'failed');
+    const esc = mod.readRunRecord(root).escalations;
+    assert.deepEqual(Object.keys(esc), ['invariants/one.md']);
+    assert.equal(esc['invariants/one.md'].reason, 'deadline');
+    assert.equal(result.results[0].deadlineStop, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 run: a normal-exit failure tags nothing (AC2)', () => {
+  const root = twoAreaRepo();
+  try {
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root), slices: [sl('invariants', ['one.md'])],
+      attemptsPerSlice: 1, effortPolicy: FIREWORKS_POLICY, ...DEADLINE, invoke: () => ({ status: 0 }),
+    });
+    assert.deepEqual(mod.readRunRecord(root).escalations, {});
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 run: tagged pages run first, alone, at low; the rest at the default; landing clears the tag (AC3, AC5, FR-019)', () => {
+  const root = twoAreaRepo();
+  try {
+    const calls = [];
+    const stub = ownPagesStub(root);
+    const record = { ...mod.readRunRecord(root), escalations: { 'gotchas/two.md': TAG() } };
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record, effortPolicy: FIREWORKS_POLICY,
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])],
+      invoke: (work, ctx) => { calls.push({ pages: work.pages, effort: ctx.reasoningEffort }); return stub(work); },
+    });
+    assert.deepEqual(calls, [{ pages: ['two.md'], effort: 'low' }, { pages: ['one.md'], effort: null }]);
+    assert.deepEqual(mod.readRunRecord(root).escalations, {});
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 run: an explicit effort wins, packing is unchanged, and the tags are kept with exact keys (AC4, Review Focus 3)', () => {
+  const root = twoAreaRepo();
+  try {
+    const calls = [];
+    const record = { ...mod.readRunRecord(root), escalations: { 'gotchas/two.md': TAG(1) } };
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record, effortPolicy: { explicit: 'high', supportsLow: true },
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: (work, ctx) => { calls.push({ pages: work.pages, effort: ctx.reasoningEffort }); return { status: 0 }; },
+    });
+    assert.deepEqual(calls, [{ pages: ['invariants/one.md', 'gotchas/two.md'], effort: null }], 'one packed invocation, no override');
+    assert.deepEqual(mod.readRunRecord(root).escalations, { 'gotchas/two.md': TAG(1) }, 'kept as-is: not reset, not counted, no area/area/page key');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 run: a provider without effort ignores the tags and keeps them (AC7)', () => {
+  const root = twoAreaRepo();
+  try {
+    const calls = [];
+    const record = { ...mod.readRunRecord(root), escalations: { 'gotchas/two.md': TAG() } };
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record, effortPolicy: { explicit: null, supportsLow: false },
+      slices: [sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: (work, ctx) => { calls.push(ctx.reasoningEffort); return { status: 0 }; },
+    });
+    assert.deepEqual(calls, [null]);
+    assert.deepEqual(mod.readRunRecord(root).escalations, { 'gotchas/two.md': TAG() });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 run: failing again at low increments the count and says so in the log (AC6, FR-021)', (t) => {
+  const root = twoAreaRepo();
+  try {
+    const errors = t.mock.method(console, 'error', () => {});
+    const record = { ...mod.readRunRecord(root), escalations: { 'gotchas/two.md': TAG(1) } };
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record, effortPolicy: FIREWORKS_POLICY,
+      slices: [sl('gotchas', ['two.md'])], attemptsPerSlice: 1, invoke: () => ({ status: 0 }),
+    });
+    assert.equal(mod.readRunRecord(root).escalations['gotchas/two.md'].failuresAtLow, 2);
+    assert.ok(mod.readRunRecord(root).backlog.some((b) => b.area === 'gotchas' && b.pages.includes('two.md')),
+      'still queued: escalation never parks a page (FR-023)');
+    const lines = errors.mock.calls.map((c) => String(c.arguments[0]));
+    assert.ok(lines.some((l) => /escalated to low and still failing \(2\): gotchas\/two\.md/.test(l)), lines.join('\n'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 run: the usage summary carries the effort actually used (FR-022)', () => {
+  const root = twoAreaRepo();
+  try {
+    const stub = ownPagesStub(root);
+    const record = { ...mod.readRunRecord(root), escalations: { 'gotchas/two.md': TAG() } };
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record, effortPolicy: FIREWORKS_POLICY, usage: USAGE_CTX,
+      slices: [sl('gotchas', ['two.md'])],
+      invoke: (work, ctx) => {
+        writeFileSync(ctx.usageLog, `${JSON.stringify({ kind: 'page', status: 200, ms: 10, uncached: 1, cached: 0, cacheWrite: 0, output: 0, reasoning: 0 })}\n`, { flag: 'a' });
+        return stub(work);
+      },
+    });
+    assert.equal(result.results[0].usage.reasoningEffort, 'low');
+    assert.equal(result.results[0].effortUsed, 'low');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 env: generatorEnv overrides the effort only when asked', () => {
+  const base = { PATH: '/bin', MCM_WIKI_REASONING_EFFORT: '' };
+  assert.equal(mod.generatorEnv('m', base, { reasoningEffort: 'low' }).MCM_WIKI_REASONING_EFFORT, 'low');
+  assert.equal(mod.generatorEnv('m', base, {}).MCM_WIKI_REASONING_EFFORT, '');
+  assert.equal(mod.generatorEnv('m', base, { reasoningEffort: null }).MCM_WIKI_REASONING_EFFORT, '');
+});
+
+test('US6 env: the CLI path hands executeSlices the escalation policy (structural, like the preflight pin)', () => {
+  const src = readFileSync(SCRIPT, 'utf8');
+  const main = src.slice(src.indexOf('async function main'));
+  assert.match(main, /effortPolicy:\s*escalationPolicy\(process\.env\)/);
+});
+
+test('US6 run: a deadline stop tags only the unlanded page of a multi-page part (review I1)', () => {
+  const root = twoAreaRepo();
+  try {
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root), slices: [sl('invariants', ['one.md', 'three.md'])],
+      attemptsPerSlice: 1, effortPolicy: FIREWORKS_POLICY, ...DEADLINE,
+      invoke: () => { writingStub(root, 'invariants', ['one.md'])(); return { status: 124 }; },
+    });
+    assert.deepEqual(Object.keys(mod.readRunRecord(root).escalations), ['invariants/three.md']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 run: the record lists each invocation with the effort it ran at (FR-022, review I2)', () => {
+  const root = twoAreaRepo();
+  try {
+    const stub = ownPagesStub(root);
+    const record = { ...mod.readRunRecord(root), escalations: { 'gotchas/two.md': TAG() } };
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record, effortPolicy: FIREWORKS_POLICY,
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], invoke: (work) => stub(work),
+    });
+    assert.deepEqual(mod.readRunRecord(root).lastRunInvocations.map(({ pages, effort, deadlineStop }) => ({ pages, effort, deadlineStop })), [
+      { pages: ['gotchas/two.md'], effort: 'low', deadlineStop: false },
+      { pages: ['invariants/one.md'], effort: null, deadlineStop: false },
+    ]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

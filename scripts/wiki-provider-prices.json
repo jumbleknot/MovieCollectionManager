@@ -1,12 +1,12 @@
 {
-  "$comment": "USD per million tokens, used ONLY to ESTIMATE a wiki run's cost in the run record (feature 078 FR-010). Not a bill. Fireworks figures supplied by the operator from the Fireworks console on 2026-09-27; Anthropic figures are Claude Sonnet 5 list prices (5-minute cache writes). Update asOf with every change. Validation: the first two Fireworks probes priced from these figures ($0.178) matched the Fireworks bill ($0.178025) — specs/078-wiki-generator-cost/research.md R0.",
-  "asOf": "2026-09-27",
+  "$comment": "USD per million tokens, used ONLY to ESTIMATE a wiki run's cost in the run record (feature 078 FR-010). Not a bill. Fireworks STANDARD rates: operator, from the Fireworks website, 2026-10-07. They replace the 2026-09-27 figures ($0.22 / $0.007 / $0.66), which under-priced the bill by 1.43x on every day of 2026-10-01..07. At these rates the run records reconcile with the Fireworks console to -0.8% (specs/078-wiki-generator-cost/research.md R14, 'SC-005 reconciled'; guarded in scripts/__tests__/wiki-usage.test.mjs). Fireworks PRIORITY is NOT re-verified: it is still the 2026-09-27 figure. Priority is unused (R3; the console shows 100% standard), so re-check it before setting MCM_WIKI_SERVICE_TIER=priority. Anthropic figures are Claude Sonnet 5 list prices (5-minute cache writes). Update asOf with every change.",
+  "asOf": "2026-10-07",
   "providers": {
     "anthropic": {
       "standard": { "uncached": 2.0, "cached": 0.2, "cacheWrite": 2.5, "output": 10.0 }
     },
     "fireworks": {
-      "standard": { "uncached": 0.22, "cached": 0.007, "cacheWrite": 0, "output": 0.66 },
+      "standard": { "uncached": 0.30, "cached": 0.006, "cacheWrite": 0, "output": 1.20 },
       "priority": { "uncached": 0.275, "cached": 0.00875, "cacheWrite": 0, "output": 0.825 }
     }
   }

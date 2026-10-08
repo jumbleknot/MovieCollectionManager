@@ -41,9 +41,11 @@ export const WIKI_PROVIDERS = Object.freeze({
     // workload it bought no speed (R3), so it is supported but not the default.
     tiers: Object.freeze(['priority']),
     // Fireworks' `reasoning_effort` for DeepSeek V4.1: low (~50), high (~75, the model's default), max,
-    // none. openwiki 0.6.0 refuses OPENWIKI_REASONING_EFFORT for its `fireworks` provider, so the usage
-    // tap sets the body key instead, the same way it sets `service_tier`. Opt-in; unset sends nothing
-    // (item #525 trial, operator 2026-10-05).
+    // none. openwiki (0.6.0 through 0.7.1) refuses OPENWIKI_REASONING_EFFORT for its `fireworks`
+    // provider, so the usage tap sets the body key instead, the same way it sets `service_tier`
+    // (`openai-compatible` could carry the effort but not the tier — research R15). Opt-in; unset
+    // sends nothing (item #525 trial, operator 2026-10-05). 078 US6 sets `low` per invocation for
+    // pages a job deadline stopped.
     reasoningEfforts: Object.freeze(['none', 'low', 'high', 'max']),
     credential: Object.freeze({ accepted: Object.freeze(['FIREWORKS_API_KEY', 'MCM_FIREWORKS_API_KEY']), mapTo: 'FIREWORKS_API_KEY' }),
   }),
