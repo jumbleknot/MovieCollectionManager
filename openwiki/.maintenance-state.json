@@ -1,50 +1,61 @@
 {
-  "coveredCommit": "3269da52e03b3c5ce8ed069652c117b97c387639",
-  "coveredAt": "2026-10-06T10:22:28.510Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "c498cec64acaa792c3fb39bd0b8f9d12dd9095ec",
+  "coveredAt": "2026-10-08T03:25:00.422Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 684,
-    "headCommit": "d95e70fa7c01073fd2d6c6724744664d6cbf7beb",
-    "markerBefore": "3b21eefab7e9c4224ce91975a97082650cee398d",
+    "number": 689,
+    "headCommit": "3072ada1349089c1c5fd78ca4433373efe78b508",
+    "markerBefore": "c498cec64acaa792c3fb39bd0b8f9d12dd9095ec",
     "slices": [
       {
-        "area": "projects",
+        "area": "runbooks",
         "pages": [
-          "sast.md"
+          "wiki-maintenance.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/sast-scanning.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-07T00:36:30.303Z"
+    "updatedAt": "2026-10-08T03:25:00.830Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 1472,
+    "pagesWritten": 3,
+    "elapsedSeconds": 2862,
     "stoppedAtBudget": false
   },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 156,
+    "calls": 305,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 619544,
-    "cached": 17265078,
+    "uncached": 1927180,
+    "cached": 33164000,
     "cacheWrite": 0,
-    "output": 348245,
-    "reasoning": 307471,
-    "ms": 2019046,
-    "estCostUsd": 0.487,
+    "output": 534706,
+    "reasoning": 461197,
+    "ms": 4230935,
+    "estCostUsd": 1.4188,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
-    "priceTable": "2026-09-27"
-  }
+    "reasoningEffort": null,
+    "priceTable": "2026-10-07"
+  },
+  "lastRunInvocations": [
+    {
+      "pages": [
+        "runbooks/wiki-maintenance.md"
+      ],
+      "effort": null,
+      "deadlineStop": false,
+      "estCostUsd": 1.4188
+    }
+  ]
 }
