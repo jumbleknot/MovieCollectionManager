@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate that must distinguish a scanner outage from a finding — and a finding on a file the pull-request scan never received from a clean one.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.6.0", at: "2026-10-06T02:26:18.087Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-08T02:37:22.749Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -18,6 +18,8 @@ sources:
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
+  - id: openwiki-source-9ccd48df872db70bfebbfa90
+    resource: repo://infrastructure-as-code/docker/minio/Dockerfile
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
@@ -49,8 +51,8 @@ sources:
   - id: openwiki-source-9372ce7270e3121a73a61934
     resource: repo://security/sast/semgrep.yaml
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-06T02:26:18.087Z
+  - by: openwiki/0.7.1
+    at: 2026-10-08T02:37:22.749Z
 ---
 
 # SAST & SCA static scanning
@@ -204,9 +206,15 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   (cancelled) run is skipped from inside the step body via `job.status` rather than in the `if:`, so a
   cancelled run cannot be turned into a failure for a commit that was never broken.
 - **Remediate, do not re-date — and a no-fix acceptance is pinned to the exact vulnerable version and
-  short-dated.** Deleting or extending an `expiry` is how a time-box becomes permanent. The
-  legitimate exception — no published fix exists — requires the evidence written into the
-  justification; a time-boxed acceptance can also be discharged by a route its own justification did
+  short-dated.** Deleting or extending an `expiry` is how a time-box becomes permanent. Two
+  legitimate exceptions exist, and **both** require the evidence written into the justification: no
+  published fix exists, or a fix exists only outside the range the advisory's consumers declare. The
+  second is an operator decision, never the reader's alone — the runbook's step 4 puts a cross-major
+  override and a time-boxed acceptance side by side — and its live worked example is
+  `@graphql-tools/utils`: patched only in 12.0.1 while `graphql-yoga` and
+  `@graphql-yoga/plugin-defer-stream` still declare `^11.2.0`, so the only bump forces a major the
+  consumer does not support (the operator chose the acceptance, 2026-10-06; removal is backlog item
+  #674). A time-boxed acceptance can also be discharged by a route its own justification did
   not anticipate (the `image-size` pair was cleared when the dependency left the tree entirely,
   not by the fix its entry predicted). Check npm before assuming: on feature 057 both "needs an
   acceptance" advisories turned out to have published fixes. Where no patched version exists at all,
@@ -295,8 +303,10 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   the workflow filter. Observed, not reasoned: PR #422 added
   `infrastructure-as-code/docker/minio/Dockerfile`, its `guardrails / sast` was a real 3m30s run that
   **passed**, and the post-merge full scan on `main` then failed on
-  `dockerfile.security.missing-user-entrypoint` — staying red until a follow-up landed the
-  accepted-risk entry. A genuinely unwanted finding would have merged just as silently. Dockerfiles
+  `dockerfile.security.missing-user-entrypoint` — staying red until a follow-up landed an
+  accepted-risk entry (that finding and its entry are both gone now: the image sets `USER 1000:1000`
+  before its `ENTRYPOINT` since feature 070, and no `dockerfile.*` entry remains in the allowlist, so
+  a regression re-blocks). A genuinely unwanted finding would have merged just as silently. Dockerfiles
   are now in the filter (item #426), and the whole surface was **enumerated once** rather than waiting
   for a third instance: on a full-scope report, a blocking SAST finding whose file `isScanTarget()`
   rejects now fails the gate with its own section and its own exit path,
@@ -378,15 +388,20 @@ flowchart TD
   D -->|"refresh the lockfile"| E["the range already permits the fix - pnpm update pkg --lockfile-only"]
   D -->|"raise the floor, both halves"| F["move the key and the value together, then pnpm install"]
   D -->|"no advice printed"| G{"Is a patched version published?"}
-  G -->|yes| H["bump it or add an override - a fixable High is never allowlisted"]
   G -->|no| I["time-boxed entry pinned to the exact vulnerable version, with expiry"]
+  G -->|yes| J{"Do the consumers' latest releases permit the patch?"}
+  J -->|yes| H["bump it or add an override - a fixable High is never allowlisted"]
+  J -->|no| K["operator decision - cross-major override, or a time-boxed acceptance that says no fix within the declared range"]
 ```
 
 `pnpm why <pkg> --prod -r` (recursive, workspace-spanning) is the by-hand cross-check; the digest's
 tag is authoritative for what the gate saw. Only when the section says *raise the floor* — or says
 nothing because there is no override yet — does the override edit apply, and then both halves move
 together or `check-override-consistency.mjs` fails the PR by name. A time-boxed acceptance is the last
-resort, never the first.
+resort, never the first — and when the "fix" exists only outside the range its consumers declare, the
+choice between a cross-major override and an acceptance is the operator's, not the reader's: the
+working example is `@graphql-tools/utils`, patched only in 12.0.1 while `graphql-yoga` and
+`@graphql-yoga/plugin-defer-stream` still declare `^11.2.0`.
 
 Full scanner matrix, local invocation, the CI gate steps, the triage/allowlist workflow, and the
 step-by-step "gate went red on an untouched dep" playbook:
