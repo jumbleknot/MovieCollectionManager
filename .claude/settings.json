@@ -15,7 +15,6 @@
   },
   "enabledPlugins": {
     "nx@nx-claude-plugins": true,
-    "react-native-best-practices@callstack-agent-skills": true,
-    "upgrading-react-native@callstack-agent-skills": true
+    "building-react-native-apps@callstack-agent-skills": true
   }
 }
