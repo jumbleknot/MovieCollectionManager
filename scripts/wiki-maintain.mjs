@@ -124,6 +124,9 @@ const EMPTY_RECORD = Object.freeze({
   backlog: [],
   proposal: null,
   lastRunBudget: null,
+  // 078 US6: pages a job deadline stopped, to retry at low effort — keyed `area/page`, beside the
+  // backlog and never inside it, so the backlog's committed shape is unchanged (FR-018).
+  escalations: {},
 });
 
 const statePath = (root) => join(root, STATE_FILE);
@@ -181,6 +184,15 @@ function assertRecordShape(record) {
   }
   if (record.proposal !== null && (typeof record.proposal !== 'object' || Array.isArray(record.proposal))) {
     throw new Error(`${STATE_FILE}: proposal must be an object or null`);
+  }
+  const esc = record.escalations;
+  if (esc === null || typeof esc !== 'object' || Array.isArray(esc)) {
+    throw new Error(`${STATE_FILE}: escalations must be an object keyed by area/page (078 US6)`);
+  }
+  for (const [key, t] of Object.entries(esc)) {
+    if (!t || typeof t.effort !== 'string' || !Number.isInteger(t.failuresAtLow) || t.failuresAtLow < 0) {
+      throw new Error(`${STATE_FILE}: escalations[${JSON.stringify(key)}] needs a string effort and a non-negative integer failuresAtLow`);
+    }
   }
 }
 

@@ -82,7 +82,10 @@ test('run record round-trips through openwiki/.maintenance-state.json', () => {
     assert.ok(statSync(onDisk).isFile(), 'the record must live at openwiki/.maintenance-state.json');
 
     const read = mod.readRunRecord(root);
-    assert.deepEqual(read, record);
+    // Every field written comes back unchanged. The one addition is a documented default: 078 US6's
+    // `escalations` reads as `{}` when a record has none (FR-018), so the expectation names it rather
+    // than loosening the comparison.
+    assert.deepEqual(read, { ...record, escalations: {} });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -2353,6 +2356,31 @@ test('proposal: a publish that fails after generation holds the marker and retur
     assert.deepEqual(held.backlog.map((s) => s.pages), [['first.md']], 'the run\'s work is outstanding again');
     assert.deepEqual(held.lastRunUsage, { estCostUsd: 0.1 }, 'the money was still spent — usage is kept');
     assert.equal(mod.readRunRecord(root).coveredCommit, head, 'persisted');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── 078 US6: escalation tags in the run record ──────────────────────────────────
+
+test('US6 record: the committed record has no escalations and loads as none (FR-018)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wiki-esc-'));
+  try {
+    mkdirSync(join(root, 'openwiki'), { recursive: true });
+    cpSync(join(REPO_ROOT, mod.STATE_FILE), join(root, mod.STATE_FILE));
+    assert.deepEqual(mod.readRunRecord(root).escalations, {});
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('US6 record: a malformed escalations map never reaches disk (Review Focus 4)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wiki-esc-'));
+  try {
+    for (const bad of [[], 'x', { 'a/b.md': { effort: 'low', failuresAtLow: -1 } }, { 'a/b.md': { failuresAtLow: 0 } }, { 'a/b.md': null }]) {
+      assert.throws(() => mod.writeRunRecord(root, { escalations: bad }), /escalations/, JSON.stringify(bad));
+    }
+    assert.deepEqual(mod.writeRunRecord(root, { escalations: { 'a/b.md': { effort: 'low', reason: 'deadline', since: 't', failuresAtLow: 0 } } }).escalations['a/b.md'].failuresAtLow, 0);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
