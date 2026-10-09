@@ -37,7 +37,7 @@
   // Isolation must stay OFF (incompatible with this feature — research D3). This privileged
   // exception subsumes the US1 capAdd above.
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
       "moby": true
     }
   },
