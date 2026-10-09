@@ -220,6 +220,16 @@ wall-clock budgets as everything else, and the attempt count is always reported:
 A `✗` line likewise says `after 3 attempt(s)`, so a slice that is genuinely unsatisfiable still looks
 different from one that was merely unlucky.
 
+**A rate-limited attempt waits instead of retrying at once (item #683).** A failed attempt where at least **half** of
+its calls answered HTTP **429** is recognised from the usage tap's per-call `status` (never from the generator's text);
+a stray 429 that the SDK's own retry absorbed inside a working attempt does not count. The retry then waits
+**60 s** (120 s before a third attempt), but only while it would still *start* inside the 4-minute time budget and leave
+the generator its 5 minutes before the job deadline; otherwise the attempt is **not** retried. Run 4798 (2026-10-06)
+had retried straight into an active 429 three times in 29 seconds and reported it as an ordinary "produced nothing".
+Either way it is named: a `RATE-LIMITED (N call(s) answered HTTP 429)` line at the attempt, a `RATE-LIMITED` line under
+the `✗`, and `rateLimited: {attempts, calls}` on the invocation in `lastRunInvocations`. An attempt that produced
+nothing **without** a 429 still retries immediately.
+
 **A retry can never forgive what an earlier attempt did.** The working tree is snapshotted once,
 before the first attempt, so a forbidden write on attempt 1 still fails the slice even if attempt 2
 behaves. Re-snapshotting per attempt was tried and it laundered a policy violation into a success —
@@ -274,7 +284,9 @@ continues where it left off.
 | Job timeout | 120 min | the hard ceiling (operator decision, 2026-10-02); a push run is held to its 60-minute window by the deadline, not by this |
 
 So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes, and a retry only
-after a fast failure; everything else carries forward in the backlog. Declared effective ceiling: **≤16 pages / ~34 min
+after a fast failure; everything else carries forward in the backlog. That includes slices the **plan** defers past the
+page budget, before any generation: until 2026-10-09 those were printed as "carried forward" but never written to the
+backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤16 pages / ~34 min
 of generation**. The page count comes from **files that actually appeared in the working tree**, not from what the
 generator says it wrote.
 
@@ -459,17 +471,29 @@ listed both. The push now also refuses outright (`pushing would discard N commit
 proposal`) if the open proposal holds a commit the new head does not: a red run, never a silent
 overwrite.
 
-Closing it **without merging** is *meant* to return its work to the backlog and roll the marker back
-— without that, abandoning a proposal leaves the marker certifying work that never landed. **It does
-not do so today (item #619):** the run plans before it reconciles, so the returned slices are
-overwritten, and `markerBefore` records the already-advanced marker. Until #619 is fixed, re-seed a
-closed proposal's pages by hand (a seed PR that edits `backlog` in `.maintenance-state.json`).
+Closing it **without merging** returns its work to the backlog and rolls the marker back to the proposal's
+`markerBefore` — without that, abandoning a proposal leaves the marker certifying work that never landed. The next
+run **reconciles before it plans**, so it plans the returned slices and the whole range from the rolled-back marker;
+`markerBefore` is the marker the opening run *found*, captured before generation. Both were broken until item #619
+(2026-10-09): the run planned before reconciling, so its own backlog and marker overwrote the reconciled ones, and
+`markerBefore` recorded the run's own base commit — proposal #615's slice vanished on the very next run, and was
+re-seeded by hand. `executeRun` in `scripts/wiki-maintain.mjs` is the whole sequence, and a test drives a
+closed-unmerged proposal through it.
 
 **When a proposal is created or updated.** Whenever any page landed — including a run that stopped
 at its budget (exit 3) or had a failed slice (exit 1). A failed slice is returned to the backlog and the run
-carries on to the next slice — but its written files are **not** reverted, so when another slice in
-the run verified, whatever the failed slice wrote rides along on the proposal: review it as such; it stops early only after two consecutive
-slice failures.
+carries on to the next slice; it stops early only after two consecutive slice failures.
+
+**A failed part's requested pages are put back before anything is proposed (item #685).** The proposal stages the
+whole working tree, so a failed part's bytes used to ride along with whatever landed. On #684 (run 4801) that was
+`runbooks/sast-scanning.md` after openwiki's restore path had rewritten it without its `verified:` block and re-hashed
+its sidecar to match: V16 sound, no gate noticed, and merging would have erased a verification event for a page that
+was never regenerated. Now, after a failed invocation, each failed part's page and `.claims` sidecar return to their
+committed bytes and its `.page-manifest.json` entry to its pre-invocation value — all three or none, so V16 still
+compares a page with its own sidecar — and the run says so (`[wiki-maintain] restored N path(s) of the part(s) that did
+not land`). Left alone, and so still possible on a proposal: a page whose page or sidecar was dirty **before** the
+invocation (its prior bytes are not in git), an **untracked** new page (it has no committed state, and deleting it would
+orphan its index link), and anything the generator wrote **outside** the requested pages. Review those as such.
 
 **One invocation can carry several slices, and a failure in one part no longer discards the others.** When an
 invocation's failure is attributable only to *other* parts — a requested page missing or still stale — while
