@@ -1172,6 +1172,203 @@ test('execute: the LANDED part of a failed group is counted and proposable, not 
   }
 });
 
+test('execute (#685): a failed part\'s restore-only change does NOT ride along with the landed part (run 4801)', () => {
+  // Run 4801: projects/sast verified; runbooks/sast-scanning's worker exited without submitting, and
+  // openwiki's restore path rewrote that page WITHOUT its `verified:` block and re-hashed its sidecar
+  // to match. V16 stayed sound, so no gate noticed — and the landed part's proposal carried the failed
+  // page too. Merging it would have erased a verification event for a page that was never regenerated.
+  const root = twoAreaRepo();
+  try {
+    writeFileSync(join(root, 'README.md'), 'source\n');
+    const page = (verified) => `---\ntype: Convention\ntitle: two\ndescription: Stale.\nresource: README.md\ntimestamp: 2020-01-01T00:00:00Z\n${verified}---\nBody.\n`;
+    const certifiedPage = page('verified:\n  - by: openwiki/0.6.0\n    at: 2020-01-02T00:00:00Z\n');
+    const hash = (text) => `sha256:${createHash('sha256').update(text).digest('hex')}`;
+    const sidecar = (text) => JSON.stringify({ pageVersion: hash(text), verification: { by: 'openwiki/0.6.0', at: '2020-01-02T00:00:00Z' }, claims: [] });
+    const manifest = (text) => `${JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/two.md': { pageVersion: hash(text) } } }, null, 2)}\n`;
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), certifiedPage);
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+    mkdirSync(join(root, 'openwiki', '.claims', 'gotchas'), { recursive: true });
+    writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json'), sidecar(certifiedPage));
+    writeFileSync(join(root, 'openwiki', '.page-manifest.json'), manifest(certifiedPage));
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'certified, stale page'], { cwd: root });
+    const committed = (rel) => spawnSync('git', ['show', `HEAD:${rel}`], { cwd: root, encoding: 'utf8' }).stdout;
+
+    const good = sl('invariants', ['one.md']);
+    const restoredOnly = sl('gotchas', ['two.md']);
+    const logged = [];
+    const realError = console.error;
+    console.error = (...args) => { logged.push(args.join(' ')); };
+    let result;
+    try {
+      result = mod.executeSlices({
+        root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+        slices: [good, restoredOnly], attemptsPerSlice: 1,
+        invoke: () => {
+          writingStub(root, 'invariants', ['one.md'])();
+          // openwiki's restore path: the page loses `verified:`, sidecar and manifest re-hashed to match.
+          const restored = page('');
+          writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), restored);
+          writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json'), sidecar(restored));
+          writeFileSync(join(root, 'openwiki', '.page-manifest.json'), manifest(restored));
+          return { status: 0 };
+        },
+      });
+    } finally {
+      console.error = realError;
+    }
+
+    assert.equal(result.outcome, 'failed');
+    assert.deepEqual(result.results[0].stalePages, ['gotchas/two.md'], 'premise: the restore-only page failed as stale');
+    assert.deepEqual(mod.proposableSlices(result), [good], 'the landed part is still proposed');
+    for (const rel of ['openwiki/gotchas/two.md', 'openwiki/.claims/gotchas/two.json']) {
+      assert.equal(readFileSync(join(root, rel), 'utf8'), committed(rel), `${rel} is back at its committed bytes`);
+    }
+    assert.deepEqual(JSON.parse(readFileSync(join(root, 'openwiki', '.page-manifest.json'), 'utf8')),
+      JSON.parse(committed('openwiki/.page-manifest.json')), 'and its manifest entry with it');
+    assert.ok(existsSync(join(root, 'openwiki', 'invariants', 'one.md')), 'the landed page is untouched');
+    const dirty = spawnSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).stdout;
+    assert.doesNotMatch(dirty, /gotchas\/two|\.claims|page-manifest/, `nothing of the failed part is left to ride along:\n${dirty}`);
+    assert.ok(logged.some((l) => /\[wiki-maintain\].*restored.*gotchas\/two\.md/.test(l)), `the run says what it restored:\n${logged.join('\n')}`);
+    const okf = spawnSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs'), '--bundle', join(root, 'openwiki')], { cwd: REPO_ROOT, encoding: 'utf8' });
+    assert.doesNotMatch(`${okf.stdout}${okf.stderr}`, /V16/, 'and V16 stays sound');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#685): a failed part\'s path that was ALREADY dirty before the invocation is left alone', () => {
+  const root = twoAreaRepo();
+  try {
+    writeFileSync(join(root, 'README.md'), 'source\n');
+    const page = (body) => `---\ntype: Convention\ntitle: two\ndescription: Stale.\nresource: README.md\ntimestamp: 2020-01-01T00:00:00Z\n---\n${body}\n`;
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), page('Committed.'));
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'stale page'], { cwd: root });
+    // An operator's uncommitted edit: its bytes are not in git, so restoring would destroy it.
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), page('Operator edit.'));
+
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: () => { writingStub(root, 'invariants', ['one.md'])(); return { status: 0 }; },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.match(readFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), 'utf8'), /Operator edit\./);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── #683: a rate-limited attempt is recognised from the tap, waited out, and named ────────────────
+
+/** Capture console.error lines while `fn` runs. */
+function capturingErrors(fn) {
+  const lines = [];
+  const real = console.error;
+  console.error = (...args) => { lines.push(args.join(' ')); };
+  try {
+    return { value: fn(), lines };
+  } finally {
+    console.error = real;
+  }
+}
+
+/** A generator stub that writes nothing and logs `n429` tap lines answering 429 (run 4798's shape). */
+const rateLimitedStub = (n429, { ok = 0 } = {}) => (_slice, { usageLog }) => {
+  const lines = [
+    ...Array.from({ length: ok }, () => ({ kind: 'chat', status: 200, ms: 5 })),
+    ...Array.from({ length: n429 }, () => ({ kind: 'chat', status: 429, ms: 5 })),
+  ];
+  writeFileSync(usageLog, lines.map((l) => `${JSON.stringify(l)}\n`).join(''), { flag: 'a' });
+  return { status: 0 };
+};
+
+test('execute (#683): a rate-limited attempt WAITS before retrying, and the run says it was rate-limited', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let t = 0;
+    const slept = [];
+    let call = 0;
+    const { value: result, lines } = capturingErrors(() => mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])],
+      clock: () => t,
+      sleep: (ms) => { slept.push(ms); t += ms; },
+      invoke: (slice, ctx) => {
+        call++;
+        t += 10_000;
+        if (call === 1) return rateLimitedStub(2, { ok: 1 })(slice, ctx);
+        return writingStub(root, 'invariants', ['one.md'])();
+      },
+    }));
+    assert.equal(call, 2, 'retried once the wait was over');
+    assert.deepEqual(slept, [mod.RATE_LIMIT_BACKOFF_MS[0]], 'one bounded wait, before the retry');
+    assert.equal(result.outcome, 'completed');
+    assert.deepEqual(result.results[0].rateLimited, { attempts: 1, calls: 2 });
+    assert.ok(lines.some((l) => /\[wiki-maintain\].*RATE-LIMITED.*429.*waiting/i.test(l)), lines.join('\n'));
+    assert.deepEqual(mod.readRunRecord(root).lastRunInvocations[0].rateLimited, { attempts: 1, calls: 2 }, 'the run record names it too');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#683): a rate limit whose wait would overrun the start budget is NOT retried, and is reported as a rate limit', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let t = 0;
+    const slept = [];
+    let call = 0;
+    const { value: result, lines } = capturingErrors(() => mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])],
+      timeBudgetSeconds: 30,
+      clock: () => t,
+      sleep: (ms) => { slept.push(ms); t += ms; },
+      invoke: (slice, ctx) => { call++; t += 10_000; return rateLimitedStub(3)(slice, ctx); },
+    }));
+    assert.equal(call, 1, 'retrying straight into an active rate limit cannot succeed');
+    assert.deepEqual(slept, []);
+    assert.equal(result.outcome, 'failed');
+    assert.deepEqual(result.results[0].rateLimited, { attempts: 1, calls: 3 });
+    assert.ok(lines.some((l) => /\[wiki-maintain\].*RATE-LIMITED.*not retrying/i.test(l)), lines.join('\n'));
+    assert.ok(!lines.some((l) => /produced nothing — retrying/.test(l)), 'never the ordinary "produced nothing" retry');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#683): an attempt that produced nothing WITHOUT a 429 keeps today\'s immediate retry', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let t = 0;
+    const slept = [];
+    let call = 0;
+    const { value: result, lines } = capturingErrors(() => mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])],
+      clock: () => t,
+      sleep: (ms) => { slept.push(ms); t += ms; },
+      invoke: (slice, ctx) => {
+        call++;
+        t += 10_000;
+        // A 500 is a failed call, but not a rate limit.
+        if (call === 1) { writeFileSync(ctx.usageLog, `${JSON.stringify({ kind: 'chat', status: 500, ms: 5 })}\n`, { flag: 'a' }); return { status: 0 }; }
+        return writingStub(root, 'invariants', ['one.md'])();
+      },
+    }));
+    assert.equal(call, 2);
+    assert.deepEqual(slept, [], 'no wait');
+    assert.equal(result.outcome, 'completed');
+    assert.equal(result.results[0].rateLimited, null);
+    assert.ok(lines.some((l) => /attempt 1 produced nothing — retrying \(2\/3\)/.test(l)), lines.join('\n'));
+    assert.ok(!lines.some((l) => /RATE-LIMITED/.test(l)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('execute: a whole-invocation failure (conformance/policy) proposes nothing and re-queues every part', () => {
   const root = twoAreaRepo();
   try {
@@ -1594,12 +1791,40 @@ test('preflight: the free path never calls it', () => {
 test('preflight: the CLI --execute path runs the SAME gate, before the proposal branch and any slice', () => {
   // main() drives executeSlices itself rather than through runMaintenance, so a gate added only to
   // runMaintenance would never run in CI. Found while implementing 078 T014 — this pins it.
+  // Since #619 the CLI path delegates to executeRun (so a test can drive the whole sequence), so the
+  // premise is now: main's execute branch calls executeRun, and executeRun gates before anything else.
   const source = readFileSync(SCRIPT, 'utf8');
-  const exec = source.slice(source.indexOf("if (opts.mode === 'execute')"));
+  const cli = source.slice(source.indexOf("if (opts.mode === 'execute')"));
+  assert.ok(cli.indexOf('executeRun(') > 0, 'the CLI execute path must delegate to executeRun');
+  assert.equal(cli.indexOf('executeSlices('), -1, 'and must not drive executeSlices around it');
+  const start = source.indexOf('export async function executeRun(');
+  const exec = source.slice(start, source.indexOf('\n}\n', start));
   const gate = exec.indexOf('preflightGate(');
   assert.ok(gate > 0, 'the CLI execute path must call preflightGate');
   assert.ok(gate < exec.indexOf('prepareProposalBranch('), 'before the proposal branch is touched');
   assert.ok(gate < exec.indexOf('executeSlices('), 'and before any slice');
+});
+
+test('preflight: executeRun stops at a failed preflight — exit 2, no generator, no proposal branch, no outcome', async () => {
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), backlog: [{ area: 'invariants', pages: ['first.md'], areaExists: true, reason: 'source changed' }] });
+    const recordBefore = mod.readRunRecord(root);
+    let invoked = 0;
+    const exit = await mod.executeRun({
+      root, opts: EXECUTE_OPTS, policy: realPolicy(), forge: stubForge(),
+      invoke: () => { invoked++; return { status: 0 }; },
+      preflight: () => ({ ok: false, detail: 'HTTP 401 (authentication_error)' }),
+    });
+    assert.equal(exit, 2);
+    assert.equal(invoked, 0, 'no paid slice');
+    assert.notEqual(g('rev-parse', '--verify', '--quiet', mod.PROPOSAL_BRANCH).status, 0, 'the proposal branch was not touched');
+    assert.deepEqual(mod.readRunRecord(root), recordBefore, 'no outcome recorded');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('preflight: the gate skips dry runs and reports a failure without throwing', () => {
@@ -1783,6 +2008,235 @@ test('proposal: a human commit placed on the branch survives the next update', (
     assert.match(log, /HUMAN: fix the wording/, 'rebase-and-append: a human commit must never be force-replaced away');
     const content = g('show', `${mod.PROPOSAL_BRANCH}:openwiki/invariants/first.md`).stdout;
     assert.match(content, /Human correction/, 'and their content must survive');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── #619: the whole --execute sequence, closed-unmerged proposal included ─────────────────────────
+
+const EXECUTE_OPTS = { mode: 'execute', since: null, json: false, dryRun: false, maxSlices: null, pageBudget: mod.PAGE_BUDGET, timeBudgetSeconds: 3600, propose: true, dispatched: false };
+
+/** A non-documentation commit, so a run's baseCommit differs from the marker it found. */
+function commitNonDoc(g, root, name) {
+  writeFileSync(join(root, name), `${name}\n`);
+  g('add', name);
+  g('commit', '-qm', `touch ${name}`);
+  return g('rev-parse', 'HEAD').stdout.trim();
+}
+
+/** A generator stub that writes whatever invariants pages it is asked for, and records the ask. */
+function recordingWriter(root, asked) {
+  return (slice) => {
+    for (const part of slice.parts ?? [slice]) asked.push(...part.pages);
+    return writingStub(root, 'invariants', (slice.parts ?? [slice]).flatMap((p) => p.pages))();
+  };
+}
+
+test('execute (#619): a proposal closed unmerged is reconciled BEFORE planning, so its work is re-planned from the pre-run marker', async () => {
+  const { root, head: m0 } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    const forge = stubForge();
+    const slice = { area: 'invariants', pages: ['first.md'], areaExists: true, reason: 'source changed' };
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), backlog: [slice] });
+    const m1 = commitNonDoc(g, root, 'one.txt');
+
+    // Run 1 proposes first.md. Its proposal must remember the marker the run FOUND (m0), not the one
+    // the run advanced to (m1) — otherwise "roll back" on a later close is a no-op.
+    const asked1 = [];
+    const exit1 = await mod.executeRun({ root, opts: EXECUTE_OPTS, policy: realPolicy(), forge, invoke: recordingWriter(root, asked1), preflight: null });
+    assert.equal(exit1, 0);
+    assert.deepEqual(asked1, ['first.md']);
+    const after1 = mod.readRunRecord(root);
+    assert.equal(after1.coveredCommit, m1, 'run 1 advanced its marker');
+    assert.equal(after1.proposal.markerBefore, m0, 'markerBefore is the marker BEFORE the run that opened the proposal');
+
+    // A reviewer closes it unmerged. A CI runner is a fresh checkout, so no local proposal branch.
+    forge.state.pulls[0].state = 'closed';
+    g('branch', '-D', mod.PROPOSAL_BRANCH);
+    commitNonDoc(g, root, 'two.txt');
+
+    // Run 2 must plan the returned slice. Its generator fails, so the slice stays in the backlog and
+    // the marker stays rolled back — neither may be overwritten by a plan made before reconciling.
+    const asked2 = [];
+    const exit2 = await mod.executeRun({ root, opts: EXECUTE_OPTS, policy: realPolicy(), forge, invoke: (s) => { asked2.push(...(s.parts ?? [s]).flatMap((p) => p.pages)); return { status: 0 }; }, preflight: null });
+    assert.equal(exit2, 1, 'the slice failed');
+    assert.deepEqual(asked2, ['first.md', 'first.md', 'first.md'], 'the closed proposal\'s slice was planned (and retried)');
+    const after2 = mod.readRunRecord(root);
+    assert.deepEqual(after2.backlog.map((s) => s.pages), [['first.md']], 'its work is back in the backlog, not lost');
+    assert.equal(after2.coveredCommit, m0, 'and the marker is not past markerBefore');
+    assert.equal(after2.proposal, null);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#619): a re-proposal after a close carries the rolled-back marker as its markerBefore', async () => {
+  const { root, head: m0 } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    const forge = stubForge();
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), backlog: [{ area: 'invariants', pages: ['first.md'], areaExists: true, reason: 'source changed' }] });
+    commitNonDoc(g, root, 'one.txt');
+    await mod.executeRun({ root, opts: EXECUTE_OPTS, policy: realPolicy(), forge, invoke: recordingWriter(root, []), preflight: null });
+    forge.state.pulls[0].state = 'closed';
+    g('branch', '-D', mod.PROPOSAL_BRANCH);
+    g('checkout', '-q', '--', 'openwiki');
+    const m2 = commitNonDoc(g, root, 'two.txt');
+
+    const asked = [];
+    const exit = await mod.executeRun({ root, opts: EXECUTE_OPTS, policy: realPolicy(), forge, invoke: recordingWriter(root, asked), preflight: null });
+    assert.equal(exit, 0);
+    assert.deepEqual(asked, ['first.md'], 'the returned slice was re-done');
+    const rec = mod.readRunRecord(root);
+    assert.equal(rec.coveredCommit, m2);
+    assert.equal(rec.proposal.number, 2, 'a fresh proposal, not the closed one');
+    assert.equal(rec.proposal.markerBefore, m0, 'it covers the whole range from the rolled-back marker');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute: slices the PLAN deferred beyond the page budget are carried in the backlog, not lost', async () => {
+  const { root } = repoAtHead();
+  const many = Array.from({ length: 20 }, (_, i) => `p${i + 1}.md`);
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), backlog: [{ area: 'invariants', pages: many, areaExists: true, reason: 'many pages' }] });
+    // Twenty pages exceed one run's page budget, so computePlan defers some AT PLAN TIME — before
+    // executeSlices ever sees them. Expectations come from the plan, not from remembered constants.
+    const plan = mod.computePlan({ root, policy: realPolicy() });
+    assert.ok(plan.deferred.length > 0, 'premise: the plan defers work');
+    const deferredPages = plan.deferred.flatMap((s) => s.pages);
+
+    const asked = [];
+    const exit = await mod.executeRun({ root, opts: { ...EXECUTE_OPTS, propose: false }, policy: realPolicy(), invoke: recordingWriter(root, asked), preflight: null });
+    assert.deepEqual(asked, plan.slices.flatMap((s) => s.pages), 'only the planned slices are invoked');
+    assert.equal(exit, 3, 'outstanding work is exit 3, not a clean 0');
+    assert.deepEqual(mod.readRunRecord(root).backlog.flatMap((s) => s.pages), deferredPages, 'the deferred slices survive the marker advancing');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/** A committed, stale page in gotchas/ with a committed sidecar — for the #685 manifest edge cases. */
+function certifiedStalePage(root, { withManifest }) {
+  writeFileSync(join(root, 'README.md'), 'source\n');
+  const text = '---\ntype: Convention\ntitle: two\ndescription: Stale.\nresource: README.md\ntimestamp: 2020-01-01T00:00:00Z\n---\nBody.\n';
+  const hash = `sha256:${createHash('sha256').update(text).digest('hex')}`;
+  writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), text);
+  writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+  if (withManifest) {
+    mkdirSync(join(root, 'openwiki', '.claims', 'gotchas'), { recursive: true });
+    writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json'), JSON.stringify({ pageVersion: hash, verification: { by: 'x', at: '2020-01-02T00:00:00Z' }, claims: [] }));
+    writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/two.md': { pageVersion: hash } } }));
+  }
+  spawnSync('git', ['add', '-A'], { cwd: root });
+  spawnSync('git', ['commit', '-qm', 'stale page'], { cwd: root });
+  return text;
+}
+
+test('execute (#685): with NO manifest before the invocation, an entry the generator created for a failed page is removed with its sidecar', () => {
+  const root = twoAreaRepo();
+  try {
+    const text = certifiedStalePage(root, { withManifest: false });
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        const hash = `sha256:${createHash('sha256').update(text).digest('hex')}`;
+        mkdirSync(join(root, 'openwiki', '.claims', 'gotchas'), { recursive: true });
+        writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json'), JSON.stringify({ pageVersion: hash, verification: { by: 'x', at: '2020-01-02T00:00:00Z' }, claims: [] }));
+        writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/two.md': { pageVersion: hash } } }));
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.ok(!existsSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json')), 'the new sidecar is gone');
+    const manifest = JSON.parse(readFileSync(join(root, 'openwiki', '.page-manifest.json'), 'utf8'));
+    assert.equal(manifest.pages['/openwiki/gotchas/two.md'], undefined, 'and so is its entry — never one pointing at a sidecar that does not exist');
+    const okf = spawnSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs'), '--bundle', join(root, 'openwiki')], { cwd: REPO_ROOT, encoding: 'utf8' });
+    assert.doesNotMatch(`${okf.stdout}${okf.stderr}`, /V16/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#685): an UNPARSABLE manifest after a failure does not crash the run — V16 reports it and the record is still written', () => {
+  const root = twoAreaRepo();
+  try {
+    certifiedStalePage(root, { withManifest: true });
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: () => { writeFileSync(join(root, 'openwiki', '.page-manifest.json'), '{"schemaVersion": 1, "pa'); return { status: 0 }; },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.equal(mod.readRunRecord(root).lastOutcome, 'failed', 'the run record was persisted');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#683): a stray 429 the SDK absorbed inside a working attempt is NOT a rate limit', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let t = 0;
+    const slept = [];
+    let call = 0;
+    const { value: result, lines } = capturingErrors(() => mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])],
+      clock: () => t,
+      sleep: (ms) => { slept.push(ms); t += ms; },
+      invoke: (slice, ctx) => {
+        call++;
+        t += 10_000;
+        if (call === 1) return rateLimitedStub(1, { ok: 9 })(slice, ctx);
+        return writingStub(root, 'invariants', ['one.md'])();
+      },
+    }));
+    assert.equal(call, 2);
+    assert.deepEqual(slept, [], 'no wait');
+    assert.equal(result.results[0].rateLimited, null);
+    assert.ok(!lines.some((l) => /RATE-LIMITED/.test(l)), lines.join('\n'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#619): a DRY run reconciles in memory only — the record is not written', async () => {
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    const forge = stubForge({ existing: { number: 7, head: mod.PROPOSAL_BRANCH, state: 'closed', merged: false } });
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), coveredCommit: 'advanced', proposal: { number: 7, markerBefore: 'before', slices: [{ area: 'invariants', pages: ['first.md'], areaExists: true, reason: 'r' }] } });
+    const recordBefore = mod.readRunRecord(root);
+    const exit = await mod.executeRun({ root, opts: { ...EXECUTE_OPTS, dryRun: true }, policy: realPolicy(), forge, invoke: () => { throw new Error('a dry run invokes nothing'); }, preflight: null });
+    assert.equal(exit, 0);
+    assert.deepEqual(mod.readRunRecord(root), recordBefore, 'a dry run persists nothing');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#619): a forge that cannot be reached for the reconcile stops the run (exit 2) rather than planning without it', async () => {
+  const { root } = repoAtHead();
+  try {
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), proposal: { number: 7, markerBefore: 'before', slices: [] } });
+    const recordBefore = mod.readRunRecord(root);
+    let invoked = 0;
+    const forge = { getPull: () => { throw new Error('forge GET /pulls/7 → 503'); }, listPulls: () => [] };
+    const exit = await mod.executeRun({ root, opts: EXECUTE_OPTS, policy: realPolicy(), forge, invoke: () => { invoked++; return { status: 0 }; }, preflight: null });
+    assert.equal(exit, 2);
+    assert.equal(invoked, 0);
+    assert.deepEqual(mod.readRunRecord(root), recordBefore);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
