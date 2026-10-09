@@ -51,6 +51,15 @@ python_version = "3.13"
 strict = true
 warn_unused_ignores = true
 
+# UnleashClient 6.9.0 began shipping `py.typed` while its package `__init__` re-exports the client
+# with a bare `from .clients import UnleashClient` (marked intentional upstream by `# ruff: noqa:
+# F401`). Under `strict`'s no-implicit-reexport that made `from UnleashClient import UnleashClient`
+# — the import upstream documents — an attr-defined error, and reddened the 2026-10-09 lock refresh
+# (#696). This scopes implicit re-export to that one third-party package; our own code stays strict.
+[[tool.mypy.overrides]]
+module = ["UnleashClient", "UnleashClient.*"]
+implicit_reexport = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
