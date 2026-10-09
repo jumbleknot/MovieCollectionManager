@@ -142,6 +142,21 @@ assert the target checkbox appears exactly once and is untenanted, and assert th
 differs by exactly the number of characters you intended and is the same length. Anything less risks
 clobbering a concurrent bot rewrite.
 
+**Which credential does what (measured 2026-10-09).** Ticking edits item #29, which needs
+`MCM_FORGE_ISSUE_TOKEN`. The `git credential fill` token answers `token does not have at least one of
+required scope(s): [read:issue]`, and through `jq .body` that reads as a `null` dashboard rather than a
+refusal. The credential token is the one that dispatches `renovate.yml` (§3) and merges PRs. One
+session, two tokens: pick by endpoint.
+
+**A database MAJOR waits in Pending Approval, and ticking it is the migration decision.** Majors of
+`postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server`,
+`opensearchproject/opensearch` and `langfuse/*` all carry `dependencyDashboardApproval`. The last two
+since features 071/072; the first four since 2026-10-09, after PR #698 merged clickhouse 25.12 -> 26.6
+and redis 7 -> 8 for production Langfuse on a green CI. **app-e2e never starts the observability
+stack**, so green said nothing about either. Before ticking, name the stack the image runs in and how
+its data survives the move. The observability postgres is held below 17 outright (spec FR-005: it is
+shared with Unleash), so it never reaches this list.
+
 > ⚠️ **A `renovate/*` branch that already exists is not evidence of pending work — check ANCESTRY
 > before ticking it.** A merged Renovate PR used to leave its branch behind; Renovate keeps listing
 > that branch on the dashboard, and a tick opens a PR for content `main` already has.
@@ -560,6 +575,15 @@ using it here spends a security mechanism on impatience.
 > already settled. **If you are here because a PR is red on this: re-run after the cutoff. That is the
 > whole procedure.** Revisit only if it starts blocking multiple PRs a week.
 
+**The same cutoff also DELAYS a fix, silently.** The failure above is loud; this direction is not. A
+lockfile refresh forced within ~24h of an upstream fix resolves the release *before* the fix, without
+any error. Measured 2026-10-09: `graphql-yoga` 5.24.4 moved to the patched `@graphql-tools/utils` ^12
+(item #674) at 2026-10-08 13:38Z. A refresh forced at ~12:00Z the next day resolved 5.24.2, leaving the
+vulnerable 11.2.2 in place. The same refresh re-forced at 13:41Z resolved 5.24.4 and dropped it. So
+**before forcing a refresh to pick up a fix, check the fix's publish time** (`npm view <pkg> time`)
+and wait out the cutoff. Then **confirm the resolution in the regenerated lockfile**: a refresh that
+merely ran is not proof that it picked up the fix.
+
 ### Extraction is not grouping
 
 A `customManagers` entry makes Renovate *see* a second copy of a version. It does **not** make both
@@ -571,6 +595,26 @@ This has been paid for three times: nx (PRs #141 and #193, both half-bumps *with
 in place), the Playwright image tag (#204), and the pnpm/Dockerfile pins (#225).
 `renovate-workflow.guard.test.mjs` asserts the *resolved* group for each pair, because a rule that
 merely mentions the package passes a weaker check.
+
+### Grouping is not lockfile-proof: lockstep packages are pinned EXACTLY
+
+A group rule governs **updates**. `lockFileMaintenance` is not an update of any one package: it
+re-resolves every manifest **range**, and no `groupName` applies to it. So a ranged member of a
+lockstep pair moves alone on a lockfile refresh, and the group rule never sees it.
+
+Measured 2026-10-09:
+- PR #695 moved `@playwright/test` (declared `^1.59.1`) to 1.64.0 while the app-ci image stayed on
+  `v1.63.0-noble`. app-e2e ran **zero tests**: the #199 shape, from the one channel the `playwright pin`
+  rule cannot govern.
+- An earlier refresh had already moved `@nx/playwright` (declared `^22.6.3`) to 22.7.12, beside `nx`
+  22.7.10 and `@nx/expo` 22.6.3. That was three Nx versions on one tree, and nothing checked it.
+
+**The rule: `nx`, every `@nx/*` and `@playwright/test` are pinned exactly in every manifest, and every
+`@nx/*` equals `nx`.** An exact pin leaves a refresh nothing to move, and turns the next version into an
+ordinary update that the group rule *does* govern; for example, `renovate/playwright-pin` appeared on
+the dashboard as soon as #699 pinned it. `check-toolchain-consistency.mjs` (the lockstep check, in
+`guardrails / naming`) fails on a range or a disagreeing plugin, so loosening a pin back to `^` is
+caught at review rather than on the next refresh.
 
 ### A pinDigest that collides with a version update on the same branch is DROPPED, silently
 
@@ -885,6 +929,13 @@ any superseded verdict rather than dropping it.
 5. **Print the value, do not reason about it.** The mongodb 7.6.0 investigation (item #264) turned on
    printing the client metadata document — `{}` versus a full document — after two plausible
    hypotheses about servers and versions had both been falsified.
+6. **Is the branch older than the fix?** `rebaseWhen: "conflicted"` means a fix landed on `main`
+   never reaches a Renovate branch that does not conflict. Measured 2026-10-09: #696 (a Python-only
+   lock refresh) failed `sast` on an advisory that `main` had allowlisted three days earlier, because its
+   base was five days old. Check `git merge-base origin/main origin/renovate/<branch>` against the fix's
+   commit. **After landing a main-side fix for a gate, tick `rebase-branch=` on every open Renovate PR
+   that failed that gate, and dispatch once (§3).** The setting stays: rebasing every branch on every
+   `main` merge would cost a ~35-minute app-e2e cycle per branch on the one runner.
 
 ## 7. Accepted residuals — decided, not overlooked
 
