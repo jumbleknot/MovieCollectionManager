@@ -254,26 +254,10 @@
   addedBy: "claude (operator-approved, steve)"
   expiry: "2026-11-01"
 
-# ── 2026-10-06: @graphql-tools/utils GHSA-7mx3-vvmw-hjmv (no fix within the consumers' declared range) ──
-# Prototype pollution in `mergeDeep`; affected `<= 12.0.0`, first patched 12.0.1. It reached the audit
-# data on 2026-10-06 and turned the required `sast` check red on every PR (first seen on #673).
-#
-# Not bumped (operator decision, option B): 11.2.2 arrives ONLY through @copilotkit/runtime@1.70.1 →
-# graphql-yoga@5.24.1 / @graphql-yoga/plugin-defer-stream@3.24.1, and even their latest releases
-# (5.24.2 / 3.24.2) still declare `@graphql-tools/utils: ^11.2.0`, so no fix exists inside the range
-# they declare; an override to 12.x would force a major they do not support.
-#
-# Reachability, checked rather than assumed: @copilotkit/runtime's dist never calls `createYoga` and
-# never imports plugin-defer-stream (it is only listed as a dependency); its sole graphql-yoga import is
-# `Repeater`, an async-iterator helper. The BFF route (bff-api/agent/run+api.ts) uses
-# copilotRuntimeNextJSAppRouterEndpoint, which delegates to the v2 Hono single-route endpoint — no
-# GraphQL execution, so no incremental-result merging (the `mergeDeep` caller) on our request path.
-#
-# Pinned to the exact vulnerable version and SHORT-dated, as node-forge and braces above. Removal is
-# tracked on the backlog as item #674.
-- scanner: "pnpm-audit"
-  id: "GHSA-7mx3-vvmw-hjmv"
-  locationPattern: "^@graphql-tools/utils@11\\.2\\.2$"
-  justification: "No fix within the range its consumers declare: graphql-yoga and @graphql-yoga/plugin-defer-stream (latest 5.24.2 / 3.24.2) still require @graphql-tools/utils ^11.2.0, patched only in 12.0.1. Reached only via @copilotkit/runtime@1.70.1, which never creates a yoga server or imports the defer-stream plugin (sole yoga import is Repeater); the BFF uses its v2 Hono endpoint, so mergeDeep is not on any request path. Operator-approved 2026-10-06; removal is item #674."
-  addedBy: "claude (operator-approved, steve)"
-  expiry: "2026-11-06"
+# ── @graphql-tools/utils GHSA-7mx3-vvmw-hjmv entry: DELETED 2026-10-09 (item #674) ───────────────────
+# Discharged by the first acceptance route item #674 named: upstream moved, and a lockfile refresh
+# carried it. graphql-yoga 5.24.4 and @graphql-yoga/plugin-defer-stream 3.24.4 (published 2026-10-08)
+# declare `@graphql-tools/utils: ^12.0.3`, and lock refresh #695 resolved both, so the vulnerable
+# 11.2.2 is gone from pnpm-lock.yaml and only the patched 12.0.3 remains. Deleted rather than left to
+# expire on 2026-11-06: an entry that matches nothing fails `--check-expiring` on the weekly sweep, and
+# deleting it is the direction that restores blocking if 11.x ever returns.
