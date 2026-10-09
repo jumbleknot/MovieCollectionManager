@@ -19,7 +19,7 @@
     "@nx/expo": "22.6.3",
     "@nx/playwright": "^22.6.3",
     "@nxlv/python": "^21.0.3",
-    "@playwright/test": "^1.36.0",
+    "@playwright/test": "1.63.0",
     "ajv": "^8.17.1",
     "nx": "22.7.10",
     "yaml": "^2.9.0"

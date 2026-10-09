@@ -37,7 +37,7 @@ importers:
         specifier: ^21.0.3
         version: 21.3.1(nx@22.7.10)
       '@playwright/test':
-        specifier: ^1.36.0
+        specifier: 1.63.0
         version: 1.63.0
       ajv:
         specifier: ^8.17.1
@@ -209,7 +209,7 @@ importers:
         specifier: ^7.25.0
         version: 7.29.7
       '@playwright/test':
-        specifier: ^1.59.1
+        specifier: 1.63.0
         version: 1.63.0
       '@tamagui/babel-plugin':
         specifier: ^2.3.0
