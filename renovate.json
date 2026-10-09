@@ -702,7 +702,14 @@
         "@nx/playwright and steal it from the `nx monorepo` group — splitting the Nx core from its",
         "own plugins, i.e. trading one skew for another. renovate-workflow.guard.test.mjs asserts",
         "both halves share a group on all three tracks, that this rule matches BOTH managers and is",
-        "ordered last, and — as the control — that @nx/playwright still lands in `nx monorepo`."
+        "ordered last, and — as the control — that @nx/playwright still lands in `nx monorepo`.",
+        "THIS RULE CANNOT SEE `lockFileMaintenance`, which is why both package.json files pin",
+        "@playwright/test EXACTLY. A lockfile refresh re-resolves within the manifest RANGE and is not",
+        "an update of this package, so no groupName applies to it. With the old `^1.36.0` / `^1.59.1`",
+        "ranges, PR #695 (2026-10-09) moved the lockfile to 1.64.0 alone and app-e2e ran zero tests",
+        "— the PR #199 shape again, from the one channel this rule does not govern. An exact pin",
+        "leaves the refresh nothing to move, and turns the next version into an ordinary update",
+        "that this rule DOES group with the image tag. Do not loosen either pin back to a range."
       ],
       "matchManagers": ["npm", "custom.regex"],
       "matchPackageNames": ["@playwright/test"],
@@ -900,6 +907,27 @@
       "matchPackageNames": ["langfuse/langfuse", "langfuse/langfuse-worker"],
         "matchUpdateTypes": ["major"],
         "dependencyDashboardApproval": true
+    },
+    {
+      "description": [
+        "THE OBSERVABILITY POSTGRES IS HELD ON 16 — the shared Langfuse/Unleash pin (spec FR-005,",
+        "scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs). ONE digest backs both",
+        "langfuse-postgres and unleash-postgres, and ADR-0002 §4 covers only the Langfuse data, so a",
+        "major on this pin migrates Unleash as a side effect.",
+        "MEASURED 2026-10-09, PR #698: `docker base images (major)` moved all four observability refs",
+        "16-alpine -> 18-alpine, and the guard red-lined `guardrails / naming`. The guard was right and",
+        "the bot had no way to know: nothing here told it. This is the vault/python `allowedVersions`",
+        "pattern, scoped by FILE so keycloak/agent-db (already on 18) keep their own major stream; a",
+        "digest refresh and any 16.x patch still flow through `docker base images`.",
+        "RAISE ONLY through the spec that moves both databases, and update the guard in the same change."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["postgres"],
+      "matchFileNames": [
+        "infrastructure-as-code/docker/observability/compose.yaml",
+        "infrastructure-as-code/docker/observability/compose.prod.yaml"
+      ],
+      "allowedVersions": "<17"
     },
     {
       "description": [
