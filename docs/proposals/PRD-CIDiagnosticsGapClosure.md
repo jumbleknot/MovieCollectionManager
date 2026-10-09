@@ -135,7 +135,7 @@ environmental. Either way the gate does not currently hold locally, which erodes
 > needs `git rm --cached -r . && git reset --hard` to pick it up.
 >
 > See [research.md § R8a](../../specs/051-ci-diagnostics-closure/research.md) and
-> [docs/runbooks/ci-diagnostics.md § A gate's verdict must not depend on the checkout](../runbooks/ci-diagnostics.md).
+> [docs/runbooks/ci-evidence-pipeline.md § A gate's verdict must not depend on the checkout](../runbooks/ci-evidence-pipeline.md).
 
 ### 1.4 One test assumes a drive-letterless temp path
 
@@ -187,7 +187,7 @@ this PRD is that an unverified assumption about where files live cost a day.
 > logs from the same `$HOME`, before teardown, and pushes the evidence out over the forge API. The
 > logs never need to outlive the container, so the open question above does not need answering.
 > Reproduced end to end — see
-> [docs/runbooks/ci-diagnostics.md § Step logs are read IN-JOB](../runbooks/ci-diagnostics.md).
+> [docs/runbooks/ci-evidence-pipeline.md § Step logs are read IN-JOB](../runbooks/ci-evidence-pipeline.md).
 >
 > **This section's own supporting measurement is true and irrelevant.** "`~/mcm-ci-step-logs/` on the
 > runner contains captures only from `cd-deploy/build-deploy` and the devcontainer image build" is

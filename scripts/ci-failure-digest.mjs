@@ -846,7 +846,7 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
   } else {
     absent.push(
       'step output — no step in this job was wrapped with scripts/ci-log-step.sh ' +
-        '(only instrumented steps mirror their output; see docs/runbooks/ci-diagnostics.md)',
+        '(only instrumented steps mirror their output; see docs/runbooks/ci-evidence-pipeline.md)',
     );
   }
 

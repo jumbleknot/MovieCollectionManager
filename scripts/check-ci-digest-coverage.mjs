@@ -224,7 +224,7 @@ export function commandLines(run) {
  *
  * HEURISTIC, and knowingly so: it reads shell as lines, not as a parse tree, so a command hidden
  * inside a single-line `case … esac` or behind an `&&` on a keyword line is not seen. It is a floor,
- * not a proof — see docs/runbooks/ci-diagnostics.md, "presence, not reachability".
+ * not a proof — see docs/runbooks/ci-evidence-pipeline.md, "presence, not reachability".
  */
 export function unwrappedCommands(run) {
   return commandLines(run).filter((line) => {
