@@ -236,6 +236,33 @@ canonical home it already had.
 **Do not write prose into `CLAUDE.md` and expect a later maintenance run to relocate it.** That file
 is an index; a check fails on content beyond its index and its machine-managed regions.
 
+### A learning that corrects what is written: rewrite it in place
+
+When a learning shows that a passage is wrong, **rewrite that passage** at its own location so it
+states what is true now. Do not leave it and append a "SUPERSEDED", "CORRECTION" or "🚨 CORRECTED by
+…" block further down, and do not put a disclaimer at the top that declares later sections
+historical. Git holds the history.
+
+- **Keep every measured fact.** A measurement, date, error string, version or item number that
+  explains *why* the rule now reads as it does stays in the rewritten passage, as its reason. Only the
+  statement of the old, false behaviour goes.
+- **A short "was X until <date> (<item, PR or commit>)" note is allowed** only where a reader is still
+  likely to meet the old behaviour: a host provisioned before the fix, an old container, a command
+  still in someone's shell history.
+
+The reason is the reading order. A reader meets the stale text first, and so does the generator,
+which summarises the source in order. It reproduced the superseded, retracted "do not pnpm install
+in a worktree" advice into `runbooks/devcontainer-sandbox.md` this way (item #589). Appended
+corrections are also the main reason `docs/` used to read as older than this bundle where it was more
+current: on 2026-09-27 `ci-diagnostics.md` alone carried 14 of them.
+
+No lint enforces this. The marker words are not a reliable signal: "superseded" is also this
+repository's term for a CI run replaced by a newer push, and it appears 18 times in `docs/runbooks/`
+for that reason. A lint on the uppercase markers would catch only the wording, and rewording an
+appended block passes it. Whether a change rewrote a passage or appended one shows in the diff, so
+it is a review question. Revisit if appended corrections reappear after this rule (item #589):
+`grep -rn -E "SUPERSEDED|CORRECTION|CORRECTED" docs/runbooks/`.
+
 ### The alternative that was rejected, and why
 
 The obvious-looking alternative — keep writing learnings into the instruction file and have a
