@@ -6,7 +6,9 @@
 //
 //   WIKI_USAGE_LOG=<path>        append one JSON line of COUNTS per model call (Anthropic /v1/messages,
 //                                OpenAI-shaped /chat/completions): agent kind, status, duration,
-//                                uncached / cached / cache-write / output / reasoning tokens.
+//                                uncached / cached / cache-write / output / reasoning tokens — and,
+//                                since item #719, the page a worker owns, the finish reason, the
+//                                NAMES of the tools called and how many calls' arguments do not parse.
 //   MCM_WIKI_SERVICE_TIER=<tier> set `service_tier` on Fireworks chat-completions request bodies.
 //   MCM_WIKI_REASONING_EFFORT=<e> set `reasoning_effort` on the same bodies. openwiki refuses an
 //                                effort for its `fireworks` provider; its `openai-compatible`
@@ -16,7 +18,8 @@
 // With none set it is inert: the real fetch receives the caller's arguments by identity.
 //
 // The negative properties are the load-bearing ones and are pinned by wiki-usage-tap.test.mjs:
-//   • no prompt, response, error text or header is ever recorded — counts, status and timing only;
+//   • no prompt, response, error text or header is ever recorded — counts, status, timing and
+//     identifiers only (a whitelisted bundle page path, declared tool names, a known finish reason);
 //   • a tier or an effort changes exactly its own key of a Fireworks body and nothing else, and no
 //     other request;
 //   • nothing here throws into the generator — a failure to read usage is itself a recorded line.
@@ -41,6 +44,58 @@ function agentKind(body) {
   } catch {
     return 'unknown';
   }
+}
+
+// Item #719. openwiki opens every page worker's system prompt with "You own exactly /openwiki/<page>."
+// (dist/agent/repository-prompts.js). Only a plain bundle path is recorded; anything else, nothing.
+const OWNED_PAGE = /You own exactly \/openwiki\/([A-Za-z0-9._/-]+\.md)\.(?:\s|$)/u;
+const FINISH_REASONS = new Set(['stop', 'length', 'tool_calls', 'content_filter', 'function_call', 'end_turn', 'max_tokens', 'tool_use', 'stop_sequence', 'pause_turn', 'refusal']);
+
+const textOf = (content) => (typeof content === 'string' ? content
+  : Array.isArray(content) ? content.map((part) => (typeof part?.text === 'string' ? part.text : '')).join('\n') : '');
+
+/** The page a worker owns, and the tool names the request declared — identifiers, never content. */
+function requestFacts(body) {
+  try {
+    const req = JSON.parse(body);
+    const declared = new Set((req.tools ?? []).map((t) => t.name ?? t.function?.name).filter((n) => typeof n === 'string'));
+    const system = [textOf(req.system), ...(req.messages ?? []).filter((m) => m?.role === 'system' || m?.role === 'developer').map((m) => textOf(m.content))].join('\n');
+    const page = OWNED_PAGE.exec(system)?.[1];
+    return { declared, page: page && !page.split('/').includes('..') ? page : undefined };
+  } catch {
+    return { declared: new Set(), page: undefined };
+  }
+}
+
+/**
+ * How a model call ENDED: its finish reason (from a fixed set), the NAMES of the tools it called (only
+ * names the request declared), and how many tool calls had arguments that do not parse — never the
+ * arguments themselves. A JSON body only: a streamed Anthropic body yields its stop_reason alone.
+ */
+function outcomeFrom(text, declared) {
+  const name = (n) => (declared.has(n) ? n : 'undeclared');
+  const reason = (r) => (r === undefined || r === null ? undefined : FINISH_REASONS.has(r) ? r : 'other');
+  const trimmed = text.trimStart();
+  if (!trimmed.startsWith('{')) {
+    let stop;
+    for (const line of text.split('\n')) {
+      if (!line.startsWith('data:')) continue;
+      try { stop = JSON.parse(line.slice(5)).delta?.stop_reason ?? stop; } catch { /* not an event */ }
+    }
+    return stop === undefined ? {} : { finish: reason(stop) };
+  }
+  const res = JSON.parse(trimmed);
+  if (Array.isArray(res.choices)) {
+    const choice = res.choices[0] ?? {};
+    const calls = choice.message?.tool_calls ?? [];
+    let badArgs = 0;
+    for (const c of calls) {
+      try { JSON.parse(c.function?.arguments ?? ''); } catch { badArgs += 1; }
+    }
+    return { finish: reason(choice.finish_reason), tools: calls.map((c) => name(c.function?.name)), badArgs };
+  }
+  const uses = (res.content ?? []).filter((b) => b?.type === 'tool_use');
+  return { finish: reason(res.stop_reason), tools: uses.map((b) => name(b.name)), badArgs: uses.filter((b) => typeof b.input !== 'object' || b.input === null).length };
 }
 
 /** Normalise either provider's usage object to one shape. Fireworks' prompt_tokens INCLUDES cached. */
@@ -113,16 +168,24 @@ export function wrapFetch(realFetch, env = process.env) {
     const res = await realFetch(input, sendInit);
     if (!log) return res;
 
-    const kind = agentKind(typeof init?.body === 'string' ? init.body : '');
+    const body = typeof init?.body === 'string' ? init.body : '';
+    const kind = agentKind(body);
+    const { declared, page } = requestFacts(body);
     const record = (fields) => {
       try {
-        appendFileSync(log, `${JSON.stringify({ kind, status: res.status, ms: Date.now() - started, ...fields })}\n`);
+        appendFileSync(log, `${JSON.stringify({ kind, ...(page ? { page } : {}), status: res.status, ms: Date.now() - started, ...fields })}\n`);
       } catch {
         // The log is best-effort; the generator's call must never fail because of it.
       }
     };
     res.clone().text()
-      .then((text) => record(res.ok ? counts(usageFrom(text)) : {}))
+      .then((text) => {
+        if (!res.ok) return record({});
+        const usage = counts(usageFrom(text));
+        let ended = {};
+        try { ended = outcomeFrom(text, declared); } catch { ended = {}; }
+        return record({ ...usage, ...ended });
+      })
       .catch((error) => record({ tapError: error?.name ?? 'Error' }));
     return res;
   };

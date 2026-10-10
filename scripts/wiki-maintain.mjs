@@ -4,6 +4,7 @@
 // Usage:
 //   node scripts/wiki-maintain.mjs --plan [--since <ref>] [--json]
 //   node scripts/wiki-maintain.mjs --execute [--max-slices <n>] [--dry-run]
+//   node scripts/wiki-maintain.mjs --claims-audit [--json]
 //   node scripts/wiki-maintain.mjs --selftest
 //
 // Exit codes: 0 planned / all attempted slices verified / nothing to do · 1 a slice failed
@@ -49,8 +50,9 @@ import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
 import { conceptStamp } from './openwiki-stamp.mjs';
 import { carryClaimsHash, CLAIMS_DIR, PAGE_MANIFEST } from './openwiki-claims.mjs';
+import { auditClaims, formatAudit, loadOpenwikiResolver } from './wiki-claims-audit.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
-import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
+import { summarizeUsage, sumUsage, NOT_CAPTURED, pageTrails, formatPageTrail } from './wiki-usage.mjs';
 import { stepLogDir } from './ci-failure-digest.mjs';
 import { isDeadlineStop, splitByEscalation, escalationPolicy, invocationEffort, nextEscalations, stillFailing } from './wiki-escalation.mjs';
 
@@ -285,9 +287,10 @@ function invocationOf(parts) {
 export const partsOf = (work) => work.parts ?? [work];
 
 /**
- * What a run's proposal carries: every verified invocation, plus the LANDED parts of an invocation
- * that failed only on other parts (verifySlice's `landedParts`). Run 4399 proposed only `r.ok`
- * results, so a group that failed on one part lost the rest — not proposed, and no longer queued.
+ * What a run's proposal carries: every verified invocation, plus the LANDED pages of an invocation
+ * that failed only on other pages (verifySlice's `landedParts`, narrowed per page since #720). Run
+ * 4399 proposed only `r.ok` results, so a group that failed on one part lost the rest — not proposed,
+ * and no longer queued; run 5010 lost two area-mates of a failed page the same way.
  */
 export function proposableSlices(result) {
   return (result.results ?? []).flatMap((r) => (r.ok ? [r.slice] : (r.landedParts ?? [])));
@@ -1478,11 +1481,9 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   // an honest outcome for a refresh, reported distinguishably rather than as either success or failure.
   // Checked PER PART for a multi-area invocation (078 US2), so a failure names the area/page it is
   // about and the executor can carry forward only the areas that did not land.
-  const missingParts = [];
   const missing = [];
   for (const part of partsOf(slice)) {
     const gone = (part.pages ?? []).filter((page) => !existsSync(join(bundleDir, part.area, page)));
-    if (gone.length > 0) missingParts.push(part);
     missing.push(...gone.map((m) => `${part.area}/${m}`));
   }
   if (missing.length > 0) {
@@ -1505,13 +1506,11 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   // the body and `generated` stamp alone, and the page counted as written — so a check that skipped
   // written pages never looked, and the marker moved past the source change exactly as in #587. A
   // real rewrite moves `generated.at` past the source's commit, so it is never flagged here.
-  const staleParts = [];
   const stalePages = [];
   for (const part of partsOf(slice)) {
     const stale = (part.pages ?? []).filter((page) =>
       !missing.includes(`${part.area}/${page}`) &&
       sourceNewerThanStamp(root, join(bundleDir, part.area, page)));
-    if (stale.length > 0) staleParts.push(part);
     stalePages.push(...stale.map((page) => `${part.area}/${page}`));
   }
   if (stalePages.length > 0) {
@@ -1546,23 +1545,34 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
     violations.push(`the bundle is no longer conformant after this slice: ${detail || 'the OKF gate failed'}`);
   }
 
-  // Only the missing-page and stale-page checks are attributable to a part; a policy or conformance
+  // Only the missing-page and stale-page checks are attributable to a PAGE; a policy or conformance
   // violation is the whole invocation's, so it carries every part forward.
-  const attributable = (missing.length > 0 ? 1 : 0) + (stalePages.length > 0 ? 1 : 0);
-  const failedParts = violations.length === attributable ? [...new Set([...missingParts, ...staleParts])] : partsOf(slice);
-  // The parts that DID land, when the failure is attributable to other parts only: the bundle is
-  // conformant (V16 included) and policy-clean, so these are safe to propose. Without this, a group
-  // that failed on one part lost the others' paid work — run 4399 dropped runbooks/backlog.md.
-  const landedParts = violations.length > 0 && violations.length === attributable
-    ? partsOf(slice).filter((part) => !failedParts.includes(part))
-    : [];
-  // 078 US6 (review I1): the PAGES that did not land, as `area/page`. A failed part can hold pages
-  // that did land; escalation must tag only the ones that did not. A policy or conformance failure
-  // is not attributable to a page, so it names every page of the invocation.
+  const attributable = violations.length > 0 && violations.length === (missing.length > 0 ? 1 : 0) + (stalePages.length > 0 ? 1 : 0);
+  // 078 US6 (review I1): the PAGES that did not land, as `area/page`.
   const failedPages = violations.length === 0 ? []
-    : violations.length === attributable ? [...missing, ...stalePages]
+    : attributable ? [...missing, ...stalePages]
       : partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`));
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts, landedParts, failedPages };
+  // A part narrowed to some of its pages. The stored runMessage names every page, so it is dropped
+  // and re-rendered from the narrowed page list.
+  const narrowed = (keep) => partsOf(slice).flatMap(({ runMessage: _unused, ...part }) => {
+    const pages = (part.pages ?? []).filter((page) => keep(`${part.area}/${page}`));
+    return pages.length === 0 ? [] : [{ ...part, pages }];
+  });
+  // Failed and landed are judged per PAGE, not per part (#720). Run 5010 failed one runbooks page and
+  // discarded the two runbooks pages that had completed beside it. When the failure is attributable,
+  // the bundle is conformant (V16 included) and policy-clean, so the pages that did land are safe to
+  // propose; run 4399 had already shown the same loss one level up, across areas.
+  const failedParts = attributable ? narrowed((key) => failedPages.includes(key)) : partsOf(slice);
+  const landedParts = attributable ? narrowed((key) => !failedPages.includes(key)) : [];
+  // Pages openwiki wrote that were never requested — chiefly the stale-Claims reconciliations it forces
+  // into every run (#707). Under the same condition they verified on their own, so they are proposed
+  // rather than paid for and discarded again. After a deadline stop revertUnrequested has already put
+  // them back, so they are not written here and cannot qualify half-finished.
+  const requested = new Set(partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${bundlePrefix}${part.area}/${page}`)));
+  const forcedPages = attributable
+    ? pagesWritten.filter((p) => !requested.has(p)).map((p) => p.slice(bundlePrefix.length))
+    : [];
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts, landedParts, failedPages, forcedPages };
 }
 
 /**
@@ -1975,6 +1985,15 @@ export function executeSlices({
     // 078 FR-022: the usage line and record name the effort this invocation actually ran at.
     const spent = invocationUsage(usageLog, usage ? { ...usage, reasoningEffort: effort ?? usage.reasoningEffort ?? null } : usage);
     archiveUsageLog({ usageLog, pages: partsOf(slice).flatMap((p) => (p.pages ?? []).map((page) => `${p.area}/${page}`)), effort: effort ?? effortPolicy.explicit ?? null, env: archiveEnv });
+    // #719: how each failed page's worker ended, from the tap's page-attributed lines — in the job log,
+    // so it reaches the failure bundle. Four workers run concurrently; without the page field the
+    // per-call log could not say whose calls were whose.
+    if (!verdict.ok && existsSync(usageLog)) {
+      const trails = pageTrails(readFileSync(usageLog, 'utf8'));
+      for (const page of verdict.failedPages ?? []) {
+        console.error(`[wiki-maintain] worker trail ${formatPageTrail(page, trails[page])}`);
+      }
+    }
     rmSync(usageDir, { recursive: true, force: true });
     usageSummaries.push(spent);
     console.log(spent === NOT_CAPTURED
@@ -2010,12 +2029,15 @@ export function executeSlices({
       if (restored.length > 0) {
         console.error(`[wiki-maintain] restored ${restored.length} path(s) of the part(s) that did not land, so they cannot ride along on the proposal (#685): ${restored.slice(0, 6).join(', ')}${restored.length > 6 ? ' …' : ''}`);
       }
-      // Only the parts that did not land (a missing-page failure is attributable per area); a policy
+      // Only the pages that did not land (missing and stale are attributable per page, #720); a policy
       // or conformance violation carries every part of the invocation forward.
       backlog.push(...(verdict.failedParts ?? partsOf(slice)));
-      // The parts that landed are proposed (see proposableSlices), so they count as written work.
-      const landedPages = new Set((verdict.landedParts ?? []).flatMap((part) =>
-        (part.pages ?? []).map((page) => `${part.area}/${page}`)));
+      // The pages that landed, and forced pages that verified on their own (#707), are proposed (see
+      // proposableSlices), so they count as written work.
+      const landedPages = new Set([
+        ...(verdict.landedParts ?? []).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`)),
+        ...(verdict.forcedPages ?? []),
+      ]);
       pagesWritten += (verdict.pagesWritten ?? []).filter((p) => landedPages.has(p.split('/').slice(-2).join('/'))).length;
       if (consecutive >= maxConsecutiveFailures) {
         // Not "this slice is bad" any more — something about the run is.
@@ -2095,6 +2117,7 @@ export function parseArgs(argv) {
     else if (a === '--selftest') setMode('selftest');
     else if (a === '--should-wait') setMode('should-wait');
     else if (a === '--normalize-links') setMode('normalize-links');
+    else if (a === '--claims-audit') setMode('claims-audit');
     else if (a === '--propose') opts.propose = true;
     else if (a === '--dispatched') opts.dispatched = true;
     else if (a === '--json') opts.json = true;
@@ -2110,7 +2133,7 @@ export function parseArgs(argv) {
     else throw new Error(`unknown argument: ${a}`);
   }
 
-  if (opts.mode === null) throw new Error('one of --plan, --execute, --normalize-links, --should-wait or --selftest is required');
+  if (opts.mode === null) throw new Error('one of --plan, --execute, --claims-audit, --normalize-links, --should-wait or --selftest is required');
   for (const [k, v] of Object.entries({ maxSlices: opts.maxSlices, pageBudget: opts.pageBudget, timeBudgetSeconds: opts.timeBudgetSeconds })) {
     if (v !== null && (!Number.isFinite(v) || v <= 0)) throw new Error(`${k} must be a positive number`);
   }
@@ -2122,6 +2145,7 @@ const USAGE = [
   '  node scripts/wiki-maintain.mjs --plan    [--since <ref>] [--json]',
   '  node scripts/wiki-maintain.mjs --execute [--since <ref>] [--max-slices <n>] [--dry-run] [--json]',
   '  node scripts/wiki-maintain.mjs --normalize-links [--dry-run] [--json]  # bundle-wide link form, offline',
+  '  node scripts/wiki-maintain.mjs --claims-audit [--json]  # pages openwiki will force into the next run, offline (#707)',
   '  node scripts/wiki-maintain.mjs --should-wait [--dispatched]   # debounce decision, offline',
   '  node scripts/wiki-maintain.mjs --selftest',
   '',
@@ -2350,6 +2374,7 @@ export function proposalBody(plan, result) {
   for (const r of result.results) {
     lines.push(`- ${r.ok ? '✅' : '✗'} \`${r.slice.area}/\` — ${(r.pagesWritten ?? []).length} page(s): ${r.slice.pages.join(', ')}`);
     for (const v of r.violations ?? []) lines.push(`  - ${v}`);
+    if ((r.forcedPages ?? []).length > 0) lines.push(`  - proposed anyway: ${r.forcedPages.join(', ')} — not requested, forced by openwiki's stale Claims, and verified on its own (#707)`);
   }
   if (result.stoppedAtFailureLimit) {
     console.error(`[wiki-maintain] stopped after ${result.results.filter((r) => !r.ok).length} consecutive slice failures — this looks like a broken run rather than a bad slice.`);
@@ -2693,6 +2718,20 @@ async function main(argv) {
       console.log(`[wiki-maintain] ${total} site-root-absolute link(s) rewritten across ${changed.length} file(s).`);
     }
     return 0;
+  }
+
+  if (opts.mode === 'claims-audit') {
+    // What openwiki's Claims preflight will force into the next run, whatever is requested (#707).
+    // Offline and free: openwiki's own model-free resolver, from the install a run would use.
+    try {
+      const { version, resolver } = await loadOpenwikiResolver({ root: REPO_ROOT });
+      const rows = await auditClaims({ root: REPO_ROOT, resolver });
+      console.log(opts.json ? JSON.stringify({ openwiki: version, forced: rows }, null, 2) : formatAudit(rows, { version }));
+      return 0;
+    } catch (err) {
+      console.error(`[wiki-maintain] claims audit failed: ${err.message}`);
+      return 2;
+    }
   }
 
   if (opts.mode === 'plan') {

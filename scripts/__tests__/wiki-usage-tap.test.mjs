@@ -198,3 +198,77 @@ test('a non-2xx model response is recorded with its status (rate limits under co
     assert.doesNotMatch(readFileSync(log, 'utf8'), /rate limited/, 'error text is content too');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ── (e) item #719: which PAGE a call belongs to, and how it ENDED — still no content ───────────
+//
+// Four page workers run concurrently, so a log of counts could not say which page's worker "exited
+// without submitting" (devcontainer-sandbox, renovate), nor why. openwiki names the page in the
+// worker's system prompt ("You own exactly /openwiki/<page>.md."), and a response's finish reason,
+// tool-call NAMES and whether each call's arguments parse are metadata, not content. A stream that
+// ends without submit_page reads off the last lines: `length` (truncated), `stop` with no tool call,
+// or a tool call whose arguments are not valid JSON (an error openwiki swallows into the same exit).
+
+const pageBody = (page, extra = {}) => JSON.stringify({
+  model: 'm',
+  messages: [
+    { role: 'system', content: `You own exactly /openwiki/${page}.\nSECRET PROMPT TEXT` },
+    { role: 'user', content: 'Research and document the assigned page, then submit it.' },
+  ],
+  tools: ['write_file', 'read_file', 'submit_page'].map((name) => ({ type: 'function', function: { name } })),
+  ...extra,
+});
+const fwToolResponse = (finish, toolCalls = []) => ({
+  choices: [{ message: { content: 'RESPONSE TEXT', tool_calls: toolCalls.map(([name, args]) => ({ type: 'function', function: { name, arguments: args } })) }, finish_reason: finish }],
+  usage: { prompt_tokens: 10, completion_tokens: 5 },
+});
+
+async function tapOne(body, response, url = FW_URL) {
+  const dir = tmp();
+  try {
+    const log = join(dir, 'usage.jsonl');
+    const { fn } = stubFetch(response);
+    await wrapWith(fn, log)(url, { method: 'POST', body });
+    await settle();
+    return { line: readLines(log)[0], text: readFileSync(log, 'utf8') };
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+}
+
+test('#719: a page worker\'s call names its page, its finish reason and its tool calls — no content', async () => {
+  const { line, text } = await tapOne(pageBody('runbooks/renovate.md'),
+    fwToolResponse('tool_calls', [['write_file', '{"path":"/openwiki/runbooks/renovate.md","content":"SECRET PAGE"}']]));
+  assert.equal(line.page, 'runbooks/renovate.md');
+  assert.equal(line.finish, 'tool_calls');
+  assert.deepEqual(line.tools, ['write_file']);
+  assert.equal(line.badArgs, 0);
+  assert.doesNotMatch(text, /SECRET|RESPONSE TEXT/, 'no prompt, response or argument content');
+});
+
+test('#719: the three ways a worker stream ends without submitting are distinguishable', async () => {
+  const truncated = await tapOne(pageBody('runbooks/a.md'), fwToolResponse('length'));
+  assert.deepEqual([truncated.line.finish, truncated.line.tools], ['length', []]);
+  const stopped = await tapOne(pageBody('runbooks/a.md'), fwToolResponse('stop'));
+  assert.deepEqual([stopped.line.finish, stopped.line.tools], ['stop', []]);
+  const malformed = await tapOne(pageBody('runbooks/a.md'), fwToolResponse('tool_calls', [['submit_page', '{"claims": [ SECRET']]));
+  assert.deepEqual([malformed.line.tools, malformed.line.badArgs], [['submit_page'], 1]);
+  assert.doesNotMatch(malformed.text, /SECRET/);
+});
+
+test('#719: only DECLARED tool names, a whitelisted page path and a known finish reason are recorded', async () => {
+  const { line, text } = await tapOne(pageBody('runbooks/a.md SECRET'),
+    fwToolResponse('SECRET_REASON', [['SECRET_TOOL', '{}']]));
+  assert.equal(line.page, undefined, 'a path that is not a plain bundle page is not recorded');
+  assert.equal(line.finish, 'other');
+  assert.deepEqual(line.tools, ['undeclared']);
+  assert.doesNotMatch(text, /SECRET/);
+});
+
+test('#719: a planner call carries no page, and Anthropic responses map to the same fields', async () => {
+  const plan = await tapOne(fwBody(), fwResponse);
+  assert.equal(plan.line.page, undefined, 'the fixture names no page');
+  const ant = await tapOne(JSON.stringify({
+    system: [{ type: 'text', text: 'You own exactly /openwiki/projects/sast.md.\nSECRET PROMPT TEXT' }],
+    tools: [{ name: 'submit_page' }, { name: 'write_file' }], messages: [],
+  }), { content: [{ type: 'text', text: 'RESPONSE TEXT' }, { type: 'tool_use', name: 'submit_page', input: { a: 1 } }], stop_reason: 'tool_use', usage: { input_tokens: 1, output_tokens: 1 } }, ANT_URL);
+  assert.deepEqual([ant.line.page, ant.line.finish, ant.line.tools, ant.line.badArgs], ['projects/sast.md', 'tool_use', ['submit_page'], 0]);
+  assert.doesNotMatch(ant.text, /SECRET|RESPONSE TEXT/);
+});

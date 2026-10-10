@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { summarizeUsage, sumUsage, NOT_CAPTURED } from '../wiki-usage.mjs';
+import { summarizeUsage, sumUsage, NOT_CAPTURED, pageTrails, formatPageTrail } from '../wiki-usage.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // The arithmetic tests price from a FROZEN fixture: their premise is "a run is priced from a dated table",
@@ -126,4 +126,30 @@ test('a run total over invocations at different efforts says "mixed"', () => {
   assert.equal(sumUsage([a, b]).reasoningEffort, 'mixed');
   assert.equal(sumUsage([a, a]).reasoningEffort, 'low');
   assert.equal(sumUsage([b, b]).reasoningEffort, null);
+});
+
+// ── item #719: per-page trails from the tap's page-attributed lines ────────────────────────────
+
+test('#719 pageTrails: calls are grouped by page, and the last calls show how each worker ended', () => {
+  const line = (o) => JSON.stringify({ kind: 'page', status: 200, uncached: 100, cached: 900, output: 5, ...o });
+  const text = [
+    JSON.stringify({ kind: 'plan', status: 200, uncached: 1, cached: 0, output: 1 }),
+    line({ page: 'runbooks/a.md', finish: 'tool_calls', tools: ['read_file'], badArgs: 0 }),
+    line({ page: 'runbooks/b.md', finish: 'tool_calls', tools: ['submit_page'], badArgs: 0 }),
+    line({ page: 'runbooks/a.md', finish: 'tool_calls', tools: ['write_file'], badArgs: 1, cached: 250000 }),
+    line({ page: 'runbooks/a.md', finish: 'stop', tools: [], badArgs: 0 }),
+    'not json',
+  ].join('\n');
+  const trails = pageTrails(text);
+  assert.deepEqual(Object.keys(trails).sort(), ['runbooks/a.md', 'runbooks/b.md'], 'planner and unparseable lines carry no page');
+  assert.equal(trails['runbooks/a.md'].calls, 3);
+  assert.equal(trails['runbooks/a.md'].maxPrompt, 250100);
+  assert.equal(trails['runbooks/a.md'].badArgs, 1);
+  assert.equal(trails['runbooks/a.md'].submitted, false);
+  assert.equal(trails['runbooks/b.md'].submitted, true);
+  assert.deepEqual(trails['runbooks/a.md'].last.map((c) => c.finish), ['tool_calls', 'tool_calls', 'stop']);
+  const out = formatPageTrail('runbooks/a.md', trails['runbooks/a.md']);
+  assert.match(out, /runbooks\/a\.md: 3 call\(s\), max prompt 250100, never called submit_page, 1 call\(s\) with unparseable tool arguments/);
+  assert.match(out, /last: tool_calls\[read_file\] → tool_calls\[write_file ✗args\] → stop\[\]/);
+  assert.match(formatPageTrail('runbooks/z.md', undefined), /no page-attributed calls/);
 });
