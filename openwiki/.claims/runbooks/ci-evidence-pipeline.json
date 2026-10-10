@@ -1,0 +1,438 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3233546823fa86f4dc0008f4484653c98baa06daae4b7bfec13507c7ac2ea07e",
+  "claims": [
+    {
+      "id": "claim_95cb33eaf9164a0bb4732cc9977a5b54",
+      "statement": "Every CI job publishes a failure digest through exactly one `if: always()` + `continue-on-error: true` step running `scripts/ci-failure-digest.mjs`, whose three absolute rules are that it must never change the job's outcome (FR-009), that everything published passes the fail-closed redactor first (FR-005), and that a job belonging to a cancelled run publishes nothing (FR-001a). Measured 2026-10-10: 22 such steps, one per job, across the ten `.forgejo/workflows/*.yml` files.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L71-L89",
+          "version": "repo-lines-v1:sha256:e88fc56f2495ea8a5ff489ecd30077aa0c0e017b223372d2cd18c9b098415514:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTU0OWNlNTFiMTEwZGFlYjEzMzkwZDdmZDYxYThkZDQ5YTdiM2RhZTdmODkyZDUxYWU5ZDQ4MzQ1NDdjZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMWI1ODI1YmJkNWEyODM0NmRiNTY4NDRkY2Y2ODVkNzRmNDkzODA2OWU5OWZkMmUwMmU4YWNkY2MyYjFhOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMTA2YWY0NDlkMTkyNGJlYjE3NDViMDdlMTgwYzY2MTIwOWI5NmUzN2MwNjFiNDBiNjQyNzRjNWJhMzlkYmQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-ci-digest-coverage.mjs#L12-L27",
+          "version": "repo-lines-v1:sha256:9add8a0b382768944aea6da492c16657cab738389f8887d963439df0dd76d299:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkODRkYWI0MzQ5ZThlNDkwNzAzNjIwZTMyOTQ3ZjJhYzJkMGUyNGNjZTc0MDZhZDllNjk5NzRkN2QyNTMxZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NGQ3ZmYxZmZhN2Q1ZDlhNmYwNWFkYWZiYmM0NmZlNTFlNGU3MjI3NGExMDE5MmVjMDJmZWFmYjYwY2M5MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiY2NiYWZmMTliNWUwMzExNDExYzk2ZmUxNjc3MjlhMGY2NjgyNmRmZWQyNWIyNWJhZTVmZGYwYTk0NmJjM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiYTJmN2U4OGM1MzIxOGYzNzg4MzgxZDk4NDZjODE0ODk3YmU0ODQxNTk0MGE3NGI1NGNjMWVlNzExZTRhY2EifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L9-L26",
+          "version": "repo-lines-v1:sha256:98a20b1728044b86d1c733a919439975e0186da198348617996d8eccd07b7b03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYzVkY2JkMTk2ZmExZWNkZjFjN2Y4ZjIwY2ZhOGZjZjY5ZTYzYmIzNmNjYjc0YTI2ZjQ1ZTczNTczOTk4MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNDNiYzE3MmIwN2EwZGNiODI4NTkxNDBlMWQwOTUwMzMxOGRjZGI1NDU2MjJkMTE0NTgwNThlYjA1NjlhNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5NGIyMTYzMGQ2OTNhN2I1ZmViOWQ0MDFjMGQwYjkwN2Q0YTJlNjE3NjM3NzliZTJkZTNmNzQzZTg3ZGVjMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMmQ2MGMxMDBiMjgyNjNiYjY2N2JhOTlmYmZkNzY3NTBkMGFlYjYzZjQ2MGQwODYzNDMyYzRkOTE2Nzg4MWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_354b8c35095442259cb13de42882a077",
+      "statement": "The digest channel depends on the event: on `pull_request` it upserts a PR comment keyed by the `<!-- ci-digest:job=<job> -->` marker (one comment per job, edited on repeat failures); on `push` and other events the digest is `digest.md` inside the evidence bundle; a cancelled run publishes nothing at all, because its contexts read as `failure` for a commit that was never broken and publishing would upsert noise on every rapid re-push.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L16-L18",
+          "version": "repo-lines-v1:sha256:891f3d53f8874ef1b4d3609a5f87616796229dcf7e07cef1c91220a2c9ee337e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDExMjM2OTM2OTBjMDcxYjA5Y2Y2ZjZiM2E2ZTU3ODE1ZGE2NGE3Yzc0NmJiZjljNzY3ZmYyODBmZGM4OTJmNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTM2MjBlNjRmMmE5NjdiM2ZkMzlmNDQ5YzA0NTYzNWNhOGIyZGYxMTdhNzdmZTk3N2EwMTI5MjFkZTczNjFiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWQ2ODdlMmVmYmVkZDk1NTkzNzJhNDY2MmY0MGI2NTRhNGZkY2ZjYjViMzRiNmM4NDUxMjgwNzI1OTRkM2FkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGEzYzE0OWEzNzcwNmFlZmE5MmU0MWE1MzBiNDA4MWU3ZWRlZjNlYTNjMzlkNGU0ZTJkZDNhMDc3ZjMzNDQ0MyJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L87-L90",
+          "version": "repo-lines-v1:sha256:c07f7766c1a423a0d46c93b6627a627d5a2880560766ca4cd5970339c9564621:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzIyZTFkZGU2YWU5NGNiNzNkY2Q0YWY0NzBiN2M5ODRmNzBmODE1ZTMzOWRjNWIxZmMxNDI5M2I5NTBjOGJkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM5ZWNmMzdmZjVmNDYxY2I3ODI3ZWI4ZmJkMmIyNDA5NjNiMjBhNDliMWIyNTg2NTMwYzkzZGZiMzgzOTEyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThmZWZmNjZiZGE2ZDQ3YzU4YjA3NjcyMTUzYTJiYTNiNmE0OTJhNWJlNDI4Yzg0ODk2NjMzZTgxNWY2YmRiMyJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L877-L877",
+          "version": "repo-lines-v1:sha256:af85a7b3e8272e407418e8dfc8a5b19dfc79846bf0908e1dc62516a6bf665891:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY4NWE3YjNlODI3MmU0MDc0MThlOGRmYzhhNWIxOWRmYzc5ODQ2YmYwOTA4ZTFkYzYyNTE2YTZiZjY2NTg5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY4NWE3YjNlODI3MmU0MDc0MThlOGRmYzhhNWIxOWRmYzc5ODQ2YmYwOTA4ZTFkYzYyNTE2YTZiZjY2NTg5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTUzOWUyOTc0NThmMWM0YzhhODNmMjI5NzVkZTM2ZDRkNWU5Mjc3ZTliZDk4ZTliYjQ2NzE2Yzc4YTI2MzBjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDZhMTg2YjA1ZjNhYTQ2NDY3ZWIzNjdjZGUzYTgwOTA3OTI3MTc5OTJkZmJkNTlkM2MxNTlkY2RkNmJmZmNiNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_675b37a4521e4cf180c8aaa375e0b0f9",
+      "statement": "There is no commit status on the normal digest path: `POST /repos/…/statuses/{sha}` returns 403 for `CI_DIGEST_TOKEN` because it needs `write:repository`, which is most of the privilege that made the deploy PAT unacceptable across every job. Since the status only ever named the bundle and the reader already knows the run and job, the reader derives `{runId}--{jobSlug}` itself; and it must use `run.id` rather than `index_in_repo`, which differ, because only `run.id` matches the `GITHUB_RUN_ID` the bundle was keyed with.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L29-L35",
+          "version": "repo-lines-v1:sha256:ab169fbb9eae1b0c339e02e8428f053c90b994341e78b352e2ffc01d7a131b53:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgyN2MxZjc3MGFlZjZjNmRiOTBlZTJmNDlmNmE3NDQ0YzBjZmMxZTQxN2U4ZTA0ODg4NDc2MTdmYjEyZjQyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJmN2VhY2E1ZTM1OWJhNDBjM2JlZmU5MDliYWQwYTJhYWY0Yzg3ODdkOTBjMmQ4ZmE2MjJhNjdmNGU3NmQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWI4ZWVjNjA0YmU2NTA4MDY0MmU4NGI5MmQzZTg2NmMyNTVkOWNlZjliMmMzODI3M2FjZmFjNTMwZmVjZTk3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYyYWM2MmY2N2NkNjk5ZGRiMTVkMWY4MWNmOWUxZjNlNGNhNmU4MjI5OTJiNDY1MjhmZTJjNmJkMmZjYmY0ZSJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1468-L1478",
+          "version": "repo-lines-v1:sha256:eff842a78c59f5dd86b327c3e190fddec38c70baef01c0d633d25001d1f3de49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZmE1YzM0OWRiNWFjMmFiZGJlNDZjNjE0ZTI0MDM2OTBmMDRlMmU1MTBiYTcxYTQ3ZjJiYjU4YTA3ZGE5YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiM2JlZDAwMTBmODM3YjdlYzM5NzgzNmE4MjdiZjA5MzJlN2I0YjIzZjdlNzkzMzExYTBlNjQzN2YyMDRhMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5MjlmZTQ5ZjE2ZjUwZjRkMGZlZTc5MzU1Y2JmMGU5NjgyMTNiYmI1Mzc0OGZmMGM1OTE5MjI4ZmZhYzgyNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNWRmNGFkYjhmMjZjOWI4YTk2ZWE3NjcwZDRiMDExZDcyMjQ0OGFhMWM2YTExYzEyNTdkZjgwYmE4NTdjNTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_69af365152794a3cae4072c122b96c79",
+      "statement": "Digest excerpts are tail-biased and capped at 200 lines and 32 KB per source (bytes, not UTF-16 units), the digest markdown itself shows at most three sources while the bundle carries all of them, and the markdown is separately trimmed to fit the ~60 KB comment channel — a full `app-e2e` digest measured 90 KB, and trimming it loses nothing because the bundle keeps every log as its own file.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L39-L50",
+          "version": "repo-lines-v1:sha256:36942375326a0a043123d6dea3dd26a2b781fd3a969630bd6f95a554b8c8eb9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0ZWU0MTViMjY4ZDZkODkzNjI3MDI2MWYyZWUzNTA3YjNhNmJhMGE2NGY2OGIxMGViY2I3YThkMmIyNjJjMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiM2MyYjZlZDM2MDM1NDhmNjJmM2MyNWQ3NzVkNzY4ZGE2MDAxOWZlZDRhNTIyNzIxNmVkOWJkYjc5N2Q2MzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2OWEwZDFlZDFlNDM3NDk1NDY5YjY2NmNlZjM0MjljZTQxZTg3MWRmZjAxMzlmMDJjOTkwMWVkMzk4M2E1MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhOWE0ZTRjYjIyOWNjMDMxMzhlMzYwZDg3NmFiMzJlZTk4MTk4N2RkZjhhYjIwMmY1NGQ5OGQxYWQxNGZkOTYifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L54-L59",
+          "version": "repo-lines-v1:sha256:1e33a586d89eae69e15bbba6d981c4ad0cb4c3056d507e69abe0945a839b80f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ5ZmZhODM2Njg1OWZmZmZlYTZmN2EwMDIwMzUxYmVjNGM4MzExZGM3NzU3ZDQ4ZTZiOTYyNWFlNTA5ZjhlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWE5YTRlNGNiMjI5Y2MwMzEzOGUzNjBkODc2YWIzMmVlOTgxOTg3ZGRmOGFiMjAyZjU0ZDk4ZDFhZDE0ZmQ5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjgxYmFiOTU4MjU3MmY2MmJmNjA5Y2RjYjZmYmMwNTM2MjQ2YmQ1ZmY1YzE0ODljMDU5N2VkMjRlNmNiNmI5YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_681543b2751d40d3b52f9114a13db7d6",
+      "statement": "Redaction of published digests is fail-closed: every rewrite pattern is explicitly global because `secret-scan`'s rules are detectors with no `/g` flag, and after redacting, the detection rules are re-run over the OUTPUT so any surviving match drops that excerpt entirely rather than publishing it. The forge host is matched by shape and never embedded as a literal, so the redactor cannot leak the host it protects.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-digest-redact.mjs#L1-L27",
+          "version": "repo-lines-v1:sha256:442010a83e66e655fda1b532b4578f9fb1065ced49ab7b5a49eb69010358912c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhZjQxZmQzYWVkMzZmMTllYTRjYmY0YTE0ZjU4Zjk0MmRhYzQ1OWJkNmRhOWZmNzhkYmJiZWFkODc5ZmU1NDQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-digest-redact.mjs#L97-L120",
+          "version": "repo-lines-v1:sha256:ddb56dfd54996ccc63766d23488571a43f2448b78f0576680b86ebd5f7388ed4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MGIxMGVkMjQ3ZTE3MTFlNGRmYWZhZjljYTZmOWE2NTI5Y2I3MGJmNjU5OGY0ZDMxZjZkYmM5Yjg1Y2VkMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZjliZTRmYTg3YzAwZDdjMTFlMTU4ZGY2NDZjYzZmN2I2YjVjOWY1ZmFmNGEwZmI4ZjY0NDExMTE2ODA0NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2ZmQ3ZGIzZjMyMGE3YjExOWMyYzU1MmFlNGYwYzlmZjliNGFkMjE5ODUxZTcyZjdhOTAwZDJmNjk2M2FiYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhMjBlYTRiNmIzZDQzOWRmZGY1NWRkZGE0NWFhYjAzMmRiNzIyOGQ2ZWM2Y2E1NzVhYjg3YWNhODFjYjQ0YzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_09ad5ec7e4774735b19daeb3c0b5435b",
+      "statement": "The redaction rules were broadened after measuring what newly instrumented steps actually emit: wrapping more `run:` steps widened what CI captures, and probing the output found that a URL userinfo shape (`https://user:password@host`) and a credential passed as a command-line flag passed through completely unredacted and were not caught by the fail-closed backstop either, since an ordinary 40-character token carries no high-signal secret prefix.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-digest-redact.mjs#L75-L95",
+          "version": "repo-lines-v1:sha256:a01601b66c3e69bb6bc8319b056520aff6b1dc1cb772a07e23f374ae3074aaed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxYWZhM2MxNjVlYzdhNjhiZmRhYTIyMDVlMGMzM2NkNTY0ODFkMjk1NWMyZGFjOGJmYTIyMmMzNjQ5NzU3NzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0MzBlMDlhMTk0ODhjZGQ2M2M0NjhiYTUwNGU1OTUxYWY5MTVmOTA0ODhlNTQwZmNjOWNhOWZjYmJhMjI2MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiY2U5NzI5YTMxMzNlZGQ1NzkyZGVlNzg3YTc1YjlkNzI2MjE4NjY3MTdjNzM0ZWMxM2QwZDNjMWIzYTg4ODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9078066851af4691bde9a7c57c739f9d",
+      "statement": "Full evidence goes to the generic package registry as `ci-failures` / `{runId}--{jobSlug}` — per run AND per job, so two jobs failing in one run keep separate bundles. The bundle is capped at 5 MB (sized for agent context, not link time), trims the largest source first while keeping the tail and recording the truncation, is retained 30 days with opportunistic pruning at publish time only, and `--full` writes it to disk and prints the path rather than the contents.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L57-L73",
+          "version": "repo-lines-v1:sha256:3508ecd5639b67bd6f2c12ff0cf4163cc8539c84c2107404a57a1403c2af2257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzgzNzAwZDU5MDI5YjM0ZjM5YzJhYmQ3NTQ1YjdlNDM5OTAyNDE1ZTcxNzc2ZjcyNGYxYWMwNDM1MGUwMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNzgxOWIzMGQ4NTVkZjgzYjQ2ZDc2Njg5NjU4Yjg4Njc4NjllYWI2ZTM1OThhNzBlYmZiZmVhMTM0YjkwMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliMGE5MDAwYWM0MDhiODJiNjk3YzU0MDMzOTNlZTE5ZjE3NzBmMDQwNjY4MDUwNDZmMjI4YzkyMDNhOGYxN2UifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1005-L1023",
+          "version": "repo-lines-v1:sha256:558d1d44ad8333e32dd8d6b1f769335e21f1d736c3b0eeb78a6fca306f5fbac9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYThlNGVkMjRhOWI2OTcwNWJmM2QzYTUwMGIwOWQxNmRkODQ0YTIzMzU2NjM1NDE3YjJiNDcwMTZiMjQyYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZjBlMWQ2ODMxYTEwYzhkMTA0MmVmNzEzMjc1ZGY2NTlhZGJjZjI5OGIwY2JhOGQ0ZDZiOWMyYTk3MDRiMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlNzY2MGYwYmMwZGI5ZDQwYTZiMzc2NzA0ZjYxYzY2YzJiNzFkMDAzZGZlYzBiOWI1NzM5MTI1YWZiMjRiNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMzNiZGNmNmRkMjhkZTE4MzA4YzJmOTMzNGJkMzQxNjI2NDFhOTU3NTFlZDhkNzU1MzgxNWYwZmY3Njk3ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1bb27f7d5a944ddca94ffcff6c135564",
+      "statement": "The bundle packer walks `~/mcm-ci-last-failure` recursively (nested files admitted by format, because Maestro writes JSON), carries screenshots as base64 manifest entries that are never half-trimmed, allocates step output and device evidence first out of a fair-shared priority reserve of half the cap, demotes bulk device dumps by size (over 512 KB) rather than basename, and states every absence in the digest itself rather than only in the manifest — all of it corrected after run 2049 and run 3434 showed a fixture-tested design dropping the evidence that mattered.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L132-L177",
+          "version": "repo-lines-v1:sha256:160a9ff834fae709440801067f36f5253e5c45217915203b9fc8477af172cdb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0M2JlNDJkNzMzOThkMDZkYjNmN2VjNjc2NGEyYjQzNDhkMGY0MDY4MGI2ZGQzZWYxNTZmZjA5ZTI2NTcxZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MjFiNWZjNzEyMjg5ZTllMWExNDY3OWU1NjNmNjM3MzExZmU3NzM1YzdjZjI0Mjk1MjY0YTFmMTBjMjVkMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MDM4NmQxODg1ZDBhYmM0MDhlYWNjN2ViODE4ZTFkYmQ2N2VhOWU5YjU3YzY5OWJmOTdmZTBkM2JhMGMyM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1395-L1399",
+          "version": "repo-lines-v1:sha256:301d0971290361a2b4939ac60c8555eca4b6bff1be145fdaeb9e1c88ffee2495:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEyNzIyZjU2NWViMWU4NzViYjM5OGJkY2IxMWQxZTg0NTExOWEwM2QzYzMyNzUyYTczMzhkYzMwNWMzZWZhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBhZWEwOTM1YjBjNmJiZmU2MDY4NTZmNDg4MDc1YjA3ODFhOTMyODgzMDBiMjZiZTRlNTk4NDNmNTQ4MmM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTFlMGQwMDhmMTZjN2EyYjcwMDJlOGJjNDY1NDg3YWUyZjVhMzNiMDhmNzNmNTM1ZDAwYmYyOGI4N2ZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhhM2UwODUyN2YyY2ZiMzFhZDhiYjQ4YmIzOWM3Zjk2OWNhOTAyZDJiNjZkMmYwMzA3MWI3ZDBhODUwMzJmZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_24395de837274e1eaa19f97a460a08ba",
+      "statement": "The digest is embedded in the bundle it describes, the bundle manifest is planned before the digest is rendered so a cap-dropped source is named in the digest, and publication happens before the bundle upload so the bundle can record whether publication reached its channel (`meta.publish = {published, channel, reason}`); if the upload itself fails, the job-log line is the only surviving signal, which is why both exist.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1395-L1399",
+          "version": "repo-lines-v1:sha256:301d0971290361a2b4939ac60c8555eca4b6bff1be145fdaeb9e1c88ffee2495:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEyNzIyZjU2NWViMWU4NzViYjM5OGJkY2IxMWQxZTg0NTExOWEwM2QzYzMyNzUyYTczMzhkYzMwNWMzZWZhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBhZWEwOTM1YjBjNmJiZmU2MDY4NTZmNDg4MDc1YjA3ODFhOTMyODgzMDBiMjZiZTRlNTk4NDNmNTQ4MmM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTFlMGQwMDhmMTZjN2EyYjcwMDJlOGJjNDY1NDg3YWUyZjVhMzNiMDhmNzNmNTM1ZDAwYmYyOGI4N2ZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhhM2UwODUyN2YyY2ZiMzFhZDhiYjQ4YmIzOWM3Zjk2OWNhOTAyZDJiNjZkMmYwMzA3MWI3ZDBhODUwMzJmZSJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1450-L1466",
+          "version": "repo-lines-v1:sha256:86a9e5ad8c8783ea573a2d134832060cda44631f279bce9e2e43f0b6af28e214:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZWMwYWIxMzNmZTJjZmQ4MGVlZjNkZmFlMmNhMDVlMmRkMTkxOWFkMzliNjFmNzc2NTcyNTIyMDg4NzM2MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmOTI5MzM1NGM4ODJmNTlkNWQ4NWUxNWYwYjc5NDg1ZWQwNGM2MmRjNWRkOGJkNDkwZDE5NTkzOWQ2NTEyNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNDYwNDNkYmNjMjVmNzdjNmIxMzQ3OGNjNDQ5NjgwZTA5ZWM5MzFhZDBhYjZhODAzNjlkMjJiNzY2MjllYzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c0dfb48223b4adf8cbaeab88999d286",
+      "statement": "When `CI_DIGEST_TOKEN` is empty the digest degrades rather than failing: it falls back to the run-provisioned token, posts a `ci-digest/<job>` commit status carrying the failing step and a short excerpt, and records itself as `degraded: true`; with both credentials absent it prints the digest inline and still exits 0.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/ci-failure-digest.test.mjs#L911-L938",
+          "version": "repo-lines-v1:sha256:a2cc7ef06e17505236dfaf2c97213bee0bb62b5403fca95d07e3b92b57572517:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWU2OGQwNDcxZTlkM2EzNTlkZjI1MzRiOWE4Yjg3NGI3ZDQwYTcyZThiMjI0Y2Q1N2YyYzg4NGIzYTU1ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NmI4MWQ5NWZmNjljZmU3M2EwYzhiMWI0NzYwNTkzZThiMmEzNzliMGI2MjFlYTI1OGMyOGQyYmI2MTZhZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMzFlOGU4MDZlMDhiZjEzZGYyZDVkMDg1MGNiMzQxZGNjMzQ3ZGY0MzBkZjZmZWJhZGU3NWEwNzExNmNjMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNzJiNzg2M2E1ZGJlMGRjMGE3Y2Q4NGNiMWU4ODBjNTQxZmFiNDQ3NWE0ZmQ3NmQ5N2UxMTZkMTllYWQzMDAifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1403-L1438",
+          "version": "repo-lines-v1:sha256:e1a74f00018b2fdbc6621a4db0aae79767f96722eeb9c5e61d0adcf1fd320cf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYzhhNjU5NDU4YzdkODgwYzU2ZTZhMzYwMzI3NTBjYWRmYTc1ZjI5Yjg0ZjQzNGIzYWNlODRmOWVjZmY5MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YTNlMDg1MjdmMmNmYjMxYWQ4YmI0OGJiMzljN2Y5NjljYTkwMmQyYjY2ZDJmMDMwNzFiN2QwYTg1MDMyZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YjVmMTYyZjYwZTVlMmI3OGQ0ZTlhM2EwYTdkZTE2N2JlNmQ2MzZiYWFkYTA3MGVlODUxZjcxMzM3NzhiZDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_437114518c4a437bb845bf7aa5fca4b8",
+      "statement": "`scripts/ci-log-step.sh` writes one row per wrapped step per INVOCATION into `_step-durations.tsv` (step, seconds, exit, ceiling) on every run, success or failure, so a duration distribution is built from normal completions rather than only from failures; the exit code and ceiling are both recorded so a reader can distinguish an observed duration from a censored one, and a step killed at its ceiling is excluded from every percentile to prevent each ceiling becoming a function of the previous one.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L124-L150",
+          "version": "repo-lines-v1:sha256:726b254b11acd3f4e3a71f8f0e09d18981c75c4d1d4a585084bb67110f04a4e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZDMxOTllMzJhNzQ4YjQ0Yzk2ODA5YTRiMGRhNjVlMGEyZmIzZDFhNDY2MTJjNDdlNjhkNmNiYjE0ZjY1MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOTdmMmE5Y2U1ZTUxOTMxMDU4NzQ3MTcyY2E3ZTUwZWVkMGQ5OTQ4OGI0NTM4YTljMTY4ODViNzJiMTE3NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjYzlmZjkzYjI2NjllNWZkYzk5OTYzZjFmMTk5ZDJmMzk1ZWViZDkxZWM3NmJjYmViZTQ3OTQ2YzM3M2MzZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4ZWQ5NmVmNDdiYzBlMzhhZjQ3OTcyZjdhMjU3NTFhNTI2MDFmZWVjMDk2OGExMzU1NTJmMTI2OTA0OWJlYmYifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L152-L164",
+          "version": "repo-lines-v1:sha256:c7a8c024837be74e0e5b2a3b3a374f53192c344baf51639eb8f9e4eaa7af7e26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMDE4N2ZiZTQ1MWQ5MzgzNjcxOThlMjE2N2QyNTYzM2VhNDEwY2M2NThkYTE2OTBmMjQ4NWNlOWIyNjc3NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliYTY2Y2I3YzFjNDNhZmQ4YmU5ODcyNGE4Y2I1NzA4MmM3YjdjNTgwMDMxNDRjMjBmYzFhOGQ4YWEwNzMzMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0OGUzYjk4MzI2ODFkNjVkNzQ0MTQzYTE3MWIzODY1ZjNjZGQ5MGZmYWZlMzNlMTA3NmUzMmZlZTUwN2MwYzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_36f68eeb7ac2433ea47d729c29211e43",
+      "statement": "The per-step ceilings in the generated `scripts/ci-step-ceilings.tsv` follow `max(observed) x 3`, rounded up to a whole minute, floored at 300 s (because `timeout 0` means no limit, so `0 x 3 = 0` would delete the guard by its own arithmetic), and applied only to a step with at least 10 observed non-killed samples; `max` rather than p95 because p95 discards exactly the slowest runs a ceiling must not fail, and x3 because that is the largest retry bound any wrapped step has.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L236-L248",
+          "version": "repo-lines-v1:sha256:57de5d7eab53bfafce315c4d72d36bf2c5835903cab4a8fa1ad47598810d0bda:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhNWUyZmVlZGU2NmViNjgzNDA1YjZkMGZlNDRkYmI1MTJmNzE4ZDc2YzliNWU2ZGY2ODRjZGE0OWI5NTNkMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5M2IzNTU4NDQ1Y2ZlYTBlODM0MTZmNmZjOGZkZWM2NDdhMzRlNTVmZmIzMjM1Mzc5MmU4MjU4NjhiMGY3OTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNTBiYTIyNGZiZWNiNmI2MGZkOGQ4NGFlYTFlNjNiNDlmODg5ZDIwOTg1ZmZiYWE2YWU2NzU2NjlhZDU2YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2ZjA5NWRmZTVjYzA0YmVmOTBmOWJjY2MyYzIxMTQ4YTMwNGZlZjY5ZWRhYjQ3NGRkNTE0NzM3MGEwZDhhODgifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-step-ceilings.tsv#L1-L12",
+          "version": "repo-lines-v1:sha256:95edd0ff43cd6bd84d39b37e385960cfd950953698936d43d86e1133ca2ac2f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNzgwMzNhMmIxZjQ0Y2YyMWFiYWY2NjFhNWEyN2RjNmIxYTg2MmNhMzgzMjM0MjAxZTVjNDgzNGMzMDljNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjYzcwMTQ5OTkwMGUxYTM0NmM0NThjZWU0NTRkZTgxYmM1ZTQxNGY4NDg3NWE3MmRiMjM3N2NlM2JhZWEyMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MTRmOGQzMTIwMDI0N2NiODcxNmMwYTBkMTRkNjYyN2Q5MmQxOTlkMjhkYTRkNzg4ZGU2MjMzNWZmZGM5MTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b6968ab74f14d45b287b10374daedbe",
+      "statement": "The wrapper resolves a ceiling by whole-name match on the table's first field (suffixes and shared prefixes make a substring match unsafe), skips comment rows (a `# web-e2e` row parsed as a ceiling of 0 would mean no limit), locates the table relative to itself rather than `$PWD`, falls through to the `CI_STEP_TIMEOUT_SECONDS` backstop on a missing or unreadable row, and warns naming the source of the value when `timeout` is not on PATH instead of silently running unbounded.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L410-L410",
+          "version": "repo-lines-v1:sha256:82dc2e17f68abd745c79bc4205d4bf4bbb662044069074824682136ae4bf5e49:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlmYzE2MDI3YWM1YzU0NWM2ZGViMDA5NTViNzg5NWNhMDM5MTk1NjE3MzRkNzdjMmIyYTAwNzE1NzBkMWVlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTAzODAzNTFjNzg5ZjY3MDNlOThhNzRmNjgxNDRiOGZiZDFjMmI4NTE4ZTk1ZTk2ZThmOTZhMWQ1ODQ1ZThiOSJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L60-L105",
+          "version": "repo-lines-v1:sha256:925364dd1f92ebe43907fd0ecd940b930a65eaae16c2c66f4da2db973a8a1c90:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlYmY0ZWJlZGU5MGNjMGM2MDdhYThmZmZiOWYwODNmODFhNmFjNjM2OGExNmU0MTU2NDEzMWUyMDNhMDkxYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlNjliOThlMTdhMjFiZjc2ZjFjMDY0ODViYmM3ZmZjMGViOGI2NzYzMTI1ZjNiNjBiYmRmNDZlNzZlNTRmMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5N2ZlNDY3MDNmNGM5NDk5MzBkMzJlMzBmMGY2YTM3OGE2MDEwMGFiOWUyZjU2NzJhMDg2N2FkMDc2NmY5MWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_45484406a9be4caa8b1dd66bd6bff950",
+      "statement": "Three tests keep the ceiling table honest — #338k re-checks the below-the-job-ceiling arithmetic for every row, #338m fails a row whose basis does not state its sample, and #338n fails if a wrapped `app-e2e` step is neither calibrated nor recorded as deliberately on the backstop — but none of them checks that a ceiling matches its own basis, so a hand-edited value beside a stale basis passes every guard.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L292-L299",
+          "version": "repo-lines-v1:sha256:a1da2f4dc10b3de62d7326440b98b4d7207f4a3b6167d958a645c48b103d8e5d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQxMTdkZjRmNDk2ZjA5NTgyYzhlZjNlOTFhMWMyY2QxYTY1MTU4ZTAxMjg2MWQ1ZDU3ODNlOWQ0ZTZkMmQ3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJmYjVmZjhkZGZhMDIyNmI5MWU1ODMzY2M0ODVhYzFmNTUxMTQ4ZTM2ZmVjMmM0MjEzY2EyNDA0OTI0ZTU0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE3YTFkMjFhYjg2NTAzMGU2M2ZlNWM0ZDYyMzQxODY4NTM3YjAxNzdkZTZlZDllNTI4N2RkMzIzNGUxYWY0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWI1MjVhZDI1OTBhMWU2ZDM3Zjk1ZWEyYjI1OGM0MmVhOTM1OWFhYjViNzZiNzllMjcyYzE3YzQ4YWRmMDU2ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-log-step.test.mjs#L534-L560",
+          "version": "repo-lines-v1:sha256:056a6ad69216514fdf2956c8c89d8134fb9e9ad5a08b5126958cf60872540e16:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZTAxOGIyZGQ0NzYyM2YwMjVhNTUyOWIzMzAwZGQ1OTZjNGZjMGZjOTI2YjRhNmMxNDdlYmIxYjBlZWNiZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NzI5MTYzYmRkYzgzYWI2OTk2Y2RkODI1MmQyMWE3OGFjMmEwMzQxZTc0OTkwMjIwNWQwNzFlZjE2ZGFlMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZmZlNzcwM2U1MmE2YTUwYTg0NDIwNzM2YjA4MmFiZDBlNWQ2M2RiNTBjY2ZlZWMyNDVlOTA1MjgyNjIyYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0Y2Y4ZmI1NGM3ZThjZTYzZDNlNzVmZWNmYTMyYzZmNDU0OWU3NjY2ODhiZmIxNGI4ZDljODkxNTlmOTI2N2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5fc0e37b935c44e7961bf4b92242a8fc",
+      "statement": "`cd-deploy` is `workflow_dispatch`-only and therefore posts no commit status, so `ci-status status --sha` and `failure --sha` report \"no failed jobs\" for a cd-deploy failure; its per-job state must be read from `GET /actions/tasks` and its digest fetched as a bundle directly by run + job. Its Trivy `build-deploy` step blocks on a fixable Critical that is frequently not an app dependency but a package manager bundled inside the `node:*-alpine` base image, and a direct dispatch with `deploy: true` is the escape hatch when a flaky `app-e2e` stopped the auto-deploy — after checking the `cd-dispatch / trigger-cd` status, which also declines for correct reasons.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L89-L90",
+          "version": "repo-lines-v1:sha256:6949e4d8206c6b32c72eb1e3363b11df6aa14345ca2836784ada8b4206c1358a:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg2ZjlkOGUzNjE2OGY4MTY0MTQ4ZjkyM2JkYTU4YjQ2MzZhZmNhM2E5NmVhYTM1YTIzNTAyNDA5MDBiNzY3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZkNmM5NjgxNDFlYWZkYjBmMDI0YTc0ZjVmZGRjYzU2NjgwMjNmZDhhMzI1NjA5MmIwM2RiYWFhNDk3YTUxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmY0MjQ3YmI5NzVjYjFhMjU0NmRiYmM5ZWUxY2NhYjFkYzZmMjQzMWFmZTQ3ODdhN2NkOTIxMGMzNTU2ZGQ4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDc2YjFkNGE0MmM0MGU0ZGMxZTUzYWViMGIxYmY3ZjA2OTU2OWYyYjAyNDI2MTg4MjQ5ZWQ3MDg0NThiYWVjMiJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L314-L342",
+          "version": "repo-lines-v1:sha256:abfba5e8f7b1c94560bac016ce231a635a246b13d8b87616fa03c44a19e419de:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0M2U5ODYxNzY4MzFhYzRiZTVjMzhiNmFmN2U4MjJhMmQxNjUzZDk5YTBiNjgyOGYwNWQ2NThhMmM5NjhmM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MTAxMjZjMDlhZjdmNmYxY2VjMzBmZDY3MDI5MjkzYjlkZDA1NTNlNmUyNzgxYjQ2ZTk2NDQ0NDBkYjM5NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a0c106b13af4073901e931b2d81b64c",
+      "statement": "Because CI logs and bundle contents are attacker-influenceable and the digest is published to a more visible surface, the reader caps gunzip output and download size rather than trusting the 5 MB writer cap, strips terminal control characters from its output, treats a digest marker as authentic only when it starts a comment and surfaces the comment author, and the writer uses a dynamically-sized code fence plus marker defanging so a log line cannot break out into live markdown or hijack another job's comment; `CI_DIGEST_TOKEN` remains reachable by PR CI, mitigated only by its narrow scope (issue and package writes, never `write:repository` or push-to-main).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L346-L368",
+          "version": "repo-lines-v1:sha256:0437181bdeb1dcd388d241559a118b0a06259e0d0016565e9235218e7bbd6410:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxYjJmYjc1ZWEwMmJjMjkzOGYxZjk5N2NhMWVmZDE4Zjk0ZTI5YmFlMjhkNmRiN2EzMjU1OTFmZTY4ZjViZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjUyYjBiMjA2YWFhOTdkOTYxOGE2ODRhMjhlYTgxNjMwYmRmNTMyNTA4ZDljNWFlZGMwMDNiZGIzNGQyNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YzM4YzlmMzYxZGI0ZTcyYzNjOGNmYzNjOGUyMmRjNzc0NzI0MTI5ODQyZDhjZTc0OTc1NGMxM2U3YzM3NzEifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L72-L85",
+          "version": "repo-lines-v1:sha256:414253118f1fc35141b46297bfd7236777619b2ee72ecb37a7545c622a9c2e53:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmNjVkNzU5NjQ1ODYwZDQ2MzM2MDFiOTU0MTY4MjI2MDlhMGI3YmNlZDU0NWZkZDFiNGUwOGQ4MzA4ZmIxOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzOTU0OWUxNzYzZjdjZWZiNzc2NDFlZDM5ZTQ5MDJhYWQwYTZlYjcxYjc4MjIyMjliMWQ0NDJlN2Y0MzMzZDQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L47-L47",
+          "version": "repo-lines-v1:sha256:eb2e979919183e1e18982bde053b472ffada7dd6b4e07d5975c6bc0d5c5ebc29:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIyZTk3OTkxOTE4M2UxZTE4OTgyYmRlMDUzYjQ3MmZmYWRhN2RkNmI0ZTA3ZDU5NzVjNmJjMGQ1YzVlYmMyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIyZTk3OTkxOTE4M2UxZTE4OTgyYmRlMDUzYjQ3MmZmYWRhN2RkNmI0ZTA3ZDU5NzVjNmJjMGQ1YzVlYmMyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY0NDdlYTlhOTUxYTczOTQ4ZTNhZjgzMjUwNzkwZjc5ZjJhNjg4NzBmNjM4YTQzYTY1OWZiYzI2ZDIxMGYxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjI2MjA5MjI5MmIwNDFiMTEzNGZlMzI3ZGVkOGIxNGViOGI5YzI4NjllZDJhNjMxYWY2MWRjNjAyMmRmMThmOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c457965f37ff4ac18bf36365460d2a57",
+      "statement": "`scripts/check-ci-digest-coverage.mjs`, run as a `guardrails / naming` gate, fails the build when any job lacks a guarded digest step or fails to wire `CI_DIGEST_JOB_STATUS`, and a job may opt out only with a non-blank `# ci-digest-exempt: <reason>` marker written inside the job block — so adding a CI job forces a choice between instrumenting it and writing down why it does not need it.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L131-L132",
+          "version": "repo-lines-v1:sha256:cade9785f3169b296e972e143257969886dcbe88ee9fe6e1468ab55c8d454db9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTAzMWU1M2I3NDVkMTEwMmI1MTY3MTFjZmRmNDk5ODNjOGI1Y2IwNjc3ZGVlNDk0MTg4ZTViMmM2ODk4M2E1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmZjgxNzViYzEwMzUzYTgyZmRmOTE2NWJkZmNkY2I0MDY0M2UzZDRmNWI3YWZmNGMwMWUxOGI1MWY4Njc0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY1YmQyOWU0ZmEyOWIyMGU1MzMxYmExZWFjOTYzOTFkNDQ5ZGI3ZWI3MGJhNGM3ZTk2ZjllZmM2OWI3MTc1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGM5MDA2MDJiYTY1N2YxMGY1MzcyYTk3MDNjNjNkODg1NDM0NjY4YjJjMjMyYjg4NDcwMTAzYWEwNGI0MWVlMyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-ci-digest-coverage.mjs#L244-L266",
+          "version": "repo-lines-v1:sha256:03199b4663ec2d7759241f67d0e916861a29e1870ea35b5526f26343f11508ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNDViNmNmNjM5Nzg2NmNlMzZkYzJhOThkZjY4MjkwZThhMzJhNjRiMTBjZDg3ZmQ0NjU2YWRmZjA5NmQ4MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhZDlhZWI2OGJjZjU0MzBhNjM2ZjBiZWRkN2MyNjI3YjBhNDdlYjg5NGFhOWFhYWNiODhjOTRkMzVhZTNmNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzM2ZlMTNmN2VlYThmYjg2MTBlNTdkNzg2OGU1NjhkNmQzMDMxNDkxNzhmMTk5OGNjMDk5N2IwN2EwNDNiOGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e21055f54b37493cbfd8b6325287c954",
+      "statement": "Coverage is enforced per STEP as well as per job: \"at least one wrapped step per job\" was insufficient because `guardrails / naming` passed with 2 of 16 `run:` steps wrapped, neither of them a gate, so a naming-gate failure published the logs of two unrelated steps. Every `run:` step must now be wrapped or carry its own justified `# ci-log-step-exempt:` marker, and the two markers are not interchangeable — `ci-digest-exempt` is job-scoped and `ci-log-step-exempt` step-scoped, each with its own blank-reason check.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-ci-digest-coverage.mjs#L280-L310",
+          "version": "repo-lines-v1:sha256:1a2caf832a3a81156555633f65f4324be5ec48099f0c303e8dc1036628fc03e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNjRlZTliYjM5ZGI2ZTU0OThjZjg5NDdmMzVhNDAwOTQxMGIxMTQwZWJkNTIyZTk0MDM2OTE4OTIwMWRhNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNWU2N2MxYmI4MmVhYmUzYzNlZGQ1Zjc3YTVjZmJhZDBlMmRhYzk1M2EyNzRjZTQ3YjcyMzNhMWUwZWMzYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0MzFhMmYzNzY2ZjY3ZTYxMTk1M2Y0ZjZhYjlkMGM1OWExM2Y4MTNkMTk1ZDk4MTAzMjgwNzQ2NmY4NTlkOGIifQ"
+        },
+        {
+          "resource": "repo://scripts/check-ci-digest-coverage.mjs#L58-L80",
+          "version": "repo-lines-v1:sha256:23a0f07b8243b589274c1f28b93ea4295065366a3a5b1e1c193757b2acee8ea9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmMzU5ZmE2YjcyYjA1OTE1NzlmMTgwNDcxMzExMjc5NDFmMDY3NDU4MjBiNDgwOTNjYjlmMDlmNjNhZTNmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNDkxNWE3MDUyMDQ0ZjEwNjZmMDI1YzUwZGVhZWE0OWZjNTNmOTk2YWYxYWYwYWQ4ODU5NTYwYTcxOWY2ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1NWJmM2Q0MDc0YTEwOTMzNzdhZDk0Y2EzMDMzYTZjN2YzYzRmZmYxZTJhNzE5ZGM4NTMzNDI1YzY0OTU1ODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2282a70f55ea4a0891c8231c0a2bcdfa",
+      "statement": "Coverage is also enforced per COMMAND: the rule was decided by a substring test against the whole `run:` block, so a multi-line block passed if the wrapper appeared anywhere in it while every command above that line ran unwrapped with no log and no `_failed-step` marker. Measured 2026-08-29, three live steps had a failure path outside their wrapper (`cd-deploy / prod-apk`, `devcontainer-image / build-publish`, `wiki-maintain / maintain`) and the gate reported all three clean; the replacement reads shell line by line and is explicitly a heuristic floor, not a parse.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-ci-digest-coverage.mjs#L205-L234",
+          "version": "repo-lines-v1:sha256:f73b57292460c983bf889c705c30051b102f77b31b38f78cc9a9d0fef6e609ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5MzhjNWIyMGZkNWZhMjk4MTI1NDg1OGZhNzgxZGVhY2Q4YmViNDJkZjFmNDMxZTMwNDA4Y2JkNGY0OTk0NmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a954d9a624e149e5ba23ab2077889f59",
+      "statement": "The coverage gate checks PRESENCE, not REACHABILITY: it reads YAML and shell as text, so it can answer whether a command is inside the wrapper but not whether the wrapper can actually run where the step runs. Four ways wrapping has shipped present-but-inert are pinned as regression cases — `working-directory:` on the step, a command beginning with an env-var assignment, a conditional `Checkout`, and a command outside the wrapper in the same block — and when a job dies in seconds with no digest content the wrapper's preconditions should be suspected before the code.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L455-L477",
+          "version": "repo-lines-v1:sha256:2cbea260884f896eea6f93a2706ccd5fbfbb9458e715d0b37d4c80cb537f39f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjODA3Nzg1ZDgzNjJkMTcyMTYyZjI5OGM2OGFlODc1Y2E0YTEyNTU0NDU3NGNmYzQ0NGQzMjI4ZmQ3NjMzOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZTQ5NTk4YzUxYTUyZTM0MThmY2M5ZjFjNWQ3OTFhOTg3YTI3YzllN2YwNWNjNWJhYTc3N2U2Mzc2YzM1ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyNTYxZjYyMjdhNjk2ZDcwYjA5MjlkZWIyMmJlNzEwYzNmMDFmZDFhODFlYjg3ZDUxODhlY2FkZjQxMTEyNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5M2RiNmJmOWVkMTY2YmFlMTliODg3MGEwMmYwOWEyZjIxNGZiZGQ4OGZkYzRkZmYwZTg5MjJlZjcwNWUwMzIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-ci-digest-coverage.test.mjs#L340-L342",
+          "version": "repo-lines-v1:sha256:f026f27b234b01681ef41a7a87cabfa6cccf20038ba7a68020af01ba89efe2f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2QwMmRhOGZhMWEyNGI3MDdhODZkM2E1ZTc2NjQ3YTg4ZjcxMTQxZjRlMzg4YzBiNjFiZWZiYzAwYzBhNDYyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQ3MDI0OTlhY2ExMDMwMWQ1OTdkNGYyNjNmZTU4MzYwNWM0NjQxYTlmNmQwYzhjNTdhODY1ZWNjMmRkNmU1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzZhMDZjZjQ2NDBkYzg1MzVkYTVlNWY1YWFjMTlkZTQzMzc3OGQwZDE0M2IxNWM2MGM5Y2IyNDI0YTQyZjBhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTdmMGM2YWU3ZDA3NjQ1Yzk5MDU0ZDFjNjI2NTQ0OWVmYzU0MGJkYzVmYzI1MzZjZGJmNWIyZDUzYjA2OTRmNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a787601ba31423fadb7f3980f548b27",
+      "statement": "Step logs are read IN-JOB, not by a host-side reader: `Publish failure digest` is a step in the same job, and in the container executor every step of a job runs in the same container, so the digest reads `$HOME` before teardown and pushes the evidence out over the forge API. The tempting contrary story — that container-job logs die with the container and must be relocated for the host — is wrong, and the measurement that fed it (no container-job captures left on the runner) is evidence about leftovers, not about diagnosability.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L385-L420",
+          "version": "repo-lines-v1:sha256:1c7f5a4a2f170df852fadf1fd774636d570c7c15049ce118b88b7a1acf23efe1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZmM3NDI5NTAxZjZkYTFkMWY4YTdlYzIyOTRlMWNiMTM4MjY0ODIyZDdlODVhMjI5NDIwZDZlMGM2MGM0NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZGE4NzllMzJhODczMjlhMTY3MGYzYWVjNjUyNjgyZWU1ZTg4MWI4MWQxYjY1M2YzMDBlMDQ1MDQzZmUxZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhNjU2ZWIwNTMxYmU1M2RhMmYyZjA2NWNkNWYxMTg0MzZlMWE3MDg4ZGI1ZTBjM2JhN2NmOGQ0YjhhYWYwNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyMzc2ZTQ4M2FlMmU0NTYzNDM2MDIyOWFhOTQ0NjYyNTAzZWZlMjUxZGMzY2UwMzQyYmE5NjY1NTU3NWU1N2QifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L1-L8",
+          "version": "repo-lines-v1:sha256:d7bdfc466fef0a7db03d62a7cb3c7104db551edd96219a16d1631c00deec12dc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ5NWZjMDRhODBjOTUyZjQ5Y2U0MTg4NjI3YzUzYjBmYmU4YzQ0MDQxYjk1MmQ1OTJhY2QxZGU5OTg2MTQ2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNlMDM3NDNhZDU3NzdlNWQyYjlhZjM4ZmFhOGNkYjMwNmM5MzZhNDEyZmVkNTFlOGUwMzY2NmIyMGFiNjZiMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQyY2FkZWFkMGUyZjg2YTYwODVhNTIxZDBlNTAwYWVkMzQyYTliZGUzYTFiMTQzZTM5MGE5Y2EyOTZiM2RjNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_844538b4d8f74311b328eb186e321407",
+      "statement": "Wrapping a step uses `bash scripts/ci-log-step.sh <log-name> <command>` for one command and a heredoc form (`bash -e /dev/stdin <<'CI_LOG_STEP'`) for a body that needs a shell, which needs no escaping. `bash -e` matches the runner default and `-euo pipefail` must not be added because `-u` and `pipefail` can turn a green step red; inside the wrapper `pipefail` is load-bearing because `cmd | tee` returns tee's exit status and a failing step would otherwise report success. Only the first failing wrapped step is recorded, a timeout is recorded with its own reason, and the legitimate exemptions are steps before checkout, the digest step itself, and `uses:`-only steps.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L479-L513",
+          "version": "repo-lines-v1:sha256:c370f7f1f22f08c53c7264cf271621701bb0a144d88137d4ed7ad3e659fc01a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMTQ2Mjk0NTAzYzJmYzJjNGFiNTNiNDEzYjI1MTVkZDY1Yjc1YTFmZDcwYTI0OTg5YmYwMTY0N2I2ZjkyZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MmY0ODc0MGRjOWMyYjcxY2I2YjhiODBmZWVmNmMyMjg1OTJlMDY3NDFhMDE5YTcxNmY4ZDI1ZjA2Y2RkNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3MzY4MjBlYjQxMDRlOTdmZDZhMTM3NmQ5NWE3NmIwY2U3ODlhYmI5MGZhNjBiNmRiMzcyNDNkOTk4ZjczNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwMTljN2Q4MTE2NmQzMDEzZjNhODBmYmFjNTBlZGY0ZjA5NmQzMjA0NjNjMWQxODBiN2Q0YmU4YjRmYjcwOGQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L10-L12",
+          "version": "repo-lines-v1:sha256:3d8ff877169121c52fa43218ba0c98547cb78bd15d85a50f4538eded603e7e8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2E5NmFhY2I2ZmY4N2U0Yjk2ODUxNmViZTE4YTIxZjM1N2I2OTQ5MDEyM2U4MWFlN2U3YzdkNGMyM2FiYTBkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJmZjZlZjVmMzdmMmVkMDIwOWZiMDJlOGI1MmNmMGM0NDJiZmIwNDgzNDM5NWY3ZjUzMDlmM2JjM2FiM2M2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTEwOTI3ZGI1MzZmNzEzMTVjOTRjNzgwM2NmYmU1YWEzZjg5YzcyNDBhZTQ4NDZjZDFlMzQzNDczN2FjMTVkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNkYmYwMDM4OTAyOGI2NDAxMDRjMTVmMzFmNWExOThjZjAwNDcwM2E4NDk1MzZiZjdmZDIzYjk0YWNlNGZhZSJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L152-L169",
+          "version": "repo-lines-v1:sha256:e457946abd727a608a0fb11b5a9521674739982f3d6532a424d417ddc775d178:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMDE4N2ZiZTQ1MWQ5MzgzNjcxOThlMjE2N2QyNTYzM2VhNDEwY2M2NThkYTE2OTBmMjQ4NWNlOWIyNjc3NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDAwNWRlZTQ3YzhkNjVlYzBjN2M0YzkyY2UwMTVlMTQxZDVmZWFkOTQxMGQ3OGEzMGVkNjg2NmY4NDQwYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliYTY2Y2I3YzFjNDNhZmQ4YmU5ODcyNGE4Y2I1NzA4MmM3YjdjNTgwMDMxNDRjMjBmYzFhOGQ4YWEwNzMzMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_67c90a69838e47d9863c557a70f7d5ab",
+      "statement": "The step-log directory is scoped by run AND by job (`$HOME/mcm-ci-step-logs/<run-id>/<job>/`), because `app-e2e` and `dast` run as two jobs of one run on the same self-hosted runner and share `$HOME` — a run-scoped directory let whichever failed first write the marker and the other publish it as its own, measured on run #1683 where the `app-e2e` digest reported a `dast` step. There is deliberately no run-scoped fallback, since one would keep reading the sibling's marker on exactly the overlapping runs the scoping exists for.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L27-L41",
+          "version": "repo-lines-v1:sha256:453cf1c96caf0db5a3706999b977ae4c4ad6288e26a8d9fd6e54b5502dcaeec4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNjM0ZjM1NTQ0MWRhMjg5MjlhNzgzZTgzNTZmZGI3M2U0NjQxYzUxZjRmMmNhODMwM2Y1OWI2ODg2NDYxNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MjEyNGEzMWI4NTYyMjU0ZjBhNTg3ZGU0YzQyZGM3ZThhNTQ5OWMwYmIyOGYwZGIxZDA0Y2M4YzE4MzJjMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MDA3MWYyYmZiNTZhMzcwYzQyZjFjMGM1MjU5ZmZmOTFiMDUwNDE4NjdjMmFiOWE1OTZkNjdmMTc0ODlhZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlMmFhOTAxNzUwZjY0NzViNzkxODg3MDE5ZmFmZGViOTI2YTQ2Yzc3YmYyNDQ0ZGYyOWFkMjYyNTk1MTU3YjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19e795c2a6b04e278ecae92bc81de125",
+      "statement": "Instrumenting a host-executor job carries two deliberately accepted costs: captures are unredacted because redaction happens at publication time and the wrapper does none, leaving raw output on the persistent runner for up to a best-effort 7-day prune; and the wrapper writes the full output, so the 200-line/32 KB caps apply only to the digest excerpt. Both were accepted for the diagnostic value of the repository's longest and most failure-prone job, and the lever if disk becomes a problem is the retention window, not un-instrumenting the steps.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L515-L531",
+          "version": "repo-lines-v1:sha256:0292092495b8df9d312305e51e3b1b78fcde69d86ee6d271f2d92a70b74e6cd0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YTYzMDdiNmQyYTQ1N2QzNzZmZjc5MzQ3Yjg3MzNlYzY4NDNjNTQzYTEwM2M2ZWI4MjNhZDEyMzc3YTk0Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MjU4OGY2OGQ2ZTliMTExOTZkNTFhYTMxMjRkMWExNWY5N2NjOGU1NTEwMGQyNjcxNDYzNDZkODJiMzI3MjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5MWVmZGIwNjRjOTQxOGUzOGU2ZThiMmY0N2Q0YmQyNjZhYzUwNjFkOThjMGUzY2M4MDdiMDhjNzNlMDAxNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlOGVkYTc3ODM4NzllNzhlNWJlNDE1MzdkNDAxNDBhOWYwNDZkOGRkNWI4MTY0OWQzM2FkZDJlODkyYzFjYzYifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L43-L44",
+          "version": "repo-lines-v1:sha256:9ea43d082aa5ede67b461be174ceef24e3342bae60faa71d5dafcb40f20b9baa:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDliOTU5YzBkZjg1MDcyZTAxZDU4Mjc3N2QzYzcwMDU3Yjg2ZGYxZWUzY2YyZDMxYWY3NzU0Y2I3YmUwZTU2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRmZGE3ZmFkNjk2MDkwOGFlODcyYzg2Yjk0MWNkMjY0MDc5ODA5MGUxNmU1NmYxNTA0MDVkODdmOTc5YTBjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGRhYjkzNDQxM2IxMjkyNjM4NzdkNzRhZDY1M2QyMzdmMTEyMDFlYzk1YTE1Yzc5N2YyYjk2MDQyMTc2ZDQ3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjY3NjMyMDAwMGNlZjkwNzVjMjg5MzI5M2VhOWM1MjdmMDFmZWNkNzk4MGZjZjBhNzNhZjMyMTQyYzgxM2I5OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8be963c9b2274bd484b3f445c5a797e1",
+      "statement": "A bundle's `logs/mc-service.log` is ordered by completion, not by start, because mc-service emits its domain event at the END of the handler in the same emit as the response; real ordering must be recovered by subtracting each line's `duration_ms` from its timestamp. This manufactures races that never happened — item #568's fully-reasoned cross-worker hypothesis was built from four adjacent raw lines and disproved by subtracting durations — and `authorized_party` plus `preferred_username` identify the actor and worker, while the `owner_id = token.subject` scoping means a foreign worker cannot read or delete another's collection at all, so two lines with different subjects cannot be acting on the same collection.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/collections/delete.rs",
+          "version": "repo-file-v1:sha256:58762f3131b77775fa53022f12260c7f701a37a2fdcf35d6769e656d466ce1dd"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/collections/list.rs",
+          "version": "repo-file-v1:sha256:f88e7abc3194b6f92e0d89ec0948504f3fd7aa93a924474d3e61c1973b6c3f21"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/logging.rs",
+          "version": "repo-file-v1:sha256:52f610c828a519a2484564e3c6d1c3137eaf85813d99f9704bed838eeb6772fe"
+        },
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L75-L129",
+          "version": "repo-lines-v1:sha256:fd71e0d9c53c1cbbaf37a7675f616e4a2072907b1299b22dca2b968361109d87:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OWY0YzVkOGU4MmVhY2I1NzU5NTA5YWY2NmYxN2Q0MTExNzU4NzczMjYyYmM4Y2Q1YzYzNjY1YWVjNjMzMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ODQwNDA3YTNiOGU2ZGNiOTc3NzYzMzQ5NWFmN2RmZWZhMWE0NDQ0YTUyNGIxZWI5ZThiMmMwNDkyODcyMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNzZjYzA5ODE5ZTNkYTA4M2VlMzMwZGJkM2QzYjQyYjUxNGIxYTY2MmUzMTUyOGYxODFiYTg1OTQ0NTJlZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0MjZhNjE0YzQ4Nzc4YjUwNzViOWM2NDQyMzAyOGI5YTUzYjE2ZGY0ZTU1ZGJlYzA0ODMyN2EyZDc0NzkyM2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1baa6feb2b44574b0d7c60f9b3263b8",
+      "statement": "A gate's verdict must be a property of the commit, never of the contributor's checkout. Two gates violated that in opposite directions at once: `check-ci-digest-coverage.mjs` failed CLOSED on a CRLF working tree because `split('\\n')` left a trailing `\\r` that the job-header pattern absorbed via `\\s*` but the exemption-marker pattern could not match, and `check-openwiki-okf.mjs` failed OPEN because an untrimmed timestamp parsed to `NaN` and the staleness check silently never ran. The rules are to split on `/\\r?\\n/` at the split rather than patching the one broken pattern, to normalize a value where it is read rather than at each use, and to name the platform a measurement came from.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L533-L596",
+          "version": "repo-lines-v1:sha256:a32ff50b49b3d241bf503900e3bb6444f2ae07851945bdfec245d92dfe9adfc1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNzA3MDFhZDYwZWI5NDZjNDQxMTUzMGQ4OTY0OTA3ZWEwN2ZhNjcyODE5YjUyNzUzYWQwOGE0OTlmM2JmYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMzRlNzU1YWRiOTIwMGJlZjQ5NTI2M2JlMjg1OTlkNjExMjMzNDFmOWQzMWY0YWMyZmU4YjU3MzY2NzBlOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmMWQ4NTRjYTM0ODk5ZDJlNjJjODA3ZjExNjRiN2Q3OWZhNWFlYmUzMDg2ZWJjZjA1NDE4MmU5NTdhN2E5NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMTlhYTAyM2MyODRiZGZkZWMwNDM5ZTMzMzU2Zjk3MTgxMDZlZWE1NTZkMzI1YTk0Njk3YzY2OGJkOTdhNTMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-ci-digest-coverage.mjs#L41-L57",
+          "version": "repo-lines-v1:sha256:92b48e8c749a1db041689f7b3b2e32dd632213e6965c955b5a7c90bde9b49571:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5NjVmYmUzZjVmMzQzMDkzZDk0ZDlkN2RmM2NmYjlmYzc1ZjFiNDI0ODQ4OGEwMWIyYTRmY2ZhZmM4NmI2ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyODkzNjRkNTM1ZmFjNzVmOTQ5ZDM5ODdhNjE5NzY2ZmQ4YzM0YWYxZDViZDI2Yjk1OTRlMjQzOGNmNzc4MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_26e7a188801b4f14b020cd0de482f55d",
+      "statement": "`.gitattributes` is a second layer rather than a substitute for tolerant parsing: it declares `eol=lf` for the file types whose content is read and split by code — shell scripts, workflow YAML, markdown, and the JS/TS family — but it governs future checkouts only, so an existing Windows clone must be re-normalized once, and a fix must be proven by feeding the parser both the LF string and a derived CRLF variant rather than by writing a fixture file and reading it back.",
+      "evidence": [
+        {
+          "resource": "repo://.gitattributes#L7-L40",
+          "version": "repo-lines-v1:sha256:a945d1f98ab5af9c84ef39fcc9d41ab087a46875392663d1c9dedc849c796da1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZjM4NGY5MDE5NzE1ZGQwMTc3ZjAwZWY2M2Q4OGNkNDlhNWVjNzQyNmQ3OGQ4NDgwYzU2MjFiOTdjNzFhMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDhkZWQ3YzU4ZTlkNWU2OTc5ODFmNWI3MDZlZTRlNDkzNDQ3ZDYzODg0MDQ1MTg3MGRlMTIyNDhkMmMxMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MWJiOTNhYzhmZWI2NWMyZDhjNjFkNjI0YzRjODcxYjQxODQxNmMwMzM3NzAwZTg4Njg5NzI0OTI5MmFlOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4MDY5YTg4MDZiMDEwN2I5M2FmYmFjZDdhMzVjMjg1YTIxNDgwMjVmNDQ1YmNmNDYyMzcxNzNlNTBiNzczNjkifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L577-L596",
+          "version": "repo-lines-v1:sha256:916f7a3fca060340a88d730070b2c4952873508226c52c710bf4c227bac928b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwZjhjZmZlMTM5M2RjYzk5OGJmM2IwMGQxZDdkZjdiOTk3M2E1NmFkMDY5ZWZkMDExM2Y3M2Q2YTYyMDE4NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMzRlNzU1YWRiOTIwMGJlZjQ5NTI2M2JlMjg1OTlkNjExMjMzNDFmOWQzMWY0YWMyZmU4YjU3MzY2NzBlOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxMjRkMTk5ZDM0ZTU1MGE2Y2NiNmQ1NzM2NmVlODkzNmMxNDA5ZWQ0NTVjMWQ4Y2RkYjI4Y2Y5YjZlZGFmMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMTlhYTAyM2MyODRiZGZkZWMwNDM5ZTMzMzU2Zjk3MTgxMDZlZWE1NTZkMzI1YTk0Njk3YzY2OGJkOTdhNTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_788634865f2642e48fa11b4a696e3a4e",
+      "statement": "The evidence scripts are zero-dependency (`node:` built-ins only) because `guardrails` runs them before any install step, and `scripts/__tests__/*.test.mjs` runs in CI under `guardrails / naming`, so new tests are gated automatically but must be deterministic, offline and token-free. Test fixtures assemble planted credentials and tailnet-shaped hosts from runtime string fragments and must not be \"tidied\" into single strings, because the secret and topology scanners cannot distinguish a fixture from a real leak; `--selftest` is a thin smoke check and the test files are authoritative.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L598-L663",
+          "version": "repo-lines-v1:sha256:9513cbccc86e6a90772b082daf688105a86ab0f805884899c0049a876e2f9797:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlMDc5NjFmZDg3YzJiMzgzMTgwNDY4MTdiZWI4YTcwZDM5OTA0OWI1MDhkMDc2MWFiM2QwYWM0MDEyNzM2YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YjBkNjMxMzc3ZTJhN2M2ZmE0ZTAwZDlhMDU5NDQyZjE0MGRlYTNmNDg3ZGY2MzliNzU5MzAyZmY0YTQ5MWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MjY5M2QwYWMyMGE1YzE2ZjQwZWMxM2RkOWRmM2Q0YTU2NjFmNWUyODkyYTQzNjUxZTFiZDUwMjBiMDE1MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-digest-redact.mjs#L22-L26",
+          "version": "repo-lines-v1:sha256:3071bae7ed248cf4a6d5a5f5c7d0398c853c21baf6185290265112c6f7ce6a03:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUxZGU5ZjQzNWY1ZTYzMWM5ZDA4YzQxNzVmNzc0YzVhZTgxYWM2OTFjNDcyM2I3MDQwODI0ZGViMjFkOTkxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Q0M2JjMTcyYjA3YTBkY2I4Mjg1OTE0MGUxZDA5NTAzMzE4ZGNkYjU0NTYyMmQxMTQ1ODA1OGViMDU2OWE1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzFiOTFkMGFiOTkyMjQxMTI1N2EzY2FiOWJlZGRmZjgyNTE0ZWU3MDU0NmJiOTI4OTc1Y2EyNzFkMmNkODRiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzYzMDgzNThjZGFmMWY4NWI2NDEzOGE1MjFiMTZmY2NiZjQ3MjMxYWZjODU1ZDBiZTU1OWFhZTdmMTYzZGI5YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f3f71fe77dee4cee9f7eb84476a69863",
+      "statement": "A green job that is not `app-e2e` publishes nothing (`digest-outcome=not-needed`), so a measurement that must survive a passing run is exported to `$GITHUB_OUTPUT` and posted by a recorder step as a commit status: `always()` so a failed run still leaves the record, `continue-on-error` so the curl cannot become a second gate, the state always `success` with the finding in the description, values carried raw, and a context name matching no required glob verified against the live branch-protection list.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L654-L663",
+          "version": "repo-lines-v1:sha256:e75196746f3798c6eaf1dd00e9c79c3042400a9bdf6f0fce85f06fa16ffc8d3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyN2JmN2QxYzk0MGZmYzNlYWY5YTg0NTYyYmJkNzcwNzI1NGY5ZjA1MzgyNzE0NjEyMzBiNGI3YTIyMDkzY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YjBkNjMxMzc3ZTJhN2M2ZmE0ZTAwZDlhMDU5NDQyZjE0MGRlYTNmNDg3ZGY2MzliNzU5MzAyZmY0YTQ5MWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4ZWFmNjcyZWUzMGYzMTAxMDk2ODhiMWRjODA1ZjBmM2ViMTAzM2JjN2U2YzQwY2ZhMDVkYjNjMzdiYWI0YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs#L133-L133",
+          "version": "repo-lines-v1:sha256:e23067038c3c7997182b51d43ec954c65e8435891a018e97d54e97e102eff3a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTIzMDY3MDM4YzNjNzk5NzE4MmI1MWQ0M2VjOTU0YzY1ZTg0MzU4OTFhMDE4ZTk3ZDU0ZTk3ZTEwMmVmZjNhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTIzMDY3MDM4YzNjNzk5NzE4MmI1MWQ0M2VjOTU0YzY1ZTg0MzU4OTFhMDE4ZTk3ZDU0ZTk3ZTEwMmVmZjNhNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM0NDkxODg3MjU5Njc0YmIzNWIxYzMzNGU2YjdkYmFlMWViMjZkNTE5Njg2NjU4YzI0N2Q0NTZiYzQ2MzUzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmVkM2I1Njg0ZTZjOGYxYjk4ZDAyNzg5N2M1YzkyMmM5ODRlZWVlMzM4YTIyM2QyMDc4ZjA5YzUwNTc4NDhhMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_05ec4904f68d4a4c9f2d5b052e9be267",
+      "statement": "On a red `app-e2e`, the `Run health` row is read first: roughly one run in seven collapses, with every agent/dock spec failing at once, `flaky=0`, and about a quarter of the usual gateway turns because the client stops sending them. `verdict=collapsed` means the failures say nothing about the diff and a re-run is warranted; `indeterminate` is normal on a pull request (gate tier only); and a collapsed run always fails, so a run that produced no digest was not a collapse.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L645-L653",
+          "version": "repo-lines-v1:sha256:8455130baa44114418af19837d8996659eb848c64554a0680147cc7a8e078321:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGZiZGY4Mzc3NGUyNjU4NTI0OGE4ZWExNjUxMjEwZjE1NjkyZGYxN2NmZTJlZmQ5N2JiZjAxZWU5OWU5ZmI0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGJjYTk0M2UwNWZkZjNmYTdmYWYyY2E0ZGE2NzZkMDI0MTM1NWVkNjhjMzljZDY2MjlkZTMxNmRiYWQ1NGZmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjNkZjExOTM5ZDMzMjA5YzBjZmJhZTc0YzVlOWE1ZTU0NjFhMjhkZDAxZTQ5NmUwNTBhMjZmYzE3NDc5MzlhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ1M2M3NDkwZWFiNDNhYjBjNDU1ZmZiMGY0YzQ4YTU3YjI1NTg3MWE0MGZiZDEwODFiNGU4OTkwMWE4YTMwYyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-10T09:54:25.792Z"
+  }
+}
