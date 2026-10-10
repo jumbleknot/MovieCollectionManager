@@ -95,7 +95,7 @@ if ! docker image inspect "$BASE_IMAGE" >/dev/null 2>&1; then
     echo "    NOTHING WAS TORN DOWN — the dev container is untouched."
     if [ "$BASE_IMAGE" = "mcm-devcontainer" ]; then
       echo "    This is the bare fallback tag, so MCM_DEVCONTAINER_IMAGE was not set. On the sandbox"
-      echo "    it lives in ~/.mcm-sandbox-env; see docs/runbooks/devcontainer-sandbox.md §8b."
+      echo "    it lives in ~/.mcm-sandbox-env; see docs/runbooks/devcontainer-sandbox-lifecycle.md §8b."
     fi
     echo "[verify-reproducible-recreate] FAIL (SC-005 — base image unobtainable, recreate not attempted)"
     exit 1

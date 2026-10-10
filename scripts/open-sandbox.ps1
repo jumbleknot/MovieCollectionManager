@@ -130,7 +130,7 @@ if ($row -match '\brunning\b') {
   # a compiled-in constant somewhere below 53.7 s - there is no flag, no DOCKER_SANDBOXES_* variable,
   # no settings file and no daemon option to raise it (checked on v0.39.0 and v0.43.0). sbx gives up,
   # the CLI exits, and that exit starts the ~30 s idle-stop which then kills a VM whose dockerd had
-  # been serving the socket the whole time. Full mechanism: docs/runbooks/devcontainer-sandbox.md 7f.
+  # been serving the socket the whole time. Full mechanism: docs/runbooks/devcontainer-sandbox-lifecycle.md 7f.
   #
   # The exit code is a CLAIM; SSH answering is EVIDENCE. Prefer the evidence. This does not weaken
   # failure detection: a genuinely broken sandbox never answers the probe below, and we then throw
