@@ -37,7 +37,7 @@
 // repository has no cost measurements, and no requirement in this feature asserts a spend ceiling.
 // Do not describe these as cost controls, and do not add a monetary one back.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
 import { join, dirname, resolve, basename, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -51,6 +51,7 @@ import { conceptStamp } from './openwiki-stamp.mjs';
 import { carryClaimsHash, CLAIMS_DIR, PAGE_MANIFEST } from './openwiki-claims.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
+import { stepLogDir } from './ci-failure-digest.mjs';
 import { isDeadlineStop, splitByEscalation, escalationPolicy, invocationEffort, nextEscalations, stillFailing } from './wiki-escalation.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -1743,6 +1744,28 @@ export const isRateLimited = ({ limited, calls }) => limited > 0 && limited * 2 
 const logSize = (logPath) => (existsSync(logPath) ? statSync(logPath).size : 0);
 
 /**
+ * Keep an invocation's per-call tap lines as a step log of this CI job (item #682), so they reach the
+ * failure bundle instead of dying with the temporary usage directory. Run 4960 failed after 447 calls,
+ * and only the SUM survived — not the per-call prompt sizes that would tell context compaction apart
+ * from a model that stops without calling submit_page. The directory is the digest's own
+ * `stepLogDir`, so writer and reader cannot drift apart. Counts, status and timing only: the tap
+ * never records a prompt, a response or a header. Outside CI (no GITHUB_RUN_ID) it writes nothing.
+ */
+export function archiveUsageLog({ usageLog, pages = [], effort = null, env = null } = {}) {
+  if (!env?.GITHUB_RUN_ID || !existsSync(usageLog)) return null;
+  try {
+    const dir = stepLogDir(env);
+    mkdirSync(dir, { recursive: true });
+    const target = join(dir, 'wiki-usage.log');
+    appendFileSync(target, `# invocation pages=${pages.join(',')} effort=${effort ?? 'default'}\n${readFileSync(usageLog, 'utf8')}`);
+    return target;
+  } catch (err) {
+    console.error(`[wiki-maintain] could not keep the per-call usage log: ${err.message}`);
+    return null;
+  }
+}
+
+/**
  * Run slices in order, verifying each, stopping at CONSECUTIVE failures or at either budget.
  *
  * The original rule was "stop at the first failure", on the reasoning that a slice producing nothing
@@ -1777,6 +1800,9 @@ export function executeSlices({
   deadlineMs = null,
   effortPolicy = escalationPolicy(),
   sleep = sleepSync,
+  // Where to keep per-call usage (#682). Null by default: the test suite runs IN CI, and a stub's
+  // tap lines must not land in the test job's step logs. Only the CLI path passes process.env.
+  archiveEnv = null,
 } = {}) {
   const runRecord = record ?? readRunRecord(root);
   // Time the generator may still use, or null when there is no deadline (local runs).
@@ -1948,6 +1974,7 @@ export function executeSlices({
 
     // 078 FR-022: the usage line and record name the effort this invocation actually ran at.
     const spent = invocationUsage(usageLog, usage ? { ...usage, reasoningEffort: effort ?? usage.reasoningEffort ?? null } : usage);
+    archiveUsageLog({ usageLog, pages: partsOf(slice).flatMap((p) => (p.pages ?? []).map((page) => `${p.area}/${page}`)), effort: effort ?? effortPolicy.explicit ?? null, env: archiveEnv });
     rmSync(usageDir, { recursive: true, force: true });
     usageSummaries.push(spent);
     console.log(spent === NOT_CAPTURED
@@ -2420,6 +2447,7 @@ export async function executeRun({
   effortPolicy = escalationPolicy(),
   baseBranch = 'main',
   remote = null,
+  archiveEnv = null,
 } = {}) {
   // Reconcile FIRST — before planning, not merely before generating (item #619). A proposal closed
   // unmerged returns its slices to the backlog and rolls the marker back (FR-016b); a plan computed
@@ -2513,6 +2541,7 @@ export async function executeRun({
     dryRun: opts.dryRun,
     baseCommit: plan.baseCommit,
     effortPolicy,
+    archiveEnv,
     ...(invoke === undefined ? {} : { invoke }),
   });
 
@@ -2723,6 +2752,7 @@ async function main(argv) {
       effortPolicy: escalationPolicy(process.env),
       baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main',
       remote: process.env.FORGE_REMOTE ?? 'origin',
+      archiveEnv: process.env,
     });
   }
 

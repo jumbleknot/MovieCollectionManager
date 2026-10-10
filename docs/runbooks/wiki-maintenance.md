@@ -343,6 +343,16 @@ It is an **estimate** (it reconciled with the Fireworks bill to the cent on the 
 `PARTIAL total` means some invocations were not captured. `failedCalls` counts non-200 responses:
 rate limiting under page concurrency shows up there first.
 
+**The per-call lines themselves are kept in the evidence bundle (item #682).** In CI, each invocation's
+tap lines are appended to the job's step log `wiki-usage.log`, under a `# invocation pages=… effort=…`
+header, so they arrive in `ci-failures:<runId>--maintain` as `step:wiki-usage`
+(`node scripts/ci-status.mjs failure --run <id> --full`). Read them when a page's worker "exited without
+submitting": `uncached + cached` per call is the prompt size, so a run whose last calls approach the
+170k-token compaction threshold (deepagents' fallback when the model has no profile) looks different from
+one that stopped well short of it. Until 2026-10-10 only the sum survived — run 4960 failed after 447
+calls with nothing finer to read. Counts, status and timing only, like the tap itself; nothing is written
+outside CI.
+
 ---
 
 ## 3. Reading a failure

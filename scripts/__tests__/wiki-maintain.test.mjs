@@ -3016,3 +3016,48 @@ test('US6 run: the record lists each invocation with the effort it ran at (FR-02
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// ── #682: the per-call usage log survives the run, in the bundle ──────────────────────────────────
+
+test('usage (#682): in CI, each invocation\'s per-call tap lines are kept as a step log the digest bundles', async () => {
+  const root = tmpGitRepo('conformant-bundle');
+  const logRoot = mkdtempSync(join(tmpdir(), 'step-logs-'));
+  try {
+    const env = { GITHUB_RUN_ID: '4960', GITHUB_JOB: 'maintain', CI_STEP_LOG_ROOT: logRoot, HOME: logRoot };
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1, archiveEnv: env,
+      invoke: (slice, { usageLog }) => {
+        writeFileSync(usageLog, `${JSON.stringify({ kind: 'chat', status: 200, ms: 5, uncached: 100, cached: 170000 })}\n`);
+        return writingStub(root, 'invariants', ['one.md'])();
+      },
+    });
+    const kept = join(logRoot, '4960', 'maintain', 'wiki-usage.log');
+    assert.ok(existsSync(kept), 'the tap lines outlive the temporary usage directory');
+    const text = readFileSync(kept, 'utf8');
+    assert.match(text, /invariants\/one\.md/, 'each invocation is headed by the pages it was for');
+    assert.match(text, /"cached":170000/, 'and carries the per-call counts verbatim');
+    const digest = await import(pathToFileURL(join(REPO_ROOT, 'scripts', 'ci-failure-digest.mjs')).href);
+    const { excerpts } = digest.collectEvidence({ home: logRoot, cwd: root, env });
+    assert.ok(excerpts.some((e) => e.source === 'step:wiki-usage'), 'the digest collector picks it up — writer and reader agree on the directory');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(logRoot, { recursive: true, force: true });
+  }
+});
+
+test('usage (#682): outside CI (no GITHUB_RUN_ID) nothing is written beside the run', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  const logRoot = mkdtempSync(join(tmpdir(), 'step-logs-'));
+  try {
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1, archiveEnv: { CI_STEP_LOG_ROOT: logRoot },
+      invoke: (slice, { usageLog }) => { writeFileSync(usageLog, '{"status":200}\n'); return writingStub(root, 'invariants', ['one.md'])(); },
+    });
+    assert.deepEqual(readdirSync(logRoot), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(logRoot, { recursive: true, force: true });
+  }
+});
