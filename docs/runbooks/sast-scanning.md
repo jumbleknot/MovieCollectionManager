@@ -9,7 +9,7 @@ blocking `sast` CI gate. Config tree: [security/sast/](../../security/sast/).
 |---|---|---|---|
 | SAST | Semgrep (OSS) | TS/JS tree (BFF + frontend) + Python agent layer | `uvx semgrep@<pin> scan` |
 | SCA | cargo audit | Rust deps (root `Cargo.lock`) | `cargo audit --json` |
-| SCA | pnpm audit | JS deps (root `pnpm-lock.yaml`) | `pnpm audit --json` (+ `--prod` for scope) |
+| SCA | pnpm audit | JS deps — **every committed `pnpm-lock.yaml`**: the root and `tools/openwiki-generator/` (discovered with `git ls-files`) | `pnpm [--dir <ws>] audit --json` (+ `--prod` for scope), per lockfile |
 | SCA | pip-audit | Python deps — **all four** surfaces: `agents/movie-assistant`, `mcp-servers/{movie-mcp,spreadsheet-mcp,web-api-mcp}` | audits each **installed venv** (see gotcha) |
 
 ## Run it locally
@@ -23,6 +23,21 @@ env, per surface). An unsynced surface **fails** the scan; it is never silently 
 > `uv sync` step to the `sast` job. A project directory carrying a `uv.lock` that is not a registered
 > surface fails the scan by design (feature 068) — neither silently unscanned, nor silently
 > auto-included with a runtime/dev classification nobody reviewed.
+
+> **Adding a nested pnpm workspace?** Nothing to register: `pnpm-audit` audits every committed
+> `pnpm-lock.yaml` (item #721), and `sast-scan.guard.test.mjs` fails if one is ever left out of the
+> audit set. Audit is lockfile-only — the sast job needs no `node_modules` in the nested workspace.
+> A nested workspace is audited as `pnpm --dir <ws> audit --json` **from the repo root**, so corepack
+> resolves the root manifest's `packageManager` (a nested `package.json` that declares none, run from
+> its own directory with no parent manifest, resolved pnpm 12.10.1 instead of the pinned 11.25.0 —
+> measured 2026-10-10).
+>
+> A **root** pnpm finding's location is the bare `pkg@version`; a **nested** workspace's is
+> `<workspace>:pkg@version` (`tools/openwiki-generator:braces@3.0.3`). So a root entry anchored at
+> `^braces@` never covers the same package in the generator's tree — that needs its own entry with its
+> own reachability, because the code paths differ. The `OVERRIDE LEVERS` advice is root-only for the
+> same reason: the root `pnpm-workspace.yaml`'s overrides do not govern a nested workspace. To
+> cross-check a nested finding by hand, run `pnpm --dir <ws> audit` / `pnpm --dir <ws> why <pkg>`.
 
 Since feature 068 a Python finding's location is **project-qualified** —
 `mcp-servers/web-api-mcp:click@8.5.0`, not `click@8.5.0` — so an allowlist `locationPattern` can, and

@@ -417,3 +417,66 @@ test('feature 068 CONTROL: other scanners keep the bare package@version location
     assert.doesNotMatch(loc, /^(agents|mcp-servers)\//);
   }
 });
+
+// ── Item #721: pnpm-audit covers EVERY committed pnpm lockfile ───────────────
+//
+// PR #713 gave tools/openwiki-generator/ its own pnpm workspace and lockfile. `pnpm audit` run at the
+// repository root reads ONLY the root lockfile — a nested workspace with its own pnpm-workspace.yaml
+// is a different project to pnpm — so that tree (run with a model-provider credential in the
+// wiki-maintain job) was never audited and nothing said so. The audit set is now DISCOVERED from git,
+// and this guard compares it with an independent `git ls-files`, so the next nested workspace cannot
+// be silently skipped and a hand-written exclusion fails here, naming the lockfile.
+
+import { pnpmAuditSet, pnpmAuditArgs, normalizePnpmAudit } from '../sast-scan.mjs';
+
+function committedPnpmLockfiles() {
+  const r = spawnSync('git', ['ls-files', '-z', '--', '*pnpm-lock.yaml'], { cwd: REPO_ROOT, encoding: 'utf8' });
+  assert.equal(r.status, 0, `git ls-files failed: ${r.stderr}`);
+  return r.stdout.split('\0').filter(Boolean).sort();
+}
+
+test('item #721: every committed pnpm-lock.yaml is in the pnpm-audit set', () => {
+  const committed = committedPnpmLockfiles();
+  // The instrument check: if this ever sees one lockfile, the guard below proves nothing about nesting.
+  assert.ok(committed.includes('pnpm-lock.yaml'), 'the root lockfile must be committed');
+  assert.ok(committed.includes('tools/openwiki-generator/pnpm-lock.yaml'), 'the generator lockfile must be committed');
+  const audited = pnpmAuditSet().map((w) => w.lockfile).sort();
+  const missing = committed.filter((l) => !audited.includes(l));
+  assert.deepEqual(missing, [], `committed pnpm lockfile(s) NOT audited by sast-scan: ${missing.join(', ')}`);
+});
+
+test('item #721: a nested workspace is audited with --dir from the repo root; the root without it', () => {
+  // From the root, so corepack resolves the ROOT manifest's packageManager (the nested package.json
+  // declares none; measured 2026-10-10: a parentless copy of it resolves pnpm 12.10.1, not 11.25.0).
+  assert.deepEqual(pnpmAuditArgs('.', []), ['audit', '--json']);
+  assert.deepEqual(pnpmAuditArgs('tools/openwiki-generator', ['--prod']),
+    ['--dir', 'tools/openwiki-generator', 'audit', '--json', '--prod']);
+});
+
+const pnpmNative = (name, version, id = 'GHSA-xxxx-yyyy-zzzz', severity = 'high') => ({
+  advisories: { 1: { id: 1, github_advisory_id: id, module_name: name, severity, title: 't', patched_versions: '<0.0.0', findings: [{ version }] } },
+});
+
+test('item #721: root pnpm-audit locations are UNCHANGED; nested ones are workspace-qualified', () => {
+  const [root] = normalizePnpmAudit(pnpmNative('braces', '3.0.3'), new Set(['1']), MAP, '.');
+  const [nested] = normalizePnpmAudit(pnpmNative('braces', '3.0.3'), new Set(['1']), MAP, 'tools/openwiki-generator');
+  assert.equal(root.location, 'braces@3.0.3');
+  assert.equal(nested.location, 'tools/openwiki-generator:braces@3.0.3');
+  // The existing root entries are anchored at the package name: they keep matching root findings and
+  // do NOT silently extend to the same package in another workspace — that needs its own entry.
+  const rootEntry = new RegExp('^braces@3\\.0\\.3$');
+  assert.ok(rootEntry.test(root.location));
+  assert.ok(!rootEntry.test(nested.location));
+  assert.equal(nested.scope, 'runtime');
+  assert.equal(nested.blocking, true);
+});
+
+test('item #721: a ROOT pnpm override never yields lockfile advice for a nested workspace finding', async () => {
+  // The root pnpm-workspace.yaml's overrides do not govern tools/openwiki-generator — it is its own
+  // workspace root. Advice to `pnpm update <pkg> --lockfile-only` would refresh the WRONG lockfile.
+  const { adviseLever } = await import('../override-lever.mjs');
+  const overrides = { 'braces@<3.0.4': '>=3.0.3 <4' };
+  const f = (location) => ({ kind: 'sca', location, fixAvailable: '>=3.0.4' });
+  assert.ok(adviseLever(f('braces@3.0.3'), overrides), 'control: the root finding DOES get advice');
+  assert.equal(adviseLever(f('tools/openwiki-generator:braces@3.0.3'), overrides), null);
+});

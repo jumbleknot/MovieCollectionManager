@@ -448,23 +448,60 @@ function runCargoAudit({ map }) {
   return { native, findings: normalizeCargoAudit(native, runtimeSet, map) };
 }
 
-// ── pnpm audit runner (T013) ─────────────────────────────────────────────────
-function pnpmAuditJson(extra) {
+// ── pnpm audit runner (T013; every committed lockfile since item #721) ──────
+//
+// `pnpm audit` reads ONE lockfile: the one belonging to the workspace it is run in. Run at the repo
+// root it never sees a NESTED workspace — a directory with its own pnpm-workspace.yaml and lockfile,
+// such as tools/openwiki-generator/ (PR #713), whose tree runs with a model-provider credential in the
+// wiki-maintain job. Until item #721 that tree was audited by nothing, and nothing said so.
+//
+// The audit set is therefore DISCOVERED from git (every committed pnpm-lock.yaml), never hard-coded,
+// and sast-scan.guard.test.mjs compares it with an independent `git ls-files` so a new nested
+// workspace — or an exclusion added here — fails the guard by name.
+//
+// INVOCATION, measured 2026-10-10 (pnpm 11.25.0 via corepack): a nested workspace is audited as
+// `pnpm --dir <ws> audit --json` FROM THE REPO ROOT. Its package.json declares no packageManager, and
+// corepack resolves the version from the directory pnpm is launched in: from the root that is the root
+// manifest's pin; a parentless copy of the generator's manifest resolved pnpm 12.10.1 instead. The
+// audit is lockfile-only — it needs no node_modules in the nested workspace (measured: 471 deps
+// audited from a checkout with none installed), so the sast job installs nothing extra.
+//
+// LOCATION: root findings keep the bare `package@version` the existing allowlist entries anchor to
+// (`^braces@3\\.0\\.3$`); a nested workspace's findings are prefixed `<workspace>:package@version`
+// (the pip-audit convention, feature 068). So a root entry never silently covers the same package in
+// another workspace's tree — that tree gets its own, separately justified entry or it blocks.
+
+/** Every committed pnpm lockfile, as `{ lockfile, workspace }` (workspace '.' = the repo root). */
+export function pnpmAuditSet() {
+  const r = run('git', ['ls-files', '-z', '--', '*pnpm-lock.yaml']);
+  if (r.status !== 0) throw new Error(`[pnpm-audit] git ls-files failed — cannot discover lockfiles: ${(r.stderr || '').slice(-300)}`);
+  const lockfiles = (r.stdout || '').split('\0').filter(Boolean).sort();
+  if (!lockfiles.length) throw new Error('[pnpm-audit] no committed pnpm-lock.yaml found — refusing to report a clean JS audit.');
+  return lockfiles.map((lockfile) => ({ lockfile, workspace: dirname(lockfile) }));
+}
+
+/** Arguments for `pnpm audit` on one workspace, run from the repo root (see the header). */
+export function pnpmAuditArgs(workspace, extra) {
+  return [...(workspace === '.' ? [] : ['--dir', workspace]), 'audit', '--json', ...extra];
+}
+
+function pnpmAuditJson(workspace, extra) {
   // Queries the npm registry's advisory endpoint — network-dependent, so bounded-retried (item #449).
   return retryTransient('pnpm-audit', () => {
-    const r = run('pnpm', ['audit', '--json', ...extra]);
+    const r = run('pnpm', pnpmAuditArgs(workspace, extra));
     try {
       return JSON.parse(r.stdout);
     } catch {
       throw transientOr(
-        `[pnpm-audit] non-JSON output (registry advisories unreachable?): ${(r.stderr || r.stdout || '').slice(-300)}`,
+        `[pnpm-audit] ${workspace} produced non-JSON output (registry advisories unreachable?): ${(r.stderr || r.stdout || '').slice(-300)}`,
         `${r.stderr || ''}\n${r.stdout || ''}`,
       );
     }
   });
 }
 
-function normalizePnpmAudit(full, prodKeys, map) {
+export function normalizePnpmAudit(full, prodKeys, map, workspace = '.') {
+  const prefix = workspace === '.' ? '' : `${workspace}:`;
   const out = [];
   for (const [key, adv] of Object.entries(full.advisories ?? {})) {
     const id = String(adv.github_advisory_id || (adv.cves || [])[0] || adv.id || key);
@@ -475,7 +512,7 @@ function normalizePnpmAudit(full, prodKeys, map) {
     for (const version of versions.length ? versions : ['*']) {
       out.push({
         scanner: 'pnpm-audit', kind: 'sca', id, title: String(adv.title ?? id),
-        location: `${adv.module_name}@${version}`, ecosystem: 'npm',
+        location: `${prefix}${adv.module_name}@${version}`, ecosystem: 'npm',
         nativeSeverity: String(adv.severity), severity, scope,
         blocking: deriveBlocking({ kind: 'sca', severity, scope }), fixAvailable: fix,
       });
@@ -486,10 +523,17 @@ function normalizePnpmAudit(full, prodKeys, map) {
 
 function runPnpmAudit({ map }) {
   assertToolchain('pnpm', 'pnpm-audit');
-  const full = pnpmAuditJson([]);
-  const prod = pnpmAuditJson(['--prod']);
-  const prodKeys = new Set(Object.keys(prod.advisories ?? {}));
-  return { native: full, findings: normalizePnpmAudit(full, prodKeys, map) };
+  const natives = {};
+  const findings = [];
+  // Any workspace failing fails the WHOLE scan, as for pip-audit: one-of-two is never a clean report.
+  for (const { lockfile, workspace } of pnpmAuditSet()) {
+    const full = pnpmAuditJson(workspace, []);
+    const prod = pnpmAuditJson(workspace, ['--prod']);
+    const prodKeys = new Set(Object.keys(prod.advisories ?? {}));
+    natives[lockfile] = full;
+    findings.push(...normalizePnpmAudit(full, prodKeys, map, workspace));
+  }
+  return { native: natives, findings };
 }
 
 // ── pip-audit runner (T014) ──────────────────────────────────────────────────
