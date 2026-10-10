@@ -1,58 +1,40 @@
 {
   "coveredCommit": "33d5b5ea42acf1ab59f6a52dcfa3c443c2132f95",
   "coveredAt": "2026-10-10T10:18:10.630Z",
-  "lastOutcome": "completed",
-  "backlog": [],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 708,
-    "headCommit": "416a2b4639327a792b21bb0381597ece77d76ab9",
-    "markerBefore": "ee813a94f7717e5b098bd84153a1525a28d0431b",
-    "slices": [
-      {
-        "area": "runbooks",
-        "pages": [
-          "wiki-maintenance.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "ci-evidence-pipeline.md"
-        ],
-        "kind": "create",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "new source, not yet covered: docs/runbooks/ci-evidence-pipeline.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-evidence-pipeline.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      }
-    ],
-    "updatedAt": "2026-10-10T10:18:11.079Z"
-  },
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "renovate.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/renovate.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
+  "proposal": null,
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 1429,
+    "pagesWritten": 0,
+    "elapsedSeconds": 2115,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 140,
+    "calls": 174,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 614113,
-    "cached": 11599760,
+    "uncached": 2736798,
+    "cached": 18575608,
     "cacheWrite": 0,
-    "output": 137763,
-    "reasoning": 94972,
-    "ms": 1273947,
-    "estCostUsd": 0.4191,
+    "output": 218541,
+    "reasoning": 170791,
+    "ms": 2129493,
+    "estCostUsd": 1.1947,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -62,11 +44,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/ci-evidence-pipeline.md"
+        "runbooks/renovate.md"
       ],
       "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 0.4191,
+      "estCostUsd": 1.1947,
       "rateLimited": null
     }
   ]
