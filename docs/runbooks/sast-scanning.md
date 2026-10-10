@@ -203,8 +203,8 @@ touched. This is the gate working, not a defect — and it recurs. The playbook 
    writing an override, check what every package on the advisory's path asks for:
    `npm view <consumer>@latest dependencies.<pkg>` (the paths are in `pnpm audit --json` → `advisories.<id>.findings[].paths`).
    If even the consumers' **latest** releases still declare a range that excludes the patched version
-   (2026-10-06: `@graphql-tools/utils` fixed only in 12.0.1, while `graphql-yoga` and
-   `@graphql-yoga/plugin-defer-stream` still require `^11.2.0`), the "pinned within the major" override
+   (the case on 2026-10-06: `@graphql-tools/utils` was fixed only in 12.0.1, while `graphql-yoga` and
+   `@graphql-yoga/plugin-defer-stream` then required `^11.2.0`), the "pinned within the major" override
    above is impossible — the only bump forces a major the consumer does not support. This is **not**
    "fixable" in the sense of this step, and it is **never** decided by the reader alone: stop and put
    both options to the operator.
@@ -216,8 +216,13 @@ touched. This is the gate working, not a defect — and it recurs. The playbook 
      justification** (which consumer, which entry point, and why the vulnerable function is or is not
      on a request path — checked in the installed package, not assumed), pinned to the **exact**
      vulnerable version, a **short** expiry, and a backlog item whose acceptance criteria delete the
-     entry rather than renew it. Worked example: the `@graphql-tools/utils` entry in
-     `security/sast/allowlist.yaml` and backlog item #674 (operator chose (b), 2026-10-06).
+     entry rather than renew it. Worked example, now **closed**: the `@graphql-tools/utils` entry and
+     backlog item #674 (operator chose (b), 2026-10-06). It was discharged by the route its item named:
+     `graphql-yoga` 5.24.4 and `@graphql-yoga/plugin-defer-stream` 3.24.4 (published 2026-10-08)
+     declare `^12.0.3`, lock refresh #695 resolved both, and the entry was **deleted** on 2026-10-09
+     rather than left to expire — an entry that matches nothing fails `--check-expiring`, and deleting
+     it is what restores blocking if 11.x ever returns. The tombstone comment in
+     `security/sast/allowlist.yaml` records it.
 
 5. **Note the local limit.** semgrep + cargo-audit + pip-audit aren't on the Windows dev box or the
    dev container, so the *full* gate is CI-authoritative; `pnpm audit` locally confirms only the

@@ -57,7 +57,7 @@ else
   # worse first-run experience — and the absence is reported loudly below either way.
   echo "[gen-container-secrets-env] ⚠ $SRC not found — writing an EMPTY env file."
   echo "[gen-container-secrets-env]   The container will start WITHOUT credentials; see"
-  echo "[gen-container-secrets-env]   docs/runbooks/devcontainer-sandbox.md §8b (the D-07 fallback)."
+  echo "[gen-container-secrets-env]   docs/runbooks/devcontainer-sandbox-lifecycle.md §8b (the D-07 fallback)."
 fi
 
 written=0
