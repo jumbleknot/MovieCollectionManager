@@ -402,7 +402,15 @@
 # Version-keyed on purpose, so the pending `docker base images` bump re-blocks and forces a fresh
 # scan rather than inheriting this suppression. Time-boxed; delete on upstream rebuild, do not renew.
 
-# ── langfuse:4 next/og RCE GHSA-vcvr-r3jv-pc5j (triaged 2026-10-02, item #642) ─────────────────────
+# ── langfuse:4 next/og RCE GHSA-vcvr-r3jv-pc5j (triaged 2026-10-02, item #642) — ENTRIES DELETED 2026-10-10 ──
+# DISCHARGED by item #642's bump of web + worker to 4.56.0 (web sha256:b1948c7c0931, worker
+# sha256:3f7571ff3a72, pushed 2026-10-09). Measured on those exact digests 2026-10-10 with the gate
+# criterion (aquasec/trivy:0.74.0 --severity CRITICAL --ignore-unfixed, ghcr DB + Java DB mirrors):
+# ZERO fixable Criticals on either image — the web image ships next 16.3.8 (past the 16.3.6 fix), and
+# the 4.49.0 piscina CVE-2026-102992 regression described below is gone too. Both entries were deleted
+# rather than re-keyed (item #303): they would match nothing and fail --check-expiring. The comment
+# below is kept as the record of why they existed.
+#
 # Published 2026-09-22 against next 16.2.0-16.3.5 (fix 16.3.6) on the UNCHANGED 4.35.0 pins, so it
 # reddened `infra-image-scan` for every PR it ran on (including wiki-only #635) and the 2026-10-02 window.
 # WHY NOT THE BUMP: Renovate never proposed one — `:4` was repushed 2026-09-23/24/25/29/30 and 10-01,
@@ -416,16 +424,6 @@
 # Keyed to version AND digest. The pin moved from the floating `:4` to `4.35.0` (same digests,
 # verified against Docker Hub 2026-10-02) so Renovate can age each release on its own tag; any
 # version or digest change re-blocks and forces a fresh scan.
-- image: '^langfuse/langfuse:4\.35\.0@sha256:a5d8d2457702'
-  id: 'GHSA-vcvr-r3jv-pc5j'
-  justification: 'next 16.3.3 RCE in the Node `next/og` ImageResponse (satori), exploitable only when an app renders attacker-controlled values into SVG. NOT REACHABLE here, measured in this exact image 2026-10-02: the built server (/app/web/.next/server) contains NO satori, @vercel/og or resvg code at all, and its one `next/og` string is Next''s own `next/server` shim that THROWS "ImageResponse moved … import from next/og" — Langfuse has no OG-image route. Prod exposure is a tailnet-only operator UI (19030, host ufw default-deny). Digest-keyed so the Langfuse upgrade (item #642) re-blocks; delete on that upgrade, do not renew.'
-  addedBy: 'renovate-window-2026-10-02'
-  expiry: '2026-10-23'
-- image: '^langfuse/langfuse-worker:4\.35\.0@sha256:5e35e625a214'
-  id: 'GHSA-vcvr-r3jv-pc5j'
-  justification: 'next 16.3.3 RCE in the Node `next/og` ImageResponse (satori). NOT REACHABLE here, measured in this exact image 2026-10-02: `next` is present only as an unused transitive under /app/worker/node_modules/.pnpm, and the worker''s own code (/app/worker/dist) has ZERO references to next/og or ImageResponse — it is a queue consumer with no HTTP rendering path. Ships and deploys as one unit with the web image (they share one database), so it moves with the web entry. Digest-keyed so the Langfuse upgrade (item #642) re-blocks; delete on that upgrade, do not renew.'
-  addedBy: 'renovate-window-2026-10-02'
-  expiry: '2026-10-23'
 
 # ── proxy-addr IP spoofing CVE-2026-90711 / GHSA-jqcg-44mw-7w3h (triaged 2026-10-09) ────────────────
 # Published against proxy-addr 1.1.0-2.0.7 (fix 2.0.8, released 2026-09-15) on two UNCHANGED pins, so it
@@ -437,16 +435,12 @@
 #   - unleash-server: dist/lib/app.js sets `app.set('trust proxy', true)` — the boolean, which Express
 #     handles without compiling any subnet, so the defective path is never entered. (`true` already
 #     trusts X-Forwarded-For by design; the CVE does not change that, and the prod UI is tailnet-only.)
-#   - langfuse-worker: never sets `trust proxy` (Express default false) and never reads req.ip/req.ips;
-#     proxy-addr is an unused transitive of the worker's health endpoint.
-# WHY NOT THE BUMP: unleash 8.2.0 is the newest release upstream (no fixed image exists); langfuse 4.55.0
-# exists but the 4.35.0 -> 4.5x move is item #642, the same deliberate upgrade the entries above wait on.
-# Keyed to version AND digest so any image change re-blocks; expiry matches the langfuse entries above.
-- image: '^langfuse/langfuse-worker:4\.35\.0@sha256:5e35e625a214'
-  id: 'CVE-2026-90711'
-  justification: 'proxy-addr 2.0.7 trust-subnet IP spoofing. NOT REACHABLE, measured in this exact image 2026-10-09: /app/worker/dist never sets Express `trust proxy` (default false, no subnet compiled) and never reads req.ip/req.ips. Upgrade is item #642; delete on that upgrade, do not renew.'
-  addedBy: 'renovate-window-2026-10-09'
-  expiry: '2026-10-23'
+#   - langfuse-worker 4.35.0: never set `trust proxy` (Express default false) and never read req.ip/req.ips;
+#     proxy-addr was an unused transitive of the worker's health endpoint. ITS ENTRY WAS DELETED 2026-10-10:
+#     item #642 moved the worker to 4.56.0 (sha256:3f7571ff3a72), which scans with ZERO fixable Criticals
+#     under the gate criterion, so the entry would only have matched nothing (item #303).
+# WHY NOT THE BUMP (unleash): 8.2.0 is the newest release upstream, so no fixed image exists (item #711).
+# Keyed to version AND digest so any image change re-blocks; expiry was set to match the (now-deleted) langfuse entries.
 - image: '^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a'
   id: 'CVE-2026-90711'
   justification: 'proxy-addr 2.0.7 trust-subnet IP spoofing. NOT REACHABLE, measured in this exact image 2026-10-09: dist/lib/app.js sets `trust proxy` to the boolean true, which Express handles without proxy-addr compiling any subnet. 8.2.0 is the newest upstream release, so no fixed image exists yet; delete when Renovate proposes one, do not renew without re-measuring.'
