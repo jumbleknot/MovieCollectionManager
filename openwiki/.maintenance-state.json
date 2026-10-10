@@ -4,17 +4,6 @@
   "lastOutcome": "failed",
   "backlog": [
     {
-      "area": "projects",
-      "pages": [
-        "sast.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
-    {
       "area": "runbooks",
       "pages": [
         "ci-evidence-pipeline.md",
@@ -39,55 +28,56 @@
       "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 716,
+    "headCommit": "23d47ca3f608ec603ab8ed9216b15790a61b6385",
+    "markerBefore": "bf8dc1647cb9f8b037fcd9f034e2ada0e3c16be6",
+    "slices": [
+      {
+        "area": "projects",
+        "pages": [
+          "sast.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-10-10T15:43:46.572Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 2170,
+    "pagesWritten": 1,
+    "elapsedSeconds": 3160,
     "stoppedAtBudget": true
   },
   "escalations": {
-    "projects/sast.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-10T14:10:40.942Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/ci-evidence-pipeline.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-10T14:10:40.942Z",
-      "failuresAtLow": 0
-    },
     "runbooks/devcontainer-sandbox.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-10T14:10:40.942Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/sast-scanning.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-10T14:10:40.942Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     }
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 324,
+    "calls": 430,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2428861,
-    "cached": 26194218,
+    "uncached": 3581935,
+    "cached": 37310456,
     "cacheWrite": 0,
-    "output": 597272,
-    "reasoning": 490739,
-    "ms": 5832398,
-    "estCostUsd": 1.6026,
+    "output": 798480,
+    "reasoning": 672885,
+    "ms": 7538036,
+    "estCostUsd": 2.2566,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
@@ -98,9 +88,9 @@
         "runbooks/devcontainer-sandbox.md",
         "runbooks/sast-scanning.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 1.6026,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 2.2566,
       "rateLimited": null
     }
   ]
