@@ -1,6 +1,6 @@
 # Runbook: Android Emulator & APK Builds (Mobile E2E)
 
-> Procedures for mobile E2E on this Windows 11 machine. Loaded on demand — referenced from CLAUDE.md. For the flakiness-diagnosis protocol and the BFF-container E2E modes, see [e2e-testing.md](e2e-testing.md).
+> Procedures for mobile E2E on the Windows 11 host and in the Docker Desktop dev container. Loaded on demand — referenced from CLAUDE.md. For the flakiness-diagnosis protocol and the BFF-container E2E modes, see [e2e-testing.md](e2e-testing.md).
 
 ## Mobile E2E approach — prefer CI for AGENT flows; local emulator for non-agent
 
@@ -80,17 +80,18 @@ the app at the **containerized dev BFF (`:8082`)**, not Metro — see [e2e-testi
 ### ★ You can EMULATE in the dev container, but you cannot BUILD the APK there
 
 Measured 2026-07-26. The baked SDK makes `adb`, `avdmanager` and a KVM emulator work — but a local
-`pnpm nx run mcm-app:build-apk` still fails, in two stages:
+`pnpm nx run mcm-app:build-apk` still fails:
 
-1. **`./gradlew` downloads its own distribution** from `services.gradle.org` → `Downloading …
-   gradle-9.3.1-bin.zip failed: timeout`. **Fixed** — `toolchain.Dockerfile` now bakes the
-   distribution at image-build time (pre-firewall), and `verify-toolchain-present.sh` asserts it.
-2. **Gradle then resolves the Android/Maven plugin graph** — `foojay-resolver`, Maven Central,
-   Google's Maven, the Gradle Plugin Portal → `Plugin [id: 'org.gradle.toolchains.foojay-resolver-
-   convention'] was not found in any of the following sources`. **Not fixed, and not worth fixing
-   this way:** pre-seeding that whole graph into the image is impractical, and the alternative is
-   adding four build-artifact domains to the egress allowlist, which is the reflex this repo
-   deliberately does not have.
+- **The Gradle distribution is baked.** `./gradlew` would otherwise download its own distribution
+  from `services.gradle.org`, which the egress firewall blocks (`Downloading … gradle-9.3.1-bin.zip
+  failed: timeout`), so `toolchain.Dockerfile` bakes it at image-build time (pre-firewall), and
+  `verify-toolchain-present.sh` asserts it.
+- **Gradle then resolves the Android/Maven plugin graph, and that is where the build dies** —
+  `foojay-resolver`, Maven Central, Google's Maven, the Gradle Plugin Portal → `Plugin [id:
+  'org.gradle.toolchains.foojay-resolver-convention'] was not found in any of the following
+  sources`. **Not fixed, and not worth fixing this way:** pre-seeding that whole graph into the image
+  is impractical, and the alternative is adding four build-artifact domains to the egress allowlist,
+  which is the reflex this repo deliberately does not have.
 
 **So the supported paths for a release APK are CI (`app-ci`'s `app-e2e`, `cd-deploy`'s `prod-apk`),
 or a build container with its own egress.** Nested-container egress is NOT firewalled (the FORWARD

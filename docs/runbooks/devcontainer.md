@@ -1,29 +1,32 @@
 # Runbook: Containerized Dev Environment (feature 037)
 
-> ## ⚠️ THIS IS NO LONGER THE PRIMARY ENVIRONMENT (feature 060)
+> **This runbook covers the Docker Desktop / Docker-in-Docker (DinD) dev container** — the
+> privileged container with a nested Docker engine, opened from VS Code on the Windows host. It is
+> **retained for one reason: the Android emulator**, which needs `/dev/kvm`. The primary AI-assisted
+> development environment (feature 060) is a **dev container inside a Docker Sandbox microVM**, which
+> provides no nested virtualization (gate R2, resolved negative) — so mobile E2E that must run locally
+> runs on this path, and everything else (web E2E, integration, the agent stack, day-to-day assistant
+> work) runs on the sandbox, which measured **0.43×** the wall-clock of this path across five stages
+> (`docker-build` alone went 1024 s → 293 s). The sandbox's operating manual is
+> **[devcontainer-sandbox.md](devcontainer-sandbox.md)** (lifecycle, egress triage, the engine seam,
+> networking, the one-step launch) with **[devcontainer-sandbox-lifecycle.md](devcontainer-sandbox-lifecycle.md)**
+> (templates, recreate, disk).
 >
-> The AI-assisted development environment now runs as a **dev container inside a Docker Sandbox
-> microVM**. Its operating manual is **[devcontainer-sandbox.md](devcontainer-sandbox.md)** — start
-> there for lifecycle, egress triage, the engine seam, disk, and the one-step launch.
->
-> **This page documents the RETAINED Docker Desktop / Docker-in-Docker path**, kept for one reason:
-> the **Android emulator**, which needs `/dev/kvm`. The microVM provides no nested virtualization
-> (gate R2, resolved negative), so mobile E2E that must run locally still runs here. Everything else
-> — web E2E, integration, the agent stack, day-to-day assistant work — belongs on the sandbox, which
-> measured **0.43×** the wall-clock of this path across five stages (`docker-build` alone went
-> 1024 s → 293 s).
->
-> **Still authoritative on this page, and applying to BOTH paths:**
+> **Applying to BOTH paths:**
 >
 > - **the credential rule** — [§ Host env vars](#host-env-vars-forwarded-via-localenv-mcm_devcontainer_image-forge_registry_host-mcm_anthropic_api_key-tmdb_api_key-mcm_forge_token-mcm_forge_issue_token)
 >   below. AI-assisted coding runs on the **Claude Max subscription**; `MCM_ANTHROPIC_API_KEY` exists
 >   only for the movie assistant and OpenWiki, and `ANTHROPIC_API_KEY` must never be set in *any*
 >   environment. This is the first gate in `CLAUDE.md`.
-> - the toolchain image contents and the `${localEnv}` forwarding mechanics.
+> - the toolchain image contents and the `${localEnv}` forwarding mechanics;
+> - the worktree rule, the Playwright-in-a-container E2E recipe, and the Claude Code config/persistence
+>   notes, each of which says where it was measured.
 >
-> **Sections describing the nested engine are historical.** Where behaviour differs on the sandbox
-> path, the difference is called out inline. Do not apply a DinD remedy to a sandbox symptom — the
-> triage order is inverted there (host policy first, see the sandbox runbook § 3).
+> **Specific to this path:** the in-container `init-firewall.sh` egress firewall (the sandbox does not
+> run it — egress there is enforced host-side by sandbox policy, D-18), the nested engine and its
+> `dind-var-lib-docker-*` volume, and the VS Code / Docker Desktop client tweaks. Do not apply a DinD
+> remedy to a sandbox symptom — the triage order is inverted there (host policy first, see the sandbox
+> runbook § 3).
 
 ## Local Ollama for free agent-flow churn (feat devcontainer-ollama)
 
@@ -34,9 +37,9 @@
 > under `--network=host` a sibling's published port *is* localhost. See
 > [devcontainer-sandbox.md § 6](devcontainer-sandbox.md).
 
-Heavy agent-flow iteration on the Anthropic API is expensive. Ollama used to serve the dev models for
-free from the Windows host (via `host.docker.internal`), but nested-DinD broke that reach —
-`host.docker.internal` now resolves to the dev container, not Windows. **Fix: run Ollama in the dev
+Heavy agent-flow iteration on the Anthropic API is expensive, and an Ollama on the Windows host cannot
+serve it: under nested DinD, `host.docker.internal` resolves to the dev container, not Windows (that
+host Ollama was the free dev-model path before DinD broke the reach). **So Ollama runs in the dev
 container.** `scripts/devcontainer-ollama.sh` runs at `postStartCommand` and:
 
 - brings up `infrastructure-as-code/docker/dev-ollama.compose.yaml` — a `dev-ollama` container
@@ -59,9 +62,9 @@ firewall-ipset drift — re-apply the firewall (`sudo env FORGE_REGISTRY_HOST=�
 .devcontainer/init-firewall.sh`) to re-resolve the CDN IPs, then retry. GPU passthrough (WSL2 +
 nvidia-container-toolkit) is a future optimization if CPU churn is too slow.
 
-> Daily-use and operational reference for the disposable Linux **dev container** the AI coding
-> assistant runs inside. The portable asset is the committed [`.devcontainer/`](../../.devcontainer/)
-> directory; this runbook is the how-to. Feature spec chain: [specs/037-containerized-dev-env/](../../specs/037-containerized-dev-env/).
+> Daily-use and operational reference for the disposable Linux **dev container** on its Docker
+> Desktop / DinD path (the sandbox path has its own runbook, above). The portable asset is the
+> committed [`.devcontainer/`](../../.devcontainer/) directory; this runbook is the how-to. Feature spec chain: [specs/037-containerized-dev-env/](../../specs/037-containerized-dev-env/).
 
 ## Why this exists (one line)
 
@@ -69,6 +72,10 @@ Give Claude Code a throwaway Linux container to run inside, so the agent's blast
 container — **not** the Windows host's files, credentials, or SSH keys.
 
 ## Security posture — stated honestly (FR-011 / SC-008)
+
+This section describes the Docker Desktop / DinD path. On the sandbox path the nested engine runs
+inside the microVM rather than in a privileged container on Docker Desktop's WSL2 layer, and egress is
+enforced host-side — see [devcontainer-sandbox.md](devcontainer-sandbox.md) § 3.
 
 This environment provides **two different strengths** of isolation. Do not conflate them:
 
@@ -143,9 +150,12 @@ already in its environment*, and the container recreated.
   supervisor, `claude-sonnet-4-6` for the specialists; replay is keyless). One cassette
   (`topic-confinement.qwen2-5.json`) is keyed to **qwen2.5** and an Anthropic key CANNOT regenerate
   it — that one needs a local Ollama, and the keyless merge gate replays it because `guardrails`
-  sets no `MODEL_PROVIDER` and so resolves the Ollama tier. Ollama is unreachable from the containerized gateway (the
-  nested-DinD `host.docker.internal` resolves to the dev container, not the Windows host), so Anthropic
-  is the in-container model path; `api.anthropic.com` is already in the `init-firewall.sh` allowlist.
+  sets no `MODEL_PROVIDER` and so resolves the Ollama tier. The **Windows host's** Ollama is
+  unreachable from the containerized gateway (the nested-DinD `host.docker.internal` resolves to the
+  dev container, not the Windows host); the in-container `dev-ollama` is reachable — see
+  [Local Ollama](#local-ollama-for-free-agent-flow-churn-feat-devcontainer-ollama) and the probe in
+  [§ 1 of Running the stacks](#1-bring-up-the-stacks). Anthropic is the model path CI uses;
+  `api.anthropic.com` is in the `init-firewall.sh` allowlist.
   Use a real `sk-ant-…` **API key** (pay-per-token) — this is NOT your Claude Code subscription login.
 
   > ### ★★★ SET `MCM_ANTHROPIC_API_KEY`, **NEVER** `ANTHROPIC_API_KEY` — on the host OR in here
@@ -187,29 +197,28 @@ already in its environment*, and the container recreated.
 - **`TMDB_API_KEY`** — a TMDB **v3** key for the agent's TMDB enrichment/search (web-api-mcp). The
   assistant dock only renders once the test user has a **runnable agent config**, and
   `agent-config-seed.ts` needs a TMDB key to seed one — so the agent web E2E (US1-navigate,
-  US4-add-from-TMDB) requires it. **`api.themoviedb.org` IS on the allowlist as of 059** — and the
-  two chains behave differently, which is the whole of this entry:
-  - **Nested containers never needed it** (FORWARD chain, which `init-firewall.sh` leaves alone).
+  US4-add-from-TMDB) requires it. **`api.themoviedb.org` is on the allowlist (feature 059) for the
+  shell's TEST RUNNER only** — on this path the two firewall chains behave differently, which is the
+  whole of this entry:
+  - **Nested containers do not need it** (FORWARD chain, which `init-firewall.sh` leaves alone).
     **Measured 2026-07-16**, with TMDB *absent* from `ALLOWED_DOMAINS`: a nested container reached a
     non-allowlisted domain (`example.com` → 200) and the nested BFF reached TMDB (`401` = connected,
     key rejected). Every RUNTIME path that calls TMDB — the BFF's validate-on-save probe,
     web-api-mcp's curator enrichment — is nested, so an allowlist entry does nothing for the app.
     **If one of those probes times out, the ruleset is stale — re-apply `init-firewall.sh` to
     re-resolve the CDN IPs. Do not "fix" it by widening the allowlist; that is not what is wrong.**
-  - **The dev-container SHELL (OUTPUT chain) was blocked** (`000`), and that is what changed.
-    Feature 059 makes the TMDB certification a merge-relevant assertion, and its proof is
-    `nx test:integration web-api-mcp` — pytest, in the shell. **Measured 2026-08-14**: before the
-    entry, `curl https://api.themoviedb.org/3/` from the shell timed out (exit 28) while
-    `registry.npmjs.org` returned 200 in the same shell; after re-applying the script it returns
-    `401` (connected) and `example.com` still times out, so default-deny is intact. The entry exists
-    for the TEST RUNNER, not for the app.
+  - **The dev-container SHELL (OUTPUT chain) needs it**, because feature 059 makes the TMDB
+    certification a merge-relevant assertion whose proof is `nx test:integration web-api-mcp` —
+    pytest, in the shell. **Measured 2026-08-14**: without the entry,
+    `curl https://api.themoviedb.org/3/` from the shell timed out (`000`, exit 28) while
+    `registry.npmjs.org` returned 200 in the same shell; with it, after re-applying the script, it
+    returns `401` (connected) and `example.com` still times out, so default-deny is intact.
 
-  The older blanket instruction ("do NOT add TMDB, or any app API, to the allowlist") is therefore
-  **superseded, not reversed by oversight**: it was a diagnostic guard against widening egress to fix
-  a stale-ipset symptom, and it holds for every runtime path. It did not cover a test runner in the
-  shell. *(The other shell-side TMDB consumer, `agent-config-probes.integration.test.ts`, runs its
-  probes IN-PROCESS but stays env-gated for an unrelated reason — its Ollama case needs a local
-  `localhost:11434`. See the test-status note below.)*
+  So the rule is narrow: **do NOT add TMDB, or any other app API, to the allowlist to fix a runtime
+  path** — that is a stale-ipset symptom, and widening egress does not fix it. The one entry exists
+  for a test runner in the shell. *(The other shell-side TMDB consumer,
+  `agent-config-probes.integration.test.ts`, runs its probes IN-PROCESS; see the test-status note
+  below for its Ollama and TMDB cases.)*
   Free key from themoviedb.org → Settings → API. After rebuild, run
   `node scripts/gen-dev-env.mjs` inside the container to also write it into
   `mcp-servers/web-api-mcp/.env.local`. Unset → empty → the agent's TMDB flows no-op and the dock stays
@@ -230,25 +239,27 @@ already in its environment*, and the container recreated.
   `MCM_FORGE_TOKEN` and **writes** are refused naming the missing variable (exit 3); the container still
   comes up. Provisioning, conventions and diagnosis: [backlog.md](backlog.md).
 
-**Setup (Windows) — the two gotchas that bite here** (identical for `ANTHROPIC_API_KEY`, `TMDB_API_KEY` and both `MCM_FORGE_*` tokens)**:**
+**Setup (Windows) — the two gotchas that bite here** (identical for `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY` and both `MCM_FORGE_*` tokens)**:**
 
-1. **`setx` alone does not update running processes.** `setx ANTHROPIC_API_KEY "sk-ant-…"` writes the
-   persistent User env, but VS Code (and whatever launched it) keeps its old environment. "Reload
+1. **`setx` alone does not update running processes.** `setx MCM_ANTHROPIC_API_KEY "sk-ant-…"` writes
+   the persistent User env, but VS Code (and whatever launched it) keeps its old environment. "Reload
    Window" / closing the window is NOT enough. **Reboot** (surest), or fully quit VS Code
    (`taskkill /F /IM Code.exe`) and relaunch it via `code <path>` from a *freshly opened* shell where
-   `echo $env:ANTHROPIC_API_KEY` already shows the value. Verify the persistent value without a reboot:
-   `[Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')` (reads the registry directly).
+   `echo $env:MCM_ANTHROPIC_API_KEY` already shows the value. Verify the persistent value without a
+   reboot: `[Environment]::GetEnvironmentVariable('MCM_ANTHROPIC_API_KEY','User')` (reads the registry
+   directly).
 2. **Clone-in-volume reads `devcontainer.json` from the IN-VOLUME clone's checked-out branch — Rebuild
    does NOT `git pull` it.** If you opened via *Clone Repository in Named Container Volume*, a
    `.devcontainer` change merged to `main` has **no effect** until the clone *inside the volume* has it.
    Bring it in from a terminal in the container (`git fetch origin && git merge origin/main`, or
    `git cherry-pick <sha>` for just that change) **then** *Dev Containers: Rebuild Container*. Symptom:
-   `echo "${ANTHROPIC_API_KEY:0:7}"` prints nothing and `docker inspect <container> --format
+   `echo "${MCM_ANTHROPIC_API_KEY:0:7}"` prints nothing and `docker inspect <container> --format
    '{{.Config.Env}}'` shows the var **absent entirely** (vs present-but-empty, which instead means
    VS Code's env was stale — gotcha #1).
 
-**Verify inside the container:** `echo "${ANTHROPIC_API_KEY:0:7}"` → `sk-ant-`. (Unset → empty → the
-agent falls back to ollama and golden record is unavailable, but the container still comes up.)
+**Verify inside the container:** `echo "${MCM_ANTHROPIC_API_KEY:0:7}"` → `sk-ant-`, and
+`echo "${ANTHROPIC_API_KEY:-unset}"` → `unset`. (Unset → empty → the agent falls back to ollama and
+golden record is unavailable, but the container still comes up.)
 
 ## Daily use
 
@@ -355,25 +366,24 @@ Things that are not obvious, each of which cost a session:
   ```
 
   This does **not** churn the other session's tree — it writes only inside the worktree, and the
-  content-addressed store is shared by design. The old advice here ("do not `pnpm install`") was
-  written for a session that only ran `node --test`; treat it as the default, not the rule. **Decide
-  from the diff**: if what you changed is only reachable through an nx target, budget the four
-  minutes rather than shipping that tier unproven.
+  content-addressed store is shared by design. The symlink (no install) is the right default for a
+  session that only runs `node --test` and the gate scripts. **Decide from the diff**: if what you
+  changed is only reachable through an nx target, budget the four minutes rather than shipping that
+  tier unproven.
 - **nx and pnpm will hand you a STALE failure.** In the same session, three targets failed with a
   message naming a path that no longer existed — cached output. `--skip-nx-cache` produced a
   completely different, and real, error. **If an nx failure's message does not match the state on
   disk, re-run it with `--skip-nx-cache` before diagnosing it.** Same family as the superseded-run
   trap in [ci-diagnostics.md](ci-diagnostics.md): the tool answered a question you already stopped
   asking.
-- **That symlink used to be committable, and `git add -A` committed it.** `.gitignore` carried
-  `node_modules/`, and a **trailing slash matches only a directory** — so the symlink was not
-  ignored. `git diff --stat` does not list untracked files either, so reviewing the diff before
-  committing does not catch it. CI then checks out a symlink where pnpm needs a directory and
-  **every install-bearing job dies at once** with `ENOTDIR: not a directory, mkdir
-  '.../node_modules'` — six required contexts on PR #488, which reads like a broken toolchain
-  rather than like a stray file. The pattern is now `node_modules` (no slash) so this cannot
-  recur; if you add any other symlink-into-the-main-checkout, check `git status --porcelain`
-  rather than `git diff` before committing.
+- **`.gitignore` says `node_modules` with NO trailing slash — keep it that way.** A **trailing slash
+  matches only a directory**, so while `.gitignore` carried `node_modules/` the symlink was not
+  ignored and `git add -A` committed it. `git diff --stat` does not list untracked files either, so
+  reviewing the diff before committing does not catch it. CI then checks out a symlink where pnpm
+  needs a directory and **every install-bearing job dies at once** with `ENOTDIR: not a directory,
+  mkdir '.../node_modules'` — six required contexts on PR #488, which reads like a broken toolchain
+  rather than like a stray file. If you add any other symlink-into-the-main-checkout, check
+  `git status --porcelain` rather than `git diff` before committing.
 - **A fresh worktree lacks gitignored artefacts**, which some gates read rather than generate.
   `security/infra-images/reports/findings.json` is one: without it
   `check-infra-image-findings.mjs --check-expiring` throws instead of passing, which reads as a
@@ -431,8 +441,8 @@ devcontainer down --workspace-folder .     # stop (retains volumes)
 
 ## In-container Docker & compose stacks (US2)
 
-`docker build` / `docker run` and the project's compose stacks run on the **in-container DinD
-engine**, separate from the host engine (nested containers never appear in the host's `docker ps`).
+On this path `docker build` / `docker run` and the project's compose stacks run on the
+**in-container DinD engine**, separate from the host engine (nested containers never appear in the host's `docker ps`).
 Bring up a stack the normal way, e.g. `pnpm nx up-auth infrastructure-as-code`.
 
 ### ★★★ Docker won't start after a rebuild? An OLD container still holds the DinD lock
@@ -505,7 +515,9 @@ node verify/verify-fresh-realm-seed.mjs   # asserts login works (realm + e2e-tes
 Then `pnpm nx docker-build mcm-app` → `up-mcm --profile app --profile bff-nonsecure` → `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` runs the web E2E on committed config alone. (Before feature 039 the realm lived only in a long-lived volume, so a fresh container hit an empty Keycloak.)
 
 **The first pull is slow (cold registries) and REQUIRES the firewall allowlist.** If a `docker
-pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Docker**:
+pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Docker**. (This is the
+`init-firewall.sh` side; on the sandbox the same `.devcontainer/egress-allowlist.json` is applied as
+host-side policy, and its triage is in [devcontainer-sandbox.md](devcontainer-sandbox.md) § 4.)
 
 - The image registries must be allowlisted: Docker Hub (`registry-1.docker.io`, `auth.docker.io`,
   `index.docker.io`, plus `hub.docker.com` — not a pull host but the tag-list API Renovate's docker
@@ -641,12 +653,14 @@ docker run --rm --network host -v "$PWD":/work -w /work/frontend/mcm-app \
   sh -c "corepack enable && pnpm exec playwright test"
 ```
 
-**2. Agent flows need `E2E_AGENT_PROVIDER=anthropic` — the ollama default cannot work here.** The dock
-only renders once `agent-config-seed` can seed a **runnable** config. Its gate: a **TMDB key is
-mandatory**, then **anthropic** needs only `ANTHROPIC_API_KEY`, whereas the default **ollama** path also
-needs `E2E_AGENT_PRODUCTION=1` **and a reachable Ollama** — which the DinD container does not have (the
-nested `host.docker.internal` resolves to the dev container, not the Windows host). So always run the
-agent flows on Anthropic in-container — the same provider CI uses:
+**2. Agent flows: set `E2E_AGENT_PROVIDER=anthropic`.** The dock only renders once
+`agent-config-seed` can seed a **runnable** config. Its gate: a **TMDB key is mandatory**, then
+**anthropic** needs only `ANTHROPIC_API_KEY`, whereas the default **ollama** path also needs
+`E2E_AGENT_PRODUCTION=1` **and a reachable Ollama** at `host.docker.internal:11434` from the BFF and
+gateway containers. The Windows host's Ollama is not reachable that way (the nested
+`host.docker.internal` resolves to the dev container, not the Windows host); the in-container
+`dev-ollama` is — see the probe under [§ 1 of Running the stacks](#1-bring-up-the-stacks) before
+relying on it. Anthropic is the same provider CI uses:
 
 ```bash
 export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
@@ -659,7 +673,8 @@ bug but is really the seed gate (missing TMDB or Anthropic key, or provider left
 
 ### Mobile E2E (Android emulator) in the dev container
 
-**Mobile E2E runs here too — no Windows host needed.** The full Android SDK + an `android-34`
+**Mobile E2E runs here — no Windows host needed — and this is why the DinD path is retained**: the
+sandbox microVM has no `/dev/kvm`. The full Android SDK + an `android-34`
 `google_apis` `x86_64` system image are **baked into the toolchain image**, and the privileged DinD
 container already passes through the host `/dev/kvm`, so a headless emulator boots with hardware
 accel. Same model as Rust/uv/watchman: the ~5 GB download happens at **image-build time**, before
@@ -692,7 +707,7 @@ which is the authority; this section only covers what is dev-container-specific.
 > **Diagnose** (`ANDROID_HOME` unset / `/opt/android-sdk` missing / no `adb`, `java`, `emulator`):
 >
 > ```bash
-> bash .devcontainer/verify/verify-toolchain-present.sh   # the Android section now FAILS loudly
+> bash .devcontainer/verify/verify-toolchain-present.sh   # the Android section FAILS loudly
 > scripts/devcontainer-android.sh status                  # "…Skipping." = the no-op tell
 > ```
 >
@@ -717,7 +732,9 @@ which is the authority; this section only covers what is dev-container-specific.
 
 ## Running the stacks + tests in THIS container (validated 2026-07-16)
 
-Everything below was driven end-to-end in the dev container (feature 040). The load-bearing
+Everything below was driven end-to-end in the DinD dev container (feature 040); the sandbox's
+differences (the engine seam, `-v` mount sources, networking) are in
+[devcontainer-sandbox.md](devcontainer-sandbox.md) §§ 5–6. The load-bearing
 deltas vs. the normal workstation flow are called out — they are what cost a session to rediscover.
 
 ### 1. Bring up the stacks
@@ -734,11 +751,24 @@ export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' 
 MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code
 ```
 
-- **Ollama is UNREACHABLE from the containerized gateway** (nested-DinD `host.docker.internal`
-  resolves to the dev container, not the Windows host). **`MODEL_PROVIDER=anthropic` is the only
-  working model path in here** — it deploys the gateway against Claude (haiku-4-5 / sonnet-4-6).
-  Do NOT pass `SUPERVISOR_MODEL`/`SPECIALIST_MODEL` (the Ollama ids 404 at Anthropic).
-- **A stale image is old code.** `node scripts/agent-stack.mjs` now rebuilds the gateway/MCP images
+- **`MODEL_PROVIDER=anthropic`** deploys the gateway against Claude (haiku-4-5 / sonnet-4-6) — the
+  provider CI uses. Do NOT pass `SUPERVISOR_MODEL`/`SPECIALIST_MODEL` (the Ollama ids 404 at
+  Anthropic). **`MODEL_PROVIDER=ollama` also works in here, via the in-container `dev-ollama`** —
+  but this has flipped once, so **verify with the probe rather than trusting this line**:
+
+  ```bash
+  docker exec movie-assistant-gateway python -c "import urllib.request,json; \
+    print([m['name'] for m in json.load(urllib.request.urlopen('http://host.docker.internal:11434/api/tags'))['models']])"
+  # → ['qwen2.5:latest', 'qwen2.5:0.5b']
+  ```
+
+  Measured 2026-08-09 from inside the gateway container, as above. The 2026-07-16 measurement had
+  been that `host.docker.internal:11434` was reachable from the **BFF** container but **not** from
+  the gateway (`ConnectTimeout`, isolated `backend-network` / `movie-assistant-mcp-network`) — and the
+  model call is made by the gateway; the nested `dev-ollama` container closed that gap. The **Windows
+  host's** Ollama stays unreachable (nested-DinD `host.docker.internal` resolves to the dev container,
+  not the Windows host).
+- **A stale image is old code.** `node scripts/agent-stack.mjs` rebuilds the gateway/MCP images
   every time (feature 041), so an `agents/**` / `mcp-servers/**` change is picked up automatically;
   only `--no-build` reuses what is on the daemon. Still rebuild the BFF image after frontend/BFF
   changes — otherwise you test yesterday's bug.
@@ -786,28 +816,12 @@ pnpm nx test:integration mcm-app          # → 115 collected / 114 pass / 1 fai
 > This is the fourth CLAUDE.md gate in its natural habitat: 84 red suites look like a tier that cannot
 > run here, and are three `export`s.
 
-**Known env-gated suites in here (NOT code failures — don't chase them):**
+**Suites that look env-gated in here (NOT code failures — don't chase them):**
 
-| Suite | Why it can't pass in the dev container |
+| Suite | What it needs in the dev container |
 |---|---|
-| `agent-config-probes.integration.test.ts` (**1** test — the TMDB case) | Runs the provider probes **in-process from the host shell**; the TMDB case needs host→TMDB egress, allowlisted-out by design. **Its Ollama case now PASSES** (2026-08-09): the nested `dev-ollama` container made `localhost:11434` real, so this suite has one env-gated case, not two. |
-| `mc-service` integration binaries (`cargo test -p mc-service` runs them too) | Need `backend/mc-service/.env.local` (`MC_DB_URL`, `KEYCLOAK_*`), which this container doesn't create. The **lib/unit** tests are unaffected: `cargo test --manifest-path backend/mc-service/Cargo.toml --lib` → 148/148. |
-
-> **Ollama nuance — SUPERSEDED 2026-08-09, kept because the old note is worth not re-deriving.**
-> The 2026-07-16 measurement was that `host.docker.internal:11434` was reachable from the **BFF**
-> container but **not** from the agent gateway (`ConnectTimeout`, isolated `backend-network` /
-> `movie-assistant-mcp-network`) — so `MODEL_PROVIDER=ollama` "cannot work in here", because the model
-> call is made by the gateway.
->
-> **Re-measured from inside the gateway container, it now works:**
-> ```bash
-> docker exec movie-assistant-gateway python -c "import urllib.request,json; \
->   print([m['name'] for m in json.load(urllib.request.urlopen('http://host.docker.internal:11434/api/tags'))['models']])"
-> # → ['qwen2.5:latest', 'qwen2.5:0.5b']
-> ```
-> The nested `dev-ollama` container closed the gap, so a local agent E2E run against
-> `MODEL_PROVIDER=ollama` is feasible in here. **Verify by running the probe above rather than
-> trusting either version of this note** — it has now flipped once.
+| `agent-config-probes.integration.test.ts` | Runs the provider probes **in-process from the shell**. The **Ollama** case self-skips (`SKIP: ollama not reachable`) when nothing answers at `OLLAMA_BASE_URL` (default `localhost:11434`); it **PASSES** with the nested `dev-ollama` container, which made `localhost:11434` real (measured 2026-08-09). The **TMDB** case asserts a non-empty `TMDB_API_KEY` and needs shell→TMDB egress, which the feature-059 allowlist entry provides (see `TMDB_API_KEY` above); it was the one env-gated case before that entry. |
+| `mc-service` integration binaries (`cargo test -p mc-service` runs them too) | Need `backend/mc-service/.env.local` (`MC_DB_URL`, `KEYCLOAK_*`); `node scripts/gen-dev-env.mjs` creates it when absent (item #227). Without it they panic with `Missing("MC_DB_URL")`. The **lib/unit** tests are unaffected: `cargo test --manifest-path backend/mc-service/Cargo.toml --lib` → 148/148. |
 
 **Agent (python) integration** additionally needs the MCP servers, which publish **no host port** —
 run it from *on* the network (a sidecar mounting the repo + `/home/coder/.local/share/uv` so
@@ -900,7 +914,7 @@ Measured on PR #199, where the lockfile moved 1.60.0 → 1.62.1 and this tag did
 run and leaves CI broken. The full list of places the pin lives, and why the two halves must land
 in the same change, is in [e2e-testing.md](./e2e-testing.md).
 
-**This rule is now ENFORCED, not merely stated** (feature 061, item #204).
+**This rule is ENFORCED, not merely stated** (feature 061, item #204).
 `scripts/check-toolchain-consistency.mjs` compares the `@playwright/test` version `pnpm-lock.yaml`
 resolves against **every** occurrence of the tag in the workflow, and fails the `naming` guardrails
 job in ~0.4 s if any disagrees — including a partial bump where only one of the two moved. Run it
@@ -910,7 +924,7 @@ before you push:
 node scripts/check-toolchain-consistency.mjs
 ```
 
-Renovate now also proposes both halves in a single PR (the `playwright pin` group in
+Renovate also proposes both halves in a single PR (the `playwright pin` group in
 `renovate.json`), so the drift should not arrive in the first place. Note that the gate covers the
 **workflow** only: the operator copies in this file are not checked, because `specs/**` and the
 runbooks carry old tags as point-in-time records. Keeping this recipe current is still manual.
@@ -933,7 +947,7 @@ runbooks carry old tags as point-in-time records. Keeping this recipe current is
 > sudo chown -R coder:coder /workspaces/mcm
 > ```
 >
-> `onCreateCommand` now does this for the known artifact paths on container creation, so a rebuild
+> `onCreateCommand` does this for the known artifact paths on container creation, so a rebuild
 > self-heals — but a mid-session root-owned write still needs the command above.
 
 **Three non-obvious requirements for AGENT specs:**
@@ -987,9 +1001,7 @@ prod BFF deploys on **node:20**, but the repo's pinned `pnpm@11.17.0` requires N
 dev container tracks the **dev toolchain's Node (24, same as the host)**; BFF runtime parity is a
 SHOULD validated in CI, not here. **Rust stable + Python 3.13 + `uv` are PRESENT** — feature 038
 delivered them as devcontainer features, and the rest of this runbook already describes working with
-them (`cargo`, `uv sync`, the Python integration tiers). This paragraph previously described them as
-a deferred future increment, which had been untrue for some time and is the first thing a reader
-checks when asking whether `cargo` exists here at all. Compose stacks still build their own
+them (`cargo`, `uv sync`, the Python integration tiers). Compose stacks still build their own
 Rust/Python images *inside* nested Docker builds, so the pilot image does not need those toolchains
 for `pnpm nx build` / integration tests — it simply has them anyway.
 
@@ -1273,7 +1285,7 @@ Claude Code create it on the volume.
 > of them applies to only one path — and since the sandbox is the path in daily use, editing the
 > Docker Desktop file alone produces a fix that is real, committed, and inert.
 
-`verify-personal-layer.sh` now asserts this directly, by **device ID** rather than by path spelling
+`verify-personal-layer.sh` asserts this directly, by **device ID** rather than by path spelling
 — `stat -c %d` on the config root must differ from `$HOME`, which proves it is really the mounted
 volume and not an overlay directory that merely has the right name. An unset or misspelled
 `CLAUDE_CONFIG_DIR` fails the harness instead of reading as healthy.
@@ -1318,9 +1330,11 @@ devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-committe
 
 ### Forge git/registry access from inside the container
 
-The default-deny egress firewall blocks git pull/push and image pulls to the **tailnet forge**
-until its host is allowlisted. Wire it like `MCM_DEVCONTAINER_IMAGE` — via the **host** env, so the
-topology-sensitive host literal never enters git:
+On this path the default-deny `init-firewall.sh` egress firewall blocks git pull/push and image
+pulls to the **tailnet forge** until its host is allowlisted (the sandbox path handles the forge in
+its host-side policy instead — see [devcontainer-sandbox.md](devcontainer-sandbox.md) § 4). Wire it
+like `MCM_DEVCONTAINER_IMAGE` — via the **host** env, so the topology-sensitive host literal never
+enters git:
 
 ```powershell
 setx FORGE_REGISTRY_HOST <forge-host>     # e.g. the host from `git remote get-url origin`
