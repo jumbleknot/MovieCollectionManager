@@ -11,7 +11,8 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/wiki-maintenance.md"
+      "reason": "source changed: docs/runbooks/wiki-maintenance.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     },
     {
       "area": "runbooks",
@@ -28,23 +29,30 @@
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 2974,
+    "elapsedSeconds": 2182,
     "stoppedAtBudget": true
   },
-  "escalations": {},
+  "escalations": {
+    "runbooks/wiki-maintenance.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-10T02:18:11.442Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 447,
+    "calls": 394,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 4434750,
-    "cached": 44517510,
+    "uncached": 2920132,
+    "cached": 40559624,
     "cacheWrite": 0,
-    "output": 660649,
-    "reasoning": 542184,
-    "ms": 6748670,
-    "estCostUsd": 2.3903,
+    "output": 564312,
+    "reasoning": 462010,
+    "ms": 5049269,
+    "estCostUsd": 1.7966,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -54,12 +62,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/ci-diagnostics.md",
         "runbooks/wiki-maintenance.md"
       ],
       "effort": null,
-      "deadlineStop": false,
-      "estCostUsd": 2.3903,
+      "deadlineStop": true,
+      "estCostUsd": 1.7966,
       "rateLimited": null
     }
   ]
