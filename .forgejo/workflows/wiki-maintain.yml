@@ -141,23 +141,35 @@ jobs:
         # exactly this.
         run: bash scripts/ci-log-step.sh maintain-install-js-dependencies pnpm install --frozen-lockfile
 
-      # The generator is a GLOBAL npm binary, not a workspace dependency: the dev container bakes it
-      # into its toolchain image (`npm install -g openwiki@0.7.1`), so it is simply absent on the CI
-      # runner. The first real run on `main` died with `/bin/sh: 1: openwiki: not found` — the
-      # orchestrator did everything right, planned two slices, and then had nothing to invoke.
+      # The generator is not a workspace dependency, and the CI runner has none baked in: the first
+      # real run on `main` died with `/bin/sh: 1: openwiki: not found` — the orchestrator planned two
+      # slices and then had nothing to invoke. So this job installs it, and HOW is load-bearing.
       #
-      # Pinned, and kept in step with .devcontainer/toolchain.Dockerfile: an unpinned generator would
-      # mean CI and local silently running different versions of the thing whose output we gate on.
-      - name: Install the OpenWiki generator (pinned to match the dev container)
+      # FROM A COMMITTED LOCKFILE, NEVER RESOLVED FRESH (item #704). This step used to be
+      # `npm install -g openwiki@0.7.1 mermaid jsdom`: only `openwiki` was pinned, and its whole
+      # transitive tree (openai, deepagents, langsmith, …) plus mermaid/jsdom resolved to whatever was
+      # newest at run time — no lockfile, no cooldown. Run 4950 died 404-ing on openai 7.32.0 two
+      # minutes after it was published; the same gap let a minutes-old package run with the
+      # generator's model credential in its environment.
+      #
+      # tools/openwiki-generator/ is a STANDALONE pnpm workspace (its own pnpm-workspace.yaml, outside
+      # the root workspace's globs) holding exact pins and pnpm-lock.yaml. `--frozen-lockfile` installs
+      # exactly that tree or fails, and its `minimumReleaseAge` makes pnpm reject any locked entry
+      # younger than three days at install time (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION) — as well as
+      # at resolve time, which is what stops a lockfile REGENERATION dragging a fresh transitive in.
+      #
+      # `mermaid` + `jsdom` are the generator's optional peer deps and are locked in the same manifest:
+      # without the real parser a diagram that fails only the strict check is rewritten in place into a
+      # plain `text` fence, the run still exits 0, and every gate still passes. Kept at the version the
+      # dev container's .devcontainer/toolchain.Dockerfile installs; the guard test fails a mismatch.
+      - name: Install the OpenWiki generator from its committed lockfile
         if: steps.self.outputs.skip != 'true'
-        #
-        # `mermaid` + `jsdom` are the generator's optional peer deps, and installing them HERE is
-        # what the vendor means by "install the Mermaid parser wherever you run OpenWiki". From
-        # 0.5.0 diagrams are embedded by default and every fence is validated after a run; without
-        # the real parser a diagram that fails only the strict check is rewritten in place into a
-        # plain `text` fence, the run still exits 0, and every gate still passes. The scheduled run
-        # is the one that writes the bundle, so a silent downgrade here is the one that ships.
-        run: bash scripts/ci-log-step.sh maintain-install-openwiki-generator npm install -g openwiki@0.7.1 mermaid jsdom
+        run: |
+          bash scripts/ci-log-step.sh maintain-install-openwiki-generator bash -e /dev/stdin <<'CI_LOG_STEP'
+          set -euo pipefail
+          pnpm --dir tools/openwiki-generator install --frozen-lockfile
+          echo "$GITHUB_WORKSPACE/tools/openwiki-generator/node_modules/.bin" >> "$GITHUB_PATH"
+          CI_LOG_STEP
 
       # The checks that describe the PINNED generator (its managed AGENTS.md/CLAUDE.md block, its
       # concurrency range, its output-cap resolver) skip wherever it is not installed — every guardrail
@@ -169,7 +181,13 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh maintain-verify-installed-generator bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
-          OPENWIKI_ROOT="$(npm root -g)/openwiki" node --test --test-reporter=tap scripts/__tests__/wiki-maintain.guard.test.mjs > /tmp/generator-guard.tap 2>&1 || { cat /tmp/generator-guard.tap; exit 1; }
+          # The `openwiki` every later step starts must be the LOCKED one — never a global that
+          # happens to be on the runner's PATH.
+          case "$(command -v openwiki)" in
+            "$GITHUB_WORKSPACE/tools/openwiki-generator/node_modules/.bin/openwiki") ;;
+            *) echo "::error::openwiki resolves to '$(command -v openwiki)', not the locked install"; exit 1 ;;
+          esac
+          OPENWIKI_ROOT="$GITHUB_WORKSPACE/tools/openwiki-generator/node_modules/openwiki" node --test --test-reporter=tap scripts/__tests__/wiki-maintain.guard.test.mjs > /tmp/generator-guard.tap 2>&1 || { cat /tmp/generator-guard.tap; exit 1; }
           grep -E '^# (tests|pass|fail|skipped)' /tmp/generator-guard.tap
           grep -qE '^# skipped 0$' /tmp/generator-guard.tap || { echo "::error::a generator check SKIPPED — a skip is not a pass here"; grep -B2 '# SKIP' /tmp/generator-guard.tap; exit 1; }
           CI_LOG_STEP
