@@ -490,3 +490,58 @@ test('#227: a file the generator deliberately SKIPS is named in its output, not 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// Item #552 — the BACKUP_TEST_* projection used to be a silent `filter`: an mcm.env missing the
+// four keys projected nothing, said nothing, and nine backup suites then skipped to green. The
+// absence must be NAMED on the run that failed to project it, with the command that fixes it.
+const MCM_STACK = (root) => resolve(root, 'infrastructure-as-code/docker/stacks/mcm.env');
+const BACKUP_TEST_KEYS = [
+  'BACKUP_TEST_S3_ACCESS_KEY',
+  'BACKUP_TEST_S3_SECRET_KEY',
+  'BACKUP_TEST_WEBDAV_USER',
+  'BACKUP_TEST_WEBDAV_PASSWORD',
+];
+
+function runGeneratorAll(root) {
+  const r = spawnSync(process.execPath, [resolve(root, 'scripts/gen-dev-env.mjs')], {
+    encoding: 'utf8',
+    env: { ...process.env, TMDB_API_KEY: 'tmdb-fixture', MCM_SKIP_REALM_VERIFY: '1' },
+  });
+  assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  return `${r.stdout}${r.stderr}`;
+}
+
+test('#552: an mcm.env MISSING BACKUP_TEST_* keys is named, with the fix — not projected as nothing', () => {
+  const root = miniRepo();
+  try {
+    writeFileSync(MCM_STACK(root), 'AGENT_DB_PASSWORD=agent-fixture\nBACKUP_TEST_S3_ACCESS_KEY=mcmbackuptest\n', 'utf8');
+    const out = runGeneratorAll(root);
+    for (const k of BACKUP_TEST_KEYS.slice(1)) {
+      assert.match(out, new RegExp(k), `the absent ${k} must be named; got:\n${out}`);
+    }
+    assert.match(out, /gen-dev-secrets\.mjs/, 'the output must name the command that back-fills them');
+    assert.ok(!out.includes('agent-fixture'), 'no stack value may be printed');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#552: a COMPLETE mcm.env projects all four BACKUP_TEST_* keys and warns about none', () => {
+  const root = miniRepo();
+  try {
+    writeFileSync(
+      MCM_STACK(root),
+      BACKUP_TEST_KEYS.map((k) => `${k}=${k.toLowerCase()}-fixture`).join('\n') + '\n',
+      'utf8',
+    );
+    const out = runGeneratorAll(root);
+    const local = readFileSync(ENV_LOCAL(root), 'utf8');
+    for (const k of BACKUP_TEST_KEYS) {
+      assert.match(local, new RegExp(`^${k}=${k.toLowerCase()}-fixture$`, 'm'), `${k} not projected`);
+    }
+    assert.doesNotMatch(out, /BACKUP_TEST_\w+ .*(absent|missing)/i, `unexpected warning:\n${out}`);
+    assert.doesNotMatch(out, /backup_test_\w+-fixture/, 'no projected value may be printed');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
