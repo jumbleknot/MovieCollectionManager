@@ -3,11 +3,12 @@
 // Reads each committed infrastructure-as-code/docker/stacks/<stack>.env.example and mints a real
 // value for every `<generate:KIND>` placeholder, copying deterministic fixtures verbatim, into the
 // gitignored <stack>.env that Docker Compose interpolates. Idempotent by default (preserves a
-// running dev's values); --force rotates. See
+// running dev's values) — an EXISTING file is completed, not skipped: keys it lacks, and generated
+// keys it holds EMPTY, are minted and NAMED in the output (values never printed); --force rotates. See
 // specs/021-externalize-compose-secrets/contracts/env-var-manifest.md.
 //
 // Usage:
-//   node scripts/gen-dev-secrets.mjs                       # generate every missing <stack>.env
+//   node scripts/gen-dev-secrets.mjs                       # generate missing files, back-fill missing keys
 //   node scripts/gen-dev-secrets.mjs --force               # rotate ALL (overwrite existing)
 //   node scripts/gen-dev-secrets.mjs --stack=observability # only one stack
 //   node scripts/gen-dev-secrets.mjs --force --stack=auth  # rotate one stack
@@ -97,15 +98,23 @@ const KV = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
  * Add any template key absent from an existing `<stack>.env`, minting placeholders as usual and
  * copying fixtures verbatim. Existing keys are left EXACTLY as they are — including ones a
  * developer edited by hand — so this is safe to run on a live box with stacks up.
+ *
+ * One exception, item #552: a `<generate:KIND>` key that is present but EMPTY (`KEY=`) is minted
+ * in place. It holds no value, so filling it rotates nothing — and counting it as "present" is the
+ * silent-skip this item is about: the run says up to date, the suite that needs it skips to green,
+ * and nothing names why. A FIXTURE key left blank is not touched: the template itself may leave it
+ * blank on purpose (REGISTRY_HOST is set per machine), and the generator has no value to give it.
+ * Only key NAMES are ever printed, never values.
  */
 function seedMissingKeys(stack, tmpl, out) {
-  const present = new Set(
-    readFileSync(out, 'utf8')
-      .split(/\r?\n/)
-      .map((l) => KV.exec(l.trim())?.[1])
-      .filter(Boolean),
-  );
+  const existingLines = readFileSync(out, 'utf8').split(/\r?\n/);
+  const present = new Map();
+  existingLines.forEach((l, i) => {
+    const kv = KV.exec(l.trim());
+    if (kv && !present.has(kv[1])) present.set(kv[1], { value: kv[2].trim(), index: i });
+  });
   const added = [];
+  const filled = [];
   for (const line of readFileSync(tmpl, 'utf8').split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
@@ -115,8 +124,9 @@ function seedMissingKeys(stack, tmpl, out) {
       return { stack, status: 'malformed' };
     }
     const [, key, rawValue] = kv;
-    if (present.has(key)) continue;
     const ph = PLACEHOLDER.exec(rawValue.trim());
+    const existing = present.get(key);
+    if (existing && (existing.value !== '' || !ph)) continue;
     let value;
     if (ph) {
       try {
@@ -128,17 +138,30 @@ function seedMissingKeys(stack, tmpl, out) {
     } else {
       value = rawValue;
     }
-    added.push(`${key}=${value}`);
+    if (existing) {
+      existingLines[existing.index] = `${key}=${value}`;
+      filled.push(key);
+    } else {
+      added.push(`${key}=${value}`);
+    }
   }
-  if (added.length === 0) {
+  if (added.length === 0 && filled.length === 0) {
     console.log(`  ${stack}: up to date (exists; --force to rotate)`);
     return { stack, status: 'skipped' };
   }
-  const body = readFileSync(out, 'utf8').replace(/\n*$/, '\n');
-  writeFileSync(out, `${body}${added.join('\n')}\n`, { encoding: 'utf8' });
+  const body = existingLines.join('\n').replace(/\n*$/, '\n');
+  writeFileSync(out, `${body}${added.map((a) => `${a}\n`).join('')}`, { encoding: 'utf8' });
+  const parts = [];
+  if (added.length) {
+    parts.push(`seeded ${added.length} new key(s) (${added.map((a) => a.split('=')[0]).join(', ')})`);
+  }
+  if (filled.length) parts.push(`filled ${filled.length} EMPTY key(s) (${filled.join(', ')})`);
+  console.log(`  ${stack}: ${parts.join('; ')} in ${stack}.env; existing values untouched`);
+  // A value minted now cannot match a container already running with an older one. Say so, rather
+  // than leave the next 401 to be diagnosed from scratch.
   console.log(
-    `  ${stack}: seeded ${added.length} new key(s) into ${stack}.env ` +
-      `(${added.map((a) => a.split('=')[0]).join(', ')}); existing values untouched`,
+    `  ${stack}: containers started BEFORE this run do not hold the new value(s) — recreate the ` +
+      'ones that consume them, then re-run `node scripts/gen-dev-env.mjs` to project them.',
   );
   return { stack, status: 'seeded' };
 }

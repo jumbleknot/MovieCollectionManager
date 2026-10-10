@@ -158,6 +158,10 @@ const BACKUP_TEST_KEYS = [
 const backupTestCreds = Object.fromEntries(
   BACKUP_TEST_KEYS.filter((k) => mcmStack[k]).map((k) => [k, mcmStack[k]]),
 );
+// Item #552: the filter above used to be the whole story — an mcm.env missing these keys projected
+// nothing and said nothing, and nine backup suites skipped to green. Name what is absent (names
+// only, never values) and the command that back-fills it without rotating anything.
+const absentBackupTestKeys = BACKUP_TEST_KEYS.filter((k) => !mcmStack[k]);
 
 const priorLocal = existsSync(ENV_LOCAL) ? parseEnv(ENV_LOCAL) : {};
 const priorBackupKey = priorDocker.BACKUP_CREDENTIAL_ENC_KEY || priorLocal.BACKUP_CREDENTIAL_ENC_KEY || '';
@@ -633,6 +637,17 @@ console.log(
 // the whole of item #227 is that an absent file was indistinguishable from an unconsidered one.
 for (const [path, why] of NOT_GENERATED) {
   console.log(`[gen-dev-env] NOT written (by design): ${path} — ${why}`);
+}
+
+if (absentBackupTestKeys.length) {
+  console.warn(
+    `[gen-dev-env] WARNING: ${absentBackupTestKeys.join(', ')} ` +
+      (existsSync(MCM_STACK_ENV) ? 'absent or empty in' : 'not projected — there is no') +
+      ' infrastructure-as-code/docker/stacks/mcm.env, so .env.local does not carry them and the ' +
+      'backup-destination integration suites will skip. Back-fill them (existing values are never ' +
+      'rotated) with `node scripts/gen-dev-secrets.mjs --stack=mcm`, recreate the `backups` profile ' +
+      'containers so they hold the same values, then re-run this script.',
+  );
 }
 
 // `.env.e2e.local` is NOT auto-created: its sync set is only the credential half, and the web E2E also
