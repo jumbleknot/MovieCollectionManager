@@ -199,7 +199,7 @@ jobs:
       # again — so the cost is the validation itself, not a second download. The flags are the
       # measured ones; see the `renovate-config` job in guardrails.yml for what each one holds up.
       - name: 'Validate renovate.json before acting on it (item #309)'
-        run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --package renovate@44.131.0 -- renovate-config-validator --strict --no-global renovate.json
+        run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
       - name: Run Renovate
         env:
           # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
@@ -257,11 +257,11 @@ jobs:
         # What covers it is the `actions/setup-node` step above, not this pin. So when raising the
         # major, check the new major's `engines.node` against that step's `node-version` as well as
         # the config changes — a pin bump and a runtime bump are two separate reviews.
-        # PINNED to 44.131.0 (2026-10-02): every renovate >= 44.131.1 depends on @yarnpkg/core@4.9.2, which was
-        # published with a Yarn-only dependency spec (got: patch:got@npm%3A11.8.2#~/.yarn/patches/…). npm cannot
-        # install it (EUNSUPPORTEDPROTOCOL), and under npx it exits 1 with no message — measured locally and on
-        # PR #630. Un-pin back to `renovate@44` once a release depends on a fixed @yarnpkg/core (backlog item).
-        run: bash scripts/ci-log-step.sh renovate npx --yes renovate@44.131.0
+        # Item #631: this was pinned to 44.131.0 from 2026-10-02 to 2026-10-10, because renovate 44.131.1–44.132.1
+        # depended on @yarnpkg/core@4.9.2, which npm cannot install (a Yarn-only `patch:` spec;
+        # EUNSUPPORTEDPROTOCOL). Under npx that failure exits 1 and prints nothing but the path to npm's log.
+        # Every release from 44.132.2 on is back on 4.9.1. Back on the major pin as of 2026-10-10 (44.149.2 installed).
+        run: bash scripts/ci-log-step.sh renovate npx --yes renovate@44
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

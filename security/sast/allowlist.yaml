@@ -227,9 +227,9 @@
 - scanner: "pnpm-audit"
   id: "GHSA-86w9-cpqp-85rv"
   locationPattern: "^node-forge@1\\.4\\.0$"
-  justification: "No patched node-forge exists (<= 1.4.0). Reached only via Expo CLI tooling (@expo/cli, @expo/code-signing-certificates); the app uses neither expo-updates nor code signing, and the CLI is not shipped in the web or server bundle, so the vulnerable PKCS#1 v1.5 verification path is not exercised at runtime. Operator-approved 2026-10-02."
+  justification: "No patched node-forge exists (<= 1.4.0; 1.4.0 is still latest, re-checked 2026-10-10). Reached only via Expo CLI tooling (@expo/cli@56.1.26, @expo/code-signing-certificates@0.0.6 — the only two dependents in the lockfile, re-measured 2026-10-10); the app uses neither expo-updates nor code signing (still no `expo-updates`/`codeSigning` in app.json, eas.json, package.json or src/), and the CLI is not shipped in the web or server bundle, so the vulnerable PKCS#1 v1.5 verification path is not exercised at runtime. The Expo 57 upgrade does NOT discharge this: @expo/cli@57.0.28 still depends on node-forge ^1.3.3. Operator-approved 2026-10-02, renewed 2026-10-10 (item #633)."
   addedBy: "claude (operator-approved, steve)"
-  expiry: "2026-11-01"
+  expiry: "2026-12-01"
 
 # ── 2026-10-03: braces GHSA-vfj7-8cjw-p6xm (no patched version exists) ──────────────────────────────
 # Stack-exhaustion DoS through deeply nested brace patterns; affected range `<= 3.0.3`, first patched:
@@ -247,12 +247,18 @@
 #
 # Pinned to the exact vulnerable version and SHORT-dated, as node-forge above: a different braces
 # version re-blocks for a fresh assessment, and the entry stops suppressing on the expiry.
+#
+# RENEWED 2026-10-10 (item #648), and node-forge above (item #633), after re-measuring: still no patched
+# release of either package. Two micromatch dependents have appeared since the original triage,
+# fast-glob (@tamagui/static, globby) and http-proxy-middleware (@nx/react, @nx/module-federation).
+# Both are build or dev tooling, and both are now in the justification. Both expiries moved to
+# 2026-12-01, the same date as the infra-image cohorts, so all of them are re-triaged in one sitting.
 - scanner: "pnpm-audit"
   id: "GHSA-vfj7-8cjw-p6xm"
   locationPattern: "^braces@3\\.0\\.3$"
-  justification: "No patched braces exists (<= 3.0.3; 3.0.3 is latest). Reached only via micromatch@4.0.8 in build/test tooling (Metro file map, Jest); counted as runtime solely because expo is a prod dependency. No first-party import, and the expanded globs come from repo config, never from a request, so the nested-pattern DoS has no input path."
+  justification: "No patched braces exists (<= 3.0.3; 3.0.3 is latest, re-checked 2026-10-10). Reached only via micromatch@4.0.8, whose dependents (re-measured in the lockfile 2026-10-10) are all build, test or dev tooling: Metro file map (metro-file-map, @expo/metro-file-map), Jest (@jest/core, @jest/transform, jest-config, jest-haste-map, jest-message-util), fast-glob@3.3.3 (via @tamagui/static, the build-time extractor, and globby) and http-proxy-middleware@3.0.7 (via @nx/react and @nx/module-federation, Nx dev-server tooling). Counted as runtime solely because expo is a prod dependency. No first-party import, and the expanded globs come from repo config, never from a request, so the nested-pattern DoS has no input path. Expo 57 does not discharge this (metro-file-map@0.87.1 still depends on micromatch ^4.0.4). Renewed 2026-10-10 (item #648)."
   addedBy: "claude (operator-approved, steve)"
-  expiry: "2026-11-01"
+  expiry: "2026-12-01"
 
 # ── @graphql-tools/utils GHSA-7mx3-vvmw-hjmv entry: DELETED 2026-10-09 (item #674) ───────────────────
 # Discharged by the first acceptance route item #674 named: upstream moved, and a lockfile refresh

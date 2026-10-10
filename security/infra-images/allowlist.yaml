@@ -440,12 +440,15 @@
 #     item #642 moved the worker to 4.56.0 (sha256:3f7571ff3a72), which scans with ZERO fixable Criticals
 #     under the gate criterion, so the entry would only have matched nothing (item #303).
 # WHY NOT THE BUMP (unleash): 8.2.0 is the newest release upstream, so no fixed image exists (item #711).
-# Keyed to version AND digest so any image change re-blocks; expiry was set to match the (now-deleted) langfuse entries.
+# Keyed to version AND digest so any image change re-blocks. The unleash entry was RENEWED 2026-10-10
+# (item #711) after re-measuring the same digest: still no fixed release upstream, still the boolean
+# `trust proxy`. Its expiry moved to 2026-12-01, the same date as the other open cohorts, so they are
+# re-triaged together.
 - image: '^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a'
   id: 'CVE-2026-90711'
-  justification: 'proxy-addr 2.0.7 trust-subnet IP spoofing. NOT REACHABLE, measured in this exact image 2026-10-09: dist/lib/app.js sets `trust proxy` to the boolean true, which Express handles without proxy-addr compiling any subnet. 8.2.0 is the newest upstream release, so no fixed image exists yet; delete when Renovate proposes one, do not renew without re-measuring.'
-  addedBy: 'renovate-window-2026-10-09'
-  expiry: '2026-10-23'
+  justification: 'proxy-addr 2.0.7 trust-subnet IP spoofing. NOT REACHABLE, measured in this exact image 2026-10-09 and RE-MEASURED 2026-10-10 (item #711): dist/lib/app.js line 43 sets `trust proxy` to the boolean true, unconditionally, and it is the only `trust proxy` in /unleash/dist, so Express never has proxy-addr compile a subnet. proxy-addr is 2.0.7 everywhere in the image. 8.2.0 (2026-09-08) is still the newest upstream release, so no fixed image exists; delete when Renovate proposes one, do not renew without re-measuring.'
+  addedBy: 'renovate-window-2026-10-09; renewed 2026-10-10 (item #711)'
+  expiry: '2026-12-01'
 
 
 # ── keycloak 26.7.4 entries CVE-2026-75595 / CVE-2026-8763 / CVE-2026-84939: DELETED 2026-10-02 ─────────
