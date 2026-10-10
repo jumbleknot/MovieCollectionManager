@@ -4,9 +4,6 @@ title: "ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4"
 description: Derived summary of the ratified decision to upgrade OpenSearch 2→3 before Langfuse 3→4 in separate specs, as landed on 2026-09-13 — both ceilings lifted and replaced by approval gates, the §3 gate measured, the audit store preserved under the §4a amendment, and the shared Postgres pin held on 16 by config.
 resource: docs/decisions/ADR-0002-stateful-major-upgrades.md
 tags: [adr, opensearch, langfuse, security, upgrade, decision-record, stateful]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-10T02:25:55.688Z
 sources:
   - id: openwiki-source-45464ccea280daa5176a3646
     resource: repo://agents/movie-assistant/src/audit_sink.py
@@ -47,8 +44,8 @@ entries carry an expiry of 2026-10-01. The 14-day warning tier opens 2026-09-17.
 Both halves have since landed: feature 071 (OpenSearch 3) and feature 072 (Langfuse 4, carrying the
 ClickHouse major it drags with it). The two `renovate.json` ceilings — `opensearchproject/opensearch`
 `allowedVersions: "<3"` and the `langfuse/langfuse` + `langfuse/langfuse-worker` `< 4` hold, which the
-ADR's own text numbers packageRules 19 and 20 (the numbering has since shifted, so look them up by
-image rather than by index) — are both gone. Each was replaced, not deleted: a `matchUpdateTypes:
+ADR's own text numbers packageRules 19 and 20 (still those two images at those indices; their
+`description` text in `renovate.json` still reads as the hold and is stale) — are both gone. Each was replaced, not deleted: a `matchUpdateTypes:
 ["major"]` plus `dependencyDashboardApproval: true` rule now makes the next major require an explicit
 dashboard tick, which is the ADR's "not by accident" expressed as config, while minors and patches
 stay automatic as the security patch stream. The same reasoning now governs two further rules:
@@ -161,8 +158,12 @@ literally — see the ClickHouse gotcha below.
   safe only because of §4: recreating the volumes collapsed a multi-major ClickHouse migration into
   a container swap. The pin has since moved further still — both `compose.yaml` and
   `compose.prod.yaml` now pull `clickhouse/clickhouse-server:26.6`, two majors past the `24.3` the
-  spec started from — which is only unremarkable because §4's property still holds: there is no data
-  to carry, so there is no version-skipping question.
+  spec started from — but **not under §4**. That bump arrived through a routine Renovate image update
+  on 2026-10-09 (#698), *after* the 072 cutover and over live production traces; §4 ratified
+  discarding the trace store **at that cutover only**, so it does not make later majors data-free. A
+  green CI did not exercise it either — `app-e2e` never starts the observability stack. Requiring a
+  dashboard tick for ClickHouse (and the other stateful datastore) majors is the follow-up proposed
+  in PR #705.
   `postgres` stayed on **16**, deliberately: `langfuse-postgres` and `unleash-postgres` pin the same
   digest, and Unleash's store is not covered by §4's disposability ratification, so a Postgres major
   would have needed its own mandate. That is now enforced rather than merely remembered.

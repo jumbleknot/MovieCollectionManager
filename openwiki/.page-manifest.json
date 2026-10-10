@@ -29,13 +29,6 @@
       "completedBy": "openwiki/0.6.0",
       "completedRunId": "401d9486-0691-4d70-92d9-a210da7e9412"
     },
-    "/openwiki/decisions/adr-0002-stateful-major-upgrades.md": {
-      "gitHead": "6b12206a9fb8e8252d8af65be5698de766bd9d39",
-      "sourceFingerprint": "sha256:8e0fb4242a788953cf9ef96a2ceb3d060c6029fd30ed8ab50b56d7168224b8d6",
-      "pageVersion": "sha256:e773870f1bc008879ae998d0ca89fb894ec83813f05240175adaf6aad34c6c22",
-      "completedBy": "openwiki/0.7.1",
-      "completedRunId": "0b8f3a99-5e18-49b7-b28c-aa4436813396"
-    },
     "/openwiki/gotchas/playwright-testid-mapping.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
       "sourceFingerprint": "sha256:cf680f372b4da6fc5bb0c7076c84c4cf792f1b17786b5c37b882eac5e2e8dcbd",
