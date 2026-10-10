@@ -730,7 +730,7 @@ function readIfPresent(path) {
  * Must stay in lockstep with the `dir=` line in scripts/ci-log-step.sh — writer and reader derive
  * the same path independently, which is the drift that produced the original defect.
  */
-function stepLogDir(env = process.env, home = env.HOME ?? '') {
+export function stepLogDir(env = process.env, home = env.HOME ?? '') {
   return join(
     env.CI_STEP_LOG_ROOT || join(home, 'mcm-ci-step-logs'),
     env.GITHUB_RUN_ID || 'local',
