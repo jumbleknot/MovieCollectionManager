@@ -33,7 +33,7 @@ command and reads back the evidence the operator pastes.
 
 ## Phase 1: Setup and preconditions
 
-- [ ] T001 Rebase the branch on `main` **after item #642 (Langfuse 4.56.0) has merged**; resolve the
+- [x] T001 Rebase the branch on `main` **after item #642 (Langfuse 4.56.0) has merged**; resolve the
   Langfuse image lines in `infrastructure-as-code/docker/observability/compose.yaml` and
   `compose.prod.yaml` in #642's favour.
 
@@ -66,14 +66,14 @@ command and reads back the evidence the operator pastes.
   and the tool's execution location is recorded in research.md. **Any other result stops the feature
   for an operator decision** (spec Edge Cases) — do not proceed to Phase 2.
 
-- [ ] T004 Resolve the `rustfs/rustfs` pin: the newest 1.x past Renovate's 3-day cooldown (1.0.1 unless
+- [x] T004 Resolve the `rustfs/rustfs` pin: the newest 1.x past Renovate's 3-day cooldown (1.0.1 unless
   a later one qualifies), **index** digest via `docker buildx imagetools inspect`; re-scan it under the
   gate criterion (`aquasec/trivy:0.74.0 image --severity CRITICAL --ignore-unfixed`, ghcr DB mirrors);
   confirm `id -u` = 10001 and `curl` present. Record in research.md R4.
 
   **Done when**: one digest is chosen, 0 fixable Critical is observed (not inferred), and R4 is updated.
 
-- [ ] T005 Save the baseline touchpoint list
+- [x] T005 Save the baseline touchpoint list
   (`git grep -il minio -- . ':!openwiki' ':!specs' ':!pnpm-lock.yaml'`) to the PR description and map
   every file to a task below or to a G2 exemption in `contracts/no-minio-guard.md`.
 

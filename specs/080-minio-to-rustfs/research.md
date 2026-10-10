@@ -77,6 +77,14 @@ Switching is a one-tag change in three compose files.
 `1.0.1-glibc` → `sha256:87763ed4dcb2bed3fc52cbf6cb7d865411e085b0b952dc78e50dffa9ece0ed9e`). The
 implementer re-resolves the **index** digest with `docker buildx imagetools inspect` before pinning.
 
+**[re-measured 2026-10-10, T004]** The pin is **`rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c`**.
+- `docker buildx imagetools inspect` returns the same index digest.
+- 1.0.1 (2026-10-03) is still the newest 1.x release and is past the 3-day cooldown. Only
+  `1.0.1-preview.*` tags are near it, and they are pre-releases.
+- Re-scanned with `--image-src remote` under the gate criterion (Trivy 0.74.0, ghcr DB mirrors):
+  **0 fixable Critical** (alpine 3.24.1).
+- `id -u` → `10001`, and `/usr/bin/curl` is present.
+
 - `Config.User` is the **name** `rustfs`; `id` → `uid=10001(rustfs) gid=10001(rustfs)`.
 - `Entrypoint ["/entrypoint.sh"]`, `Cmd ["rustfs"]`, `Volumes {"/data":{}}`, exposes 9000 and 9001.
 - Env defaults: `RUSTFS_VOLUMES=/data`, `RUSTFS_OBS_LOG_DIRECTORY=/logs`,
@@ -356,6 +364,14 @@ Open as of 2026-10-10: the dev `stacks/mcm.env` lost the four `BACKUP_TEST_*` ke
 at `60d03774` (2026-10-10). Every one is assigned to a task in `tasks.md` or to the guard's
 exemption list in `contracts/no-minio-guard.md`. Plus one **not in git**: the host-managed Nx-cache
 compose (R14).
+
+**[re-measured 2026-10-10, T005]** The count is still **72 files** on `origin/main` after #642, #704, #712 and #716 merged. Each one is mapped:
+- **57 by exact path** in `tasks.md` or the guard contract.
+- **7 integration suites** named in T014 by short name.
+- **8 ADR and proposal files** under the guard's `docs/decisions/**` and `docs/proposals/**` path
+  exemptions.
+
+No file is unmapped, so no new task is needed.
 
 ## Residual risks accepted
 

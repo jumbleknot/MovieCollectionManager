@@ -84,6 +84,21 @@ production Langfuse data is disposable. The operator explicitly wants it preserv
   workflow, Dockerfile, promotion script and their guards. RustFS is consumed as an upstream pulled
   image through Renovate and the infra-image sweep.
 
+### Session 2026-10-10 (operator answers to the open questions — all five defaults taken)
+
+- Q: How is the Nx-cache store handled (User Story 5)? → A: It is migrated in place by the same tool
+  and procedure. It stays a separate, operator-run story (Phase 10), so it never blocks the Langfuse
+  cutover.
+- Q: How long is the rollback window? → A: 14 days. After that, the original volume and the old
+  Komodo Variable are deleted (T047).
+- Q: Is the credential new or copied? → A: New. A freshly generated secret goes under
+  `LANGFUSE_RUSTFS_SECRET_KEY`, and `LANGFUSE_MINIO_ROOT_PASSWORD` is kept until T047 for rollback.
+- Q: Is the ingestion gap during cutover acceptable? → A: Yes. Langfuse ingestion stops while the
+  writers are stopped, and resumes when `cd-deploy` on `main` finishes, about one CI run later. The
+  cutover goes through `cd-deploy` (T039), not a manual Komodo deploy.
+- Q: Is item #552 fixed first, or does the proof rely on CI? → A: Item #552 is fixed first, so the
+  local zero-skip proof (T016) is real and T002 passes.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Production Langfuse keeps every object it had, on RustFS, with a real way back (Priority: P1)
@@ -409,11 +424,4 @@ remote-cache hit.
 
 ## Open Questions (for the operator)
 
-1. **Nx-cache store (User Story 5)** — it is host state, holds only rebuildable cache, and is outside
-   the in-place decision as stated. Default here: migrate it in place by the same tool (one procedure,
-   warm cache). Acceptable alternative: recreate empty. Or defer it to its own item.
-2. **Rollback window length** — default 14 days, then the original volume and old Komodo Variable are
-   deleted.
-3. **New credential value** — default: a freshly generated secret under the new variable name
-   (measured: RustFS accepts different root credentials on a migrated MinIO drive), which rotates the
-   credential for free. Alternative: copy the old value.
+None. All five were answered on 2026-10-10 (see Clarifications), each taking the default.
