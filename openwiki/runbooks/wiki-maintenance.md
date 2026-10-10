@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain, the provider/credential table with its per-provider knobs (page concurrency, service tier, and the Fireworks-only reasoning effort of item #525) and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the run budget with its per-event job deadline and exit-code semantics, the four independent slice-verification causes (missing page, non-conformance including V16, a policy-forbidden write, a page left stale after the run), the deadline-stop escalation that tags the pages a GNU timeout stopped and retries them first and alone at low reasoning effort (feature 078 US6), the single long-lived openwiki-maintenance proposal that proposes per part and reverts unrequested writes after a deadline stop, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain, the provider/credential table with its per-provider knobs (page concurrency, service tier, and the Fireworks-only reasoning effort of item #525) and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the run budget with its per-event job deadline and exit-code semantics, the four independent slice-verification causes (missing page, non-conformance including V16, a policy-forbidden write, a page left stale after the run), the deadline-stop escalation that tags the pages a GNU timeout stopped and retries them first and alone at low reasoning effort (feature 078 US6), the single long-lived openwiki-maintenance proposal that proposes per part, reverts unrequested writes after a deadline stop and restores a failed part before proposing the rest, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -49,10 +49,10 @@ sources:
     resource: repo://specs/078-wiki-generator-cost/research.md
   - id: openwiki-source-7086f8288aa6f7e1f4ff5e4e
     resource: repo://specs/078-wiki-generator-cost/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-08T02:37:22.749Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-08T02:37:22.749Z
+    at: 2026-10-10T02:25:55.688Z
 ---
 
 
@@ -101,14 +101,15 @@ stateDiagram-v2
     Invocation --> Verify: pages counted from the working tree
     Verify --> Partial: failure only on other parts, conformance and policy clean
     Partial --> Proposal: the landed parts are proposed
-    Partial --> Backlog: only the failed parts return
+    Partial --> RestoreFailedPart: only the failed parts return
     Verify --> Proposal: any page landed, whatever the outcome
     Verify --> StoppedAtBudget: page or time budget spent, or under 5 min left before the reserve
     StoppedAtBudget --> Proposal: pages that landed are still proposed (exit 3, not a failure)
     Verify --> Retry: slice failed, attempts remain
     Retry --> Verify
-    Retry --> Backlog: 3 attempts used
-    Verify --> Backlog: slice failed
+    Retry --> RestoreFailedPart: 3 attempts used
+    Verify --> RestoreFailedPart: slice failed
+    RestoreFailedPart --> Backlog: each failed part is back at its committed bytes
     Backlog --> Tag: only a deadline stop tags the pages that did not land
     Tag --> [*]: the next run retries them first, at low effort
     Verify --> StoppedAtFailureLimit: two consecutive slices failed
@@ -129,10 +130,11 @@ or wall clock, or a job deadline that leaves too little time to *start* a genera
 the remainder carried forward (exit 3),
 while two consecutive slice failures end it as a failure (exit 1). A run that
 generated pages but could not get them onto a proposal undoes the marker advance rather than certifying
-work that only exists on a runner about to be thrown away. Four of those edges are the newer machinery: a
+work that only exists on a runner about to be thrown away. Five of those edges are the newer machinery: a
 generator the job deadline stops is first cleaned of everything the slice never asked for, an
 invocation that fails only on *some* of its parts proposes the parts that verified instead of discarding
-them with the failed ones, a deadline stop is also what tags the pages that did not land, and the next run
+them with the failed ones, the parts that did *not* land are restored to their committed bytes so they
+cannot ride along on that proposal, a deadline stop is also what tags the pages that did not land, and the next run
 takes those tagged pages first and alone at a lower reasoning effort.
 
 ## The provider is configuration (feature 078)
@@ -235,6 +237,8 @@ flowchart TD
     E -->|no| G["Slice verified"]
     P --> K["The parts that verified are still proposed"]
     P --> H["Retried within the run, then only the failed parts return to the backlog"]
+    P --> R["Each failed part's page, sidecar and manifest entry are restored"]
+    R --> K
     F --> H
     G --> I["Marker may advance — only if no slice in the run failed"]
 ```
@@ -261,8 +265,10 @@ one means, are enumerated in the gotchas below. The two stamp-reading checks thi
 Two refinements the diagram shows that the four causes alone do not. A failure that is attributable
 *only* to other parts — a requested page missing or still stale, with conformance and policy clean — is
 recorded per part (`landedParts`), so the parts that verified are proposed and only the failed parts
-return to the backlog. And a generator the job deadline stopped is first cleaned up: everything the run
-changed is restored, or deleted if new, except what the slice actually requested. That same stop is what
+return to the backlog; the failed parts are also restored to their committed bytes first, so their
+pages cannot ride along on that proposal (item #685). And a generator the job deadline stopped is first
+cleaned up: everything the run changed is restored, or deleted if new, except what the slice actually
+requested. That same stop is what
 feeds the escalation machinery described under **Escalation after a deadline stop** below — the pages
 that did not land are tagged and retried first and alone at a lower reasoning effort on the next run.
 
@@ -390,7 +396,7 @@ in the same commit.** An orphan tag for a page that is neither queued nor presen
 run; one for a page that still exists is kept, and does nothing until the page is planned again.
 
 **What the record shows.** `lastRunInvocations` lists each invocation with its pages, `effort`,
-`deadlineStop` and `estCostUsd`, and `lastRunUsage.reasoningEffort` reads `mixed` when invocations differ
+`deadlineStop`, `estCostUsd` and `rateLimited`, and `lastRunUsage.reasoningEffort` reads `mixed` when invocations differ
 — naming the first one's effort would misattribute the whole run's tokens to it.
 
 **Caveat, and it is the reason this is a retry and not a promise.** The evidence that `low` lands a slow
@@ -428,6 +434,15 @@ output tokens. When an escalated invocation runs at `low` beside default-effort 
 `reasoningEffort: "mixed"` rather than misattributing every token to the first invocation's effort, and
 `lastRunInvocations` names each invocation's own `effort` and `deadlineStop`.
 
+**The per-call lines themselves are kept in the evidence bundle (item #682).** In CI, each invocation's
+tap lines are appended to the job's step log `wiki-usage.log`, under a `# invocation pages=… effort=…`
+header, so they arrive in `ci-failures:<runId>--maintain` as `step:wiki-usage`
+(`node scripts/ci-status.mjs failure --run <id> --full`). Read them when a page's worker "exited without
+submitting": `uncached + cached` per call is the prompt size, so a run whose last calls approach the
+170k-token compaction threshold looks different from one that stopped well short of it. Until 2026-10-10
+only the sum survived — run 4960 failed after 447 calls with nothing finer to read. Counts, status and
+timing only, like the tap itself; nothing is written outside CI.
+
 ## Gotchas
 
 - **A filename is not a specification.** The run message carries a one-line subject per page — without
@@ -446,7 +461,14 @@ output tokens. When an escalated invocation runs at `low` beside default-effort 
 - **A slice is retried up to 3 times within one run before returning to the backlog**, and the attempt
   count is always reported. A retry can never forgive what an earlier attempt did: the working tree is
   snapshotted once, before the first attempt, so a forbidden write on attempt 1 still fails the slice
-  even if attempt 2 behaves. Note: the ~50% "miss" rate measured during feature-044 was not genuine
+  even if attempt 2 behaves. **A rate-limited attempt waits instead of retrying at once (item #683):**
+  a failed attempt where at least half of its calls answered HTTP **429** is recognised from the usage
+  tap's per-call `status` — never from the generator's text — and the retry then waits 60 s (120 s
+  before a third attempt), but only while it would still *start* inside the 4-minute time budget and
+  leave the generator its 5 minutes before the job deadline; otherwise the attempt is not retried. An
+  attempt that produced nothing **without** a 429 still retries immediately, and either way it is
+  named (`RATE-LIMITED (N call(s) answered HTTP 429)`, plus `rateLimited: {attempts, calls}` on the
+  invocation in `lastRunInvocations`). Note: the ~50% "miss" rate measured during feature-044 was not genuine
   non-determinism — it was a fixed bug (the model id then pinned was absent from
   `@langchain/anthropic`'s table, so every turn was silently capped at 4096 output tokens and truncated
   before it could open a tool call). OpenWiki 0.5.2 fixed the cause upstream — an explicit `maxTokens`
@@ -545,7 +567,7 @@ output tokens. When an escalated invocation runs at `low` beside default-effort 
 - **The proposal is one long-lived branch (`openwiki-maintenance`), at most one open pull request, ever,
   and never auto-merged.** The runner is a fresh checkout, so the branch exists there only on the
   **remote**: the run checks it out from there, and only while its proposal is **open** (a closed one's
-  commits are not revived — see the #619 gap below). Until 2026-09-28 it looked only for a *local*
+  commits are not revived — its work has gone back to the backlog instead). Until 2026-09-28 it looked only for a *local*
   branch, found none on every CI run, started from `main`, and the `--force-with-lease` push replaced
   the open proposal — measured on proposal #594, where a 4-page and then an 8-page slice were discarded
   while the run record still listed both. A run that finds it open now continues the *remote* branch,
@@ -553,11 +575,14 @@ output tokens. When an escalated invocation runs at `low` beside default-effort 
   update — and the push refuses outright (`pushing would discard N commit(s) from open proposal`) when
   `git cherry` shows a commit the open proposal holds that the new head lacks: a red run, never a silent
   overwrite. Closing it without merging is *meant* to return its work to the backlog and roll the marker
-  back — without that, abandoning a proposal leaves the marker certifying work that never landed. **It
-  does not do so today (item #619):** the run computes its plan before it reconciles the proposal, so
-  the returned slices are overwritten by the run's own backlog and `markerBefore` records the
-  already-advanced marker. Until #619 is fixed, re-seed a closed proposal's pages by hand — a seed
-  change that edits `backlog` in `openwiki/.maintenance-state.json`. If the *publishing* step itself
+  back — without that, abandoning a proposal leaves the marker certifying work that never landed. **Both
+  halves of that were broken until item #619 (2026-10-09) and are fixed now:** the run reconciles the
+  previous proposal **before** it plans, so the returned slices are planned and the plan starts from the
+  rolled-back marker rather than the run's own backlog overwriting them; and `markerBefore` is the marker
+  the opening run *found* — read before generation — not the one it advanced to, or the roll-back would
+  be a no-op. Reconciling is free (one forge read) and precedes even the preflight; a forge that cannot
+  be reached for it stops the run at exit 2 rather than planning without the answer, and a `--dry-run`
+  reconciles in memory only. If the *publishing* step itself
   fails instead (the push or the forge call), the marker is held and this run's slices go back to the
   backlog, so nothing is certified that never reached a proposal; the recorded usage stays, because that
   money was already spent.
@@ -570,10 +595,18 @@ output tokens. When an escalated invocation runs at `low` beside default-effort 
   stale at the deadline — and since the backlog page's source change was already behind the marker,
   nothing would have planned it again. A **whole-invocation** failure (conformance or policy) still
   proposes nothing and returns every part. A proposal is created or updated whenever **any** page
-  landed — including a run that stopped at its budget (exit 3) or had a failed slice (exit 1) — and a
-  failed slice's written files are **not** reverted, so when another slice in the run verified, whatever
-  the failed slice wrote rides along on the proposal: review it as such. The run stops early only after
-  two consecutive slice failures.
+  landed — including a run that stopped at its budget (exit 3) or had a failed slice (exit 1). **A
+  failed part's bytes no longer ride along on that proposal (item #685):** the proposal stages the whole
+  working tree, so on #684 (run 4801) `runbooks/sast-scanning.md` travelled with the landed part after
+  openwiki's restore path had rewritten it without its `verified:` block and re-hashed its sidecar to
+  match — V16 stayed sound, no gate noticed, and merging would have erased a verification event for a
+  page that was never regenerated. After a failed invocation, each failed part's page and `.claims`
+  sidecar return to their committed bytes and its `.page-manifest.json` entry to its pre-invocation
+  value — all three or none, so V16 still compares a page with its own sidecar — and the run says so.
+  Left alone, and so still possible on a proposal: a page whose page or sidecar was dirty **before** the
+  invocation (its prior bytes are not in git), an **untracked** new page (it has no committed state, and
+  deleting it would orphan its index link), and anything the generator wrote **outside** the requested
+  pages. Review those as such. The run stops early only after two consecutive slice failures.
 - **After a deadline stop, the slice keeps only what it requested.** openwiki forces every page with a
   Claims issue into a run, so a generator stopped part-way (GNU `timeout` exit 124, or 137 after
   `--kill-after`) can leave a page it was never asked for half-written — on run 4606 (2026-10-04) that

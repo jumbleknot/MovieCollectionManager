@@ -4,14 +4,23 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the anti-ratchet per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), the event-vs-trigger_event field split that makes a scheduled run look like a push, the ⏳ trap where absence in the 50-row tasks window is not evidence a job was never scheduled, the scheduled-run-posts-no-commit-status fix (item #485), the commit-status bookkeeping pattern for green jobs whose output would otherwise vanish (item #457), and the mc-service evidence-bundle log-ordering trap that can manufacture a race that never happened (item #568).
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-26T17:09:29.023Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-96c32d20fcdefc48cf9ec296
+    resource: repo://backend/mc-service/src/api/collections/create.rs
+  - id: openwiki-source-c3e333457ea705ec015d1cbd
+    resource: repo://backend/mc-service/src/api/collections/delete.rs
+  - id: openwiki-source-12999abcc7373e8376b400bb
+    resource: repo://backend/mc-service/src/api/collections/list.rs
+  - id: openwiki-source-4ed96763667f13cac6dcc6ce
+    resource: repo://backend/mc-service/src/api/middleware/logging.rs
   - id: openwiki-source-f83bd1373e0f000fa5d548c0
     resource: repo://docs/runbooks/ci-diagnostics.md
+  - id: openwiki-source-f003db5a1a23dba30ccf3b03
+    resource: repo://docs/runbooks/ci-evidence-pipeline.md
+  - id: openwiki-source-3adf769c2d4e02405ca6896b
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/assistant-add-flow.ts
   - id: openwiki-source-083be07d2570a758cc6c0b74
     resource: repo://scripts/__tests__/renovate-health.test.mjs
   - id: openwiki-source-f8f2427f127614b5db674fca
@@ -22,7 +31,10 @@ sources:
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.5.2", at: "2026-09-26T17:09:29.023Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-10T02:25:55.688Z
 ---
 
 # CI self-serve diagnostics
@@ -303,15 +315,45 @@ runtime rather than any literal configured value.
 - **A bundle's `logs/mc-service.log` is ordered by completion, not by start — read literally it
   manufactures races that never happened (item #568).** mc-service logs its domain event in the same
   emit as the response, at the END of the handler, so a slow request's line appears *after*
-  everything that ran during it. Recover real ordering by subtracting each line's `duration_ms` from
-  its own timestamp to get a start time, then sort on that — never trust file order for timing. A
-  fully-reasoned cross-worker race hypothesis, built from four adjacent raw lines, nearly triggered a
-  per-worker test-fixture redesign; subtracting durations showed the "later" write had actually
-  started earlier, so there was no concurrency to isolate at all. Before accepting any cross-worker or
-  cross-actor theory, check it against `subject` / `preferred_username` / `authorized_party` in the
-  same lines first — mc-service scopes collections by `owner_id = token.subject`, so two lines with
-  different `subject` values cannot be acting on the same collection regardless of how their
-  timestamps or sequential-looking ObjectIds line up.
+  everything that ran during it. Two emitters produce that ordering: `logging_middleware`
+  (`backend/mc-service/src/api/middleware/logging.rs`) awaits `next.run(request)` first and only then
+  emits the `request completed` event carrying `status` and a numeric `duration_ms`, and each handler
+  logs its own domain event (`collection_created`, `collection_deleted`, …) after its command/query
+  has returned and just before the response goes out.
+  Recover real ordering by subtracting each line's `duration_ms` from its own timestamp to get a
+  start time, then sort on that — never trust file order for timing. A fully-reasoned cross-worker
+  race hypothesis, built from four adjacent raw lines, nearly triggered a per-worker test-fixture
+  redesign; subtracting durations showed the "later" write had actually started earlier, so there was
+  no concurrency to isolate at all. Extract the window as a table instead of reading raw lines — the
+  token payload drowns the fields that matter:
+
+  ```bash
+  # start time = timestamp - duration_ms. Print both, and sort by the START when ordering matters.
+  python3 - <<'EOF' < /tmp/mcm-ci-status/<runId>--<job>/logs/mc-service.log
+  import sys, json
+  for line in sys.stdin:
+      i = line.find('{')
+      if i < 0: continue
+      try: o = json.loads(line[i:])
+      except Exception: continue
+      f, sp = o.get('fields', {}), o.get('span', {})
+      print(o['timestamp'], f"dur={f.get('duration_ms')}", f.get('status'),
+            sp.get('method'), sp.get('path') or sp.get('name'), f.get('message'))
+  EOF
+  ```
+
+  **Two fields settle "who did this" without inference, and one scoping rule ends most cross-worker
+  theories outright.** `authorized_party` separates the *actors* even when every E2E worker acts as
+  the same subject: `movie-collection-manager` is the browser/BFF session (a test or its teardown),
+  `agent-gateway` with `mc-service` in the audience is the agent's downscoped write token.
+  `preferred_username` names the *worker* (`e2e_w3_…` is worker 3), which is what distinguishes a
+  test's own teardown from another worker's. But check the scoping first: every collection endpoint
+  derives `owner_id` from `token.subject` (`api/collections/{list,get,delete,create,update}.rs`), so
+  mc-service scopes collections by `owner_id = token.subject` — a foreign worker cannot list, read or
+  delete your collection at all, and two lines carrying different `subject` values cannot be acting
+  on the same collection regardless of how their timestamps or sequential-looking ObjectIds line up.
+  Sequential ObjectIds prove nothing either: ids differing by one only mean concurrent creations in
+  the same second, which is consistent with any number of independent writers.
 - **A session merging through the API must pass `delete_branch_after_merge: true` every time — the
   repo setting does not cover API merges.** `default_delete_branch_after_merge: true` (enabled
   2026-08-29) is the default for the **web UI merge button only**. An API merge omitting the flag

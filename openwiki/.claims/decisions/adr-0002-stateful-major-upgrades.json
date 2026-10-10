@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:684dd652329d116a3901bbae9962b9f2d51718d19a56f29d5da8f0653e57ed7c",
+  "pageVersion": "sha256:e773870f1bc008879ae998d0ca89fb894ec83813f05240175adaf6aad34c6c22",
   "claims": [
     {
       "id": "claim_8b6898d0a9ad4212967a781a765e86c2",
@@ -127,7 +127,7 @@
           "version": "repo-lines-v1:sha256:3e67a06659434581a6f66a34530bd9b9898c5795efd3edcad287a2363d065c33:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkMDdiODBmZWVmZGYyNDQxODRjZmRkNTBjOTk4MDFlOGRhMDEzMGIzNTY1OTg1ODE2NDk1ODM1MTA3OTAyOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2ZTU5YTNkN2JhNGM1NTk3OTRhNWQ4NzExZDYzNTBkNjBmMmRkMzljYmQwM2RkMzJjNzIwMTc0YzI0MWU3YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://renovate.json#L816-L895",
+          "resource": "repo://renovate.json#L831-L910",
           "version": "repo-lines-v1:sha256:be24d4fc25f92b0cde4cd9742f6fd266807b1f395fccd843c0ffd6131320a5c5:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3OWE3NTRhNjc2YWNjNGE3NWVlNmQ2ZmVkZjUwYjZkYjM5OTc1MmZjNTIxMWYyZGExYjIxOGVhNjhjYjVjYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NzU5OTg2MWFhMjQwMzlhMDQ5NmM3NDRjOGUyOTllZWRlZjVhNjgwYTQwNjQ1MDhmMzliMDNkZmExMjZlMWEifQ"
         }
       ]
@@ -148,11 +148,23 @@
     },
     {
       "id": "claim_b38b8a8ffd6347edb9375d9ee25026e5",
-      "statement": "postgres stays on 16 under feature 072 because a Postgres major would drag a third stateful service with real data into the change: langfuse-postgres and unleash-postgres reference the identical pinned digest and Unleash's store is not covered by §4's disposability ratification, so upstream's ${POSTGRES_VERSION:-17} is treated as a parameterised default, not a floor.",
+      "statement": "postgres stays on 16 under feature 072 because a Postgres major would drag a third stateful service with real data into the change: langfuse-postgres and unleash-postgres reference the identical pinned digest (postgres:16-alpine@sha256:cf78e766…) in both compose.yaml and compose.prod.yaml, and Unleash's store is not covered by §4's disposability ratification, so upstream's ${POSTGRES_VERSION:-17} is treated as a parameterised default, not a floor. The decision is now enforced by scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs, which asserts one shared pin and a 16 tag across both files, and by a renovate.json packageRule holding `postgres allowedVersions: \"<17\"` scoped by matchFileNames to the two observability compose files — a rule that fired for real on PR #698 (2026-10-09) when `docker base images (major)` offered 16-alpine → 18-alpine and red-lined `guardrails / naming`.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L114-L133",
-          "version": "repo-lines-v1:sha256:7758559195ffd87058b4701b0cda896ee7bb597da96969c2a5b736c698e9f61a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhZGU5ZjJkNmRiNDRjOTU1NTQxYTgzZjIxZTE2MWI2OGFkYmQ1ZDBlODllN2VkNjg3ZDVhZDMzNDEyMWFhNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MWU4MDk4NTE1N2FiNjA0NjFmZTUzYWFlZTIxMmYzYmU1MjQ0MDNmODI3OWFmZDNiNTMxNjdjNzAzMjk1NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MzAxMGIzOTU3N2EwZTUxZGQ0Nzk0NDQzNDY4MDFkNWRhYjc0N2M5OGU0YWRmOGE0YmRiOGM0Y2ExOTMwZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1N2ZmZTJhYzAzMzIzOGYxYTM0ODFhZjRiNWJmMWFkOGJmZmVhODc1MDdlMzdhYTk0N2UwNDhjZDNmNWUwNzMifQ"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L114-L114",
+          "version": "repo-lines-v1:sha256:3ade9f2d6db44c955541a83f21e161b68adbd5d0e89e7ed687d5ad334121aa47:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2FkZTlmMmQ2ZGI0NGM5NTU1NDFhODNmMjFlMTYxYjY4YWRiZDVkMGU4OWU3ZWQ2ODdkNWFkMzM0MTIxYWE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2FkZTlmMmQ2ZGI0NGM5NTU1NDFhODNmMjFlMTYxYjY4YWRiZDVkMGU4OWU3ZWQ2ODdkNWFkMzM0MTIxYWE0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzgzMDEwYjM5NTc3YTBlNTFkZDQ3OTQ0NDM0NjgwMWQ1ZGFiNzQ3Yzk4ZTRhZGY4YTRiZGI4YzRjYTE5MzBlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjMyOTdmMjFiMGI3YTk5ZGU1NWQ1OWQxNWE0NDg4YmFjZDk5NjEzZGU2NGEyOWU3M2E2MWUwYTRhMDgxMGJjZSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L310-L311",
+          "version": "repo-lines-v1:sha256:3be66a13f9d63ec43aa419824a27c431fc138725a1df330e04396e15bff22107:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA5MTM4MGZlZjQ4OGJhYThjMWNkZWEyOWIwMzFkMzc3MDE4OGZkZDA5MWM2ZjU2ZDVkMjBkNTY2ZGYxMzhjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2FkZTlmMmQ2ZGI0NGM5NTU1NDFhODNmMjFlMTYxYjY4YWRiZDVkMGU4OWU3ZWQ2ODdkNWFkMzM0MTIxYWE0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDY0OTg3MjJlYWMxYjRmYzIyMWFkMWM4ZWY4MTA3Yzg4ZWQ5YTA0ZmI0ZTc2YjBkOTAzYTEwOTZjMWEzODY1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjZhN2UxMTJlMjU4YTk4ZjgyNWZkMDZiM2U2NmEzMTA3NWI3NjQ5YWI5NWMwM2I0ZWJkOTY4MmUyM2Y3ZjEyOCJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L911-L931",
+          "version": "repo-lines-v1:sha256:121a2d2e4164fe55e8d4f4133e340db55dae491274d6beb1a12f2f4e9a58c949:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs#L33-L67",
+          "version": "repo-lines-v1:sha256:f4056ae10f8140427287adedc5d7e04c5e212b275343e96ba605eb949c32a3a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMTJiZmIxZjc0NmI3M2UyYjI4YWQ0YWQyMWRkM2QzMDU5NWEzZGVhM2IyYTkyZWYyOWRkZGQ5MjE3MjY2N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkNDQ1ZTIyMWVlYjNlODZmZDNjNTI4OTEwNWEyNmUzM2JhNWZjMDlmMzUzM2FiYjk4NmRkZWNjNjRhMzQwYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         },
         {
           "resource": "repo://specs/072-langfuse-4-major/spec.md#L46-L57",
@@ -231,7 +243,7 @@
       "statement": "The Langfuse half ran the same gate criteria as OpenSearch and passed clean on all three moving images (langfuse/langfuse:4, langfuse/langfuse-worker:4 and clickhouse-server:25.12), with CVE-2026-75604 / GHSA-2xp9-vwfh-vxw4 absent because the bundled package is next 16.3.3 — the fixed version the allowlist justification named — which is the distinction that justifies deleting a suppression rather than merely observing an absent finding.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L877-L882",
+          "resource": "repo://renovate.json#L892-L897",
           "version": "repo-lines-v1:sha256:ca3bbdb373f64fb992b039a9f74a8f2e493da9f2e0a9da889046b421a73eaac1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjRjYmY3YzQ3NjhmNTgyYjg2ZWI1OWYyMDFkMDdmNGY2YzZkZTk2ODMxNWI3ODQyMzc1MDEwZTdkOGUwZGY1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWE1YzMzNDZhZDVlYzM4YWVkZWRjZDgzNWUzNmZmZjRhNzFmZjBmZGQxMjk4OGRiYjdmZGYxOTIzNzQyOTY4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzgwMTg0YzY0NTdlOTQ3OGFiYjVjY2UyNTgyMGU1ZGIzOWU0MDAyMzc4ZThlMTJlMDEzN2Y1NmJmYmZmNmI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGU0YWYyYjhhYWM1MDkwYjFlMTA4NjgyZjUzMGZkNWYxMDZmODMzNTMxODJlNWE4YzgyM2E4NmNkZjIyMGZmNyJ9"
         },
         {
@@ -239,10 +251,46 @@
           "version": "repo-lines-v1:sha256:7a1c4482a159c98b07d0947676e5ffac8b51fd93b81b13716b74ed6b80903020:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NmVjOGU0N2JhMTc3YWMyNWQ3OGM4ZDAwYTVjY2RmYzA4YWI3MGM4Njc3YzE0NDk5NDNmODczMDc4NmYzYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYjgxZDg2ZDczN2MyNDI4YWFhNzJhNTIxZmY1NmMyMDc2MmRiNDZhMjJkMGY5NjNkOTZhZThiN2Y2MTBmYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0Mzc1ZDljMTcxZWNjYmNkNjkzZGYyMWU5MmJhMTFhMzMwZTVmN2UwOWJlYTI5YmU4ZjU5MWExY2MyZWNiYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b3875503fd9341e4b915e4532e6f4c26",
+      "statement": "The ClickHouse major feature 072 carried has kept moving rather than stopping at the version the spec measured: both infrastructure-as-code/docker/observability/compose.yaml and compose.prod.yaml now pin clickhouse/clickhouse-server:26.6, two majors past the 24.3 the spec started from and past the 25.12 it verified. That is only unremarkable because §4's property still holds for the Langfuse trace store — there is no data to carry across the jump, so a multi-major ClickHouse move is a container swap plus a volume recreate rather than a version-skipping migration.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L132-L133",
+          "version": "repo-lines-v1:sha256:9f51687f394ad11ca9ea31cff23ba8fac30e556644c6315e5bdc9457a6996ffc:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU2ZmEzMjU1ZmFmMmQ5MzQ1NGM0NTE5MmMxZTJkNGI5MmNlODliODFlMDM5YWMzYjQ2YjhkZjEwOWUwZWMzOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDczM2YwNjVhOGEwOWYwZjljY2JkMzk1NGZjZmZlNmNiZmE2MTBkOGYwMmYxMzI3YzQwYTE1MmNlZTcxYjY0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWRmODZjOGZiMjc2MmVjZTcyOGQ5NmZjMTA3YTViZTk3ZjNiM2ZhZDFiN2E4Y2I2ZmUzYjQwMDdlMDZhMjQ0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTU3ZmZlMmFjMDMzMjM4ZjFhMzQ4MWFmNGI1YmYxYWQ4YmZmZWE4NzUwN2UzN2FhOTQ3ZTA0OGNkM2Y1ZTA3MyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L127-L127",
+          "version": "repo-lines-v1:sha256:0733f065a8a09f0f9ccbd3954fcffe6cbfa610d8f02f1327c40a152cee71b648:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDczM2YwNjVhOGEwOWYwZjljY2JkMzk1NGZjZmZlNmNiZmE2MTBkOGYwMmYxMzI3YzQwYTE1MmNlZTcxYjY0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDczM2YwNjVhOGEwOWYwZjljY2JkMzk1NGZjZmZlNmNiZmE2MTBkOGYwMmYxMzI3YzQwYTE1MmNlZTcxYjY0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmMyZjI1MjVlZDZkNmZmMzYzZTllM2MyYjhjNzEyMDk2NzE4OTkxYjk1Mjk3MzQ5MWI0OTE5Zjc2Y2MzZWQ5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjJhZTg0ZTcwZjYzOWY2N2U3M2NiMzY4OTM1ZmFlYzFhMWFhNmQ3Y2RiNmE2MTU1MWIyNWJiNWI3NjllNDdmOCJ9"
+        },
+        {
+          "resource": "repo://specs/072-langfuse-4-major/spec.md#L28-L44",
+          "version": "repo-lines-v1:sha256:c42134c27455720c96215788150224a9187f70d91890fbaf428ad2afeb201b2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMGE2NTFjMWZhMDIxZmM5OGEzNWM2ZTYzNDhiOGU2MTEyZGRlMDQwNzlkNTc1ZGZiZjlhMDBlODc5Y2FjMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NDJiZDljNmJlNjU3ZGIwNmMyNTNmY2E1NGNlOGZhODc0MTNhMjQ0NmIzZmU1MjNkYWE4ZjA2N2MyNTc2MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5MTAzZTQyODc4OGI1OTVhODYwMWNlODliYmUzZTBjYWFhMDQ5NTYzMGU0NTk5NDJlNzU0MWFjOWZkYzdiZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNDQ5MTc5OGIwOTgxNDhkMzkwNTMxOTk4OTgwZGE5ODRlNmVmOTU2NzNkNzJjYjQzZjUzMzZmMGUwZTU2ZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3994be38411240079ff484985aa7510e",
+      "statement": "The Langfuse images are pinned by version (`4.35.0@sha256:…`) rather than the floating `:4` and held in their own renovate.json group deliberately outside `docker base images`, because a Langfuse *minor* runs Postgres and ClickHouse migrations on a prod stack (ADR-0002) and riding inside the base-image security channel would make that channel unmergeable whenever a migration needs a slower look; the floating `:4` tag was repushed repeatedly, so the 3-day minimumReleaseAge never expired and no bump was ever proposed while a new advisory reddened the scan. The server and worker still resolve identically on the major-approval gate, because they are one deployment sharing one database.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L932-L952",
+          "version": "repo-lines-v1:sha256:15ebf5fb263de592ca3f4b5a483f14a9071296bb0e313ab913a05775a159e9b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4ODk4YThlZjJjMmM3MGI1Yzc4Mzk5M2ZmYThkYmZmZThkZTk0Y2EyZjhiOGJhYWM1NjQyNmMyYTE3MTBlZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NzU5OTg2MWFhMjQwMzlhMDQ5NmM3NDRjOGUyOTllZWRlZjVhNjgwYTQwNjQ1MDhmMzliMDNkZmExMjZlMWEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1235-L1248",
+          "version": "repo-lines-v1:sha256:45333093629b6e6c923017a8869f51ff8c946f093802d7f46afe1e2c2c83c0be:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyODViOTUwMjA5NTQ2MzJiMmI0ODY2ZGY5NTMwOGU2ZjZmMmI5M2E1NGQzNmQ2M2EzYWQyMTdhYmFlZTNjOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTQxNDNlZDUzMzJjY2IxODUwZDk2ZDk5Njg3YjVkMDA0OTdkODM0OWZkMWRjZjI0ODM3N2UyZjMxNWVlMGMifQ"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L405-L428",
+          "version": "repo-lines-v1:sha256:5fc7de27cfe3369ad65847f540ade930ee846194cdc36a25b1cf2c15ab64604d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MzZhNWYzZjRmZDE3MTY3OTQ0YzM0NzRlZWM1ODVhNjY3YzliZDkyZjYxODA0NjYxOTI3NTFmNzBmZjY0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkYTliZmI3NDZlYzVlMGE4NjFmNDBhYmEzNThjNGViODA1ZjdhNzU3MzliMjM3M2Q0N2UwYmY0ODE5ZGI5MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiN2M5YjQ0YTA2Y2E0NjUwMzk1OTMxMWY3MWU0ZjY2Y2U1ZmZhZTEzZGM0YmI5OWIxOWE5OWIwMTgwNDJmNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNzU3NjZjNmQ0NTkyOGQ5NjU1NWE3MmVhZDhhMWFkNDgwYzdhNTg5Njg0NmNhMzA4ZTNlNjZhZWM0ZTE1YWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-29T10:29:14.990Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-10T02:25:55.688Z"
   }
 }

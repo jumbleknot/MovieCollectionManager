@@ -53,10 +53,10 @@ sources:
     resource: repo://mcp-servers/movie-mcp/src/server.py
   - id: openwiki-source-8402614feddf4612babe005b
     resource: repo://specs/079-run-error-sanitiser/plan.md
-generated: { by: "openwiki/0.6.0", at: "2026-10-04T14:07:00.171Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-04T14:07:00.171Z
+  - by: openwiki/0.7.1
+    at: 2026-10-10T02:25:55.688Z
 ---
 
 # Agent Gateway (LangGraph)
@@ -111,15 +111,17 @@ the runtime's stream handler re-raises hard exceptions "for the existing run-lev
 which does not exist — `endpoint.py` hands the generator to a `StreamingResponse` whose 200 and
 headers are already flushed, so the connection is aborted mid-chunk with no terminal AG-UI event and a
 client waiting on one hangs for its full timeout. `IdentityAwareAGUIAgent` splits that duty across two
-overrides, and with the `ag-ui-langgraph` version this lock pins (0.0.46) the split is what keeps it
-working:
+overrides. The split became necessary when the runtime changed: **0.0.46** added the handler
+described below, and `agents/movie-assistant/uv.lock` now pins **0.0.47** — the lock refresh that
+0.0.46's leak blocked (feature 079, item #641). The two-seam design is deliberately version-agnostic,
+so it holds on either pin:
 
-- `_handle_stream_events` is where the conversion happens. The runtime wraps its own stream in an
-  `except Exception` that yields `RUN_ERROR(message=str(exc))` — the exact leak 065 FR-010 forbids —
-  and that handler sits *inside* the `run()` this repository overrides, so an outer `except` never
-  sees the exception again. Catching one level in is what preserves the provider facts: the terminal
-  event names the provider status and the provider error type when the failure is a provider HTTP
-  error, and the exception class in every case.
+- `_handle_stream_events` is where the conversion happens. Since 0.0.46 the runtime wraps its own
+  stream in an `except Exception` that yields `RUN_ERROR(message=str(exc))` — the exact leak 065
+  FR-010 forbids — and that handler sits *inside* the `run()` this repository overrides, so an outer
+  `except` never sees the exception again. Catching one level in is what preserves the provider
+  facts: the terminal event names the provider status and the provider error type when the failure is
+  a provider HTTP error, and the exception class in every case.
 - `run()` keeps the outbound guard: any `RUN_ERROR` this repository did not build — the runtime's
   `str(exc)` one, or one built from an upstream `error` event — leaves with a fixed, content-free
   message and no raw event. `SanitisedRunErrorEvent` (a `RunErrorEvent` subclass with no extra
@@ -297,7 +299,12 @@ specialist rather than making an unauthenticated Claude call.
   0.0.46 broke that assumption**: it wraps its stream in its own `except Exception` yielding
   `RUN_ERROR(message=str(exc))` — the exact leak 065 FR-010 forbids — from *inside* the `run()` this
   repository overrides, so the facts-preserving conversion now happens one level in, in
-  `_handle_stream_events`. `run()` keeps the outbound guard (079 FR-003): any `RUN_ERROR` this
+  `_handle_stream_events`. The committed `uv.lock` has since moved to **0.0.47**, the lock refresh
+  0.0.46's leak was blocking, and the two-seam design is unchanged by that bump: the override targets
+  the private stream method, and if a future runtime renames or stops calling it, `run()`'s outbound
+  guard still prevents the client leak while the integration test's facts assertion goes red — a
+  regression that turns into a red gate rather than a silent leak. `run()` keeps the outbound guard
+  (079 FR-003): any `RUN_ERROR` this
   repository did not build is replaced by a fixed content-free message with `raw_event` cleared, so a
   runtime that stops calling `_handle_stream_events` degrades to "less specific", never to "leaks
   again". `SanitisedRunErrorEvent` exists so the guard tells its own terminal events apart by type

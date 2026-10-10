@@ -13,6 +13,8 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
+  - id: openwiki-source-4822620909fed304f1c4de8a
+    resource: repo://pnpm-lock.yaml
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
@@ -51,10 +53,10 @@ sources:
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
-generated: { by: "openwiki/0.6.0", at: "2026-10-07T00:12:01.561Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-07T00:12:01.561Z
+  - by: openwiki/0.7.1
+    at: 2026-10-10T02:25:55.688Z
 ---
 
 # SAST & SCA static security scanning
@@ -469,31 +471,40 @@ a scan that happened to pass.
   above), and deleting it means a regression re-blocks — which
   is the convention this file follows everywhere.
 
-  **The "no patched version exists" exception has a shape, and the committed file shows it three
-  times.** An advisory whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3`
-  — the latter still `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the
-  exact vulnerable version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin
-  means a *different* version of the package re-blocks for a fresh assessment rather than inheriting an
-  acceptance written for the old one; the short expiry means it stops suppressing on its own. The third,
-  `@graphql-tools/utils@11.2.2`, is the same shape for a slightly different reason — a fix exists
-  (12.0.1) but sits outside the range its consumers declare, and forcing it would cross a major they do
-  not support. All three state reachability **checked rather than assumed**: the audit classifies the
-  npm pair as runtime only because `expo` lists its CLI as a production dependency, while the code paths
-  involved are build/test tooling that ships in neither bundle and, in `braces`' case, expand globs from
-  repository configuration rather than from a request. Removal is tracked on the backlog (a patched
-  release, or the dependency leaving the tree) — the entry is a dated holding position, not a fix.
+  **A no-fix acceptance has a shape, and the committed file currently shows it twice.** An advisory
+  whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3` — the latter still
+  `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the exact vulnerable
+  version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin means a
+  *different* version of the package re-blocks for a fresh assessment rather than inheriting an
+  acceptance written for the old one; the short expiry means it stops suppressing on its own. Both state
+  reachability **checked rather than assumed**: the audit classifies them as runtime only because `expo`
+  lists its CLI as a production dependency, while the code paths involved are build/test tooling that
+  ships in neither bundle and, in `braces`' case, expand globs from repository configuration rather than
+  from a request. Removal is tracked on the backlog (a patched release, or the dependency leaving the
+  tree) — the entry is a dated holding position, not a fix.
+
+  The **second** exception — a fix exists, but only outside the range the package's consumers declare —
+  took the same shape (pinned to the exact vulnerable version, short-dated, reachability written into
+  the justification), and its one instance is now **discharged rather than renewed**. The
+  `@graphql-tools/utils@11.2.2` entry existed because the fix (12.0.1) sat outside the `^11.2.0` range
+  `graphql-yoga` and `@graphql-yoga/plugin-defer-stream` declared, so the only bump would have crossed a
+  major they did not support. It was deleted on 2026-10-09 (item #674) because the first acceptance
+  route the backlog item named actually happened: graphql-yoga 5.24.4 and the defer-stream plugin
+  3.24.4 declare `@graphql-tools/utils: ^12.0.3`, and the lock refresh that resolved both removed the
+  vulnerable 11.2.2 from `pnpm-lock.yaml`, leaving only the patched 12.0.3. Deletion rather than
+  expiry-extension is the direction that restores blocking if 11.x ever returns.
 
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
-  package", which is a different question from "is the vulnerable code path exercised". Two of the
-  three current no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
-  production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces
-  only through micromatch in Metro's file watcher and Jest. Neither is imported by first-party code,
-  neither ships in the web or server bundle, and the glob patterns those tools expand come from
-  repository configuration rather than a request. (The third, `@graphql-tools/utils`, is tagged
-  runtime through `@copilotkit/runtime` but is only listed as a dependency, never reached on a request
-  path.) That reasoning has to be **checked and written into the justification**, because the tag
-  alone would have said the opposite.
+  package", which is a different question from "is the vulnerable code path exercised". Both current
+  no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a production
+  dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces only through
+  micromatch in Metro's file watcher and Jest. Neither is imported by first-party code, neither ships in
+  the web or server bundle, and the glob patterns those tools expand come from repository configuration
+  rather than a request. The same distinction applied to the now-deleted `@graphql-tools/utils` entry,
+  which was tagged runtime through `@copilotkit/runtime` while being only listed as a dependency, never
+  reached on a request path. That reasoning has to be **checked and written into the justification**,
+  because the tag alone would have said the opposite.
 
 - **`mcm-auth-before-authz` firing on a service-layer function is a false positive you must NOT "fix"
   by adding the guard — the correct response is a file-pinned allowlist entry.** The rule's structural
