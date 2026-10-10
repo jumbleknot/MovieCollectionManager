@@ -17,8 +17,9 @@ evidence is or is not in a bundle. This file was split out of `ci-diagnostics.md
 
 ## The digest
 
-Published per failing job, `if: always()` + `continue-on-error: true` in **all six workflows**
-(16 jobs). Channel depends on the event:
+Published per failing job, `if: always()` + `continue-on-error: true` in **every job of all ten
+workflows** — 22 jobs, 22 digest steps, counted 2026-10-10 (16 jobs in six workflows when this was
+first written). Channel depends on the event:
 
 | Event | Channel | Identity |
 |---|---|---|
@@ -28,7 +29,7 @@ Published per failing job, `if: always()` + `continue-on-error: true` in **all s
 
 > **There is no commit status.** `POST /repos/…/statuses/{sha}` returns **403** for
 > `CI_DIGEST_TOKEN` — it needs `write:repository`, which is most of the privilege that made
-> `CD_PUSH_TOKEN` unacceptable across 16 jobs. Since the status only ever *named* the bundle and the
+> `CD_PUSH_TOKEN` unacceptable across every job (16 then, 22 now). Since the status only ever *named* the bundle and the
 > reader already knows the run and job, it derives `{runId}--{jobSlug}` itself. Measured 2026-07-20.
 >
 > Use **`run.id`**, not `index_in_repo` — they differ (986 vs 985 on the run that proved this), and
@@ -249,8 +250,10 @@ only to a step with at least **10 observed (non-killed) samples**.
 
 **`CI_STEP_TIMEOUT_SECONDS` survives as the BACKSTOP, not the ceiling.** It bounds a wrapped step
 with no calibrated row, so a table miss can never fall through to unbounded and restore the #326
-defect. Today exactly one step is on it — `app-e2e-collect-container-logs`, which runs only on the
-failure path and has n=2. It stays at 2700 s because an uncalibrated step's legitimate duration is
+defect. Three steps are on it today (see the commented `ON THE BACKSTOP` rows in the table):
+`app-e2e-collect-container-logs`, which runs only on the failure path and has n=2, and
+`app-e2e-build-images` and `app-e2e-bring-up-backup-destinations`, both new in feature 073 with no
+observations yet — regenerate the table once ~10 runs have published a duration for them. It stays at 2700 s because an uncalibrated step's legitimate duration is
 by definition unknown, and the asymmetry still holds there: a fast **false** red costs a ~35-40 min
 re-run on this capacity-1 runner; a slow **true** failure costs only the difference between that
 bound and the job's 75 min.
@@ -515,7 +518,7 @@ the reporter in what it reports on is circular), and `uses:`-only steps (no comm
 ### Two costs of instrumenting a HOST-executor job, accepted deliberately
 
 Container-job captures die with the container. Host-executor captures (`app-e2e`, `dast`,
-`cd-deploy/build-deploy`, `devcontainer-image`) land in `$HOME/mcm-ci-step-logs/<run-id>/` on the
+`cd-deploy/build-deploy`, `devcontainer-image`) land in `$HOME/mcm-ci-step-logs/<run-id>/<job>/` on the
 **persistent** runner and stay there:
 
 - **They are unredacted.** Redaction happens at *publication* time in the digest, not at capture
