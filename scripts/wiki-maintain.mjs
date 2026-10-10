@@ -48,9 +48,9 @@ import { isDeepStrictEqual } from 'node:util';
 import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
-import { conceptStamp } from './openwiki-stamp.mjs';
 import { carryClaimsHash, CLAIMS_DIR, PAGE_MANIFEST } from './openwiki-claims.mjs';
 import { auditClaims, formatAudit, loadOpenwikiResolver } from './wiki-claims-audit.mjs';
+import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED, pageTrails, formatPageTrail } from './wiki-usage.mjs';
 import { stepLogDir } from './ci-failure-digest.mjs';
@@ -178,6 +178,18 @@ export function writeRunRecord(root = REPO_ROOT, record = {}) {
 }
 
 function assertRecordShape(record) {
+  // 082 FR-005: parking is a recorded decision — page key → { item, since, reason }.
+  if (record.parked !== undefined) {
+    if (record.parked === null || typeof record.parked !== 'object' || Array.isArray(record.parked)) {
+      throw new Error(`${STATE_FILE}: parked must be an object of "<area>/<page>" → { item, since, reason }`);
+    }
+    for (const [key, entry] of Object.entries(record.parked)) {
+      if (!/^[^/]+\/[^/]+\.md$/u.test(key) || entry === null || typeof entry !== 'object'
+        || !Number.isInteger(entry.item) || typeof entry.since !== 'string' || typeof entry.reason !== 'string') {
+        throw new Error(`${STATE_FILE}: parked["${key}"] must be { item: <backlog item number>, since: <date>, reason: <text> }`);
+      }
+    }
+  }
   if (record.lastOutcome !== null && !RUN_OUTCOMES.includes(record.lastOutcome)) {
     throw new Error(`${STATE_FILE}: lastOutcome must be one of ${RUN_OUTCOMES.join(' | ')} (or null), got ${JSON.stringify(record.lastOutcome)}`);
   }
@@ -402,6 +414,7 @@ export function planSlices({
   allDocPaths = [],
   maxPagesPerSlice = MAX_PAGES_PER_SLICE,
   maxNewPagesPerSlice = MAX_NEW_PAGES_PER_SLICE,
+  parked = {},
 } = {}) {
   const { concepts, areas } = readBundle(bundleRoot);
 
@@ -434,6 +447,10 @@ export function planSlices({
   const wanted = new Map();
   const subjectFor = new Map();
   const want = (area, page, reason, subject = null) => {
+    // 082 FR-005: a parked page is planned by NOTHING — not a new source change, not the backlog —
+    // until a reviewed change removes its `parked` entry. Parking used to be "advance the marker past
+    // its source change", which the next source change silently undid.
+    if (Object.hasOwn(parked, `${area}/${page}`)) return;
     if (!plannable(area, page)) {
       dropped.push(`${area}/${page}`);
       return;
@@ -660,6 +677,7 @@ export function computePlan({
     backlog: runRecord.backlog ?? [],
     policy,
     allDocPaths,
+    parked: runRecord.parked ?? {},
   });
 
   // What one run can attempt, given the page budget. The rest is `deferred` and carried forward — a
@@ -675,6 +693,17 @@ export function computePlan({
     }
   }
 
+  // 082: concepts that fell behind the marker, from the budget left over (FR-001, FR-003, FR-008).
+  const drift = selectDrift({
+    root,
+    bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE),
+    queued: new Set([...attempt, ...deferred].flatMap((s) => s.pages.map((p) => `${s.area}/${p}`))),
+    parked: runRecord.parked ?? {},
+    budgetLeft: Math.max(0, pageBudget - pages),
+  });
+  attempt.push(...drift.slices);
+  pages += drift.planned.length;
+
   const withMessages = attempt.map((s) => ({ ...s, runMessage: renderRunMessage(s) }));
 
   return {
@@ -689,6 +718,69 @@ export function computePlan({
     plannedPages: pages,
     uncovered: slices.uncovered ?? [],
     dropped: slices.dropped ?? [],
+    drift: { planned: drift.planned, deferred: drift.deferred, parked: drift.parked, parkedOrphans: drift.parkedOrphans, unplannable: drift.unplannable },
+  };
+}
+
+/** 082 FR-003: drifted pages planned per run, at most. With PAGE_BUDGET 8 it leaves 6 for other work. */
+export const DRIFT_PAGES_PER_RUN = 2;
+
+/**
+ * Concepts whose cited source was committed after their stamp — the V12 comparison, from
+ * ./openwiki-drift.mjs — and that nothing else will plan: not queued (this run's slices, deferred or
+ * backlog work) and not parked (item #526, feature 082). Without this, a page that fell behind the
+ * marker was never planned again: its source had already changed, and would not change again merely
+ * because the page was out of date.
+ *
+ * Bounded twice: at most `limit` pages, and never more than the budget left over, so drift cannot
+ * starve change-driven work. Oldest stamp first, then path. What does not fit is REPORTED, never
+ * written to the backlog — it is found again next run, so a backlog of it would only grow. A drifted
+ * page under a DIRECTORY resource is unplannable: any commit under that directory re-flags it, so
+ * regenerating it would buy nothing durable.
+ */
+export function selectDrift({ root = REPO_ROOT, bundleRoot = null, queued = new Set(), parked = {}, budgetLeft = PAGE_BUDGET, limit = DRIFT_PAGES_PER_RUN } = {}) {
+  const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
+  const { concepts } = readBundle(bundleDir);
+  const existing = new Set(concepts.map((c) => c.path));
+  const parkedList = Object.entries(parked).filter(([key]) => existing.has(key))
+    .map(([page, { item, since, reason }]) => ({ page, item, since, reason }));
+  const parkedOrphans = Object.keys(parked).filter((key) => !existing.has(key));
+
+  const candidates = [];
+  const unplannable = [];
+  for (const c of concepts) {
+    if (queued.has(c.path) || Object.hasOwn(parked, c.path)) continue;
+    const judged = sourceCommitAfterStamp({ root, fields: frontMatter(join(bundleDir, c.area, c.page)) });
+    if (!judged?.stale) continue;
+    if (judged.directory) unplannable.push(c.path);
+    else candidates.push({ ...c, source: judged.source, stampMs: judged.stampMs });
+  }
+  candidates.sort((a, b) => a.stampMs - b.stampMs || a.path.localeCompare(b.path));
+  const take = Math.min(limit, budgetLeft);
+  const chosen = candidates.slice(0, take);
+
+  const byArea = new Map();
+  for (const c of chosen) {
+    if (!byArea.has(c.area)) byArea.set(c.area, []);
+    byArea.get(c.area).push(c);
+  }
+  const slices = [...byArea].map(([area, list]) => ({
+    area,
+    pages: list.map((c) => c.page),
+    // A refresh of an existing page, so it packs into the same invocation as other refreshes.
+    kind: 'refresh',
+    drift: true,
+    subjects: {},
+    areaExists: true,
+    reason: list.map((c) => `drift: ${c.source} changed after the page's stamp`).join('; '),
+  }));
+  return {
+    slices,
+    planned: chosen.map((c) => c.path),
+    deferred: candidates.slice(take).map((c) => c.path),
+    parked: parkedList,
+    parkedOrphans,
+    unplannable,
   };
 }
 
@@ -1590,15 +1682,7 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
  * byte-identical but whose claims it verified after the source moved is therefore not stale here.
  */
 function sourceNewerThanStamp(root, pageFile) {
-  const fm = frontMatter(pageFile);
-  const stamp = conceptStamp(fm);
-  const resource = typeof fm.resource === 'string' ? fm.resource.trim().split('#')[0].split('?')[0] : '';
-  if (stamp === null || resource === '' || /^[a-z][a-z0-9+.-]*:/i.test(resource)) return false;
-  const stampMs = Date.parse(stamp.value);
-  if (Number.isNaN(stampMs)) return false;
-  const r = spawnSync('git', ['log', '-1', '--format=%cI', '--', resource], { cwd: root, encoding: 'utf8' });
-  const out = r.status === 0 ? r.stdout.trim() : '';
-  return out !== '' && Date.parse(out) > stampMs;
+  return sourceCommitAfterStamp({ root, fields: frontMatter(pageFile) })?.stale === true;
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -2152,7 +2236,7 @@ const USAGE = [
   'Invoke through Nx: `pnpm nx wiki-plan infrastructure-as-code` / `pnpm nx wiki-maintain infrastructure-as-code`.',
 ].join('\n');
 
-function reportPlan(plan, { json }) {
+export function reportPlan(plan, { json }) {
   if (json) {
     console.log(JSON.stringify(plan, null, 2));
     return;
@@ -2162,6 +2246,16 @@ function reportPlan(plan, { json }) {
     : plan.sinceCommit ? plan.sinceCommit.slice(0, 8) : 'never covered — full sweep';
   console.log(`[wiki-maintain] plan at ${plan.baseCommit.slice(0, 8)} (since ${since})`);
   console.log(`[wiki-maintain] ${plan.changedPaths.length} documentation path(s) changed in range`);
+  // 082 FR-004: before the early return, so parked pages are visible even when nothing is planned.
+  if (plan.drift) {
+    const d = plan.drift;
+    console.log(`[wiki-maintain] drift: ${d.planned.length} planned, ${d.deferred.length} deferred, ${d.parked.length} parked, ${d.unplannable.length} unplannable`);
+    for (const p of d.planned) console.log(`  planned      ${p}`);
+    for (const p of d.deferred) console.log(`  deferred     ${p}  (over the per-run bound or the budget; found again next run)`);
+    for (const p of d.parked) console.log(`  parked       ${p.page} (item #${p.item}, since ${p.since}): ${p.reason}`);
+    for (const p of d.parkedOrphans ?? []) console.log(`  parked, page gone  ${p}  (remove the entry)`);
+    for (const p of d.unplannable) console.log(`  unplannable  ${p}  (directory resource: any commit under it re-flags the page)`);
+  }
   if (plan.slices.length === 0) {
     console.log('[wiki-maintain] 0 slices — nothing to document.');
     return;
@@ -2372,7 +2466,7 @@ export function proposalBody(plan, result) {
     '',
   ];
   for (const r of result.results) {
-    lines.push(`- ${r.ok ? '✅' : '✗'} \`${r.slice.area}/\` — ${(r.pagesWritten ?? []).length} page(s): ${r.slice.pages.join(', ')}`);
+    lines.push(`- ${r.ok ? '✅' : '✗'} \`${r.slice.area}/\`${r.slice.drift ? ' (drift)' : ''} — ${(r.pagesWritten ?? []).length} page(s): ${r.slice.pages.join(', ')}`);
     for (const v of r.violations ?? []) lines.push(`  - ${v}`);
     if ((r.forcedPages ?? []).length > 0) lines.push(`  - proposed anyway: ${r.forcedPages.join(', ')} — not requested, forced by openwiki's stale Claims, and verified on its own (#707)`);
   }
