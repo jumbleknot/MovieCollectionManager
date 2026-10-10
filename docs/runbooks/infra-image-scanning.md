@@ -238,10 +238,24 @@ That gate is invisible from the job's tick, and for three weeks it was believed 
 API=…/api/v1/repos/jumbleknot/mcm
 curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" "$API/commits/<sha>/statuses?page=1&limit=100" \
   | jq -r '.[] | select(.context == "infra-image-scan/expiry") | .description'
-# event_name=schedule expiry_step=success   <- the cron ran it
-# event_name=push     expiry_step=skipped   <- a push-triggered sweep; correctly skipped
-# event_name=<unset>  expiry_step=<unset>   <- the runner returned no value: a real fault, investigate
+# event_name=schedule gate=<x>     expiry_step=success   <- the cron ran it, and both checks passed
+# event_name=schedule gate=<x>     expiry_step=failure   <- it ran and a check failed: read the log
+# event_name=schedule gate=failure expiry_step=skipped   <- an earlier step failed (item #484)
+# event_name=push     gate=success expiry_step=skipped   <- a push-triggered sweep; correctly skipped
+# event_name=<unset>  expiry_step=<unset>                <- the runner returned no value: a real fault
 ```
+
+`expiry_step=failure` covers two different causes, and the status cannot separate them:
+
+- **An entry needs action.** It is expiring within 14 days, already expired, or matches nothing. The
+  step log names it.
+- **The checker itself crashed.** Item #562: from 2026-09-12 until 2026-10-02 both checkers threw on
+  the absent report they announce as legitimate. Because the step runs `cmd1 && cmd2` under `bash -e`,
+  the infra-image half never ran at all.
+
+Look for a `GateError` stack trace in the step log before treating the failure as an allowlist
+problem.
+The first scheduled run after the fix (2026-10-02) read `gate=failure expiry_step=success`.
 
 Both halves are **raw measurements** interpolated from the run context, never a restatement of what
 the `if:` is believed to do. The status is always `success` and never gates anything — it is a record,
@@ -534,6 +548,33 @@ matches the reference in the compose files today, **and** stops matching a later
 old tag matches nothing after the bump, the finding it covered becomes un-allowlisted, and the gate
 blocks — while reporting the entry only as an `UNMATCHED ENTRIES` line, which reads like housekeeping
 rather than like the cause. Check that line before assuming a new CVE appeared.
+
+### A "later version" fixture must be DERIVED from the pin (item #561)
+
+The second direction above needs a reference that is *not* today's pin. That reference was once a
+hand-written map of "next versions", and the 2026-09-25 base-image bump silently broke it:
+
+- `unleash-server` moved 8.1.0 → 8.2.0, which was the map's own "next" value, so the fixture now
+  equalled the pin.
+- `otel-lgtm` moved past the map's value, so the fixture now pointed at an *older* version.
+
+Nothing failed. That branch of the test runs only for repositories that carry an allowlist entry, and
+neither did at the time. The first correctly keyed unleash entry would then have been accused of
+being a floating key that no upgrade could discharge. The obvious way to make that test green is to
+widen the key into a span, which is exactly what the guard exists to prevent.
+
+`nextRefFor` in `infra-image-scan.test.mjs` now increments the last number of the **actual pin**, and
+asserts that the derived reference differs from the pin. That second assertion is what makes it
+impossible for the conditional branch to pass vacuously. Two rules generalise from this:
+
+- A fixture describing "a later version of what we pin" is derived from the pin, never written beside
+  it. A bump invalidates a literal without failing anything.
+- A conditionally reached assertion needs a self-check on its own fixture, because green does not
+  mean the assertion ran.
+
+A tag with no number in it (the `rust:alpine3.21` shape) cannot be bumped this way. The helper fails
+loudly for it with a message asking for a declared exception, and none of today's version-keyed
+repositories has that shape.
 
 ### A version-keyed entry cannot be re-keyed on `main` and in the bump PR at once
 

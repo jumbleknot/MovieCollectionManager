@@ -463,12 +463,12 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24.19.0
-      # PINNED to 44.131.0 (2026-10-02): every renovate >= 44.131.1 depends on @yarnpkg/core@4.9.2, which was
-      # published with a Yarn-only dependency spec (got: patch:got@npm%3A11.8.2#~/.yarn/patches/…). npm cannot
-      # install it (EUNSUPPORTEDPROTOCOL), and under npx it exits 1 with no message — measured locally and on
-      # PR #630. Un-pin back to `renovate@44` once a release depends on a fixed @yarnpkg/core (backlog item).
+      # Item #631: this was pinned to 44.131.0 from 2026-10-02 to 2026-10-10, because renovate 44.131.1–44.132.1
+      # depended on @yarnpkg/core@4.9.2, which npm cannot install (a Yarn-only `patch:` spec;
+      # EUNSUPPORTEDPROTOCOL). Under npx that failure exits 1 and prints nothing but the path to npm's log.
+      # Every release from 44.132.2 on is back on 4.9.1. Back on the major pin as of 2026-10-10 (44.149.2 installed).
       - name: Validate renovate.json (strict, as a repo config)
-        run: bash scripts/ci-log-step.sh renovate-config-validate npx --yes --package renovate@44.131.0 -- renovate-config-validator --strict --no-global renovate.json
+        run: bash scripts/ci-log-step.sh renovate-config-validate npx --yes --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
