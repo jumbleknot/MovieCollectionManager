@@ -376,6 +376,11 @@ jobs:
           # The gate's OWN outcome is the second measured field that closes it:
           #   expiry_step=skipped gate=success  → the `if:` was false
           #   expiry_step=skipped gate=failure  → an earlier step failed (the #484 fault itself)
+          #   expiry_step=failure               → the step RAN and a check inside it failed: either
+          #     an entry is expiring, expired or unmatched, or the checker itself crashed. The
+          #     status cannot tell those apart, so read the step log. Item #562: both checkers
+          #     crashed on the absent report they announce as legitimate, and the infra-image half
+          #     never ran.
           # Both are MEASUREMENTS carried through raw. The status never restates a belief about one.
           MEASURED_GATE_OUTCOME: ${{ steps.gate.outcome }}
         run: |
