@@ -255,3 +255,26 @@ Write for an engineer or coding agent who is competent but new to this repositor
 concrete. Prefer the specific detail that prevents a mistake over the general statement that sounds
 complete. When a rule exists because something once broke, say so — the reason is what makes the rule
 stick.
+
+## 9. Claims evidence — cite what states the fact, never what churns
+
+Every `repo://` citation in a page's Claims is re-resolved before every run. One that moved or
+vanished forces the whole page into that run as a mandatory reconciliation — a full paid
+regeneration — whatever the run was asked to do. A citation of a file that routine commits rewrite
+therefore costs a page regeneration on every such commit, while the fact it supports has not
+changed. Runs 4960 and 4972 (2026-10-09/10) each paid for five forced pages this way (item #707).
+
+Do **not** cite, as Claims evidence:
+
+- **Lockfiles** — `uv.lock`, `pnpm-lock.yaml`, `Cargo.lock`, `package-lock.json`. Cite the manifest
+  that declares the dependency (`pyproject.toml`, `package.json`, `Cargo.toml`) instead.
+- **Image digest or version-pin lines** — `@sha256:` lines in a Dockerfile `FROM` or a compose
+  `image:`, and the `infrastructure-as-code/docker/*/.env.deploy` files every CD promotion rewrites.
+  Cite the policy or runbook section that says the image is pinned, not the pin.
+- **Line ranges inside a list whose entries rotate** — above all `security/sast/allowlist.yaml`,
+  whose entries are added and expire. Cite the whole file, or the runbook section that states the
+  policy.
+
+Prefer the narrowest **stable** source: a heading-level section of a runbook over a line range of a
+script that is under active change. `node scripts/wiki-maintain.mjs --claims-audit` lists, offline,
+every page openwiki will force into the next run and marks the citations that are churn.

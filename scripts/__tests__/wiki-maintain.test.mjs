@@ -1237,6 +1237,56 @@ test('execute (#685): a failed part\'s restore-only change does NOT ride along w
   }
 });
 
+test('execute (#720): one failed page does NOT discard its landed AREA-MATES (run 5010)', () => {
+  // Run 5010 (2026-10-10): runbooks/devcontainer-sandbox.md exited without submitting, while
+  // runbooks/ci-evidence-pipeline.md and runbooks/sast-scanning.md completed. Failure was judged per
+  // AREA, so the two completed pages were restored and carried forward with the failed one, and only
+  // projects/sast.md (another area) was proposed. Landing is a property of a PAGE.
+  const root = twoAreaRepo();
+  try {
+    writeFileSync(join(root, 'README.md'), 'source\n');
+    const stalePage = (body) => `---\ntype: Convention\ntitle: stuck\ndescription: Stale.\nresource: README.md\ntimestamp: 2020-01-01T00:00:00Z\n---\n${body}\n`;
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'stuck.md'), stalePage('Original.'));
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), '---\ntype: Convention\ntitle: two\ndescription: Old.\n---\nOld.\n');
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'three.md'), '---\ntype: Convention\ntitle: three\ndescription: Old.\n---\nOld.\n');
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [stuck](stuck.md)\n- [two](two.md)\n- [three](three.md)\n');
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'run 5010 shape'], { cwd: root });
+    const committed = (rel) => spawnSync('git', ['show', `HEAD:${rel}`], { cwd: root, encoding: 'utf8' }).stdout;
+
+    const other = sl('invariants', ['one.md']);
+    const area = sl('gotchas', ['stuck.md', 'two.md', 'three.md']);
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [other, area], attemptsPerSlice: 1,
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        writingStub(root, 'gotchas', ['two.md', 'three.md'])();
+        // The worker that never submitted: bytes touched, stamp not moved — still stale.
+        writeFileSync(join(root, 'openwiki', 'gotchas', 'stuck.md'), stalePage('Partly rewritten.'));
+        return { status: 0 };
+      },
+    });
+
+    assert.equal(result.outcome, 'failed', 'the stuck page still fails the run');
+    assert.deepEqual(result.results[0].failedPages, ['gotchas/stuck.md'], 'premise: exactly one page failed');
+    assert.deepEqual(result.backlog.map((s) => [s.area, s.pages]), [['gotchas', ['stuck.md']]],
+      'only the failed PAGE is carried forward, not its area-mates');
+    assert.deepEqual(mod.proposableSlices(result).map((s) => [s.area, s.pages]),
+      [['invariants', ['one.md']], ['gotchas', ['two.md', 'three.md']]], 'the landed area-mates are proposed');
+    assert.equal(result.pagesWritten, 3, 'and counted');
+    assert.equal(readFileSync(join(root, 'openwiki', 'gotchas', 'stuck.md'), 'utf8'), committed('openwiki/gotchas/stuck.md'),
+      'only the failed page is restored');
+    for (const page of ['two.md', 'three.md']) {
+      assert.match(readFileSync(join(root, 'openwiki', 'gotchas', page), 'utf8'), /Written by the stub/, `${page} keeps its new bytes`);
+    }
+    const okf = spawnSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs'), '--bundle', join(root, 'openwiki')], { cwd: REPO_ROOT, encoding: 'utf8' });
+    assert.equal(okf.status, 0, `the proposed tree stays conformant, index.md included (V9):\n${okf.stdout}${okf.stderr}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('execute (#685): a failed part\'s path that was ALREADY dirty before the invocation is left alone', () => {
   const root = twoAreaRepo();
   try {
@@ -1650,6 +1700,53 @@ test('execute: after a DEADLINE stop, a half-written forced page is restored and
     assert.equal(result.outcome, 'completed', 'the requested page landed; the unfinished forced page no longer sinks it');
     assert.equal(result.pagesWritten, 1);
     assert.deepEqual(mod.proposableSlices(result).map((s) => s.pages), [['one.md']]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/** openwiki's reconciliation of the covered `gotchas/forced.md`: page, sidecar and manifest agree (V16). */
+function reconcileForced(root, body) {
+  const text = `---\ntype: Convention\ntitle: forced\ndescription: Reconciled.\n---\n${body}\n`;
+  const hash = `sha256:${createHash('sha256').update(text).digest('hex')}`;
+  writeFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), text);
+  writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'forced.json'), JSON.stringify({ pageVersion: hash, verification: { by: 'x', at: '2026-10-10T00:00:00Z' }, claims: [] }));
+  writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/forced.md': { pageVersion: hash } } }));
+}
+
+test('execute (#707): a FORCED page that completed V16-sound is proposed although the requested page failed', () => {
+  // Runs 4960 and 4972 paid for five forced stale-Claims pages and threw them away, because the
+  // requested part failed and only requested pages counted. The forced issue then survives into the
+  // next run, which pays for it again.
+  const root = coveredPageRepo();
+  try {
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1,
+      invoke: () => { reconcileForced(root, 'Reconciled.'); return { status: 0 }; }, // one.md never written
+    });
+    assert.equal(result.outcome, 'failed', 'the requested page still failed');
+    assert.deepEqual(result.results[0].forcedPages, ['gotchas/forced.md']);
+    assert.equal(result.pagesWritten, 1, 'the reconciled page counts, so a proposal is published');
+    assert.match(readFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), 'utf8'), /Reconciled\./, 'and its bytes are kept');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#707): after a DEADLINE stop a forced page is NOT proposed — its completion is unknowable', () => {
+  const root = coveredPageRepo();
+  try {
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1,
+      clock: () => 1_000_000, deadlineMs: 1_000_000 + 60 * 60_000,
+      invoke: () => { reconcileForced(root, 'Reconciled.'); return { status: 124 }; },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.deepEqual(result.results[0].forcedPages, []);
+    assert.equal(result.pagesWritten, 0, 'nothing to propose');
+    assert.match(readFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), 'utf8'), /Original\./, 'revertUnrequested restored it');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

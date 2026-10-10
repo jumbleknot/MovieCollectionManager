@@ -19,11 +19,25 @@ The planner decomposes the documentation changes since the last recorded run int
 **8 pages**, exactly **one bundle area** each. It makes no model call and needs no credential, so
 there is never a reason to skip it before spending. Read the plan; then run it.
 
+The plan shows what was **requested**. openwiki adds to it on its own: every page with a stale or
+unresolved Claims citation is forced into every run as a full paid regeneration, whatever was
+requested (item #707). To see that set before paying, run the same model-free check openwiki runs:
+
+```bash
+node scripts/wiki-maintain.mjs --claims-audit          # offline, keyless, free; --json for machines
+```
+
+It loads openwiki's own `RepositoryEvidenceResolver` from the install the `openwiki` binary on `PATH`
+belongs to (exit 2 when there is none). A page marked **churn citations only: avoidable** is forced
+only because it cites a lockfile, a digest pin or a rotating allowlist line — `openwiki/INSTRUCTIONS.md`
+§9 forbids those. The comparison is `result.evidence.version` against the stored version; comparing
+`result.version`, which does not exist, flags every page.
+
 At execution, consecutive same-kind slices of **different** areas are packed into one generator
 invocation of up to `MAX_PAGES_PER_INVOCATION` pages (feature 078). Every invocation pays a fixed
 planning pass — ~$0.33 on Sonnet, 83% of a one-page run — so a run touching three areas used to plan
-three times. The slice is still the unit of the backlog: a failure carries forward only the areas whose
-pages did not land.
+three times. The slice is still the unit of the backlog, but a failure carries forward only the PAGES that
+did not land (§4, "The proposal"); their area-mates that landed are proposed.
 
 ```bash
 pnpm nx wiki-maintain infrastructure-as-code        # PAID — needs the selected provider's key (§1a)
@@ -565,25 +579,42 @@ closed-unmerged proposal through it.
 at its budget (exit 3) or had a failed slice (exit 1). A failed slice is returned to the backlog and the run
 carries on to the next slice; it stops early only after two consecutive slice failures.
 
-**A failed part's requested pages are put back before anything is proposed (item #685).** The proposal stages the
-whole working tree, so a failed part's bytes used to ride along with whatever landed. On #684 (run 4801) that was
-`runbooks/sast-scanning.md` after openwiki's restore path had rewritten it without its `verified:` block and re-hashed
-its sidecar to match: V16 sound, no gate noticed, and merging would have erased a verification event for a page that
-was never regenerated. Now, after a failed invocation, each failed part's page and `.claims` sidecar return to their
-committed bytes and its `.page-manifest.json` entry to its pre-invocation value — all three or none, so V16 still
-compares a page with its own sidecar — and the run says so (`[wiki-maintain] restored N path(s) of the part(s) that did
-not land`). Left alone, and so still possible on a proposal: a page whose page or sidecar was dirty **before** the
-invocation (its prior bytes are not in git), an **untracked** new page (it has no committed state, and deleting it would
-orphan its index link), and anything the generator wrote **outside** the requested pages. Review those as such.
+**Landing is judged per page, and a page that failed is put back before anything is proposed (items #685, #720).**
+When an invocation's failure is attributable to particular pages — a requested page missing, or still stale after the
+run — while conformance (V16 included) and policy are clean, `verifySlice` splits every part by page: `failedPages`
+names the pages that did not land, `failedParts` holds only those pages, and `landedParts` holds every other requested
+page, area-mates of a failed page included. The landed pages are proposed (`proposableSlices`: verified invocations
+plus landed parts), and only the failed pages return to the backlog. A **whole-invocation** failure (conformance or
+policy) still proposes nothing and returns every part. Three runs set this shape:
 
-**One invocation can carry several slices, and a failure in one part no longer discards the others.** When an
-invocation's failure is attributable only to *other* parts — a requested page missing or still stale — while
-conformance (V16 included) and policy are clean, `verifySlice` reports the parts that verified as `landedParts`, and
-they are proposed (`proposableSlices`: verified invocations plus landed parts); only the failed parts return to the
-backlog. Before this, run 4399 (2026-10-01) verified `runbooks/backlog.md` but proposed nothing because `projects/sast.md`
-in the same invocation was still stale at the deadline — and since the backlog page's source change was already behind
-the marker, nothing would have planned it again. A **whole-invocation** failure (conformance or policy) still proposes
-nothing and returns every part.
+- Run 4399 (2026-10-01) verified `runbooks/backlog.md` but proposed nothing, because `projects/sast.md` in the same
+  invocation was still stale at the deadline. The backlog page's source change was already behind the marker, so
+  nothing would have planned it again. Fixed by proposing the parts that landed.
+- Run 5010 (2026-10-10) showed the same loss inside one area, while landing was still judged per part (one part per
+  area). `runbooks/devcontainer-sandbox.md` exited without submitting, and the completed `runbooks/ci-evidence-pipeline.md`
+  and `runbooks/sast-scanning.md` were restored and carried forward with it — about $2.26 for one page, and two pages
+  paid for twice. Fixed by judging per page.
+- On #684 (run 4801) a failed page's bytes rode along with what landed, because the proposal stages the whole working
+  tree: `runbooks/sast-scanning.md`, after openwiki's restore path had rewritten it without its `verified:` block and
+  re-hashed its sidecar to match. V16 was sound, no gate noticed, and merging would have erased a verification event for
+  a page that was never regenerated. Fixed by restoring failed pages: each one's page and `.claims` sidecar return to
+  their committed bytes and its `.page-manifest.json` entry to its pre-invocation value — all three or none, so V16
+  still compares a page with its own sidecar — and the run says so (`[wiki-maintain] restored N path(s) of the part(s)
+  that did not land`).
+
+The area's `index.md` is not restored: it lists the failed page and its landed area-mates alike, so the proposed tree
+still passes V9. Left alone, and so still possible on a proposal: a failed page whose page or sidecar was dirty
+**before** the invocation (its prior bytes are not in git), and an **untracked** new page (it has no committed state,
+and deleting it would orphan its index link). Review those as such.
+
+**Pages openwiki forced in are proposed when they verified on their own (item #707).** openwiki forces every page with
+a stale or unresolved Claim citation into every run (`runClaimsPreflight`). Runs 4960 (~$2.39) and 4972 (~$1.80) paid
+for five such pages and discarded them both times, because the requested part failed and only requested pages counted —
+so each issue survived into the next run and was paid for again. Under the same condition as above (failure
+attributable to requested pages; conformance, V16 and policy clean), a page the run wrote but did not request is now
+reported as `forcedPages`, counted as written and proposed; the proposal body lists it as "proposed anyway". After a
+deadline stop it never qualifies: `revertUnrequested` (below) has already put every unrequested path back, because a
+stopped worker's page may be half-written.
 
 **After a deadline stop, the slice keeps only what it requested.** openwiki forces every page with a Claims issue into
 a run, so a generator stopped part-way (GNU `timeout` exit 124, or 137 after `--kill-after`) can leave a page it was
