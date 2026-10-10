@@ -1,0 +1,26 @@
+# tools/openwiki-generator — the OpenWiki generator's LOCKED dependency tree (item #704).
+#
+# This file makes the directory its OWN pnpm workspace root. That is deliberate: inside the root
+# workspace pnpm would apply the root's settings (which set no cooldown, see the root
+# pnpm-workspace.yaml) and the root lockfile, and nothing below would take effect. The root's
+# `packages` globs (frontend/*, packages/*) do not reach here; wiki-maintain.guard.test.mjs fails if
+# one ever does.
+#
+# Installed by .forgejo/workflows/wiki-maintain.yml with
+#   pnpm --dir tools/openwiki-generator install --frozen-lockfile
+# run from the repository root, so corepack picks the root manifest's pnpm (packageManager is declared
+# once, in the root — check-toolchain-consistency.mjs). How to bump: docs/runbooks/wiki-maintenance.md §4.
+
+# openwiki's LangGraph checkpointer loads better-sqlite3's native binding at run time. Its install
+# script also ran under the old `npm install -g`, so allowing it changes no posture. Every other
+# package's build script stays denied (pnpm 11 fails an undecided one).
+allowBuilds:
+  better-sqlite3: true
+
+# Three days, in minutes — renovate.json's catch-all `minimumReleaseAge`. pnpm applies it at RESOLVE
+# time (a lockfile regeneration cannot pick a transitive younger than this — the item #271 gap that
+# Renovate's cooldown does not cover) and at INSTALL time (a frozen install fails
+# ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION rather than install a locked entry inside the window). Run 4950
+# died on a transitive two minutes old. Do NOT add a minimumReleaseAgeExclude list: nothing here is a
+# security floor, and this code runs with the generator's model credential.
+minimumReleaseAge: 4320

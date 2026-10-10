@@ -9,7 +9,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
@@ -28,6 +29,16 @@ const wf = parse(raw);
 const job = () => Object.values(wf.jobs)[0];
 const steps = () => job().steps ?? [];
 const stepText = () => steps().map((s) => `${s.name ?? ''}\n${s.run ?? ''}\n${JSON.stringify(s.env ?? {})}`).join('\n');
+
+// The generator's locked install (item #704) — see the tests under 'the dependency tree is LOCKED'.
+const GENERATOR_DIR = join(REPO_ROOT, 'tools', 'openwiki-generator');
+const GENERATOR_MANIFEST = JSON.parse(readFileSync(join(GENERATOR_DIR, 'package.json'), 'utf8'));
+const GENERATOR_WORKSPACE = parse(readFileSync(join(GENERATOR_DIR, 'pnpm-workspace.yaml'), 'utf8')) ?? {};
+const GENERATOR_LOCK = parse(readFileSync(join(GENERATOR_DIR, 'pnpm-lock.yaml'), 'utf8'));
+/** The install the workflow must run: the committed lockfile, frozen, from the standalone directory. */
+const LOCKED_INSTALL = /pnpm --dir tools\/openwiki-generator install --frozen-lockfile/;
+/** renovate.json's catch-all `minimumReleaseAge: 3 days`, in the minutes pnpm counts in. */
+const RENOVATE_COOLDOWN_MINUTES = 3 * 24 * 60;
 
 // ── triggers and debounce (FR-009, research R3) ─────────────────────────────────
 
@@ -134,7 +145,7 @@ test('the job verifies the INSTALLED generator before any paid call, and a skip 
   // guardrail job. The wiki job is the one place it IS installed, so it runs them there, after the
   // install and before the plan/execute steps, and treats a skip as a failure (a skip reads as a pass).
   const names = steps().map((st) => `${st.name ?? ''} ${st.run ?? ''}`);
-  const install = names.findIndex((n) => /npm install -g openwiki@/.test(n));
+  const install = names.findIndex((n) => LOCKED_INSTALL.test(n));
   const verify = names.findIndex((n) => /wiki-maintain\.guard\.test\.mjs/.test(n));
   const execute = names.findIndex((n) => /wiki-maintain\.mjs --execute/.test(n));
   assert.ok(install >= 0 && verify > install, 'the guard runs after the generator is installed');
@@ -164,47 +175,83 @@ function generatorInstall(text) {
   return null;
 }
 
-test('the workflow installs the generator, pinned to the dev container version', () => {
-  // The first real run on `main` died with `/bin/sh: 1: openwiki: not found`. The generator is a
-  // GLOBAL npm binary baked into the dev container's toolchain image, not a workspace dependency, so
-  // nothing put it on the CI runner. The orchestrator planned correctly and then had nothing to call.
-  const install = generatorInstall(raw);
-  assert.ok(install, 'the workflow must install the generator');
+// ── the generator's dependency tree is LOCKED, not resolved at run time (item #704) ──
 
+
+test('the workflow installs the generator from the committed lockfile, never resolved fresh', () => {
+  // Run 4950 (2026-10-09) died 404-ing on openai 7.32.0 two minutes after it was published: the step
+  // was `npm install -g openwiki@0.7.1 mermaid jsdom`, which pinned openwiki alone and resolved its
+  // whole transitive tree at run time with no lockfile and no cooldown. Any return of a fresh
+  // resolution — a global install, an npx, a `pnpm add` — reopens exactly that.
+  const commands = steps().map((st) => st.run ?? '').join('\n')
+    .split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
+  assert.match(commands, LOCKED_INSTALL, 'the generator must be installed with a frozen install of tools/openwiki-generator');
+  for (const fresh of [/npm\s+(install|i)\s+-g/, /\bnpx\b[^\n]*openwiki/, /pnpm\s+(add|dlx)\b/, /npm\s+(install|i)\b[^\n]*openwiki/]) {
+    assert.doesNotMatch(commands, fresh, `the workflow resolves a package at run time (${fresh}) — install from the lockfile instead`);
+  }
+  assert.match(commands, /tools\/openwiki-generator\/node_modules\/\.bin"? >> "\$GITHUB_PATH"/,
+    'the locked binary must be the `openwiki` later steps start');
+  assert.match(commands, /command -v openwiki/, 'and the verify step must fail if PATH resolves any other openwiki');
+  assert.match(commands, /OPENWIKI_ROOT="\$GITHUB_WORKSPACE\/tools\/openwiki-generator\/node_modules\/openwiki"/,
+    'the installed-generator checks must read the LOCKED install, not a global one');
+});
+
+test('the generator manifest pins exactly, and the lockfile is the one the manifest describes', () => {
+  const deps = GENERATOR_MANIFEST.dependencies ?? {};
+  assert.deepEqual(Object.keys(deps).sort(), ['jsdom', 'mermaid', 'openwiki'],
+    'the generator plus its two optional Mermaid peers — without them diagrams are silently downgraded');
+  for (const [name, version] of Object.entries(deps)) {
+    assert.match(version, /^\d+\.\d+\.\d+$/, `${name} must be an exact version, not a range (${version})`);
+  }
+  // A manifest edited without regenerating the lockfile is caught by `--frozen-lockfile` in CI, but
+  // only on the paid job's runner; catching it here makes it a guardrail failure instead.
+  const locked = GENERATOR_LOCK?.importers?.['.']?.dependencies ?? {};
+  for (const [name, version] of Object.entries(deps)) {
+    assert.equal(locked[name]?.specifier, version, `pnpm-lock.yaml's specifier for ${name} must equal the manifest`);
+    assert.equal(String(locked[name]?.version).split('(')[0], version, `pnpm-lock.yaml must resolve ${name} to ${version}`);
+  }
+  // packageManager is declared ONCE, in the root manifest (check-toolchain-consistency.mjs, item #286).
+  assert.equal(GENERATOR_MANIFEST.packageManager, undefined, 'no second packageManager — run it as `pnpm --dir` from the root');
+});
+
+test('a transitive younger than the Renovate cooldown cannot be installed by the maintain job', () => {
+  // Item #704 AC2. pnpm enforces `minimumReleaseAge` twice: at RESOLVE time (a lockfile regeneration —
+  // Renovate's or a human's — cannot pick a version younger than the window, so it cannot drag a fresh
+  // transitive in the way PR #263 did at the root, item #271) and at INSTALL time (a frozen install
+  // verifies every locked entry against the policy and fails ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION).
+  // The live demonstration is recorded in docs/runbooks/wiki-maintenance.md; this pins the config.
+  const age = GENERATOR_WORKSPACE.minimumReleaseAge;
+  assert.ok(Number.isInteger(age) && age >= RENOVATE_COOLDOWN_MINUTES,
+    `tools/openwiki-generator/pnpm-workspace.yaml must set minimumReleaseAge >= ${RENOVATE_COOLDOWN_MINUTES} (got ${age})`);
+  assert.equal(GENERATOR_WORKSPACE.minimumReleaseAgeExclude, undefined,
+    'no release-age exclusions: the generator runs with a model credential, and nothing here is a security floor');
+  // It must be ITS OWN workspace root. Inside the root workspace, pnpm would read the root's settings
+  // (which deliberately set no cooldown) and the root lockfile, and this directory's would not apply.
+  const rootWorkspace = parse(readFileSync(join(REPO_ROOT, 'pnpm-workspace.yaml'), 'utf8'));
+  for (const glob of rootWorkspace.packages ?? []) {
+    const re = new RegExp(`^${glob.replace(/\*\*/g, '.+').replace(/\*/g, '[^/]+')}$`);
+    assert.doesNotMatch('tools/openwiki-generator', re, `the root workspace glob '${glob}' swallows the generator directory`);
+  }
+});
+
+test('the dev container installs the same generator version and the Mermaid parser', () => {
+  // The dev container still bakes a global install into its toolchain image (no repository checkout
+  // at image-build time). It must name the SAME openwiki version, or CI and local silently run
+  // different generators on the output we gate; renovate.json moves both in one grouped PR.
   const dockerfile = readFileSync(join(REPO_ROOT, '.devcontainer', 'toolchain.Dockerfile'), 'utf8');
   const pinned = generatorInstall(dockerfile);
   assert.ok(pinned, 'the dev container pins a version');
-  assert.equal(install.version, pinned.version,
+  assert.equal(GENERATOR_MANIFEST.dependencies.openwiki, pinned.version,
     'CI and the dev container must run the SAME generator version — otherwise they silently differ on the thing whose output is gated');
   // 078 FR-015: 0.6.0 was the first version with parallel page workers (OPENWIKI_PAGE_CONCURRENCY);
   // 0.7.1 (amendment 2026-10-07) adds the worker retry (#913) and scoped planning (#865), research R15.
   assert.equal(pinned.version, '0.7.1', 'the generator is pinned at 0.7.1 (feature 078 amendment, research R15)');
-});
-
-test('CI and the dev container both install the Mermaid parser, or neither validates diagrams', () => {
-  // `mermaid` and `jsdom` are OPTIONAL peer dependencies of the generator, and their absence is
-  // silent. From 0.5.0 diagrams are embedded by default and every fence is validated after a run;
-  // without the real parser a weaker built-in check runs instead, and a diagram that passes it but
-  // fails the real one is rewritten in place into a plain `text` fence. Exit code 0, gates green,
-  // diagram silently downgraded.
-  //
-  // Parity matters more than presence: if only one side has the parser, the two environments
-  // disagree about what a valid diagram is, and the one that writes the bundle decides. That is the
-  // same class of drift the version pin above exists to stop.
-  const dockerfile = readFileSync(join(REPO_ROOT, '.devcontainer', 'toolchain.Dockerfile'), 'utf8');
-  const peerDeps = (text) =>
-    new Set((generatorInstall(text)?.rest ?? '').trim().split(/\s+/).filter((w) => /^(mermaid|jsdom)$/.test(w)));
-  const inCi = peerDeps(raw);
-  const inContainer = peerDeps(dockerfile);
-  assert.deepEqual(
-    [...inCi].sort(),
-    [...inContainer].sort(),
-    `CI installs [${[...inCi].sort()}] alongside the generator and the dev container installs ` +
-      `[${[...inContainer].sort()}]. They must match, or the two environments silently disagree ` +
-      'about which Mermaid diagrams are valid.',
-  );
-  assert.deepEqual([...inCi].sort(), ['jsdom', 'mermaid'],
-    'both `mermaid` and `jsdom` are required for authoritative diagram validation — with either missing, openwiki falls back to the weaker built-in check and downgrades diagrams it cannot verify');
+  // `mermaid` and `jsdom` are OPTIONAL peers and their absence is silent: without the real parser a
+  // diagram that fails only the strict check is rewritten into a plain `text` fence, exit 0, gates
+  // green. If only one environment has the parser, the two disagree about what a valid diagram is.
+  const inContainer = new Set(pinned.rest.trim().split(/\s+/).filter((w) => /^(mermaid|jsdom)$/.test(w)));
+  assert.deepEqual([...inContainer].sort(), ['jsdom', 'mermaid'],
+    'the dev container must install both `mermaid` and `jsdom` beside the generator, as CI does');
 });
 
 // ── injection (found by semgrep on this workflow's first CI run) ────────────────
@@ -346,7 +393,23 @@ function pinMismatch() {
   return installed === pinned ? null
     : `installed openwiki ${installed} is not the pinned ${pinned} — rebuild the toolchain image, or set OPENWIKI_ROOT to a side install of ${pinned}`;
 }
-const LANGCHAIN_CHAT_MODELS = `${OPENWIKI_ROOT}/node_modules/@langchain/anthropic/dist/chat_models.js`;
+/**
+ * Where `@langchain/anthropic` lives is a property of the INSTALL LAYOUT, not of openwiki: an
+ * `npm install -g` nests it under openwiki/node_modules, while the locked pnpm install in
+ * tools/openwiki-generator (item #704) puts it beside openwiki in the virtual store. Resolve it the way
+ * openwiki itself would — from openwiki's real directory — and fall back to the nested path, so a
+ * missing install still surfaces as the ENOENT the skip logic expects.
+ */
+function langchainChatModels() {
+  const nested = `${OPENWIKI_ROOT}/node_modules/@langchain/anthropic/dist/chat_models.js`;
+  try {
+    const require = createRequire(realpathSync(`${OPENWIKI_ROOT}/package.json`));
+    return join(dirname(require.resolve('@langchain/anthropic/package.json')), 'dist', 'chat_models.js');
+  } catch {
+    return nested;
+  }
+}
+const LANGCHAIN_CHAT_MODELS = langchainChatModels();
 const OPENWIKI_AGENT = `${OPENWIKI_ROOT}/dist/agent/index.js`;
 
 /** The `env` block the generator will actually run with. */

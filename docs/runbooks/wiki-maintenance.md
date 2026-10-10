@@ -179,11 +179,11 @@ Two things to know before changing it again:
 - **Run the guard first, and read the SKIP COUNT, not just the exit code.** Two of its four cap
   assertions skip when OpenWiki is absent from `/usr/local/lib/node_modules`, and a skip reads as a
   pass. The `claude-sonnet-5` bump was verified at 20 passed / 0 failed / **0 skipped**.
-- **Verifying a generator version bump before the image carries it** (how 0.5.2 → 0.6.0 and
-  0.6.0 → 0.7.1 were done, feature 078): side-install it — `npm install -g --prefix <dir> openwiki@<v> mermaid jsdom`, never
-  over the container's global copy that other sessions are using — and run the guard with
-  `OPENWIKI_ROOT=<dir>/lib/node_modules/openwiki`. The installed-generator assertions then read the
-  new version instead of skipping; count them.
+- **Verifying a generator version bump before the image carries it**: bump the locked install first
+  (§4, *How the generator's dependencies are pinned*) — it is a side install by construction, so the
+  container's global copy that other sessions are using is never touched — and run the guard with
+  `OPENWIKI_ROOT=$PWD/tools/openwiki-generator/node_modules/openwiki`. The installed-generator
+  assertions then read the new version instead of skipping; count them.
 - **On every generator bump, re-check the gaps we work around.** The table is in
   [`specs/078-wiki-generator-cost/research.md`](../../specs/078-wiki-generator-cost/research.md) R15: request-body
   options (`service_tier`), reasoning effort for `fireworks`, local token usage, and the managed `AGENTS.md`
@@ -457,6 +457,77 @@ any timer it was holding dies with it. Git state survives cancellation; run stat
 The run **does not trigger itself**: the `[skip ci]` marker commit and a bundle-only change (its own
 proposal landing) are both recognised and skipped.
 
+### How the generator's dependencies are pinned, and how they are bumped
+
+The CI runner has no generator baked in, so the job installs one — **from a committed lockfile,
+never resolved at run time** (item #704). `tools/openwiki-generator/` holds three exact pins
+(`openwiki`, and its optional Mermaid peers `mermaid` and `jsdom` — see *Diagrams need their parser*
+below) and the `pnpm-lock.yaml` for the whole tree. The job runs
+`pnpm --dir tools/openwiki-generator install --frozen-lockfile`, puts that directory's
+`node_modules/.bin` on `PATH`, and its verify step fails unless `command -v openwiki` resolves there.
+
+Why: the step used to be `npm install -g openwiki@0.7.1 mermaid jsdom`. Only `openwiki` was pinned;
+its transitive tree (`openai`, `deepagents`, `langsmith`, …) and `mermaid`/`jsdom` resolved to whatever
+was newest at run time. Run 4950 (2026-10-09) died 404-ing on `openai@7.32.0`, resolved two minutes
+after it was published, and the same gap let a minutes-old package run with the generator's model
+credential in its environment. Two runs a day apart could also run different generator code with no
+diff in this repository, which confounds every cost and reliability comparison.
+
+**The cooldown.** The directory is its **own** pnpm workspace root — its own `pnpm-workspace.yaml`,
+outside the root workspace's `frontend/*` and `packages/*` globs — so the root's settings (which
+deliberately set no cooldown) do not apply and its own do. It sets `minimumReleaseAge: 4320` (three
+days, Renovate's catch-all), which pnpm enforces twice:
+
+- **At resolve time**, so a lockfile regeneration — Renovate's or yours — cannot pick a transitive
+  younger than three days. This is the gap item #271 describes for the root workspace (Renovate's
+  cooldown covers what it *proposes*, not what a lockfile regeneration drags in), closed for this
+  directory. Measured on the first lock: `openai` resolved to 7.30.0, not 7.31.0 or 7.32.0.
+- **At install time**: a frozen install verifies every locked entry against the policy and fails
+  `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` ("The lockfile contains entries that the active policies
+  reject") rather than install one inside the window.
+
+There is deliberately **no** `minimumReleaseAgeExclude` here: nothing in the generator is a security
+floor, and the code runs with a model credential. `better-sqlite3` is the one package allowed to run
+an install script (`allowBuilds`) — openwiki's LangGraph checkpointer loads its native binding at
+runtime, and it ran under the old `npm install -g` too.
+
+**Checking the guard yourself** (the live half of the proof; the static half is
+`scripts/__tests__/wiki-maintain.guard.test.mjs`, which fails a cooldown under three days, an
+exclusion list, a range instead of an exact pin, a lockfile that disagrees with the manifest, or any
+run-time resolution in the workflow). Copy the three files somewhere scratch, raise the window past
+the age of the lock, and install frozen — **from the repository root**, with `--dir`, so corepack
+picks this repository's pnpm; run from inside the scratch directory it picks whatever pnpm is
+newest, which is a different instrument:
+
+```bash
+d=$(mktemp -d) && cp tools/openwiki-generator/{package.json,pnpm-lock.yaml,pnpm-workspace.yaml} "$d"/
+sed -i 's/minimumReleaseAge: .*/minimumReleaseAge: 525600/' "$d/pnpm-workspace.yaml"
+CI=true pnpm --dir "$d" install --frozen-lockfile; echo "exit=$?"   # expect exit=1 and the violation list
+```
+
+On 2026-10-10 that exited 1 with `[ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION] 203 lockfile entries
+failed verification`; the same install with the committed window succeeds.
+
+**Bumping.** Renovate manages it: the manifest and the dev container's
+`npm install -g openwiki@<v>` (a `customManagers` regex entry) are grouped as `openwiki generator`, so
+both openwiki halves move in one PR — `wiki-maintain.guard.test.mjs` fails if they differ. To bump by
+hand, from the repository root:
+
+```bash
+pnpm --dir tools/openwiki-generator add openwiki@<v> --save-exact   # or mermaid / jsdom
+# then edit .devcontainer/toolchain.Dockerfile's `npm install -g openwiki@<v>` to the same version
+OPENWIKI_ROOT=$PWD/tools/openwiki-generator/node_modules/openwiki \
+  node --test --test-reporter=tap scripts/__tests__/wiki-maintain.guard.test.mjs   # 0 failed, 0 skipped
+```
+
+A refresh of the transitive tree within the existing pins is
+`pnpm --dir tools/openwiki-generator update`; the cooldown still applies. Either way, a bump changes
+what writes the bundle: check `pnpm nx wiki-plan infrastructure-as-code`, re-check the R15 gaps in
+§1, and review one dispatched run before merging.
+The dev container's global copy is still resolved fresh **at image build**, which is rebuilt rarely
+and never holds a CI credential. Local runs use it by default; put
+`tools/openwiki-generator/node_modules/.bin` first on `PATH` to run the locked tree locally instead.
+
 ### The proposal
 
 One long-lived branch (`openwiki-maintenance`), one open pull request, **ever**. A run that finds it
@@ -723,10 +794,13 @@ alongside `jsdom`. Without them OpenWiki falls back to a lightweight built-in ch
 that fails validation is rewritten in place into a plain `text` fence with a short comment — the run
 still exits 0 and every gate still passes.
 
-Both are therefore installed beside the generator in `.devcontainer/toolchain.Dockerfile` **and** in
-`.forgejo/workflows/wiki-maintain.yml`, and a guard in `scripts/__tests__/wiki-maintain.guard.test.mjs`
-asserts the two lists match — if only one environment has the parser, the two disagree about what a
-valid diagram is, and the one that writes the bundle wins.
+Both are therefore installed beside the generator in `.devcontainer/toolchain.Dockerfile` **and**
+pinned in CI's locked install (`tools/openwiki-generator/package.json`, §4), and
+`scripts/__tests__/wiki-maintain.guard.test.mjs` fails if either environment drops them — if only one
+environment has the parser, the two disagree about what a valid diagram is, and the one that writes
+the bundle wins. Both sit outside the peer range openwiki 0.7.1 declares (`mermaid ^11.16`,
+`jsdom ^29.1`) — the versions every CI run since mid-September actually resolved — and the real parser was
+verified to load and reject a malformed fence from the locked install.
 
 ---
 

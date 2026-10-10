@@ -397,6 +397,21 @@
       ],
       "depNameTemplate": "astral-sh/uv",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Item #704. The dev container's toolchain image still installs the OpenWiki generator globally",
+        "(`npm install -g openwiki@<v> mermaid jsdom` \u2014 there is no repository checkout at image-build",
+        "time), while CI installs it from tools/openwiki-generator/pnpm-lock.yaml. wiki-maintain.guard.test.mjs",
+        "fails if the two openwiki versions differ, so this manager moves the Dockerfile half in the SAME PR",
+        "as the manifest half (both grouped as `openwiki generator` in packageRules) instead of proposing a",
+        "bump that arrives red."
+      ],
+      "managerFilePatterns": ["/^\\.devcontainer/toolchain\\.Dockerfile$/"],
+      "matchStrings": ["npm install -g openwiki@(?<currentValue>[\\d.]+)"],
+      "depNameTemplate": "openwiki",
+      "datasourceTemplate": "npm"
     }
   ],
   "docker-compose": {
@@ -681,6 +696,34 @@
       "matchManagers": ["npm", "custom.regex"],
       "matchPackageNames": ["nx", "/^@nx//"],
       "groupName": "nx monorepo",
+      "automerge": false
+    },
+    {
+      "description": [
+        "Item #704. The OpenWiki generator's locked dependency tree (tools/openwiki-generator/) moves as ONE",
+        "unit: openwiki plus its optional Mermaid peers (mermaid, jsdom), and the dev container's openwiki pin",
+        "(the customManagers entry, manager `custom.regex`). Two rules because a packageRule ANDs its matchers:",
+        "this one takes everything declared in the generator manifest, the next takes `openwiki` wherever it is",
+        "declared. Both must stay AFTER the generic `js patch/minor` and `js majors` rules \u2014 the last",
+        "matching groupName wins.",
+        "The catch-all `minimumReleaseAge: 3 days` gates what Renovate PROPOSES here as everywhere. What a",
+        "lockfile regeneration drags in TRANSITIVELY is gated by pnpm itself: the directory's own",
+        "pnpm-workspace.yaml sets `minimumReleaseAge: 4320`, so resolution cannot choose a transitive younger",
+        "than three days \u2014 the item #271 gap, closed for this directory. A bump changes what writes the",
+        "knowledge bundle: review it with a wiki-plan and one dispatched run, never on CI alone",
+        "(docs/runbooks/wiki-maintenance.md)."
+      ],
+      "matchFileNames": ["tools/openwiki-generator/package.json"],
+      "groupName": "openwiki generator",
+      "automerge": false
+    },
+    {
+      "description": [
+        "Item #704 \u2014 see the rule above. Joins the dev container's `custom.regex` openwiki pin to the manifest's."
+      ],
+      "matchManagers": ["npm", "custom.regex"],
+      "matchPackageNames": ["openwiki"],
+      "groupName": "openwiki generator",
       "automerge": false
     },
     {

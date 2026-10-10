@@ -3176,3 +3176,56 @@ test('(2026-10-09) the shared observability postgres is HARD-held below 17; othe
     'the observability postgres ceiling leaked onto keycloak, which is already on 18 — scope it by matchFileNames',
   );
 });
+
+// ── the OpenWiki generator's locked tree moves as ONE unit (item #704) ───────────────────────────────
+//
+// The generator's dependency tree is installed from tools/openwiki-generator/pnpm-lock.yaml (the
+// wiki-maintain job, `--frozen-lockfile`), while the dev container's toolchain image still installs
+// `npm install -g openwiki@<v> mermaid jsdom` globally. wiki-maintain.guard.test.mjs fails if the two
+// openwiki versions differ, so a bump that moves one half and strands the other arrives RED. Same
+// splitting mechanism as nx and Playwright: the generic npm rules match first, a customManager's
+// manager is `custom.regex`, and the LAST matching groupName wins.
+
+const GENERATOR_MEMBERS = [
+  { label: 'toolchain.Dockerfile openwiki', manager: 'custom.regex', packageFile: '.devcontainer/toolchain.Dockerfile', depName: 'openwiki' },
+  { label: 'generator manifest openwiki', manager: 'npm', packageFile: 'tools/openwiki-generator/package.json', depName: 'openwiki' },
+  { label: 'generator manifest mermaid', manager: 'npm', packageFile: 'tools/openwiki-generator/package.json', depName: 'mermaid' },
+  { label: 'generator manifest jsdom', manager: 'npm', packageFile: 'tools/openwiki-generator/package.json', depName: 'jsdom' },
+];
+
+for (const updateType of ['patch', 'minor', 'major']) {
+  test(`the OpenWiki generator's pins are proposed in ONE group on the ${updateType} track`, () => {
+    const groups = GENERATOR_MEMBERS.map((m) => ({ ...m, groupName: resolvedGroupName({ ...m, datasource: 'npm', updateType }) }));
+    const shown = groups.map((g) => `    ${g.label.padEnd(32)} group=${JSON.stringify(g.groupName)}`).join('\n');
+    assert.deepEqual([...new Set(groups.map((g) => g.groupName))], ['openwiki generator'],
+      `on the ${updateType} track the generator's pins do not share the 'openwiki generator' group:\n${shown}\n` +
+        '  A stranded half is a red bot PR (the dev-container parity guard) or, worse, a generator that\n' +
+        '  moves without its Mermaid parser. Item #704.');
+  });
+}
+
+test('the OpenWiki generator group does not swallow unrelated npm packages', () => {
+  // The control: `mermaid`/`jsdom` are grouped by FILE, so the same names elsewhere stay where they were.
+  for (const dep of [
+    { manager: 'npm', packageFile: 'package.json', depName: 'yaml' },
+    { manager: 'npm', packageFile: 'frontend/mcm-app/package.json', depName: 'mermaid' },
+  ]) {
+    assert.notEqual(resolvedGroupName({ ...dep, datasource: 'npm', updateType: 'minor' }), 'openwiki generator',
+      `${dep.depName} in ${dep.packageFile} was pulled into the generator group`);
+  }
+});
+
+test('the dev container half of the generator pin is extracted, and the manifest is not ignored', () => {
+  const manager = (config.customManagers ?? []).find((m) => m.depNameTemplate === 'openwiki');
+  assert.ok(manager, 'no customManager extracts the openwiki pin from .devcontainer/toolchain.Dockerfile');
+  assert.equal(manager.datasourceTemplate, 'npm', 'one datasource, so both halves carry ONE depName');
+  const dockerfile = readFileSync(resolve(REPO_ROOT, '.devcontainer/toolchain.Dockerfile'), 'utf8');
+  const hits = manager.matchStrings.flatMap((s) => [...dockerfile.matchAll(new RegExp(s, 'g'))]);
+  assert.equal(hits.length, 1, `the openwiki matchString must hit the Dockerfile's install exactly once (got ${hits.length})`);
+  assert.ok(manager.managerFilePatterns.some((p) => new RegExp(p.slice(1, -1)).test('.devcontainer/toolchain.Dockerfile')),
+    'the openwiki customManager no longer targets .devcontainer/toolchain.Dockerfile');
+  for (const glob of config.ignorePaths ?? []) {
+    const re = new RegExp(`^${glob.replace(/\*\*\//g, '(.*/)?').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')}$`);
+    assert.doesNotMatch('tools/openwiki-generator/package.json', re, `ignorePaths '${glob}' hides the generator manifest from Renovate`);
+  }
+});
