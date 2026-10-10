@@ -82,7 +82,7 @@ description: "Tasks for 082: re-plan wiki concepts that fell behind the maintena
 - [x] T042 [P] Rewrite `docs/runbooks/wiki-maintenance.md` in place: drift selection, the bound, parking (replacing
       the "advance `coveredCommit` past the page's source change" recipe) and the report (FR-010).
       **Done when** the runbook's parking recipe edits `parked` and nothing else.
-- [ ] T043 Final gates: `node --test scripts/__tests__/*.test.mjs` (0 failed, 0 skipped), plus
+- [x] T043 (2026-10-10: 1612 pass, 0 fail, 0 skipped; all six exit 0) Final gates: `node --test scripts/__tests__/*.test.mjs` (0 failed, 0 skipped), plus
       `check-openwiki-okf`, `check-openwiki-governance`, `secret-scan`, `check-topology-scrub`,
       `wiki-maintain --selftest` and `--plan`, all exit 0.
 - [ ] T044 After the first merged run, check item #526's criteria against the run record and the plan, then close #526.
