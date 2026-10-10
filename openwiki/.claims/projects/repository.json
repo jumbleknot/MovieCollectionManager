@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d7febd266f7d510fe5799db7559ad030cf0d7e0ac860d36d18f2cd24b32bbb3a",
+  "pageVersion": "sha256:0ac716b2b98f4f64e49874e0fb88ce8003c16964ee526f56c0826b4630af1083",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -224,11 +224,15 @@
     },
     {
       "id": "claim_7872ae1c6b2f448bb6b8e4f20104b3bf",
-      "statement": "`sbx` is pinned at v0.47.0 (upgraded from v0.43.0 on 2026-10-08). Because it enforces this environment's isolation and egress, an upgrade is a security-relevant change with a required ritual: read the intervening release notes for network-policy, `--network=host`, port-publishing, idle-stop, secret-injection and template changes; capture the before-state with `verify-reboot-survival.sh --capture`; re-run the harness plus the host-side `verify-sandbox-egress.sh --audit-check`; re-run the G5 sibling-egress refusal explicitly; and record the new version in the runbook. Several behaviours here are version-specific and undocumented.",
+      "statement": "`sbx` is pinned at v0.47.0 (`0411f50ee4700fe7bd37e6e7e3aced563e850ca9`), upgraded from v0.43.0 on 2026-10-08 via `winget upgrade Docker.sbx` after `sbx daemon stop`. Because it enforces this environment's isolation and egress, an upgrade is a security-relevant change with a required ritual: read the intervening release notes for network-policy, `--network=host`, port-publishing, idle-stop, secret-injection and template changes; capture the before-state with `verify-reboot-survival.sh --capture`; re-run the harness (`run-harness.sh`) plus the host-side `verify-sandbox-egress.sh --audit-check`; re-run the G5 sibling-egress refusal explicitly; and record the new version in the runbook. Several behaviours here are version-specific and undocumented.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L1354-L1461",
-          "version": "repo-lines-v1:sha256:3acc887577a9c715f37e67da16ab559fb20dfb3e061469509f80f6f683f615e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkY2NjMzE4NjBiZjk1NGRhNzFhYmIzODAzZTUxNmQxNGE1ODM3OGM2NGQ0MjllMzgxNzE4ZjczOGQ1OGRmOTg2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0YzBiYzk0OWY4ODdjM2E4NDk5ZmYxYTdjYzY4NGRhODg3NjZkMjJmMzBmMTVjZGY5ZDk0MTIxZDJjNzVmZjlkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIn0"
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L540-L565",
+          "version": "repo-lines-v1:sha256:2709fa095b21273f0c1e29ce8a9447eeeaace6bc79ed929ebeea5f0b12fbc5f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjY2MzMTg2MGJmOTU0ZGE3MWFiYjM4MDNlNTE2ZDE0YTU4Mzc4YzY0ZDQyOWUzODE3MThmNzM4ZDU4ZGY5ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MTg0YmYzYjUyNDhiYmYyODZiOTY5ODQ4MDc0OWFjZjZhZDJkYzY4YTY5ZWZiMTU0OTEzZmJkYzFlYTE2ZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3ZGNiZWI1OGRhMzVlNzI4ZmNlYmIzNDc4YzAwYTIyMWRkMzIyOGE1MmIzZTMxYTg1ODc3YmUyYmZmNGJjODIifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L630-L647",
+          "version": "repo-lines-v1:sha256:c7f47185be5fa26927fc0858097a2e4a7bda4959affd192aa58fb294310f73a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0YmJmYWI5OGI3NzY2NzUyNDMzMGRkMjI3ZmE4MjhmMzUyYTNiZGM3NDJjZmMxNjUwMDllYzgzZmQ3ZmM5ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMGJjOTQ5Zjg4N2MzYTg0OTlmZjFhN2NjNjg0ZGE4ODc2NmQyMmYzMGYxNWNkZjlkOTQxMjFkMmM3NWZmOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiZWM5ZDFjMTdkYWU4YjRhOTJkMjE0NTNhYzA2ODMzNDE2Mzc0YzVmOTNjNTU0ZjZkZWU5MDQ4OWIwMTk2MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNmRlZWIyODg5MmIxY2RlYmZlNWMxMmMyY2Q2MjBiNWI4ZjI5Mjg5YzFmZmUzZDRmNWZjMWIyZTZhNGVhN2QifQ"
         }
       ]
     },
@@ -237,12 +241,12 @@
       "statement": "`sbx run` can report `docker daemon failed to start inside the sandbox` while dockerd is healthy: restoring this VM's 20 `restart: unless-stopped` containers takes 54–101 s and overruns sbx's compiled-in dockerd-readiness budget, so sbx aborts, the CLI exits, and the ~30 s idle-stop kills a working VM. There is no knob (no flag, `DOCKER_SANDBOXES_*`/`SBX_*` variable, settings file, or daemon option; v0.43.0 did not raise it). `scripts/open-sandbox.ps1` works around it by treating the exit code as a claim and SSH answering as evidence, waiting up to a 120 s deadline; a bare `sbx run` still shows the false failure.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L834-L944",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L114-L224",
           "version": "repo-lines-v1:sha256:f4006fdb3353e1a539d5b7404ff18dac5604d7a4250c30ae99c396dbf9b83501:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ZjgwZjAwOTE4YzI0YWU2M2JjYTJjNzJhZmE0ZGMwNTg4ZjUzY2U2ZDQ0MGI3NjNkYzFkNzhiMDIyNzZkMDRkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4ZGM3ZDQ1YjQ4OTBkODIzMjUwMTUyZmEyZjkwZDJmNzkwMTcxY2IxOWIyNWJiZTQ0NTkyOGJjY2Y2MWFhOTI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIn0"
         },
         {
           "resource": "repo://scripts/open-sandbox.ps1#L126-L164",
-          "version": "repo-lines-v1:sha256:ac15d5eeeec9e2a958d0789ed4bc214b0fa964bb55bb6358146aefdf32f59655:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YmZmNjYwNzQ1ZGM1ZDJlY2MzN2JhMWFkMzVkMjA3MTI4YjhiM2U1YjllNTJmNGFlOWQ0NjZiNTBmY2MzMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmNjI4MmExOWZiNjM2OWU4ZjkzODIxM2I3MTFlNDQ5ZjJmZmUwMTY5N2I3NDJmZGE3NzQxYzExNDlmNTg1MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxZWQ1ZjA2OWE0MGQ2ODk0ZjMzOTJlNTg0NjdiMjJlNGRhOTliMmY4MmEwNGQwODJkZGQ5OGY4YzM0Y2ZiOGIifQ"
+          "version": "repo-lines-v1:sha256:4c9475e0e6cc036ad68db2df227e727e18b0055aa9c6effd0c16f409f227ca4f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YmZmNjYwNzQ1ZGM1ZDJlY2MzN2JhMWFkMzVkMjA3MTI4YjhiM2U1YjllNTJmNGFlOWQ0NjZiNTBmY2MzMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmNjI4MmExOWZiNjM2OWU4ZjkzODIxM2I3MTFlNDQ5ZjJmZmUwMTY5N2I3NDJmZGE3NzQxYzExNDlmNTg1MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxZWQ1ZjA2OWE0MGQ2ODk0ZjMzOTJlNTg0NjdiMjJlNGRhOTliMmY4MmEwNGQwODJkZGQ5OGY4YzM0Y2ZiOGIifQ"
         }
       ]
     },
@@ -262,11 +266,15 @@
     },
     {
       "id": "claim_8bec03500ec240ed993844be694b375d",
-      "statement": "In `sbx` v0.47.0 the VM-shell egress refusal body changed to HTTP 403 `Approval required for <host>:<port>.` (from `Blocked by network policy`). A harness check keyed to the old marker reported a deny-by-default breach that had not occurred, so both verify scripts now accept both bodies. The new body also queues a pending approval (`sbx policy approval ls`), and `sbx policy approval respond … allow` is a second path that widens egress while bypassing the canonical `.devcontainer/egress-allowlist.json` — it must never be used; add the destination to the canonical file and apply the generated rule instead, and use `dismiss` to clear the queue.",
+      "statement": "In `sbx` v0.47.0 the VM-shell egress refusal body changed to HTTP 403 `Approval required for <host>:<port>.` (from `Blocked by network policy`). A harness check keyed to the old marker reported a deny-by-default breach that had not occurred, so both verify scripts (`verify-sandbox-egress.sh` and `verify-firewall-allowlist.sh`) now accept both bodies. The new body also queues a pending approval (`sbx policy approval ls`), and `sbx policy approval respond … allow` is a second path that widens egress while bypassing the canonical `.devcontainer/egress-allowlist.json` — it must never be used; add the destination to the canonical file and apply the generated rule instead, and use `dismiss` to clear the queue.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L1361-L1372",
-          "version": "repo-lines-v1:sha256:b8f0472e4a930012856abada3e4622f27d8020f3aa073fa352a2aca0ab2d6fc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5OTg1NDJkMDUzYjM0MWVhZDA1ZWYxOTA4M2ViODBmMDQ2YTRmYjRiN2JiNjBlZjY1ZDUzMmMyODI2NmY1NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMmNiZDM4Y2YyZGQwMGNlMTU3OTg4ZWI1YTg0NzNhYTZkMWRkMGZmMDUzMjcyZTU4MWQ5MzMwNTQyNWU5ZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxYWI2OGYwZDY2NzhmYTc5YzU1NzM5MmQ0NGMyNDc3ZDk5NzI1NmVhZGQ2ZTc4YzJmNjhjNzc2ZWVjYTliYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWI1MjM2NDdmNDI0NzQxODRhZmM0ODhlNjFhZTFkNzVmMGI3ODAyNjllNDRlN2NjZDU4NTdjZjZiNTk0ZTMifQ"
+          "resource": "repo://.devcontainer/verify/verify-firewall-allowlist.sh#L146-L161",
+          "version": "repo-lines-v1:sha256:bb9f9effe632254f2bb3cf409bd6f5bb297777b6a723092778761c9832cf1bb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMWU4MWMxZTc0YzQ4MjNmMTMyMjc0ZGVhYTNlYWFjMjQ1ODIxZmNhZmJmZTE3OGQ5YTUwOGUwZGU0MTczOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjMmEwNzMwNTI4ZTMxNmMwY2ViMDBkNDE1ZmMwNzc2YjkxOTBkYTM4OTY0ZmQwNmViOWZkODdiYjdmYjU4ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYmViZWYwY2U0MDFjMmZlMTAxMGIyZmE5OThkNGZkY2E4NDdkNzAzNDMxZTM2MDdlYWJiNTczNWRmMThiOTAifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/verify/verify-sandbox-egress.sh#L18-L55",
+          "version": "repo-lines-v1:sha256:1c958e768d5a8ab0b0c863cf42b0f357d33bd07c4b16a4c559bf0cabba1cc172:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0ZDA3MDBjM2ExYmQ4ZTUzYmFlYjdlNTQ3YmZlNGM4ZWMwZDEyMTQzNGJmZWNmZTQ0ZTQzZTUwZTlmODA1YzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZGFhOWVmYjYyMGNjMzc2NjUxNzI3YWJlODY3YTdkZWExNWM5M2Q0NzA5YmFkOTM4NDE1N2NiODM4NzZlNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0Mzc1MWMyY2RiNzU1Zjk2YmJhNmUyMDI3NjZlODFhYTEyNTlmMmQwODZlYTMxNzFhZGRmNGNlYTcxNDFjZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxNTJmMzE3ODQyNGNlNTcwZTk1MWNlNjUwN2IzOGU4ZjE3NTQ0ZDdlMjMwM2EyY2NhMmI1MDMxYWFlYTY2MWMifQ"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L213-L240",
@@ -305,14 +313,52 @@
           "version": "repo-lines-v1:sha256:eeadb73c749ea6463a4c85c02e8c3ba3acaa5cbf581eebd9910057a3fe16a8a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MDkyZWI5MjY0NTIzOTM2OTNlZGZiMTIyYWVmZTQ5NjgxZWI3OGU1Y2U0OGQ3NTY0NDE2NmRmMzdkN2NjZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMGIzYmVhYjZlOTE1YWM5NThlZDJmZDFjMTdmMjc1OWI0NWMzMDkzYjM0NTZhNjA0MWFjZjUzYjRjNWMyMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3MjY3OGNmNjA2MzE1MTM5NzYwODA5NDEyYmE5ZGQyOWVkYTI4Njg5YjhkNTQ1NmZkYzVhMjgyZmZlNzIxZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDU3OWM2M2VmMTIwYjZmN2I4NTBhZTU3ZWNjOTE5ZWY2MjZiNWIyYTFiMDE3OGY1ZjQzZGIxYzZlODJmOTMifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L1218-L1288",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L755-L825",
           "version": "repo-lines-v1:sha256:59b56144186d4e29edf24e58e003dee38ebf43ce28515490c27627145fc19290:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0Y2RkOThmZWE4OGU2NzJjNzg1MGQ0NTQ5YWU4MGFiNTU5NGZhZmZlNmIzODgxMjI2MjAxYTNmOTk0OGYxYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjMDY5ZTU4YTRhZGQ1ZWMyYzkwMjcyMTc3YTdkYjQ0OGQzMjQxZWE3Y2U5NGE2M2JkOTQwM2RkN2RlYjcxMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyOTI5Y2RhZWFiZTQ4ZWNiNDliZjZhMjM2OTU1OTc1MGZmZGI1ZjZkMzJlNjJhMzlhOTFmZDE4YjA0ZWE3M2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96fe828f599642539a75fa587033e20b",
+      "statement": "The sandbox operating manual is split into two runbooks that share one section numbering (so `§8b` means the same section in either): `docs/runbooks/devcontainer-sandbox.md` carries day-to-day operation (credential rule §0, getting in §1, lifecycle §2, egress triage §3, engine seam §5, running git §7d, credential injection, collected foot-guns), while `docs/runbooks/devcontainer-sandbox-lifecycle.md` carries recreating, resizing, verifying and upgrading (§7b templates, §7e full disk, §7f the `sbx run` false failure, §8 disk sizing, §8b cold recreate, §10 the harness, §10b the `sbx` version and upgrade ritual). The lifecycle file was split out of the main runbook on 2026-10-10 (item #682) so each source stays small enough for the wiki generator; the section numbers are unchanged.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L1-L11",
+          "version": "repo-lines-v1:sha256:900b4e69fd341ad7c95d2c83e2f850e9075e10161b5a67cce0f1c6074e4ca8fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZWJjYWU2ZGE3ZjNhNDE1NmRmZjk5YzVhODM4YzRlZjNlZTA3MTdlZGQ2MDYwNjJlYjBjZjcxNGQ1YWQxYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5YTk2M2E4MDQ5N2QwM2M5N2UxYTZmZmNhN2VkNTYzMmFjY2FkYzBlNGJkNWFmNTEwMmUyNThmYWQ2N2Q0M2IifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L829-L838",
+          "version": "repo-lines-v1:sha256:a78a401a234ad16cae37cdbc3a0e6973ac9587230c5593f34593db997b291828:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MDhlNTEzNzExMzZkMGJkMmQ1NTZhMDhlN2EwODkxMWUzZWE1NzJkYmJiNWRjNmVmY2VkOWFmMGI3MDZkMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMDAzMzA5ZGMyYjBjMmJmZThkNDIxN2I1ZjAwNTkwY2QzNDQzYzcwZTkwMGZhNDJmODZiNWVkNWU2MWU4YmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5MGFhZTYwZjc1ZWE1Mzc1OTQxOTg2NzY2ZDNjODBiN2FlZDhmNmQ2YzBlMzQ4NWIyNmFjZjJiZDY2NDgwODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwOTQyZTgzYTI1YTg1N2NhYzUxNGMxZDgzNDQxODMyZmZlMGNlOTU5OTJkNThjNTM3ZjZkOGNjMzJmOTk3NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_055181bdc55d466094321ac72f92a12a",
+      "statement": "The `sbx` v0.44–v0.47 release-note items that affect this environment are narrow and none widens egress: `sbx rm` prompts in v0.45.0 and declining returns non-zero, so scripts and agent shells need `--force`; egress became stricter across v0.45.0–v0.47.0 (DNS resolution is refused when no rule permits it, PTR lookups only for already-authorized IPs, policy-evaluation failures fail closed, and raw TCP to a denied hostname is no longer let through by an allow rule for its resolved IP); and `sbx create` still has no `--disk` flag on v0.47.0, so disk sizes remain creation-time environment variables.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L547-L558",
+          "version": "repo-lines-v1:sha256:b8f0472e4a930012856abada3e4622f27d8020f3aa073fa352a2aca0ab2d6fc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5OTg1NDJkMDUzYjM0MWVhZDA1ZWYxOTA4M2ViODBmMDQ2YTRmYjRiN2JiNjBlZjY1ZDUzMmMyODI2NmY1NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMmNiZDM4Y2YyZGQwMGNlMTU3OTg4ZWI1YTg0NzNhYTZkMWRkMGZmMDUzMjcyZTU4MWQ5MzMwNTQyNWU5ZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxYWI2OGYwZDY2NzhmYTc5YzU1NzM5MmQ0NGMyNDc3ZDk5NzI1NmVhZGQ2ZTc4YzJmNjhjNzc2ZWVjYTliYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWI1MjM2NDdmNDI0NzQxODRhZmM0ODhlNjFhZTFkNzVmMGI3ODAyNjllNDRlN2NjZDU4NTdjZjZiNTk0ZTMifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L87-L87",
+          "version": "repo-lines-v1:sha256:8b5b5de7deb0a677465542475d1fc329f42117ad57e7d2d8df9b9e8dad4c1057:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YjVkZTdkZWIwYTY3NzQ2NTU0MjQ3NWQxZmMzMjlmNDIxMTdhZDU3ZTdkMmQ4ZGY5YjllOGRhZDRjMTA1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YjVkZTdkZWIwYTY3NzQ2NTU0MjQ3NWQxZmMzMjlmNDIxMTdhZDU3ZTdkMmQ4ZGY5YjllOGRhZDRjMTA1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWMxNTYwMzRjNGE2YmI3ZGMyMjMwMzI5MTI2YjA2ODI5YTlmMTgyZjc0NTRjYjU4ODczNjQ0YmZhZDBjMjc5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjk2NWNkMjFiNDg2YWU2N2VjMzAwODlmZjc3MmY2N2Q5Mjk2ZjdlMmI1NjVkZTM3YWM1YTZjMDI1OTU5ODkzNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c00ced669ab74a33bd557a1555f976b8",
+      "statement": "The verified 2026-10-08 upgrade to `sbx` v0.47.0 plus the 150 GB recreate passed the harness at 12/12 (including `reproducible-recreate`), the G5 sibling-egress refusal, and the host-side `verify-sandbox-egress.sh --audit-check` with all 50 canonical destinations live in the policy; the volumes were confirmed from the host at `mcm-docker.img` 150.0 GB and `rwlayer.img` 40.0 GB. The first harness run was 9/12, with three failures that were not regressions: the refusal-body marker change (an instrument fault), the personal layer absent on a CLI `devcontainer up`, and a known first-run `firewall-allowlist` case that passed on re-run.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L567-L576",
+          "version": "repo-lines-v1:sha256:d1d35742f58843ba4457514606aea533ef7c6832575c2c03562aec37817b58c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOTU5YWE5NTM2ODE4NDQ4MWZmMDBlMmMzODE3MjFlNjgwMjE4MmFmZTQwMGFlZmEyM2VmMmVmM2Q4OGYzODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNGRiZjMxOGJkNGE2ZDQzZDhlYjZlMDM1MzNlZjdlNmRlZTFiNWU5ODRiZGYzNTljMWJlYmVhZDE2ZTcwOGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmNmM2NWM4NWIwNTg5NzgzMzY2OTQ3MjI1MzFlNTljZTY0NzQzZmM1ZjRlMzc3ZDFkYmRmMTRiZjJiNWE0MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjYzM5ZWYwZGIyYzc2MTYwYzhjZGY5YzM3N2E4YThiZTQ0ZjU2MDUyNjg5Y2VmZWQ2MjgwNzIxOTRlZjQ5ZjAifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-10T02:25:55.688Z"
+    "at": "2026-10-10T14:51:10.653Z"
   }
 }

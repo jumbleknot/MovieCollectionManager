@@ -53,10 +53,10 @@ sources:
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T14:51:10.653Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T02:25:55.688Z
+    at: 2026-10-10T14:51:10.653Z
 ---
 
 # SAST & SCA static security scanning
@@ -201,15 +201,18 @@ cannot move an entry between `expiring` and `expired`.
 The window length is defined **once** in `scripts/allowlist-expiry.mjs`
 (`WARNING_WINDOW_DAYS = 14`) and imported by both gates. A dedicated `--check-expiring` mode runs
 **twice weekly — Tuesday and Friday, 04:00 UTC** — in the `infra-image-scan` workflow,
-`always()`-guarded and pinned to `github.event_name == 'schedule'`, and fails on any expiring or
-expired entry. One step invokes it twice, once per allowlist (SAST and infra-image), and a guard test
-pins both invocations so a dropped one cannot leave half the signal dead. The Tuesday sweep
+`always()`-guarded and pinned to `github.event_name == 'schedule'`, and fails on any entry that is
+expiring or expired. One step invokes it twice, once per allowlist (SAST and infra-image), and a guard
+test pins both invocations so a dropped one cannot leave half the signal dead. The mode also fails on
+an entry that matched nothing, but **not for SAST**: that half runs where no SAST report exists, so
+unmatched detection is skipped there and a quietly non-matching SAST entry is visible solely in a
+normal gate run's report-only `UNMATCHED ENTRIES` section. The Tuesday sweep
 (item #642) runs the same steps as Friday's, this check included: Friday alone leaves only the hours
 before the Renovate window to triage what it finds, so an advisory published early in the week now
 gets three days in hand. This mode is **never**
 run on pull requests — `infra-image-scan` also serves `pull_request`, so a wrong `if:` would block
 every PR the moment an entry entered the window, and the failure would be *scheduled* rather than
-immediate. Unmatched detection is not part of the SAST half of that signal (see below).
+immediate.
 
 ## The `sast` job and the two commands that matter
 

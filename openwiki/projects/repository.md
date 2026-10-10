@@ -6,7 +6,7 @@ resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T02:25:55.688Z
+    at: 2026-10-10T14:51:10.653Z
 sources:
   - id: openwiki-source-c765a50891cfc213a2fc94d1
     resource: repo://.devcontainer/assert-egress-governed.sh
@@ -14,10 +14,16 @@ sources:
     resource: repo://.devcontainer/gen-container-secrets-env.sh
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
+  - id: openwiki-source-4811c78aebdb18972e0c3805
+    resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
+  - id: openwiki-source-81dfe425b1bf98f80dc07cd0
+    resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
   - id: openwiki-source-f83bd1373e0f000fa5d548c0
     resource: repo://docs/runbooks/ci-diagnostics.md
+  - id: openwiki-source-3428fee3ac79873bee5650fc
+    resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
   - id: openwiki-source-7b223ba4df7203eeb5667fa8
     resource: repo://docs/runbooks/devcontainer-sandbox.md
   - id: openwiki-source-a9fc7285078c8062777b3180
@@ -26,7 +32,7 @@ sources:
     resource: repo://README.md
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T14:51:10.653Z" }
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -88,17 +94,40 @@ enforced **outside the VM** — closing the gap an in-container firewall never c
 
 Runs on **Windows PowerShell 5.1** — the default shell. `pwsh` (PowerShell 7) is **not** required
 and is not installed by default on Windows. It checks whether the sandbox is running, starts it if
-not, waits for SSH, and opens VS Code directly inside the dev container. See
-**[docs/runbooks/devcontainer-sandbox.md](../../docs/runbooks/devcontainer-sandbox.md)** for the full
-operating manual: lifecycle, egress triage, engine seam, disk limits, and the credential rule.
+not, waits for SSH, and opens VS Code directly inside the dev container.
 
-`sbx` itself is pinned at **v0.47.0** (upgraded from v0.43.0 on 2026-10-08). It is load-bearing for
+The operating manual is **two runbooks that share one section numbering**, so a `§8b` reference
+means the same section in either file:
+
+- **[docs/runbooks/devcontainer-sandbox.md](../../docs/runbooks/devcontainer-sandbox.md)** — the
+  day-to-day manual: the credential rule (§0), getting in (§1), lifecycle (§2), egress triage (§3),
+  the engine seam (§5), running git and the UID fix (§7d), credential injection, and the collected
+  foot-guns.
+- **[docs/runbooks/devcontainer-sandbox-lifecycle.md](../../docs/runbooks/devcontainer-sandbox-lifecycle.md)**
+  — recreating, resizing, verifying and upgrading: §7b templates and recreate-from-nothing, §7e a
+  full disk wearing other symptoms, §7f the `sbx run` false failure, §8 disk (three volumes), §8b
+  what a cold recreate needs, §10 the verification harness, and §10b the `sbx` version and upgrade
+  ritual. It was split out of the main runbook on 2026-10-10 (item #682) so each source stays small
+  enough for the wiki generator; the section numbers are unchanged.
+
+`sbx` itself is pinned at **v0.47.0** (`0411f50ee4700fe7bd37e6e7e3aced563e850ca9`), upgraded from
+v0.43.0 on 2026-10-08 (`winget upgrade Docker.sbx`, after `sbx daemon stop`). It is load-bearing for
 isolation and egress enforcement, so upgrading it is a **security-relevant change**, not a routine
-one: read the intervening release notes for network-policy, `--network=host`, port-publishing,
-idle-stop, secret-injection, and template changes; capture the before-state with
-`verify-reboot-survival.sh --capture`; re-run the full harness; re-run the G5 sibling-egress refusal
-explicitly; and record the new version in the runbook. Several behaviours are version-specific and
-undocumented.
+one. The ritual: read the intervening release notes for network-policy, `--network=host`,
+port-publishing, idle-stop, secret-injection, and template changes; capture the before-state with
+`verify-reboot-survival.sh --capture`; re-run the harness (`run-harness.sh`) plus the host-side
+`verify-sandbox-egress.sh --audit-check`; re-run the G5 sibling-egress refusal explicitly; and record
+the new version in the runbook. Several behaviours here are version-specific and undocumented.
+
+The v0.44–v0.47 release-note items that touch this environment are narrow and none widens egress:
+`sbx rm` prompts in v0.45.0 and declining returns non-zero, so scripts and agent shells need
+`--force`; egress got **stricter** across v0.45.0–v0.47.0 (DNS is refused when no rule permits it,
+PTR lookups only for already-authorized IPs, policy-evaluation failures fail **closed**, and raw TCP
+to a denied hostname is no longer let through by an allow rule for its resolved IP); and `sbx create`
+still has **no `--disk` flag** on v0.47.0, so disk sizes remain creation-time environment variables.
+The verified 2026-10-08 upgrade ran the harness to **12/12 PASS** (including
+`reproducible-recreate`), G5 PASS, `--audit-check` PASS with all 50 canonical destinations live, and
+the volumes confirmed at 150 GB / 40 GB from the host.
 
 ### Retained: Docker Desktop / Docker-in-Docker
 
@@ -225,9 +254,9 @@ constant below that — there is no flag, variable, settings file, or daemon opt
 ~30 s idle-stop then kills a VM whose dockerd had been serving the socket the whole time.
 
 `scripts/open-sandbox.ps1` is immune because it treats the **exit code as a claim and SSH
-answering as evidence**, waiting up to 120 s. A bare `sbx run` still shows the false failure; when
-starting by hand, use the runbook's ~30 s grace window (`sbx exec mcm sh -c 'docker ps'`) or just
-run the launcher.
+answering as evidence**, waiting up to a 120 s deadline. A bare `sbx run` still shows the false
+failure; when starting by hand, use the runbook's ~30 s grace window (`sbx exec mcm sh -c 'docker ps'`)
+or just run the launcher.
 
 ### A template carries neither Docker images NOR the egress policy
 

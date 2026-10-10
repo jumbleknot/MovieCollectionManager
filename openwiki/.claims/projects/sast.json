@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:43116ffce26ad68c338f7920bd234712738ae5d740daecad5442c78130a75696",
+  "pageVersion": "sha256:5cbf6effdb7ef1e9f6277bc3e20058406e1575594e5e124e589ecb624a4d4a5b",
   "claims": [
     {
       "id": "claim_8dae93c0934d4f8da3e82f0eb70b444c",
@@ -126,7 +126,7 @@
     },
     {
       "id": "claim_c0bccca23f014291a1bb5fcbed78ddba",
-      "statement": "The `--check-expiring` mode runs twice weekly — Tuesday and Friday at 04:00 UTC — in the infra-image-scan workflow, `always()`-guarded and pinned to `github.event_name == 'schedule'`, and fails on any expiring or expired entry in either allowlist. The Tuesday sweep (item #642) runs the same steps as Friday's because a single Friday 04:00 run leaves only the hours before the Renovate window to triage what it finds. The mode is never run on pull requests, because infra-image-scan also serves `pull_request` and a wrong `if:` would block every PR the moment an entry entered the window.",
+      "statement": "The `--check-expiring` mode runs twice weekly — Tuesday and Friday at 04:00 UTC — in the infra-image-scan workflow, `always()`-guarded and pinned to `github.event_name == 'schedule'`, and fails on any entry that is expiring, expired, or matched nothing this run. The unmatched tier is not reachable for the SAST half of that step: the job produces no SAST report, so no scanner registers a finding, unmatched detection is skipped, and a quietly non-matching SAST entry is visible solely in a normal gate run's report-only `UNMATCHED ENTRIES` section. The Tuesday sweep (item #642) runs the same steps as Friday's because a single Friday 04:00 run leaves only the hours before the Renovate window to triage what it finds. The mode is never run on pull requests, because infra-image-scan also serves `pull_request` and a wrong `if:` would block every PR the moment an entry entered the window.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L322-L339",
@@ -141,8 +141,16 @@
           "version": "repo-lines-v1:sha256:dbe42742929fc2bc11d6fd6a66f7efc246cd9ef0ef68b1e11bc902357320cb84:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMjJkZDBlZTQ1YTNkODJiNWFmYWUyOWIzOWNiNzY4NWNiMGJiOWY3OTY4NzU5YTE4MmUxNGQ5ZGNlMTUxMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzNmE0Yjc4YWQ2NjU5N2ZjOWQyZDkxMmEwOGExOThlMjE5OWJjNGQ4MDUyNTE5YzZjYTFiZTlmZTA2YzgzNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMDhjYjdiODU0OTI2NGYxNWIyNGMyM2EzOTJiOTQ2YjM0ODM1ZTMyMDg1NGUwYWM1YTA1MzNjNTZjOWMzNmQifQ"
         },
         {
-          "resource": "repo://security/sast/README.md#L164-L173",
-          "version": "repo-lines-v1:sha256:58aff2cd6ec4f12d78d17ae3273c28bdb9cd3331bd16936b6c01028fa0be3b98:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5ZmZhYTY3MjQ0MzFjNjFlNTg0ZTQzZjE1Y2YxZGY5Y2JkMzQ4ZTlkYjEwNmY3MjczY2EzMWYxYzZhZTA4ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzYzExYmVmNDA0MjJiNTJjNWNmZGQ0MTY5MzgxZmU2Y2UzMzBjMjk3NGI0ODM5MDg5YjFiNTI1NzFhMGE1Y2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjNGM0ZjQ3Y2FkNDc5ZmY1ZDE5MWM0MjY3YjQ1OTY5NmYxZmVmZDMzMTUwOGNjM2Q0NDg5NTQxMmFlZmNkODQifQ"
+          "resource": "repo://scripts/allowlist-expiry.mjs#L82-L121",
+          "version": "repo-lines-v1:sha256:bfcc29a24106b1391358ca1bd8574635e81881f3bed8ebb90af90ef155e04dba:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2N2U0YWZiNDNiMjdmNjBiZGRjMDc3ZTIxMWI4Y2I4NDg3YzBlMDRiNjYzY2VjNTVmMmNlNjUzMDA4Njg4N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxZDg2NWZhMjEyYzAzYjQzN2E0MjNlODViY2E5ZDg0MjFlYTFmMmI0YjMyYjBiNzBlMzQwZjVhMzQ4ZWYzZWIifQ"
+        },
+        {
+          "resource": "repo://scripts/check-sast-findings.mjs#L296-L308",
+          "version": "repo-lines-v1:sha256:706f08beea4fd91b49c9519db96652ab0e8730eb22b612dd728f94084c1dbb43:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2YmQzZjc4ODQ1Y2I4MTE1NjY5ZDQxMzAyMDcwMzAwNDU0Zjc2MGIxMjM0ODcyZGVkOGIzZGRmMDZmMzg3MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZGM3NWQyOWQxZmY2NTJiYmI2MTEwNDFiMDM2ZmUzZmQ2NmJkODZlZGEwNDZlYjNkNTJiNzYzMjQ3YWNmMmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwNTdlYTZhZTg5MmY4MzJiYzA3ZmU3ODU5NmUxZDcyM2ViM2I0ZGQyYzlmMDBkYjI4ODIwZTkzNjIyNDYxNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZTBmMjdlMzlkMjliNGEwMzNiODM5YzgyYjgxNzA1ZTAxMGQxYWZmZTJjOWI3ZWEwZTQwMzZiNzc1NDQ0NDYifQ"
+        },
+        {
+          "resource": "repo://security/sast/README.md#L164-L179",
+          "version": "repo-lines-v1:sha256:f60d4ff0c9a3d032f5719e65d34c8755cc4003e22a25abe79180274187344199:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5ZmZhYTY3MjQ0MzFjNjFlNTg0ZTQzZjE1Y2YxZGY5Y2JkMzQ4ZTlkYjEwNmY3MjczY2EzMWYxYzZhZTA4ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YjA4NDlkNzAxNjdjYTNkYjg0ZWMzODg2NzhhNGI3MTVhMGY5YTdhOTFiZWQwNmM1MDg2MzEzOGVlZmRiZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzYzExYmVmNDA0MjJiNTJjNWNmZGQ0MTY5MzgxZmU2Y2UzMzBjMjk3NGI0ODM5MDg5YjFiNTI1NzFhMGE1Y2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNDcyOGU2MjhhOGZlMjkxNmU4NDgwNThlZWVhZmUzZTgzZDkwNjZhMzQ4ODQ1ZGYyYTQ3MTMyMTAyMTZlNjUifQ"
         }
       ]
     },
@@ -265,7 +273,7 @@
           "version": "repo-lines-v1:sha256:8a9f3aac6b8a231145ab9c0e2f8a08c706db92926854f5b95a0db3ac02ed66eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU5ZDg3NjhkYThkNjA0YjA5MDE1NWU4ZjNjMGMxMDE3ZjcyZjIyMmIxOGQzNjUxZmM2M2U5MmUxMjhhYmE5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE2NTU5YWQ4YjZlOGFiMmJiNzA1YjA2OGE4MTc2MDk1ZjVlNmE3Yzk4YjMzMDA2YzA4MTkwZjcyMTgyN2QyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVmYTMzNDQ5ZDYxMmM0ODExYTI4NWJiOTgyMjZjMDk1ZDkwMzMwZDIzMTY5MTMwMzI5NjM5MmQzMGZjMjQ0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2MwYWJkM2MxZTE4NzNjYTk0NDRhMzc2NTJhOWIwZjg3OTk2NDVhYjBmN2IwNDNhNTM3MzhkZDUzNWNiNzIwMCJ9"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L338-L343",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L343-L348",
           "version": "repo-lines-v1:sha256:5f3f85994242042c93621381093b3471fd3e633daa4d2cf2b8b088f670a58353:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgyODcyMDhmNzA3MjNiZGIwZDAxZGNiMzc4YWI0ODAxN2I3MWMyMTViOTE5YjUxZTQyYzIwMGUzZWRiMGRlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0NmJlODgzNGM1NmZiZDg2ZDMxOWYwODIyYWQyYWNhY2ViMDA3ZTEzYjhmNDU1NDYxYmI0MDc1MWUxYmFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTgxZTA2NjY1OWZhNWZmMWNjMGI3MGQ3YTYyMTgzZTM2MmNkN2U5N2JlYzljZWM1ZjUxZDAyYzIwYWFiNGE4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNkZDM3NTlkMDljYTZkZDkzOTBlMDY3NmRiMzAwZDY2Yjg3MWQ0NWI0OGZjODlkY2QyODMzNGIxMjAzZjE5YyJ9"
         },
         {
@@ -357,16 +365,16 @@
       "statement": "Remediation is preferred over re-dating: deleting or extending an `expiry` converts a time-box into a permanent suppression, and a fixable High whose patched version exists within the range its consumers declare must be bumped rather than allowlisted. The two legitimate exceptions — no published fix exists at all, and a fix exists only outside the range the consumers declare (an operator decision, not the reader's) — each require the evidence written into the justification and take a specific shape in the committed file: the entry is pinned to the exact vulnerable version so a different version re-blocks for a fresh assessment, and short-dated so it stops suppressing on its own. The committed file currently shows that shape twice, for the node-forge and braces entries, where no patched version exists at all and the audit classifies each as runtime only because `expo` lists its CLI as a production dependency while the code paths involved are build/test tooling; the third instance of the pattern, `@graphql-tools/utils@11.2.2` (whose fix sat outside the `^11.2.0` range its consumers declared), was deleted on 2026-10-09 under backlog item #674 once graphql-yoga and its defer-stream plugin widened to `^12.0.3` and a lock refresh removed the vulnerable version from pnpm-lock.yaml. Each entry stated reachability checked rather than assumed, and each removal is tracked on the backlog rather than renewed at expiry.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L187-L220",
-          "version": "repo-lines-v1:sha256:11bf3e2da8af24cb8cfddb8334e494b72894ae9943583a15cd5ed73d0a111a9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyYWZmZTg0MjgzNGYwMzQyZTk2M2YwZWM4OGZkZTk3ODUwNTFiZGE1ZjY4NjM4ZmRmODk0ODk0NzRlZTYzNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYWY0MTM2ZWEzOTcwNjc1MTFmZjI1MTgzNTkzYmExZDNlYmY2NmQ3YWE0MDU5MjVhNTU0MzA5MDg2NjUzODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMDQ1MTQ2OWU1OWVlYjU0ZTZiMmVmMDY1NzExY2Q4ZjZkYjQ5MmI1ODQ3NjQ5OTQ2ODQ4ZmFiZTE3ZWRiOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
+          "resource": "repo://docs/runbooks/sast-scanning.md#L187-L225",
+          "version": "repo-lines-v1:sha256:e6d9f78d3e7b862999075f33a0b7ab854f8ad19f4432fc66613d393878edfc8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyYWZmZTg0MjgzNGYwMzQyZTk2M2YwZWM4OGZkZTk3ODUwNTFiZGE1ZjY4NjM4ZmRmODk0ODk0NzRlZTYzNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzZmOTdiMzg4YTI0YmQ5M2QzNWQwMTUxNDlkZTQxMDgwNTIzOWZmNWQ4OTc2ZDNlZTQ3YWM5NjZiYTQxNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMDQ1MTQ2OWU1OWVlYjU0ZTZiMmVmMDY1NzExY2Q4ZjZkYjQ5MmI1ODQ3NjQ5OTQ2ODQ4ZmFiZTE3ZWRiOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L308-L313",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L313-L318",
           "version": "repo-lines-v1:sha256:03f60f2ea8e86e2e7e73f3c6d3eb56cde4291d6d31e1011514192ebe20b1a65b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRmYWZmNjNlZmY3Mjk3ODA2YjhlOGMxODg5NDBmM2FkZTViMDYzNDEzYjU3NjliMDkyZjM4MTg3ZDdkOTU3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI5MjM4YTQ0NTkwZDQxNDEzZTU3Y2NmMDBlNjY1MjNjNDRkYzI4YmQwNDY0ZDVkNGE1MWExMGE3MTNjZDg3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjBmNjA0ZGJlMWQ3ZGRiZjFiZDM0MGI0NzY1ZjA1ZjFmNTAwZjViZmJmMWI3N2YyNzQzYzQ5ZTFlOTE3Njk1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDBkYjM0ODlhYTg3MjYzZDM2NTBlODdlZjMwMWM1NzY1OGMxYjAzNGZkOGVkNWY1NjViMmYyMDNlZTY3NjNiNSJ9"
         },
         {
           "resource": "repo://pnpm-lock.yaml",
-          "version": "repo-file-v1:sha256:126ec0278eb14fb2ce8fda4b42f09cd22891add5fcb8b2dfbdfbd7c4002362a1"
+          "version": "repo-file-v1:sha256:ec01b28236fffa9c6f00e13500436d521210e1d83efa7a7309e614874581c6b3"
         },
         {
           "resource": "repo://security/sast/allowlist.yaml#L211-L263",
@@ -499,7 +507,7 @@
       "statement": "A failed Semgrep run leaves a well-formed 0-finding report rather than a partial one: the orchestrator runs the scanners in order (semgrep, cargo-audit, pnpm-audit, pip-audit) and breaks out of the loop on the first failure, recording `ran: false` plus `scanners[].error` for that scanner, so the scanners after the failed one never ran in that invocation. A missing toolchain is the same shape, because `assertToolchain` refuses to skip a language surface and fails the scan naming the scanner. This is why a 0-finding report and a 0-blocking-finding report both print green and the finding COUNT must be checked, not just the exit code.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L338-L343",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L343-L348",
           "version": "repo-lines-v1:sha256:5f3f85994242042c93621381093b3471fd3e633daa4d2cf2b8b088f670a58353:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgyODcyMDhmNzA3MjNiZGIwZDAxZGNiMzc4YWI0ODAxN2I3MWMyMTViOTE5YjUxZTQyYzIwMGUzZWRiMGRlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0NmJlODgzNGM1NmZiZDg2ZDMxOWYwODIyYWQyYWNhY2ViMDA3ZTEzYjhmNDU1NDYxYmI0MDc1MWUxYmFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTgxZTA2NjY1OWZhNWZmMWNjMGI3MGQ3YTYyMTgzZTM2MmNkN2U5N2JlYzljZWM1ZjUxZDAyYzIwYWFiNGE4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNkZDM3NTlkMDljYTZkZDkzOTBlMDY3NmRiMzAwZDY2Yjg3MWQ0NWI0OGZjODlkY2QyODMzNGIxMjAzZjE5YyJ9"
         },
         {
@@ -531,7 +539,7 @@
       "statement": "Allowlist `locationPattern`s are matched against paths normalized to forward slashes so one pattern is portable across the Windows dev host and the Linux CI runner; a pattern written with backslashes matches nothing on the runner and passes silently on the Windows side. The generated reports/allowlist.proposed.yaml additionally writes its dedupe key with `\\u0000` as an escape sequence rather than a raw NUL byte, because a raw one makes grep treat the whole file as binary and print no matching lines at all.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L356-L357",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L361-L362",
           "version": "repo-lines-v1:sha256:44877ab3ee914095a855deda5dd890ec1e696626b4eeec9cb82bca151dd290e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhNjI5NDkyNmE3YzhlN2NkNDc1M2RjMjg2YzUwZjQ2ZWNiNTRlMWJiNjU1OWI0NzdiY2RhYjIyYzg1MjRkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU2ZThhZjFmNTQ5NjFiY2NkZTVjZWU5M2U4ZmUyNzhkODgzNWYwYmNjMmY3NzlhZTNhYzQ1OGIzMjA2ZGZmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjcxMDZmMTdhODY1MDNhNDNmNDE5Mjk0OWRmN2IxZGI1M2Q5YjUxZmM5OWRkNWFhZTY0MjdlZWU3ZTkzMWRkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -571,7 +579,7 @@
           "version": "repo-lines-v1:sha256:69539fbdb56aec7540caaaeb8df69d640d7492b78f48d1bbc0b0f538e8f577e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDNmOTcyYzFlNzY1ZGUwYjg3YWU5NTM5MzhkNzBiOWE1NWRjZjNkMGYxMTgwZTM3MDAxOWM5NjVlZWViYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYTMxYWFiZjQ1NTdiZGNhYjE4Yzc3ZTk3MmRmOWQ5MDRmNzhkM2M1NjE3MzFjOGZlMjQ3NGIzMjcyYjAzYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OTA5MzU3Y2IxYTNjOWFhZDNmMWExMTdhNzU0YmFjMmVlOWU5YzAwNDBiZDlhMTcwOWQyOGU0ZDJhZjBhM2IifQ"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L353-L355",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L358-L360",
           "version": "repo-lines-v1:sha256:b7106f17a86503a43f4192949df7b1db53d9b51fc99dd5aae6427eee7e931dd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTlhODIwODFlNDVlNDhiOTg0Y2NiM2M2ZmE3NDMxNGRmYmRjYTc0ZDk4OWYxOGY5ZjI5OTY3ZmMxOWNhZjUyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmI0N2ZjMmQwODZhMTBjMzFjZjgzNWYwM2YxYzQxY2I0NTRhNDdiMGIzMjVjYjY1ODJkZDFiNjhhZjYzNThlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjY0MDVmM2Q0NzkwZjU2ZmVjNWY2MzAzZDZiYTMxYzdiODljZWZkYWUzZjFhMWZjNTFkOWFmMDY0YjAzYzdhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ4NzdhYjNlZTkxNDA5NWE4NTVkZWRhNWRkODkwZWMxZTY5NjYyNmI0ZWVlYzljYjgyYmNhMTUxZGQyOTBlOSJ9"
         }
       ]
@@ -617,8 +625,8 @@
           "version": "repo-lines-v1:sha256:063ddfc7b8249581b5f2938e2fcc4ccbae97817c116ee92d04f89d51e09c74c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNjY1YmFlMGMzZjBiMTg1YTA3NzI1Y2Y2NjdlOTEwMDRkZDVjZjVkYTEyNjc0NTFlMjI4YjkzZGZlYzRkODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNDI4NmNhZDEyMTRjOWQ5YzMxZWNkYTFkYmIxYjg4ZGU1ZWI1YTU2MTY4OTJiMjM3ZDNiNTY0YThmNTZmMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkMjBkYTVhNzM1MDI1NjZmMzU1MmJhZWFiNjI1NzQyNzc2MDVmNTNlYWEzZDM1NmY5ZTFjMzQ2YjMxOGYxYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2YTA3MDk5YzY0YmY2OTcxMTc2NmJjODJhMjU2Y2VmNjYwMzBmOGY4MzAyZDYzZTFmZTYxM2RkZmJmOWE2ZjQifQ"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L202-L220",
-          "version": "repo-lines-v1:sha256:09730dec6446d48ad0cab7548d53effa2bb1bdf11bce129ae4a9e7ff6db9a322:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYWY0MTM2ZWEzOTcwNjc1MTFmZjI1MTgzNTkzYmExZDNlYmY2NmQ3YWE0MDU5MjVhNTU0MzA5MDg2NjUzODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
+          "resource": "repo://docs/runbooks/sast-scanning.md#L202-L225",
+          "version": "repo-lines-v1:sha256:efe0bec9b817414e3c8d0d3c181f914ee50183d52c69e18f1519fc8e05e3f8d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzZmOTdiMzg4YTI0YmQ5M2QzNWQwMTUxNDlkZTQxMDgwNTIzOWZmNWQ4OTc2ZDNlZTQ3YWM5NjZiYTQxNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
         },
         {
           "resource": "repo://security/sast/allowlist.yaml#L211-L263",
@@ -635,7 +643,7 @@
           "version": "repo-lines-v1:sha256:4a60842c0347d049bb01b9469a772537f1c981d5eb3c29af90dd6653b6b71b78:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRiMzExOTZhMDU5NWNhMmE2NWNjZmMzNDk4NTY4YzMyMzJlMTIxNzc3MWVlMmE2ZGI4NmMzYzcwMzQwOWUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU5MmM1ZTFiODIyNjEyZGM0MGJlYzMyYjkzMmViYzQ3Y2FkMTYyYWNkMGJlOTY2YWVkNDEzMmZiZTc2MWZkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L280-L298",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L285-L303",
           "version": "repo-lines-v1:sha256:d4085f6b76e9d86b7a234b7f86c6be8d1f8d48308c8f6db56e9a724cf68a0094:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmE3NGM1NzJiYjI3YjAzYzkzNWY5NjQxMmVjNWViNGFkMzNlZTZhN2FiZGJmZTE4Y2RhOGQwYTJmMDY3ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZDBiNDllNGViZTRjMjk4ODZkMjZlOWE0ZmE2YWMzZTQwZGJiMzNmM2YxNDdkODU4MmQyNzdmMjhhY2UzYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMTk0N2Q0NDM3ZGRhODVkZmUyNGI3OTdkNzM4ZDEzYTc4ODQ1YTczMTdkMjRhOTljNTA0YWI5Y2YyNGZkMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZWY0MjYzZTdjOWM0NDczNjQxYTk5MzUwNTgxZjRiNTdhMDNlZjIxY2Q2OWE0YTYyMjE0ZGY3NGExOTRlN2EifQ"
         }
       ]
@@ -643,6 +651,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-10T02:25:55.688Z"
+    "at": "2026-10-10T14:51:10.653Z"
   }
 }
