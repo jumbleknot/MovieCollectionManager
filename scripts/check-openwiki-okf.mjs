@@ -23,15 +23,15 @@ import { readFileSync, readdirSync, existsSync, statSync, mkdtempSync, writeFile
 import { join, relative, resolve, dirname, basename, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 
 // V14/V15 share their scanner with the generator's normalizer — see that module's header for the
 // measurement (POST /api/v1/markup) that establishes why a leading `/` is a dead link here.
 import { bodyLinks, classifyBodyLink, relativeFormFor, splitTarget } from './openwiki-links.mjs';
-import { conceptStamp, stampValues } from './openwiki-stamp.mjs';
+import { stampValues } from './openwiki-stamp.mjs';
 import { claimsDurabilityFindings } from './openwiki-claims.mjs';
+import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_BUNDLE = 'openwiki';
@@ -150,32 +150,8 @@ function resolveRelativeResource(value) {
 
 // ── drift (V12) — git commit date, NOT mtime ────────────────────────────────────
 // A fresh checkout stamps every file's mtime with the checkout time, so an mtime-based comparison
-// would report EVERY concept as stale in CI. The last-commit date is the only meaningful signal.
-const commitDateCache = new Map();
-
-function lastCommitDate(absPath) {
-  if (commitDateCache.has(absPath)) return commitDateCache.get(absPath);
-  let result = null;
-  try {
-    const out = execFileSync('git', ['log', '-1', '--format=%cI', '--', absPath], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-    if (out) result = new Date(out);
-  } catch {
-    result = null; // not a git repo, or the file is untracked — drift is unknowable, stay silent
-  }
-  if (!result) {
-    try {
-      result = statSync(absPath).mtime;
-    } catch {
-      result = null;
-    }
-  }
-  commitDateCache.set(absPath, result);
-  return result;
-}
+// would report EVERY concept as stale in CI. The last-commit date is the only meaningful signal. The
+// comparison lives in ./openwiki-drift.mjs (feature 082), shared with wiki-maintain.
 
 // ── bundle walk ─────────────────────────────────────────────────────────────────
 
@@ -329,18 +305,17 @@ function validateBundle(bundleRoot) {
         } else {
           // V12 — drift REPORTS ONLY. A documentation edit must never block a merge on a paid
           // regeneration run, so this can never touch the exit code.
-          const stamp = conceptStamp(fields);
-          if (stamp === null || Number.isNaN(Date.parse(stamp.value))) {
+          // The comparison is ./openwiki-drift.mjs, shared with wiki-maintain's verifier and drift
+          // planner (feature 082). Only V12 falls back to mtime for an untracked source.
+          const drift = sourceCommitAfterStamp({ root: REPO_ROOT, fields, fallbackToMtime: true });
+          if (drift?.unstampable) {
             // A concept that cites a source but carries no usable stamp is one V12 CANNOT check.
             // Counted rather than dropped: the whole point of the fallback above is that this
             // number is visible, so a migration that strips stamps shows up as coverage falling
             // instead of as a gate that silently checks less each run.
             unstampable.push({ file: rel(file), source: target });
-          } else {
-            const sourceDate = lastCommitDate(abs);
-            if (sourceDate && sourceDate > new Date(stamp.value)) {
-              warnings.push({ rule: 'V12', file: rel(file), source: target });
-            }
+          } else if (drift?.stale) {
+            warnings.push({ rule: 'V12', file: rel(file), source: target });
           }
         }
       }

@@ -157,6 +157,14 @@ documents (preferred), or a canonical URL for genuinely external references. **R
 paths are verified to resolve** by the conformance gate, so a link to a moved or renamed file fails
 the build; keep them accurate.
 
+**`resource` names one canonical FILE, never a directory.** Drift is judged by the cited source's last
+commit, and a directory's last commit is any commit to anything under it. So a page citing a directory
+is re-flagged as stale by every unrelated change beneath it, and regenerating it buys nothing durable.
+`process/spec-driven-development.md` cited `specs/` and was re-flagged by every new spec; the planner now
+reports such a page as *unplannable* rather than paying to regenerate it (feature 082). Cite the
+document that states the process or the rule, such as a runbook, the constitution or a template, not
+the folder its instances live in.
+
 **`resource` is the field that classifies a page**, so its presence is not cosmetic. A page carrying
 one is a *derived summary* of that document. A page carrying none is *authoritative* — canonical in
 its own right — and must be listed under `authoritative:` in `openwiki/protected.yaml`. Omitting a

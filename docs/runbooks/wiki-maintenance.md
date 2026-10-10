@@ -466,11 +466,51 @@ own at `reasoning_effort: low`, before any other work. Everything else runs at t
   carries:
   `[wiki-maintain] ⚠ escalated to low and still failing (N): area/page — consider parking it (078 US6)`.
   Nothing is parked automatically.
-- **Parking a tagged page:** remove its backlog slice **and** its `escalations` entry in the same commit. A tag left
+- **Parking a tagged page:** see "Parking" below. Remove its `escalations` entry in the same commit. A tag left
   behind for a page that is neither queued nor present is dropped by the next run. One for a page that exists is
-  kept, and does nothing until the page is planned again.
+  kept, and does nothing while the page is parked.
 - **Caveat:** the evidence that `low` lands a slow page is one success on one page (spec 078 research R14). Escalation
   guarantees the retry happens, and that a repeat failure is visible. It does not guarantee the page lands.
+
+### Pages that fell behind the marker: drift, and parking (feature 082)
+
+The planner's main input is "documentation changed since the marker". On its own, that made drift a one-way
+ratchet: a page whose source changed **before** the marker, and that was not carried in the backlog, was never
+planned again, because its source would not change again just because the page was out of date (item #526; 23 of
+68 concepts on 2026-09-20). So every plan also looks for **drift**: concepts whose cited source was committed after
+the page's stamp. It uses the same comparison as the OKF gate's V12 warning (`scripts/openwiki-drift.mjs`), so the
+two cannot disagree.
+
+- **Bounded.** At most `DRIFT_PAGES_PER_RUN` (2) drift pages a run, oldest stamp first, and only from the page
+  budget left after change-driven and backlog work. Drift cannot starve that work, and a run never attempts more
+  than `PAGE_BUDGET` pages.
+- **Never queued.** Drift beyond the bound is reported, not written to the backlog. It is found again on the next
+  run. A drift slice that fails is carried like any failed slice.
+- **A directory `resource` is unplannable.** Any commit under the directory re-flags the page, so the plan reports
+  it and does not pay to regenerate it. The brief requires a `resource` to name one file (§5 of
+  `openwiki/INSTRUCTIONS.md`).
+- **V12 stays a warning.** Drift is acted on by the planner, a run at a time. It never fails a build, so a
+  documentation edit never waits on a paid regeneration.
+
+`--plan` prints the four groups before anything else, even when there is nothing to do:
+
+```text
+[wiki-maintain] drift: 0 planned, 1 deferred, 2 parked, 1 unplannable
+```
+
+**Parking.** A page that cannot currently be regenerated, such as one whose worker exits without submitting on
+every attempt, is **parked**: an entry under `parked` in `openwiki/.maintenance-state.json`, made in a reviewed PR:
+
+```json
+"parked": { "runbooks/renovate.md": { "item": 719, "since": "2026-10-10", "reason": "page worker exits without submitting (run 4998)" } }
+```
+
+A parked page is planned by nothing: not by drift, not by a new change to its source, and not from the backlog.
+`--plan` lists it with its item on every run, and reports an entry whose page no longer exists as orphaned.
+**Unparking is removing the entry**, in the change that is expected to let the page land. Until feature 082,
+parking meant advancing `coveredCommit` past the page's source change and dropping the page from the backlog. That
+recorded nothing, and the next change to the source silently undid it. `writeRunRecord` refuses an entry without
+an `item`, a `since` date and a `reason`. Check the result offline with `node scripts/wiki-maintain.mjs --plan`.
 
 ## 4. What CI does, and why it waits
 

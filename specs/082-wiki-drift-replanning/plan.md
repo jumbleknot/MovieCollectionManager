@@ -4,8 +4,8 @@
 
 **Input**: Feature specification from `/specs/082-wiki-drift-replanning/spec.md`
 
-**Gate before implementation:** the operator ratifies the proposed decision in spec FR-001 and FR-004
-(bounded drift slices, plus the report). Until then this plan is a proposal, and no task below starts.
+**Gate before implementation:** passed. The operator ratified spec FR-001 and FR-004 (bounded drift slices,
+plus the report) on 2026-10-10.
 
 ## Summary
 
@@ -57,7 +57,9 @@ parked, budgetLeft, limit })`:
 3. puts directory resources in `unplannable`;
 4. sorts by stamp ascending, then path;
 5. takes `min(limit, budgetLeft)` pages;
-6. groups them per area as `{ kind: 'drift', area, pages, reason: 'drift: <source> changed after stamp' }`.
+6. groups them per area as `{ kind: 'refresh', drift: true, area, pages, reason: 'drift: <source> changed after the page's stamp' }`.
+   They are refreshes of existing pages, so `packSlices` packs them into the same invocation as other refreshes,
+   which share one planning pass.
 
 The rest go in `driftDeferred`, which is reported and **never written to the backlog** (FR-003). A drift
 slice that fails is carried in the backlog like any other slice, so it is not selected twice (scenario 4).
@@ -89,7 +91,7 @@ scripts/
 ├── wiki-maintain.mjs                  # D2–D4; sourceNewerThanStamp imports D1
 └── __tests__/
     ├── openwiki-drift.test.mjs        # D1 (new)
-    └── wiki-maintain.test.mjs         # D2–D4, SC-001…SC-003, SC-005
+    └── wiki-drift-plan.test.mjs       # D2–D4, SC-001…SC-003, SC-005 (new)
 openwiki/
 ├── .maintenance-state.json            # `parked` (D3 migration)
 └── INSTRUCTIONS.md                    # D5 rule

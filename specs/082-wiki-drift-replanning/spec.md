@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-10
 
-**Status**: Draft. The adopted option (FR-001 to FR-004) is **proposed, awaiting operator ratification**.
+**Status**: Ratified 2026-10-10 by the operator: option 1 bounded plus option 4 (FR-001 to FR-004), as written.
 
 **Input**: Backlog item #526: "Concepts that fall behind the run-record marker are never re-planned; drift
 is a one-way ratchet". It also takes in that item's 2026-10-06 comment: a directory `resource` is
