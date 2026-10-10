@@ -357,15 +357,32 @@ It is an **estimate** (it reconciled with the Fireworks bill to the cent on the 
 `PARTIAL total` means some invocations were not captured. `failedCalls` counts non-200 responses:
 rate limiting under page concurrency shows up there first.
 
-**The per-call lines themselves are kept in the evidence bundle (item #682).** In CI, each invocation's
-tap lines are appended to the job's step log `wiki-usage.log`, under a `# invocation pages=… effort=…`
-header, so they arrive in `ci-failures:<runId>--maintain` as `step:wiki-usage`
-(`node scripts/ci-status.mjs failure --run <id> --full`). Read them when a page's worker "exited without
-submitting": `uncached + cached` per call is the prompt size, so a run whose last calls approach the
-170k-token compaction threshold (deepagents' fallback when the model has no profile) looks different from
-one that stopped well short of it. Until 2026-10-10 only the sum survived — run 4960 failed after 447
-calls with nothing finer to read. Counts, status and timing only, like the tap itself; nothing is written
-outside CI.
+**The per-call lines themselves are kept in the evidence bundle (item #682), and each names its page
+(item #719).** In CI, each invocation's tap lines are appended to the job's step log `wiki-usage.log`,
+under a `# invocation pages=… effort=…` header, so they arrive in `ci-failures:<runId>--maintain` as
+`step:wiki-usage` (`node scripts/ci-status.mjs failure --run <id> --full`; a dispatched run posts no commit
+status, so fetch `…/generic/ci-failures/<runId>--maintain/bundle.json.gz` from the package list instead).
+Until 2026-10-10 only the sum survived — run 4960 failed after 447 calls with nothing finer to read.
+
+Four page workers run concurrently, so a line is useful only if it says whose call it was. A page worker's
+line carries `page` (the bundle path openwiki names in the worker's prompt, "You own exactly /openwiki/…"),
+`finish` (the response's finish or stop reason, from a fixed set, else `other`), `tools` (the names of the
+tools it called — only names the request declared, else `undeclared`) and `badArgs` (how many of those
+calls' arguments do not parse as JSON). Still no content: no prompt, response, argument or error text.
+`uncached + cached` is the prompt size; prompts of 170–260k tokens are routine, so prompt size alone has
+not explained a failure (#719).
+
+For every page that did not land, the run prints the worker's trail to the job log:
+
+```text
+[wiki-maintain] worker trail runbooks/renovate.md: 61 call(s), max prompt 241113, never called submit_page — last: tool_calls[write_file] → tool_calls[read_file] → stop[]
+```
+
+That tells apart the three ways a worker ends without submitting: a truncated turn (`length`), a turn
+that simply stopped with no tool call (`stop[]`), and a tool call whose arguments do not parse (`✗args`) —
+an error openwiki 0.7.1 swallows into the same "exited without submitting" outcome
+(`runPageWorkerAttempt`). The figures in the example are illustrative. Counts, status, timing and those
+identifiers only; nothing is written outside CI.
 
 ---
 

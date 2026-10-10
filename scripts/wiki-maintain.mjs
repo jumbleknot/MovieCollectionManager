@@ -52,7 +52,7 @@ import { conceptStamp } from './openwiki-stamp.mjs';
 import { carryClaimsHash, CLAIMS_DIR, PAGE_MANIFEST } from './openwiki-claims.mjs';
 import { auditClaims, formatAudit, loadOpenwikiResolver } from './wiki-claims-audit.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
-import { summarizeUsage, sumUsage, NOT_CAPTURED } from './wiki-usage.mjs';
+import { summarizeUsage, sumUsage, NOT_CAPTURED, pageTrails, formatPageTrail } from './wiki-usage.mjs';
 import { stepLogDir } from './ci-failure-digest.mjs';
 import { isDeadlineStop, splitByEscalation, escalationPolicy, invocationEffort, nextEscalations, stillFailing } from './wiki-escalation.mjs';
 
@@ -1985,6 +1985,15 @@ export function executeSlices({
     // 078 FR-022: the usage line and record name the effort this invocation actually ran at.
     const spent = invocationUsage(usageLog, usage ? { ...usage, reasoningEffort: effort ?? usage.reasoningEffort ?? null } : usage);
     archiveUsageLog({ usageLog, pages: partsOf(slice).flatMap((p) => (p.pages ?? []).map((page) => `${p.area}/${page}`)), effort: effort ?? effortPolicy.explicit ?? null, env: archiveEnv });
+    // #719: how each failed page's worker ended, from the tap's page-attributed lines — in the job log,
+    // so it reaches the failure bundle. Four workers run concurrently; without the page field the
+    // per-call log could not say whose calls were whose.
+    if (!verdict.ok && existsSync(usageLog)) {
+      const trails = pageTrails(readFileSync(usageLog, 'utf8'));
+      for (const page of verdict.failedPages ?? []) {
+        console.error(`[wiki-maintain] worker trail ${formatPageTrail(page, trails[page])}`);
+      }
+    }
     rmSync(usageDir, { recursive: true, force: true });
     usageSummaries.push(spent);
     console.log(spent === NOT_CAPTURED

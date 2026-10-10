@@ -12,7 +12,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSync, statSync, existsSync, cpSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSync, statSync, existsSync, cpSync, appendFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -1285,6 +1285,33 @@ test('execute (#720): one failed page does NOT discard its landed AREA-MATES (ru
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('execute (#719): a failed page\'s worker trail is printed from the page-attributed usage log', () => {
+  const root = twoAreaRepo();
+  const logged = [];
+  const realError = console.error;
+  console.error = (...args) => { logged.push(args.join(' ')); };
+  try {
+    const tap = (o) => `${JSON.stringify({ kind: 'page', status: 200, uncached: 10, cached: 0, output: 1, badArgs: 0, ...o })}\n`;
+    mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: (_work, { usageLog }) => {
+        writingStub(root, 'invariants', ['one.md'])();
+        appendFileSync(usageLog, tap({ page: 'invariants/one.md', finish: 'tool_calls', tools: ['submit_page'] }));
+        appendFileSync(usageLog, tap({ page: 'gotchas/two.md', finish: 'tool_calls', tools: ['write_file'] }));
+        appendFileSync(usageLog, tap({ page: 'gotchas/two.md', finish: 'length', tools: [] }));
+        return { status: 0 };
+      },
+    });
+  } finally {
+    console.error = realError;
+    rmSync(root, { recursive: true, force: true });
+  }
+  const trail = logged.filter((l) => /worker trail/.test(l));
+  assert.equal(trail.length, 1, `exactly the failed page is traced:\n${logged.join('\n')}`);
+  assert.match(trail[0], /gotchas\/two\.md: 2 call\(s\).*never called submit_page.*tool_calls\[write_file\] → length\[\]/);
 });
 
 test('execute (#685): a failed part\'s path that was ALREADY dirty before the invocation is left alone', () => {

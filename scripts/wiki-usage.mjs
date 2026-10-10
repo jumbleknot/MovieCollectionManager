@@ -63,3 +63,37 @@ export function sumUsage(summaries) {
   out.priceTable = captured[0].priceTable;
   return out;
 }
+
+/**
+ * Item #719: the tap's page-attributed lines, grouped by page — how many calls each worker made, its
+ * largest prompt, whether it ever called submit_page, and its last `tail` calls (finish reason, tool
+ * names, unparseable arguments). The last calls are what tell a truncated turn (`length`), a turn that
+ * simply stopped (`stop` with no tool call) and a malformed tool call apart. Lines without a page
+ * (planner calls, older taps) are skipped.
+ */
+export function pageTrails(text, { tail = 3 } = {}) {
+  const trails = {};
+  for (const raw of (text ?? '').split('\n')) {
+    let call;
+    try { call = JSON.parse(raw); } catch { continue; }
+    if (typeof call?.page !== 'string') continue;
+    const t = (trails[call.page] ??= { calls: 0, maxPrompt: 0, badArgs: 0, submitted: false, last: [] });
+    t.calls += 1;
+    t.maxPrompt = Math.max(t.maxPrompt, (call.uncached ?? 0) + (call.cached ?? 0) + (call.cacheWrite ?? 0));
+    t.badArgs += call.badArgs ?? 0;
+    if ((call.tools ?? []).includes('submit_page')) t.submitted = true;
+    t.last.push({ status: call.status, finish: call.finish ?? null, tools: call.tools ?? null, badArgs: call.badArgs ?? 0 });
+    if (t.last.length > tail) t.last.shift();
+  }
+  return trails;
+}
+
+/** One line per page for the job log, which is what reaches the failure bundle. */
+export function formatPageTrail(page, trail) {
+  if (!trail) return `${page}: no page-attributed calls in the usage log`;
+  const step = (c) => `${c.status === 200 ? '' : `HTTP ${c.status} `}${c.finish ?? '?'}[${(c.tools ?? []).join(',')}${c.badArgs > 0 ? ' ✗args' : ''}]`;
+  return `${page}: ${trail.calls} call(s), max prompt ${trail.maxPrompt}, `
+    + `${trail.submitted ? 'called submit_page' : 'never called submit_page'}`
+    + `${trail.badArgs > 0 ? `, ${trail.badArgs} call(s) with unparseable tool arguments` : ''}`
+    + ` — last: ${trail.last.map(step).join(' → ')}`;
+}
