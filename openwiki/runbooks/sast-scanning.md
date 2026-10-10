@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate that must distinguish a scanner outage from a finding — and a finding on a file the pull-request scan never received from a clean one.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-08T02:37:22.749Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -52,7 +52,7 @@ sources:
     resource: repo://security/sast/semgrep.yaml
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-08T02:37:22.749Z
+    at: 2026-10-10T02:25:55.688Z
 ---
 
 # SAST & SCA static scanning
@@ -99,15 +99,15 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   previously produced a false "gate bug" report.
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
-  package", which is a different question from "is the vulnerable code path exercised". Two of the
-  three current no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
+  package", which is a different question from "is the vulnerable code path exercised". Both current
+  no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
   production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces
   only through micromatch in Metro's file watcher and Jest. Neither is imported by first-party code,
   neither ships in the web or server bundle, and the glob patterns those tools expand come from
-  repository configuration rather than a request. (The third, `@graphql-tools/utils`, is tagged
-  runtime through `@copilotkit/runtime` but is only listed as a dependency, never reached on a request
-  path.) That reasoning has to be **checked and written into the justification**, because the tag
-  alone would have said the opposite.
+  repository configuration rather than a request. The same distinction applied to the now-deleted
+  `@graphql-tools/utils` entry, which was tagged runtime through `@copilotkit/runtime` while being
+  only listed as a dependency, never reached on a request path. That reasoning has to be **checked
+  and written into the justification**, because the tag alone would have said the opposite.
 - **`pnpm why <pkg> --prod` without `-r` reports the wrong scope.** Without `-r` the command runs at
   the repo root only and prints nothing for a dep that is runtime-reachable via a sub-package (e.g.
   `mcm-app > @copilotkit/runtime > … > fast-uri`). That empty output is **not** "dev-only" — it is
@@ -210,17 +210,20 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   legitimate exceptions exist, and **both** require the evidence written into the justification: no
   published fix exists, or a fix exists only outside the range the advisory's consumers declare. The
   second is an operator decision, never the reader's alone — the runbook's step 4 puts a cross-major
-  override and a time-boxed acceptance side by side — and its live worked example is
+  override and a time-boxed acceptance side by side — and its worked example is
   `@graphql-tools/utils`: patched only in 12.0.1 while `graphql-yoga` and
-  `@graphql-yoga/plugin-defer-stream` still declare `^11.2.0`, so the only bump forces a major the
-  consumer does not support (the operator chose the acceptance, 2026-10-06; removal is backlog item
-  #674). A time-boxed acceptance can also be discharged by a route its own justification did
-  not anticipate (the `image-size` pair was cleared when the dependency left the tree entirely,
-  not by the fix its entry predicted). Check npm before assuming: on feature 057 both "needs an
-  acceptance" advisories turned out to have published fixes. Where no patched version exists at all,
-  the convention the file has settled into is: pin the `locationPattern` to the **exact vulnerable
-  version** (`^node-forge@1\.4\.0$`, `^braces@3\.0\.3$`) and date the entry shortly ahead, so a
-  *different* version re-blocks for a fresh assessment and the entry stops suppressing on its own.
+  `@graphql-yoga/plugin-defer-stream` still declared `^11.2.0`, so the only bump forced a major the
+  consumer did not support (the operator chose the acceptance, 2026-10-06). That acceptance has since
+  been **discharged by the first route its backlog item named** rather than renewed: graphql-yoga
+  5.24.4 and the defer-stream plugin 3.24.4 declare `@graphql-tools/utils: ^12.0.3`, a lock refresh
+  resolved both, and the entry was deleted on 2026-10-09 (item #674) with the vulnerable 11.2.2 gone
+  from `pnpm-lock.yaml`. A time-boxed acceptance can also be discharged by a route its own
+  justification did not anticipate (the `image-size` pair was cleared when the dependency left the
+  tree entirely, not by the fix its entry predicted). Check npm before assuming: on feature 057 both
+  "needs an acceptance" advisories turned out to have published fixes. Where no patched version exists
+  at all, the convention the file has settled into is: pin the `locationPattern` to the **exact
+  vulnerable version** (`^node-forge@1\.4\.0$`, `^braces@3\.0\.3$`) and date the entry shortly ahead, so
+  a *different* version re-blocks for a fresh assessment and the entry stops suppressing on its own.
   The justification then carries the reachability check that was actually done — which tree the
   package arrives through, whether any first-party code imports it, and whether the input path the
   advisory needs exists at all — because the audit's runtime tag alone is not evidence (see the
@@ -400,8 +403,10 @@ nothing because there is no override yet — does the override edit apply, and t
 together or `check-override-consistency.mjs` fails the PR by name. A time-boxed acceptance is the last
 resort, never the first — and when the "fix" exists only outside the range its consumers declare, the
 choice between a cross-major override and an acceptance is the operator's, not the reader's: the
-working example is `@graphql-tools/utils`, patched only in 12.0.1 while `graphql-yoga` and
-`@graphql-yoga/plugin-defer-stream` still declare `^11.2.0`.
+worked example was `@graphql-tools/utils`, patched only in 12.0.1 while `graphql-yoga` and
+`@graphql-yoga/plugin-defer-stream` still declared `^11.2.0`. That acceptance was itself discharged
+when the consumers widened to `^12.0.3` and a lock refresh carried the patched version — a reminder
+that a time-box is a holding position, not a fix.
 
 Full scanner matrix, local invocation, the CI gate steps, the triage/allowlist workflow, and the
 step-by-step "gate went red on an untouched dep" playbook:

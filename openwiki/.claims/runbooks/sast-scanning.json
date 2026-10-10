@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:181d31ba4c5955e4f8f08ef2e7376b1160c40240d4fb6b7910720664ff8f1080",
+  "pageVersion": "sha256:e80e45cc49d6897bfe95896374e5a16479560e817dbe0eb9be1928d7fabc1d5a",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -179,7 +179,7 @@
           "version": "repo-lines-v1:sha256:9e2bc7a46edf3fb7fcc60b59fdf479ad2a03cc7ae9697b1e4e756b4f11cc3ed5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRiMzExOTZhMDU5NWNhMmE2NWNjZmMzNDk4NTY4YzMyMzJlMTIxNzc3MWVlMmE2ZGI4NmMzYzcwMzQwOWUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ3NjExMmY3YjgzYmUzZjg2M2FmODkxNzM1NGYyNDU1Zjk2MTgxNDIzYTIxMWFlZWExNjRlMjcwYmU1ODgzZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L265-L277",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L279-L291",
           "version": "repo-lines-v1:sha256:08e357c14c07887938af2b1cfd3ae1ad9ac4b95021f1203226768b87aa9a0e31:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMjg0M2I3ZjBhZTgwNjE5ZGM4ZGZhYzY5NjA5NjUwODM3Y2RhYzVjYzU5NzU0NDMwMmQyYmJjMzJmYzViZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhZjI3YTA3N2QwMDM3MTBiYjRiNzAzZGUzM2JjN2QzMmQxYTc2ZGJlMzIwNmU5ZGJmYTY2YjJjNWQzNjNmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyNTRjMmNkN2IyOTRmNDc2YzkyNDFiNDMxMzQyMjI3YmZiYjJjYmY3YzUyNjFmNzQ5NmE5ZGU4ZmIyMzIxODIifQ"
         },
         {
@@ -477,8 +477,8 @@
           "version": "repo-lines-v1:sha256:8fdd90ddfd9dbd55f175d4ab95320e6745e864d70be57bb9530928a781543c21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTY5YjE1M2RhZDg1ZmIzZDk2MjNlZWQ1ZjEwMTNmNDliYjVhMjhiNzRmZTk1MzAxYmNhNmZjMWFjODU2NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMzZjNTRjMWJiYjgwYjlkOGE3YjM3ZThiYjFkM2ZlNTU3NGY2N2JiMmM5OWJhNzE3ZGUxODQzZjJmN2I3YTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjhhMjhiMWQxMTI3NTc2MzFlYWZhYjY1OGI2MTJhNWE3ZGM4MzY1NjI1YWVmNmUyMzg3ZjUyY2VmNDEwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNGY5Y2I3ZTJmYmY5MWZiZGEzMmZkNzhiOTRmZGJjNDhmNjg5YjM2MzkwMzdiOTI5ODdmZjc1NmI5MzEyZWUifQ"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L257-L279",
-          "version": "repo-lines-v1:sha256:51ee1ef5b909a1744b24afff6519781a78e018ff06ca7c5a12a6e00152c5648c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYjRhNGI2OWM0ZDUwOWRmMjljM2YyZTIxMWU0MzM4NTQyNmFhNGI1Yjg1Yzg1NDRjMTgxNmM0YTYxN2FhMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzhkMjc0Y2U5NDUyOTI0MTFkYTUxNDhiZmU3MWE4NGE5NWZjZDg3NDI2YjQwNDVhNWQyNGQzNmU2N2Q4YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiYmU0ZDBlNzM1YjdkY2I0NzYwYmI1ODczYWQ2YjBmYTA4ZTFhOWU3OWVjNGZlYzk5NTY0YmY5YWU1ZDdmMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://security/sast/allowlist.yaml#L257-L263",
+          "version": "repo-lines-v1:sha256:b5969db36e04acca00cdc57227ede3caca1e12a19bfadae405079729ae5166b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZhZjA3ZTM1YTU0MjcyYzBjMTljMjBkZWQ2ODYwM2E4YTcyNDNmYTQwNDhjOTI5YmRhNzYyMDdhMjU0ODY5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc0NDlkYjU5MDJhNmNmNDZmZWM1YTY3NGExOWRjNjFmZDc2MDFhNDE5ODM5NTFjYTkxYmQxYWM5NWFhMmQxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJiZTRkMGU3MzViN2RjYjQ3NjBiYjU4NzNhZDZiMGZhMDhlMWE5ZTc5ZWM0ZmVjOTk1NjRiZjlhZTVkN2YyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
@@ -583,8 +583,8 @@
           "version": "repo-lines-v1:sha256:0d6b0d2cf4075f5624c87392a519b1db19395e720f56d667857346a434153716:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjZWVjMDFlNmIyMjhkYzFmOWJiOTllNzBjZmE0OWEwNGFmZTVlNTExNjQzOGEyNDRiMzNiMGUxNGFjOWI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIwYzJiYWIyMzM2ZDdiZWU2ODk3MjcxYWRmMzgzMGUwNDQ3Mzc2YzExNjI3YWJmODVlNmM1ZjVmM2M2NmUxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRkMDU2N2Q4MTMyZjFkNTY0NTVmOTVmNWYwZjM1OWEwZDZlZWQ4YmNjYzk0ZWQ3NjY0NTA1N2JjMzIzZWVmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgwMTcxYTI2YmFhMmIxZDhkNTJjNmNlMWJiMTUwY2FhMzYzZjYyZjgxZTc3M2Q3NzEwY2IzNmIxMTA5MjcyNCJ9"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L211-L279",
-          "version": "repo-lines-v1:sha256:2c4559b8d820a1c9e22558869dcbb6676a496f156fb8abb4eb2ab743af0b8eff:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzhkMjc0Y2U5NDUyOTI0MTFkYTUxNDhiZmU3MWE4NGE5NWZjZDg3NDI2YjQwNDVhNWQyNGQzNmU2N2Q4YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://security/sast/allowlist.yaml#L211-L255",
+          "version": "repo-lines-v1:sha256:b4ad41638aefb2c164a0bbb9d43e75ad378a2c6fa701be91378c521eeaec3651:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxODE0ZDU2YmNjMDdlZGJhZDk1MThiOGMzYTNlYzk0OWEwZTJhMTBjM2UyYjQyYWEwYmQ2MGFlNTA4ZTM2MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
         }
       ]
     },
@@ -640,15 +640,15 @@
     },
     {
       "id": "claim_465f8a2f2b4f4ea98385e5c58d02afa5",
-      "statement": "When a patched version exists but every consumer's latest release still declares a range that excludes it, the finding is not 'fixable' in the ordinary sense and is never decided by the reader alone: the operator chooses between a cross-major override (`pkg@<fixed: '>=fixed <next-major'`, accepted only with the full required set green including `app-e2e` when the consumer is on the app's runtime path) and a time-boxed acceptance pinned to the exact vulnerable version with a short expiry and a backlog item whose acceptance criteria delete the entry rather than renew it. Live example: `@graphql-tools/utils` is patched only in 12.0.1 while `graphql-yoga` and `@graphql-yoga/plugin-defer-stream` still require `^11.2.0`, so the operator chose the acceptance on 2026-10-06 and removal is backlog item #674.",
+      "statement": "When a patched version exists but every consumer's latest release still declares a range that excludes it, the finding is not 'fixable' in the ordinary sense and is never decided by the reader alone: the operator chooses between a cross-major override (`pkg@<fixed: '>=fixed <next-major'`, accepted only with the full required set green including `app-e2e` when the consumer is on the app's runtime path) and a time-boxed acceptance pinned to the exact vulnerable version with a short expiry and a backlog item whose acceptance criteria delete the entry rather than renew it. The one live instance of the second exception, `@graphql-tools/utils`, has since been discharged rather than renewed: graphql-yoga 5.24.4 and `@graphql-yoga/plugin-defer-stream` 3.24.4 moved to `@graphql-tools/utils: ^12.0.3`, a lock refresh resolved both, and the allowlist entry was deleted on 2026-10-09 (item #674) with the vulnerable 11.2.2 gone from `pnpm-lock.yaml` — the direction that restores blocking if 11.x ever returns.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/sast-scanning.md#L202-L220",
           "version": "repo-lines-v1:sha256:09730dec6446d48ad0cab7548d53effa2bb1bdf11bce129ae4a9e7ff6db9a322:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYWY0MTM2ZWEzOTcwNjc1MTFmZjI1MTgzNTkzYmExZDNlYmY2NmQ3YWE0MDU5MjVhNTU0MzA5MDg2NjUzODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L257-L279",
-          "version": "repo-lines-v1:sha256:51ee1ef5b909a1744b24afff6519781a78e018ff06ca7c5a12a6e00152c5648c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYjRhNGI2OWM0ZDUwOWRmMjljM2YyZTIxMWU0MzM4NTQyNmFhNGI1Yjg1Yzg1NDRjMTgxNmM0YTYxN2FhMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzhkMjc0Y2U5NDUyOTI0MTFkYTUxNDhiZmU3MWE4NGE5NWZjZDg3NDI2YjQwNDVhNWQyNGQzNmU2N2Q4YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiYmU0ZDBlNzM1YjdkY2I0NzYwYmI1ODczYWQ2YjBmYTA4ZTFhOWU3OWVjNGZlYzk5NTY0YmY5YWU1ZDdmMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://security/sast/allowlist.yaml#L257-L263",
+          "version": "repo-lines-v1:sha256:b5969db36e04acca00cdc57227ede3caca1e12a19bfadae405079729ae5166b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZhZjA3ZTM1YTU0MjcyYzBjMTljMjBkZWQ2ODYwM2E4YTcyNDNmYTQwNDhjOTI5YmRhNzYyMDdhMjU0ODY5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc0NDlkYjU5MDJhNmNmNDZmZWM1YTY3NGExOWRjNjFmZDc2MDFhNDE5ODM5NTFjYTkxYmQxYWM5NWFhMmQxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJiZTRkMGU3MzViN2RjYjQ3NjBiYjU4NzNhZDZiMGZhMDhlMWE5ZTc5ZWM0ZmVjOTk1NjRiZjlhZTVkN2YyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
@@ -669,6 +669,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-08T02:37:22.749Z"
+    "at": "2026-10-10T02:25:55.688Z"
   }
 }

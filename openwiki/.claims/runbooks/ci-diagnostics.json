@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:81ddb4e5ec75a508f6111f34608311f3e83a2fc3d0ac552ce5a30f0b6ddb9daf",
+  "pageVersion": "sha256:6586215b82319384ed569dde87c77b965cbf893da6e8b7cdfc29788e2a5ad4ae",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -113,24 +113,58 @@
       "statement": "A pull request opened via an AGit push (HEAD:refs/for/main) has no backing branch, so Forgejo treats the run as untrusted and executes it without Actions secrets, silently emptying every ${{ secrets.* }} rather than failing the job outright; ci-status.mjs detects and prints a DETACHED HEAD warning for this case because the resulting failure (e.g. a rejected remote-cache request) otherwise looks like an unrelated credential or infrastructure fault.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L911-L935",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L935-L959",
           "version": "repo-lines-v1:sha256:590696c7049e250734122d05d310edb6703e894edc6b6ff72a458c1caee5abc7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1YmNmZTFlZDRjMWRiNTY0OTljZWE1NGQxYzBhNzVmNTcwNjc2MTMzNTdlNDEwOTRiYjMwN2FlYTUxYjQyNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjFiNTc2MzhhNmUyY2M2YmU4NGRlNTQ1NzQxZGExMTU5ODU0YWNjMDBmM2U5YjAyOGZjNzZhNDM4OWM5NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YTZlZGNiOTgyNGRiNWVhMGI3Zjg4YzI2OWQwMGYxMDEwY2U4NDcwNTA2OTQ4MDk0MDI4NjNjNTQ4YzVhMDgifQ"
         }
       ]
     },
     {
       "id": "claim_4d81acfe57ce4859961b053bdf91cf81",
-      "statement": "mc-service writes its domain-event log line at the end of a request handler in the same emit as the response, so logs/mc-service.log's line order is completion order rather than start order; reconstructing true temporal (start) order for a bundle's mc-service log requires subtracting each line's own duration_ms from its timestamp rather than trusting file order, and cross-worker or cross-actor race hypotheses built from raw line order should be checked against the subject/preferred_username/authorized_party fields and mc-service's owner_id=token.subject collection scoping before being accepted, since two lines with different subject values cannot be acting on the same collection.",
+      "statement": "mc-service writes its domain-event log line at the end of a request handler, in the same emit as the response, so logs/mc-service.log's line order is completion order rather than start order: logging_middleware awaits next.run(request) and only then emits the `request completed` event carrying a numeric duration_ms, and handlers such as create_collection/delete_collection log their domain event after the command returns. Reconstructing true temporal (start) order for a bundle's mc-service log therefore requires subtracting each line's own duration_ms from its timestamp and sorting on that rather than trusting file order, and a cross-worker race hypothesis built from adjacent raw lines can be entirely inverted by this (item #568).",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1127-L1181",
-          "version": "repo-lines-v1:sha256:fd71e0d9c53c1cbbaf37a7675f616e4a2072907b1299b22dca2b968361109d87:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OWY0YzVkOGU4MmVhY2I1NzU5NTA5YWY2NmYxN2Q0MTExNzU4NzczMjYyYmM4Y2Q1YzYzNjY1YWVjNjMzMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ODQwNDA3YTNiOGU2ZGNiOTc3NzYzMzQ5NWFmN2RmZWZhMWE0NDQ0YTUyNGIxZWI5ZThiMmMwNDkyODcyMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNzZjYzA5ODE5ZTNkYTA4M2VlMzMwZGJkM2QzYjQyYjUxNGIxYTY2MmUzMTUyOGYxODFiYTg1OTQ0NTJlZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0MjZhNjE0YzQ4Nzc4YjUwNzViOWM2NDQyMzAyOGI5YTUzYjE2ZGY0ZTU1ZGJlYzA0ODMyN2EyZDc0NzkyM2YifQ"
+          "resource": "repo://backend/mc-service/src/api/collections/create.rs#L17-L31",
+          "version": "repo-lines-v1:sha256:ad745677efef37417fc301ce0fafe08d3b75984df5725c8416c26cb2f6f236eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0MTI4ODE2MDEzNWNhOWJhNjJkN2Y3ZDM3M2M1MTBiYWRkOTMxZDQ4ZDZjYjI1NzYwZWEzOWZiNmMyMWI1YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyYTcyN2UzMzk0ZDlkNTI0OGRkMTdiZjY5MTVjY2MwOWUxNzkxYjdiNzFiMDEwYTVjNjkyNTIzNzQyNTRlNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/collections/delete.rs#L21-L39",
+          "version": "repo-lines-v1:sha256:648fb80e57a07f5dff70d20909a3d2839f71a7a9329d4b8c7f495e09046fef29:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0MTI4ODE2MDEzNWNhOWJhNjJkN2Y3ZDM3M2M1MTBiYWRkOTMxZDQ4ZDZjYjI1NzYwZWEzOWZiNmMyMWI1YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhNDE0NjQ2MDlkZDQxZTBiOWY3MjIyZjQ4Y2ViMjk5MGUzNTQzNDhlNTNiNTc2NWUyNWJmZTc2OGVkM2Y0ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/logging.rs#L14-L53",
+          "version": "repo-lines-v1:sha256:827e84abe8db9cae715cb5e3b5a7ac20bb0da87de382337a29ba05d0be3fa8f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmN2IxMjJiMjBiOTQyNzJmYjY1NWYwOTYwNDQ3N2ZkOWVmMDIzNjYxODE5MDc5ZTcwMDdkMTQ3NzdkODRkNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3YWUzNzQ0NWRkNjE2Nzc5MzgzYWNhZmVhZjNhZTQ3YTEzOGQwMWQ3NmUxNGYzYzRkN2IzZWE4YjFiYTc0MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyODY1ZjBjYmE5NTQyNDhkYzA5ZjIzYzc3ZWI1YTZlMjU1NWM2ZjEwMjc3MWMyMGIxYmNlNDE1Zjc3YTdhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L75-L107",
+          "version": "repo-lines-v1:sha256:04a0bf2afdcbc98c8fef52c2d3b5ba6324bd25890a42a9ba905958055eab2ad0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OWY0YzVkOGU4MmVhY2I1NzU5NTA5YWY2NmYxN2Q0MTExNzU4NzczMjYyYmM4Y2Q1YzYzNjY1YWVjNjMzMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNzZjYzA5ODE5ZTNkYTA4M2VlMzMwZGJkM2QzYjQyYjUxNGIxYTY2MmUzMTUyOGYxODFiYTg1OTQ0NTJlZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMDNlZDRlZTA4ZjEwMGY4NDIzMjMwM2U2YmZkYzE2MDA1N2FhZTlkOThhMzg4NjRhNDkxMDQ3ZTE0MDFiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6b0034cc42ba41a59fa8ae2038063ba2",
+      "statement": "Cross-worker or cross-actor race hypotheses drawn from mc-service.log should be checked against `subject` / `preferred_username` / `authorized_party` before being accepted: authorized_party separates the actors even when every E2E worker acts as the same subject (movie-collection-manager = browser/BFF session, agent-gateway = the agent's downscoped write token) and preferred_username names the worker, while mc-service scopes collections by owner_id = token.subject in every collection endpoint, so two lines with different subject values cannot be acting on the same collection and a foreign worker's delete is impossible rather than a race to narrow.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/collections/delete.rs#L17-L27",
+          "version": "repo-lines-v1:sha256:7e996c2a779b14cc2181935b6fb206ccde282fbae2d1a218770fa4286b043a6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2Y2ZiMWM4OWYzNzQ5YTE5NmM4MmM5NmJhZWM5MGUwN2RhMGZjNjBjNTZiNzhjODFhZDUxZDZiYTBlNjU5YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0ODRjNGJhNWMxNjJjMGFlMDNkNjc5OTZhMzYxNDhlNjBjMGYyNDFmZDgwNjIxNzIxZmRjOTJkYWMxZDgyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NWJkMjIwMWU5ODdiZDk0M2NjYmM0NTZhNmE5ZDcyOWVlNDYzMGM1NmQ1MmFiZTRlMTFkNGJiMDNiY2RmYzEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/collections/list.rs#L12-L23",
+          "version": "repo-lines-v1:sha256:49b8b7647ff2f8deebca28ce90d714035fadc766914a87e8cba72ce733316daf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNDI0ZDllZDhkZmQzZWU2Njk2NTdjZjY5YTk1NWNiMzkyMjI0ZmVhZGI4ODdlNjIwOWEyMzBhYzU5ZTk1YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMjkyOGJkODk5MGY0YmQ3YTUwMDQ1NmQ4Y2RjYjAxYmZmOWFlNTk3YTNkMzhmNjMzNTAxMjRjMzQwMTZmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2MmVmZWEwY2EzODI1MmMwNzFmYzU0YjczYTI0OTgxOTdhMDk1YjUwNzAxYjA5MTZmZWVmZDBlNWNiNmVhNTgifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L109-L129",
+          "version": "repo-lines-v1:sha256:cd02f5d2127a932f63afef4d9323617a7314dcab10742c443b361d051aa7dc64:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MzNmM2JkZWEyYzc5MjU4NGIxYjI0NmFkY2MwOTJmMWFhNjUxZGVlMDdmYjQ4MzRlOWYyZWYzNTMxMGMyZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ODQwNDA3YTNiOGU2ZGNiOTc3NzYzMzQ5NWFmN2RmZWZhMWE0NDQ0YTUyNGIxZWI5ZThiMmMwNDkyODcyMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjYmFmZjk3ZjMzOGIzMmYwMjhjMTY3YzJhNWZlYTZhZGJkMjQ0MTZiYzUxZDQ5YjY1NTY5MjI2NjU3MDhlOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0MjZhNjE0YzQ4Nzc4YjUwNzViOWM2NDQyMzAyOGI5YTUzYjE2ZGY0ZTU1ZGJlYzA0ODMyN2EyZDc0NzkyM2YifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/setup/assistant-add-flow.ts#L93-L113",
+          "version": "repo-lines-v1:sha256:b9a8b50c88004f3c6ad34b83900542ac307e67f826f43d21d0b6c067c0ac7650:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZDdlODkzNDYwMDQyNjY2Y2U5ZTM5Yjk2NWNmODM3OWFmZmY1ZWU0NWY3MDRhN2M1NTQxZmY3Mzc5NTM5OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2MmMxZDBhZTI2ZjZiNzIzMTBmZDczNDMyM2U1OGEzMDEwODhlYmFjZjkyOGU2MTZkMGRmOThjN2FiMGE4NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkMjJiMDdmYmUyNDBjYmE5NzhkZDdhYmIzZGZmMmUxYzNlNGI1ZTdjYjhiY2M1Mzg0MmEzMWNhMDM5MzJhNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmYzRlMDM3ZDc5YTYwMTkxOWUwM2E2ZjlmYWIwZjJkNWE1NDg4ODcwZTE1YTYyNTg0NDFiYjg0OGIwNDRhOWMifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-26T17:09:29.023Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-10T02:25:55.688Z"
   }
 }

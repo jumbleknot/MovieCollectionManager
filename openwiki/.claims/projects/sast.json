@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:59f24739e2f892e74e026363173644dca135510c9a9139d40ccb21c9867ad7cd",
+  "pageVersion": "sha256:43116ffce26ad68c338f7920bd234712738ae5d740daecad5442c78130a75696",
   "claims": [
     {
       "id": "claim_8dae93c0934d4f8da3e82f0eb70b444c",
@@ -265,7 +265,7 @@
           "version": "repo-lines-v1:sha256:8a9f3aac6b8a231145ab9c0e2f8a08c706db92926854f5b95a0db3ac02ed66eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU5ZDg3NjhkYThkNjA0YjA5MDE1NWU4ZjNjMGMxMDE3ZjcyZjIyMmIxOGQzNjUxZmM2M2U5MmUxMjhhYmE5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE2NTU5YWQ4YjZlOGFiMmJiNzA1YjA2OGE4MTc2MDk1ZjVlNmE3Yzk4YjMzMDA2YzA4MTkwZjcyMTgyN2QyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVmYTMzNDQ5ZDYxMmM0ODExYTI4NWJiOTgyMjZjMDk1ZDkwMzMwZDIzMTY5MTMwMzI5NjM5MmQzMGZjMjQ0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2MwYWJkM2MxZTE4NzNjYTk0NDRhMzc2NTJhOWIwZjg3OTk2NDVhYjBmN2IwNDNhNTM3MzhkZDUzNWNiNzIwMCJ9"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L315-L320",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L338-L343",
           "version": "repo-lines-v1:sha256:5f3f85994242042c93621381093b3471fd3e633daa4d2cf2b8b088f670a58353:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgyODcyMDhmNzA3MjNiZGIwZDAxZGNiMzc4YWI0ODAxN2I3MWMyMTViOTE5YjUxZTQyYzIwMGUzZWRiMGRlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0NmJlODgzNGM1NmZiZDg2ZDMxOWYwODIyYWQyYWNhY2ViMDA3ZTEzYjhmNDU1NDYxYmI0MDc1MWUxYmFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTgxZTA2NjY1OWZhNWZmMWNjMGI3MGQ3YTYyMTgzZTM2MmNkN2U5N2JlYzljZWM1ZjUxZDAyYzIwYWFiNGE4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNkZDM3NTlkMDljYTZkZDkzOTBlMDY3NmRiMzAwZDY2Yjg3MWQ0NWI0OGZjODlkY2QyODMzNGIxMjAzZjE5YyJ9"
         },
         {
@@ -354,7 +354,7 @@
     },
     {
       "id": "claim_7e604cf1205843f5a6c32c4d6011cc3d",
-      "statement": "Remediation is preferred over re-dating: deleting or extending an `expiry` converts a time-box into a permanent suppression, and a fixable High whose patched version exists within the range its consumers declare must be bumped rather than allowlisted. The two legitimate exceptions — no published fix exists at all, and a fix exists only outside the range the consumers declare (an operator decision, not the reader's) — each require the evidence written into the justification and take a specific shape in the committed file: the entry is pinned to the exact vulnerable version so a different version re-blocks for a fresh assessment, and short-dated so it stops suppressing on its own. The committed file shows that shape three times — the node-forge and braces entries (no patched version exists at all) and the @graphql-tools/utils entry (a fix exists only outside the ^11.2.0 range graphql-yoga and its defer-stream plugin declare, so forcing 12.0.1 would cross a major they do not support) — each stating reachability checked rather than assumed and each removal tracked on the backlog rather than renewed at expiry.",
+      "statement": "Remediation is preferred over re-dating: deleting or extending an `expiry` converts a time-box into a permanent suppression, and a fixable High whose patched version exists within the range its consumers declare must be bumped rather than allowlisted. The two legitimate exceptions — no published fix exists at all, and a fix exists only outside the range the consumers declare (an operator decision, not the reader's) — each require the evidence written into the justification and take a specific shape in the committed file: the entry is pinned to the exact vulnerable version so a different version re-blocks for a fresh assessment, and short-dated so it stops suppressing on its own. The committed file currently shows that shape twice, for the node-forge and braces entries, where no patched version exists at all and the audit classifies each as runtime only because `expo` lists its CLI as a production dependency while the code paths involved are build/test tooling; the third instance of the pattern, `@graphql-tools/utils@11.2.2` (whose fix sat outside the `^11.2.0` range its consumers declared), was deleted on 2026-10-09 under backlog item #674 once graphql-yoga and its defer-stream plugin widened to `^12.0.3` and a lock refresh removed the vulnerable version from pnpm-lock.yaml. Each entry stated reachability checked rather than assumed, and each removal is tracked on the backlog rather than renewed at expiry.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/sast-scanning.md#L187-L220",
@@ -365,8 +365,12 @@
           "version": "repo-lines-v1:sha256:03f60f2ea8e86e2e7e73f3c6d3eb56cde4291d6d31e1011514192ebe20b1a65b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRmYWZmNjNlZmY3Mjk3ODA2YjhlOGMxODg5NDBmM2FkZTViMDYzNDEzYjU3NjliMDkyZjM4MTg3ZDdkOTU3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI5MjM4YTQ0NTkwZDQxNDEzZTU3Y2NmMDBlNjY1MjNjNDRkYzI4YmQwNDY0ZDVkNGE1MWExMGE3MTNjZDg3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjBmNjA0ZGJlMWQ3ZGRiZjFiZDM0MGI0NzY1ZjA1ZjFmNTAwZjViZmJmMWI3N2YyNzQzYzQ5ZTFlOTE3Njk1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDBkYjM0ODlhYTg3MjYzZDM2NTBlODdlZjMwMWM1NzY1OGMxYjAzNGZkOGVkNWY1NjViMmYyMDNlZTY3NjNiNSJ9"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L211-L279",
-          "version": "repo-lines-v1:sha256:2c4559b8d820a1c9e22558869dcbb6676a496f156fb8abb4eb2ab743af0b8eff:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzhkMjc0Y2U5NDUyOTI0MTFkYTUxNDhiZmU3MWE4NGE5NWZjZDg3NDI2YjQwNDVhNWQyNGQzNmU2N2Q4YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://pnpm-lock.yaml",
+          "version": "repo-file-v1:sha256:126ec0278eb14fb2ce8fda4b42f09cd22891add5fcb8b2dfbdfbd7c4002362a1"
+        },
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L211-L263",
+          "version": "repo-lines-v1:sha256:054ed9b175440041c46c5b7bf56c3ebd1734e14edbc2e986df15f62ca308df74:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NDQ5ZGI1OTAyYTZjZjQ2ZmVjNWE2NzRhMTlkYzYxZmQ3NjAxYTQxOTgzOTUxY2E5MWJkMWFjOTVhYTJkMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -495,7 +499,7 @@
       "statement": "A failed Semgrep run leaves a well-formed 0-finding report rather than a partial one: the orchestrator runs the scanners in order (semgrep, cargo-audit, pnpm-audit, pip-audit) and breaks out of the loop on the first failure, recording `ran: false` plus `scanners[].error` for that scanner, so the scanners after the failed one never ran in that invocation. A missing toolchain is the same shape, because `assertToolchain` refuses to skip a language surface and fails the scan naming the scanner. This is why a 0-finding report and a 0-blocking-finding report both print green and the finding COUNT must be checked, not just the exit code.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L315-L320",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L338-L343",
           "version": "repo-lines-v1:sha256:5f3f85994242042c93621381093b3471fd3e633daa4d2cf2b8b088f670a58353:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgyODcyMDhmNzA3MjNiZGIwZDAxZGNiMzc4YWI0ODAxN2I3MWMyMTViOTE5YjUxZTQyYzIwMGUzZWRiMGRlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0NmJlODgzNGM1NmZiZDg2ZDMxOWYwODIyYWQyYWNhY2ViMDA3ZTEzYjhmNDU1NDYxYmI0MDc1MWUxYmFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTgxZTA2NjY1OWZhNWZmMWNjMGI3MGQ3YTYyMTgzZTM2MmNkN2U5N2JlYzljZWM1ZjUxZDAyYzIwYWFiNGE4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNkZDM3NTlkMDljYTZkZDkzOTBlMDY3NmRiMzAwZDY2Yjg3MWQ0NWI0OGZjODlkY2QyODMzNGIxMjAzZjE5YyJ9"
         },
         {
@@ -527,7 +531,7 @@
       "statement": "Allowlist `locationPattern`s are matched against paths normalized to forward slashes so one pattern is portable across the Windows dev host and the Linux CI runner; a pattern written with backslashes matches nothing on the runner and passes silently on the Windows side. The generated reports/allowlist.proposed.yaml additionally writes its dedupe key with `\\u0000` as an escape sequence rather than a raw NUL byte, because a raw one makes grep treat the whole file as binary and print no matching lines at all.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L333-L334",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L356-L357",
           "version": "repo-lines-v1:sha256:44877ab3ee914095a855deda5dd890ec1e696626b4eeec9cb82bca151dd290e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhNjI5NDkyNmE3YzhlN2NkNDc1M2RjMjg2YzUwZjQ2ZWNiNTRlMWJiNjU1OWI0NzdiY2RhYjIyYzg1MjRkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU2ZThhZjFmNTQ5NjFiY2NkZTVjZWU5M2U4ZmUyNzhkODgzNWYwYmNjMmY3NzlhZTNhYzQ1OGIzMjA2ZGZmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjcxMDZmMTdhODY1MDNhNDNmNDE5Mjk0OWRmN2IxZGI1M2Q5YjUxZmM5OWRkNWFhZTY0MjdlZWU3ZTkzMWRkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -567,7 +571,7 @@
           "version": "repo-lines-v1:sha256:69539fbdb56aec7540caaaeb8df69d640d7492b78f48d1bbc0b0f538e8f577e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDNmOTcyYzFlNzY1ZGUwYjg3YWU5NTM5MzhkNzBiOWE1NWRjZjNkMGYxMTgwZTM3MDAxOWM5NjVlZWViYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYTMxYWFiZjQ1NTdiZGNhYjE4Yzc3ZTk3MmRmOWQ5MDRmNzhkM2M1NjE3MzFjOGZlMjQ3NGIzMjcyYjAzYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OTA5MzU3Y2IxYTNjOWFhZDNmMWExMTdhNzU0YmFjMmVlOWU5YzAwNDBiZDlhMTcwOWQyOGU0ZDJhZjBhM2IifQ"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L330-L332",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L353-L355",
           "version": "repo-lines-v1:sha256:b7106f17a86503a43f4192949df7b1db53d9b51fc99dd5aae6427eee7e931dd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTlhODIwODFlNDVlNDhiOTg0Y2NiM2M2ZmE3NDMxNGRmYmRjYTc0ZDk4OWYxOGY5ZjI5OTY3ZmMxOWNhZjUyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmI0N2ZjMmQwODZhMTBjMzFjZjgzNWYwM2YxYzQxY2I0NTRhNDdiMGIzMjVjYjY1ODJkZDFiNjhhZjYzNThlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjY0MDVmM2Q0NzkwZjU2ZmVjNWY2MzAzZDZiYTMxYzdiODljZWZkYWUzZjFhMWZjNTFkOWFmMDY0YjAzYzdhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ4NzdhYjNlZTkxNDA5NWE4NTVkZWRhNWRkODkwZWMxZTY5NjYyNmI0ZWVlYzljYjgyYmNhMTUxZGQyOTBlOSJ9"
         }
       ]
@@ -606,7 +610,7 @@
     },
     {
       "id": "claim_350e26ec77c84ed1a06bbc7b69b4818c",
-      "statement": "The `runtime` tag a finding carries is the audit's own scoping rather than a reachability finding: it answers whether the whole-workspace `--prod` audit sees the package, not whether the vulnerable code path is exercised, so it must never be read as evidence of reachability when writing an allowlist justification. Two of the three no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a production dependency — node-forge arrives only through Expo CLI / code-signing tooling and braces only through micromatch in Metro's file watcher and Jest — while neither is imported by first-party code, neither ships in the web or server bundle, and the glob patterns those tools expand come from repository configuration rather than a request; the third, @graphql-tools/utils, is tagged runtime through @copilotkit/runtime but is only listed as a dependency and never reached on a request path.",
+      "statement": "The `runtime` tag a finding carries is the audit's own scoping rather than a reachability finding: it answers whether the whole-workspace `--prod` audit sees the package, not whether the vulnerable code path is exercised, so it must never be read as evidence of reachability when writing an allowlist justification. Both of the two current no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a production dependency — node-forge arrives only through Expo CLI / code-signing tooling and braces only through micromatch in Metro's file watcher and Jest — while neither is imported by first-party code, neither ships in the web or server bundle, and the glob patterns those tools expand come from repository configuration rather than a request. The now-deleted @graphql-tools/utils acceptance was tagged runtime through @copilotkit/runtime on the same kind of non-evidence, being only listed as a dependency and never reached on a request path.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/sast-scanning.md#L144-L155",
@@ -617,8 +621,8 @@
           "version": "repo-lines-v1:sha256:09730dec6446d48ad0cab7548d53effa2bb1bdf11bce129ae4a9e7ff6db9a322:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYWY0MTM2ZWEzOTcwNjc1MTFmZjI1MTgzNTkzYmExZDNlYmY2NmQ3YWE0MDU5MjVhNTU0MzA5MDg2NjUzODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L211-L279",
-          "version": "repo-lines-v1:sha256:2c4559b8d820a1c9e22558869dcbb6676a496f156fb8abb4eb2ab743af0b8eff:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzhkMjc0Y2U5NDUyOTI0MTFkYTUxNDhiZmU3MWE4NGE5NWZjZDg3NDI2YjQwNDVhNWQyNGQzNmU2N2Q4YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://security/sast/allowlist.yaml#L211-L263",
+          "version": "repo-lines-v1:sha256:054ed9b175440041c46c5b7bf56c3ebd1734e14edbc2e986df15f62ca308df74:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NDQ5ZGI1OTAyYTZjZjQ2ZmVjNWE2NzRhMTlkYzYxZmQ3NjAxYTQxOTgzOTUxY2E5MWJkMWFjOTVhYTJkMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -638,7 +642,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-10-07T00:12:01.561Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-10T02:25:55.688Z"
   }
 }

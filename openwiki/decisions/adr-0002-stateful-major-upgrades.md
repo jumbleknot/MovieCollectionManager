@@ -1,12 +1,9 @@
 ---
 type: Decision
 title: "ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4"
-description: Derived summary of the ratified decision to upgrade OpenSearch 2→3 before Langfuse 3→4 in separate specs, as landed on 2026-09-13 — both ceilings lifted, the §3 gate measured, and the audit store preserved under the §4a amendment.
+description: Derived summary of the ratified decision to upgrade OpenSearch 2→3 before Langfuse 3→4 in separate specs, as landed on 2026-09-13 — both ceilings lifted and replaced by approval gates, the §3 gate measured, the audit store preserved under the §4a amendment, and the shared Postgres pin held on 16 by config.
 resource: docs/decisions/ADR-0002-stateful-major-upgrades.md
 tags: [adr, opensearch, langfuse, security, upgrade, decision-record, stateful]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T10:29:14.990Z
 sources:
   - id: openwiki-source-45464ccea280daa5176a3646
     resource: repo://agents/movie-assistant/src/audit_sink.py
@@ -16,8 +13,14 @@ sources:
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-0ff61f596da1302e58282fa2
+    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
+    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-4708763005c35901b04f5740
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-0142cec1b04f10ba9cda1285
@@ -26,7 +29,7 @@ sources:
     resource: repo://specs/072-langfuse-4-major/research.md
   - id: openwiki-source-c8fd59e28a7d780b80a80bd7
     resource: repo://specs/072-langfuse-4-major/spec.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
 ---
 
 # ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4
@@ -39,10 +42,17 @@ CVE allowlist entries whose only upstream remediation is the major itself**, and
 entries carry an expiry of 2026-10-01. The 14-day warning tier opens 2026-09-17.
 
 Both halves have since landed: feature 071 (OpenSearch 3) and feature 072 (Langfuse 4, carrying the
-ClickHouse major it drags with it). The `renovate.json` packageRule 19 ceiling
-(`opensearchproject/opensearch allowedVersions: "<3"`) and packageRule 20's `langfuse/* < 4` ceiling
-are both gone, each replaced by a `dependencyDashboardApproval` requirement on the next major — the
-ADR's "not by accident" expressed as config. See the
+ClickHouse major it drags with it). The two `renovate.json` ceilings — `opensearchproject/opensearch`
+`allowedVersions: "<3"` and the `langfuse/langfuse` + `langfuse/langfuse-worker` `< 4` hold, which the
+ADR's own text numbers packageRules 19 and 20 (still those two images at those indices; their
+`description` text in `renovate.json` still reads as the hold and is stale) — are both gone. Each was replaced, not deleted: a `matchUpdateTypes:
+["major"]` plus `dependencyDashboardApproval: true` rule now makes the next major require an explicit
+dashboard tick, which is the ADR's "not by accident" expressed as config, while minors and patches
+stay automatic as the security patch stream. The same reasoning now governs two further rules:
+`langfuse/langfuse` and `-worker` are pinned by **version** (`4.35.0@sha256`) rather than the floating
+`:4` and kept in their own group deliberately outside `docker base images`, because a Langfuse
+*minor* runs Postgres and ClickHouse migrations on a prod stack; and the shared observability
+Postgres pin is held on 16 (see the gotcha below). See the
 [infra-image scanning runbook](../runbooks/infra-image-scanning.md) for how the gate and allowlist
 interact.
 
@@ -146,9 +156,26 @@ literally — see the ClickHouse gotcha below.
   on ClickHouse 24 is a state nobody would deliberately run, and ClickHouse 25 under Langfuse 3 is
   an unreviewed combination upstream does not ship — so the two cannot land separately. Widening was
   safe only because of §4: recreating the volumes collapsed a multi-major ClickHouse migration into
-  a container swap. `postgres` stayed on **16**, deliberately: `langfuse-postgres` and
-  `unleash-postgres` pin the same digest, and Unleash's store is not covered by §4's disposability
-  ratification, so a Postgres major would have needed its own mandate.
+  a container swap. The pin has since moved further still — both `compose.yaml` and
+  `compose.prod.yaml` now pull `clickhouse/clickhouse-server:26.6`, two majors past the `24.3` the
+  spec started from — but **not under §4**. That bump arrived through a routine Renovate image update
+  on 2026-10-09 (#698), *after* the 072 cutover and over live production traces; §4 ratified
+  discarding the trace store **at that cutover only**, so it does not make later majors data-free. A
+  green CI did not exercise it either — `app-e2e` never starts the observability stack. Requiring a
+  dashboard tick for ClickHouse (and the other stateful datastore) majors is the follow-up proposed
+  in PR #705.
+  `postgres` stayed on **16**, deliberately: `langfuse-postgres` and `unleash-postgres` pin the same
+  digest, and Unleash's store is not covered by §4's disposability ratification, so a Postgres major
+  would have needed its own mandate. That is now enforced rather than merely remembered.
+  `scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` asserts, against **both** compose
+  files, that the two services reference one identical pin and that its tag starts with `16` — so a
+  find-and-replace on the Postgres image cannot migrate Unleash as a silent side effect. The guard
+  earned its keep on PR #698 (2026-10-09), when `docker base images (major)` moved all four
+  observability refs `16-alpine → 18-alpine` and red-lined `guardrails / naming`; the response was a
+  `postgres allowedVersions: "<17"` packageRule scoped by `matchFileNames` to the two observability
+  compose files, which blocks the major while leaving 16.x patches and digest refreshes flowing.
+  Raising it is only legitimate through the spec that moves both databases, with the guard updated in
+  the same change.
 
 - **The Langfuse major broke a verification, not just an image.** Langfuse 4 removes
   `GET /api/public/traces` (404) — precisely the endpoint the SC-008 integration test polled for

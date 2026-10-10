@@ -1,13 +1,19 @@
 ---
 type: Reference
 title: MovieCollectionManager repository — structure and working conventions
-description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two dev-environment options (sandbox microVM and Docker Desktop), the mandatory pre-work gates (credential rule, SDD gate, PR-head rule), and the load-bearing gotchas that cost a session when missed.
+description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two dev-environment options (sandbox microVM and Docker Desktop), the mandatory pre-work gates (credential rule, SDD gate, worktree rule, PR-head rule), and the load-bearing gotchas that cost a session when missed.
 resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-20T14:56:38.255Z
+  - by: openwiki/0.7.1
+    at: 2026-10-10T02:25:55.688Z
 sources:
+  - id: openwiki-source-c765a50891cfc213a2fc94d1
+    resource: repo://.devcontainer/assert-egress-governed.sh
+  - id: openwiki-source-61f1a679973e2c37988cd802
+    resource: repo://.devcontainer/gen-container-secrets-env.sh
+  - id: openwiki-source-a157c487923d65153283de40
+    resource: repo://.devcontainer/sandbox/devcontainer.json
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
   - id: openwiki-source-f83bd1373e0f000fa5d548c0
@@ -18,7 +24,9 @@ sources:
     resource: repo://docs/runbooks/devcontainer.md
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-20T14:56:38.255Z" }
+  - id: openwiki-source-08fc841d5e458f6987e87106
+    resource: repo://scripts/open-sandbox.ps1
+generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -84,6 +92,14 @@ not, waits for SSH, and opens VS Code directly inside the dev container. See
 **[docs/runbooks/devcontainer-sandbox.md](../../docs/runbooks/devcontainer-sandbox.md)** for the full
 operating manual: lifecycle, egress triage, engine seam, disk limits, and the credential rule.
 
+`sbx` itself is pinned at **v0.47.0** (upgraded from v0.43.0 on 2026-10-08). It is load-bearing for
+isolation and egress enforcement, so upgrading it is a **security-relevant change**, not a routine
+one: read the intervening release notes for network-policy, `--network=host`, port-publishing,
+idle-stop, secret-injection, and template changes; capture the before-state with
+`verify-reboot-survival.sh --capture`; re-run the full harness; re-run the G5 sibling-egress refusal
+explicitly; and record the new version in the runbook. Several behaviours are version-specific and
+undocumented.
+
 ### Retained: Docker Desktop / Docker-in-Docker
 
 The Docker Desktop path is kept for **one reason only**: the Android emulator, which needs
@@ -133,7 +149,29 @@ Before writing implementation code under `backend/`, `frontend/`, `agents/`, `mc
 exist. Proposals (`docs/proposals/**`) and knowledge/index edits are exempt. See
 [Proposal → spec → plan → tasks → implementation lifecycle](../process/spec-driven-development.md).
 
-### 3 — PR head must be a real branch, not an AGit push
+### 3 — You are probably not the only agent: commit from a worktree
+
+Several Claude sessions can share one dev container, and they share `/workspaces/mcm` — including
+its **git index and checked-out branch**. Five concurrent sessions were measured in that one
+checkout on 2026-09-18. A `git checkout -b`, `git add -A`, `git stash`, or `git rebase` there is
+not a private act; it rewrites what another session is mid-edit on, and the damage lands silently
+on the other agent.
+
+```bash
+git worktree add -b <branch> /home/coder/worktrees/<slug> origin/main
+ln -sfn /workspaces/mcm/node_modules /home/coder/worktrees/<slug>/node_modules
+```
+
+Use `/home/coder/worktrees/…`, never `/workspaces/.worktrees/…` (`/workspaces` itself is not
+writable). The `node_modules` symlink covers `node --test` and the `scripts/*.mjs` gates but
+**not** any `pnpm nx` target, which dies in pnpm's dependency check with
+`ERR_PNPM_UNSAFE_MODULES_DIR` — a real `CI=true pnpm install --frozen-lockfile` inside the
+worktree is the only fix (~4 min). A worktree does **not** survive a container rebuild, so push
+the branch before any risky container operation. Reads — `git fetch`, `git log`, and everything
+against the forge API (opening a PR, merging, commenting, `ci-status`) — need no worktree at all.
+Full procedure and the four traps: [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md).
+
+### 4 — PR head must be a real branch, not an AGit push
 
 A PR's head MUST be a real branch (`git push origin HEAD:<branch>`, then POST via the
 `git credential fill` credential). An AGit push (`HEAD:refs/for/main`) yields a
@@ -164,13 +202,32 @@ restarted with `sbx run`."*
 is an **agent**, not a sandbox name. Running `sbx run mcm` tries to run an agent called `mcm`.
 Without `--name` you can end up with a second sandbox rather than your existing one.
 
-### `sandboxd` does not auto-start at boot
+### The microVM idle-stops ~30 s after the last session — and `sandboxd` does not auto-start
+
+The VM stops roughly **30 seconds after the last session disconnects**. It is hardcoded; there is
+no configuration knob. Coming back to a "missing" environment usually means it idle-stopped —
+start it and nothing is lost — but **long unattended jobs die** unless a session is held
+(`ssh mcm.sbx 'sleep 5400'` in another window, with the work launched via `setsid nohup … &`).
 
 After a workstation reboot, `sandboxd` must be started on demand — `sbx run --name mcm -d`
 does this. Reaching for `ssh mcm.sbx` first surfaces a daemon error that reads like a broken
 environment rather than a cold host. Everything else survives a real reboot (workspace clone,
 images, volumes, containers with a restart policy). Verify with
 `.devcontainer/verify/verify-reboot-survival.sh --verify` rather than judging by eye.
+
+### `sbx run`'s failure message names the wrong component — the launcher no longer believes it
+
+`sbx run` can report `500 Internal Server Error: docker daemon failed to start inside the sandbox`
+while **dockerd is perfectly healthy**. Restoring this VM's 20 `restart: unless-stopped` containers
+took 54–101 s across five measured starts, and sbx's dockerd-readiness budget is a compiled-in
+constant below that — there is no flag, variable, settings file, or daemon option to raise it
+(checked on v0.39.0 and v0.43.0, and not raised by v0.43.0). sbx aborts, the CLI exits, and the
+~30 s idle-stop then kills a VM whose dockerd had been serving the socket the whole time.
+
+`scripts/open-sandbox.ps1` is immune because it treats the **exit code as a claim and SSH
+answering as evidence**, waiting up to 120 s. A bare `sbx run` still shows the false failure; when
+starting by hand, use the runbook's ~30 s grace window (`sbx exec mcm sh -c 'docker ps'`) or just
+run the launcher.
 
 ### A template carries neither Docker images NOR the egress policy
 
@@ -180,7 +237,8 @@ cold rebuild. Budget accordingly: "recreate ≤ 15 min" covers instantiation plu
 
 Policy rules are scoped per sandbox. A sandbox created from the template gets the **default**
 profile — the forge is unreachable and the first `docker pull` is refused (policy refusals are
-instant, ~1 s; network faults time out — use that difference as a diagnostic clue). The recreate
+instant, ~1 s; network faults time out — use that difference as a diagnostic clue, but note that
+an instant failure is not always a policy refusal). The recreate
 sequence is: instantiate → apply egress policy (from `gen-egress-policy.mjs`) → provision.
 
 ### The workspace foot-gun: `sbx run` mounts the current directory read-write
@@ -205,6 +263,8 @@ DOCKER_HOST=unix:///var/run/docker-host.sock
 
 If you invoke Docker from a context that does not inherit `containerEnv` (a raw `docker exec`
 from the VM into the dev container, a script run before the env is set), pass it explicitly.
+`verify-engine-seam.sh` guards this with a deliberately **slow** (2 s) probe, because a fast one
+would assert nothing.
 
 ### egress triage order is inverted vs the Docker Desktop path
 
@@ -213,7 +273,18 @@ In the sandbox that firewall is **not used** — the enforcement is at the host-
 the VM, and the in-VM firewall would be VM-wide under `--network=host`. When something is blocked:
 **host policy first, in-VM second** — the opposite of the Docker Desktop path. `nc -z <ip> 443`
 reports OPEN against a blocked destination because the proxy accepts the TCP connection and refuses
-at TLS; always probe with a real request.
+at TLS; always probe with a real request. From the dev container a refusal is `rc=6` (NXDOMAIN) and
+`curl` writes `000`, which is curl's placeholder for a request that was never made — read the exit
+code, not the status code.
+
+The VM shell's refusal body changed in `sbx` **v0.47.0**: HTTP 403 with `Approval required for
+<host>:<port>.` instead of `Blocked by network policy`. Because a check keyed to the old marker no
+longer matched, the first harness run after the upgrade reported `example.com is REACHABLE — deny-by-default is NOT enforcing`. That read as a breach and was an instrument fault; both verify
+scripts now accept both bodies. The new body also means **a refusal queues a pending approval**
+(`sbx policy approval ls`). `sbx policy approval respond … allow` is a second way to widen egress
+that **bypasses** the canonical `.devcontainer/egress-allowlist.json` — never use it; add the
+destination to the canonical file and apply the generated rule instead, and use `dismiss` to clear
+the queue.
 
 ### Run git inside the container, not the VM shell — and the UID fix (§7d)
 
@@ -226,11 +297,13 @@ wrote from the VM shell was unwritable by the container user — the failure app
 
 **✅ FIXED 2026-08-17:** `toolchain.Dockerfile` now creates `coder` at **1000:1000** (moving the
 base image's `node` to 1100 first), so both sides share the same uid. The rule above still stands
-for automation scripts — `ssh <sandbox> 'git …'` re-poisons the tree even after the fix. See
+for automation scripts — `ssh <sandbox> 'git …'` re-poisons the tree even after the fix, and
+`.devcontainer/fix-workspace-ownership.sh` still runs at create and at every start to repair an
+already-poisoned tree. See
 [docs/runbooks/devcontainer-sandbox.md §7d](../../docs/runbooks/devcontainer-sandbox.md) for the
 re-pin procedure and the two rejected alternatives.
 
-### `containerEnv` entries leak into the image — credentials must go through the runtime env file
+### `containerEnv` entries leak into the image — credentials go through `--env-file`
 
 Every entry in `containerEnv` becomes an `ENV` instruction in the generated derived image. This is
 not a secret — it is what the devcontainer CLI does by design — but the consequence is a permanent,
@@ -238,11 +311,24 @@ image-layer-level leak: **measured on the derived image on 2026-09-19**, all fou
 were present in `Config.Env` and in **three history layers**, readable by anyone who can read the
 image.
 
-For this reason, the sandbox dev container's credentials are written to a runtime env file by
-`.devcontainer/gen-container-secrets-env.sh` at container-creation time (via `onCreateCommand`),
-not declared in `containerEnv`. If you are tempted to add a secret to `containerEnv` for
-convenience, it will be baked permanently into every layer of the next image build. Use the
-runtime env file instead.
+For this reason the credentials were removed from `containerEnv`. They are now written by
+`.devcontainer/gen-container-secrets-env.sh`, invoked as `initializeCommand` — which the CLI runs
+on the VM *before* the container is created — and passed to the container with `docker run
+--env-file` via `runArgs`. `docker exec` still inherits them; the image does not. `remoteEnv` is not
+an option on this path, because the sandbox is routinely entered by `ssh mcm.sbx` + `docker exec`,
+which `remoteEnv` does not reach. The generator sources `~/.mcm-sandbox-env` as a shell and re-emits
+the bare `KEY=value` form, because `docker --env-file` does no quote processing and would otherwise
+deliver values wrapped in literal apostrophes. Five names are covered
+(`MCM_ANTHROPIC_API_KEY`, `MCM_FIREWORKS_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`,
+`MCM_FORGE_ISSUE_TOKEN`). The one residue that does not go away is that the values remain visible in
+`docker inspect <container>` — inherent, since `docker exec` must be able to see them.
+
+Two consequences when you change the config: **`devcontainer up` does not recreate the container
+when only `runArgs`/`containerEnv` change** — it reattaches to the existing container, reports
+success, and keeps running the old image — so pass `--remove-existing-container` and verify against
+the container (`docker inspect` its `Created`/`Image`), never against the command's exit code. And
+an image built while the credentials were still in `containerEnv` keeps them forever; remove it and
+treat those credentials as exposed.
 
 ---
 
@@ -253,4 +339,5 @@ runtime env file instead.
 - [RTK (Rust Token Killer) token compression](../invariants/rtk-token-compression.md) — mandatory before any assistant session
 - [Testing tiers and what gates a merge](../invariants/testing-tiers.md) — which tiers block a merge
 - [Proposal → spec → plan → tasks → implementation lifecycle](../process/spec-driven-development.md) — SDD mechanics
-- [Containerized dev environment (devcontainer)](../runbooks/devcontainer.md) — wiki summary of the devcontainer runbooks
+- [Dev container on Docker Sandbox microVM](../runbooks/devcontainer-sandbox.md) — wiki summary of the primary environment's runbook
+- [Containerized dev environment (devcontainer)](../runbooks/devcontainer.md) — wiki summary of the retained Docker Desktop runbook

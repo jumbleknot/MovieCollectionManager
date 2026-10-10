@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d2eeeec59478e2b298ce0e1141ce3a75c90260c94e5fc742bc4561001455f065",
+  "pageVersion": "sha256:b47caa21bd32884c462e90174691760b08f43578154cffe54157f1dd0c1a335b",
   "claims": [
     {
       "id": "claim_7d3bd91d26e14adca9d54e0d80d60ae3",
@@ -53,7 +53,7 @@
       "statement": "Four ASGI middlewares capture BFF-supplied per-request values (X-Agent-Config, X-Import-File, X-UI-Snapshot, Authorization Bearer) into request-local ContextVars, and `IdentityAwareAGUIAgent.prepare_stream` bridges them into `config[\"configurable\"]` because a ContextVar set at the ASGI boundary does not reliably propagate into LangGraph's per-node executor tasks. Raw tokens are never checkpointed.",
       "evidence": [
         {
-          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L151-L157",
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L182-L188",
           "version": "repo-lines-v1:sha256:9bb7d43b9ecedac4d33229971b0be124bfa7c5d28ad6bdace54950ea05ff359e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmU5NWQzZmIzNzE0OWRlZWE5ZGViMDY3YWYzMDcyZTJlZTMxOGFhMzM0ZDdlZTY0ZmQ0ZDQ3NTg0M2MwYTI2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJhM2VhZDc0ZTViNmFlYjYwNTdmZjM4MjM0ZjM4ZTVkZDc2MjBmY2JiYzZmZmEwMGE0YjU1ZWU2OTE0NGI5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE2NmU1ZDk4YzQxYjU3YjdmOTgyNTg2N2UxYjY0ZmFmODhkZWE5YTAwNzljMDRkNDMxZTdkNDZkZWNjMDA0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDgyZGY3MDI2N2VhZTdhMjE4NzIyMmQyMDY1NGEzMjQ2MWFiMGE3OWQ3ZjZmMjgwMmY4ZjBhMTU4MWZlOTEwMyJ9"
         },
         {
@@ -428,7 +428,7 @@
     },
     {
       "id": "claim_2fb67622fce04f6c9b1605b3624690ed",
-      "statement": "Since ag-ui-langgraph 0.0.46 (the version `agents/movie-assistant/uv.lock` pins) the runtime wraps its own stream in `LangGraphAgent.run()` with an `except Exception` that yields `RUN_ERROR(message=str(exc))` — the leak 065 FR-010 forbids — and that handler sits inside the `run()` this repository overrides, so a sanitiser placed only at `run()` never sees the exception again. `IdentityAwareAGUIAgent._handle_stream_events` therefore converts one level in, which is what preserves the provider facts (status and provider error type, plus the exception class) in the terminal event; the unit tests replace the base `_handle_stream_events` so the override is what runs over it.",
+      "statement": "Since ag-ui-langgraph 0.0.46 the runtime wraps its own stream in `LangGraphAgent.run()` with an `except Exception` that yields `RUN_ERROR(message=str(exc))` — the leak 065 FR-010 forbids — and that handler sits inside the `run()` this repository overrides, so a sanitiser placed only at `run()` never sees the exception again. `IdentityAwareAGUIAgent._handle_stream_events` therefore converts one level in, which is what preserves the provider facts (status and provider error type, plus the exception class) in the terminal event; the unit tests replace the base `_handle_stream_events` so the override is what runs over it. The committed `agents/movie-assistant/uv.lock` has since moved to 0.0.47 — the lock refresh 0.0.46's leak was blocking (feature 079 / item #641, PR #638) — and the two-seam design is unchanged by that bump.",
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/agui_identity.py#L253-L285",
@@ -439,8 +439,8 @@
           "version": "repo-lines-v1:sha256:4a3e0a3b0ef6c3959e8fd495c84f23d45705ee6f28cceea4d3932c1d54647543:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MzA5NmM3MTZhMTc0ZDQ1MTBiYTUyOWNlZGFlMTkxM2M5NDdkNjRmNWE1OTI4NTNiMzk4MmNiNGVmYjA0YmUwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MTc0NDE3Y2Y3OTU5NWIxMmIzMDI3NzliODA1M2YwNGIyYzhmMmIwMjQwNDFkMDI4OTQ2ZmNlYWQ0OGY1ZTc2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2Y2JjNTY4YWQ1NGFkZDdjNDIyNTViOWJmNTQ3MDhjMjEzYzc2YWQ4YTQ0OGJmMWU4NjRmZGZjNDMyM2NhZDk1In0"
         },
         {
-          "resource": "repo://agents/movie-assistant/uv.lock#L19-L21",
-          "version": "repo-lines-v1:sha256:33e6ccc913386cbb1afad39fb73e796d0c6700ef4ad79efc863cea570a6c466c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE1M2E1MGIxMzFjOGMzMzc2NmY5YTY2NTg2MTBlNjhhZjU1Mzk5ZjhjNmI2OTgxOGYxYjYyY2NkMGE3ZDgwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RhM2JkYmM3ZTdhNzZjMDU0MTNlNDk5MTc5OTBlN2RhNzlhYjQ0MjUwZWVkODU4ODcwMzBmMGVmYTdmYjI4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc5MGFhNTc4MWYzYTQzZDAwNzkxZmM4MmIxN2RiZGRmYTI5MGJjOGExOWZkZjMyYzQzNmY3ZTVkOTY5NTk5YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTljOWM0MjI4ZDZmYWVjNmQwNzUzZTllMmQxOGEwN2IzNzhiYzExN2M5ODI4MmQ0YmE5YmQyMWQ1MWJmODgxNiJ9"
+          "resource": "repo://agents/movie-assistant/uv.lock#L19-L34",
+          "version": "repo-lines-v1:sha256:51e15f3b1720c7bd8417951fb10e7bd9f377b05f4199c6705a5637b38dae155d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTNhNTBiMTMxYzhjMzM3NjZmOWE2NjU4NjEwZTY4YWY1NTM5OWY4YzZiNjk4MThmMWI2MmNjZDBhN2Q4MGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3OTBhYTU3ODFmM2E0M2QwMDc5MWZjODJiMTdkYmRkZmEyOTBiYzhhMTlmZGYzMmM0MzZmN2U1ZDk2OTU5OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1M2YzMjZiYTU4MmNjMmVlZWY3MWE4YTAwNGVlZjQwOTUyMzFhYzc5Y2U2NjRjNjI4MWJlNjg1YmMxYjMzYWUifQ"
         },
         {
           "resource": "repo://specs/079-run-error-sanitiser/plan.md#L23-L53",
@@ -515,10 +515,28 @@
           "version": "repo-lines-v1:sha256:9e354ac7bef50cff8fe6d87a1179d7bd59768a04def08261cd7494b23dc7c8d7:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMDBhNmEzOTA0Y2IxNDhiMjg4YTY3ZWU2ZjFkOTI4N2NhMDQyZGIzNjE0ZmQ3ZTYxM2I2ZGRhY2IyMGI5NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NzNiYzAyZGNhM2QyZGY5OGY5ZDJjMDU2M2YxMzcyMmRjY2NmMjIyYzBjYTAwMWU4ZGQzOWM0YTIyYTQ2MWUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_edb0e65678de48909a2082fcf9bb1e67",
+      "statement": "The facts-preserving half of the terminal-error seam overrides a PRIVATE runtime method, so the design degrades deliberately rather than silently: if a future ag-ui-langgraph renames or stops calling `_handle_stream_events`, `run()`'s outbound guard still prevents the client leak (at the cost of the provider facts, leaving only the fixed content-free message) while the integration test's facts assertion goes red — a regression that surfaces as a red gate rather than a silent leak.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py#L253-L269",
+          "version": "repo-lines-v1:sha256:6ca3dda2ab25ed0e7fac8738c6ec883ef214f0679b0eb8f600ef06b2d41af522:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NWU0OTJhNDg2YTUwOGRmOWIwY2RhYzE1OTIxZTNjZTIzZjI0MWRkYzNhZjI0YmI0MmNkNGVlYTc3YzRhNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5NDQ2MWFjYjU5NzBmZjMxYWY4MWU3ODg4ZjNiN2RlNjgyZTNjMjQ0ODE2NDVlNDRmN2U0MTFmYzU5NWVhN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZDUxZDdkOWNlODY3MjFjZGMxYzI0YjQ5ZDJhNjM3NTU3Y2E0MTgyZmEzMjcyZTRmODVkMGUyYWNhYjJlYzcifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/integration/test_gateway_provider_error.py#L212-L236",
+          "version": "repo-lines-v1:sha256:f4951c611949e0d2bd4cd280e5953b825e850f6d95fe5f919f28045cf16039b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZDIwMTA2YmY1NzZlMWVjOTEyMzczNmE1N2RlOTMzZjE2YmUyNWNhNDg4NWQ1YmMyNzQ3N2Q4YzhhZjkxNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjOTY2MWQwYzk5YWZmYjJmZTQ0Y2U3MWFmMGJiMjY5MjEwZjcyYjEzZDZmNzkwYWY2OTc5Y2Q2NDZmNzAxNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzZmEzNTdlYTFjNTJiNGMyOTMwYmIzNWI2NjI0YmQ0ZjdlZWFjN2ZhN2JmYmU1Nzc0YTMzOGNkZDI0NjEzYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyZGQ3OGNmZTc1NzNkNjdiZWUzYTNiODQxZGU1YzAxZTEzMWFhOWNjNTMwM2VhNmNmNDdjNmJmZjgwNjhlZjIifQ"
+        },
+        {
+          "resource": "repo://specs/079-run-error-sanitiser/plan.md#L55-L57",
+          "version": "repo-lines-v1:sha256:d57c7db002ce0a5249e582e2b8929cad101670f00f78bba717d2618dd573de66:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmM3MzQ4YTUwNWY2ZTUyNDdhNGIyNTg0ZTliOGMyZGEwMWU2NzI0YzVmNTcyODg4NTZhNmYwNjE3YWE1NGZlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzg0MzdjMDFmMDI4Yjg0OWRkN2Q0NzQ4M2FmYWQ1ZWU4ZWQ5MjZlZTdiNTU0MGQ2ZmYxMjY5ZmY4NGUwYzUwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDRjMTdhNTgzZTQ0N2Q4YmRjYTVhMjQ1YThjZjE4ODJhZmI0YzQ0NmU5YzU3ZjM3ZTQ4MTEzODVhZTk3MDU2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWUwNmM2Y2Q3NWJmZmQzZjM3ODZlYmNlNWU0MmRkZjRkMzYxZWVhMDhmZWUxYTU3M2JiNDllNTIzODUwMjhmMyJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-10-04T14:07:00.171Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-10T02:25:55.688Z"
   }
 }
