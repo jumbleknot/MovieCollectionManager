@@ -2817,11 +2817,28 @@ test('proposal: a publish that fails after generation holds the marker and retur
 
 // ── 078 US6: escalation tags in the run record ──────────────────────────────────
 
-test('US6 record: the committed record has no escalations and loads as none (FR-018)', () => {
+test('US6 record: the committed record loads with a well-formed escalations map; a record without one loads as none (FR-018)', () => {
+  // This used to assert the committed record had NO escalations. That was true only until the first
+  // real deadline stop: run 4972 (2026-10-10) tagged runbooks/wiki-maintenance.md, and proposal #708,
+  // branched from that record, went red on a legitimate state. The premise FR-018 actually needs is
+  // that the committed record LOADS, and that every tag in it is the shape the executor reads.
   const root = mkdtempSync(join(tmpdir(), 'wiki-esc-'));
   try {
     mkdirSync(join(root, 'openwiki'), { recursive: true });
     cpSync(join(REPO_ROOT, mod.STATE_FILE), join(root, mod.STATE_FILE));
+    const { escalations } = mod.readRunRecord(root);
+    assert.equal(typeof escalations, 'object');
+    assert.ok(escalations !== null && !Array.isArray(escalations));
+    for (const [key, tag] of Object.entries(escalations)) {
+      assert.match(key, /^[^/]+\/[^/]+\.md$/, `${key} is keyed area/page`);
+      assert.equal(tag.effort, 'low', `${key} escalates to low, the only step`);
+      assert.ok(Number.isInteger(tag.failuresAtLow) && tag.failuresAtLow >= 0, `${key} counts failures at low`);
+    }
+
+    // A record from before US6 has no field at all, and must read as "no tags", never crash.
+    const legacy = JSON.parse(readFileSync(join(root, mod.STATE_FILE), 'utf8'));
+    delete legacy.escalations;
+    writeFileSync(join(root, mod.STATE_FILE), JSON.stringify(legacy));
     assert.deepEqual(mod.readRunRecord(root).escalations, {});
   } finally {
     rmSync(root, { recursive: true, force: true });
