@@ -567,3 +567,60 @@ test('(m7) the success line NAMES the single-declaration relation it just proved
   assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
   assert.match(r.stdout, /root manifest only/i, `the success line does not mention the single declaration: ${r.stdout}`);
 });
+
+// --- (n) lockstep packages are pinned exactly, and @nx/* equals nx (2026-10-09) ------------------
+//
+// MEASURED on PR #695. Renovate's `playwright pin` and `nx monorepo` group rules govern ordinary
+// updates only; lockFileMaintenance re-resolves inside a manifest RANGE, so `^1.59.1` let a lockfile
+// refresh move @playwright/test to 1.64.0 alone, and `^22.6.3` had already moved @nx/playwright to
+// 22.7.12 on an nx 22.7.10 tree. An exact pin is what makes the group rule enforceable.
+
+test('(n) THE BUG: a caret @playwright/test in a nested manifest is rejected', async () => {
+  const { findLockstepPinDrift } = await import('../check-toolchain-consistency.mjs');
+  const root = repo({ pkg: { ...PKG }, manifests: { 'frontend/app/package.json': { devDependencies: { '@playwright/test': '^1.59.1' } } } });
+  const d = findLockstepPinDrift(root);
+  assert.equal(d.length, 1);
+  assert.equal(d[0].file, 'frontend/app/package.json');
+  assert.match(d[0].problem, /pinned EXACTLY/);
+  assert.match(d[0].problem, /lockFileMaintenance/, 'it must name the channel that bypasses the group rule');
+});
+
+test('(n2) a caret @nx/* plugin, and an exact one that disagrees with nx, are both rejected', async () => {
+  const { findLockstepPinDrift } = await import('../check-toolchain-consistency.mjs');
+  const root = repo({ pkg: { ...PKG, devDependencies: { nx: '22.7.10', '@nx/expo': '22.6.3', '@nx/playwright': '^22.6.3' } } });
+  const d = findLockstepPinDrift(root);
+  assert.equal(d.length, 2, JSON.stringify(d));
+  assert.ok(d.some((f) => /@nx\/expo 22\.6\.3 disagrees with nx 22\.7\.10/.test(f.problem)));
+  assert.ok(d.some((f) => /@nx\/playwright .*pinned EXACTLY/.test(f.problem)));
+});
+
+test('(n3) exact, agreeing pins are clean — and non-lockstep @nx-lookalikes are ignored', async () => {
+  const { findLockstepPinDrift } = await import('../check-toolchain-consistency.mjs');
+  const root = repo({
+    pkg: { ...PKG, devDependencies: { nx: '22.7.10', '@nx/expo': '22.7.10', '@nxlv/python': '^21.0.3', '@playwright/test': '1.63.0' } },
+    manifests: { 'frontend/app/package.json': { devDependencies: { '@playwright/test': '1.63.0' } } },
+  });
+  assert.deepEqual(findLockstepPinDrift(root), []);
+});
+
+test('(n4) two different exact @playwright/test pins across manifests are rejected', async () => {
+  const { findLockstepPinDrift } = await import('../check-toolchain-consistency.mjs');
+  const root = repo({
+    pkg: { ...PKG, devDependencies: { '@playwright/test': '1.63.0' } },
+    manifests: { 'frontend/app/package.json': { devDependencies: { '@playwright/test': '1.64.0' } } },
+  });
+  const d = findLockstepPinDrift(root);
+  assert.equal(d.length, 1);
+  assert.match(d[0].problem, /1\.63\.0 and 1\.64\.0/);
+});
+
+test('(n5) THE REAL REPO pins every lockstep package exactly, @nx/* equal to nx', async () => {
+  const { findLockstepPinDrift } = await import('../check-toolchain-consistency.mjs');
+  assert.deepEqual(findLockstepPinDrift(), []);
+});
+
+test('(n6) the success line NAMES the lockstep relation it just proved', () => {
+  const r = spawnSync('node', [GATE], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.match(r.stdout, /lockstep package is pinned exactly/i, r.stdout);
+});

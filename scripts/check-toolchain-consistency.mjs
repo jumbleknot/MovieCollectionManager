@@ -234,6 +234,95 @@ export function findNxPinDrift(root = REPO_ROOT) {
   }];
 }
 
+/** Dependency maps a lockstep declaration can live in. peerDependencies are ranges by design. */
+const DEPENDENCY_MAPS = ['dependencies', 'devDependencies', 'optionalDependencies'];
+
+/** True for the packages Renovate moves AS ONE UNIT and that therefore must be pinned exactly. */
+export const isLockstepPackage = (name) => name === 'nx' || name.startsWith('@nx/') || name === '@playwright/test';
+
+/**
+ * The lockstep comparison itself, kept pure so the selftest can drive it without a filesystem.
+ *
+ * @param {{file:string,line:number,name:string,spec:string}[]} decls every lockstep declaration found
+ * @param {string|null} nxVersion the root manifest's exact `nx` pin, or null when it has none
+ * @returns {{file:string,line:number,problem:string}[]}
+ */
+export function compareLockstepDeclarations(decls, nxVersion) {
+  const exact = /^\d+\.\d+\.\d+$/;
+  const findings = [];
+  for (const d of decls) {
+    if (!exact.test(d.spec)) {
+      findings.push({
+        file: d.file, line: d.line,
+        problem:
+          `${d.name} is declared as ${JSON.stringify(d.spec)} — it must be pinned EXACTLY. Renovate's group rule ` +
+          'moves it in lockstep with its partners, but lockFileMaintenance re-resolves inside a RANGE and no ' +
+          'groupName applies to it, so a range lets a lockfile refresh move this one alone (PR #695: ' +
+          '@playwright/test 1.63.0 -> 1.64.0 without its image, zero tests ran).',
+      });
+      continue;
+    }
+    if (d.name.startsWith('@nx/') && nxVersion && d.spec !== nxVersion) {
+      findings.push({
+        file: d.file, line: d.line,
+        problem:
+          `${d.name} ${d.spec} disagrees with nx ${nxVersion} — the Nx core and its plugins are one release and ` +
+          'move together (`nx monorepo` group). Pin every @nx/* to the nx version.',
+      });
+    }
+  }
+  const playwright = [...new Set(decls.filter((d) => d.name === '@playwright/test' && exact.test(d.spec)).map((d) => d.spec))];
+  if (playwright.length > 1) {
+    const first = decls.find((d) => d.name === '@playwright/test');
+    findings.push({
+      file: first.file, line: first.line,
+      problem: `@playwright/test is pinned to ${playwright.join(' and ')} across manifests — one runner, one version.`,
+    });
+  }
+  return findings;
+}
+
+/**
+ * Every package Renovate moves as one unit must be pinned EXACTLY in every manifest — and the Nx
+ * plugins must equal the Nx core.
+ *
+ * MEASURED 2026-10-09. The `playwright pin` and `nx monorepo` group rules hold their pairs together
+ * for ordinary updates only. `lockFileMaintenance` re-resolves every RANGE inside the manifest and is
+ * not an update of any one package, so no groupName applies to it:
+ *   - PR #695 moved `@playwright/test` (`^1.59.1`) to 1.64.0 while the app-ci image stayed on
+ *     v1.63.0-noble — findPlaywrightPinDrift caught it, after ~35 minutes of app-e2e running zero tests;
+ *   - `@nx/playwright` (`^22.6.3`) had already been moved to 22.7.12 by an earlier refresh, on a tree
+ *     whose `nx` was 22.7.10 and `@nx/expo` 22.6.3 — three Nx versions at once, which nothing checked.
+ * An exact pin leaves a refresh nothing to move, and turns the next version into an ordinary update
+ * that the group rule DOES govern. This reads MANIFESTS rather than the lockfile on purpose: the
+ * lockfile check fires after the drift has happened, this one makes the drift impossible.
+ *
+ * @returns {{file:string,line:number,problem:string}[]}
+ */
+export function findLockstepPinDrift(root = REPO_ROOT) {
+  const decls = [];
+  let nxVersion = null;
+  for (const rel of ['package.json', ...collectNestedManifests(root)]) {
+    const text = readFileSync(join(root, rel), 'utf8');
+    let pkg;
+    try {
+      pkg = JSON.parse(text);
+    } catch {
+      continue; // findNestedPackageManagerDrift already reports an unparseable manifest
+    }
+    const lines = text.split(/\r?\n/);
+    for (const map of DEPENDENCY_MAPS) {
+      for (const [name, spec] of Object.entries(pkg[map] ?? {})) {
+        if (!isLockstepPackage(name)) continue;
+        const idx = lines.findIndex((l) => l.includes(`"${name}"`));
+        decls.push({ file: posixLocation(rel), line: idx === -1 ? 1 : idx + 1, name, spec: String(spec) });
+        if (rel === 'package.json' && name === 'nx') nxVersion = String(spec);
+      }
+    }
+  }
+  return compareLockstepDeclarations(decls, nxVersion);
+}
+
 /** The npm package whose version the Playwright container image must match. */
 const PLAYWRIGHT_PACKAGE = '@playwright/test';
 
@@ -496,6 +585,7 @@ export function findDrift(root = REPO_ROOT) {
 
   findings.push(...findNestedPackageManagerDrift(root));
   findings.push(...findNxPinDrift(root));
+  findings.push(...findLockstepPinDrift(root));
   findings.push(...findPlaywrightPinDrift(root));
   return findings;
 }
@@ -511,10 +601,10 @@ function runScan() {
   if (findings.length) {
     console.error(`✗ toolchain-consistency gate FAILED: ${findings.length} pin(s) disagree:`);
     for (const f of findings) console.error(`  ${f.file}:${f.line} — ${f.problem}`);
-    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by the ROOT `packageManager` and declared nowhere else, and the Playwright image tag must name the version pnpm-lock.yaml resolves.');
+    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by the ROOT `packageManager` and declared nowhere else, the packages Renovate moves as one unit (nx, @nx/*, @playwright/test) are pinned exactly with @nx/* equal to nx, and the Playwright image tag must name the version pnpm-lock.yaml resolves.');
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced and declared in the root manifest only; nx agrees with nx.json installation.version; the Playwright image tag matches the lockfile)');
+  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced and declared in the root manifest only; nx agrees with nx.json installation.version; every lockstep package is pinned exactly and @nx/* equals nx; the Playwright image tag matches the lockfile)');
 }
 
 function selftest() {
@@ -568,11 +658,20 @@ function selftest() {
   t('an ambiguous resolution is REJECTED', comparePlaywrightPins(['1.62.1', '1.60.0'], pinsFor('1.62.1')).length === 1);
   t('neither half present is not drift', comparePlaywrightPins([], []).length === 0);
 
+  // The lockstep pins (2026-10-09, PR #695). Again the case that matters is the REJECTION.
+  const decl = (name, spec, file = 'package.json') => ({ file, line: 1, name, spec });
+  t('exact, agreeing lockstep pins are clean', compareLockstepDeclarations([decl('nx', '22.7.10'), decl('@nx/expo', '22.7.10'), decl('@playwright/test', '1.63.0')], '22.7.10').length === 0);
+  t('THE BUG: a caret @playwright/test is REJECTED', compareLockstepDeclarations([decl('@playwright/test', '^1.59.1')], null).length === 1);
+  t('a caret @nx/* plugin is REJECTED', compareLockstepDeclarations([decl('@nx/playwright', '^22.6.3')], '22.7.10').length === 1);
+  t('an exact @nx/* plugin that disagrees with nx is REJECTED', compareLockstepDeclarations([decl('@nx/expo', '22.6.3')], '22.7.10').length === 1);
+  t('two different exact @playwright/test pins are REJECTED', compareLockstepDeclarations([decl('@playwright/test', '1.63.0'), decl('@playwright/test', '1.64.0', 'a/package.json')], null).length === 1);
+  t('a non-lockstep package is ignored', compareLockstepDeclarations([], '22.7.10').length === 0 && !isLockstepPackage('@nxlv/python') && !isLockstepPackage('@monodon/rust'));
+
   if (fails.length) {
     console.error('✗ toolchain-consistency --selftest FAILED:\n  - ' + fails.join('\n  - '));
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity, Playwright drift rejection)');
+  console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity, Playwright drift rejection, lockstep exact-pin rejection)');
 }
 
 // Same guard idiom as check-override-consistency.mjs / check-sast-findings.mjs, and here it is not

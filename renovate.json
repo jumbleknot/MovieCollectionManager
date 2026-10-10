@@ -931,6 +931,31 @@
     },
     {
       "description": [
+        "STATEFUL DATASTORE MAJORS NEED AN EXPLICIT DASHBOARD TICK — the opensearch (rule above) and langfuse",
+        "approval gate, extended to every database image this repository runs.",
+        "MEASURED 2026-10-09, PR #698: `docker base images (major)` carried clickhouse 25.12 -> 26.6 and redis",
+        "7 -> 8 for the production Langfuse stack and merged on a green CI — but app-e2e never starts the",
+        "observability stack, so green said nothing about either migration. ADR-0002 exists because a stateful",
+        "major landing in a Friday window is how a data migration gets waved through; the same reasoning that",
+        "gated opensearch and langfuse applies to every image below, and nothing listed them.",
+        "Approval, not `allowedVersions`: the requirement is not-by-accident, not never. Patches, minors and",
+        "digest refreshes stay automatic — that is the security patch stream for the running images. The",
+        "observability postgres stays HARD-held below 17 by the rule above; this rule only adds the tick for",
+        "the postgres majors that ARE allowed to move (keycloak, agent-db).",
+        "renovate-workflow.guard.test.mjs asserts every name here requires approval on major and not on patch."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "postgres",
+        "mongodb/mongodb-community-server",
+        "redis",
+        "clickhouse/clickhouse-server"
+      ],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": [
         "LANGFUSE IS PINNED BY VERSION, NOT BY `:4` \u2014 the floating-tag cooldown treadmill (2026-10-02, item #642).",
         "On `:4@sha256` Renovate can only offer the CURRENT digest of `:4`, aged against `:4`'s own",
         "tag_last_pushed. Langfuse re-pushed `:4` on 2026-09-23, 09-24, 09-25, 09-29, 09-30 and 10-01, so the",

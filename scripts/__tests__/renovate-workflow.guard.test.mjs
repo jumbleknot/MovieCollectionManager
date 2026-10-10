@@ -3133,3 +3133,46 @@ test('(#486) the allocation decision is RECORDED, not just enacted', () => {
   assert.match(raw, /item #486/, 'renovate.json must record WHY the slots are allocated as they are');
   assert.ok(rulesWithPriority().length >= 3, 'expected the lockfile rule plus the two explicit resets');
 });
+
+// ── 2026-10-09: stateful datastore majors (PR #698) ─────────────────────────────────────────────────
+// `docker base images (major)` merged clickhouse 25.12 -> 26.6 and redis 7 -> 8 for the production
+// Langfuse stack on a green CI that never starts that stack. Every database image now needs a tick on
+// a MAJOR, exactly like opensearch and langfuse — and keeps its patch stream automatic.
+const STATEFUL_DATASTORES = ['postgres', 'mongodb/mongodb-community-server', 'redis', 'clickhouse/clickhouse-server'];
+
+test('(2026-10-09) every stateful datastore MAJOR requires dashboard approval; its PATCH does not', () => {
+  for (const depName of STATEFUL_DATASTORES) {
+    assert.equal(
+      resolvedRuleValue(heldImage(depName, 'major'), 'dependencyDashboardApproval'),
+      true,
+      `a ${depName} MAJOR no longer requires dashboard approval — a database major is a data migration, and ` +
+        'app-e2e does not exercise every stack it runs in (PR #698 merged clickhouse/redis majors on green).',
+    );
+    assert.equal(
+      resolvedRuleValue(heldImage(depName, 'patch'), 'dependencyDashboardApproval'),
+      undefined,
+      `a ${depName} PATCH requires dashboard approval — the within-major patch stream is the security patch ` +
+        'stream for the running image and must stay automatic.',
+    );
+  }
+});
+
+test('(2026-10-09) the shared observability postgres is HARD-held below 17; other postgres pins are not', () => {
+  // langfuse-postgres-shared-pin.guard (FR-005) rejects any move off 16 here; PR #698 proposed 18 because
+  // nothing told Renovate. The ceiling must stay scoped by FILE — keycloak and agent-db are already on 18.
+  for (const packageFile of [
+    'infrastructure-as-code/docker/observability/compose.yaml',
+    'infrastructure-as-code/docker/observability/compose.prod.yaml',
+  ]) {
+    assert.equal(
+      resolvedAllowedVersions({ ...heldImage('postgres', 'major'), packageFile }),
+      '<17',
+      `${packageFile}: the shared Langfuse/Unleash postgres lost its <17 ceiling`,
+    );
+  }
+  assert.equal(
+    resolvedAllowedVersions({ ...heldImage('postgres', 'major'), packageFile: 'infrastructure-as-code/docker/keycloak/compose.yaml' }),
+    null,
+    'the observability postgres ceiling leaked onto keycloak, which is already on 18 — scope it by matchFileNames',
+  );
+});
