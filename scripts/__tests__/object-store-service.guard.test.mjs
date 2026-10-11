@@ -4,12 +4,12 @@
 // Each clause is here because the obvious alternative was measured to fail (research.md):
 //
 //   S1  digest-pinned, the Alpine tag, ONE digest everywhere — Renovate moves them together, and a
-//       floating tag is how the old Nx-cache MinIO froze at whatever quay last received (R14).
+//       floating tag is how the old host-managed Nx-cache store froze at whatever quay last received (R14).
 //   S2  NO `user:` key. A fresh named volume inherits the image's /data (uid 10001, 0750); any other
 //       uid is FATAL at startup — and CI's backup destination is a fresh volume on every run (R5).
 //   S3  RUSTFS_ACCESS_KEY / RUSTFS_SECRET_KEY, the secret fail-fast `${VAR:?…}`. The image's own
 //       answer to a MISSING credential is a warning and the well-known default `rustfsadmin` (R4).
-//   S4  a real readiness probe, RustFS's own path, so nothing keeps a MinIO-compat shim alive (R7).
+//   S4  a real readiness probe, RustFS's own path, so nothing keeps a compatibility shim alive (R7).
 //   S5  bucket init with credentials referenced as `$$VAR` from the container's environment and fed
 //       to curl on stdin — never `${…}` interpolated into argv, where `docker inspect` and `ps` read
 //       it (the defect fixed in 56983c75). Prod keeps the "stay alive, healthy on a marker" shape

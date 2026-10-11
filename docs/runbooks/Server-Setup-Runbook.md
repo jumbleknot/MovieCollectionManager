@@ -661,7 +661,7 @@ and across reboots. Replace `1001` with `id -u ci` if different.
 
 ---
 
-## Phase 8 — Self-hosted Nx remote cache (MinIO + custom cache server)
+## Phase 8 — Self-hosted Nx remote cache (RustFS + custom cache server)
 
 Speeds polyglot affected-builds across runs without Nx Cloud.
 
@@ -670,44 +670,97 @@ Speeds polyglot affected-builds across runs without Nx Cloud.
 > The current method is Nx's built-in **custom remote cache server** (OpenAPI spec, Nx ≥ 20.8):
 > the client needs only two env vars pointing at a server that implements the spec. We run the
 > open-source Rust [`nx-cache-server`](https://github.com/nxcite/nx-cache-server) (<4 MB RAM, zero
-> telemetry) backed by MinIO. All on the **prod** daemon.
+> telemetry) backed by an S3 object store — **RustFS** since feature 080. All on the **prod** daemon.
 
-**Stage 1 — MinIO + auto-created bucket** (`/home/prod/minio/`):
+**Stage 1 — RustFS + auto-created bucket** (`/home/prod/rustfs/`):
+
+The same pinned image every git-tracked RustFS instance uses
+(`infrastructure-as-code/docker/observability/compose.prod.yaml` carries the pin; Renovate does not see
+this host-managed file, so copy the digest from there when it moves). It runs as the image's own uid
+(10001) with **no `user:`**, logs to stdout, has its **console disabled**, and publishes **only** the S3
+port — the old store's `0.0.0.0:9001` console publish is gone (contract S1–S8 of feature 080).
 
 ```bash
-prod$ mkdir -p ~/minio && cd ~/minio
-prod$ printf 'MINIO_ROOT_USER=nxcache\nMINIO_ROOT_PASSWORD=%s\n' "$(openssl rand -base64 24)" > .env
+prod$ mkdir -p ~/rustfs && cd ~/rustfs
+prod$ printf 'RUSTFS_ACCESS_KEY=nxcache\nRUSTFS_SECRET_KEY=%s\n' "$(openssl rand -hex 24)" > .env
 prod$ chmod 600 .env
 ```
 
 ```yaml
 # compose.yaml
 services:
-  minio:
-    image: quay.io/minio/minio
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
+  rustfs:
+    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    restart: always
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-    ports: ["9000:9000", "9001:9001"]
-    volumes: [minio-data:/data]
-  createbucket:                      # mc sidecar — recent MinIO consoles can't create buckets
-    image: quay.io/minio/mc
-    depends_on: [minio]
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?set in .env}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:?set in .env}
+      RUSTFS_OBS_LOG_DIRECTORY: ""
+      RUSTFS_CONSOLE_ENABLE: "false"
+    ports: ["9000:9000"]
+    volumes: [data:/data]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:9000/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+  createbucket:                      # same image (it ships curl); PUT of an existing bucket is 200
+    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    depends_on:
+      rustfs: {condition: service_healthy}
     restart: "no"
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-    entrypoint: >
-      /bin/sh -c "until mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD}; do sleep 2; done; mc mb -p local/nx-cache; echo bucket ready;"
+      S3_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?set in .env}
+      S3_SECRET_KEY: ${RUSTFS_SECRET_KEY:?set in .env}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        printf 'user = "%s:%s"\n' "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" \
+          | curl -fsS -K - --aws-sigv4 "aws:amz:us-east-1:s3" -o /dev/null -X PUT http://rustfs:9000/nx-cache \
+          && echo bucket ready
 volumes:
-  minio-data:
+  data:
+    external: true                   # created by the migration tool's copy (below), or empty on a new host
+    name: nx-cache-rustfs-data
 ```
 ```bash
+# NEW host only (no previous cache store): create the volume empty. Otherwise see "Migrating" below.
+prod$ docker volume create nx-cache-rustfs-data
 prod$ docker compose up -d
 prod$ docker compose logs createbucket     # ends with "bucket ready"
 ```
+
+**Migrating the existing store (feature 080, contract M8).** Until this is done the host still runs
+the previous store from `/home/prod/minio/` on the volume `minio_minio-data`. The data is rebuildable
+(a cold cache costs time, not correctness), so recreating empty is an accepted alternative — but the
+default is the same in-place, verified copy as Langfuse. From a checkout of this repository, with the
+wrapper described in [prod-control-tower.md](prod-control-tower.md):
+
+```bash
+prod$ export MIGRATION_DIR=$HOME/080-nx-cache
+prod$ systemctl --user stop nx-cache                             # M1 — the only writer
+prod$ read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=nxcache   # the OLD store's secret, from /home/prod/minio/.env
+prod$ scripts/object-store-migration.sh manifest --endpoint <old store service URL, port 9000> \
+        --network <the old compose project's network> --out manifest.json                 # M2
+prod$ (cd /home/prod/minio/ && docker compose stop)                                      # M3
+prod$ scripts/object-store-migration.sh inventory --volume minio_minio-data --out inventory.json
+prod$ scripts/object-store-migration.sh copy --from minio_minio-data --to nx-cache-rustfs-data --out copy.json --apply
+prod$ cd ~/rustfs && docker compose up -d                                                # Stage 1, on the copy
+# update the two credential lines in ~/nx-cache/nx-cache.env to the NEW pair (Stage 2), then:
+prod$ systemctl --user start nx-cache
+prod$ read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=nxcache   # the NEW store's secret, from ~/rustfs/.env
+prod$ scripts/object-store-migration.sh verify --endpoint http://rustfs:9000 --network rustfs_default \
+        --manifest manifest.json --out parity.json                                       # M5
+```
+
+Read the old store's service name and network with `docker ps` / `docker network ls` first (they are
+host state, not in git): confirm the volume by ownership **and** contents (feature 070 trap 1). Then
+run one CI build twice and look for `Nx read the output from the remote cache` (SC-010). Rollback:
+`systemctl --user stop nx-cache`, `docker compose up -d` in `/home/prod/minio/`, restore the old
+credential lines, start `nx-cache`. If `backup.sh` captures `/home/prod/minio/`, point it at
+`~/rustfs/` too.
 
 **Stage 2 — the cache server** (binary + systemd-user, like the runner):
 
@@ -718,14 +771,14 @@ prod$ curl -s https://api.github.com/repos/nxcite/nx-cache-server/releases/lates
      | grep -oP '"browser_download_url":\s*"\K[^"]+' | grep 'linux-x86_64'
 prod$ curl -L -o nx-cache-aws "<paste the linux-x86_64 url>" && chmod +x nx-cache-aws
 
-# token clients will use, + env file (pulls MinIO creds from minio/.env):
-prod$ source ~/minio/.env
+# token clients will use, + env file (pulls the store's creds from rustfs/.env):
+prod$ source ~/rustfs/.env
 prod$ TOKEN=$(openssl rand -hex 32); echo "SAVE THIS ACCESS TOKEN: $TOKEN"
 prod$ cat > ~/nx-cache/nx-cache.env <<EOF
 S3_BUCKET_NAME=nx-cache
 SERVICE_ACCESS_TOKEN=$TOKEN
-AWS_ACCESS_KEY_ID=$MINIO_ROOT_USER
-AWS_SECRET_ACCESS_KEY=$MINIO_ROOT_PASSWORD
+AWS_ACCESS_KEY_ID=$RUSTFS_ACCESS_KEY
+AWS_SECRET_ACCESS_KEY=$RUSTFS_SECRET_KEY
 AWS_REGION=us-east-1
 S3_ENDPOINT_URL=http://127.0.0.1:9000
 PORT=3010
@@ -996,8 +1049,8 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 > - **Keycloak** Postgres (`pg_dump -d keycloak`) and **agent-db** Postgres (`pg_dump -d agent_db`) — `docker exec … pg_dump` over the container's local socket.
 > - **mc-service Mongo** (`mongodump` of `mc_db`, the movie data) and **BFF Mongo** (`bff_db`) — `docker exec … mongodump` inside each Mongo container. The Mongo connection URIs (which carry creds) are read **live from the running app containers** at backup time via a `cenv()` helper, so **no secret is stored in the script** (host rewritten to `127.0.0.1`).
 > - Each app-DB dump is best-effort and drops a `DUMP-FAILED-<name>` marker in the snapshot on error, so an incomplete backup is visible instead of silent.
-> - **Intentionally NOT dumped:** langfuse / unleash / audit-opensearch (telemetry), redis caches, MinIO nx-cache (all rebuildable).
-> - ⚠️ **Gotcha that bit us:** the *original* `backup.sh` dumped only Forgejo + Komodo + the minio/nx-cache **dirs** — it did **not** dump the app databases. A reboot corrupted Forgejo's Postgres and Forgejo happened to be the only thing with a real backup. **Whenever a stateful service is added, add its dump to `backup.sh`.**
+> - **Intentionally NOT dumped:** langfuse / unleash / audit-opensearch (telemetry), redis caches, the RustFS nx-cache store (all rebuildable).
+> - ⚠️ **Gotcha that bit us:** the *original* `backup.sh` dumped only Forgejo + Komodo + the object-store/nx-cache **dirs** — it did **not** dump the app databases. A reboot corrupted Forgejo's Postgres and Forgejo happened to be the only thing with a real backup. **Whenever a stateful service is added, add its dump to `backup.sh`.**
 >
 > **Restore (Forgejo Postgres — proven 2026-07-05).** Only the PG volume was corrupt; repos/registry live on a separate, intact volume. Extract `forgejo-db.sql` from the `forgejo dump` archive in restic, reset the DB (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on a fresh volume), then **load the SQL twice, ignoring errors** — the `forgejo dump` SQL is xorm-generated and **not dependency-ordered**, so pass 1 creates tables + data with some index/`setval`-before-table errors, and pass 2 fills the missing indexes/sequences while re-`INSERT`s bounce off primary keys (no duplicate data). Forgejo runs migrations on boot and self-heals.
 >
@@ -1148,7 +1201,7 @@ The first **validation reboot** (2026-07-08) did not come back clean and exposed
 | Cockpit (host admin) | host | `https://server.tailnet.ts.net:9090` |
 | Forgejo (SSOT + registry) | prod | `http://server.tailnet.ts.net:3000` |
 | Komodo (CD) | prod | `http://server.tailnet.ts.net:9120` |
-| MinIO (Nx cache) | prod | `http://server.tailnet.ts.net:9001` |
+| RustFS (Nx cache) | prod | no UI — console disabled; S3 API on `:9000`, consumed on loopback by `nx-cache` (feature 080) |
 | CI Forgejo runner | ci | (no UI — status in Forgejo) |
 | MCM production stack | prod | Komodo ResourceSync stacks from `infrastructure-as-code/komodo/stacks.toml`: `prod-auth` → `prod-mc-service` → `prod-mcm-bff` → `prod-movie-assistant` (+ `prod-audit`/`prod-observability`/`prod-vault`); local-dev equivalent: named stacks under `stacks/` (feature 020), `auth` + `mcm` (+ `audit`/`observability`), `up-auth` → `up-mcm` |
 | Public app (BFF) | prod | `https://mcm.${BASE_DOMAIN}` (Cloudflare Tunnel) |

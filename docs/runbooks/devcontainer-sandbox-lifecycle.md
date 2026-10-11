@@ -214,7 +214,7 @@ keeps a manually stopped container down across daemon restarts, so this is effec
 
 ```bash
 sbx exec mcm sh -c 'docker stop langfuse-web langfuse-worker langfuse-clickhouse \
-  langfuse-minio langfuse-postgres langfuse-redis unleash-service unleash-postgres otel-lgtm'
+  langfuse-rustfs langfuse-postgres langfuse-redis unleash-service unleash-postgres otel-lgtm'
 ```
 
 Bring them back with the documented `nx up-*` targets. This is now a **speed** choice, not a

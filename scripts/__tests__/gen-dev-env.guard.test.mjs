@@ -155,6 +155,51 @@ test('US6: an EXISTING .env.local keeps its developer-customised keys (no regres
   }
 });
 
+// ─── feature 080 — a SEEDED default that named the retired backup S3 host is MIGRATED ────────────
+//
+// BACKUP_TEST_S3_INTERNAL_ENDPOINT and BACKUP_ALLOWED_DESTINATION_HOSTS are seeded-once defaults in
+// .env.local: never rewritten, so a developer who points them elsewhere keeps that. Feature 080 renamed
+// the S3 test destination, and seed-once then means every EXISTING dev box keeps sending the BFF a
+// host that no longer exists — while .env.docker (fully generated) allows only the new one. The
+// suites would fail on "destination not allowed", which reads as a guard bug. So a value that is
+// EXACTLY the old generated default is upgraded; anything a person wrote is left alone.
+const RETIRED_S3_HOST = 'mcm-bff-backup-minio'; // the pre-080 container name, as old .env.local files hold it
+
+test('080: an EXISTING .env.local holding the PRE-080 seeded defaults is migrated to the RustFS host', () => {
+  const root = miniRepo();
+  try {
+    writeFileSync(
+      ENV_LOCAL(root),
+      [
+        '# hand-written',
+        `BACKUP_TEST_S3_INTERNAL_ENDPOINT=http://${RETIRED_S3_HOST}:9000`,
+        `BACKUP_ALLOWED_DESTINATION_HOSTS=localhost,127.0.0.1,${RETIRED_S3_HOST},mcm-bff-backup-webdav`,
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+    runGenerator(root);
+    const written = readFileSync(ENV_LOCAL(root), 'utf8');
+    assert.match(written, /^BACKUP_TEST_S3_INTERNAL_ENDPOINT=http:\/\/mcm-bff-backup-rustfs:9000$/m);
+    assert.match(written, /^BACKUP_ALLOWED_DESTINATION_HOSTS=localhost,127\.0\.0\.1,mcm-bff-backup-rustfs,mcm-bff-backup-webdav$/m);
+    assert.equal(written.includes(RETIRED_S3_HOST), false, 'the retired host survived the migration');
+    assert.equal((written.match(/^BACKUP_TEST_S3_INTERNAL_ENDPOINT=/gm) ?? []).length, 1, 'rewritten in place, not duplicated');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('080: a DEVELOPER-CUSTOMISED backup endpoint is NOT touched by that migration', () => {
+  const root = miniRepo();
+  try {
+    writeFileSync(ENV_LOCAL(root), 'BACKUP_TEST_S3_INTERNAL_ENDPOINT=http://my-own-s3:9000\n', 'utf8');
+    runGenerator(root);
+    assert.match(readFileSync(ENV_LOCAL(root), 'utf8'), /^BACKUP_TEST_S3_INTERNAL_ENDPOINT=http:\/\/my-own-s3:9000$/m);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ─── item #395 — a STALE credential must be detected, not reported as synced ─────────────────────
 //
 // Sibling of the case above, and the harder one. That defect was "the generator does not WRITE a

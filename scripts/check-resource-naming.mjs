@@ -44,7 +44,7 @@ const RETIRED_KEYS = new Set([
   'agent-gateway', 'agent-gateway-metro', 'agent-db', 'movie-mcp', 'spreadsheet-mcp',
   'web-api-mcp', 'opa', 'unleash', 'vault', 'opensearch', 'keycloak-db',
   // Feature 080 — the object stores renamed to RustFS. Naming the dead keys is the mechanism, which is
-  // why this is the one live line the no-MinIO guard exempts (contracts/no-minio-guard.md G2).
+  // why this is the one live line the no-minio-references.guard.test.mjs exempts (feature 080, G2).
   'langfuse-minio', 'langfuse-minio-init', 'mcm-bff-backup-minio', 'mcm-bff-backup-minio-init',
 ]);
 const APPROVED_NETWORKS = new Set([
