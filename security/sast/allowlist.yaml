@@ -260,6 +260,35 @@
   addedBy: "claude (operator-approved, steve)"
   expiry: "2026-12-01"
 
+# ── 2026-10-10: braces GHSA-vfj7-8cjw-p6xm in tools/openwiki-generator (item #721) ──────────────────
+# Operator-approved 2026-10-11 (steve). Not the root entry above re-used: the root entry is anchored at
+# `^braces@` and so, correctly, does not reach this workspace's findings (`<workspace>:pkg@version`).
+# This tree was first audited by item #721, and this finding was there the moment it was.
+#
+# Reachability, MEASURED 2026-10-10, and it is NOT the root entry's "no input path": here there IS one.
+# braces@3.0.3 arrives via openwiki@0.7.1 > deepagents@1.13.2 > micromatch@4.0.8 (and > fast-glob@3.3.3
+# > micromatch). openwiki's agent backend (OpenWikiLocalShellBackend) extends deepagents'
+# LocalShellBackend, whose `glob` and `grep` tools pass the MODEL's tool-call arguments to fast-glob /
+# micromatch.isMatch — so the pattern is model-chosen, and the model reads repository content.
+# Measured against the installed tree: a ~20 KB pattern `{a,` x5000+ ... `}` x5000+ takes 0.4 s; at
+# ~40 KB the V8 regexp compiler aborts the WHOLE PROCESS (FATAL ERROR: RegExpCompiler Allocation failed
+# — out of memory, exit 134), uncatchable. Patterns over 65536 chars are refused by micromatch itself.
+#
+# Why accepting it is proposed anyway: the impact is availability of ONE unattended, non-required,
+# non-production job — the wiki-maintain generator dies, the run fails, and the next merge re-triggers
+# it. No confidentiality or integrity effect: an abort prints a native stack trace, not the
+# environment, and nothing is written. Triggering it needs the model to emit a ~40 KB nested-brace
+# glob, i.e. prompt injection through content already merged to `main`, which is reviewed. No patched
+# braces exists (<= 3.0.3; 3.0.3 is latest), and deepagents pins micromatch ^4, so there is no
+# lockfile lever either. Version-keyed and on the 2026-12-01 cohort like the root entry: a new braces
+# version, or the date, re-blocks it for a fresh look.
+- scanner: "pnpm-audit"
+  id: "GHSA-vfj7-8cjw-p6xm"
+  locationPattern: "^tools/openwiki-generator:braces@3\\.0\\.3$"
+  justification: "Operator-approved 2026-10-11 (item #721). No patched braces exists (<= 3.0.3; 3.0.3 is latest). Reached via openwiki@0.7.1 > deepagents@1.13.2 > micromatch@4.0.8 (also via fast-glob@3.3.3). REACHABLE, measured 2026-10-10: deepagents' glob/grep tools pass model-chosen patterns to micromatch, and a ~40 KB nested-brace pattern aborts the node process (V8 RegExpCompiler OOM, exit 134). Accepted as availability-only impact on the unattended, non-required wiki-maintain job: the run fails and the next merge re-triggers it; no data is read or written, and triggering needs prompt injection via content already merged to main. No lockfile lever (deepagents requires micromatch ^4)."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-12-01"
+
 # ── @graphql-tools/utils GHSA-7mx3-vvmw-hjmv entry: DELETED 2026-10-09 (item #674) ───────────────────
 # Discharged by the first acceptance route item #674 named: upstream moved, and a lockfile refresh
 # carried it. graphql-yoga 5.24.4 and @graphql-yoga/plugin-defer-stream 3.24.4 (published 2026-10-08)
