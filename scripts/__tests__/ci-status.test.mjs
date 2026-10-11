@@ -169,7 +169,7 @@ test('(h2) bundleJobName resolves a real check to its job and a narrow status to
   assert.equal(bundleJobName('guardrails / naming'), 'naming');
   assert.equal(bundleJobName('app-ci / app-e2e (pull_request)'), 'app-e2e');
   assert.equal(bundleJobName('infra-image-scan / infra-image-scan (push)'), 'infra-image-scan');
-  assert.equal(bundleJobName('minio-image / build-publish (push)'), 'build-publish');
+  assert.equal(bundleJobName('devcontainer-image / build-publish (push)'), 'build-publish');
 
   // Narrow statuses a job posts about ITSELF by curl (items #418, #485). No ` / `, deliberately —
   // a separator-less context cannot match the required glob `infra-image-scan / infra-image-scan*`,

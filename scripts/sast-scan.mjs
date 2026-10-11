@@ -43,7 +43,7 @@ const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs|py)$/i;
 const WORKFLOW_PATH_RE = /^\.(?:forgejo|github)\/workflows\/[^/]+\.ya?ml$/i;
 // Dockerfiles, for the same reason and by the same measurement (item #426). A Dockerfile has NO
 // EXTENSION, so it matched neither pattern above and a pull request ADDING one was gated on nothing —
-// observed, not reasoned: PR #422 added infrastructure-as-code/docker/minio/Dockerfile, its
+// observed, not reasoned: PR #422 added feature 069's object-store Dockerfile (since deleted), its
 // `guardrails / sast` was a real 3m30s run that PASSED, and the post-merge full scan on main then
 // failed on `dockerfile.security.missing-user-entrypoint`. main stayed red until PR #425 landed the
 // accepted-risk entry. A genuinely unwanted finding would have merged just as silently.
@@ -52,7 +52,7 @@ const WORKFLOW_PATH_RE = /^\.(?:forgejo|github)\/workflows\/[^/]+\.ya?ml$/i;
 //   1. The rule fires under the packs ALREADY configured — `dockerfile.*` arrives with the existing
 //      five, so this needed no new --config. Handing Semgrep the file was the whole gap.
 //   2. Noise is nil. The five packs over all eight first-party Dockerfiles produced exactly ONE
-//      finding (the already-accepted minio one) and zero Medium/Low, so this class gates without a
+//      finding (the already-accepted object-store one) and zero Medium/Low, so this class gates without a
 //      warning tax.
 //
 // Matches `Dockerfile`, `Dockerfile.prod`, `toolchain.Dockerfile` — the three spellings present here

@@ -111,8 +111,7 @@
 #   openpolicyagent/opa 1.20.1 .. v1.20.1 is latest (2026-08-28) — postdates the fix yet still ships
 #                                 x/crypto 0.54.0, so upstream has not picked it up
 #   grafana/otel-lgtm 0.32.0 .... v0.32.0 is latest (2026-08-28) — same
-#   minio/mc .................... already on the latest RELEASE tag
-#   minio/minio ................. a newer tag exists (RELEASE.2025-10-15) but STILL predates the fix
+#   (two date-tagged object-store images, since retired, were also listed here)
 #   hashicorp/vault 1.18 ........ deliberately pinned (feature 036); already carries three entries
 #   mongodb-community-server .... deliberately pinned on 8.0.8 (feature 036)
 # Remediation for all of the above is an UPSTREAM REBUILD against x/crypto 0.55.0, which is already
@@ -171,133 +170,20 @@
 # allowlist-expiry run. Deleting is also the direction that restores blocking — if the advisory
 # returns on a later opa, it re-blocks.
 
-# ── minio/minio and minio/mc: ALL SIX ENTRIES REMOVED 2026-09-11 (feature 069, item #420) ─────────
-# Four seed entries (CVE-2025-68121 and CVE-2026-33186 on each image) and two item-329 entries
-# (CVE-2026-56854 on each) are gone, because the images they key on left the pulled set entirely.
+# ── The object-store image entries: ALL FOUR REMOVED with feature 080 (item #560) ─────────────────
+# Feature 069 built the Langfuse/backup object store from source and carried four entries here for it:
+# CVE-2026-33186 (grpc v1.72.0, an indirect dependency upstream had frozen) and the 2026-09-16
+# amqp091-go cohort CVE-2026-77405 / -77408 / -77411. Upstream had stopped releasing eleven months
+# before those advisories were published, so no bump could ever discharge them — which is why feature
+# 080 replaced the image with upstream rustfs/rustfs (0 fixable Critical at its pin, measured) rather
+# than renewing the entries. Deleted in the SAME change that removed the last compose reference.
 #
-# MinIO deleted both repositories from Docker Hub on 2026-09-11 and had already moved the community
-# edition to source-only distribution in October 2025, so no registry receives updates any more. We
-# now build our own image from source (infrastructure-as-code/docker/minio/Dockerfile) and reference
-# it as ${REGISTRY_HOST}/jumbleknot/minio. These keys can never match again.
-#
-# NOT RE-KEYED TO THE NEW IMAGE, DELIBERATELY. Whether the from-source build still carries these
-# advisories is an empirical question the first real sweep answers — and it plausibly does not:
-# CVE-2025-68121 is a Go STDLIB finding that exists because upstream shipped an old toolchain, and we
-# now choose our own (golang:1.25-alpine). Writing a suppression before observing the finding would
-# suppress something never seen, and would hide exactly the improvement this feature was built for.
-# If a Critical does appear on our image, triage it then, on its merits, with evidence attached.
-#
-# Deletion rather than expiry, per item #303: an entry matching nothing does not age out quietly — it
-# fails under UNMATCHED ENTRIES and reddens the weekly allowlist-expiry run.
-
-# ── OUR OWN from-source MinIO image, triaged 2026-09-11 (feature 069, item #420) ──────────────────
-# Written only AFTER observing the finding, never before. The entries for the deleted upstream images
-# were deliberately not re-keyed to this one, because whether a from-source build carries the same
-# advisories is an empirical question — and the answer turned out to be "one of them, not both".
-#
-# WHAT THE FIRST SCAN OF OUR IMAGE ACTUALLY FOUND (minio-image run 3123):
-#
-#   CVE-2025-68121  Go stdlib     — ABSENT. Present on the upstream image, and on postgres, mongodb
-#                                   and vault, because those ship an old Go. We choose our builder
-#                                   (golang:1.25-alpine), so this one is a build input, not a
-#                                   suppression. This is the feature's central claim, confirmed.
-#   CVE-2026-33186  grpc v1.72.0  — PRESENT, and not fixable by anything under our control.
-#
-# WHY AN ENTRY AND NOT A BUMP, checked rather than assumed (2026-09-11):
-#   minio RELEASE.2025-09-07T16-13-09Z  go.mod pins google.golang.org/grpc v1.72.0 (indirect)
-#   minio RELEASE.2025-10-15T17-29-55Z  go.mod pins google.golang.org/grpc v1.72.0 (indirect)  <- newest
-#   mc    RELEASE.2025-08-13T08-35-41Z  go.mod pins google.golang.org/grpc v1.71.0 (indirect)
-#   fix requires >= 1.79.3
-# So even the newest upstream release — the one titled "Security/CVE" — does not clear it. It is an
-# INDIRECT dependency of upstream's module graph; choosing our Go toolchain cannot move it.
-#
-# CONSIDERED AND REJECTED: forcing it with `go mod edit -replace google.golang.org/grpc@v1.79.3`. That
-# rewrites upstream's dependency graph on our own initiative, eight minor versions forward, on a
-# service holding production object data — a much larger change than the advisory warrants, and one
-# needing its own verification. Revisit if the advisory's exploitability against MinIO's actual use of
-# grpc is established, or if upstream bumps it.
-#
-# Same advisory the deleted upstream images carried as seed entries, so this is continuity of an
-# existing accepted risk, not a new one. Internal-only (Langfuse object store, not internet-facing).
-# Time-boxed; DELETE when a MinIO release ships grpc >= 1.79.3 rather than renewing the date.
-# ── The 2026-09-16 amqp091-go cohort, on OUR from-source MinIO image (item #560) ──────────────────
-# Three CRITICALs in github.com/rabbitmq/amqp091-go v1.10.0 (fix 1.13.0), all published 2026-09-16:
-#   CVE-2026-77405  missing explicit TLS minimum version in the URI parser
-#   CVE-2026-77408  silent data truncation / state corruption via a shortstr integer overflow
-#   CVE-2026-77411  protocol desynchronization and frame injection via an integer overflow in readLongstr
-#
-# THE SAME THREE ADVISORIES already carry entries above for grafana/otel-lgtm, added by the 2026-09-18
-# Renovate window. This is the same cohort reaching a second image by a different route — otel-lgtm
-# through otelcol-contrib's rabbitmq receiver, MinIO through its AMQP event-notification target — so
-# this continues an already-triaged accepted risk rather than opening a new question.
-#
-# HOW IT SURFACED, and how long it went unseen. `minio-image.yml` gates its own publish on this scan,
-# and its weekly cron went red on 2026-09-18 (run 3518) and every run since — 3947, 3960, 3979, and
-# the post-merge run on `main`. Nothing reported it: the scheduled run posts NO commit status, the
-# health digest does not read this workflow, and on a pull request `minio-image / build-publish` is
-# ADVISORY, so a red never blocks and nothing summarises it. Two weeks of a red gate on `main`, in
-# silence. That visibility gap is item #560's other half and is NOT fixed by this entry.
-#
-# NO UPSTREAM RELEASE CLEARS IT — measured at the source, not inferred (2026-09-26):
-#   RELEASE.2025-09-07T16-13-09Z  go.mod: amqp091-go v1.10.0   <- our pin
-#   RELEASE.2025-10-15T17-29-55Z  go.mod: amqp091-go v1.10.0   <- the NEWEST release
-#   master                        go.mod: amqp091-go v1.10.0
-# `curl raw.githubusercontent.com/minio/minio/<ref>/go.mod | grep amqp091-go`, three refs, one answer.
-#
-# AND THE STRUCTURAL REASON IT WILL NOT CHANGE BY WAITING: MinIO's last community release is
-# 2025-10-15, **eleven months BEFORE these advisories were published**. Community edition moved to
-# source-only and then stopped releasing; there is no upstream cadence left to deliver a fix. This is
-# criterion 1 of the `docs/runbooks/renovate.md` §4 rule in its strongest form — not "the wait is
-# long", but "no wait can ever satisfy it".
-#
-# WHY THE RISK IS ACCEPTED. All three defects are in the AMQP **client**, reachable only once MinIO
-# instantiates an AMQP notification target and connects to a broker. Checked across the whole tree
-# (2026-09-26), not assumed:
-#   • NO `MINIO_NOTIFY_*` variable is set anywhere — zero matches under infrastructure-as-code/,
-#     scripts/ and the BFF server;
-#   • NO AMQP broker exists in any stack — zero matches for rabbitmq or :5672;
-#   • all four MinIO instances run the same bare `server /data --console-address :9001` with only
-#     root credentials in `environment:`, so no target is configured at startup either.
-# With no target configured the client is never constructed, and the vulnerable readers and URI
-# parser are never reached.
-#
-# NOT INTERNET-FACING, on either instance:
-#   • `mcm-bff-backup-minio` publishes 127.0.0.1:9100/9101 — LOOPBACK only;
-#   • prod `langfuse-minio` declares NO `ports:` at all — internal compose network only.
-#
-# KEYED TO THE VERSION, DELIBERATELY DIVERGING FROM THE SIBLING ENTRY BELOW. The grpc entry keys on
-# the bare `jumbleknot/minio:` prefix, which matches every tag this image will ever carry; that was
-# accepted for it, but a floating key is exactly what feature 063 / item #297 forbids, and here it
-# would be actively wrong. Our tag is DERIVED from `MINIO_TAG` (`2025.09.07-161309` from
-# `RELEASE.2025-09-07T16-13-09Z`), so the version key makes a MinIO bump discharge these entries
-# mechanically: the moment the tag moves they stop matching, the gate re-blocks, and they come back
-# only with a scan of whatever release actually landed. Since a MinIO bump is the ONLY thing that
-# could ever clear these advisories, that is precisely the event this entry must not survive.
-# The registry host is still omitted — it is topology-sensitive and injected at runtime, and the
-# matcher is an unanchored regex, so this matches `<forge>/jumbleknot/minio:2025.09.07-161309@<digest>`.
-#
-# EXPIRY 2026-12-01 joins the existing cohort so the next re-triage stays one sitting. Per item #303,
-# DELETE these when upstream is remediated rather than letting the date pass.
-- image: 'jumbleknot/minio:2025\.09\.07-161309'
-  id: 'CVE-2026-77405'
-  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — missing explicit TLS minimum version in the URI parser) in our from-source MinIO image (feature 069, item #420). THE SAME THREE ADVISORIES already carry entries here for grafana/otel-lgtm from the 2026-09-18 window, so this continues a triaged accepted risk reaching a second image by a different route. NO UPSTREAM RELEASE CLEARS IT, measured at the source 2026-09-26 rather than inferred: amqp091-go is v1.10.0 in the go.mod of our pin RELEASE.2025-09-07T16-13-09Z, of the NEWEST release RELEASE.2025-10-15T17-29-55Z, and of master. Structurally unfixable by waiting: MinIO''s last community release is 2025-10-15, ELEVEN MONTHS before these advisories were published, and community edition has stopped releasing — there is no upstream cadence left to deliver a fix. Reachable only through MinIO''s AMQP event-notification target: no MINIO_NOTIFY_* variable is set anywhere in the tree, no AMQP broker exists in any stack, and all four instances run a bare `server /data` with only root credentials, so the client is never constructed. Not internet-facing — the backup instance binds 127.0.0.1:9100/9101 and prod''s langfuse-minio declares no ports at all. Version-keyed to the MINIO_TAG-derived tag so a MinIO bump — the only thing that could ever clear it — re-blocks and forces a fresh scan. Time-boxed; delete on upstream remediation, do not renew.'
-  addedBy: 'item-560'
-  expiry: '2026-12-01'
-- image: 'jumbleknot/minio:2025\.09\.07-161309'
-  id: 'CVE-2026-77408'
-  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — silent data truncation and state corruption via a shortstr integer overflow) in our from-source MinIO image (feature 069, item #420). THE SAME THREE ADVISORIES already carry entries here for grafana/otel-lgtm from the 2026-09-18 window, so this continues a triaged accepted risk reaching a second image by a different route. NO UPSTREAM RELEASE CLEARS IT, measured at the source 2026-09-26 rather than inferred: amqp091-go is v1.10.0 in the go.mod of our pin RELEASE.2025-09-07T16-13-09Z, of the NEWEST release RELEASE.2025-10-15T17-29-55Z, and of master. Structurally unfixable by waiting: MinIO''s last community release is 2025-10-15, ELEVEN MONTHS before these advisories were published, and community edition has stopped releasing — there is no upstream cadence left to deliver a fix. Reachable only through MinIO''s AMQP event-notification target: no MINIO_NOTIFY_* variable is set anywhere in the tree, no AMQP broker exists in any stack, and all four instances run a bare `server /data` with only root credentials, so the client is never constructed. Not internet-facing — the backup instance binds 127.0.0.1:9100/9101 and prod''s langfuse-minio declares no ports at all. Version-keyed to the MINIO_TAG-derived tag so a MinIO bump — the only thing that could ever clear it — re-blocks and forces a fresh scan. Time-boxed; delete on upstream remediation, do not renew.'
-  addedBy: 'item-560'
-  expiry: '2026-12-01'
-- image: 'jumbleknot/minio:2025\.09\.07-161309'
-  id: 'CVE-2026-77411'
-  justification: 'New advisory published 2026-09-16 (github.com/rabbitmq/amqp091-go below 1.13.0 — protocol desynchronization and frame injection via an integer overflow in readLongstr) in our from-source MinIO image (feature 069, item #420). THE SAME THREE ADVISORIES already carry entries here for grafana/otel-lgtm from the 2026-09-18 window, so this continues a triaged accepted risk reaching a second image by a different route. NO UPSTREAM RELEASE CLEARS IT, measured at the source 2026-09-26 rather than inferred: amqp091-go is v1.10.0 in the go.mod of our pin RELEASE.2025-09-07T16-13-09Z, of the NEWEST release RELEASE.2025-10-15T17-29-55Z, and of master. Structurally unfixable by waiting: MinIO''s last community release is 2025-10-15, ELEVEN MONTHS before these advisories were published, and community edition has stopped releasing — there is no upstream cadence left to deliver a fix. Reachable only through MinIO''s AMQP event-notification target: no MINIO_NOTIFY_* variable is set anywhere in the tree, no AMQP broker exists in any stack, and all four instances run a bare `server /data` with only root credentials, so the client is never constructed. Not internet-facing — the backup instance binds 127.0.0.1:9100/9101 and prod''s langfuse-minio declares no ports at all. Version-keyed to the MINIO_TAG-derived tag so a MinIO bump — the only thing that could ever clear it — re-blocks and forces a fresh scan. Time-boxed; delete on upstream remediation, do not renew.'
-  addedBy: 'item-560'
-  expiry: '2026-12-01'
-- image: 'jumbleknot/minio:'
-  id: 'CVE-2026-33186'
-  justification: 'Our from-source MinIO image (feature 069, item #420). google.golang.org/grpc v1.72.0 (fix 1.79.3) is an INDIRECT dependency pinned in upstream MinIO''s own go.mod, so our choice of Go toolchain cannot move it — verified 2026-09-11 that the newest upstream release RELEASE.2025-10-15T17-29-55Z pins v1.72.0 too, so no bump clears it. Rejected forcing it with a go.mod replace: rewriting upstream''s dependency graph eight minor versions forward, unilaterally, on a service holding production object data is a larger change than the advisory warrants. The deleted upstream images carried a seed entry for this same advisory, so this continues an accepted risk rather than adding one. Internal-only. Keyed to the repository prefix WITHOUT the registry host, because the host is topology-sensitive and injected at runtime — the matcher is an unanchored regex, so this matches `<forge>/jumbleknot/minio:<tag>@<digest>`. Time-boxed; delete when a MinIO release ships grpc >= 1.79.3.'
-  addedBy: 'item-420'
-  expiry: '2026-12-01'
+# Why deletion had to be deliberate rather than left to expiry: since item #423 an entry whose image
+# is not in a run's scanned set is OUT OF SCOPE and silent, so these would NOT have surfaced under
+# UNMATCHED ENTRIES at all. Measured 2026-10-11 against a full local sweep (21 images): with the four
+# entries still present, `--check-expiring` exits 0; evaluated at 2026-11-20 it reports all four as
+# EXPIRING (expiry 2026-12-01). The first signal would have been a red weekly run two weeks before
+# expiry, about an image nothing deploys any more.
 
 # ── NEW advisories on unchanged images, triaged 2026-09-10, RE-TRIAGED 2026-09-14 (item #406) ─────
 # As triaged: TWO advisories, 11 blocking findings, four pulled images — every one of them on a
@@ -332,7 +218,7 @@
 #                                      upgrade WAS the remediation and the two entries were deleted
 #                                      rather than re-keyed. Deliberately not re-keyed before being
 #                                      observed: whether a new major carries the same advisory is an
-#                                      empirical question (same rule feature 069 applied to MinIO).
+#                                      empirical question (same rule feature 069 applied to its object-store image).
 #   opensearchproject/opensearch .... re-keyed 2.x -> 3.x digest by feature 071 / item #439; the major
 #                                     did NOT discharge it. Still 6 Critical findings. Entry RENEWED.
 #   quay.io/keycloak/keycloak ....... still 1 Critical finding on 26.7.3. Entry RENEWED and its key
@@ -342,8 +228,8 @@
 # are unchanged. Both survivors were re-measured, not re-dated: an expiry renewed without a fresh scan
 # is the thing the time-box exists to prevent.
 #
-# EXPIRY 2026-12-01 now matches the jumbleknot/minio entry above, so the next re-triage is again one
-# sitting rather than a dribble — the same grouping trick, re-aimed after the 2026-10-01 cohort emptied.
+# EXPIRY 2026-12-01 matched the object-store image entries (deleted by feature 080), so the next
+# re-triage is again one sitting rather than a dribble — the same grouping trick, re-aimed after the 2026-10-01 cohort emptied.
 # Per item #303, DELETE each entry when its image is remediated rather than letting the date pass — an
 # entry that matches nothing keeps failing under UNMATCHED ENTRIES instead of ageing out quietly.
 - image: 'opensearchproject/opensearch:3@sha256:bcc1797519726ceb6d651d4a3e60b7c30da91793914a8dfe75fd441d4f641509'

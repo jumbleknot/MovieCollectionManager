@@ -150,12 +150,12 @@ test('(11) a matched entry is never reported, regardless of scanner activity', (
 });
 
 test('matching is by unique key, not by advisory id — two allowlists reuse ids across targets', () => {
-  // e.g. CVE-2025-68121 appears against BOTH hashicorp/vault and minio/mc in the infra-image
-  // allowlist. Keying on the id alone would let one entry's match silently cover the other's staleness.
-  const shared = [ENTRY({ key: 'vault', id: 'CVE-2025-68121' }), ENTRY({ key: 'minio', id: 'CVE-2025-68121' })];
+  // e.g. CVE-2025-68121 appeared against BOTH hashicorp/vault and a (since-retired) object-store
+  // client image in the infra-image allowlist. Keying on the id alone would let one entry's match silently cover the other's staleness.
+  const shared = [ENTRY({ key: 'vault', id: 'CVE-2025-68121' }), ENTRY({ key: 'object-store', id: 'CVE-2025-68121' })];
   const out = selectUnmatched(shared, new Set(['vault']), new Set(['pnpm-audit']));
   assert.equal(out.length, 1);
-  assert.equal(out[0].key, 'minio');
+  assert.equal(out[0].key, 'object-store');
 });
 
 test('an expiring entry can also be unmatched — the two properties are orthogonal', () => {
@@ -167,7 +167,7 @@ test('an expiring entry can also be unmatched — the two properties are orthogo
 // --- scope: the item #423 guard -------------------------------------------------------------------
 //
 // Scanner identity stopped being able to separate two runs the moment a SECOND job started consulting
-// the same allowlist. Feature 069 made `minio-image` scan exactly one image against the whole
+// the same allowlist. Feature 069 made its object-store builder scan exactly one image against the whole
 // infra-image allowlist, while the sweep scans every pulled image against the same file — and every
 // entry in it carries the same literal scanner `trivy`. So each job reported the other's LIVE entries
 // as "suppressed nothing this run" (16 of them, measured), which is the precise opposite of what

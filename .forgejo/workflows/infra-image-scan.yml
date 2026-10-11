@@ -1,6 +1,6 @@
 # Infra-image CVE scanning (feature 035; always-post required context — feature 039 Workstream C).
 # Keyless, fail-closed Trivy sweep over the THIRD-PARTY images we pull but do not build (Keycloak,
-# Postgres, Redis, Mongo, Vault, OpenSearch, ClickHouse, LangFuse, Grafana, OPA, Unleash, MinIO,
+# Postgres, Redis, Mongo, Vault, OpenSearch, ClickHouse, LangFuse, Grafana, OPA, Unleash, RustFS,
 # Caddy, Mailpit) — the six jumbleknot/* built images are already Trivy-scanned in cd-deploy, so they
 # are excluded here (disjoint sets).
 #
@@ -46,15 +46,11 @@ on:
     # WHY 04:00 SPECIFICALLY, and why the 3h gap is the real figure:
     #   * This job takes ~3 minutes, but the runner may be inside a ~35-minute `app-e2e`, so the gap
     #     budgets for QUEUE DEPTH, not for the job.
-    #   * No other Friday cron fires at 04:00. 05:00 is `minio-image` and 06:00 is
-    #     `devcontainer-image` — two heavy builds (timeout-minutes: 60 each) that used to sit
-    #     directly in front of this sweep on the single runner. 04:00 puts it ahead of both.
+    #   * No other Friday cron fires at 04:00. 06:00 is `devcontainer-image` — a heavy build
+    #     (timeout-minutes: 60) that used to sit directly in front of this sweep on the single runner,
+    #     together with a second one at 05:00 that feature 080 deleted. 04:00 puts it ahead of both.
     #   * Both crons are UTC, so the 3h gap is FIXED. DST moves `renovate.json`'s local-time window,
     #     never the distance between these two UTC crons.
-    #   * Ordering ahead of `minio-image` is safe: compose pins `jumbleknot/minio` by immutable
-    #     digest, and `infra-image-scan.mjs` excludes it from this sweep anyway (BUILT_IMAGE_NAMES —
-    #     it is scanned by `minio-image.yml`, which gates its own publish). So this sweep's result
-    #     does not depend on that morning's rebuild.
     #
     # `renovate-workflow.guard.test.mjs` asserts this cron is strictly earlier than every
     # `renovate.yml` window cron, so the ordering cannot be undone silently.
@@ -153,14 +149,11 @@ jobs:
       # True when Trivy must actually run: an infra image ref changed on a PR/push, OR this is the
       # weekly cron / a push (any non-pull_request event runs the full sweep, un-path-gated).
       RUN_SCAN: ${{ needs.changes.outputs.infra == 'true' || github.event_name != 'pull_request' }}
-      # Needed since feature 069 (item #420). The observability stack now pulls `jumbleknot/minio` —
-      # an image this project builds from source, because MinIO deleted its published images — and
-      # check-topology-scrub forbids the real forge host in a committed file, so compose can only
-      # reference it as `${REGISTRY_HOST}/…`. Without this value the scanner cannot resolve the ref,
-      # and the sweep would pass having never looked at our own image: a green that is a claim about
-      # images nobody scanned. infra-image-scan.mjs now EXITS 2 rather than skipping quietly, so a
-      # missing value fails the job instead of silently shrinking what it covers.
-      REGISTRY_HOST: ${{ vars.REGISTRY }}
+      # No REGISTRY_HOST since feature 080. It was here only so the sweep could resolve feature 069's
+      # from-source object-store image (`${REGISTRY_HOST}/jumbleknot/…`); that image is gone and its
+      # replacement, rustfs/rustfs, is a Docker Hub pull like every other image here. If a future
+      # compose ref needs the host again, infra-image-scan.mjs EXITS 2 naming the unresolved ref —
+      # it never silently shrinks what it covers.
     steps:
       - name: Checkout
         if: ${{ env.RUN_SCAN == 'true' }}

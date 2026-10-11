@@ -23,7 +23,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
@@ -1093,8 +1094,8 @@ test('a cargo 0.x minor bump is treated as breaking, not as routine', () => {
 // TWO independent reasons it went red, and both matter. (1) The three allowlist entries are keyed to
 // the regex `hashicorp/vault:1\.18`, which cannot match `hashicorp/vault:1.21@sha256:...` — the
 // matcher is an UNANCHORED `new RegExp(e.image).test(f.image)`, which is also why appending a digest
-// does NOT break the other entries (`minio/mc`, `grafana/otel-lgtm:latest`,
-// `opensearchproject/opensearch:2` all still match). (2) The two pgx Criticals are genuinely new and
+// does NOT break the other entries (`grafana/otel-lgtm:latest`, `opensearchproject/opensearch:2`
+// all still match). (2) The two pgx Criticals are genuinely new and
 // allowlisted nowhere.
 //
 // This was ALREADY MEASURED AND WRITTEN DOWN by feature 036, in the allowlist justifications the
@@ -1711,12 +1712,11 @@ for (const { repository, bump, example } of C1_ROWS) {
 }
 
 test('no formerly-floating infra image resolves to a digest-only update type', () => {
-  // The C1 table's last row, applied to every reference rather than to the six it names — this is
-  // the one that also covers minio, whose tags need the declared regex versioning to be orderable
-  // at all. `-debug` is included: a variant left floating is still a reference nobody can classify.
-  // minio/mc and minio/minio left this list with feature 069 — they are no longer pulled at all, so
-  // the loop below would silently iterate over nothing for them. A stale name here is not harmless:
-  // it reads as coverage while testing an image that does not exist.
+  // The C1 table's last row, applied to every reference rather than to the six it names. `-debug` is
+  // included: a variant left floating is still a reference nobody can classify. Two date-tagged
+  // object-store images left this list with feature 069 (no longer pulled), and their from-source
+  // successor left the repository with feature 080. A stale name here is not harmless: the loop below
+  // would silently iterate over nothing for it, which reads as coverage of an image that does not exist.
   const FORMERLY_FLOATING = [
     'axllent/mailpit', 'curlimages/curl', 'grafana/otel-lgtm',
     'openpolicyagent/opa', 'unleashorg/unleash-server',
@@ -1733,52 +1733,15 @@ test('no formerly-floating infra image resolves to a digest-only update type', (
   }
 });
 
-test('the minio date-tagged family orders by calendar, and its update type says only that', () => {
-  // Contract C4. The mapping is year->major, month->minor, day->patch, so a January release reports
-  // `major` because the YEAR ADVANCED, not because anything broke (FR-004, research R2). Asserted
-  // rather than merely commented, so the calendar semantics cannot quietly become semver ones.
-  //
-  // DATASOURCE MOVED, feature 069 (item #420). This resolved against the DOCKER datasource while
-  // MinIO published images we pulled. It no longer does — MinIO deleted both repositories from Docker
-  // Hub and distributes source only, so we build our own image and Renovate tracks the SOURCE release
-  // through a customManager on the Dockerfile's build args. The date-tag shape and the calendar
-  // semantics are unchanged; only where Renovate reads them from has moved. The property was worth
-  // keeping, so the test was updated at the cause rather than deleted with the images.
-  const sourceDep = (depName, updateType = 'minor') => ({
-    manager: 'custom.regex', datasource: 'github-releases', depName, updateType,
-  });
-  for (const repository of ['minio/minio', 'minio/mc']) {
-    const versioning = resolvedVersioning(sourceDep(repository));
-    assert.ok(
-      versioning !== null && versioning.startsWith('regex:'),
-      `${repository} has no regex versioning, so its RELEASE.<date> tags are unparseable — ` +
-        'renovate@44\'s `loose` scheme returns null for them (measured against its own dist), ' +
-        'which is invisible rather than unordered.',
-    );
-    assert.equal(updateType('RELEASE.2025-09-07T16-13-09Z', 'RELEASE.2026-01-15T10-00-00Z', versioning), 'major');
-    assert.equal(updateType('RELEASE.2025-09-07T16-13-09Z', 'RELEASE.2025-10-01T10-00-00Z', versioning), 'minor');
-    assert.equal(updateType('RELEASE.2025-09-07T16-13-09Z', 'RELEASE.2025-09-08T10-00-00Z', versioning), 'patch');
-
-    // The trailing `Z$` anchor is load-bearing: the same namespace publishes `-cpuv1` builds, and
-    // without the anchor Renovate could drift onto one — the same defect class as opa's `-dev`
-    // and `-rootless` tags (FR-006).
-    assert.equal(
-      parseTag('RELEASE.2025-09-07T16-13-09Z-cpuv1', versioning),
-      null,
-      `${repository}'s versioning regex accepts a -cpuv1 variant — the trailing Z$ anchor is missing.`,
-    );
-  }
-});
-
 // ---------------------------------------------------------------------------------------------
 // openpolicyagent/opa MOVES AS ONE UNIT — contract C2/C3, FR-005/FR-006.
 //
 // This is the ONLY genuine pairing risk in the eight. Two DIFFERENT tags (`1.20.1` and
 // `1.20.1-debug`) in two different files under ONE dependency name, so nothing about the file
-// layout forces them to move together. curl, otel-lgtm, minio, mc and unleash each carry an
-// IDENTICAL ref in both observability files — Renovate sees one dependency with two locations and
-// rewrites both by construction — so that shape is asserted ONCE below as a control, not five times
-// as if it were five risks.
+// layout forces them to move together. curl, otel-lgtm and unleash each carry an IDENTICAL ref in
+// both observability files — Renovate sees one dependency with two locations and rewrites both by
+// construction — so that shape is asserted ONCE below as a control, not three times as if it were
+// three risks.
 //
 // The half-bump shape this repository has now paid for four times (#194 nx, #204 Playwright, #225
 // pnpm, the vault allowlist key in PR #289) is why the assertion is on the RESOLVED value rather
@@ -1885,9 +1848,9 @@ test('the identically-referenced images are one dependency with two locations �
   // Asserted so that if someone ever makes local and prod diverge, the claim above stops being true
   // loudly rather than silently.
   //
-  // minio/minio and minio/mc left this list with feature 069 — MinIO deleted them and we build our
-  // own. Their replacement is asserted separately below, because it is not a third-party dependency
-  // and Renovate does not group it.
+  // Two date-tagged object-store images left this list with feature 069 and their from-source
+  // successor with feature 080. rustfs/rustfs is referenced in THREE files (backups too), so it is
+  // asserted separately below rather than squeezed into this two-file shape.
   for (const repository of ['curlimages/curl', 'grafana/otel-lgtm', 'unleashorg/unleash-server']) {
     const tags = new Set(tagsFor(repository));
     assert.equal(
@@ -1901,55 +1864,78 @@ test('the identically-referenced images are one dependency with two locations �
   }
 });
 
-test('(069) our own MinIO image is referenced identically in dev and prod', () => {
-  // The same structural-pairing property as the control above, for the image this repository builds.
-  // It matters more here, not less: a divergence would run a DIFFERENT MinIO build against the dev
-  // and production object stores, and both references are edited by hand rather than by Renovate's
-  // docker manager — the host is interpolated, so Renovate does not manage these lines at all.
-  //
-  // Read from the files DIRECTLY rather than through `tagsFor`. That helper — like the scanner's
-  // enumerateImages before feature 069 fixed it, and like `infraComposeRefs` still — drops any ref
-  // containing `${`, so our own image is invisible to it. That exclusion is correct for its purpose
-  // (reasoning about Renovate-managed third-party deps, which ours is not), so this test does its own
-  // parsing instead of widening a shared helper to serve a case it was not built for.
-  //
-  // Third place the same exclusion has bitten this feature. Recorded so the next one is expected.
-  const files = [
-    'infrastructure-as-code/docker/observability/compose.yaml',
-    'infrastructure-as-code/docker/observability/compose.prod.yaml',
-  ];
-  const refs = files.flatMap((f) => readFileSync(resolve(REPO_ROOT, f), 'utf8')
-    .split(/\r?\n/)
-    // `\$\{REGISTRY_HOST[^}]*\}` tolerates the `:?set in …` guard the refs carry. Every other
-    // REGISTRY_HOST reference in this repository is guarded, so an unguarded one would be the
-    // anomaly — matching only the bare form made this test fail the moment the refs were brought
-    // into line with that convention.
-    .map((l) => /^\s*image:\s*\$\{REGISTRY_HOST[^}]*\}\/jumbleknot\/minio:([^@\s]+)@/.exec(l))
-    .filter(Boolean)
-    .map((m) => m[1]));
-  const tags = new Set(refs);
-  assert.equal(
-    tags.size, 1,
-    `our MinIO image carries different tags across the observability files (${JSON.stringify([...tags])}).\n` +
-      '  dev and prod would run different builds against different object stores.',
-  );
-  assert.equal(refs.length, 4, 'our MinIO image is expected twice in each observability file (server + init)');
-  assert.match(
-    [...tags][0], /^\d/,
-    'our MinIO image tag does not begin with a digit, so infra-image-scan classifies it as FLOATING\n' +
-      '  and it would need a declared exception. We control this tag — keep it orderable. Feature 069\n' +
-      '  chose 2025.09.07-161309 over upstream\'s unorderable RELEASE.2025-09-07T16-13-09Z for exactly\n' +
-      '  this reason.',
-  );
-});
-
 test('all eight formerly-floating references stay in the `docker base images` group', () => {
   // C2's first row. They must not be stranded into per-image PRs on the single CI runner.
-  for (const repository of ['axllent/mailpit', 'curlimages/curl', 'grafana/otel-lgtm', 'minio/minio', 'minio/mc', 'openpolicyagent/opa', 'unleashorg/unleash-server']) {
+  for (const repository of ['axllent/mailpit', 'curlimages/curl', 'grafana/otel-lgtm', 'openpolicyagent/opa', 'unleashorg/unleash-server']) {
     for (const updateTypeTrack of ['patch', 'minor', 'major']) {
       assert.equal(resolvedGroupName(dockerDep(repository, updateTypeTrack)), 'docker base images', `${repository} (${updateTypeTrack}) is not grouped`);
     }
   }
+});
+
+// ---------------------------------------------------------------------------------------------
+// rustfs/rustfs — feature 080 (item #560). Upstream, pulled by digest, proposed by Renovate.
+//
+// Item #560 was a supply chain with NO working update channel: renovate.json carried a rule for the
+// previous object-store build, and prose about a customManager that did not exist, so the rule
+// matched nothing and nothing ever proposed anything. A RULE is therefore not the property. The property is that Renovate
+// EXTRACTS the dependency from every file that pins it — (b) below — and that the rule which governs
+// it resolves to the supply-chain cooldown — (a).
+
+const RUSTFS = 'rustfs/rustfs';
+
+test('(080a) a packageRule names rustfs/rustfs, and it resolves to at least the 3-day cooldown', () => {
+  const named = packageRules.filter((r) => (r.matchPackageNames ?? []).includes(RUSTFS));
+  assert.ok(named.length >= 1, `no packageRule names ${RUSTFS} — its update channel is undeclared (item #560's shape)`);
+  const global = resolvedMinimumReleaseAge(dockerDep('some/unrelated-image'));
+  const days = (v) => {
+    const m = /^(\d+) days?$/.exec(String(v));
+    assert.ok(m, `minimumReleaseAge ${JSON.stringify(v)} is not the "<n> days" form this guard models`);
+    return Number(m[1]);
+  };
+  assert.ok(days(global) >= 3, `the global cooldown resolved to ${global}`);
+  const own = resolvedMinimumReleaseAge(dockerDep(RUSTFS));
+  assert.ok(days(own) >= days(global), `${RUSTFS} resolves to ${own}, shorter than the ${global} global`);
+});
+
+test('(080a) rustfs/rustfs is ONE tag across every compose ref, and an orderable one', () => {
+  const files = gitTrackedImageFiles(RUSTFS);
+  const tags = new Set();
+  for (const f of files) {
+    for (const m of readFileSync(resolve(REPO_ROOT, f), 'utf8').matchAll(/^\s*image:\s*rustfs\/rustfs:([^@\s]+)@sha256:[0-9a-f]{64}\s*$/gm)) tags.add(m[1]);
+  }
+  assert.equal(tags.size, 1, `rustfs/rustfs carries different tags: ${JSON.stringify([...tags])}`);
+  assert.notEqual(parseTag([...tags][0], resolvedVersioning(dockerDep(RUSTFS))), null, 'the rustfs tag is not orderable');
+});
+
+/** Tracked files with an `image:` line naming `repo` — measured from git, not listed by hand. */
+function gitTrackedImageFiles(repo) {
+  const r = spawnSync('git', ['ls-files', '-z'], { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 1 << 26 });
+  assert.equal(r.status, 0, r.stderr);
+  const re = new RegExp(`^\\s*image:\\s*["']?${repo.replace('/', '\\/')}[:@]`, 'm');
+  return r.stdout.split('\0').filter(Boolean)
+    .filter((f) => /\.ya?ml$/.test(f))
+    .filter((f) => existsSync(resolve(REPO_ROOT, f)) && re.test(readFileSync(resolve(REPO_ROOT, f), 'utf8')));
+}
+
+test('(080b) every compose file that pins rustfs/rustfs is VISIBLE to Renovate', () => {
+  // Modelled on infra-image-scan.test.mjs's "(412) every compose file carrying an image ref is
+  // VISIBLE to Renovate": a manager that matches no file fails silently and looks exactly like a
+  // manager with no work.
+  const DEFAULT = ['/(^|/)(?:docker-)?compose[^/]*\\.ya?ml$/'];
+  const patterns = (config['docker-compose']?.managerFilePatterns ?? DEFAULT).map((p) => {
+    const m = /^\/(.*)\/([a-z]*)$/.exec(p);
+    assert.ok(m, `managerFilePatterns entry ${JSON.stringify(p)} is not the /regex/ form this guard models`);
+    return new RegExp(m[1], m[2]);
+  });
+  const ignored = (f) => (config.ignorePaths ?? []).some((g) => {
+    const re = new RegExp(`^${g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '(?:.*/)?').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')}`);
+    return re.test(f);
+  });
+  const files = gitTrackedImageFiles(RUSTFS);
+  assert.ok(files.length >= 3, `the instrument found only ${files.length} file(s) pinning ${RUSTFS}: ${files.join(', ')}`);
+  const invisible = files.filter((f) => !patterns.some((re) => re.test(f)) || ignored(f));
+  assert.deepEqual(invisible, [], `Renovate never extracts ${RUSTFS} from:\n${invisible.map((f) => `  ${f}`).join('\n')}`);
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -3033,8 +3019,9 @@ test('(#487) the weekly CVE sweep runs STRICTLY EARLIER than the Renovate window
   );
 
   // The gap must budget for QUEUE DEPTH, not for the job. The sweep itself takes ~3 minutes, but
-  // the capacity-1 runner may be inside a ~35-minute `app-e2e`, and two heavy weekly builds
-  // (minio-image 05:00, devcontainer-image 06:00, timeout-minutes: 60 each) sit between them.
+  // the capacity-1 runner may be inside a ~35-minute `app-e2e`, and a heavy weekly build
+  // (devcontainer-image 06:00, timeout-minutes: 60) sits between them. (Feature 080 deleted the
+  // other one that used to sit there.)
   assert.ok(
     earliestWindow - latestSweep >= 2,
     `only ${earliestWindow - latestSweep}h between the sweep and the window — too tight to absorb a ` +

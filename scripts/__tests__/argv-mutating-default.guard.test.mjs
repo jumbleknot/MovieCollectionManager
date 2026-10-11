@@ -182,12 +182,12 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     // than a violation of it. See the ci-failure-digest tests below for the evidence.
     'ci-failure-digest.mjs': 'guarded',
 
-    // Item #577 — born guarded, and INVERTED like the prune script: the default action reports and
-    // `--apply` is what pushes a branch and opens a pull request. So the fall-through this table
-    // exists to catch is not merely rejected here, it is inert. argv still goes through
-    // partitionArgs, because "nothing was promoted" must never be a typo wearing a verdict's
-    // clothes — the operator would read it as a statement about the image.
-    'promote-minio-digest.mjs': 'guarded',
+    // Feature 080 — born guarded, and INVERTED like the prune script: every subcommand is read-only
+    // except `copy`, which is REFUSED without `--apply` (there is no dry-run spelling to mistype).
+    // It moves production data, so the fall-through this table exists to catch must be inert here
+    // too. (Its predecessor in this slot, item #577's image-digest promoter, was deleted with the
+    // from-source object-store build it promoted.)
+    'object-store-migration.mjs': 'guarded',
   };
 
   const scriptsDir = resolve(REPO_ROOT, 'scripts');

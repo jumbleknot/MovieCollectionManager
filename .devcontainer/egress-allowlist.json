@@ -226,24 +226,6 @@
       "cdnRotating": false
     },
     {
-      "domain": "proxy.golang.org",
-      "group": "packages",
-      "reason": "Go module proxy — the default GOPROXY. Added by feature 069 (item #420), which builds MinIO and mc FROM SOURCE because upstream deleted its published images and moved to source-only distribution. This is the first Go build in the repository, which is why no Go destination existed before: the packages group covered npm, crates, pypi, alpine and debian only. Without it, 'go build' fails with 'dial tcp: lookup proxy.golang.org: no such host' AFTER a successful git clone — which reads like a Dockerfile fault rather than a missing allowlist entry. The tell is the same one Maven Central gave on 2026-09-10: curl exits 000 (cannot connect) from the dev container itself, not 403.",
-      "cdnRotating": true
-    },
-    {
-      "domain": "sum.golang.org",
-      "group": "packages",
-      "reason": "Go checksum database. Required alongside proxy.golang.org: the Go toolchain verifies every module against it, and the alternative is GOFLAGS=-mod=mod with GONOSUMCHECK/GONOSUMDB — disabling supply-chain verification inside a feature whose entire justification is supply-chain durability. Allowlist the checksum DB; do not switch the check off.",
-      "cdnRotating": true
-    },
-    {
-      "domain": "storage.googleapis.com",
-      "group": "packages",
-      "reason": "Where proxy.golang.org actually SERVES module zips — it returns signed URLs on this host, so allowlisting the proxy alone gets you as far as module RESOLUTION and no further. Added 2026-09-12 by feature 069 after the first local build with the proxy allowed still failed: metadata resolved, every .zip download then hit \"lookup storage.googleapis.com: no such host\". Broad, and deliberately chosen anyway: the bucket is a path rather than a subdomain, so no narrower name exists. The alternative, GOPROXY=direct, is BROADER in practice — it fetches each module from wherever its source lives (go.googlesource.com for golang.org/x/*, plus any other VCS host a dependency uses), whereas the default proxy funnels every module through exactly two hosts. Checksum verification via sum.golang.org is unaffected either way.",
-      "cdnRotating": true
-    },
-    {
       "domain": "dl-cdn.alpinelinux.org",
       "group": "packages",
       "reason": "Alpine package CDN. Required by the mcm-app IMAGE BUILD — frontend/mcm-app/Dockerfile's runner stage does `apk add --no-cache gcompat`. THIS IS A DIRECT COST OF THE FEATURE'S HEADLINE SECURITY WIN, and worth understanding rather than just allowlisting: on the Docker Desktop path an image build runs in a container off the nested dockerd, whose traffic traverses the FORWARD chain that init-firewall.sh deliberately leaves alone — so build-time package fetches were NEVER governed and nobody had to think about them. Under the sandbox the policy is enforced host-side and covers ALL VM egress including build containers, which is precisely the 037 residual this migration closes (FR-025/G5). Closing it means every builder's package fetches now need explicit permission. Measured 2026-08-16: without this the build dies at `apk add --no-cache gcompat` -> exit 1. Retires with the other build-time entries if the runner stage ever stops needing gcompat.",

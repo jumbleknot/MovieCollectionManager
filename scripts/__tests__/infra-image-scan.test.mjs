@@ -2,7 +2,7 @@
 // Runs on any host (no Trivy needed) via `node --test`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { enumerateImages, normalizeTrivy, buildProposedAllowlist } from '../infra-image-scan.mjs';
+import { enumerateImages, normalizeTrivy, buildProposedAllowlist, BUILT_IMAGE_NAMES } from '../infra-image-scan.mjs';
 import { parse as parseYaml } from 'yaml';
 import { readFileSync, globSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -59,8 +59,8 @@ test('enumerateImages handles quotes and registry-prefixed refs', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// The partition must be COMPLETE, not merely disjoint — feature 069 (item #420),
-// specs/069-minio-from-source/contracts/scanner-scope.md.
+// The partition must be COMPLETE, not merely disjoint — feature 069 (item #420), and that feature's
+// scanner-scope contract.
 //
 // The rule is "every image is scanned by WHOEVER BUILDS IT, and everything else is scanned here" —
 // and the invariant is that each image is covered by EXACTLY ONE scanner. Disjointness ("nothing in
@@ -73,9 +73,9 @@ test('enumerateImages handles quotes and registry-prefixed refs', () => {
 // coincided only while every jumbleknot/* image happened to be a cd-deploy image, and feature 069
 // broke that coincidence by adding an image built by a DIFFERENT workflow.
 //
-// The fixture is a HYPOTHETICAL image on purpose. It was `jumbleknot/minio` while that was the live
-// example — and then minio joined the exclusion set (it is scanned by its own builder), and these
-// tests failed for a reason that had nothing to do with the property being tested. A fixture naming a
+// The fixture is a HYPOTHETICAL image on purpose. It was feature 069's own object-store image while
+// that was the live example — and then that image joined the exclusion set (it was scanned by its own
+// builder), and these tests failed for a reason that had nothing to do with the property being tested. A fixture naming a
 // real image stops testing the property the moment that image's classification changes; a
 // hypothetical keeps asserting "a jumbleknot/ image nobody else scans must be enumerated here"
 // forever, which is the actual invariant.
@@ -93,6 +93,30 @@ test('(069) a jumbleknot/ image NOT built by cd-deploy IS enumerated — complet
       + '  silently. Exclude by membership of BUILT_IMAGE_NAMES, not by the "jumbleknot/" prefix.',
   );
   assert.match(refs[0], /^jumbleknot\/future-widget:/);
+});
+
+// Feature 080 (item #560). The exclusion list is EXACTLY the images cd-deploy builds and scans
+// (FR-009) — nothing else builds an image any more. Feature 069 added its from-source object store
+// to this list because a separate workflow built and scanned it; feature 080 deleted that workflow
+// and pulls RustFS upstream instead, so leaving the name here would exclude an image NOTHING scans.
+test('(080) BUILT_IMAGE_NAMES is exactly the six images cd-deploy builds', () => {
+  assert.deepEqual(
+    [...BUILT_IMAGE_NAMES].sort(),
+    ['agent-gateway', 'mc-service', 'mcm-bff', 'movie-mcp', 'spreadsheet-mcp', 'web-api-mcp'],
+    'an image is excluded from this keyless sweep that cd-deploy does not build — it would be scanned by nobody',
+  );
+});
+
+test('(080) the sweep enumerates rustfs/rustfs from the real compose tree, digest-pinned', () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  const files = globSync('infrastructure-as-code/**/*.{yaml,yml}', { cwd: repoRoot }).map((p) => ({
+    path: p, content: readFileSync(resolve(repoRoot, p), 'utf8'),
+  }));
+  const rustfs = enumerateImages(files, {}).filter((i) => i.ref.startsWith('rustfs/rustfs:'));
+  assert.equal(rustfs.length, 1, `expected ONE rustfs/rustfs ref (one digest everywhere), got ${JSON.stringify(rustfs.map((i) => i.ref))}`);
+  assert.match(rustfs[0].ref, /@sha256:[0-9a-f]{64}$/);
+  assert.equal(rustfs[0].floatingTag, false);
+  assert.ok(rustfs[0].locations.length >= 6, `rustfs/rustfs found in only ${rustfs[0].locations.length} location(s)`);
 });
 
 // The registry host is INTERPOLATED in compose and must still be scanned — feature 069.
@@ -260,9 +284,10 @@ test('buildProposedAllowlist emits only blocking findings as valid, gate-matchab
 // digit", a coin flip per image.
 //
 // Measured on main immediately after PR #289 landed: of the eight `latest`-tagged infra images,
-// the four whose digests begin with a letter (mailpit c969…, otel-lgtm d6b2…, minio/mc a7fe…,
-// opa:latest-debug f6aa…) were reported FLOATING, and the four beginning with a digit
-// (opa:latest 39da…, minio/minio 14ce…, unleash 16f3…, curl 7c12…) were reported version-pinned.
+// the four whose digests begin with a letter (mailpit c969…, otel-lgtm d6b2…, the object-store
+// client a7fe…, opa:latest-debug f6aa…) were reported FLOATING, and the four beginning with a digit
+// (opa:latest 39da…, the object-store server 14ce…, unleash 16f3…, curl 7c12…) were reported
+// version-pinned.
 // A `latest` image reported as pinned is the exact opposite of what this flag exists to say, and
 // item #297's acceptance criterion is written against this output.
 
@@ -296,20 +321,21 @@ test('(fd3) a v-prefixed semver tag is a VERSION, not a floating tag', () => {
 
 test('(fd4) a digest-only ref with no tag is floating, and a registry PORT is not a tag', () => {
   const files = [{ path: 'c.yaml', content: [
-    '    image: minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727',
+    '    image: example/digest-only@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727',
     '    image: registry.example.com:5000/some/app',
   ].join('\n') }];
   const imgs = enumerateImages(files);
-  assert.equal(imgs.find((i) => i.ref.startsWith('minio/mc')).floatingTag, true, 'no tag == latest == floating');
+  assert.equal(imgs.find((i) => i.ref.startsWith('example/digest-only')).floatingTag, true, 'no tag == latest == floating');
   assert.equal(imgs.find((i) => i.ref.includes(':5000')).floatingTag, true, 'a registry port was parsed as the tag');
 });
 
 // ---------------------------------------------------------------------------------------------
 // THE DECLARED-EXCEPTION COUNT — feature 063 / item #297, contract C5 / SC-006.
 //
-// After the eight floating references are version-pinned, two remain floating BY DESIGN:
-// `minio/minio` and `minio/mc` publish `RELEASE.<iso-date>` tags, which `isFloatingTag` cannot
-// order and therefore — correctly — refuses to call version-pinned.
+// After the eight floating references were version-pinned, two remained floating BY DESIGN: the
+// object-store server and client images published `RELEASE.<iso-date>` tags, which `isFloatingTag`
+// cannot order and therefore — correctly — refuses to call version-pinned. (Both left with feature
+// 069; their from-source successor left with feature 080. The declared set is empty today.)
 //
 // THE TEMPTING FIX IS THE ONE THE SPEC FORBIDS. Widening `isFloatingTag` to recognise `RELEASE.*`
 // would make the report read clean, and would couple a general-purpose classifier to one vendor's
@@ -332,9 +358,9 @@ test('(063) the floating references are EXACTLY the declared exceptions — not 
   // rather than restated here, so the declaration and the exception cannot disagree.
   const renovate = JSON.parse(readFileSync(resolve(repoRoot, 'renovate.json'), 'utf8'));
   // NARROWED to the DOCKER datasource — feature 069. This used to take every rule with date
-  // versioning, which was the same set while MinIO's images were pulled from a registry. It is not
-  // any more: we build MinIO from source, so a date-versioning rule now also exists for the
-  // github-releases datasource that tracks the SOURCE tag. That rule describes what we compile, not
+  // versioning, which was the same set while the date-tagged images were pulled from a registry. It
+  // was not after feature 069 built the object store from source: a date-versioning rule then also
+  // existed for the github-releases datasource that tracked the SOURCE tag (deleted with feature 080). That rule describes what we compile, not
   // an image reference in the tree, and counting it here would demand a floating image that does not
   // and should not exist.
   //
@@ -362,8 +388,8 @@ test('(063) the floating references are EXACTLY the declared exceptions — not 
 
   // UPDATED AT THE CAUSE — feature 069 (item #420). This assertion used to require
   // `declared.size > 0`, on the reasoning that "a count of 0 means isFloatingTag was widened to hide
-  // the exceptions". That reasoning was right while MinIO's date-tagged images were in the tree. It is
-  // wrong now: MinIO deleted its published images, we build our own with an ORDERABLE tag, and the
+  // the exceptions". That reasoning was right while date-tagged images were in the tree. It is wrong
+  // now: those images left the tree (feature 069, then feature 080 for their successor), and the
   // exception set is empty BECAUSE THE IMAGES LEFT — not because the classifier was weakened.
   //
   // Those two situations produce the same count and must not produce the same verdict, so the
@@ -388,7 +414,7 @@ test('(063) the floating references are EXACTLY the declared exceptions — not 
   );
 
   // DERIVED from the declaration, never a literal. This read `assert.equal(floating.length, 2)` with
-  // the two MinIO images named in the message; every change to the exception set then required
+  // the two date-tagged images named in the message; every change to the exception set then required
   // editing a magic number, and a guard that must be hand-edited to track what it guards is one edit
   // away from being edited into uselessness. The count now cannot disagree with the set above.
   assert.equal(
@@ -409,7 +435,7 @@ test('(063) the floating references are EXACTLY the declared exceptions — not 
 //                            ref does not break the key) but STOPS matching `1.21`. When PR #289
 //                            bumped vault, five Criticals surfaced — a dischargeable key doing its
 //                            job, loudly, which is the behaviour wanted.
-//   `minio/minio`            matches EVERY tag of that image that will ever exist. It cannot stop
+//   `example/server`         matches EVERY tag of that image that will ever exist. It cannot stop
 //                            matching, so it suppresses the Critical it was written for and every
 //                            future one in the same image, in silence and for ever.
 //
@@ -438,10 +464,10 @@ test('(063) every allowlist entry for a formerly-floating image can be discharge
   // A plausible NEXT version of each image, with a different digest — the upgrade that must
   // discharge the entry. Synthetic on purpose: what upstream publishes next is Renovate's network
   // step, and a test that guessed it would be asserting its own fixture rather than the key.
-  // minio/minio and minio/mc were removed from this map by feature 069 (item #420). They are no
-  // longer referenced anywhere under infrastructure-as-code/** — MinIO deleted the images and we
-  // build our own from source — so this test's "is this list stale?" assertion correctly began
-  // failing for them. Their four allowlist entries went in the same change rather than being re-keyed
+  // The date-tagged object-store images were removed from this map by feature 069 (item #420). They
+  // were no longer referenced anywhere under infrastructure-as-code/** — upstream deleted the images
+  // and feature 069 built its own from source — so this test's "is this list stale?" assertion
+  // correctly began failing for them. Their four allowlist entries went in the same change rather than being re-keyed
   // to our image: whether the from-source build still carries those advisories is an empirical
   // question the first real sweep answers, and writing a suppression before observing the finding
   // could hide a fix. Research §R3 in fact predicts the newer Go toolchain clears CVE-2025-68121.
@@ -587,8 +613,8 @@ test('(412) every third-party infra image reference is digest-pinned — no unde
         .map((i) => `  ${i.ref}\n${i.locations.map((l) => `      ${l.path}:${l.line}`).join('\n')}`)
         .join('\n') +
       '\n  Pin it as `<repo>:<tag>@sha256:<digest>`. If it genuinely cannot be pinned, that is a\n' +
-      '  DECLARED exception: say why here and in renovate.json, the way the date-tagged minio\n' +
-      '  entries were declared — never by deleting this assertion.',
+      '  DECLARED exception: say why here and in renovate.json, the way the date-tagged object-store\n' +
+      '  entries once were — never by deleting this assertion.',
   );
 });
 

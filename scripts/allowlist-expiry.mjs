@@ -22,8 +22,8 @@
 //     { key, id, addedBy, expiry, scanner }
 //
 // `key` is a caller-supplied unique identity, NOT the advisory id: both files reuse ids across
-// targets (CVE-2025-68121 appears against hashicorp/vault and minio/mc; GHSA-7rqj-j65f-68wh against
-// both langfuse images). Keying unmatched-detection on the id alone would let one entry's match
+// targets (CVE-2025-68121 appeared against hashicorp/vault and a since-retired object-store client
+// image; GHSA-7rqj-j65f-68wh against both langfuse images). Keying unmatched-detection on the id alone would let one entry's match
 // silently cover another entry's staleness.
 //
 // NOTE ON ONE SIGNATURE. The contract lists `formatExpiring(entries)`. It takes `(entries, today)`
@@ -89,8 +89,9 @@ export function classifyExpiry(expiry, today) {
  *
  * THE SCOPE CONDITION (item #423). Scanner identity stopped being sufficient the moment a SECOND job
  * began consulting the same allowlist. Feature 069 gave the infra-image allowlist two consumers: the
- * sweep, which scans every pulled third-party image, and the `minio-image` builder, which scans
- * exactly one image via `--image`. Every entry in that file carries the same literal scanner
+ * sweep, which scans every pulled third-party image, and its object-store image builder, which
+ * scanned exactly one image via `--image` (deleted by feature 080 — cd-deploy's scan-push.sh is the
+ * single-image consumer today, and has the same shape). Every entry in that file carries the same literal scanner
  * (`trivy`), so the scanner guard cannot separate the two runs — and each reported the OTHER's live
  * entries as suppressing nothing. Measured on `main`: a single-image run produced 16 such lines.
  *
