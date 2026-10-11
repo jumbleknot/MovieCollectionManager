@@ -101,6 +101,15 @@ command and reads back the evidence the operator pastes.
   **Any other result stops the feature for an operator decision** (spec Edge Cases). Do not proceed
   to Phase 2.
 
+  **Amended 2026-10-11 (T009, research R19): the SSE and tiered zeros above are NOT evidence.**
+  BusyBox `grep` in its default locale misses a marker that follows non-UTF-8 bytes, and every marker
+  inside an `xl.meta` does. Measured on the deployed MinIO with one real SSE-S3 object: this exact
+  command printed **0**, `LC_ALL=C` printed **1**, and the `XL2 ` control read 6 of 6 either way.
+  - The format, set shape, size and ownership rows stand, because they do not use grep.
+  - The GO is therefore **provisional**. The operator's advance tool `inventory` (T037, M0.4) is the
+    first valid SSE and tiered measurement. It sets `LC_ALL=C` and self-tests the search, and it must
+    report `migratable` before the window.
+
 - [x] T004 Resolve the `rustfs/rustfs` pin: the newest 1.x past Renovate's 3-day cooldown (1.0.1 unless
   a later one qualifies), **index** digest via `docker buildx imagetools inspect`; re-scan it under the
   gate criterion (`aquasec/trivy:0.74.0 image --severity CRITICAL --ignore-unfixed`, ghcr DB mirrors);
@@ -120,7 +129,7 @@ command and reads back the evidence the operator pastes.
 
 **⚠️ No story work starts until this phase is complete.**
 
-- [ ] T006 [P] Write `scripts/__tests__/object-store-migration.test.mjs` — pure logic of
+- [x] T006 [P] Write `scripts/__tests__/object-store-migration.test.mjs` — pure logic of
   `scripts/object-store-migration.mjs` (data-model.md): `classifyDrive(formatJson, counts)` refuses
   `fs`, multi-set, multi-drive, SSE > 0, tiered > 0, notification config; accepts `xl-single`;
   `diffManifests(old, new)` names missing / unexpected / size / ETag mismatches; `checksumSample()` is
@@ -135,13 +144,27 @@ command and reads back the evidence the operator pastes.
   **Expected RED**: fails — `Cannot find module '../object-store-migration.mjs'`, then (with an empty
   stub exporting nothing) every case failing `is not a function`. Read the count: one file.
 
-- [ ] T007 Implement the pure logic in `scripts/object-store-migration.mjs` (exports + parser + `main`
+  **Done 2026-10-11.** RED, read:
+  - With no module: `ERR_MODULE_NOT_FOUND: Cannot find module '…/scripts/object-store-migration.mjs'`
+    (1 file failed).
+  - With an empty stub: `SyntaxError: The requested module '../object-store-migration.mjs' does not
+    provide an export named 'ACCEPTED_FLAGS'`. ESM named imports fail at link time, so this is not
+    the `is not a function` the task predicted.
+
+  One case was added after T009 found the grep defect (research R19): `classifyDrive` refuses on a
+  failed or missing instrument self-test. Its RED: 2 of 41 failing. The real-compose case of
+  `pinnedRustfsRef` lives in T010's guard instead, so this file stays independent of compose.
+
+- [x] T007 Implement the pure logic in `scripts/object-store-migration.mjs` (exports + parser + `main`
   guarded so importing has no side effects).
 
   **Verify GREEN**: same command → all pass, 0 skipped. Regression:
   `node --test scripts/__tests__/*.test.mjs` → no new failures.
 
-- [ ] T008 Write `scripts/__tests__/object-store-migration.rehearsal.mjs` (deliberately **not**
+  **Done 2026-10-11.** GREEN: 41 tests, 41 pass, 0 fail, **0 skipped**. Regression
+  `node --test scripts/__tests__/*.test.mjs`: see T028 for the final count.
+
+- [x] T008 Write `scripts/__tests__/object-store-migration.rehearsal.mjs` (deliberately **not**
   `*.test.mjs`, so `guardrails`' glob — which has no Docker — does not run it; research R13). Skips
   without a Docker daemon **unless** `MCM_REQUIRE_LIVE_STACK=1`, which turns the skip into a failure.
   Scenario: seed a scratch volume with the **currently deployed** MinIO
@@ -161,7 +184,24 @@ command and reads back the evidence the operator pastes.
   **Expected RED**: fails at the first Docker-driving subcommand (`inventory`/`manifest`/`copy`/
   `verify` not implemented). 0 skipped.
 
-- [ ] T009 Implement the Docker-driving subcommands `inventory`, `manifest`, `copy`, `verify`,
+  **Done 2026-10-11.** **Deviation**: the Docker subcommands were written in the same sitting as
+  T007, so the first RED is not "subcommand not implemented". The real first RED was 16 of 16
+  failing, **0 skipped**, on
+  `AssertionError: compose.prod.yaml carries no digest-pinned rustfs/rustfs image`. The rehearsal and
+  the wrapper read the pin from `compose.prod.yaml`, and T018 had not run yet.
+
+  T009's four mutations stand in as the evidence that this file detects real defects.
+
+  Additions beyond the task:
+  - Wrapper coverage: `object-store-migration.sh` runs `inventory` to the same digest and refuses
+    `copy` without `--apply`.
+  - "copy refused while the source is still mounted".
+  - The old credential pair is rejected by RustFS.
+  - A lifecycle negative control: a lifecycle rule must not read as versioning.
+  - A notification-target refusal.
+  - A **real** SSE-S3 fixture, written by the deployed MinIO with a static KMS key.
+
+- [x] T009 Implement the Docker-driving subcommands `inventory`, `manifest`, `copy`, `verify`,
   `rehearse` (research R12): Docker via the CLI only (`DOCKER_HOST` honoured); S3 calls inside
   `docker run --rm --network <net> <pinned rustfs> curl --aws-sigv4 …` with credentials passed by
   **name** (`-e S3_SECRET_KEY`) from the caller's environment, never as a value in argv; `copy` refuses
@@ -174,7 +214,32 @@ command and reads back the evidence the operator pastes.
   assertion fails; (c) make `verify` ignore ETags → a planted ETag mismatch passes unnoticed → the
   rehearsal's planted-mismatch case fails. Regression: `node --test scripts/__tests__/*.test.mjs`.
 
-- [ ] T010 [P] Write `scripts/__tests__/object-store-service.guard.test.mjs` asserting, for every
+  **Done 2026-10-11.** `MCM_REQUIRE_LIVE_STACK=1 node --test scripts/__tests__/object-store-migration.rehearsal.mjs`
+  → **17 tests, 17 pass, 0 fail, 0 skipped**, in about 36 s. All scratch containers and volumes were
+  removed afterwards.
+
+  Mutations: each one turned the rehearsal RED, then was reverted.
+
+  | Mutation | Result |
+  |---|---|
+  | (a) drop the chown | 4 fail: the copy reports non-owned entries; RustFS never becomes ready on the copy |
+  | (b) mount the source rw and touch a file | 2 fail: `sourceDigestBefore != sourceDigestAfter`, and "the source drive is byte-identical" |
+  | (c) `verify` ignores ETags | 1 fail: the planted-mismatch case |
+  | (d) **added**: drop `LC_ALL=C` | 4 fail, including the real-SSE fixture |
+
+  **Finding (research R19)**: BusyBox `grep` in its default locale misses markers inside binary
+  `xl.meta`. On one real SSE-S3 object it counted **0** in the default locale and **1** with
+  `LC_ALL=C`; the `XL2 ` control read 6 of 6 either way.
+  - T003's SSE and tiered zeros are therefore **not evidence**, and T003's GO is provisional until the
+    operator's tool `inventory` (T037) passes.
+  - `inventory` now sets `LC_ALL=C` and runs a self-test on a planted marker that follows high bytes.
+
+  The prod wrapper `scripts/object-store-migration.sh` copies the CLI out of
+  `docker:29.8.2-cli@sha256:35cfcf89…`, runs the tool in
+  `node:24.21.0-alpine3.23@sha256:9ec4a2e2…`, and moves files with `docker cp`, not bind mounts.
+  `--network` was added to `manifest`/`verify`; it is required, never inferred.
+
+- [x] T010 [P] Write `scripts/__tests__/object-store-service.guard.test.mjs` asserting, for every
   compose service whose image is `rustfs/rustfs` (contracts/object-store-service.md S1–S8): digest
   pinned to the index digest, identical across files; **no `user:` key**; `RUSTFS_ACCESS_KEY` /
   `RUSTFS_SECRET_KEY` set (no `MINIO_*` alias, secret is `${…:?…}`); healthcheck is the S4 form;
@@ -189,13 +254,28 @@ command and reads back the evidence the operator pastes.
   **Expected RED**: fails on the instrument check — 0 RustFS services in `observability/compose.yaml`,
   `observability/compose.prod.yaml`, `backups/compose.yaml`.
 
-- [ ] T011 Measure the three open items in the contract on the pinned image (research R7, R8, R10):
+  **Done 2026-10-11.** RED: 34 tests, **24 fail**, 10 pass. The 10 passed vacuously: their loops
+  matched zero RustFS services, and the instrument check is the case that failed for that reason.
+  GREEN after T012/T017/T018: 34 pass, 0 fail, 0 skipped. Two clauses were added beyond the task:
+  `RUSTFS_CONSOLE_ENABLE: "false"` (T011b), and the S9 external-volume shape.
+
+- [x] T011 Measure the three open items in the contract on the pinned image (research R7, R8, R10):
   (a) does `/health/ready` return non-200 while the drive initialises (start on a large copied drive
   and poll from t=0)? (b) the console-disable variable for this version and that `:9001` is then
   closed; (c) `sleep` present for `exec sleep infinity`. Amend `contracts/object-store-service.md` S4/S7
   and research.md if any answer differs.
 
   **Done when**: three measured answers are recorded, and the contract matches them.
+
+  **Done 2026-10-11.** Measured on the pinned image:
+  - (a) Readiness, on a migrated drive of 5,001 objects / 300 MB, polled every 50 ms from before the
+    container existed: `/health/ready` answered `503` while the server initialised. It turned `200` in
+    the same poll as an authenticated `HEAD /langfuse` and a listing, never before them. S4 stands.
+  - (b) `RUSTFS_CONSOLE_ENABLE=false`. With it unset, the console is ON and `:9001` listens; with
+    `false`, `:9001` is closed (curl exit 7).
+  - (c) `/bin/sleep` (coreutils) is present, and `sleep infinity` runs.
+
+  The contract S4/S7 and research R7/R8/R10 now record these answers.
 
 **Checkpoint**: tool rehearsed end to end; contract guard RED and waiting for compose.
 

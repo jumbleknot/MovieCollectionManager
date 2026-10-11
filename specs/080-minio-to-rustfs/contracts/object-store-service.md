@@ -61,8 +61,17 @@ healthcheck:
 Every dependant that today waits on `langfuse-minio: condition: service_healthy` waits on
 `langfuse-rustfs: condition: service_healthy`.
 
-**Verify**: T011 measures that `/health/ready` is non-200 before the drive is initialised; if it is
-not, this clause is amended to an authenticated `HEAD /<bucket>` before implementation proceeds.
+**Verify**: T011 measured it **[measured 2026-10-11, T011]**. RustFS 1.0.1 started on a migrated
+drive of 5,001 objects / 300 MB, with a sidecar polling from before the container existed. Polled
+every 50 ms were `/health/ready`, an authenticated `HEAD /langfuse`, and an authenticated
+`ListObjectsV2`:
+
+- `/health/ready` answered `503` while the server initialised (S3 calls answered `503` too).
+- It turned `200` in the **same** poll as the authenticated HEAD and the listing.
+- It was never `200` before them.
+
+So it is a readiness signal, and the clause stands as written. No authenticated probe is needed.
+Object-store-service guard: `scripts/__tests__/object-store-service.guard.test.mjs`.
 
 ## S5 — Bucket creation
 
@@ -88,7 +97,14 @@ Idempotent by measurement: PUT of an existing bucket returns 200.
 
 ## S7 — Console and ports
 
-Console disabled (variable confirmed in T011). No console port published anywhere.
+Console disabled with `RUSTFS_CONSOLE_ENABLE: "false"` on every instance. **[measured 2026-10-11,
+T011]**:
+
+- With the variable unset, the console is **on**: `:9001` listens and answers.
+- With `false`, `:9001` is closed (`curl` exit 7) and only `:9000` listens.
+- `/rustfs/console/` on `:9000` answers `403` either way.
+
+No console port is published anywhere.
 `langfuse-rustfs`: no ports. `mcm-bff-backup-rustfs`: `127.0.0.1:9100:9000` only. Nx-cache store:
 `9000:9000` only (consumed on loopback by `nx-cache-server`; the existing tailnet-only ufw posture is
 unchanged).

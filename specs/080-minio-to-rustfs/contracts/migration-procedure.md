@@ -3,9 +3,29 @@
 Applies to: production Langfuse (`observability-langfuse-minio-data`), the dev Langfuse volume, and
 the host-managed Nx-cache volume. **Not** to the backup test destination (fixture data, fresh volume).
 
-Steps marked **[OPERATOR]** run on the production host or in Komodo and cannot be performed by CI or
-by an agent. Each step names its tool command; the tool is `scripts/object-store-migration.mjs`
+Steps marked **[OPERATOR]** run on the production host or in Komodo. Neither CI nor an agent can
+perform them. Each step names its tool command. The tool is `scripts/object-store-migration.mjs`
 (research R12).
+
+**How the tool runs on the production host** (decided 2026-10-11, tasks.md T003): through
+`scripts/object-store-migration.sh`, from a checkout of this repository on the host. Nothing is
+installed there:
+
+- The wrapper copies the Docker CLI out of a digest-pinned `docker:<v>-cli` image.
+- It runs the tool in a digest-pinned `node:<v>-alpine` container, with the host's rootless socket
+  (`$XDG_RUNTIME_DIR/docker.sock`) mounted.
+- It copies the evidence directory `$MIGRATION_DIR` in before the run and back out after it, so the
+  relative `--out`/`--manifest` paths below land there.
+- It refuses `copy` without `--apply` before any container exists.
+
+S3 credentials come from the environment **by name**. Set them without echoing, and never put them on
+a command line:
+
+```sh
+read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=minio     # M2: the OLD store's pair
+```
+
+`--network backend-network` is the network the stack's services share (`compose.prod.yaml`).
 
 ---
 
@@ -17,8 +37,16 @@ by an agent. Each step names its tool command; the tool is `scripts/object-store
    Langfuse 4.56.0 change (item #642), and approved — but **not merged**.
 3. The rehearsal (`rehearse`, T009) and the dev migration (T021) have passed, with output recorded.
 4. **[OPERATOR]** `inventory` has been run once against prod in advance (read-only; MinIO may be
-   running) as a go/no-go: layout `xl-single`, one drive, zero SSE, zero tiered. Any refusal stops the
-   feature for an operator decision (see spec Edge Cases).
+   running, which the record states as `sourceInUse: true`) as a go/no-go: layout `xl-single`, one
+   drive, zero SSE, zero tiered, instrument self-test `1 1`. Any refusal stops the feature for an
+   operator decision (see spec Edge Cases). **This is the first valid SSE/tiered measurement of
+   production**: T003's zeros came from a grep that misses markers inside binary `xl.meta`
+   (research R19).
+
+   ```sh
+   export MIGRATION_DIR=$HOME/080-cutover
+   scripts/object-store-migration.sh inventory --volume observability-langfuse-minio-data --out inventory-advance.json
+   ```
 
 ## M1 — Quiesce writers
 
@@ -26,9 +54,16 @@ by an agent. Each step names its tool command; the tool is `scripts/object-store
 
 ## M2 — Manifest
 
-**[OPERATOR]** `node scripts/object-store-migration.mjs manifest --endpoint http://langfuse-minio:9000
---out <dir>/manifest.json` (credentials from the environment, not argv). Lists every object and
-SHA-256s every multipart object plus the deterministic sample.
+**[OPERATOR]** With the OLD store's credentials in the environment (`S3_ACCESS_KEY=minio`,
+`S3_SECRET_KEY` = the value of `LANGFUSE_MINIO_ROOT_PASSWORD`):
+
+```sh
+scripts/object-store-migration.sh manifest --endpoint http://langfuse-minio:9000 \
+     --network backend-network --out manifest.json
+```
+
+It lists every object (and every version, in a versioned bucket), and SHA-256s every multipart
+object plus the deterministic sample.
 
 ## M3 — Stop the old store, inventory, copy
 
@@ -36,14 +71,20 @@ SHA-256s every multipart object plus the deterministic sample.
 
 ```sh
 docker stop langfuse-minio-init langfuse-minio
-node scripts/object-store-migration.mjs inventory --volume observability-langfuse-minio-data --out <dir>/inventory.json
-node scripts/object-store-migration.mjs copy --from observability-langfuse-minio-data \
-     --to observability-langfuse-rustfs-data --image <pinned rustfs ref> --apply --out <dir>/copy.json
+scripts/object-store-migration.sh inventory --volume observability-langfuse-minio-data --out inventory.json
+scripts/object-store-migration.sh copy --from observability-langfuse-minio-data \
+     --to observability-langfuse-rustfs-data --out copy.json --apply
 ```
 
-`copy` refuses if the target volume exists, mounts the source `:ro`, chowns the target to the uid read
-from `<pinned rustfs ref>`, asserts zero entries with another owner, and re-digests the source
-(must equal `inventory.json`'s digest).
+The RustFS image defaults to the pin in `compose.prod.yaml` (`--image` overrides it). `copy` refuses
+when:
+
+- the target volume exists, or
+- the source is still mounted by a running container.
+
+Otherwise it mounts the source `:ro` and creates the target. It chowns the target to the uid read from
+the pinned image, and asserts zero entries with another owner. It re-digests the source, which must
+equal the digest taken just before the copy, and `inventory.json`'s.
 
 ## M4 — Deploy
 
@@ -56,11 +97,12 @@ the intended fail-safe (contract S9).
 
 ## M5 — Verify
 
-**[OPERATOR]**
+**[OPERATOR]** With the NEW store's credentials in the environment (`S3_ACCESS_KEY=langfuse`,
+`S3_SECRET_KEY` = the value of `LANGFUSE_RUSTFS_SECRET_KEY`):
 
 ```sh
-node scripts/object-store-migration.mjs verify --endpoint http://langfuse-rustfs:9000 \
-     --manifest <dir>/manifest.json --out <dir>/parity.json
+scripts/object-store-migration.sh verify --endpoint http://langfuse-rustfs:9000 \
+     --network backend-network --manifest manifest.json --out parity.json
 ```
 
 Pass = SC-001. Then in the Langfuse UI: a pre-migration trace with media loads; run one assistant
