@@ -36,7 +36,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-11T22:25:03.651Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -122,14 +122,23 @@ proposal, and the always-on gates sit after it rather than inside it.
   third-party host happens to be down. `okf-governance` has the identical posture, and both run as
   steps of the same always-on `okf` CI job, each preceded by its own `--selftest` so a rule that
   silently stopped detecting its case turns the build red.
-- **Drift detection is report-only, never blocking.** If a concept's cited source changed after the
-  concept's stamp — the newest of `generated.at`, `verified.at` and `timestamp`
-  (`scripts/openwiki-stamp.mjs`) — the gate lists it as a warning but does not fail the build — regenerating
-  a concept is a manual, model-cost step, so a blocking drift check would gate every unrelated
-  documentation edit on a paid run. Two consequences worth knowing: drift is not an input to the
-  planner, so nothing re-plans a concept once the run-record marker has passed its source change; and
-  a concept that cites a source but carries no usable stamp is counted and printed rather than
-  silently dropped, because drift coverage that shrinks quietly still prints as conformant.
+- **Drift is report-only in the gate, but an input to the planner.** If a concept's cited source
+  changed after the concept's stamp — the newest of `generated.at`, `verified.at` and `timestamp`
+  (`scripts/openwiki-stamp.mjs`) — rule V12 lists it as a warning and never touches the exit code,
+  because regenerating a concept is a manual, model-cost step and a blocking drift check would gate
+  every unrelated documentation edit on a paid run. Closing the gap is the planner's job: besides the
+  paths changed since the run-record marker and the carried-forward backlog, every plan takes up to
+  `DRIFT_PAGES_PER_RUN` (2) drifted concepts, **oldest stamp first** and only from the page budget
+  left over, and reports the rest without writing it to the backlog — the bound is what stops one
+  edit to a widely cited file from enqueuing every concept citing it at once. A drifted page under a
+  **directory** `resource` is unplannable, since any commit under it re-flags the page, and a parked
+  page is excluded and listed instead. Drift is never fanned out from changed paths, so a page whose
+  source moved *before* the marker can be planned again without the hand-seeded sweep that used to be
+  the only way to clear the V12 list. Two further consequences worth knowing: a concept that cites a
+  source but carries no usable stamp is counted and printed rather than silently dropped, because
+  drift coverage that shrinks quietly still prints as conformant; and the planner, the verifier's
+  stale-page check and V12 all read one comparison (`scripts/openwiki-drift.mjs`), so the three
+  cannot disagree.
 - **`docs/proposals/**` is deliberately excluded from the bundle** — see
   [Spec-driven development](./spec-driven-development.md) for why, and where the one
   process concept documenting that lifecycle lives instead.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9ec27555e13bea2a6679ba3c80a5b39bd08d9d291634710654325344145bdb96",
+  "pageVersion": "sha256:91048eb4048217d0428128b4567fa8c6a7234d1b42ec506570247e791939e46b",
   "claims": [
     {
       "id": "claim_8dae93c0934d4f8da3e82f0eb70b444c",
@@ -450,19 +450,23 @@
     },
     {
       "id": "claim_41814f6b78364cf48e8041685e3e3394",
-      "statement": "Workflow YAML and Dockerfiles were both added to the pull-request changed-scope filter after each class of file was found to be gated on nothing: workflow YAML was absent until item #224, so a `curl … | sh` added to a workflow first appeared only on the post-merge full scan, and a Dockerfile has no extension so PR #422's new Dockerfile was handed to nothing and reddened `main` on a missing-user-entrypoint finding until an accepted-risk entry landed (item #426). `DOCKERFILE_PATH_RE` admits Dockerfile spellings without substring-matching `.dockerignore` or prose, and the scope widening is limited to the two workflow trees rather than every `.yml` tree-wide.",
+      "statement": "Workflow YAML and Dockerfiles were both added to the pull-request changed-scope filter after each class of file was found to be gated on nothing: workflow YAML was absent until item #224, so a `curl … | sh` added to a workflow first appeared only on the post-merge full scan, and a Dockerfile has no extension so PR #422's new Dockerfile was handed to nothing and reddened `main` on `dockerfile.security.missing-user-entrypoint` until an accepted-risk entry landed (item #426). That finding and its entry are both gone now — the minio image sets `USER 1000:1000` before its `ENTRYPOINT` (feature 070) and no `dockerfile.*` entry remains in the allowlist, so a regression re-blocks. `DOCKERFILE_PATH_RE` admits Dockerfile spellings without substring-matching `.dockerignore` or prose, and the scope widening is limited to the two workflow trees rather than every `.yml` tree-wide.",
       "evidence": [
         {
-          "resource": "repo://scripts/sast-scan.mjs#L210-L210",
-          "version": "repo-lines-v1:sha256:dd4c5163396ec7636bd13f9861aea426ad364ca53cb33720a921f7c9cbef2ba6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGQ0YzUxNjMzOTZlYzc2MzZiZDEzZjk4NjFhZWE0MjZhZDM2NGNhNTNjYjMzNzIwYTkyMWY3YzljYmVmMmJhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGQ0YzUxNjMzOTZlYzc2MzZiZDEzZjk4NjFhZWE0MjZhZDM2NGNhNTNjYjMzNzIwYTkyMWY3YzljYmVmMmJhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM1NjU4NThjYjY1ODk4MjU5MmM5ZmYxZjg5MDE3N2ZjNjBkMjA3MGUyOTQ1NDQ0ODg3YWQ5NThkZjZiMmI2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTcyOTZkMWQ4ZTE5MDFmZmRmZWQ5NzJkMGYzZjMxNmE4ZTAxY2VhODdhMWUwYjNmYjdmZWUyYTY1YmRjMDRlMyJ9"
+          "resource": "repo://infrastructure-as-code/docker/minio/Dockerfile",
+          "version": "repo-file-v1:sha256:819747cd307378838ad8883be9c56e4350ef078ecd691f60b5072997bb5f68d9"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L208-L211",
+          "version": "repo-lines-v1:sha256:a879c5b693f53e673be4174cfd2bfb1cba4e6927d3c93fe153fae0ee1adae733:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDMwNDhhN2UzNDVhZjBmMmQ1OWRlOGY0YmE5YzQxZTQ0MTJjMDM3ZTY1MzI5MTgzMDU2YWIxYTBlZGE2ZWY0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGFiYTk5MzVkMDViMzRlM2ZlNDg5YzY3OWRkZTBjOGZmNTMyM2FmMmVlMzJlNjkxZjM3OWVlZjMwNGIwNjVmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjk2NDMyNTI4OGYzZGE1MTNjMmU2Mzc5MjgxOGZhNGRiNGVlY2RkNjllZmFkMDNjOGRkYTI0MjIyYWI3MWYyNyJ9"
         },
         {
           "resource": "repo://scripts/sast-scan.mjs#L61-L61",
           "version": "repo-lines-v1:sha256:c902758437c4492df3aee1decd704e5722cd2e3b23e24d121f5ab2445ffad61d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkwMjc1ODQzN2M0NDkyZGYzYWVlMWRlY2Q3MDRlNTcyMmNkMmUzYjIzZTI0ZDEyMWY1YWIyNDQ1ZmZhZDYxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkwMjc1ODQzN2M0NDkyZGYzYWVlMWRlY2Q3MDRlNTcyMmNkMmUzYjIzZTI0ZDEyMWY1YWIyNDQ1ZmZhZDYxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTVkMDczYjFiYjFiZDE2OGY0MjI0OWRlZGVjZDliN2ZkN2UxNDA1ZTY5ODMwMjQ4YzhjMmFlOGExZjRlOWE4YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2NiOTUxNWVjNDI3YmE2YTQwMzFmMDg1NjJlYTczNjM0MjkwNTFmZDc0NTVkMzc2MDlkMjYwYTgzMzUwNjA1OCJ9"
         },
         {
-          "resource": "repo://security/sast/README.md#L70-L76",
-          "version": "repo-lines-v1:sha256:fb5d7513fac4e4fbaa3a25ac9b9a6d2719104200de37ed3f5bf2ff42f1517a7b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJiYTAyNmZhMDFlNzc1ZmQxM2M0MzJkNzMxNjNkOTY4YWY5Y2VlZDBmMjA5YTM0M2I0ZDE4ZmJlN2MzMTJiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjcwMGY0MmQxMmFmZGVmNmY5YmUzZGM0ZWU3NDJjYjhkOGI0YmFmMTk2ZDMzNTM0YmY2MmNhNjJiNDI1MzI5ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDMyODk5Zjg5ZTg0YjEyNDE0NGRhMmVmM2I1ZTQ1ZDE4MzM4MGRhODE0NTBiNTBlNGE4OWU0MDFjYzIxNGFlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWFkODI3YjViODhiNTQ3ZmE3NDU2Njg3MzM3ZTM2NzAxOWZmNGNiY2YwZDg1YmY5M2Q4YWU0OTFiZGJjOTJjMyJ9"
+          "resource": "repo://security/sast/allowlist.yaml",
+          "version": "repo-file-v1:sha256:953554f7fb6484c54e28356a884f364e0066f6e9c9fe756e9c271ea3e4bc722c"
         }
       ]
     },
@@ -709,6 +713,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T16:36:45.100Z"
+    "at": "2026-10-11T22:25:03.651Z"
   }
 }

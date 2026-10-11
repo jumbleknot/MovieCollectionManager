@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4d5913dc39c58034ca3deb3edbcdb0f4eb30bed2df7c42e5517d4f947b190737",
+  "pageVersion": "sha256:5c88c1af812a4af3cfd237ccc636f4685c867a09d0ad549aa1c6f5166e726537",
   "claims": [
     {
       "id": "claim_c94970677b844011986b6c34aa1dac78",
@@ -175,10 +175,34 @@
           "version": "repo-lines-v1:sha256:9df7d2696afc522c7ea6e75dca4c03305f2b05d058d3a77490aace6210d23983:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYTFkOTQ0MTA0NWQ5YzdkOGJlYzBkNzQ2NWI0ODk4YmEwNzE5YTliMzA5NmM4MjFjNmVlOWU3MGM0NzdkYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3YjExZDE3ZTBlNTM0Y2JjMmJkNWNkNjQwMGI5YTc0ZDI3OWZiNTNmNTZmNjljOTM4YTZlYmNmMmY3ZWM4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNmM4YTMzZGRlNzA1NzQ4M2JhNjJmMjk4NmJhZWQ0NmFiZmU0ZDVjNzU4NTQxMzJkMDFlZDI4ZjJkYWNjNDIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_a22f7ce7228147dbb353e959949c84a1",
+      "statement": "The reserved range 19000–19099 lies below the Linux ephemeral port range (32768+), so a reserved prod published port cannot be transiently claimed by an outbound client connection.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L9-L13",
+          "version": "repo-lines-v1:sha256:85c3d2b90788958ff9599c4ca8bbc0a083b3bb40a58d2ac0317c35c34fca28f4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGMwYmRlMzc0NzQ4ZTE1Mjc2N2U4YWYzYjQxNmMyZjEyOTU0NzJiMzUzN2FiYjc0MzZjMmYwOTRiYTJmYTVhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUwZGIwY2FkYjA4OGFhNjlhMTJmMmNkNmJmMWNiNzlmN2Q0YjdlZTI2MjRlNTM4YTE5MDliNWJiMzQ5ZWVhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmJmNDEyNGUzY2YwYTM3YTRhYzNjN2YxOTQxNTg5YWRmZTZjMDA2YjQ0MjhhZDE4MTQzMWVjNmI0M2YwNDAwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI2YWQ1NTg1NTFhOTcxOWYwOWNmMThiYmM5ZDhkZDNhZGE4ZjA1ZTE4MTUxYTljOWEyODE0ODI1MDRmYmRiMSJ9"
+        },
+        {
+          "resource": "repo://specs/029-prod-ci-port-isolation/research.md#L30-L30",
+          "version": "repo-lines-v1:sha256:bede57ce20dcb478d6f4b06113fcb93887b2c18ff3a97d2d7693831ad52e47ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmVkZTU3Y2UyMGRjYjQ3OGQ2ZjRiMDYxMTNmY2I5Mzg4N2IyYzE4ZmYzYTk3ZDJkNzY5MzgzMWFkNTJlNDdiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmVkZTU3Y2UyMGRjYjQ3OGQ2ZjRiMDYxMTNmY2I5Mzg4N2IyYzE4ZmYzYTk3ZDJkNzY5MzgzMWFkNTJlNDdiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTRkYWY1NDUwYzE5NzVkZmQyZTJjZWU0NzAyNDg4YjliNGQ2YmVmZTM4NjE2MTU3YmEwYmE4OGFmMDk1NDczOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGMwZTkwMTdkZTkxYmQ0NDFmY2VlNGQwYmU5ZDVhMWE1YzE4Nzg5MWY1NmZiMDlhY2IzZWVlMmJmMTE0ZDU1ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_721bc41dc071480ea53e9476f1a546d4",
+      "statement": "The collision gate discovers candidate compose files with two globs — infrastructure-as-code/docker/**/compose*.yaml and infrastructure-as-code/docker/stacks/*.compose.yaml — and classifies each by basename (a basename ending .prod.yaml is prod, everything else discovered is CI/dev), so a compose file whose name does not begin with 'compose' falls outside the scan.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L102-L127",
+          "version": "repo-lines-v1:sha256:6bd7a6688e51eff82c967e028de1f1b303a6b964fa63ccf45ea88989c6a5f13c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhY2M0ZTlhOTBmYWJkOGUxZjllODc0NWE2MGNhNjQzZmYxOTQ3Yjg3NGM1MWNkZGI5OTQ4YTBmOGQxMmY1ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyM2Q4ZjExYWEzZmQ1MWVhNjZjMGFhODY1NjNiOWI3ODI5MmU0NDBiMTkxOGVjMmZiMDI2NjdkZDUyNDQ0NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYjZmM2QwOWJiOGNhYTZiOTUyYWVkZWE5ZTFmZWI3M2IyNjE3MzNjOTBiMGNiZWI1OGM4MjZmMGIxNjAxZDQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-10T21:52:25.656Z"
+    "at": "2026-10-11T22:25:03.651Z"
   }
 }

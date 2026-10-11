@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: SAST & SCA static scanning
-description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) across the whole dependency graph, normalized into one blocking `sast` CI gate that must distinguish a scanner outage from a finding — and a finding on a file the pull-request scan never received from a clean one.
+description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
@@ -52,19 +52,58 @@ sources:
     resource: repo://security/sast/semgrep.yaml
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T16:36:45.100Z
+    at: 2026-10-11T22:25:03.651Z
 ---
 
 # SAST & SCA static scanning
 
-Four scanners — Semgrep (TS/JS + Python source), cargo audit (Rust deps), pnpm audit (JS deps — every
-committed `pnpm-lock.yaml`, root and nested workspace alike), and pip-audit (Python deps — all four
-Python surfaces) — feed one normalized findings report and one blocking `sast` CI job. It
-complements [DAST scanning](./dast-scanning.md): DAST exercises the running app,
-this scans source and the dependency graph at rest. It is also disjoint from
-[infra-image scanning](./infra-image-scanning.md), which scans pulled third-party
-container images rather than first-party code or first-party dependency graphs. For how the pieces fit
-together architecturally, see [SAST & SCA static security scanning](../projects/sast.md).
+Four scanners — Semgrep over first-party TS/JS and Python source (the target filter also admits the two
+workflow trees and first-party Dockerfiles), cargo audit over Rust dependencies, pnpm audit over **every
+committed `pnpm-lock.yaml`** (root and nested workspace alike), and pip-audit over **all four** Python
+venvs — feed one normalized findings report and one blocking `sast` CI job. It complements
+[DAST scanning](./dast-scanning.md): DAST exercises the running app, this scans source and the dependency
+graph at rest. It is also disjoint from [infra-image scanning](./infra-image-scanning.md), which scans
+pulled third-party container images rather than first-party code or first-party dependency graphs. For
+how the pieces fit together architecturally, see [SAST & SCA static security scanning](../projects/sast.md).
+
+```mermaid
+flowchart TD
+  S1["Semgrep: TS/JS and Python source, workflow YAML, Dockerfiles"] --> N
+  S2["cargo-audit: Cargo.lock"] --> N
+  S3["pnpm audit: every committed pnpm-lock.yaml"] --> N
+  S4["pip-audit: the four Python venvs"] --> N
+  N["sast-scan.mjs: normalize severity, derive scope and the blocking flag"] --> R["findings.json plus SARIF, summary, per-scanner native output"]
+  N -->|a scanner fails| FC["fail closed: the error is recorded and the scan exits 1 after writing a partial report"]
+  R --> G["check-sast-findings.mjs"]
+  G --> P["exit 0: no un-allowlisted blocking finding"]
+  G --> X["exit 1: un-allowlisted blocking finding, or GATE-SCOPE ASYMMETRY"]
+```
+
+Four scanners, one normalization step, one report, and one gate with exactly two blocking exit paths —
+the second of which is about the gate's own coverage rather than about the code.
+
+## Running it, and where the output lands
+
+Both entry points are static — no application stack is required:
+
+```bash
+pnpm nx sast infrastructure-as-code        # → node scripts/sast-scan.mjs --scope full
+node scripts/check-sast-findings.mjs       # the gate: exit 0 pass / 1 fail / 2 bad input
+```
+
+Reports land in `security/sast/reports/` (gitignored): `findings.json` is the gate's input contract, with
+`findings.sarif`, `summary.txt` and `<scanner>-native.json` for triage. `--scope changed --base <ref>`
+narrows Semgrep to the files changed against `<ref>` (SCA still runs full), `--only <scanner,...>`
+restricts the scanners — the lever that gets you the SCA half when Semgrep's registry is unreachable —
+and `--emit-allowlist` writes a proposed baseline for triage.
+
+The blocking `sast` job in [guardrails.yml](../../.forgejo/workflows/guardrails.yml) runs on every pull
+request and every push to `main`, with **no `paths:` filter**. It installs the toolchain, `uv sync`s all
+four Python surfaces, runs the gate's `--selftest` and the custom rules' fixtures *before* the scan, then
+the scan (`--scope changed` on a PR, `--scope full` on push) and the gate, and uploads the `sast-report`
+artifact unconditionally. The forge exposes no per-step logs, so a failed job is read from that artifact
+or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> --job sast` (see
+[CI self-serve diagnostics](./ci-diagnostics.md)).
 
 ## Gotchas
 
@@ -170,7 +209,7 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   while the **host-side sandbox policy is scoped per sandbox** and does not pick up a new destination
   until an operator re-applies it (`sbx policy allow network semgrep.dev --sandbox mcm` on the
   Windows host — see
-  [devcontainer-sandbox.md](../../docs/runbooks/devcontainer-sandbox.md#4-egress-allowlist)). The
+  [devcontainer-sandbox.md](./devcontainer-sandbox.md#4-egress-allowlist)). The
   committed entry does not tell you which world you are in. One command does:
   ```bash
   curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous

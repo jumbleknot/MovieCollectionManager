@@ -58,7 +58,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T16:36:45.100Z
+    at: 2026-10-11T22:25:03.651Z
 ---
 
 # SAST & SCA static security scanning
@@ -98,7 +98,7 @@ another tree — that tree gets its own, separately justified entry or it blocks
 
 ```mermaid
 flowchart TD
-  S1["Semgrep: TS/JS and Python"] --> N
+  S1["Semgrep: TS/JS and Python source, workflow YAML, Dockerfiles"] --> N
   S2["cargo-audit: Cargo.lock"] --> N
   S3["pnpm audit: every committed pnpm-lock.yaml"] --> N
   S4["pip-audit: four Python venvs"] --> N
@@ -678,7 +678,9 @@ a scan that happened to pass.
   trees; a Dockerfile has **no extension**, so PR #422's new Dockerfile was handed to nothing, its
   `guardrails / sast` was a real passing run, and the post-merge full scan reddened `main` on
   `dockerfile.security.missing-user-entrypoint` until an accepted-risk entry landed (item #426).
-  `DOCKERFILE_PATH_RE` now admits Dockerfile spellings (`Dockerfile`, `Dockerfile.prod`,
+  That finding and its entry are **both gone now**: the minio image sets `USER 1000:1000` before its
+  `ENTRYPOINT` (feature 070) and no `dockerfile.*` entry remains in the allowlist, so a regression
+  re-blocks. `DOCKERFILE_PATH_RE` now admits Dockerfile spellings (`Dockerfile`, `Dockerfile.prod`,
   `toolchain.Dockerfile`) without substring-matching `.dockerignore` or prose.
 
   Because that class of bug is invisible from a green gate, the gate itself now reports it:
@@ -700,8 +702,8 @@ a scan that happened to pass.
   The whole PR-visible surface was then enumerated once, by testing every full-scan finding's path
   against `isScanTarget`. After Dockerfiles were added, **zero blocking findings sit on a file class a
   pull request cannot see**. Two classes remain deliberately invisible and are recorded rather than
-  closed: `.json` (e.g. `renovate.json`) and non-workflow `.yaml` (e.g. `pnpm-workspace.yaml`), which
-  between them carry 22 findings that are *all* Medium and so report-only on a push too. That residual
+  closed: `.json` (e.g. `renovate.json`) and non-workflow `.yaml` (e.g. `pnpm-workspace.yaml`), whose
+  findings are all Medium and so report-only on a push too. That residual
   is a **snapshot of today's rule set** — if a pack update promotes one of those rules to ERROR, the
   gap reopens silently and the enumeration method must be re-run.
 
