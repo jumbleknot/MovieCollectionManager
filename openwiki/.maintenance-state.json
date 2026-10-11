@@ -1,8 +1,29 @@
 {
-  "coveredCommit": "5af1f9b4253e97e0d50051b8a0281749b088b983",
-  "coveredAt": "2026-10-10T22:43:52.958Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "c51d9a99b04f73fd74f7aa7c608f710e51aced3b",
+  "coveredAt": "2026-10-11T17:21:40.009Z",
+  "lastOutcome": "completed",
   "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "sast.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/sast-scanning.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/sast.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "sast-scanning.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md"
+    },
     {
       "area": "runbooks",
       "pages": [
@@ -11,23 +32,38 @@
       "kind": "create",
       "subjects": {},
       "areaExists": true,
-      "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox-lifecycle.md"
+      "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox-lifecycle.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     },
     {
       "area": "runbooks",
       "pages": [
-        "wiki-maintenance.md"
+        "prod-reboot-resilience.md"
       ],
       "kind": "refresh",
+      "drift": true,
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md"
+      "reason": "drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-reboot-resilience.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "invariants",
+      "pages": [
+        "published-port-reservation.md"
+      ],
+      "kind": "refresh",
+      "drift": true,
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/published-port-reservation.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 728,
-    "headCommit": "026d0742ae73644e2e2653d0b80f475a2c1b7ea0",
+    "headCommit": "5af3446781917d815b66e1b9ab4fa2309401088e",
     "markerBefore": "631f47dcc2e8890a9d599cbc34125490ed19a47d",
     "slices": [
       {
@@ -56,36 +92,39 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "wiki-maintenance.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md"
       }
     ],
-    "updatedAt": "2026-10-11T16:14:24.469Z"
+    "updatedAt": "2026-10-11T17:21:40.503Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 15,
-    "elapsedSeconds": 3314,
-    "stoppedAtBudget": false
+    "pagesWritten": 3,
+    "elapsedSeconds": 2699,
+    "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/wiki-maintenance.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 2
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 577,
+    "calls": 268,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 5421708,
-    "cached": 42334432,
+    "uncached": 1499539,
+    "cached": 26298934,
     "cacheWrite": 0,
-    "output": 1025533,
-    "reasoning": 835473,
-    "ms": 9229378,
-    "estCostUsd": 3.1112,
+    "output": 381402,
+    "reasoning": 287017,
+    "ms": 3375166,
+    "estCostUsd": 1.0653,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -95,18 +134,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/ci-evidence-pipeline.md",
-        "runbooks/sast-scanning.md",
-        "runbooks/server-setup.md",
-        "runbooks/android-emulator.md",
-        "runbooks/devcontainer.md",
-        "runbooks/infra-image-scanning.md",
-        "runbooks/prod-reboot-resilience.md",
         "runbooks/wiki-maintenance.md"
       ],
       "effort": "low",
       "deadlineStop": false,
-      "estCostUsd": 3.1112,
+      "estCostUsd": 1.0653,
       "rateLimited": null
     }
   ],
