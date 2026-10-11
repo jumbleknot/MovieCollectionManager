@@ -54,7 +54,7 @@
   },
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 2195,
+    "elapsedSeconds": 2347,
     "stoppedAtBudget": false
   },
   "escalations": {
@@ -62,68 +62,68 @@
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/sast-scanning.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/server-setup.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/android-emulator.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/devcontainer.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/infra-image-scanning.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/prod-reboot-resilience.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/wiki-maintenance.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     }
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 412,
-    "failedCalls": 0,
+    "calls": 603,
+    "failedCalls": 25,
     "uncounted": 0,
-    "uncached": 3012815,
-    "cached": 35904984,
+    "uncached": 4424724,
+    "cached": 44273276,
     "cacheWrite": 0,
-    "output": 763508,
-    "reasoning": 662479,
-    "ms": 6046271,
-    "estCostUsd": 2.0355,
+    "output": 885759,
+    "reasoning": 720725,
+    "ms": 6765944,
+    "estCostUsd": 2.656,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
@@ -138,9 +138,9 @@
         "runbooks/prod-reboot-resilience.md",
         "runbooks/wiki-maintenance.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 2.0355,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 2.656,
       "rateLimited": null
     }
   ],
