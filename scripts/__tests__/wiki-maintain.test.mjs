@@ -1381,6 +1381,47 @@ test('execute (run 5104): a V16 break on a page that LANDED still fails the whol
   }
 });
 
+test('execute (run 5145): a requested page left MID-EDIT (V16-broken, not stale) is attributed to itself; the submitted ones land', () => {
+  // Push run 5145 (2026-10-11): 5 of 6 workers submitted (openwiki finalizes each page's Claims ON
+  // SUBMIT), but projects/sast.md was mid-edit at the deadline. Its bytes no longer matched its sidecar
+  // (V16), yet its stamp was fresh, so it was neither missing nor stale and #729's confinement never
+  // applied: nothing landed. V16 names the page, so the failure is attributable to it.
+  const root = twoAreaRepo();
+  try {
+    const page = (body) => `---\ntype: Convention\ntitle: two\ndescription: Fresh.\nresource: README.md\ntimestamp: 2999-01-01T00:00:00Z\nverified:\n  - by: openwiki/0.7.1\n    at: 2999-01-01T00:00:00Z\n---\n${body}\n`;
+    const certified = page('Certified.');
+    const hash = `sha256:${createHash('sha256').update(certified).digest('hex')}`;
+    writeFileSync(join(root, 'README.md'), 'source\n');
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), certified);
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+    mkdirSync(join(root, 'openwiki', '.claims', 'gotchas'), { recursive: true });
+    writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json'), JSON.stringify({ pageVersion: hash, verification: { by: 'openwiki/0.7.1', at: '2999-01-01T00:00:00Z' }, claims: [] }));
+    writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/two.md': { pageVersion: hash } } }));
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'certified, fresh page'], { cwd: root });
+    const committed = (rel) => spawnSync('git', ['show', `HEAD:${rel}`], { cwd: root, encoding: 'utf8' }).stdout;
+
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md']), sl('gotchas', ['two.md'])], attemptsPerSlice: 1,
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), page('Mid-edit when the deadline hit.'));
+        return { status: 0 };
+      },
+    });
+    assert.deepEqual(result.results[0].failedPages, ['gotchas/two.md'], 'the V16-broken requested page is the failed one');
+    assert.deepEqual(mod.proposableSlices(result).map((s) => [s.area, s.pages]), [['invariants', ['one.md']]]);
+    assert.equal(result.pagesWritten, 1);
+    assert.deepEqual(result.backlog.map((s) => [s.area, s.pages]), [['gotchas', ['two.md']]], 'only it is carried forward');
+    assert.equal(readFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), 'utf8'), committed('openwiki/gotchas/two.md'));
+    const okf = spawnSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs'), '--bundle', join(root, 'openwiki')], { cwd: REPO_ROOT, encoding: 'utf8' });
+    assert.equal(okf.status, 0, `${okf.stdout}${okf.stderr}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('execute (#685): a failed part\'s path that was ALREADY dirty before the invocation is left alone', () => {
   const root = twoAreaRepo();
   try {
@@ -1643,8 +1684,14 @@ test('execute: a slice whose output breaks the Markdown/Claims invariant fails i
       // Rewrites the covered page without re-certifying its Claims.
       invoke: () => { writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), covered.replace('Body.', 'New body.')); return { status: 0 }; },
     });
+    // The premise since run 5145: a V16 break on a REQUESTED page is attributed to that page, which is
+    // put back to its certified bytes (#685's triple restore) and fails. The property guarded is the
+    // same: the uncertified bytes are never published, and openwiki is never handed a non-durable bundle.
     assert.equal(result.outcome, 'failed');
-    assert.match(result.results[0].violations.join('\n'), /V16|not durable/);
+    assert.match(result.results[0].violations.join('\n'), /left mid-edit by their worker and restored: gotchas\/two\.md/);
+    assert.deepEqual(mod.proposableSlices(result), [], 'nothing is proposed');
+    assert.equal(readFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), 'utf8'), covered, 'the uncertified bytes are gone');
+    assert.deepEqual(claimsMod.claimsDurabilityFindings(join(root, 'openwiki')), [], 'and the bundle is durable again');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -1800,11 +1847,11 @@ test('execute: after a DEADLINE stop, a half-written forced page is restored and
 });
 
 /** openwiki's reconciliation of the covered `gotchas/forced.md`: page, sidecar and manifest agree (V16). */
-function reconcileForced(root, body) {
+function reconcileForced(root, body, verifiedAt = '2026-10-10T00:00:00Z') {
   const text = `---\ntype: Convention\ntitle: forced\ndescription: Reconciled.\n---\n${body}\n`;
   const hash = `sha256:${createHash('sha256').update(text).digest('hex')}`;
   writeFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), text);
-  writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'forced.json'), JSON.stringify({ pageVersion: hash, verification: { by: 'x', at: '2026-10-10T00:00:00Z' }, claims: [] }));
+  writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'forced.json'), JSON.stringify({ pageVersion: hash, verification: { by: 'x', at: verifiedAt }, claims: [] }));
   writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/forced.md': { pageVersion: hash } } }));
 }
 
@@ -1828,19 +1875,46 @@ test('execute (#707): a FORCED page that completed V16-sound is proposed althoug
   }
 });
 
-test('execute (#707): after a DEADLINE stop a forced page is NOT proposed — its completion is unknowable', () => {
+test('execute (#707): after a DEADLINE stop a forced page whose sidecar was NOT stamped by this run is reverted', () => {
+  // A V16-sound page whose verification predates the invocation is openwiki's restore path (#685), not
+  // a submission — it must not ride along.
   const root = coveredPageRepo();
   try {
     const result = mod.executeSlices({
       root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
       slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1,
       clock: () => 1_000_000, deadlineMs: 1_000_000 + 60 * 60_000,
-      invoke: () => { reconcileForced(root, 'Reconciled.'); return { status: 124 }; },
+      invoke: () => { reconcileForced(root, 'Reconciled.', '2020-01-01T00:00:00Z'); return { status: 124 }; },
     });
     assert.equal(result.outcome, 'failed');
     assert.deepEqual(result.results[0].forcedPages, []);
     assert.equal(result.pagesWritten, 0, 'nothing to propose');
     assert.match(readFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), 'utf8'), /Original\./, 'revertUnrequested restored it');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (run 5145): after a DEADLINE stop a forced page SUBMITTED in this run is kept and proposed', () => {
+  // openwiki 0.7.1 finalizes each page's Claims on submit_page, stamping verification.at with the run's
+  // start. A forced page that submitted before the stop is therefore durable, and paid for: keep it.
+  const root = coveredPageRepo();
+  try {
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md'])], attemptsPerSlice: 1,
+      clock: () => 1_000_000, deadlineMs: 1_000_000 + 60 * 60_000,
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        reconcileForced(root, 'Reconciled.', new Date(Date.now() + 1000).toISOString());
+        return { status: 124 };
+      },
+    });
+    assert.deepEqual(result.results[0].forcedPages, ['gotchas/forced.md']);
+    assert.equal(result.pagesWritten, 2, 'the requested page and the submitted forced one');
+    assert.match(readFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), 'utf8'), /Reconciled\./);
+    const okf = spawnSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs'), '--bundle', join(root, 'openwiki')], { cwd: REPO_ROOT, encoding: 'utf8' });
+    assert.equal(okf.status, 0, `${okf.stdout}${okf.stderr}`);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

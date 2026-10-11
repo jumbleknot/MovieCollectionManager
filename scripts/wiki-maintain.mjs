@@ -48,7 +48,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { parse as parseYaml } from 'yaml';
 import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
-import { carryClaimsHash, CLAIMS_DIR, PAGE_MANIFEST } from './openwiki-claims.mjs';
+import { carryClaimsHash, claimsDurabilityFindings, CLAIMS_DIR, PAGE_MANIFEST } from './openwiki-claims.mjs';
 import { auditClaims, formatAudit, loadOpenwikiResolver } from './wiki-claims-audit.mjs';
 import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
@@ -1419,10 +1419,31 @@ const sha = (file) => {
  *
  * Only for a deadline stop: a run that ENDS on its own is judged on everything it wrote.
  */
-export function revertUnrequested({ root = REPO_ROOT, bundleRoot = null, slice, before = new Map() } = {}) {
+export function revertUnrequested({ root = REPO_ROOT, bundleRoot = null, slice, before = new Map(), submittedSince = null } = {}) {
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const prefix = `${relative(root, bundleDir).split(sep).join('/')}/`;
   const keep = new Set();
+  // Run 5145: openwiki 0.7.1 finalizes each page's Claims ON SUBMIT (submitRepositoryPage), stamping the
+  // sidecar's verification.at with the run's start. So an unrequested (forced) page that submitted
+  // before the stop is durable and paid for, and is kept with its sidecar. A V16-sound page whose
+  // verification PREDATES this invocation is openwiki's restore path (#685), not a submission: reverted.
+  if (submittedSince !== null) {
+    const since = Date.parse(submittedSince);
+    for (const path of detectWrittenPaths(root)) {
+      if (!path.startsWith(prefix) || !isConceptPage(path) || before.has(path)) continue;
+      const rel = path.slice(prefix.length);
+      const claimsPath = `${prefix}${CLAIMS_DIR}/${rel.replace(/\.md$/u, '.json')}`;
+      try {
+        const sidecar = JSON.parse(readFileSync(join(root, claimsPath), 'utf8'));
+        const at = Date.parse(sidecar?.verification?.at ?? '');
+        const actual = `sha256:${createHash('sha256').update(readFileSync(join(root, path))).digest('hex')}`;
+        if (!Number.isNaN(at) && at >= since && sidecar.pageVersion === actual) {
+          keep.add(path);
+          keep.add(claimsPath);
+        }
+      } catch { /* no readable sidecar: not a submission */ }
+    }
+  }
   for (const part of partsOf(slice)) {
     keep.add(`${prefix}${part.area}/index.md`);
     for (const page of part.pages ?? []) {
@@ -1550,7 +1571,7 @@ const isConceptPage = (relPath) => relPath.endsWith('.md') && !RESERVED_BUNDLE_F
  *      written or not (#587, #616). Conformance (2) includes V16: every page openwiki covers still
  *      matches its verified Claims, since a bundle that breaks that stops every later run.
  */
-export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy = null, before = new Map(), actor = 'generator' } = {}) {
+export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy = null, before = new Map(), actor = 'generator', restoredPages = [] } = {}) {
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const bundlePrefix = `${relative(root, bundleDir).split(sep).join('/')}/`;
 
@@ -1612,6 +1633,12 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
     );
   }
   const noChange = missing.length === 0 && stalePages.length === 0 && pagesWritten.length === 0;
+  // Run 5145: requested pages the executor put back after a worker left them mid-edit. Their committed
+  // bytes may be current, but the request was not done, so they fail and are carried forward.
+  const restored = restoredPages.filter((key) => !missing.includes(key) && !stalePages.includes(key));
+  if (restored.length > 0) {
+    violations.push(`${restored.length} requested page(s) were left mid-edit by their worker and restored: ${restored.join(', ')}.`);
+  }
 
   if (policy !== null) {
     for (const p of written) {
@@ -1639,10 +1666,11 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
 
   // Only the missing-page and stale-page checks are attributable to a PAGE; a policy or conformance
   // violation is the whole invocation's, so it carries every part forward.
-  const attributable = violations.length > 0 && violations.length === (missing.length > 0 ? 1 : 0) + (stalePages.length > 0 ? 1 : 0);
+  const attributable = violations.length > 0
+    && violations.length === (missing.length > 0 ? 1 : 0) + (stalePages.length > 0 ? 1 : 0) + (restored.length > 0 ? 1 : 0);
   // 078 US6 (review I1): the PAGES that did not land, as `area/page`.
   const failedPages = violations.length === 0 ? []
-    : attributable ? [...missing, ...stalePages]
+    : attributable ? [...missing, ...stalePages, ...restored]
       : partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`));
   // A part narrowed to some of its pages. The stored runMessage names every page, so it is dropped
   // and re-rendered from the narrowed page list.
@@ -1661,7 +1689,7 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   // rather than paid for and discarded again. After a deadline stop revertUnrequested has already put
   // them back, so they are not written here and cannot qualify half-finished.
   const requested = new Set(partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${bundlePrefix}${part.area}/${page}`)));
-  const forcedPages = attributable
+  const forcedPages = attributable || violations.length === 0
     ? pagesWritten.filter((p) => !requested.has(p)).map((p) => p.slice(bundlePrefix.length))
     : [];
   return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, missingPages: missing, stalePages, failedParts, landedParts, failedPages, forcedPages };
@@ -2017,6 +2045,8 @@ export function executeSlices({
     // and the slice passed. A retry must never be able to forgive what the previous attempt did.
     const before = snapshotTree(root);
     const manifestBefore = readManifestPages(root, bundleDir);
+    // Wall-clock start of this invocation, for telling a page openwiki submitted IN it apart (run 5145).
+    const invocationStart = now();
     // One usage log per invocation, shared by its retries — a retry's tokens are real spend too.
     const usageDir = mkdtempSync(join(tmpdir(), 'wiki-usage-'));
     const usageLog = join(usageDir, 'usage.jsonl');
@@ -2029,7 +2059,7 @@ export function executeSlices({
         invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog, timeoutMs, reasoningEffort: effort });
         stopped = isDeadlineStop(invocation, timeoutMs);
         if (stopped) {
-          const reverted = revertUnrequested({ root, bundleRoot: bundleDir, slice, before });
+          const reverted = revertUnrequested({ root, bundleRoot: bundleDir, slice, before, submittedSince: invocationStart });
           if (reverted.length > 0) {
             console.error(`[wiki-maintain] deadline stop: restored ${reverted.length} path(s) this slice did not request (openwiki's forced or unfinished pages): ${reverted.slice(0, 6).join(', ')}${reverted.length > 6 ? ' …' : ''}`);
           }
@@ -2075,14 +2105,20 @@ export function executeSlices({
     // break the restore does not repair, still fails the whole invocation.
     if (!verdict.ok) {
       const failedKeys = new Set([...(verdict.missingPages ?? []), ...(verdict.stalePages ?? [])]);
-      const unattributed = verdict.violations.filter((v) => !/^\d+ requested page\(s\) (do not exist|are still stale)/u.test(v));
+      // Run 5145: a requested page left mid-edit by a stopped or dead worker breaks V16 while its stamp
+      // is fresh, so it is neither missing nor stale. V16 names the page, which makes it attributable.
+      const requestedKeys = new Set(partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`)));
+      for (const { page } of claimsDurabilityFindings(bundleDir)) {
+        if (requestedKeys.has(page)) failedKeys.add(page);
+      }
+      const unattributed = verdict.violations.filter((v) => !/^\d+ requested page\(s\) (do not exist|are still stale|were left mid-edit)/u.test(v));
       if (failedKeys.size > 0 && unattributed.length === 1 && unattributed[0].startsWith('the bundle is no longer conformant')) {
         const parts = partsOf(slice).flatMap(({ runMessage: _unused, ...part }) => {
           const pages = (part.pages ?? []).filter((page) => failedKeys.has(`${part.area}/${page}`));
           return pages.length === 0 ? [] : [{ ...part, pages }];
         });
         const restored = restoreFailedParts({ root, bundleRoot: bundleDir, parts, before, manifestBefore });
-        const again = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before });
+        const again = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before, restoredPages: [...failedKeys] });
         if (!again.violations.some((v) => v.startsWith('the bundle is no longer conformant'))) {
           console.error(`[wiki-maintain] the conformance failure was confined to the page(s) that failed (${[...failedKeys].join(', ')}); restored ${restored.length} path(s), and the rest are judged on their own (run 5104).`);
           verdict = again;
