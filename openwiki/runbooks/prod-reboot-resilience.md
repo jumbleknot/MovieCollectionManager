@@ -1,10 +1,34 @@
 ---
 type: Runbook
 title: Prod reboot resilience
-description: Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes (bind-address, restart policy, periphery storage location) that made recovery fully hands-off.
+description: Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes — bind address, restart policy, and periphery storage location — that made recovery hands-off.
 resource: docs/runbooks/prod-reboot-resilience.md
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
-timestamp: 2026-07-26T13:44:06+00:00
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-11T15:19:14.150Z
+sources:
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-abae5c338f9f983f89ea77ad
+    resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
+    resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
+    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
+  - id: openwiki-source-852cc196002c1a675baddf5c
+    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
+  - id: openwiki-source-b6d5c062815f2af4f3aec768
+    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-5a48ade99311698ed1a02a08
+    resource: repo://scripts/check-prod-ci-port-collision.mjs
+  - id: openwiki-source-b182ec4cb28667debd4684ff
+    resource: repo://scripts/check-prod-restart-policy.mjs
+  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
+    resource: repo://scripts/preflight.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
 ---
 
 # Prod reboot resilience
@@ -12,49 +36,192 @@ timestamp: 2026-07-26T13:44:06+00:00
 Records the recovery posture for the rootless-Docker production homelab after a host reboot: host-side
 remediations applied outside the repo, repo/deploy-side fixes committed to compose files (so they
 survive every Komodo ResourceSync deploy), one operator redeploy step, and a validation-reboot
-checklist. It exists because a kernel-upgrade reboot exposed several defects at once, and a second
-reboot later exposed further defects that the first round of fixes had missed — this is a two-round
-history, not a single fix.
+checklist. It exists because a kernel-upgrade reboot exposed several defects at once, and a later
+validation reboot exposed further defects the first round had missed — a two-round history, not a
+single fix.
+
+The source runbook, [`docs/runbooks/prod-reboot-resilience.md`](../../docs/runbooks/prod-reboot-resilience.md),
+is authoritative for the host-remediation table, the full tailnet-throughput diagnostic narrative, the
+port-migration history and the row-by-row validation checklist. This page explains the mechanisms and
+the shape of the two rounds; reach for the runbook to run a procedure.
+
+## The chain a reboot has to survive
+
+Every defect in this history is a link in one chain, and each round of fixes closed a link the previous
+round had assumed was already sound.
+
+```mermaid
+flowchart TD
+  Drain["Graceful-shutdown drain unit stops every container to Exited 0"] --> Boot["Host reboots"]
+  Boot --> Daemon["Rootless daemon starts, possibly before the tailnet interface is up"]
+  Daemon --> Policy{"restart set to always on every service?"}
+  Policy -->|"no, unless-stopped"| Stays["Container stays Exited after boot"]
+  Policy -->|"yes"| Up["Containers return Up"]
+  Up --> Bind{"Published port bound to 0.0.0.0?"}
+  Bind -->|"no, tailnet-IP scoped"| Empty["Up with an empty Ports column and nothing listening"]
+  Bind -->|"yes, plus firewall default-deny"| Reach["Admin UIs reachable over the tailnet"]
+  Up --> Peri["Periphery needs a persistent root, and Forgejo must be up before it can re-clone"]
+  Peri --> Sync["Komodo Execute Sync recreates stacks with their declared networks"]
+```
+
+The chain a reboot must survive: each decision point is a distinct failure mode fixed in round 1 or round 2.
+
+The drain unit is the reason the chain starts where it does. On shutdown it deliberately stops every
+container cleanly (so no state is half-written), which means boot does not begin from "containers were
+running" — it begins from "every container is `Exited (0)`". Anything that only returns containers the
+daemon considers *running* therefore cannot recover this host.
+
+## Round 1 — feature 028 (bind address, keyfile, first restart policy)
+
+Three repo/deploy-side fixes, all committed so a ResourceSync deploy reproduces them:
+
+- **Published admin/UI ports moved to a broad `0.0.0.0` bind.** The rootless daemon starts before
+  `tailscaled`, so a `<tailnet-ip>:host:container` publish silently fails to bind; the container reports
+  `Up` with an empty Ports column and nothing listening. Only a `0.0.0.0` bind or a full rootless-daemon
+  restart *after* the tailnet interface exists recovers it — a plain container restart does not. Tailnet-only
+  exposure is preserved by the host firewall's default-deny-inbound posture, which is now load-bearing:
+  the three published ports are Keycloak admin, LangFuse web and Grafana/otel-lgtm, all in the
+  [prod-reserved range](../invariants/published-port-reservation.md) (see
+  [`keycloak/compose.prod.yaml`](../../infrastructure-as-code/docker/keycloak/compose.prod.yaml#L45-L53)
+  and the two publishes in
+  [`observability/compose.prod.yaml`](../../infrastructure-as-code/docker/observability/compose.prod.yaml#L40-L45)).
+- **The Mongo replica-set keyfile entrypoint became idempotent.** `mongo-entrypoint.sh` writes the keyfile
+  at mode `0400`; on a plain container *restart* the prior run's read-only file persists, and because
+  `mongod` runs non-root the entrypoint's redirect cannot reopen it for write, so the container
+  crash-loops. The fix removes the file before rewriting it on every start
+  ([`mongo-entrypoint.sh`](../../infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh#L18-L26)).
+- **A restart-policy assumption** — that `unless-stopped` meant "every prod container returns
+  automatically after a reboot". That assumption was wrong, and round 2 is where it was disproved.
+
+Round 1 also left one operator step: a Komodo `prod-auth` redeploy, because on reboot `keycloak-service`
+came back missing a shared network attachment and the app could not resolve Keycloak. The durable fix is
+the redeploy — the compose already declares the network set, so a recreate restores it — never a manual
+`docker network connect`, which is a one-off the next reboot can lose.
+
+## The supersession between the rounds — feature 029 (port reservation)
+
+Round 1's own port choice was itself superseded, and that is load-bearing rather than narrative detail.
+Feature 028 first bound Keycloak admin at `0.0.0.0:8099`; prod and the CI runner are **two rootless
+daemons on one host publishing into the same host port space**, and `0.0.0.0:8099` collided with the CI
+app-e2e Keycloak's loopback bind on the same number. Whenever a CI Keycloak was up, prod Keycloak could
+not bind on redeploy → crash-loop → prod auth down; a leftover CI stack held the port for hours on
+2026-07-06. The fix moved the three prod admin/UI publishes into the **prod-reserved range `19000–19099`**,
+disjoint from every CI/dev port. The range, its mapping and the invariant behind it are documented once,
+in [Published-port reservation](../invariants/published-port-reservation.md) — treat the current
+reserved-range assignment as authoritative, not the original bind fix.
+
+Feature 029 also made the intra-stack Keycloak↔Postgres network **compose-managed** instead of external,
+so compose creates and attaches it atomically on every `up`. That closed a worse version of the round-1
+network symptom: a failed port bind rolled back Keycloak's networking entirely, leaving it unable to
+resolve its own database (`UnknownHostException`).
+
+## Round 2 — feature 030 (restart policy and periphery storage location)
+
+A validation reboot on 2026-07-08 came back **not** clean: the data tier was up, but the whole app tier,
+Komodo periphery and Forgejo were down, and Komodo could not redeploy anything. Two independent root
+causes, both gaps round 1 missed.
+
+### `unless-stopped` cannot survive this host's shutdown → `restart: always`
+
+The two remediations defeated each other. The drain unit stops every container to `Exited (0)`, and
+`unless-stopped` deliberately declines to restart a container that was already *stopped* when the daemon
+starts. So the drain marked containers stopped, and the policy then refused to bring them back on boot.
+Proven on Docker 29.6.0: a `docker stop` plus a user-daemon restart leaves an `unless-stopped` container
+`Exited`, while an otherwise-identical `restart: always` container comes back `Up`. Every service in every
+prod compose now declares `restart: always` (27 services across the seven `compose.prod.yaml` files), and
+every host-managed compose — Forgejo, Komodo itself, cloudflared and the monitoring stack — was set to
+`always` as host state. The one-shot init containers idle on `sleep infinity` after an idempotent init so
+they too stay eligible. Do not reintroduce `unless-stopped` on a prod or host-managed service expecting a
+reboot to bring it back.
+
+The drain unit was retained but **reworked to stop containers in parallel**. Sequentially it ran
+`docker stop -t 30 $(docker ps -q)`; with roughly 40 containers that exceeded `TimeoutStopSec=120` and
+was SIGKILL'd mid-drain, stopping a non-deterministic subset. Parallel stopping lets the graceful drain
+finish inside its timeout — its only remaining job, since `restart: always` now guarantees the return.
+
+### Komodo periphery's root was on an ephemeral tmpfs
+
+Periphery's `root_directory` was the stock default `/etc/komodo`. Under rootless Docker, `/etc` is
+copy-up'd to a **per-daemon tmpfs** (RootlessKit `--copy-up=/etc`), so everything periphery writes under
+it is wiped on every reboot — including the cloned repo checkout that every stack's relative bind-mounts
+resolve against. After the reboot the checkout was gone, and Docker auto-created each missing bind-mount
+*source file* as a directory, so the Mongo and Vault containers failed with `not a directory … mount a
+directory onto a file` (exit **127**). This is structural, not a race: it recurs every reboot. The fix
+is host state — point `PERIPHERY_ROOT_DIRECTORY` at a path on persistent disk and recreate periphery —
+and the
+[server-setup runbook](./server-setup.md) Phase 9 now bootstraps that value so a rebuild cannot
+reintroduce `/etc/komodo` (see
+[`Server-Setup-Runbook.md`](../../docs/runbooks/Server-Setup-Runbook.md#L794-L797)).
 
 ## Gotchas
 
-- **A tailnet-IP-scoped published port silently fails to bind if the container engine starts before
-  the tailnet interface is up** — the container shows running with an empty ports column, and only a
-  rebind or a full daemon restart (after the tailnet interface is up) recovers it, not a plain container
-  restart. The fix was moving affected published ports to a broad bind behind the host firewall's
-  default-deny-inbound posture, landing them in the
-  [published-port reservation range](../invariants/published-port-reservation.md) to avoid
-  colliding with the CI runner sharing the same host.
-  - **This is the second time the same physical ports moved** — a first change was itself superseded
-    by a follow-up feature after those ports collided with the CI runner's own use of the same host's
-    port space; treat the current reserved-range assignment as authoritative, not the original bind fix.
-- **`restart: unless-stopped` does not bring a container back after a reboot on this stack.** A
-  graceful-shutdown drain unit stops every container cleanly on shutdown, and `unless-stopped`
-  deliberately declines to restart a container that was already stopped when the daemon starts — the
-  two remediations defeat each other. Every prod and host-managed compose service was switched to
-  `restart: always` to close this; do not reintroduce `unless-stopped` on a prod service expecting a
-  reboot to bring it back.
+- **A tailnet-IP-scoped published port silently fails to bind if the container engine starts before the
+  tailnet interface is up** — the container shows running with an empty ports column, and only a rebind
+  or a full daemon restart (after the tailnet interface is up) recovers it, not a plain container restart.
+  The fix was moving affected published ports to a broad bind behind the host firewall's default-deny
+  posture, landing them in the
+  [published-port reservation range](../invariants/published-port-reservation.md) to avoid colliding with
+  the CI runner sharing the same host.
+  - **This is the second time the same physical ports moved** — round 1's own bind was superseded after
+    those ports collided with the CI runner's use of the same host's port space; treat the current
+    reserved-range assignment as authoritative, not the original bind fix.
+- **`restart: unless-stopped` does not bring a container back after a reboot on this stack.** The
+  graceful-shutdown drain stops every container cleanly on shutdown, and `unless-stopped` deliberately
+  declines to restart a container that was already stopped when the daemon starts — the two remediations
+  defeat each other. Every prod and host-managed compose service is `restart: always`; do not reintroduce
+  `unless-stopped` on a prod service expecting a reboot to bring it back.
 - **A crash-looping non-root Mongo keyfile entrypoint is a permissions bug, not a data bug** — a plain
   container restart (not recreate) can leave a prior run's read-only keyfile in place, and the non-root
-  mongod process cannot overwrite it. The entrypoint fix removes the file before rewriting it on every
-  start, making the operation idempotent; the regression test for this must run as a non-root uid, since
-  running it as root masks the bug entirely.
-- **A durable network re-attach after reboot is a Komodo redeploy, not a manual `docker network
-  connect`.** A manual reconnect is a one-off that the next reboot can lose; only a redeploy recreates
-  the container with its full declared network set from the compose file.
+  `mongod` process cannot overwrite it. The entrypoint fix removes the file before rewriting it on every
+  start, making the operation idempotent. The regression test for this must run as a non-root uid, since
+  running it as root masks the bug entirely — the idempotency test drives the real script and plants a
+  pre-existing `0400` keyfile
+  ([`mongo-entrypoint.test.sh`](../../infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh#L36-L46)).
+- **A durable network re-attach after reboot is a Komodo redeploy, not a manual `docker network connect`.**
+  A manual reconnect is a one-off that the next reboot can lose; only a redeploy recreates the container
+  with its full declared network set from the compose file. The intra-stack Keycloak→Postgres link no
+  longer depends on that at all, because it is compose-managed and attached atomically on every `up`.
 - **Komodo's own periphery agent can be a recovery dependency, not just a deployed workload.** If
   periphery itself is a rootless container that gets stopped on shutdown, Komodo Core loses its agent on
-  reboot and cannot redeploy anything — including itself — until periphery, and the git source it
-  depends on, are manually started first. Persistent storage for periphery's own working directory
-  matters for the same reason: an ephemeral filesystem under it silently loses the git checkout that
-  every stack's relative bind-mounts resolve against, on every reboot.
+  reboot and cannot redeploy anything — including itself — until periphery, and the git source it depends
+  on, are manually started first. Recovery order when a reboot lands dirty: start periphery, start Forgejo
+  (Komodo clones the repo from it on every sync), then run Komodo's Execute Sync to re-clone to the
+  persistent root and recreate every stack. Persistent storage for periphery's own working directory
+  matters for the same reason: an ephemeral filesystem under it silently loses the git checkout that every
+  stack's relative bind-mounts resolve against, on every reboot.
 - **A host-level throughput bug can look exactly like a network outage and isn't.** A segmentation-offload
   default on the tailnet interface capped one direction of tailnet transfer while leaving small-packet
   latency, loss, and every conventional network diagnostic looking clean — the tell was that no plausible
   network condition could explain the observed throughput number. The fix must be bound to interface
   recreation (a systemd unit keyed to the device), not just applied once, since both a reboot and a
   tailnet daemon restart reset it.
+- **A validation reboot is part of the change, not a follow-up.** Both rounds required one after merging
+  and syncing, and the point is that nothing is started by hand after boot; any failing row is a defect to
+  fix before closing the round. The checklist is in the source runbook's validation section.
 
-Full host-side remediation table, the complete tailnet-throughput diagnostic narrative, the exact port
-migration history, and the row-by-row validation-reboot checklist for both rounds of fixes:
-`docs/runbooks/prod-reboot-resilience.md`.
+## Enforcement — the two required gates
+
+Round 1 and round 2 each left a self-enforcing gate, so config-as-code cannot silently drift back to the
+failure:
+
+- **`scripts/check-prod-ci-port-collision.mjs`** keeps prod's published host ports disjoint from every
+  CI/dev-published port. It compares host **port numbers** and ignores the bind interface, because a prod
+  `0.0.0.0` bind collides with a CI bind on the same number whatever interface the CI side names; it
+  skips entries with no deterministic fixed host port (bare container port, `${VAR}` host field) and
+  expands numeric ranges. Exit `0` clean / `1` collision / `2` unparseable, and `--selftest` plants an
+  overlap so a gate that stopped detecting cannot report green
+  ([`check-prod-ci-port-collision.mjs`](../../scripts/check-prod-ci-port-collision.mjs#L1-L24)).
+- **`scripts/check-prod-restart-policy.mjs`** makes `restart: always` a required property of every prod
+  service. Long-running services must declare `always`; `unless-stopped` is forbidden (the round-2
+  regression) and a missing `restart:` is forbidden because it defaults to `no`. `no` / `on-failure` are
+  allowed only for genuine one-shot containers whose names match the init/seed pattern, since `always`
+  would restart-loop them
+  ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs#L33-L56)).
+
+Both run selftest-then-scan in the `naming` job of
+[`guardrails.yml`](../../.forgejo/workflows/guardrails.yml#L121-L128) on every PR and every push to
+`main`, and locally through [`scripts/preflight.mjs`](../../scripts/preflight.mjs#L32-L44).
+
+Related pages: [Published-port reservation](../invariants/published-port-reservation.md),
+[prod control tower](./prod-control-tower.md), [prod data-tier auth](./prod-data-tier-auth.md),
+[homelab server setup](./server-setup.md), [phase 15 operator checklist](./phase-15-operator-checklist.md).

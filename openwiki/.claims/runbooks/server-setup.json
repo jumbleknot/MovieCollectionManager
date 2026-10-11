@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:04f2fe6c607880e284f35b3545fef9c9821622a0dcec488b3450e8098d6c2984",
+  "pageVersion": "sha256:39e99dd01e7c1e8c68eff484eab7d1cbd155b0256292e92ded822c11f727dbad",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -29,8 +29,8 @@
       "statement": "The host runs two unprivileged service users (`ci` and `prod`), each with its own rootless dockerd at its own socket and its own data root under its home, and the rootful docker.service is disabled — this is the isolation boundary that keeps a CI breakout from reaching prod or the host as root. The prod daemon hosts the long-lived services (Forgejo, Komodo, MinIO/Nx cache, monitoring), while the CI daemon runs build/test jobs.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1131-L1149",
-          "version": "repo-lines-v1:sha256:a4c467b781d19c9aadc2e4b149e7e786fe042a84087f4fd7a39d179ba1b1ec11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYWVlZmJlZDZlNGI4MjJlMDg2NDIxNTNjOTNjNThlYzRmMWE4YjBjNjNlYjMxZTUyZWEzMmI2YTZiYmU1NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZjkwMzBjNzYwNTdjYzAxOGZlNjAyMTM2MTVmNmE5NjBiMTcxMDIyYjE1OGJmNmQ2YWYzOGFiMjFmNDI3ODgifQ"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1093-L1095",
+          "version": "repo-lines-v1:sha256:d3e14c490f0560db8b733f4bd55bcbae2f2f21e4a6b5c5f121e6b2d00b65bd60:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZiYzk4YmEwOWViYjEyZTdkZTlkMmZmZThjNjZiMzkyNDc0MGEzNzY2ZTM3ZTcxZjNiMGI1YTY1ZGFmZmExZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY2YWNlNzYzMGY0NTM0N2Y3NjIxOTlhMTU0YzliYmFiM2Y4MGYwYmYyYTk2ODg0OTA0YmQ0NWU0OTYzZDcyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGQ4YTE4YjUyZDZjNTYyY2VjNTA5MTkxYTRhYWIzMzE3YTk2ODRmODcxNDQzZjE3ZTQ1Njg4YTA1NWVkMmNhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTNkNWQxMThjZTdkNTA4NTdjZWU3YmFiNGU5YmE5MWM3Mzc3MmEyYjEyYjdhZTI4NWEwOWI1ZmRjZGE3YTdjYSJ9"
         },
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L167-L179",
@@ -43,6 +43,10 @@
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L252-L252",
           "version": "repo-lines-v1:sha256:0dc6c923f9b48abeb9e3813b54cba8ef4b0777b9fb991af2ff85d2a08e96bd83:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRjNmM5MjNmOWI0OGFiZWI5ZTM4MTNiNTRjYmE4ZWY0YjA3NzdiOWZiOTkxYWYyZmY4NWQyYTA4ZTk2YmQ4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRjNmM5MjNmOWI0OGFiZWI5ZTM4MTNiNTRjYmE4ZWY0YjA3NzdiOWZiOTkxYWYyZmY4NWQyYTA4ZTk2YmQ4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGUzNmU4MDUyOTlkOTI0NDA2MmQwZTE1NmRjYjExYzQ5NWMwN2M2MDAxNjUwNDZjYjBkYzlmZjc3MTJmZWZjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGQ2ZjhkMTVjODllZDRkMDNkN2ZmOWE1MDY5NGM2YTc1ZDMxYzRjNDRlNzUzYzZjZTI5MzQ5MWJjMDhmYzIxNCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L317-L317",
+          "version": "repo-lines-v1:sha256:88eafc63fa35da149a1adee47f602b28704381e434521c8ee9b79660b5d05e53:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODhlYWZjNjNmYTM1ZGExNDlhMWFkZWU0N2Y2MDJiMjg3MDQzODFlNDM0NTIxYzhlZTliNzk2NjBiNWQwNWU1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhlYWZjNjNmYTM1ZGExNDlhMWFkZWU0N2Y2MDJiMjg3MDQzODFlNDM0NTIxYzhlZTliNzk2NjBiNWQwNWU1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDUyNDAxYWNkMTMxZjgyMDE0ODYwN2FhMzRiMzJkMmFiYTU1YjE5ZDYzMjEyMTE3ZTZlMzJkYzg5MmQwZmE2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDZmMzM3YzIxM2QyMzFmZDBmYmRhM2ZiYTEzNTQ5M2Y3NTYzYmM5Yjg0YmMxYzBkZjRhNDdjZTE4ZjU4NWJiNCJ9"
         }
       ]
     },
@@ -83,12 +87,8 @@
           "version": "repo-lines-v1:sha256:49300fa417b7df7ce2cd75b1827dab2ab49080e246a916957b9824fc6b11ae0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NWQzMWIwZmJlYTg5ZjMxZTk1MTYyNzhlNjczNTAwODVkZmY1MzdmODFiN2RlOWUyZmRjNjY0MGFkYTU0NDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDNjMzU0NTliNWM3ZTFjMmE3MmY1MjhiYzJhMzkzOTQ4ZTA0YjJiYWRkNWZlYmQ0MWJiMzNiZTNkNmM2OWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzE4YzYxZjU0NjgwNzQ1NTFkZTgzMDc3NmQyMDUyNmI4NWM2NTllOGQ2ODhiN2QwMGZkZmI3ZjliNDY5OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlZDExNDg0NTRhMTg3NjQzODFjM2FlMWY0YTViOWZlMTEwMzNjNjhmNzQ2YmRlMjI2YmRhZGFiZTE5YThhMTEifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L935-L935",
-          "version": "repo-lines-v1:sha256:df9dd0f562d3fb7bd9b63c21c52e44e2739372b27877673a7aa9c95041d30c83:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGY5ZGQwZjU2MmQzZmI3YmQ5YjYzYzIxYzUyZTQ0ZTI3MzkzNzJiMjc4Nzc2NzNhN2FhOWM5NTA0MWQzMGM4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGY5ZGQwZjU2MmQzZmI3YmQ5YjYzYzIxYzUyZTQ0ZTI3MzkzNzJiMjc4Nzc2NzNhN2FhOWM5NTA0MWQzMGM4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmQ0MDdjODUzZGFlMTg0MTE5MTkyNjhmYzZlYTY4ZjM0NmViMDdjYTg4NmEyZTA0NmU0ZDIxMTIyMWM2ODg5NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGVlNTY1OTZhMjI2ODlmZDg3MzMxNWQ1MzQyNDU5ZmUwNDU0ZDQ1ZDY5YTZlMTYxMGZiZTk5ZDIxYTFmNTQ0MyJ9"
-        },
-        {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L947-L947",
-          "version": "repo-lines-v1:sha256:e5a10199ce4df3cf09ec69aa7f2711c64ae5e85a1439d523d097f41602088947:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTVhMTAxOTljZTRkZjNjZjA5ZWM2OWFhN2YyNzExYzY0YWU1ZTg1YTE0MzlkNTIzZDA5N2Y0MTYwMjA4ODk0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTVhMTAxOTljZTRkZjNjZjA5ZWM2OWFhN2YyNzExYzY0YWU1ZTg1YTE0MzlkNTIzZDA5N2Y0MTYwMjA4ODk0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFlZWZmY2U0MzljMzAxMzc0MzE2NTJmMTU1ZjY0ODFhMjlkZjQ2ODUzNmRhNzcyZjI1ZDJlMTIwZTU3YzRlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L951-L951",
+          "version": "repo-lines-v1:sha256:a5838d175388a98e78c9263d4420dc182eb785d0e7b2bfa3bb23019931b92ba7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU4MzhkMTc1Mzg4YTk4ZTc4YzkyNjNkNDQyMGRjMTgyZWI3ODVkMGU3YjJiZmEzYmIyMzAxOTkzMWI5MmJhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU4MzhkMTc1Mzg4YTk4ZTc4YzkyNjNkNDQyMGRjMTgyZWI3ODVkMGU3YjJiZmEzYmIyMzAxOTkzMWI5MmJhNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmRkNzAwODkxODNjYmY0ZDZjZTA3YjQxYzJkMDY1MDQ4MWEwZDQ2OTI0YjE0NWRhZWViN2VkOThhYWZhYTgwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3NDA0MjgyMDgwNjYyY2ZiYTE5ZmU5MTEyNTZhMjQ0YzM0MGZkZjM5OWQzZDA1ZTU2ODQ3YzIyY2JkZWIwNCJ9"
         }
       ]
     },
@@ -115,11 +115,11 @@
       "statement": "This forge build (15.0.3+gitea-1.22.0) exposes no Actions-artifact API — `GET /api/v1/repos/.../actions/artifacts` is a missing route (404), not an empty result — so an `upload-artifact` APK is retrievable only by a human through the run page and only until it expires. `cd-deploy`'s `prod-apk` job therefore publishes every release APK to the generic package registry as package `mcm-app-android`, version `<expo.version>-<sha7>`, alongside a `.apk.sha256` sidecar in `sha256sum -c` format, using the existing `write:package` CI push token (no new token, no widened scope); retrieval uses a `read:package` token against `/api/packages` (not `/api/v1`).",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L497-L513",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L506-L522",
           "version": "repo-lines-v1:sha256:e5659d28375ed002f1363b6a10d6ad8c2e19804cbbdb4759c5385f6b9e5052ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1Yzg4ZTM0M2U1ZDA2YmE4YjI0NDQwNjcwNTMyYjczMzllNjE4ZGVjNTgxNGJhNmNiODY4Mzk1MzI1NzhmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4N2YwZDQxZGEzZjM4MTJhYWNiYzQ3YzllZmRjZGEyN2Q2NzdhOGEwYzU5MjcyZTMyZTA1ZTIxOGQzYTQxNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2NiMjY2MzU3ZTJlYTZkNDA5NmY1ZjIyZjgwZTdhODE2MTMzN2U5MWM2YTE1MmI3NjA3YzJhYjY3NjQxYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODY1ZjAxYmFiNzZmM2Q5MjAwNmM4NGM5YTk5OGRmNmM0NmJkZTRiMTc0ZmIyODU4ZGZhYWRiZmIzOGUzMjkifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L479-L524",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L483-L528",
           "version": "repo-lines-v1:sha256:0d89cc67db24c7248567e2c62d61877112f5af238c06e0f07dd797373dc6bb93:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMmIzZjlkOWUwODEwMWZhNGNiNDExNzZlNzMxNWI5Y2I4OGRkY2VjYzBiZTg4NmM0ZmE4YjVlNmQ2ZmZmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMzdhN2U2NGQyOWVlZGVhMTgyMjI2OGU5YWQ5MjA3N2QyMTQ3MGE1MTlmNTFiMTc4ZTQ1Y2RjYTE3MzlhY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YjEzNDcwZWEzYzViN2EzMTIyZmMxYTdmYTkxYTM0MmY1MDI4ZDgxNzgxNGE3MGUyODRjOTJmZmM4ZDJiYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0ZmY4ZDg5MGYxNjJjMjk5MjQ4ZWJjODdjOWM1N2U4YWY2Y2ZiOGVhN2RlNjY3YTA3ZTFkY2U0NGFjNGUyOGIifQ"
         },
         {
@@ -141,7 +141,7 @@
       "statement": "Release-APK retention is count-based, not time-based: the measured universal release APK is 114,365,972 bytes (109 MB) on run #6036 and every deploy produces one, so `publish-apk.mjs` prunes to the newest 5 versions by `created_at` (≈550 MB ceiling) rather than a 30-day window, because a quiet month would delete every installable APK while a busy week would keep more than the disk affords. A version whose name ends in `-keep` is never pruned and does not consume a retention slot, which is the supported way to make a build outlive the window. The pruning keeps a version whose `created_at` fails to parse (deleting on a parse failure is the destructive direction), sorts by `created_at` rather than name (`1.10.0` sorts before `1.9.0` as a string, so name order would prune the newest first), and paginates the version listing because the forge defaults to 30 items ordered by name, making an unpaginated call a silent retention no-op.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L526-L543",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L530-L547",
           "version": "repo-lines-v1:sha256:55536c84d8cb0e123856595cf711c766a2be856d434daf4b9640d464d16e07d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5Y2E3NmRkZTk2ZGQ0YWZhOWQ5MjI5ZjBlODUxNzcwNjc1YmE5ZDY1YjA5NzhjYjMxZWJlMjczYTI5NTJhOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMzA4ZTQ4ODMxNWIxYjNkNWNmYjc0OWU5YTQ2OGVmMGNlMThhNzA5M2UwYmMwM2NjZDhhNDA5OTU2MzVhZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzNGNkY2Y0NTNkYTVmNjVjNGMzNDE4MTg5YTQ0NzEyYTk3MDA4NTE1MGNmYWMxNDdhZThhODY0ZTlkMTE4ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiZmY2NTQ1MmQ3N2EzMTVjZTY0ZTg4OTBkMDFiNjZkMWI5MDAyM2YyNGYwNjQ1YmQyZGUzMWI3ZDBmY2FkZGMifQ"
         },
         {
@@ -163,7 +163,7 @@
       "statement": "`prod-apk` is deliberately non-blocking: no job `needs:` it, the publish step is `continue-on-error`, and `publish-apk.mjs` always exits 0 while printing `::error::` on every failure path, so a registry hiccup is visible in the job log without turning a deploy red. A re-upload of an already-published version is a 409 treated as \"already published\" rather than a failure, because the bytes are the same build of the same source.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L503-L513",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L512-L522",
           "version": "repo-lines-v1:sha256:698ad5fdf5eba5d0260f14a7a0a50301f5fcd6c49f519827124b2e46ee483aa5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTQ1YWMzNmVmYWMyYmRjMGE2NGNlNDcyMTNhYWY2OTQ0ZWIwNDkwNWZhYTc2YTZiMTU0YTAwMTFhNzcyMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4N2YwZDQxZGEzZjM4MTJhYWNiYzQ3YzllZmRjZGEyN2Q2NzdhOGEwYzU5MjcyZTMyZTA1ZTIxOGQzYTQxNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMDE1NGI1MDE3MGJkNDJhMzQzYjkwNmFlMzNjNWY0YzYzZTdhYThjMzcyNGY1ODYzZDNjMjkyMDMyZWRjOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODY1ZjAxYmFiNzZmM2Q5MjAwNmM4NGM5YTk5OGRmNmM0NmJkZTRiMTc0ZmIyODU4ZGZhYWRiZmIzOGUzMjkifQ"
         },
         {
@@ -185,11 +185,11 @@
       "statement": "The forge's `ubuntu-latest` runner label maps to `docker://node:22-bookworm`, a plain Node image running as root — not a GitHub-hosted Ubuntu runner — so GitHub-hosted-runner recipes do not transfer. In particular `sudo` is not installed and is unnecessary (the kvm runner executes as the unprivileged `ci` user, which also has no sudo), and a copied `sudo …` line dies on its first word; with a customary `|| true` the step goes green having done nothing, which is exactly what `cd-deploy`'s `prod-apk` disk step did on every run it ever made.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L327-L352",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L336-L361",
           "version": "repo-lines-v1:sha256:79506bce1bd04f3623e7d8c41afc5f4ca479313dc8976992f193ea82ba7950e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ZDUxYzkxZjMwNWE0MmJhZTVlNzBjNGQwN2Y3OWM2NmIxZTBjMWNlZjUyNzU4Mjc5MzRkYjIzYWMzNDE3MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZDA5YjZlYjQ2MDlmZTVmOGQ0ZmQ5YjFiYmFhMmM3YWFkYTQ4N2UzZjFjMTU4ZDJjODU0NzI3NjdkYTc3MTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MGI1NTVlZWRlMGIwNDA0NzE3OWY1ZWE3OTk1YjMwM2VmNDY0NDIzMTAyMzliOWZiZWQ1NmYwMTIzMmI0ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZDUwNjA4YTZiOTMyOTBkMWE4NjAzOWVkNjIzZDAzNTYyNDY5OGJkMWYwYTgzNjVmMzUyZTQ0OGY3NzA1NjEifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L592-L601",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L596-L605",
           "version": "repo-lines-v1:sha256:5ba2591eeda36e0ba8f3103d5d41af151436e63ef28b38681f53cc5644981af1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4ZDIwNDc5NzUwYWQ1ZjI0MDhmMDYxMmNjMDBlMGY3YjBkMDRhZjRmZGQ5NzM2MjRiMmQ0ZGI4ZGVlYzhlODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZGI1MTBmZjJkMGIxMjk0YTRmNDdiY2YwNDUzZGM4MjJhYzBjMzY2MmUwNjY4ZDUyYWIzMzliODhkZGYwMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMTY0ZjNkM2M5MmJiMDE2MTFkYTI2NGZiM2FhNjFjY2YyMTM4MDQ5NTk2ZjgwMGNkM2FiNDcxM2YzZTY0YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViYjcwOWYyYjZiNzIxOTBjYzNiNTZiYjM5YjIyYThlYTU0ZDMxYTBjZjkxMzg1NGVmZjExNGZhYzUxYzA4MWUifQ"
         },
         {
@@ -203,11 +203,11 @@
       "statement": "Dropping `sudo` from the disk step is worse than leaving the no-op: measured 2026-09-15 with `docker run --rm node:22-bookworm`, `/usr/share/dotnet`, `/opt/ghc`, `/usr/local/.ghcup`, `/usr/share/swift` and `/usr/local/share/powershell` do not exist, and the one sizeable removable directory, `/usr/local/lib/node_modules` (19 MB), holds `corepack` and `npm`, which `pnpm/action-setup` resolves pnpm through two steps later — so a working `rm -rf` would break the job to reclaim 19 MB, and would not even reclaim that, since deleting files in an image's lower layers writes whiteouts to the container layer and host usage goes UP. Freeing real host disk from a job means pruning the rootless daemon (`docker image prune -af`, no privileges needed), which `app-e2e`, `dast` and `build-deploy` do; `prod-apk` has no Docker CLI and nothing to prune.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L336-L348",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L345-L357",
           "version": "repo-lines-v1:sha256:55f1c1f1391ac7d1c76f1aa93df79b130f988869485cdb54afe8071c12b9d823:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNmYwZWNmNjRhZGJlODMzM2M1MjFkNDExNTdlNmM2MDM2Mzg4NDk5MTUwOTRmODg3ZjU1YjI2ZTBkNTgwM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDc4NDUwOWNmMDFiMWNjYzUzYTBmZmU4YmE3MmU4MTQxZGY2MWJjZTM2NWMxZDZmZDE0ZWQ2ZWIzNWU5MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ODc2MmQxZjVjZTkyOGQ4NWMzNzU2YzdjZTc4OTlhYWI4YmFhYTJmNGEzZmE0OThiZTAyYjU5Y2M5NGM0ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyMDkwMGU5YjAxNGY3NTJlNWFhMGU5NjMzMzVkZmNkNGI2YTI3ZGZkYWQ4ZjgxMTI0MDBmMGU4ODBhZjRhNGMifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L602-L608",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L606-L612",
           "version": "repo-lines-v1:sha256:edaa188ea7ed7156cd2c18d5cd9f99cff6a825e89a927ddc9993a7e77f423a87:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y5NjU3MWRjNTY2MmVlZTE2ZDAxNGI4MDBmNDhmODgxM2QxM2U1MzFkM2RmY2FlZjYxYzdkZWM2YTg2MjQ2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjk5NDc1NGZmYjU2YWFiMzgxMWU5NjA5OWExMWViMDUzOWFiNjY2NzJiYjc5NGM4ZmFlOGU3Y2JkODYyNDkwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhNDRhZDY0MDNhNmEzMmRmNjhjOTQyNzU3Njg4N2YzOWZmNDhhM2FkZTIwOWYyZGQ1ZmI3ZjY1YWNiMDNlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjc3OWQ0Y2I3NmRmNzUzMmU2OGI1ZWJhZWYxN2RjNDE5ODUxNjY2YjNlMTViNjgyNTIwZjY3MWI3YzY5Y2VmZSJ9"
         },
         {
@@ -221,7 +221,7 @@
       "statement": "`scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the disk-step fix in both directions: it fails any workflow step anywhere in `.forgejo/workflows` that invokes `sudo` in command position, and it fails the `prod-apk` disk step if it deletes `/usr/local/lib/node_modules`, attempts any `rm`, or carries a `|| true` — requiring instead that the step state in its output that no reclamation is attempted and that its name not promise one. It further asserts the commit-status recorder exists, posts under its own context, is `always()` + `continue-on-error`, is off pull requests, reports `<unset>` rather than a wrong value, and matches none of `main`'s required status globs so it cannot gate a merge.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L422-L440",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L431-L449",
           "version": "repo-lines-v1:sha256:c5b36f83a9c9300ebcba3d1a90eece7b0dca3bf08fd80df3ff415ae6aa15c7a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZDVlOWM2NWQ4MmJlNzQ5MDc4ZTIxNWMyMjhmMzhhZDUyMTI0NzJlNTBkYTVkNTMwMjE5ZmE4Y2IzOTQ2MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNjZiODlmZjJmOTYyYjlhOWNmNzQ4YTM1MDc4OWY2NWM0MjhiOTE2MDMzMmMwZTRiMzQ5MDJjZmEwY2FjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZmNhNzViM2E0NDgxYTI3YTZmZWMzODk4MjRjMzYyNWNhNGNjNzEwYTdhYTE4NGJkN2E0NTE5YzhlODI4MDcifQ"
         },
         {
@@ -243,7 +243,7 @@
       "statement": "Forgejo runs on the prod daemon (a long-lived service, with Postgres behind it) as the source-of-truth forge, with Actions and the OCI/generic package registry enabled by env; GitHub is a downstream push mirror rather than the source. Every automated consumer authenticates with its own minimally-scoped named personal access token — registry push and pull are split, CD's git write uses a whitelisted-user PAT rather than the runner's auto token (which the pre-receive hook declines on protected `main`), and the debug dispatch token is revoked when idle.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1017-L1037",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1011-L1031",
           "version": "repo-lines-v1:sha256:cdfaa8642899c280dfe2e99349bf87845caadc1110fe63562d25e421e99ac24b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYTA1NmMyMmE1NzNjYWI4M2JlMDEyZDE1ZmJkMTczYTMxOGZiZDRmOTM2NDhiMTU5MzdjM2Q1MGRlZTc1OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNTdlYjc5ODMwMDhiNjllMmU4NjMyNWY5YWI1MjU2MDY3ZTFmMGU3OGE4OGZjNjU0MjljN2IyOTYwZjEwNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmOGVlNzRmNzNmMTRiODIzNmZiNGY5MTRmN2JjNjQyMTgzMWZjMjU3OWIzNmE5MjMwMWQ3ODBlNjkwMzEzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGUwMWZmMjVhMGYwOWQ3ZTA4OTIwYjIwMmViOWIxMTNhMDhhNmQ1MjdkNDFhNjZjOGRlZWM2NDI5NGZjMGUifQ"
         },
         {
@@ -265,8 +265,16 @@
       "statement": "Komodo provides CD to the prod daemon as Core + a Periphery agent + a database, using FerretDB rather than MongoDB (the unpinned Mongo image crash-loops on this new-kernel + rootless combination) and with Periphery repointed at the prod rootless socket. Its webhook is a git-style branch redeploy validated by HMAC with the global webhook secret — it will not consume a posted image digest — so promotion is digest-by-git: CI resolves the immutable digest, commits it to a tracked env file, pushes, then fires the signed webhook, and there is no rollback endpoint (rollback = redeploy the prior digest).",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L754-L815",
-          "version": "repo-lines-v1:sha256:fe20e88a6d89361fac11f583b0beddb81fef8d3271304b4310a067abbc58961f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YWY1OTk5NjE3YWIwODQ4NTQ2MmVjYWVkYjFlYTU2YWZlMWExZDA3NzQ3MzM2YzI3MWM5YzQwNGI3ZGVlZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5MjVlZTJmODhjMDdmN2NiZDNkOGQ4OWFiNTk5ZTY4MDIxNGFkZmNlZjMzNzNlMjVlYTMxZDcwOTUwODhjMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkN2NjMDc2ZTVhODU1ZTU2ZmI1NTgxZTYzZTBjNDQzMzIxNzM1OTE0NjQzODQ0NTU3OTg2OGQ0ODM3Yjc1M2IifQ"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L764-L774",
+          "version": "repo-lines-v1:sha256:03bb67680af722f671db97db541f3e688a2845c0ed06048f550b4817fbaf5805:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YWY1OTk5NjE3YWIwODQ4NTQ2MmVjYWVkYjFlYTU2YWZlMWExZDA3NzQ3MzM2YzI3MWM5YzQwNGI3ZGVlZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDFkMDFkMzM1MGExNzU2NGYyOTA4ZTI1ZWRkZjY1ZTlhYWU3MTZiMjE0MGNkYjgyNzY5ZmQ1MjkzY2YyMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxMzFkMGI5ZDU5OTU4YTQzZjhkNjIzOGNkM2I2N2U0ZDZiMWQ0NWExYTExYWNjNzUwMzgxZGNkNDI0ODc3OWMifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L801-L812",
+          "version": "repo-lines-v1:sha256:2d4c99f4747fe1b344653b78a52b5228f9f2ef95ced21a3fae053caa90ee6eb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OTdjMmUxMWY3NTc0NTA2NmM2NmQ2MmQ4Njg0YTk5Y2M0OGU4N2UxNmJjNDFlNzNjYjM5MDg4ZGYzMDMwYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1MjVmOTViZjIwNmE5NTNiYTE4Y2I3YzhmM2YwZTI3NWI2NDYzMGQyNTBkNmI3Mzc3Y2FmOTRlMjNmYWY3NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyY2NmNDgxZWI1ODk1N2M4YzNkN2RkNjVkMDBiNWNiNGJlZDAwNmQxYjYzM2RkNDNiNDcyNjA3NGNmZGRiYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYTIyNDgyOTE3YmFiNWYwY2QyZGU2ZDg0N2ZlMDY5YzlkMzEwNmYzOTVkMmNhOWRkOTBlMjAwZDhjNjQyYjMifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L814-L831",
+          "version": "repo-lines-v1:sha256:8c0896a9c8e1add3ff5cce85c0cde3c78e9664531f9b0b18bddcf438cfc37b9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwYWRhMTVjODcxMzMwMDE3M2IyMTQ1NjIyYjJkNDA0ZWQwMTE2MTYwNTIxOTQ4NmViYTllM2MzNmYzNmI4OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZTQ1YTUxMWE1ZGFmMzhhMmM1ODdmZTM2ZWNhZTZkOWM1NGE4ZTA1MGM3MjExNDYzNGNlZjcxYTMwMzRkY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYzVmYzIwYTk3ZDQ3MDk4ZTJlYjkzNGEwOGE4YThiZDdmY2IzNDMwNzA3ODE1ODMyMGRlNWEyNGU2MmYyZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkN2NjMDc2ZTVhODU1ZTU2ZmI1NTgxZTYzZTBjNDQzMzIxNzM1OTE0NjQzODQ0NTU3OTg2OGQ0ODM3Yjc1M2IifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L1-L24",
@@ -291,7 +299,7 @@
           "version": "repo-lines-v1:sha256:c19a89e87444f6c5627c0c40ee952005cffeb48a3847290aff8bb59fb4932d93:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE5YTg5ZTg3NDQ0ZjZjNTYyN2MwYzQwZWU5NTIwMDVjZmZlYjQ4YTM4NDcyOTBhZmY4YmI1OWZiNDkzMmQ5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE5YTg5ZTg3NDQ0ZjZjNTYyN2MwYzQwZWU5NTIwMDVjZmZlYjQ4YTM4NDcyOTBhZmY4YmI1OWZiNDkzMmQ5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDMxOTYyOTNmYjhkMTIzMWVjNDZiYTQ5NGFlMmE5NTNjZWRjOGM1MzNjMDUyMjkxZmNhMWZhYjdlZDc0MTQ3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L976-L994",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L970-L988",
           "version": "repo-lines-v1:sha256:04abbd07d1158978c91373f47542bf49f39b085fd219df51fd0473f7ec36a38d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMWVmZmUxNGNkZmFkZDY3NjQxZDg1ODg5MWRkNDdhNGE0M2U3ZTY0ZTIwYzc0NDBjY2FlZThmZGM2MTQ5ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MTc4OWNlMGQ0OGZhMzI1NDE4MjdjMGY1NTZlMDE0NTA5YTZmZTBjMmEyNTU5NDVmNDAyZDc0YmVmNzE5ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYWQzNTlhNDBlMTZmMGMyZGNmMTc5ODU5NjMwNTIxYTg4ZjdmZmZmZjM0YzI2ZGM0NGMyMzk0ZjMzNGJiNDUifQ"
         },
         {
@@ -299,10 +307,28 @@
           "version": "repo-lines-v1:sha256:d0de232a6ae5c7178950ef459a7116220d3f4e20dc7bf52d74b162ecd3c40849:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYjU0YTRlYmMzMDRhNTM2ZTM5MGZlNDFkMWMxYTliODk5ODVmNzg3YzFhYjI3YTZkOTliMWRlMDQ4OTZlMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ZDVhNzY5YWUxMzU5NWNmODJjNGVjNDNhNzgzYzZlZmZhYjZjYWE2YTkyNjc0OGYzNTA5NDAzOGJmMjE0MjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkN2U4Y2QxYWMxYTJlY2U3NzYzODA2YWNmZGIwZTI1YTYxMGVmYmMyZWQ4YzJlMDAxMDIxZmEzMGZmZGM1N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyNTI5Mjg1NWJjZTUxOTczMjIwZDEwODMxN2M4YmVmMzVmYWEzOTZhZTc5MDI4YzJiOWM3ZTdkMzY0ZjFmMzcifQ"
         }
       ]
+    },
+    {
+      "id": "claim_de2046d5d94547978e22cc634d6f5943",
+      "statement": "Reboot resilience (Phase 17) is enforced as config-as-code rather than by prose: `scripts/check-prod-restart-policy.mjs` requires `restart: always` on every long-running service in the prod compose files, forbids `restart: unless-stopped` (which does not bring a cleanly stopped container back after a reboot, because the graceful-shutdown drain unit leaves every container at `Exited (0)`), and allows `no`/`on-failure` only for name-matched one-shot containers. The gate runs selftest + scan as the \"Prod restart-policy gate\" step of the `naming` job in `.forgejo/workflows/guardrails.yml`, so a future prod service added with the obvious `unless-stopped` default cannot silently reintroduce the outage.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L125-L128",
+          "version": "repo-lines-v1:sha256:b48742a666f61ad7436e8ba2ab9ae4b94563c650aa0df5ec239f70fdd82ddfa5:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0ZDlmOGFkMjk2ZWUzN2ViOTA3MjljZjA3OWY3NzRmNGZlMGEyZjFhZWY0YjZjNjBjODI0NmY2ODA3ZDU2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjhhODk5MDJiNWQwNmJhNTAxZTg2NTcxOTYzNzRlYzhjNjgzOWYwYTA1YjY4ZTU4Zjg0YjQ5YzIyZDNhYTI3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWI5YTExMjM3ZjYwYTQwYWViM2FlYzZlNDlkOWYxNzJiMDJlNjMxNjVkMWQ1Njk4MmFiMDUxNjNkZmNhNzE1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGYwZGQwYjc1ZDRiYWUwYWMyMDUwMGM0NjA2ZTg4NTcxNzhkNmUxNjE3YWQzMDA0YWZkNjFlOWFhMDk5ZDY4OCJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L33-L50",
+          "version": "repo-lines-v1:sha256:f15335374a4c6fa4e044b0cc736361d3421e90f7fe53091c5de753293ba3dafd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZWM0NGM2ZTI2NzMyODMxMzhmNmZhZjI4MDBhNTFlNzc4ZmI2NTc2NzIwZDliYjc0NjE4NzlkM2EyZDM3M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZWYwN2JlY2E0MzhmNmQ5ZDY1YjMwNjQ1YTUzNzA1YWYxZTk3MzE2ODdhYWFjZTY4MjdiMDBjYTY3M2MwNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTNlNDBhYjQyMTc3M2M2YjMyOTAxOTQyMDc1ZmY1NzM0ZGFiZWU4MzZlZjQ5MTczMmQ4M2JhZDQxNjFjZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZjNhZGYxNjBlZjI4Nzc5ZDJiNzQwMzc1ZjViNTk1NzNiZWNiYmIyMGU1MzE3MmMxNTdjOTVkNGMwNDNkZTkifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L4-L17",
+          "version": "repo-lines-v1:sha256:abc9abeff9fde567aa13e94527c2384a03810cc03e95e1f08c8616a535ec2065:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyOTYxOGMzZmFkZGM2OGJjYjVkZjc5MTAyZDg4NjEzNDczYmUwY2VlYjRlYWU4NTQzOGY1NmJhN2E3ZGU1MDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNWY3YWZjMDgzNjI0NGExMGU4MTNlMzM0YmEwZDllN2M5Nzk0NDY1YjU2YzhjY2YxYjEyY2JiMGY4ZWFmYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5OTA2NDU1ZTU0YzRkMGNmMGM0OThhMzdkMzZmZWI3ODAwYjNlMzNmZjQ0YThlNDcwM2FiZWFhYjhiOWZlMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0MzA0MTU1OWM1OGY4MjliZTQ4ZjRkY2JhNWJlZTgxNmQ2NDIyZjRlNDQwOGFkMDVmYzNiMmI0OGY5Y2VlMTcifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-29T01:49:10.027Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-11T15:19:14.150Z"
   }
 }

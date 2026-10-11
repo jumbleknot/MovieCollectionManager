@@ -83,10 +83,10 @@ sources:
     resource: repo://scripts/agent-stack.mjs
   - id: openwiki-source-d253edfea28a71c8a87b78e7
     resource: repo://specs/068-mcp-2x-migration/contracts/mcp-tool-result.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T03:23:45.685Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T03:23:45.685Z
+  - by: openwiki/0.7.1
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # The three scoped MCP servers
@@ -184,9 +184,12 @@ All three are built the same way in `src/server.py`:
   matching only 7 of 9 movie-mcp tools, and because a middleware-wrapped app is exactly the case that
   slipped through the 1.x→2.x migration (see the gotchas).
 - The images build from the repository root as context (`docker build -f mcp-servers/<server>/Dockerfile .`),
-  on a digest-pinned `python:3.14-slim` base, sync the committed lockfile with `uv sync --frozen --no-dev`,
-  and run as the non-root `app` user via `python -m src.server`. All three entries bind
-  `0.0.0.0` from their own `*_MCP_HOST` / `*_MCP_PORT` env vars and write nothing to disk.
+  in two stages on a digest-pinned `python:3.14-slim` base: a `build` stage that copies in only the
+  committed `pyproject.toml` + `uv.lock` and runs `uv sync --frozen --no-dev` (with `uv` copied from a
+  digest-pinned `ghcr.io/astral-sh/uv:0.12.10` image), and a `runtime` stage that copies the resulting
+  `/app` — virtualenv plus `src` — owned by the non-root `app` user and enters via `python -m src.server`.
+  All three entries bind `0.0.0.0` from their own `*_MCP_HOST` / `*_MCP_PORT` env vars and write nothing
+  to disk.
 
 ## movie-mcp — the identity-carrying proxy
 

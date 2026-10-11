@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0ac716b2b98f4f64e49874e0fb88ce8003c16964ee526f56c0826b4630af1083",
+  "pageVersion": "sha256:cdba9c3b719a45a555a3dea0923627e04637ecf07823c699f6898ccc539cde5a",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -45,12 +45,12 @@
       "statement": "The sandbox microVM path measured 0.43× the wall-clock of the Docker-in-Docker path across five bring-up stages; `docker-build` alone went from 1024 s to 293 s.",
       "evidence": [
         {
-          "resource": "repo://README.md#L142-L143",
-          "version": "repo-lines-v1:sha256:58f1b2162dfce385d257bfc6b77436514e106f32c7ff253884566ea808682625:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE5Y2M1NThlMjk5MWExZjllZDQxMDNmMzA4MDEyMjM3ZjNiOTAwYjk4NzY2YjY0ZDc2ZjU3Mjg0ODc2ZDJlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGViZWRmYjBkZDk0MTQyMzViMzY4NDFjMTU5M2I2M2E2YmNjZGM3NGUyOTJjOWRjYzcxNGFmZTZjNDNmZjVmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2RlYzQxZTdmYzYzZjY5NDU1ZTBlNDNiYzQwNTQyZGZmMWUzYmFkMTkxYTZjMGRlYjhmMzk2MGVmMTc4MjM0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTUxODNjZGFiNzEwY2FkYjNlMWZjZTY4ZmUxZjYwMjIxZmI2ZjE0NmQzZjMyM2ViYzBjNzRjYmFiNmE5MzY1NyJ9"
+          "resource": "repo://README.md#L142-L142",
+          "version": "repo-lines-v1:sha256:ea9cc558e2991a1f9ed4103f308012237f3b900b98766b64d76f57284876d2ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE5Y2M1NThlMjk5MWExZjllZDQxMDNmMzA4MDEyMjM3ZjNiOTAwYjk4NzY2YjY0ZDc2ZjU3Mjg0ODc2ZDJlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE5Y2M1NThlMjk5MWExZjllZDQxMDNmMzA4MDEyMjM3ZjNiOTAwYjk4NzY2YjY0ZDc2ZjU3Mjg0ODc2ZDJlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2RlYzQxZTdmYzYzZjY5NDU1ZTBlNDNiYzQwNTQyZGZmMWUzYmFkMTkxYTZjMGRlYjhmMzk2MGVmMTc4MjM0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjRlMGI3MmU4MDlkZjg0MjBjYzAxMzY1MWE2NGRkNDNjY2RkMDAzNTdlMTlmYzlhMmExYjRkNzUwZGQzZDhhNyJ9"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L12-L14",
-          "version": "repo-lines-v1:sha256:df7e5d5ebc8795e4a8c5453e1a097e8a6db0845ab4a1a08ac071cedfd8cf2fec:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQ3Zjg2ODg4MzFiZTU0NzNlZjU2Y2Y5NmEzZTAwYzc5NjQ0YTg0ZjA0YjE2MzA4NDIzN2VmNDcxN2M4ZTdhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTE2NjI3MjU4NDU1YWFjMzA5ZTczNjY2OTdlMGJmNTcyNWRjYzYxNmMyMmEwOTRlYzY5N2M0Y2RkMmNkYWY4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDBlOGIwYzQwNTU2YTdjNDJiZGIyNTdiMjA3Yjk3OThmYTYzYmJmOTVjNGNlMmY3NTQ4MjNjZThkNjRhNzUzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc1ZDRiMTBjOTM2Nzc3NzhhYTVhMTFjMTA5Zjc2YTY2MzRmMjY4NTY0N2IzM2FkNDI5YjkwNDMwZjI3N2NhMiJ9"
+          "resource": "repo://docs/runbooks/devcontainer.md#L9-L10",
+          "version": "repo-lines-v1:sha256:d9671e7405440c3bf16615241d24b2fc64d08ff280421ea221c5221da2925a4e:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWViYzc1ZmM1YWUzMmUyNWUxYTBjNDE1N2M3MWNlMWE3YTNjY2I4YjdhMTQyNzAyOTU4YTJlZWUyOWM3ZDM2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDAyOTQwYjcxOTYxNDhmYmNlNjc2MDQ5NzY3MGJkMWRlYTMzZjkwZTBmNzUxYzIxOTE5NzFlOTA5MDAzNDU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDE5ZGE5NWVkZDZlMzI4NzRhZGEyNmQ5NGQzMzJmYTM4MzIwNWM3MDA0ZDc3OTgxNmJhNjM5MWEyZGU1Y2MxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTJmY2QxNDM4ZmJkYmQ5ODdkZWRkNmEwYjRmMGFhNzJjMzEwMzI1Yjc3YTExMWE2MzYzNjI3MTVjMDg2M2NlNiJ9"
         }
       ]
     },
@@ -284,15 +284,15 @@
     },
     {
       "id": "claim_0360611fc9834c2496ff05414bfae932",
-      "statement": "Because several concurrent Claude sessions can share `/workspaces/mcm` and its git index and checked-out branch (five were measured on 2026-09-18), any branch work must happen in a git worktree under `/home/coder/worktrees/<slug>`, never `/workspaces/.worktrees/…` (`/workspaces` is not writable). The `node_modules` symlink into the main checkout suffices for `node --test` and the `scripts/*.mjs` gates but not for any `pnpm nx` target, which fails with `ERR_PNPM_UNSAFE_MODULES_DIR` and needs a real `CI=true pnpm install --frozen-lockfile` inside the worktree; a worktree does not survive a container rebuild, so branches must be pushed before risky container operations.",
+      "statement": "Because several concurrent Claude sessions can share `/workspaces/mcm` and its git index and checked-out branch (five were measured on 2026-09-18), any branch work must happen in a git worktree under `/home/coder/worktrees/<slug>`, never `/workspaces/.worktrees/…` (`/workspaces` is not writable). The `node_modules` symlink into the main checkout suffices for `node --test` and the `scripts/*.mjs` gates but not for any `pnpm nx` target, which fails with `ERR_PNPM_UNSAFE_MODULES_DIR` and needs a real `CI=true pnpm install --frozen-lockfile` inside the worktree; an nx failure whose message names a path that no longer exists is a stale-cache answer and must be re-run with `--skip-nx-cache` before diagnosis; and a worktree does not survive a container rebuild, so branches must be pushed before risky container operations.",
       "evidence": [
         {
           "resource": "repo://CLAUDE.md#L7-L7",
           "version": "repo-lines-v1:sha256:657251edf9b7a1ba2b50aede4fd41dcf7b6072f71687c7f518cf44050be56c94:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3MjUxZWRmOWI3YTFiYTJiNTBhZWRlNGZkNDFkY2Y3YjYwNzJmNzE2ODdjN2Y1MThjZjQ0MDUwYmU1NmM5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3MjUxZWRmOWI3YTFiYTJiNTBhZWRlNGZkNDFkY2Y3YjYwNzJmNzE2ODdjN2Y1MThjZjQ0MDUwYmU1NmM5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmEwNmM3NmJiNDJjYmVlNjczMzYyNTcyYTZiMDQ5YTkwYWQ4OTk5OTVmMGM1MzZmNDhjNDc1ZDAzN2QyZTNkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA3YmFkMDRjNjQ1NzdjNmQ1MTk5ZmE0NDVkNGRhOTZjMmNkZmY2Yzc2ZGUxMmRjM2ZjZWE4NDljMjRiNzIzMSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L303-L399",
-          "version": "repo-lines-v1:sha256:dd523e7d1c12121022b8cee52e791a6dd28a0daac9b4d23b46e8de5053549a30:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMjYwNWYyYjM2NDExOTE1N2IyYmUxMTBmOTZmZjc1Y2VmMzRjNTQ4MmM5OTM3NmU4YjY5OGNhYWI1NWE1NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyZDZhMjU1NTU1YjVjZmFmNzg4MjcwZDRiYWYzMWEzMjhmN2RiZTk3ZjNjNjg1MGYyZWY1NmZkYTY0MzcyMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5MjYwZWJjYTdhY2FjODYzYmMyMzMwNWYzYzVhN2E3MjFlMmIzYmEwNTA0YjU3YzYwNzllMjgzNzU4MjM0N2QifQ"
+          "resource": "repo://docs/runbooks/devcontainer.md#L314-L413",
+          "version": "repo-lines-v1:sha256:49bcb843afc124e5a83b72797387ca35f20e17a6d7877a617cf90a44e5de4595:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYzI2MDVmMmIzNjQxMTkxNTdiMmJlMTEwZjk2ZmY3NWNlZjM0YzU0ODJjOTkzNzZlOGI2OThjYWFiNTVhNTY0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkMzQ3ZmEyZTkyZDgxNjJkZjIzNmE1NjYzNDJkMjg0ZjllMGIzMGFlOWMwYjJiNzFjYzliY2E2YTU0YTYwYzdiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlMmQ2YTI1NTU1NWI1Y2ZhZjc4ODI3MGQ0YmFmMzFhMzI4ZjdkYmU5N2YzYzY4NTBmMmVmNTZmZGE2NDM3MjI2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNjMwZTRiMmUyMTRiNTA3OWE1YzRhOTc1ZWUzMGI3NzI3OTllNWI4NzEwYzc1MDY5ZTRlNGMwYTViODgwOTNmIn0"
         }
       ]
     },
@@ -355,10 +355,24 @@
           "version": "repo-lines-v1:sha256:d1d35742f58843ba4457514606aea533ef7c6832575c2c03562aec37817b58c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOTU5YWE5NTM2ODE4NDQ4MWZmMDBlMmMzODE3MjFlNjgwMjE4MmFmZTQwMGFlZmEyM2VmMmVmM2Q4OGYzODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNGRiZjMxOGJkNGE2ZDQzZDhlYjZlMDM1MzNlZjdlNmRlZTFiNWU5ODRiZGYzNTljMWJlYmVhZDE2ZTcwOGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmNmM2NWM4NWIwNTg5NzgzMzY2OTQ3MjI1MzFlNTljZTY0NzQzZmM1ZjRlMzc3ZDFkYmRmMTRiZjJiNWE0MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjYzM5ZWYwZGIyYzc2MTYwYzhjZGY5YzM3N2E4YThiZTQ0ZjU2MDUyNjg5Y2VmZWQ2MjgwNzIxOTRlZjQ5ZjAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5a7b6960c1914fc9b4a0602393aeaf42",
+      "statement": "Android emulator support is path-dependent and documented as a three-row matrix: never on the Docker Sandbox microVM (no nested virtualization, so `/dev/kvm` cannot exist however the container is configured), available headless with hardware acceleration on the retained Docker Desktop / DinD container via the host's `/dev/kvm`, and available in CI — which is the recommended route for agent mobile flows because local Metro OOM-crashes after roughly one to two `/run` calls. `scripts/devcontainer-android.sh` refuses legibly on the sandbox, naming the absence, the reason and both remaining routes, rather than failing as if the image were broken.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L157-L173",
+          "version": "repo-lines-v1:sha256:9755da406099f9d5fcc0757e8fe2311e113f45a3f57a49989eead138229f982a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYTU0NmI2ZGI3ZjBiZTg2OWYxZWEzMjczYTBhOWNmNzNlZjg4MWM5ZDZhZWFiZWJlZWY5MGZhMmJjYWMxOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDFlZThlZjhmZTgwZDVmZTMwMTgwMGQzYmM2MTYzZGQ3NzVjYzRhNjNkZmRmYWYyYTlmOTgwYWUzOWE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxNzI2NTU3NzIxNDcyYTAzNjllMTk4MDk4MGQxMTRhMWUzZjU4MTIxZTM2YjFmZWFlMTgzMTFkOTJlYjFhYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMzhlOGUxMDcxOTFlNDZmZjJhMTI2MGIwY2M2OGRkOGU4OTE1MDhjNDFmOTJkNDBkMzcwOTc5MWVjMzQ2NmQifQ"
+        },
+        {
+          "resource": "repo://scripts/devcontainer-android.sh#L1-L58",
+          "version": "repo-lines-v1:sha256:81ed72c6cd048bd4be35b6c58fe80fc848a1b7a1e06f4a907395f65c7584849f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NWVmYTBmMDQxYTc3MmMxMThiZWM0NDllNWUzNzExMTc5NTMwMGNkZmZhNTA3OTU1YzE4YTNlMjk4ZDU1YjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmZDIzZTA3MzVhMDBiMzYyNjcxYzcxM2MzYjgwMDUwOGYzNGM5YzdmOGNmMDAzMzI0YTg3OTQ3ZDdmMDM0ZDQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-10T14:51:10.653Z"
+    "at": "2026-10-11T15:19:14.150Z"
   }
 }

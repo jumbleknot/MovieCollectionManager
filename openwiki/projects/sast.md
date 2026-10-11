@@ -53,10 +53,10 @@ sources:
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T14:51:10.653Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T14:51:10.653Z
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # SAST & SCA static security scanning
@@ -379,10 +379,16 @@ a scan that happened to pass.
   to say.
   Measured on run 3521 (the 2026-09-18 cron, three `amqp091-go` CRITICALs): the recorder posted
   `event_name=schedule expiry_step=skipped`, proving the `if:` evaluated true and only the upstream
-  failure could have caused the skip. `always()` alone would run the check on every PR and block them
-  all, so the schedule guard survives *inside* it, and the body suppresses `cancelled` from `job.status`
-  so a superseded run is not turned into a failure for a commit that was never broken. The check is
-  report-only, so it can never mask a red gate or turn one green.
+  failure could have caused the skip. That reading was luck of composition, so the recorder now carries
+  a **third** measured field, the CVE gate's own outcome: `expiry_step=skipped` alone conflates "the
+  `if:` was false" with "an earlier step failed and skipped this one", and the pair disambiguates them —
+  `expiry_step=skipped gate=success` means the `if:` was false, `expiry_step=skipped gate=failure` is
+  the #484 fault itself, and `expiry_step=failure` means the step ran and a check inside it failed
+  (read the step log, because the status cannot tell an expiring entry from a checker crash). This
+  requires the gate step to be addressable by `id:`. `always()` alone would run the check on every PR
+  and block them all, so the schedule guard survives *inside* it, and the body suppresses `cancelled`
+  from `job.status` so a superseded run is not turned into a failure for a commit that was never
+  broken. The check is report-only, so it can never mask a red gate or turn one green.
 
 - **Before raising a floor, check whether the lockfile is the lever, not the override.** Since
   feature 058 the gate prints an `OVERRIDE LEVERS` advisory section for any finding whose package

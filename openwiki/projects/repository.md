@@ -6,7 +6,7 @@ resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T14:51:10.653Z
+    at: 2026-10-11T15:19:14.150Z
 sources:
   - id: openwiki-source-c765a50891cfc213a2fc94d1
     resource: repo://.devcontainer/assert-egress-governed.sh
@@ -30,9 +30,11 @@ sources:
     resource: repo://docs/runbooks/devcontainer.md
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-38de5a41429287f01c1b5bfd
+    resource: repo://scripts/devcontainer-android.sh
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T14:51:10.653Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -143,8 +145,14 @@ The dev container is a headless Linux environment. **The Android emulator and iO
 cannot run inside it.** Native mobile build, emulator, and device-debug work (including Maestro
 mobile E2E) remain host-side activities. The container covers everything else: backend
 development, compose-based test stacks, the web target, and Metro (watchman-backed, hot-reload).
-The sole documented exception is the `devcontainer-android.sh` path for DinD; the script refuses
-legibly and names both remaining routes rather than failing silently.
+
+The Android emulator is the one documented exception, and it is path-dependent: **never** on the
+sandbox microVM (no nested virtualization, so `/dev/kvm` cannot exist however the container is
+configured), available headless with hardware acceleration on the retained Docker Desktop / DinD
+container via the host's `/dev/kvm`, and available in CI — which is the **recommended** route for
+agent mobile flows, because local Metro OOM-crashes after roughly one to two `/run` calls.
+`scripts/devcontainer-android.sh` refuses legibly and names both remaining routes (CI, or the
+retained Docker Desktop container) rather than failing silently or looking like a broken image.
 
 ---
 
@@ -198,6 +206,8 @@ writable). The `node_modules` symlink covers `node --test` and the `scripts/*.mj
 worktree is the only fix (~4 min). A worktree does **not** survive a container rebuild, so push
 the branch before any risky container operation. Reads — `git fetch`, `git log`, and everything
 against the forge API (opening a PR, merging, commenting, `ci-status`) — need no worktree at all.
+An nx failure whose message names a path that no longer exists is a **stale cache** answer, not a
+real one: re-run with `--skip-nx-cache` before diagnosing it.
 Full procedure and the four traps: [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md).
 
 ### 4 — PR head must be a real branch, not an AGit push

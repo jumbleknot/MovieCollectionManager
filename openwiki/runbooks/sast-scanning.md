@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate that must distinguish a scanner outage from a finding — and a finding on a file the pull-request scan never received from a clean one.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -52,7 +52,7 @@ sources:
     resource: repo://security/sast/semgrep.yaml
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T02:25:55.688Z
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # SAST & SCA static scanning
@@ -99,15 +99,17 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   previously produced a false "gate bug" report.
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
-  package", which is a different question from "is the vulnerable code path exercised". Both current
+  package", which is a different question from "is the vulnerable code path exercised". Both live
   no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
-  production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces
-  only through micromatch in Metro's file watcher and Jest. Neither is imported by first-party code,
-  neither ships in the web or server bundle, and the glob patterns those tools expand come from
-  repository configuration rather than a request. The same distinction applied to the now-deleted
-  `@graphql-tools/utils` entry, which was tagged runtime through `@copilotkit/runtime` while being
-  only listed as a dependency, never reached on a request path. That reasoning has to be **checked
-  and written into the justification**, because the tag alone would have said the opposite.
+  production dependency: node-forge arrives only through Expo CLI / code-signing tooling, and braces
+  only through `micromatch` in build and test tooling — Metro's file map, Jest, and (added at the
+  2026-10-10 re-measurement) `fast-glob` and `http-proxy-middleware`. Neither is imported by
+  first-party code, neither ships in the web or server bundle, and the glob patterns those tools
+  expand come from repository configuration rather than a request. The same distinction governed the
+  now-deleted `@graphql-tools/utils` acceptance, which was tagged runtime through
+  `@copilotkit/runtime` while only being listed as a dependency rather than reached on a request
+  path. That reasoning has to be **checked and written into the justification**, because the tag
+  alone would have said the opposite.
 - **`pnpm why <pkg> --prod` without `-r` reports the wrong scope.** Without `-r` the command runs at
   the repo root only and prints nothing for a dep that is runtime-reachable via a sub-package (e.g.
   `mcm-app > @copilotkit/runtime > … > fast-uri`). That empty output is **not** "dev-only" — it is

@@ -1,7 +1,7 @@
 ---
 type: Process
 title: OpenWiki bundle generation and maintenance
-description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan / wiki-maintain / okf-governance around them), the event-driven freshness model, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), and what the conformance and governance gates enforce versus deliberately refuse to enforce.
+description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan / wiki-maintain / okf-governance around them), the event-driven freshness model, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, and what the conformance and governance gates enforce versus deliberately refuse to enforce.
 resource: infrastructure-as-code/project.json
 tags: [openwiki, okf, documentation, ci, maintenance]
 sources:
@@ -29,10 +29,14 @@ sources:
     resource: repo://scripts/wiki-maintain.mjs
   - id: openwiki-source-8591439162d997daf59a1ac6
     resource: repo://specs/043-openwiki-okf/data-model.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-08T02:37:22.749Z" }
+  - id: openwiki-source-c8029c93bdccd81963968b22
+    resource: repo://tools/openwiki-generator/package.json
+  - id: openwiki-source-012d67e0a1df20ece216c0d0
+    resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-08T02:37:22.749Z
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -168,17 +172,37 @@ proposal, and the always-on gates sit after it rather than inside it.
 - **Neither budget is a monetary bound.** OpenWiki reports no token or cost figure of its own; a run's
   usage is captured by a tap and recorded, but nothing enforces a spend ceiling, and the wall-clock
   budget exists to bound occupancy of the shared CI runner. Do not describe these as cost controls.
+- **CI installs the generator from a committed lockfile, never resolved fresh — and the dev container
+  must name the same version.** The generator is not a workspace dependency and the CI runner has none
+  baked in, so the workflow installs it, but from `tools/openwiki-generator/`: a standalone pnpm
+  workspace holding exact pins for `openwiki`, `mermaid` and `jsdom` plus its own `pnpm-lock.yaml`,
+  installed with `pnpm --dir tools/openwiki-generator install --frozen-lockfile` and put first on
+  `PATH` (the verify step fails unless `command -v openwiki` resolves there). A guard test fails any
+  run-time resolution in the workflow — a global install, an `npx`, a `pnpm add` — because the previous
+  `npm install -g openwiki@0.7.1 mermaid jsdom` pinned only `openwiki` and resolved its whole
+  transitive tree at run time; run 4950 died 404-ing on a transitive published two minutes earlier.
+  That workspace also sets `minimumReleaseAge: 4320` (three days) and is deliberately its own
+  workspace root, so the root's no-cooldown settings do not apply and pnpm rejects an entry inside the
+  window both when resolving a lockfile and when installing frozen. The dev container still bakes a
+  *global* install at image-build time (there is no checkout then), so the two halves are kept in step
+  by hand and by Renovate's grouped `openwiki generator` rule: a guard test reads the
+  `npm install -g openwiki@<v>` command line from the Dockerfile and fails if it names a version other
+  than the one in the locked manifest, since otherwise CI and local runs would silently run different
+  generators on the output the gates judge. That guard runs in this job after the install and **before
+  any paid call**, and a SKIP fails the step — a skipped check reads as a pass, and a mismatched
+  managed block would fail every slice of the run that follows.
 - **Mermaid diagrams degrade silently without their parser.** From OpenWiki 0.5.0 diagrams are embedded
   by default and every fence is validated after a run; the real `mermaid` parser and `jsdom` are
   optional peer dependencies, and without them a diagram that fails the strict check is rewritten in
   place into a plain `text` fence while the run still exits 0 and every gate still passes. Both are
-  installed beside the generator in `.devcontainer/toolchain.Dockerfile` and in
-  `.forgejo/workflows/wiki-maintain.yml`, at the same pinned generator version (`openwiki@0.7.1`), and
-  guard tests in `scripts/__tests__/wiki-maintain.guard.test.mjs` assert that both the version and the
-  parser list match — an environment that is missing the parser, or running a different generator,
-  disagrees about what a valid diagram is, and the one that writes the bundle wins. The downgrade is
-  not invisible after the fact: the rewritten fence keeps an `openwiki: mermaid parse failed` comment
-  naming the parser error, so a diagram that never rendered can be found and repaired by hand.
+  installed beside the generator in `.devcontainer/toolchain.Dockerfile`, and both are pinned in CI's
+  locked install (`tools/openwiki-generator/package.json`), and guard tests in
+  `scripts/__tests__/wiki-maintain.guard.test.mjs` assert that the two environments name the same
+  generator version and the same parser set — an environment that is missing the parser, or running a
+  different generator, disagrees about what a valid diagram is, and the one that writes the bundle
+  wins. The downgrade is not invisible after the fact: the rewritten fence keeps an
+  `openwiki: mermaid parse failed` comment naming the parser error, so a diagram that never rendered
+  can be found and repaired by hand.
 - **Rejected content is fixed in the brief, never allowlisted.** If a page trips the conformance gate,
   the governance gate or a leak scan, the surface that changes is `openwiki/INSTRUCTIONS.md`, followed
   by a regeneration. The gates deliberately have no skip flag and no allowlist, because an allowlisted

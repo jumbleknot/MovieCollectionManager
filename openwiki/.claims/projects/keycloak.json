@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f50f3742597712c93e6715260ab404ec2619fa1216c851f5f8cf8bf3b0bd16a5",
+  "pageVersion": "sha256:46f07bd4c2b2bb65e3c9a94aef47aa770f52c2050f7db5218f2525dc437f8262",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -55,7 +55,7 @@
       "statement": "The realm exists in three committed variants that import through three separate paths into the same Postgres volume: `dev-realm.json` via the `compose.dev.yaml` overlay on `pnpm nx up-auth infrastructure-as-code`, `ci-realm.json` via the `compose.ci.yaml` overlay in app-ci's Keycloak bring-up step, and `prod-realm.json` via `compose.prod.yaml` under Komodo. Only the dev and CI overlays add `--import-realm`, leaving the shared `keycloak/compose.yaml` base and therefore the CI path unchanged. (The namespace of committed filenames is separate from the import namespace: every variant is mounted at the target path `grumpyrobot-realm.json`.)",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L656-L662",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L665-L671",
           "version": "repo-lines-v1:sha256:5348b5884664a80eca4827d66333f5ab51d301fca3bc4cf6fb226ccc87423942:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E3ZmVkMzIyOWExYjY3MDVjOTk1ZWFkZWVlNzQ0OWM2MzBjODQ3NGQ3OTQzNzQ4OTU2ZmQwMGQzOTE3ZTgzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZmNiZDAwMWZmNDEzNDI3NWU2NjFmZjg1NmEzN2RhNjM4MWU2ZmUxNDgxZjNmZTE0MzQ4Mzc1YWZiYzNjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBiNjY0MDc0OWZkMmJkODdiNDg4MGFkMjk3OWQ5OTA4ODgxYzVmOWExMzNhYmI4MGRjMTczYTY5M2U1MDhlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODNkY2EzYzc4MDdlY2M5ZWVhN2YzYTk4NTZkMWEzYTQzOWM2NTlhY2E5ZjNjNmU4ZTJmNmNmZDQ2ZGY4NWFiNSJ9"
         },
         {
@@ -99,7 +99,7 @@
       "statement": "Realm import is idempotent and non-destructive because Keycloak's directory import IGNORE_EXISTING semantics skip a realm that already exists: an established `keycloak-store-postgres-data` volume is untouched on every `up-auth`, and a fresh or wiped volume gets the `grumpyrobot` realm, its app clients, and `e2e-test-user` re-seeded on the next `up-auth`. The same property means an edit to a realm JSON file changes nothing for a stack that is already running until the realm is re-imported.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L562-L567",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L571-L576",
           "version": "repo-lines-v1:sha256:92c85ff2cb64b192ad59fc55b13c12783c3895c5a7be3cc151fc4e91572269d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDFkN2ZmYjdjMjA5MjUzZTJjMzdjMDgzMTgyNWI3ZmU5YjFlYmQwY2M5ZDMxYWFjNDM3NWFkZjM4YmYzYTMxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk3YTE2ZmQ2MjcwNGRhMGY2YWI4ZTBkNjQwODVkNzA3ZWZmZWYwNjljN2E1MTJkZTA0NGY1ZTU3ZjM1ZTZiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZiNjE0YmU3NDVhYzg4YTdlMDNkZmNkMTNkYWNmMDI0MzY5ODZhMzEzMzg2MjZkZDczZjk1NTM1OTI0NDY5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjFmNjk0MTMyMzc3N2FjNWRlMWI1ODIzMDA4OTAxZGQyZDg4MTA4OGEzMzdlYmQ2YWNjNTU3ZWZhNWYwZmIyZCJ9"
         },
         {
@@ -187,11 +187,11 @@
       "statement": "Removing a client from a realm export requires removing every reference to it, not just the client object: a dropped client that still appears in `roles.client[<id>]` or `scopeMappings` makes `--import-realm` abort in production mode with `App doesn't exist in role definitions: <id>` and crash-loop `keycloak-service`. The ROPC client `mcm-bff-test` illustrates the asymmetry — it exists in the dev and CI realms but not in `prod-realm.json` — and it is no longer unused in the throwaway sense: the agent integration suite and the DAST job log in through it, so its secret is minted at bring-up, pinned into the realm import, and re-exported to the later steps, which therefore must not read it from `stacks/auth.env`.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L650-L655",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L659-L664",
           "version": "repo-lines-v1:sha256:dd4d2ac12b08112b1ec41a27e2d66d8fb33438fd2c1283520a799082ef2d4d4f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0MTY2YjQxNGVhOTU2YjBiMmQxMzFiZTBjZjc5MThkNGEwZWVlZTRmZTE4OGJkNzk0ODVjOGRhYzNmZTkzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk3NzY2ZGU1NTE2NTY5ZjI3OGVlZmZlZjU3MGFkZjIzNDcxOGRiNDM5NzY1MGJlNzQ1ODQwMDUzMjU0Mjc1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU0OTVhOWI2MzE1Y2I1ZDVhM2YxNTAwODYxNDcwOTkwNzJmNzE3ZDJmODFkNGJjNWNhN2VlNDQzNTYxZjUzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWMwMmI3ZTNhMDM3MTYxMDJmYzU5MDYzYjI5Yzc1N2Y3Mzg4NjBjMDE1OWZhYzJlZDZmNGRlZjNjOTBjOTVkOCJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L908-L908",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L924-L924",
           "version": "repo-lines-v1:sha256:d25e5cb63288dd53369a6f80d88e62cd9fe2dd3f9da5c1577651b0e045dd0066:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1ZTVjYjYzMjg4ZGQ1MzM2OWE2ZjgwZDg4ZTYyY2Q5ZmUyZGQzZjlkYTVjMTU3NzY1MWIwZTA0NWRkMDA2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1ZTVjYjYzMjg4ZGQ1MzM2OWE2ZjgwZDg4ZTYyY2Q5ZmUyZGQzZjlkYTVjMTU3NzY1MWIwZTA0NWRkMDA2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGVjYzFlOGZlN2QyNTYxZWYwMzEyYTQxYmQ1Y2U1NDdlYWYxNjBiODQwODQyZTRjYzNhZmE2ZGNiNTM3ODY4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjhmMTVlMDY1YWNmY2JkODk1ZjFjYWIyMDExZjI4YTA3NDk2YjJkNzE1ZjhjNjk1MTcwODc2ZjlmMjcxZGI4ZSJ9"
         },
         {
@@ -209,7 +209,7 @@
       "statement": "The committed `prod-realm.json` keeps a `${BASE_DOMAIN}` placeholder (in the `movie-collection-manager` client's redirect URIs and web origins) that is rendered at deploy to a gitignored concrete file pointed to by `PROD_REALM_FILE`. The render must use `sed 's|${BASE_DOMAIN}|<domain>|g'`, not `envsubst`, because the realm JSON also contains 32 Keycloak `${role_*}` / `${client_*}` i18n placeholders that `envsubst` would expand and corrupt; the `sed` form touches only the literal `${BASE_DOMAIN}`.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L907-L907",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L923-L923",
           "version": "repo-lines-v1:sha256:0032de0a05fefaaf4fe43fd7889ebdb6332667e8e0d96159d1ea934962c11f67:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWRjMGYxOGYxMzE3M2RlNTljZDk5ZGEyMDJjODkyOWMxZmZhNTMyMTI2YmM0YWVjYjUyMjJhNTgxY2NmZGM4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmI4ZjM0NmQzYWY3OGFkOTE3MTlkYWEwMjMzZGRiMDFmZDExZDgyZGUyZTJhMmYwMjM1ZWExMWYzYTQ2YTRhZSJ9"
         },
         {
@@ -287,7 +287,7 @@
           "version": "repo-lines-v1:sha256:555d1ed7f0a734562af10d1970318336e1d6488b9c120b575778965b42f2968e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMzkyYTRlM2E1ZDEwZjJlZDUxNzBhMjU3YTI0Njc0YzY1NjAwN2FiNjRiMzJlYWFiNmU5MzJkYzU5MDNlYzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxYTZkNDg3OTQzNDVkNWRkY2RmNDVkM2E2ZjJhZDgzMTNkNmJiMDU1Yjg3M2JiZGRmNTI1ZjhlMDRkNDQ0ZGYifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L175-L198",
+          "resource": "repo://scripts/gen-dev-env.mjs#L179-L202",
           "version": "repo-lines-v1:sha256:16c0dd6fd51aa8c5e4b5c714480215dd08ca8cbfedcd144f35a466277e26cf8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyZTI2ZmZhOWQwMGQyYjBmZWVmMGM2ZDVmY2JmNDk1ZDEwNjVlYTAzM2VjNjAwZWQ2MDRjZmFmMmVkNjkwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNGJiNGYwZjU1NDc2Yjg3YTBmMjNiMGYwNWNmZDcwMDJmZTVjZWMyNmRmY2MzOTg1NDkwOTQ0MmQ0NGUyNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlMGI1NTE4NjA2Nzk0OTJkM2ZiZjgxZTEzZTg0ZmMwZGI5ODFhN2YzN2M2OGJiZjlmZWQ1YjY1Yjg0Y2I3MGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0ZjlkZDA5NTcxOTBjMzIyNjRhYjE0MDM2ODIzMGQwNzgyODcxZDBhYTZkYjI5NGNjYTUzYmIyZDUxMDRlMDIifQ"
         }
       ]
@@ -315,8 +315,8 @@
       "statement": "The prod Keycloak admin console is published on host port 19099, not the dev/CI 8099: prod and the CI runner share one host under two rootless Docker daemons publishing into one host port space, and a `0.0.0.0:8099` prod bind overlapping CI's existing Keycloak on the loopback port 8099 crash-looped `prod-auth` for 6 h on 2026-07-06. Feature 029 moved the port into the prod-reserved 19000-19099 range and the admin console is served under a separate `KC_HOSTNAME_ADMIN` (the tailnet admin address, never the public host); the bind is `0.0.0.0` because the rootless daemon starts before `tailscaled` at boot, so a tailnet-IP bind silently fails, and tailnet-only exposure is preserved by the host firewall.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L90-L96",
-          "version": "repo-lines-v1:sha256:09a0ccf57f08e8be34d842f0160926d24f3e1c004a8463fb0e09789279625594:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjcwNWFhYTE2MjJkNzBhNzRlOTEwZDUwOGY5YTg0OWY4YzBmMDdhN2E2MDBhZDI4MzYzNWVhMDU5ZWM1NjA0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJmZTk4ZTVjZTgwODY4ZmU5Y2I5MjJlYzk4NTE5ZTc3MDZmMTYzOWQ4NzU2MjZmNDE0ODM3Mzc4MjIyNGU3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTE1YWYzNzJkOWIwNDI3YWI4YTM3N2I2ZjI2MjU0MjJhZjQ3NzRmMjJjNjExNDhlM2ZhNGNmNmM3OGM3OTZlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjkwMTk2ZmQxZWFmYzM0NzdlMzI0NTg4ZmJkMTJlODdhMzVhMzJmYTQ3NzY4NjhkZDM3M2E0YTU0NGNiNWI2OSJ9"
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L96-L98",
+          "version": "repo-lines-v1:sha256:ce9bfd1990fc36e8ea7e276f31cec62e6a78a4f5da2238627059db621231c98f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg4MjUyMWUzZjg4OTgyNTY3MDA3MTc1MDdhZjM1NjcxNGNjMjQyNmIwNDAzNTRjZTY5MDBhOGFjOTJiODE4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
@@ -324,7 +324,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L45-L53",
-          "version": "repo-lines-v1:sha256:0e6c3cfc51950e9abe258258e6cf0961e4b42e8b888badc7710511a0e8d6a80e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhMGU3OWRlNzZmNTkyYTRkZmRjNjQzMWM5MzI4MDNkMTRhN2VlODgxYzEyZjljZGRhZTFlMWExNDk0YTViZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjA3NmE0MWVkNzZjNjQxM2FlNTgwM2RlMjYzOTQ5ODg1ZGNjMDRjMTg2YzIxNzk2M2I2NjQ2MzE0ODBlN2VjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE0ZjYyZGIzZTJhNjViNzVlM2E0Nzk4ZjhhNjJhZjJkZTdiZjk2MDZhM2FhMTdiNjY5N2RmYzYwNjBlN2Y4YiJ9"
+          "version": "repo-lines-v1:sha256:0e6c3cfc51950e9abe258258e6cf0961e4b42e8b888badc7710511a0e8d6a80e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhMGU3OWRlNzZmNTkyYTRkZmRjNjQzMWM5MzI4MDNkMTRhN2VlODgxYzEyZjljZGRhZTFlMWExNDk0YTViZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUxNmVkYzRmZjY4YjdkMzhlNWUwZGNhZDNjMjE5ODM5NmRhYzIwZmNkMzU5NzdmNjMxMWUxNzE5ODkxNGI4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE0ZjYyZGIzZTJhNjViNzVlM2E0Nzk4ZjhhNjJhZjJkZTdiZjk2MDZhM2FhMTdiNjY5N2RmYzYwNjBlN2Y4YiJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L70-L72",
@@ -341,12 +341,12 @@
       "statement": "The prod container `keycloak-service` lost its `backend-network` attachment on reboot on 2026-07-06, coming back attached only to `edge-network` and `keycloak-network`, which broke mc-service's OIDC/JWKS discovery of `keycloak-service` (`dns error … Try again`). A manual `docker network connect` is only a one-off that the next reboot can lose; the durable remedy is a Komodo `prod-auth` redeploy, which recreates the container with the full network set already declared in `compose.prod.yaml`. Feature 029 additionally makes the intra-stack `keycloak-network` compose-managed rather than external, so Keycloak and its Postgres are created and attached atomically on every `up` even if the shared external networks hit the rootless re-attach race.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1114-L1114",
-          "version": "repo-lines-v1:sha256:182fa5accb9f9a6887661938476815dac9d01b6d51a6494de16668c7538150cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgyZmE1YWNjYjlmOWE2ODg3NjYxOTM4NDc2ODE1ZGFjOWQwMWI2ZDUxYTY0OTRkZTE2NjY4Yzc1MzgxNTBjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgyZmE1YWNjYjlmOWE2ODg3NjYxOTM4NDc2ODE1ZGFjOWQwMWI2ZDUxYTY0OTRkZTE2NjY4Yzc1MzgxNTBjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNmYjNjMWYwODA4OTNjZTViMjRiMWZjOTFlNWZhYTc5NTNiNmU4MDBiZjY3OGY1YzViN2EyMDk2YzZkZTkyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmMyMzczMWU4N2QzMTk3ZDkxZGMxZjY0YWIwZWUxY2EyYjc5MmUxYTM0MjVkNDRiODU1Yzg0NDQ0NjQxNWM2MiJ9"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1126-L1126",
+          "version": "repo-lines-v1:sha256:d206252035d25ad88df98054480bd96305085471ceaa692d7423888d08deb9be:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIwNjI1MjAzNWQyNWFkODhkZjk4MDU0NDgwYmQ5NjMwNTA4NTQ3MWNlYWE2OTJkNzQyMzg4OGQwOGRlYjliZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIwNjI1MjAzNWQyNWFkODhkZjk4MDU0NDgwYmQ5NjMwNTA4NTQ3MWNlYWE2OTJkNzQyMzg4OGQwOGRlYjliZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTU0ZWNlMGMzMTQ3ZjQ3ZWY2MjM4MDU0OTNlOWFiZGI3MDExNDc1ODI4ZDM2NWIyMGQ5OWU1MjY3Y2RlNzUxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQxMjU0MjdlY2EzNTNhNzcyZmQ1ZGM4MjcwYjJlZDZiMTMwMTMxOGRmNmYxZTU0NWIyMGI1YzNkNjc1M2JjMCJ9"
         },
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L112-L121",
-          "version": "repo-lines-v1:sha256:e5f0f0b7ef3b7f2bc11baf0e514c8ed6b3f77d8f29ab3777f0194ca70d7313b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YWRkNDcxMzQ2MzM3ZGQ0NjRiMmIwNGM0YTJkYjZlNzE5OGZmNDFlMjU3MWVmYmNlOWMwZmYyNmJjM2NmMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3Zjc1YTdmNTVhN2ViMmYyNjViOWYyZjc4MjA4NDJiZDA0NzE3ZTBlNTE4OTI5MjFkZTRiYzU4ZjRmZDEyMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwM2JlZmMyZTM3NzU2MDhlMWU3MDQ2Y2E2ODkyZTM4MTM1MzczNzVlOGRhMzBjYWZlMjdhYmE3YzYwYTc3YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3MTVmN2ZlZjlkODRhYWYyNzRhYTQ5ZTEzYjFjOTY2YzYwNzNlNTMyYzkwNTczZTA2MWQwMmNjNzc1OTZmNDcifQ"
+          "version": "repo-lines-v1:sha256:5bd10c413d34be14a2b6f148428b545b392816648520161d9ffa8497ece4992d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YWRkNDcxMzQ2MzM3ZGQ0NjRiMmIwNGM0YTJkYjZlNzE5OGZmNDFlMjU3MWVmYmNlOWMwZmYyNmJjM2NmMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwOGJjYmY3NDE4OWU3N2FlNWY3MjU2NzAzYjk1MTBiOWI2MDI0NTZhNzk0ZDllNGJlZWI0ODg0Nzg4ZWY4M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjOTcyNjA1NGFlN2ZiN2JjNzgwYjRjZmU3MzRiNWFmZmE0NmYzYzFiYjBmZWVhYmNjZDViZWE0ZGVkMWViZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkODdhYThiZGE4YzA5MTA0NDRhMzhiMTI2YTkzYmI0NzM5YmI4YzUwNTJhYjQ4ZDc2NTVhYjIzZDlkMWI0ODYifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L97-L126",
@@ -395,7 +395,7 @@
       "statement": "Client redirect URIs and web origins are realm state, not application config: `add-container-redirect-uris.mjs` idempotently adds the containerized-BFF callback and `login?verified=true` origins (dev container `:8082`, TLS `:8443`) to the `movie-collection-manager` client, and the mobile app-link/custom-scheme callback is the same kind of realm entry — its absence breaks on-device login only after the browser redirect, not at login time.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L919-L919",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L935-L935",
           "version": "repo-lines-v1:sha256:9d42e9bbf56d69464c43d1f9826610c0f4184070ff0b278e5eda6542a8d4e486:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MmU5YmJmNTZkNjk0NjRjNDNkMWY5ODI2NjEwYzBmNDE4NDA3MGZmMGIyNzhlNWVkYTY1NDJhOGQ0ZTQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MmU5YmJmNTZkNjk0NjRjNDNkMWY5ODI2NjEwYzBmNDE4NDA3MGZmMGIyNzhlNWVkYTY1NDJhOGQ0ZTQ4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY0ZWRiODNiMmM2MzQ2MjU4ZWUzZjM3ODJiNjU0NDRmYjM4NzgyYWZjNDgxODJkNzk2M2Q4MDk3M2ZiOGQ3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk4ZTBiMDRlYWIwM2JhZTdjZjY5Zjk5Mzg4MTM5ZTNhOTY2MmNlNzU3ZjEzNmIwZTExMThjNDE1NzJhMDM1NCJ9"
         },
         {
@@ -413,7 +413,7 @@
       "statement": "The CI runner is a PERSISTENT host, so `app-ci` force-removes the app containers and the stateful data volumes — `keycloak-store-postgres-data` among them — before provisioning each run: Keycloak's `--import-realm` uses IGNORE_EXISTING, so a realm left in place would never pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks E2E idempotency. Image build caches are deliberately preserved so the rebuild stays fast. Without that reset step a committed realm edit would silently not reach CI.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L562-L584",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L571-L593",
           "version": "repo-lines-v1:sha256:435c16dfe808910fb20a9416755666b33f1843d4fe47a4d1154d62a45ce34f85:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZDdmZmI3YzIwOTI1M2UyYzM3YzA4MzE4MjViN2ZlOWIxZWJkMGNjOWQzMWFhYzQzNzVhZGYzOGJmM2EzMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2YjYxNGJlNzQ1YWM4OGE3ZTAzZGZjZDEzZGFjZjAyNDM2OTg2YTMxMzM4NjI2ZGQ3M2Y5NTUzNTkyNDQ2OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhYmYyNmM1ZjFkOWZmZGVmM2U1YmVmYzMyNDFlN2I2OTI3ZGI0YmM2M2JjODFkMmRkMGVlNmFhMmZlMmUwMGEifQ"
         }
       ]
@@ -423,7 +423,7 @@
       "statement": "`KC_BOOTSTRAP_ADMIN_USERNAME` / `KC_BOOTSTRAP_ADMIN_PASSWORD` create the initial `admin` user only when the realm database has no admin, so the hardened posture is to log in once, create a named admin with 2FA and delete the bootstrap user — after which the values are inert. They must nevertheless stay configured: they are fail-fast `${VAR:?}` references, so removing the lines breaks every redeploy, and a fresh database deploy needs them to create the first admin at all.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L911-L911",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L927-L927",
           "version": "repo-lines-v1:sha256:70e38cccf133a62548cbd932518899c861c349f93d65d9cc4344f5121d304613:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBlMzhjY2NmMTMzYTYyNTQ4Y2JkOTMyNTE4ODk5Yzg2MWMzNDlmOTNkNjVkOWNjNDM0NGY1MTIxZDMwNDYxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBlMzhjY2NmMTMzYTYyNTQ4Y2JkOTMyNTE4ODk5Yzg2MWMzNDlmOTNkNjVkOWNjNDM0NGY1MTIxZDMwNDYxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmI4ZjM0NmQzYWY3OGFkOTE3MTlkYWEwMjMzZGRiMDFmZDExZDgyZGUyZTJhMmYwMjM1ZWExMWYzYTQ2YTRhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZhMzcyYjgzMzVjZWEyNjY2NDkzOGRkZjUwNWMyMjkzNGU3MjlhNmFlMWQ4YTE2ZTY4MzUyZDNlYzU1MzAxOCJ9"
         },
         {
@@ -437,8 +437,8 @@
       "statement": "The production admin console, served on the tailnet under its own `KC_HOSTNAME_ADMIN`, still sends its OIDC and session-check (\"3rd party check\") iframe to `KC_HOSTNAME` — the public auth origin. Until that public route resolves, opening the tailnet console fails with a third-party-check iframe timeout, so the failure is a missing public route rather than a broken admin login.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L910-L910",
-          "version": "repo-lines-v1:sha256:f0d3a84112fb4510be8316a4e6842c1e4381ca7be7cf00e5c3db7942d8844e86:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjBkM2E4NDExMmZiNDUxMGJlODMxNmE0ZTY4NDJjMWU0MzgxY2E3YmU3Y2YwMGU1YzNkYjc5NDJkODg0NGU4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjBkM2E4NDExMmZiNDUxMGJlODMxNmE0ZTY4NDJjMWU0MzgxY2E3YmU3Y2YwMGU1YzNkYjc5NDJkODg0NGU4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYyZmI2MDZjODAzNGE5NDQ2MDg0MDgxOWQxNGRhYmYwZDlkMDU2ZjM4MWU0NGY0NTk1NmQ3ZGY0MmMzMDUxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTYyYzdjMmY4MjI4YzBhN2QyZDgwZmEwYzgzOTkzMzdhZWJiOTAwMjExN2VmMjUzNzMwZjAxMDNlZjkyZjMyOSJ9"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L926-L926",
+          "version": "repo-lines-v1:sha256:071d399fa33ff21ded4634b463db2852398037e75bf98eb003a053d3a03b2687:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcxZDM5OWZhMzNmZjIxZGVkNDYzNGI0NjNkYjI4NTIzOTgwMzdlNzViZjk4ZWIwMDNhMDUzZDNhMDNiMjY4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcxZDM5OWZhMzNmZjIxZGVkNDYzNGI0NjNkYjI4NTIzOTgwMzdlNzViZjk4ZWIwMDNhMDUzZDNhMDNiMjY4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU5NjIwMjA3YjdhZDc1OTcyOGU3NTU5OTU1ZDZhMWYzMzQwOWI5ZTAzY2E0MGQ1NDQwMjBmM2FhZDE4OTIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTYyYzdjMmY4MjI4YzBhN2QyZDgwZmEwYzgzOTkzMzdhZWJiOTAwMjExN2VmMjUzNzMwZjAxMDNlZjkyZjMyOSJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L70-L72",
@@ -493,7 +493,7 @@
       "statement": "The `${BASE_DOMAIN}` render path is documented inconsistently with what is actually run: `compose.prod.yaml` and `.env.prod.example` describe rendering `prod-realm.json` with `envsubst` restricted to `BASE_DOMAIN`, while the runbook and README record the hand-run `sed 's|${BASE_DOMAIN}|<domain>|g'` as the command in use. Both touch only the literal `${BASE_DOMAIN}` and leave Keycloak's `${role_*}` / `${client_*}` i18n placeholders intact; a reader following only the compose comment has no warning about the unrestricted-`envsubst` corruption the restricted form exists to avoid.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L907-L907",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L923-L923",
           "version": "repo-lines-v1:sha256:0032de0a05fefaaf4fe43fd7889ebdb6332667e8e0d96159d1ea934962c11f67:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWRjMGYxOGYxMzE3M2RlNTljZDk5ZGEyMDJjODkyOWMxZmZhNTMyMTI2YmM0YWVjYjUyMjJhNTgxY2NmZGM4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmI4ZjM0NmQzYWY3OGFkOTE3MTlkYWEwMjMzZGRiMDFmZDExZDgyZGUyZTJhMmYwMjM1ZWExMWYzYTQ2YTRhZSJ9"
         },
         {
@@ -526,12 +526,8 @@
     },
     {
       "id": "claim_7f1e5362d0a14368afeab9cfc9e54b79",
-      "statement": "The Keycloak container's command diverges by environment: `start-dev` in the base `compose.yaml` and in both the dev and CI overlays, but `start` (production mode) plus `--import-realm` declared in `compose.prod.yaml` itself. Relatedly, prod runs `restart: always` on both `keycloak-service` and `keycloak-store-postgres` where the base file uses `unless-stopped`, because the host's shutdown drain stops every container to `Exited (0)` and `unless-stopped` declines to restart a container that was stopped when the daemon returns — so on this host `always` is what actually makes a reboot hands-off.",
+      "statement": "The Keycloak container's command diverges by environment: `start-dev` in the base `compose.yaml` and in both the dev and CI overlays, but `start` (production mode) plus `--import-realm` declared in `compose.prod.yaml` itself. Relatedly, prod runs `restart: always` on both `keycloak-service` and `keycloak-store-postgres` where the base file uses `unless-stopped`, because the host's shutdown drain stops every container to `Exited (0)` and `unless-stopped` declines to restart a container that was stopped when the daemon returns — so on this host `always` is what actually makes a reboot hands-off, a property `scripts/check-prod-restart-policy.mjs` now enforces on every long-running prod service.",
       "evidence": [
-        {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L110-L110",
-          "version": "repo-lines-v1:sha256:f87b1e6141b7e96d6689d29df26d0126c92e31e1113a85128b8beffd5165a46a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg3YjFlNjE0MWI3ZTk2ZDY2ODlkMjlkZjI2ZDAxMjZjOTJlMzFlMTExM2E4NTEyOGI4YmVmZmQ1MTY1YTQ2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg3YjFlNjE0MWI3ZTk2ZDY2ODlkMjlkZjI2ZDAxMjZjOTJlMzFlMTExM2E4NTEyOGI4YmVmZmQ1MTY1YTQ2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTcxMTM2NjQ5NzQwZDEyOTRhMGQ3YjY4ODE5NjRjZGM3ZmMxMmI2MWMwNTIwODBmYWU2MTZiN2U2MTExY2ZhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWIwYzBkYjJkM2MzY2U5NjQ0MTY5Nzc0N2ZjYzg0NzU1ZGNhYTk2NjY4NTY0ODRkYzU5NTRmNGQ3ZDI3YjM3MSJ9"
-        },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.ci.yaml#L26-L28",
           "version": "repo-lines-v1:sha256:b0441a3bf0e253c99a69596c34550e717a54d3d8b9bfe2bb539bbb11f6487e85:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2YmE0MjU1ZDAxYzZkMmMwMTI1ZmQ3YTFhYjE2YTcxZmY3YTBiOThkYWZiNTQxYzNiMzA4YjIxN2Q4MmM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmZmNzM1MWE2NWYxMTVkYzg1NDIyYTlhZGYzZDNkNjI2Yjk2YTIzOTg0ZDc1NzlkZmU1YjE1ZTFhNmE4YmIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTk4NjNmNzU1MTE4OTQ1OGVhYzdmYThjOTRkYzJmOWZkMmRiMjVlYmQyNDk3OGMzMjQwMzA5ZTAyYzk0Yjc5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjllOWM0ZDM1NTBlMDA1NGI3ZGMyNWUzNzQ4YTE0Nzg1NmEzNjliZmI5NWRjMjFhY2Q4NzI3OGZlMGRjMWI0NSJ9"
@@ -545,12 +541,20 @@
           "version": "repo-lines-v1:sha256:e7a4d536512c5e8fed47605b4dab735e65cba56c02460d8250fb238708de9f13:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdhNGQ1MzY1MTJjNWU4ZmVkNDc2MDViNGRhYjczNWU2NWNiYTU2YzAyNDYwZDgyNTBmYjIzODcwOGRlOWYxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdhNGQ1MzY1MTJjNWU4ZmVkNDc2MDViNGRhYjczNWU2NWNiYTU2YzAyNDYwZDgyNTBmYjIzODcwOGRlOWYxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIyOTBhYTM4ZGZkNmY4YmZmZjVjYjNmZjYzYmMwYjRiOTQ0Y2Q5ODM2NjcwNzAxMTMxYTZkNzdhZTdlMWEyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWY4NmFhOGQwYzgwN2JiNDE0N2Y5N2QwMjQ1ZjM5YTMxMWFkOGJhN2RlMzExZWM4NmJkYzZmZmE2NWE3MmNjMyJ9"
         },
         {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L44-L44",
+          "version": "repo-lines-v1:sha256:e7a4d536512c5e8fed47605b4dab735e65cba56c02460d8250fb238708de9f13:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdhNGQ1MzY1MTJjNWU4ZmVkNDc2MDViNGRhYjczNWU2NWNiYTU2YzAyNDYwZDgyNTBmYjIzODcwOGRlOWYxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdhNGQ1MzY1MTJjNWU4ZmVkNDc2MDViNGRhYjczNWU2NWNiYTU2YzAyNDYwZDgyNTBmYjIzODcwOGRlOWYxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjJjY2I1Mzc3OWQ2ODQ3MThkOGY2N2ExNzNhZmQzN2UwZjQzOTJjNDM1Y2QxOTVmY2NjNWEyNDY2YjA2OTAwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTZkZmQ2Mjc1NTM1OTAzYTlhNzRhMGMyNzFjYjllMDIwYjc1MjYxZGE3MzY1ZDM5ODliOTczOTdjNDAxZDhjNiJ9"
+        },
+        {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L94-L96",
           "version": "repo-lines-v1:sha256:24f040618c58f4638c82919310e7c8ab128720e2cc88f74c07c25200b2639de7:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2YmE0MjU1ZDAxYzZkMmMwMTI1ZmQ3YTFhYjE2YTcxZmY3YTBiOThkYWZiNTQxYzNiMzA4YjIxN2Q4MmM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM4MzUxYjc3Y2I1NDU4NjEyZjJhYzRlNmU4YzU1MDk3MzY0OTI1YWZhZjkyN2JjZDZkOTQyYjVmNWQyNWE4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWU5ZDRmM2MxMmNjYzIzN2U0YTQ5NDZkM2RmZTA3NGIwMGI2OThkNTcyMjRhNGQyNmIzNzUyMDNmZjUzYWE2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQyMzVlYzIwMjE0ZjI2MWVkNzM5M2YzODA3MmI0YmQ5NjViN2NjNjZmNDc3MGVhMzJiNjExMmNhZTU5YWY4NSJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L75-L76",
           "version": "repo-lines-v1:sha256:8bc47c20ff2707883d99b2de2c024fdb33e6fbdf96854a6ac05af8163785d3db:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2YmE0MjU1ZDAxYzZkMmMwMTI1ZmQ3YTFhYjE2YTcxZmY3YTBiOThkYWZiNTQxYzNiMzA4YjIxN2Q4MmM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM0MTIwOGUxNmZjYjM2OTlmNmEzMzNmYzZjZDZhZWIyZDMzOWE1MDE5M2Y3ZTVjYzg1MjFlZGM1ZThhMjYwZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI2MTViMDg1ZjE5NDYyYmQ3NGU4ZjZmMDEyMjZkNzQ5ZjRiYTU2YmJjMTcxY2ZmZjNmZDQyYTY0NWQ0YTQxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQyMzVlYzIwMjE0ZjI2MWVkNzM5M2YzODA3MmI0YmQ5NjViN2NjNjZmNDc3MGVhMzJiNjExMmNhZTU5YWY4NSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L4-L17",
+          "version": "repo-lines-v1:sha256:abc9abeff9fde567aa13e94527c2384a03810cc03e95e1f08c8616a535ec2065:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyOTYxOGMzZmFkZGM2OGJjYjVkZjc5MTAyZDg4NjEzNDczYmUwY2VlYjRlYWU4NTQzOGY1NmJhN2E3ZGU1MDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNWY3YWZjMDgzNjI0NGExMGU4MTNlMzM0YmEwZDllN2M5Nzk0NDY1YjU2YzhjY2YxYjEyY2JiMGY4ZWFmYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5OTA2NDU1ZTU0YzRkMGNmMGM0OThhMzdkMzZmZWI3ODAwYjNlMzNmZjQ0YThlNDcwM2FiZWFhYjhiOWZlMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0MzA0MTU1OWM1OGY4MjliZTQ4ZjRkY2JhNWJlZTgxNmQ2NDIyZjRlNDQwOGFkMDVmYzNiMmI0OGY5Y2VlMTcifQ"
         }
       ]
     },
@@ -571,10 +575,46 @@
           "version": "repo-lines-v1:sha256:147b3042a9c767b423bf65f23e5718bbd67a505c57a11ee2f1b036930d18f836:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRhYmE0OTVkNDdhN2E1N2VhYzZkMzI5ODRlYWQ0NWUzNDI5NGM1Nzc3ZWMzNzBhNGEyNmQ2M2I4NTc2MjBlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJlNTM0NGNlYTEyYWFlODJjNDMxN2ZjNWMyMzI0M2ZkMDI2NjQwZDQ1YTAwMTc1NDZmZGY2MzRlZDQ2YzlkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTliMWVlZDFjZDE1NmE5OGI1MTFkZDcwOGJiYzQ0MTM1MTkwNmQ2NDk2NzgwMjZiM2ZiNGEzZWY2OWNmYmRjZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc0YmYxMWY2ZjMyYmMzMTlmNDVlMDc2Yjg1ZmUzZjM4YzczMGQ3YTY3MDU5ZjhjMTkzNTYwMGM0MWUyOGI4MSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_aa18585f3ff04e4fa5ee135018babed4",
+      "statement": "Both prod auth-reachability invariants are self-enforcing CI gates rather than documentation alone: `scripts/check-prod-ci-port-collision.mjs` compares prod and CI/dev published host ports by NUMBER (a `0.0.0.0` prod bind collides with a CI bind on the same port regardless of the CI bind's host IP) and exits non-zero on any overlap, while `scripts/check-prod-restart-policy.mjs` forbids `unless-stopped` and a missing `restart:` on every long-running service in every `compose.prod.yaml` (only one-shot init/seed containers may use `no`/`on-failure`). The `guardrails` workflow runs each with `--selftest` first and then as a scan, so reintroducing the 2026-07-06 port overlap or the pre-feature-030 restart policy fails CI instead of the next deploy or reboot.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L121-L128",
+          "version": "repo-lines-v1:sha256:d1d28cfe44cf26d0603201fb5bec8db417672af572db62b084b815975a55bc16:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQzMjFmYmZkYzI2MzlkYzc3OTUzYmJkMmRiNzcwZGJhZjZmNzYxZWNhZGFjYTE1OTFhNzZiM2FhZjUxYzQ3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjhhODk5MDJiNWQwNmJhNTAxZTg2NTcxOTYzNzRlYzhjNjgzOWYwYTA1YjY4ZTU4Zjg0YjQ5YzIyZDNhYTI3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAwNjgwZDNmNzY2YjRkOTI5OTQ3MmU4Yjc4NDJlNmIxYTIyMDc4MDMwY2QyMTk4ZmY5NmE3NzA2YTY1OGNmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGYwZGQwYjc1ZDRiYWUwYWMyMDUwMGM0NjA2ZTg4NTcxNzhkNmUxNjE3YWQzMDA0YWZkNjFlOWFhMDk5ZDY4OCJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L1-L24",
+          "version": "repo-lines-v1:sha256:02f6461b373b04cf81483810350f9fbce29a17cfde8615c8fe8de5fdeb0b07e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZGVlMTBmZGIxNmIwN2RiMDdiOTc3MjQ5YjU0NWI3MDBhYzhiNTRlMTc5NTY3YWQwNTRjYWI3M2EyNTVhMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjkzY2NlYTA1MGJhMDlkMDg1ZjM3YjE2OWQ3NDQwZjNlYWFkOGRiNGNjNDZmNDQ0NGQ2NDIzM2U0OGE1YzMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L1-L23",
+          "version": "repo-lines-v1:sha256:52c8d65b37bf0195a81acf73e8fbded52ffc6adfdb16c349593e1f36d51c4552:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYmIxOTI1MTFjZjc4MTUwNzgxMmVjZDNmMTExNDY5MjdmNDA5NjZmYjlmMTg2MTk0ZDcwYWI4YjgzOTkzYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjkzY2NlYTA1MGJhMDlkMDg1ZjM3YjE2OWQ3NDQwZjNlYWFkOGRiNGNjNDZmNDQ0NGQ2NDIzM2U0OGE1YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_55a5c2a249b64d63b5b37f0a165e1f16",
+      "statement": "Two comments left around the prod admin port are stale relative to the effective configuration: `compose.prod.yaml`'s `env_file` block still lists `KC_ADMIN_BIND_IP` among the values read from `.env.prod` and its `KC_HOSTNAME_ADMIN` comment still shows the pre-feature-029 `:8099` tailnet URL, while `.env.prod.example` records the variable's removal and `komodo/stacks.toml` still passes `KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]` into `prod-auth` where nothing reads it. The effective admin address is therefore whatever `.env.prod` sets (`:19099` on this host), and the compose comments are not a reliable guide to it.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
+          "version": "repo-lines-v1:sha256:cde2581d7ccc42a3b196012df655dca45eb32c9542ae852f429d08fe6cef8a42:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDVmOWEzM2U1Yjk0ODdiNGRhZTM4OTU4ZDIxNzkwNDA5YzYzZmY3ODMxOTNjZmM4OWFlOTY5MTQ5NmY3ZDIxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhMzgwM2RjMTUyM2QwYzk2MTVlZTljNDY0ZjNmMDQ5MDRjMDE2NjMwYTMxMGYwZTM0YzI1NDJjNWJiNzA5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjljZWZlMzZiOTNjZDE3YWIwMWIwMmM2YTBlM2UxNzQ1NWUyYTdmZjIyNDIwYzlhYjhkNDZhZDE0NWUwNDNjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDVhZmZhOTRkYmJiZDA3NmI3OTE5MTJmYWEzNjBlMjAxYzI2ZmY0MzBkNDhkYjNlYjFjMWQzM2MzNzAzZGU1YSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L59-L72",
+          "version": "repo-lines-v1:sha256:49c89edac050622e8b9fe4448effe12236f193ea54c14cca8eaee87ff05f3f02:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZjViMjIyYTM1MTg5NTZkYzdiOWRmNTg2NGRhNTdjN2IzNjQ2MmUwYWQ5ZTAzNmE4ZjE4MTA2ZmVmYjc4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZDA1MmRmZmEyOWY3MTJlZjNiN2FmNmY5ZWYzNGM2ZTM4NmU1OTc2ODI0MTdkMzMxOGE3ZDY3ZTNkMDM3NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1NzMxODY1MjY5MTc1OGZkNmIxMzI5YmJlM2U3ZjZiODg2YmM4OTUzM2VmOTljNjljNzhmNTgxOTUyNjdjMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODQ0YTQ0ZTc0YmJjZDMxODU2NzI2ZTIyMDdmYTRmMzk0ZDUwYTQyZDBmNTU0ZTA3NTMwZGJhMmJlMDkxYjUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L37-L44",
+          "version": "repo-lines-v1:sha256:772490cfa21ce332a19dc9178f1dbc5b3377b711e7572a3e92ed4e043eb115e7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxMmRiYzlmNWI4NGUxNmQ3YzE4YTZhZTdjNWMwNWVmMjk1NGUxNWI4NDE2YTg0NDgzY2UzZGVjOTJiY2IzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-10-04T14:07:00.171Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-11T15:19:14.150Z"
   }
 }

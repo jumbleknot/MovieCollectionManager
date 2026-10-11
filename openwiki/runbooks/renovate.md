@@ -4,9 +4,6 @@ title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-vs-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the weekly CVE sweep that runs three hours before the window on purpose (item #487), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (#308/#350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (#349/#350/#412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (#412/#560), the health digest that used to read only an advisory column and only the newest scheduled sweep (#485/#563), the pinned-toolchain gotchas for Rust (devcontainer rebuild) and Python (packageRules ordering), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-02T22:36:21.093Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -30,7 +27,10 @@ sources:
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-3b90cb16e95306cae75aac45
     resource: repo://scripts/renovate-health.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-10-02T22:36:21.093Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # Renovate dependency bot
@@ -368,14 +368,17 @@ shape entirely), and without `--strict` a needed migration is a warning, exit 0,
 the check exists to catch. It runs in two places on the same `renovate@44` major the live run uses: a
 required, unconditional job in `guardrails.yml` on every `renovate.json` edit, and a pre-run step in
 `renovate.yml` that catches a key deprecated by a minor bump between Friday windows when nothing in the
-repo changed. Both references currently pin the exact patch `renovate@44.131.0`, because every
-`renovate >= 44.131.1` pulls a `@yarnpkg/core` published with a Yarn-only dependency spec that npm
-cannot install — under `npx` it exits 1 with no message — and a guard test asserts all three
-`renovate@` invocations agree on the major, so the validator can never certify a config against a
-grammar the run does not use. It does not replace the guard test — the two catch different failure
-classes: the validator catches a key Renovate does not know at all; the guard test catches a key
-Renovate knows but ignores depending on where it is written (for example, `prPriority` set inside
-`lockFileMaintenance` instead of at the packageRule level).
+repo changed. Both invocations pin the **major** (`renovate@44`), like the live run, and a guard test
+asserts all three `renovate@` invocations agree on the major, so the validator can never certify a
+config against a grammar the run does not use. **Exact-patch pinning was tried once and reverted**
+(item #631): both invocations were pinned to `renovate@44.131.0` from 2026-10-02 to 2026-10-10 because
+renovate 44.131.1–44.132.1 depended on a `@yarnpkg/core` published with a Yarn-only `patch:` spec that
+npm cannot install (`EUNSUPPORTEDPROTOCOL`) — under `npx` that failure exits 1 printing nothing but the
+path to npm's log. Every release from 44.132.2 on is back on `@yarnpkg/core` 4.9.1, so the pin went
+back to the major on 2026-10-10 (44.149.2 installed). It does not replace the guard test — the two
+catch different failure classes: the validator catches a key Renovate does not know at all; the guard
+test catches a key Renovate knows but ignores depending on where it is written (for example,
+`prPriority` set inside `lockFileMaintenance` instead of at the packageRule level).
 
 ## Related
 
