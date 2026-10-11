@@ -1,12 +1,9 @@
 ---
 type: Runbook
 title: Infra-image CVE scanning
-description: Keyless Trivy scanning of the third-party server images the project pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault and the rest of infrastructure-as-code — NOT MinIO, which is built from source and scanned by its own builder) — the one-scanner-per-image partition rule, the fixable-Critical-only gate, the allowlist-as-baseline rules, the bounded retry that keeps a Trivy DB blip from redding a required context, and the publish-versus-promote split for the from-source MinIO image.
+description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault and the rest of infrastructure-as-code — not MinIO, which is built from source and scanned by its own builder) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules, the bounded retry that keeps a Trivy DB blip from redding a required context, and the publish-versus-promote split for the from-source MinIO image.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
 sources:
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
@@ -37,6 +34,9 @@ sources:
   - id: openwiki-source-4708763005c35901b04f5740
     resource: repo://security/infra-images/allowlist.yaml
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-11T22:25:03.651Z
 ---
 
 # Infra-image CVE scanning
@@ -60,13 +60,58 @@ repositories on 2026-09-11 (having moved to source-only distribution in October 
 now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`), published by
 `.forgejo/workflows/minio-image.yml`, which scans it and gates its own publish — through this same
 pipeline (`scripts/infra-image-scan.mjs --image <ref>`), so it shares the severity map and the one
-allowlist the weekly expiry check reads.
+allowlist the weekly expiry check reads. Why the *builder* scans it rather than sending it here: this
+scan is keyless by design (no `${{ secrets }}`) and our images live in a private registry, so Trivy
+here cannot pull them — feature 069 tried it and CI proved the point (run 3121: `unable to find the
+specified image`). A builder already holds the image locally and is already authenticated, so it
+needs no new credential and blocks the **publish** instead of auditing after the fact.
+
+## How a run flows
+
+```mermaid
+flowchart TD
+  A["cron Tue + Fri 04:00 UTC"] --> C
+  B["pull_request — no paths filter"] --> C
+  D["push — infra paths only"] --> C
+  C["changes job — dorny filter, PR-only"] --> E{"RUN_SCAN"}
+  E -->|"infra path on a PR, or any non-PR event"| F["scanImage per enumerated image"]
+  E -->|"non-infra PR"| G["every Trivy step skipped — job still succeeds"]
+  F --> H["check-infra-image-findings.mjs — the gate"]
+  H -->|"un-allowlisted fixable Critical"| I["gate red"]
+  H -->|"nothing blocking"| J["gate green"]
+  I --> K["scheduled run only: allowlist expiry step, then infra-image-scan/weekly verdict"]
+  J --> K
+```
+
+Trigger-to-verdict flow. The `changes` job only ever *gates* the Trivy steps; the required
+`infra-image-scan / infra-image-scan` context is posted by the job either way.
+
+## Entrypoints
+
+| entrypoint | what it does |
+|---|---|
+| `node scripts/infra-image-scan.mjs` | enumerate → Trivy each image → write `security/infra-images/reports/{findings.json,summary.txt,trivy-*.json}`. `--list` enumerates only (needs no Trivy, works anywhere); `--emit-allowlist` also writes `allowlist.proposed.yaml`; `--image <ref>` scans exactly one image instead of enumerating the tree (this is how a builder scans its own artifact). |
+| `node scripts/check-infra-image-findings.mjs` | the gate: exit 1 on any `blocking` finding not suppressed by a live allowlist entry; `--check-expiring` is the report-only hygiene tier; `--selftest` proves fail/suppress/expiry without Trivy. |
+| `pnpm nx infra-scan infrastructure-as-code` | the Nx target wrapping the orchestrator, alongside the `sast`/`dast` targets. |
+| `security/infra-images/severity-map.yaml` | Trivy severity → normalized scale. An unmapped native value is a hard error in the orchestrator (no silent default); `UNKNOWN` maps conservatively to `Low` so it can never block. |
+
+Exit codes are deliberate: `0` ok, `1` scan/gate-relevant failure (fail-closed), `2` bad args or
+config error — including the unresolved-`REGISTRY_HOST` refusal below.
 
 ## Gotchas
 
 - **Not path-gated on the authoritative run.** A twice-weekly full sweep is the scan of record
   precisely because a new advisory can land against an image nobody changed — an on-change check on
   infrastructure edits exists only for fast feedback, not as the source of truth.
+- **The `changes` job's PR-only `if:` is load-bearing — removing it silently kills the sweep.** The
+  `dorny/paths-filter` step is gated on `github.event_name == 'pull_request'` because dorny derives its
+  diff base from the PR event and, on any other event, falls back to the repository's default branch —
+  which this forge does not put in the payload, so the action hard-errors. That used to kill `changes`
+  on the weekly cron, and since `infra-image-scan` is `needs: [changes]` the required job was skipped:
+  the full sweep — the whole point of the un-path-gated safety net — never ran. Skipped, the filter
+  output is empty and `RUN_SCAN`'s `github.event_name != 'pull_request'` clause forces the sweep, which
+  is exactly the intended behaviour. A `push` is unaffected by dorny's diff base but is filtered out
+  here anyway and loses nothing, for the same reason.
 - **Scanner partition rule: by coverage, not by namespace.** An image is scanned by whoever *builds*
   it; everything else belongs here. `cd-deploy` owns its six app images (see
   [CI/CD pipeline](../projects/ci-cd-pipeline.md)); `minio-image` owns the from-source MinIO image. The
@@ -166,6 +211,12 @@ allowlist the weekly expiry check reads.
   the `apk` installs float, so promoting it would mean a no-content PR most weeks. A
   `workflow_dispatch` run promotes only when its `promote` input is explicitly ticked; the default is
   false, because dispatch is also how the build is proven still working and that must stay read-only.
+  A third fact makes the canary safe rather than merely pointless: **every build is also tagged with a
+  per-run immutable tag** (`<tag>-r<run id>`). This registry drops a manifest the moment nothing tags
+  it — measured 2026-09-12, when a re-push left the previous digest returning 404 — so with the moving
+  release tag alone the weekly canary would have orphaned whatever digest the compose files pinned,
+  every Friday, in dev and prod. The per-run tag keeps each manifest alive, so updating a pin is a
+  deliberate act rather than a weekly breakage.
   Two measured traps in the promoter itself: (1) the digest it writes must be resolved from the
   registry as the **manifest list**, by asking `GET /v2/<ns>/minio/manifests/<tag>` directly — not via
   `docker buildx imagetools inspect`, which is a **client-side** operation that talks to the registry
@@ -173,7 +224,14 @@ allowlist the weekly expiry check reads.
   though `docker push` succeeds in the same job; (2) the count of refs to repoint must come from a
   **live scan of the tree** (`findRefs()`, which throws rather than reporting an empty promotion), never
   from a stale count recorded in a spec note — a later feature can add more pinned refs than the note
-  remembers.
+  remembers. The promoter also **refuses to guess the registry scheme**: `registryBase()` takes it from
+  `REGISTRY_SCHEME` or the forge origin and fails loudly if neither is set, because assuming https is
+  precisely what broke run 4093.
+  The promotion opens a **pull request** rather than pushing to `main`, and it carries no `[skip ci]`:
+  `app-e2e` running on the ref change is what makes proposing it automatically safe, and
+  `scripts/__tests__/minio-promote.guard.test.mjs` fails if `infrastructure-as-code/docker/**` ever
+  leaves app-ci's `app` paths filter. The **unmerged promotion PR is itself the stale-pin signal** —
+  there is deliberately no second reporting mechanism.
 - **MinIO's date-based update types are calendar arithmetic, not semantic versioning.** The regex
   versioning scheme maps year→major, month→minor, day→patch. A January release reports **major** because
   the year advanced, not because anything broke. Do not read the label as a risk signal the way you
@@ -220,9 +278,14 @@ allowlist the weekly expiry check reads.
     | jq -r '.[] | select(.context == "infra-image-scan/expiry") | .description'
   # event_name=schedule gate=success expiry_step=success   <- the cron ran both checks, and they passed
   # event_name=schedule gate=failure expiry_step=skipped   <- an earlier step failed (item #484)
-  # event_name=push     expiry_step=skipped                <- a push-triggered sweep; correctly skipped
+  # event_name=push     gate=success expiry_step=skipped   <- a push-triggered sweep; correctly skipped
   # event_name=<unset>  expiry_step=<unset>                <- the runner returned no value: a real fault
   ```
+
+  The step runs both allowlist checkers in sequence — the SAST one and
+  `check-infra-image-findings.mjs --check-expiring` — and that mode is **report-only**: it does not
+  evaluate blocking findings, so the step can never fail for a reason the gate above is already
+  responsible for, and it cannot turn a red gate green.
 
   Every field is a **raw measurement** interpolated from the run context, never a restatement of what
   the `if:` is believed to do; `<unset>` is a real answer, distinct from returning the wrong one. The
@@ -240,9 +303,12 @@ allowlist the weekly expiry check reads.
   > once already: `/actions/runs` reports `event: push` for a cron run, and only `trigger_event` says
   > `schedule`. See [CI self-serve diagnostics](./ci-diagnostics.md) § "A scheduled run reports
   > `event: push`".
-- **Adding this as a required PR check is a manual operator step** — the agent cannot configure branch
-  protection itself; the scheduled run is a safety net, not a merge gate, until an operator wires the
-  PR-triggered context into branch protection.
+- **The PR-triggered context is required; the scheduled sweep is not a merge gate.** Branch protection
+  requires `infra-image-scan / infra-image-scan` on `main` through a glob that also matches the
+  push-event context, which is why an infra CVE with no bearing on a diff can make an unrelated PR
+  unmergeable. The scheduled sweep posts no such context and is a safety net only; its verdict is the
+  separate `infra-image-scan/weekly` status above. Configuring branch protection is an operator step in
+  the forge UI (repo → Settings → Branches) — the agent cannot change it.
 - **Trivy is not on every developer machine, so the scored scan is CI-authoritative** — don't treat a
   local enumeration (`--list`, which needs no Trivy and works anywhere) as equivalent to a real scan
   result. The Linux dev container is not one of the machines without Trivy: the binary is absent from
@@ -264,6 +330,20 @@ allowlist the weekly expiry check reads.
   only, so an advisory re-rated Critical→High stops blocking without anything upstream changing — and
   in the gate's output that is indistinguishable from remediation. Read the installed package version
   before writing "remediated".
+
+## Guards
+
+| guard | what it pins |
+|---|---|
+| `scripts/__tests__/infra-image-scan.test.mjs` | pure enumeration + normalization: the partition/completeness case against a **hypothetical** fixture, `${REGISTRY_HOST}` resolution, `isFloatingTag` `(fd1)`–`(fd4)`, set equality of floating refs against renovate's declared exceptions, the two-directional allowlist-key assertion, and digest pinning. Runs without Trivy, so it is Windows-friendly. |
+| `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact run-3622 stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
+| `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, and a fixable Critical still blocks while an unfixable one does not. |
+| `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
+| `scripts/__tests__/minio-promote.guard.test.mjs`, `promote-minio-digest.test.mjs` | the promoter: `REGISTRY_SCHEME` is passed and never guessed, and the ref count comes from the tree. |
+| `node scripts/check-infra-image-findings.mjs --selftest` | the gate's whole decision table without Trivy, and CI runs it **before** the real scan so a broken gate is not mistaken for a clean sweep. |
+
+A guard is not decoration here: each one above exists because its absence was paid for — a silent
+coverage hole, a retry that would have masked a finding, a gate that ran after the push.
 
 Full scanner-vs-scanner coverage table, the allowlist entry shape and seeding steps, the local Trivy
 recipe, and the remediation ownership: `docs/runbooks/infra-image-scanning.md`.

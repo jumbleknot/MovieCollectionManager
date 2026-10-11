@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ef11b927975dcce8fe500ab40e99ee49768b37b98e804181f3e37ac25d7f18ae",
+  "pageVersion": "sha256:06ac3c0809ea86c73421e825aa8dbbf4a91cc451d1c60dafce4e06b03c74d50f",
   "claims": [
     {
       "id": "claim_56495de49283417ebfad3252513b4706",
@@ -11,7 +11,7 @@
           "version": "repo-lines-v1:sha256:78fe0489aca2f0a9748aac907a0a4b73d08f32036dbb36a43e11440074c277a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ODg1MDMyMjZiZGQ4MzY1MDE2YjViMzU5ZDdjZGE2MmI5MWYxZTc2NTcwZDRjOTNiMGI2NDU1OTE0NjYwM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YmM0OWZhZmI3ZmRlMDAxNTgzZTJlNzhlNTJhZDFmMWMzMDVkYjc5NGM3NDE5ODU1NmVlMGFiNzY0OGQ0NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2MGE3MTIxMzJkNTVhOTY0YTNkMGU4ZjQ2ZTRhNTZkMGRmNmM1ODc2OGI5YjVmMDE4MzJkNGIzNTFlMWMwM2MifQ"
         },
         {
-          "resource": "repo://docs/runbooks/infra-image-scanning.md#L422-L449",
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L424-L451",
           "version": "repo-lines-v1:sha256:8df5d0258d39d968588eb35b9229779452dd00e385e3f5c17e2fa330cce42f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMGU2ZWI1MWQzOTc5NWNmMGY2MzEyYmQzZjMzMTYxMWU3ZmY2ODE5ZjhlZDU5Y2EyMGQ4YTM2MGIxNzg5ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NzE0ZjE0MDZhMWE3MTcxMzU4OGNkNTVmNWIxZTRmOGE3OGViZTlhMGM5YjUzMzExY2U2ZjIyNWJkZGY3ZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyMmMyZjE5ODY3MWMwODI4YmUxNGI1MzM4M2QyMTg3YTViMjQ1MDZiMWQ1ZWJiZmE2NDVmNDAzM2UxNzI3NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4NmM3NDVhNDJlMWUzZGJiODAyMTU1NDViNzFhZWQxNzNiY2JiYWMwMzI2NWVmMzE2MDkzMmZiY2QyNzA3ZjIifQ"
         }
       ]
@@ -21,7 +21,7 @@
       "statement": "scripts/promote-minio-digest.mjs must resolve the published image's digest by querying the registry directly for the manifest list (GET /v2/<ns>/minio/manifests/<tag> with index media types preferred) rather than via `docker buildx imagetools inspect`, because imagetools is a client-side operation that talks to the registry itself and ignores the Docker daemon's insecure-registries configuration, causing it to fail over plain HTTP even though `docker push` succeeds in the same job via the daemon.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/infra-image-scanning.md#L468-L492",
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L470-L494",
           "version": "repo-lines-v1:sha256:c3fb4cdc0cce7c1aeab89584cbe6006cd6cbda18f3aae2f5676963a50ab414ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExN2U1N2JmMDVmZmFkNjY5ZTEwMzczMTE0ODU3NGUwMWM1ZGZmZDk2MWMyMmY0YWNkNjUzMTljNWE4YjY3YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNzUyM2ZlMzZjZjNiZjY3OTg5Y2E3NjRjZGMyYWQyZGNmMWJhMzFmZTVlNWU1ODQwNTE2MzA3YzkwMmE1NDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4NDM1YmUzYmY5NmQxMzY3Mjg2M2Q4OGY0MWViMDg4MWNlMGIyYjZiYmM4ZmE4OWViMDYyZGNmOWYxMmE1YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhNmJkNzlkNjAwYTg1Yjc2YTQ3YTdkMTNmZjUwYzFkYmFiOTM2NjZmYWM1ODJiYjhlZjQ2OWJlM2YxODEwMTYifQ"
         },
         {
@@ -35,7 +35,7 @@
       "statement": "scripts/promote-minio-digest.mjs computes the count of compose refs to repoint via a live tree scan (findRefs()), which throws on an empty result rather than silently succeeding, instead of trusting a fixed count recorded in a spec/task note — a later feature can add more pinned refs than a stale note remembers.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/infra-image-scanning.md#L493-L497",
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L495-L499",
           "version": "repo-lines-v1:sha256:f438aa5980d50e72c37ccb0aebf6a50d65cf795f95e5884abe19ee1585c790a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmU1YmMxOWE1YjJiNmM5MDA1ZTFhODUzNTIyODIwYmI3YmNlZTFjZWZjMzQ3NTU1MTMxODQwNzM2Njg4NGVlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzY2NjFlYTc5N2U5ZGFkMGM1MzU5MTU3NzY3ZjVjY2E0MTJiNzRhNWQ3ZGFiOTY5M2NiOTNjZGRmY2JlYjczZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2NlNTY5MzU1YjEwMmVhYWY0NTZiNGJiOGVhYmNmOTdmNjQ1ODg5OWExODE3NzQ4YjUzMDBkYzYxYzA4YzYwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjkzMTEwODEyZTUyYjUyMWNlZDIxOTIzNDgzNTcxOTcyNWJiNWEwNzM2MjNkZTk3NzI4ZDQxZWVkOGNhZDg5ZCJ9"
         },
         {
@@ -199,7 +199,7 @@
       "statement": "Suppressions must be dischargeable by an upgrade: scripts/__tests__/infra-image-scan.test.mjs asserts for every formerly-floating repository that each allowlist key still matches the reference in the compose files today AND stops matching a synthetic later version, derived by incrementing the last numeric component of the actual pin (with a self-check that the derived ref differs from the pin) rather than read from a hand-written 'next version' map that a bump can silently invalidate.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/infra-image-scanning.md#L552-L577",
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L554-L579",
           "version": "repo-lines-v1:sha256:d5a949284294e2634838c28d85d6693483122904556205422954a4cad65ced3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlZTc0MGExYzBhMTdjNzhjZmQ1MTkyMGZhMmE2ZjY4Yzg2ZjA1Njg5OGQxMDhiMDMxMTY0YzAxNmUzODBiOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MjlkZmY2ZjQ3YjRkMGFhNjQ0MWYwYjhkZjExYWYwOTQ0YWIwYzhkOWQ5YjcxM2U0ZGUxZWI3YjU2YTcxZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyYzg1MmVkZjAxNTliYjdkNDU5ODA3ZGE1NTJlMWUyMzk2NmI0NjdhOWE5M2MyZWYxMWYwYWE0ZDE2OWZlYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkODg0ZGE2Y2JjYzM4Y2U5NGY0NTljYWU0ODMyNDAxYzI2YTZhYTVhOTFkZTYyNzU4MjcwNzQ4OGMzOTI2YTEifQ"
         },
         {
@@ -235,10 +235,126 @@
           "version": "repo-lines-v1:sha256:970a15fb9bc8e9c39c24cc0d490b2ad043662aa76b82b54f753ead0d465d96e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmOTczMmM1ZWZhZWFkZGNiM2MxNDNhMTFiNGU2YWJlODFhODFjY2E4NDNjZjlkYjU1NGFmZjAwMDk4NDdiNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhMmJkMjFhOWM0MTdjOWNhMzcyZTM3YzZkYzg4ZmRjMGMzYjkyMDlmMWUxZTZiZmNmZmJhZjJmODFjNGU3MzAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_bd749a40432146ce80553ed603840d03",
+      "statement": "The `dorny/paths-filter` step in `infra-image-scan.yml`'s `changes` job is gated on `github.event_name == 'pull_request'` because dorny derives its diff base from the PR event and otherwise falls back to the repository default branch, which this forge does not put in the payload, so the action hard-errors. That error killed `changes` on the weekly cron, and since the required `infra-image-scan` job is `needs: [changes]` the full sweep was silently skipped; when the filter step is skipped its output is empty and `RUN_SCAN`'s `github.event_name != 'pull_request'` clause forces the sweep, which is the intended behaviour.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L100-L121",
+          "version": "repo-lines-v1:sha256:5b490e61d5ca26c24fb512fda1659ae79f4c922a29ff3e15aae21506b85d5b93:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmN2Y2N2NmYTBhNjE4MmRkMjlkNmQ4MTEzOWVhNDU1NjU0MWI1ZWFkYzFhNjZhOTFhNDk1ZjBlN2Y2NGRkZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NWIzNTZmMjQzODg4YjdhNmQ0NWYxZjdiNjhjYjJmYTY3NDc1ODMxOWUyODgyNGVkM2NmMDY0MTc4NjFhNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3MDBiMDNkY2NhODQ0ZGY2NGUzZjBlNjdiNTc4ODZkMzFlMTI2NGFhODFhZTJlOGZhNjVjY2JjMjhiMjc0OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L142-L155",
+          "version": "repo-lines-v1:sha256:f82bcf6e4edf99753f17646cccb30e887a2608282b88688bf9a51317d9bbdbad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjZjFhNjlhOTVkMWFjMjA4MmMwNWY3YWUyYThiM2M0OWEzNjNhNDQwOTBlMTFlMTZiMzliNDE3ZDdmMzE0ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjY3MDA5OTM3ZTEwYTdjMzRkZDZiZjMwNWJjNjE1ZTBlZWM0YTEwZTFjMTBkZTlmMzFkYTQ5MmMyMDdkNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiYmUwMDAwNjc0MTYwOTFlOTU4NGE3YmQ2MWJhM2Y3MGFiOWYxMGJmOGZhNWZiYmQ0YzRkMWUzYzVmNWM2Y2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7a13526d277454c808dab526178029b",
+      "statement": "Every MinIO build is pushed under both the moving release tag and a per-run immutable tag (`<tag>-r<GITHUB_RUN_ID>`), because this registry drops a manifest once nothing tags it (measured 2026-09-12: a re-push left the previous digest returning 404). Without that tag the weekly canary — whose digest changes every run because the `apk` installs resolve against Alpine's live index — would orphan the digest the compose refs pin, every Friday, in dev and prod.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/minio-image.yml#L138-L157",
+          "version": "repo-lines-v1:sha256:cb34582c99f0ab53f3c4bdb3ed363c627b3e5e44b2b84ac3e245a9a805043268:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNTVkZWY3NmIxMWY1N2ZkODlmZmQxMmY0ZTEyYTExOThkMzJhOTY5NWMzMTdlYTcxYjg5YjlhZDY0N2FmYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiZDVkOTljMGJmZGE0MjYwOGFiZjljMGVjZTZkMDY5ZjIxNGY5OWU2N2FmMGVlNzNmYjI2NWFlODIyMzdhMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2ZmI3ZWVmMGI4NGRiNmZiMTVjMTE5YmRjYmU0NWNjYmM4NzNkNWY4NjFmYjU5NmVmNGU0NzQyMGU4ZTgzZDMifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/minio-image.yml#L268-L280",
+          "version": "repo-lines-v1:sha256:b7579e89ec2605d5d71bccb3e8791649b3469020f05815b3f9fa6234fd77e1c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYWE5YWYwMjVjNTliYWRiYjljM2E1NjViODgxZDIxMGVhNzBmMzM0ZjIwNmQ1MDZjYmVmNjkxNGNlZjA4MGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkY2ZkZjcwOTRiNGY4YWJmNDAwZjE4ODIxMjI2NmQ4NWU2N2M1ZDBmNGM4ZGM0MGE0OGU0N2NlN2QzZjkxMTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZGFhNjU2YzNlOWEzMjRmODFhNzkwYjcxYTgwODRkZjc2MDhjOTQ4MjZlYjI1ZjZjNzA0ZTVjZmIzNWU5Y2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MDczNTk5MzYxZDIwNDA4MDYzMTg1MDRiNTRjNzI3NDA2ZTg2M2Q2ZTQzZjYwMGFmMTBkMWE0MWQwNmQxZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0271167c712945639dff6d9e50d58992",
+      "statement": "`registryBase()` in scripts/promote-minio-digest.mjs takes the registry scheme from `REGISTRY_SCHEME` when set, else from the scheme of `GITHUB_SERVER_URL` (the registry is the forge), and THROWS rather than defaulting when neither is available or the value is not http/https — because assuming https is exactly what failed run 4093 (`http: server gave HTTP response to HTTPS client`).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/promote-minio-digest.test.mjs#L175-L195",
+          "version": "repo-lines-v1:sha256:9ad016cacd76aed5a5334b06513231e42652f17e6912915855f1d5296c7ada9a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwN2QzZDBiMjg5ZDI3ZDU4N2FiZjU3NTk4YzliZTRjOTYyZGJhZjM4NjQ2ZTJkZjRhNDdiOTkxYTUzMTQ3ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZDE4ZjRiZWI4NzM2YTFjZTgzMGJlYTg3NWI5N2M2ZTA1MmQxYjljY2IxNzRlMTRmZWVmZjg3Y2NlOThlZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlZDRhYTg4Y2IxYjAxYzRlMmNlNzQ0MzhiNTA5ZWI0MGMyNmIyNDBhYWQ4YTg0MDVlYzk5NTU3ZTk2YTljYjUifQ"
+        },
+        {
+          "resource": "repo://scripts/promote-minio-digest.mjs#L230-L267",
+          "version": "repo-lines-v1:sha256:01b922455b11b388e54a33933ea8813470cbe9ee81ef58a75b649c9df86fce37:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzZjBhMDQ2MjhiN2FlOTUwNDM2ZTFlNjk1OGExZTc1MGYzZDc0YmM4NTYyNjdhNWIzZjNiNzFiMGE1NTJiM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMDhkMDI2ZWNkOGFmOWE2M2IyZTcxMjAzNmQzNjM4MDRlOGJlMmJkNzMzY2M3ODdlMDM1NmYwMTI0Y2M5NWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ce2e7f606062444e82dd2c1e42576d48",
+      "statement": "The MinIO promotion opens a pull request rather than pushing to `main`, and carries no `[skip ci]`, because `infrastructure-as-code/docker/**` is in app-ci's `app` paths filter so the ref change must run `app-e2e`; `scripts/__tests__/minio-promote.guard.test.mjs` fails if that stops being true. The unmerged promotion PR is deliberately the only stale-pin signal — there is no second reporting mechanism.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/minio-image.yml#L329-L343",
+          "version": "repo-lines-v1:sha256:70df98a176784eb8f153dfaeba837dc90f2eaed6d5e95ecd7a07fce85fcd0492:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZjYzYTkzMDg4OWMyMGI1MWUyZmQ1MmQ3ZjFlMjVkOTM0ZWQ5NjI3NGNiMzFkZTMwZjM0ZDFjNjk1NjFmODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZDg5ODViMzgyZDFmZGNjZTk3YTc5NjE0YmU3OWFiZDY1ZGQzOWNjYWNlYTM2MjY2ZDY1NjNlMmI1Y2IxYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYjQwZjZjMDBhNGIxY2RkZTc3YTg0NjAyOGNiM2RkMjM4ZGE4NGNkZmRlMTE3OWI3NGI2OThmMzE0ZDQ1NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMjNlOTUyNjZmZWJiZTJhNTAxMjA3OGJmYjIxODhiZTc3MTMxZGNjYTE4NDU3ZTRkZTc5Mjk5ZDg1MTMzNzkifQ"
+        },
+        {
+          "resource": "repo://scripts/promote-minio-digest.mjs#L334-L368",
+          "version": "repo-lines-v1:sha256:42ac9343a3fbf089236532c28c03291439ef3cc9660594c8f43a5aabe424f6ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZDBkMzllODgxMDA5YWMxOTNmNWE1MGY0ZmI3ZWE4MTRlZTAxMGQ4NmVmNzQ4Njk1NmZjOWViYTFjNmExMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1NTI3YzY3N2Y1YWI4ODAxNzNlNjhiOTI2ZTE3Y2JlYTU0ZWQ5MTJmNmE0MGM2MjdmZDQxNGI2MDdlOGQ5N2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ODA3Nzg2Y2YzYmM4M2MzM2YzYjk5ZWM5MDE3NGRjMDEwZDVjNDIyNGNhNjFkMDY1ZjllMWI1NWIwNzg5M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZGRmZjUwZTZkNjVjZmQ4MDI2M2JlYWY2YzM1MTY3ZDk3NGZmNTFjMWNmYjgxYTJlMzAzNmVhMjgwYmJiZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_814b2fd758224191bb278e071060dbec",
+      "statement": "scripts/infra-image-scan.mjs uses deliberate exit codes — 0 ok, 1 scan/gate-relevant failure (fail-closed), 2 bad args or config error — and offers `--image <ref>` to scan exactly one image instead of enumerating the tree (the mode a builder uses to scan its own artifact), `--list` to enumerate without Trivy, and `--emit-allowlist` to write a proposed baseline. Severity normalization is data-driven: `loadSeverityMap()` throws on an unmapped native Trivy severity (no silent default) and `UNKNOWN` maps conservatively to `Low` so it can never block.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs#L14-L19",
+          "version": "repo-lines-v1:sha256:4be5edabd4b77efc20d6972d98433b09252be989691d609f8f4128ef2e32f598:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUxZGU5ZjQzNWY1ZTYzMWM5ZDA4YzQxNzVmNzc0YzVhZTgxYWM2OTFjNDcyM2I3MDQwODI0ZGViMjFkOTkxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTRkMzY1ODgzZTdmNTMwMTdlYTA0NDU5MGU2N2FmNmU1ZjEyMjdhMzAxZmM2ODViMjZkNWY5MzVkYWE4ZmU4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODNmYzA3YTlkMjlhZjQyYTY3YjBjOGIwY2YwMTRjNDc5YWI5MDNlZDU4ZGRmYWI4NmUyMzk0ZjAzMDJhNDM0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODZmZWI4MjVkOGJmZTRjMWZkMzkxZDY4NWVmYmM0MmFmNmZmOWZiOWIyY2I2MTg0OWE3MmRjYmEzMWU3NzdjNSJ9"
+        },
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs#L309-L343",
+          "version": "repo-lines-v1:sha256:12cd3132b529299a188dd28dbaf5f09874ab7a3f0da3681c5fc1908648728196:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZGE0MzIzZDljZmI1MmI1MjAyYmVlMjkyMTlmYjk1ZDdjNWM5YjBjYWZlNzJhZjA1ZmNkZDRhZDEzYWRhNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYTk2NjQ5MmI0MDFmMjhjODJhNjQ4NGZhYzhjYTcyM2IxM2U2ODNhM2I4ZjVjN2ViMTRmOWQyMDkzNzVjNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNThlYjJhZjUxYjJmYzQyOWM1Y2U3MzMwMTQ3YzA3ZGVlZDViYmRjZDEyZWViNjI5NGVkOTYyOTJjNmI2OGEifQ"
+        },
+        {
+          "resource": "repo://security/infra-images/severity-map.yaml",
+          "version": "repo-file-v1:sha256:c2987d009bc30b7ec9a838fc3f41f7c713c7155f8ee9f6312396dfb42643a6ff"
+        }
+      ]
+    },
+    {
+      "id": "claim_ba630835cbf341b49f3a1dfa7ed55e46",
+      "statement": "`--check-expiring` in scripts/check-infra-image-findings.mjs is report-only: it skips the blocking-finding gate entirely and fails on allowlist hygiene alone (an entry expiring within 14 days, already expired, or matching nothing), so the weekly step can never fail for a reason the gate above already owns and cannot turn a red gate green. The gate also ships a `--selftest` that CI runs before the real scan, so a broken gate is not mistaken for a clean sweep.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L204-L206",
+          "version": "repo-lines-v1:sha256:29c7bb705a7d782461ced48e469b3e955bd5b74e7979f97df35e77c26a3fe366:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZkODdlNjM1OTE2MTllZDA4N2YyZmVlY2UxNzJiYzM5NTczNmFmNjdmY2JkZGZiMDcxZTI2MjM0YWIwNzVkNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRkY2EzOGNhNTdhYmE3NWQ2ZjAzYjRkZmY1ZDg4NzliNGM5Mjk5OTFkNDU0ZWZhODc0OTk4OTQ5NzhiMTQ3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGNiNjY5MGFlNGZmNzY0NjVjZWU1NDI0ODAzODE1YTYwZGNlYTE1ZmFhN2E2MmVlNTg2ODI1ZjMwZjc3ZjBhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmIxOWNkZjYzYTA0ZTZjZGM5M2RlMjc4MmRjNTcxZGFkNmU1MDY4NjExMjZlNTkxY2ExMjkzMmEzNjA0YjYxZSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-infra-image-findings.mjs#L211-L244",
+          "version": "repo-lines-v1:sha256:a290e8ee440cbbbd65e3080216a71ffda740e96d8ebdb22881fc15347c777330:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZjY4MzdjZjI5ZmYwNDZjNmNlMDY3NmE5ODM3ZDM5ODk1NGQzZjVkYTU0M2MyZTk5YzZmMTNmZjUzZmI1NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhOTMyM2QxNWIwODVhYTAxODkwMmNjZmNlZDM0NWQwOWNiNWQ1MDdiMGQzZmQ1NGE5NWEzOTJiZTg4ZTEyZTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4448ce31e9164897a4651ecef281eba3",
+      "statement": "The keyless constraint is why an image's own builder scans it rather than routing it to this sweep: infra-image-scan references no `${{ secrets }}` and our images live in a private registry, so Trivy here cannot pull them (measured run 3121: `unable to find the specified image`). A builder already holds the image locally and is already authenticated, so it needs no new credential and gates the publish instead of auditing after it.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/minio-image.yml#L210-L224",
+          "version": "repo-lines-v1:sha256:451e3f3e9c9f5cdfd2f91ac65d08147c500e678d0f3fd2e73f50e2fb47bb1e68:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiY2M3MTA0N2M3ZGY5ZjBjNGJjNDA4MGQ4NzA2MTcwZWQ3MjQ3M2M1NGI5Njg5N2E0ODE5NWUwNGQ2OTNhNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZWJmMDZjMjE0Njc4NDdjZmM2NjA3MGNhNTBjNmIzMGYyNGNlMWYwYTE0ZjZmYzdmYTg2ZGI4NTExMmZkY2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkYWM5YWMzZjE0ZGI0ZmM2NWRkM2IyNTcxMWZkNWQ5NThhZjIwOWJiOWJmYjI2ZGVlZTViNzgyNTk4NDM5YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNGM2OTg0ZGU0Mzc3NTZkOTMyNDg2YjgzZmY5NDNmYzJjMzE1YTAzYzVlZDljYjhhYjM4YzgzZjFhMmFiMTcifQ"
+        },
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs#L34-L48",
+          "version": "repo-lines-v1:sha256:93cc7ce9049dea10b7659a402df15d11b7e3f649a508f28fa2cbe2b9b9009b17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YzVjMWQxNzJiN2ZkMDZjM2YzMGQyZDEzNjQzZWE3ZjdkNGNmMTY4N2ZhMDM0MWE3NWRmODFkOGY4Mzg2ZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMmZmMTMyYmNmNjU3ZDZhM2JkMWNiYzU2OWI4OGE0YjZkNjhjMWZmYWQ0ZGU2MzQ4NjY3ODMxMWQ1OTlkNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5MWMxYmZjN2YyZGY4MzcwMDkxNDEwYWIwYTI5YzNlZTVjNjg4MTQ1NmE4YzI2NDJkZDU0ZTgzZDMzOWE3MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOTczMmM1ZWZhZWFkZGNiM2MxNDNhMTFiNGU2YWJlODFhODFjY2E4NDNjZjlkYjU1NGFmZjAwMDk4NDdiNTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f81652d1d0d645eb89b7a40a1ad2ecb5",
+      "statement": "The `infra-image-scan/expiry` status cannot separate the two causes of `expiry_step=failure`: an allowlist entry needing action (expiring within 14 days, already expired, or matching nothing), or the checker itself crashing — item #562, where from 2026-09-12 until 2026-10-02 both checkers threw on the absent report they announce as legitimate and, because the step runs `cmd1 && cmd2` under `bash -e`, the infra-image half never ran at all. A `GateError` stack trace in the step log is the tell for the second cause.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L250-L256",
+          "version": "repo-lines-v1:sha256:0e650f724dd77a9adc9ba02e87626ba72e04e2a3bd11fe8fd51cebd7c49c1389:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzY4ZGUyMWExMDVlODdiYmY2MGI4Mzk0OWMxZWUyZTkwOTMwZTFkZTU1YzIyYjI3YWZjNGU4NmU0ZTJhYTg4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUwOTg5NzFhMjE1YzgzNmEyOWUzMzY0YmMwY2IwNWY5NGI2MmIwZWI0YWM0ODU3ZWFjNjIyNmUyMmYwNTRiZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjU2MmE0ZTZkNTkyMjFlNjFiMmM3OGUzYmQwNDMzYWRmNTI3MjNkZmY2MjU2OTc5MDlhY2E1Y2E1OGY5ZWY3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTA3NDQxOWFlZDg1MDNkZTBmMzg5MGIwNzljYjVlZTYwOGJjNzgzYjVhNTZlMDAxYjliZDFjMmFmMTg5NmVjNSJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L376-L384",
+          "version": "repo-lines-v1:sha256:69eb7a66451b7448807c262226e797405403178fbb9e24576d253e10db4a77aa:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ2MzUzY2FkNWJmZGY4MDY1ZjhiNDM5NjQ1MTdhMDRkZWE2MWMxN2NjODQ4MTY4OWY2MDc3NDZhZGE4YmRlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjI1MzdkOTE2Yzc4OWRjY2MwZGI1MzA2MDAyNDM1ZjM2YTM5ZjA5M2NiZmNhMzQyNDJiNjQzYzQwMjFiNTg4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTExNDMzOGNlMDlkY2JiYzJjMzQ4YWY5ZGNlZGZkY2FjMzIzYmZkZWRkYmQ4Y2M4MjRjMDk4MzY0ZDk5YTE2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRiNzcxNzgzNmY5OTE4ODBmZDZiYzJkZmU2MWVjZmRjZDM5YzY3Y2NmMWMwZTRhOTYyY2Q5N2IxNzEzOGIyNiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T15:19:14.150Z"
+    "at": "2026-10-11T22:25:03.651Z"
   }
 }

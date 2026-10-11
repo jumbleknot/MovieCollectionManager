@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2c641c592e80ec655af460a8cbcb98f352e6832c2b90f7dc31fc7717310153ae",
+  "pageVersion": "sha256:d008cb4a23710e9bdb1f2c5f854f3a98951ec1d2953fc1e7e7b626ab9cd3fd0e",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -739,10 +739,70 @@
           "version": "repo-lines-v1:sha256:39f553c21cb5d4bff8b6a248022fa7de45046e65f90622c5610712df91b669de:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
         }
       ]
+    },
+    {
+      "id": "claim_4bec9aaed8f549ffafe6c097d04db5de",
+      "statement": "The scan is invoked locally either through the Nx target `pnpm nx sast infrastructure-as-code` (which runs `node scripts/sast-scan.mjs --scope full`) or directly, and gated with `node scripts/check-sast-findings.mjs` (exit 0 pass / 1 un-allowlisted blocking finding / 2 bad input); reports are written to the gitignored `security/sast/reports/` as `findings.json` (the gate's input contract), `findings.sarif`, `summary.txt` and one `<scanner>-native.json` per scanner, with `--scope changed --base <ref>` narrowing only Semgrep, `--only <scanner,...>` restricting the scanners, and `--emit-allowlist` writing a proposed baseline to `reports/allowlist.proposed.yaml` for triage.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L533-L534",
+          "version": "repo-lines-v1:sha256:016c5cc1dda4ac611457955e9273c775286d340ecd1f171910cf4510df20528a:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzYzNlMWE3OTE0NWFhNWJkNWExYmNlOGQ0NDAyMGM2NzM0OTVmOGQxZjZhMThlNDFhYmQ2ZmY4NjU1MzBhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDcwMWQ1OGM4MTI4NzEwZjY0MTE1MmRlODUyYTk3NTRhOTJmYmE1NjYwMTg5Y2NlNGU4NmM1YWEzMDFhYzcxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBhNjg4ZjVjMmUwYzlhMGJjZTg5Yjg5MWEwZTQ4OWU2MTI1YmYzOWFmY2VjZGNiMzA5MWMxOWMyMTAxOTI4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmVhZDk0MzI2OTA2NzlhOTJhM2FjOGE5NjY2MTcwOGQ5YTQ2MDQyYzQxOGJlMDU4ODVmZTk5NDVmN2YxMTcyMiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L178-L185",
+          "version": "repo-lines-v1:sha256:53dd06372e7fb84a9f9c10e1873d0be34edb8759959288486be417a3bc15f871:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjViMWU2OGJiMDViOGM1OThiYmQ0ZDI2ZDc4YzdjNTIzMjkzNGQzNTg5MmI3OTU2MzJlNmI2ODg0MzYxNmZhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJiMmY0MTViNWZlNGY0Y2ZkZDM5ZjY5ZjI4NTk0OTc1NzM4ZjYzMjMwNzg0ZTdjOWQ4MWE3ZWJiOWNlZThmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjljMjEwZDQ1MjVjYmM5MThkZmUzOTM1MDgzZjAzZmU2YTg5NjcxODJjNjllNmVmNzE4NzAwOThjODYwZjdjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2I4NTdiYmZkM2FjY2NhMjYxNzM5Y2IxNjM2OWEwOWExNDRlYWUxNjZjODhmZTUyZTJlOWZmOTRiNDYxMmFmNSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-sast-findings.mjs#L11-L16",
+          "version": "repo-lines-v1:sha256:0278c2e62a068fd03068b286dd1538e9c431b045c0740eae6fe5506af817197c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUxZGU5ZjQzNWY1ZTYzMWM5ZDA4YzQxNzVmNzc0YzVhZTgxYWM2OTFjNDcyM2I3MDQwODI0ZGViMjFkOTkxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiNzg4ZDNjYWQzMzAyZTcxMTU1NmY1MmM5M2I0MTdkYmUxNjZkMzM3OTRiNzZiMzg0NGMxMDkwMDA3OWM3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjJmOWQxYjhkNzQ2NzlhYWFmZjZiYzZhMzYwOTU5NzFiZTRiOTdhMTg4OThlZjQ2MjZkOWU3ZDY5ZjY2ODAxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjllOTg1OTE0MzBhNGNmMzQzNzMxZGJkNjIzM2IyZjk2NzU0MjUzMzZjZWM1ZmY2YjhlN2Y5NDk0MjA2ZGVjNyJ9"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L800-L891",
+          "version": "repo-lines-v1:sha256:d382d1253e316f5c6d3d1129232ddd9d0acf16777d0d1335e98f5fb1b46582ee:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMzI1Y2IxYzk1ZDJlMmMyZjU0NjhhMGFiOWZkMzNmN2QxMzg3OWQ3NjMxNTE1ZjM4N2E0MWY0YmVmZTVmMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiZTY4NWQyMzQ0NjA2ZWExNzFiOGNmMmM3NDZlNWM2OWJmM2JmOGU0NjE0ZjVlMGU5N2QyOWRlN2RhNTFmMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlNGI0MGU2ZTA5ZThiM2RlMDA3MTgxN2FmNmNiMGRkZjgxNWMxMTM1NGI3OTg0MDRjOWQ0Yjk3ZTc0YTY5YWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f928668e79b458bbef4ab19e4e183ed",
+      "statement": "The orchestrator fails fast rather than dropping a language surface: on the first scanner failure it records the error in that scanner's `scanners[].error`, writes the partial report, SARIF and summary, and exits 1 — so a report exists for triage even on a failed scan.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L10-L13",
+          "version": "repo-lines-v1:sha256:0d73c49035d8273265868d197e91f95ebe7063d9d2ace0fd034be850b1a3fe92:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAxZWFkOTM2YTIyODFkNTNkY2MwNjRiN2UyYTJhYjBkNTNiOTJlZjNlZjdiMzRiNjY4NjczMDA3ODk1Yzg2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMyZTRiZmM1MGUyNGQ1NWE4MDNkYmE1NTU5ZjBmNzQ1MWE2ODFiZDM4NDFlYWMwNGY2ZTlkMmE4OWZkZWRkZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2IzMmM0NTg0NDFmNmM3NTFhZWRkZDU2YzI2MjkzYjJlNjZkMDNkNDYyMGMwNGI3OWY3Y2Q5ODU2ZDdlNTE3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGYzOWJjMmEyNDhlOTExMDUxODVlMTEyNWIxNTFlMDZmOGIzN2M5MWYzOGY3MmUzYmQxNTE2OTdlMTI5OTBmMiJ9"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L854-L891",
+          "version": "repo-lines-v1:sha256:f8f6ef36559faee5053ea0a7fedcaa6f6b5cc9b268237a2fc73587ae5e9a94d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0OGFiNDUwNzBlZjA4YmIzNDdlZDI1NzYxYmM3N2I1YjgyNDc1Zjg2NjlhZDhiMTUxNzRkNmRkYmUxNGE0NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5MDQ2ODk0NmY4NjZlMTRjODg3YTBiNzNjNWFjNmVmMzdlZmUyMmNmZmJiYzJiNDYxMWQ1ZWE0OGZhYzZjMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlNGI0MGU2ZTA5ZThiM2RlMDA3MTgxN2FmNmNiMGRkZjgxNWMxMTM1NGI3OTg0MDRjOWQ0Yjk3ZTc0YTY5YWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4e8e7a7136c4f13a483554d72c105b4",
+      "statement": "The `sast` job proves its instruments before scanning — `check-sast-findings.mjs --selftest` and `node scripts/sast-scan.mjs --test-rules` run ahead of the scan step — and uploads the `sast-report` artifact under an `if: ${{ always() }}` guard so a report is available for triage even when the job is red.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L373-L401",
+          "version": "repo-lines-v1:sha256:580fcdfdaf3b93f625c61039d23e343c98272c71348ecb927e2924f231f25074:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNDhkNzEyNjUwMGM2ZWNmZWRmMzBjOTUzOWYxZjUzZWNlODJjZGE5N2MwZjQyOGJkOGNlNjVhNWNhYjRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiODBhOTk2MjIzMGU0ODkyNzU0Zjc2YmY0ZjhlOTg0NDY3NWEwYjY2NDJmYTBkZWQxOGQ3ZDFiZWI5YjFjN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4ZGZhMGUwYWIxMjAxODMxNTIxMjg5MGI4M2IwZjQ0MjY0ZDNjZGJlZTFhYTVkNmFmZDJkNzY3NjI2YTY3MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2142a5b880a4f249de6f4b080e3fde3",
+      "statement": "The forge exposes no per-step logs for the `sast` job, so a failed run is diagnosed by reproducing the scan locally and reading the `sast-report` artifact (`findings.json` plus `summary.txt`) or by reading the published failure digest for the job rather than by hunting runner logs.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/sast-scanning.md#L74-L75",
+          "version": "repo-lines-v1:sha256:446b8bf07b229651237ef6e056a588a235ea6ee0e466913bae8a348f819ba52a:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVkMmRkMDAzZTBhZjlmYjQxYjhmMDQ3YWIwNWMyMTMzYzgzY2JkOWE3MDMyOTllYWU0NzM2ZGJlYTgxYjBmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdhYjE5YWNjZDM0ZDY4YzM2ZTUyOGZiZDAxZmRlZjFkNDQ4OTczZWQ3MGEyNzY2NzUwMmM5OTJlZjZiNmEwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBlMWZkNDhiZDNmMTZkMDFjYTdmNmNkZGQ5MGJiMDhlNGI3OGU5YzQ1MDhkZDcwNTc3ZTc3MDNhZmI1OTRlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmMyYTJmNzZkMzQ3MzE5NzE4OTk0ODY0MzUxY2NiMjQ3YmQxMjA4NDU4NDYxNjRhNzAwYjI2ZjEwOGVmOGYyNSJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T16:36:45.100Z"
+    "at": "2026-10-11T22:25:03.651Z"
   }
 }

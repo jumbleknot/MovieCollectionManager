@@ -4,31 +4,9 @@ title: Published-port reservation convention
 description: The prod-reserved 19000-19099 host-port range that keeps the three production admin/UI publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it and the failure it prevents.
 resource: docs/runbooks/prod-reboot-resilience.md
 tags: [ports, ci, production, collision, homelab]
-timestamp: 2026-10-10T22:15:00+00:00
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T21:52:25.656Z
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-a9fc7285078c8062777b3180
-    resource: repo://docs/runbooks/devcontainer.md
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
-    resource: repo://scripts/preflight.mjs
+    at: 2026-10-11T22:25:03.651Z
 ---
 
 # Published-port reservation convention
@@ -40,8 +18,10 @@ manifests as a crash-loop on the *losing* side, not a clean bind error most engi
 
 The convention: **every prod admin/UI published port lives in the reserved range `19000–19099`**
 (Keycloak admin `19099`, LangFuse `19030`, Grafana/otel-lgtm `19002`, all `0.0.0.0`, tailnet-only via
-firewall rules). CI/dev keeps its own separate, lower port numbers. `scripts/check-prod-ci-port-collision.mjs`
-is the CI gate that enforces disjointness between the two ranges.
+firewall rules). CI/dev keeps its own separate, lower port numbers. The range also sits below the
+Linux ephemeral port range (`32768+`), so a reserved prod port can never be transiently grabbed by an
+outbound client connection. `scripts/check-prod-ci-port-collision.mjs` is the CI gate that enforces
+disjointness between the two ranges.
 
 ```mermaid
 flowchart TD
@@ -60,9 +40,12 @@ service keeps its recognizable low digits — `8099 → 19099`, `3030 → 19030`
 
 ## What the gate checks
 
-- **File split.** Prod = every `infrastructure-as-code/docker/**/compose*.yaml` whose basename ends
-  `.prod.yaml` (the seven prod composes). CI/dev = every other tracked compose file — `compose.yaml`,
-  `compose.ci.yaml`, `compose.agent-e2e.yaml`, `stacks/*.compose.yaml`.
+- **File split.** Prod = the compose files under `infrastructure-as-code/docker/**` whose basename
+  ends `.prod.yaml` (the seven prod composes). CI/dev = everything else the gate discovers —
+  `compose.yaml`, `compose.ci.yaml`, `compose.agent-e2e.yaml`, `stacks/*.compose.yaml`. Discovery is
+  two globs (`infrastructure-as-code/docker/**/compose*.yaml` plus
+  `infrastructure-as-code/docker/stacks/*.compose.yaml`) and classification is by basename only, so a
+  compose file whose name does not start with `compose` falls outside the scan.
 - **Only fixed host ports count.** A bare container port (random host port), a `${VAR}` host field and
   an unparseable entry are all skipped, and the `host_ip` is ignored — the comparison is over host
   **port numbers**, because a prod `0.0.0.0` bind collides with a CI bind on that port whatever

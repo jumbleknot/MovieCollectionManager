@@ -6,29 +6,7 @@ resource: docs/runbooks/prod-reboot-resilience.md
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
-sources:
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
-  - id: openwiki-source-852cc196002c1a675baddf5c
-    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
-  - id: openwiki-source-b6d5c062815f2af4f3aec768
-    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-b182ec4cb28667debd4684ff
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
-    resource: repo://scripts/preflight.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+    at: 2026-10-11T22:25:03.651Z
 ---
 
 # Prod reboot resilience
@@ -134,6 +112,11 @@ every host-managed compose — Forgejo, Komodo itself, cloudflared and the monit
 they too stay eligible. Do not reintroduce `unless-stopped` on a prod or host-managed service expecting a
 reboot to bring it back.
 
+The immediate fix on the host was an interim `docker update --restart always` over the running
+containers, which only survives until each container is next *recreated*. What makes the policy durable
+across redeploys and rebuilds is the committed compose value plus the host-compose edits — the interim
+update is a stopgap, not the fix.
+
 The drain unit was retained but **reworked to stop containers in parallel**. Sequentially it ran
 `docker stop -t 30 $(docker ps -q)`; with roughly 40 containers that exceeded `TimeoutStopSec=120` and
 was SIGKILL'd mid-drain, stopping a non-deterministic subset. Parallel stopping lets the graceful drain
@@ -153,6 +136,31 @@ and the
 reintroduce `/etc/komodo` (see
 [`Server-Setup-Runbook.md`](../../docs/runbooks/Server-Setup-Runbook.md#L794-L797)).
 
+## The rest of the host-side posture
+
+The compose fixes are only part of what the host has to survive, and the remainder is host state that
+no gate can see. The graceful-shutdown drain unit is the one this page leans on throughout; alongside it
+the host carries an orderly-shutdown trigger for sustained power loss (UPS + Network UPS Tools, so a
+brownout no longer becomes the hard kill that exposed these defects in the first place), scheduled
+backups covering **all** data volumes rather than a subset, and the device-keyed segmentation-offload
+unit described below. The source runbook's host-remediation table is the authoritative record with the
+per-control verification command for each.
+
+## Recovery order when a reboot lands dirty
+
+If a reboot does land dirty, nothing self-heals until Komodo can act again, and Komodo needs two things
+that the same reboot stopped:
+
+1. **Start Komodo periphery.** It is itself a rootless container and therefore a drain victim; with no
+   agent, Komodo Core shows no stacks and can redeploy nothing — including itself.
+2. **Start Forgejo.** Komodo clones the repository from it on every sync, so the git source must be
+   reachable before a sync can succeed.
+3. **Run Komodo's Execute Sync.** It re-clones into the persistent periphery root and recreates every
+   stack with its declared networks.
+
+With `restart: always` this ordering should never be needed — it is the manual escape hatch, not the
+intended path.
+
 ## Gotchas
 
 - **A tailnet-IP-scoped published port silently fails to bind if the container engine starts before the
@@ -170,6 +178,10 @@ reintroduce `/etc/komodo` (see
   declines to restart a container that was already stopped when the daemon starts — the two remediations
   defeat each other. Every prod and host-managed compose service is `restart: always`; do not reintroduce
   `unless-stopped` on a prod service expecting a reboot to bring it back.
+- **An interim `docker update --restart always` is not a fix.** It rewrites the restart policy of the
+  containers that exist right now and is lost the moment one is recreated — by a Komodo redeploy, a
+  compose `up`, or a host rebuild. Only the value in the compose file (or the host-managed compose file)
+  survives, which is exactly why the policy is enforced as config-as-code.
 - **A crash-looping non-root Mongo keyfile entrypoint is a permissions bug, not a data bug** — a plain
   container restart (not recreate) can leave a prior run's read-only keyfile in place, and the non-root
   `mongod` process cannot overwrite it. The entrypoint fix removes the file before rewriting it on every
@@ -182,13 +194,11 @@ reintroduce `/etc/komodo` (see
   with its full declared network set from the compose file. The intra-stack Keycloak→Postgres link no
   longer depends on that at all, because it is compose-managed and attached atomically on every `up`.
 - **Komodo's own periphery agent can be a recovery dependency, not just a deployed workload.** If
-  periphery itself is a rootless container that gets stopped on shutdown, Komodo Core loses its agent on
-  reboot and cannot redeploy anything — including itself — until periphery, and the git source it depends
-  on, are manually started first. Recovery order when a reboot lands dirty: start periphery, start Forgejo
-  (Komodo clones the repo from it on every sync), then run Komodo's Execute Sync to re-clone to the
-  persistent root and recreate every stack. Persistent storage for periphery's own working directory
-  matters for the same reason: an ephemeral filesystem under it silently loses the git checkout that every
-  stack's relative bind-mounts resolve against, on every reboot.
+  periphery is stopped on shutdown, Komodo Core loses its agent on reboot and cannot redeploy anything —
+  including itself — until periphery, and the git source it depends on, are manually started first (see
+  the recovery order above). Persistent storage for periphery's own working directory matters for the
+  same reason: an ephemeral filesystem under it silently loses the git checkout that every stack's
+  relative bind-mounts resolve against, on every reboot.
 - **A host-level throughput bug can look exactly like a network outage and isn't.** A segmentation-offload
   default on the tailnet interface capped one direction of tailnet transfer while leaving small-packet
   latency, loss, and every conventional network diagnostic looking clean — the tell was that no plausible
@@ -198,6 +208,10 @@ reintroduce `/etc/komodo` (see
 - **A validation reboot is part of the change, not a follow-up.** Both rounds required one after merging
   and syncing, and the point is that nothing is started by hand after boot; any failing row is a defect to
   fix before closing the round. The checklist is in the source runbook's validation section.
+- **The restart-policy gate only sees in-repo prod composes.** Host-managed composes live outside the
+  repository (Forgejo, Komodo, cloudflared, the monitoring stack), so no gate can fail on their restart
+  policy — their `always` is host state an operator must maintain by hand, and a rebuild that forgets it
+  reintroduces the round-2 failure for those stacks only.
 
 ## Enforcement — the two required gates
 
@@ -205,11 +219,12 @@ Round 1 and round 2 each left a self-enforcing gate, so config-as-code cannot si
 failure:
 
 - **`scripts/check-prod-ci-port-collision.mjs`** keeps prod's published host ports disjoint from every
-  CI/dev-published port. It compares host **port numbers** and ignores the bind interface, because a prod
-  `0.0.0.0` bind collides with a CI bind on the same number whatever interface the CI side names; it
-  skips entries with no deterministic fixed host port (bare container port, `${VAR}` host field) and
-  expands numeric ranges. Exit `0` clean / `1` collision / `2` unparseable, and `--selftest` plants an
-  overlap so a gate that stopped detecting cannot report green
+  CI/dev-published port. It splits the tree by filename — prod is every compose file whose basename ends
+  `.prod.yaml`, CI/dev is every other tracked compose file — and compares host **port numbers** while
+  ignoring the bind interface, because a prod `0.0.0.0` bind collides with a CI bind on the same number
+  whatever interface the CI side names; it skips entries with no deterministic fixed host port (bare
+  container port, `${VAR}` host field) and expands numeric ranges. Exit `0` clean / `1` collision / `2`
+  unparseable, and `--selftest` plants an overlap so a gate that stopped detecting cannot report green
   ([`check-prod-ci-port-collision.mjs`](../../scripts/check-prod-ci-port-collision.mjs#L1-L24)).
 - **`scripts/check-prod-restart-policy.mjs`** makes `restart: always` a required property of every prod
   service. Long-running services must declare `always`; `unless-stopped` is forbidden (the round-2

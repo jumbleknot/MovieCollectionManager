@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:302a27865862aa1e6accd7fc648a23b762af5f0c1b0bb986c3e72888cf8bc868",
+  "pageVersion": "sha256:d8b9ed58e7a7e36042d58d260b8f3ee433736267bdff3ad3c6c2c2f94f59317a",
   "claims": [
     {
       "id": "claim_6691a99af5cb400388c90e70331847b4",
@@ -223,10 +223,58 @@
           "version": "repo-lines-v1:sha256:d3a0c214eb47693833f30c39c2b8ab6536b786fb4656f2c14189a96dca1424a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmExZTIxYjY1NTU3N2U2MTAxMzhjYThkMWFlOTQwMTIwN2Q0N2JjNmUxYWViM2RjZTc4MTBkMTdjNzdiMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YWZlMzM4YjI5MDA0NGFhN2U2ZjQzN2MyNzhiNzZlYzdjNjA2YTk5NzgzMmI1ODFiMTZkMTU0MzJlZDRhYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyYmU2YWY4YmY2YjI5YmRkZTY1ZDczOGFlZjVhNGY1ZTZhOTc3ZjM2NjA2MDE5YWM0OTEzN2E3ZmIxMDI0YjEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e9989bd26e1e4252a11b6b2f554eeb74",
+      "statement": "The restart-policy fix is only durable as config-as-code: an interim `docker update --restart always` over the running containers is lost as soon as any container is recreated by a Komodo redeploy, a compose `up`, or a host rebuild, so durability comes from the committed prod compose value plus the host-managed compose edits.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L172-L183",
+          "version": "repo-lines-v1:sha256:b207a951fd57040dcd277f529b4fb79afe36944114a1e9cf2e855794536dd973:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYmEzMzQ2NzVjZDQ5ZDYxNWRiYzczYjQ3NmU5Y2FmMDgxNDZiZjZkMzQyZThmOGUzZjM3NzgxNmU2OWE0ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNjRlNTg1NmZlYzFhZDczYWFkNWM1MDhiMjBmZGFiYzgwMTYzN2ZmYWZiYjA2YTFjYmYzY2MzMmU5OGNiYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiN2JiNDJlZGE0YzMyOTcxZjU5YjU1MzYxMGI2MjliZGJkYzg3ZjRiZTIyZTA0ODU1YTlkYzJjNzM2MDhiNDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzQ4MGY0ZmJhNDY3MTkxZmY5YzFlZmU5ODU4YmFjMTE5MTM1MzczZjc5ZjdmZTM1MTMwNmY3NTU0NDgwOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_07f2b3a2333440e18cccd27e5c8bcc7d",
+      "statement": "Host-managed composes (Forgejo, Komodo, cloudflared and the monitoring stack) live outside the repository, so no repo gate can fail on their restart policy — their `restart: always` is host state an operator maintains by hand, and a rebuild that omits it reintroduces the round-2 failure for those stacks only.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L174-L181",
+          "version": "repo-lines-v1:sha256:4baa71190f986a1308baf9ccf11965796daf85386893e2820f35929c4f658e6b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2M1MzZmZDFiZWFhYjkwMTdjNWFhMGQ0ZWIwNzFjOTQzZjQ0NWI4MjUyMTUzZDc4YjZlM2ZkZjVhMjM5YWRjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGZiMDA0YmI3NzlkZjYxMTkzNzcxYTg2MGFlYzY4OTk1NzU5MDZhYzMyYjM0ZGUzNzIxOGJlNmI2Y2Q4Y2Y1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDViNTc2OGQ0NzRlOWJkYjAzNDMyMWFmNWFhZjQ0ZDBhZGFmNGUxNTNlNzc5MTBhNzljZTE3MzE4Zjk4YmViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTYyZDRkODIzZTU4MDk2NjBhNGE1NTc3NzkzZDJiYjQ4YjY2OWNmYTEzYzk3MjY4NDJhMGI4OTU1NWRkOWI0ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L58-L60",
+          "version": "repo-lines-v1:sha256:06a44ed46db2ff7e7676da57236976ac6147fe32416841ff54e5f2f6017c8aaf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVhNjEyZDg0OWNjMGZlYmM3OTNkOTQ0YjQyZTliNjhmMmFmZGUyZDYzMzMxNjEzNjUzYTgxOTY4NGM1NjNmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ2MzZkMzViODlhNDE2OTNlMWIzNzAwZDg2NDk3ZmNmZjE5ZWQ4YmNjMWUzMWExZTk2MjQ3MGQ5NzRjN2FhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDI3OWI2ODA1MjBlZDUyNmRjYzRjOGFhMzczNTI3NTkwZTI4MTk1ZTQwZmJlNjEwN2UxZTViNDk1YTQ1NzczNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ1NWJkZGEyNTU4MmU4YzZhOTk2MTFiZjk1YzZjMDIxMmI0NDM3NDQ4OGZmNmJjODY2NzA4OTU3YzdiNGY0NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e27e7d77c2149b9a776ffa7a8744b71",
+      "statement": "The reboot posture depends on host state no gate can see: the graceful-shutdown drain unit, a UPS/NUT orderly-shutdown trigger for sustained power loss, backups covering all data volumes rather than a subset, and the device-keyed tailnet segmentation-offload unit — the source runbook's host-remediation table is the authoritative record with a verification command per control.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L15-L21",
+          "version": "repo-lines-v1:sha256:627e5ba248454605f0c15c7c5d9907e62cbd28250ba3040a25539254729fd87e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmRhMTY1NmQ2MTU5MDIxOTAwMDVlY2ExZDViNDUwYTQxOWY5ZDA5Y2RlYTYxNWQyNDQyZmM2YzJiNjMyZGIyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzhiM2E0ZGRhOWQ4ZDRiZWJkMzBhMDEwYzVjNzc0ZGZjYjY3YmQwNjk2YmRmMjhkMzgyNTQ4MzdlNzE4MjgyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjYxNTA3M2QzNGM0ZGUyZTg5MDMxMzA1NTJlOGU4ZGQ2ZmQxMDU3Y2Y5M2NjZTJjODU1MDRiNGM4MDcyY2UyYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2365d2ab95a845468de1c200e9f4d691",
+      "statement": "scripts/check-prod-ci-port-collision.mjs splits the tree by filename: prod is every compose file whose basename ends `.prod.yaml`, and CI/dev is every other tracked compose file (compose.yaml, compose.ci.yaml, compose.agent-e2e.yaml, stacks/*.compose.yaml), so disjointness is enforced across that file classification rather than a declared list.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L102-L127",
+          "version": "repo-lines-v1:sha256:6bd7a6688e51eff82c967e028de1f1b303a6b964fa63ccf45ea88989c6a5f13c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhY2M0ZTlhOTBmYWJkOGUxZjllODc0NWE2MGNhNjQzZmYxOTQ3Yjg3NGM1MWNkZGI5OTQ4YTBmOGQxMmY1ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyM2Q4ZjExYWEzZmQ1MWVhNjZjMGFhODY1NjNiOWI3ODI5MmU0NDBiMTkxOGVjMmZiMDI2NjdkZDUyNDQ0NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYjZmM2QwOWJiOGNhYTZiOTUyYWVkZWE5ZTFmZWI3M2IyNjE3MzNjOTBiMGNiZWI1OGM4MjZmMGIxNjAxZDQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L15-L18",
+          "version": "repo-lines-v1:sha256:dfe03652152df016a4654a699f6462bb811734714d94d9ef2eafc7bcb1d01c99:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWVlNTBjYmU0NDY0OTgwNWIyNDBjZjZhMWIwMWE5YTY3MjllMTBmMjdlNGZkNTI1MDhjNTAyMzVlMGU4MDk0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVjYTRkNDNmYWNiYmY5NzFlMmNjYmVjY2NiZDg5ZThkZGEwYWRkMTIxYTViNWEzZjU5ODE0MzMxNjI2NDU5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA2NzZkMTA3ZWE0NjFkNzBhZTNkOGI0MzAwMDVjZWJiNWQ4Zjk5NWNkYjE4MTg5NzY2MDk2OTU2MTQ3YmI2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzExMTMzZTc1YmNhZTZkYzc0NDI4ZDIzZmRkYWQ1MDhmYWZiNDZlNzlkZGFmMWI0NGRjY2E4ZTQwZjJmYWMxMiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T15:19:14.150Z"
+    "at": "2026-10-11T22:25:03.651Z"
   }
 }
