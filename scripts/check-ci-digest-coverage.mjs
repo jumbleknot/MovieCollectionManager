@@ -2,8 +2,8 @@
 // CI failure-digest coverage gate (feature 042 durability).
 //
 // Why this exists: the self-serve diagnostics feature (042) works only because EVERY job publishes a
-// failure digest — one `if: always()` step, copy-pasted across 16 jobs in 6 workflows. Nothing stops
-// job #17 (or a whole new workflow) being added WITHOUT it, and when that happens the omission is
+// failure digest — one `if: always()` step, copy-pasted across 22 jobs in 10 workflows (2026-10-11). Nothing stops
+// the next job (or a whole new workflow) being added WITHOUT it, and when that happens the omission is
 // invisible: the job just silently produces no digest, and its failures go back to needing a human to
 // paste the log. That is exactly the decay a diagnostics tool must not suffer. This gate makes digest
 // coverage a REQUIRED, self-enforcing property — a new job without one turns CI red with a clear

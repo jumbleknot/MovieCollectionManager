@@ -85,4 +85,4 @@ description: "Tasks for 082: re-plan wiki concepts that fell behind the maintena
 - [x] T043 (2026-10-10: 1612 pass, 0 fail, 0 skipped; all six exit 0) Final gates: `node --test scripts/__tests__/*.test.mjs` (0 failed, 0 skipped), plus
       `check-openwiki-okf`, `check-openwiki-governance`, `secret-scan`, `check-topology-scrub`,
       `wiki-maintain --selftest` and `--plan`, all exit 0.
-- [ ] T044 After the first merged run, check item #526's criteria against the run record and the plan, then close #526.
+- [x] T044 (2026-10-11, dispatch 5115: the drift report printed, both parked pages excluded and listed, budget unchanged; #526 closed) After the first merged run, check item #526's criteria against the run record and the plan, then close #526.

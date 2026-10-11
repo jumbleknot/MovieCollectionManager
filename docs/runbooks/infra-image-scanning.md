@@ -16,7 +16,7 @@ The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). 
 
 ## How it runs
 
-- **Weekly full sweep** (`schedule: cron '0 7 * * 5'` (Friday 07:00 UTC ≈ 3 AM ET)) — the authoritative run. A new advisory can hit an **unchanged** pinned image, so the sweep is **not path-gated** (same rule as the 033 SCA scan).
+- **Twice-weekly full sweep** (`schedule:` `cron '0 4 * * 5'`, Friday 04:00 UTC, before Renovate's Friday window; and `cron '0 4 * * 2'`, Tuesday 04:00 UTC, added for item #642) — the authoritative runs. Tuesday's exists because an advisory published early in the week first surfaced at Friday 04:00 on 2026-10-02 (GHSA-vcvr-r3jv-pc5j on the unchanged `langfuse:4` pins), leaving three hours to triage before the window. Both run the same steps. A new advisory can hit an **unchanged** pinned image, so the sweep is **not path-gated** (same rule as the 033 SCA scan).
 - **On-change PR/push check** — `.forgejo/workflows/infra-image-scan.yml` also triggers when `infrastructure-as-code/**`, the scanner scripts, or `security/infra-images/**` change, for fast feedback on a newly-introduced vulnerable image.
 - **Keyless** (public images, Trivy fetches advisory data with no account — no `${{ secrets }}`) and **fail-closed** (a Trivy/pull/parse failure fails the job — never a clean report on failure).
 
@@ -228,8 +228,10 @@ Two consequences worth internalising:
 ### Did the weekly ALLOWLIST-EXPIRY step run? Read its status, not its absence (item #418)
 
 The expiry check over both allowlists is the only thing that ever reports an expired, expiring or
-unmatched suppression, and it runs on the **weekly cron only** (`if: github.event_name == 'schedule'`)
-— it must never run on a PR, or a dated entry would block every pull request a fortnight later.
+unmatched suppression, and it runs on the **scheduled sweeps only** (`if: ${{ always() && github.event_name == 'schedule' }}`)
+— it must never run on a PR, or a dated entry would block every pull request a fortnight later. The `always()` is
+item #484: a bare `if: github.event_name == 'schedule'` was skipped whenever the CVE gate before it failed, so the
+expiry warning went missing in exactly the weeks the gate was red (caught on run 3521, the 2026-09-18 sweep).
 
 That gate is invisible from the job's tick, and for three weeks it was believed to have never fired
 (see item #418, resolved). Since then the job publishes the measurement directly:
@@ -663,6 +665,10 @@ Trivy isn't local, so seed from the **first Linux/CI scan** (feature-033 platfor
 
 A finding is fixed by a **Renovate base-image bump** (bump the pinned tag/digest). After the bump lands and the scan re-runs, **delete** the finding's allowlist entry — the gate stays green and a regression re-blocks. The scan does not bump anything itself.
 
-## Operator: make it a required check
+## It is a required check
 
-The **PR-triggered** `infra-image-scan` context should be added to `main` branch protection as a required check (Forgejo → repo → Settings → Branches). The **weekly** run is a scheduled safety net — its failure surfaces on the Actions list (wire an alert/issue if desired); it is not a PR gate. The agent cannot self-configure branch protection — this is a manual operator step.
+The `infra-image-scan / infra-image-scan` context is required on `main` by branch protection, through a glob that
+also matches the push-event context (see "A green `infra-image-scan` usually proves nothing" above). The
+**scheduled** sweeps are not a PR gate: a sweep's verdict is posted as the `infra-image-scan/weekly` commit status
+(item #485), and its failure also shows on the Actions list. Branch protection is configured by an operator in Forgejo (repo →
+Settings → Branches); the agent cannot change it.
