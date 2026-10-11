@@ -47,6 +47,13 @@ export const WIKI_PROVIDERS = Object.freeze({
     // sends nothing (item #525 trial, operator 2026-10-05). 078 US6 sets `low` per invocation for
     // pages a job deadline stopped.
     reasoningEfforts: Object.freeze(['none', 'low', 'high', 'max']),
+    // Item #719. The per-turn output cap for this provider, raising the target's 16384 floor. DeepSeek
+    // reasons INSIDE the output budget: on dispatch 5115, runbooks/wiki-maintenance.md's worker ended
+    // both attempts at exactly 16384 output tokens (5891 reasoning + ~10.5k of page text), before the
+    // tool call that writes the page, which openwiki reports as "exited without submitting". Billed
+    // only when used. The Anthropic row has none: the Anthropic TypeScript SDK refuses a NON-streaming
+    // request whose max_tokens implies more than ten minutes (about 21k).
+    maxOutputTokens: 65_536,
     credential: Object.freeze({ accepted: Object.freeze(['FIREWORKS_API_KEY', 'MCM_FIREWORKS_API_KEY']), mapTo: 'FIREWORKS_API_KEY' }),
   }),
 });
@@ -119,6 +126,7 @@ export function resolveWikiProvider(env = process.env) {
     tier,
     reasoningEffort,
     pageConcurrency,
+    maxOutputTokens: row.maxOutputTokens ?? null,
     credential: row.credential,
   };
 }
@@ -150,6 +158,10 @@ export function buildGeneratorEnv(env = process.env) {
   child.OPENWIKI_PROVIDER = resolved.openwikiProvider;
   child.OPENWIKI_MODEL_ID = resolved.modelId;
   child.OPENWIKI_PAGE_CONCURRENCY = String(resolved.pageConcurrency);
+  // Item #719: a provider may RAISE the target's per-turn output cap, never lower it.
+  if (resolved.maxOutputTokens !== null && !(Number(env.OPENWIKI_MAX_OUTPUT_TOKENS) >= resolved.maxOutputTokens)) {
+    child.OPENWIKI_MAX_OUTPUT_TOKENS = String(resolved.maxOutputTokens);
+  }
   if (resolved.tier) child[TIER] = resolved.tier;
   if (resolved.reasoningEffort) child[EFFORT] = resolved.reasoningEffort;
   // Item #613. openwiki gives an OpenAI-compatible provider (Fireworks) no request timeout, so the

@@ -188,3 +188,26 @@ test('the generator gets an explicit, small provider retry count unless the oper
   const overridden = buildGeneratorEnv({ MCM_WIKI_PROVIDER: 'fireworks', FIREWORKS_API_KEY: 'fw', OPENWIKI_PROVIDER_RETRY_ATTEMPTS: '4' });
   assert.equal(overridden.OPENWIKI_PROVIDER_RETRY_ATTEMPTS, '4', 'an explicit operator value wins');
 });
+
+// ── per-provider output cap (item #719, run 5115) ──────────────────────────────────────────────
+//
+// Dispatch 5115: runbooks/wiki-maintenance.md's worker ended BOTH attempts with finish=length at
+// exactly 16384 output tokens (5891 reasoning + ~10.5k of page text), before emitting the tool call
+// that writes the page — the ReAct stop condition, reported as "exited without submitting". DeepSeek
+// V4.1 Flash on Fireworks reasons inside the output budget and accepts far more than 16384, so its row
+// raises the cap. Anthropic keeps the target's 16384: the Anthropic TypeScript SDK refuses a
+// NON-streaming request whose max_tokens implies more than ten minutes (about 21k), so a higher
+// global cap could break that provider outright.
+
+test('#719: Fireworks raises the per-turn output cap to 65536; the target value stays the floor', () => {
+  const child = buildGeneratorEnv({ MCM_WIKI_PROVIDER: 'fireworks', FIREWORKS_API_KEY: 'k', OPENWIKI_MAX_OUTPUT_TOKENS: '16384' });
+  assert.equal(child.OPENWIKI_MAX_OUTPUT_TOKENS, '65536');
+  const higher = buildGeneratorEnv({ MCM_WIKI_PROVIDER: 'fireworks', FIREWORKS_API_KEY: 'k', OPENWIKI_MAX_OUTPUT_TOKENS: '100000' });
+  assert.equal(higher.OPENWIKI_MAX_OUTPUT_TOKENS, '100000', 'an explicit higher operator value is never lowered');
+});
+
+test('#719: Anthropic keeps the target cap (non-streaming SDK guard above ~21k max_tokens)', () => {
+  const child = buildGeneratorEnv({ MCM_ANTHROPIC_API_KEY: 'k', OPENWIKI_MAX_OUTPUT_TOKENS: '16384' });
+  assert.equal(child.OPENWIKI_MAX_OUTPUT_TOKENS, '16384');
+  assert.equal(WIKI_PROVIDERS.anthropic.maxOutputTokens, undefined, 'no raise on the Anthropic row');
+});

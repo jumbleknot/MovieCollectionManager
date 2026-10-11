@@ -77,11 +77,17 @@ test('the generator runs with the resolved provider, the cap, and the usage tap 
   assert.equal(env.OPENWIKI_PROVIDER, 'fireworks');
   assert.equal(env.OPENWIKI_MODEL_ID, 'accounts/fireworks/models/deepseek-v4p1-flash');
   assert.equal(env.OPENWIKI_PAGE_CONCURRENCY, '3');
-  assert.equal(env.OPENWIKI_MAX_OUTPUT_TOKENS, '16384');
+  assert.equal(env.OPENWIKI_MAX_OUTPUT_TOKENS, '65536', 'the Fireworks row raises the target\'s 16384 floor (item #719)');
   assert.equal(env.hasFireworksKey, true);
   assert.equal(env.hasAnthropicKey, false, 'least privilege');
   assert.equal(env.hasMcmAnthropicKey, false, 'least privilege');
   assert.match(env.NODE_OPTIONS, /--import=\S*wiki-usage-tap\.mjs/);
+});
+
+test('#719: the Anthropic provider launches with the target\'s 16384 cap, unraised', () => {
+  const r = launch({ MCM_ANTHROPIC_API_KEY: 'k' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.invocation.env.OPENWIKI_MAX_OUTPUT_TOKENS, '16384');
 });
 
 test('the caller\'s NODE_OPTIONS (e.g. the heap flag) are kept, not replaced', () => {
