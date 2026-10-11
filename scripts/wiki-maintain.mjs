@@ -1664,7 +1664,7 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   const forcedPages = attributable
     ? pagesWritten.filter((p) => !requested.has(p)).map((p) => p.slice(bundlePrefix.length))
     : [];
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, stalePages, failedParts, landedParts, failedPages, forcedPages };
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, missingPages: missing, stalePages, failedParts, landedParts, failedPages, forcedPages };
 }
 
 /**
@@ -2063,6 +2063,30 @@ export function executeSlices({
           continue;
         }
         console.error(`[wiki-maintain] ${slice.area}/ attempt ${attempt} produced nothing — retrying (${attempt + 1}/${attemptsPerSlice}).`);
+      }
+    }
+
+    // Run 5104: a conformance failure CONFINED to pages that failed anyway. A worker that died
+    // mid-edit (HTTP 412) left its page with bytes its Claims sidecar does not certify. V16 is a
+    // whole-invocation failure, so 13 landed pages were discarded with it. When the only violation
+    // not attributable to a page is conformance, put the failed pages back first (#685's restore:
+    // page, sidecar and manifest entry together) and judge again. If the bundle is then conformant,
+    // the break was theirs alone, and the failure is attributable after all. A policy violation, or a
+    // break the restore does not repair, still fails the whole invocation.
+    if (!verdict.ok) {
+      const failedKeys = new Set([...(verdict.missingPages ?? []), ...(verdict.stalePages ?? [])]);
+      const unattributed = verdict.violations.filter((v) => !/^\d+ requested page\(s\) (do not exist|are still stale)/u.test(v));
+      if (failedKeys.size > 0 && unattributed.length === 1 && unattributed[0].startsWith('the bundle is no longer conformant')) {
+        const parts = partsOf(slice).flatMap(({ runMessage: _unused, ...part }) => {
+          const pages = (part.pages ?? []).filter((page) => failedKeys.has(`${part.area}/${page}`));
+          return pages.length === 0 ? [] : [{ ...part, pages }];
+        });
+        const restored = restoreFailedParts({ root, bundleRoot: bundleDir, parts, before, manifestBefore });
+        const again = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before });
+        if (!again.violations.some((v) => v.startsWith('the bundle is no longer conformant'))) {
+          console.error(`[wiki-maintain] the conformance failure was confined to the page(s) that failed (${[...failedKeys].join(', ')}); restored ${restored.length} path(s), and the rest are judged on their own (run 5104).`);
+          verdict = again;
+        }
       }
     }
 
