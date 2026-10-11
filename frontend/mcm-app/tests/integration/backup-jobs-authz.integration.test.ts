@@ -37,8 +37,8 @@ import {
 const bff = createBffClient();
 const JOBS = '/bff-api/backups/jobs';
 
-// The BFF container reaches the test MinIO by compose service name, not on loopback.
-const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-minio:9000';
+// The BFF container reaches the test RustFS by compose service name, not on loopback.
+const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
 const S3_BUCKET = process.env.BACKUP_TEST_S3_BUCKET || 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env.BACKUP_TEST_S3_ACCESS_KEY || 'mcmbackuptest';
 const S3_SECRET = process.env.BACKUP_TEST_S3_SECRET_KEY || '';

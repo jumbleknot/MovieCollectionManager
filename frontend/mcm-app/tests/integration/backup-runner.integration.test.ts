@@ -1,7 +1,7 @@
 /**
  * Backup runner, end to end (feature 073, T032 — FR-008/012/014; US2-AC1/2/5).
  *
- * REAL mc-service, REAL MinIO, REAL Mongo. One run, one artifact.
+ * REAL mc-service, REAL RustFS, REAL Mongo. One run, one artifact.
  *
  * THE FIDELITY CHECK COMPARES AGAINST LIVE DATA READ BACK FROM mc-service, never against the
  * in-memory structure the artifact was built from. Comparing a thing to itself proves nothing

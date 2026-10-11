@@ -5,9 +5,9 @@
 // DELETE. No multipart, no presigning, no storage classes, no ETag semantics.
 //
 // Verified twice, against two independent external oracles: the signer against AWS's published
-// vectors, and this driver against a real MinIO. Neither alone would be enough — vectors prove
+// vectors, and this driver against a real RustFS. Neither alone would be enough — vectors prove
 // the algorithm but not that a server accepts it, and a server test would pass against a signer
-// that was subtly wrong in a way MinIO happens to tolerate.
+// that was subtly wrong in a way RustFS happens to tolerate.
 
 import { XMLParser } from 'fast-xml-parser';
 
@@ -42,8 +42,8 @@ export function createS3Driver(
     service: 's3',
   };
 
-  // Path-style (`/bucket/key`) rather than virtual-host style. MinIO and most self-hosted stores
-  // need it, and a bucket name containing a dot breaks virtual-host style under TLS anyway.
+  // Path-style (`/bucket/key`) rather than virtual-host style. Most self-hosted stores (RustFS
+  // among them) need it, and a bucket name containing a dot breaks virtual-host style under TLS anyway.
   const bucketPath = destination.pathStyle === false ? '' : `/${destination.bucket}`;
   const objectPath = (key: string) => `${bucketPath}/${key}`;
 

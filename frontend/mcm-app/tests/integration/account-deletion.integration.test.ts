@@ -8,11 +8,11 @@
  * in a passing suite that only checks the database.
  *
  * SECOND is the one that proves we did NOT overreach: the artifacts at the user's own
- * destination are still there, byte for byte, against real MinIO. "We forgot to delete them" and
+ * destination are still there, byte for byte, against real RustFS. "We forgot to delete them" and
  * "we deliberately leave them" also look identical otherwise, and only one of those is the
  * requirement.
  *
- * Nothing here is mocked. Keycloak, MongoDB, Redis and MinIO are all real — the constitution
+ * Nothing here is mocked. Keycloak, MongoDB, Redis and RustFS are all real — the constitution
  * forbids substituting them in this tier, and for SC-001 a mocked identity provider could not
  * demonstrate anything at all.
  */

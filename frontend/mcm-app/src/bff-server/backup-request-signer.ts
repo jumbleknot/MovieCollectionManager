@@ -7,7 +7,7 @@
 // this file and backup-driver-s3.ts and nothing else.
 //
 // Verified against AWS's PUBLISHED test vectors (unit-tests/fixtures/aws-sigv4) at all three
-// intermediate stages, and against a real MinIO in the integration tier. Both oracles are
+// intermediate stages, and against a real RustFS in the integration tier. Both oracles are
 // external: a signing implementation checked only against its own expectations passes happily
 // while producing a consistent, wrong signature.
 //

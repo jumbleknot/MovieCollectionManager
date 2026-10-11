@@ -8,7 +8,7 @@
  * written — it converts "today's backup failed" into "yesterday's backup is gone too", and the
  * user finds out at restore.
  *
- * AGAINST REAL MinIO. Retention is "list the keys, sort them, delete the tail", and every part
+ * AGAINST REAL RustFS. Retention is "list the keys, sort them, delete the tail", and every part
  * of that is a property of the destination: what `list` returns for a prefix, whether the order
  * is really lexicographic, whether a delete of a missing key errors. A mock would be me
  * asserting my own assumptions about someone else's server.

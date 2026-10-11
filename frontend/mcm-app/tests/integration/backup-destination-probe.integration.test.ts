@@ -1,7 +1,7 @@
 /**
  * Destination probe route (feature 073, T022 — FR-004; US1-AC1/AC2/AC4).
  *
- * Over HTTP against the real BFF, probing REAL MinIO and WebDAV servers.
+ * Over HTTP against the real BFF, probing REAL RustFS and WebDAV servers.
  *
  * WHAT FR-004 ACTUALLY ASKS FOR is not "does it work" but WHICH of three things is wrong, and
  * the three have three different fixes: correct the address, correct the credential, or grant
@@ -32,7 +32,7 @@ import {
 const bff = createBffClient();
 const PROBE = '/bff-api/backups/destinations/test';
 
-const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-minio:9000';
+const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
 const S3_BUCKET = process.env.BACKUP_TEST_S3_BUCKET || 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env.BACKUP_TEST_S3_ACCESS_KEY || 'mcmbackuptest';
 const S3_SECRET = process.env.BACKUP_TEST_S3_SECRET_KEY || '';
@@ -93,7 +93,7 @@ describeBackupTargets('the four outcomes are told apart (FR-004)', () => {
   it('unreachable → says so, and does NOT say credentials', async () => {
     const res = await bff.post(
       PROBE,
-      s3Draft({ endpoint: 'http://mcm-bff-backup-minio:9999' }),
+      s3Draft({ endpoint: 'http://mcm-bff-backup-rustfs:9999' }),
       auth(),
     );
     expect(res.status).toBe(200);
