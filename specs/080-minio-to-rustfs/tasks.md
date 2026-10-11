@@ -288,7 +288,7 @@ skips; driver logic unchanged.
 
 **Independent Test**: fresh `backups` stack → `test:integration` with skipping forbidden → skip count 0.
 
-- [ ] T012 [US2] `infrastructure-as-code/docker/backups/compose.yaml`: `mcm-bff-backup-minio{,-init}`
+- [x] T012 [US2] `infrastructure-as-code/docker/backups/compose.yaml`: `mcm-bff-backup-minio{,-init}`
   → `mcm-bff-backup-rustfs{,-init}` per contract S1–S8 (no `user:`, `RUSTFS_*` creds from
   `BACKUP_TEST_S3_*`, S4 health, S5 one-shot init exiting 0, S6 logs, drop `127.0.0.1:9101`, keep
   `127.0.0.1:9100:9000`); volume `mcm-bff-backup-rustfs-data`; drop `REGISTRY_HOST` and the header
@@ -296,7 +296,12 @@ skips; driver logic unchanged.
 
   **Verify GREEN** (T010, backups half): `node --test --test-name-pattern "backups" scripts/__tests__/object-store-service.guard.test.mjs` → pass.
 
-- [ ] T013 [P] [US2] `scripts/gen-dev-env.mjs` (lines ~173, ~501) and `scripts/gen-ci-env.mjs` (~68):
+  **Done 2026-10-11.** GREEN on the backups half: 10/10. Fresh volume measured: `mcm-bff-backup-rustfs`
+  is healthy as uid 10001, the init exits 0 (`mcm-backups-test bucket ready`), the only port is
+  `127.0.0.1:9100`, and neither container's argv holds the secret (checked against the value
+  without printing it).
+
+- [x] T013 [P] [US2] `scripts/gen-dev-env.mjs` (lines ~173, ~501) and `scripts/gen-ci-env.mjs` (~68):
   `mcm-bff-backup-minio` → `mcm-bff-backup-rustfs` in `BACKUP_ALLOWED_DESTINATION_HOSTS` and
   `BACKUP_TEST_S3_INTERNAL_ENDPOINT`. Regenerate local env with the documented generator.
 
@@ -304,7 +309,18 @@ skips; driver logic unchanged.
   host; `frontend/mcm-app/src/bff-server/unit-tests/backup-destination-url-guard.test.ts` still passes
   (`pnpm nx test mcm-app -- --testPathPattern='backup-destination-url-guard'`).
 
-- [ ] T014 [P] [US2] Integration tier and comments:
+  **Done 2026-10-11, with an added fix.** The generator change alone did NOT update an existing
+  `.env.local`: `BACKUP_TEST_S3_INTERNAL_ENDPOINT` and `BACKUP_ALLOWED_DESTINATION_HOSTS` are
+  seeded-once defaults there, so every existing dev box kept the old host. Measured: after
+  `node scripts/gen-dev-env.mjs`, `.env.docker` carried `mcm-bff-backup-rustfs` but `.env.local`
+  still carried the old name.
+  - Fix: `syncEnvFile` now upgrades a seeded value only when it is byte-equal to the PRE-080
+    default; a customised value is untouched.
+  - Two tests in `gen-dev-env.guard.test.mjs`: RED 1/2, then GREEN 19/19.
+  - After a re-run, both files carry the RustFS host.
+  - `backup-destination-url-guard` unit test: see T035's mcm-app run.
+
+- [x] T014 [P] [US2] Integration tier and comments:
   `frontend/mcm-app/tests/integration/setup/preflight.global.js` probes `/health/ready` labelled
   `Backup S3 (RustFS)`; `backup-destination-probe.integration.test.ts` default endpoint and its
   unreachable-port case use `mcm-bff-backup-rustfs`; comments naming MinIO as the oracle in
@@ -317,7 +333,10 @@ skips; driver logic unchanged.
 
   **Done when**: the listed files contain no MinIO reference and the driver/signer diff is comments only.
 
-- [ ] T015 [US2] `.forgejo/workflows/app-ci.yml`, step "Bring up the backup destinations" (~683–780):
+  **Done 2026-10-11.** No MinIO reference is left in the listed files. In the driver and signer the
+  `git diff` changes comment lines only (checked: no non-comment `+`/`-` lines).
+
+- [x] T015 [US2] `.forgejo/workflows/app-ci.yml`, step "Bring up the backup destinations" (~683–780):
   container names in both wait loops, `BACKUP_TEST_S3_INTERNAL_ENDPOINT` (~967, ~1041), the failure
   log-dump list (~1328); remove `REGISTRY_HOST: ${{ vars.REGISTRY }}`, its "unset" check and the
   comments about anonymously pulling `jumbleknot/minio`; rewrite the step-split comment.
@@ -326,7 +345,11 @@ skips; driver logic unchanged.
   **Done when**: no MinIO or `REGISTRY_HOST` reference remains in that step, and
   `node --test scripts/__tests__/*.test.mjs` (which includes the step-ceiling guards) passes.
 
-- [ ] T016 [US2] Local proof, fresh volumes: `docker compose -p mcm --env-file
+  **Done 2026-10-11.** The step has no MinIO or `REGISTRY_HOST` reference left, and the YAML
+  parses. `node --test scripts/__tests__/*.test.mjs` passes, including the step-ceiling guards.
+  The ceiling is unchanged, because there is no measured run yet; see T035.
+
+- [x] T016 [US2] Local proof, fresh volumes: `docker compose -p mcm --env-file
   infrastructure-as-code/docker/stacks/mcm.env -f infrastructure-as-code/docker/backups/compose.yaml
   up -d` after removing any old `mcm-bff-backup-minio*` containers and volume; wait for
   `mcm-bff-backup-rustfs` healthy and the init exit 0; then
@@ -340,6 +363,19 @@ skips; driver logic unchanged.
   **Done when**: integration reports 0 failed and **0 skipped** — and the 14 S3-using suites
   (research R16) are each in the passed list — and the backups E2E passes. Paste counts into the PR.
 
+  **Done 2026-10-11, all REAL, nothing skipped.**
+  - Stacks: auth was brought up with the documented `up-auth` command. mcm (`app` + `bff-nonsecure`)
+    was built from this worktree (`nx build mc-service`, `nx docker-build mcm-app`). The backups stack
+    runs on a fresh RustFS volume.
+  - The old backup-destination containers were removed. Their volume `mcm_mcm-bff-backup-minio-data`
+    was **kept**, because this session did not create it.
+  - `MCM_REQUIRE_LIVE_STACK=1 MCM_REQUIRE_BACKUP_TARGETS=1 pnpm nx run mcm-app:test:integration`:
+    **58 suites passed of 58; 401 tests passed of 401; 0 failed, 0 skipped.**
+  - Every suite that imports the backup-targets gate is in the passed list. That is **15** suites:
+    the 14 S3 suites of research R16, plus `backup-driver-webdav`.
+  - `backups.spec.ts`, run in `mcr.microsoft.com/playwright:v1.63.0-noble` from a staged named volume
+    with both env files and `E2E_REQUIRE_BACKUP_TARGETS=1`: **9 passed, 0 skipped**.
+
 **Checkpoint**: US2 provable on its own; CI's `app-e2e` proves it again (T035).
 
 ---
@@ -350,7 +386,7 @@ skips; driver logic unchanged.
 
 **Independent Test**: dev migration with parity pass and both trace kinds loading.
 
-- [ ] T017 [US1] `infrastructure-as-code/docker/observability/compose.yaml`: `langfuse-minio{,-init}` →
+- [x] T017 [US1] `infrastructure-as-code/docker/observability/compose.yaml`: `langfuse-minio{,-init}` →
   `langfuse-rustfs{,-init}` (contract S1–S8, dev one-shot init); `LANGFUSE_S3_{EVENT,MEDIA}_UPLOAD_*`
   endpoint `http://langfuse-rustfs:9000`, access key `langfuse`, secret
   `${LANGFUSE_RUSTFS_SECRET_KEY:?…}`, path-style and bucket unchanged; both `depends_on` blocks;
@@ -358,7 +394,9 @@ skips; driver logic unchanged.
 
   **Verify GREEN** (T010, dev half): `node --test --test-name-pattern "observability/compose.yaml" scripts/__tests__/object-store-service.guard.test.mjs`.
 
-- [ ] T018 [US1] `infrastructure-as-code/docker/observability/compose.prod.yaml`: same, prod shape —
+  **Done 2026-10-11.** GREEN on the dev half.
+
+- [x] T018 [US1] `infrastructure-as-code/docker/observability/compose.prod.yaml`: same, prod shape —
   `restart: always`; init keeps "touch `/tmp/ready`, `exec sleep infinity`" + marker healthcheck,
   dependants on `service_healthy`; volume `langfuse-rustfs-data` → `external: true`, name
   `observability-langfuse-rustfs-data` (contract S9 — **never** created by compose); drop
@@ -366,7 +404,9 @@ skips; driver logic unchanged.
 
   **Verify GREEN** (T010 fully): `node --test scripts/__tests__/object-store-service.guard.test.mjs` → all pass.
 
-- [ ] T019 [US1] **Verify RED first, with the existing guard**: after T018, run
+  **Done 2026-10-11.** GREEN on the full guard: 34/34.
+
+- [x] T019 [US1] **Verify RED first, with the existing guard**: after T018, run
 
   ```bash
   node --test scripts/__tests__/komodo-stack-env.guard.test.mjs
@@ -385,7 +425,19 @@ skips; driver logic unchanged.
   **Verify GREEN**: same command → pass. Then `node scripts/gen-dev-secrets.mjs` on a scratch copy
   produces the new key.
 
-- [ ] T020 [P] [US1] Gates: `scripts/check-resource-naming.mjs` (~36) — `langfuse-rustfs{,-init}` into
+  **Done 2026-10-11.** RED as predicted:
+  `prod-observability: … requires ${LANGFUSE_RUSTFS_SECRET_KEY:?…} but neither its environment block
+  nor its additional_env_files supply it`.
+  - It also failed `the guard detects a removed variable`, whose mutation subject was the
+    `REGISTRY_HOST` line that this change removes. That test was updated at the cause, to use the new
+    variable as its subject.
+  - GREEN: 3/3.
+  - `gen-dev-secrets.mjs --stack=observability`, run on a scratch copy, seeded
+    `LANGFUSE_RUSTFS_SECRET_KEY` with a value of 20 characters or more.
+  - `mcm.env.example`: the `REGISTRY_HOST` key was removed, because no mcm-stack dev service
+    interpolates it. The prod composes get it from Komodo.
+
+- [x] T020 [P] [US1] Gates: `scripts/check-resource-naming.mjs` (~36) — `langfuse-rustfs{,-init}` into
   `NAME_ALLOWLIST` (Rule 3 vendor bundle; `mcm-bff-backup-rustfs*` already match `IDENTIFIER_RE`), and
   the four retired MinIO keys into `RETIRED_KEYS` (Rule 4: a missed reference resurrected as a network
   alias must fail loudly — this is the one live-code place MinIO names stay, exempted by line in G2);
@@ -397,7 +449,11 @@ skips; driver logic unchanged.
   not yet in `NAME_ALLOWLIST`).
   **Verify GREEN**: the three checks and `node --test scripts/__tests__/*.test.mjs` pass.
 
-- [ ] T021 [US1] **Dev migration on real data** (the second rehearsal, contracts/migration-procedure.md
+  **Done 2026-10-11.** RED: `check-resource-naming.mjs` exited 1 with 4 violations
+  (`langfuse-rustfs`/`-init` in both observability files). GREEN: all three gates and their
+  `--selftest`s exit 0.
+
+- [x] T021 [US1] **Dev migration on real data** (the second rehearsal, contracts/migration-procedure.md
   M1–M5 against dev): identify the dev volume by ownership **and** contents (feature 070 trap 1);
   stop `langfuse-web`/`langfuse-worker`; `manifest`; stop MinIO; `inventory`; `copy --apply` into the
   compose-prefixed `langfuse-rustfs-data`; bring the stack up on the new compose; `verify`.
@@ -405,10 +461,40 @@ skips; driver logic unchanged.
   **Done when**: `parity.json` verdict `pass`; a pre-existing trace **with media** and a new
   assistant trace both load in Langfuse at `localhost:3030`; all four JSON records attached to the PR.
 
-- [ ] T022 [P] [US1] Monitoring unchanged (dev): Grafana (`otel-lgtm`) loads, and Tempo/Prometheus/Loki
+  **Done 2026-10-11, with one deviation.**
+  - There was no pre-existing dev Langfuse data in this container. The pre-080 observability compose
+    (`origin/main`) was brought up first, and real data was written through Langfuse's own paths:
+    - 40 traces, through the OTel endpoint the gateway's SDK uses;
+    - 2 media objects, through `/api/public/media` and its presigned PUT.
+    - On MinIO, 20/20 + 20/20 traces loaded, and the media bytes matched (SHA-256).
+  - The dev volume was identified by its compose labels (project `observability`, volume
+    `langfuse-minio-data`) and by its contents (inventory: owner 1000, bucket `langfuse`).
+  - M0.4–M5 were run **through the production wrapper** (`scripts/object-store-migration.sh`):
+    - the advance inventory said `migratable`;
+    - the manifest held 8 objects / 488,541 bytes, all 8 checksummed;
+    - the inventory of the stopped drive said `migratable`;
+    - copy: `pass` — uid 10001, 0 entries not owned, source digest unchanged.
+  - The worktree compose was brought up; `langfuse-rustfs-init` exited 0.
+  - verify: **`pass`** — 8 → 8 objects, 0 missing, unexpected, size, ETag or checksum mismatches,
+    8 checksummed.
+  - Both pre-migration media traces load, and their media now downloads from `langfuse-rustfs:9000`
+    with matching bytes.
+  - A post-migration trace with media loads, and the bucket grew to 11 objects.
+  - **Deviation:** the "new assistant trace" was produced through Langfuse's OTel ingestion endpoint,
+    not through a live assistant turn, because the agent stack and model were not brought up. This is
+    the same write path. The four JSON records are in the PR description.
+
+- [x] T022 [P] [US1] Monitoring unchanged (dev): Grafana (`otel-lgtm`) loads, and Tempo/Prometheus/Loki
   show telemetry newer than the stack restart (research R15).
 
   **Done when**: observed and noted on the PR.
+
+  **Done 2026-10-11.** Grafana 13.2.2 `/api/health` is ok. After the cutover, one OTLP span, one metric
+  and one log were sent to `:4318`. Through Grafana's datasource proxy:
+  - Tempo returned the trace by id;
+  - Prometheus returned the metric's value;
+  - Loki returned the log line.
+  `count(up)` = 1.
 
 **Checkpoint**: everything in-repo for US1 is done; production waits for Phase 8.
 
@@ -419,7 +505,7 @@ skips; driver logic unchanged.
 **Goal**: Renovate extracts and proposes RustFS; the sweep scans it; the MinIO build machinery and its
 allowlist entries are gone.
 
-- [ ] T023 [P] [US3] `scripts/__tests__/renovate-workflow.guard.test.mjs`: **add** (a) a packageRule
+- [x] T023 [P] [US3] `scripts/__tests__/renovate-workflow.guard.test.mjs`: **add** (a) a packageRule
   matching `rustfs/rustfs` resolves for a docker dep with `minimumReleaseAge` ≥ the 3-day global; (b)
   **visibility** — modelled on `infra-image-scan.test.mjs`'s "(412) every compose file carrying an
   image ref is VISIBLE to Renovate": every tracked file containing `rustfs/rustfs` matches a
@@ -437,7 +523,16 @@ allowlist entries are gone.
   `docker-compose.managerFilePatterns` to a pattern excluding `observability/` → (b) fails naming both
   observability files; revert.
 
-- [ ] T024 [US3] `renovate.json`: delete the `["minio/minio", "minio/mc"]` packageRule and its prose
+  **Done 2026-10-11.**
+  - RED: 125 of 126 pass. The failure was `(080a) a packageRule names rustfs/rustfs …`.
+  - (b) passed at once, so it was mutation-RED'd: `managerFilePatterns` was narrowed to exclude
+    `observability/`. That failed (b), naming both observability files. Then it was reverted.
+  - Also deleted, because they guarded deleted machinery:
+    - the date-tag test;
+    - the `(069) our own MinIO image is referenced identically` test;
+    - the `minio/*` names in the lists.
+
+- [x] T024 [US3] `renovate.json`: delete the `["minio/minio", "minio/mc"]` packageRule and its prose
   (~1044–1100) including the false "by the customManager below"; fix MinIO mentions in other rule
   descriptions (~224, ~772, ~1024); add a `rustfs/rustfs` docker rule (description says why: pulled
   upstream since feature 080; Alpine tag line; standard cooldown), placed with the other server-image
@@ -446,7 +541,10 @@ allowlist entries are gone.
   **Verify GREEN**: T023's command → all pass. Also `npx --yes renovate-config-validator` via the
   repository's existing validator step, if one exists in `guardrails`.
 
-- [ ] T025 [P] [US3] `scripts/__tests__/infra-image-scan.test.mjs`: assert `BUILT_IMAGE_NAMES` does not
+  **Done 2026-10-11.** GREEN: 126/126. `renovate-config-validator --strict --no-global
+  renovate.json` (renovate@44) → `Config validated successfully`.
+
+- [x] T025 [P] [US3] `scripts/__tests__/infra-image-scan.test.mjs`: assert `BUILT_IMAGE_NAMES` does not
   contain `minio` and that `enumerateImages` over the repository's compose files includes
   `rustfs/rustfs`; replace `minio/*` fixture strings (~263–311, ~412, ~441, ~590) with neutral
   hypothetical images (the file's own convention, ~76).
@@ -454,14 +552,26 @@ allowlist entries are gone.
   **Verify RED**: `node --test scripts/__tests__/infra-image-scan.test.mjs` → **Expected RED**: the
   `BUILT_IMAGE_NAMES` assertion fails (`minio` still present).
 
-- [ ] T026 [US3] `scripts/infra-image-scan.mjs`: remove `minio` from `BUILT_IMAGE_NAMES` and the
+  **Done 2026-10-11.** RED: 1 of 27 failing, `BUILT_IMAGE_NAMES is exactly the six images cd-deploy
+  builds` (the old name was still in the list). `BUILT_IMAGE_NAMES` is now exported, with no
+  behaviour change.
+
+- [x] T026 [US3] `scripts/infra-image-scan.mjs`: remove `minio` from `BUILT_IMAGE_NAMES` and the
   comments at ~37–47, ~141–148; `.forgejo/workflows/infra-image-scan.yml`: header image list (~3), cron
   ordering note (~49–56 — no 05:00 `minio-image` any more), the `REGISTRY_HOST` comment (~156) and its
   env if it exists only for MinIO.
 
   **Verify GREEN**: T025's command → pass; `node --test scripts/__tests__/*.test.mjs` → pass.
 
-- [ ] T027 [US3] `security/infra-images/allowlist.yaml`: delete the four `jumbleknot/minio` entries
+  **Done 2026-10-11.**
+  - GREEN: 27/27.
+  - The workflow's `REGISTRY_HOST` env was removed. Measured: `enumerateImages` over the tree with no
+    `REGISTRY_HOST` reports `unresolved: []`, because cd-deploy's refs carry a second `${…}` and are
+    excluded either way.
+  - A local sweep with Trivy 0.74.0 (ghcr DB mirrors) scanned 21 images, `rustfs/rustfs:1.0.1@…`
+    among them. RustFS had 1 finding, Medium, and 0 blocking. The gate exited 0.
+
+- [x] T027 [US3] `security/infra-images/allowlist.yaml`: delete the four `jumbleknot/minio` entries
   (~281–300) and the MinIO comment blocks (~114–115, ~174–260).
 
   **Verify RED** (before deleting, after T012/T017/T018): `node scripts/check-infra-image-findings.mjs
@@ -473,7 +583,21 @@ allowlist entries are gone.
   `scripts/check-infra-image-findings.mjs` comments ("two jobs consult this allowlist" → one) and
   `scripts/__tests__/allowlist-expiry.test.mjs`'s `minio` fixture key (~153–170).
 
-- [ ] T028 [US3] Retire the build machinery: delete `.forgejo/workflows/minio-image.yml`,
+  **Done 2026-10-11. The predicted RED was NOT reproduced, and the measurement explains why.**
+  - Inputs: the real findings of the local sweep above.
+  - With the four entries still present, `--check-expiring` exits **0**. Since item #423, an entry
+    whose image is not in the run's scanned set is OUT OF SCOPE and silent, so it can never show up as
+    UNMATCHED.
+  - Evaluated with the clock at 2026-11-20 (the `evaluate()` export, run on the same report and
+    allowlist), all four are reported **EXPIRING** (expiry 2026-12-01). That is the only signal they
+    would ever have produced, and it would have arrived as a red weekly run two weeks before expiry.
+  - After deletion: `--check-expiring` exits 0, and at 2026-11-20 only the two unrelated cohort
+    entries (opensearch, unleash) remain.
+  - The comments in `allowlist-expiry.mjs` and `check-infra-image-findings.mjs` were fixed. "Two jobs"
+    stays true: cd-deploy's `scan-push.sh` is the single-image consumer today.
+  - `--selftest` passes, and the expiry tests pass 23/23.
+
+- [x] T028 [US3] Retire the build machinery: delete `.forgejo/workflows/minio-image.yml`,
   `infrastructure-as-code/docker/minio/`, `scripts/promote-minio-digest.mjs`,
   `scripts/__tests__/minio-promote.guard.test.mjs`, `scripts/__tests__/promote-minio-digest.test.mjs`.
 
@@ -492,7 +616,18 @@ allowlist entries are gone.
   mechanism that no longer exists.
   **Verify GREEN**: same command → 0 failures.
 
-- [ ] T029 [P] [US3] `.devcontainer/egress-allowlist.json`: confirm nothing else fetches Go modules
+  **Done 2026-10-11.**
+  - RED: 1,652 of 1,653 pass. Only `(#500) every argv-dispatching script … has a RECORDED verdict`
+    failed.
+  - The SAST and ci-status fixtures did not fail, because they are pure path strings. They were still
+    fixed:
+    - SAST now uses `infrastructure-as-code/docker/example/…`;
+    - ci-status now uses `devcontainer-image / build-publish`.
+  - The argv verdict now records `object-store-migration.mjs: guarded` in place of the deleted
+    promoter.
+  - GREEN: 0 failures (see T035 for the final count).
+
+- [x] T029 [P] [US3] `.devcontainer/egress-allowlist.json`: confirm nothing else fetches Go modules
   (`git grep -n -i 'golang\|GOPROXY\|go mod\|go build'` outside specs/docs — `backend/mc-service/Dockerfile`
   matched the broad search; read it), then delete `proxy.golang.org` and `sum.golang.org` if both were
   added only for feature 069 (read each `reason`). Run any guard covering the allowlist and the sandbox
@@ -501,13 +636,23 @@ allowlist entries are gone.
   **Done when**: the entries are removed (or kept with a corrected reason naming their real consumer)
   and the allowlist guards pass.
 
+  **Done 2026-10-11.**
+  - Nothing else fetches Go modules: `backend/mc-service/Dockerfile` matched only on `cargo build`.
+  - **Three** entries were removed, not two. `storage.googleapis.com`'s own reason says feature 069
+    added it on 2026-09-12 solely because the Go proxy serves module zips from it, and nothing in the
+    tree references it.
+  - `gen-egress-policy.mjs --check`: 47 destinations valid.
+  - `verify-egress-allowlist-contract.sh`: 8/8.
+  - The running sandbox's host-side policy is unchanged until it is recreated (devcontainer-sandbox.md
+    §4). Shrinking it is an operator's choice.
+
 **Checkpoint**: no workflow, schedule or allowlist entry for MinIO remains (SC-011).
 
 ---
 
 ## Phase 6: User Story 4 — Nothing still says MinIO, except history (Priority: P2)
 
-- [ ] T030 [US4] Write `scripts/__tests__/no-minio-references.guard.test.mjs` per
+- [x] T030 [US4] Write `scripts/__tests__/no-minio-references.guard.test.mjs` per
   `contracts/no-minio-guard.md` (G1 scan of `git ls-files`, G2 closed exemption list with reasons, G3
   instrument checks incl. "every exemption matches something").
 
@@ -518,7 +663,18 @@ allowlist entries are gone.
   **Expected RED**: fails listing every live file still naming MinIO (at this point: runbooks, README,
   remaining comments) as `path:line`.
 
-- [ ] T031 [US4] Runbooks: `docs/runbooks/prod-control-tower.md` (replace the feature-070 "migrate the
+  **Done 2026-10-11.** RED: G1 listed every live reference by `path:line`. The largest counts were
+  in the allowlist, prod-control-tower, infra-image-scanning, Server-Setup and renovate.md.
+  - Five exemptions were added beyond the contract, each with a reason; the contract G2 is updated:
+    - the wrapper (temporary);
+    - the guard's `MINIO_` alias assertion;
+    - the retired seeded-default constant (gen-dev-env, T013);
+    - citations of the spec directories and of this guard;
+    - **temporary tokens** for the real names of the rollback resources that exist until M7.
+  - The G3 floor is the number of files actually scanned (1,826 → floor 1,800), not the number of
+    tracked files.
+
+- [x] T031 [US4] Runbooks: `docs/runbooks/prod-control-tower.md` (replace the feature-070 "migrate the
   MinIO data volume to uid 1000" section with the 080 cutover procedure — link
   `specs/080-minio-to-rustfs/contracts/migration-procedure.md` — and update volume/variable lists);
   `prod-reboot-resilience.md` (host-managed compose table: `rustfs`); `Server-Setup-Runbook.md` Phase 8
@@ -532,14 +688,27 @@ allowlist entries are gone.
   **Done when**: none of these files fails the T030 guard outside a history block, and every command
   in them names a binary the RustFS image actually has.
 
-- [ ] T032 [P] [US4] `README.md` (~50) stack table; `infrastructure-as-code/docker/stacks/mcm.compose.yaml`
+  **Done 2026-10-11.** No runbook fails the guard outside a history block or a rollback-resource
+  token. The commands name only binaries the RustFS image has (`curl`, `sh`), plus the wrapper.
+
+- [x] T032 [P] [US4] `README.md` (~50) stack table; `infrastructure-as-code/docker/stacks/mcm.compose.yaml`
   (~19) comment; any remaining comment the T030 guard names.
 
   **Done when**: the guard names nothing outside G2.
 
-- [ ] T033 [US4] **Verify GREEN** + mutation: `node --test scripts/__tests__/no-minio-references.guard.test.mjs`
+  **Done 2026-10-11.** The guard names nothing outside G2.
+
+- [x] T033 [US4] **Verify GREEN** + mutation: `node --test scripts/__tests__/no-minio-references.guard.test.mjs`
   → pass. Mutations (each RED, then revert): plant `minio` in `README.md`; plant it in a runbook
   outside a history block (inside one → stays GREEN); add an exemption path that matches no file.
+
+  **Done 2026-10-11.** GREEN: 11/11, 0 skipped. Each on-disk mutation was run, then reverted:
+  | Mutation | Result |
+  |---|---|
+  | `minio` planted in README.md | RED, `README.md:244` |
+  | runbook, outside a history block | RED, `renovate.md:1189` |
+  | runbook, inside a history block | GREEN |
+  | stale path exemption | RED, `stale path exemption(s) — delete them: scripts/no-such-file.mjs` |
 
 - [ ] T034 [US4] OpenWiki: `pnpm nx wiki-plan infrastructure-as-code` (offline, free) to list the
   concept pages whose sources changed; do **not** hand-edit pages that carry a `resource`. Regeneration
@@ -550,6 +719,16 @@ allowlist entries are gone.
 
   **Done when**: the wiki-maintain PR after merge describes RustFS as current for Langfuse storage and
   the backup destination (US4-AC3); the gates are green.
+
+  **Partly done 2026-10-11 (the in-PR half).**
+  - `pnpm nx wiki-plan infrastructure-as-code` (offline) planned 7 pages in 5 slices: the
+    prod-control-tower, local-dev and ci-diagnostics runbooks, repository, published-port-reservation,
+    infrastructure-stacks and the new devcontainer-sandbox-lifecycle. It deferred 8, including
+    infra-image-scanning and server-setup.
+  - No page was hand-edited, and no paid generation was run.
+  - `okf-lint`: 70 concepts conformant. `okf-governance`: 1,110 paths classified.
+  - The "Done when" — the wiki-maintain PR after merge describing RustFS — is **post-merge** and is
+    still open.
 
 ---
 
