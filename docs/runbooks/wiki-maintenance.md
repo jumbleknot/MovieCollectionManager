@@ -841,35 +841,32 @@ drift is NOT checked for these:
 If that count climbs, drift coverage is falling — investigate the generator's provenance pass rather
 than the pages. A silent loss of coverage is precisely the failure this counter exists to make loud.
 
-### Drift is reported, never planned
+### How a concept falls behind, and what re-plans it
 
-V12 is **warn-only** — it never touches the exit code — and it is **not an input to the planner**.
-`planSlices` in `scripts/wiki-maintain.mjs` takes only the paths changed since the run-record marker
-and the carried-forward backlog; its header says so deliberately, because one edit to a widely cited
-file would fan out across every concept citing it and never clear. The consequence is that a concept
-which falls behind the marker — its source changed, but the slice that should have refreshed it did
-not — is **not re-planned automatically**. The V12 list is the only place it shows up, and clearing
-it takes a hand-seeded sweep (`--since <ref>`, or pages put in the run record's `backlog`).
+V12 is **warn-only**: it never touches the exit code, so a documentation edit never waits on a paid
+regeneration. Re-planning is the planner's job. Besides the paths changed since the run-record marker
+and the carried-forward backlog, each plan takes up to `DRIFT_PAGES_PER_RUN` drifted concepts from the
+budget left over, and reports the rest (feature 082; see "Pages that fell behind the marker: drift, and
+parking" in §3). Drift is not fanned out from changed paths: one edit to a widely cited file would
+otherwise enqueue every concept citing it at once, and never clear. The bound is what keeps it finite.
 
-Known ways a concept falls behind, each tracked:
+The routes by which a concept used to fall behind, and what closed each:
 
-- **#526** — the general gap: nothing re-plans a concept once the marker has passed its source change.
-- **#587 (fixed)** — a refresh slice that wrote nothing for one of its requested pages used to
-  verify, because the only check was that the requested pages *exist*. An existing page that had not
-  been rewritten counted toward `noChange`, and the marker advanced past the change. Measured on
-  `openwiki/runbooks/renovate.md`, 2026-09-26. `verifySlice` now fails the slice for such a page when
-  its source is newer than its stamp (§3, cause 4), so the page returns to the backlog and the marker
-  holds. This closes the route by which a *planned* page fell behind; #526 remains for pages that were
-  never planned.
-- **#616 (open; its guards are in place)** — a run that only stripped a page's `verified:` block counted as a
-  refresh, and left Markdown and Claims inconsistent (proposal #615). The cause is openwiki's own restore path when a
-  worker exits without submitting. Both guards shipped in #617: a requested page changed only in front matter is
-  judged stale (§3, cause 4), and V16 fails a non-durable bundle. The item stays **open** for its last criterion, a
-  real refresh of `runbooks/ci-diagnostics.md`, which the current Fireworks model cannot generate (see #589). Do not
-  describe #616 as fixed.
-- **#525** — the drift-driven sweep that clears the current V12 list. It was blocked on #587 and on
-  the canonical documents being corrected first (#588, done), so that it does not regenerate from
-  wrong sources.
+- **#526 (closed by feature 082)**: nothing re-planned a concept once the marker had passed its source
+  change. On 2026-09-20, 23 of 68 concepts were in that state. Drift slices now re-plan them a bounded
+  number per run. A deliberately **parked** page is excluded and listed instead.
+- **#587 (fixed)**: a refresh slice that wrote nothing for one of its requested pages used to verify,
+  because the only check was that the requested pages *existed*. An existing page that had not been
+  rewritten counted toward `noChange`, and the marker advanced past the change. Measured on
+  `openwiki/runbooks/renovate.md`, 2026-09-26. `verifySlice` now fails the slice for such a page when its
+  source is newer than its stamp (§3, cause 4), so the page returns to the backlog and the marker holds.
+- **#616 (closed)**: a run that only stripped a page's `verified:` block counted as a refresh, and left
+  Markdown and Claims inconsistent (proposal #615). The cause is openwiki's own restore path when a worker
+  exits without submitting. Both guards shipped in #617: a requested page changed only in front matter is
+  judged stale (§3, cause 4), and V16 fails a non-durable bundle. #685 later added the restore of a failed
+  page's page, sidecar and manifest entry, so such bytes can no longer ride along on a proposal.
+- **#525 (closed)**: the one-off drift-driven sweep that cleared the 2026-09 V12 list, once #587 and the
+  canonical-document corrections (#588) were in place.
 
 **Read a V12 line with its stamp in mind.** The comparison is the source's last **commit** date
 against the page's stamp (the newest of `generated.at`, `verified.at` and `timestamp`). Several pages
