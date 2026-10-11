@@ -1,28 +1,19 @@
 {
-  "coveredCommit": "c51d9a99b04f73fd74f7aa7c608f710e51aced3b",
-  "coveredAt": "2026-10-11T17:21:40.009Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "b18a0f43dae03cd9271d3c0aa8746945704b9cac",
+  "coveredAt": "2026-10-11T23:58:28.672Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
       "area": "runbooks",
       "pages": [
         "devcontainer-sandbox.md",
-        "renovate.md"
-      ],
-      "kind": "refresh",
-      "areaExists": true,
-      "reason": "unparked for item #719: the per-turn output cap is now 65536 on Fireworks (PR #732)",
-      "subjects": {}
-    },
-    {
-      "area": "runbooks",
-      "pages": [
-        "wiki-maintenance.md"
+        "renovate.md",
+        "infra-image-scanning.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/wiki-maintenance.md"
+      "reason": "unparked for item #719: the per-turn output cap is now 65536 on Fireworks (PR #732); source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/infra-image-scanning.md"
     },
     {
       "area": "runbooks",
@@ -33,76 +24,47 @@
       "subjects": {},
       "areaExists": true,
       "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox-lifecycle.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above \u2014 the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 735,
-    "headCommit": "65d1bd28cc3af6b6ac52cf20f5bf1e9a80b08585",
+    "number": 737,
+    "headCommit": "ad8e92d6c564f00d475916fc1838d6c07f1dab58",
     "markerBefore": "c51d9a99b04f73fd74f7aa7c608f710e51aced3b",
     "slices": [
       {
-        "area": "invariants",
-        "pages": [
-          "published-port-reservation.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp"
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "sast.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/sast-scanning.md"
-      },
-      {
         "area": "runbooks",
         "pages": [
-          "sast-scanning.md",
-          "prod-reboot-resilience.md",
-          "infra-image-scanning.md"
+          "wiki-maintenance.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/wiki-maintenance.md"
+        "reason": "unparked for item #719: the per-turn output cap is now 65536 on Fireworks (PR #732); source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/infra-image-scanning.md"
       }
     ],
-    "updatedAt": "2026-10-11T23:01:33.655Z"
+    "updatedAt": "2026-10-11T23:58:29.157Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 6,
-    "elapsedSeconds": 2194,
+    "pagesWritten": 7,
+    "elapsedSeconds": 894,
     "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/wiki-maintenance.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T19:40:23.757Z",
-      "failuresAtLow": 2
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 378,
+    "calls": 101,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2909730,
-    "cached": 33179770,
+    "uncached": 323000,
+    "cached": 10307284,
     "cacheWrite": 0,
-    "output": 513876,
-    "reasoning": 413938,
-    "ms": 5032807,
-    "estCostUsd": 1.6886,
+    "output": 112607,
+    "reasoning": 72185,
+    "ms": 884837,
+    "estCostUsd": 0.2939,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -112,16 +74,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "invariants/published-port-reservation.md",
-        "projects/sast.md",
-        "runbooks/sast-scanning.md",
-        "runbooks/prod-reboot-resilience.md",
-        "runbooks/infra-image-scanning.md",
         "runbooks/wiki-maintenance.md"
       ],
       "effort": "low",
-      "deadlineStop": true,
-      "estCostUsd": 1.6886,
+      "deadlineStop": false,
+      "estCostUsd": 0.2939,
       "rateLimited": null
     }
   ]
