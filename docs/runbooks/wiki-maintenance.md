@@ -642,7 +642,12 @@ run — while conformance (V16 included) and policy are clean, `verifySlice` spl
 names the pages that did not land, `failedParts` holds only those pages, and `landedParts` holds every other requested
 page, area-mates of a failed page included. The landed pages are proposed (`proposableSlices`: verified invocations
 plus landed parts), and only the failed pages return to the backlog. A **whole-invocation** failure (conformance or
-policy) still proposes nothing and returns every part. Three runs set this shape:
+policy) still proposes nothing and returns every part. The one exception is a conformance failure **confined
+to the pages that failed**. When the only violation not attributable to a page is the conformance gate, the failed
+pages are restored first (below) and the slice is judged again. If the bundle is then conformant, the break was
+theirs, and the pages that landed are proposed. Run 5104 (2026-10-11) needed this: 13 of 15 workers submitted, but
+`runbooks/ci-evidence-pipeline.md`'s worker died on repeated HTTP 412s mid-edit, and its uncertified bytes (V16)
+discarded all 13 (~$2.66). Four runs set this shape:
 
 - Run 4399 (2026-10-01) verified `runbooks/backlog.md` but proposed nothing, because `projects/sast.md` in the same
   invocation was still stale at the deadline. The backlog page's source change was already behind the marker, so

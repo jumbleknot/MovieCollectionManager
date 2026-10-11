@@ -1314,6 +1314,73 @@ test('execute (#719): a failed page\'s worker trail is printed from the page-att
   assert.match(trail[0], /gotchas\/two\.md: 2 call\(s\).*never called submit_page.*tool_calls\[write_file\] → length\[\]/);
 });
 
+test('execute (run 5104): a V16 break confined to a FAILED page is restored, and the pages that landed are still proposed', () => {
+  // Run 5104 (2026-10-11): 13 of 15 workers submitted, but runbooks/ci-evidence-pipeline.md's worker died
+  // on HTTP 412 and its page was left with bytes its Claims sidecar does not certify. V16 is a
+  // whole-invocation conformance failure, so all 13 landed pages (~$2.66) were discarded. The break was
+  // confined to a page that failed anyway, and #685's restore puts that page's triple back to its committed bytes.
+  const root = twoAreaRepo();
+  try {
+    writeFileSync(join(root, 'README.md'), 'source\n');
+    const page = (body) => `---\ntype: Convention\ntitle: two\ndescription: Stale.\nresource: README.md\ntimestamp: 2020-01-01T00:00:00Z\nverified:\n  - by: openwiki/0.7.1\n    at: 2020-01-02T00:00:00Z\n---\n${body}\n`;
+    const certified = page('Certified.');
+    const hash = `sha256:${createHash('sha256').update(certified).digest('hex')}`;
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), certified);
+    writeFileSync(join(root, 'openwiki', 'gotchas', 'index.md'), '# Gotchas\n- [two](two.md)\n');
+    mkdirSync(join(root, 'openwiki', '.claims', 'gotchas'), { recursive: true });
+    writeFileSync(join(root, 'openwiki', '.claims', 'gotchas', 'two.json'), JSON.stringify({ pageVersion: hash, verification: { by: 'openwiki/0.7.1', at: '2020-01-02T00:00:00Z' }, claims: [] }));
+    writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/gotchas/two.md': { pageVersion: hash } } }));
+    spawnSync('git', ['add', '-A'], { cwd: root });
+    spawnSync('git', ['commit', '-qm', 'certified, stale page'], { cwd: root });
+    const committed = (rel) => spawnSync('git', ['show', `HEAD:${rel}`], { cwd: root, encoding: 'utf8' }).stdout;
+
+    const good = sl('invariants', ['one.md']);
+    const died = sl('gotchas', ['two.md']);
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [good, died], attemptsPerSlice: 1,
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        // The worker that died mid-edit: bytes changed, sidecar untouched, stamp not moved.
+        writeFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), page('Half-edited by a worker that died.'));
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.deepEqual(result.results[0].failedPages, ['gotchas/two.md'], 'the failure is attributed to the page that failed');
+    assert.deepEqual(mod.proposableSlices(result).map((s) => [s.area, s.pages]), [['invariants', ['one.md']]], 'the landed page is proposed');
+    assert.equal(result.pagesWritten, 1);
+    assert.equal(readFileSync(join(root, 'openwiki', 'gotchas', 'two.md'), 'utf8'), committed('openwiki/gotchas/two.md'), 'the broken page is back at its certified bytes');
+    const okf = spawnSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs'), '--bundle', join(root, 'openwiki')], { cwd: REPO_ROOT, encoding: 'utf8' });
+    assert.equal(okf.status, 0, `the proposed tree is conformant:\n${okf.stdout}${okf.stderr}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (run 5104): a V16 break on a page that LANDED still fails the whole invocation', () => {
+  // The confinement check must not launder a real break: when restoring the failed pages does not make
+  // the bundle conformant, nothing is proposed.
+  const root = coveredPageRepo();
+  try {
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'), record: mod.readRunRecord(root),
+      slices: [sl('invariants', ['one.md', 'missing.md'])], attemptsPerSlice: 1,
+      invoke: () => {
+        writingStub(root, 'invariants', ['one.md'])();
+        writeFileSync(join(root, 'openwiki', 'gotchas', 'forced.md'), 'broken but finished'); // unrequested, not failed
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.match(result.results[0].violations.join('\n'), /V16/);
+    assert.deepEqual(mod.proposableSlices(result), [], 'nothing is proposable from a tree the restore did not repair');
+    assert.equal(result.pagesWritten, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('execute (#685): a failed part\'s path that was ALREADY dirty before the invocation is left alone', () => {
   const root = twoAreaRepo();
   try {
