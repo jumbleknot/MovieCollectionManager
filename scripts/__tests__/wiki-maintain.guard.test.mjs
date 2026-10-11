@@ -534,14 +534,18 @@ test('the target names NO provider or model — nx would let it overwrite the jo
   assert.ok(!('OPENWIKI_PAGE_CONCURRENCY' in env), 'concurrency is resolved and validated by wiki-provider.mjs');
 });
 
-test('the explicit output cap reaches the generator for EVERY provider', () => {
+test('the explicit output cap reaches the generator for EVERY provider, and a provider may only raise it', () => {
   // FR-004: the 4096-fallback lesson is provider-independent. The cap lives in the target env (one
-  // value, applies to all providers); the launcher must pass it through untouched for each of them.
+  // value, the floor for all providers). Since item #719 a provider row may RAISE it (Fireworks, whose
+  // model reasons inside the output budget and was truncated at 16384 on dispatch 5115), so the premise
+  // is now: every provider gets AT LEAST the target's cap, and exactly its own raise where it has one.
   const cap = wikiUpdateEnv().OPENWIKI_MAX_OUTPUT_TOKENS;
   for (const provider of Object.keys(WIKI_PROVIDERS)) {
     const [credential] = WIKI_PROVIDERS[provider].credential.accepted;
     const child = buildGeneratorEnv({ MCM_WIKI_PROVIDER: provider, [credential]: 'x', OPENWIKI_MAX_OUTPUT_TOKENS: cap });
-    assert.equal(child.OPENWIKI_MAX_OUTPUT_TOKENS, cap, `${provider}: the cap must reach the generator`);
+    const expected = String(Math.max(Number(cap), WIKI_PROVIDERS[provider].maxOutputTokens ?? 0));
+    assert.equal(child.OPENWIKI_MAX_OUTPUT_TOKENS, expected, `${provider}: the cap (or the provider's raise) must reach the generator`);
+    assert.ok(Number(child.OPENWIKI_MAX_OUTPUT_TOKENS) >= Number(cap), `${provider}: a provider never lowers the target's cap`);
     assert.ok(Number(child.OPENWIKI_MAX_OUTPUT_TOKENS) >= MIN_OUTPUT_TOKENS, provider);
   }
 });

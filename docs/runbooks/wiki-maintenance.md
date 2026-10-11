@@ -174,6 +174,18 @@ it in one line, and the symptom is a green build with an empty diff. `wiki-updat
 that value, not any vendor table, is the one that reaches the model. The model is pinned at
 **`claude-sonnet-5`** (`OPENWIKI_MODEL_ID` in `infrastructure-as-code/project.json`).
 
+**The target's 16384 is a floor; a provider may raise it (item #719).** On Fireworks, DeepSeek V4.1 Flash
+reasons inside its output budget, and a page worker that writes a whole page in one `write_file` turn can
+need more than 16384. Dispatch 5115 (2026-10-11) measured exactly that: `runbooks/wiki-maintenance.md`
+ended both attempts with `finish: length` at `output: 16384` (5,891 reasoning tokens plus about 10.5k of page
+text) before the tool call, which openwiki reports as "exited without submitting". The 2026-08 4096 defect
+recurred at a higher cap. The `fireworks` row in `scripts/wiki-provider.mjs` therefore sets
+`maxOutputTokens: 65536`, and the launcher raises `OPENWIKI_MAX_OUTPUT_TOKENS` to it, never lowering an explicit
+higher value. The `anthropic` row has no raise: the Anthropic TypeScript SDK refuses a **non-streaming** request
+whose `max_tokens` implies more than ten minutes (about 21k), so a higher global cap could break that provider
+outright. Output tokens are billed only when generated, so the raise costs nothing on turns that do not need it.
+The worker trail (§2, "What a run cost") shows a truncated turn as `length[]`.
+
 **The pin has made a round trip, and both moves were deliberate.** Feature 043 (2026-07-27) pinned
 `claude-sonnet-5`. The 2026-08-01 fix above moved it to `claude-sonnet-4-6` — an id the vendor table
 *did* match, which was the only way to escape the 4096 fallback before an explicit cap existed.

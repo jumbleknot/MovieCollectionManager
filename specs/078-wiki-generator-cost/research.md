@@ -362,3 +362,24 @@ the branch head with the `wiki-update` target's environment.
   at `low` in CI run 4801, landed here at the default effort, on 0.7.1, as one of four parallel pages. openwiki
   prints nothing per attempt, so whether the new worker retry fired cannot be told. T050 watches real runs.
 - The probe's output was discarded unreviewed. CI regenerates those pages after merge.
+
+## R18: the per-turn output cap is per provider (item #719, 2026-10-11)
+
+(R17 is reserved for T050's close-out, item #690.)
+
+**Measured.** Dispatch 5115 was the first run with page-attributed usage (PR #722). `runbooks/wiki-maintenance.md`'s
+worker ended both attempts with `finish: length` and `output: 16384`, the last with 5,891 reasoning tokens. No call
+returned a non-200 (577 of 577). The other 14 workers submitted. This is the 044 failure mode (a turn truncated
+before its tool call is a ReAct stop), recurring at the explicit 16384 cap now that a reasoning model spends part of
+that budget thinking.
+
+**Decision (operator, 2026-10-11).** Treat it as a configuration fix under this feature, not a new spec. The target's
+`OPENWIKI_MAX_OUTPUT_TOKENS=16384` stays as the guarded floor. `WIKI_PROVIDERS.fireworks.maxOutputTokens = 65536`
+raises it for Fireworks only.
+- **The limit:** third-party catalogs list DeepSeek V4.1 Flash's output limit at about 384K–393K. The first run with
+  the raise confirms it on the wire.
+- **Why not Anthropic:** the Anthropic TypeScript SDK refuses non-streaming requests above about 21k `max_tokens`.
+- **Cost:** billed per generated token, so there is no cost when a turn does not need the room.
+
+The guard test now asserts that a provider may only raise the target's cap.
+
