@@ -13,6 +13,8 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
+  - id: openwiki-source-9ccd48df872db70bfebbfa90
+    resource: repo://infrastructure-as-code/docker/minio/Dockerfile
   - id: openwiki-source-4822620909fed304f1c4de8a
     resource: repo://pnpm-lock.yaml
   - id: openwiki-source-40275cb92c3610938f16ade3

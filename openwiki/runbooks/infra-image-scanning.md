@@ -33,6 +33,8 @@ sources:
     resource: repo://scripts/publish-sweep-verdict.mjs
   - id: openwiki-source-4708763005c35901b04f5740
     resource: repo://security/infra-images/allowlist.yaml
+  - id: openwiki-source-0a3ed93b2a41764b679ff58d
+    resource: repo://security/infra-images/severity-map.yaml
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
 verified:
   - by: openwiki/0.7.1
