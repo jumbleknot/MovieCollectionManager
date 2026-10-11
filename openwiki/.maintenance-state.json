@@ -6,6 +6,17 @@
     {
       "area": "runbooks",
       "pages": [
+        "devcontainer-sandbox.md",
+        "renovate.md"
+      ],
+      "kind": "refresh",
+      "areaExists": true,
+      "reason": "unparked for item #719: the per-turn output cap is now 65536 on Fireworks (PR #732)",
+      "subjects": {}
+    },
+    {
+      "area": "runbooks",
+      "pages": [
         "wiki-maintenance.md"
       ],
       "kind": "refresh",
@@ -22,7 +33,7 @@
       "subjects": {},
       "areaExists": true,
       "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox-lifecycle.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above \u2014 the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
@@ -113,17 +124,5 @@
       "estCostUsd": 1.6886,
       "rateLimited": null
     }
-  ],
-  "parked": {
-    "runbooks/devcontainer-sandbox.md": {
-      "item": 719,
-      "since": "2026-10-10",
-      "reason": "page worker exits without submitting at any source size or effort (runs 4767, 4846, 5010); parked in PR #718"
-    },
-    "runbooks/renovate.md": {
-      "item": 719,
-      "since": "2026-10-10",
-      "reason": "page worker exits without submitting (run 4998); parked in PR #710"
-    }
-  }
+  ]
 }

@@ -234,14 +234,10 @@ A surviving branch distorts one more thing: `branch/index.js` gates the branch b
 > apply §4's rule and its measured exception. It is safe for `lockFileMaintenance`; assume it is not
 > safe for anything else.
 >
-> **CORRECTED 2026-08-30 (item #290).** This block previously read *"⛔ Never delete a branch that is
-> an OPEN PR's head … for `lockFileMaintenance` it marks the channel rejected"*, and named
-> `renovate/lock-file-maintenance-cargo-deps` as one that "must stay until PR #288 autocloses". The
-> stated consequence was **false for the one channel it named** — see §4 for the code path. The
-> branch was deleted on 2026-08-30 and PR #288 closed with it.
->
-> Recorded so the correction is not merely asserted: this repository had the rule *and* the wrong
-> reason for it, which is the shape it has been bitten by before — a comment standing in for a check
+> Measured for `lockFileMaintenance` on 2026-08-30 (item #290): `renovate/lock-file-maintenance-cargo-deps`
+> was deleted and PR #288 closed with it, and the channel was **not** marked rejected (§4 has the code
+> path). An earlier version of this rule forbade the deletion for exactly that channel, giving the wrong
+> reason — a comment standing in for a check, the shape this repository has been bitten by before
 > (#194, #204, and §2's own `--is-ancestor` note).
 
 ---
@@ -658,21 +654,18 @@ it is this section's own theme once more: a setting that is present, doing nothi
 nothing.
 
 **The fix is a separate branch, not a hand-pin**: a `docker digest pins` packageRule scoped to
-`matchUpdateTypes: ["pinDigest"]`, ordered after `docker base images`. A separate branch is a
+`matchUpdateTypes: ["pinDigest", "digest"]`, ordered after `docker base images`. A separate branch is a
 separate `upgradeKey` namespace. **Verified rather than assumed** — re-running the identical lookup
-with the rule present took the collision count from **eight to zero**. It is scoped by updateType so
-a digest *refresh* of an already-pinned image (updateType `digest`) still rides the normal group;
-only the *initial* pin is separated, and the guard test asserts both halves of that.
+with the rule present took the collision count from **eight to zero**, and the guard test asserts it.
 
-> ⚠️ **SUPERSEDED 2026-09-04 (item #350): the rule now claims `["pinDigest", "digest"]`, and the
-> guard's control was reversed.** The scoping above held only while the image was unpinned. Once
-> `python:3.13-slim` carried a digest (feature 063), its weekly refresh became an updateType `digest`
-> and collided with the same `3.14-slim` version update on the same key — eight times per run,
-> measured with the identical lookup, while the version update it lost to sat pending. So the
-> python digest **never refreshed**: the #303 class reopened for python, reported nowhere. A refresh
-> is the one docker update that *always* shares its key with any version update of the same image,
-> so it needs its own namespace as much as the initial pin does. Verified the #308 way: collision
-> count for python 8 → 0 with the widened rule.
+It claims the digest *refresh* (`digest`) as well as the initial pin (`pinDigest`) because a refresh
+is the one docker update that *always* shares its key with any version update of the same image. It
+was scoped to `pinDigest` alone until 2026-09-04 (item #350): once `python:3.13-slim` carried a digest
+(feature 063), its weekly refresh collided with the `3.14-slim` version update on the same key, eight
+times per run, measured with the identical lookup, while the version update it lost to sat pending.
+The python digest **never refreshed** — the #303 class reopened for python, reported nowhere. Widening
+the rule took python's collision count 8 → 0, verified the #308 way, and the guard's control was
+reversed to match.
 
 ### A release with no timestamp is pending FOR EVER — and a mixed group drops it silently
 
@@ -727,8 +720,7 @@ uv bumps skip feature 034's cooldown — is recorded on the rule itself.
   asserts both halves. Renovate WARNs once per run under this setting, and WARNs are what
   **Repository Problems** (and the item #311 health digest) are built from, so a top-level
   `logLevelRemap` demotes that one message to `info` — a *different* WARN still surfaces.
-- **`docker digest pins` claims `digest` as well as `pinDigest`** — see the SUPERSEDED note under the
-  collision entry above.
+- **`docker digest pins` claims `digest` as well as `pinDigest`** — see the collision entry above.
 
 Verified with the local lookup before and after: python collisions 8 → 0; `quay.io/keycloak/keycloak`
 no longer appears among the releases marked pending for want of a timestamp. Those two runs could
