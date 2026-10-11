@@ -1,8 +1,19 @@
 {
   "coveredCommit": "c51d9a99b04f73fd74f7aa7c608f710e51aced3b",
   "coveredAt": "2026-10-11T17:21:40.009Z",
-  "lastOutcome": "completed",
+  "lastOutcome": "failed",
   "backlog": [
+    {
+      "area": "invariants",
+      "pages": [
+        "published-port-reservation.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/published-port-reservation.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
     {
       "area": "projects",
       "pages": [
@@ -17,12 +28,16 @@
     {
       "area": "runbooks",
       "pages": [
-        "sast-scanning.md"
+        "sast-scanning.md",
+        "prod-reboot-resilience.md",
+        "infra-image-scanning.md",
+        "wiki-maintenance.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md"
+      "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/wiki-maintenance.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/sast-scanning.md; openwiki/runbooks/prod-reboot-resilience.md; openwiki/runbooks/infra-image-scanning.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     },
     {
       "area": "runbooks",
@@ -34,111 +49,84 @@
       "areaExists": true,
       "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox-lifecycle.md",
       "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
-    {
-      "area": "runbooks",
-      "pages": [
-        "prod-reboot-resilience.md"
-      ],
-      "kind": "refresh",
-      "drift": true,
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-reboot-resilience.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
-    {
-      "area": "invariants",
-      "pages": [
-        "published-port-reservation.md"
-      ],
-      "kind": "refresh",
-      "drift": true,
-      "subjects": {},
-      "areaExists": true,
-      "reason": "drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/published-port-reservation.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 728,
-    "headCommit": "5af3446781917d815b66e1b9ab4fa2309401088e",
-    "markerBefore": "631f47dcc2e8890a9d599cbc34125490ed19a47d",
-    "slices": [
-      {
-        "area": "invariants",
-        "pages": [
-          "published-port-reservation.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/prod-reboot-resilience.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/published-port-reservation.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "ci-evidence-pipeline.md",
-          "sast-scanning.md",
-          "server-setup.md",
-          "android-emulator.md",
-          "devcontainer.md",
-          "infra-image-scanning.md",
-          "prod-reboot-resilience.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "wiki-maintenance.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md"
-      }
-    ],
-    "updatedAt": "2026-10-11T17:21:40.503Z"
-  },
+  "proposal": null,
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 2699,
+    "pagesWritten": 0,
+    "elapsedSeconds": 2193,
     "stoppedAtBudget": true
   },
-  "escalations": {},
+  "escalations": {
+    "invariants/published-port-reservation.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-11T19:40:23.757Z",
+      "failuresAtLow": 0
+    },
+    "projects/sast.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-11T19:40:23.757Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/sast-scanning.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-11T19:40:23.757Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/prod-reboot-resilience.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-11T19:40:23.757Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/infra-image-scanning.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-11T19:40:23.757Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/wiki-maintenance.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-11T19:40:23.757Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 268,
+    "calls": 373,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1499539,
-    "cached": 26298934,
+    "uncached": 3154983,
+    "cached": 37582558,
     "cacheWrite": 0,
-    "output": 381402,
-    "reasoning": 287017,
-    "ms": 3375166,
-    "estCostUsd": 1.0653,
+    "output": 711863,
+    "reasoning": 628861,
+    "ms": 6191465,
+    "estCostUsd": 2.0262,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
+        "invariants/published-port-reservation.md",
+        "projects/sast.md",
+        "runbooks/sast-scanning.md",
+        "runbooks/prod-reboot-resilience.md",
+        "runbooks/infra-image-scanning.md",
         "runbooks/wiki-maintenance.md"
       ],
-      "effort": "low",
-      "deadlineStop": false,
-      "estCostUsd": 1.0653,
+      "effort": null,
+      "deadlineStop": true,
+      "estCostUsd": 2.0262,
       "rateLimited": null
     }
   ],
