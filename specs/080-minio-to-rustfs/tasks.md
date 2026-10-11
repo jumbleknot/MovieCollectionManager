@@ -39,14 +39,15 @@ command and reads back the evidence the operator pastes.
 
   **Done when**: `git log origin/main` contains #642's merge and the branch rebases cleanly onto it.
 
-- [ ] T002 Check item #552's precondition: `infrastructure-as-code/docker/stacks/mcm.env` holds
+- [x] T002 Check item #552's precondition: `infrastructure-as-code/docker/stacks/mcm.env` holds
   `BACKUP_TEST_S3_ACCESS_KEY`, `BACKUP_TEST_S3_SECRET_KEY`, `BACKUP_TEST_WEBDAV_USER`,
   `BACKUP_TEST_WEBDAV_PASSWORD` (names only — never print values). If any is missing, **stop** and
   point at #552; do not hand-patch around it (research R17). CI is unaffected (mints its own).
 
-  **Done when**: the four keys are present, or #552 is resolved first.
+  **Done when**: the four keys are present, or #552 is resolved first. **Done 2026-10-11**: all four
+  keys are present in this dev container's `mcm.env`, and PR #724 (item #552) merged the generator fix.
 
-- [ ] T003 **[OPERATOR]** Early go/no-go on the production host, read-only, before any tool exists
+- [x] T003 **[OPERATOR]** Early go/no-go on the production host, read-only, before any tool exists
   (research R6, R14). The agent prepares; the operator runs and pastes. The command must run under
   Alpine's BusyBox, which has **no `grep --include`**. The first attempt on 2026-10-10 used it: both
   grep calls failed, and the `0`s it printed were `wc -l` of empty output, not measurements. Hence
@@ -68,12 +69,20 @@ command and reads back the evidence the operator pastes.
   EOS
   ```
 
-  **Partial result, 2026-10-11, `observability-langfuse-minio-data`:**
-  - `format.json` is `"format":"xl-single"`, with one set of one drive. ✓
-  - Top level is `langfuse` only. Size is 558.4M. 0 files are not owned by uid 1000. ✓
-  - The SSE and tiered counts are **not yet measured**: the first attempt's grep failed, as described
-    above.
-  - The Nx-cache volume is named `minio_minio-data` and is not yet inventoried.
+  **Result, 2026-10-11: GO.** Both drives pass. The operator ran the command on the prod host:
+
+  | | `observability-langfuse-minio-data` | `minio_minio-data` (Nx cache) |
+  |---|---|---|
+  | format | `xl-single`, 1 set × 1 drive | `xl-single`, 1 set × 1 drive |
+  | `xl.meta` files / control | 1076 / 1076 | 1113 / 1113 |
+  | SSE / tiered | 0 / 0 | 0 / 0 |
+  | top level | `langfuse` | `nx-cache` |
+  | size | 558.3M | 399.2M |
+  | not owned by uid 1000 | 0 | 2314 |
+
+  The Nx-cache drive's ownership is expected, because the upstream `quay.io/minio/minio` image
+  created it. The migration chowns the **copy** to the RustFS image's uid, never the original
+  (research R5), so neither drive needs a pre-step.
 
   **Tool execution location — decided 2026-10-11:**
   - The tool runs **on the production host**, inside a pinned container image that carries `node` and
