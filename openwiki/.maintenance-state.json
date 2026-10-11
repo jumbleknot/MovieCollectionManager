@@ -62,56 +62,56 @@
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T19:40:23.757Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "projects/sast.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T19:40:23.757Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/sast-scanning.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T19:40:23.757Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/prod-reboot-resilience.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T19:40:23.757Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/infra-image-scanning.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T19:40:23.757Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/wiki-maintenance.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T19:40:23.757Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     }
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 373,
+    "calls": 337,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 3154983,
-    "cached": 37582558,
+    "uncached": 2512207,
+    "cached": 30821006,
     "cacheWrite": 0,
-    "output": 711863,
-    "reasoning": 628861,
-    "ms": 6191465,
-    "estCostUsd": 2.0262,
+    "output": 558203,
+    "reasoning": 476777,
+    "ms": 5200883,
+    "estCostUsd": 1.6084,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
@@ -124,9 +124,9 @@
         "runbooks/infra-image-scanning.md",
         "runbooks/wiki-maintenance.md"
       ],
-      "effort": null,
+      "effort": "low",
       "deadlineStop": true,
-      "estCostUsd": 2.0262,
+      "estCostUsd": 1.6084,
       "rateLimited": null
     }
   ],
