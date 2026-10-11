@@ -33,7 +33,7 @@ const IDENTIFIER_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent-audit
 const NAME_ALLOWLIST = new Set([
   // Rule 3 — third-party vendor bundles
   'langfuse-web', 'langfuse-worker', 'langfuse-postgres', 'langfuse-clickhouse',
-  'langfuse-redis', 'langfuse-minio', 'langfuse-minio-init', 'otel-lgtm',
+  'langfuse-redis', 'langfuse-rustfs', 'langfuse-rustfs-init', 'otel-lgtm',
   // Rule 3b — auxiliary / bundle members
   'keycloak-mailpit', 'unleash-postgres', 'unleash-seed',
 ]);
@@ -43,6 +43,9 @@ const RETIRED_KEYS = new Set([
   'mc-db', 'rs-init', 'mcm-redis', 'mcm-bff-db', 'caddy', 'mcm-bff-dev',
   'agent-gateway', 'agent-gateway-metro', 'agent-db', 'movie-mcp', 'spreadsheet-mcp',
   'web-api-mcp', 'opa', 'unleash', 'vault', 'opensearch', 'keycloak-db',
+  // Feature 080 — the object stores renamed to RustFS. Naming the dead keys is the mechanism, which is
+  // why this is the one live line the no-MinIO guard exempts (contracts/no-minio-guard.md G2).
+  'langfuse-minio', 'langfuse-minio-init', 'mcm-bff-backup-minio', 'mcm-bff-backup-minio-init',
 ]);
 const APPROVED_NETWORKS = new Set([
   'backend-network',

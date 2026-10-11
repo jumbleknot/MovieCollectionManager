@@ -29,7 +29,7 @@ const SECRET_KEY = /PASSWORD|SECRET|TOKEN|SALT|ENCRYPTION_KEY|_AUTH|REQUIREPASS/
 // mirroring check-resource-naming.mjs's NAME_ALLOWLIST.
 //   *_FILE          → a path to a Docker secret file, not the secret itself (POSTGRES_PASSWORD_FILE).
 //   *_USER          → an account name, not a credential.
-//   *ACCESS_KEY_ID  → the public half of an S3 key pair (= "minio", a non-secret identifier).
+//   *ACCESS_KEY_ID  → the public half of an S3 key pair (= "langfuse", a non-secret identifier).
 //   *_CLIENT_ID     → an OAuth client identifier (public by definition), e.g. AGENT_SUBJECT_TOKEN_CLIENT_ID.
 //   *_AUDIENCE      → an OAuth token audience name (public), e.g. AGENT_SUBJECT_TOKEN_AUDIENCE.
 //   AGENT_GATEWAY_CLIENT_SECRET → out of scope: injected at deploy as ${...:-} (data-model.md).
@@ -192,7 +192,7 @@ function selftest() {
     ['clean URL ${VAR}', { services: { x: { environment: { DATABASE_URL: 'postgres://u:${PG_PW:?msg with spaces}@h:5432/db' } } } }, false],
     ['clean requirepass ${VAR}', { services: { x: { command: ['redis-server', '--requirepass', '${R:?m}'] } } }, false],
     ['allowlisted _FILE', { services: { x: { environment: { POSTGRES_PASSWORD_FILE: '/run/secrets/pw' } } } }, false],
-    ['allowlisted _USER', { services: { x: { environment: { POSTGRES_USER: 'minio' } } } }, false],
+    ['allowlisted _USER', { services: { x: { environment: { POSTGRES_USER: 'langfuse' } } } }, false],
   ];
   const fails = [];
   for (const [label, doc, expect] of cases) {

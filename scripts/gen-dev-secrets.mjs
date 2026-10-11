@@ -103,7 +103,7 @@ const KV = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
  * in place. It holds no value, so filling it rotates nothing — and counting it as "present" is the
  * silent-skip this item is about: the run says up to date, the suite that needs it skips to green,
  * and nothing names why. A FIXTURE key left blank is not touched: the template itself may leave it
- * blank on purpose (REGISTRY_HOST is set per machine), and the generator has no value to give it.
+ * blank on purpose (a per-machine value), and the generator has no value to give it.
  * Only key NAMES are ever printed, never values.
  */
 function seedMissingKeys(stack, tmpl, out) {

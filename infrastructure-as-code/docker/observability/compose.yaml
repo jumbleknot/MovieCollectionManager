@@ -8,7 +8,7 @@ name: observability
 #
 # Components (constitution §AI Agent Technology Stack):
 #   - LangFuse v3 (LLM traces / per-turn cost / latency)  → web :3030, worker, + postgres /
-#     clickhouse / redis / minio (v3 ingestion pipeline). Bootstrapped with deterministic
+#     clickhouse / redis / rustfs (v3 ingestion pipeline). Bootstrapped with deterministic
 #     LANGFUSE_INIT_* keys so the gateway + the SC-008 verify test authenticate with no UI setup.
 #   - grafana/otel-lgtm (OpenTelemetry → Tempo traces + Prometheus metrics + Loki logs + Grafana)
 #     → OTLP gRPC :4317 / HTTP :4318, Grafana UI :3001.
@@ -32,7 +32,7 @@ services:
         condition: service_healthy
       langfuse-redis:
         condition: service_healthy
-      langfuse-minio:
+      langfuse-rustfs:
         condition: service_healthy
     ports:
       - "127.0.0.1:3030:3000"
@@ -52,15 +52,15 @@ services:
       REDIS_AUTH: "${LANGFUSE_REDIS_PASSWORD:?set in stacks/observability.env}"
       LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
       LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
-      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
-      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
-      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: "${LANGFUSE_MINIO_ROOT_PASSWORD:?set in stacks/observability.env}"
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-rustfs:9000
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: "${LANGFUSE_RUSTFS_SECRET_KEY:?set in stacks/observability.env}"
       LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
       LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
       LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
-      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-minio:9000
-      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
-      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: "${LANGFUSE_MINIO_ROOT_PASSWORD:?set in stacks/observability.env}"
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-rustfs:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: "${LANGFUSE_RUSTFS_SECRET_KEY:?set in stacks/observability.env}"
       LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
       NEXTAUTH_URL: http://localhost:3030
       NEXTAUTH_SECRET: "${LANGFUSE_NEXTAUTH_SECRET:?set in stacks/observability.env (run: node scripts/gen-dev-secrets.mjs)}"
@@ -94,9 +94,9 @@ services:
         condition: service_healthy
       langfuse-redis:
         condition: service_healthy
-      langfuse-minio:
+      langfuse-rustfs:
         condition: service_healthy
-      langfuse-minio-init:
+      langfuse-rustfs-init:
         condition: service_completed_successfully
     environment: *langfuse-env
     networks:
@@ -167,21 +167,28 @@ services:
       retries: 10
     logging: *obs-logging
 
-  langfuse-minio:
-    image: ${REGISTRY_HOST:?set in stacks/observability.env}/jumbleknot/minio:2025.09.07-161309@sha256:8054a7ce1af3d5f57e508de5f17885ae7892234ac465d1d9cb8e8977358a06a2
-    container_name: langfuse-minio
+  # Langfuse's event/media object store: RustFS (feature 080), pulled upstream by digest — it
+  # replaced the from-source build of features 069/070 when that upstream stopped releasing (item
+  # #560). No `user:` key: the image runs as its own uid 10001 (contracts/object-store-service.md
+  # S2), and a fresh volume inherits /data owned by it — any other uid fails at startup.
+  langfuse-rustfs:
+    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    container_name: langfuse-rustfs
     profiles: [observability]
     restart: unless-stopped
-    command: ["server", "/data", "--console-address", ":9001"]
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: "${LANGFUSE_MINIO_ROOT_PASSWORD:?set in stacks/observability.env}"
+      RUSTFS_ACCESS_KEY: langfuse
+      RUSTFS_SECRET_KEY: "${LANGFUSE_RUSTFS_SECRET_KEY:?set in stacks/observability.env}"
+      # stdout, not the image's default log FILE that `docker logs` never sees.
+      RUSTFS_OBS_LOG_DIRECTORY: ""
+      # Console defaults to ON with CORS `*`; nothing uses it, and `false` closes :9001.
+      RUSTFS_CONSOLE_ENABLE: "false"
     volumes:
-      - langfuse-minio-data:/data
+      - langfuse-rustfs-data:/data
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:9000/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -189,19 +196,28 @@ services:
     logging: *obs-logging
 
   # One-shot: create the `langfuse` bucket (LangFuse v3 does NOT auto-create it; without it
-  # ingestion fails with "Failed to upload JSON to S3"). langfuse-web/worker wait for this.
-  langfuse-minio-init:
-    image: ${REGISTRY_HOST:?set in stacks/observability.env}/jumbleknot/minio:2025.09.07-161309@sha256:8054a7ce1af3d5f57e508de5f17885ae7892234ac465d1d9cb8e8977358a06a2
-    container_name: langfuse-minio-init
+  # ingestion fails with "Failed to upload JSON to S3"). langfuse-worker waits for this. Same pinned
+  # image (it ships curl); PUT of an existing bucket answers 200, so a restart is a no-op. The
+  # secret is referenced as `$$S3_SECRET_KEY` from the container's environment and fed to curl on
+  # stdin — never interpolated into argv, where `docker inspect` and `ps` would show it.
+  langfuse-rustfs-init:
+    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    container_name: langfuse-rustfs-init
     profiles: [observability]
     depends_on:
-      langfuse-minio:
+      langfuse-rustfs:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://langfuse-minio:9000 minio ${LANGFUSE_MINIO_ROOT_PASSWORD:?set in stacks/observability.env} &&
-      mc mb --ignore-existing local/langfuse &&
-      echo 'langfuse bucket ready'"
+    environment:
+      S3_ACCESS_KEY: langfuse
+      S3_SECRET_KEY: "${LANGFUSE_RUSTFS_SECRET_KEY:?set in stacks/observability.env}"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        printf 'user = "%s:%s"\n' "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" \
+          | curl -fsS -K - --aws-sigv4 "aws:amz:us-east-1:s3" -o /dev/null -X PUT http://langfuse-rustfs:9000/langfuse
+        echo 'langfuse bucket ready'
     networks:
       - backend-network
     logging: *obs-logging
@@ -321,8 +337,8 @@ volumes:
     name: observability-langfuse-clickhouse-data
   langfuse-clickhouse-logs:
     name: observability-langfuse-clickhouse-logs
-  langfuse-minio-data:
-    name: observability-langfuse-minio-data
+  langfuse-rustfs-data:
+    name: observability-langfuse-rustfs-data
   otel-lgtm-data:
     name: observability-otel-lgtm-data
   unleash-pg-data:
