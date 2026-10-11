@@ -655,7 +655,11 @@ names the pages that did not land, `failedParts` holds only those pages, and `la
 page, area-mates of a failed page included. The landed pages are proposed (`proposableSlices`: verified invocations
 plus landed parts), and only the failed pages return to the backlog. A **whole-invocation** failure (conformance or
 policy) still proposes nothing and returns every part. The one exception is a conformance failure **confined
-to the pages that failed**. When the only violation not attributable to a page is the conformance gate, the failed
+to pages that failed**: missing or stale pages, or requested pages that V16 names, because a worker that died or
+was stopped mid-edit leaves a fresh stamp over uncertified bytes. Push run 5145 (2026-10-11) lost five submitted
+pages, `runbooks/wiki-maintenance.md` among them, to one such page (`projects/sast.md`). Those pages are restored,
+they count as failed and are carried forward even when their committed bytes are current, and the rest are judged
+on their own. When the only violation not attributable to a page is the conformance gate, the failed
 pages are restored first (below) and the slice is judged again. If the bundle is then conformant, the break was
 theirs, and the pages that landed are proposed. Run 5104 (2026-10-11) needed this: 13 of 15 workers submitted, but
 `runbooks/ci-evidence-pipeline.md`'s worker died on repeated HTTP 412s mid-edit, and its uncertified bytes (V16)
@@ -690,13 +694,22 @@ reported as `forcedPages`, counted as written and proposed; the proposal body li
 deadline stop it never qualifies: `revertUnrequested` (below) has already put every unrequested path back, because a
 stopped worker's page may be half-written.
 
-**After a deadline stop, the slice keeps only what it requested.** openwiki forces every page with a Claims issue into
-a run, so a generator stopped part-way (GNU `timeout` exit 124, or 137 after `--kill-after`) can leave a page it was
-never asked for half-written — on run 4606 (2026-10-04) that broke V16 on `projects/keycloak.md`, a whole-invocation
-failure, and the requested page's $0.96 regeneration was lost. `revertUnrequested` now restores every path the run
-changed to its committed state (or deletes it if new) **except** the requested pages, their `.claims` sidecars and the
-requested areas' `index.md`; paths that were dirty before the run are left alone. It applies **only** to a deadline stop:
-a generator that exits on its own is judged on everything it wrote.
+**After a deadline stop, the slice keeps what it requested and what openwiki finished submitting.** openwiki forces
+every page with a Claims issue into a run, so a generator stopped part-way (GNU `timeout` exit 124, or 137 after
+`--kill-after`) can leave a page it was never asked for half-written. On run 4606 (2026-10-04) that broke V16 on
+`projects/keycloak.md`, a whole-invocation failure, and the requested page's $0.96 regeneration was lost.
+`revertUnrequested` therefore restores every path the run changed to its committed state (or deletes it if new),
+**except**:
+
+- the requested pages, their `.claims` sidecars and the requested areas' `index.md`;
+- any unrequested page whose worker **submitted** before the stop.
+
+openwiki 0.7.1 finalizes a page's Claims on `submit_page` (`submitRepositoryPage`), not only at the end of the run,
+so a submitted page's sidecar certifies its bytes and carries `verification.at` from this run. A page is kept only
+when both hold: page and sidecar agree, and `verification.at` is no earlier than the invocation's start. A V16-sound
+page with an older verification is openwiki's restore path (#685), not a submission, so it is reverted. Paths that
+were dirty before the run are left alone. All of this applies **only** to a deadline stop: a generator that exits on
+its own is judged on everything it wrote.
 
 ### If the run record and the forge disagree, the forge wins
 
