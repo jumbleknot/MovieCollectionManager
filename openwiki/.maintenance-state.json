@@ -16,26 +16,18 @@
     {
       "area": "runbooks",
       "pages": [
-        "ci-evidence-pipeline.md",
-        "sast-scanning.md",
-        "server-setup.md",
-        "android-emulator.md",
-        "devcontainer.md",
-        "infra-image-scanning.md",
-        "prod-reboot-resilience.md",
         "wiki-maintenance.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-evidence-pipeline.md; openwiki/runbooks/sast-scanning.md; openwiki/runbooks/server-setup.md; openwiki/runbooks/android-emulator.md; openwiki/runbooks/devcontainer.md; openwiki/runbooks/infra-image-scanning.md; openwiki/runbooks/prod-reboot-resilience.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md"
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 728,
-    "headCommit": "b8f3bdc179255362791b3ee76afafeeaeaa03589",
+    "headCommit": "026d0742ae73644e2e2653d0b80f475a2c1b7ea0",
     "markerBefore": "631f47dcc2e8890a9d599cbc34125490ed19a47d",
     "slices": [
       {
@@ -48,78 +40,52 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/prod-reboot-resilience.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/published-port-reservation.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "ci-evidence-pipeline.md",
+          "sast-scanning.md",
+          "server-setup.md",
+          "android-emulator.md",
+          "devcontainer.md",
+          "infra-image-scanning.md",
+          "prod-reboot-resilience.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md"
       }
     ],
-    "updatedAt": "2026-10-10T22:43:53.346Z"
+    "updatedAt": "2026-10-11T16:14:24.469Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 2347,
+    "pagesWritten": 15,
+    "elapsedSeconds": 3314,
     "stoppedAtBudget": false
   },
   "escalations": {
-    "runbooks/ci-evidence-pipeline.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 1
-    },
-    "runbooks/sast-scanning.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 1
-    },
-    "runbooks/server-setup.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 1
-    },
-    "runbooks/android-emulator.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 1
-    },
-    "runbooks/devcontainer.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 1
-    },
-    "runbooks/infra-image-scanning.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 1
-    },
-    "runbooks/prod-reboot-resilience.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 1
-    },
     "runbooks/wiki-maintenance.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-11T00:29:29.448Z",
-      "failuresAtLow": 1
+      "failuresAtLow": 2
     }
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 603,
-    "failedCalls": 25,
+    "calls": 577,
+    "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 4424724,
-    "cached": 44273276,
+    "uncached": 5421708,
+    "cached": 42334432,
     "cacheWrite": 0,
-    "output": 885759,
-    "reasoning": 720725,
-    "ms": 6765944,
-    "estCostUsd": 2.656,
+    "output": 1025533,
+    "reasoning": 835473,
+    "ms": 9229378,
+    "estCostUsd": 3.1112,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -140,7 +106,7 @@
       ],
       "effort": "low",
       "deadlineStop": false,
-      "estCostUsd": 2.656,
+      "estCostUsd": 3.1112,
       "rateLimited": null
     }
   ],
