@@ -4,9 +4,6 @@ title: Local dev infrastructure & environment variables
 description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — plus the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
 resource: docs/runbooks/local-dev.md
 tags: [docker-compose, local-dev, secrets, keycloak, runbook]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T03:23:45.685Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -42,7 +39,10 @@ sources:
     resource: repo://scripts/up-mcm-agents.mjs
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T03:23:45.685Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -76,7 +76,13 @@ or use the pre-provisioned [containerized dev environment](./devcontainer.md).
    per stack from the committed `<stack>.env.example` templates. Idempotent; `--force` rotates and
    `--stack=<name>` scopes. A template that has gained a key since the file was written is seeded
    **into** the existing file rather than skipped, so one new variable never forces a rotation of
-   every other value.
+   every other value. A `<generate:KIND>` key that exists but is **empty** (`KEY=`) is likewise
+   minted in place — it holds no value, so filling it rotates nothing, whereas counting it as
+   "present" was the silent skip of item #552 (the run says up to date, the suite that needs the
+   value skips to green, and nothing names why). A blank *fixture* key is left alone: the template
+   may leave it blank on purpose (`REGISTRY_HOST` is set per machine). Each run names the keys it
+   added or filled — **key names only, never values** — and warns that containers started before the
+   run do not hold the new values, so they must be recreated and `gen-dev-env.mjs` re-run.
 3. `node scripts/gen-dev-env.mjs` — projects the realm's client secrets out of `stacks/auth.env`
    into the BFF env files, so **realm-secret == BFF-secret by construction** and a login works on
    first boot with no manual import. It **does not import the realm**; `up-auth` does that (step 4).
@@ -106,7 +112,11 @@ generator:
 
 - **Synced** — realm-derived credentials that must match the seeded realm on every run
   (`KEYCLOAK_*`, the `E2E_*` quartet, the backup test credentials projected from `stacks/mcm.env`).
-  A re-run rewrites them, so a hand-edited value is corrected rather than preserved.
+  A re-run rewrites them, so a hand-edited value is corrected rather than preserved. The
+  `BACKUP_TEST_*` projection is loud when it has nothing to project (item #552): the four key names
+  that are absent or empty in `stacks/mcm.env` are printed, along with the command that back-fills
+  them without rotating anything (`node scripts/gen-dev-secrets.mjs --stack=mcm`), because the old
+  silent filter projected nothing, said nothing, and nine backup-destination suites skipped to green.
 - **Seeded once** — developer knobs and host-reachable URLs (`MC_DB_URL`, `MC_SERVICE_PORT`,
   `RUST_LOG`, `MONGO_URL`, `BFF_BASE_URL`, the backup encryption/tick keys, the destination
   allow-list). Absent keys are appended; keys already present are left exactly as the developer set
@@ -161,11 +171,15 @@ carries no secret values on any path.
   old single-project footgun is gone; treat each stack's lifecycle target as independent.
 - **`--profile` flags must precede `up`/`down`** with Docker Compose v2 — a flag placed after the
   subcommand is silently ignored.
-- **The two BFF processes share one Mongo, so their keys must agree.** The backup and agent-config
-  encryption keys are reused from `.env.docker` first and `.env.local` second (and a wrongly-sized
-  prior value is re-minted rather than reused), because a destination or credential sealed under one
-  file's key is undecryptable under the other — surfacing much later as an authentication failure on
-  a secret that was stored correctly.
+- **The two BFF processes share one Mongo, so their keys must agree.** `BACKUP_CREDENTIAL_ENC_KEY`
+  and `BACKUP_TICK_SECRET` are reused from `.env.docker` first and `.env.local` second, because the
+  containerized BFF and the Metro dev loop write to the same BFF Mongo — a destination or credential
+  sealed under one file's key is undecryptable under the other, surfacing much later as an
+  authentication failure on a secret that was stored correctly. The two AES-256-GCM keys
+  (`AGENT_CONFIG_ENC_KEY`, reused from `.env.docker` alone, and `BACKUP_CREDENTIAL_ENC_KEY`) are
+  reused only when the prior value base64-decodes to exactly **32 bytes**; a legacy hex key — 64
+  chars that decode to 48 bytes — is re-minted rather than reused, since the reuse path would
+  silently preserve the bug it represents.
 - **The `--profile agents` gateway (heavy, Postgres-checkpointer variant) needs its Keycloak client
   secret fetched live from a running Keycloak** — there is no committed source for it. Without it the
   gateway starts but every tool call fails closed (chat works; add/query/organize don't).
@@ -256,7 +270,9 @@ pass without that flag, which is how it stayed invisible for as long as it did.
 The generator's coverage is pinned by `scripts/__tests__/gen-dev-env.guard.test.mjs`: it derives the
 set of documented `.env.local` files from the runbooks and fails if one is neither generated nor a
 declared exception, so a documented file that nothing writes shows up here rather than three weeks
-later in someone's `nx affected`.
+later in someone's `nx affected`. The same guard pins the two loudness rules — a deliberately skipped
+file must be named in the generator's output, and an `mcm.env` missing `BACKUP_TEST_*` keys must be
+reported with the back-fill command while printing no value.
 
 See [testing tiers](../invariants/testing-tiers.md) for how these local suites relate to the gating
 tiers, [Keycloak](../projects/keycloak.md) for the realm and its clients, and

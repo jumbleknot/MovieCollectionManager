@@ -1,12 +1,9 @@
 ---
 type: Runbook
 title: Android emulator & APK builds (mobile E2E)
-description: The decision rule for where to run mobile E2E flows (agent flows in CI's app-e2e job on the kvm host runner, everything else on a local emulator), the Metro-less standalone APK and its in-bundle localhost:8082 guard, why the job runs on the ci host rather than in a job container, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, and the emulator-state traps that mimic app bugs.
+description: The decision rule for where to run mobile E2E flows (agent flows in CI's app-e2e job on the kvm host runner, everything else on a local emulator), the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job runs on the ci host rather than in a job container, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-04T20:25:31.907Z
 sources:
   - id: openwiki-source-7e1c4d46c53be9bf32311e06
     resource: repo://.devcontainer/toolchain.Dockerfile
@@ -30,7 +27,12 @@ sources:
     resource: repo://scripts/ci-mobile-agent-flows.sh
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
-generated: { by: "openwiki/0.6.0", at: "2026-10-04T20:25:31.907Z" }
+  - id: openwiki-source-33d177ccb5008acd450b4d41
+    resource: repo://scripts/maestro-run.sh
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -70,6 +72,18 @@ AOSP image has only a WebView shell, which drops that redirect and leaves login 
 The emulator job `adb reverse`s 8082 and 8099, then runs gating → enable-anthropic → the agent flows →
 disable, followed last and specially by the non-agent `admin-settings-access` flow.
 
+Three details of that step are load-bearing when editing it:
+
+- **The AVD is deliberately oversized for Chrome.** The action is given 4 GB guest RAM, a 576 MB heap
+  and 3 cores because the OAuth Custom Tab renderer crashed mid-load on the default AVD RAM (logcat:
+  `CustomTabActivity` "WIN DEATH … app died"), which surfaced as a flaky login rather than as a crash.
+- **The action's `script:` block is executed line-by-line in separate shells**, so multi-line
+  constructs (a `for` loop with backslash continuations) break there — that is why the whole flow loop
+  lives in `scripts/ci-mobile-agent-flows.sh` and the step is a single `bash` invocation.
+- **The Maestro CLI is pinned** (`MAESTRO_VERSION=2.10.0`): the vendor installer fetches
+  `releases/latest` when that variable is unset, so without the pin the mobile tier silently tracked
+  whatever Maestro released that day. Renovate maintains the pin.
+
 - **When the mobile half runs:** every push to `main` and every `workflow_dispatch`; on a
   `pull_request` only when the diff touches the job's `mobile` filter (`frontend/**`, `agents/**`,
   `mcp-servers/**`, `backend/**`, `packages/**`, the workflow itself, or the two Maestro scripts
@@ -108,6 +122,17 @@ disable, followed last and specially by the non-agent `admin-settings-access` fl
 
 ## Gotchas
 
+```mermaid
+flowchart LR
+  App["mcm-app inside the emulator"]
+  App -->|"bundle fetch to 10.0.2.2:8081"| Metro["Metro dev server on host port 8081"]
+  App -->|"BFF 8082 and Keycloak 8099 at localhost"| Tunnel["adb reverse tunnels"]
+  Tunnel -->|"same ports on the host loopback"| BFF["dev BFF and Keycloak on the host"]
+```
+
+Why the split is per-service: Metro is reached through the QEMU gateway, Keycloak and the BFF only
+through `adb reverse`.
+
 - **Agent flows still prefer CI even inside the dev container.** The decision rule is unchanged
   regardless of where the emulator runs; only the *transport* to reach the OOM-prone Metro server
   differs (tunnel vs. `10.0.2.2`).
@@ -117,9 +142,11 @@ disable, followed last and specially by the non-agent `admin-settings-access` fl
   alone never distinguishes a broken gateway from an empty port. The real split is **by service, not by
   transport**: **Metro must be reached at `10.0.2.2:8081`** — an RN 0.85 debug build resolves its
   dev-server address to the QEMU gateway by default and does not consult `adb reverse tcp:8081` for
-  that fetch (proved by reading the app's own sockets). (`scripts/maestro-e2e.mjs` takes the other
-  route: after every `pm clear` it writes the app's `debug_http_host` pref as `localhost:8081`, which
-  *does* go through the reverse tunnel. Either way Metro must be listening on host port 8081.)
+  that fetch (proved by reading the app's own sockets). (`frontend/mcm-app/scripts/maestro-e2e.mjs`
+  takes the other route: after every `pm clear` it writes the app's `debug_http_host` pref as
+  `localhost:8081`, which *does* go through the reverse tunnel — so that path needs
+  `adb reverse tcp:8081`, and flows it launches must use `clearState: false`, since a second `pm clear`
+  would wipe the pref it just wrote. Either way Metro must be listening on host port 8081.)
   **Keycloak and the BFF still require `adb reverse`**, because `KC_HOSTNAME=http://localhost:8099` pins
   Keycloak's issuer and session cookies to `localhost`; reaching the same server at `10.0.2.2:8099`
   loses them mid-flow with `error="cookie_not_found"`. Re-run `adb reverse tcp:8082 tcp:8082` and
@@ -175,6 +202,18 @@ disable, followed last and specially by the non-agent `admin-settings-access` fl
   from the open internet at build time, which the container's default-deny egress firewall blocks —
   pre-seeding that graph is impractical, so a release APK comes from CI or a build container with its
   own egress. Agent flows here still prefer CI.
+- **Secrets reach Maestro through the environment, never through argv.** `scripts/maestro-run.sh` is
+  the single sanctioned entry point: it reads `.env.e2e.local` (or the job env) and exports each
+  credential under a `MAESTRO_`-prefixed twin, which Maestro strips in-flow — so no credential value
+  lands on a command line readable via `ps`. Only non-secret values go on argv, e.g. the unique
+  `COLLECTION_NAME` the `agent-add-ownership` flow needs per attempt.
+- **A failed mobile flow's device evidence is captured inside the emulator script, not by the workflow.**
+  `scripts/ci-mobile-agent-flows.sh` writes `mobile-diagnostics/<flow>-attempt<n>/` per failed attempt
+  (ReactNativeJS + full logcat and the newest `~/.maestro/tests/` directory), because the
+  `android-emulator-runner` action terminates the emulator before the job's collect-logs step runs and
+  because the uploaded `maestro-debug` artifact is unreachable through this forge's API. The
+  failure-time collect step folds that directory into `container-logs/` as `_mobile-diagnostics`. See
+  [CI evidence pipeline](./ci-evidence-pipeline.md) for how that bundle is retrieved.
 - **Two emulator-state traps that look like app bugs.**
   - **A second MCM build steals the OAuth redirect.** `frontend/mcm-app/app.json` sets
     `"scheme": "mcm-app"`, so *every* installed build claims `mcm-app://native-auth-callback`
@@ -186,8 +225,9 @@ disable, followed last and specially by the non-agent `admin-settings-access` fl
     browser, the helper still types credentials into the form and Keycloak rejects the submission with
     `error="already_logged_in"`, redirecting back with **no `code`**. `scripts/ci-mobile-agent-flows.sh`
     handles this: it runs `adb shell pm clear com.android.chrome` and re-skips Chrome's first-run
-    experience before `admin-settings-access`, which logs in as a *different* seeded user than the agent
-    flows. That reset also re-establishes the FRE, so it is repeated on each retry.
+    experience before `admin-settings-access`, which logs in as a *different* seeded user (the seeded
+    `mc-admin`) than the agent flows. That reset also re-establishes the FRE, so it is repeated on each
+    retry.
 
 For the BFF-container modes an agent/non-agent flow runs against once launched, see
 [E2E testing](./e2e-testing.md); for how the `app-e2e` job fits the rest of the pipeline, see

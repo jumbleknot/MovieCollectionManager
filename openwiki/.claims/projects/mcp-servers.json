@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:94f911306aba7e56a23e89ca8233308bceffaf63d5ba8ac7825da3b5ff12a5ff",
+  "pageVersion": "sha256:4ebe87a20fd9f040be92e80f601f1795469de3582b994e8ad1c1841aecb3764d",
   "claims": [
     {
       "id": "claim_bb4afd7234e2497fbeb2f2c50daca580",
@@ -288,19 +288,27 @@
     },
     {
       "id": "claim_6210a5f1756a44d8bb882319035e1e2b",
-      "statement": "All three server images build from the repository root as context (`docker build -f mcp-servers/<server>/Dockerfile .`) on a digest-pinned `python:3.14-slim` base, sync the pinned lockfile with `uv sync --frozen --no-dev`, and run as a non-root `app` user with the virtualenv and source mounted read-only, entering via `python -m src.server`.",
+      "statement": "All three server images build from the repository root as context (`docker build -f mcp-servers/<server>/Dockerfile .`, the `build` Nx target) in two digest-pinned stages: a `build` stage on `python:3.14-slim` that copies in only the committed `pyproject.toml` + `uv.lock` before running `uv sync --frozen --no-dev` (so the dependency layer is independent of source edits), and a `runtime` stage on the same pinned base that copies the resulting `/app` (virtualenv + `src`) owned by a non-root `app` user, with `uv` itself copied from a digest-pinned `ghcr.io/astral-sh/uv:0.12.10` image. Each container enters via `python -m src.server`. Nothing in the Dockerfiles, the per-server compose files or the agent stack actually mounts the virtualenv or source read-only — only the Dockerfile comment says so.",
       "evidence": [
         {
-          "resource": "repo://mcp-servers/movie-mcp/Dockerfile#L1-L33",
-          "version": "repo-lines-v1:sha256:420aed97b9ee9005c61545f1fc6f27783c59ea1fc39f89fd71e4ac1c7cf24d98:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiN2JmYzVhNDg3ZTEwNDEwODBiM2Q2YjU5MjQyNGRmNWMwYTk4NDE4MWE5Mjc5NzBlY2I3ZGZkNjM3Mzc5ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNjgzYzg3ZmYwYzczNjg4NzQ0NmRhZmYyZGFiZGY3YjI4YTU3NjBkMGJhNTlkZjRjNTU4ODZjZjRiMmRiNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://infrastructure-as-code/docker/agents/compose.prod.yaml#L119-L163",
+          "version": "repo-lines-v1:sha256:d0b67778e7ff248088f89d11fcf9c9851402f4f175f3205078b9cf1b7d23db06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMWNmMmViM2U4NTMzZDNhYTA3NzVhNmNhMzk5M2ZjMzE3MzdlYzExNzVlZjQ2MWNjNWZlNmE0ZDRmNThmOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjY2UxZTQxYTAyYzYwNzM5ZDIwNjRkNGU5NDQ2M2Q2ZDVlZTg2N2VmN2M1OThiMmY1NGMzNzgzMzEzODRlNDcifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/movie-mcp/Dockerfile#L1-L17",
+          "version": "repo-lines-v1:sha256:442e595f01a34ce3ba308589d643d84bb06639f6ea8790098da7349f1541e7b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiN2JmYzVhNDg3ZTEwNDEwODBiM2Q2YjU5MjQyNGRmNWMwYTk4NDE4MWE5Mjc5NzBlY2I3ZGZkNjM3Mzc5ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNjgzYzg3ZmYwYzczNjg4NzQ0NmRhZmYyZGFiZGY3YjI4YTU3NjBkMGJhNTlkZjRjNTU4ODZjZjRiMmRiNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://mcp-servers/movie-mcp/project.json#L23-L26",
           "version": "repo-lines-v1:sha256:aa9ca8d2303b0a19f2510b8cb4e75dbfa3bb14bd7f34f30a8499b6a7b5dd868f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjZWU5OWY3YTFlNWUwY2RjOWU4M2JhNmU1YTgwZTAzYWI0NDdlZmI2NGRiZDhlOTRhYjBhOTQ5ODlhMDJhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwY2RiOTcyYTdiZmI3ZWQyNDZmOWZmNjcyMzg1ZTU1ZjQ5NjhmYzExMDQzZGM1YjY4NGQ1MWRmYTMxZGJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjg4NzBmNzVjNWVlYzJlMzhmMzg5NTg0ZDNkOGZkNGZmYTdjZWNkYjQyYzVmMTVkNmFhMjYzNjEwMGY1MWYzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDcyMDJiOGU0MjQ0ZmU3NGQ5ZGI5ZWU2NWNkMjkzMTQ2YTkxNTMwYTYzNDM3YTY1ZmUzNmFlMzk4YWVlYTAwMSJ9"
         },
         {
-          "resource": "repo://mcp-servers/spreadsheet-mcp/Dockerfile#L1-L33",
-          "version": "repo-lines-v1:sha256:1b7523d6597c7e96e4deb880d02db243e5ada836892a58a340af48018856ef56:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YjU0NzlkMzRkNzY2ZDk5YTI1ZGQ2YWZlY2M5MGQ2MjhlOTAxNjE0ZmI4ODFhMTcwMDliYjMyMjUzZjIyMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNjgzYzg3ZmYwYzczNjg4NzQ0NmRhZmYyZGFiZGY3YjI4YTU3NjBkMGJhNTlkZjRjNTU4ODZjZjRiMmRiNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://mcp-servers/spreadsheet-mcp/Dockerfile#L1-L17",
+          "version": "repo-lines-v1:sha256:5b935e22308ddd911166bb3e1df72d5b482c140d88db440fc310f26c5414fd78:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YjU0NzlkMzRkNzY2ZDk5YTI1ZGQ2YWZlY2M5MGQ2MjhlOTAxNjE0ZmI4ODFhMTcwMDliYjMyMjUzZjIyMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNjgzYzg3ZmYwYzczNjg4NzQ0NmRhZmYyZGFiZGY3YjI4YTU3NjBkMGJhNTlkZjRjNTU4ODZjZjRiMmRiNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/Dockerfile#L1-L18",
+          "version": "repo-lines-v1:sha256:7fd75ebaae9862b4e66de93997191a17020b743bba89411ba11ce1651168925e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4NDhjMmM0NzM0ZWJkZjU2ZDEyNTRkZjAzOTY5YzY4ZGEzOWJiYWYyNTEyNzgxZTQ2YjczY2FiMDIwNmFiZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNjgzYzg3ZmYwYzczNjg4NzQ0NmRhZmYyZGFiZGY3YjI4YTU3NjBkMGJhNTlkZjRjNTU4ODZjZjRiMmRiNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -309,7 +317,7 @@
       "statement": "Each server exposes the Nx targets `test` (unit), `test:integration`, `lint` (ruff + mypy), `build` (Docker image tagged `<server>:latest`) and `lock`, and all three integration suites run together in the app-ci job with `MCM_REQUIRE_LIVE_STACK=1` turning an unexpected skip into a failure, because a suite that skips when its dependency is absent reports green and gives false confidence — how two spreadsheet-mcp tests sat broken and unexecuted for weeks.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L820-L884",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L829-L893",
           "version": "repo-lines-v1:sha256:28cadcd14460d45a0a549ff96ec1fbc763e2756ae9459abb1c2767f28874221a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNDhhMjgxYTk1ZjYwNjZjODhlNmVhOGFlNDliZmVmNzJhNzhhYTg4ZjNmODYwNDg4MmRhMDViZWNhZTEwYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNmJkMzI3ZDFhMjg2YTAwNGViZTU4ZTZiNjg5MDY1YzVmZWI5NGUzZTc4Mzg1OTliMTg1ODYyOGU0MTIwZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1MDI3NjkzMmQ0MzU2NWYyMDQ2MDEzYzBmN2I3NDE1MmI4NGM0ZjQ5OTBjMThiYWE5NDExYzdjNWUyNGViMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZWZkNjY1YzAxYjQ3NTE3NDBjMjg0NTdjYTk3YTc2ZGFiOWFjNzI3NmJmOGVkNGJkOWY0ZGY4NmUxNDYxMTYifQ"
         },
         {
@@ -519,7 +527,7 @@
       "statement": "The two test tiers have non-overlapping jobs and neither replaces the other: the unit tier is the only place the HTTP transport may be stubbed (permitted there and only there) so it can cover branches no real upstream input exhibits, while the integration tier is the only check that the live upstream still returns the documented shape. movie-mcp's integration suite additionally asserts the structured-content contract across the MCP boundary — a mapping tool unwrapped, a sequence tool wrapped under `result`, and a write tool's status sentinel surviving the boundary — and web-api-mcp's suite is the only merge-blocking check of the certification extraction against TMDB's real response shape.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L840-L884",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L849-L893",
           "version": "repo-lines-v1:sha256:4bf0bcedda100e0ddd00b972830c83f4b3841791a2aaf1a20d930b127dab8613:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MGMzMTAyYmJlYzA2ODA3ZmFlNWQ0YmFmNzdlNGVlOGMxMDg4MGU3YThlYjU0M2U5NjA1NmU1MTI0ZTRhZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNmJkMzI3ZDFhMjg2YTAwNGViZTU4ZTZiNjg5MDY1YzVmZWI5NGUzZTc4Mzg1OTliMTg1ODYyOGU0MTIwZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2MDQ2NjM5MDZiMDI3OWU2MjVkZmY1MzIwM2IxZTEwZDgzN2UxM2I2ZjRmOWViZjFlYTRjMGY0NjMzMTU0MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZWZkNjY1YzAxYjQ3NTE3NDBjMjg0NTdjYTk3YTc2ZGFiOWFjNzI3NmJmOGVkNGJkOWY0ZGY4NmUxNDYxMTYifQ"
         },
         {
@@ -534,7 +542,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-29T03:23:45.685Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-11T15:19:14.150Z"
   }
 }

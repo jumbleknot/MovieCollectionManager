@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e80e45cc49d6897bfe95896374e5a16479560e817dbe0eb9be1928d7fabc1d5a",
+  "pageVersion": "sha256:2c641c592e80ec655af460a8cbcb98f352e6832c2b90f7dc31fc7717310153ae",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
-      "statement": "The static-scanning pipeline has four scanners — Semgrep over the TS/JS and Python source surfaces, cargo-audit over the root Cargo.lock, pnpm audit over pnpm-lock.yaml, and pip-audit over the Python venvs — whose output is normalized into one findings report consumed by a single blocking `sast` job in the guardrails workflow.",
+      "statement": "The static-scanning pipeline has four scanners — Semgrep over the TS/JS and Python source surfaces, cargo-audit over the root Cargo.lock, pnpm audit over EVERY committed pnpm-lock.yaml (root and nested workspace alike), and pip-audit over all four Python venvs — whose output is normalized into one findings report consumed by a single blocking `sast` job in the guardrails workflow.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml#L305-L401",
@@ -12,11 +12,11 @@
         },
         {
           "resource": "repo://docs/runbooks/sast-scanning.md#L8-L13",
-          "version": "repo-lines-v1:sha256:be16c3c1800d44c85d2259ef828d54ba5dc733d617c691b3126cc61b0ea42c8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVmNjdmNWY2MDgzNGRmZmMzMmVjZjA4NzY2ZmRjYmVmNTYzZDgwOTlhMzI4Yzc1M2E0OGRiMzliYzM1MGRkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGJkOGY3ZWJhODU3NGY3ZmE5YzBhNDQyYWMyMjc3MjQyNDhmNWQzZTA1MzkyZGZlYjNlNzZhZjk4YzA0ZDUxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjMxOTQzMWE0OTk5Mzg4NzQ4NWU3ODJmMTFiOWQzNjdlNGE2ZDFiOGYxYWQ3ZmEyY2YwZDU5Yzk5NjBkYTY3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg4ODYyZWIxZDg0ZDQwMWUzYjE5NjQzYWZhZDA5ZjQ5YmVjYjJmODJkYTY5MTkwYjgzYzFiYjAxOWI3ZGI3YSJ9"
+          "version": "repo-lines-v1:sha256:208e14d5da7bb92419b98b22eb27c8ff1b46795cc321ea34bff4e3c44b3d6a72:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVmNjdmNWY2MDgzNGRmZmMzMmVjZjA4NzY2ZmRjYmVmNTYzZDgwOTlhMzI4Yzc1M2E0OGRiMzliYzM1MGRkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGJkOGY3ZWJhODU3NGY3ZmE5YzBhNDQyYWMyMjc3MjQyNDhmNWQzZTA1MzkyZGZlYjNlNzZhZjk4YzA0ZDUxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjMxOTQzMWE0OTk5Mzg4NzQ4NWU3ODJmMTFiOWQzNjdlNGE2ZDFiOGYxYWQ3ZmEyY2YwZDU5Yzk5NjBkYTY3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg4ODYyZWIxZDg0ZDQwMWUzYjE5NjQzYWZhZDA5ZjQ5YmVjYjJmODJkYTY5MTkwYjgzYzFiYjAxOWI3ZGI3YSJ9"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs",
-          "version": "repo-file-v1:sha256:d1b5a27ab7cb5d498c58934e4e67ac329ead49b2fa04f934f9ca6c9e143eb4ad"
+          "resource": "repo://scripts/sast-scan.mjs#L451-L486",
+          "version": "repo-lines-v1:sha256:9aff1074f5214aa025a3b37a2753ffd770a002576a4374fe456647e70f8a1749:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNDZmNTBjZDI5NzVjYzQxNDNmMjk1MWJmM2FjNDI5MDk4ZDVlNzQxYTdlM2FjOGM1YmY0NzJmYzAxZGY3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExN2M5MWFjNjg1ZWQ2Njk4MGJjYjYwMGM3NjA4OGQzOTIxZTY0MGMxMzgxMjEzNmRkMGZiZTU4ODU4MGQxNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
         }
       ]
     },
@@ -43,7 +43,7 @@
           "version": "repo-lines-v1:sha256:832981e91a27bd4ee78a4a9971b7c93c0039b861166fd882c87bb1d1664ac7d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjJjZTRlZGI1OWZhZWZmZDQ1NTNmNDYyY2VlOTM1YzQyYTU3NTQyMmViOTkzYzVlZmJiNzc0ODA4ZTc0NzFhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE0OGFjYzBlNDMwOWNlMjYwOTZmOGY1NjBlMWEyOGJlYzVhYmEzZDFjNDQwZjM3Y2YyNWVkNGNhYjBmM2VjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTVjNDE2NzUyMzhmMWQwMDRmMjM0OTgyNDdmOTA1MzhmYjIxODU1YzgyZGYwZWZlOTU5MmYzYjkwODViZTM5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjA3MWIzYThlYTlhMDE3OGM4M2ExMWQ1NDc1NGYyMzU5ZDAzNWM2MWZhZGZmMWMyOTZhOGI0NjBhZmQ1YmUxMyJ9"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L130-L135",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L145-L150",
           "version": "repo-lines-v1:sha256:db50258870117f5d7f82f6cbeefd82df85681cb5fcae29cac63d9eef17c40222:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzJiOGRkZTc3NDA4N2NlNmU4MDk3NzZiODM3OTVlYTg2OGJhZGNlNDlmYjFiZWE5YWJmYzEzOTRkMTUxNTkwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM3ZGE4ZjUxYzM0OTg0NTFhZmE5MWI1NzYzZTc3MWU0M2I0ODk5OTMzMjJlZmFhOTE0OWIxMzdiYTI2MmZkMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTA5MTRhYzdiYjkxYWNkMzU3YmIwZjZiNjFlODhiODUxOWMyNGNkY2Y2YjYwMjljYWIyMTIxNDdkZjM0MWVhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmRlNjVmOTY2MGMzY2Y2YTBhNTdmOTM3MGY1YmMwZGI5OWIxYWRlZDdmYzQ0Njc0MDU0OTM1ZWE1YzU1MGM5NSJ9"
         }
       ]
@@ -95,7 +95,7 @@
           "version": "repo-lines-v1:sha256:05e0d86fdebde18ef36d2115b04e0cd83848f0def8cf2c1fcf0f3beb63571566:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NjUzNGNlYmY4YmVjMjViNzI0MjZhOTFjZmJlNzA3YjY2ZDVkZTkyYWUyZmI0ZWI5YjZlNjVlMGNkMDY1NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwMTNmY2VhMTlmZWI1OWU2MTUxYmU5MWI2OTQwMDZmNDQ3NWNlMDUyMWJmZDI5NWI1ZDRkMzVkZTNhNzNjYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MTFkNzE2MDRjMzIwMGM2Y2FjZmVjNzhhN2YxNTc5ODk5OGFlMmQ4OTc0Njc1YjMzOWFjNmU0OGFmYWFlNGEifQ"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L519-L563",
+          "resource": "repo://scripts/sast-scan.mjs#L563-L607",
           "version": "repo-lines-v1:sha256:50ad95ba3e7f4f791f5c619ceee8cf75c61db8b3057a95b40b82f28f600dfdbe:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNjI4ZTAwYmZmZjA0ODkzMmYwYzIwN2VlMzMyYjU0OWY4NGY5MmY3MTM2ZTQwOTJhZDg4YWQ1NjA2MjdkMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1MWY3NGViZTU4MGJhZGQ1NzY3NzZjMDc0ZGY3ZGUxZGQ4NzkxNzA4NzMwMTU3OTQzZjEyNTNmMDA5ZmJmNTkifQ"
         }
       ]
@@ -109,7 +109,7 @@
           "version": "repo-lines-v1:sha256:4c52726d67a11ea780fd42c488b733ec896d076fe7209e66065be4a0e2d38c0b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkZGM2MzYxMTVlNDI0MDk1NzAyMzYxNDdjNTZjMmZlOGFlMzkxODc1NmU3ODUyZGVhODk5NTEzODQxZGQ1MTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYTg0MzY3NTQ4Nzk4NjMzZDQ2ZGYxYjBkY2I0MzA5ZDRjNWI3Mzc5MmQ4Y2M0NTlmMDAxMWIwZWI1MTA4NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4MzY4OTZjYTZmMTA5Njg4MmZjYTY0ZWVhNjljMDA5MzQzZTgzYjM2MzFkNzI5Yzc5ZjM4NjE4N2I0MzI3ZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkNjA1Y2FmYTAwNTUzYTA3OTg0OTc4YjlkZGJhMTJjOTJkYzZkZmViMTUwMGQwZDBjODUyMWM4OThmODNlMGQifQ"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L565-L593",
+          "resource": "repo://scripts/sast-scan.mjs#L609-L637",
           "version": "repo-lines-v1:sha256:0061af068807a6b767bc2894ebd4c14c5fbe3c8648ac376c683383ca9843b12a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzYTgyYWMxOWMxY2RiMjAwNmM3MmEyYTdkZThhN2M1MjQ4NzY1YmNjMDkxN2RjN2I0ZTllMDFmYTBhMjlhZWEifQ"
         }
       ]
@@ -123,7 +123,7 @@
           "version": "repo-lines-v1:sha256:37b2b859a1026832d34b70c69866228a1b4ff8861dd0373fbee572fbe7843e1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjNGVjYmFhMjUxYTZkMWJmMzZhMjNhMzNlMjI0MDFjYzg3ZTM5NDRlNjBlZDY4MDQ2ODkxMjNiMmU3MjRkOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyZTU1ZjAyNDc5NDM5NDUzNDU0M2UzYTAzZWY5MzNkMTg4MjljZmNhYWI1ZDYzOTliZmEwYjg5ZWNmZjQ2NzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZTY3MzgyYmM1NDMyYzViYzYyYTlmMTA4ZGZlNTRlZWI4NmNhOTA4ZmY2MTkxYjE2ZWNlNWYyYmJmZDAyMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmNTRhZWYxMmM1NTMxZGZjYTJkYWE3MGM0YWU4YjBmOTk1ZmMzYjAwOGFhY2ExNzc4NzAyNzdjYjgwYWVkZmIifQ"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L620-L669",
+          "resource": "repo://scripts/sast-scan.mjs#L664-L713",
           "version": "repo-lines-v1:sha256:571e8d31ffeceeb4608f4103e26c7e7be6acf049cf1960aa7a5ab93d1c63fc0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0MjY4YjMzYzQyNzcxNmQyNTY4ZWFkYWE1NTYwZWI4Y2I4YzdkMWU0NzI3ZmYzOTYxNzgzYWUxZWZiYWYwODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5MTdhODRiZWU0NGI5NTBiYmNjOTJlMDdiNGE3NTZhNzI1ZDFiNjdmMGI4NGQ5OGQ5OTdhNzg4ZTdiODExNmEifQ"
         }
       ]
@@ -133,7 +133,7 @@
       "statement": "Every scanner is keyless and fail-closed: rule and advisory data are fetched anonymously at scan time and any fetch failure fails the job instead of producing a false clean, with no secret required.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L253-L256",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L273-L276",
           "version": "repo-lines-v1:sha256:83f88c6308ec45b69843f0477d7ceb2932a1ba66cc3aa6a98a5033f7ce4b5168:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjUyZTE1NzJiNTc2ODBjOGJkNTkwZjMwZDEzMjdkNGVkYmE0ZmY2ZDlhNTNmNTFmMDZmNTk2ZjhmNjExNDdkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhiZGViMGU1MjA2ODQxZTA1ZjlmNThjOWEzMzQ2MTRhZWQ4YjM5ZDA3NDZhNTc2ZWI0MzVlYmI5MTIyMjhjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmY1MWFkZjU2NTIxMmI0MWI2ODkxMDIyNWIzMmJmNGNmOGRmMGE4NjEwZmFjODI3Nzk0NDk1MGZhMWIyNTcwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmRmNTkwZWUwMTBkYjk4MTU2MmY2Y2RkODc0NmNhYzYzMGJmYTMwODhhZGQ3MmI1YWNiZjQ5MjcwZmZlMTcxZSJ9"
         },
         {
@@ -183,7 +183,7 @@
           "version": "repo-lines-v1:sha256:08e357c14c07887938af2b1cfd3ae1ad9ac4b95021f1203226768b87aa9a0e31:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMjg0M2I3ZjBhZTgwNjE5ZGM4ZGZhYzY5NjA5NjUwODM3Y2RhYzVjYzU5NzU0NDMwMmQyYmJjMzJmYzViZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhZjI3YTA3N2QwMDM3MTBiYjRiNzAzZGUzM2JjN2QzMmQxYTc2ZGJlMzIwNmU5ZGJmYTY2YjJjNWQzNjNmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyNTRjMmNkN2IyOTRmNDc2YzkyNDFiNDMxMzQyMjI3YmZiYjJjYmY3YzUyNjFmNzQ5NmE5ZGU4ZmIyMzIxODIifQ"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L257-L276",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L277-L296",
           "version": "repo-lines-v1:sha256:5ba6acec9aaf2e5526b70be40f401713c03772f75c4794f6f039d3e6ec973b5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYmFlNzhhMWE2YjMxMjY0NWMzMzg1MWE4MTI1M2E4ODA0NjlkOTZkM2Y0OGQ2MzYyMmQ2MDQxZGIyNjAyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MWE0ZjlmYTQ5ZjY4ODBiMWQyMTU0OTVlNTg1NzE1ODRlNjFkNjdmMTcxMjkyZDM2Y2Q1MzY2MjlmZDMwMWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3ZmFjZDJjY2U4NmIzNmViNjY4NTA3ZWE0M2U0NDQ0YWExN2Y1YWY1M2RmNGI3OGJmYjM1MDI5NGJhN2M5YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMTk0N2Q0NDM3ZGRhODVkZmUyNGI3OTdkNzM4ZDEzYTc4ODQ1YTczMTdkMjRhOTljNTA0YWI5Y2YyNGZkMjMifQ"
         }
       ]
@@ -193,11 +193,11 @@
       "statement": "Because the empty-report green is specific to Semgrep, `--only pnpm-audit` (and the other SCA scanners) still produces a real local report — which matters because every dependency-floor remediation is an SCA finding — and the report's finding COUNT, not the exit code, is what distinguishes a vacuous pass from a clean scan.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L280-L298",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L300-L318",
           "version": "repo-lines-v1:sha256:d4085f6b76e9d86b7a234b7f86c6be8d1f8d48308c8f6db56e9a724cf68a0094:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmE3NGM1NzJiYjI3YjAzYzkzNWY5NjQxMmVjNWViNGFkMzNlZTZhN2FiZGJmZTE4Y2RhOGQwYTJmMDY3ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZDBiNDllNGViZTRjMjk4ODZkMjZlOWE0ZmE2YWMzZTQwZGJiMzNmM2YxNDdkODU4MmQyNzdmMjhhY2UzYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMTk0N2Q0NDM3ZGRhODVkZmUyNGI3OTdkNzM4ZDEzYTc4ODQ1YTczMTdkMjRhOTljNTA0YWI5Y2YyNGZkMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZWY0MjYzZTdjOWM0NDczNjQxYTk5MzUwNTgxZjRiNTdhMDNlZjIxY2Q2OWE0YTYyMjE0ZGY3NGExOTRlN2EifQ"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L763-L772",
+          "resource": "repo://scripts/sast-scan.mjs#L807-L816",
           "version": "repo-lines-v1:sha256:931528f8672b31bee595ac58d3dc4b087f67d7fe9d385acc470e3ea40305e6bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmYjY4YTE2YmEyZGJkNmI5MTZlNDAyYTc1MTFmNDc0MTdiMGZlNTc0YzlhOTU1NmRlMGIyYTQ5YWJiODRmNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZDQzNDIwMzFhMTNkOTdkMjlmZmMyNzQ4ZTI0NDMwYjNiODgzY2I1N2M4NjdjZjZjZjIxOGI1MGNhZDA5NzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2NjJlNTFjZTQ2ZmY5Yjk2NDQ3NGFjOTJkZmNhYjRlMDgwMDcwNTQyMWViODI4ZTZiOGVkNTg5MTEyMWQzNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhYjFlMzRlM2EzMDI4YjVlNTdlMWE0NmI3YjRhN2NiOWIzYmJlMTZmY2VmYWY1NDI1ZjM5ZGY3YjQwYzdlOTQifQ"
         }
       ]
@@ -225,7 +225,7 @@
       "statement": "The blinded-rule attribution must read the rule name out of the error message prose as well as the structured `rule_id` field, because the pinned Semgrep populates that field on `Internal matching error` but not on `PartialParsing` errors — keying on the field alone understated 36 errors as 3.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L326-L337",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L346-L357",
           "version": "repo-lines-v1:sha256:02681d939c4907d7d7454876b70c27975ba35e533fc186af46801860fd3b8d63:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MzA2ZjIwMjM2M2M1OGM1Mjk5YTUyNjkxMWMyZGU2MjZmNGNmZmQ5YWE2MGY0NmI2NDg4Zjk1ZjA3OTA0N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZmM0YjViYzc1MDdjNjIwNmFlOTA1ZjQ2ZTE2NTgyYTBjM2E2ODI1Y2EwMzY2NmUyOTgyOWU5ZWMyOWJmNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyODU0ZmYyM2E5NzU0MThjMmVmOTMyMzViMWYyZTFkMDZhOTVjZjUxZWFhOTMzOTUwY2U0ZDk0ODE3OGQxZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5MTZjNmQzODQ5ZDhkYzUyMzBkYjI2YmM1MzE0ZWFkN2EwNTM0YjU5ZmU2YmQ4ZGYyNDQ5Njc5NjNiODU3MGMifQ"
         },
         {
@@ -257,7 +257,7 @@
       "statement": "A `sast` gate failure whose output says `TRANSPORT/SERVICE ERROR` is a third-party outage that survived three bounded retries and should be re-run, not read as a finding: pip-audit queries osv.dev, cargo-audit fetches the RustSec advisory DB, and pnpm audit queries the npm registry, and the classifier distinguishes those from a real fault which still fails on the first attempt.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L93-L120",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L108-L135",
           "version": "repo-lines-v1:sha256:bde5557d0f20653db874378c42ebcea219ea71de77005773dbc16fedd0a93ba0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NmFlMmFiN2RkZGRkOWEzYTI3ZDMzMjM0ZGVhZTA2YzdmMmFmMDQ1ODRjZGY2YjEyZGZmY2VhYzZjZDMwODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4NDkwYTU0ZjFmYzdhYjI1MDM0OTQ2NDg5NTEyOWUyZDRjYzMwNzZlZDBjY2ZlMjBjNDJmNjgyOTUwY2E5MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2NzJiZWI4YmI5YzljMTRhOTQzMDQ1ODA0ZWFjZjVkMTZjMjg1M2YzZWI1N2VhNzU0NzAxM2Q0NzdmZWVmMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3NjA1MWQ0ODg0YTMzNDRmODJmNGU1N2M4ZjkyZjAyMmM5NzhkZmE0MmU1OTk4YzcyNjlkN2VkZjJiN2VhMzgifQ"
         },
         {
@@ -331,7 +331,7 @@
       "statement": "Renovate cannot raise the lower bound of a keyed override — it parses `name@<range>` as an opaque depName and half-bumps when it rewrites one — which is why the override-consistency guard is needed for floor raises.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L238-L243",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L258-L263",
           "version": "repo-lines-v1:sha256:0fecd5750a8c0f7be2c790a3503039de9f583347c40e544bfd70be778217e9e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODQ5NGRjY2M4MWZmM2Y1YzIyNDUyNjUzMTk5ODU0YmNlODkwOWY3MzE4MjJiYzU4MDk3MzcwOGJhNDc4M2JlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3NmFiMjc5MzE4NTJkYWUwMzUwMDMxZjk1YjhhYWJjNDY5NDhmZWM3NjNkZmYwZDU0YTQ3NDZkZWM2OWE0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTg2NTg5OTFhMGZlYzdhNjE0ZmRhOWQ2YzBjM2U3YWM2MzRiMDNkN2UzNThlM2FlMzgzODIxMmFlZDE0YjVkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODhjYjY0OWIxZThkYzVkZDc5NDAxYjQ0ODBmZmE5YmMzM2Q0MTBkNDBmYjRhZmQ2N2U4MzAyNDM5MGU3MDYxZCJ9"
         },
         {
@@ -469,16 +469,12 @@
       "statement": "A time-boxed allowlist acceptance must be remediated rather than re-dated — deleting or extending an `expiry` is how a time-box becomes permanent — and there are exactly two legitimate exceptions, both of which require the evidence written into the justification: no published fix exists, or a fix exists only outside the range the advisory's consumers declare. A time-boxed acceptance may also be discharged by a route its own justification did not anticipate, as when a dependency leaves the tree entirely.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L202-L220",
-          "version": "repo-lines-v1:sha256:09730dec6446d48ad0cab7548d53effa2bb1bdf11bce129ae4a9e7ff6db9a322:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYWY0MTM2ZWEzOTcwNjc1MTFmZjI1MTgzNTkzYmExZDNlYmY2NmQ3YWE0MDU5MjVhNTU0MzA5MDg2NjUzODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
+          "resource": "repo://docs/runbooks/sast-scanning.md#L217-L240",
+          "version": "repo-lines-v1:sha256:efe0bec9b817414e3c8d0d3c181f914ee50183d52c69e18f1519fc8e05e3f8d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzZmOTdiMzg4YTI0YmQ5M2QzNWQwMTUxNDlkZTQxMDgwNTIzOWZmNWQ4OTc2ZDNlZTQ3YWM5NjZiYTQxNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L135-L156",
-          "version": "repo-lines-v1:sha256:8fdd90ddfd9dbd55f175d4ab95320e6745e864d70be57bb9530928a781543c21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTY5YjE1M2RhZDg1ZmIzZDk2MjNlZWQ1ZjEwMTNmNDliYjVhMjhiNzRmZTk1MzAxYmNhNmZjMWFjODU2NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMzZjNTRjMWJiYjgwYjlkOGE3YjM3ZThiYjFkM2ZlNTU3NGY2N2JiMmM5OWJhNzE3ZGUxODQzZjJmN2I3YTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjhhMjhiMWQxMTI3NTc2MzFlYWZhYjY1OGI2MTJhNWE3ZGM4MzY1NjI1YWVmNmUyMzg3ZjUyY2VmNDEwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNGY5Y2I3ZTJmYmY5MWZiZGEzMmZkNzhiOTRmZGJjNDhmNjg5YjM2MzkwMzdiOTI5ODdmZjc1NmI5MzEyZWUifQ"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L257-L263",
-          "version": "repo-lines-v1:sha256:b5969db36e04acca00cdc57227ede3caca1e12a19bfadae405079729ae5166b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZhZjA3ZTM1YTU0MjcyYzBjMTljMjBkZWQ2ODYwM2E4YTcyNDNmYTQwNDhjOTI5YmRhNzYyMDdhMjU0ODY5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc0NDlkYjU5MDJhNmNmNDZmZWM1YTY3NGExOWRjNjFmZDc2MDFhNDE5ODM5NTFjYTkxYmQxYWM5NWFhMmQxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJiZTRkMGU3MzViN2RjYjQ3NjBiYjU4NzNhZDZiMGZhMDhlMWE5ZTc5ZWM0ZmVjOTk1NjRiZjlhZTVkN2YyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://security/sast/allowlist.yaml",
+          "version": "repo-file-v1:sha256:953554f7fb6484c54e28356a884f364e0066f6e9c9fe756e9c271ea3e4bc722c"
         }
       ]
     },
@@ -487,7 +483,7 @@
       "statement": "Allowlist `locationPattern`s are matched against paths normalized to forward slashes so one pattern is portable across the Windows dev host and the Linux CI runner; a backslash pattern matches nothing on the runner while passing silently on Windows.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L356-L357",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L376-L377",
           "version": "repo-lines-v1:sha256:44877ab3ee914095a855deda5dd890ec1e696626b4eeec9cb82bca151dd290e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhNjI5NDkyNmE3YzhlN2NkNDc1M2RjMjg2YzUwZjQ2ZWNiNTRlMWJiNjU1OWI0NzdiY2RhYjIyYzg1MjRkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU2ZThhZjFmNTQ5NjFiY2NkZTVjZWU5M2U4ZmUyNzhkODgzNWYwYmNjMmY3NzlhZTNhYzQ1OGIzMjA2ZGZmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjcxMDZmMTdhODY1MDNhNDNmNDE5Mjk0OWRmN2IxZGI1M2Q5YjUxZmM5OWRkNWFhZTY0MjdlZWU3ZTkzMWRkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -544,19 +540,19 @@
     },
     {
       "id": "claim_defeb1397e07473ca5556aa0094e68cf",
-      "statement": "The SCA `runtime` tag answers whether the whole-workspace `--prod` audit sees the package, not whether the vulnerable code path is exercised; two of the three current no-fix acceptances (node-forge, braces) are tagged runtime solely because `expo` declares `@expo/cli` a production dependency while the vulnerable code sits in Expo CLI / code-signing tooling and in micromatch under Metro's file watcher and Jest, so reachability must be checked separately and written into the justification.",
+      "statement": "The SCA `runtime` tag answers whether the whole-workspace `--prod` audit sees the package, not whether the vulnerable code path is exercised; the root no-fix acceptances (node-forge, braces) are tagged runtime solely because `expo` declares `@expo/cli` a production dependency while the vulnerable code sits in Expo CLI / code-signing tooling and in micromatch under build and test tooling (Metro's file map, Jest, plus fast-glob and http-proxy-middleware as of the 2026-10-10 re-measurement), so reachability must be checked separately and written into the justification — and the same check on the same advisory can return the opposite verdict in a different workspace, where deepagents passes model-chosen patterns to micromatch.",
       "evidence": [
         {
           "resource": "repo://scripts/sast-scan.mjs#L202-L206",
           "version": "repo-lines-v1:sha256:91c7df156e8c1444316f9daf29f4503611baa29d855d30f968c602fd3b2d87eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZkYjBkOWY3NDllNDNhNjhiNzE3ZDM1YTg4YmU0YzQ5ZGJkMjEwMDQ2ZTlkMjAwMGVjNjM3ZTI1MTc4Y2IwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQwM2Q0ZDU0MzBjMmExNzYyZjcyZDJlYTEyZDRhYjUxNzRkOTBhM2VjMzQ1YzU3ZDBkZGIzNTZiMGI4ZmRjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWM1NjU4NThjYjY1ODk4MjU5MmM5ZmYxZjg5MDE3N2ZjNjBkMjA3MGUyOTQ1NDQ0ODg3YWQ5NThkZjZiMmI2YyJ9"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L467-L485",
-          "version": "repo-lines-v1:sha256:1b2b943a953ebadcb31bef7cd271d93f136940146061d4f708c58a0294adf568:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMjQyOThiMGQ5MzEyMDczYWQzZTQyMGIzYmRjMjQ5ZjEyMzIxODFiMmIwOGYxMGM4NmU5YzM5ZmRhMjUwNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjNmQyNTkyOTk0YWU2ZTA5NGM2ZTkyOGMzZjEwNmU3MzhmMWQwNTllN2RhZmFhMzA2MjE3Y2Y1NzI1MTE4NzMifQ"
+          "resource": "repo://security/sast/allowlist.yaml#L211-L261",
+          "version": "repo-lines-v1:sha256:0aec0958cdb39540157fd10a5302d4971eee816ead10636e4ad181dfb1f44089:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwMzhlZjFmYmM5MmI4YmE1NTAzMmI3ZTVlYWUxNzAxYTNkM2RiOTMxYzZjM2M2MjY0ZjNmZjA5NzE2M2E0M2QifQ"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L211-L255",
-          "version": "repo-lines-v1:sha256:b4ad41638aefb2c164a0bbb9d43e75ad378a2c6fa701be91378c521eeaec3651:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxODE0ZDU2YmNjMDdlZGJhZDk1MThiOGMzYTNlYzk0OWEwZTJhMTBjM2UyYjQyYWEwYmQ2MGFlNTA4ZTM2MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyZTYyMDNlMWQ0Zjc0ZWZlNjdjYmM3NGM3YzczZWZiMTNlY2Q5MWIzNDk0MTllYWZkMDkyZDg1N2JlMDVhY2YifQ"
+          "resource": "repo://security/sast/allowlist.yaml#L263-L290",
+          "version": "repo-lines-v1:sha256:c74cbdcda9794c7234e82191601be3f8ad8e22c63525fb6881cd00e7474e4046:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmMWViYmQxMWQ4MjJmODcwNDBiZmQ3ZDNjMjE5YjE2NmZlZTE3N2UzYWFjNjAwOTA1NjViZTAyOGU5YjA2YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZDc5MmM1MjljOTBmODg3YTljOGI1MWU5ZDc2MzU1OTJmYTI3NDA0MGUzNDQ5Njc2NDExYmVjZDM4YTg3MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
         }
       ]
     },
@@ -583,8 +579,8 @@
           "version": "repo-lines-v1:sha256:0d6b0d2cf4075f5624c87392a519b1db19395e720f56d667857346a434153716:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjZWVjMDFlNmIyMjhkYzFmOWJiOTllNzBjZmE0OWEwNGFmZTVlNTExNjQzOGEyNDRiMzNiMGUxNGFjOWI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIwYzJiYWIyMzM2ZDdiZWU2ODk3MjcxYWRmMzgzMGUwNDQ3Mzc2YzExNjI3YWJmODVlNmM1ZjVmM2M2NmUxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRkMDU2N2Q4MTMyZjFkNTY0NTVmOTVmNWYwZjM1OWEwZDZlZWQ4YmNjYzk0ZWQ3NjY0NTA1N2JjMzIzZWVmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgwMTcxYTI2YmFhMmIxZDhkNTJjNmNlMWJiMTUwY2FhMzYzZjYyZjgxZTc3M2Q3NzEwY2IzNmIxMTA5MjcyNCJ9"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L211-L255",
-          "version": "repo-lines-v1:sha256:b4ad41638aefb2c164a0bbb9d43e75ad378a2c6fa701be91378c521eeaec3651:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxODE0ZDU2YmNjMDdlZGJhZDk1MThiOGMzYTNlYzk0OWEwZTJhMTBjM2UyYjQyYWEwYmQ2MGFlNTA4ZTM2MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
+          "resource": "repo://security/sast/allowlist.yaml",
+          "version": "repo-file-v1:sha256:953554f7fb6484c54e28356a884f364e0066f6e9c9fe756e9c271ea3e4bc722c"
         }
       ]
     },
@@ -640,15 +636,15 @@
     },
     {
       "id": "claim_465f8a2f2b4f4ea98385e5c58d02afa5",
-      "statement": "When a patched version exists but every consumer's latest release still declares a range that excludes it, the finding is not 'fixable' in the ordinary sense and is never decided by the reader alone: the operator chooses between a cross-major override (`pkg@<fixed: '>=fixed <next-major'`, accepted only with the full required set green including `app-e2e` when the consumer is on the app's runtime path) and a time-boxed acceptance pinned to the exact vulnerable version with a short expiry and a backlog item whose acceptance criteria delete the entry rather than renew it. The one live instance of the second exception, `@graphql-tools/utils`, has since been discharged rather than renewed: graphql-yoga 5.24.4 and `@graphql-yoga/plugin-defer-stream` 3.24.4 moved to `@graphql-tools/utils: ^12.0.3`, a lock refresh resolved both, and the allowlist entry was deleted on 2026-10-09 (item #674) with the vulnerable 11.2.2 gone from `pnpm-lock.yaml` — the direction that restores blocking if 11.x ever returns.",
+      "statement": "When a patched version exists but every consumer's latest release still declares a range that excludes it, the finding is not 'fixable' in the ordinary sense and is never decided by the reader alone: the operator chooses between a cross-major override (`pkg@<fixed: '>=fixed <next-major'`, accepted only with the full required set green including `app-e2e` when the consumer is on the app's runtime path) and a time-boxed acceptance pinned to the exact vulnerable version with a short expiry and a backlog item whose acceptance criteria delete the entry rather than renew it. The one live instance of the second exception, `@graphql-tools/utils`, has since been discharged rather than renewed: graphql-yoga 5.24.4 and `@graphql-yoga/plugin-defer-stream` 3.24.4 moved to `@graphql-tools/utils: ^12.0.3`, a lock refresh resolved both, and the allowlist entry was deleted on 2026-10-09 (item #674) with the vulnerable 11.2.2 gone from the lockfile — the direction that restores blocking if 11.x ever returns.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L202-L220",
-          "version": "repo-lines-v1:sha256:09730dec6446d48ad0cab7548d53effa2bb1bdf11bce129ae4a9e7ff6db9a322:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYWY0MTM2ZWEzOTcwNjc1MTFmZjI1MTgzNTkzYmExZDNlYmY2NmQ3YWE0MDU5MjVhNTU0MzA5MDg2NjUzODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
+          "resource": "repo://docs/runbooks/sast-scanning.md#L217-L240",
+          "version": "repo-lines-v1:sha256:efe0bec9b817414e3c8d0d3c181f914ee50183d52c69e18f1519fc8e05e3f8d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzZmOTdiMzg4YTI0YmQ5M2QzNWQwMTUxNDlkZTQxMDgwNTIzOWZmNWQ4OTc2ZDNlZTQ3YWM5NjZiYTQxNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
         },
         {
-          "resource": "repo://security/sast/allowlist.yaml#L257-L263",
-          "version": "repo-lines-v1:sha256:b5969db36e04acca00cdc57227ede3caca1e12a19bfadae405079729ae5166b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZhZjA3ZTM1YTU0MjcyYzBjMTljMjBkZWQ2ODYwM2E4YTcyNDNmYTQwNDhjOTI5YmRhNzYyMDdhMjU0ODY5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc0NDlkYjU5MDJhNmNmNDZmZWM1YTY3NGExOWRjNjFmZDc2MDFhNDE5ODM5NTFjYTkxYmQxYWM5NWFhMmQxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJiZTRkMGU3MzViN2RjYjQ3NjBiYjU4NzNhZDZiMGZhMDhlMWE5ZTc5ZWM0ZmVjOTk1NjRiZjlhZTVkN2YyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://security/sast/allowlist.yaml",
+          "version": "repo-file-v1:sha256:953554f7fb6484c54e28356a884f364e0066f6e9c9fe756e9c271ea3e4bc722c"
         }
       ]
     },
@@ -665,10 +661,88 @@
           "version": "repo-lines-v1:sha256:6115c6d21c4528ab8490faaa433a883940e25ad693d417de2bf4d861b000d86b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjNiZjhmYThhYjU2NzlhOWJkMDc1ODQ2Y2QwZGI1NGEwZjEzYjJjYzgzNjBhYTllNjljMWFhN2ExY2E4ZWJlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY4ZDc1Yzc0ODgwZGUyOWQwODM3MjFmYmJhZTI4NGExYTNmZDJkNmVhMjBkN2JiNzRmNTIzZjE2YTc5NTE2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ0NTI1Y2IzZWI1ZTk4OWU4ODRlMTBmN2E3OGQ3ODY4YWVlMmE3MzdhZmFhNmEzM2VkYzY0NzI4ODZiOGQ3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDA0MTY5ODkxZDY4ODMxYTI0ZjJjMjM0ZmU0MzI4MmZlNjU4NDQ3NGY5OWFmOGVhOTljMmY1NTY0MTE1NmZlNCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_bd56ccdb527f48c3b60da23f2526634e",
+      "statement": "The pnpm audit set is discovered from git (`git ls-files -z -- '*pnpm-lock.yaml'`) rather than hard-coded, and `sast-scan.guard.test.mjs` compares it against an independent `git ls-files`, so a newly added nested workspace or a hand-written exclusion fails the guard by name; the audit is lockfile-only, so the sast job installs nothing into the nested workspace.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/sast-scan.guard.test.mjs#L421-L454",
+          "version": "repo-lines-v1:sha256:45064db8a2330a73dc62261c6546421c67e62c58a6762d38301411c0ad045153:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYTliNjQxM2E4ZWYxZTcxZDhmMzQ5MDk5YWM2ZDdhYTUzMDU3MGM1MTlkMDc1YTFjMWQwYzNlMWI5MTk3YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNjc1MjhkN2Q2NWJjYWQ3ZWM1YTg3YjM1ZGM5YzllOTAyZmRiMDRlN2ZkNDU1MjRmYmI3YzBlM2E0MzMzZmMifQ"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L451-L486",
+          "version": "repo-lines-v1:sha256:9aff1074f5214aa025a3b37a2753ffd770a002576a4374fe456647e70f8a1749:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNDZmNTBjZDI5NzVjYzQxNDNmMjk1MWJmM2FjNDI5MDk4ZDVlNzQxYTdlM2FjOGM1YmY0NzJmYzAxZGY3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExN2M5MWFjNjg1ZWQ2Njk4MGJjYjYwMGM3NjA4OGQzOTIxZTY0MGMxMzgxMjEzNmRkMGZiZTU4ODU4MGQxNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78928d7463d540bdad8b9130c1a38375",
+      "statement": "A nested pnpm workspace is audited as `pnpm --dir <ws> audit --json` launched FROM THE REPO ROOT, because corepack resolves the pnpm version from the directory pnpm is launched in: a nested `package.json` declaring no `packageManager`, run from its own parentless directory, resolved pnpm 12.10.1 instead of the root manifest's pinned 11.25.0 (measured 2026-10-10).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/sast-scanning.md#L27-L40",
+          "version": "repo-lines-v1:sha256:99f900b1a7b7705d54f72ec8e4f8abca2b87bd214dedc05d5fd9cfa3f52ec513:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YjgyZjBiZjM2Zjk1NmFmNDJjZWMyYTVhNTNlZmNiMTgxYmI3YWUyNGUzMDAwNTY1NWQyMWJjZTE4MDIxNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMGE5NjRmOTkzNzQ5NTY4YmRmNjIxY2M0ZjcxNTExZjM1ZmIyODQ3NjU3YWM3N2JlNGQ1N2UzZGNjYjllYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiYjM4ZWRmNmE2NTU0MzVhMTkyNzU2MzIyYTYzMjdiNjE5ZDc5NDJhZDYxZGVjMWVjOTc4OTQ4YzkyYjViN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YzNlMmUwZTc3Y2M3ZTIwMzBiOTAyMWNiMjBkOTc3NjJmMTVkNjFiZmZhMDcxOThkNzg4NzRlMDY0ODI2YTAifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/sast-scan.guard.test.mjs#L448-L454",
+          "version": "repo-lines-v1:sha256:a5739c88d9a59521b1251f5a5baceaa2d5d3a994e9f1eecc7d53be7c661500ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFlOGE2YmM0ZjdjNzAxZDY0OWE0NDAyNjBiNTlhMGVlYjEzMzBlN2M0M2RlNzYwODc0MTViMzNjYmE2N2VjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDc2ZTVkMDg4MDY0YTNhNWE5ZGFkYjhhNDI1OTU2M2QyYjA0ZGE2ZjVlYjgxOTdlZGVkMzNkNDI1OTViY2EzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjM2NzUyOGQ3ZDY1YmNhZDdlYzVhODdiMzVkYzljOWU5MDJmZGIwNGU3ZmQ0NTUyNGZiYjdjMGUzYTQzMzNmYyJ9"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L462-L486",
+          "version": "repo-lines-v1:sha256:97bc047ad19af17ec750baa6d9e120404bcdc92e08e214e902d7a2d2eb60d8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYTFhMmYzNDI1ZWQxYjU3YzAzNDc5ZjU2ZDNiZmI5ZWI4YWE1M2VlZjNlZTA4NmVhOGFlY2MwMjI4NGM4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWI0MWU2OWZjNWE1OWQ3NTM2NWZlMmQwNTQ5Mzg1MzgxMmNjODFiZmZlOTgxMzE0ZmQ3ODIyYjBjYTYwODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3901b38219a5409490e35e24901f0538",
+      "statement": "A root pnpm finding's location is the bare `pkg@version` while a nested workspace's is prefixed `<workspace>:pkg@version`, so a root allowlist entry anchored at the package name never silently covers the same package in another tree — that tree needs its own entry with its own reachability justification, because the code paths differ (the root braces copy has no input path; the generator's copy is reachable through deepagents' model-driven glob/grep tools).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/sast-scan.guard.test.mjs#L456-L472",
+          "version": "repo-lines-v1:sha256:f2e5edc9c35d0470b9f2ad110a1b450bc007f52b31616074c00d5359a872059e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYmUxNzczNGNjNDYxNDUyMmU2ZGJmZTI4ZWY5YjU5YTkxOTFkMmI3YmY3MTkyNmQ3MWMxZGRjNGM5NmU3YzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MmVlMmQxODRiNzhkZjA4YWVhOGU1M2YzMGFjNGQyM2NlNTEyMmNmNDhjNTE0MjVkN2Q0NzA4MGJjMmY1NTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4YTU5NTBjZGY0MWVmZTY0OWY3ZDgyNjg1MmM4OTVmYWEwOTU3MGI0MWFhOTNiYWJiOWM4ZTNhZWRkODZiNjcifQ"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L469-L521",
+          "version": "repo-lines-v1:sha256:6ca90b9fd4298ba474426b381639bf935f1bb7a9d6a111f16440c58c86ed0c23:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NGZiNDhjZGFmNzBhZDk4ZmMzZGYzMjE2MDM4YjNhMWRjM2ZjNWJmMjFkYWI2MjRmNGU5MzdjNTAwMDA5OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYzc3ZGRjMzcyNGM2OWFjNTZiNzJkMjQ5NjIxMzc3Y2ExZmIyZWQ1OTgxOWY5OGQxNTcwNmU4ODA5NTkzNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5ZTA4NzFhYTYyNDdhYzU5NmQzZmU5YzA2Zjg0MTZjMTI0NWI5YjhiZWI4ZjM3NDNjYjc5OTI2OGU4NGRjMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmZjFkMTQ2YjJjYWI0YzA3YjJmNTZmZWVkOWFjMTg5ZTY2MGFiNzJlMWZkMGMyYjk0OGJhNzUyMGUzZTEzODYifQ"
+        },
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L263-L290",
+          "version": "repo-lines-v1:sha256:c74cbdcda9794c7234e82191601be3f8ad8e22c63525fb6881cd00e7474e4046:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmMWViYmQxMWQ4MjJmODcwNDBiZmQ3ZDNjMjE5YjE2NmZlZTE3N2UzYWFjNjAwOTA1NjViZTAyOGU5YjA2YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZDc5MmM1MjljOTBmODg3YTljOGI1MWU5ZDc2MzU1OTJmYTI3NDA0MGUzNDQ5Njc2NDExYmVjZDM4YTg3MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9f6a3e183cd948029abcb3335932e0d6",
+      "statement": "The `OVERRIDE LEVERS` advice is deliberately root-only: the root `pnpm-workspace.yaml`'s overrides do not govern a nested workspace, so advising `pnpm update <pkg> --lockfile-only` there would refresh the wrong lockfile; `adviseLever` returns null for a workspace-qualified location even when an identical root finding does get advice.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/sast-scan.guard.test.mjs#L474-L482",
+          "version": "repo-lines-v1:sha256:edde6d94176b8072516b0c6e00c41cee116971b40c087bcb8e77a7919f64e2e9:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI2OGZhMzVmMTVlMDFmZTQzYTU4ZjBjOTZiNmE3YjY2Y2QxYTgzNDk2MGQ5NDA1ZjZkMWQ3MWRhNzllMjAwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTgyMzg4Yjk5ZjgwMjZmM2NlYzFjNjRmOTc5MDA3YjE4NmVmMDE5YWQ5YWVmZjM2NmI4MjMxOWEwY2ZmMzI0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L462-L472",
+          "version": "repo-lines-v1:sha256:57a7690a9e03b316383650e42bae5e23fe5ba8fcaf2899d649195a41be0b30f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYTFhMmYzNDI1ZWQxYjU3YzAzNDc5ZjU2ZDNiZmI5ZWI4YWE1M2VlZjNlZTA4NmVhOGFlY2MwMjI4NGM4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTA3YWNkZTQ0MTJkYTdlZDFiMzQyMDA3Njc5MGQyNWU4MDU0NmFlNDhkZTY0YTlhYmE2NGM3ZWQyMGViOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWI0MWU2OWZjNWE1OWQ3NTM2NWZlMmQwNTQ5Mzg1MzgxMmNjODFiZmZlOTgxMzE0ZmQ3ODIyYjBjYTYwODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0YzE5Nzg2YzBmOWFhNjQ2NWE1MmM2YWRjNGY5ODEwZjg3YzI5ZjE2OWQxMWM3YTZjMjk2ZTU2MDVjYmFiYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_df880e6a836e4fe99cfba2ac14548d76",
+      "statement": "Where no patched version exists, the allowlist convention is to pin `locationPattern` to the exact vulnerable version and short-date the entry, so a different version re-blocks for a fresh assessment and the entry stops suppressing on its own — with the reachability check that was actually performed recorded in the justification. A renewal is not a re-date: the three live no-fix entries were renewed on 2026-10-10 only after re-measuring that no patched release had shipped and re-listing the dependents (items #633/#648/#721), and all three now share the 2026-12-01 expiry so they re-triage in one sitting.",
+      "evidence": [
+        {
+          "resource": "repo://security/sast/README.md#L136-L139",
+          "version": "repo-lines-v1:sha256:0d6b0d2cf4075f5624c87392a519b1db19395e720f56d667857346a434153716:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjZWVjMDFlNmIyMjhkYzFmOWJiOTllNzBjZmE0OWEwNGFmZTVlNTExNjQzOGEyNDRiMzNiMGUxNGFjOWI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIwYzJiYWIyMzM2ZDdiZWU2ODk3MjcxYWRmMzgzMGUwNDQ3Mzc2YzExNjI3YWJmODVlNmM1ZjVmM2M2NmUxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRkMDU2N2Q4MTMyZjFkNTY0NTVmOTVmNWYwZjM1OWEwZDZlZWQ4YmNjYzk0ZWQ3NjY0NTA1N2JjMzIzZWVmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgwMTcxYTI2YmFhMmIxZDhkNTJjNmNlMWJiMTUwY2FhMzYzZjYyZjgxZTc3M2Q3NzEwY2IzNmIxMTA5MjcyNCJ9"
+        },
+        {
+          "resource": "repo://security/sast/allowlist.yaml#L211-L290",
+          "version": "repo-lines-v1:sha256:39f553c21cb5d4bff8b6a248022fa7de45046e65f90622c5610712df91b669de:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-10T02:25:55.688Z"
+    "at": "2026-10-11T16:36:45.100Z"
   }
 }

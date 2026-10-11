@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: SAST & SCA static scanning
-description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole dependency graph, normalized into one blocking `sast` CI gate that must distinguish a scanner outage from a finding — and a finding on a file the pull-request scan never received from a clean one.
+description: Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) across the whole dependency graph, normalized into one blocking `sast` CI gate that must distinguish a scanner outage from a finding — and a finding on a file the pull-request scan never received from a clean one.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -52,13 +52,14 @@ sources:
     resource: repo://security/sast/semgrep.yaml
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T02:25:55.688Z
+    at: 2026-10-11T16:36:45.100Z
 ---
 
 # SAST & SCA static scanning
 
-Four scanners — Semgrep (TS/JS + Python source), cargo audit (Rust deps), pnpm audit (JS deps), and
-pip-audit (Python deps) — feed one normalized findings report and one blocking `sast` CI job. It
+Four scanners — Semgrep (TS/JS + Python source), cargo audit (Rust deps), pnpm audit (JS deps — every
+committed `pnpm-lock.yaml`, root and nested workspace alike), and pip-audit (Python deps — all four
+Python surfaces) — feed one normalized findings report and one blocking `sast` CI job. It
 complements [DAST scanning](./dast-scanning.md): DAST exercises the running app,
 this scans source and the dependency graph at rest. It is also disjoint from
 [infra-image scanning](./infra-image-scanning.md), which scans pulled third-party
@@ -99,21 +100,49 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   previously produced a false "gate bug" report.
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
-  package", which is a different question from "is the vulnerable code path exercised". Both current
-  no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
-  production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces
-  only through micromatch in Metro's file watcher and Jest. Neither is imported by first-party code,
-  neither ships in the web or server bundle, and the glob patterns those tools expand come from
-  repository configuration rather than a request. The same distinction applied to the now-deleted
-  `@graphql-tools/utils` entry, which was tagged runtime through `@copilotkit/runtime` while being
-  only listed as a dependency, never reached on a request path. That reasoning has to be **checked
-  and written into the justification**, because the tag alone would have said the opposite.
+  package", which is a different question from "is the vulnerable code path exercised". The two live
+  no-fix acceptances in the root tree are tagged runtime purely because `expo` lists `@expo/cli` as a
+  production dependency: node-forge arrives only through Expo CLI / code-signing tooling, and braces
+  only through `micromatch` in build and test tooling — Metro's file map, Jest, and (added at the
+  2026-10-10 re-measurement) `fast-glob` and `http-proxy-middleware`. Neither is imported by
+  first-party code, neither ships in the web or server bundle, and the glob patterns those tools
+  expand come from repository configuration rather than a request. The same distinction governed the
+  now-deleted `@graphql-tools/utils` acceptance, which was tagged runtime through
+  `@copilotkit/runtime` while only being listed as a dependency rather than reached on a request
+  path. That reasoning has to be **checked and written into the justification**, because the tag
+  alone would have said the opposite. **And the check can come back the other way:** the third live
+  braces acceptance — the one anchored to `tools/openwiki-generator` (item #721) — is *genuinely
+  reachable*, because `deepagents`' `glob`/`grep` tools pass the model's tool-call arguments to
+  `fast-glob`/`micromatch.isMatch`, and a ~40 KB nested-brace pattern aborts the Node process (V8
+  `RegExpCompiler` OOM, exit 134). It is accepted as availability-only impact on one unattended,
+  non-required job. Same package, same advisory, opposite reachability verdict — which is why each
+  workspace's entry carries its own evidence rather than inheriting the root one's.
 - **`pnpm why <pkg> --prod` without `-r` reports the wrong scope.** Without `-r` the command runs at
   the repo root only and prints nothing for a dep that is runtime-reachable via a sub-package (e.g.
   `mcm-app > @copilotkit/runtime > … > fast-uri`). That empty output is **not** "dev-only" — it is
   the wrong scope. The gate itself uses `pnpm audit --prod` across the whole workspace; when in
   doubt, trust the digest's tag (`[pnpm-audit] runtime` vs `[pnpm-audit/dev]`). This exact mistake
   wrongly accused the gate of a bug on 2026-07-21; the gate was right.
+- **`pnpm audit` reads ONE lockfile — every committed lockfile is now audited, and a nested
+  workspace's findings do not inherit the root entries.** Run at the repo root, `pnpm audit` never
+  sees `tools/openwiki-generator/`, a directory with its own `pnpm-workspace.yaml` and lockfile; that
+  tree — which runs with a model-provider credential in the wiki-maintain job — was audited by
+  nothing until item #721. The audit set is now discovered from git (`git ls-files '*pnpm-lock.yaml'`)
+  rather than hard-coded, and `sast-scan.guard.test.mjs` compares it with an independent `git ls-files`
+  so a new nested workspace — or a hand-written exclusion — fails the guard by name. A nested
+  workspace is audited as `pnpm --dir <ws> audit --json` **from the repo root**, so corepack resolves
+  the root manifest's `packageManager` (a nested `package.json` declaring none, run from its own
+  directory with no parent manifest, resolved pnpm 12.10.1 instead of the pinned 11.25.0 — measured
+  2026-10-10). The audit is lockfile-only, so the `sast` job installs nothing extra. **The locations
+  differ:** a root finding keeps the bare `pkg@version` the existing entries anchor to
+  (`^braces@3\.0\.3$`), while a nested workspace's is prefixed `<workspace>:pkg@version`
+  (`tools/openwiki-generator:braces@3.0.3`). A root entry therefore never silently covers the same
+  package in another tree, which needs its own entry with its own reachability justification — and
+  that distinction is not academic: the root `braces` copy has no input path, while the generator's
+  copy IS reachable because `deepagents`' `glob`/`grep` tools pass model-chosen patterns to
+  `micromatch`. The `OVERRIDE LEVERS` advice is root-only for the same reason: the root
+  `pnpm-workspace.yaml`'s overrides do not govern a nested workspace, so its
+  `pnpm update <pkg> --lockfile-only` would refresh the wrong lockfile.
 - **A fixable High must be bumped, never allowlisted.** The allowlist is for findings with no fix
   yet; suppression is gate-only and the finding stays visible in the report regardless.
 - **A rule's documented limitation is triaged into the allowlist, never "fixed" by working around it.**
@@ -222,12 +251,17 @@ together architecturally, see [SAST & SCA static security scanning](../projects/
   tree entirely, not by the fix its entry predicted). Check npm before assuming: on feature 057 both
   "needs an acceptance" advisories turned out to have published fixes. Where no patched version exists
   at all, the convention the file has settled into is: pin the `locationPattern` to the **exact
-  vulnerable version** (`^node-forge@1\.4\.0$`, `^braces@3\.0\.3$`) and date the entry shortly ahead, so
-  a *different* version re-blocks for a fresh assessment and the entry stops suppressing on its own.
-  The justification then carries the reachability check that was actually done — which tree the
+  vulnerable version** (`^node-forge@1\.4\.0$`, `^braces@3\.0\.3$`,
+  `^tools/openwiki-generator:braces@3\.0\.3$`) and date the entry shortly ahead, so a *different*
+  version re-blocks for a fresh assessment and the entry stops suppressing on its own. The
+  justification then carries the reachability check that was actually done — which tree the
   package arrives through, whether any first-party code imports it, and whether the input path the
   advisory needs exists at all — because the audit's runtime tag alone is not evidence (see the
-  runtime-scope gotcha above).
+  runtime-scope gotcha above). A renewal is not a re-date: the no-fix entries were renewed only after
+  re-measuring that no patched release had shipped and re-listing the dependents (items #633/#648,
+  2026-10-10, all three moved to the shared 2026-12-01 date so they re-triage in one sitting), and the
+  generator entry was added the same day the nested workspace first became audited at all. A renewal
+  whose only change is the date is exactly the re-dating this rule forbids.
 - **A suppression that matches nothing is not harmless, so delete rather than re-anchor it.** The
   retired click entry and the feature-034 remediations were deleted, not renewed, for the same
   reason: a dead entry would have absorbed a genuine regression on that package, silently, until its
@@ -400,7 +434,11 @@ flowchart TD
 `pnpm why <pkg> --prod -r` (recursive, workspace-spanning) is the by-hand cross-check; the digest's
 tag is authoritative for what the gate saw. Only when the section says *raise the floor* — or says
 nothing because there is no override yet — does the override edit apply, and then both halves move
-together or `check-override-consistency.mjs` fails the PR by name. A time-boxed acceptance is the last
+together or `check-override-consistency.mjs` fails the PR by name. One case gets no advice at all and
+is not a bug: a **nested** workspace's finding, because the root `pnpm-workspace.yaml`'s overrides do
+not govern `tools/openwiki-generator` — advice to refresh "the lockfile" would name the wrong one, so
+the lever has to be chosen by hand there (`pnpm --dir tools/openwiki-generator audit` /
+`pnpm --dir tools/openwiki-generator why <pkg>` to cross-check). A time-boxed acceptance is the last
 resort, never the first — and when the "fix" exists only outside the range its consumers declare, the
 choice between a cross-major override and an acceptance is the operator's, not the reader's: the
 worked example was `@graphql-tools/utils`, patched only in 12.0.1 while `graphql-yoga` and

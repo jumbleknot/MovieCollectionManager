@@ -1,12 +1,9 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI registry, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, runbook]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T01:49:10.027Z
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
@@ -22,9 +19,14 @@ sources:
     resource: repo://scripts/cd/publish-apk.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
+  - id: openwiki-source-b182ec4cb28667debd4684ff
+    resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T01:49:10.027Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -33,14 +35,19 @@ The end-to-end runbook for provisioning the single physical headless host that b
 and production: OS install and hardening, Tailscale-only remote access, two segregated rootless Docker
 daemons (one per service user — `ci` and `prod` — each with its own socket, data root, networks, and
 volumes so a breakout in one cannot reach the other or the host as root), Forgejo as the
-source-of-truth forge with its own OCI registry (push-mirrored to GitHub), and Komodo driving CD to
-production. Every literal in the source is a placeholder, and the topology-scrub gate forbids the real
-ones from entering git.
+source-of-truth forge with its own OCI registry and generic package registry (push-mirrored to
+GitHub), and Komodo driving CD to production. Every literal in the source is a placeholder, and the
+topology-scrub gate forbids the real ones from entering git.
 
 This document was relocated here from `docs/proposals/homelab-setup/` because it is a live operator
 reference, not pre-specification ideation — see the
 [proposal → spec → plan → tasks → implementation lifecycle](../process/spec-driven-development.md)
 for why that distinction matters and why proposals themselves are out of scope for this wiki.
+
+The literal commands, package lists, placeholder values and troubleshooting asides live in
+[`docs/runbooks/Server-Setup-Runbook.md`](../../docs/runbooks/Server-Setup-Runbook.md), which is
+authoritative; this page is the distilled map of what each phase achieves and which failures are
+load-bearing.
 
 ## Phase map — what each phase achieves
 
@@ -114,7 +121,28 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
 - **16 — Verification checklist.** The acceptance list for the whole build-out, including the two
   daemons reporting rootless with distinct data roots.
 - **17 — Reboot resilience.** The post-reboot fixes; the *current* reboot procedure is
-  [Prod reboot resilience](./prod-reboot-resilience.md).
+  [Prod reboot resilience](./prod-reboot-resilience.md). The fixes are config-as-code and
+  self-enforcing: `scripts/check-prod-restart-policy.mjs` requires `restart: always` on every
+  long-running prod service and forbids `unless-stopped` — which does not bring a cleanly stopped
+  container back after a reboot — and runs selftest + scan alongside the port-collision gate in
+  `guardrails.yml`'s `naming` job.
+
+```mermaid
+flowchart TD
+  Host["Phases 0-4 · firmware, OS, hardening, tailnet, KVM"] --> Daemons["Phase 5 · two rootless daemons + external networks and volumes"]
+  Daemons --> Forgejo["Phase 6 · Forgejo SSOT + OCI registry + GitHub push mirror"]
+  Daemons --> Cache["Phase 8 · Nx remote cache on the prod daemon"]
+  Daemons --> Ops["Phases 12-14 · extended hardening, monitoring, backups"]
+  Forgejo --> Runner["Phase 7 · Actions runner on the ci daemon"]
+  Forgejo --> Komodo["Phase 9 · Komodo CD on the prod daemon"]
+  Daemons --> Ingress["Phases 10-11 · public ingress and prod auth config"]
+  Runner --> Pipeline["Phase 15 · wire the pipeline"]
+  Komodo --> Pipeline
+  Ingress --> Pipeline
+  Pipeline --> Verify["Phases 16-17 · verification checklist and reboot resilience"]
+```
+
+The bring-up spine: every phase consumes state an earlier one created, so a rebuild cannot start in the middle.
 
 ## Gotchas
 
@@ -196,4 +224,4 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
 
 Full phase-by-phase commands (BIOS/firmware through registry/token hygiene), the exact package lists,
 the token inventory, the restore procedures, and every troubleshooting aside:
-`docs/runbooks/Server-Setup-Runbook.md`.
+[`docs/runbooks/Server-Setup-Runbook.md`](../../docs/runbooks/Server-Setup-Runbook.md).

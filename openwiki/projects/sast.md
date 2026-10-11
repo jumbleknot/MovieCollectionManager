@@ -25,6 +25,8 @@ sources:
     resource: repo://scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs
   - id: openwiki-source-08ab4a1d1f3934b68be3d4ae
     resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
+  - id: openwiki-source-b24a848c671edad8616a78b0
+    resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-be4449db5d1cd6939f816b1e
@@ -53,10 +55,10 @@ sources:
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T14:51:10.653Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T14:51:10.653Z
+    at: 2026-10-11T16:36:45.100Z
 ---
 
 # SAST & SCA static security scanning
@@ -70,7 +72,7 @@ normalized report; one `sast` gate in [CI/CD pipeline](./ci-cd-pipeline.md)
 |---|---|---|
 | SAST | **Semgrep** (OSS) | TS/JS tree (BFF + frontend) + Python agent layer |
 | SCA | **cargo audit** | Rust deps (`Cargo.lock`) |
-| SCA | **pnpm audit** | JS deps (`pnpm-lock.yaml`) |
+| SCA | **pnpm audit** | JS deps — **every committed `pnpm-lock.yaml`**: the root and `tools/openwiki-generator/` (discovered with `git ls-files`) |
 | SCA | **pip-audit** | Python deps — **all four** surfaces: `agents/movie-assistant`, `mcp-servers/{movie-mcp,spreadsheet-mcp,web-api-mcp}` |
 
 Rust *code* is outside Semgrep's scope — clippy (`pnpm nx lint mc-service`) owns Rust patterns, so Rust
@@ -78,11 +80,27 @@ participates here only through cargo-audit on its *deps* (see
 [testing tiers](../invariants/testing-tiers.md) for which tier blocks a merge). Config tree:
 `security/sast/`; full operator procedures in `docs/runbooks/sast-scanning.md`.
 
+### pnpm-audit's audit set is discovered, not hard-coded
+
+`pnpm audit` reads exactly one lockfile: the one belonging to the workspace it is run in. Run at the
+repository root it never sees a **nested** workspace — a directory with its own
+`pnpm-workspace.yaml` and lockfile, such as `tools/openwiki-generator/`, whose tree runs with a
+model-provider credential in the `wiki-maintain` job. Until item #721 that tree was audited by nothing
+and nothing said so. `pnpmAuditSet()` therefore enumerates every committed `pnpm-lock.yaml` with
+`git ls-files`, and a guard test compares that set against an independent `git ls-files` so a new
+nested workspace — or a hand-written exclusion — fails by name. A nested workspace is audited as
+`pnpm --dir <ws> audit --json` **from the repo root**, which is also what makes corepack resolve the
+root manifest's `packageManager`; the audit is lockfile-only, so the `sast` job installs no extra
+`node_modules`. Location follows the pip-audit convention: a root finding keeps the bare
+`package@version` the existing entries anchor to (`^braces@3\.0\.3$`), while a nested workspace's is
+prefixed `<workspace>:package@version`, so a root entry never silently covers the same package in
+another tree — that tree gets its own, separately justified entry or it blocks.
+
 ```mermaid
 flowchart TD
   S1["Semgrep: TS/JS and Python"] --> N
   S2["cargo-audit: Cargo.lock"] --> N
-  S3["pnpm audit: pnpm-lock.yaml"] --> N
+  S3["pnpm audit: every committed pnpm-lock.yaml"] --> N
   S4["pip-audit: four Python venvs"] --> N
   N["orchestrator: normalize severity, derive runtime scope and blocking"] --> F["findings.json plus SARIF, summary, per-scanner native output"]
   N -->|a scanner fails| FC["fail closed: scanners error recorded, scan exits 1 after writing a partial report"]
@@ -248,7 +266,7 @@ alternative — a green that proves nothing — has already happened once:
 |---|---|
 | `check-sast-findings.mjs --selftest` | the gate's fail / allowlist-suppress / dev-warn / clean / blank-field-reject / expiry paths, plus the warning tier, unmatched detection, blinded-rule reporting, per-surface pip-audit suppression, gate-scope asymmetry and the absent-report path — asserted on **output** as well as exit code, since the binding constraint of the warning tier is that the exit code does *not* move |
 | `sast-scan.mjs --test-rules` | the custom rules still match what they claim (see below) |
-| `scripts/__tests__/sast-scan.guard.test.mjs` | pure normalization, the blocking rule, scope classification, toolchain fail-fast, the blinded-rule summary, `isScanTarget()` for both workflow trees and Dockerfile spellings, fixture pairing, and the `PYTHON_SURFACES` model — the built report is validated against the findings **schema**, which is the gate's input contract |
+| `scripts/__tests__/sast-scan.guard.test.mjs` | pure normalization, the blocking rule, scope classification, toolchain fail-fast, the blinded-rule summary, `isScanTarget()` for both workflow trees and Dockerfile spellings, fixture pairing, the `PYTHON_SURFACES` model, and the pnpm-audit set (every committed lockfile present, `--dir` used for a nested workspace and not for the root, nested locations workspace-qualified, and no root override advice for a nested finding) — the built report is validated against the findings **schema**, which is the gate's input contract |
 | `scripts/__tests__/sast-scan-retry.guard.test.mjs` | both directions of the transient classifier: the exact run-3328 output retries, a real fault (unsynced venv, unparseable lockfile, panic) fails on the first attempt, and an advisory *title* containing "error"/"timeout"/a status phrase does not |
 | `scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs` | the curl-pipe-shell rule's own regexes, applied to the real workflows — including that the pattern still *sees* at least six installers, so the acceptance assertions cannot pass vacuously |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the `--check-expiring` step's `if:` (schedule-guarded *and* `always()`-guarded), that no other workflow invokes `--check-expiring`, the override-consistency gate's presence on PRs, and the item #418/#484 recorder that publishes the **measured** `github.event_name` and step outcomes as the `infra-image-scan/expiry` commit status — asserted statically because a missing step and a passing step look identical from a job's tick |
@@ -264,7 +282,10 @@ a scan that happened to pass.
   `mcm-app > @copilotkit/runtime > … > fast-uri`). That empty output is **not** "dev-only" — it is
   the wrong scope. The gate itself uses `pnpm audit --prod` across the whole workspace; when in
   doubt, trust the digest's tag (`[pnpm-audit] runtime` vs `[pnpm-audit/dev]`). This exact mistake
-  wrongly accused the gate of a bug on 2026-07-21; the gate was right.
+  wrongly accused the gate of a bug on 2026-07-21; the gate was right. For a **nested** workspace the
+  equivalent hand check is `pnpm --dir <ws> audit` / `pnpm --dir <ws> why <pkg>`: the root
+  `pnpm-workspace.yaml`'s overrides do not govern `tools/openwiki-generator/`, which is its own
+  workspace root.
 
 - **`semgrep.dev` is now in the egress allowlist — but adding it to the canonical list is only HALF
   the change (item #222, 2026-08-22).** Semgrep resolves the five `p/*` community packs in
@@ -379,10 +400,16 @@ a scan that happened to pass.
   to say.
   Measured on run 3521 (the 2026-09-18 cron, three `amqp091-go` CRITICALs): the recorder posted
   `event_name=schedule expiry_step=skipped`, proving the `if:` evaluated true and only the upstream
-  failure could have caused the skip. `always()` alone would run the check on every PR and block them
-  all, so the schedule guard survives *inside* it, and the body suppresses `cancelled` from `job.status`
-  so a superseded run is not turned into a failure for a commit that was never broken. The check is
-  report-only, so it can never mask a red gate or turn one green.
+  failure could have caused the skip. That reading was luck of composition, so the recorder now carries
+  a **third** measured field, the CVE gate's own outcome: `expiry_step=skipped` alone conflates "the
+  `if:` was false" with "an earlier step failed and skipped this one", and the pair disambiguates them —
+  `expiry_step=skipped gate=success` means the `if:` was false, `expiry_step=skipped gate=failure` is
+  the #484 fault itself, and `expiry_step=failure` means the step ran and a check inside it failed
+  (read the step log, because the status cannot tell an expiring entry from a checker crash). This
+  requires the gate step to be addressable by `id:`. `always()` alone would run the check on every PR
+  and block them all, so the schedule guard survives *inside* it, and the body suppresses `cancelled`
+  from `job.status` so a superseded run is not turned into a failure for a commit that was never
+  broken. The check is report-only, so it can never mask a red gate or turn one green.
 
 - **Before raising a floor, check whether the lockfile is the lever, not the override.** Since
   feature 058 the gate prints an `OVERRIDE LEVERS` advisory section for any finding whose package
@@ -474,17 +501,34 @@ a scan that happened to pass.
   above), and deleting it means a regression re-blocks — which
   is the convention this file follows everywhere.
 
-  **A no-fix acceptance has a shape, and the committed file currently shows it twice.** An advisory
-  whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3` — the latter still
-  `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the exact vulnerable
-  version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin means a
-  *different* version of the package re-blocks for a fresh assessment rather than inheriting an
-  acceptance written for the old one; the short expiry means it stops suppressing on its own. Both state
-  reachability **checked rather than assumed**: the audit classifies them as runtime only because `expo`
-  lists its CLI as a production dependency, while the code paths involved are build/test tooling that
-  ships in neither bundle and, in `braces`' case, expand globs from repository configuration rather than
-  from a request. Removal is tracked on the backlog (a patched release, or the dependency leaving the
-  tree) — the entry is a dated holding position, not a fix.
+  **A no-fix acceptance has a shape, and the committed file currently shows it three times.** An
+  advisory whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3` — the
+  latter still `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the exact
+  vulnerable version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin means
+  a *different* version of the package re-blocks for a fresh assessment rather than inheriting an
+  acceptance written for the old one; the short expiry means it stops suppressing on its own. The three
+  are the node-forge entry, the root `braces` entry, and a **second** `braces` entry anchored to
+  `tools/openwiki-generator:` (item #721) — the nested workspace's tree needed its own entry because
+  the root one, anchored at `^braces@`, correctly never reaches a `<workspace>:pkg@version` location,
+  and because the reachability answer there is the opposite one (below). The first two state
+  reachability **checked rather than assumed**: the audit classifies them as runtime only because
+  `expo` lists its CLI as a production dependency, while the code paths involved are build/test tooling
+  that ships in neither bundle and, in root `braces`' case, expand globs from repository configuration
+  rather than from a request. The two `braces` expiries were renewed together on 2026-10-10 to the same
+  2026-12-01 date as the infra-image cohorts (items #633/#648), so all of them are re-triaged in one
+  sitting. Removal is tracked on the backlog (a patched release, or the dependency leaving the tree) —
+  each entry is a dated holding position, not a fix.
+
+  The generator's `braces` entry is the case where the reachability answer is **yes**: `braces@3.0.3`
+  arrives via `openwiki > deepagents > micromatch` (and via `fast-glob`), and deepagents' `glob`/`grep`
+  tools pass the **model's** tool-call arguments to micromatch, so the pattern is model-chosen and the
+  model reads repository content. Measured against the installed tree: a ~20 KB nested-brace pattern
+  takes 0.4 s, and at ~40 KB the V8 regexp compiler aborts the whole process (uncatchable OOM, exit
+  134). It is accepted anyway as **availability-only** impact on one unattended, non-required,
+  non-production job — the `wiki-maintain` generator dies, the run fails, the next merge re-triggers
+  it, and nothing is read or written. Triggering it needs prompt injection through content already
+  merged to `main`, which is reviewed, and there is no lockfile lever because deepagents pins
+  micromatch `^4`.
 
   The **second** exception — a fix exists, but only outside the range the package's consumers declare —
   took the same shape (pinned to the exact vulnerable version, short-dated, reachability written into
@@ -499,15 +543,18 @@ a scan that happened to pass.
 
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
-  package", which is a different question from "is the vulnerable code path exercised". Both current
-  no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a production
-  dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces only through
-  micromatch in Metro's file watcher and Jest. Neither is imported by first-party code, neither ships in
-  the web or server bundle, and the glob patterns those tools expand come from repository configuration
-  rather than a request. The same distinction applied to the now-deleted `@graphql-tools/utils` entry,
-  which was tagged runtime through `@copilotkit/runtime` while being only listed as a dependency, never
-  reached on a request path. That reasoning has to be **checked and written into the justification**,
-  because the tag alone would have said the opposite.
+  package", which is a different question from "is the vulnerable code path exercised". The node-forge
+  and root `braces` acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
+  production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces only
+  through micromatch in Metro's file watcher and Jest (re-measured 2026-10-10, which added `fast-glob`
+  via `@tamagui/static`/`globby` and `http-proxy-middleware` via Nx to the dependent list — all build or
+  dev tooling). Neither is imported by first-party code, neither ships in the web or server bundle, and
+  the glob patterns those tools expand come from repository configuration rather than a request. The
+  same distinction applied to the now-deleted `@graphql-tools/utils` entry, which was tagged runtime
+  through `@copilotkit/runtime` while being only listed as a dependency, never reached on a request
+  path. That reasoning has to be **checked and written into the justification**, because the tag alone
+  would have said the opposite — and the generator's `braces` entry is the proof that the tag is not a
+  verdict either way: it carries the same runtime tag, and there the code path *is* reachable.
 
 - **`mcm-auth-before-authz` firing on a service-layer function is a false positive you must NOT "fix"
   by adding the guard — the correct response is a file-pinned allowlist entry.** The rule's structural

@@ -4,9 +4,6 @@ title: CI evidence pipeline (producing the evidence)
 description: How CI produces the evidence a session reads back — the per-job failure digest and its three channels, the 5 MB ci-failures bundle with its recursive packing and trimming rules, per-step durations and the generated ceiling table, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
 resource: docs/runbooks/ci-evidence-pipeline.md
 tags: [ci, forgejo, evidence, diagnostics, tooling, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-10T09:54:25.792Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -44,7 +41,10 @@ sources:
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T09:54:25.792Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -57,22 +57,22 @@ fail" without pasting a log out of the web UI. It began as feature 042 and has b
 every feature that instrumented a job.
 
 This is the **producing** half. Reading CI — `ci-status` subcommands, exit codes, the states the API
-misreports, tokens, opening and verifying a PR — is [ci-diagnostics.md](ci-diagnostics.md); start there
+misreports, tokens, opening and verifying a PR — is [ci-diagnostics.md](./ci-diagnostics.md); start there
 when you are diagnosing a run, and come here when you are adding a job, wrapping a step, or asking why
 a piece of evidence is or is not in a bundle. The operator procedures and the full arithmetic live in
 [the runbook this summarizes](../../docs/runbooks/ci-evidence-pipeline.md).
 
 ```mermaid
 flowchart TD
-  W["wrapped step: bash scripts/ci-log-step.sh"] --> LOG["step log, per run AND per job\nfull output, tee'd, pipefail"]
-  LOG --> DIG["Publish failure digest\nif always, continue-on-error"]
+  W["wrapped step: bash scripts/ci-log-step.sh"] --> LOG["step log, per run AND per job — full output, tee'd, pipefail"]
+  LOG --> DIG["Publish failure digest, if always plus continue-on-error"]
   DIG --> RED["fail-closed redaction"]
   RED --> CH{"which event"}
   CH -->|"pull_request"| PR["PR comment, upserted by job marker"]
   CH -->|"push or other"| BUN["digest.md inside the bundle"]
   CH -->|"cancelled run"| NON["nothing published"]
-  DIG --> B["ci-failures package\nrunId--jobSlug, 5 MB cap, 30 days"]
-  LOG --> DUR["step-durations.tsv\nseparate file in the bundle"]
+  DIG --> B["ci-failures package — runId--jobSlug, 5 MB cap, 30 days"]
+  LOG --> DUR["step-durations.tsv, a separate file in the bundle"]
   DUR --> B
 ```
 
@@ -83,10 +83,10 @@ one of three channels, and the bundle carries the full evidence.
 
 One `if: always()` + `continue-on-error: true` step per job — `Publish failure digest`, running
 `scripts/ci-failure-digest.mjs`. Measured 2026-10-10: **22 such steps across the ten
-`.forgejo/workflows/*.yml` files**, one per job in every workflow that has jobs. (The runbook and
-`check-ci-digest-coverage.mjs`'s header still say "16 jobs in 6 workflows" — that was the count when the
-machinery was built, and the rule has been enforced on every job added since. The count grows; the rule
-does not.)
+`.forgejo/workflows/*.yml` files** — 22 jobs, 22 digest steps, one per job in every workflow that has
+jobs. (`check-ci-digest-coverage.mjs`'s header still says "16 jobs in 6 workflows": that was the count
+when the machinery was built, and the rule has been enforced on every job added since. The count grows;
+the rule does not.)
 
 | Event | Channel | Identity |
 |---|---|---|
@@ -108,13 +108,24 @@ does not.)
 - **A cancelled run publishes nothing.** Its contexts read as `failure`, so without the suppression a
   single rapid re-push would upsert a failure comment for every cancelled job. The newer run publishes
   the truth.
-- **Degradation is stated, not silent.** Container jobs have no Docker CLI, and only `app-ci / app-e2e`
-  writes `~/mcm-ci-last-failure/` today, so "no container health" is normal — it appears under
-  **Not collected** rather than as an empty section.
+- **Degradation is stated, not silent.** Container jobs have no Docker CLI, so "no container health" is
+  normal — it appears under **Not collected** rather than as an empty section. The bundle directory is
+  no longer written by one job: `app-ci / dast` captures into it too (item #645), overwriting it with
+  its own per-container logs plus an owner stamp, because the digest used to present the *previous*
+  `app-e2e` failure's logs as dast's own. The digest's own absence message still claims only
+  `app-ci / app-e2e` writes one today, so read that line as stale rather than as evidence.
 - **When `CI_DIGEST_TOKEN` is empty the digest degrades rather than failing**: it falls back to the
   run-provisioned token, posts a `ci-digest/<job>` commit status carrying the failing step and a short
   excerpt, and marks itself `degraded: true`. With both credentials absent it prints the digest inline
   and exits 0 — a broken digest must never mask, replace or delay the real job result.
+- **A green run has a third, cheaper mode.** `shouldPublish` keys on an explicit `success` and returns
+  `counts`, which uploads a small bundle carrying only the `[e2e-gate]` counts, the contention tally and
+  the `web-e2e` setup lines — no PR comment, no health block, no container logs. It needs the
+  purpose-scoped credential, since the run-provisioned token can only write a commit status. The source
+  list is self-limiting to steps only `app-e2e` produces, so every other green job finds nothing and
+  publishes nothing (`digest-outcome=not-needed`). An *unknown* job status publishes nothing at all
+  rather than falling into counts mode — a job that once lost `CI_DIGEST_JOB_STATUS` published a spurious
+  digest on a green run, and treating unknown as cheaply-publishable would resurrect that.
 
 ### Redaction is fail-closed
 
@@ -138,7 +149,7 @@ through unredacted and were not caught by the backstop either.
 ## The evidence bundle
 
 The digest is deliberately small. For a failure its excerpt cannot explain, the reader fetches the
-bundle (`ci-status … --full`); the how is the [sibling page's](ci-diagnostics.md) business.
+bundle (`ci-status … --full`); the how is the [sibling page's](./ci-diagnostics.md) business.
 
 - Stored in the generic package registry as `ci-failures` / **`{runId}--{jobSlug}`** — **per run *and*
   job**, so two jobs failing in one run keep separate bundles instead of overwriting each other.
@@ -155,7 +166,10 @@ bundle (`ci-status … --full`); the how is the [sibling page's](ci-diagnostics.
   channel (`meta.publish = {published, channel, reason}`). The bundle is readable over the API and the
   job log is not; without that field a failed publish is visible only to a human in the web UI, which is
   how one diagnosis stayed unproven across two smoke runs. If the *upload* itself fails, the job-log line
-  is the only surviving signal — which is why both exist.
+  is the only surviving signal — which is why both exist. A second field, `meta.digestOutcome`, carries
+  the same fact in the three-way `not-needed` / `published` / `failed` vocabulary the reader renders;
+  `publish` is kept alongside it rather than replaced, because bundles published before the split still
+  carry it and a reader comparing two bundles should not have to work out which superseded which.
 
 ### It packs `container-logs/` recursively, and names what it cannot carry (item #241)
 
@@ -368,6 +382,11 @@ a real failure.
   `run:` steps** produced no capture, and `guardrails / naming` had 16 `run:` steps with 2 wrapped —
   **neither of them a gate** — so a naming-gate failure published the logs of two unrelated steps. Every
   `run:` step must now be wrapped or carry its own justified `# ci-log-step-exempt:` marker.
+  **A published-but-empty digest is itself a gap** (measured 2026-07-26 on PR #107: `affected` and
+  `mc-service-checks` both failed, both published, and both digests said only "no step in this job was
+  wrapped"). Publishing is necessary but not sufficient, which is why a job with genuinely nothing
+  capturable — a `dorny/paths-filter`-only job like `app-ci / changes` — opts out of the *capture* half
+  with a job-level `ci-log-step-exempt` marker rather than by leaving its steps bare.
 - **Command level (item #177 variant 4).** Coverage was still decided by a substring test against the
   whole block, so a multi-line `run:` block passed if the wrapper appeared anywhere in it and every
   command above that line ran unwrapped — **no log, and no `_failed-step` marker either**, so the digest
@@ -463,8 +482,9 @@ run: |
 ### Two costs of instrumenting a HOST-executor job, accepted deliberately
 
 Container-job captures die with the container. Host-executor captures (`app-e2e`, `dast`,
-`cd-deploy / build-deploy`, `devcontainer-image`) land in `$HOME/mcm-ci-step-logs/<run-id>/<job>/` on the
-**persistent** runner and stay there:
+`cd-deploy / build-deploy`, `devcontainer-image`, `minio-image / build-publish` — every job on the
+self-hosted Docker runner label) land in `$HOME/mcm-ci-step-logs/<run-id>/<job>/` on the **persistent**
+runner and stay there:
 
 - **They are unredacted.** Redaction happens at *publication* time in the digest, not at capture time —
   the wrapper does no redaction at all. Raw output sits on the runner for up to 7 days (a best-effort
@@ -563,14 +583,14 @@ claim.
 
 ## Related
 
-- [CI self-serve diagnostics](ci-diagnostics.md) — the reading half: `ci-status` commands, exit codes,
+- [CI self-serve diagnostics](./ci-diagnostics.md) — the reading half: `ci-status` commands, exit codes,
   the states the API misreports, the evidence-bundle log-ordering trap as the reader sees it.
 - [CI/CD pipeline](../projects/ci-cd-pipeline.md) — the workflows, jobs and deploy path this
   instrumentation is attached to.
 - [Testing tiers](../invariants/testing-tiers.md) — which suites gate a merge and therefore which
   failures this machinery has to explain.
-- [E2E testing](e2e-testing.md), [DAST scanning](dast-scanning.md),
-  [SAST & SCA scanning](sast-scanning.md), [Infra-image CVE scanning](infra-image-scanning.md) — the jobs
-  whose steps are wrapped, and the failure classes they emit.
+- [E2E testing](./e2e-testing.md), [DAST scanning](./dast-scanning.md),
+  [SAST & SCA scanning](./sast-scanning.md), [Infra-image CVE scanning](./infra-image-scanning.md) — the
+  jobs whose steps are wrapped, and the failure classes they emit.
 - [OpenWiki bundle maintenance](../process/wiki-maintenance.md) — the scheduled job whose dispatch
   inputs are one of the wrapped blocks.

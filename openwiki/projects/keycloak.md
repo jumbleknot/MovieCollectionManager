@@ -4,9 +4,6 @@ title: Keycloak (Identity and Access Management)
 description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
 tags: [auth, keycloak, iam, docker, realm, jwt]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-04T14:07:00.171Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -68,6 +65,8 @@ sources:
     resource: repo://scripts/__tests__/keycloak-realm-schema.test.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
+  - id: openwiki-source-b182ec4cb28667debd4684ff
+    resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-8859745870982587154fcc8e
     resource: repo://scripts/check-realm-consistency.mjs
   - id: openwiki-source-d332b78944bf7820230a82f2
@@ -78,7 +77,10 @@ sources:
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-10-04T14:07:00.171Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-11T15:19:14.150Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -339,6 +341,21 @@ the public host — and the admin bind is `0.0.0.0` by necessity (the rootless d
 Because the console's own session-check iframe still points at `KC_HOSTNAME`, the *public* auth route
 must be reachable for the tailnet console to work at all; a console that fails with a third-party-check
 timeout is that route missing, not a broken admin login.
+
+Two comments around that port are stale: `compose.prod.yaml`'s `env_file` block still lists
+`KC_ADMIN_BIND_IP` among the values it reads from `.env.prod`, and its `KC_HOSTNAME_ADMIN` comment still
+shows the pre-029 `:8099` tailnet URL. The variable is genuinely gone from the bind (`.env.prod.example`
+records its removal) and `komodo/stacks.toml` still passes `KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]` to
+`prod-auth`, where nothing reads it — harmless, but it means the compose comments are not a reliable
+guide to the effective admin URL, which is whatever `.env.prod` sets (`:19099` on this host).
+
+**Both prod invariants are self-enforcing guardrails.** `scripts/check-prod-ci-port-collision.mjs` fails
+if any prod published port overlaps a CI/dev one — compared by port *number*, because a `0.0.0.0` prod
+bind collides with a CI bind on the same port regardless of the CI bind's host IP — and
+`scripts/check-prod-restart-policy.mjs` forbids `unless-stopped` and a missing policy on every
+long-running prod service (one-shot init/seed containers are the only exception). Both run `--selftest`
+first and then scan, in the `guardrails` gate, so a future prod or CI service that reintroduces an
+overlap or the old restart policy fails CI rather than the next reboot.
 
 **The prod bootstrap admin credential is first-boot-only — and must stay anyway.**
 `KC_BOOTSTRAP_ADMIN_USERNAME` / `KC_BOOTSTRAP_ADMIN_PASSWORD` create the initial `admin` user only when
