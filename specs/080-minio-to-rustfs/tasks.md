@@ -47,24 +47,50 @@ command and reads back the evidence the operator pastes.
   **Done when**: the four keys are present, or #552 is resolved first.
 
 - [ ] T003 **[OPERATOR]** Early go/no-go on the production host, read-only, before any tool exists
-  (research R6, R14). The agent prepares; the operator runs and pastes:
+  (research R6, R14). The agent prepares; the operator runs and pastes. The command must run under
+  Alpine's BusyBox, which has **no `grep --include`**. The first attempt on 2026-10-10 used it: both
+  grep calls failed, and the `0`s it printed were `wc -l` of empty output, not measurements. Hence
+  the `find … -exec grep` form, and a **control count**: every `xl.meta` begins with the `XL2 `
+  header, so `control` must equal `xl.meta files`, or the zeros below it mean nothing. Validated on a
+  local MinIO drive: 36 / 36. Run it once per volume (`observability-langfuse-minio-data`, then the
+  Nx cache `minio_minio-data`):
 
   ```sh
-  docker volume ls | grep -i minio        # expect observability-langfuse-minio-data (+ the Nx-cache volume)
-  docker run --rm -v observability-langfuse-minio-data:/data:ro alpine:3.24 sh -c '
-    cat /data/.minio.sys/format.json; echo;
-    grep -rlis "X-Minio-Internal-Server-Side-Encryption" --include=xl.meta /data | wc -l;
-    grep -rlis "transition-status" --include=xl.meta /data | wc -l;
-    ls /data; du -sh /data; find /data ! -user 1000 | wc -l'
+  docker run --rm -i -v <VOLUME>:/data:ro alpine:3.24 sh <<'EOS'
+  cat /data/.minio.sys/format.json; echo
+  echo "xl.meta files:         $(find /data -name xl.meta -type f | wc -l)"
+  echo "control (XL2 header):  $(find /data -name xl.meta -type f -exec grep -l 'XL2 ' {} + | wc -l)"
+  echo "SSE-marked xl.meta:    $(find /data -name xl.meta -type f -exec grep -lis 'X-Minio-Internal-Server-Side-Encryption' {} + | wc -l)"
+  echo "tiered xl.meta:        $(find /data -name xl.meta -type f -exec grep -lis 'transition-status' {} + | wc -l)"
+  echo "top level:             $(ls /data | tr '\n' ' ')"
+  echo "size:                  $(du -sh /data | cut -f1)"
+  echo "not owned by uid 1000: $(find /data ! -user 1000 | wc -l)"
+  EOS
   ```
 
-  Repeat for the Nx-cache volume. Also confirm **where the tool will run**: either `node` on the prod
-  host, or the dev container with `DOCKER_HOST=ssh://prod@<host>` (the tool drives Docker only through
-  the CLI and runs every S3 call inside a throwaway container on the target network, so either works).
+  **Partial result, 2026-10-11, `observability-langfuse-minio-data`:**
+  - `format.json` is `"format":"xl-single"`, with one set of one drive. ✓
+  - Top level is `langfuse` only. Size is 558.4M. 0 files are not owned by uid 1000. ✓
+  - The SSE and tiered counts are **not yet measured**: the first attempt's grep failed, as described
+    above.
+  - The Nx-cache volume is named `minio_minio-data` and is not yet inventoried.
 
-  **Done when**: both drives report `"format":"xl-single"` with one set of one drive, 0 SSE, 0 tiered,
-  and the tool's execution location is recorded in research.md. **Any other result stops the feature
-  for an operator decision** (spec Edge Cases) — do not proceed to Phase 2.
+  **Tool execution location — decided 2026-10-11:**
+  - The tool runs **on the production host**, inside a pinned container image that carries `node` and
+    the Docker CLI, with the host's rootless socket (`$XDG_RUNTIME_DIR/docker.sock`) mounted.
+  - The operator invokes it through a wrapper script that T009 adds next to the tool.
+  - It does **not** run from the dev container over `DOCKER_HOST=ssh://`. That would put standing
+    control of the prod daemon (root-equivalent) into the assistant's sandbox, which this repository
+    keeps free of prod credentials.
+  - Nothing is installed on the host: the setup runbook provisions no `node` there.
+
+  **Done when**:
+  - Both volumes report `xl-single` with one set of one drive.
+  - `control` equals `xl.meta files`.
+  - 0 SSE and 0 tiered.
+
+  **Any other result stops the feature for an operator decision** (spec Edge Cases). Do not proceed
+  to Phase 2.
 
 - [x] T004 Resolve the `rustfs/rustfs` pin: the newest 1.x past Renovate's 3-day cooldown (1.0.1 unless
   a later one qualifies), **index** digest via `docker buildx imagetools inspect`; re-scan it under the
