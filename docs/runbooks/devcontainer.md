@@ -146,8 +146,8 @@ process's environment** — so setting one is not enough; VS Code must be *relau
 already in its environment*, and the container recreated.
 
 - **`MCM_ANTHROPIC_API_KEY`** — needed for the movie-assistant agent's Anthropic model backend and
-  the **golden cassette RE-RECORD** path (golden's surface is Claude — `claude-haiku-4-5` for the
-  supervisor, `claude-sonnet-4-6` for the specialists; replay is keyless). One cassette
+  the **golden cassette RE-RECORD** path (golden's surface is Claude — the code defaults, `claude-haiku-4-5` for the
+  supervisor and `claude-sonnet-5` for the specialists since feature 075; replay is keyless). One cassette
   (`topic-confinement.qwen2-5.json`) is keyed to **qwen2.5** and an Anthropic key CANNOT regenerate
   it — that one needs a local Ollama, and the keyless merge gate replays it because `guardrails`
   sets no `MODEL_PROVIDER` and so resolves the Ollama tier. The **Windows host's** Ollama is
@@ -751,8 +751,9 @@ export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' 
 MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code
 ```
 
-- **`MODEL_PROVIDER=anthropic`** deploys the gateway against Claude (haiku-4-5 / sonnet-4-6) — the
-  provider CI uses. Do NOT pass `SUPERVISOR_MODEL`/`SPECIALIST_MODEL` (the Ollama ids 404 at
+- **`MODEL_PROVIDER=anthropic`** deploys the gateway against Claude — `claude-sonnet-5` for both tiers
+  here, because `devcontainer.json` pins `ANTHROPIC_SUPERVISOR_MODEL` and `agent-stack.mjs` passes
+  it in (the code defaults are haiku-4-5 / sonnet-5) — the provider CI uses. Do NOT pass `SUPERVISOR_MODEL`/`SPECIALIST_MODEL` (the Ollama ids 404 at
   Anthropic). **`MODEL_PROVIDER=ollama` also works in here, via the in-container `dev-ollama`** —
   but this has flipped once, so **verify with the probe rather than trusting this line**:
 
@@ -996,7 +997,7 @@ bash .devcontainer/verify/verify-engine-isolation.sh --host-check   # the host h
 ## Toolchain scope
 
 Pilot image = **Node 24 + pnpm (corepack) + watchman + DinD** on `node:24-bookworm`. Note: the
-prod BFF deploys on **node:20**, but the repo's pinned `pnpm@11.17.0` requires Node >= 22.13 (and loads `node:sqlite` at startup)
+prod BFF deploys on **node:20**, but the repo's pinned pnpm 11 (`packageManager` in `package.json`) requires Node >= 22.13 (and loads `node:sqlite` at startup)
 (Node ≥ 22/24 only) — on Node 20, `pnpm install` crashes with `ERR_UNKNOWN_BUILTIN_MODULE`. So the
 dev container tracks the **dev toolchain's Node (24, same as the host)**; BFF runtime parity is a
 SHOULD validated in CI, not here. **Rust stable + Python 3.13 + `uv` are PRESENT** — feature 038
