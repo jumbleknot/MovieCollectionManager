@@ -36,7 +36,6 @@ file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"                    # Komodo writes the interpolated `environment` here (secrets)
 environment = """
 BASE_DOMAIN=[[BASE_DOMAIN]]
-KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]
 KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:19099
 KC_BOOTSTRAP_ADMIN_PASSWORD=[[KC_BOOTSTRAP_ADMIN_PASSWORD]]
 KC_DB_PASSWORD=[[KC_DB_PASSWORD]]

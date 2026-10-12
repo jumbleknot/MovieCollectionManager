@@ -495,7 +495,7 @@ jobs:
 
       # The job runs ON THE ci HOST (`runs-on: kvm`, a `kvm:host` runner label), so /dev/kvm is the
       # host's own device: KVM enabled on the host and the ci user in the `kvm` group (/dev/kvm group
-      # kvm, mode 660). There is no job container and no container.options here — that was the setup
+      # kvm; mode 666 on this host, measured 2026-10-12). There is no job container and no container.options here — that was the setup
       # before 235f2f4c. Fail LOUD if KVM is missing — never silently skip the mobile suite (spec Edge
       # Cases, research R1).
       - name: Verify KVM is available
@@ -504,7 +504,7 @@ jobs:
           if [ -e /dev/kvm ]; then
             ls -l /dev/kvm
           else
-            echo "::error::/dev/kvm not present on the ci host (this job runs on the host via the kvm:host runner label, not in a container). Check KVM is enabled on the host (kvm_intel/kvm_amd loaded), that the ci user is in the kvm group (as root on the host: usermod -aG kvm ci; /dev/kvm group kvm, mode 660), and that the runner still registers the kvm:host label."
+            echo "::error::/dev/kvm not present on the ci host (this job runs on the host via the kvm:host runner label, not in a container). Check KVM is enabled on the host (kvm_intel/kvm_amd loaded), that the ci user is in the kvm group (as root on the host: usermod -aG kvm ci; /dev/kvm group kvm, mode 660 or 666), and that the runner still registers the kvm:host label."
             exit 1
           fi
           CI_LOG_STEP

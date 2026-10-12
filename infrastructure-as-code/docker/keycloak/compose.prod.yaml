@@ -58,7 +58,7 @@ services:
         max-file: "10"
     env_file:
       - .env.prod          # #PROD prod secrets/values (KC_DB_PASSWORD, KC_BOOTSTRAP_ADMIN_PASSWORD,
-                           # BASE_DOMAIN, KC_ADMIN_BIND_IP, KC_HOSTNAME_ADMIN, PROD_REALM_FILE);
+                           # BASE_DOMAIN, KC_HOSTNAME_ADMIN, PROD_REALM_FILE);
                            # chmod 600, gitignored. No secrets/*.txt file-secret (feature 022).
     environment:
       # #PROD public issuer is the Cloudflare hostname; TLS terminated at the edge. BASE_DOMAIN is a
@@ -68,7 +68,7 @@ services:
       # over the internal network (keycloak-service:8080) for the refresh-token grant.
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       # #PROD admin console served on the tailnet name, not the public host (e.g.
-      # http://<prod-host>.<tailnet>.ts.net:8099). Supplied from .env.prod, no committed literal.
+      # http://<prod-host>.<tailnet>.ts.net:19099). Supplied from .env.prod, no committed literal.
       KC_HOSTNAME_ADMIN: "${KC_HOSTNAME_ADMIN:?set in .env.prod — tailnet admin URL}"
       # #PROD edge terminates TLS; tunnel -> container is plain HTTP.
       KC_HTTP_ENABLED: "true"

@@ -589,7 +589,8 @@ ci$ ./forgejo-runner daemon \
     --url http://server.tailnet.ts.net:3000/ \
     --uuid <UUID_FROM_UI> \
     --token-url file://$HOME/runner/runner-token \
-    --label ubuntu-latest:docker://node:22-bookworm
+    --label ubuntu-latest:docker://node:22-bookworm \
+    --label kvm:host
 ```
 The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once confirmed.
 
@@ -620,7 +621,7 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 > `build-deploy` (every `nx build` there is a Docker *image* build plus a `docker push`, which the
 > `node:22-bookworm` container can't do — it has no Docker CLI/daemon). Why the emulator job can't run
 > in a container is in Phase 5.4. Requirements on the host: (a) `ci` in the `kvm` group
-> (`sudo usermod -aG kvm ci`; `/dev/kvm` should be group `kvm`, mode 660); (b) `ci`'s rootless daemon
+> (`sudo usermod -aG kvm ci`; `/dev/kvm` is group `kvm`, and on this host mode 666, measured 2026-10-12 as `crw-rw-rw- root kvm`, so 660 via a udev rule is the tighter option and the group membership is what keeps the job working if it is applied); (b) `ci`'s rootless daemon
 > reachable at `DOCKER_HOST=unix:///run/user/1001/docker.sock` (the jobs set it; adjust `1001` if
 > `id -u ci` differs). The jobs install the Docker CLI themselves if the host lacks one. The `app-ci`
 > workflow **fails loud** if `/dev/kvm` is absent — it never silently skips the mobile suite.
@@ -644,7 +645,7 @@ After=docker.service
 [Service]
 Environment=DOCKER_HOST=unix:///run/user/1001/docker.sock
 WorkingDirectory=/home/ci/runner
-ExecStart=/home/ci/runner/forgejo-runner daemon --url http://server.tailnet.ts.net:3000/ --uuid <UUID_FROM_UI> --token-url file:///home/ci/runner/runner-token --label ubuntu-latest:docker://node:22-bookworm
+ExecStart=/home/ci/runner/forgejo-runner daemon --url http://server.tailnet.ts.net:3000/ --uuid <UUID_FROM_UI> --token-url file:///home/ci/runner/runner-token --label ubuntu-latest:docker://node:22-bookworm --label kvm:host
 Restart=always
 RestartSec=5
 
