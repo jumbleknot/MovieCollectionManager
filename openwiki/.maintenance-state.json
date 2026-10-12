@@ -1,17 +1,18 @@
 {
-  "coveredCommit": "6884541a94fcfe07d80f9ce9885d5168fce9e1a7",
-  "coveredAt": "2026-10-12T00:56:26.126Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "5bec80c435d1ce200cc7daccba7f36fb4a39ea4c",
+  "coveredAt": "2026-10-12T19:22:30.717Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
       "area": "runbooks",
       "pages": [
-        "wiki-maintenance.md"
+        "android-emulator.md",
+        "devcontainer.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "drift: docs/runbooks/wiki-maintenance.md changed after the page's stamp"
+      "reason": "drift: docs/runbooks/wiki-maintenance.md changed after the page's stamp; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md"
     },
     {
       "area": "runbooks",
@@ -25,37 +26,48 @@
       "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 743,
+    "headCommit": "ca51260daa84a040fb9f1ec5135a5b2187740965",
+    "markerBefore": "6884541a94fcfe07d80f9ce9885d5168fce9e1a7",
+    "slices": [
+      {
+        "area": "runbooks",
+        "pages": [
+          "wiki-maintenance.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift: docs/runbooks/wiki-maintenance.md changed after the page's stamp; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md"
+      }
+    ],
+    "updatedAt": "2026-10-12T19:22:31.175Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 3094,
+    "pagesWritten": 5,
+    "elapsedSeconds": 1707,
     "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/wiki-maintenance.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-12T10:34:43.511Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 152,
+    "calls": 306,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 674730,
-    "cached": 15382090,
+    "uncached": 1397353,
+    "cached": 28604468,
     "cacheWrite": 0,
-    "output": 238750,
-    "reasoning": 203154,
-    "ms": 3011362,
-    "estCostUsd": 0.5812,
+    "output": 275257,
+    "reasoning": 217364,
+    "ms": 2443423,
+    "estCostUsd": 0.9211,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
@@ -63,9 +75,9 @@
       "pages": [
         "runbooks/wiki-maintenance.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 0.5812,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 0.9211,
       "rateLimited": null
     }
   ],
