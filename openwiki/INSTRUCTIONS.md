@@ -213,6 +213,12 @@ Two mechanisms now enforce this, and neither is a reason to write the wrong form
 Links inside a fenced code block or a code span are exempt — that is how this section is able to
 show the wrong form above.
 
+**A link to a section of a SOURCE document targets that document, not its concept page.** A concept
+page is a summary and does not carry its source's headings. So `./devcontainer-sandbox.md#4-egress-allowlist`
+resolves as a file but its anchor does not, while `../../docs/runbooks/devcontainer-sandbox.md#4-egress-allowlist`
+does (proposal #737, `runbooks/sast-scanning.md`). Link a concept page by its file only, and a specific
+section through the source document's path.
+
 ## 7. Where a new learning goes — the canonical-home rule
 
 This section is for anyone (human or assistant) who has just learned something durable about this
@@ -313,3 +319,15 @@ Do **not** cite, as Claims evidence:
 Prefer the narrowest **stable** source: a heading-level section of a runbook over a line range of a
 script that is under active change. `node scripts/wiki-maintain.mjs --claims-audit` lists, offline,
 every page openwiki will force into the next run and marks the citations that are churn.
+
+## 10. Never copy live state into a page
+
+`openwiki/.maintenance-state.json`, `.page-manifest.json`, `.last-update.json`, `.run.json` and the
+`.claims/` sidecars are **live state**: the next run rewrites them. Describe what their fields mean
+and where to read them, but do not copy current values into a page: a backlog, an `escalations`
+entry, a `lastOutcome`, a cost or a call count. A copied value is wrong by the next run, and a page
+that quotes it looks authoritative while it is stale. Proposal #737 published "after the 2026-10-11
+runs it holds `lastOutcome: failed` … `failuresAtLow: 2` … ~$1.69" in `runbooks/wiki-maintenance.md`,
+a snapshot that was already false when proposed. A measured value that explains *why* a rule exists
+belongs in the source runbook, dated, with its run number, and the page may cite it from there.
+
