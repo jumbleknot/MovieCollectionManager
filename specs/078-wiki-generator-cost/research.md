@@ -363,9 +363,87 @@ the branch head with the `wiki-update` target's environment.
   prints nothing per attempt, so whether the new worker retry fired cannot be told. T050 watches real runs.
 - The probe's output was discarded unreviewed. CI regenerates those pages after merge.
 
-## R18: the per-turn output cap is per provider (item #719, 2026-10-11)
+## R17: T050, observing US6, 0.7.1 and the corrected price table on real runs (item #690, 2026-10-08 → 2026-10-12)
 
-(R17 is reserved for T050's close-out, item #690.)
+The window is the first real CI runs after the close-out merge (PR #688, 2026-10-08). Evidence comes from:
+- the committed run records (`git log origin/main -- openwiki/.maintenance-state.json`);
+- the `<run id>--maintain` failure bundles;
+- the operator's Fireworks console screenshots of 2026-10-12.
+
+The run-by-run detail is in item #690's comments.
+
+**SC-008 observed.**
+- Run 4972 (push, e9c4e8d2) was stopped at the job deadline after 2181 s on `runbooks/wiki-maintenance.md`. Its record (6b12206a) carries `{effort: "low", reason: "deadline", failuresAtLow: 0}`.
+- The next run, 4973 (dispatch), recorded one invocation at `effort: "low"` covering exactly that page, first and alone. It landed (7 pages including 6 forced, ~$1.15), and the tag cleared (fa0f1cad).
+- Run 5008 tagged all 4 pages of one packed invocation, which is FR-017's per-page tagging on a real run.
+- `low` cuts the reasoning share less than hoped: 73% of output against 81% at default (the run-4801 caveat).
+
+**SC-009 held.** Every record in the window was read.
+
+| Record | Run | Failure | Effect on tags |
+|---|---|---|---|
+| 6b12206a | 4972 | deadline, default | **new** tag (1 page) |
+| cd9efb09 | 5008 | deadline, default | **new** tags (4 pages) |
+| 65cb58cb | 5103 | deadline, default | **new** tags (8 pages) |
+| c39ec310 | 5138 | deadline, default | **new** tags (6 pages) |
+| 69dcce3f | 5188 | deadline, default | **new** tag (1 page) |
+| 60d03774, 5ba7f4ac, 51acb01c | 4846, 4960, 4998 | worker exit, untagged pages | none |
+| 080f851d | 5010 | worker exit at `low` on tagged pages | none new; `failuresAtLow` 0 → 1 |
+| 135c20cb | 5104 | HTTP 412 (no credit) at `low` | none new; `failuresAtLow` 0 → 1 on all 8 |
+| cfbcd459 | 5115 | `length` at `low` | none new; `failuresAtLow` → 2 |
+| b2fd5c25, 89a8a41a | 5145, 5151 | deadline at `low` on tagged pages | none new; `failuresAtLow` → 1, → 2 |
+
+- A deadline stop where the requested page landed creates no tag: 530ee589 (5093) recorded `completed` with `escalations: {}`. That is the "only the parts that did not land" rule.
+- Run 4950 died in the install step, and no generator ran.
+- **One observation, not a failure of SC-009:** run 5104's 412s came from the exhausted account, yet they still counted as a "failure at low" against all eight tagged pages. A billing failure is charged to the pages. That inflates the count that drives the "consider parking it" flag. `rateLimited` covers 429 but not 412.
+
+**0.7.1 worker retry (#913): it does not rescue the pages that exit.**
+- `runbooks/devcontainer-sandbox.md` (run at 8c7c8733: 111 calls, 1196 s) and `runbooks/ci-diagnostics.md` (4960: 447 calls, 2974 s) still exited without submitting on 0.7.1, more slowly than before.
+- Both stay with item #682 and the parking list (#719).
+
+**0.7.1 plan handling (#906): not exercised.**
+- No run hit "already has a different persisted plan".
+- All 14 maintain bundles in the window (4846 to 5188) were searched for it.
+- Whether 0.7.1 absorbs it remains unobserved.
+
+**No timeout kill.**
+- Every failed `maintain` row published its bundle; a killed run publishes none.
+- The longest rows were 52.1 min on a push (4971, 5007) and 53.5 min on a dispatch (5009). All are self-recorded deadline stops.
+
+**SC-005 held at table `2026-10-07`.**
+
+| Day (UTC) | Tokens: estimate | Tokens: console (chart) | Estimate | Bill (chart, ±≈$0.2) | Bill ÷ estimate |
+|---|---|---|---|---|---|
+| Oct 08 | 59.8M | ≈ 60M | $2.961 | ≈ $2.95 | 1.00 |
+| Oct 09 | 47.8M | ≈ 49M | $2.304 | ≈ $2.4 | 1.04 |
+| Oct 10 | 239.2M | ≈ 236M | $11.843 | ≈ $11.6 | 0.98 |
+| Oct 11 | 281.2M | ≈ 285M | $14.090 | ≈ $14.4 | 1.02 |
+| Oct 12 (to 10:35) | 46.9M | ≈ 47M | $2.185 | ≈ $2.2 | 1.01 |
+| **Window** | **674.9M** | **677.09M** (console total) | **$33.38** | ≈ $33.5 | **−0.3% on tokens** |
+
+- **How the estimate is built:**
+  - each distinct `lastRunUsage` is counted once;
+  - a run is placed from its record's commit time minus `lastRunBudget.elapsedSeconds`;
+  - its cost is split across UTC days in proportion to its time on each.
+
+  Oct 09's +4% and Oct 10's −2% come from that split around run 4960, which crosses midnight. Taken together, the two days differ by +1%.
+- **Oct 08 includes the local R16 probe** (14.89M tokens, $1.01). It was operator-approved and run outside CI, so it has no run record. Without it the day reads 44.9M and $1.95 against ≈ 60M and $2.95.
+  - So this window was **not** CI-only, unlike R14's, where "the CI run records account for all of it".
+  - A gap between the run records and the console is first a question of use outside CI, and only then a price-table question.
+- **Cross-check:** the console's "Last 7 days" total of $38, less Oct 05–07 (≈ $4.5 off the same chart), is ≈ $33.5, against $33.38 estimated.
+- **The window is 5 days, not the 7 the acceptance criterion named.**
+  - Every day is inside 5%, and the window total matches to 0.3% on tokens.
+  - Spend after 2026-10-12 is by then a handful of push runs.
+  - So `scripts/wiki-provider-prices.json` needs no correction, and its R14-window guard test stands unchanged.
+- **The account ran out of credit on 2026-10-11** (run 5104, HTTP 412s), and the operator added $20. The `worker trail` line names it (`HTTP 412`), so an empty account reads as such in the failure digest.
+
+**What this leaves open:** none of it is 078 scope.
+- #682: worker exits on large pages.
+- #733: a push run's window, measured per page on 2026-10-12. `runbooks/wiki-maintenance.md` ran alone at default effort in push run 5188 and did not finish in 41.5 min of model time.
+- #906: unobserved.
+- The 412-counts-as-failure observation above.
+
+## R18: the per-turn output cap is per provider (item #719, 2026-10-11)
 
 **Measured.** Dispatch 5115 was the first run with page-attributed usage (PR #722). `runbooks/wiki-maintenance.md`'s
 worker ended both attempts with `finish: length` and `output: 16384`, the last with 5,891 reasoning tokens. No call
