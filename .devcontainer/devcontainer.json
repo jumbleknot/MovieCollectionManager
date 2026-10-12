@@ -138,14 +138,14 @@
     // never hits the 5-minute cache and would pay the cache WRITE, costing ~2.5x more than Haiku.
     "ANTHROPIC_SUPERVISOR_MODEL": "claude-sonnet-5",
     // Anthropic API key for the movie-assistant agent's model backend and the golden cassette
-    // RE-RECORD path (golden's surface is Claude — claude-haiku-4-5 for both the supervisor and,
-    // since feature 075, the specialist tier — so record
+    // RE-RECORD path (golden's surface is Claude — the code defaults, claude-haiku-4-5 for the
+    // supervisor and, since feature 075, claude-sonnet-5 for the specialist tier — so record
     // mode makes real Anthropic calls; replay mode is keyless). Ollama is unreachable from the
     // containerized gateway (the nested-DinD `host.docker.internal` resolves to this container, not the
     // Windows host), so Anthropic is the in-container model path; api.anthropic.com is already in the
     // init-firewall allowlist. Sourced from the HOST env via ${localEnv} so no key literal enters git
     // (secret-scan). This is a real `sk-ant-...` API key (pay-per-token) — SEPARATE from a Claude Code
-    // subscription login. Set it on the host (setx ANTHROPIC_API_KEY ...); unset → empty → the agent
+    // subscription login. Set it on the host (setx MCM_ANTHROPIC_API_KEY ...); unset → empty → the agent
     // falls back to its default (ollama) and golden record is unavailable, but the container still comes up.
     //
     // ⚠️ RENAMED 2026-08-16 (feature 060) — DELIBERATELY **NOT** `ANTHROPIC_API_KEY`, as a COST
