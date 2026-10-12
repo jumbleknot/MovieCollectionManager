@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3161f9a0f6ef94e60bea91b03eadc6cd189140d418b905a513247749b90b69e7",
+  "pageVersion": "sha256:5b343c5608ad23514b83ec37a6b1f2435504bde56b2a2fc7d74437029f2335e5",
   "claims": [
     {
       "id": "claim_20c43d7793fd4c2f9b478778ec76ae93",
@@ -1119,10 +1119,56 @@
           "version": "repo-file-v1:sha256:cb28caf11261c7e737544a85df56194446a336b9d0490206cb5fea1bc124858b"
         }
       ]
+    },
+    {
+      "id": "claim_8b1c4356332e4c5c89be17d2e7465b6a",
+      "statement": "The repository-root `.openwikiignore` is the enforcement of the churn-citation rule (openwiki/INSTRUCTIONS.md §9): openwiki must never read or cite a path listed there, and a citation of one is what makes a page show up as \"churn citations only: avoidable\" in `node scripts/wiki-maintain.mjs --claims-audit`. The operator's 2026-10-12 change (item #739) added `**/pnpm-lock.yaml` and `security/sast/allowlist.yaml` — a lockfile changes on every dependency bump and the SAST allowlist rotates entries weekly — beside the CD promotion files every deploy rewrites (`**/.env.deploy`, measured 36 times in September 2026, item #525/#613). Adding a path to the list while any `.claims` sidecar still cites it crashes openwiki's Claims preflight (`EvidenceResourceError`, measured), so the citing pages must be uncovered in the same change; the fix for a churn citation is always to cite the manifest, policy or runbook section that states the fact instead.",
+      "evidence": [
+        {
+          "resource": "repo://.openwikiignore#L1-L18",
+          "version": "repo-lines-v1:sha256:6cdfbdb2f8925b393e4029ed5f8bac37f83a6163246c4c1b5c15fe792c98f076:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkOTRlN2RlOTVmMjhmYmY4MWI3Y2E5Y2E3OGFhMjk1MGUyZjNiYWYyMDQ5ZTA1OWZhYjk0NjdkZGUxNDQyYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNjg3ZjZjODhhMTFhMDU4YTg0Mjc2YTAzNzAzNWVhZjczYjYxYmE0ZGUyODUzM2NmYWQ2ZTI3YWM1OTE2MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L24-L34",
+          "version": "repo-lines-v1:sha256:82891771a416e20389a3c1e7d8666d7be907dc108be7c6f90f3ae7e464f71124:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliODRjMTk2ZTZiZjhhNWM3N2Y1YmQwZGU3NmNiNWU4NTU2Mzc4ZGQ1ODZjNzkxYTk5NzZkMmEwMWFiYWI4M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1N2QyOWIyOWRlMWViNTMwZGFlOWI4ZDlhNDg4N2U0NmFhY2M1MzFiMjIwNjdhNWVmMDIzNDhhMjg0NDhlN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViOGNlNWNkN2Q5MzhmNTQyYjFmNWJhODZkYjg5ZTY4NjkxZmVkZTEzZTJmZWM3N2RjM2IzYWIwOWQ0Mzg2YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlNDBlOGU1ZjMzZDgyMTM4NzllMzdlMzBhMzllNjI4MmU3ZWY2ZjBmMzU1ZWZiZmY1ZjU0ZTY5MWNlMDU4YmUifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-claims-audit.mjs#L145-L145",
+          "version": "repo-lines-v1:sha256:69f99baa5a4e3a825c6f2bd2b6e875461d0bb79c755c5cd6844e856317199e12:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjlmOTliYWE1YTRlM2E4MjVjNmYyYmQyYjZlODc1NDYxZDBiYjc5Yzc1NWM1Y2Q2ODQ0ZTg1NjMxNzE5OWUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjlmOTliYWE1YTRlM2E4MjVjNmYyYmQyYjZlODc1NDYxZDBiYjc5Yzc1NWM1Y2Q2ODQ0ZTg1NjMxNzE5OWUxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODI3OTU5OGU1Y2QzN2I3ZWRhZjY5MTM1Y2NlOGY0MDJiMGI4MTBhZjQ0YzIxYTc3MWI3MmMzYTUxYjZmODAzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjZjODhiMDk4YjUwODhiNzBmZDY1MzJkY2U1YjUxNGI0ODkzNzA2OTM5YTk2NzkwMGJiYjlhN2U5OGY1ODY5MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_94bdf24abb394aeea92abc2f7a310cfc",
+      "statement": "`openwiki/.maintenance-state.json`, `.page-manifest.json`, `.last-update.json`, `.run.json` (the generator's own in-progress run) and the `.claims/` sidecars are live state — the next run rewrites them — so a page must describe what their fields mean and where to read them, never copy a current backlog, `escalations` entry, `lastOutcome`, cost or call count into the prose (openwiki/INSTRUCTIONS.md §10): a copied value is wrong by the next run and a page that quotes it looks authoritative while it is stale. Proposal #737 published exactly such a `lastOutcome`/`failuresAtLow`/cost snapshot in `runbooks/wiki-maintenance.md`, already false when proposed. A measured value that explains why a rule exists is different: it belongs in the source runbook, dated and with its run number, and the page cites it from there.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:98ce53c4af7422b550ef479b0a7e45e3ff55b07f2f2bd054e4c85a64314470bc"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs",
+          "version": "repo-file-v1:sha256:cb28caf11261c7e737544a85df56194446a336b9d0490206cb5fea1bc124858b"
+        }
+      ]
+    },
+    {
+      "id": "claim_b973117ddcce4ac4bcab9e6d07b3f73c",
+      "statement": "A `parked` entry in the run record is not always a page whose worker keeps failing: a page whose `resource` names a directory cannot be regenerated durably, because any commit anywhere under that directory re-flags the page as drift (V12), so such a page is parked rather than paid for (item #739, which parked `process/spec-driven-development.md`, whose `resource` is `specs/`).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L501-L503",
+          "version": "repo-lines-v1:sha256:cade01e93d8846af9440b4d503452849781a634c5bb2170ecb8a345169ac8426:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBlYzk3Yzc2YTVhNmVkYzBlZmZiZjJhNmUwZTg5ZmJlYzAwZmVhNWVkNTFjZGI0MzY3MGYzMWE2ZmE0NjQwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUyMGMzZGU2ZWVlMjZjOGNlYjMxZjJmYjI5NTY0NTUyMTEwMzA4ZGIwNGI1YWIzZDk4ZGRiODBhZjFiNTc0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWM3OWM0NWQ0ODQ2YjVlYTUxYmVkMzdkMDBhNDU5MDdkNTExMWZkZjc4Y2QwMGVhNzIyYTQ1ZWRmODgwZjRkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTViMDVlYjY4YjcwYmFmMGE4NjhkZjI3MTY3MGI0ZjYwNzMxNmU2ODhiZTRjYTkyMjg1ODEzOGM1OGI5ZWUwNyJ9"
+        },
+        {
+          "resource": "repo://scripts/openwiki-drift.mjs",
+          "version": "repo-file-v1:sha256:72c80326fb22edca34f0cfc1071de248cf25706dfcc975382b0e38c4b31b24b1"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T23:43:39.044Z"
+    "at": "2026-10-12T18:54:07.831Z"
   }
 }

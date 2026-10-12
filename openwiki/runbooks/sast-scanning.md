@@ -48,8 +48,6 @@ sources:
     resource: repo://scripts/override-lever.mjs
   - id: openwiki-source-bd64475e04b69688a7d80d8d
     resource: repo://scripts/sast-scan.mjs
-  - id: openwiki-source-c375ab176697b193168e58a4
-    resource: repo://security/sast/allowlist.yaml
   - id: openwiki-source-dc4b183eb81f4bf37332aff8
     resource: repo://security/sast/README.md
   - id: openwiki-source-a19234abfb32b98f346a6d4f
