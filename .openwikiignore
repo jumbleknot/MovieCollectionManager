@@ -9,3 +9,10 @@
 # Adding a path here while any .claims sidecar still cites it CRASHES openwiki's claims preflight
 # (EvidenceResourceError, measured): uncover the citing pages in the same change.
 **/.env.deploy
+
+# Item #739 (operator, 2026-10-12): churn files. A lockfile changes on every dependency bump, and the
+# SAST allowlist rotates entries weekly; a Claim citing either forced its page into a paid run on every
+# such commit, while the fact it supported was unchanged. Cite the manifest, policy or runbook section
+# that states the fact instead (INSTRUCTIONS.md §9).
+**/pnpm-lock.yaml
+security/sast/allowlist.yaml
