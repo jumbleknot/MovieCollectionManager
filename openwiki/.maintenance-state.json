@@ -1,20 +1,8 @@
 {
-  "coveredCommit": "b18a0f43dae03cd9271d3c0aa8746945704b9cac",
-  "coveredAt": "2026-10-11T23:58:28.672Z",
+  "coveredCommit": "6884541a94fcfe07d80f9ce9885d5168fce9e1a7",
+  "coveredAt": "2026-10-12T00:56:26.126Z",
   "lastOutcome": "completed",
   "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "devcontainer-sandbox.md",
-        "renovate.md",
-        "infra-image-scanning.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "unparked for item #719: the per-turn output cap is now 65536 on Fireworks (PR #732); source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/infra-image-scanning.md"
-    },
     {
       "area": "runbooks",
       "pages": [
@@ -25,12 +13,24 @@
       "areaExists": true,
       "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox-lifecycle.md",
       "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "wiki-maintenance.md"
+      ],
+      "kind": "refresh",
+      "drift": true,
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift: docs/runbooks/wiki-maintenance.md changed after the page's stamp",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 737,
-    "headCommit": "ad8e92d6c564f00d475916fc1838d6c07f1dab58",
+    "headCommit": "41c2b08fec43690a30fc7d8253b62115cfc193cd",
     "markerBefore": "c51d9a99b04f73fd74f7aa7c608f710e51aced3b",
     "slices": [
       {
@@ -42,43 +42,58 @@
         "subjects": {},
         "areaExists": true,
         "reason": "unparked for item #719: the per-turn output cap is now 65536 on Fireworks (PR #732); source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/infra-image-scanning.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "devcontainer-sandbox.md",
+          "renovate.md",
+          "infra-image-scanning.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "unparked for item #719: the per-turn output cap is now 65536 on Fireworks (PR #732); source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/sast-scanning.md; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/infra-image-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox.md; openwiki/runbooks/renovate.md; openwiki/runbooks/infra-image-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-11T23:58:29.157Z"
+    "updatedAt": "2026-10-12T00:56:26.597Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 7,
-    "elapsedSeconds": 894,
+    "pagesWritten": 3,
+    "elapsedSeconds": 2876,
     "stoppedAtBudget": true
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 101,
+    "calls": 254,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 323000,
-    "cached": 10307284,
+    "uncached": 2407628,
+    "cached": 27202622,
     "cacheWrite": 0,
-    "output": 112607,
-    "reasoning": 72185,
-    "ms": 884837,
-    "estCostUsd": 0.2939,
+    "output": 598850,
+    "reasoning": 508454,
+    "ms": 4969258,
+    "estCostUsd": 1.6041,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/wiki-maintenance.md"
+        "runbooks/devcontainer-sandbox.md",
+        "runbooks/renovate.md",
+        "runbooks/infra-image-scanning.md"
       ],
-      "effort": "low",
+      "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 0.2939,
+      "estCostUsd": 1.6041,
       "rateLimited": null
     }
   ]
