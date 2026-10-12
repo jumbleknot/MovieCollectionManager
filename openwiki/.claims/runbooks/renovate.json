@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3577f3811149b18d27c9e90e18b88965b96816f85aa68de6ed567673ba0bc6ba",
+  "pageVersion": "sha256:3a62f458ea42503485ba3d3d0aa07716d9b5c9a18fe885763d882f4545df180e",
   "claims": [
     {
       "id": "claim_cbafc350ce384b609f6c1b3d75c5c485",
@@ -255,7 +255,7 @@
           "version": "repo-lines-v1:sha256:30e62fa6aecd7a939c0f34efeaf40e0bf2f9cd5ef4e1747908852139b84f5901:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZDk1Yjk0OTZhY2YzMDlkY2Y2ZTA0MWQ5ZTdjOWNmMjJhYjBkZjY0NDYwMDM2MjI4NjEzZTJhYWM1Nzc2ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwOTIxMmZmNjcxNTUwMzAzZDI1YWQxNTFmNDNmNWU4ZTk4MzdmM2EwZTQ1MDA0MWRiMTJlNDk2ZDhjMDRkMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1ZTI1ZGJkNDE1YTg3M2E3NDljNzdhZjJkMDFlN2MyODU2ZTgyMTQ0MGVjZDhiNTc3MzA5ZjI0YTU5YWVmYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4NjVjODMyNDMwM2IyZjNhZGRhNjEwMGY1MjRlYWQ1MWJmNWQ2NjhiMzk0NGFmNWNlMjY4YzE4N2FjODQzMWYifQ"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md#L494-L515",
+          "resource": "repo://docs/runbooks/renovate.md#L490-L511",
           "version": "repo-lines-v1:sha256:8ba9bdf3a83fc936fbb7aee3ac3fec0b8f100c570f4b112c4975c5e517d91eb7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NjUwOWNjODJkYjhjODFkNGM0NmNjNWQzZWYxNGZkZmFmYjEzMDc5MWZlZTZlZTM5OGMxZjFiNmNkN2QyNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4NWRjNmE1MDU5OWEzODI1ZDFjYjQyOWM3OTA5MDVkZWE0Yjk4MTFhNDdhOWZmYTFhMzFjMjYwMjFlZTkxN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MjllYTBkYTQ2ZDI0MDU5MGM3ZjEyOTcyMTc1OTNmM2JjNDM2YjY3MjI4ZTY4ZjZmNGNmNGY3YjcwODhmMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlOWFlNTBhZDAzNWQ0MTJmMzZmY2EwMTU2ZWI2Mjg5MzU1MWZhMGU1OTMzY2I3NzU2MTBjMGJjOTNkNmVmMzkifQ"
         }
       ]
@@ -279,7 +279,7 @@
       "statement": "Merging past a pending `renovate/stability-days` check defaults to HOLD and is permitted only when all three conditions hold: the wait cannot satisfy it because the pending state is structural rather than temporal, the posture has been measured first with the gate's own criteria and recorded on the PR, and the update has security value now; branch protection treats the check as advisory so the forge permits the merge, which is exactly why the rule exists.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L401-L426",
+          "resource": "repo://docs/runbooks/renovate.md#L397-L422",
           "version": "repo-lines-v1:sha256:ad4930d327e930304ff7e4e6eab25ea33098845329b4428486d09e6b7212ac74:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YjZkMzRjOTg0MDBlOWIyY2ViZTg0NjM3NmQwMWIwYzdkZjI0ZjBmNTU5NzQwNTY0YjM4NThkNThlMjA0ZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NzBiZmQ0NjQ3YmFmZTI0OGU2ZDhiOTAyMGVkMzExOWMwZjE4ZDk0ZDQzMGEzNWRmYmNkOGZiNWE1NjQ2ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzNTRiNzdmY2VmZjBkNmIyOGNlYmMzOWIwYTY5MGEyYTM5ODQ1YjljZGZiNDdjYWYxZDAxOTU5N2IwMmY3YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4YWYwOTNiMWRiOTIxM2Y0MDUzNjUxMGRiNmY0NzliNTZlMGRjMmRkYTQ5ZDEzZmRlYzdmM2QzOWRkZDAxNmMifQ"
         },
         {
@@ -293,7 +293,7 @@
       "statement": "Autoclose requires EVERY dependency in a group to be satisfied on main: finalize/prune.js only offers a branch to the `- autoclosed` path once no upgrade in it remains, so a hand-carry that is one version short does not close the PR — it silently rebases or shrinks it. The verification is `git merge-tree --write-tree main <branch>`, and a commit message's claim about its own content is not evidence.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L447-L475",
+          "resource": "repo://docs/runbooks/renovate.md#L443-L471",
           "version": "repo-lines-v1:sha256:ccdef04d0f63180cb73d38b7029653f3e761c7b643bfef12e011630a71c92813:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZDdkMDM5YjUxMDZiMTM5NjgxOGE3MDg0NzU1NDJkNDliMzdiYTE0NjljYjY1ZGJiMjU1ZGQ5NTdhYjRiYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5M2M2YTgxNDU4OTQwZWJhNjU2OGIzNjcyYzc1OGZiMTRhZjg1NWRmZDhjNjU4YWQyMWYwNWEzYzYzMDczZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMzQwYWQyYTJmMDExY2M3NzRkYzk1MzMxN2Y5NTFjMzY5NWZmZTc3NjExNDE3MjQwNjkzMDBhZWQ5OTlhNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ZGE3NDA5OTJkZGY0ZmEyYTkxODk4OWMzMmNiYjZmZGYwMGI4MWNmODZmYTIyM2JkODVhMjdhOTBhM2U0OTIifQ"
         }
       ]
@@ -303,11 +303,11 @@
       "statement": "Closing a `lockFileMaintenance` PR does NOT mark the channel rejected, unlike every other Renovate PR: `recreateClosed` resolves true for that upgrade class in updates/generate.js, so check-existing.js returns before looking for a closed PR; the exception is documented so it can be acted on deliberately, not so the blanket never-hand-close rule is relaxed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L347-L353",
+          "resource": "repo://docs/runbooks/renovate.md#L343-L349",
           "version": "repo-lines-v1:sha256:4f03228065bb3f6d8b6fb10885b283a8e76b2029e884b872a8b1867b415e892c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3ZDUxODYxZmMwNjNkOWU3NzRkYmNiMWQ2YjY2MzMxNGEzYTQ4YjBlMDAxNDY5NjY4M2VkZjA1NGExNDliZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg4NjAwMTkxODUwNDQ5NjhiODlhNzMxMTQ0ZjZkMTk4MzU3NjBmOWZkODVjZDlkMTRiZmIyYjE0MTA2MTNjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjI0ZmU4OTM4ZGY0YTgyNWRiMjI4MjMzYjgxMDRjYWIzODgzOTc0MWYxODkxYmE4YTE4OWRkNGI0YzVkYzllNiJ9"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md#L358-L382",
+          "resource": "repo://docs/runbooks/renovate.md#L354-L378",
           "version": "repo-lines-v1:sha256:151b5cdbb097e1ab7d83916b4b3bacb743b106ea90be4598430db9e58a5570b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyNGIyZDkxY2YyZTNjY2I4Yjg2YmU3ZTZlZjlmNjkzODBiYzg1YTM4YzVmYjUyOGFhYmVmODYxNzliZjk3OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZWU0NjE3ZTVmM2I5ZTAyMGQzZDlmY2JjNDk3ZDRmYzA4ZWVmNGFkYjI2YTZmOWEzZTBmNjcwOGYyNmI5MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkZmE5OTQxMzZlMDcyODY1ZWQ2MmY2MzQxYjQ5ZDc5ODJkMmUxMGQ5Mjg4NTI3NzFkMTBkMjdiNDhjMzc4MzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhN2FjNmY4NzE0OGVmODQ0Zjg2M2U2MjNlMTJhZWNhZjgyYmIyNDI2MThiNjczMDVhYjZiM2M0NDllMDc1YWMifQ"
         }
       ]
@@ -371,7 +371,7 @@
       "statement": "uv's single source of truth is ONE version string repeated at every site (three install-script URLs, five setup-uv inputs each carrying a `# uv-version` marker, and four image tags), held together by one customManager plus the `uv pin` packageRule and asserted equal across every site by the guard test — deliberately not a shared file, because astral-sh/setup-uv's `version:` input is an Actions expression and cannot read a repository file, which would leave the five action sites unpinned.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L1096-L1125",
+          "resource": "repo://docs/runbooks/renovate.md#L1088-L1117",
           "version": "repo-lines-v1:sha256:61d4f3bb2f55fd2f859d391f489f44beae293ba21fc1d246a5f27c8f423a671a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2OTdlNjAzNmFjNjdhM2ZlNmFlNDhlYWNhYmQxNWUzYmM5NjRhZjYyNTM2ZGVlMGE3MzJlYWU0MTllYTY3NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwOGI5YzkxYjM5M2Q4ZDgxN2VmMGFhMTJkYjcyZDczNjIyOWEzN2JkYzEyODY2ZGQ2NzIwNTA3MmRkMzBiZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0YjFjYTE5ZDkxNWQ0Njk4NDllNDMyMDFiZTIzNWE1MTU2ZGZkNjE4OWZkMWU5OTQ2MTY0M2I2MWI5ODQzMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyMWJkMDk5OTNmZjRjZjIxZThhMDJiMzE0ZDI2ZTMxODI1OWYzY2NjYjBhMDU3YzliZWE1ZmM1OTYyOGNmMjAifQ"
         },
         {
@@ -403,7 +403,7 @@
       "statement": "The release-age cooldown gates only the package Renovate proposes, not transitives a lockfile regeneration drags in: pnpm independently verifies the lockfile against supply-chain policy at install, so a compliant bump can resolve a transitive published hours earlier and redden required contexts at `pnpm install`. Handling is to wait for the cutoff and re-run; item #271 decided this friction is accepted rather than mitigated, and it must not be spent as a `minimumReleaseAgeExclude` convenience entry.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L550-L576",
+          "resource": "repo://docs/runbooks/renovate.md#L546-L572",
           "version": "repo-lines-v1:sha256:cd8feb583945fb92136ca5f8c38af8402013640c8065e311985e7ae75e3d8943:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5MjYzZWRiOWEyNmViZTRjNzI2YTdiZGY0ZDgyNGRmYTNlOGRlNmYyMjVkMTc5ZTY3MTBlNWJhMGQzNTA2YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZDk5YjNhZTAyNWUxMGQ5MTg4MjliZjA0NTcyODBkN2Y0YTA5NGJlODVmMWRiMWEwMjRhNzRiYjk5NDk4NGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5YjhkNjRiNzNmYzA2ZjUwYWYxMmRhZjY4NjEwNzUwMDNhZjMyZDAyMGM1MDcxMThmOGNlZmZlNWZhYWZjZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkODhjMGI5NDQ2ODIxMmZlYWJkOTAxMzc5YjIwOTdkY2RmNzc4MTE2MGFkMTVmNWZlYTI1ZDIyZjdhMzA5OWEifQ"
         },
         {
@@ -417,7 +417,7 @@
       "statement": "A step body of two gate commands joined with `&&` under `bash -e` reports one outcome, so a first command that throws hides the second command's failure-to-run and looks identical to both running and finding nothing — this hid an entire expiry-check tier for two weeks. The reproduction is to run the STEP exactly as CI does (`bash -e -c 'cmd1 && cmd2'`) rather than each command in isolation, and against a clean checkout, since gitignored local state can mask the defect.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L873-L901",
+          "resource": "repo://docs/runbooks/renovate.md#L865-L893",
           "version": "repo-lines-v1:sha256:c91977083e509ad6892afd2bb50942d9fb3481bae5df60ac9ec60816948404c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZDgzYjI4MzAzNDg5ZGVhNjRhNDQ3ZmM2YjEyZmI5NGI5ZGNmZmNkMGJjZTZiOTM5MzAyZDlhY2MxZTM5ODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlYjIzNzVlZDA0ZTA1NzY3N2JjZGEyOGEwNmI3NWY5OTNmODI2YmM2MmMyNzUxYTUyNWU1N2IzOWIwNDU2N2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmYmM1ZmMyZWM1M2IyYmQ2MGI3OTI4MDAyNzcyYzUwYjE1NmZkNTVjYzRkYzYzZWY1ZWU4YmZhY2Q5MTI0ZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NDkzNjA2MjNmNGVjMGUxYmIxNTlkNWY2YjU5ZTJhOTk4NDBkNTA3NGM0MGEwYzdmNjE0Y2M2ODQ0MDAyOWMifQ"
         }
       ]
@@ -443,10 +443,184 @@
           "version": "repo-lines-v1:sha256:73e3c8df5afdc831fc3e38e22a946aeca277d89abff36174194977195c42594c:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmJiOWE4OTkxMzg4OWNlOGJlMGIzYmMyN2FiNzY4OWQxNjZjM2Q4MGQ0YWIyMTFjNjVjMDYzZDZkNmI3MDc0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ZiMTA5N2Y3ZmQ0NTRjNjY3NDZmYTc3ZGEwMThmZTBlNTY1YjU5MzcxYzQ5MWQ0ZGRkNzAzODk3MDBkZGQ4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE0ZDc0ZTJmNDI0OWJlNzBlYTBiNTUzOGY5NGQ2NTM1YjJjNGQwMmEyZjRjODg2M2MxZTc5MThkMTZiNTYyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM1YzgwMjE0MmEwYWIxZTlmNWY5MDY0Njk2YjdkMDUyMmZjZmY0MzhmNDE5MjQ5MTBiNjY4M2ZmM2I5YjNlZCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_c580be79a38945268c08d3cae7dfc8cf",
+      "statement": "The infra-image-scan CVE sweep runs twice weekly on UTC crons — 0 4 * * 5 and, added for item #642, 0 4 * * 2 — and every sweep slot stays strictly earlier than renovate.yml's Friday window cron at 0 7 * * 5, so main's CVE posture is known before Renovate opens the PRs the sweep would otherwise need to gate retroactively; the guard test compares the LATEST sweep cron against the EARLIEST single-slot window cron and additionally requires a gap of at least two hours, sized for capacity-1 runner queue depth rather than for the sweep's own ~3 minutes, with both files' crons asserted to be 5-field UTC so DST cannot narrow it.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L61-L72",
+          "version": "repo-lines-v1:sha256:01ce644df37d86dc2821e64ea9e5a9e56ccb5a90ba7dc15b18ab4c819f99b82a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyNGQ4NTkyYzE3NDFhMmI2OGE2NjhlZWZmMWQzNTE5ZTYzN2JjMTBlOTY1OGIwNWUzMGNhOWNjNTJiMzc3NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0YzM2Nzk1MGUxOWYwY2YxNjQ0ZjZiYWJkZTczNmM0YTc0NjExNmY3NWViOTc2YjMzZmZjYTU5MTE0M2EzZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNjhjOWI4MDE4MWRiNDA2NzE1ODY3OTVkZWFkZmM3NGJjMDA4M2YzZmJiNDk3NTk5OTAwYmZjODBlNDY0MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MGZjMGFiOGE0ODNlMzliZmFhODg5NWExYTk2YjE0YzZmMWFmNjA1N2VkNjIwM2I0N2VhMWJmM2YzNjNmZmMifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml#L32-L46",
+          "version": "repo-lines-v1:sha256:d07f1a54ea996a8c83976ca1b820740f9cc7efdf663ee59c0f3bd334af38960f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWRjOTlkNzkwNGMzMWMwMmU0N2NiYzg5OTA5Y2VhMTViODkwMTE3NDVkOGJjMThhMTY1ZThhNTM3ODc1MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYmIwZjlkZmYyMDZjMDhhMTQ1YWY3NjEzNDJlN2EzZWEyN2ZiNDJjYTJlY2Q5NDgxZGIzNjVhMGQ5YjJmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MThmZTE2NzE0YjY2MTQzZTBhYzA1YTM3NjcyMTk3NzRiYWU3ZTkxMDFhYWI0NTJmYjk2MzkxOTdkMTc5NjMifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3009-L3063",
+          "version": "repo-lines-v1:sha256:40c359a8b1be1433696d7edbeb0a66c2fc168a0a4a1ce5303079722a9e5f622c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMjM3Y2JlOWIyODQ4YmIzZTNjNGZhZDA5MGFjYWJlOGYyMTY5NTdjZTg5MGQ5OTdlZjNjZjI5MTA4MjllMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZTQwMjUzNmNjN2VkYWU3ZDVjYzBjMWQ1MTdiOTA5YThiZWIxNjMxZDQ5M2FiZGVjMDkxYmI1M2Y2OTQwMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkY2ZhNGViOGI2OWY5MWJmZGY4MjE3MjJiNDFlMzMyYWNhZWI0NTJiNjk2MDgzMmFmZWUwNGYyMjVkZWEzZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_49aebc51a50447059f1eedefed9a25af",
+      "statement": "Friday is a single-runner cron ladder in UTC: 04:00 the CVE sweep, 05:00 minio-image, 06:00 devcontainer-image (each of the two image builds carrying a 60-minute timeout), 07:00 the Renovate window, 10:00 lockfile-refresh-check, 11:00 renovate-health — which is why the sweep-to-window gap is budgeted in hours, to absorb a queued ~35-minute app-e2e as well as the two builds between them.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/devcontainer-image.yml#L28-L28",
+          "version": "repo-lines-v1:sha256:815e225dad28f953d9939beed05012a73690d3abe685ec68b8cf0160388b8532:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODE1ZTIyNWRhZDI4Zjk1M2Q5OTM5YmVlZDA1MDEyYTczNjkwZDNhYmU2ODVlYzY4YjhjZjAxNjAzODhiODUzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODE1ZTIyNWRhZDI4Zjk1M2Q5OTM5YmVlZDA1MDEyYTczNjkwZDNhYmU2ODVlYzY4YjhjZjAxNjAzODhiODUzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTMwMWViM2YwZmRiMGI2ZTNhNzhiNTRlMjVjNTNhYTkxYmU1MGEyZmM1YzFiMzQwYzcxYjM1NWIxYTZhYTRhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc1MzU4OTNlM2Q2ZTA1Yjg3OGIwODRjODc5MjliNTVhYTJiYTgwMTMxOGUxZWE5MWQ0ZTIyNDA3ZDA3OWQ4OSJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L61-L72",
+          "version": "repo-lines-v1:sha256:01ce644df37d86dc2821e64ea9e5a9e56ccb5a90ba7dc15b18ab4c819f99b82a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyNGQ4NTkyYzE3NDFhMmI2OGE2NjhlZWZmMWQzNTE5ZTYzN2JjMTBlOTY1OGIwNWUzMGNhOWNjNTJiMzc3NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0YzM2Nzk1MGUxOWYwY2YxNjQ0ZjZiYWJkZTczNmM0YTc0NjExNmY3NWViOTc2YjMzZmZjYTU5MTE0M2EzZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNjhjOWI4MDE4MWRiNDA2NzE1ODY3OTVkZWFkZmM3NGJjMDA4M2YzZmJiNDk3NTk5OTAwYmZjODBlNDY0MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MGZjMGFiOGE0ODNlMzliZmFhODg5NWExYTk2YjE0YzZmMWFmNjA1N2VkNjIwM2I0N2VhMWJmM2YzNjNmZmMifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/lockfile-refresh-check.yml#L14-L23",
+          "version": "repo-lines-v1:sha256:063561fe0eed761f5721706f9f3fa76a9dbadcd3f78002b4e5f0307c64b8b75d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMmZhNzNmMDcwNDg5ZDk3MjRhMDI5ZGZiNTAyYWEwODg1MDdkMDg1NzliYmJjYzk0ZWQ5MzVjMWEwNTMzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MzM5MTA5ODUwMWQ0MjQ5NGEyNGI1YzAwZTdkZDgxNGFiNzYxOGZiYjEwN2EwOTEyMDQzNDk4MjM3ZTc4MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlOTVjOWU1ZjRkY2E1NGFjNzJjMjFjZTMyZjY3YTI0Yjg0MGJjMWI1OTJiOTI4Y2I3YTlkODBkYWEzY2U5M2EifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/minio-image.yml#L68-L68",
+          "version": "repo-lines-v1:sha256:6fcb50776eaa0361cf9709fbcf633a231634027bcf63385448a815757c1dd201:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmZjYjUwNzc2ZWFhMDM2MWNmOTcwOWZiY2Y2MzNhMjMxNjM0MDI3YmNmNjMzODU0NDhhODE1NzU3YzFkZDIwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmZjYjUwNzc2ZWFhMDM2MWNmOTcwOWZiY2Y2MzNhMjMxNjM0MDI3YmNmNjMzODU0NDhhODE1NzU3YzFkZDIwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmY2OWIxNjdmNTc4YjE1ZDE5ODA0NzU5YmM0NjJkYzNmOWVkNzc1OGU3ZTVlZmVkMTk1YTFhZjdhZDg4MWY5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGFjYzA1MzYwMjRlNWVlYzQ0OWNiN2Y5YjYxZjQ3ZGU0MjMxNDBkYWU4YTAwYzg5MGMxZDU2NDFiNjU5MmM0NyJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate-health.yml#L21-L21",
+          "version": "repo-lines-v1:sha256:49f9f6ef3f7477b8e8d7f348252f933f50fbc6ba4a4a891fe0aec3e2138e3c41:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDlmOWY2ZWYzZjc0NzdiOGU4ZDdmMzQ4MjUyZjkzM2Y1MGZiYzZiYTRhNGE4OTFmZTBhZWMzZTIxMzhlM2M0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDlmOWY2ZWYzZjc0NzdiOGU4ZDdmMzQ4MjUyZjkzM2Y1MGZiYzZiYTRhNGE4OTFmZTBhZWMzZTIxMzhlM2M0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzY0NDJlY2M3ZmNiNThiNDRjODk3NGQxZjNlMzc1MWQ1MWMxMmY5OWJlNzgwMDg2MTBhM2VhYmZmNGM2Y2MwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzQ2ZDBjZWVhMTQ3ZjFlYmUxYWEwOWY5NTU0NTFjODhkZjMwODUwODUzOTQ5OTVlMjBjMWJlODM3MGRkYTRmMCJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml#L32-L46",
+          "version": "repo-lines-v1:sha256:d07f1a54ea996a8c83976ca1b820740f9cc7efdf663ee59c0f3bd334af38960f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWRjOTlkNzkwNGMzMWMwMmU0N2NiYzg5OTA5Y2VhMTViODkwMTE3NDVkOGJjMThhMTY1ZThhNTM3ODc1MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYmIwZjlkZmYyMDZjMDhhMTQ1YWY3NjEzNDJlN2EzZWEyN2ZiNDJjYTJlY2Q5NDgxZGIzNjVhMGQ5YjJmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MThmZTE2NzE0YjY2MTQzZTBhYzA1YTM3NjcyMTk3NzRiYWU3ZTkxMDFhYWI0NTJmYjk2MzkxOTdkMTc5NjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe9be52604574aedbbad12078cf5c120",
+      "statement": "Whether the lockfile refresh fired UNAIDED is checked by a scheduled job rather than a note to a human (item #218): lockfile-refresh-check.yml runs Friday 10:00 UTC, after the window has finished and its PRs exist, and comments its verdict on the tracking item — comment-only and always exit 0, so it never trains people to ignore a weekly red, and it no-ops once that item closes. The load-bearing distinction is unaided versus forced, and the tell is WHEN the PR was created, because Renovate returns `not-scheduled` before creating a branch, so a lock-file PR created outside the permitted window cannot have come from the schedule; reading the dashboard tick directly does not work because Renovate rewrites that issue on every run.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/lockfile-refresh-check.yml#L1-L23",
+          "version": "repo-lines-v1:sha256:c89f4a5aaa0e06a6ca30346ab34e7b4cf6406fb5bc60985eb2476aa976c416a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTZkYzg1YmVlZWYyMjgyNTc0MzllOGRmNGVhOGZiODYwNTk4Y2UyZmFiMDY3ZGZiOTQyYzJkYzZmNGQxOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMmZhNzNmMDcwNDg5ZDk3MjRhMDI5ZGZiNTAyYWEwODg1MDdkMDg1NzliYmJjYzk0ZWQ5MzVjMWEwNTMzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlOTVjOWU1ZjRkY2E1NGFjNzJjMjFjZTMyZjY3YTI0Yjg0MGJjMWI1OTJiOTI4Y2I3YTlkODBkYWEzY2U5M2EifQ"
+        },
+        {
+          "resource": "repo://scripts/check-lockfile-refresh.mjs#L1-L66",
+          "version": "repo-lines-v1:sha256:6ca230e4b55680dfaf5273989baeeb2fba6112e7e9f80b03c538e871e3fac184:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjMjQzN2NlZjI5NjlmMTAwZjBhNDg3NjQ4NzAxNTU2MTIxY2RmNDM5MjMyN2Y0ZjA4ODE5NmQ1ZWFkZGM3ODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa899aa9fb55448da6254ff305e36462",
+      "statement": "A database MAJOR waits in Pending Approval, and ticking it IS the migration decision: postgres, mongodb/mongodb-community-server, redis, clickhouse/clickhouse-server, opensearchproject/opensearch and langfuse/* all carry dependencyDashboardApproval, tightened for the four database images on 2026-10-09 after PR #698 merged clickhouse 25.12 -> 26.6 and redis 7 -> 8 for the production Langfuse stack on a green CI that never starts that stack (app-e2e does not exercise the observability stack), while the within-major patch stream stays automatic; the shared observability postgres is hard-held below 17 by an allowedVersions ceiling scoped by matchFileNames because one pin backs both Langfuse and Unleash, so it never reaches this list.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L151-L158",
+          "version": "repo-lines-v1:sha256:90d4dc8bb996386f3297fdb2f14378be9fd4637bc51bdd535ab32d02b3ad7844:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU2YmM5OGY5NmI2YWFkOGFiNzMyMzM2Y2Q2YjBhYmEwODI3ODJkYjJhYjUwNzM2YzdhZWM3MTI0YTdkMDU3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJiYjkyODhkYzdhYzljYWRiNmU2M2VjOGUyNDc5ZDYxMTY1OTJkZDE4NjFiN2RjZGExYzFiMzAyNDNmODkxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQwODcyYjhjNTUwNjc5NWI5ZGMxZjEyYzhhMjdmMmI5NTQ2YzliMThhMzNhNTE0Njk3ZjYwMTA4MWZjOTRjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk1NGQ2YzA1NTUxNmU5ZjFiM2JmZDkzZmY0MzkzOTQ3NjBhYzNjZDExOGZlMTMxZjU5ZDMzZGM0MmZlZmZiZSJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L917-L998",
+          "version": "repo-lines-v1:sha256:c7c34d40c25e5f0af91f6cd8473907cb5744e082a13f025863400e5c7908f90e:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YWI1MTg0ODY4N2EyNjI4NDJhZmNlZGI3ZTZjNGE3YTI1ZGY5M2MzNGE0MGJmN2M1MDllODRmODBiZGY3NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4M2UzMmE3ZDVmOGY1MGVlZjQ4NzM1MGVmNmQ0NGNjZDAzZjBjYmRiYzk3MDBjNTM2OWU3NzI5NDM3YzkyOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1ZTQwNTUxNzFmNDA3M2RhYjMwNGZmZTcwMDY5ODU0NGNjMGVhMjhjZmU4MGE5OGNmMTUyNDhmZTdhZjYxMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNzBlYTgxMjgxMjc2NWE0MjJiMmRiMjdlZDQ1MmU5NTNiZTFkYmMzM2M2NTVlMzU2ZDcwY2UzNTlkNGMyZjEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3137-L3178",
+          "version": "repo-lines-v1:sha256:1916e6910e7a08e68c7672f2dcb0da0a3a1623127e8550f968f5afc817a3c2ee:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxN2VkOTg0MzQ4NGY0NTYwMjMyMzExOTdjNmFhZmZiMDRkODM1ZTRhMjA2MmIxZmNmM2IwYmZkYTY1NGNjYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMDEwNzQzOWQ1YTVmNjY2MzY1N2U1ZjA2MWI3OTY0YjJmNWNhMGIyMTA2NWQ3YTc1NzhkN2EzYWE4NmE0YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_831d08d43ebd4db3b3b44c4109849c78",
+      "statement": "Ticking the Dependency Dashboard and dispatching or merging use different credentials, which is measured behaviour rather than convention: ticking edits the dashboard issue and needs the issue-scoped token, while the git-credential token answers `token does not have at least one of required scope(s): [read:issue]` — which through `jq .body` reads as a null dashboard rather than a refusal — and that second token is the one that dispatches renovate.yml and merges PRs.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L145-L149",
+          "version": "repo-lines-v1:sha256:76dd3e260fe265bf683653aef4ef692ed4cda5b4538d54a90b3422b8adc91dfb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzNkMDkwNTNjODdjZGQ1NjUxMTMwZmQ5OGQ1MzRlNDlmYWZhOGMwNzQzMTQ2ODc3ODJhNTFlZmQ1ZjA3N2U1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU5YTU0OTE0OGVhMGUyNzNlODI3N2RiNTA3MmMzZDhjNmU3NTFlZjU5YjI1ZTVkZDk4YzY3Zjg3ZGYyYTM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWQ4YjQ0ZTgwNjhlOTgyNmUyYjA0N2EyYTY2YzNhYzE5MWU5YTI0MmVkODMxODE4MDA0NWY4MWI5OGJlZTUzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWE4ZGRmZjk5ZWI2MzQ4NTMyNzljMmMzZDNkMWU1MTEyN2UyZTczNWZhNDc4MmUzZTVhY2E3NmQ0ZWM1MTRkNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ec6de8d68eb4b748ce928944e3ffc8a",
+      "statement": "A `main`-side fix for a gate does not reach a Renovate PR by itself, so the triage rule is to tick `rebase-branch=` on every open Renovate PR that failed that gate and dispatch once: `rebaseWhen: \"conflicted\"` means a fix landed on main never reaches a Renovate branch that does not conflict. Measured 2026-10-09 — #696, a Python-only lock refresh, failed `sast` on an advisory main had allowlisted three days earlier because its base was five days old. The setting stays because rebasing every branch on every main merge would cost a ~35-minute app-e2e cycle per branch on the one runner.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L924-L930",
+          "version": "repo-lines-v1:sha256:c61d0c48dcb0817d62027354a255fa1ce8be1ded242caf0f0a630566d43ba34e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTMxMWYwZmE2NTVmOWY2YTU5ODBlNmNlN2MyNjkzMmE3YzdkOWU3MDc2ZTc5NTU3ZTk4M2FlYTIzZmUwMWY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDg0MTY2ZTAxNDBhNGZmYzA4NzQ0MWUwMWE5YzY2YzFhMzlhZDI0ZDM3M2JkMDU5OTMyZDRkN2U1ZWI4NWVmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjNkN2Y1ZDJiYzE5NDk4NTVhMWJhNzUzM2YzYjg0ZGIyYTE1MTEyM2UwOWZiMjEzNWVlZDQ3ODc1NzcyOWRmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDU1NzM5YjI0Yzc1YjA1MTBjNDE4NzBlNTEyMDY4ZWQ2YWU0YTA2NjMyMTRkYWRjZWM2ZmI4YmE3NTJmNzI1YSJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L75-L75",
+          "version": "repo-lines-v1:sha256:1b1d37bf30dd1b73076c9ba6f4db91835fc11f7d2a4cec82f31a8535737028e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxZDM3YmYzMGRkMWI3MzA3NmM5YmE2ZjRkYjkxODM1ZmMxMWY3ZDJhNGNlYzgyZjMxYTg1MzU3MzcwMjhlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxZDM3YmYzMGRkMWI3MzA3NmM5YmE2ZjRkYjkxODM1ZmMxMWY3ZDJhNGNlYzgyZjMxYTg1MzU3MzcwMjhlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjI1NjRmZjVkM2NkN2JkOTA1ZjJkNzkxNDQ5NjhkMDUzYWEwM2NiMmM0OWZkOGI1OTM5MWRlYzdlMmEzZjM2ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjNhYzM5NWE1ZDc1NTBhZDcxOGRkOGRlN2Y1YWMxNWU3ZGY3ZjkzNmRmZTIzZTRmMzBjMzc3Njg1MzAwNTMwMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a31c37cb82274753903fd82c338659cb",
+      "statement": "A group rule governs UPDATES, not lockfile re-resolution: lockFileMaintenance re-resolves every manifest RANGE and no groupName applies to it, so a ranged member of a lockstep pair moves alone on a refresh and the group rule never sees it. Measured 2026-10-09 — PR #695 moved `@playwright/test` (declared `^1.59.1`) to 1.64.0 while the app-ci image stayed on `v1.63.0-noble` and app-e2e ran ZERO tests — so `nx`, every `@nx/*` and `@playwright/test` are now pinned exactly in every manifest with every `@nx/*` equal to `nx`, and check-toolchain-consistency.mjs in `guardrails / naming` fails on a range or a disagreeing plugin so loosening a pin back to `^` is caught at review rather than on the next refresh.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L595-L613",
+          "version": "repo-lines-v1:sha256:d449ab9ba0f9014c43c103b049e9b9c03f3b7bf648129d91d398224257a06b42:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNzhkOWNhNTRmZmFkOTQzZjJhYjllYWYxMzhkODQxYTFmNzRjMWI5Mzk4MGQ0Mzg3YjNhNTAyM2M0NTZiODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MTdiMzBkODhmZTE5MjkwNTRhMWU3NWExMmY0ZmI3ZDgxYWQ5NDViMzU4NGU2ZTMxM2ViZmZkYjI2ODU4OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MDI3YzJiNDY4Mjc5NTY4Njk0YTI5MDRhYWZlOWIyZTIwZGFiMmI2N2U3MWQ0MTQ2OGQ1ZmRhOTVlYmQzZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwY2QyNmU4ZmE0ZmE1NTYxNzc3NDYyYzQ0MWUxOTNiZDMxOGMyNWE0OTdkN2E1Yzg1YTljMTUyYThlOTRiODcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ccddca16a2a24168925c2655fc93daec",
+      "statement": "The OpenWiki generator's own dependency tree is grouped as one `openwiki generator` PR on every version track (item #704): a customManager extracts the `openwiki` pin from `.devcontainer/toolchain.Dockerfile` while the built-in npm manager reads tools/openwiki-generator/package.json, so a packageRule must join the two managers — otherwise a stranded half is a red bot PR or, worse, a generator that moves without its Mermaid parser. The guard asserts the resolved group for openwiki, mermaid and jsdom on patch/minor/major, that the same names elsewhere are NOT swallowed (the control), that the manifest is not hidden by an ignorePaths glob, and that the Dockerfile matchString hits exactly once.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L715-L730",
+          "version": "repo-lines-v1:sha256:9216ddc85bc091e7200adc5260ee10448485769fd45bcb08e3a116d3d2f6c9f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NDE5MTE5Nzk5YTUwNDVmOWY5OTkxY2YxZjkxMGE0OGZjYmNlNDU4MmRlMDE3NmM4MzJhNjRhYmM3ZmYzNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmU5M2ZiMjVjYjRiZGE3YzRlZDg0MzcyYzY4OTdlNDQ3OGFjMzUxZWY1ZTVjYmM3NGMxMTQyYjQ5YzIyOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNjkxMDI4NDQyM2VjMjljZmFlMDJhNzcwNmVmNDJjNDQ2ZTc1ZjllNTM4ZTVhNmVjMjJiNmY5NDAxNTQ5NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlMGU5MGZhZTAwNzA2MGY0MzQ1OGE3MzlkNTYzZDllMDE0OWEyYTU0MjQ3ZGMyN2I2ZWJjZThmZmFhMGJhMTYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3180-L3231",
+          "version": "repo-lines-v1:sha256:73c55cf9e79201a88622bfdbdaa8f3a04c2563c80535881faf65dfe79c4724d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YjFlMWE1ODQ4ZTZiM2JiN2FiNDQ1ZGQ3ZjZhZmZkOTgyZGJmMzY5YTY2MjViOGY3MjFiOWQwNTVjZGVkN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_033cce8a509f4c3eb5e35c68340bd8a8",
+      "statement": "The Renovate run pins its own Node runtime (24.19.0), and that step must stay BEFORE `corepack enable` because corepack is provisioned from whichever Node is on PATH at the time: the runner's ubuntu-latest container ships Node 22, renovate 44.14.12 raised `engines.node` to ^24.11.0 INSIDE the pinned major, and this was the only workflow with no setup-node, so from 2026-08-09 every run logged `npm warn EBADENGINE` then `ERROR: Unsupported node environment detected` and exited 1. A guard test asserts both the pin and the ordering, and check-toolchain-consistency.mjs validates the version against `engines.node`.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml#L92-L105",
+          "version": "repo-lines-v1:sha256:64a08dd85a803575d8785abfdf879a7df8be4c808163a223123fa35024e08104:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0MTk1Y2YyMGI4MjgzNDEyNTk1ZGI5NDE4YzM2MTc4M2JjMmQ4NGIxZThlODM2MjE2MjBmODE3OTdkOTFiMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NTE0NTkxMGQ0YzU3YjVlODRjNGVjYjkyMTRjZGIyNjQ4ZTUwN2VjMTIzMGE5NjdhNjFiOGQxOTNhYTI5NzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiYzE4NDVlZTZjZjkzM2UzZTI2YmMwNGY4MWI2YTU5MmIwOWY3NDQwMzNiODg3ZTM2OWRmOWI1ZDVmNTEwNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NmNiOTYyNTAzMDg0YTRhZDZlYjgzM2I0YWM5NzU2YzQ4YTVkOTgwMGJlODI3YTk2ZGM5Nzg3NWI0NTkyOGQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1-L20",
+          "version": "repo-lines-v1:sha256:ac860dcdc4583f16c7cb600fae4d9b5d4b46dfa2f0339e32f5dce8e288e9548e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiMDk5YjU3OWNjNWY0Y2M1NGU0ZGFlZTljMDJiZTE2OTM4NTdmODZhNGI5NjhhY2M2NDQ5MTA0MWE0ODU2YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMWVhZDkzNmEyMjgxZDUzZGNjMDY0YjdlMmEyYWIwZDUzYjkyZWYzZWY3YjM0YjY2ODY3MzAwNzg5NWM4NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0YmRkMTVkMzQ2MzY3MTBjMzRmOWNjOTg0ZGY0YmVjNjY4YmFiMGIwYjBhNzRjNmQ1MjRhN2RkMTcwNzVkZTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e07cc3cac8ff4ae8b7381652786478c8",
+      "statement": "The release-age cooldown also DELAYS a fix silently, in the direction that produces no error at all: a lockfile refresh forced within ~24h of an upstream fix resolves the release BEFORE the fix and leaves the vulnerable version in place. Measured 2026-10-09 — `graphql-yoga` 5.24.4 moved to the patched `@graphql-tools/utils` ^12 at 2026-10-08 13:38Z, a refresh forced at ~12:00Z the next day resolved 5.24.2 leaving 11.2.2, and the same refresh re-forced at 13:41Z resolved 5.24.4. So check the fix's publish time before forcing a refresh, and confirm the resolution in the regenerated lockfile, since a refresh that merely ran is not proof it picked the fix up.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L574-L581",
+          "version": "repo-lines-v1:sha256:1a3885d7f5288f6d50c371b6e435c1afa1f072482be95af307cbfc1c7634bc5d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjRjMTc2NGRlMzU1ZWJkNGE5NmU0NTdhZmZhZTFjYzBiMjUzM2UzMDMxNTdiMTQ2NmFkNTA1ZjJmZjg5Zjk5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNhMDAxNWI5MDRkNWFkOTZkZGY1ZTY4NzFmNGY1NmRmZGIxMzFiNjYzMGE3MTVmOTk1NGRlZTQ4M2Y2MDBkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDU4NWYxYWVkZmIzNjE2NjA3NDExNzNkYWRkOWY3Njc5YTBiYWNmNWI2NzI5MjgzMjg3M2E2M2Y5Yjc4ZTU5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Q4OGMwYjk0NDY4MjEyZmVhYmQ5MDEzNzliMjA5N2RjZGY3NzgxMTYwYWQxNWY1ZmVhMjVkMjJmN2EzMDk5YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_476d81d53212485ba38ae81705e10410",
+      "statement": "renovate-config-validator runs in two places on the same renovate@44 major the live run uses — an unconditional, ungated job in guardrails.yml that gates every edit to renovate.json, and a pre-run step in renovate.yml that catches a key deprecated by a minor bump when nothing in the repository changed — and it catches the unknown/renamed-key class only with BOTH `--strict` and `--no-global`. Both invocations pin the MAJOR (`renovate@44`), as does the run itself, and the validator job pins the SAME Node as the run (a guard test asserts the two node-version pins are equal), because a validator on a different runtime or grammar would certify a config the run mis-reads; a guard test also asserts all three renovate@ invocations agree on the major. Exact-patch pinning was used only from 2026-10-02 to 2026-10-10 (item #631) because renovate 44.131.1–44.132.1 depended on a @yarnpkg/core published with a Yarn-only `patch:` spec npm cannot install (EUNSUPPORTEDPROTOCOL), which under npx exits 1 printing nothing but npm's log path — every release from 44.132.2 on is back on @yarnpkg/core 4.9.1, so the pin returned to the major on 2026-10-10. It complements rather than replaces the guard test, which catches a key Renovate knows but ignores depending on where it is written.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L437-L471",
+          "version": "repo-lines-v1:sha256:ec8fe1a719618ab08963e3cebb4e76990bbb0b68d8aa4b721e3d8acca99805ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhMTI5YTNmNjYyNTMzNmI0OWI5YmU4ZDU3NDVhYWNjZjkwOTk0MjJiMTgwNDAxY2FjOTkyZWI0MWJiNTg3NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NGRjNTRhMzAwMzBlNzQ0MDlkODAxZDRiMDgwM2M0NTFiNGFiZDc2ZjdkMzc2NDM4M2E0NDlhMzE4N2RmMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3YWJlMDBjYjY0Y2E3YjVhYmQ4ZDhkZWY1ZmZmY2ZiYmRmNThhMzdiZWY5MzVkNDQ0MWQ3MDdhMmRiN2FiZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml#L185-L202",
+          "version": "repo-lines-v1:sha256:ab1dc5c4e433e724835e49876008237e85e12e0a683b79a20ba70dc4f98802a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNjQ2MDVhZTEzYjhmMjJiOGYzYjc5ZDA4MDg0ZjUwNTY3YmRiNTllZjQ5NzRkNmNhYzgxZDBlNjJlYzc4NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyODlmOGQ3YzhlYTgwMDk3NGIwM2IzOGI5ZTIwYzg5OTdmZDcwOGU5NGE5OGYxZTYyMTEyMzFhN2Q1NTJiYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZjJiOWE0NjA2NDhmMDU5YzY5MjJmNDg4NzgxMTM0NGM0YjUwNzFiOWQ0MDM0YTMyZDc2ZmE0ODJhYTZhYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5YmViYWNmZmFiM2FiMDgyYmYwMTczMjViMmQzODM0YmI1ZWQ5ZDYzOWE0MjliYjY4ZTY0OGQ3NjcyOTUwYWMifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml#L236-L264",
+          "version": "repo-lines-v1:sha256:5b5ed529ed6a94dc18794a6f13e10748971a00f69252d30f5dad12725a45490c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYWQ1MDEzZTVlMDk2MmE1ZTU1OTE4NjIxMWVlZWI1Y2ViZjUzOTMyYWEyMTJmMDVlZGYyOWUwMjMyYzI0YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYzk3YWE4ZTEyZGJiMTJjZDA5NGNlZTZmZjk4YzgzOTE3ZTRkYzJkMTc4MjljZmVhZTc2YTJjMTE5YmUyOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMzZjZTZhODMzYWJiZThlNmE4ODFlOTllMTIzNzBkZDExMTJkZDViMDEyNDEyYWY1ZmNiM2Y0Y2Q1Njk3YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2219-L2310",
+          "version": "repo-lines-v1:sha256:046ab3814859d5f7de45e9c02e3b322b5ba18c504954a001e27138073dec14e9:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlZTZhZmI2MmNlYjNmMzRjNDBmYjFiYTVmMDBkM2M0MGIyYTAwNjJkOGE5NzRjNmUwZDQ4YmEwNTQwOGVhMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkNjU4ZTk3N2ZlNmQzZDgzNjdmOTZmNDI2ZDBmNGJiODg5MTBkNzdhNWJiZjliZTE0YzAyMzI5ZDU0ZTJjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyY2M5MjZlYzljYjgwMmEwMTE5M2I4OTRlZTYwOTQ2MmU0MmQ4NGM4MDExMTllMWVkNDUwZTRjMTRhMzkzODcifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T15:19:14.150Z"
+    "at": "2026-10-12T00:08:34.364Z"
   }
 }
