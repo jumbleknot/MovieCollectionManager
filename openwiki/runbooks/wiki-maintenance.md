@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain (including the bounded drift planning and parking of feature 082), the provider/credential table with its per-provider knobs (page concurrency, service tier, the Fireworks-only reasoning effort of item #525, and the per-turn output cap that item #719 raises to 65536 for Fireworks and deliberately not for Anthropic) and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown, the run budget with its per-event job deadline and exit-code semantics, the slice-verification causes (a requested page missing, non-conformance including V16, a policy-forbidden write, a requested page left stale after the run, and a requested page a worker left mid-edit), the per-page landing and restore machinery (failedPages, landedParts, forcedPages, the V16-named mid-edit page of run 5145 and the conformance-confined exception), the deadline-stop escalation that tags the pages a GNU timeout stopped and retries them first and alone at low reasoning effort (feature 078 US6), the single long-lived openwiki-maintenance proposal that proposes per page and reconciles before it plans, and the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain (including the bounded drift planning and parking of feature 082), the provider/credential table with its per-provider knobs (page concurrency, service tier, the Fireworks-only reasoning effort of item #525, and the per-turn output cap that item #719 raises to 65536 for Fireworks and deliberately not for Anthropic) and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown, the run budget with its per-event job deadline and exit-code semantics, the slice-verification causes (a requested page missing, non-conformance including V16, a policy-forbidden write, a requested page left stale after the run, and a requested page a worker left mid-edit), the per-page landing and restore machinery (failedPages, landedParts, forcedPages, the V16-named mid-edit page of run 5145 and the conformance-confined exception), the deadline-stop escalation that tags the pages a GNU timeout stopped and retries them first and alone at low reasoning effort (feature 078 US6), the single long-lived openwiki-maintenance proposal that proposes per page and reconciles before it plans, the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run, the churn-citation rule that forces a page into a paid run on every routine commit and the `.openwikiignore` list that retires such a path (item #739), and the live-state rule that keeps the record's current backlog, tags, outcomes and costs out of a page (proposal #737).
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -9,6 +9,8 @@ sources:
     resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
+  - id: openwiki-source-e119253b3c3737247dc63f2a
+    resource: repo://.openwikiignore
   - id: openwiki-source-c231cd090281b3129aaf6167
     resource: repo://docs/runbooks/wiki-maintenance.md
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
@@ -59,10 +61,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T23:43:39.044Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-12T18:54:07.831Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T23:43:39.044Z
+    at: 2026-10-12T18:54:07.831Z
 ---
 
 
@@ -80,7 +82,8 @@ free check answers a different question the plan cannot: `node scripts/wiki-main
 the next run because one of their cited Claims is stale or unresolved — a full paid regeneration
 whatever the plan requested (item #707) — and marks a page whose only issues are churn citations (a
 lockfile, a digest pin, a rotating allowlist line) as **avoidable**, since `openwiki/INSTRUCTIONS.md`
-§9 forbids citing those. It runs openwiki's own evidence resolver from the install the `openwiki`
+§9 forbids citing those and the repository-root `.openwikiignore` retires such a path outright (item
+#739). It runs openwiki's own evidence resolver from the install the `openwiki`
 binary on `PATH` belongs to, and exits 2 when there is none. The paid run is bounded three ways: a page budget, a start deadline, and a
 per-event **job deadline** that a
 merge-triggered run and a dispatched run are each given differently. The run
@@ -93,6 +96,16 @@ outstanding, what is tagged, what is parked, what is proposed, and what the last
 is shape-checked on write (`writeRunRecord` refuses a malformed `parked` entry, a bad `lastOutcome`, an
 `escalations` tag without a string `effort` and a non-negative `failuresAtLow`), so an invalid record
 never reaches disk.
+**That file and its siblings are live state — read them, never quote them.** `.maintenance-state.json`,
+`.page-manifest.json`, `.last-update.json`, `.run.json` (the generator's own in-progress run) and the
+`.claims/` sidecars are all rewritten by the next run, so a page must describe what their fields *mean*
+and where to read them, never reproduce a backlog, an `escalations` tag, a `lastOutcome`, a cost or a
+call count (`openwiki/INSTRUCTIONS.md` §10). A copied value is wrong by the next run and the
+page looks authoritative while it is stale — proposal #737 published a `lastOutcome`/`failuresAtLow`/cost
+snapshot in this very page that was already false when proposed, which is what the rule exists to stop.
+A *measured* value that explains why a rule exists is different: it belongs in the source runbook, dated
+and with its run number, and the page cites it from there — as the run 5145, run 4950 and dispatch 5115
+facts below do.
 **A run that finds nothing to document is
 free and still advances the marker** — the record's `coveredCommit` moves to the planned base commit
 with `lastOutcome: nothing-to-do` and no model is invoked, so the next run over the same tree is free
@@ -478,7 +491,7 @@ because under 5 minutes were left — is not a failure either, and does not tag.
 the backlog and never inside it, so the committed backlog keeps its shape:
 
 ```json
-"escalations": { "runbooks/sast-scanning.md": { "effort": "low", "reason": "deadline", "since": "…", "failuresAtLow": 0 } }
+"escalations": { "<area>/<page>.md": { "effort": "low", "reason": "deadline", "since": "…", "failuresAtLow": 0 } }
 ```
 
 **Tagged pages run first, and alone.** They are split out of the queue, packed among themselves, and run
@@ -500,7 +513,7 @@ overall, because tags are per page, not per invocation. A page that did land is 
 **A repeat failure at low.** The tag stays and `failuresAtLow` counts up, and the run says so:
 
 ```text
-[wiki-maintain] ⚠ escalated to low and still failing (2): runbooks/sast-scanning.md — consider parking it (078 US6)
+[wiki-maintain] ⚠ escalated to low and still failing (N): <area>/<page>.md — consider parking it (078 US6)
 ```
 
 Nothing is parked automatically. **Parking means removing the backlog slice AND the `escalations` entry
@@ -509,19 +522,22 @@ same record, which is what actually stops the planner picking the page up again 
 below). An orphan tag for a page that is neither queued nor present is dropped by the next run; one for a
 page that still exists is kept, and does nothing until the page is planned again.
 
-**What the record shows.** `lastRunInvocations` lists each invocation with its pages, `effort`,
-`deadlineStop`, `estCostUsd` and `rateLimited`, and `lastRunUsage.reasoningEffort` reads `mixed` when invocations differ
-— naming the first one's effort would misattribute the whole run's tokens to it.
-
-**The committed record is the live state, so read it rather than a copy of it.** After the 2026-10-11
-runs it holds `lastOutcome: failed`; a backlog of three slices — `devcontainer-sandbox.md` and
-`renovate.md` explicitly **unparked** for item #719 (the per-turn output cap is now 65536 on Fireworks,
-PR #732), this page, and a `create` slice for `devcontainer-sandbox-lifecycle.md`; no open `proposal`;
-one `escalations` entry, `runbooks/wiki-maintenance.md` with `failuresAtLow: 2`; and a single invocation
-at `effort: low` with `deadlineStop: true` that cost ~$1.69 (378 calls, 513,876 output tokens, of which
-413,938 were reasoning, prices 2026-10-07). Two things that state illustrates: an escalation tag can
-outlive several runs (this page's `failuresAtLow` is 2, so it has failed at `low` twice), and the cost
-line records the effort and the deadline stop alongside the money.
+**What the record shows, and why you read it instead of a copy.** `lastRunInvocations` lists each
+invocation with its pages, `effort`, `deadlineStop`, `estCostUsd` and `rateLimited`, and
+`lastRunUsage.reasoningEffort` reads `mixed` when invocations differ — naming the first one's effort would
+misattribute the whole run's tokens to it. The record's shape is stable enough to describe: a
+`lastOutcome`, a `backlog` of slices (some of them `create` slices for pages that do not exist yet, some
+explicitly **unparked** to retry a slice that had been set aside — as the pages parked on item #719 were
+once the per-turn output cap was raised to 65536 on Fireworks, PR #732), at most one open `proposal`, an
+`escalations` map, and the `lastRunUsage` / `lastRunInvocations` pair the run writes about itself. A few
+properties of that shape are load-bearing rather than incidental: an escalation tag can outlive several
+runs, so its `failuresAtLow` counts historical failures at `low` rather than describing the run you are
+watching; the cost line records the effort and the deadline stop alongside the money, so a run that spent
+its budget and stopped early is visible as such; and a `parked` entry may be there because the slice was
+unplannable rather than because a model failed — a `resource` that names a directory instead of a file
+cannot become a slice (the brief requires one file), so any commit under that directory re-flags the page
+and a regeneration buys nothing durable. **Read the file for the current values; the field semantics are
+the durable part** — see the live-state rule above.
 
 **Caveat, and it is the reason this is a retry and not a promise.** The evidence that `low` lands a slow
 page is **one success on one page** (078 research R14): `sast-scanning` failed twice at default effort —
@@ -534,7 +550,8 @@ visible. It does not guarantee the page lands.
 OpenWiki reports no usage itself, so `scripts/wiki-usage-tap.mjs` is loaded into the generator process
 and records per-call **counts** (never content). Each invocation's counts are priced from
 `scripts/wiki-provider-prices.json` — a dated table; update `asOf` with every change — and the run total
-lands in the job log and in `lastRunUsage` in `openwiki/.maintenance-state.json`:
+lands in the job log and in `lastRunUsage` in `openwiki/.maintenance-state.json`. The line's shape (the
+figures below are illustrative; read the job log or the record for a real run):
 
 ```text
 [wiki-maintain] usage runbooks/: 47 call(s), 183838 uncached / 2801438 cached / 43117 output tokens, ~$0.0883 (fireworks, prices 2026-10-07)
@@ -826,7 +843,7 @@ The figures in the example are illustrative.
   beside the backlog, never inside it, keyed `area/page`:
 
   ```json
-  "escalations": { "runbooks/sast-scanning.md": { "effort": "low", "reason": "deadline", "since": "…", "failuresAtLow": 0 } }
+  "escalations": { "<area>/<page>.md": { "effort": "low", "reason": "deadline", "since": "…", "failuresAtLow": 0 } }
   ```
 
   **Parking is the recorded way to stop retrying a page at all, and it is now an explicit entry rather
@@ -835,14 +852,16 @@ The figures in the example are illustrative.
   reviewed PR:
 
   ```json
-  "parked": { "runbooks/renovate.md": { "item": 719, "since": "2026-10-10", "reason": "page worker exits without submitting (run 4998)" } }
+  "parked": { "<area>/<page>.md": { "item": 719, "since": "2026-10-10", "reason": "page worker exits without submitting (run 4998)" } }
   ```
 
   A parked page is planned by **nothing**: not by drift, not by a new change to its source, and not from
   the backlog. `--plan` lists it with its item on every run, and reports an entry whose page no longer
   exists as orphaned. **Unparking is removing the entry**, in the change expected to let the page land —
   as happened to `runbooks/renovate.md`, whose entry named item #719 and was removed once the per-turn
-  output cap was raised (PR #732), leaving the record with no `parked` entries at all.
+  output cap was raised (PR #732). A `parked` entry is not always a failed worker: a page whose `resource`
+  names a **directory** cannot be regenerated durably — any commit anywhere under it re-flags the page
+  (V12) — so it is parked rather than paid for (item #739).
   Until feature 082, parking meant advancing `coveredCommit` past the page's source change and dropping
   the page from the backlog: that recorded nothing, and the next change to the source silently undid it.
   `writeRunRecord` refuses an entry without an `item`, a `since` date and a `reason`, so check the result
@@ -982,6 +1001,21 @@ The figures in the example are illustrative.
   rules that follow from it, are recorded under that item. **Nothing yet checks that a sidecar's claims
   are *true*:** the only gate on sidecars is V16's durability check, so a sidecar records what the
   generator asserted about a page, not reviewed content.
+- **A churn citation is a recurring bill, and `.openwikiignore` is how a path is retired from citation
+  (item #739).** Every `repo://` citation is re-resolved before every run, so a citation of a file that
+  routine commits rewrite forces its page into that run as a mandatory reconciliation — a full paid
+  regeneration — while the fact it supports has not changed; runs 4960 and 4972 (2026-10-09/10) each paid
+  for five forced pages this way (item #707). `openwiki/INSTRUCTIONS.md` §9 therefore forbids citing a
+  lockfile, an image-digest or version-pin line, or a line range inside a rotating list such as the SAST
+  allowlist, and `.openwikiignore` at the repository root is the enforcement: openwiki must never read or
+  cite a path listed there. The operator's 2026-10-12 change (item #739) added the two churn paths to it —
+  `**/pnpm-lock.yaml` and `security/sast/allowlist.yaml` — beside the CD promotion files every deploy
+  rewrites (`**/.env.deploy`, measured 36 times in September 2026, item #525/#613), which were already
+  there. **Adding a path there while a sidecar still cites it crashes openwiki's Claims preflight**
+  (`EvidenceResourceError`, measured), so the
+  citing pages must be uncovered in the same change; and because a citation of an ignored path is itself
+  what makes a page "avoidable" in `--claims-audit`, the fix is always to cite the manifest, policy or
+  runbook section that states the fact instead.
 - **A sidecar is a durability contract, not a note: V16 is what enforces it.** `openwiki/.page-manifest.json`
   lists every page openwiki has **covered** (`/openwiki/<page>.md` keys, each with its own `pageVersion`
   and a `completedBy` generator version). openwiki 0.6.0 and later re-prove each covered page before a run can

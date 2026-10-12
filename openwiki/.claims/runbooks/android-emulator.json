@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c5f14d448c85c2d1375dbca1a8d9f4a160745aae7f57dd79286611fb41b5cd62",
+  "pageVersion": "sha256:b09a116b0eec507a0df1d315208ed687bfbc66119589697e56d76cc258bed238",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -162,7 +162,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/android-emulator.md#L220-L255",
-          "version": "repo-lines-v1:sha256:7df0e5fc69c0cd8073306dcd04ac41507226a5217dfaa9d267be98e94c0a43de:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZjhiMDg0ODU2OGZkYTY2ZWZlYWUxOTdmNzg0ZTQyNDQxNzY5YjBhOTJlMTg1ZTNmOWJhMmYyZThlOTlhZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmZDA2MmViMmY5N2E3M2RhZjBmNDEzMDM0ODM4OGFkZTlhYzRlNTdjMWQ2ZDg5YTE4Y2MyMTExYWU2NWE3MmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMmIxZWJhMTBlMWIyMWZkMWVhMDQ0YjRmYWU2OTdlN2JhZWYzNWJlMzU0YjIwOTBmMzU4ZDNlMjI4MGU2MmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4YjMzNGJiODVlNjZlOWU3MzlhMzdiZDkyZGNiODBmYTZkMTU5OGM5NThlZjVhYmRkYTQ0MDU3OWRhNzYyYWQifQ"
+          "version": "repo-lines-v1:sha256:d63f856b8646a9c5811bd15ea4d70e063c5089228cad97bc49a464f427bf3a1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZjhiMDg0ODU2OGZkYTY2ZWZlYWUxOTdmNzg0ZTQyNDQxNzY5YjBhOTJlMTg1ZTNmOWJhMmYyZThlOTlhZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmZDA2MmViMmY5N2E3M2RhZjBmNDEzMDM0ODM4OGFkZTlhYzRlNTdjMWQ2ZDg5YTE4Y2MyMTExYWU2NWE3MmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMmIxZWJhMTBlMWIyMWZkMWVhMDQ0YjRmYWU2OTdlN2JhZWYzNWJlMzU0YjIwOTBmMzU4ZDNlMjI4MGU2MmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4YjMzNGJiODVlNjZlOWU3MzlhMzdiZDkyZGNiODBmYTZkMTU5OGM5NThlZjVhYmRkYTQ0MDU3OWRhNzYyYWQifQ"
         }
       ]
     },
@@ -333,10 +333,24 @@
           "version": "repo-lines-v1:sha256:9b72bcf5731ac62558e7d96803aa623dfffdd156ad877cb45674b3c4a51e46a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZmZlM2UwZjg1NTE3YzE3NjhhODBkZjdlN2U1YzZiMGM0MmM2ODk4ODg1OTYyMjM3YzRjMzJhMjQ2NTlkOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NTgxMWE3ZjUzMzI4ZTI3NmViOWJiMzlmYTI1NWI2MjVlMTUzOGViMzA3MWQ3ZjdiNWUzN2ViNjAzY2U0ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMGNjZWFhNzg4YmIwNGE1ODExNTMwNDc5NmVkODhlNGU2ZWEyYTRmZGVjZjE3ODRkZjNmNzRiYWM4ZDc4ZjgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_aac8f271ebdb4fe282388d84252d4066",
+      "statement": "The standalone release APK can reach the cleartext dev BFF only because frontend/mcm-app/plugins/with-dev-cleartext.js (declared in app.json's plugins) writes an Android network security config at prebuild time that permits cleartext for localhost, 127.0.0.1 and 10.0.2.2 only and points android:networkSecurityConfig at it; Android blocks http:// at targetSdk >= 28 and Expo relaxes it only in the debug manifest, so without this plugin the release APK's login POST fails with ERR_NETWORK and never leaves the device, while every other host stays cleartext-blocked so a production HTTPS build is unaffected.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/app.json#L28-L41",
+          "version": "repo-lines-v1:sha256:4b110f7cd283cdb79e87e8e2c463dbc8c76ce6170b4dd7665139adc1a76749a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYzVjMjU4YjY0YjYxZjJkODEwZmY3NzJjNDliYWEwNzhmYjUxNGNmNmZkODMxZDgxZTQ2ZmMxOGIwNzhlYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkY2Y5NDBjYTNmNTlhYTNlZGMwMDRlOTg2Nzc2YWExY2NmMzNiNzVkMzc4NTQ0NzBiMjQwNTYzN2FlMjRlOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/plugins/with-dev-cleartext.js#L1-L54",
+          "version": "repo-lines-v1:sha256:3172dbc49c122fa815f8947fe4e3b68b12544855f9850028228b88db77177fc3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyZDU0NDMzNzZkZDA2NjRiM2ViZWFjZDY0NGNhZmRjYTViMGI2MDBiYzlmNmIwOGQwMzlmYjMxNDYxNTBlNmYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T15:19:14.150Z"
+    "at": "2026-10-12T18:54:07.831Z"
   }
 }

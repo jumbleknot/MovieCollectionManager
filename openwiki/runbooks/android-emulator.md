@@ -15,6 +15,10 @@ sources:
     resource: repo://docs/runbooks/android-emulator.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-30d3dc827bae5c1cb657fa31
+    resource: repo://frontend/mcm-app/app.json
+  - id: openwiki-source-a4c39fcf1686803a0f1b3a45
+    resource: repo://frontend/mcm-app/plugins/with-dev-cleartext.js
   - id: openwiki-source-57b4f1588cb74332de8a1a9a
     resource: repo://frontend/mcm-app/scripts/build-apk.mjs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
@@ -29,10 +33,10 @@ sources:
     resource: repo://scripts/devcontainer-android.sh
   - id: openwiki-source-33d177ccb5008acd450b4d41
     resource: repo://scripts/maestro-run.sh
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-12T18:54:07.831Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-12T18:54:07.831Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -65,8 +69,10 @@ The flow-type decision, and the build decision that follows from it.
 
 CI's APK is standalone: the JS bundle is embedded and `EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082`
 plus `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099` are inlined at build time, so the app
-talks to the containerized dev BFF and gateway and **never to Metro**. The emulator step runs on an
-API-34 `google_apis_playstore` `x86_64` image — the Play Store image is load-bearing, not cosmetic:
+talks to the containerized dev BFF and gateway and **never to Metro**. (Being a *release* build, that
+APK can only reach those `http://` URLs because a config plugin allowlists cleartext for them — see
+the gotcha below.) The emulator step runs on an API-34 `google_apis_playstore` `x86_64` image — the
+Play Store image is load-bearing, not cosmetic:
 it ships Chrome, whose Custom Tabs service hands Keycloak's `mcm-app://` redirect back to the OS. The
 AOSP image has only a WebView shell, which drops that redirect and leaves login unable to complete.
 The emulator job `adb reverse`s 8082 and 8099, then runs gating → enable-anthropic → the agent flows →
@@ -168,6 +174,15 @@ through `adb reverse`.
   **count-based** — the newest five versions, pruned at publish time and roughly 109 MB each — so pin
   anything that must outlive that window as `<version>-keep`. Recipe:
   [Homelab server setup §6.7](./server-setup.md).
+- **A release APK can only reach the dev BFF because a config plugin allowlists cleartext for it.**
+  Android blocks `http://` at `targetSdk >= 28`, and Expo relaxes that only in the *debug* manifest —
+  so the standalone release APK the mobile suite installs would fail the login POST with `ERR_NETWORK`
+  and never leave the device. `frontend/mcm-app/plugins/with-dev-cleartext.js` (listed in
+  `frontend/mcm-app/app.json`'s `plugins`) writes a network security config at prebuild time that
+  permits cleartext for `localhost`, `127.0.0.1` and `10.0.2.2` **only**, and points
+  `android:networkSecurityConfig` at it. Every other host stays cleartext-blocked, so the production
+  HTTPS build is unaffected. Chrome is unaffected either way — it carries its own cleartext policy, so
+  Keycloak at `http://localhost:8099` loads regardless.
 - **Before rebuilding the APK, check whether the installed APK is already native-compatible with HEAD.**
   A pure JS/Metro change (including a new pure-JS dependency with no native module) never needs a
   rebuild — diff `frontend/mcm-app/package.json`, `frontend/mcm-app/android/` and

@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
-description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the canonical egress allowlist behind the in-container firewall, the MCM_ANTHROPIC_API_KEY rule, and the worktree, DinD-lock and pnpm-store traps.
+description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the canonical egress allowlist behind the in-container firewall, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock and pnpm-store traps.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-12T18:54:07.831Z
 sources:
   - id: openwiki-source-f7c89635dfc6efb0ecec007f
     resource: repo://.devcontainer/devcontainer.json
@@ -28,7 +28,9 @@ sources:
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-c3ef9454981554d2b5a20dec
     resource: repo://scripts/devcontainer-ollama.sh
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+  - id: openwiki-source-238c6bb3246fc134ab159b1e
+    resource: repo://scripts/wiki-provider.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-12T18:54:07.831Z" }
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -65,6 +67,27 @@ canonical list — and is read through `scripts/gen-egress-policy.mjs --format i
 same generator that emits the sandbox's host-side policy. Adding a destination means editing that
 file and its recorded `reason`; two hand-maintained lists would turn a blocked fetch into the union
 of two allowlists and diagnosis into guesswork.
+
+The script treats an unusable allowlist as a reason to **apply nothing at all** rather than to apply
+default-deny with an empty list. Every precondition failure is fatal, because the alternative —
+`DROP` with zero allowlisted destinations — is a total egress blackout that presents as a network
+fault rather than as a bug in the script:
+
+```mermaid
+flowchart TD
+  A["postStartCommand: sudo env FORGE_REGISTRY_HOST=… init-firewall.sh"] --> B{"gen-egress-policy.mjs present"}
+  B -- no --> F["FATAL — refuse to apply default-deny"]
+  B -- yes --> C{"node on root PATH"}
+  C -- no --> F
+  C -- yes --> D["node gen-egress-policy.mjs --format ipset-domains"]
+  D -- "non-zero exit" --> F
+  D -- ok --> E{"domains resolved"}
+  E -- zero --> F
+  E -- "non-empty" --> G["OUTPUT: default DROP plus allowlist"]
+  G --> H["FORWARD left to dockerd — nested egress is not policed here"]
+```
+
+*Why the firewall either applies a real allowlist or applies nothing: every precondition failure is fatal, so a crashed generator cannot silently become an egress blackout.*
 
 The lifecycle hooks are worth knowing when something is missing rather than broken:
 `onCreateCommand` repairs volume ownership and seeds Claude Code's config, `postCreateCommand` runs
@@ -125,6 +148,13 @@ a claim asserted from inside the thing being claimed about is not proof.
   [Environment]::SetEnvironmentVariable('ANTHROPIC_API_KEY', $null, 'User')
   ```
   Then fully quit VS Code and every terminal before relaunching.
+- **The same `MCM_`-prefix rule now covers the OpenWiki generator's Fireworks key.** `MCM_FIREWORKS_API_KEY`
+  is mapped to `FIREWORKS_API_KEY` only inside the generator's own process (the launcher strips every
+  other provider's key from that child), mirroring the Anthropic rule; `api.fireworks.ai` is in the
+  canonical allowlist for model traffic only, and the `fireworks.ai` website FQDN is deliberately not
+  covered. **This key is not in this path's `containerEnv`** — it travels only on the sandbox path,
+  where `.devcontainer/gen-container-secrets-env.sh` emits it into the `--env-file` from
+  `~/.mcm-sandbox-env` alongside the four older credentials.
 - **Credentials must not be listed in `containerEnv` — that is not "environment for the container",
   it is an ENV instruction in the generated Dockerfile-with-features.** Measured 2026-09-19 on the
   derived image: the credential values were present in `Config.Env` and in **3 history layers**, a
