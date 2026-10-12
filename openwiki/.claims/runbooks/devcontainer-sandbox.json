@@ -1,0 +1,380 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:84b0926e8fa86552585b45bf6b775d2a0577cc084d0566feeb32e5ce5156c3ac",
+  "claims": [
+    {
+      "id": "claim_b54f7e594cb243cc9e8248e3b08b320f",
+      "statement": "The primary AI-assisted development environment since feature 060 is a dev container running inside a Docker Sandbox microVM rather than Docker Desktop or Docker-in-Docker, measured at 0.43x the wall-clock of the Docker Desktop/DinD path across five build stages (docker-build alone 1024 s to 293 s); the Docker Desktop path is retained solely because the Android emulator needs /dev/kvm that the microVM cannot provide.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L1-L12",
+          "version": "repo-lines-v1:sha256:276c5cdeab693441ce0ff737154f9892d269fbd1cf0af75a8efd1dd1b85df16e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3OWFmMGJkNmZiNjVjMjU1OGUxNDM1YWJlMTM0YzViZDZjMmI5NDFhMDgwYTUwZTYxODY2ZjgyNGQ5MzMzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NWYwNWJmZmI2MDkxNTIzMjMzNmM5OTllNTM3NDgyNzY1NjM5N2FlNjMwYTYwOTA0YmZiZDYyNWIzM2ViYjEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L1-L11",
+          "version": "repo-lines-v1:sha256:0dce73fc034abe8ac65233a91d783d36f4118d2e88ef2121a59115bc8d6788c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5YmI1OGI2NzU1MjhmNzBiNjE4MDM2Y2E1ODY4ODZmNTIyN2UyMzQwODRlMmM1MTAwMGY3Y2JhZjhmYzMzZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjMTZkMWEyYjRjNjE1N2M4MGQyZTMwYTBhMDJlZGMyMzFkMWY5NzFhOTY2MmJlYmI0MDY0MDA0ZjUzNTExZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNjJkMDVkZTI4Njg3ZjJhOTAxNzRmYmViMzNjZDQyNTUxYzViMWNkNGM4YmYyYTJiMDRhYjQ4ZDY3NTRiNDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f01f4d839dbe49e0a980509ac1d31d9b",
+      "statement": "`sbx start` does not exist (it silently prints the root help), so a stopped sandbox is restarted with `sbx run --name mcm -d`; `--name` is load-bearing because the first positional argument to `sbx run` is an agent, and omitting the flag can create a second sandbox instead of reattaching to the existing one.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L80-L97",
+          "version": "repo-lines-v1:sha256:224f719a6859f93e91141bdb20b034b4512eed0f2a050d266010cfec06438bb5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OThkZmMxY2Y3ZTVjMTI2MWYyZWQzY2M4OTU2MzBkNjNmZWY1MjU3NTcwZjhmZDk0NDdlOGQ2OGRiNWFhMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NmZjZjczMjYxZjRiNjAwMjQ5MmQzZjhiODM4ZmY2NjUyOWVhMWY0YmVkNWYzOWYzNzMyYTJmZTJjY2U0MzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNzgyOTJlYmE2MzliODA2YWM2NzIwODJiNmIyZjEzYThiYzdiNTBhNTJlN2Q0NDQyMmYyNjNjZDBiNmNjZTIifQ"
+        },
+        {
+          "resource": "repo://scripts/open-sandbox.ps1#L27-L31",
+          "version": "repo-lines-v1:sha256:2d965efce1b6aa24f413ef99340dfab3dcb19df296ed9e4bb2a09268f35052a4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEwMTIxMTA2ZDM3Y2RiMTYwNGVlMzMxYjFkMjEwNzcxODg0Njc3ZWEwZmEwOGI2ZmFiODU2NDZjM2RlYjc2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdmYWEwMTNjMTdiMDFhYjIzNWNlMDc5NmQ4MmUxZWUyNWU1ZDIxN2VlZjIwZmE2N2Y5NTFmYzc4NTQzNDBiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmY1ZDg5NjdjZWNiMTEzNmY1ODY3MTBiMmUxYzVmODBlMmJkOGU3Y2M2MjFlMTg3NDEwYTFmMjgzODQ2NjU3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTkxNTNhMDFmNzJkM2E1YmIwZGNmYzdmNTZhZGM3Zjc4YjM3OWEyNzkyMmZhZTE4ZDM3MzEwMzQzMzBlMWNjYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6719017df844401ca7fddc39bd0a245f",
+      "statement": "The microVM idle-stops roughly 30 seconds after the last session disconnects — hardcoded with no configuration knob — so long unattended jobs die unless a session is held open, and a 'missing' environment is normally just an idle-stopped one.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L110-L118",
+          "version": "repo-lines-v1:sha256:59a26387cbafbb57b4809072aa4e7943c592099fdb8505db3883e3650209e210:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUxYmU3OTU1Mjk5N2EyMzhhODU1MzExMTBjMjdiZTg0OWQxNDQ1MGQ1NmQ1ZWYxMDE5NDFmODE5ODJlYmM2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGYyNDdiNGY4ODkxODZjNjdlYzMzNDU5OWZjZTUyMGQ1MTRiMTA1ZTgxZTc2MzMwMDg1OTU0OTQxNjUyNGI4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc4M2UxYjZmNGY0MTFhMGQ4ZmZhMWJiZDRlNjRiMmE3NjA5OTVhOGM2ZTUzYmQ5ZmU5MGFhMzdkYjFlZmVhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE0YmYxMmQ0MzRlNGE3MGVhZDAwNGQ2YmZhMTEzMTZjNDhjZDNiMWM0YjVmZjcxNjE1ZTYwMmMzODdhNzkzNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e12a7eb6d4949dcbc0eee160ee84fc8",
+      "statement": "The dev container carries `--restart=always` and returns by itself after a VM restart or reboot, while the agent stack is deliberately started with `restart=no` so a restart policy cannot resurrect the gateway from its pre-rebuild image; it must be brought back explicitly and a restart verified with verify-reboot-survival.sh rather than by eye.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L90-L104",
+          "version": "repo-lines-v1:sha256:dcb60348af61cababd52f1cb5a2a80a3523785f70b14760349267e8de8d38f23:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YzgwZmRlYTk1NzU1NzY1M2MxM2I2MzBhZDAxZWViNzg4YjMxZjhiYzU0MzJlODAyNDYyOGUxMDk2MjJkZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZDU4NjkzNDhmNDVjNDNiNTc1ODlkYjI1ZGUyNmM2OTcyNjA1NmIyODQ3N2JiMzEwZjc3ZTAwN2Y0NWU3MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlZmE1N2ViOTdiZGMzNmM0ZTM1YmEzOTZlNTFmNDQ2M2I0OWQ4ZDQ1MTFkZjVlMmRiY2IzYjYzZGY4MDc5ZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNDg5YTBkMWY1MmQ5ZjgxYjdlM2JlYWM5NTQyZWZkMjQxOWRlMjZkYmNjMGQxYmZjNDJmYTM1YzY3NmQxNDgifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L118-L118",
+          "version": "repo-lines-v1:sha256:df247b4f889186c67ec334599fce520d514b105e81e763300859549416524b8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGYyNDdiNGY4ODkxODZjNjdlYzMzNDU5OWZjZTUyMGQ1MTRiMTA1ZTgxZTc2MzMwMDg1OTU0OTQxNjUyNGI4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGYyNDdiNGY4ODkxODZjNjdlYzMzNDU5OWZjZTUyMGQ1MTRiMTA1ZTgxZTc2MzMwMDg1OTU0OTQxNjUyNGI4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE2NzhkNzNiNzkwOWYzN2M3YWEzZTExNWYzMDM2MGI0OTM5YTY3MDEwZDJkY2JmYTg4MGYxMDNhMWY1NWE1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE0YmYxMmQ0MzRlNGE3MGVhZDAwNGQ2YmZhMTEzMTZjNDhjZDNiMWM0YjVmZjcxNjE1ZTYwMmMzODdhNzkzNCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L440-L464",
+          "version": "repo-lines-v1:sha256:054a621f6b7ea091bdef8cd32ad0612bceaa51f6de759b206ce0d9f2fc75a623:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiODAzMDkzOWFlZTdjZDA4OWM0MGM1NGE1NGM0YTI5ZDBkOTU0MTlkYWE1N2Y3NTlkZTEzM2JkYjg0OGZmY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ccb12f23fa974a27a07cd6ed41c11f27",
+      "statement": "`sbx run` reporting 'docker daemon failed to start inside the sandbox' is a false failure: dockerd restores the VM's 20 `unless-stopped` containers in 54-101 s, exceeding sbx's compiled-in readiness budget (under ~54 s, with no flag, DOCKER_SANDBOXES_* variable, settings file or daemon option to raise it), so the CLI exits and the ~30 s idle-stop kills a healthy VM; a session attached within the resulting grace window defers the auto-stop.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L114-L224",
+          "version": "repo-lines-v1:sha256:f4006fdb3353e1a539d5b7404ff18dac5604d7a4250c30ae99c396dbf9b83501:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ZjgwZjAwOTE4YzI0YWU2M2JjYTJjNzJhZmE0ZGMwNTg4ZjUzY2U2ZDQ0MGI3NjNkYzFkNzhiMDIyNzZkMDRkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4ZGM3ZDQ1YjQ4OTBkODIzMjUwMTUyZmEyZjkwZDJmNzkwMTcxY2IxOWIyNWJiZTQ0NTkyOGJjY2Y2MWFhOTI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_47e11266391f4986873164cc052987fb",
+      "statement": "scripts/open-sandbox.ps1 works around the false start failure by treating `sbx run`'s exit code as a claim and SSH answering as evidence, waiting up to 120 s on a deadline rather than throwing on a non-zero exit code, so the launcher is immune while a bare `sbx run`/`sbx exec` still shows the failure.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L184-L224",
+          "version": "repo-lines-v1:sha256:dc3ff98f7d4a405e68245b5b997648c9096e7aa0102e4363bc124d866feb4b0e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYzBkZGY5ZDllZTA0MWJkNzgzYjc0NjZkN2EwYzY4OTIyMGU3ZjBjNzdlYWI2NDFhMTgwNDJhMzY4NmE5MDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYzdkNDViNDg5MGQ4MjMyNTAxNTJmYTJmOTBkMmY3OTAxNzFjYjE5YjI1YmJlNDQ1OTI4YmNjZjYxYWE5MjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhMWRlZDU2OTdlZGJmYmYwYWY2ZmQxNmFlMGU1ZTAzYjNhZDM1YWIxZGQ0MmMzYWVhM2ZiOWRiOTJjMWYxNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://scripts/open-sandbox.ps1#L110-L164",
+          "version": "repo-lines-v1:sha256:25d2715fd57fad2be8cd57a29fc6cb1aa998c94819ed69663075d9400aff42fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjZmNhZmNkOTg0Y2M5OTUwNDcwMWQ2NDc0MzNkYjZkZTNhNzgwNGZjYzUyNjg2ZWRkZGU4MDU4NWZlNTY4NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZmIwYmMxN2I2Y2Y4ZjZmYWM5NjU5N2Y3M2EzOTVkMWMzMmZiYjQyZWQ0YjEyZmIxYjgyYTJjOTQ5NTE3ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxZWQ1ZjA2OWE0MGQ2ODk0ZjMzOTJlNTg0NjdiMjJlNGRhOTliMmY4MmEwNGQwODJkZGQ5OGY4YzM0Y2ZiOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a33b03b504fc4270a53f66525ff55765",
+      "statement": "On the sandbox path egress is enforced by the host-side per-sandbox policy outside the microVM, not by the in-VM firewall: init-firewall.sh is not run here because `--network=host` makes the container share the VM's network namespace identically (a default-DROP would be VM-wide), and postStartCommand runs assert-egress-governed.sh to verify rather than re-implement the layer; triage order when something is blocked is host policy first, in-VM second.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L412-L440",
+          "version": "repo-lines-v1:sha256:485ca3d4b528f25f3d283b1d7937c90a0c93d56b588050bd75584bc8dcf7fd90:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNDM4N2ZlYzI0NWVlZWU1NzhiOGRjYWM1MzNjZjc4YTkzZmM1ZDUxNmUxZmQ5ZDFkZmU5MmMyYjhmNGEyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0MDIzYWNhZTg4MDI2MTI3OTViMDc0NGU2MGQxMTYyMzZlMjI3ZWZmNDQ4MGNmZTNjZTY4YTRkMWNhOTUyNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmNDk2NjBhYTVlNWYzMmI1ZWVmMDA5NmUzZGU4Yjc3MmExMzAwMWU4MmVkYjYyOWMzNzY5Mzc4YTNhZjJmMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L185-L211",
+          "version": "repo-lines-v1:sha256:6d1c70b820b83e47e37de1016bffc61bae0cfff4039d63bd0fdf70da93f709d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmZmNkMzVjZjc3NDI2ZjEzNDg2YzE1ZDUzOGFkYTdkZGZiMjJkODI5OWMwZDgxNTU5Y2RiMGFlMDQ0Njk3YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyYjg3MzU3OGMyOTM0M2Y3YWVhZThhNWRiMDI4YzM0NDg1NzI2ODNmZGY3YTEyZmE0MjI5YjE1NDgyMDFjM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyYTg3NDBiNzUzMmUwYjE2MWU5OWY2OWVmZjgzMzU5ODk3YmFjMjQyNGQwOWExYjE2MmUzMDM2ZGIwYjUwY2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9479e159a68d48d286dc3576e6025b12",
+      "statement": "A blocked destination presents a different refusal signature at each vantage point, and sbx v0.47.0 changed the VM-shell body from 'Blocked by network policy' to 'Approval required for <host>:<port>', which made the harness report a refused host as REACHABLE until both verify scripts accepted both bodies (2026-10-08); the new body also queues a pending approval, and `sbx policy approval respond ... allow` bypasses the canonical allowlist so it must never be used.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-sandbox-egress.sh#L16-L55",
+          "version": "repo-lines-v1:sha256:33334840077bbd6be46a74f93f3b1fc294686f254c8da3c8095561d22f7ca73d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4ZjM0NzkzYTU3NjYzNTJiYmFkMTliOTczMzlmNzExODMxMDFiOWU5M2Y3ZTU3OGVjMTQxMjhkNjcxODEzYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZGFhOWVmYjYyMGNjMzc2NjUxNzI3YWJlODY3YTdkZWExNWM5M2Q0NzA5YmFkOTM4NDE1N2NiODM4NzZlNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxZDQxZDhmNzc3MTRjMDI0Njg4Zjc3NTQyMTRjNzAwNTI1MjFkODg4OWZkZDA1NTQ5ZmQ1YzEwMjg1YWY3ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxNTJmMzE3ODQyNGNlNTcwZTk1MWNlNjUwN2IzOGU4ZjE3NTQ0ZDdlMjMwM2EyY2NhMmI1MDMxYWFlYTY2MWMifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L213-L240",
+          "version": "repo-lines-v1:sha256:b24c73b32e985b11dfa38c699329c2778ab72e58a2915838459f4d326c3e7c47:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczM2Q1MDA0ZGY4NDMwMThkYTVhMzZhMThjNTRlY2I1ZmE2NjMwY2Q5Nzk4MmJjMDczMWVjODNmMTgwYmVhNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MTM1M2RhYjIwMjY1YjkwNTlmM2ZlZjI3NWU1MzQ0YWUzZTM0Yjk5MmFmOTVkMDU5MTg5NjcxOGRlZjliZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0MTczOTRlYjYwYzE5MmU4MTdkYWM0NTA0MDAzODZlMDk0MDkzMWRmNzAzN2E2YTExZDYzNWRjY2Y1ZWFiMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzOTA3NjRhODk1MTUzNjI4M2U0MDFlMTU4NTE4YTYyZGM3NWZiZWZjNzI3NzhmOWZhZDQwODBjOTI1ZjI4MjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_918e28fba77c45738815a41658221d9c",
+      "statement": "The egress allowlist resolves per FQDN and never per apex domain, and allowlisting a service's front door does not cover its blob/CDN host — a trap confirmed for Docker Hub, GHCR, Quay, MCR, GitHub releases and Ollama's Cloudflare R2 bucket, and applied equally to every second hostname a service uses including MCP endpoints.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L258-L351",
+          "version": "repo-lines-v1:sha256:0945b6262541b6bdb291c698a4795c56c228618c98d576d34077724312b61520:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NjgxMTdiZmZhZDg5ZWEwZGRmMzdmNTc2YmRkZTJmZTdiNmI4MDc5MjI3NmZiNjY4YjQ3ZWRjODQyODg3NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmOTc4N2NkODFmODYzYTRjOGIzYzliMTJiNWM4NWU5ZmUzNDNhNmFlNjhjYTM1NzM2OGI4NTBlMGNhOTllODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMmU0NzI0ODFlODQzNTdhNDM0YWM0ZWYxM2NkM2ZjYTQyMzMxYWI4ZjZhMGI4NTBhYmVmZGVlNDBiZGRiMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c34036f36974462da2424f3503609419",
+      "statement": "A destination missing from the allowlist does not merely fail a command: it silently retires a merge-gating tier to CI-only while the tier still appears to run, which is why a missing host is triaged as a blocked gate — the absences that have actually done so are semgrep.dev, api.osv.dev, registry.ollama.ai plus its pinned R2 blob host, and api.themoviedb.org.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L302-L322",
+          "version": "repo-lines-v1:sha256:10f0c4f5188dae7bc996be35b73ac48364b5ecdc84dc28b29e7a746fbac46ebc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzMjYxZmRiOWQ2ODc3NGRlYzAzM2M2ZGU1NDk2ZjVlMzU2N2I3NjhmMDkxMGU5MmRjNzU4NjNmNDIwMjM0NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiZTdkMWRlMmU3OTBmNjdiZjUxZmQzNWU0NjFkMjFiYjdlYzlmMjU5NzU2M2U4MGI3OTEwMmQzMWM5YTQ5YTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzYzliNzMxZDg5Zjc0NGU2NDQ1ZWFlNmJlMzZkMjA2MGM5ZjFjMmNlN2MxNWUxMThkMmZlODljOGY0ZDllM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MmEzN2JjM2QzMjBhYzA3YzBhMDdmZTc4ZWYyOTQ0N2FiNTdlYjQ3OTgyMGQwZDAzNGFiNzExOTE2ZWIxZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_29e647b3db234e9f90177c79ae37fb9b",
+      "statement": "A connect-only probe cannot test egress here: the sandbox proxy accepts the TCP connection and refuses at TLS, so `nc -z <ip> 443` reports OPEN against a blocked destination and every probe must be application-level.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-sandbox-egress.sh#L36-L40",
+          "version": "repo-lines-v1:sha256:aeaaff2cc3b290310f535ed0663c3cf5b4d20dbbaff35109bf4bd1c3dd19ef3c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM4YTA4OTA4YzAzZTQ3NDRhMTdjNzJlNTRlZjU4YjU1MDI3MzczOWQyODk1ZjYwNTNlZjRhOTYyZTZlOTUwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWNiMzNhNDg5ZTFmYTM1ZmY2MGIyZDU1NjRjNmZjYWU2YzFmNzAzOWMxMmE3NmExNTU5NjI0YjFiZWU2YmE4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzMwYjJlMWIwMDliNTZmOWIzMjBjZmRmZTNlNTZlMzRhZTZhMjg5NGM2ZDI2MDhiNzE0YjljZjQxMjVmYmEyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA3NTA2MjcwZGE2ZjRiMDQzMTA4NDAwMzA5YzRlMTE0YjgxZWZiMzNkYzBlYjU4MzE0NGMzZDY3MDg2ZjE0YSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L238-L240",
+          "version": "repo-lines-v1:sha256:6791503f3239b39cebb8f44c0a923bd4e81db2ed025f71ebe9a7281b94d6894e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc1M2NkN2I3ZDkxM2E0YjJjNjc1NDQzZDQ0OGI5OWNkYzcyMzNmYzdkMTY3MGE4YTdjNWI1OTQyZjRiZDA1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcxMzUzZGFiMjAyNjViOTA1OWYzZmVmMjc1ZTUzNDRhZTNlMzRiOTkyYWY5NWQwNTkxODk2NzE4ZGVmOWJmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2M2NTZlYjYwYzc2ZjIxMDQ2MmVkYTVjN2E2OTRiNGYxZGUxNGYxNTNmNDgyOTQzN2ZiNjk1NzQ4NTc2ODkyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjM5MDc2NGE4OTUxNTM2MjgzZTQwMWUxNTg1MThhNjJkYzc1ZmJlZmM3Mjc3OGY5ZmFkNDA4MGM5MjVmMjgyMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e3e9de7fcd4346b4af99a851cb3440d6",
+      "statement": "The docker-outside-of-docker socat relay fronting the VM engine socket silently truncates output — exit code 0 with empty stdout for any command slower than socat's 0.5 s default half-close timeout, because `docker exec` half-closes stdin immediately — so the sandbox config points DOCKER_HOST directly at unix:///var/run/docker-host.sock, and contexts that do not inherit containerEnv must pass that variable explicitly.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L215-L253",
+          "version": "repo-lines-v1:sha256:83f71a19be269d66f8d156653ef6b2496bbf6f76186ccf77e29cdc49899b7592:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNGVhNzMwMzkxNTlhZmE0ZDE5ZTNmZWRkOWVjM2Q5ZjdmNWI0ZjAyNmIwOTZhMjA2MDRlMjlkMzlmYTkwMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNzg1NDhmODAyYmZiYTQ0ODEwYzAzMjA2YjJkMzg0MTg1MGUwNTQwODcwNjIwM2ViNWEyYmRiZWMwNTU5YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhMGFhNmUyODIyMWNhOTQ3YzBmNjVmODcyNmE2OTVmMGY2YmQzYTFhZDViYTM4OWZiNWEyNmRkNjkyNGQzZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3MjZiODE5MjczOGFkYWIxYmY5OTQ4M2Q1NzQ4ZjM0MmFmNDRiYjg2Mjc0MjEzOTkwZmZmMDA5YjQwNzFjOGMifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L355-L386",
+          "version": "repo-lines-v1:sha256:250caa66d4c6b3b1ab43c6e2da5d61d59727350d514acb217b4fc26e9f44c8ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0MDk3ZjM0MDZkMmYzYjBmNDg0ZmJiMDc5ZmMxOTczZmQ0NTBhNDc2MzJmMjk3MzZlNDRmYTFjY2E3N2ZhM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMmEwYWZmYmQ0MjkwNjZiYTUyOTY2NjQzNjk5NjIxYTViYzNhM2YyNzk0NWY3YWE3OGZkM2ExOTM1ODJiMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2YTAxM2U5ZGJhOTU1MzFmZWQwNDc2NjczZGZiMjZiNzI1MDQ2ZDEzNWI2NzE4YTQ4MzYwNTA1M2Q5MWRlMjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_279ed52ca68a4ab68c7574d5338670d4",
+      "statement": "A `-v` mount source is resolved by the Docker daemon on the VM, not in the dev container, and a missing source is not an error — the daemon creates it as an empty directory; only /workspaces/mcm is genuinely shared, and the socket to mount is the VM's plain /var/run/docker.sock rather than this container's docker-host.sock.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L388-L426",
+          "version": "repo-lines-v1:sha256:e3bbf9f96270d17e63662ff3746e287cb62a57652af7da2ce2f5f08a0fd1fd38:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ZmQ0OTZkYzljODQxZTkxYWYxMjQ5ZDVlZjNmZGU2NmM1ZTU2OGEyNzIzZDA3OGNlYjQ3ODU0YjM4ZGNmYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlYzVkMDk3ODM5MDgzMjU1N2Y4YzA2OTQzNTgyY2Y2Y2ZmMmMzMGUzOTdkYTZhZGI1NTdjYWVhOTljNWFkZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0MDkzYjQxODY5ODY0YzRkN2NjNTNlMzA3MzVmNTI0NDRhZDFmNDBmN2YzYjI5OTMzMTBmNjk4NTUyYzRlODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_24292ed5abba4016beac4321c6d5f031",
+      "statement": "`host.docker.internal` is unreachable from the dev container because Docker's implicit entry resolves to fe80::1, while under `--network=host` a sibling's published port is localhost; the gateway and MCP containers still require the load-bearing `--add-host host.docker.internal:host-gateway` flag.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L430-L436",
+          "version": "repo-lines-v1:sha256:913458be90a096b23e73fa4080858e567af7bad2c21eec3ac37fe965e5789abb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBkOGI3YjM5ZGQyODAzZjI1ODljZjA0NDcxNmRhN2M4ODM0YTNmZWM3ZDAyMzIwY2RlMjNjZTZhOGQ2NTg5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWI2N2YxOTU1ZTk5MWYyYzFhM2NkODgyODZjZTZkYmFkYzkzNGE4ZWYzM2YxYWU5YmYxY2M3YTA3OTY4NjY1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6718f2b18cc4939bb544a4adc6d8f16",
+      "statement": "The sandbox has three independently sized volumes (vdd at /var/lib/docker, vdb at the VM root, plus a clone-mode workspace volume) whose sizes come from DOCKER_SANDBOXES_* environment variables read only at sandbox creation, so resizing means recreate and the variables must be set at User scope — v0.42.0 drops the default Docker volume from 50 GB to 10 GB, and a recreate that reuses a deleted sandbox's name can inherit its old volumes, so the resize is verified from the host .img sizes rather than with df inside.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L228-L318",
+          "version": "repo-lines-v1:sha256:2d9af9816547c291793fdd1f45e5c2078021dc0680d56d08333516c6857fcc90:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNWNmZTEyMjk3OTExZDBkNTJiNGQyZWFlN2Y2YTE2M2U4ZGE4OTk3MjA1OWVjZTllZDU2MTBiYjlhM2FlNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1OWEwZTliMzA5ZjFmZmI0MDg2YmIwOWU0ZjYwNmUwNjg1MWFkOWY5YmNmYzg4ZDAwMTAxYjFlZjdkMGViYjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cba9c7e9507c4dfb87805c654d02a7bd",
+      "statement": "`sbx run` mounts the current directory as the sandbox workspace read-write over virtiofs unless a workspace path is passed explicitly, which destroys the host-filesystem isolation the environment exists for, and a sandbox created from a template carries neither the egress policy (it gets the default profile) nor any Docker images.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L14-L75",
+          "version": "repo-lines-v1:sha256:866b01b0a34e61fac4f1cee405dce2594899e88e468c34989210a33d36ffc957:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZTc4ZGQ1M2I0YTU3YWI4NzIwNzRjZmMwNmI3MDQ4OTE3ZTMxZTMxZmMzNzQwMmY3MTQxNjg5YmRjNDA1NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiNmRlZTUxMjBiNTMwZjJiODk4MzdhODA0ZTQxMjRjZDYwMGE0ODk5NDU3MmNmYjczYWYwMzVjMWE1ODYwZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_df755abcee6b4e06ad273e48d4bb59bc",
+      "statement": "An image re-pin resolves the digest from the registry's manifests endpoint: the build's run summary is unreadable on this forge (no log or summary endpoint, /actions/runs/{id}/jobs is 404) and the packages API's newest row is the provenance attestation rather than the image, and `set -a` is load-bearing because the config reads the pin via ${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer} from the shell running devcontainer up — without it the build silently falls back to the stale local tag, which an all-CACHED build reveals.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L591-L686",
+          "version": "repo-lines-v1:sha256:96174df52f25c6d746e267d60eb00bb7e49b304dc4c9fec3461cf56981287c67:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNTRiZGJkMTU3ZjhjZGFmNTc4Y2EyOTNkMDRiNmMwMjVmZDhkMDNjNGQ4ZGM0YTkzYTYxYWIwMmMxMGY0ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhY2UwZjZmOTVlYTQ2YmJiMWNmODhjMDc5MGQ1NDQwNjY2OTk0YmU0MzQyNWFjZWI1YjI4ZWMwNGI5ZWJjYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NTg1MjM5OWQ1MzlhNDFiYzBlMDNiODA4MGEyMjE3ZmU4ZDdlNjAwZDQwODAzNGJkY2ZlMzllNjBjOWMxZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwODdlMmM0Yjc3YzAwNTc2NGJhZDYxMjkxMjFlZGRjMjk4YWE4ZjQ5MjI0MGFlNjZmMjgzMWFhNGViZjE5NmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c08d10e8f7654df09c48496bd512f192",
+      "statement": "A cold recreate needs three things the provisioning path does not supply: the @devcontainers/cli installed, insecure-registries in /etc/docker/daemon.json (the forge registry is plain HTTP on port 3000, so pulls otherwise fail with 'http: server gave HTTP response to HTTPS client'), and a sandbox restart instead of /etc/init.d/docker restart, which exits on 'ulimit: error setting limit' and leaves the config unapplied because there is no systemd (PID 1 is tini).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L418-L452",
+          "version": "repo-lines-v1:sha256:d619157e1662746d20cc379b175684d4cef7bc903f8d7c5d2d45a3b92d5a2ad3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmMzYyZTdhMmYyN2Q3MDU2MTNjMTM0Y2UyMjE4MWFiYzUzMGU5OGFjNmQ4ZjEzYWI2ODc2ZDMzOWExMmI0NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3OTA0MTFmYzljYzczOTRmNTEzMGI3YjYzNWUwMzY2NjczOGQ3YzdlODRmNGEzZjZhNWZkNTkzOWVjNjUyNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NzBjMDg2NzQ3MGMxYTFjMjY3YzViNjg4NjMyNmFhNGNlOGFlNGI1MjFiMDkwMjJmOWFiMzhhMTM0NjkzMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_89239482b4684d75b8ed3d7c28f4a722",
+      "statement": "`--config` in `devcontainer up` resolves against the caller's CWD rather than against `--workspace-folder`, so from the VM shell (which lands in /home/agent/workspace) a relative config path fails with an error that reads like the file is missing; the path must be absolute or the shell must cd to /workspaces/mcm first.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L152-L162",
+          "version": "repo-lines-v1:sha256:07ef66de0314ff82e68a4f7a98b82ba0f5ebc04237371e17b1fbc99f8dacb43d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwYTNhNDdmZGJkZmNkMjU5NzBhNzAyMmM3MDRkZmIwYjM2NmY2YTBhOGFhMjczYTJlZDJhZTVmNmI0MzNkMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZjYzMTQxNTk0ZTA4YzA0NzdmNzJkMTI2NGQwODJkNmEyMWE2YTQ1MzhiMjI0YWFhNzAwYzU5Yjk0MzY1YTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNWFkY2VlODNhYTkwOTc1MDEzNWE1NGYzMjRjNzViN2Y3ODRjN2IxZTEyN2NiN2YyNmQwZGUwMjQwODFkZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2ZjFmYTdjOTRkMjQ4NDNjZmU1YTAyNGYzZmVlMzEwZWQxYjM2NDU0NzMyMzA0MWU3Y2VkOGJiZmFhMGU1ZDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f945d8a64dbd481d83b9431385f7df2b",
+      "statement": "Credentials must never be listed in containerEnv, because the devcontainer CLI compiles every entry into an ENV instruction in the generated Dockerfile-with-features — measured 2026-09-19 with all four credentials present in the derived image's Config.Env and literal values in 3 history layers, a permanent leak that survives every recreate; they are instead passed with `docker run --env-file` from a file written by an initializeCommand on the VM before create, because remoteEnv does not reach the ssh + docker exec sessions this sandbox is routinely entered by.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L105-L121",
+          "version": "repo-lines-v1:sha256:b381a4b4d066019798450df2a1d7670b35d5e972c5d977af28dc2d489e031df8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTc2YTJiNGE4ZDJkNjQzMWYwMGQyOTJkN2ViMDI5OWQ1ZGQyOTliMjcxN2FmNTAzYzM5Njg3NWQ5ZDE1ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMWUyZjVlMWE4OWMzMjg4YzcxMTdjZWYyNWM2NTBiYzFjMmE2NDJmZWNmZDUxZjkwNzRiOWQzYzhiMTVkY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0MDY3MmU1ZDk0MWRhMjZhMzQ0NmMwZDU4ZmRlNjIwMmM2NzJiOTNjM2VkNjAwNmRiOWIxMmM5YzQzNzNmODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxNWMyYWMzMTE1ZWRmZGZiNTZlZjBiZWNlZGQ4ZDFiNGI5NjA4YTRkNmIzZGI5ZGNmOGI3MmM3NDMzOThjNTMifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L755-L801",
+          "version": "repo-lines-v1:sha256:fbe8968d2fbc95d20589b96aa918f281f33024c85f8bccb6070e269895ee8672:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0Y2RkOThmZWE4OGU2NzJjNzg1MGQ0NTQ5YWU4MGFiNTU5NGZhZmZlNmIzODgxMjI2MjAxYTNmOTk0OGYxYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NTEzYTFlYmE5ZWZiOTEzZDM4ZmY2MTM5ZjVlNTIyNzFmODZjNmYwZWViNDIwYzVlMDdlZjEzNjI1OTIyMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjMDY5ZTU4YTRhZGQ1ZWMyYzkwMjcyMTc3YTdkYjQ0OGQzMjQxZWE3Y2U5NGE2M2JkOTQwM2RkN2RlYjcxMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjMjkzM2M1NmU1NGU4ZmIwOWExYTY1YWNmMDgyOTZjNzY1ODJhMTFhYzM0MTFlOWMwNDk4YmRkMDAwMzlkODcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc0107a7385443f99e3864cd18e0b82b",
+      "statement": "`devcontainer up` does not recreate the container when only runArgs or containerEnv change — measured 2026-09-19 it reattached in ~13 log lines while the environment kept running the old image with the credentials still baked in — so the recreate must be forced with --remove-existing-container and verified against the container's creation time and image rather than the command's exit code.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L803-L824",
+          "version": "repo-lines-v1:sha256:2bf15b006422021ad25fc7089bb2d8da298e185365588e400b871cebb101e55e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiZDkxMjhjZGZkOGUyOGU5OGYwZTRmMmM0NDJkM2Q5OTQ3NGI0NTAwMGUwYzJhNjA4NmUyYTk2ZGEzMTVjMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3Yzg1ODI3NGZiYzVjMjk2YmQxMzI1ZTMwYTI4NmU0MTgzMWQ0YTYyOWFkYWMzYmVlZmM4Yzc1MzFmMGI1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2NzA4ZjFlNzMwY2MzMjkzNmRlNmYyNjlkOGY2NDAwYTk5MDI3MWU0Nzc4YTE4MzIzM2E4YTg4ZjhiOTJjNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a10b66ee8da743eebf962a59fcf6b8d9",
+      "statement": "Several concurrent agent sessions share /workspaces/mcm, including its git index and checked-out branch, so any branch work belongs in a git worktree under /home/coder/worktrees/<slug> (never /workspaces/.worktrees, which is not writable); the node_modules symlink suffices for node --test and the scripts/*.mjs gates but every pnpm nx target dies with ERR_PNPM_UNSAFE_MODULES_DIR and needs a real install inside the worktree, and a worktree does not survive a dev-container rebuild.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md#L314-L413",
+          "version": "repo-lines-v1:sha256:49bcb843afc124e5a83b72797387ca35f20e17a6d7877a617cf90a44e5de4595:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYzI2MDVmMmIzNjQxMTkxNTdiMmJlMTEwZjk2ZmY3NWNlZjM0YzU0ODJjOTkzNzZlOGI2OThjYWFiNTVhNTY0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkMzQ3ZmEyZTkyZDgxNjJkZjIzNmE1NjYzNDJkMjg0ZjllMGIzMGFlOWMwYjJiNzFjYzliY2E2YTU0YTYwYzdiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlMmQ2YTI1NTU1NWI1Y2ZhZjc4ODI3MGQ0YmFmMzFhMzI4ZjdkYmU5N2YzYzY4NTBmMmVmNTZmZGE2NDM3MjI2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNjMwZTRiMmUyMTRiNTA3OWE1YzRhOTc1ZWUzMGI3NzI3OTllNWI4NzEwYzc1MDY5ZTRlNGMwYTViODgwOTNmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_900534a9e95b40ccb6dd9d8c83923383",
+      "statement": "Git must run inside the dev container, never from the VM shell: the VM user and container user were different UIDs (1000 'agent' vs 1001 'coder', the same UID rendering as 'node' inside the container), which made object writes fail on 111 of 256 .git/objects subdirs; the fix is that toolchain.Dockerfile now creates coder at 1000:1000 by renumbering the base image's node to 1100, and applying it is an image re-pin rather than a local build, with fix-workspace-ownership.sh remaining as the repair path.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile#L99-L140",
+          "version": "repo-lines-v1:sha256:f82e23bd5302362fb0c62bd5f6669c532f6f1610386810cfc25c424bef4b5c97:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwNDJiZDUzZjliYWU4ZmI2NjcxODk3ZWY1MTg5NGNkYzVhNmYxNDRmOWM1YTg1N2YyNGQ4OGU5NTYzNjJlOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NjFkNjE5ZTljZjMzYmUyMzRlY2Q1ZDk5MTk5ZmNlMDZlMDJmZTRhMmZjZjYwZTY5N2I2ZWIyNTRlNTc5NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhYTlhNWY1NGNjOTNjMzBkNWI4MDAxNWY2MGJjMjI1YjliNDUyOGFmMzU4NWZmNWZkZmUzMzcyZTAyODc2NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMWYzYzk1NDUxZjg3NzJiMjM2MWQyYzE5MjQzNWJiMTA2ZDc4ODE0OTEyNDg4MzRiN2QyYzdhOWQ0OWE5NjYifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L546-L585",
+          "version": "repo-lines-v1:sha256:f312775d2a3f36a83f1bfed60e0ffcccb41a9b122906842f47b434e6955276ea:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MzkzNWRlZjk4OTA2NjYyYWJmNmNmZjc3YjhkYzFlODdkMDc3OTJhMDBiYmRmYjQyOTNjZjY5OTAzNGQyYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmZTY4MmNkMzk1ODY4YmYyZTkyMTAyZjc5NDg4YzJkYmU0ZmM2ZWU4Mjc4ZTVhYWY1ZTFjZDdkY2EyNWJhZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef0c8b6129fa466193b83ef51d80d3da",
+      "statement": "The sandbox, VS Code dev-container port forwarding and Docker Desktop all bind the same Windows 127.0.0.1 port space, so a port the sandbox forwarded is a port the host cannot bind; the dangerous variant is a VS Code forward that keeps the host port bound after the service inside the sandbox has stopped, which makes a client complete the handshake and then hang forever, so the port must be diagnosed by owning process (Code / com.docker.backend / ssh) rather than by reachability.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L495-L542",
+          "version": "repo-lines-v1:sha256:cde61c59205d51422da7e752c858f3b0a029cad7e873413240e2891b3fc7286d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZDllOTcwMDZiMjRjMjViMGUyNTE0NzExMzRkMjljY2M5NTg5ODk5NzBlZGIxZTJlMGIxN2QwNjJjMzRiMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZDBmOWNjMjM2YmY3YTdkMDRkYjBiMWQ1NTQzOWI1MWM3MDE4Y2YyZjg3ZGZhYjZiZDFiMmMxOTMwZDU0OTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZjdhYzhlY2JhM2M5MTExNjVkN2Q2ZTlmMjJiY2I3ZGJiMWEzNjE5YWE4OGIwMTViMWVjZTMwYTZjZWY3YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_15c699f81725456a85599f822b9f1a24",
+      "statement": "`sbx ports mcm --publish 0.0.0.0:8081:8081` binds the port on the Windows host non-loopback with no netsh portproxy shim, omitting the HOST_IP prefix restricts it to loopback, and `sbx ports` lists nothing while the sandbox is stopped — which is the idle-stop, not removed ports.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L468-L493",
+          "version": "repo-lines-v1:sha256:55d7d5805132b37ca85fe060e57f02deb9199d908f63d84c87ae2ff0e8864bc3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNDZiYjc2YjQ4Mjc4ZTIwNmUxNTk3ZjMxOWY1NWYyMDI3ZDMzNDJhMDI3NmY5NjAyMDAwMGNkNzdjODFmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ZDVhOTcyNzM5ZGQ4MjRiZDUxZDhlYjJjNTk3OWM0YzY3NGYyMWU0YWIxZjMzN2RiNjU1YTQ0ODZkZWU4YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1MzRhYmUwNTRmZjY1MjBlYzNhODEyODlmZDJhNWM3OGM1ZTYyZGQ2N2E5NmEwOWE2NTQxNzJkNjVjYWU0MmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_655d33e8417249ecaea2270407b366e5",
+      "statement": "sbx is pinned at v0.47.0 (upgraded from v0.43.0 on 2026-10-08) and an upgrade is a security-relevant change: it is load-bearing for isolation and egress enforcement, so the ritual is to read the intervening release notes for network-policy, --network=host, port-publishing, idle-stop, secret-injection and template changes, capture before-state with verify-reboot-survival.sh --capture, re-run the harness, and re-run the G5 sibling-egress refusal explicitly.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L540-L643",
+          "version": "repo-lines-v1:sha256:697fa767641fe5cafd5f13d02300f69774280843973107de335979f4fde1c881:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkY2NjMzE4NjBiZjk1NGRhNzFhYmIzODAzZTUxNmQxNGE1ODM3OGM2NGQ0MjllMzgxNzE4ZjczOGQ1OGRmOTg2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NzJmYTIwYjVkZDdhNjcwMDk1NWU4ZDlkZjk2M2U0YzkyOWE5MDhiZTgyZDNiMzlmOWJhOTQ5YzZkZjgyNWIyIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_47092ab236834f82b8d58c3048d021ab",
+      "statement": "The verification harness enumerates twelve expected scripts by name across three vantage points, counts anything without an explicit pass as a failure, and refuses to invent the host-side result without MCM_HOST_CHECK; running it destroys and rebuilds the dev container because its last check removes the container and its derived image, and its host-side engine-seam check passes vacuously when Docker Desktop is stopped.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/run-harness.sh#L8-L72",
+          "version": "repo-lines-v1:sha256:030ed0d2034be14d73ce93c767aa0b45034f15d456f9dee7368fc411330b8e9d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyZDI0YmI0ZDAzYmI3YjJjNTYyM2E3NjZiOTY3ZDMwNzBjOTRiYjk1ZjJjNzBlZDc0MjgxMzNkNWJjOTE4ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYWYwMGJhNzQ4ZGUzYTIxMjg4ZGE3NWMzMjlkYTdhNGY5ZmMzM2Q4OWFlZjUxZDQ1YzlmMDNmMzhhMTI1ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkM2U2ZjVjY2VhMGZhMDI0ZjZlNDVhZmVlODE4Y2JkZDc2YmU2NDAzNTIwZjRhODU1NWJlNWU0YTI0NGYzNWIifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L477-L536",
+          "version": "repo-lines-v1:sha256:909f0d285a97f58c36a03462e60c21c0f22a42749d33ed077f8878c20bfeb633:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NTRiMjc3ZmYzYmQyNjNjYmFhZDU4YWFjYTJiODRlMDM0ZTdhOWYwYzFlYjI1NTVhOTJlNjQ0MTY3NDFjZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlYmNmMDViYTk5Yzg4MGYwYzJiNmM0NGEyOGU3YWQ0M2VmZTg1ZTFjOTRiNDUxMTAzNGZhYzU2OTQxM2U1NTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_238466c577e64a6895bec8b7357d92e0",
+      "statement": "Claude Code's global config file ~/.claude.json was never on the mcm-claude volume — the volume mounts the ~/.claude directory while .claude.json is a sibling on the ephemeral overlay — so a recreate dropped oauthAccount, userID, machineID and session history while the OAuth credentials survived; the fix (item #257) is CLAUDE_CONFIG_DIR=/home/coder/.claude in containerEnv, which relocates the config root, whereas a symlink does not work because Claude Code replaces the file rather than editing it in place.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L281-L307",
+          "version": "repo-lines-v1:sha256:41aff9894c4575cb5b93377e2f90528296c0dbf356f05cc1a2213cd253c971c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZjU0OTAzYjQ2MWFlMWM1ZTU3YTRkMGY0YzZlNTNkMDAyOWNmZTE5NmVhMzIyOWNlMjU0MWMxYjczOGRlZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNDczMWVlNDcxN2E2MDMxZWNmNjFhZTdlMzZjODgzNGE5NTg3OTg4ZGEzNmU0OWMzZmQyNDU1NzFlMTdmYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NzhkNjY4MTdkNGEwOTliNWUwYTYwMWE1NjFiOGY0MjBkMWIzZjI1OGVmMzU3MDVhN2ZkZDI4MjgwODQ1YTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZjA5YjkzZDU0MTc3ZDlkZWU0ZGMwMDNjZTNhMTUxNTc3YWE0ODM2OTQwMWJmN2IwYmIyZDUzOWU2NGE2M2UifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L154-L158",
+          "version": "repo-lines-v1:sha256:27ac0cb7383b8235a1d5b0db76c2e21942e7813e6952316898d7dd26df1df0ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU1OTgzNTI1MjE1NjZhNDIyYjNkMGQ4Yjk5NTRjYzRkNjcyNjcxNjM2NjhkMzBjNDEyMWNlZGUxM2JkZWFiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZmNDNkZTM0YWFmOWM1ODMzOWM4MmE0ODM3N2RjYzU2YjdlMTNmMTA1MmU0NGE2ZGYwYTNiZTJjZDkzZTFhMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTNiNmMzNDIxYzUzNzRkMjBiMTgyMTRlNTVjMzdiZDZmMTgzOTFiYTY0Y2I2ZGI0MmM1Y2M5ZjRlNmMxNGMxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWNlYzEyY2IwYTE5ZmU5OTE2M2ZmMDliNjg1ZThiNjhlNjE5OGZhNTVjODM4OTRlZWZmYjU0OTlhNzhlODMwMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a42d78b4bb9e424a8492f0faafab0ebe",
+      "statement": "`sbx rm` prompts for confirmation from v0.45.0 onward and a non-interactive prompt answers No, so scripts and agent shells need `--force`; the same non-interactive-defaults-to-No behaviour makes `sbx secret rm` need `-f` and `rtk init -g` silently wire nothing, which is why ensure-rtk-hook.sh exists.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L550-L552",
+          "version": "repo-lines-v1:sha256:682f56649da1a6ab2732fa38e194179fad1f0730da6095ef069548452b370df4:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ5M2ViODFiYTMyZTM0NzJhN2E4NGIxOWQ5ODQxODIzMmRhOGZjNTZhYTE4Mzk0ZmI0YTEzZWFiNDZlZGI3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTYzZWNiOTRjNTA1ZDZmYTk4Mzk4Yzc1NTdiYjQ3ODVkZDkzYjVjZGE0ZjcwODg1ZjQzMzUzYjA4OTA0MWQ5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODgzZTczMjU5ZmEyMjAzM2I0ODdmYjc5Y2IwODM2Y2ZjNDc5M2RhNDdhNjExNzEzMDYyM2EzMWU0MjA2ODA0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTVkNjg1YWI2NDA5MzZlZjA4YzdhNmY1MjE0M2EzOGJmMGQ2ZDc0MWYzMTJiOTYwZTg4NDQ1MjEzMWNlZGZkMCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L844-L845",
+          "version": "repo-lines-v1:sha256:183be85d961c5d056e2805e9a9081fe091473ab28ad00d6dea0de01a248faa83:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTIyYzE1MjA2ZmE3YmM4NzI2NTcwMWExYzVjMDY2YTNhZDExYzU0ZTcyYTZkNGM4ZTgwYWQyNTdmMjVkOTJmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJhNmZhM2VhMDJlNjY1MzBiZjRiNDRjYWM3NWExYzJmZjJmN2UzZDQ1YmRjMDA5YTM4NTQ3ZTBiMDk0N2MwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzc3OGEyYzQwZTk0MzQzZGVlMWZmZDIwNzg0ZjZlMTA3YTkwNTc5NmRmZmQ4NzZmMGM2NTZkZjViNTExMGFjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWNkZmIxOWEyNDBlMDEyM2JlZmVmZjdjM2FhM2FiYjJmODlkMzVhNWIwMmJlZjY1NGUzZmJmMWZmMmY3Mzk4MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f779be6e0c6241598925b32a87848e8a",
+      "statement": "`anthropicKey()` in agent-stack.mjs honours ANTHROPIC_API_KEY first, and because the VM sets that variable to the sandbox's own 'proxy-managed' marker, a naive agent-stack run injects a non-credential and fails with a 401 that reads as a bad key rather than a precedence problem; `env -u ANTHROPIC_API_KEY` lets the gitignored .env.local win.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L750-L753",
+          "version": "repo-lines-v1:sha256:86480dda5f4af563c0f55df0c36b222daeb0f6f56a4e1f3ea0840abb7a6115ee:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhiMGNmNWNlZGM5NjlkNzYwZWQwNDJiMDgwYjUwZGUxYjYyZGIxY2M5ODVhOTU4MzU5ZmMzYjE4YmYwMzJmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJhYTJiYzU2ZmQxMjc5YTNhNDQ0NGRmOWU4N2U1YTMzZWM2MTIwMjFhZjZmOWU0OTc3ODQ3ODVjMWJhMThiOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTljNjg5NzllNzU2Y2NkYzZmM2RiODJiZmVjY2U5MTkyM2JmYTMzZWY2NGRkY2FkZTgyMTVjYzA3MjkyMzFkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDc0ZGM0ZmZlOTMxZDNkMGM3YTUxZjc1OGYxYzMyYmYzYjcyNTE4OGFlMjE3NDJhNmM0YmY1ZGI4OThhMTE3YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c619a100db0145a2b4603015dfedbdb8",
+      "statement": "scripts/open-sandbox.ps1 generates the compound VS Code dev-container URI at run time (hex-encoding a JSON descriptor of the workspace path and config file) instead of pasting a fixed string, because a hardcoded URI silently opens the wrong target once the workspace path or config file moves; the same script checks and starts the sandbox first because a stopped VM makes the File > Open Recent entry fail in a way that reads as a broken environment.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L61-L77",
+          "version": "repo-lines-v1:sha256:a1e4c0cab0c273aa254778a1b4dbaf5b897784cef8714321438d2bac680b6e53:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NjMwMjM2YjQ1YWUwNzJmY2IzYzQ2MTUwYWNjZTA0ZDAyYzQ5NDQwYmViZWIzYTE4NGY3ODg2ZTg5NzkyY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkOWIxNWI2NGNhYTNhNGJkOWM4MDgyYjRkMzlmYmVjNzVkNjAzMmRhZWI0NGEyODIzNTYxYjVlYWM5OWM1OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMDg5MTc3NjdmZTM2YTA5NGQ5NDY1NTFiZGI0MDJjOTUxOGUyNmM1ZTRlOTQ2NTRkYzA2ZjdiYmMzNGMyZjgifQ"
+        },
+        {
+          "resource": "repo://scripts/open-sandbox.ps1#L1-L31",
+          "version": "repo-lines-v1:sha256:7bdbc25bd62b1ec3e933e3006bfdcbdc1edb27dae8ad6eeff8105a01fb52ab6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MDU3YjIwOTk5NDY3NDdkZDI1YTFiNTAyZGJkOWFhOTUyZGY4ZmQ1OGFjY2ZkZTQzYzMwYzc4YjI3YmJkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3ZmFhMDEzYzE3YjAxYWIyMzVjZTA3OTZkODJlMWVlMjVlNWQyMTdlZWYyMGZhNjdmOTUxZmM3ODU0MzQwYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5MTUzYTAxZjcyZDNhNWJiMGRjZmM3ZjU2YWRjN2Y3OGIzNzlhMjc5MjJmYWUxOGQzNzMxMDM0MzMwZTFjY2MifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-12T00:08:34.364Z"
+  }
+}

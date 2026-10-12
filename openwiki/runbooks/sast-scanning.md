@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-11T23:43:39.044Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -12,6 +12,8 @@ sources:
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
+  - id: openwiki-source-ea70eb6c045047448e446296
+    resource: repo://.gitignore
   - id: openwiki-source-7b223ba4df7203eeb5667fa8
     resource: repo://docs/runbooks/devcontainer-sandbox.md
   - id: openwiki-source-7c76000f237dd683a4fb0536
@@ -20,6 +22,8 @@ sources:
     resource: repo://docs/runbooks/sast-scanning.md
   - id: openwiki-source-9ccd48df872db70bfebbfa90
     resource: repo://infrastructure-as-code/docker/minio/Dockerfile
+  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
+    resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
@@ -36,6 +40,8 @@ sources:
     resource: repo://scripts/check-override-consistency.mjs
   - id: openwiki-source-3597b8f7b798d708bd7e75a1
     resource: repo://scripts/check-sast-findings.mjs
+  - id: openwiki-source-70875ab1853f42b7c7d4b78a
+    resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-b202cb0e9ae4a5b1b46e466a
     resource: repo://scripts/lib/scanner-retry.mjs
   - id: openwiki-source-302b6b882f29dba1e61bfa9e
@@ -209,6 +215,7 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   while the **host-side sandbox policy is scoped per sandbox** and does not pick up a new destination
   until an operator re-applies it (`sbx policy allow network semgrep.dev --sandbox mcm` on the
   Windows host — see
+<!-- openwiki: broken internal link [./devcontainer-sandbox.md#4-egress-allowlist] heading anchor "4-egress-allowlist" does not exist in "./devcontainer-sandbox.md". Fix the href or restore the target, then delete this comment. -->
   [devcontainer-sandbox.md](./devcontainer-sandbox.md#4-egress-allowlist)). The
   committed entry does not tell you which world you are in. One command does:
   ```bash

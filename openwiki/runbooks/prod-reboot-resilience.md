@@ -7,6 +7,27 @@ tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 verified:
   - by: openwiki/0.7.1
     at: 2026-10-11T22:25:03.651Z
+sources:
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-abae5c338f9f983f89ea77ad
+    resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
+    resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
+    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
+  - id: openwiki-source-852cc196002c1a675baddf5c
+    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
+  - id: openwiki-source-b6d5c062815f2af4f3aec768
+    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-5a48ade99311698ed1a02a08
+    resource: repo://scripts/check-prod-ci-port-collision.mjs
+  - id: openwiki-source-b182ec4cb28667debd4684ff
+    resource: repo://scripts/check-prod-restart-policy.mjs
+  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
+    resource: repo://scripts/preflight.mjs
 ---
 
 # Prod reboot resilience

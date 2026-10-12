@@ -7,6 +7,29 @@ tags: [ports, ci, production, collision, homelab]
 verified:
   - by: openwiki/0.7.1
     at: 2026-10-11T22:25:03.651Z
+sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-a9fc7285078c8062777b3180
+    resource: repo://docs/runbooks/devcontainer.md
+  - id: openwiki-source-abae5c338f9f983f89ea77ad
+    resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
+    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-839571d2c51f49a930537d1b
+    resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-5a48ade99311698ed1a02a08
+    resource: repo://scripts/check-prod-ci-port-collision.mjs
+  - id: openwiki-source-6f10e821d1ec074deb438a3e
+    resource: repo://scripts/check-topology-scrub.mjs
+  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
+    resource: repo://scripts/preflight.mjs
+  - id: openwiki-source-2b08f7b6b68dedecf129d61c
+    resource: repo://specs/029-prod-ci-port-isolation/research.md
 ---
 
 # Published-port reservation convention

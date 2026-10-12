@@ -1,14 +1,20 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-vs-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the weekly CVE sweep that runs three hours before the window on purpose (item #487), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (#308/#350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (#349/#350/#412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (#412/#560), the health digest that used to read only an advisory column and only the newest scheduled sweep (#485/#563), the pinned-toolchain gotchas for Rust (devcontainer rebuild) and Python (packageRules ordering), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
+description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item #487), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (#308/#350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (#349/#350/#412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (#412/#560), lockstep packages a lockfile refresh moves alone (#695), the health digest that used to read only an advisory column and only the newest scheduled sweep (#485/#563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
 sources:
+  - id: openwiki-source-6186a866b56089a82cce5c62
+    resource: repo://.forgejo/workflows/devcontainer-image.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
+  - id: openwiki-source-6e16973a4e3f6a5a2bd2e44c
+    resource: repo://.forgejo/workflows/lockfile-refresh-check.yml
+  - id: openwiki-source-c950e0aee079c6db1d918078
+    resource: repo://.forgejo/workflows/minio-image.yml
   - id: openwiki-source-eca7c5325f14a686c18a7c8a
     resource: repo://.forgejo/workflows/renovate-health.yml
   - id: openwiki-source-6e3646982d72c64cb5e2486d
@@ -25,21 +31,23 @@ sources:
     resource: repo://scripts/__tests__/renovate-health.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-8a0f1bda8bd15d4b15217f58
+    resource: repo://scripts/check-lockfile-refresh.mjs
   - id: openwiki-source-3b90cb16e95306cae75aac45
     resource: repo://scripts/renovate-health.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-12T00:08:34.364Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-12T00:08:34.364Z
 ---
 
 # Renovate dependency bot
 
 Renovate opens dependency-update PRs on a defined schedule and budget. The grouping, version locks,
-and cooldown rationale lives in `renovate.json` (heavily commented). This page covers the operating
-side: the schedule, forcing and verifying a run, reading the dashboard, and the failure modes that
-produce absence instead of an error — see `docs/runbooks/renovate.md` for the full procedures,
-measured evidence, and code citations behind every claim below.
+and cooldown rationale lives in [renovate.json](../../renovate.json) (heavily commented). This page
+covers the operating side: the schedule, forcing and verifying a run, reading the dashboard, and the
+failure modes that produce absence instead of an error — see `docs/runbooks/renovate.md` for the full
+procedures, measured evidence, and code citations behind every claim below.
 
 ## Channels, one budget
 
@@ -76,13 +84,21 @@ branch exists.
   `0 7 * * 5` (Friday 07:00 UTC, inside the `* 2-4 * * 5` window that covers both the EDT and EST
   offsets). Outside the window Renovate returns `not-scheduled` before branch creation, so "it will
   sort itself out tonight" is false for routine work — force it instead (see below).
-- **The weekly CVE sweep runs three hours BEFORE the Friday window, on purpose (item #487).**
+- **The CVE sweep's Friday run fires three hours BEFORE the window, on purpose (item #487).**
   `infra-image-scan.yml`'s sweep fires at `0 4 * * 5`; the Renovate window opens at `0 7 * * 5`. If
   the two ran together, `main`'s CVE posture would be unknown until after the very PRs the sweep is
   meant to gate already existed — measured on 2026-09-18, where PR #478 (node/rust/keycloak digest
-  pins) was unmergeable from creation on an unrelated otel-lgtm CVE. Both crons are UTC so the 3h gap
-  is fixed; DST cannot narrow it. **Do not "tidy the crons together"** — a guard test asserts the sweep
-  is strictly earlier than every Renovate window cron.
+  pins) was unmergeable from creation on an unrelated otel-lgtm CVE. The sweep is now **twice-weekly**
+  — `0 4 * * 2` was added (item #642) so an advisory published mid-week is triaged before Friday —
+  and the ordering assertion compares the *latest* sweep cron against the *earliest* window cron, so
+  both sweep slots stay strictly ahead. Both crons are UTC so the 3h Friday gap is fixed; DST cannot
+  narrow it. **Do not "tidy the crons together"** — a guard test asserts the ordering and a gap of at
+  least two hours, sized for queue depth rather than for the sweep's own ~3 minutes.
+- **Friday is a ladder on one runner, and that is what the gap is really sized for.** In UTC: 04:00
+  the CVE sweep, 05:00 `minio-image`, 06:00 `devcontainer-image` (each with a 60-minute timeout),
+  07:00 the Renovate window, 10:00 `lockfile-refresh-check`, 11:00 `renovate-health`. The capacity-1
+  runner may also already be inside a ~35-minute `app-e2e`, which is why the ordering rule budgets
+  hours rather than minutes.
 - **The budget binds before the schedule.** `prHourlyLimit: 5` and `prConcurrentLimit: 6` in
   `renovate.json` (raised from `prHourlyLimit` 4 / `prConcurrentLimit` 5 on 2026-10-02, when the
   in-window budget grew to a fifth slot); the guard test requires `prConcurrentLimit` to stay above
@@ -92,11 +108,19 @@ branch exists.
   hourly limit for every key and blocks **branch** creation too, not just PR creation, and open PRs
   also eat `prConcurrentLimit` headroom — leaving four green Renovate PRs unmerged caps the next
   window at one new PR. **Merging promptly is a throughput lever.**
+- **"Did the lockfile refresh fire unaided?" has a scheduled answer (item #218).**
+  `lockfile-refresh-check.yml` runs Friday 10:00 UTC, after the window, and comments its verdict on
+  the item — comment-only, always exit 0, and it no-ops once that item closes, so nothing has to be
+  cleaned up afterwards. The load-bearing distinction is *unaided* versus *forced*, and the tell is
+  **when** the PR was created: Renovate returns `not-scheduled` before branch creation, so a lock-file
+  PR created outside the permitted window cannot have come from the schedule. Reading the dashboard
+  tick directly does not work — Renovate rewrites that issue on every run, so by the time the check
+  runs the tick that mattered is already gone.
 - **Why `docker base images` carries `prPriority: 3` (item #486), and why the ranking must not be
   inverted.** With one in-window run a week, `prHourlyLimit` *is* the weekly throughput, and the three
   `lockFileMaintenance` channels at `prPriority: 5` already claim three of the slots every week by
   construction. Before #486, `docker base images` — the channel carrying the same base-image security
-  bumps the weekly CVE sweep blocks merges over — sorted with every other routine channel and had not
+  bumps the CVE sweep blocks merges over — sorted with every other routine channel and had not
   received a slot since PR #289, a roughly six-week wait while the sweep kept gating on those images.
   It now ranks at `prPriority: 3`: ahead of every routine channel, deliberately behind
   `lockFileMaintenance`'s 5. That ordering is not an accident to be tidied — lockfile refresh is first
@@ -163,6 +187,14 @@ dispatch is one runner slot.
   this exception only deliberately; it does not generalize to any other channel.
 - **Never hand-push to a Renovate branch.** Renovate detects the modification and can stop managing the
   branch. Use a `rebase-branch=` tick plus a dispatch instead.
+- **After landing a `main`-side fix for a gate, tick `rebase-branch=` on every open Renovate PR that
+  failed that gate, then dispatch once.** `rebaseWhen: "conflicted"` means a fix landed on `main` never
+  reaches a Renovate branch that does not conflict, so the PR keeps failing on something `main` already
+  resolved. Measured 2026-10-09: #696 (a Python-only lock refresh) failed `sast` on an advisory `main`
+  had allowlisted three days earlier, because its base was five days old. Compare
+  `git merge-base origin/main origin/renovate/<branch>` against the fix's commit. The setting stays:
+  rebasing every branch on every `main` merge would cost a ~35-minute `app-e2e` cycle per branch on the
+  one runner.
 - **A surviving `renovate/*` branch is not evidence of pending work — check ancestry before ticking.**
   `renovate.json` sets `rebaseWhen: "conflicted"`, which skips the `isBranchBehindBase` guard entirely;
   an already-merged branch is not conflicted either, so Renovate reuses it and opens a PR from the stale
@@ -227,6 +259,23 @@ Awaiting Schedule to `other-branch=` under Other Branches across three runs in o
 one-character edit: read the body first, assert the target checkbox appears exactly once and is
 untenanted, and assert the resulting body differs by exactly the number of characters intended.
 
+**A database MAJOR waits in Pending Approval, and ticking it is the migration decision.** Majors of
+`postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server`,
+`opensearchproject/opensearch` and `langfuse/*` all carry `dependencyDashboardApproval`; the clickhouse
+25.12 → 26.6 and redis 7 → 8 majors for the production Langfuse stack merged on a green CI on
+2026-10-09 (PR #698), and `app-e2e` never starts the observability stack — so green said nothing about
+either, and the four database images have required a tick on a MAJOR ever since. Before ticking, name
+the stack the image runs in and how its data survives the move; the within-major patch stream stays
+automatic, so only the major is gated. The observability postgres is held below 17 outright because one
+pin backs both Langfuse and Unleash, so it never reaches this list — see
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md).
+
+**Which credential does what (measured 2026-10-09).** Ticking edits item #29, which needs the
+issue-scoped token (`MCM_FORGE_ISSUE_TOKEN`). The `git credential fill` token answers `token does not
+have at least one of required scope(s): [read:issue]`, and through `jq .body` that reads as a `null`
+dashboard rather than a refusal. That second token is the one that dispatches `renovate.yml` and merges
+PRs. One session, two tokens: pick by endpoint.
+
 ## Pinned toolchains (item #307)
 
 A floating reference means no version, no classification, no reproducibility; a pin with nothing
@@ -240,6 +289,18 @@ at every site, and tracked by something that will move it.
 | **cargo-audit** | `guardrails.yml` (`--version`) and the toolchain image | customManager, `crate` | no |
 | **python** (interpreter minor) | `agents/movie-assistant/.python-version` — docker `allowedVersions` ceiling is derived from it | 1 pin + 8 image refs share depName/datasource with pyenv; `requires-python` floors and 4 lockfiles ride other paths | yes — `python toolchain` (item #366) |
 | **uv** | one version string repeated at every site (3 install-script URLs + 5 `setup-uv` inputs + 4 image tags) | customManager (`github-releases`) for script/action shapes; built-in docker manager for image tags | yes — `uv pin` |
+
+**The Renovate run pins its own runtime, and that pin is not about `engines`.** The runner's
+`ubuntu-latest` container ships Node 22; renovate 44.14.12 raised `engines.node` to `^24.11.0` *inside*
+the pinned major, so from 2026-08-09 every run logged `npm warn EBADENGINE` and then `ERROR:
+Unsupported node environment detected` and exited 1 — this was the only workflow in the repository with
+no `setup-node`, which is exactly why it inherited a runtime nobody had chosen. `renovate.yml` now pins
+24.19.0, the version every other job already ran, and that step must stay **before** `corepack enable`,
+because corepack is provisioned from whichever Node is on PATH at the time. A guard test asserts both
+the pin and the ordering, and `check-toolchain-consistency.mjs` validates the version against
+`engines.node`. A Node bump can still arrive as two PRs (workflow `node-version` entries ride
+`ci actions`, a Dockerfile `FROM node` rides `docker base images`) — accepted while the gate
+floor-checks.
 
 **Rust: the devcontainer needs an image rebuild after any toolchain bump.** `cargo`, `rustc`, and
 `nx test mc-service` fail in the dev container immediately after a bump lands, because rustup keys
@@ -297,12 +358,32 @@ None of these produce a red build or a searchable error. They produce absence, a
   1.7 hours earlier and reddened six required contexts at `pnpm install`, none about the actual change.
   **Handling: wait** — the transitive ages past the cutoff and a re-run passes. **Decided (item #271):
   this friction is accepted, not mitigated** — it is infrequent, fails loudly and safely, and is a
-  two-minute diagnosis with this runbook.
+  two-minute diagnosis with this runbook. **The same cutoff also DELAYS a fix, silently**, which is the
+  direction that has no error: measured 2026-10-09, a refresh forced ~24h after a fix landed resolved
+  the release *before* it and left the vulnerable version in place, while the same refresh re-forced at
+  13:41Z picked the fix up. So check the fix's publish time (`npm view <pkg> time`) before forcing a
+  refresh, and **confirm the resolution in the regenerated lockfile** — a refresh that merely ran is not
+  proof it resolved the fix.
+- **A group rule governs UPDATES, not lockfile re-resolution — so lockstep packages are pinned
+  EXACTLY.** `lockFileMaintenance` re-resolves every manifest **range** and no `groupName` applies to
+  it, so a ranged member of a lockstep pair moves alone on a refresh and the group rule never sees it.
+  Measured 2026-10-09: PR #695 moved `@playwright/test` (declared `^1.59.1`) to 1.64.0 while the app-ci
+  image stayed on `v1.63.0-noble`, and `app-e2e` ran **zero tests** — the `#199` shape, from the one
+  channel the `playwright pin` rule cannot govern; an earlier refresh had already left three Nx versions
+  on one tree with nothing checking it. `nx`, every `@nx/*` and `@playwright/test` are now pinned
+  exactly in every manifest and every `@nx/*` must equal `nx`, with `check-toolchain-consistency.mjs`
+  (in `guardrails / naming`) failing on a range or a disagreeing plugin — so loosening a pin back to `^`
+  is caught at review rather than on the next refresh.
 - **Extraction is not grouping.** A `customManagers` entry makes Renovate *see* a second copy of a
   version; it does not make both copies move in one PR. Paid for three times: nx, the Playwright image
   tag, and the pnpm/Dockerfile pins — each needed its own `packageRule` matching both managers, ordered
   after the broad rules. The guard test asserts the *resolved* group for each pair, since a rule that
-  merely mentions the package passes a weaker check.
+  merely mentions the package passes a weaker check. The newest instance is the OpenWiki generator's own
+  tree (item #704): a customManager extracts the `openwiki` pin from `.devcontainer/toolchain.Dockerfile`
+  while the npm manager reads `tools/openwiki-generator/package.json`, so one `openwiki generator` rule
+  has to join them on every version track — with a control asserting that `mermaid`/`jsdom` named
+  elsewhere are not swallowed, that the manifest is not hidden by an `ignorePaths` glob, and that the
+  Dockerfile matchString hits exactly once.
 - **A pinDigest colliding with a version update on the same branch is DROPPED, silently (item #308,
   widened by #350).** `branchify.js` de-duplicates upgrades per branch on
   `${packageFile}:${depName}:${currentValue}`; a second update for that key with a different `newValue`
@@ -370,7 +451,10 @@ required, unconditional job in `guardrails.yml` on every `renovate.json` edit, a
 `renovate.yml` that catches a key deprecated by a minor bump between Friday windows when nothing in the
 repo changed. Both invocations pin the **major** (`renovate@44`), like the live run, and a guard test
 asserts all three `renovate@` invocations agree on the major, so the validator can never certify a
-config against a grammar the run does not use. **Exact-patch pinning was tried once and reverted**
+config against a grammar the run does not use. The validator job also pins the **same Node** as the run
+(a guard test asserts the two `node-version` pins are equal), because renovate@44 raised `engines.node`
+inside the pinned major and a validator on a different runtime would be certifying a config against a
+runtime the run does not have. **Exact-patch pinning was tried once and reverted**
 (item #631): both invocations were pinned to `renovate@44.131.0` from 2026-10-02 to 2026-10-10 because
 renovate 44.131.1–44.132.1 depended on a `@yarnpkg/core` published with a Yarn-only `patch:` spec that
 npm cannot install (`EUNSUPPORTEDPROTOCOL`) — under `npx` that failure exits 1 printing nothing but the
@@ -384,13 +468,15 @@ test catches a key Renovate knows but ignores depending on where it is written (
 
 - [CI self-serve diagnostics](ci-diagnostics.md) — reading a CI failure without log access
 - [The agent-driven backlog](backlog.md) — item #29 and the `status/bot-managed` dashboard convention
-- [Infra image scanning](infra-image-scanning.md) — the weekly CVE sweep whose timing this page's
+- [Infra image scanning](infra-image-scanning.md) — the twice-weekly CVE sweep whose timing this page's
   scheduling gotchas are built around, and the scan recipe used to satisfy stability-days criterion 2
 - [Devcontainer sandbox](devcontainer-sandbox.md) — the egress allowlist that governs whether a local
   Renovate lookup can see Docker Hub timestamps at all
 - [CI/CD pipeline](../projects/ci-cd-pipeline.md) — where a Renovate PR's gates run once it exists
 - [Pull-request batching](../process/pull-request-batching.md) — why the three lockfile channels are
   split rather than grouped into one PR, which is what leaves three of the five slots spoken for
-- [ADR-0002: stateful major upgrades](../decisions/adr-0002-stateful-major-upgrades.md) — why
-  `langfuse` takes its own `groupName` (and its explicit `prPriority` reset) rather than riding
-  `docker base images`
+- [ADR-0002: stateful major upgrades](../decisions/adr-0002-stateful-major-upgrades.md) — why a
+  database major waits in Pending Approval, and why `langfuse` takes its own `groupName` (and its
+  explicit `prPriority` reset) rather than riding `docker base images`
+- [Wiki maintenance](wiki-maintenance.md) — the OpenWiki generator tree whose pins this repository
+  groups as one `openwiki generator` PR

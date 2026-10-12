@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Infra-image CVE scanning
-description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault and the rest of infrastructure-as-code — not MinIO, which is built from source and scanned by its own builder) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules, the bounded retry that keeps a Trivy DB blip from redding a required context, and the publish-versus-promote split for the from-source MinIO image.
+description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault and the rest of infrastructure-as-code — not MinIO, which is built from source and scanned by its own builder) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep ordered ahead of the Renovate window, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules, the bounded retry that keeps a Trivy DB blip from redding a required context, and the publish-versus-promote split for the from-source MinIO image.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
 sources:
@@ -15,8 +15,14 @@ sources:
     resource: repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs
   - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
     resource: repo://scripts/__tests__/infra-image-scan.test.mjs
+  - id: openwiki-source-f97d4affa52e4fb2bbe43045
+    resource: repo://scripts/__tests__/minio-promote.guard.test.mjs
   - id: openwiki-source-8bd5c4ede704298934afbfaa
     resource: repo://scripts/__tests__/promote-minio-digest.test.mjs
+  - id: openwiki-source-6f6c73d41089615fd1769487
+    resource: repo://scripts/__tests__/publish-sweep-verdict.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-fe6babf23c099d13c73c6b6f
@@ -33,27 +39,36 @@ sources:
     resource: repo://scripts/publish-sweep-verdict.mjs
   - id: openwiki-source-4708763005c35901b04f5740
     resource: repo://security/infra-images/allowlist.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+  - id: openwiki-source-0a3ed93b2a41764b679ff58d
+    resource: repo://security/infra-images/severity-map.yaml
+generated: { by: "openwiki/0.7.1", at: "2026-10-12T00:08:34.364Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T22:25:03.651Z
+    at: 2026-10-12T00:08:34.364Z
 ---
 
 # Infra-image CVE scanning
 
 Trivy scans every third-party image the project pulls but does not build — everything under
-`infrastructure-as-code/**` except images scanned by their own builder and any `${..}`-interpolated
-reference. It is deliberately disjoint from [SAST/SCA scanning](./sast-scanning.md), which covers
-first-party source and first-party dependency graphs, and from [DAST scanning](./dast-scanning.md),
-which exercises the running app over HTTP. Renovate keeps base images current; this scan catches a
-freshly published CVE against an already-pinned image, which currency alone cannot.
+`infrastructure-as-code/**` except images scanned by their own builder, and except a ref that is still
+`${..}`-interpolated once the one host variable this scan can resolve has been substituted (see the
+registry-host gotcha below). It is deliberately disjoint from
+[SAST/SCA scanning](./sast-scanning.md), which covers first-party source and first-party dependency
+graphs, and from [DAST scanning](./dast-scanning.md), which exercises the running app over HTTP.
+Renovate keeps base images current; this scan catches a freshly published CVE against an
+already-pinned image, which currency alone cannot.
 
 **Cadence: twice weekly — Tuesday and Friday, 04:00 UTC — and the scheduled sweep is never
 path-gated.** A new advisory can land against an image nobody changed, so the on-change PR/push check
 exists only for fast feedback, not as the source of truth. The Friday run is ordered three hours ahead
-of the Renovate window on purpose (see [Renovate](./renovate.md)); the Tuesday run (item #642) means an
-advisory published early in the week is visible with three days in hand instead of surfacing at the
-moment the window's PRs already exist and inherit a red nobody had seen.
+of the Renovate window on purpose (see [Renovate](./renovate.md)), and that ordering is pinned rather
+than commented: `renovate-workflow.guard.test.mjs` asserts the latest sweep cron fires **strictly
+earlier** than the earliest window cron, with at least a two-hour gap, and that both are UTC-fixed
+5-field expressions (item #487). The Tuesday run (item #642) means an advisory published early in the
+week is visible with three days in hand instead of surfacing at the moment the window's PRs already
+exist and inherit a red nobody had seen — GHSA-vcvr-r3jv-pc5j, on the unchanged `langfuse:4` pins,
+was published 2026-09-22 and first surfaced at 04:00 on 2026-10-02. Tuesday 04:00 is hour-of-week 52,
+far ahead of the window, so the ordering guard still compares against Friday 04:00.
 
 **MinIO (`minio/minio`, `minio/mc`) left this set in feature 069.** Upstream deleted both Docker Hub
 repositories on 2026-09-11 (having moved to source-only distribution in October 2025). This project
@@ -75,16 +90,20 @@ flowchart TD
   D["push — infra paths only"] --> C
   C["changes job — dorny filter, PR-only"] --> E{"RUN_SCAN"}
   E -->|"infra path on a PR, or any non-PR event"| F["scanImage per enumerated image"]
-  E -->|"non-infra PR"| G["every Trivy step skipped — job still succeeds"]
+  E -->|"non-infra PR"| G["every Trivy step skipped — required context still posts success"]
   F --> H["check-infra-image-findings.mjs — the gate"]
   H -->|"un-allowlisted fixable Critical"| I["gate red"]
   H -->|"nothing blocking"| J["gate green"]
-  I --> K["scheduled run only: allowlist expiry step, then infra-image-scan/weekly verdict"]
+  I --> K
   J --> K
+  K["always() — every non-PR run posts infra-image-scan/expiry"]
+  K --> L["scheduled runs only: the expiry check over both allowlists, then the infra-image-scan/weekly verdict"]
 ```
 
 Trigger-to-verdict flow. The `changes` job only ever *gates* the Trivy steps; the required
-`infra-image-scan / infra-image-scan` context is posted by the job either way.
+`infra-image-scan / infra-image-scan` context is posted by the job either way. The two observability
+contexts at the foot are posted by `always()`-guarded steps — which is why they still run in the week
+the gate is red — and neither can gate anything.
 
 ## Entrypoints
 
@@ -107,8 +126,8 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   `dorny/paths-filter` step is gated on `github.event_name == 'pull_request'` because dorny derives its
   diff base from the PR event and, on any other event, falls back to the repository's default branch —
   which this forge does not put in the payload, so the action hard-errors. That used to kill `changes`
-  on the weekly cron, and since `infra-image-scan` is `needs: [changes]` the required job was skipped:
-  the full sweep — the whole point of the un-path-gated safety net — never ran. Skipped, the filter
+  on the cron, and since `infra-image-scan` is `needs: [changes]` the required job was skipped: the
+  full sweep — the whole point of the un-path-gated safety net — never ran. Skipped, the filter
   output is empty and `RUN_SCAN`'s `github.event_name != 'pull_request'` clause forces the sweep, which
   is exactly the intended behaviour. A `push` is unaffected by dorny's diff base but is filtered out
   here anyway and loses nothing, for the same reason.
@@ -121,16 +140,18 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   absent from cd-deploy's set — published and examined by neither gate, zero findings, no error. The
   rule is now membership of `BUILT_IMAGE_NAMES`. Any future image built outside cd-deploy must be added
   to `BUILT_IMAGE_NAMES` or explicitly enumerated here — the invariant is exactly one scanner per
-  image, not zero and not two. Completeness is asserted against a fixture in
-  `scripts/__tests__/infra-image-scan.test.mjs` (a live-tree assertion would stop testing anything the
-  day MinIO is the only such image and someone removes it).
+  image, not zero and not two. Completeness is asserted against a **hypothetical** fixture in
+  `scripts/__tests__/infra-image-scan.test.mjs` (`jumbleknot/future-widget`), not against the live
+  tree: the earlier fixture named `jumbleknot/minio`, and when that image joined the exclusion set the
+  test failed for a reason that had nothing to do with the property it asserts.
 - **The registry host is interpolated in compose, and the scanner must resolve it or refuse to run.**
   `check-topology-scrub` forbids the real forge host in a committed file, so our own images can only be
   referenced as `${REGISTRY_HOST}/…` — and a blanket `${` skip would have made exactly the image the
   partition rule exists to cover invisible here. With `REGISTRY_HOST` set (CI) the ref is concretely
   pullable and is enumerated; without it the ref is skipped, and on a real scan that is a **hard
   failure** (`exit 2`), not a quiet reduction in coverage — a sweep that silently covers less than the
-  tree and still passes is worse than one that fails loudly.
+  tree and still passes is worse than one that fails loudly. The variable is matched by regex, not as a
+  literal, so the guarded compose form (`${REGISTRY_HOST:?…}`, which contains spaces) resolves too.
 - **Only a fixable Critical blocks the gate.** An unfixable Critical (no upstream patched version yet)
   is a report-only warning, since a version bump can't clear it and it must not wedge the gate
   indefinitely. `normalizeTrivy()` marks `blocking = Critical AND a fix exists upstream` — the same bar
@@ -185,7 +206,9 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   which reads like housekeeping rather than like the cause. Check that line before assuming a new CVE
   appeared. Unmatched detection is also **scoped to the images the run actually scanned**
   (`generatedForImages`, item #423), because two jobs consult this one allowlist — the sweep and the
-  single-image `minio-image` builder — and each used to report the other's live entries as stale.
+  single-image `minio-image` builder, whose findings both carry the same literal scanner label — and
+  each used to report the other's live entries as stale. The field is required, not defaulted: a
+  producer that stops writing it fails the gate rather than silently restoring the old behaviour.
 - **A version-keyed entry cannot be re-keyed on `main` and in the bump PR at once.** A version-keyed
   entry names one version, but during a bump two are live: `main` still references the old tag, the
   Renovate branch references the new one. Whichever single version the key names, the other side blocks.
@@ -199,11 +222,13 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   entry when the bump lands.
 - **The floating-tag exception set is now EMPTY — that is correct, not a regression.** The two MinIO
   images are no longer pulled, so they are no longer exceptions. The old rule ("a floating count of 0 is
-  a FAILURE") still guards against widening `isFloatingTag` to hide exceptions, but the guard now works
-  by asserting **set equality against the declared list** (which is empty), not by asserting a count.
-  Tests `(fd1)`–`(fd4)` assert the classifier's behaviour directly and do not depend on the count. A
-  count of 0 with an empty declared list is passing; a count of 0 where the declared list is non-empty
-  is the failure.
+  a FAILURE") still guards against widening `isFloatingTag` to hide exceptions, but it no longer works
+  by asserting a magic count: the guard asserts **set equality** between the refs the classifier calls
+  floating in `infrastructure-as-code/**` and the declared exceptions read out of renovate.json's
+  docker-datasource `regex:^RELEASE` rules, with the count derived from that same declaration so the
+  two cannot disagree. Tests `(fd1)`–`(fd4)` assert the classifier's behaviour directly and do not
+  depend on the count at all — a count of 0 with an empty declared list is passing; a count of 0 where
+  the declared list is non-empty is the failure.
 - **Publishing a rebuilt MinIO image is not the same as promoting it into the stacks.** A push that
   edits the Dockerfile both publishes **and** promotes — `scripts/promote-minio-digest.mjs` runs,
   repoints every pinned ref it finds in the tree, and opens (or updates) one always-current pull
@@ -211,6 +236,9 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   the `apk` installs float, so promoting it would mean a no-content PR most weeks. A
   `workflow_dispatch` run promotes only when its `promote` input is explicitly ticked; the default is
   false, because dispatch is also how the build is proven still working and that must stay read-only.
+  The split exists because publication alone left the stacks stale: PR #559 bumped the builder's
+  `golang` base as a security bump, the image rebuilt and published, and every compose ref still pinned
+  the pre-#559 digest three weeks later (item #577).
   A third fact makes the canary safe rather than merely pointless: **every build is also tagged with a
   per-run immutable tag** (`<tag>-r<run id>`). This registry drops a manifest the moment nothing tags
   it — measured 2026-09-12, when a re-push left the previous digest returning 404 — so with the moving
@@ -236,9 +264,13 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   versioning scheme maps year→major, month→minor, day→patch. A January release reports **major** because
   the year advanced, not because anything broke. Do not read the label as a risk signal the way you
   would for `opa` or `unleash`. (`loose` versioning cannot parse `RELEASE.…` tags at all — its `_parse`
-  returns null, making them unordered rather than merely mislabelled.) Note: the project's own built
-  MinIO image uses an orderable tag format (`2025.09.07-161309`) and needs no versioning exception;
-  this rule still applies when reasoning about upstream MinIO releases in other contexts.
+  returns null for anything beginning `RELEASE.`, which makes those tags *invisible* rather than merely
+  unordered.) Since feature 069 the rule that carries this versioning targets the upstream **source**
+  release on the `github-releases` datasource rather than a pulled image, because we compile MinIO
+  ourselves. Our own image uses an orderable tag format (`2025.09.07-161309`) and needs no versioning
+  exception. One trap that belongs to the Renovate side rather than to this scan: a `packageRule` can
+  resolve while nothing extracts the dependency it describes — see
+  [Renovate](./renovate.md) for the `MINIO_TAG` case (item #560).
 - **A green `infra-image-scan` tick usually proves nothing — check the duration.** The required context
   posts `success` on every PR, including ones where Trivy never ran. That is deliberate (a job-level
   `if:` skip posts no status at all, and the required pattern then blocks the PR forever) — but it means
@@ -277,6 +309,7 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" "$API/commits/<sha>/statuses?page=1&limit=100" \
     | jq -r '.[] | select(.context == "infra-image-scan/expiry") | .description'
   # event_name=schedule gate=success expiry_step=success   <- the cron ran both checks, and they passed
+  # event_name=schedule gate=<x>     expiry_step=failure   <- it ran and a check failed: read the log
   # event_name=schedule gate=failure expiry_step=skipped   <- an earlier step failed (item #484)
   # event_name=push     gate=success expiry_step=skipped   <- a push-triggered sweep; correctly skipped
   # event_name=<unset>  expiry_step=<unset>                <- the runner returned no value: a real fault
@@ -339,11 +372,14 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
 | `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact run-3622 stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
 | `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, and a fixable Critical still blocks while an unfixable one does not. |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
-| `scripts/__tests__/minio-promote.guard.test.mjs`, `promote-minio-digest.test.mjs` | the promoter: `REGISTRY_SCHEME` is passed and never guessed, and the ref count comes from the tree. |
+| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, and both are UTC-fixed 5-field expressions — so a later "tidy the crons together" cannot silently undo it. |
+| `scripts/__tests__/publish-sweep-verdict.test.mjs` | the weekly verdict mapping as a pure function: gate-red, scan-could-not-run, job-failed-elsewhere, green, and the cancelled run that publishes nothing. |
+| `scripts/__tests__/minio-promote.guard.test.mjs`, `promote-minio-digest.test.mjs` | the promoter: the promotion step's `if:` admits a Dockerfile push and never the canary, `REGISTRY_SCHEME` is passed and never guessed, and the ref count comes from the tree. |
 | `node scripts/check-infra-image-findings.mjs --selftest` | the gate's whole decision table without Trivy, and CI runs it **before** the real scan so a broken gate is not mistaken for a clean sweep. |
 
 A guard is not decoration here: each one above exists because its absence was paid for — a silent
-coverage hole, a retry that would have masked a finding, a gate that ran after the push.
+coverage hole, a retry that would have masked a finding, a gate that ran after the push, a cron that
+could be tidied back into a race with the window.
 
 Full scanner-vs-scanner coverage table, the allowlist entry shape and seeding steps, the local Trivy
 recipe, and the remediation ownership: `docs/runbooks/infra-image-scanning.md`.
