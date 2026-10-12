@@ -29,6 +29,9 @@ operator ("~8 pages per run, timeout 60"), T029–T031 implemented with the deri
 default in the workflow; added: the wiki job verifies the installed generator and fails on a skip. T032 (upstream
 request) and T034 (score ≥ 10 real runs, SC-005 reconciliation) remain.
 
+**2026-10-12:** T050 is done (research R17), and with it US6. Feature 078's task list is complete. What remains
+open is tracked outside it: #682, #733 and #906.
+
 **2026-10-08:** Merge C is implemented: T023a, T032, T034–T048. All that remains is T049 (open the PR) and T050
 (post-merge observation of SC-008 and of 0.7.1 on real runs).
 
@@ -938,6 +941,11 @@ the PR with the `git credential fill` credential, then run `ci-status watch`, re
 The operator merges if any required context was path-skipped.
 
 ### T050 — After merge: observe (no code)
+**DONE 2026-10-12** (item #690, research R17).
+- SC-008 was observed: 4972 → 4973 at `low`, and the page landed. SC-009 held across every record in the window.
+- The 0.7.1 worker retry (#913) does not rescue the pages that exit. #906 was not exercised.
+- There were no timeout kills.
+- SC-005 holds at table `2026-10-07`: every UTC day from 2026-10-08 to 2026-10-12 is within 5%, and tokens are −0.3% over the window. That is 5 of the 7 days named. No price correction is needed.
 Over the first real runs on 0.7.1, record in research R16:
 - **SC-008:** the first deadline failure, and the next run's `reasoningEffort: "low"` on the tagged pages;
 - **0.7.1:** whether #913 lands a page that used to exit, or only doubles its time; whether #906 absorbs a "different
