@@ -471,10 +471,6 @@
         {
           "resource": "repo://docs/runbooks/sast-scanning.md#L217-L240",
           "version": "repo-lines-v1:sha256:efe0bec9b817414e3c8d0d3c181f914ee50183d52c69e18f1519fc8e05e3f8d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzZmOTdiMzg4YTI0YmQ5M2QzNWQwMTUxNDlkZTQxMDgwNTIzOWZmNWQ4OTc2ZDNlZTQ3YWM5NjZiYTQxNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml",
-          "version": "repo-file-v1:sha256:953554f7fb6484c54e28356a884f364e0066f6e9c9fe756e9c271ea3e4bc722c"
         }
       ]
     },
@@ -545,14 +541,6 @@
         {
           "resource": "repo://scripts/sast-scan.mjs#L202-L206",
           "version": "repo-lines-v1:sha256:91c7df156e8c1444316f9daf29f4503611baa29d855d30f968c602fd3b2d87eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZkYjBkOWY3NDllNDNhNjhiNzE3ZDM1YTg4YmU0YzQ5ZGJkMjEwMDQ2ZTlkMjAwMGVjNjM3ZTI1MTc4Y2IwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQwM2Q0ZDU0MzBjMmExNzYyZjcyZDJlYTEyZDRhYjUxNzRkOTBhM2VjMzQ1YzU3ZDBkZGIzNTZiMGI4ZmRjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWM1NjU4NThjYjY1ODk4MjU5MmM5ZmYxZjg5MDE3N2ZjNjBkMjA3MGUyOTQ1NDQ0ODg3YWQ5NThkZjZiMmI2YyJ9"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L211-L261",
-          "version": "repo-lines-v1:sha256:0aec0958cdb39540157fd10a5302d4971eee816ead10636e4ad181dfb1f44089:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwMzhlZjFmYmM5MmI4YmE1NTAzMmI3ZTVlYWUxNzAxYTNkM2RiOTMxYzZjM2M2MjY0ZjNmZjA5NzE2M2E0M2QifQ"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L263-L290",
-          "version": "repo-lines-v1:sha256:c74cbdcda9794c7234e82191601be3f8ad8e22c63525fb6881cd00e7474e4046:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmMWViYmQxMWQ4MjJmODcwNDBiZmQ3ZDNjMjE5YjE2NmZlZTE3N2UzYWFjNjAwOTA1NjViZTAyOGU5YjA2YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZDc5MmM1MjljOTBmODg3YTljOGI1MWU5ZDc2MzU1OTJmYTI3NDA0MGUzNDQ5Njc2NDExYmVjZDM4YTg3MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
         }
       ]
     },
@@ -560,10 +548,6 @@
       "id": "claim_4dbf5093ced042e186e387e7a41742ff",
       "statement": "A custom rule's documented limitation is triaged into the allowlist rather than worked around: `mcm-auth-before-authz` only recognizes a guard call textually earlier in the same function, so the backups reader/writer and the account-deletion pipeline — all of which receive an already-authenticated (or step-up) token from a route wrapper — carry entries pinned to those individual files, so a new unguarded upstream client anywhere else still fails the gate, and pushing a `requireMcUser` call down into those functions would contradict the role-enforcement-is-a-layer rule by reintroducing the per-call-site check that rule exists to prevent.",
       "evidence": [
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L159-L209",
-          "version": "repo-lines-v1:sha256:ff7ca2e26657e0a5efccf54301832ede3eff87fa67562c4f265428203a38cc46:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZjhmZWQyMGIyNDQxZjEzOTAzMzExZDk4ODZiZTYzYzJkMGE0MDAxODRkYTkxZGIzYWI2ZTJhYmE3Yjc1ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlOGVjNjdlMGI4YmYwZWVmNDczNmYwMmRiNTc1YzhlZTJjNTc0ZTgxNWY1YThkMDIyMjM1YmEwOTUyYTEwMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYmU2Y2NmNzM4NTRhZTVjMjg4Njk5NGIwNzg0MGYyNWRiZGFlMGEwODMwM2FmYzY3ZGY4ODIzNzE5MDM1MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZjZmYjRkMDQ5NWE3NGRjMTU2NWZlNTY2MjdiY2M0NzFiMmIxOGFlMjg3ZmZmNGRhOTNiMmM5ZmM5ODVhYzUifQ"
-        },
         {
           "resource": "repo://security/sast/rules/mcm-auth-before-authz.yaml",
           "version": "repo-file-v1:sha256:8215a861fc748047ea831de03d6d278f081998400f856869dbb5fcd7334b7c40"
@@ -577,24 +561,6 @@
         {
           "resource": "repo://security/sast/README.md#L136-L139",
           "version": "repo-lines-v1:sha256:0d6b0d2cf4075f5624c87392a519b1db19395e720f56d667857346a434153716:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjZWVjMDFlNmIyMjhkYzFmOWJiOTllNzBjZmE0OWEwNGFmZTVlNTExNjQzOGEyNDRiMzNiMGUxNGFjOWI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIwYzJiYWIyMzM2ZDdiZWU2ODk3MjcxYWRmMzgzMGUwNDQ3Mzc2YzExNjI3YWJmODVlNmM1ZjVmM2M2NmUxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRkMDU2N2Q4MTMyZjFkNTY0NTVmOTVmNWYwZjM1OWEwZDZlZWQ4YmNjYzk0ZWQ3NjY0NTA1N2JjMzIzZWVmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgwMTcxYTI2YmFhMmIxZDhkNTJjNmNlMWJiMTUwY2FhMzYzZjYyZjgxZTc3M2Q3NzEwY2IzNmIxMTA5MjcyNCJ9"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml",
-          "version": "repo-file-v1:sha256:953554f7fb6484c54e28356a884f364e0066f6e9c9fe756e9c271ea3e4bc722c"
-        }
-      ]
-    },
-    {
-      "id": "claim_81467c960fe84bb78e7d690b0e8ae125",
-      "statement": "A suppression that matches nothing is deleted rather than renewed or re-anchored, because a dead entry would silently absorb a genuine regression on that package until its expiry; the retired click entry and the feature-034 remediations were all discharged this way.",
-      "evidence": [
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L135-L156",
-          "version": "repo-lines-v1:sha256:8fdd90ddfd9dbd55f175d4ab95320e6745e864d70be57bb9530928a781543c21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTY5YjE1M2RhZDg1ZmIzZDk2MjNlZWQ1ZjEwMTNmNDliYjVhMjhiNzRmZTk1MzAxYmNhNmZjMWFjODU2NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMzZjNTRjMWJiYjgwYjlkOGE3YjM3ZThiYjFkM2ZlNTU3NGY2N2JiMmM5OWJhNzE3ZGUxODQzZjJmN2I3YTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjhhMjhiMWQxMTI3NTc2MzFlYWZhYjY1OGI2MTJhNWE3ZGM4MzY1NjI1YWVmNmUyMzg3ZjUyY2VmNDEwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNGY5Y2I3ZTJmYmY5MWZiZGEzMmZkNzhiOTRmZGJjNDhmNjg5YjM2MzkwMzdiOTI5ODdmZjc1NmI5MzEyZWUifQ"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L43-L87",
-          "version": "repo-lines-v1:sha256:18aad2054190dd8ec5c3aad4ecbb4d9c64167781fc0518db85883dd93c5dd223:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYmY4ZmE4YWI1Njc5YTliZDA3NTg0NmNkMGRiNTRhMGYxM2IyY2M4MzYwYWE5ZTY5YzFhYTdhMWNhOGViZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNmU5NDg3OGVkNDU5ODUwNTcxY2IzNDYzZTMyNDIzMDZmMGY2YTU0OTFiOTMxZjk5MDYzNzk5M2NkYjhmY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0NDUyNWNiM2ViNWU5ODllODg0ZTEwZjdhNzhkNzg2OGFlZTJhNzM3YWZhYTZhMzNlZGM2NDcyODg2YjhkN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExYTUzZTc2YTU2Y2Y5NTAyYjcwMWViZDU5YjBkYmUwMTg2NGNhOGNiOWE5N2FkOWIxMGI0ZTAzMWM3MmE3YTcifQ"
         }
       ]
     },
@@ -641,10 +607,6 @@
         {
           "resource": "repo://docs/runbooks/sast-scanning.md#L217-L240",
           "version": "repo-lines-v1:sha256:efe0bec9b817414e3c8d0d3c181f914ee50183d52c69e18f1519fc8e05e3f8d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWYwNjgwNTVlMmZkMGQxMjFiMGZiN2NjNTcwYmU5YjJkYTk0MmU3YzNhNzc3Njg5ODM1NDJlNzUxMTcxY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzZmOTdiMzg4YTI0YmQ5M2QzNWQwMTUxNDlkZTQxMDgwNTIzOWZmNWQ4OTc2ZDNlZTQ3YWM5NjZiYTQxNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YWVmYjdiNDBmMTgyYTM3NDViYzQwM2RjMGZkZWY4YjQzMTM5N2Q0MWNjMjUyZTEwZjRlMWM2YzY5ZWViODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZmNhZDIzMTBjMTc1MWY4YTdiODI0MjJlNjkyMTZiMDFmNjNkYWY3MWU5ZDA0NTU5MmNlODk4ZDBjZGViN2MifQ"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml",
-          "version": "repo-file-v1:sha256:953554f7fb6484c54e28356a884f364e0066f6e9c9fe756e9c271ea3e4bc722c"
         }
       ]
     },
@@ -655,10 +617,6 @@
         {
           "resource": "repo://infrastructure-as-code/docker/minio/Dockerfile#L199-L201",
           "version": "repo-lines-v1:sha256:f19fca8ce9c033896bec8189e8555a4c79f2bc78a53868a741e5128a0776e5a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWRiZDk4NDM3YmI5M2FiNGNlZWNkMjU1NDZiOGVkM2Q0Njg1MTRmN2VlMTc4ZTFkMTEzMDVjNzJlMjE2YTdjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI4NzVmZThlYzIyZDkyOTE3YWNjYjBlZTA3ZTFjNzdiY2M4ZjFhYWU2ZTljNTEwYjIwNjJiNTYxNzExOGFmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWY4Y2Q5ZDI3ZThmYzY0ODJjYzc5NDFkNjhmYjMyZWMyOWRjNmJiOGM4NzM1ZmFkM2ExOTE0NTBhMjI3NmI4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzMxMzE4ODIzNTQyMWQzOWFiMTI4YmY2ZDEwYjk0Y2YxYjkwNTg3NzVjN2M2ZDRiMDk1MDI0NTAxMzg2ZjJhNSJ9"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L43-L45",
-          "version": "repo-lines-v1:sha256:6115c6d21c4528ab8490faaa433a883940e25ad693d417de2bf4d861b000d86b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjNiZjhmYThhYjU2NzlhOWJkMDc1ODQ2Y2QwZGI1NGEwZjEzYjJjYzgzNjBhYTllNjljMWFhN2ExY2E4ZWJlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY4ZDc1Yzc0ODgwZGUyOWQwODM3MjFmYmJhZTI4NGExYTNmZDJkNmVhMjBkN2JiNzRmNTIzZjE2YTc5NTE2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ0NTI1Y2IzZWI1ZTk4OWU4ODRlMTBmN2E3OGQ3ODY4YWVlMmE3MzdhZmFhNmEzM2VkYzY0NzI4ODZiOGQ3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDA0MTY5ODkxZDY4ODMxYTI0ZjJjMjM0ZmU0MzI4MmZlNjU4NDQ3NGY5OWFmOGVhOTljMmY1NTY0MTE1NmZlNCJ9"
         }
       ]
     },
@@ -705,10 +663,6 @@
         {
           "resource": "repo://scripts/sast-scan.mjs#L469-L521",
           "version": "repo-lines-v1:sha256:6ca90b9fd4298ba474426b381639bf935f1bb7a9d6a111f16440c58c86ed0c23:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NGZiNDhjZGFmNzBhZDk4ZmMzZGYzMjE2MDM4YjNhMWRjM2ZjNWJmMjFkYWI2MjRmNGU5MzdjNTAwMDA5OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYzc3ZGRjMzcyNGM2OWFjNTZiNzJkMjQ5NjIxMzc3Y2ExZmIyZWQ1OTgxOWY5OGQxNTcwNmU4ODA5NTkzNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5ZTA4NzFhYTYyNDdhYzU5NmQzZmU5YzA2Zjg0MTZjMTI0NWI5YjhiZWI4ZjM3NDNjYjc5OTI2OGU4NGRjMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmZjFkMTQ2YjJjYWI0YzA3YjJmNTZmZWVkOWFjMTg5ZTY2MGFiNzJlMWZkMGMyYjk0OGJhNzUyMGUzZTEzODYifQ"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L263-L290",
-          "version": "repo-lines-v1:sha256:c74cbdcda9794c7234e82191601be3f8ad8e22c63525fb6881cd00e7474e4046:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmMWViYmQxMWQ4MjJmODcwNDBiZmQ3ZDNjMjE5YjE2NmZlZTE3N2UzYWFjNjAwOTA1NjViZTAyOGU5YjA2YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZDc5MmM1MjljOTBmODg3YTljOGI1MWU5ZDc2MzU1OTJmYTI3NDA0MGUzNDQ5Njc2NDExYmVjZDM4YTg3MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
         }
       ]
     },
@@ -733,10 +687,6 @@
         {
           "resource": "repo://security/sast/README.md#L136-L139",
           "version": "repo-lines-v1:sha256:0d6b0d2cf4075f5624c87392a519b1db19395e720f56d667857346a434153716:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjZWVjMDFlNmIyMjhkYzFmOWJiOTllNzBjZmE0OWEwNGFmZTVlNTExNjQzOGEyNDRiMzNiMGUxNGFjOWI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIwYzJiYWIyMzM2ZDdiZWU2ODk3MjcxYWRmMzgzMGUwNDQ3Mzc2YzExNjI3YWJmODVlNmM1ZjVmM2M2NmUxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRkMDU2N2Q4MTMyZjFkNTY0NTVmOTVmNWYwZjM1OWEwZDZlZWQ4YmNjYzk0ZWQ3NjY0NTA1N2JjMzIzZWVmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgwMTcxYTI2YmFhMmIxZDhkNTJjNmNlMWJiMTUwY2FhMzYzZjYyZjgxZTc3M2Q3NzEwY2IzNmIxMTA5MjcyNCJ9"
-        },
-        {
-          "resource": "repo://security/sast/allowlist.yaml#L211-L290",
-          "version": "repo-lines-v1:sha256:39f553c21cb5d4bff8b6a248022fa7de45046e65f90622c5610712df91b669de:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjNjNTg1NTI1ZTcxNDY5MGIwNzljY2RhMGVjNTNkNDJkMWMxM2NiZmQxZWU0MDcyNGY1MDA0MWU0YzZjMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2UzOTNhODU5MzY4MTEwN2VjMTNkNDc2NzRmMDU4NTVmZmMwNmI2NWMyYzgxY2VmMTgzNjE3MjI2ZDM1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MzZjNjIyMDA5NWQ4NmUwNDAxMDU2NTI2NDMxYmFkNWI1ZmQ5ZGE0OTNjNDYzYTg4MzRhZmNjYzA3MmIyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMTRjZDU4MzhjYTdhYTBkMGFkZjQzZThkNTlhNGIzYjUwYTBlYjZkNGU2ZmIyNzdiMWQxM2Y4ODAxNDE4M2UifQ"
         }
       ]
     },
