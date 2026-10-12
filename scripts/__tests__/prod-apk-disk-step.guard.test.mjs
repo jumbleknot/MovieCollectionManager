@@ -15,7 +15,7 @@
 // Two facts make this worth a test rather than a comment, and they pull in OPPOSITE directions:
 //
 //   1. `runs-on: ubuntu-latest` on this forge is `--label ubuntu-latest:docker://node:22-bookworm`
-//      (docs/runbooks/Server-Setup-Runbook.md:588) — a plain Node image running as root. `sudo` is
+//      (docs/runbooks/Server-Setup-Runbook.md:592) — a plain Node image running as root. `sudo` is
 //      absent from it and from every other runner here (the kvm runner executes as the unprivileged
 //      `ci` user, which has no sudo either). So no workflow step may invoke it, anywhere.
 //
