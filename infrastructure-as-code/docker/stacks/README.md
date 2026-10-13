@@ -1,7 +1,8 @@
 # Stack env files
 
 Feature 021 (externalize-compose-secrets) removed every clear-text credential from the tracked
-Docker Compose files. Each secret is now a fail-fast `${VAR:?…}` interpolation reference; the real
+Docker Compose files. Most secrets are fail-fast `${VAR:?…}` interpolation references; some services
+load theirs from an `env_file:` instead (the BFF reads `frontend/mcm-app/.env.docker`). The real
 per-machine values live in gitignored per-stack `.env` files generated from committed templates.
 
 ## Files

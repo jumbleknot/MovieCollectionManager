@@ -50,7 +50,7 @@ fail-fast). **15 new Variables** (13 observability + 2 audit); Vault dormant nee
 
 - **audit (2):** `OPENSEARCH_INITIAL_ADMIN_PASSWORD` (strong — OpenSearch rejects weak), `OPENSEARCH_AUDIT_WRITER_PASSWORD`.
 - **observability (13):** `LANGFUSE_SALT`, `LANGFUSE_ENCRYPTION_KEY` (64-hex), `LANGFUSE_NEXTAUTH_SECRET`, `LANGFUSE_PG_PASSWORD`, `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`, `LANGFUSE_MINIO_ROOT_PASSWORD`, `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`, `LANGFUSE_INIT_PROJECT_SECRET_KEY`, `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`, `UNLEASH_ADMIN_TOKEN`, `UNLEASH_CLIENT_TOKEN`.
-- **reused (NOT new):** `TS_ADMIN_IP`, `TAILNET_HOST` (already seeded for prod-auth) — the R10 tailnet operator-UI binds.
+- **reused (NOT new):** `TAILNET_HOST` (already seeded for prod-auth) — LangFuse's tailnet `NEXTAUTH_URL`. The R10 operator-UI binds are `0.0.0.0` since feature 028, so they need no IP Variable.
 
 The `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` / `_SECRET_KEY` are the **same** values the gateway consumes (the
 deterministic bootstrap keeps its pinned keys valid). `UNLEASH_CLIENT_TOKEN` is the **client** token the app uses.
