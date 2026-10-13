@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8c60b772fdd7924c7371001424d9669d1eab4fdf48c010b55ccc9c4eb7b0ffbe",
+  "pageVersion": "sha256:b63ad0ae373d7dafc2e32f9d30c413e7388e4f045c7a41198f9e734d3df25b12",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -316,7 +316,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L96-L98",
-          "version": "repo-lines-v1:sha256:350ca661d67f4234d5621843e722079554a48f3fee30a447b192cc63b558d209:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2M2VlYjczNTczYjljNDNlNzNhZWZlYTBhMWZlMTMwMWU1ZDE2YTM0NmI2MTJlYjRjYzk0MTkxZjRhYTBmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+          "version": "repo-lines-v1:sha256:26dbaf807e37f3864f7f1a2eaeed4f8874de725e0efca92b4992c9fd47819761:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
@@ -600,7 +600,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L98-L98",
-          "version": "repo-lines-v1:sha256:d663eeb73573b9c43e73aefea0a1fe1301e5d16a346b612eb4cc94191f4aa0f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2M2VlYjczNTczYjljNDNlNzNhZWZlYTBhMWZlMTMwMWU1ZDE2YTM0NmI2MTJlYjRjYzk0MTkxZjRhYTBmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2M2VlYjczNTczYjljNDNlNzNhZWZlYTBhMWZlMTMwMWU1ZDE2YTM0NmI2MTJlYjRjYzk0MTkxZjRhYTBmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+          "version": "repo-lines-v1:sha256:8b5ab4e1c46b9e2ece4a76630e9574ef33f2d1fc11d84b2ccfc255639de50758:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
@@ -615,10 +615,46 @@
           "version": "repo-lines-v1:sha256:819ccacd67b547fd6cc5efd13e02aecbf33632caa089cfd6dfc732daa3b02c1a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxMmRiYzlmNWI4NGUxNmQ3YzE4YTZhZTdjNWMwNWVmMjk1NGUxNWI4NDE2YTg0NDgzY2UzZGVjOTJiY2IzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_b6afdfba0643412bbc7923df4f216bcb",
+      "statement": "The retired bind-prefix variable and its sibling `TS_ADMIN_IP` are the two halves of one operational rule: a Komodo stack `environment` key can outlive the compose that read it. `KC_ADMIN_BIND_IP` was prunable because both its consumer (feature 028's compose bind) and its producer (the `prod-auth` block in `infrastructure-as-code/komodo/stacks.toml`, which stopped passing it on 2026-10-12, item #727) went away, whereas `TS_ADMIN_IP` is still passed by the `prod-observability` block even though feature 029 moved those admin binds to `0.0.0.0` and no compose file reads the IP any more — so that Komodo Variable must stay until its last consumer line goes, and removing a variable on the strength of \"the bind is gone\" is what breaks the next deploy.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L98-L98",
+          "version": "repo-lines-v1:sha256:8b5ab4e1c46b9e2ece4a76630e9574ef33f2d1fc11d84b2ccfc255639de50758:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L11-L18",
+          "version": "repo-lines-v1:sha256:c58a3d7ef42903f7aba805971b4a61e0cf42f26aae9843bc82cdec199c24101f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZiMWNhZGFiMGFlOGQ0ZDY4YjE0Yjk3YmU3MzhkNmMxZTZlNWQ1NzViM2NjZGIwMTEyNzg4MTIyZjE5N2Q4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxMjBiOGViOWRjZTQyZTNmNGVhZDBmMzI5YmFiZjJkNmM3MjljMDY4YWZkZjIyZTM0YTM5NGY0OTQ2MDJlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc5YTMyMmU2NjY4NGI5Mzg2YjMwMzY2Nzk5ZGE0M2NjY2Q2M2I5YWEwZDk0MzIwYTljZWNkM2RmZGRhN2NiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNmZmQ2OWJlZmM2NzYzZjE1OGZmOGU2MjQ3MjBhYmExZWExZjQyOTVhOTg4NThkZmZiOTA1NzQ4OWNiNjAwYyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L169-L173",
+          "version": "repo-lines-v1:sha256:2c2eb1c61a1f04183eec91173f04d51366a3cf9fc577036c723335be10e3c0bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ5ZTA2NmNlNjEzYWZkYTE2NmM5Y2Q3ZjFkMTEzMTZjZDhjMmFkZWUwYmNjMGRhYWI0MDgyZGJkNGQ1ZTczYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZlZDkzOTU5MjNlNTdiYTk1MjBhYTE4MjkzNzY1YTUxZGU2YTk0Yjc5ODQ3MjgzOGVkOTY3Y2JlNDNmZmVkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ2NmIzZjhhMjM3NDBiNDgzZTgxMDczNTAyYTY4OTM3YzU0OGY4ZGQ3MTZkMjk0OGY1OTFkOTMwN2UwYmNiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQzMGM1OTYxOTNjMzFiOTY0MjRjYTE2OWQ3MzFlOGYxY2ZjYzI3NjUxOTU0ZGEwNDZmYzUwNDEyMjhmNDI5MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_603e81bcdcc34fb0a518fe544390badd",
+      "statement": "`ensureClientRedirectUris` in `frontend/mcm-app/src/bff-server/keycloak.ts` is the runtime counterpart to the committed redirect URIs: `GET /bff-api/auth/init` calls it on app mount with the complete list (web OAuth callback, verified-email redirect, the native `mcm-app://` login callback, the backup-consent callback, the account-deletion step-up callback, and that flow's own native scheme URI), and it authenticates as the BFF service account, reads the live `movie-collection-manager` client, and PUTs it back with `[...existing, ...missing]`. The write being ADDITIVE is the property under guard, and a module-level flag set only on a successful run makes the call one-shot per process; `tests/integration/backup-consent-redirect-uri.integration.test.ts` asserts against a real Keycloak that the pre-existing URIs survive a call, not merely that the new one appeared, because a list-replacing write would silently unregister every unnamed flow and surface only when someone hit that flow, at Keycloak, with nothing pointing back at the change.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L22-L46",
+          "version": "repo-lines-v1:sha256:c3fd05ed5914f7d91e57396bb3cda6e77a1844d1a10109999986712863157a41:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMjg0NTAxZTA0ZTcyY2ZmMWZkMDk3YTYyNTdiNjIwOGJiZDViNDZmYmZlYzk0OGYzZWYxNjk3ZWQ3M2JhNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNTllYzQ2OTM1NTlmM2M0Y2U5MzEwMDI1N2FlZDhlYjIyOTM5YmYyMWQ1N2FkZDIzYjMwYjAzZDIxZWIxNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2Y2UxYTU3MmYwN2NlYmJlYTU4ZDQ2OWRlMTdkZjRkMzg3NmUyNzE1OTRlYmIzZTRmMDI0ZTkzODFkMjc0N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L461-L516",
+          "version": "repo-lines-v1:sha256:7d431c3edca2085855666a9083e7a13f51f547ad9ee8fb733a5b02883ef94915:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNGYzZjlhNTBjOWU2ZWI4MzkzNzVlOTBmNzkwZWI5ZDJiYjczOTVmNDg2OGE0NDRiODQ2ZmU3MWNlMTM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YTVjMDkzNWUxYmM2OTVhYWNmZDJiYjk0ODkzM2IyMDczZDc5MTM4ZGIzNGU5OTAwNzdlOGJlM2Q1ODU2YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts#L1-L75",
+          "version": "repo-lines-v1:sha256:49f22b8b71c3fcb668d4767f066d8b641ecce94475e147426d43357f3c650068:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-13T00:05:43.068Z"
+    "at": "2026-10-13T01:33:44.700Z"
   }
 }

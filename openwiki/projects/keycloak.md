@@ -80,7 +80,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T00:05:43.068Z
+    at: 2026-10-13T01:33:44.700Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -353,6 +353,13 @@ all three layers: feature 028 dropped it from the compose port bind, and the sta
 variable that names no Keycloak option. Read the effective admin URL from `.env.prod` (the stack's
 `:19099` on this host), not from a historical comment.
 
+**Its sibling `TS_ADMIN_IP` is the counter-example, and the difference is the rule.** The
+`prod-observability` stack block in the same `stacks.toml` still receives `TS_ADMIN_IP`, even though
+feature 029 moved those admin binds to `0.0.0.0` so no compose file reads the IP any more — so that
+Komodo Variable has to stay until its last consumer line goes, while the one whose consumer *and*
+producer both went could be pruned. A stack `environment` key outlives the compose that read it;
+removing a variable on the strength of "the bind is gone" is what breaks the next deploy.
+
 **Both prod invariants are self-enforcing guardrails.** `scripts/check-prod-ci-port-collision.mjs` fails
 if any prod published port overlaps a CI/dev one — compared by port *number*, because a `0.0.0.0` prod
 bind collides with a CI bind on the same port regardless of the CI bind's host IP — and
@@ -397,9 +404,26 @@ elsewhere: the BFF's RFC 8693 mint 401s with `invalid_client`, the gateway then 
 subject token, `needs_token` tools short-circuit with "No caller identity", and the failure surfaces
 as an agent that answers from TMDB and cannot resolve the user's collection.
 
-**Client redirect URIs are part of the realm, not the app.** `add-container-redirect-uris.mjs` exists
-because the containerized BFF (dev `:8082`, prod-style TLS `:8443`) needs its callback and
-`login?verified=true` origins allowlisted on `movie-collection-manager`; without them Keycloak rejects
-the callback after login. The mobile deep link is the same kind of entry — `prod-realm.json` carries
-the custom-scheme callback alongside the public web origin — and its absence breaks on-device login
-only after the browser redirect.
+**Client redirect URIs are part of the realm, not the app — and two different mechanisms keep them
+there.** `add-container-redirect-uris.mjs` exists because the containerized BFF (dev `:8082`,
+prod-style TLS `:8443`) needs its callback and `login?verified=true` origins allowlisted on
+`movie-collection-manager`; without them Keycloak rejects the callback after login. The mobile deep
+link is the same kind of entry — `prod-realm.json` carries the custom-scheme callback alongside the
+public web origin — and its absence breaks on-device login only after the browser redirect.
+
+The runtime twin is `ensureClientRedirectUris` in `frontend/mcm-app/src/bff-server/keycloak.ts`, called
+from `GET /bff-api/auth/init` on app mount with the complete list — web OAuth callback, verified-email
+redirect, the native `mcm-app://` login callback, and the later additions: the backup-consent callback,
+the account-deletion step-up callback, and its own native scheme URI. It authenticates as the BFF
+service account, reads the live client, and PUTs back the client with `[...existing, ...missing]` —
+additive by construction, so it neither duplicates an entry nor needs the caller to know what is
+already registered. Its errors are swallowed (the operator adds the entry in the console instead), and
+a module-level flag makes it one-shot per process, set only on a successful run.
+
+That the write is *additive* rather than replacing is the property under guard, not an incidental
+detail: the moment the write became `redirectUris: <the list you passed>`, the first caller of the
+process would silently unregister every flow it did not name, and nothing would fail at deploy time —
+the app would keep working until somebody hit the flow whose URI went missing, at Keycloak, with
+nothing pointing back at the change. `tests/integration/backup-consent-redirect-uri.integration.test.ts`
+therefore asserts the pre-existing URIs survive a call, against a real Keycloak, rather than only that
+the new one appeared.
