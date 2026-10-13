@@ -23,10 +23,16 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-dc9c673c8dc973e1e621fa45
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-d58b64a5afcc9df80ea92152
+    resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-d637881fca08f33aeaf4b141
     resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
   - id: openwiki-source-b95aa0cad6a90f846312a9a6
     resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
+  - id: openwiki-source-b84c2ebda1fa9702c5fd6055
+    resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
   - id: openwiki-source-34854463fd23e29b106dcb63
     resource: repo://infrastructure-as-code/docker/keycloak/.env.prod.example
   - id: openwiki-source-60cf9a830f0ca275ffed94d7
@@ -51,6 +57,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/scripts/configure-token-exchange.mjs
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-79878dc2da65b6b5c71034f7
     resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
   - id: openwiki-source-f71a8c09fa1dfc3547dbcf23
@@ -77,10 +85,10 @@ sources:
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T01:33:44.700Z
+    at: 2026-10-13T10:46:04.907Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -354,11 +362,12 @@ variable that names no Keycloak option. Read the effective admin URL from `.env.
 `:19099` on this host), not from a historical comment.
 
 **Its sibling `TS_ADMIN_IP` is the counter-example, and the difference is the rule.** The
-`prod-observability` stack block in the same `stacks.toml` still receives `TS_ADMIN_IP`, even though
-feature 029 moved those admin binds to `0.0.0.0` so no compose file reads the IP any more — so that
-Komodo Variable has to stay until its last consumer line goes, while the one whose consumer *and*
-producer both went could be pruned. A stack `environment` key outlives the compose that read it;
-removing a variable on the strength of "the bind is gone" is what breaks the next deploy.
+`prod-observability` stack block in the same `stacks.toml` kept receiving `TS_ADMIN_IP` long after
+feature 028 moved those admin binds to `0.0.0.0`, so no compose file read the IP any more — the
+Komodo Variable had to stay seeded until its last consumer line went. That line finally went on
+2026-10-13 (item #727), so no stack or compose file reads `TS_ADMIN_IP` now and the Variable can be
+retired. A stack `environment` key outlives the compose that read it; removing a variable on the
+strength of "the bind is gone" is what breaks the next deploy.
 
 **Both prod invariants are self-enforcing guardrails.** `scripts/check-prod-ci-port-collision.mjs` fails
 if any prod published port overlaps a CI/dev one — compared by port *number*, because a `0.0.0.0` prod

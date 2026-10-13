@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b63ad0ae373d7dafc2e32f9d30c413e7388e4f045c7a41198f9e734d3df25b12",
+  "pageVersion": "sha256:fb443e10d63c40d76bb7f81d3703ee61802913be4046ca60dc4bdcdb614450e9",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -316,7 +316,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L96-L98",
-          "version": "repo-lines-v1:sha256:26dbaf807e37f3864f7f1a2eaeed4f8874de725e0efca92b4992c9fd47819761:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+          "version": "repo-lines-v1:sha256:2883c24f9b05328907dcfbd0d13dd6fcf6c95150bd9f640ab1ff3b8cef3f505e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
@@ -600,7 +600,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L98-L98",
-          "version": "repo-lines-v1:sha256:8b5ab4e1c46b9e2ece4a76630e9574ef33f2d1fc11d84b2ccfc255639de50758:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+          "version": "repo-lines-v1:sha256:25010e416df6366df3bf6e96792aa88a14f91e17bb36ffc89adef8bf364b39f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
@@ -618,19 +618,19 @@
     },
     {
       "id": "claim_b6afdfba0643412bbc7923df4f216bcb",
-      "statement": "The retired bind-prefix variable and its sibling `TS_ADMIN_IP` are the two halves of one operational rule: a Komodo stack `environment` key can outlive the compose that read it. `KC_ADMIN_BIND_IP` was prunable because both its consumer (feature 028's compose bind) and its producer (the `prod-auth` block in `infrastructure-as-code/komodo/stacks.toml`, which stopped passing it on 2026-10-12, item #727) went away, whereas `TS_ADMIN_IP` is still passed by the `prod-observability` block even though feature 029 moved those admin binds to `0.0.0.0` and no compose file reads the IP any more — so that Komodo Variable must stay until its last consumer line goes, and removing a variable on the strength of \"the bind is gone\" is what breaks the next deploy.",
+      "statement": "The two retired bind-prefix variables are the two halves of one operational rule: a Komodo stack `environment` key can outlive the compose that read it. `KC_ADMIN_BIND_IP` was prunable because both its consumer (feature 028's compose port bind) and its producer (the `prod-auth` block in `infrastructure-as-code/komodo/stacks.toml`, which stopped passing it on 2026-10-12, item #727) went away, and `TS_ADMIN_IP` followed the same path one day later: no compose file had read it since feature 028 made the operator-UI binds `0.0.0.0`, and the `prod-observability` block stopped passing it on 2026-10-13 (item #727), so no stack or compose file reads it now and the Komodo Variable can be retired. The durable lesson is that removing a variable on the strength of \"the bind is gone\" is what breaks the next deploy — the stack `environment` line has to go first, and until it does the Variable must stay seeded even though nothing reads it.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L98-L98",
-          "version": "repo-lines-v1:sha256:8b5ab4e1c46b9e2ece4a76630e9574ef33f2d1fc11d84b2ccfc255639de50758:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI1YWI0ZTFjNDZiOWUyZWNlNGE3NjYzMGU5NTc0ZWYzM2YyZDFmYzExZDg0YjJjY2ZjMjU1NjM5ZGU1MDc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+          "version": "repo-lines-v1:sha256:25010e416df6366df3bf6e96792aa88a14f91e17bb36ffc89adef8bf364b39f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L11-L18",
-          "version": "repo-lines-v1:sha256:c58a3d7ef42903f7aba805971b4a61e0cf42f26aae9843bc82cdec199c24101f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZiMWNhZGFiMGFlOGQ0ZDY4YjE0Yjk3YmU3MzhkNmMxZTZlNWQ1NzViM2NjZGIwMTEyNzg4MTIyZjE5N2Q4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxMjBiOGViOWRjZTQyZTNmNGVhZDBmMzI5YmFiZjJkNmM3MjljMDY4YWZkZjIyZTM0YTM5NGY0OTQ2MDJlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc5YTMyMmU2NjY4NGI5Mzg2YjMwMzY2Nzk5ZGE0M2NjY2Q2M2I5YWEwZDk0MzIwYTljZWNkM2RmZGRhN2NiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNmZmQ2OWJlZmM2NzYzZjE1OGZmOGU2MjQ3MjBhYmExZWExZjQyOTVhOTg4NThkZmZiOTA1NzQ4OWNiNjAwYyJ9"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L9-L19",
+          "version": "repo-lines-v1:sha256:dd9ad051d7a73a7bf00dc547a71d21ad32b4cd3b9d105f10a2eadcafee295523:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMzUzZDc5Nzc2ZWZlNTQwMGIyODdkMTI4OTcwNmM4ZWY4YWFlZDBmNmQ4NjMwNThlNjNkZTNjNmRhMTVlZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1M2E5NmYzNDMxNmU0MWZhMjYyZmViOGNhYTM0ZWM5MWJmNDQzODgzZGQ4MDY4ZTUyMGEwOWQ0YzZlN2NjZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4OTQ5ZGIyOWFjYTY3MTBiMmM0ZWJlMWZhNzNhNzI1NjY0YTJlMDExNjBkMjRjMDgzNTI4M2U3NTZhODZiMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNTVmYjdiZWE2OWU0NzY4OGY2YzcxMWEwMzIyMjk3MDZmMWM3NDJkODhiYjM4YTUzZDM5MzdiYWUxMmNiYjgifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L169-L173",
-          "version": "repo-lines-v1:sha256:2c2eb1c61a1f04183eec91173f04d51366a3cf9fc577036c723335be10e3c0bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ5ZTA2NmNlNjEzYWZkYTE2NmM5Y2Q3ZjFkMTEzMTZjZDhjMmFkZWUwYmNjMGRhYWI0MDgyZGJkNGQ1ZTczYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZlZDkzOTU5MjNlNTdiYTk1MjBhYTE4MjkzNzY1YTUxZGU2YTk0Yjc5ODQ3MjgzOGVkOTY3Y2JlNDNmZmVkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ2NmIzZjhhMjM3NDBiNDgzZTgxMDczNTAyYTY4OTM3YzU0OGY4ZGQ3MTZkMjk0OGY1OTFkOTMwN2UwYmNiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQzMGM1OTYxOTNjMzFiOTY0MjRjYTE2OWQ3MzFlOGYxY2ZjYzI3NjUxOTU0ZGEwNDZmYzUwNDEyMjhmNDI5MyJ9"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L154-L173",
+          "version": "repo-lines-v1:sha256:108f173c1930fb3469cfd037cdb4cb3b1e39fad755cc452ebff0992de2c2a566:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Mjk4ZjZjYTc3NzZlYTdjODUxNzFiYzVhY2IyY2E4NzZiODc5YTBkZmI2ZTI4NjAwN2NhZmVjNGQ1OWI3M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2YWVkNDZhNzZjMzZhMmMyODA4MWY4NzRkZWYxMjZlMWMxN2EyMDk3MTRjMDY1ZTFiYzE0N2I1YTFkZjdmZTcifQ"
         }
       ]
     },
@@ -640,7 +640,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L22-L46",
-          "version": "repo-lines-v1:sha256:c3fd05ed5914f7d91e57396bb3cda6e77a1844d1a10109999986712863157a41:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMjg0NTAxZTA0ZTcyY2ZmMWZkMDk3YTYyNTdiNjIwOGJiZDViNDZmYmZlYzk0OGYzZWYxNjk3ZWQ3M2JhNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNTllYzQ2OTM1NTlmM2M0Y2U5MzEwMDI1N2FlZDhlYjIyOTM5YmYyMWQ1N2FkZDIzYjMwYjAzZDIxZWIxNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2Y2UxYTU3MmYwN2NlYmJlYTU4ZDQ2OWRlMTdkZjRkMzg3NmUyNzE1OTRlYmIzZTRmMDI0ZTkzODFkMjc0N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "version": "repo-lines-v1:sha256:1ff1ae44fb241b61d0178de975d60860d93c58a6ab62be25ee0831474980b3ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMjg0NTAxZTA0ZTcyY2ZmMWZkMDk3YTYyNTdiNjIwOGJiZDViNDZmYmZlYzk0OGYzZWYxNjk3ZWQ3M2JhNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNTllYzQ2OTM1NTlmM2M0Y2U5MzEwMDI1N2FlZDhlYjIyOTM5YmYyMWQ1N2FkZDIzYjMwYjAzZDIxZWIxNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2Y2UxYTU3MmYwN2NlYmJlYTU4ZDQ2OWRlMTdkZjRkMzg3NmUyNzE1OTRlYmIzZTRmMDI0ZTkzODFkMjc0N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L461-L516",
@@ -655,6 +655,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-13T01:33:44.700Z"
+    "at": "2026-10-13T10:46:04.907Z"
   }
 }

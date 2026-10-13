@@ -6,7 +6,7 @@ resource: docs/decisions/ADR-0001-prod-secrets-management.md
 tags: [adr, secrets, komodo, vault, decision-record, security]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T00:05:43.068Z
+    at: 2026-10-13T10:46:04.907Z
 sources:
   - id: openwiki-source-bff475d8fa855e3592cfedc2
     resource: repo://.specify/memory/constitution.md
@@ -24,7 +24,7 @@ sources:
     resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-2c24e272c750d36f7963e28d
     resource: repo://specs/026-prod-data-auth-vault/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
 ---
 
 # ADR-0001: Production secrets-management standard
@@ -60,12 +60,14 @@ The seven core prod stacks are `[[stack]]` blocks in
 [`infrastructure-as-code/komodo/stacks.toml`](../../infrastructure-as-code/komodo/stacks.toml):
 `prod-auth`, `prod-mc-service`, `prod-mcm-bff`, `prod-movie-assistant`, `prod-audit`,
 `prod-observability` and `prod-vault`. All seven declare `env_file_path = ".env.prod"`; six of them
-also carry an `environment = """…"""` block whose values are `[[Variable]]` tokens, so the committed
-file holds no value and the deploy-time interpolation *is* the mechanism. `prod-vault` is the one
-stack with no `environment` block at all — it holds no secret to interpolate. Non-secret operational
-values — bare image digests in the committed `.env.deploy`, and topology values, which are also
-`[[Variable]]` tokens rather than inline literals — travel by their own channels and sit outside the
-ADR's coverage map.
+also carry an `environment = """…"""` block in which every secret-bearing value is a masked
+`[[Variable]]` token, so the committed file holds no secret and the deploy-time interpolation *is* the
+mechanism. `prod-auth` is the only block that also carries a non-secret literal
+(`PROD_REALM_FILE=/home/prod/keycloak/prod-realm.rendered.json`). `prod-vault` is the one stack with
+no `environment` block at all — it holds no secret to interpolate. Non-secret operational values —
+bare image digests in the committed `.env.deploy`, and topology values, which are also `[[Variable]]`
+tokens rather than inline literals — travel by their own channels and sit outside the ADR's coverage
+map.
 
 The coupling that makes this safe to change: Komodo writes a stack's `environment` block into that
 stack's `env_file_path`, so a variable absent from the block is absent at `docker compose config`
