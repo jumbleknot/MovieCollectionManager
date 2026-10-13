@@ -15,8 +15,8 @@
 #
 # Secrets: every credential is fail-fast ${VAR:?}; real values are masked Komodo Variables written to
 # the gitignored .env.prod. No inline literal, no ${VAR:-literal} default. TAILNET_HOST is an existing
-# prod-auth Variable (topology, not a secret) reused below; TS_ADMIN_IP is no longer used for the binds
-# (feature 028) and may be retired as a Variable.
+# prod-auth Variable (topology, not a secret) reused below. TS_ADMIN_IP is no longer used for the binds
+# (feature 028), and komodo/stacks.toml stopped passing it on 2026-10-13 (item #727).
 #
 # Note on vendor image tags: the pinned-in-plan images carry explicit tags; the vendor-bundle tools
 # (otel-lgtm, opa, unleash, minio/mc) mirror the dev-proven tags — digest-pin them on the host once

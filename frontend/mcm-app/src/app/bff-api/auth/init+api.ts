@@ -20,9 +20,9 @@ export async function GET(_req: Request): Promise<Response> {
 }
 
 async function _get(): Promise<Response> {
-  // ALL SIX, every time. This function replaces the list it is given, so dropping one of the
-  // others here is how this goes wrong — the app would keep working until someone hit
-  // the flow whose URI went missing.
+  // ALL SIX, every time. The write only ADDS what is missing from the client's registration
+  // (keycloak.ts), so a URI left out of this list is never registered by this path — on a fresh
+  // realm the app would keep working until someone hit the flow whose URI went missing.
   await ensureClientRedirectUris([
     `${BASE_URL}/auth-callback`,        // web OAuth PKCE callback
     `${BASE_URL}/login?verified=true`,  // email verification redirect

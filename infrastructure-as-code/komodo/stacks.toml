@@ -166,11 +166,10 @@ LANGFUSE_INIT_USER_PASSWORD=[[LANGFUSE_INIT_USER_PASSWORD]]
 UNLEASH_PG_PASSWORD=[[UNLEASH_PG_PASSWORD]]
 UNLEASH_ADMIN_TOKEN=[[UNLEASH_ADMIN_TOKEN]]
 UNLEASH_CLIENT_TOKEN=[[UNLEASH_CLIENT_TOKEN]]
-TS_ADMIN_IP=[[TS_ADMIN_IP]]
 TAILNET_HOST=[[TAILNET_HOST]]
 """
-# ↑ TS_ADMIN_IP + TAILNET_HOST are EXISTING prod-auth Variables reused for the R10 tailnet operator-UI
-#   binds (LangFuse :3030, Grafana :3002) — nothing new to seed. The 13 LangFuse/Unleash Variables ARE new.
+# ↑ TAILNET_HOST is an EXISTING prod-auth Variable, reused for LangFuse's NEXTAUTH_URL on the tailnet
+#   (:19030) — nothing new to seed. The 13 LangFuse/Unleash Variables ARE new.
 
 [[stack]]
 name = "prod-vault"                              # US3 — dormant, prod-shaped Vault (uninitialized + sealed)
