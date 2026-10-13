@@ -1,53 +1,12 @@
 ---
 type: Architecture
 title: Infrastructure-as-code stacks (local Compose + production Komodo)
-description: How the four independently operable local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, and the ordering, interpolation and topology rules that keep them from colliding or drifting.
+description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, and the deploy ordering, interpolation/env_file contract and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
-sources:
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-f98f56169006fd5a5bdf85b9
-    resource: repo://backend/mc-service/tests/integration/health_test.rs
-  - id: openwiki-source-318b395038e1943bc8a10f72
-    resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
-  - id: openwiki-source-23175e1d10427daa3344d3ec
-    resource: repo://docs/runbooks/prod-control-tower.md
-  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
-    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
-  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
-    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
-  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-449c6b41a5fd5507e7bdc831
-    resource: repo://infrastructure-as-code/docker/spreadsheet-mcp/compose.yaml
-  - id: openwiki-source-18dcf2373667222e1bc520c1
-    resource: repo://infrastructure-as-code/docker/stacks/audit.compose.yaml
-  - id: openwiki-source-79878dc2da65b6b5c71034f7
-    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
-  - id: openwiki-source-164936b930a31e48cf0a65fc
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
-  - id: openwiki-source-803bcd8d160132605ee08429
-    resource: repo://infrastructure-as-code/docker/stacks/observability.compose.yaml
-  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
-    resource: repo://infrastructure-as-code/docker/stacks/README.md
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
-    resource: repo://infrastructure-as-code/project.json
-  - id: openwiki-source-a6996cae4bd83db81e823602
-    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
-  - id: openwiki-source-7ed01c27b7f22a2815bd5d15
-    resource: repo://scripts/check-komodo-sync.mjs
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-b182ec4cb28667debd4684ff
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T20:12:19.419Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-13T01:33:44.700Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -76,15 +35,22 @@ project bundling everything behind profiles. Lifecycle goes through the Nx targe
 `infrastructure-as-code/project.json` — `up-auth`, `up-mcm`, `up-mcm-agents`, `up-audit`,
 `up-observability`, `up-all`, and their `down-*` counterparts — which wrap the `docker compose -p
 <stack>` invocation and that stack's `.env` file, rather than raw `docker compose` by convention.
-`up-all` runs auth then mcm, serially, in that order. The agent layer has two distinct bring-up paths:
-`up-mcm-agents` (the heavy in-stack `--profile agents` variant) and `up-agents-prod`
-(`scripts/agent-stack.mjs`, the light containerized production-node stack used for local agent E2E).
+`up-all` runs auth then mcm, serially, in that order. `up-auth` applies the shared keycloak compose
+plus the `keycloak/compose.dev.yaml` overlay as a second `-f`, which is what imports the `grumpyrobot`
+realm on a fresh volume. Each `down-*` target names **every** profile it might have brought up (all
+five for `mcm`, `vault` for `auth`), so a teardown actually removes the profile-gated containers — a
+`down` target that omits a profile silently leaves those containers running.
 
-Every credential in every stack is a fail-fast `${VAR:?…}` interpolation reference. The values live in
-gitignored per-stack `<stack>.env` files minted from the committed `<stack>.env.example` templates by
-`node scripts/gen-dev-secrets.mjs`; the stack's `include` uses the long syntax with an `env_file:` pin
-so that file is the interpolation source for the included component files (feature 021). Full template
-table, generation kinds, rotation and fail-fast behaviour:
+The agent layer has two distinct bring-up paths: `up-mcm-agents` (the heavy in-stack `--profile agents`
+variant) and `up-agents-prod` (`scripts/agent-stack.mjs`, the light containerized production-node stack
+used for local agent E2E).
+
+Every dev-stack secret is a fail-fast `${VAR:?…}` interpolation reference (the agent layer keeps a
+couple of deliberately optional `${VAR:-}` keys so it can come up without token exchange). The values
+live in gitignored per-stack `<stack>.env` files minted from the committed `<stack>.env.example`
+templates by `node scripts/gen-dev-secrets.mjs`; the stack's `include` uses the long syntax with an
+`env_file:` pin so that file is the interpolation source for the included component files (feature
+021). Full template table, generation kinds, rotation and fail-fast behaviour:
 [stacks README](../../infrastructure-as-code/docker/stacks/README.md).
 
 Since feature 039 the per-service `profiles:` assignments live **in each included component file**, not
@@ -134,6 +100,43 @@ time. Nothing host-shaped or secret-shaped is committed: the git host lives in a
 bootstrapped Komodo `Repo` resource referenced by name, and the domain, tailnet admin address and
 registry host are Variables.
 
+The `environment` block is the stack's **declared input list**, and it is the only place those inputs
+are declared:
+
+- **`prod-auth`** (`docker/keycloak`) — `BASE_DOMAIN`, `KC_HOSTNAME_ADMIN`,
+  `KC_BOOTSTRAP_ADMIN_PASSWORD`, `KC_DB_PASSWORD`, `PROD_REALM_FILE`. No `additional_env_files`.
+- **`prod-mc-service`** (`docker/mc-service`) — `REGISTRY_HOST`, `MONGO_MC_APP_PASSWORD`,
+  `MONGO_MC_KEYFILE`; plus `.env.deploy`.
+- **`prod-mcm-bff`** (`docker/bff`) — `BASE_DOMAIN`, `REGISTRY_HOST`, `KEYCLOAK_CLIENT_SECRET`,
+  `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET`, `AGENT_CONFIG_ENC_KEY`,
+  `AGENT_SUBJECT_TOKEN_CLIENT_SECRET`, `OPENSEARCH_PASSWORD`, `MONGO_BFF_APP_PASSWORD`; plus
+  `.env.deploy`.
+- **`prod-movie-assistant`** (`docker/agents`) — `REGISTRY_HOST`, `AGENT_DB_PASSWORD`,
+  `AGENT_GATEWAY_CLIENT_SECRET`, `OPENSEARCH_PASSWORD`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`,
+  `UNLEASH_API_TOKEN`; plus `.env.deploy`.
+- **`prod-audit`** (`docker/opensearch`) — `OPENSEARCH_INITIAL_ADMIN_PASSWORD`,
+  `OPENSEARCH_AUDIT_WRITER_PASSWORD`. No `additional_env_files`.
+- **`prod-observability`** (`docker/observability`) — `REGISTRY_HOST`, thirteen LangFuse/Unleash secret
+  tokens (`LANGFUSE_SALT`, `LANGFUSE_ENCRYPTION_KEY`, `LANGFUSE_NEXTAUTH_SECRET`,
+  `LANGFUSE_PG_PASSWORD`, `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`,
+  `LANGFUSE_MINIO_ROOT_PASSWORD`, `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`,
+  `LANGFUSE_INIT_PROJECT_SECRET_KEY`, `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`,
+  `UNLEASH_ADMIN_TOKEN`, `UNLEASH_CLIENT_TOKEN`), and the topology pair `TS_ADMIN_IP` + `TAILNET_HOST`.
+  No `additional_env_files`.
+- **`prod-vault`** (`docker/vault`) — **no `environment` block at all**: a dormant Vault has no root
+  token to inject.
+
+Because the list is the contract, an entry can outlive the compose that read it. `KC_ADMIN_BIND_IP` was
+only ever the bind *prefix*; feature 028 dropped it from the keycloak compose bind and `stacks.toml`
+stopped passing it to `prod-auth` afterwards — until then Komodo wrote it into `.env.prod`, which the
+keycloak compose loads with `env_file:`, so it reached the container as a `KC_*` variable naming no
+Keycloak option (harmless, but a reminder that removing the consumer does not remove the input). The
+mirror case is live today: `prod-observability` still receives `TS_ADMIN_IP` although no compose bind
+reads it any more, so the Komodo Variable has to stay until that line goes. The admin *URL* is a
+separate, live var (`KC_HOSTNAME_ADMIN`) and is the one a port move must keep in sync. See
+[prod reboot resilience](../../docs/runbooks/prod-reboot-resilience.md) for the full retired-variable
+record.
+
 Image digests are not in the TOML either. A tracked, host-free `.env.deploy` beside each component's
 prod compose carries the bare `<SVC>_DIGEST` value per service and is passed as
 `additional_env_files` — last, so the digest interpolates from git while `REGISTRY_HOST` and the
@@ -163,6 +166,14 @@ secrets interpolate from `.env.prod`. The compose assembles the pull reference a
   coupling mechanical: every required variable in a stack's prod compose files must be supplied by that
   stack's `environment` block or its `additional_env_files`. (This is exactly how `prod-observability`
   broke once `REGISTRY_HOST` reached a fourth consumer.)
+- **A stack's `environment` key can outlive the compose line that read it, and the Komodo Variable must
+  stay until its last consumer goes.** The guard above only checks one direction (every `${VAR:?}` has a
+  supplier); nothing detects a supplied variable nobody reads. `KC_ADMIN_BIND_IP` sat in `prod-auth`'s
+  block after the bind stopped using it and was only dropped later; `TS_ADMIN_IP` is still passed to
+  `prod-observability` with no compose bind reading it, so retiring the Variable early would be a
+  silent config edit rather than a cleanup. See
+  [Published-port reservation](../invariants/published-port-reservation.md) for how this interacts with
+  the port-move rule.
 - **The committed `stacks.toml` never carries a real host, domain, or IP.** The git-provider host lives
   in the bootstrapped Komodo `Repo` resource referenced by name (`linked_repo = "mcm-repo"`); the
   production domain, tailnet admin address, and registry host are Komodo *Variables*, interpolated at
@@ -180,7 +191,10 @@ secrets interpolate from `.env.prod`. The compose assembles the pull reference a
 - **All four core live production stacks were adopted in place, not created fresh.** The ResourceSync
   reconciles against already-running containers with matching names — a rename or restructuring here is
   a config *diff* against a live system, not a from-scratch stand-up; preview the diff before applying.
-  See [Phase 15 operator checklist](../runbooks/phase-15-operator-checklist.md) for the manual
+  A rename is worse than a diff: Komodo sets the Compose project name from the Komodo **Stack** name,
+  overriding the compose `name:` field, so `prod-app → prod-mcm-bff` needed a manual down-then-deploy
+  cutover rather than an edit. See
+  [Phase 15 operator checklist](../runbooks/phase-15-operator-checklist.md) for the manual
   consolidation that got the stacks to this ResourceSync-managed state.
 - **Every prod admin/UI port lives in the reserved range `19000–19099`, and moving one requires updating
   its own self-referencing URL variable too.** `scripts/check-prod-ci-port-collision.mjs` compares the
@@ -204,5 +218,6 @@ secrets interpolate from `.env.prod`. The compose assembles the pull reference a
 
 See [Homelab server setup](../runbooks/server-setup.md) for how the underlying host and its two
 segregated rootless Docker daemons were provisioned, [Prod control tower](../runbooks/prod-control-tower.md)
-for the three support stacks, and `docs/MCM-Architecture.md`'s "Docker Infrastructure" section for the
-full per-stack service/profile table and local bring-up commands.
+for the three support stacks, [Local dev](../runbooks/local-dev.md) for the local bring-up loop, and
+`docs/MCM-Architecture.md`'s "Docker Infrastructure" section for the full per-stack service/profile
+table and local bring-up commands.

@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7c460654d08701b8e92ee6c82248a758d60dc1af52d96749136b211492c39c1d",
+  "claims": [
+    {
+      "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
+      "statement": "infrastructure-as-code/ defines each local environment as one of four named Docker Compose stacks (auth, mcm, audit, observability), each its own Compose project whose aggregator file is an include:-only list of that stack's per-service compose files, and each brought up through an Nx target that pins the project name, the aggregator file and the stack's gitignored .env rather than a bare docker compose invocation.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml",
+          "version": "repo-file-v1:sha256:86d0fa050123c38d0fbee3c9caccf824cce48cddf0df2c722e56353fcd3dea67"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
+          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json",
+          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+        }
+      ]
+    },
+    {
+      "id": "claim_042a0e0fc02e412687a91b0e74356f6e",
+      "statement": "The local stack lifecycle targets encode manual ordering and a complete teardown: up-all runs auth then mcm serially (parallel: false), and each down-* target names every profile that stack might have been brought up with (all five for mcm, vault for auth) so profile-gated containers are actually removed.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/project.json",
+          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+        }
+      ]
+    },
+    {
+      "id": "claim_27cb955a6b9e46529e22daf03ff06193",
+      "statement": "Per-service profiles: assignments live inside the included component compose files rather than being re-declared in the stack aggregator, which removes the include-override merge that only newer Docker Compose accepted and lets the stack parse on any conformant Compose.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
+          "version": "repo-file-v1:sha256:a5fe862e349bde9a17861ee7702e056ec14693a7e42f32b238a273cf9fe1b5b0"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
+          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.yaml",
+          "version": "repo-file-v1:sha256:a4e793e68d6d2826bff95926244d759fab0b9380ab5d90c63c7205f54d0618f6"
+        }
+      ]
+    },
+    {
+      "id": "claim_da870c75175745458bc8b2d8134b2213",
+      "statement": "stacks.toml declares seven deploy=true [[stack]] blocks whose after= edges form the production deploy order: prod-auth is the root, prod-mc-service waits on it, prod-mcm-bff waits on prod-mc-service, prod-movie-assistant waits on prod-mcm-bff, prod-vault waits on prod-auth, prod-observability waits on prod-mcm-bff for ordering only, and prod-audit is an independent root.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        }
+      ]
+    },
+    {
+      "id": "claim_60f379643eb9475cb68122ceea12673b",
+      "statement": "Each production stack's environment block is the only declaration of that stack's required inputs: Komodo writes it into the stack's env_file_path (.env.prod), and the three CI-built stacks (prod-mc-service, prod-mcm-bff, prod-movie-assistant) additionally receive their committed host-free .env.deploy as additional_env_files, while prod-auth, prod-audit and prod-observability take none.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        }
+      ]
+    },
+    {
+      "id": "claim_ac82dec80c49450899e9df0a2e9005aa",
+      "statement": "scripts/__tests__/komodo-stack-env.guard.test.mjs makes the stacks.toml-to-prod-compose coupling mechanical and one-directional: it requires every ${VAR:?...} in a stack's compose files to be supplied by that stack's environment block or additional_env_files, but it cannot detect an environment key that no compose reads.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs",
+          "version": "repo-file-v1:sha256:00bb396bdf192813bf78907e5ec3c3dc3ee71a13ca3bc785c444c22ac5f443ee"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd3c1cc5e3e34ec09cf53b8f580e9074",
+      "statement": "A stack environment key can outlive its consumer: prod-auth no longer passes the retired bind-prefix variable KC_ADMIN_BIND_IP, while prod-observability still receives TS_ADMIN_IP even though no compose bind reads it, so that Komodo Variable must stay until the stacks.toml line is removed.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
+          "version": "repo-file-v1:sha256:40d26311917acf90b5351c3b9fad81db0aaea6411ec56dc06fefd9583eb1d953"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:5521f7aa44f885f2df5f76b1ecaa26a75e41cf3693b3b569db9c50fb01a408bc"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        }
+      ]
+    },
+    {
+      "id": "claim_23981ea51c5e4c5e93e212aa229b525c",
+      "statement": "The committed Komodo config is host-free by construction: the git host lives in a separately bootstrapped Repo resource referenced by name and the domain/tailnet/registry values are masked [[NAME]] Variables, with scripts/check-komodo-sync.mjs failing on a *.ts.net host, a Tailscale CGNAT address or a non-[[var]] URL authority in infrastructure-as-code/komodo/**/*.toml (comments included), and scripts/check-topology-scrub.mjs covering real tailnet hosts elsewhere in the tree.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        },
+        {
+          "resource": "repo://scripts/check-komodo-sync.mjs",
+          "version": "repo-file-v1:sha256:fcc16e01476904162d68839214cfbeb4ec0e732a4add508478028076ade391f2"
+        },
+        {
+          "resource": "repo://scripts/check-topology-scrub.mjs",
+          "version": "repo-file-v1:sha256:0432b29ae1727640410510bae92dfb4c4f1a83e75db146f0070912fa99d7dc28"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c56a12d61dc499ebe5874e126f953b4",
+      "statement": "Image digests are deliberately outside stacks.toml: cd-deploy promotes each built image's immutable digest into a tracked, host-free .env.deploy beside the component compose, which the stack receives as additional_env_files (passed last so the digest interpolates from git), and the compose assembles ${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml",
+          "version": "repo-file-v1:sha256:e7d02aaaf8d9ec1b70e04831fa5e61be38f38e4873337bea8a8c111ad38e42f0"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        }
+      ]
+    },
+    {
+      "id": "claim_b78142b60121461986a05cb04889e2d9",
+      "statement": "The ResourceSync adopts the four live core production stacks in place rather than creating them, because their Komodo Stack names already match the TOML; a rename is not a plain config diff, since Komodo sets the Compose project name from the Stack name and overrides the compose name: field.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md",
+          "version": "repo-file-v1:sha256:92d366c231c357bc27d11b1b2bb8ad2d4bba17f205e4c011f146199ff697023b"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        }
+      ]
+    },
+    {
+      "id": "claim_48ec71903fbf4203895e2be82b43aa57",
+      "statement": "Production admin/UI publishes must sit in the reserved host-port range 19000-19099, enforced by scripts/check-prod-ci-port-collision.mjs, which compares the fixed host port numbers of every compose.prod.yaml against every other tracked compose file (host_ip ignored) because the prod and CI rootless daemons publish into one shared host port space.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:0a124147dc3b4088c296242b4033762c9c44bbe492309d24d3acfa88e3dcc708"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs",
+          "version": "repo-file-v1:sha256:40006e27eec40864087b5343050b4435f0fd4aa857d3aac8663e2cbcd853c771"
+        }
+      ]
+    },
+    {
+      "id": "claim_f736758a71184770bf66cbf037313004",
+      "statement": "Every long-running service in a compose.prod.yaml must declare restart: always: scripts/check-prod-restart-policy.mjs forbids unless-stopped and a missing policy outright and permits restart: no / on-failure only for one-shot init/seed containers, because the host's graceful-shutdown drain stops containers to Exited(0) and unless-stopped then declines to bring them back when the daemon starts.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
+          "version": "repo-file-v1:sha256:40d26311917acf90b5351c3b9fad81db0aaea6411ec56dc06fefd9583eb1d953"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs",
+          "version": "repo-file-v1:sha256:c6367ac6f4c51643d17a3e9f4fecad592e4ce1f058b69051f01e15131a9c8a72"
+        }
+      ]
+    },
+    {
+      "id": "claim_7af134fd24df41eebc9efaa49b587429",
+      "statement": "prod-vault is deployed deliberately dormant: its prod compose runs a real Vault server (not -dev) with a healthcheck override that reports healthy while uninitialized and sealed, and the stack carries no environment block because a dormant Vault has no root token to inject.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:4872f1f01fee081c83099b185dd5488d676b3c9ad974c8654a73c54b37d53751"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        }
+      ]
+    },
+    {
+      "id": "claim_50c2dcafe27b47658c179908a88725a0",
+      "statement": "The no-cross-project-depends_on rule between local stacks fails as a working-looking 401 rather than a crash: mc-service serves /health while Keycloak is unreachable and still rejects every protected request, behaviour pinned by unauthenticated_401_is_returned_even_when_keycloak_is_unreachable in backend/mc-service/tests/integration/health_test.rs.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/health_test.rs",
+          "version": "repo-file-v1:sha256:be20f10a301853e95bbf9dc7bdf11fb8332785a666663cba906df31dc204d318"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
+          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+        }
+      ]
+    },
+    {
+      "id": "claim_e980447e51aa4ff585b01a628eaaf9ff",
+      "statement": "A Compose profile is not isolation from interpolation: Compose interpolates every service in an included file at parse time regardless of which profiles are selected, which is why the backup destination services live in their own compose file brought up explicitly rather than as another mcm profile.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
+          "version": "repo-file-v1:sha256:d47a078cc804b69fa963b7b225f164751a52e8b681474c3f54934db7b7442eb3"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
+          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+        }
+      ]
+    },
+    {
+      "id": "claim_e72ac8ee489949f4ac7d6e0d1c96ccbd",
+      "statement": "Both production operator UIs bind 0.0.0.0 on prod-reserved ports (LangFuse 19030, Grafana/otel-lgtm 19002) rather than the tailnet IP, because the rootless daemon starts before tailscaled and a tailnet-IP-scoped publish silently fails to bind; tailnet-only exposure is preserved by the host firewall default-deny.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:09aa1a47bb3053ea6a899513ea67e6cac60263162a340512eac889f5eca9464d"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:5521f7aa44f885f2df5f76b1ecaa26a75e41cf3693b3b569db9c50fb01a408bc"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7280cd3ae334b88979c2aaa76344ea9",
+      "statement": "Dev stack credentials are fail-fast ${VAR:?} references whose real values live in gitignored per-stack <stack>.env files minted from committed .env.example templates, with each stack's include: long syntax pinning that file as the interpolation source for its included component files.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
+          "version": "repo-file-v1:sha256:9ff678e2ac6285f90764ba3d0928ac074a5d62f4425d386c7bb6460fef7f77d3"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml",
+          "version": "repo-file-v1:sha256:86d0fa050123c38d0fbee3c9caccf824cce48cddf0df2c722e56353fcd3dea67"
+        }
+      ]
+    },
+    {
+      "id": "claim_554a32bdd4844d4da2fad3f937ea1ab0",
+      "statement": "The local agent layer has two distinct bring-up paths: up-mcm-agents runs the heavy in-stack agents profile, while up-agents-prod runs scripts/agent-stack.mjs, the light containerized production-node stack used for local agent E2E.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/project.json",
+          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+        },
+        {
+          "resource": "repo://scripts/agent-stack.mjs",
+          "version": "repo-file-v1:sha256:fe4602fa55cdfe9d580771f061c16f109ba5cf6ef5489796be1e726f26cd519e"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-13T01:33:44.700Z"
+  }
+}
