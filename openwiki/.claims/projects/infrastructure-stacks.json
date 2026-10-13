@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7c460654d08701b8e92ee6c82248a758d60dc1af52d96749136b211492c39c1d",
+  "pageVersion": "sha256:6a5774e2df38dacdf521027bd263d6b0de942384362c734b42603b22407804d4",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
         }
       ]
     },
@@ -64,7 +64,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
         }
       ]
     },
@@ -80,19 +80,19 @@
     },
     {
       "id": "claim_cd3c1cc5e3e34ec09cf53b8f580e9074",
-      "statement": "A stack environment key can outlive its consumer: prod-auth no longer passes the retired bind-prefix variable KC_ADMIN_BIND_IP, while prod-observability still receives TS_ADMIN_IP even though no compose bind reads it, so that Komodo Variable must stay until the stacks.toml line is removed.",
+      "statement": "A stack environment key can outlive its consumer, and both prod bind-prefix variables have now run that course to completion: prod-auth stopped passing KC_ADMIN_BIND_IP on 2026-10-12 (feature 028 dropped it from the keycloak compose bind), and prod-observability stopped passing TS_ADMIN_IP on 2026-10-13 (feature 028 made the two operator-UI binds 0.0.0.0), so no stack or compose file reads either name and both Komodo Variables can be retired — leaving one seeded only costs dead config, since the admin URL uses the separate KC_HOSTNAME_ADMIN.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
-          "version": "repo-file-v1:sha256:40d26311917acf90b5351c3b9fad81db0aaea6411ec56dc06fefd9583eb1d953"
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L98-L98",
+          "version": "repo-lines-v1:sha256:25010e416df6366df3bf6e96792aa88a14f91e17bb36ffc89adef8bf364b39f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:5521f7aa44f885f2df5f76b1ecaa26a75e41cf3693b3b569db9c50fb01a408bc"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L16-L19",
+          "version": "repo-lines-v1:sha256:6a0385aad430e240a295f3b3b460d2bde3551c819af86dae8ec02692947e8826:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ0ZjMxNzExZDU2MTg0NzE3OTY3MzI1NzViMjMzNmI5OThkZTI1YjE2YzUzMjNjNzY4MzI0MTA1ZWI4NDZmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzYTk2ZjM0MzE2ZTQxZmEyNjJmZWI4Y2FhMzRlYzkxYmY0NDM4ODNkZDgwNjhlNTIwYTA5ZDRjNmU3Y2NmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmM3OGRjY2UxN2FjYzczMzI0MTBiOThjOWFjYzEzNGY0NDBjOWM0ZjlkMjc2NmEyMzgwMTQyYTE3MGJkNTdkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2I1NWZiN2JlYTY5ZTQ3Njg4ZjZjNzExYTAzMjIyOTcwNmYxYzc0MmQ4OGJiMzhhNTNkMzkzN2JhZTEyY2JiOCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L154-L172",
+          "version": "repo-lines-v1:sha256:f9d701622691e7d2d2ba6ee2f1c0d8ba93102cd72f387c49f9dccd9ba999edad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ZWRhM2QyYWY3MjZkYjExNmQwODA5MTY5NTllODViZDE5YTdjMGI5ZmVhYTA5ZGE4NjA3ODI0YmYzYjNlZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Mjk4ZjZjYTc3NzZlYTdjODUxNzFiYzVhY2IyY2E4NzZiODc5YTBkZmI2ZTI4NjAwN2NhZmVjNGQ1OWI3M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
         }
       ]
     },
@@ -102,7 +102,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
         },
         {
           "resource": "repo://scripts/check-komodo-sync.mjs",
@@ -124,7 +124,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
         }
       ]
     },
@@ -138,7 +138,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
         }
       ]
     },
@@ -162,7 +162,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
-          "version": "repo-file-v1:sha256:40d26311917acf90b5351c3b9fad81db0aaea6411ec56dc06fefd9583eb1d953"
+          "version": "repo-file-v1:sha256:e3b9a5c194413b279d00f51d711b0bc0c7c1e606a2493511bea7ae07363fc56a"
         },
         {
           "resource": "repo://scripts/check-prod-restart-policy.mjs",
@@ -180,7 +180,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
         }
       ]
     },
@@ -218,11 +218,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:09aa1a47bb3053ea6a899513ea67e6cac60263162a340512eac889f5eca9464d"
+          "version": "repo-file-v1:sha256:7cf49183e2ff4b36e03076ae14a4d3bcdd95d14b664c7333f2f407458d9dea23"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:5521f7aa44f885f2df5f76b1ecaa26a75e41cf3693b3b569db9c50fb01a408bc"
+          "version": "repo-file-v1:sha256:99e6409347ce4584149dbff893a4ad1f897141551df04e1d8d0cfcb827ce4a32"
         }
       ]
     },
@@ -232,7 +232,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
-          "version": "repo-file-v1:sha256:9ff678e2ac6285f90764ba3d0928ac074a5d62f4425d386c7bb6460fef7f77d3"
+          "version": "repo-file-v1:sha256:ecc1411123c4003e5f27ba22223197b2da0584d593e324cbc938c06eb07a50e7"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml",
@@ -257,6 +257,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-13T01:33:44.700Z"
+    "at": "2026-10-13T10:46:04.907Z"
   }
 }

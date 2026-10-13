@@ -23,10 +23,10 @@ sources:
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T00:05:43.068Z
+    at: 2026-10-13T10:46:04.907Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -96,7 +96,9 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   `[[stack]]` blocks in `infrastructure-as-code/komodo/stacks.toml` (`branch = main`) and, because
   each carries `deploy = true` + `after = [...]`, *deploys* them too in dependency order
   (`prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant`, plus `prod-audit`,
-  `prod-observability` and `prod-vault`).
+  `prod-observability` and `prod-vault`). The four core stacks were created manually during Phase 15
+  and the `prod-app → prod-mcm-bff` rename was done by hand, so the sync **adopts** them in place — a
+  config diff, not a create-from-scratch — which is why the first apply is previewed as a diff.
 - **10 — Public ingress, TLS and DNS.** Pick exactly one ingress model. The confirmed one is direct
   edge-TLS — the tunnel terminates TLS at the edge and dials the containers over plain HTTP on a
   shared external network, with no Caddy — and only two hostnames are public; everything else stays

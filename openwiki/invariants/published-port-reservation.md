@@ -6,7 +6,7 @@ resource: docs/runbooks/prod-reboot-resilience.md
 tags: [ports, ci, production, collision, homelab]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T01:33:44.700Z
+    at: 2026-10-13T10:46:04.907Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -16,8 +16,8 @@ sources:
     resource: repo://docs/runbooks/devcontainer.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
     resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-34854463fd23e29b106dcb63
-    resource: repo://infrastructure-as-code/docker/keycloak/.env.prod.example
+  - id: openwiki-source-ff035ef3df6eca36fc791d1d
+    resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
@@ -32,7 +32,7 @@ sources:
     resource: repo://scripts/preflight.mjs
   - id: openwiki-source-2b08f7b6b68dedecf129d61c
     resource: repo://specs/029-prod-ci-port-isolation/research.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
 ---
 
 # Published-port reservation convention
@@ -110,12 +110,12 @@ option: harmless, but proof that a `.env.prod` key can outlive its reader. The a
 always the separate `KC_HOSTNAME_ADMIN`, and that URL var is the live one a port move must keep in
 sync.
 
-`TS_ADMIN_IP` is the same shape in the other direction. `komodo/stacks.toml` still hands it to
-`prod-observability`, but no compose bind reads it any more — the observability compose records that
-it is no longer used for the binds and may be retired as a Komodo Variable. The runbook pins the
-sequencing: the Variable must stay seeded until that `stacks.toml` line goes, so the two retire
-together. Because nothing references the name any more, leaving it seeded cannot fail a deploy — the
-only cost is dead config.
+`TS_ADMIN_IP` is the same shape, and it has now run the same course to completion. It was only ever
+the bind *prefix* for the two observability operator UIs; feature 028 made those binds `0.0.0.0`, so
+no compose bind had read it since, and `komodo/stacks.toml` stopped passing it to `prod-observability`
+on 2026-10-13 (item #727). **No stack or compose file reads `TS_ADMIN_IP` any more**, so the Komodo
+Variable can be retired. Because nothing references the name, leaving it seeded cannot fail a deploy —
+the only cost is dead config.
 
 ## Gotchas
 
@@ -137,8 +137,10 @@ only cost is dead config.
   Keycloak's admin-hostname var (`KC_HOSTNAME_ADMIN`) and LangFuse's `NEXTAUTH_URL`.
 - **A retired variable can linger in a Komodo-supplied `.env.prod`** long after its reader is gone —
   `KC_ADMIN_BIND_IP` is the worked example (compose bind dropped in feature 028, stack config stopped
-  passing it 2026-10-12, item #727). Retire the stack `environment` line and the Komodo Variable
-  together; read the effective value from `.env.prod`, not from a historical comment.
+  passing it 2026-10-12, item #727), and `TS_ADMIN_IP` has since followed it out the same way: the
+  stack stopped passing it on 2026-10-13 and no stack or compose file reads it now, so the Komodo
+  Variable can be retired. Retire the stack `environment` line and the Komodo Variable together; read
+  the effective value from `.env.prod`, not from a historical comment.
 - **CI now tears down its stacks on every run** specifically so a leftover CI stack can't hold a port
   indefinitely and starve a prod redeploy the way the original incident did. The `app-ci` `app-e2e`
   job's "Tear down CI stacks (always)" step runs under `if: ${{ always() }}` — success, failure and

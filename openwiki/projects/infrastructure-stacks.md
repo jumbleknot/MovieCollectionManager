@@ -6,7 +6,53 @@ resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T01:33:44.700Z
+    at: 2026-10-13T10:46:04.907Z
+sources:
+  - id: openwiki-source-80b643ca97b6e7e300789088
+    resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-f98f56169006fd5a5bdf85b9
+    resource: repo://backend/mc-service/tests/integration/health_test.rs
+  - id: openwiki-source-318b395038e1943bc8a10f72
+    resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
+  - id: openwiki-source-23175e1d10427daa3344d3ec
+    resource: repo://docs/runbooks/prod-control-tower.md
+  - id: openwiki-source-abae5c338f9f983f89ea77ad
+    resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
+    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-0ff61f596da1302e58282fa2
+    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
+  - id: openwiki-source-79878dc2da65b6b5c71034f7
+    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
+  - id: openwiki-source-164936b930a31e48cf0a65fc
+    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
+  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
+    resource: repo://infrastructure-as-code/docker/stacks/README.md
+  - id: openwiki-source-3b86829117dd0577834407fc
+    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
+  - id: openwiki-source-819b0a18008c0f90a7eaf2b3
+    resource: repo://infrastructure-as-code/docker/vault/compose.yaml
+  - id: openwiki-source-839571d2c51f49a930537d1b
+    resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
+    resource: repo://infrastructure-as-code/project.json
+  - id: openwiki-source-a6996cae4bd83db81e823602
+    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
+  - id: openwiki-source-7efe877535a6dbac41dcc29c
+    resource: repo://scripts/agent-stack.mjs
+  - id: openwiki-source-7ed01c27b7f22a2815bd5d15
+    resource: repo://scripts/check-komodo-sync.mjs
+  - id: openwiki-source-5a48ade99311698ed1a02a08
+    resource: repo://scripts/check-prod-ci-port-collision.mjs
+  - id: openwiki-source-b182ec4cb28667debd4684ff
+    resource: repo://scripts/check-prod-restart-policy.mjs
+  - id: openwiki-source-6f10e821d1ec074deb438a3e
+    resource: repo://scripts/check-topology-scrub.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -121,19 +167,22 @@ are declared:
   `LANGFUSE_PG_PASSWORD`, `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`,
   `LANGFUSE_MINIO_ROOT_PASSWORD`, `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`,
   `LANGFUSE_INIT_PROJECT_SECRET_KEY`, `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`,
-  `UNLEASH_ADMIN_TOKEN`, `UNLEASH_CLIENT_TOKEN`), and the topology pair `TS_ADMIN_IP` + `TAILNET_HOST`.
-  No `additional_env_files`.
+  `UNLEASH_ADMIN_TOKEN`, `UNLEASH_CLIENT_TOKEN`), and `TAILNET_HOST`, reused for LangFuse's tailnet
+  `NEXTAUTH_URL`. No `additional_env_files`.
 - **`prod-vault`** (`docker/vault`) — **no `environment` block at all**: a dormant Vault has no root
   token to inject.
 
-Because the list is the contract, an entry can outlive the compose that read it. `KC_ADMIN_BIND_IP` was
-only ever the bind *prefix*; feature 028 dropped it from the keycloak compose bind and `stacks.toml`
-stopped passing it to `prod-auth` afterwards — until then Komodo wrote it into `.env.prod`, which the
-keycloak compose loads with `env_file:`, so it reached the container as a `KC_*` variable naming no
-Keycloak option (harmless, but a reminder that removing the consumer does not remove the input). The
-mirror case is live today: `prod-observability` still receives `TS_ADMIN_IP` although no compose bind
-reads it any more, so the Komodo Variable has to stay until that line goes. The admin *URL* is a
-separate, live var (`KC_HOSTNAME_ADMIN`) and is the one a port move must keep in sync. See
+Because the list is the contract, an entry can outlive the compose that read it — and both bind-prefix
+variables have now run that course to completion. `KC_ADMIN_BIND_IP` was only ever the bind *prefix*;
+feature 028 dropped it from the keycloak compose bind and `stacks.toml` stopped passing it to
+`prod-auth` on 2026-10-12 (item #727) — until then Komodo wrote it into `.env.prod`, which the keycloak
+compose loads with `env_file:`, so it reached the container as a `KC_*` variable naming no Keycloak
+option (harmless, but a reminder that removing the consumer does not remove the input). `TS_ADMIN_IP`
+followed the same path: feature 028 made the two operator-UI binds `0.0.0.0`, so no compose bind had
+read it since, and `stacks.toml` stopped passing it to `prod-observability` on 2026-10-13. No stack or
+compose file reads either name any more, so both Komodo Variables can be retired — leaving one seeded
+cannot fail a deploy, the only cost is dead config. The admin *URL* was always a separate, live var
+(`KC_HOSTNAME_ADMIN`) and is the one a port move must keep in sync. See
 [prod reboot resilience](../../docs/runbooks/prod-reboot-resilience.md) for the full retired-variable
 record.
 
@@ -169,9 +218,11 @@ secrets interpolate from `.env.prod`. The compose assembles the pull reference a
 - **A stack's `environment` key can outlive the compose line that read it, and the Komodo Variable must
   stay until its last consumer goes.** The guard above only checks one direction (every `${VAR:?}` has a
   supplier); nothing detects a supplied variable nobody reads. `KC_ADMIN_BIND_IP` sat in `prod-auth`'s
-  block after the bind stopped using it and was only dropped later; `TS_ADMIN_IP` is still passed to
-  `prod-observability` with no compose bind reading it, so retiring the Variable early would be a
-  silent config edit rather than a cleanup. See
+  block after the bind stopped using it and was dropped on 2026-10-12; `TS_ADMIN_IP` was still passed to
+  `prod-observability` after feature 028 made the operator-UI binds `0.0.0.0`, and was dropped on
+  2026-10-13. No stack or compose file reads either name now. Retire the `stacks.toml` line and the
+  Komodo Variable together, and read the effective value from `.env.prod` rather than from a historical
+  comment. See
   [Published-port reservation](../invariants/published-port-reservation.md) for how this interacts with
   the port-move rule.
 - **The committed `stacks.toml` never carries a real host, domain, or IP.** The git-provider host lives
