@@ -157,10 +157,10 @@ Reach it at `https://server.tailnet.ts.net:9090`. Use it for host metrics, logs,
 
 ```bash
 $ sudo usermod -aG kvm steve
-$ ls -l /dev/kvm        # expect group "kvm", crw-rw----+
+$ ls -l /dev/kvm        # expect group "kvm"; this host shows crw-rw-rw- (666, measured 2026-10-12)
 ```
 
-(The `ci` service user is added in Phase 5; KVM passthrough into its rootless containers is configured in Phase 6.)
+(The `ci` service user is added in Phase 5. The emulator job does not get KVM passed into a container: it runs on the host as `ci` through the `kvm:host` runner label, set up in 5.4 and Phase 7.)
 
 ---
 
