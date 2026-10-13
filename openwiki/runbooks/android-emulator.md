@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Android emulator & APK builds (mobile E2E)
-description: The decision rule for where to run mobile E2E flows (agent flows in CI's app-e2e job on the kvm host runner, everything else on a local emulator), the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job runs on the ci host rather than in a job container, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, and the emulator-state traps that mimic app bugs.
+description: The decision rule for where to run mobile E2E flows (agent flows in CI's app-e2e job on the kvm host runner, everything else on a local emulator), the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job runs on the ci host rather than in a job container (its own Docker CLI plus a rootless-daemon assertion, and a named `/dev/kvm` check that fails loud), the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
 sources:
@@ -23,6 +23,8 @@ sources:
     resource: repo://frontend/mcm-app/scripts/build-apk.mjs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
+    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-2d569134a872251a7d87c36a
     resource: repo://scripts/build-apk-short-path.ps1
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
@@ -33,10 +35,10 @@ sources:
     resource: repo://scripts/devcontainer-android.sh
   - id: openwiki-source-33d177ccb5008acd450b4d41
     resource: repo://scripts/maestro-run.sh
-generated: { by: "openwiki/0.7.1", at: "2026-10-12T18:54:07.831Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-12T18:54:07.831Z
+    at: 2026-10-13T00:05:43.068Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -103,15 +105,20 @@ Three details of that step are load-bearing when editing it:
   build; a stale Metro transform cache on a persistent runner otherwise silently bakes an older URL and
   the failure surfaces much later, at login. The build therefore disables the Gradle daemon
   (`GRADLE_OPTS=-Dorg.gradle.daemon=false`), because a reused daemon keeps the env it started with.
-- **A missing KVM capability fails the job; it never skips the mobile suite.** The job verifies
-  `/dev/kvm` exists before the emulator step and exits 1 with an `::error::` naming the fix if it does
-  not. The rationale is the same one that makes the bundle guard worth having: a silently skipped mobile
-  half is indistinguishable from a passing one. **`/dev/kvm` is the host's own device, not something
-  handed to a container.** `app-e2e` declares `runs-on: kvm` — the *name* of a host-type runner label
-  defined as `kvm:host` — so the job executes **on the ci host**, the way the GitHub-era VM did. What
-  must therefore hold is host state: KVM enabled on the host (`kvm_intel`/`kvm_amd` loaded), the `ci`
-  user in the `kvm` group (`/dev/kvm` group `kvm`, mode 660), and the runner still registering the
-  `kvm:host` label. An earlier version of this page said `/dev/kvm` came from the runner config's
+- **A missing KVM capability fails the job; it never skips the mobile suite.** The `app-e2e` job's
+  **`Verify KVM is available`** step (wrapped by `scripts/ci-log-step.sh` as
+  `app-e2e-verify-kvm-available`, and so named in the failure digest) runs before the emulator step: it
+  `ls -l`s `/dev/kvm` when present and otherwise exits 1 with an `::error::` naming the host fixes. Cite
+  that step by name, not by line number — it has moved within the job before, and a stale range reads as
+  a missing check. The rationale is the same one that makes the bundle guard worth having: a silently
+  skipped mobile half is indistinguishable from a passing one. **`/dev/kvm` is the host's own device,
+  not something handed to a container.** `app-e2e` declares `runs-on: kvm` — the *name* of a host-type
+  runner label defined as `kvm:host` — so the job executes **on the ci host**, the way the GitHub-era VM
+  did. What must therefore hold is host state: KVM enabled on the host (`kvm_intel`/`kvm_amd` loaded),
+  the `ci` user in the `kvm` group, and the runner still registering the `kvm:host` label. On this host
+  `/dev/kvm` is **mode 666, measured 2026-10-12 as `crw-rw-rw- root kvm`**; the `::error::` text names
+  `660 or 666`, and 660 via a udev rule is the tighter option — the group membership is what keeps the
+  job working if it is applied. An earlier version of this page said `/dev/kvm` came from the runner config's
   `container.options: --device /dev/kvm`; that described the pre-`235f2f4c` job-container setup and is
   wrong. The workflow's own comment carries the correction (2026-10-04), and the host is required rather
   than convenient: the job's web-E2E leg reaches the dev BFF at `localhost:8082` while the emulator leg
@@ -201,7 +208,12 @@ through `adb reverse`.
   exhausts runner disk and dies mid-compile with no clean error. The `|| true` on both lines is
   deliberate — a prune that finds nothing must not fail the step — but it is **not a licence to be
   wrong**: `--reserved-space` was checked against the **docker 27.5.1** CLI the job's host-runner setup
-  installs, precisely so a bad flag could not become a silent no-op.
+  installs, precisely so a bad flag could not become a silent no-op. Contrast `cd-deploy`'s `prod-apk`
+  job, which builds an APK too but has no Docker CLI and no images, so its disk step **only reports**:
+  it is named `Report disk space (nothing to reclaim — see item #457)`, says so in words, carries no
+  `|| true` (a failing `df` fails the step) and exports its measurement as a commit status under
+  `cd-deploy/prod-apk-disk`. `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins all of that —
+  including that **no** workflow step invokes `sudo`, which no runner here provides.
 - **Windows hits a hard `CMAKE_OBJECT_PATH_MAX` (250-char) wall building RN ≥0.85 native modules.** The
   real cause is CMake replicating the full absolute source path under the object directory; this repo's
   path plus the deep pnpm layout (`node_modules/.pnpm/<pkg>@<ver>_<hash>/node_modules/<pkg>/…`)

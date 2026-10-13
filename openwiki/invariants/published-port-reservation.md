@@ -6,7 +6,7 @@ resource: docs/runbooks/prod-reboot-resilience.md
 tags: [ports, ci, production, collision, homelab]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T22:25:03.651Z
+    at: 2026-10-13T00:05:43.068Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -16,6 +16,8 @@ sources:
     resource: repo://docs/runbooks/devcontainer.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
     resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-34854463fd23e29b106dcb63
+    resource: repo://infrastructure-as-code/docker/keycloak/.env.prod.example
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
@@ -30,6 +32,7 @@ sources:
     resource: repo://scripts/preflight.mjs
   - id: openwiki-source-2b08f7b6b68dedecf129d61c
     resource: repo://specs/029-prod-ci-port-isolation/research.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
 ---
 
 # Published-port reservation convention
@@ -80,6 +83,21 @@ service keeps its recognizable low digits — `8099 → 19099`, `3030 → 19030`
   scan as the "Prod↔CI port-collision gate" step on every PR and every push to `main`, and
   `scripts/preflight.mjs` runs the same pair locally.
 
+## Secondary references a port move must also update
+
+The gate only reads the `ports:` key of a compose file, so a port move is not finished when the
+compose bind changes: the same port number usually appears again as a **self-referencing URL** that
+must be updated in lockstep. Concretely, the two secondary references today are:
+
+- `KC_HOSTNAME_ADMIN` in the `prod-auth` `environment` block of
+  `infrastructure-as-code/komodo/stacks.toml` — the `http://[[TAILNET_HOST]]:19099` admin-console URL,
+  which the keycloak compose also requires as `${KC_HOSTNAME_ADMIN:?}` in its `environment:` block.
+- `NEXTAUTH_URL` in `infrastructure-as-code/docker/observability/compose.prod.yaml` — LangFuse's own
+  login/callback URL, pointing at the tailnet host on `:19030`.
+
+Miss either and the port binds cleanly while the service serves a URL that points at the old port —
+a working bind with a broken redirect, which no port-scan gate can see.
+
 ## Gotchas
 
 - **This rule exists because of a real outage, not preemptively.** A prod Keycloak admin bind on a
@@ -91,12 +109,10 @@ service keeps its recognizable low digits — `8099 → 19099`, `3030 → 19030`
   2026-07-06 a leftover CI stack held the port for roughly six hours and kept prod auth down for that
   long.
 - **Moving or adding a prod published port also requires updating that port's self-referencing URL
-  var** — for example Keycloak's admin-hostname var in the stacks config, or an observability tool's
-  own callback URL in its compose file — because the collision gate only scans the `ports:` compose
-  key, not those secondary references. Missing this step reintroduces a working port bind pointing at
-  a stale self-referencing URL. Concretely, the two secondary references are `KC_HOSTNAME_ADMIN` in
-  `infrastructure-as-code/komodo/stacks.toml` (a `[[TAILNET_HOST]]:19099`-shaped admin URL) and
-  LangFuse's `NEXTAUTH_URL` in the observability prod compose (its own login/callback URL, `:19030`).
+  var**, because the collision gate only scans the `ports:` compose key, not those secondary
+  references. The current pair is listed under
+  [Secondary references a port move must also update](#secondary-references-a-port-move-must-also-update):
+  Keycloak's admin-hostname var (`KC_HOSTNAME_ADMIN`) and LangFuse's `NEXTAUTH_URL`.
 - **CI now tears down its stacks on every run** specifically so a leftover CI stack can't hold a port
   indefinitely and starve a prod redeploy the way the original incident did. The `app-ci` `app-e2e`
   job's "Tear down CI stacks (always)" step runs under `if: ${{ always() }}` — success, failure and
@@ -112,16 +128,29 @@ service keeps its recognizable low digits — `8099 → 19099`, `3030 → 19030`
 - **A `0.0.0.0` prod bind is tailnet-only *solely* because of the host firewall's default-deny-inbound
   posture**, and that posture is now load-bearing — do not relax it. The broad bind is deliberate: the
   rootless daemon starts before `tailscaled` at boot, so a `<tailnet-ip>:host:container` publish
-  silently fails (the container shows `Up` with an empty Ports column and nothing listening). The
-  retired bind-IP variables are still handed to the `prod-auth` stack config, but no compose bind
-  reads them.
+  silently fails (the container shows `Up` with an empty Ports column and nothing listening).
+- **The retired bind-IP variable is gone from the `prod-auth` stack config too — and the admin *URL*
+  var is a separate, live one.** `KC_ADMIN_BIND_IP` was only ever the bind *prefix*: feature 028
+  dropped it from the keycloak compose bind (`.env.prod.example` records the removal), and
+  `infrastructure-as-code/komodo/stacks.toml` stopped passing it to `prod-auth` on 2026-10-12 (item
+  #727). Until that date it *was* passed, and because Komodo writes the stack `environment` block into
+  `.env.prod`, which the keycloak compose loads with `env_file:`, it reached the container as a `KC_*`
+  variable naming no Keycloak option — harmless, but a reminder that a `.env.prod` key can outlive the
+  code that read it. The `prod-auth` `environment` block now carries
+  `KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:19099` instead, and that URL var is the live one a port
+  move must keep in sync. `TS_ADMIN_IP` is a separate case: `stacks.toml` still hands it to
+  `prod-observability`, but no compose bind reads it any more, and the runbook notes the operator may
+  retire the Komodo Variable (harmless if left).
 - **Don't confuse the range's low end with Expo's dev-server ports.** `19000`/`19001`/`19006` are
   Expo's legacy default dev-server ports; this project's Expo SDK does not use them and the dev
   container is explicitly told not to forward them. Those numbers are *not* prod reservations — only
   the ports a prod compose actually publishes are, and the reserved range as a whole is what keeps
   CI/dev out.
 
-Full incident narrative, the exact three reserved ports, and the pre/post-fix bind table:
-[prod-reboot-resilience.md](../../docs/runbooks/prod-reboot-resilience.md). Related pages:
-[Infrastructure stacks](../projects/infrastructure-stacks.md), [Keycloak](../projects/keycloak.md),
-[prod control tower](../runbooks/prod-control-tower.md).
+Full incident narrative, the exact three reserved ports, the pre/post-fix bind table, and the
+"Retired variables" record: [prod-reboot-resilience.md](../../docs/runbooks/prod-reboot-resilience.md).
+Related pages: [Infrastructure stacks](../projects/infrastructure-stacks.md),
+[Keycloak](../projects/keycloak.md),
+[prod control tower](../runbooks/prod-control-tower.md),
+[server setup](../runbooks/server-setup.md),
+[secrets management](secrets-management.md).

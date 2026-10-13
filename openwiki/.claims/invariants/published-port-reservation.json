@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5057306960c39971fa1f4009e344b352026a4e0b1cd3c30291b6d9a5d776396f",
+  "pageVersion": "sha256:35937f9e368bfeda8a0bbaf67b11005b099985ff31d5ad120fd8f73ebdeb0db5",
   "claims": [
     {
       "id": "claim_c94970677b844011986b6c34aa1dac78",
@@ -134,15 +134,19 @@
     },
     {
       "id": "claim_37601233ec524e8db80f487314af35d8",
-      "statement": "Moving or adding a prod published port also requires updating that port's self-referencing URL var, because the collision gate only scans the compose ports: key — concretely KC_HOSTNAME_ADMIN in infrastructure-as-code/komodo/stacks.toml and LangFuse's own NEXTAUTH_URL login/callback URL in the observability prod compose.",
+      "statement": "Moving or adding a prod published port also requires updating that port's self-referencing URL var, because the collision gate only scans the compose `ports:` key: concretely KC_HOSTNAME_ADMIN — set to the :19099 admin URL by the prod-auth stack's `environment` block in infrastructure-as-code/komodo/stacks.toml and required fail-fast as ${KC_HOSTNAME_ADMIN:?} by the keycloak prod compose — and LangFuse's own NEXTAUTH_URL login/callback URL in the observability prod compose. Missing this leaves a working port bind pointing at a stale URL that no port-scan gate can see.",
       "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L70-L72",
+          "version": "repo-lines-v1:sha256:25b4078f6b1d60989f3169dba0eae7fb38de94c85c08ab9d8c2314fd81f9fe98:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQ3YmYyMGEwOGVhNDAyYWNkNzM0YWM1NTIxMjRmOTA2YmUyNTk2NzFhMjRiNDcxZmEyMTM0MDczZDZlMzUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVkMDUyZGZmYTI5ZjcxMmVmM2I3YWY2ZjllZjM0YzZlMzg2ZTU5NzY4MjQxN2QzMzE4YTdkNjdlM2QwMzc1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIwOWFmMDc5ZjVmNWQ2MzE4M2MxODFhMWQwYzY0NGIzMDUxY2M1ZDgyMzU2NGIzMmFlNjVjZjJhNDkwOGU5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg4NDRhNDRlNzRiYmNkMzE4NTY3MjZlMjIwN2ZhNGYzOTRkNTBhNDJkMGY1NTRlMDc1MzBkYmEyYmUwOTFiNSJ9"
+        },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L72-L74",
           "version": "repo-lines-v1:sha256:48cdcff65aaf7b005e8e18475bfedff336869473a2be0d4608ed18960f6d4731:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzMjllYzg3ZjgyN2Y1NDI2MmM1YTE1Mzg1NjI0OTM1NTVmYzY4OGYwMzk2YmYyYzE2YjgxNDRjYmUzMjIzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYxZDliMWU5NzllZDFlZGI2ZmUzYTE1MjU1MTIxOTM4MWY1YjQyNTg3Njc0OTQ1ZmYwZGNjYzRkZGIzYjRhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2IxMzNiODU4YmQyMmEwMGI2YmMwMjlhNDY2YWE3YmEzMGY1MGI3ZDgwMmVjYjFmZGJiMjU4NTJmYmI0OTY0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ1NDEzZTBkNTIyNDI2NDM5NDZkNjgyOTZmM2NlZDljODRhZDUwMTI1Y2Q0Mzg0ZmM5NDI1MmU1OGQzYzUyMSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L37-L44",
-          "version": "repo-lines-v1:sha256:772490cfa21ce332a19dc9178f1dbc5b3377b711e7572a3e92ed4e043eb115e7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxMmRiYzlmNWI4NGUxNmQ3YzE4YTZhZTdjNWMwNWVmMjk1NGUxNWI4NDE2YTg0NDgzY2UzZGVjOTJiY2IzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
         }
       ]
     },
@@ -199,10 +203,46 @@
           "version": "repo-lines-v1:sha256:6bd7a6688e51eff82c967e028de1f1b303a6b964fa63ccf45ea88989c6a5f13c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhY2M0ZTlhOTBmYWJkOGUxZjllODc0NWE2MGNhNjQzZmYxOTQ3Yjg3NGM1MWNkZGI5OTQ4YTBmOGQxMmY1ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyM2Q4ZjExYWEzZmQ1MWVhNjZjMGFhODY1NjNiOWI3ODI5MmU0NDBiMTkxOGVjMmZiMDI2NjdkZDUyNDQ0NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYjZmM2QwOWJiOGNhYTZiOTUyYWVkZWE5ZTFmZWI3M2IyNjE3MzNjOTBiMGNiZWI1OGM4MjZmMGIxNjAxZDQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_63a799f779f54460a0f08b084f470692",
+      "statement": "The prod-auth stack's environment block in infrastructure-as-code/komodo/stacks.toml no longer passes KC_ADMIN_BIND_IP to the keycloak prod compose (removed 2026-10-12, item #727) and instead carries KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:19099. While it was passed, Komodo wrote KC_ADMIN_BIND_IP into .env.prod, which the keycloak prod compose loads with `env_file:`, so it reached the container as a KC_* variable that names no Keycloak option — the admin URL uses the separate KC_HOSTNAME_ADMIN.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L98-L98",
+          "version": "repo-lines-v1:sha256:d663eeb73573b9c43e73aefea0a1fe1301e5d16a346b612eb4cc94191f4aa0f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2M2VlYjczNTczYjljNDNlNzNhZWZlYTBhMWZlMTMwMWU1ZDE2YTM0NmI2MTJlYjRjYzk0MTkxZjRhYTBmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2M2VlYjczNTczYjljNDNlNzNhZWZlYTBhMWZlMTMwMWU1ZDE2YTM0NmI2MTJlYjRjYzk0MTkxZjRhYTBmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
+          "version": "repo-lines-v1:sha256:cde2581d7ccc42a3b196012df655dca45eb32c9542ae852f429d08fe6cef8a42:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDVmOWEzM2U1Yjk0ODdiNGRhZTM4OTU4ZDIxNzkwNDA5YzYzZmY3ODMxOTNjZmM4OWFlOTY5MTQ5NmY3ZDIxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhMzgwM2RjMTUyM2QwYzk2MTVlZTljNDY0ZjNmMDQ5MDRjMDE2NjMwYTMxMGYwZTM0YzI1NDJjNWJiNzA5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjljZWZlMzZiOTNjZDE3YWIwMWIwMmM2YTBlM2UxNzQ1NWUyYTdmZjIyNDIwYzlhYjhkNDZhZDE0NWUwNDNjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDVhZmZhOTRkYmJiZDA3NmI3OTE5MTJmYWEzNjBlMjAxYzI2ZmY0MzBkNDhkYjNlYjFjMWQzM2MzNzAzZGU1YSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L59-L62",
+          "version": "repo-lines-v1:sha256:87e328529266113e481810c6d556bc565ebb50bee1799ea91ee6d70bd32e9b79:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBmNWIyMjJhMzUxODk1NmRjN2I5ZGY1ODY0ZGE1N2M3YjM2NDYyZTBhZDllMDM2YThmMTgxMDZmZWZiNzhkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc3ZWI0OGI0MDE3ZGJlMjE2M2VmNGFlNmQ1ODA3MjgyMDA3ODkzNDkyYjBmNTU3ZDM3OGJmZmY3YTFmNmUyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTU3MzE4NjUyNjkxNzU4ZmQ2YjEzMjliYmUzZTdmNmI4ODZiYzg5NTMzZWY5OWM2OWM3OGY1ODE5NTI2N2MzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWExNDMyYzIwZWMyMWQyMDI5MjQ3YzY4NmYwNDFlZjAxMmEwOTBhYzBjY2ZkYjk2ODAzODQ3NDJlM2JlZWNhNiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        }
+      ]
+    },
+    {
+      "id": "claim_dbea6e6e726d44b7b68bdca924998e07",
+      "statement": "TS_ADMIN_IP is still handed to the prod-observability stack by infrastructure-as-code/komodo/stacks.toml, but no compose bind reads it any more — the observability prod compose records that it is no longer used for the port binds and may be retired as a Komodo Variable (harmless if left).",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L17-L19",
+          "version": "repo-lines-v1:sha256:5360d87e2ef2e00e37c26c24ee5860b753888d6c4183e6667af15149d9d0293b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzUwZjkzMWJiYzMzM2JlMTA5ZjVmZGY0YjVjM2VhNjMxZGNkY2UzYmJmOTE0YzkzY2QzZTEzMjQ0YzQzMTBjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBhZjM3ZjBkZDVkZGMwMjVlODUyNzk1ZWM2MzZlMDI0MjM0MThhNDg0MzYwODdhMDAyZjI3YTA0Y2IxMzAxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDJkNmUzMDhmMDM4MTFmNTJlNDM3NTdiY2NhZTU3MDVkNTYwYzdiYjMyZjg1NzljYjRiYmEwZDFmZjc5ZTI3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2I1NWZiN2JlYTY5ZTQ3Njg4ZjZjNzExYTAzMjIyOTcwNmYxYzc0MmQ4OGJiMzhhNTNkMzkzN2JhZTEyY2JiOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:90725219901e4e5591ce0dce38e5611b5ad7710cacd4dded39e3701634558356"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T22:25:03.651Z"
+    "at": "2026-10-13T00:05:43.068Z"
   }
 }

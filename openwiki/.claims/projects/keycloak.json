@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:46f07bd4c2b2bb65e3c9a94aef47aa770f52c2050f7db5218f2525dc437f8262",
+  "pageVersion": "sha256:8c60b772fdd7924c7371001424d9669d1eab4fdf48c010b55ccc9c4eb7b0ffbe",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -19,8 +19,8 @@
           "version": "repo-lines-v1:sha256:fa88a012c938950dc34a25f462ae62d64dbe6bdfdc590ac835f396f021d90cea:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E2M2I0N2EwMjFkMTcwMmJkMjdjZjIzOTUxZDY1ZDBiMGIyNmYxODE0ODJmYjMzYWY2ZDczZTVkMjg1NDUzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzMWUyNjAzOThhZDYxMDkxNGRmYzI4ZjA0OGQzOTI2NGJhN2Q1MDMyNzhkZDJmOGJiMWM0YzE0YjQ5OWQ5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRkNjFjZDFmMmIzZDMxYjBjMGMwM2ZhOTQwY2Y5NTg4NTE1OGNhYzkwMzljYTdlNDQ3NWExYjRkNTExM2I1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGE2ZDNhZWNkM2NlYzdlM2ViZWYyYzUyZDc2ODI4NjQ4YzE1OGFlODZjNGE0ZmZkNjNmZWE4ZDMzZDZmMTdiMCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L44",
-          "version": "repo-lines-v1:sha256:30d0f8ff304f01cc64363a905093b2e574866475b045893a60cbe816d935358b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyZjNhOGU5ZTdjOGQ1NmJkMDY3MmYwNGE3MDZmYTI2OTkxMGIxOGZiNGY0YWI3ZjdmOTVmODVkZGMzNmQyZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYTNhZDVjZGY0N2I0NDg2NzliZmNjZDc0YTRlNWNkNTY5ZTU1M2IxMzAxNzk5NGFiMzYwNDUxZjVmOWMyZGMifQ"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L43",
+          "version": "repo-lines-v1:sha256:33974e6d6b06d56042913f0644877f9a31fd9be1cb98824054f2b0dbd83eb787:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyZjNhOGU5ZTdjOGQ1NmJkMDY3MmYwNGE3MDZmYTI2OTkxMGIxOGZiNGY0YWI3ZjdmOTVmODVkZGMzNmQyZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYTNhZDVjZGY0N2I0NDg2NzliZmNjZDc0YTRlNWNkNTY5ZTU1M2IxMzAxNzk5NGFiMzYwNDUxZjVmOWMyZGMifQ"
         },
         {
           "resource": "repo://scripts/export-ci-realm.mjs#L193-L196",
@@ -191,7 +191,7 @@
           "version": "repo-lines-v1:sha256:dd4d2ac12b08112b1ec41a27e2d66d8fb33438fd2c1283520a799082ef2d4d4f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0MTY2YjQxNGVhOTU2YjBiMmQxMzFiZTBjZjc5MThkNGEwZWVlZTRmZTE4OGJkNzk0ODVjOGRhYzNmZTkzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk3NzY2ZGU1NTE2NTY5ZjI3OGVlZmZlZjU3MGFkZjIzNDcxOGRiNDM5NzY1MGJlNzQ1ODQwMDUzMjU0Mjc1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU0OTVhOWI2MzE1Y2I1ZDVhM2YxNTAwODYxNDcwOTkwNzJmNzE3ZDJmODFkNGJjNWNhN2VlNDQzNTYxZjUzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWMwMmI3ZTNhMDM3MTYxMDJmYzU5MDYzYjI5Yzc1N2Y3Mzg4NjBjMDE1OWZhYzJlZDZmNGRlZjNjOTBjOTVkOCJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L924-L924",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L925-L925",
           "version": "repo-lines-v1:sha256:d25e5cb63288dd53369a6f80d88e62cd9fe2dd3f9da5c1577651b0e045dd0066:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1ZTVjYjYzMjg4ZGQ1MzM2OWE2ZjgwZDg4ZTYyY2Q5ZmUyZGQzZjlkYTVjMTU3NzY1MWIwZTA0NWRkMDA2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1ZTVjYjYzMjg4ZGQ1MzM2OWE2ZjgwZDg4ZTYyY2Q5ZmUyZGQzZjlkYTVjMTU3NzY1MWIwZTA0NWRkMDA2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGVjYzFlOGZlN2QyNTYxZWYwMzEyYTQxYmQ1Y2U1NDdlYWYxNjBiODQwODQyZTRjYzNhZmE2ZGNiNTM3ODY4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjhmMTVlMDY1YWNmY2JkODk1ZjFjYWIyMDExZjI4YTA3NDk2YjJkNzE1ZjhjNjk1MTcwODc2ZjlmMjcxZGI4ZSJ9"
         },
         {
@@ -209,7 +209,7 @@
       "statement": "The committed `prod-realm.json` keeps a `${BASE_DOMAIN}` placeholder (in the `movie-collection-manager` client's redirect URIs and web origins) that is rendered at deploy to a gitignored concrete file pointed to by `PROD_REALM_FILE`. The render must use `sed 's|${BASE_DOMAIN}|<domain>|g'`, not `envsubst`, because the realm JSON also contains 32 Keycloak `${role_*}` / `${client_*}` i18n placeholders that `envsubst` would expand and corrupt; the `sed` form touches only the literal `${BASE_DOMAIN}`.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L923-L923",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L924-L924",
           "version": "repo-lines-v1:sha256:0032de0a05fefaaf4fe43fd7889ebdb6332667e8e0d96159d1ea934962c11f67:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWRjMGYxOGYxMzE3M2RlNTljZDk5ZGEyMDJjODkyOWMxZmZhNTMyMTI2YmM0YWVjYjUyMjJhNTgxY2NmZGM4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmI4ZjM0NmQzYWY3OGFkOTE3MTlkYWEwMjMzZGRiMDFmZDExZDgyZGUyZTJhMmYwMjM1ZWExMWYzYTQ2YTRhZSJ9"
         },
         {
@@ -316,7 +316,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L96-L98",
-          "version": "repo-lines-v1:sha256:ce9bfd1990fc36e8ea7e276f31cec62e6a78a4f5da2238627059db621231c98f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg4MjUyMWUzZjg4OTgyNTY3MDA3MTc1MDdhZjM1NjcxNGNjMjQyNmIwNDAzNTRjZTY5MDBhOGFjOTJiODE4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+          "version": "repo-lines-v1:sha256:350ca661d67f4234d5621843e722079554a48f3fee30a447b192cc63b558d209:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2M2VlYjczNTczYjljNDNlNzNhZWZlYTBhMWZlMTMwMWU1ZDE2YTM0NmI2MTJlYjRjYzk0MTkxZjRhYTBmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
@@ -328,7 +328,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L70-L72",
-          "version": "repo-lines-v1:sha256:be847b234b430a8715e5055fc077bf05467c26fca2ba14d440aa183312a9896a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQ3YmYyMGEwOGVhNDAyYWNkNzM0YWM1NTIxMjRmOTA2YmUyNTk2NzFhMjRiNDcxZmEyMTM0MDczZDZlMzUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVkMDUyZGZmYTI5ZjcxMmVmM2I3YWY2ZjllZjM0YzZlMzg2ZTU5NzY4MjQxN2QzMzE4YTdkNjdlM2QwMzc1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIwOWFmMDc5ZjVmNWQ2MzE4M2MxODFhMWQwYzY0NGIzMDUxY2M1ZDgyMzU2NGIzMmFlNjVjZjJhNDkwOGU5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg4NDRhNDRlNzRiYmNkMzE4NTY3MjZlMjIwN2ZhNGYzOTRkNTBhNDJkMGY1NTRlMDc1MzBkYmEyYmUwOTFiNSJ9"
+          "version": "repo-lines-v1:sha256:25b4078f6b1d60989f3169dba0eae7fb38de94c85c08ab9d8c2314fd81f9fe98:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQ3YmYyMGEwOGVhNDAyYWNkNzM0YWM1NTIxMjRmOTA2YmUyNTk2NzFhMjRiNDcxZmEyMTM0MDczZDZlMzUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVkMDUyZGZmYTI5ZjcxMmVmM2I3YWY2ZjllZjM0YzZlMzg2ZTU5NzY4MjQxN2QzMzE4YTdkNjdlM2QwMzc1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIwOWFmMDc5ZjVmNWQ2MzE4M2MxODFhMWQwYzY0NGIzMDUxY2M1ZDgyMzU2NGIzMmFlNjVjZjJhNDkwOGU5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg4NDRhNDRlNzRiYmNkMzE4NTY3MjZlMjIwN2ZhNGYzOTRkNTBhNDJkMGY1NTRlMDc1MzBkYmEyYmUwOTFiNSJ9"
         },
         {
           "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L7-L9",
@@ -341,7 +341,7 @@
       "statement": "The prod container `keycloak-service` lost its `backend-network` attachment on reboot on 2026-07-06, coming back attached only to `edge-network` and `keycloak-network`, which broke mc-service's OIDC/JWKS discovery of `keycloak-service` (`dns error … Try again`). A manual `docker network connect` is only a one-off that the next reboot can lose; the durable remedy is a Komodo `prod-auth` redeploy, which recreates the container with the full network set already declared in `compose.prod.yaml`. Feature 029 additionally makes the intra-stack `keycloak-network` compose-managed rather than external, so Keycloak and its Postgres are created and attached atomically on every `up` even if the shared external networks hit the rootless re-attach race.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1126-L1126",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1127-L1127",
           "version": "repo-lines-v1:sha256:d206252035d25ad88df98054480bd96305085471ceaa692d7423888d08deb9be:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIwNjI1MjAzNWQyNWFkODhkZjk4MDU0NDgwYmQ5NjMwNTA4NTQ3MWNlYWE2OTJkNzQyMzg4OGQwOGRlYjliZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIwNjI1MjAzNWQyNWFkODhkZjk4MDU0NDgwYmQ5NjMwNTA4NTQ3MWNlYWE2OTJkNzQyMzg4OGQwOGRlYjliZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTU0ZWNlMGMzMTQ3ZjQ3ZWY2MjM4MDU0OTNlOWFiZGI3MDExNDc1ODI4ZDM2NWIyMGQ5OWU1MjY3Y2RlNzUxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQxMjU0MjdlY2EzNTNhNzcyZmQ1ZGM4MjcwYjJlZDZiMTMwMTMxOGRmNmYxZTU0NWIyMGI1YzNkNjc1M2JjMCJ9"
         },
         {
@@ -395,7 +395,7 @@
       "statement": "Client redirect URIs and web origins are realm state, not application config: `add-container-redirect-uris.mjs` idempotently adds the containerized-BFF callback and `login?verified=true` origins (dev container `:8082`, TLS `:8443`) to the `movie-collection-manager` client, and the mobile app-link/custom-scheme callback is the same kind of realm entry — its absence breaks on-device login only after the browser redirect, not at login time.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L935-L935",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L936-L936",
           "version": "repo-lines-v1:sha256:9d42e9bbf56d69464c43d1f9826610c0f4184070ff0b278e5eda6542a8d4e486:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MmU5YmJmNTZkNjk0NjRjNDNkMWY5ODI2NjEwYzBmNDE4NDA3MGZmMGIyNzhlNWVkYTY1NDJhOGQ0ZTQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MmU5YmJmNTZkNjk0NjRjNDNkMWY5ODI2NjEwYzBmNDE4NDA3MGZmMGIyNzhlNWVkYTY1NDJhOGQ0ZTQ4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY0ZWRiODNiMmM2MzQ2MjU4ZWUzZjM3ODJiNjU0NDRmYjM4NzgyYWZjNDgxODJkNzk2M2Q4MDk3M2ZiOGQ3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk4ZTBiMDRlYWIwM2JhZTdjZjY5Zjk5Mzg4MTM5ZTNhOTY2MmNlNzU3ZjEzNmIwZTExMThjNDE1NzJhMDM1NCJ9"
         },
         {
@@ -423,7 +423,7 @@
       "statement": "`KC_BOOTSTRAP_ADMIN_USERNAME` / `KC_BOOTSTRAP_ADMIN_PASSWORD` create the initial `admin` user only when the realm database has no admin, so the hardened posture is to log in once, create a named admin with 2FA and delete the bootstrap user — after which the values are inert. They must nevertheless stay configured: they are fail-fast `${VAR:?}` references, so removing the lines breaks every redeploy, and a fresh database deploy needs them to create the first admin at all.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L927-L927",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L928-L928",
           "version": "repo-lines-v1:sha256:70e38cccf133a62548cbd932518899c861c349f93d65d9cc4344f5121d304613:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBlMzhjY2NmMTMzYTYyNTQ4Y2JkOTMyNTE4ODk5Yzg2MWMzNDlmOTNkNjVkOWNjNDM0NGY1MTIxZDMwNDYxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBlMzhjY2NmMTMzYTYyNTQ4Y2JkOTMyNTE4ODk5Yzg2MWMzNDlmOTNkNjVkOWNjNDM0NGY1MTIxZDMwNDYxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmI4ZjM0NmQzYWY3OGFkOTE3MTlkYWEwMjMzZGRiMDFmZDExZDgyZGUyZTJhMmYwMjM1ZWExMWYzYTQ2YTRhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZhMzcyYjgzMzVjZWEyNjY2NDkzOGRkZjUwNWMyMjkzNGU3MjlhNmFlMWQ4YTE2ZTY4MzUyZDNlYzU1MzAxOCJ9"
         },
         {
@@ -437,12 +437,12 @@
       "statement": "The production admin console, served on the tailnet under its own `KC_HOSTNAME_ADMIN`, still sends its OIDC and session-check (\"3rd party check\") iframe to `KC_HOSTNAME` — the public auth origin. Until that public route resolves, opening the tailnet console fails with a third-party-check iframe timeout, so the failure is a missing public route rather than a broken admin login.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L926-L926",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L927-L927",
           "version": "repo-lines-v1:sha256:071d399fa33ff21ded4634b463db2852398037e75bf98eb003a053d3a03b2687:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcxZDM5OWZhMzNmZjIxZGVkNDYzNGI0NjNkYjI4NTIzOTgwMzdlNzViZjk4ZWIwMDNhMDUzZDNhMDNiMjY4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcxZDM5OWZhMzNmZjIxZGVkNDYzNGI0NjNkYjI4NTIzOTgwMzdlNzViZjk4ZWIwMDNhMDUzZDNhMDNiMjY4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU5NjIwMjA3YjdhZDc1OTcyOGU3NTU5OTU1ZDZhMWYzMzQwOWI5ZTAzY2E0MGQ1NDQwMjBmM2FhZDE4OTIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTYyYzdjMmY4MjI4YzBhN2QyZDgwZmEwYzgzOTkzMzdhZWJiOTAwMjExN2VmMjUzNzMwZjAxMDNlZjkyZjMyOSJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L70-L72",
-          "version": "repo-lines-v1:sha256:be847b234b430a8715e5055fc077bf05467c26fca2ba14d440aa183312a9896a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQ3YmYyMGEwOGVhNDAyYWNkNzM0YWM1NTIxMjRmOTA2YmUyNTk2NzFhMjRiNDcxZmEyMTM0MDczZDZlMzUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVkMDUyZGZmYTI5ZjcxMmVmM2I3YWY2ZjllZjM0YzZlMzg2ZTU5NzY4MjQxN2QzMzE4YTdkNjdlM2QwMzc1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIwOWFmMDc5ZjVmNWQ2MzE4M2MxODFhMWQwYzY0NGIzMDUxY2M1ZDgyMzU2NGIzMmFlNjVjZjJhNDkwOGU5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg4NDRhNDRlNzRiYmNkMzE4NTY3MjZlMjIwN2ZhNGYzOTRkNTBhNDJkMGY1NTRlMDc1MzBkYmEyYmUwOTFiNSJ9"
+          "version": "repo-lines-v1:sha256:25b4078f6b1d60989f3169dba0eae7fb38de94c85c08ab9d8c2314fd81f9fe98:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQ3YmYyMGEwOGVhNDAyYWNkNzM0YWM1NTIxMjRmOTA2YmUyNTk2NzFhMjRiNDcxZmEyMTM0MDczZDZlMzUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVkMDUyZGZmYTI5ZjcxMmVmM2I3YWY2ZjllZjM0YzZlMzg2ZTU5NzY4MjQxN2QzMzE4YTdkNjdlM2QwMzc1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIwOWFmMDc5ZjVmNWQ2MzE4M2MxODFhMWQwYzY0NGIzMDUxY2M1ZDgyMzU2NGIzMmFlNjVjZjJhNDkwOGU5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg4NDRhNDRlNzRiYmNkMzE4NTY3MjZlMjIwN2ZhNGYzOTRkNTBhNDJkMGY1NTRlMDc1MzBkYmEyYmUwOTFiNSJ9"
         }
       ]
     },
@@ -493,7 +493,7 @@
       "statement": "The `${BASE_DOMAIN}` render path is documented inconsistently with what is actually run: `compose.prod.yaml` and `.env.prod.example` describe rendering `prod-realm.json` with `envsubst` restricted to `BASE_DOMAIN`, while the runbook and README record the hand-run `sed 's|${BASE_DOMAIN}|<domain>|g'` as the command in use. Both touch only the literal `${BASE_DOMAIN}` and leave Keycloak's `${role_*}` / `${client_*}` i18n placeholders intact; a reader following only the compose comment has no warning about the unrestricted-`envsubst` corruption the restricted form exists to avoid.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L923-L923",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L924-L924",
           "version": "repo-lines-v1:sha256:0032de0a05fefaaf4fe43fd7889ebdb6332667e8e0d96159d1ea934962c11f67:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWRjMGYxOGYxMzE3M2RlNTljZDk5ZGEyMDJjODkyOWMxZmZhNTMyMTI2YmM0YWVjYjUyMjJhNTgxY2NmZGM4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmI4ZjM0NmQzYWY3OGFkOTE3MTlkYWEwMjMzZGRiMDFmZDExZDgyZGUyZTJhMmYwMjM1ZWExMWYzYTQ2YTRhZSJ9"
         },
         {
@@ -596,25 +596,29 @@
     },
     {
       "id": "claim_55a5c2a249b64d63b5b37f0a165e1f16",
-      "statement": "Two comments left around the prod admin port are stale relative to the effective configuration: `compose.prod.yaml`'s `env_file` block still lists `KC_ADMIN_BIND_IP` among the values read from `.env.prod` and its `KC_HOSTNAME_ADMIN` comment still shows the pre-feature-029 `:8099` tailnet URL, while `.env.prod.example` records the variable's removal and `komodo/stacks.toml` still passes `KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]` into `prod-auth` where nothing reads it. The effective admin address is therefore whatever `.env.prod` sets (`:19099` on this host), and the compose comments are not a reliable guide to it.",
+      "statement": "The production admin address is stack-supplied and the old bind-prefix variable is retired at every layer: the `prod-auth` block in `komodo/stacks.toml` sets `KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:19099` in its `environment` (which Komodo writes into the stack's gitignored `.env.prod`), `compose.prod.yaml` consumes it as `${KC_HOSTNAME_ADMIN:?…}` on the tailnet admin host, and `.env.prod.example` documents the same variable at the same prod-reserved port. `KC_ADMIN_BIND_IP` is gone from all three: feature 028 dropped it from the compose port bind and the stack stopped passing `KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]` on 2026-10-12 (item #727) — until then Komodo wrote it into `.env.prod`, which the keycloak compose loads with `env_file:`, so it reached the container as a `KC_*` variable naming no Keycloak option. The effective admin URL is therefore whatever `.env.prod` sets (`:19099` on this host), and no longer has to be read around a stale comment.",
       "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L98-L98",
+          "version": "repo-lines-v1:sha256:d663eeb73573b9c43e73aefea0a1fe1301e5d16a346b612eb4cc94191f4aa0f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2M2VlYjczNTczYjljNDNlNzNhZWZlYTBhMWZlMTMwMWU1ZDE2YTM0NmI2MTJlYjRjYzk0MTkxZjRhYTBmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2M2VlYjczNTczYjljNDNlNzNhZWZlYTBhMWZlMTMwMWU1ZDE2YTM0NmI2MTJlYjRjYzk0MTkxZjRhYTBmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMTgzZjAwNDkyNjhlOWU1NDk5ZmM4MDcwNTE5ZTFhMWNkNmY0OGYzM2YyYzJhMWUyYWFhMGEyYTNkYWQ3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+        },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
           "version": "repo-lines-v1:sha256:cde2581d7ccc42a3b196012df655dca45eb32c9542ae852f429d08fe6cef8a42:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDVmOWEzM2U1Yjk0ODdiNGRhZTM4OTU4ZDIxNzkwNDA5YzYzZmY3ODMxOTNjZmM4OWFlOTY5MTQ5NmY3ZDIxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhMzgwM2RjMTUyM2QwYzk2MTVlZTljNDY0ZjNmMDQ5MDRjMDE2NjMwYTMxMGYwZTM0YzI1NDJjNWJiNzA5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjljZWZlMzZiOTNjZDE3YWIwMWIwMmM2YTBlM2UxNzQ1NWUyYTdmZjIyNDIwYzlhYjhkNDZhZDE0NWUwNDNjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDVhZmZhOTRkYmJiZDA3NmI3OTE5MTJmYWEzNjBlMjAxYzI2ZmY0MzBkNDhkYjNlYjFjMWQzM2MzNzAzZGU1YSJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L59-L72",
-          "version": "repo-lines-v1:sha256:49c89edac050622e8b9fe4448effe12236f193ea54c14cca8eaee87ff05f3f02:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZjViMjIyYTM1MTg5NTZkYzdiOWRmNTg2NGRhNTdjN2IzNjQ2MmUwYWQ5ZTAzNmE4ZjE4MTA2ZmVmYjc4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZDA1MmRmZmEyOWY3MTJlZjNiN2FmNmY5ZWYzNGM2ZTM4NmU1OTc2ODI0MTdkMzMxOGE3ZDY3ZTNkMDM3NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1NzMxODY1MjY5MTc1OGZkNmIxMzI5YmJlM2U3ZjZiODg2YmM4OTUzM2VmOTljNjljNzhmNTgxOTUyNjdjMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODQ0YTQ0ZTc0YmJjZDMxODU2NzI2ZTIyMDdmYTRmMzk0ZDUwYTQyZDBmNTU0ZTA3NTMwZGJhMmJlMDkxYjUifQ"
+          "version": "repo-lines-v1:sha256:8ab65faa2821ad5037220ebadb7e8fac7add5b25f3d4b3c5b69f278b1e6ec807:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZjViMjIyYTM1MTg5NTZkYzdiOWRmNTg2NGRhNTdjN2IzNjQ2MmUwYWQ5ZTAzNmE4ZjE4MTA2ZmVmYjc4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZDA1MmRmZmEyOWY3MTJlZjNiN2FmNmY5ZWYzNGM2ZTM4NmU1OTc2ODI0MTdkMzMxOGE3ZDY3ZTNkMDM3NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1NzMxODY1MjY5MTc1OGZkNmIxMzI5YmJlM2U3ZjZiODg2YmM4OTUzM2VmOTljNjljNzhmNTgxOTUyNjdjMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODQ0YTQ0ZTc0YmJjZDMxODU2NzI2ZTIyMDdmYTRmMzk0ZDUwYTQyZDBmNTU0ZTA3NTMwZGJhMmJlMDkxYjUifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L37-L44",
-          "version": "repo-lines-v1:sha256:772490cfa21ce332a19dc9178f1dbc5b3377b711e7572a3e92ed4e043eb115e7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxMmRiYzlmNWI4NGUxNmQ3YzE4YTZhZTdjNWMwNWVmMjk1NGUxNWI4NDE2YTg0NDgzY2UzZGVjOTJiY2IzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L37-L43",
+          "version": "repo-lines-v1:sha256:819ccacd67b547fd6cc5efd13e02aecbf33632caa089cfd6dfc732daa3b02c1a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxMmRiYzlmNWI4NGUxNmQ3YzE4YTZhZTdjNWMwNWVmMjk1NGUxNWI4NDE2YTg0NDgzY2UzZGVjOTJiY2IzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T15:19:14.150Z"
+    "at": "2026-10-13T00:05:43.068Z"
   }
 }
