@@ -77,10 +77,10 @@ sources:
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-13T00:05:43.068Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -342,12 +342,16 @@ Because the console's own session-check iframe still points at `KC_HOSTNAME`, th
 must be reachable for the tailnet console to work at all; a console that fails with a third-party-check
 timeout is that route missing, not a broken admin login.
 
-Two comments around that port are stale: `compose.prod.yaml`'s `env_file` block still lists
-`KC_ADMIN_BIND_IP` among the values it reads from `.env.prod`, and its `KC_HOSTNAME_ADMIN` comment still
-shows the pre-029 `:8099` tailnet URL. The variable is genuinely gone from the bind (`.env.prod.example`
-records its removal) and `komodo/stacks.toml` still passes `KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]` to
-`prod-auth`, where nothing reads it — harmless, but it means the compose comments are not a reliable
-guide to the effective admin URL, which is whatever `.env.prod` sets (`:19099` on this host).
+**The admin address is stack-supplied, and the old bind-prefix variable is retired everywhere.** The
+`prod-auth` stack in `komodo/stacks.toml` sets `KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:19099` in its
+`environment` block — the interpolated value Komodo writes into the stack's gitignored `.env.prod` — and
+`compose.prod.yaml` consumes it as `${KC_HOSTNAME_ADMIN:?…}`, while `.env.prod.example` documents the
+same variable at the same reserved port. The former bind-prefix variable `KC_ADMIN_BIND_IP` is gone from
+all three layers: feature 028 dropped it from the compose port bind, and the stack stopped passing
+`KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]` on 2026-10-12 (item #727). Until then Komodo still wrote it into
+`.env.prod`, which the keycloak compose loads with `env_file:`, so it reached the container as a `KC_*`
+variable that names no Keycloak option. Read the effective admin URL from `.env.prod` (the stack's
+`:19099` on this host), not from a historical comment.
 
 **Both prod invariants are self-enforcing guardrails.** `scripts/check-prod-ci-port-collision.mjs` fails
 if any prod published port overlaps a CI/dev one — compared by port *number*, because a `0.0.0.0` prod

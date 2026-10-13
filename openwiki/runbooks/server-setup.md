@@ -23,10 +23,10 @@ sources:
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-13T00:05:43.068Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -92,7 +92,11 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
 - **9 — Komodo (CD to the prod daemon).** Core + Periphery agent + database, deployed from Komodo's
   own compose files with two changes: Periphery repointed at the rootless socket, and **FerretDB
   instead of MongoDB** (the unpinned Mongo image crash-loops on this new-kernel + rootless
-  combination).
+  combination). The prod stacks are not defined by hand: one **ResourceSync** reconciles the seven
+  `[[stack]]` blocks in `infrastructure-as-code/komodo/stacks.toml` (`branch = main`) and, because
+  each carries `deploy = true` + `after = [...]`, *deploys* them too in dependency order
+  (`prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant`, plus `prod-audit`,
+  `prod-observability` and `prod-vault`).
 - **10 — Public ingress, TLS and DNS.** Pick exactly one ingress model. The confirmed one is direct
   edge-TLS — the tunnel terminates TLS at the edge and dials the containers over plain HTTP on a
   shared external network, with no Caddy — and only two hostnames are public; everything else stays
@@ -217,6 +221,18 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
     `cd-deploy/prod-apk-disk`. It is `always()` + `continue-on-error` so a *failed* `prod-apk` still
     leaves the record, it never posts a non-success state, and it is asserted to match none of `main`'s
     required status globs — observability, never a second gate.
+- **Komodo's webhook is a git-style branch redeploy, not a digest body — so promotion is
+  digest-by-git.** The ResourceSync's "Execute Sync" webhook validates the branch in a GitHub-shaped
+  payload with `X-Hub-Signature-256` (HMAC using the global `KOMODO_WEBHOOK_SECRET` from
+  `compose.env`, which is also the CI `KOMODO_WEBHOOK_AUTH` secret) and then reconciles and redeploys
+  the branch's stacks in `after` order. It will **not** consume a posted image digest, so CI resolves
+  the immutable `…@sha256:` digest, writes it into a tracked host-free `.env.deploy` beside the
+  component's prod compose, commits and pushes, and only then fires the signed webhook. There is no
+  rollback endpoint — rollback is redeploying the prior digest, which `cd-deploy` does by reverting the
+  promotion commit and re-firing the webhook. The single sync URL replaced the earlier per-stack
+  redeploy webhooks, which left `prod-mc-service` and `prod-movie-assistant` on stale images; the
+  committed `stacks.toml` stays host-free because the git host lives in the bootstrapped `mcm-repo`
+  Repo resource and the domain/tailnet/registry values are masked Komodo Variables.
 - **Never commit the real forge hostname, production domain, or tailnet address.** Every literal in
   this runbook is a placeholder; the topology-scrub and secret-scan gates block a real value from
   landing in git, matching the redaction posture in
