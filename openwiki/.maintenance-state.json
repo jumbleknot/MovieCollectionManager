@@ -1,24 +1,26 @@
 {
-  "coveredCommit": "f2582c46f099934c16a5006b38ab37e6cb56a1f8",
-  "coveredAt": "2026-10-14T01:24:04.989Z",
+  "coveredCommit": "adf940f1626f9e780409664c21a9a6fc8d7a14e4",
+  "coveredAt": "2026-10-14T01:43:49.289Z",
   "lastOutcome": "completed",
   "backlog": [
     {
       "area": "runbooks",
       "pages": [
-        "devcontainer-sandbox-lifecycle.md"
+        "prod-control-tower.md",
+        "prod-reboot-resilience.md"
       ],
-      "kind": "create",
+      "kind": "refresh",
+      "drift": true,
       "subjects": {},
       "areaExists": true,
-      "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox-lifecycle.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "drift: docs/runbooks/prod-control-tower.md changed after the page's stamp; drift: docs/runbooks/prod-reboot-resilience.md changed after the page's stamp",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md; openwiki/runbooks/prod-reboot-resilience.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 751,
-    "headCommit": "3d394692b4d7c810c4287fc930a70a8b88a97ca2",
+    "headCommit": "adf541a4c8b2fcef61dc847cc3b833a601f6f888",
     "markerBefore": "8e12631f8426c6c072a6ac7be13ed7d581d171d0",
     "slices": [
       {
@@ -55,29 +57,40 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/prod-reboot-resilience.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md; openwiki/runbooks/prod-control-tower.md; openwiki/runbooks/prod-reboot-resilience.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "devcontainer-sandbox-lifecycle.md"
+        ],
+        "kind": "create",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "new source, not yet covered: docs/runbooks/devcontainer-sandbox-lifecycle.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-14T01:24:05.427Z"
+    "updatedAt": "2026-10-14T01:43:49.727Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 2231,
+    "pagesWritten": 1,
+    "elapsedSeconds": 576,
     "stoppedAtBudget": true
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 114,
+    "calls": 50,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 633154,
-    "cached": 7337082,
+    "uncached": 223385,
+    "cached": 3281128,
     "cacheWrite": 0,
-    "output": 184638,
-    "reasoning": 129344,
-    "ms": 2430463,
-    "estCostUsd": 0.4555,
+    "output": 39916,
+    "reasoning": 23437,
+    "ms": 532173,
+    "estCostUsd": 0.1346,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -87,13 +100,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/server-setup.md",
-        "runbooks/prod-control-tower.md",
-        "runbooks/prod-reboot-resilience.md"
+        "runbooks/devcontainer-sandbox-lifecycle.md"
       ],
       "effort": "low",
       "deadlineStop": false,
-      "estCostUsd": 0.4555,
+      "estCostUsd": 0.1346,
       "rateLimited": null
     }
   ],
