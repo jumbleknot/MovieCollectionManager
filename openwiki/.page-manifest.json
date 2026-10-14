@@ -225,13 +225,6 @@
       "gitHead": "1433973334773d1d18174706dc3944dd578f4b05",
       "sourceFingerprint": "sha256:338187f7fce78de84316b4dfb8f8f72a0be73c83128485d48ab69ed726b222c9"
     },
-    "/openwiki/runbooks/prod-reboot-resilience.md": {
-      "pageVersion": "sha256:a6b7813e22df369d66ec0a11d703182a64a83e35ca145f6d8e59b10d53734f0b",
-      "completedBy": "openwiki/0.7.1",
-      "completedRunId": "f556a170-5d56-4bd5-bdad-a3e134800fe6",
-      "gitHead": "1433973334773d1d18174706dc3944dd578f4b05",
-      "sourceFingerprint": "sha256:338187f7fce78de84316b4dfb8f8f72a0be73c83128485d48ab69ed726b222c9"
-    },
     "/openwiki/runbooks/renovate.md": {
       "gitHead": "0f551ce84cbdd2b00ab4f2525708b172980d4d3a",
       "sourceFingerprint": "sha256:12e503b9748615925d8efc62820a73218c5602ec7dbb02db18b71e3d97c64915",

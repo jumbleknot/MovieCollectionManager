@@ -1,7 +1,9 @@
 ---
-type: "Reference"
-title: "Prod reboot resilience"
-openwiki_generated: true
+type: Runbook
+title: Prod reboot resilience
+description: Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes — bind address, restart policy, and periphery storage location — that made recovery hands-off.
+resource: docs/runbooks/prod-reboot-resilience.md
+tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -28,9 +30,6 @@ sources:
   - id: openwiki-source-750b2cbfd1a5b0c826bf579b
     resource: repo://scripts/preflight.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-14T01:54:06.604Z
 ---
 
 
