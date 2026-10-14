@@ -1,19 +1,8 @@
 {
-  "coveredCommit": "947bf2226196ccce574388053668c1172facf94b",
-  "coveredAt": "2026-10-14T00:12:27.263Z",
+  "coveredCommit": "bed54e95d65ec3875cfb103321ca6f4aea11e969",
+  "coveredAt": "2026-10-14T00:34:12.324Z",
   "lastOutcome": "completed",
   "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "stacks.md"
-      ],
-      "kind": "create",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "new source, not yet covered: infrastructure-as-code/docker/stacks/README.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
     {
       "area": "runbooks",
       "pages": [
@@ -42,7 +31,7 @@
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 751,
-    "headCommit": "e54130b821b5d997c7ad7b284080a48947610b9c",
+    "headCommit": "be65717c9cd35eb61c0572d4843bf1f57fd9280f",
     "markerBefore": "8e12631f8426c6c072a6ac7be13ed7d581d171d0",
     "slices": [
       {
@@ -55,29 +44,40 @@
         "areaExists": true,
         "reason": "drift: infrastructure-as-code/komodo/stacks.toml changed after the page's stamp",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/infrastructure-stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "stacks.md"
+        ],
+        "kind": "create",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "new source, not yet covered: infrastructure-as-code/docker/stacks/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-14T00:12:27.676Z"
+    "updatedAt": "2026-10-14T00:34:12.740Z"
   },
   "lastRunBudget": {
     "pagesWritten": 1,
-    "elapsedSeconds": 1005,
+    "elapsedSeconds": 701,
     "stoppedAtBudget": true
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 89,
+    "calls": 67,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 577221,
-    "cached": 5688812,
+    "uncached": 245688,
+    "cached": 4724506,
     "cacheWrite": 0,
-    "output": 63941,
-    "reasoning": 38758,
-    "ms": 744066,
-    "estCostUsd": 0.284,
+    "output": 48017,
+    "reasoning": 27171,
+    "ms": 493262,
+    "estCostUsd": 0.1597,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -87,11 +87,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/infrastructure-stacks.md"
+        "projects/stacks.md"
       ],
       "effort": "low",
       "deadlineStop": false,
-      "estCostUsd": 0.284,
+      "estCostUsd": 0.1597,
       "rateLimited": null
     }
   ],
