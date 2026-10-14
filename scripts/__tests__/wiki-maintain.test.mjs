@@ -3604,3 +3604,49 @@ test('#748 (d): a joined entry ALREADY in a committed backlog is split back into
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('#748 review: the marker never moves BACKWARDS — a newer record that covered further keeps its marker', () => {
+  const base = REC({ coveredCommit: 'c0' });
+  const theirs = REC({ coveredCommit: 'c2', coveredAt: 't2' });
+  const ours = REC({ coveredCommit: 'c1', coveredAt: 't1' });
+  const descends = (later, earlier) => later === 'c2' && earlier === 'c1';
+  const { record } = mod.mergeRunRecords({ base, ours, theirs, isAncestor: (a, b) => descends(b, a) });
+  assert.equal(record.coveredCommit, 'c2');
+  assert.equal(record.coveredAt, 't2');
+  const { record: mine } = mod.mergeRunRecords({ base, ours: theirs, theirs: ours, isAncestor: (a, b) => descends(b, a) });
+  assert.equal(mine.coveredCommit, 'c2', 'and ours stands when ours is the further one');
+});
+
+test('#748 review: a pointer the newer record cleared (merged or closed) is not resurrected by this run extending it', () => {
+  const X = { branch: mod.PROPOSAL_BRANCH, number: 745, markerBefore: 'c0', slices: [sl('runbooks', ['a.md'])] };
+  const base = REC({ proposal: X });
+  const theirs = REC({ proposal: null, coveredCommit: 'c1' });
+  const ours = REC({ proposal: { ...X, slices: [...X.slices, sl('runbooks', ['b.md'])] } });
+  assert.equal(mod.mergeRunRecords({ base, ours, theirs }).record.proposal, null);
+  const opened = REC({ proposal: { ...X, number: 760 } });
+  assert.equal(mod.mergeRunRecords({ base, ours: opened, theirs }).record.proposal.number, 760, 'a proposal this run OPENED still stands');
+});
+
+test('#748 review: a failed switch to the proposal branch leaves the run record exactly as it was, never conflicted', () => {
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    g('add', '-A');
+    g('commit', '-qm', 'record');
+    // A proposal branch whose rebase onto main conflicts.
+    g('checkout', '-qb', mod.PROPOSAL_BRANCH);
+    writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'), '# Invariants (proposal)\n');
+    g('commit', '-qam', 'proposal edit');
+    g('checkout', '-q', 'main');
+    writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'), '# Invariants (main)\n');
+    g('commit', '-qam', 'main edit');
+    const mine = `${JSON.stringify({ ...mod.readRunRecord(root), lastOutcome: 'completed', coveredAt: 'adopted' }, null, 2)}\n`;
+    writeFileSync(join(root, mod.STATE_FILE), mine);
+    assert.throws(() => mod.prepareProposalBranch({ root, baseBranch: 'main', git: g }), /does not rebase cleanly/, 'the ORIGINAL error surfaces');
+    assert.equal(readFileSync(join(root, mod.STATE_FILE), 'utf8'), mine, 'the record is this run\'s, byte for byte');
+    assert.equal(g('status', '--porcelain', '--', mod.STATE_FILE).stdout.slice(0, 2), ' M', 'modified, not unmerged');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

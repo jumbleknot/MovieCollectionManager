@@ -507,11 +507,13 @@ two cannot disagree.
   than `PAGE_BUDGET` pages.
 - **Never queued.** Drift beyond the bound is reported, not written to the backlog. It is found again on the next
   run. A drift slice that fails is carried like any failed slice.
-- **A page the open proposal already holds is covered.** The proposal's pages are not on `main` yet, so
-  `main`'s stamps make them look drifted. The planner reads each candidate from the proposal branch, and a
-  page that is fresh there is not planned: not as drift, not from the backlog and not from a source change.
-  `--plan` lists these pages as `on the open proposal`. Dispatch 5264 regenerated two pages into #751, and the
-  next run had queued both again (#748).
+- **A drifted page the open proposal already holds is covered.** The proposal's pages are not on `main` yet,
+  so `main`'s stamps make them look drifted. The planner reads each drift candidate from the proposal branch,
+  and one that is fresh there is not planned, either as new drift or from a carried drift slice. `--plan` lists
+  these pages as `on the open proposal`. Dispatch 5264 regenerated two pages into #751, and the next run had
+  queued both again (#748). **Only drift is skipped.** Freshness compares commit dates, and a merged branch
+  keeps its commit's earlier date, so work queued by a source change or a failure is always planned. Drift
+  is re-derived from `main` on every run, so if the proposal closes, nothing is lost.
 - **A directory `resource` is unplannable.** Any commit under the directory re-flags the page, so the plan reports
   it and does not pay to regenerate it. The brief requires a `resource` to name one file (§5 of
   `openwiki/INSTRUCTIONS.md`). *Unplannable* is not *parked*. An unplannable page costs nothing whether or not
@@ -569,7 +571,7 @@ work or corrupting the record when it happens anyway:
 - **The record commit merges; it never replays.** The step merges three ways: this run's record, `main`'s
   current one, and the record the run started from (`--merge-record`). A field only one side changed takes
   that side's value. Escalation tags, parked pages and backlog pages merge per page, so neither run's tags or
-  queued pages are lost. Two **different** proposal pointers are a conflict, and the step fails with nothing
+  queued pages are lost. The marker never moves backwards. Two **different** proposal pointers are a conflict, and the step fails with nothing
   committed. Run 5229 had replayed its whole record over a newer one, erasing the open proposal's pointer and
   two deadline tags.
 - **A packed invocation is carried as its per-area slices.** A joined entry such as

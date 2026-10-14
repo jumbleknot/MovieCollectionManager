@@ -230,11 +230,12 @@ function assertRecordShape(record) {
  *   - two DIFFERENT proposal pointers cannot both be right (FR-016: one open proposal, ever), so that is
  *     a conflict, refused rather than guessed. A null pointer yields to a set one: the side that cleared
  *     it reconciled an older proposal, and the other side's is newer.
- *   - anything else both sides changed (the marker, the last-run fields) is this run's own account.
+ *   - the marker never moves backwards (`isAncestor`); anything else both sides changed (the last-run
+ *     fields) is this run's own account.
  *
  * Returns `{ record, conflicts }`. An unchanged `theirs` returns `ours` exactly, the old behaviour.
  */
-export function mergeRunRecords({ base = {}, ours = {}, theirs = {} } = {}) {
+export function mergeRunRecords({ base = {}, ours = {}, theirs = {}, isAncestor = () => false } = {}) {
   const b = { ...EMPTY_RECORD, ...base };
   const o = { ...EMPTY_RECORD, ...ours };
   const t = { ...EMPTY_RECORD, ...theirs };
@@ -274,9 +275,18 @@ export function mergeRunRecords({ base = {}, ours = {}, theirs = {} } = {}) {
     });
   }
 
+  // The marker never moves backwards: when the newer record covered further, its marker stands, and
+  // the range between is covered by that run or sits in the merged backlog.
+  if (bothChanged('coveredCommit') && o.coveredCommit && t.coveredCommit && isAncestor(o.coveredCommit, t.coveredCommit)) {
+    record.coveredCommit = t.coveredCommit;
+    record.coveredAt = t.coveredAt;
+  }
+
   if (bothChanged('proposal')) {
     if (o.proposal === null) record.proposal = t.proposal;
-    else if (t.proposal === null) record.proposal = o.proposal;
+    // The newer record cleared the very proposal this run extended (it merged or closed): this run's
+    // pointer is to a dead proposal, so it must not come back.
+    else if (t.proposal === null) record.proposal = o.proposal.number === b.proposal?.number ? null : o.proposal;
     else if (o.proposal.number !== t.proposal.number) {
       conflicts.push(`proposal: this run recorded #${o.proposal.number} but main's record now points at #${t.proposal.number} — only one maintenance proposal can be open (FR-016), so a human must say which`);
     } else {
@@ -750,12 +760,25 @@ export function computePlan({
   pageBudget = PAGE_BUDGET,
   now = () => new Date().toISOString(),
   // The open proposal's branch (#748). Its pages are not on main yet, so main's stamps call them
-  // drifted; a page the proposal already holds fresh is covered, and planning it again pays twice.
+  // drifted; a DRIFTED page the proposal already holds fresh is covered, and planning it pays twice.
   proposalRef = null,
 } = {}) {
   const runRecord = record ?? readRunRecord(root);
   const sinceCommit = since ?? runRecord.coveredCommit;
   const baseCommit = git(['rev-parse', 'HEAD'], root);
+  // DRIFT only. Freshness on the proposal is judged by commit DATES, and a merged branch keeps its
+  // commit's own earlier date, so a change merged after the proposal was generated can look older
+  // than the proposal's stamp. Work a change or a failure queued is never dropped on that evidence;
+  // drift is re-derived from main's stamps every run, so skipping it loses nothing if the proposal
+  // closes. Run 5268 carried exactly this: a drift slice, put back after the run stopped.
+  const coveredOnProposal = freshOnRef(root, proposalRef);
+  const onProposal = [];
+  const backlog = (runRecord.backlog ?? []).flatMap((s) => {
+    if (s?.drift !== true || !Array.isArray(s.pages)) return [s];
+    const keep = s.pages.filter((p) => !coveredOnProposal(`${s.area}/${p}`));
+    onProposal.push(...s.pages.filter((p) => !keep.includes(p)).map((p) => `${s.area}/${p}`));
+    return keep.length === 0 ? [] : [{ ...s, pages: keep }];
+  });
   const changedPaths = changedSince(root, sinceCommit);
   const sinceResolved = changedPaths.sinceResolved !== false;
 
@@ -763,21 +786,11 @@ export function computePlan({
   const slices = planSlices({
     bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE),
     changedPaths,
-    backlog: runRecord.backlog ?? [],
+    backlog,
     policy,
     allDocPaths,
     parked: runRecord.parked ?? {},
   });
-
-  const coveredOnProposal = freshOnRef(root, proposalRef);
-  const onProposal = [];
-  for (let i = slices.length - 1; i >= 0; i--) {
-    const s = slices[i];
-    const keep = s.pages.filter((p) => !coveredOnProposal(`${s.area}/${p}`));
-    onProposal.push(...s.pages.filter((p) => !keep.includes(p)).map((p) => `${s.area}/${p}`));
-    if (keep.length === 0) slices.splice(i, 1);
-    else if (keep.length < s.pages.length) slices[i] = { ...s, pages: keep };
-  }
 
   // What one run can attempt, given the page budget. The rest is `deferred` and carried forward — a
   // plan that pretended a 40-page sweep fits in one run would be lying to its reviewer.
@@ -1107,16 +1120,17 @@ export function prepareProposalBranch({
   }
   // ...but a modified record blocks both moves below: git refuses to rebase with unstaged changes, and
   // to check out a branch cut from an older `main`, whose record differs. Reconcile writes the record
-  // whenever it ADOPTS a proposal, so every adopting run with a remote branch died here (#748). Set it
-  // aside and put it back: the proposal branch never commits the record, so after the rebase its copy
-  // is the base branch's and the change re-applies exactly.
-  // Tracked and modified only: an untracked record blocks neither move, and a stash cannot name it.
-  const stashed = g('diff', '--quiet', 'HEAD', '--', STATE_FILE).status === 1;
-  if (stashed) gitOrThrow(g, ['stash', 'push', '--quiet', '--', STATE_FILE], 'setting the run record aside');
+  // whenever it ADOPTS a proposal, so every adopting run with a remote branch died here (#748). So its
+  // bytes are set aside and written back whatever happens. Not a stash: a pop can conflict, leaving
+  // markers in the record and hiding the error that mattered. The record is this run's, wholesale.
+  // Tracked and modified only: an untracked record blocks neither move.
+  const recordPath = statePath(root);
+  const saved = g('diff', '--quiet', 'HEAD', '--', STATE_FILE).status === 1 ? readFileSync(recordPath) : null;
+  if (saved !== null) gitOrThrow(g, ['checkout', '--', STATE_FILE], 'setting the run record aside');
   try {
     return switchToProposalBranch({ g, baseBranch, branch, remote, adoptRemote });
   } finally {
-    if (stashed) gitOrThrow(g, ['stash', 'pop', '--quiet'], 'restoring the run record');
+    if (saved !== null) writeFileSync(recordPath, saved);
   }
 }
 
@@ -3042,7 +3056,8 @@ async function main(argv) {
     // merged record and nothing else, so a conflict leaves the shell redirect empty and the step fails.
     try {
       const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
-      const { record, conflicts } = mergeRunRecords({ base: read(opts.base), ours: read(opts.ours), theirs: read(opts.theirs) });
+      const isAncestor = (a, b) => spawnSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: REPO_ROOT }).status === 0;
+      const { record, conflicts } = mergeRunRecords({ base: read(opts.base), ours: read(opts.ours), theirs: read(opts.theirs), isAncestor });
       if (conflicts.length > 0) {
         for (const c of conflicts) console.error(`[wiki-maintain] record conflict — ${c}`);
         return 1;
