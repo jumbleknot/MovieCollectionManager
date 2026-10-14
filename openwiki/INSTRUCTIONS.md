@@ -148,6 +148,10 @@ Every page needs a `type`. Beyond that, populate `title`, `description`, `tags`,
 `timestamp` wherever they apply — `description` in particular, since the per-directory `index.md`
 navigation is built from it, and a missing description degrades retrieval for everyone.
 
+**A `description` never contains `#`.** The generator ends the `index.md` entry at the first `#`, so
+"… reasoning effort of item #525" is listed as "… reasoning effort of item". Name an item in the page body,
+or write "item 525" if the description must name it.
+
 Suggested `type` values, kept small and consistent so filtering is predictable:
 
 `Architecture` · `Service` · `Runbook` · `Decision` · `Process` · `Convention` · `Gotcha` · `Reference`
