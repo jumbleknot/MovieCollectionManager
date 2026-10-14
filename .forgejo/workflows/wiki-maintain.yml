@@ -327,6 +327,10 @@ jobs:
       # (FR-009a) — the same mechanism cd-deploy's digest-promote commit uses.
       - name: Commit the run record
         if: always() && steps.self.outputs.skip != 'true'
+        env:
+          # The commit the run started from (the `tip` step), as the record merge's base. Passed as an
+          # environment variable, never interpolated into the script.
+          START: ${{ steps.tip.outputs.start }}
         run: |
           bash scripts/ci-log-step.sh maintain-commit-run-record bash -e /dev/stdin <<'CI_LOG_STEP'
           set -uo pipefail
@@ -349,7 +353,7 @@ jobs:
           # the step with nothing committed, rather than guessing.
           WORK="$(mktemp -d)"
           cp openwiki/.maintenance-state.json "$WORK/ours.json"
-          START="${{ steps.tip.outputs.start }}"
+          START="${START:-}"
           if [ -z "$START" ] || ! git show "$START:openwiki/.maintenance-state.json" > "$WORK/base.json" 2>/dev/null; then
             # No known start (the tip step did not run): treat the tip as the base — this run's record wins, as before.
             rm -f "$WORK/base.json"
