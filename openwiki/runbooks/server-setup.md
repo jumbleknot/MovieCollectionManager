@@ -5,10 +5,14 @@ description: The phase-ordered from-scratch bring-up runbook for the single phys
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, runbook]
 sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-abae5c338f9f983f89ea77ad
+    resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-839571d2c51f49a930537d1b
@@ -23,10 +27,10 @@ sources:
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-14T00:46:58.372Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T10:46:04.907Z
+    at: 2026-10-14T00:46:58.372Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -69,13 +73,20 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
 - **3 — Remote management.** Tailscale with `--ssh`, plus the `ufw allow in on tailscale0` rule —
   without it, Phase 2's default-deny blocks every admin UI (Cockpit, Forgejo, Komodo, Grafana) even
   over the tailnet. Cockpit for browser-based host admin.
-- **4 — KVM.** Put the (future) `ci` user in the `kvm` group so the emulator job can receive
-  `/dev/kvm`.
+- **4 — KVM.** Enable hardware virtualization and put the (future) `ci` user in the `kvm` group so
+  the emulator job can use `/dev/kvm`. The device is **not** passed into a job container: the job
+  executes **on the host** as the unprivileged `ci` user through a host-type runner label defined as
+  `kvm:host` (Phase 7), which is precisely why `ci` must be in the group. On this host `/dev/kvm` is
+  mode **666** (`crw-rw-rw- root kvm`, measured 2026-10-12); 660 via a udev rule is the tighter option,
+  and the group membership is what keeps the job working if it is applied. Passing
+  `--device /dev/kvm --group-add kvm` into a job container was the setup until commit `235f2f4c`.
 - **5 — Two segregated rootless Docker daemons.** The core of the design: two unprivileged service
   users, each running its own rootless `dockerd` at its own socket with data under its own home, plus
-  per-daemon `daemon.json` (log rotation, `live-restore`), KVM device passthrough into CI containers,
-  and the pre-created external networks/volumes the prod stacks expect. This phase owns the
-  daemon-installation, subordinate-UID and cgroup-delegation gotchas below.
+  per-daemon `daemon.json` (log rotation, `live-restore`), the `kvm`-group membership and `kvm:host`
+  host-execution label that let the emulator and Docker-image-building jobs run as `ci` on the host
+  rather than in a job container, and the pre-created external networks/volumes the prod stacks
+  expect. This phase owns the daemon-installation, subordinate-UID and cgroup-delegation gotchas
+  below.
 - **6 — Forgejo (source of truth) + OCI registry + GitHub push mirror.** Runs on the prod daemon with
   Postgres behind it; `packages` (the registry) and `actions` are enabled by env, the GitHub mirror is
   a push mirror so Forgejo stays SSOT, and every automated consumer gets its own minimally-scoped
@@ -84,15 +95,27 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
 - **7 — Forgejo Actions runner.** `forgejo-runner` v12 as a **binary** under the `ci` user's
   systemd-user manager (a container runner would fight container↔Forgejo networking), registered with
   the UUID + secret the web UI hands out — the older registration-token flow is deprecated. The runner
-  label is where `ubuntu-latest` becomes a plain Node image.
+  advertises **two labels**: `ubuntu-latest`, which is where it becomes a plain Node image, and the
+  host-type `kvm:host` (referenced as `runs-on: kvm`, the label *name*), on which jobs execute directly
+  on the host as the unprivileged `ci` user with no job container — the emulator job and the
+  Docker-image-building jobs, which need `/dev/kvm`, a single-host view of `localhost:8082` /
+  `10.0.2.2:8082`, and a reachable `ci` rootless daemon.
 - **8 — Self-hosted Nx remote cache.** MinIO plus the open-source Rust `nx-cache-server` on the prod
   daemon; the first-party `@nx/s3-cache` / `@nx/shared-fs-cache` packages are deprecated over an
   unpatchable CVE. Client wiring is entirely env-driven, so local runs without the token fall back to
   the local cache and no remote-cache config leaks into the repo.
 - **9 — Komodo (CD to the prod daemon).** Core + Periphery agent + database, deployed from Komodo's
-  own compose files with two changes: Periphery repointed at the rootless socket, and **FerretDB
+  own compose files with three changes: Periphery repointed at the rootless socket, **FerretDB
   instead of MongoDB** (the unpinned Mongo image crash-loops on this new-kernel + rootless
-  combination). The prod stacks are not defined by hand: one **ResourceSync** reconciles the seven
+  combination), and **`PERIPHERY_ROOT_DIRECTORY` bootstrapped onto persistent disk** (a directory
+  under the `prod` user's home) instead of the stock `/etc/komodo` default. The last one is not
+  cosmetic: under rootless Docker `/etc` is copy-up'd to a per-daemon tmpfs, so a default Periphery
+  root is wiped on every reboot — along with the cloned repo checkout that every stack's relative
+  bind-mounts resolve against, after which Docker auto-creates each missing bind-mount source *file*
+  as a directory and the Mongo and Vault containers die with `not a directory` (exit 127). Bootstrap
+  the persistent root here so a rebuild cannot reintroduce the tmpfs default; the failure and its
+  fix are recorded in [Prod reboot resilience](./prod-reboot-resilience.md).
+  The prod stacks are not defined by hand: one **ResourceSync** reconciles the seven
   `[[stack]]` blocks in `infrastructure-as-code/komodo/stacks.toml` (`branch = main`) and, because
   each carries `deploy = true` + `after = [...]`, *deploys* them too in dependency order
   (`prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant`, plus `prod-audit`,
@@ -169,6 +192,25 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   - **Cgroup delegation must be enabled at the systemd `user@.service` level, or rootless Docker only
     enforces memory/pids limits**, silently ignoring CPU/IO limits — required for the CI-vs-prod
     resource isolation above.
+- **`/dev/kvm` is host state, not something handed to a container.** The emulator job reaches it by
+  running **on the ci host** through the `kvm:host` runner label (`runs-on: kvm` uses the label
+  *name*), so what has to hold is: KVM enabled on the host, `ci` in the `kvm` group, and the runner
+  still advertising that label. On this host the device is mode **666** (`crw-rw-rw- root kvm`,
+  measured 2026-10-12); 660 via a udev rule is the tighter option, and the group membership is what
+  keeps the job working if it is applied. A host job must also provision its own Docker CLI and prove
+  it reaches the `ci` rootless daemon at the job's `DOCKER_HOST` — there is no fallback socket — and a
+  missing `/dev/kvm` **fails the job loudly** rather than skipping the mobile suite. The same
+  `kvm:host` label carries the Docker-image-building jobs, which a `node:22-bookworm` job container
+  could not run at all (no Docker CLI or daemon). See [Android emulator](./android-emulator.md) for the
+  job-side view.
+- **A default Periphery root lives on a tmpfs and is wiped by every reboot.** Rootless Docker
+  copy-ups `/etc` into a per-daemon tmpfs, so Komodo's stock `/etc/komodo` root — and with it the
+  cloned repo checkout that every stack's relative bind-mounts resolve against — does not survive.
+  Docker then auto-creates each missing bind-mount *source file* as a directory, and the Mongo/Vault
+  containers fail with `not a directory` (exit 127). Phase 9 therefore bootstraps
+  `PERIPHERY_ROOT_DIRECTORY` onto persistent disk at install time, so a rebuild cannot reintroduce the
+  default; the recovery ordering when a reboot does land dirty is in
+  [Prod reboot resilience](./prod-reboot-resilience.md).
 - **The forge's Actions-artifact API is a missing route, not an empty result.** `GET
   /api/v1/repos/.../actions/artifacts` answers `404 page not found` on this build
   (15.0.3+gitea-1.22.0), so `upload-artifact` APKs are reachable only by a human clicking through the

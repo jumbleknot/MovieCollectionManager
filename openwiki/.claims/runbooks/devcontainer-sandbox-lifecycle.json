@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3ffb0b8cd562c8e0c795b33acbe4724733aa53354ec684e7513bf7f2e542dcb7",
+  "claims": [
+    {
+      "id": "claim_d09a6a6493dd4c28a412786ec71bb102",
+      "statement": "The Docker Sandbox dev-container runbook was split into two files on 2026-10-10 (item #682) — the operating manual docs/runbooks/devcontainer-sandbox.md and the lifecycle companion docs/runbooks/devcontainer-sandbox-lifecycle.md — and section numbers are shared between them, so a section reference means the same section in either file.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
+          "version": "repo-file-v1:sha256:736bb8970614aa87599386e3dc6768b2c7d842dc2242f5e05d008552c431e2fe"
+        }
+      ]
+    },
+    {
+      "id": "claim_74c5579d7b414173a72d59cb6eea6414",
+      "statement": "`sbx run` mounts the CURRENT DIRECTORY as the sandbox workspace read-write over virtiofs unless a scratch directory is passed explicitly, so creating a sandbox from the repository destroys the host-filesystem isolation the environment exists for; a Windows mount in the VM is still reachable from the VM shell even though the dev container is separately isolated from it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        },
+        {
+          "resource": "repo://scripts/open-sandbox.ps1",
+          "version": "repo-file-v1:sha256:11fda0edbe42ed352205b7e2d8023dfc302f3c132f7d28c9e7b5cef3418edf8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_6dd0acc8ab2c4e1980b562e9d73f05fb",
+      "statement": "A sandbox template carries neither the egress policy (policy rules are scoped per sandbox, so a new sandbox gets the default profile) nor the Docker images (`sbx template save` snapshots the VM root filesystem, not the Docker data disk), so recreate is instantiate then apply policy then provision, and it is fast but cold — the instantiation is seconds and the real time is the cold rebuild and re-pull that follows.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        },
+        {
+          "resource": "repo://scripts/gen-egress-policy.mjs",
+          "version": "repo-file-v1:sha256:fe30dc352b9caa5ef48974a7f8811cab2e35c129685ee92319ecd8e8711e9b70"
+        }
+      ]
+    },
+    {
+      "id": "claim_e5aaef6a8e744806b1b1544a692bdf52",
+      "statement": "`sbx template save` stops the sandbox and holds a lock that blocks other `sbx` commands for its full duration, so it must not be run when the environment is needed and its apparent absence from `sbx template ls` is not evidence of failure.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_daf304af51cb42fdb285c87713db0508",
+      "statement": "A sandbox has three independently sized volumes (the Docker data disk, the VM root holding /workspaces/<name>, and a cloned-workspace volume used only in --clone mode), each sized by an environment variable read at sandbox creation time, so changing a size means recreating the sandbox; the variables must be set at User scope because the default Docker volume was reduced in a later sbx release.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_eddf865286a04b44a718c669afa02ba6",
+      "statement": "A full Docker volume never reports a disk error: it surfaces as a feature-install `exit code: 100`, apt reporting `is not signed` / `At least one invalid signature was encountered`, or a build dying in `exporting layers`; `df` is the authority while `docker system df` is not, because it counts shared layers optimistically.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_69747bb901df4d22a44f5b4566f7e996",
+      "statement": "Reclaiming disk from the dev-container images requires removing the derived image AFTER its parent toolchain image is gone (until then the layers are shared and deleting either frees almost nothing), and two dev-container images will not fit simultaneously, so removing the previous pair is part of re-pinning.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_af99a68db9ab4534a67d6221e5543fae",
+      "statement": "Build cache can mask a broken environment: a build that reuses a cached feature-install layer can succeed without running the failing step, so pruning the cache reveals a pre-existing failure rather than causing it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_713ccebda8824ce4a53f3e03464ac21f",
+      "statement": "`sbx run` reports `docker daemon failed to start inside the sandbox` while dockerd is healthy because the daemon restores every `restart: unless-stopped` container first (54–101 s measured here), sbx's compiled-in dockerd-readiness budget is shorter with no flag, environment variable, settings file or daemon option to raise it, and the CLI exit then trips the ~30 s idle-stop that kills the VM; `scripts/open-sandbox.ps1` works around it by treating the exit code as a claim and SSH answering as evidence, waiting on a deadline instead of a loop count.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        },
+        {
+          "resource": "repo://scripts/open-sandbox.ps1",
+          "version": "repo-file-v1:sha256:11fda0edbe42ed352205b7e2d8023dfc302f3c132f7d28c9e7b5cef3418edf8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_879d19a961224dfe87bc909943ea2333",
+      "statement": "A cold recreate from scratch needs three things the provisioning path does not supply: the `devcontainer` CLI installed, an `insecure-registries` entry in /etc/docker/daemon.json because the forge registry is plain HTTP, and a sandbox restart rather than `/etc/init.d/docker restart` (which exits on `ulimit: error setting limit (Invalid argument)` while `docker info` keeps answering, so it reads as success).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_e592532c4aa448fc8d6b452970ace3e9",
+      "statement": "An instant failure is not always an egress-policy refusal: the HTTP/HTTPS registry mismatch fails in 0.034 s and has nothing to do with policy, so the timing is a clue to be confirmed by reading the error text rather than a diagnosis.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_deb61814e7004de7add3e023505900c7",
+      "statement": "`/workspaces/<name>` is a plain directory on the VM root volume rather than a mount, so `sbx rm` destroys the working tree and the local credential/configuration files; `tar -T -` fed an empty list writes a valid zero-entry archive that `sbx cp` copies without error, so a backup must be validated by listing it rather than by trusting the exit code.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_d6cf6c0f46a842bea5d34a4e17bceeb6",
+      "statement": "`run-harness.sh` runs twelve verify scripts across three vantage points (in-container, VM-side, host-side), enumerates the expected scripts by name because a glob silently shrinks and a skipped check reads as a pass, and requires MCM_HOST_CHECK because the host-side proof cannot be produced from inside the thing being claimed about; without it the run reports eleven and fails.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/run-harness.sh",
+          "version": "repo-file-v1:sha256:8159c62472abdbd723e1d5c2399e7d1ace23d3f11692d5d119e5a25a95a287a3"
+        }
+      ]
+    },
+    {
+      "id": "claim_170a078934ac4583bbf357f49e0f4f7f",
+      "statement": "Running the verification harness destroys and rebuilds the dev container: verify-reproducible-recreate.sh removes the container and its derived image by design, so a `reproducible-recreate` FAIL means the container is gone right now, not that a future recreate would fail; the script now sources the VM-local image pin and proves the base image is obtainable BEFORE it destroys anything.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/run-harness.sh",
+          "version": "repo-file-v1:sha256:8159c62472abdbd723e1d5c2399e7d1ace23d3f11692d5d119e5a25a95a287a3"
+        },
+        {
+          "resource": "repo://.devcontainer/verify/verify-reproducible-recreate.sh",
+          "version": "repo-file-v1:sha256:daa45487bdbd545e441e5ffc54fb6f77f416031a59a48d39355b99111fb41b4d"
+        }
+      ]
+    },
+    {
+      "id": "claim_2fc3f235e64c4c3c9d7618ffd44b90d9",
+      "statement": "`verify-engine-seam.sh --host-check` passes vacuously when Docker Desktop is stopped, because every assertion is of the form \"the Windows engine does not list X\" and it does not distinguish an engine that answered-and-absent from an engine that could not be reached at all; reachability must be confirmed separately before treating the host-side proof as re-verified.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-engine-seam.sh",
+          "version": "repo-file-v1:sha256:02b515581c4ec63bb9fd89091140ad091a036b0751df05fb40c83a2183263172"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a9ff7d2d03e49928914adfbea7cbe89",
+      "statement": "`verify-firewall-allowlist.sh` carries the G5 sibling-egress refusal, probed from a real sibling container because inferring it from the policy's stated scope proves nothing; it is RED by design on the Docker Desktop path, which is what makes the GREEN on the sandbox path meaningful.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-firewall-allowlist.sh",
+          "version": "repo-file-v1:sha256:e57ccd277f1e1a452f9b1d64787151bb7fdc813d5160bfc60c8c61c2d0aa7da9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3e046ef462a04645ab5d7738df651187",
+      "statement": "An `sbx` upgrade is a security-relevant change rather than routine, and the ritual is: read the intervening release notes for network-policy semantics, `--network=host`, port publishing, idle-stop, secret injection and template semantics; capture the before-state with verify-reboot-survival.sh --capture; upgrade and re-run the harness plus the host-side egress audit; re-run the G5 sibling-egress refusal explicitly; and record the new version.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-reboot-survival.sh",
+          "version": "repo-file-v1:sha256:4c58f52d7fe65f67723e2e96cefebe26bd84b554972ca677a146f349d8ac08b2"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_7ee04438446142099230ac777af85b7e",
+      "statement": "Several version-specific `sbx` behaviours can change silently across releases and must be re-checked after an upgrade rather than assumed: there is no `--disk` flag (volume sizes remain creation-time environment variables), the idle-stop and dockerd-readiness budget are hardcoded with no knob, `sbx start` does not exist, templates exclude the Docker image store, and `sbx run` still defaults the workspace to the current directory.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_fee6f2b28d204883a8d20c9c22cbea75",
+      "statement": "Relocating the sandbox data root off the system drive breaks SSH until the ACLs are fixed, because files on another volume inherit that volume's ACL and grant Authenticated Users, which Windows OpenSSH refuses for a config file; and `ssh <name>.sbx` from Git Bash fails with a DNS error because `sbx setup ssh` writes an Include with a Windows-style absolute path that MSYS OpenSSH resolves relative to ~/.ssh/ and never loads.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_03de4603ef544dc5bb86b7e055ca80c5",
+      "statement": "A CLI `devcontainer up` installs no personal layer and the RTK PreToolUse hook is not wired automatically, so the harness's `personal-layer` check fails until the dotfiles layer and the hook are supplied explicitly.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json",
+          "version": "repo-file-v1:sha256:b907b13cc62ac74970c0ce85d33f52ddfa70f49346771351ef20a5aabf84095d"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_d7defea9f20b43beb79f8e2e1a6e3ca1",
+      "statement": "The sandbox's Docker data disk is not visible from inside the dev container and `df /` there reports that volume because the container's overlay upper dir lives on it, so volume topology and resize verification must be done from the VM shell and from the host respectively.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-14T01:34:17.413Z"
+  }
+}

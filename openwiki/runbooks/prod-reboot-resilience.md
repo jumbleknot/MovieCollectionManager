@@ -4,9 +4,6 @@ title: Prod reboot resilience
 description: Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes — bind address, restart policy, and periphery storage location — that made recovery hands-off.
 resource: docs/runbooks/prod-reboot-resilience.md
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-11T22:25:03.651Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -14,6 +11,8 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-34854463fd23e29b106dcb63
+    resource: repo://infrastructure-as-code/docker/keycloak/.env.prod.example
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-852cc196002c1a675baddf5c
@@ -22,13 +21,18 @@ sources:
     resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-839571d2c51f49a930537d1b
+    resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
   - id: openwiki-source-b182ec4cb28667debd4684ff
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-750b2cbfd1a5b0c826bf579b
     resource: repo://scripts/preflight.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 ---
+
+
 
 # Prod reboot resilience
 
@@ -80,15 +84,15 @@ Three repo/deploy-side fixes, all committed so a ResourceSync deploy reproduces 
   restart *after* the tailnet interface exists recovers it — a plain container restart does not. Tailnet-only
   exposure is preserved by the host firewall's default-deny-inbound posture, which is now load-bearing:
   the three published ports are Keycloak admin, LangFuse web and Grafana/otel-lgtm, all in the
-  [prod-reserved range](../invariants/published-port-reservation.md) (see
-  [`keycloak/compose.prod.yaml`](../../infrastructure-as-code/docker/keycloak/compose.prod.yaml#L45-L53)
-  and the two publishes in
-  [`observability/compose.prod.yaml`](../../infrastructure-as-code/docker/observability/compose.prod.yaml#L40-L45)).
+  [prod-reserved range](../invariants/published-port-reservation.md) (see the runbook's §2a, and the
+  `#PROD` port comments in
+  [`keycloak/compose.prod.yaml`](../../infrastructure-as-code/docker/keycloak/compose.prod.yaml) and
+  [`observability/compose.prod.yaml`](../../infrastructure-as-code/docker/observability/compose.prod.yaml)).
 - **The Mongo replica-set keyfile entrypoint became idempotent.** `mongo-entrypoint.sh` writes the keyfile
   at mode `0400`; on a plain container *restart* the prior run's read-only file persists, and because
   `mongod` runs non-root the entrypoint's redirect cannot reopen it for write, so the container
   crash-loops. The fix removes the file before rewriting it on every start
-  ([`mongo-entrypoint.sh`](../../infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh#L18-L26)).
+  ([`mongo-entrypoint.sh`](../../infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh)).
 - **A restart-policy assumption** — that `unless-stopped` meant "every prod container returns
   automatically after a reboot". That assumption was wrong, and round 2 is where it was disproved.
 
@@ -109,10 +113,38 @@ disjoint from every CI/dev port. The range, its mapping and the invariant behind
 in [Published-port reservation](../invariants/published-port-reservation.md) — treat the current
 reserved-range assignment as authoritative, not the original bind fix.
 
+Two consequences of that move are easy to miss, and both are the runbook's §2a:
+
+- **The gate only reads a compose file's `ports:` key, so a port move is not finished when the bind
+  changes.** The same number usually reappears as a *self-referencing URL* that must move in lockstep —
+  today Keycloak's `KC_HOSTNAME_ADMIN` and LangFuse's `NEXTAUTH_URL`. A missed one leaves a working bind
+  serving a URL for the old port: a broken redirect no port scan can see.
+- **A bookmark on the old admin port is stale** — the admin console was on the pre-029 port until feature
+  029 and now lives on the reserved one.
+
 Feature 029 also made the intra-stack Keycloak↔Postgres network **compose-managed** instead of external,
 so compose creates and attaches it atomically on every `up`. That closed a worse version of the round-1
 network symptom: a failed port bind rolled back Keycloak's networking entirely, leaving it unable to
 resolve its own database (`UnknownHostException`).
+
+### The bind-prefix variables both rounds retired
+
+The two variables that used to scope those publishes are gone, and the reason generalizes:
+
+- **`KC_ADMIN_BIND_IP` was only ever the bind *prefix*.** Feature 028 dropped it from the keycloak compose
+  bind, but Komodo kept passing it to the `prod-auth` stack until 2026-10-12 (item #727), so it reached the
+  container through the compose `env_file:` as a `KC_*` variable that names no Keycloak option — harmless,
+  but dead config. The admin **URL** was always the separate `KC_HOSTNAME_ADMIN`.
+- **`TS_ADMIN_IP` followed the same course to completion.** It was only the prefix of the two
+  observability operator-UI binds; feature 028 made those binds `0.0.0.0`, and the stack config stopped
+  passing the variable on 2026-10-13 (item #727). No stack or compose file reads it now, so the Komodo
+  Variable can be retired.
+
+Retire the stack `environment` line and the Komodo Variable together. Nothing detects a supplied variable
+nobody reads, and because nothing references the name, leaving it seeded cannot fail a deploy — the only
+cost is dead config. The invariant page carries the worked example under
+[Published-port reservation](../invariants/published-port-reservation.md); the runbook's own record is its
+"Retired variables" paragraph in §2a.
 
 ## Round 2 — feature 030 (restart policy and periphery storage location)
 
@@ -155,7 +187,7 @@ is host state — point `PERIPHERY_ROOT_DIRECTORY` at a path on persistent disk 
 and the
 [server-setup runbook](./server-setup.md) Phase 9 now bootstraps that value so a rebuild cannot
 reintroduce `/etc/komodo` (see
-[`Server-Setup-Runbook.md`](../../docs/runbooks/Server-Setup-Runbook.md#L794-L797)).
+[`Server-Setup-Runbook.md` §Phase 9](../../docs/runbooks/Server-Setup-Runbook.md#phase-9--komodo-cd-to-the-prod-daemon)).
 
 ## The rest of the host-side posture
 
@@ -164,8 +196,41 @@ no gate can see. The graceful-shutdown drain unit is the one this page leans on 
 the host carries an orderly-shutdown trigger for sustained power loss (UPS + Network UPS Tools, so a
 brownout no longer becomes the hard kill that exposed these defects in the first place), scheduled
 backups covering **all** data volumes rather than a subset, and the device-keyed segmentation-offload
-unit described below. The source runbook's host-remediation table is the authoritative record with the
+unit described next. The source runbook's host-remediation table is the authoritative record with the
 per-control verification command for each.
+
+## The tailnet throughput fix the host must re-apply
+
+This one is host state for the same reason as the drain unit: a reboot resets it. Tailscale's default
+segmentation offload (TSO/GSO/GRO) on its own tun device collapsed **outbound** tailnet throughput to
+~150 KB/s for every peer — image pulls from the forge registry, Forgejo API reads, CI-monitor calls —
+while the same box in the same second received at ~15.86 MB/s. Disabling offload on the device took one
+identical fetch from ~117 KB/s to **84.5 MB/s** (~600×).
+
+The signature is what makes it hard to see, and it is the reason to measure both directions: small
+packets were unaffected (sub-millisecond ICMP, 0% loss, healthy TCP ACKs), every counter read clean (no
+socket-buffer errors, no NIC errors, CPU idle, MTU correct, a direct tailnet path), and at ~1 ms RTT no
+plausible network condition can cap TCP at that number. When no network condition can produce the
+measurement, stop looking at the network.
+
+The fix has to be bound to **device creation**, not applied once, because a `tailscaled` restart recreates
+the tun and resets the flags exactly as a reboot does. The host unit therefore declares
+`BindsTo=`/`WantedBy=sys-subsystem-net-devices-tailscale0.device` and re-runs
+`ethtool -K tailscale0 tso off gso off gro off` whenever the interface appears; verify with
+`ethtool -k tailscale0`, which must read the three offloads `off`. Residual risk: Tailscale deliberately
+enables TSO/GSO on its tun, so the unit and `tailscaled` race to set the same flags — if throughput
+collapses again, read `ethtool -k tailscale0` first, and an `on` result means the race was lost.
+
+Two measurement traps manufactured false conclusions during the diagnosis:
+
+- **PowerShell `Invoke-WebRequest` is roughly 40× slower than `curl.exe`** (1.57 MB/s vs 68.6 MB/s on the
+  same fetch), which produced a convincing but entirely wrong root cause. Benchmark with `curl.exe`.
+- **A shell session into the host over the tailnet is Tailscale SSH, not OpenSSH.** It terminates inside
+  `tailscaled` and never traverses the tun, so its download path sits near 10 KB/s regardless and did
+  **not** improve with this fix. Use HTTP as the throughput probe, never that session type.
+
+The runbook's §1a holds the full diagnostic narrative, the unit's exact contents and the verification
+command; this page only records why the control exists and why it must re-apply itself.
 
 ## Recovery order when a reboot lands dirty
 
@@ -194,6 +259,9 @@ intended path.
   - **This is the second time the same physical ports moved** — round 1's own bind was superseded after
     those ports collided with the CI runner's use of the same host's port space; treat the current
     reserved-range assignment as authoritative, not the original bind fix.
+  - **A port move is not done when the bind changes.** The collision gate only reads the `ports:` key, so
+    the self-referencing URL vars (Keycloak's admin hostname, LangFuse's login URL) must be moved in the
+    same change or the service serves the old port while binding the new one.
 - **`restart: unless-stopped` does not bring a container back after a reboot on this stack.** The
   graceful-shutdown drain stops every container cleanly on shutdown, and `unless-stopped` deliberately
   declines to restart a container that was already stopped when the daemon starts — the two remediations
@@ -209,7 +277,7 @@ intended path.
   start, making the operation idempotent. The regression test for this must run as a non-root uid, since
   running it as root masks the bug entirely — the idempotency test drives the real script and plants a
   pre-existing `0400` keyfile
-  ([`mongo-entrypoint.test.sh`](../../infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh#L36-L46)).
+  ([`mongo-entrypoint.test.sh`](../../infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh)).
 - **A durable network re-attach after reboot is a Komodo redeploy, not a manual `docker network connect`.**
   A manual reconnect is a one-off that the next reboot can lose; only a redeploy recreates the container
   with its full declared network set from the compose file. The intra-stack Keycloak→Postgres link no
@@ -226,6 +294,16 @@ intended path.
   network condition could explain the observed throughput number. The fix must be bound to interface
   recreation (a systemd unit keyed to the device), not just applied once, since both a reboot and a
   tailnet daemon restart reset it.
+  - **The tooling can manufacture the wrong root cause.** A PowerShell HTTP client measured roughly 40×
+    slower than `curl.exe` on the same fetch, and a tailnet SSH session terminates inside the tailnet
+    daemon without ever touching the tun, so it can never be a throughput probe. Re-measure with the
+    right tool before believing a network diagnosis — see
+    [the throughput fix above](#the-tailnet-throughput-fix-the-host-must-re-apply).
+- **A variable can outlive its reader.** The two bind-prefix variables were retired only after the
+  consuming binds and the stack `environment` lines went away — the first had kept reaching the Keycloak
+  container as a meaningless `KC_*` option through the compose `env_file:`. Retire the stack line and the
+  Komodo Variable together, and read the effective value from the deploy env file rather than from a
+  historical comment.
 - **A validation reboot is part of the change, not a follow-up.** Both rounds required one after merging
   and syncing, and the point is that nothing is started by hand after boot; any failing row is a defect to
   fix before closing the round. The checklist is in the source runbook's validation section.
@@ -241,22 +319,26 @@ failure:
 
 - **`scripts/check-prod-ci-port-collision.mjs`** keeps prod's published host ports disjoint from every
   CI/dev-published port. It splits the tree by filename — prod is every compose file whose basename ends
-  `.prod.yaml`, CI/dev is every other tracked compose file — and compares host **port numbers** while
-  ignoring the bind interface, because a prod `0.0.0.0` bind collides with a CI bind on the same number
-  whatever interface the CI side names; it skips entries with no deterministic fixed host port (bare
-  container port, `${VAR}` host field) and expands numeric ranges. Exit `0` clean / `1` collision / `2`
-  unparseable, and `--selftest` plants an overlap so a gate that stopped detecting cannot report green
-  ([`check-prod-ci-port-collision.mjs`](../../scripts/check-prod-ci-port-collision.mjs#L1-L24)).
+  `.prod.yaml`, CI/dev is every other compose file the gate's discovery globs return — and compares host
+  **port numbers** while ignoring the bind interface, because a prod `0.0.0.0` bind collides with a CI
+  bind on the same number whatever interface the CI side names; it skips entries with no deterministic
+  fixed host port (bare container port, `${VAR}` host field) and expands numeric ranges. Exit `0` clean /
+  `1` collision / `2` unparseable, and `--selftest` plants an overlap so a gate that stopped detecting
+  cannot report green
+  ([`check-prod-ci-port-collision.mjs`](../../scripts/check-prod-ci-port-collision.mjs)). Discovery is by
+  glob and classification by basename, so a compose file that neither starts with `compose` nor lives
+  under `stacks/` is outside the scan entirely — the
+  [port-reservation invariant](../invariants/published-port-reservation.md) names the one such file.
 - **`scripts/check-prod-restart-policy.mjs`** makes `restart: always` a required property of every prod
   service. Long-running services must declare `always`; `unless-stopped` is forbidden (the round-2
   regression) and a missing `restart:` is forbidden because it defaults to `no`. `no` / `on-failure` are
-  allowed only for genuine one-shot containers whose names match the init/seed pattern, since `always`
-  would restart-loop them
-  ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs#L33-L56)).
+  allowed only for genuine one-shot containers whose names match the init/seed/`rs-init`/`createbucket`
+  pattern, since `always` would restart-loop them
+  ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs)).
 
 Both run selftest-then-scan in the `naming` job of
-[`guardrails.yml`](../../.forgejo/workflows/guardrails.yml#L121-L128) on every PR and every push to
-`main`, and locally through [`scripts/preflight.mjs`](../../scripts/preflight.mjs#L32-L44).
+[`guardrails.yml`](../../.forgejo/workflows/guardrails.yml) on every PR and every push to `main`, and
+locally through [`scripts/preflight.mjs`](../../scripts/preflight.mjs).
 
 Related pages: [Published-port reservation](../invariants/published-port-reservation.md),
 [prod control tower](./prod-control-tower.md), [prod data-tier auth](./prod-data-tier-auth.md),
