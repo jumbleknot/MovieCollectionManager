@@ -1,12 +1,7 @@
 ---
-type: Runbook
-title: Prod reboot resilience
-description: Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes — bind address, restart policy, and periphery storage location — plus the host-side controls no gate can see, including the device-bound tailnet offload fix.
-resource: docs/runbooks/prod-reboot-resilience.md
-tags: [production, reboot, resilience, rootless-docker, komodo, tailscale, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-14T00:46:58.372Z
+type: "Reference"
+title: "Prod reboot resilience"
+openwiki_generated: true
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -32,8 +27,13 @@ sources:
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-750b2cbfd1a5b0c826bf579b
     resource: repo://scripts/preflight.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-14T00:46:58.372Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-14T01:54:06.604Z
 ---
+
+
 
 # Prod reboot resilience
 
@@ -188,7 +188,7 @@ is host state — point `PERIPHERY_ROOT_DIRECTORY` at a path on persistent disk 
 and the
 [server-setup runbook](./server-setup.md) Phase 9 now bootstraps that value so a rebuild cannot
 reintroduce `/etc/komodo` (see
-[`Server-Setup-Runbook.md`](../../docs/runbooks/Server-Setup-Runbook.md#L794-L797)).
+[`Server-Setup-Runbook.md` §Phase 9](../../docs/runbooks/Server-Setup-Runbook.md#phase-9--komodo-cd-to-the-prod-daemon)).
 
 ## The rest of the host-side posture
 
@@ -320,12 +320,16 @@ failure:
 
 - **`scripts/check-prod-ci-port-collision.mjs`** keeps prod's published host ports disjoint from every
   CI/dev-published port. It splits the tree by filename — prod is every compose file whose basename ends
-  `.prod.yaml`, CI/dev is every other tracked compose file — and compares host **port numbers** while
-  ignoring the bind interface, because a prod `0.0.0.0` bind collides with a CI bind on the same number
-  whatever interface the CI side names; it skips entries with no deterministic fixed host port (bare
-  container port, `${VAR}` host field) and expands numeric ranges. Exit `0` clean / `1` collision / `2`
-  unparseable, and `--selftest` plants an overlap so a gate that stopped detecting cannot report green
-  ([`check-prod-ci-port-collision.mjs`](../../scripts/check-prod-ci-port-collision.mjs)).
+  `.prod.yaml`, CI/dev is every other compose file the gate's discovery globs return — and compares host
+  **port numbers** while ignoring the bind interface, because a prod `0.0.0.0` bind collides with a CI
+  bind on the same number whatever interface the CI side names; it skips entries with no deterministic
+  fixed host port (bare container port, `${VAR}` host field) and expands numeric ranges. Exit `0` clean /
+  `1` collision / `2` unparseable, and `--selftest` plants an overlap so a gate that stopped detecting
+  cannot report green
+  ([`check-prod-ci-port-collision.mjs`](../../scripts/check-prod-ci-port-collision.mjs)). Discovery is by
+  glob and classification by basename, so a compose file that neither starts with `compose` nor lives
+  under `stacks/` is outside the scan entirely — the
+  [port-reservation invariant](../invariants/published-port-reservation.md) names the one such file.
 - **`scripts/check-prod-restart-policy.mjs`** makes `restart: always` a required property of every prod
   service. Long-running services must declare `always`; `unless-stopped` is forbidden (the round-2
   regression) and a missing `restart:` is forbidden because it defaults to `no`. `no` / `on-failure` are
@@ -334,8 +338,8 @@ failure:
   ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs)).
 
 Both run selftest-then-scan in the `naming` job of
-[`guardrails.yml`](../../.forgejo/workflows/guardrails.yml#L121-L128) on every PR and every push to
-`main`, and locally through [`scripts/preflight.mjs`](../../scripts/preflight.mjs#L31-L44).
+[`guardrails.yml`](../../.forgejo/workflows/guardrails.yml) on every PR and every push to `main`, and
+locally through [`scripts/preflight.mjs`](../../scripts/preflight.mjs).
 
 Related pages: [Published-port reservation](../invariants/published-port-reservation.md),
 [prod control tower](./prod-control-tower.md), [prod data-tier auth](./prod-data-tier-auth.md),

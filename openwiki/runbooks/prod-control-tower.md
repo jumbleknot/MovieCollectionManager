@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the one-time MinIO, Langfuse 4 and OpenSearch 2→3 migrations with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the one-time MinIO uid-1000, Langfuse 4 + ClickHouse 25 and OpenSearch 2→3 migrations with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, runbook]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-14T00:46:58.372Z
+    at: 2026-10-14T01:54:06.604Z
 sources:
   - id: openwiki-source-a32b06ef0f76afb80af4d88a
     resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
@@ -34,7 +34,9 @@ sources:
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-bf15c8e3067ce028059a1350
     resource: repo://scripts/check-resource-naming.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-14T00:46:58.372Z" }
+  - id: openwiki-source-767dd8a5885ff03fcbe9c2c0
+    resource: repo://specs/070-minio-non-root/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -69,8 +71,9 @@ gateway is the primary emitter (audit + LangFuse + OTel + OPA + Unleash). The La
 reach `prod-movie-assistant` and never `prod-mcm-bff`; `UNLEASH_API_TOKEN` is the *client* token, not the
 admin one. The audit sink sits on its own external `agent-audit-network`, which only
 `agent-audit-opensearch`, its init container, and the gateway/BFF consumers join — keycloak and mc-service
-cannot reach it. Adding that network and the `vault` volume prefix was the whole guardrail delta
-(`APPROVED_NETWORKS` / `VOLUME_RE` in `scripts/check-resource-naming.mjs`).
+cannot reach it. Adding that network to `APPROVED_NETWORKS` and the `vault` volume prefix to `VOLUME_RE`
+was the whole guardrail delta for this feature (`scripts/check-resource-naming.mjs`); feature 071 later
+added the narrow `-snapshots` volume form alongside them.
 
 ## Additive no-op and rollback
 
@@ -113,7 +116,9 @@ independently up/down-able.
   convention exists to prevent; do not put these ports back on their old defaults.
 - **Vault is intentionally left uninitialized and sealed in production.** A health-check override makes
   that state read as healthy; do not run the Vault init/unseal sequence as part of this rollout — it is
-  out of scope until the ADR's revisit trigger fires.
+  out of scope until the ADR-0001 revisit trigger fires (see
+  [Secrets management](../invariants/secrets-management.md) for why Komodo Variables, not Vault, are the
+  production secrets backbone).
 - **The audit sink is append-only, and its writer account is verified to be.** Re-run the provisioning
   check after any upgrade: it asserts `write 201` *and* `read 403` / `search 403` / `delete 403` against a
   document that demonstrably exists (a missing doc would answer 404 either way, so a "not 200" check would
@@ -166,6 +171,10 @@ Two smaller prod-only details worth knowing:
   3-day TTL: with image defaults they grew to 128 GiB / 28 GiB of diagnostics against 84 KiB of actual
   Langfuse data, and background merges of the resulting parts ran the host at ~725% CPU and ~32% iowait.
   Only tables that *exist* on the server may be listed — declaring a `<*_log>` section enables that table.
+  One table is deliberately left alone: `opentelemetry_span_log`'s default section defines a full
+  `<engine>`, and ClickHouse **refuses to start** if a separate `<ttl>` is added there
+  (`If 'engine' is specified for system table, TTL parameters should be specified directly inside
+  'engine'`) — measured on the 25.12 image before the file shipped.
 
 Full failure-symptom table and the reproduction recipe: `docs/runbooks/prod-control-tower.md`.
 
@@ -214,7 +223,9 @@ empty named volume from the image directory it is mounted over, ownership includ
 true of the image published as `sha256:629bcee8…`, which has no `/data`: a from-empty bring-up on
 that image creates a `0:0` volume and MinIO fails with the *same* `unable to rename … file access
 denied` as an unmigrated volume — so the error points at a migration that was never owed. Fixed
-2026-09-13; needs the new digest pinned in both compose files to take effect.
+2026-09-13; it takes effect only once the new digest is pinned in both compose files, and the
+`langfuse-minio` and `langfuse-minio-init` refs must move together (a split would run the server and
+the bucket-init one-shot on different images).
 
 **If you see that error on a volume you just created**, do not chown it and do not conclude the
 migration was missed — check the image first:
@@ -271,13 +282,15 @@ UNMATCHED entry (the `langfuse/langfuse:3` suppressions are deleted by the merge
 re-blocks if the advisory ever returns).
 
 **Since the cutover, the ClickHouse pin has moved further — and that is not the same free lunch.** Both
-observability composes now pull a ClickHouse release two majors past the `24.3` this cutover started
-from, arriving through a routine Renovate image update *after* the cutover and over live production
-traces. §4's "recreate the volumes" ratification applied at this cutover only; it does not make later
-majors data-free, and the observability stack is not started by the end-to-end CI job, so a green CI
-says nothing about a ClickHouse major. Stateful datastore majors (ClickHouse, Postgres, Redis, Mongo)
-now require an explicit dependency-dashboard tick; see
-[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the rule and
+observability composes now pull `clickhouse/clickhouse-server:26.6`, two majors past the `24.3` this
+cutover started from, arriving through a routine Renovate image update *after* the cutover and over live
+production traces. §4's "recreate the volumes" ratification applied at this cutover only; it does not
+make later majors data-free, and the observability stack is not started by the end-to-end CI job, so a
+green CI says nothing about a ClickHouse major. Stateful datastore majors (ClickHouse, Postgres, Redis,
+Mongo) now require an explicit dependency-dashboard tick — the `dependencyDashboardApproval` rule those
+images gained after the 25.12→26.6 bump merged on a green CI; see
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the rule,
+[the Renovate runbook](./renovate.md) for what ticking it means, and
 [the runbook section](../../docs/runbooks/prod-control-tower.md) for the literal cutover script.
 
 ## OpenSearch 2 → 3 for the audit sink, PRESERVING the history (feature 071)
@@ -318,7 +331,11 @@ volume is a separate, deliberate act afterwards — it is **not** part of this p
   `external: true`, so compose never creates it — a missing external volume aborts the deploy. A fresh
   volume mounted at `/mnt/snapshots` (a path the image does NOT contain) is root-owned; OpenSearch does
   not run as root and snapshots fail with a permissions error that does not name the volume. Derive the
-  uid from the running container (`docker exec agent-audit-opensearch id -u`), never assume it.
+  uid from the running container (`docker exec agent-audit-opensearch id -u`), never assume it. The
+  repository deliberately does not live inside the data volume — the upgrade replaces that volume, which
+  would destroy the snapshot at the exact moment it is the only copy — so the naming gate grew a narrow
+  `-snapshots` form (`VOLUME_SNAPSHOTS_RE` in `scripts/check-resource-naming.mjs`) instead of the volume
+  being misnamed as `-data`.
 - **Re-measure the document count at A5 — 5,276 was a reading, not a constant.** The audit sink is live
   during Deploy A. Write down the A5 count; that number is what the B5 check must reproduce exactly.
 - **Stop at A8 and confirm `state: SUCCESS` before starting Deploy B.** There is no recovery path if the
@@ -340,6 +357,12 @@ volume is a separate, deliberate act afterwards — it is **not** part of this p
 - **Re-run the least-privilege provisioning check (B6) after restore.** Feature 071 widened the check to
   assert `read 403` and `delete 403` in addition to `write 201` — the old check was incomplete and would
   have passed vacuously on a broken privilege set.
+- **The init script no longer prints the credentials it provisions.** It used to echo both passwords in
+  full; once `agent-audit-init` began running it in production that output went to container stdout, so
+  both live credentials sat in `docker logs agent-audit-init`, in Komodo's log view, and in anything
+  shipping those logs — a direct violation of the never-log list in
+  [logging and audit](../invariants/logging-and-audit.md). Found 2026-09-13 while reading the init logs to
+  verify the upgrade. It now prints *where* the credentials live, never what they are.
 
 ### Rollback
 
@@ -369,5 +392,7 @@ verification per phase, and the complete prod-only failure-symptom table:
 [`docs/runbooks/prod-control-tower.md`](../../docs/runbooks/prod-control-tower.md). The related prod
 runbooks are [prod-data-tier-auth](./prod-data-tier-auth.md),
 [prod-reboot-resilience](./prod-reboot-resilience.md) and
-[server-setup](./server-setup.md); the stack-level view of the same seven Komodo stacks is in
+[server-setup](./server-setup.md); the image gates these stacks answer to are
+[infra-image scanning](./infra-image-scanning.md) and [Renovate](./renovate.md), and the stack-level
+view of the same seven Komodo stacks is in
 [Infrastructure stacks](../projects/infrastructure-stacks.md).

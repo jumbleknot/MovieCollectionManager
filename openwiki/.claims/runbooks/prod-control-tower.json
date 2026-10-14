@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0ef9cd1f4a0496db3b6e43c2091134ff5e7161e12e184cd312d7373633c2a0a2",
+  "pageVersion": "sha256:897560b7321e543eda8ce882ec02c55ed02bc7bfdd2dad6ddb32d2c6367a81da",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -306,7 +306,7 @@
     },
     {
       "id": "claim_96423dd441cb4be0aafac8c152c1a779",
-      "statement": "ClickHouse in prod-observability is bounded in two independent ways: a container mem_limit of 4g with a matching memswap_limit and a CPU ceiling, so it cannot starve the shared host (measured at ~725% CPU with swap full on 2026-10-02, slowing every CI job 2-3x), and a mounted mcm-system-logs.xml that removes trace_log and text_log and puts a 3-day TTL on the other existing system-log tables, because with image defaults those diagnostic tables grew to 128 GiB and 28 GiB against 84 KiB of actual Langfuse data. Only tables that already exist may be declared, since declaring a *_log section enables that table.",
+      "statement": "ClickHouse in prod-observability is bounded in two independent ways: a container mem_limit of 4g with a matching memswap_limit and a CPU ceiling, so it cannot starve the shared host (measured at ~725% CPU with swap full on 2026-10-02, slowing every CI job 2-3x), and a mounted mcm-system-logs.xml that removes trace_log and text_log and puts a 3-day TTL on the other existing system-log tables, because with image defaults those diagnostic tables grew to 128 GiB and 28 GiB against 84 KiB of actual Langfuse data. Only tables that already exist may be declared, since declaring a *_log section enables that table; one table is exempt because its default section defines a full <engine> — adding a separate <ttl> to opentelemetry_span_log makes ClickHouse refuse to start (measured on the 25.12 image), so it is left at its default.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml#L1-L36",
@@ -359,10 +359,52 @@
           "version": "repo-lines-v1:sha256:eb29b1783692dbe350773fbee2df111638eba7319b09daab71601bcabc953f9a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThhZWUyMGZlNmJkNWJhN2FhNzI3OTBmMDk0YTE1ODhkYTIyNTAzNWIzOWI0OTUyN2YzMzIwNjI0Mzc0OWQwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwN2I1YjZhZDkwODI0OWU3MTliNWFmZGQyZjg5MDkzZjNkYWI2ODM4M2Q5ZDc5MjllYjEwOGJhOTNmMzE4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgwMzg1NzE1NDVjOTYzNTNlY2JjODQ0MzgwMTk2NDk4OTU5ZWM4Y2NlZGZkYjFkNmI5YzRiNjI2OTgyYzQ4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg4MDkwYzU3NjQ2ZDY0ZGFkMzQ5Njk0YmZkZGQzM2MzN2M0ODk2NjgxMjUyMmNlMjFiYjcwNGM2Nzk3NWRiMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_77885ab0466e467ca4543abdd39a9ced",
+      "statement": "The OpenSearch snapshot repository lives in its own external volume (agent-audit-opensearch-snapshots) rather than inside the data volume, because the 2→3 upgrade replaces the data volume and a repository inside it would be destroyed at the exact moment it is the only copy. The resource-naming gate admits this with a narrowly scoped agent-<...>-snapshots form (VOLUME_SNAPSHOTS_RE) instead of the volume being misnamed as -data.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L48-L52",
+          "version": "repo-lines-v1:sha256:6ab4592a21bd1f0fcd90b2ba032f6efa10cbf3597dd80f36d73a45bb23503566:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEzZjRkOTY2MWU5ZDJjM2UxYTI4OWU1ODMyMjk5YmVhMTRjZGI2NGJmODg2NjFkZjcxN2IxMmZhMDJkMDExZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVmMjJlODFiNGFjZmFjY2FkODVkNTFjZDc0MDhjMTNiNzhmZjc2NjM3Y2E4OTVhYWY2NGUxYTIyODdmYTU3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWE5ZWU5NmFlNjUyOTBkN2NjMjk4NTQ4ZjMxMDIxMGE2MWQ0NzgyYTdmN2FlMmU4Nzk3YjMxODBjOTZhNTQ5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzhiMzRjOWU3MjQyZjUxNjg5YTllMzQ3NGUyNTE4ZWQwNjRkYWZkYWZmZWJlNzkyNjc4MjM0OTAwY2E1NmNiYyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-resource-naming.mjs#L22-L27",
+          "version": "repo-lines-v1:sha256:fe488a30b304385339a2cf843f1a2a6b63db7a1f4aeb4fabf5e6e6d9c475b050:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE2ZjUzZGNkNzcyNTFkZTk0ZDNjODM5NjU3OWE0ODFjMzE5NGQ5ZTM5N2E5NmY0ZjkyYjM0YzE0YWI5OThhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg1ZmU0NmNhMTg0NGNhZWUyMmMwMGQxNDIzYjNlYTI2MzRkOTYyMjQ2ZWM3ODhhZjFmNGU0NDE3ZGZmZTFlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTdkZThlYWNlYWViZmM2MmE5ZTBhZDMzMjlmOGRjYjFlMDlmMDM5ZjE5NzZjNTUxOGEwYWJmMWRlNDQ3N2RkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGU1YTMxYTBiYjE5OTczOTY5N2ZmMDI5N2M2Zjk2MDhmMjM5MDM5YTUyMmU0OTcxNjkzMjQ1NmU4ZjhiNGY2NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_db8f1e086c1b4bcda91de71e46486c08",
+      "statement": "When the from-source MinIO image digest moves, the langfuse-minio and langfuse-minio-init refs must be repinned together in both the dev and prod composes, because a split would run the server and the bucket-init one-shot on different images; the digest must be taken from the published minio-image run rather than a remembered branch digest, since two builds of identical source produce different digests.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L182-L210",
+          "version": "repo-lines-v1:sha256:2effe959c63ec4e93253eac163838d16c46e6af02f21558c05b50a27a7b0c0e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMTRjNjVjNzQ3NWM4MzQ3MGI5ZWE4YjUyZjg1MDAxOTE5ZGE0MjhlM2QzODhiMzRkMjJjNmRkZmIzN2ViOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YTRkNTM2NTEyYzVlOGZlZDQ3NjA1YjRkYWI3MzVlNjVjYmE1NmMwMjQ2MGQ4MjUwZmIyMzg3MDhkZTlmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2MDg1Zjk0ODFmZTA1NjQxZGRmNmJkZTliYWMyMmVmOTY2MTIxNzg0YTNlMjYxNDAwZmM4YmMyYTk2ZjhiZDkifQ"
+        },
+        {
+          "resource": "repo://specs/070-minio-non-root/tasks.md#L196-L216",
+          "version": "repo-lines-v1:sha256:843e2e9b21cdbd25ab1a31c048a304b98655cbc10fa036e1f245a1d6932bca68:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ZDQzZDI0MjU5YzBhODMwOTNjZWMwZDY1MjBlNjIwM2UyZDUzZGMyMTMzMmM3ODhjMTBhZjVlZDZjN2NkOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NjNmZWU2Yjk3ZTM4ZGQ0MjNiNmNhM2Y0NzU3OGNiNDVmNTZkZDVlZGQ4NjNjNjE3MzUxMmFhNWNkOGIxMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5OWYzNWQ1MDE1MjE1OTYyNTI1MDU5OTA5OGQ1MmFkMzllYTE0YWY3NDVkNzNiMzJmY2RmMjQ4NjJhNzk5MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiMzhiYjAwMDVhNzAwOTI3YTE1MTY5NTgzMDQ1YzAwZjY0N2QzMGVkZmU4ZWVjYWM5NDdjNzJmNDc5ODQwYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_591350a425c047e5b00fe0e7676c453a",
+      "statement": "init-audit-user.sh no longer echoes the credentials it provisions. It used to print both passwords in full, and once agent-audit-init began running it in production that output went to container stdout, leaving both live credentials in docker logs agent-audit-init, in Komodo's log view and in anything shipping those logs — a direct violation of the stack's never-log list. It now prints where the credentials live (dev: the gitignored stacks/audit.env; prod: Komodo Variables), never what they are.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L441-L459",
+          "version": "repo-lines-v1:sha256:a3bf893efd1138844161af6e5d1c00c033e2d3d4c697d361fada6477d0f6adac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OTdlZDNmMTNkMjAyMWM3MzBlNmNlMzZiNjYxNzdhMDRkYTQxODQ1YmJhZTEyZWQ1M2NmNmNlMWU0NzI0M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYmY3Y2FjN2ExOTE0Y2E3ZmZmZGZhMWVkNjY3ZDNlZGMzM2QyNWVkMTU5NTY1MWQ0ZmY5NzM3NTBjNjdjYmMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/init-audit-user.sh#L117-L134",
+          "version": "repo-lines-v1:sha256:da9cf79c3448e7995b9252d6e24fa9d7dfe3e07dd01260f3f63d97a91e816ef3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZDRhYmIwOTc0ZjkwMmU4ODZiZWIzNjljODg3NjBiZDBmZjcyZTY4N2Y3OGY1NzQ5NDI4YTNiMjQ0ZDk1NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZTgwZDZlMTgwOTY2MGNlMDMxNDNhZmI3YjQ0ZWYwMTY0YmRhYTJiOWU0MGJjMmQwYTdkOGM0MzJlNDc5MTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlN2NmMDBiODgxODlmOWNiMTMxYWEwNjJlZWZhZTIyYzBhNDI1NjZmZWYxNzcyNjUyM2ZjZjY1NzQ1MGVhNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-14T00:46:58.372Z"
+    "at": "2026-10-14T01:54:06.604Z"
   }
 }

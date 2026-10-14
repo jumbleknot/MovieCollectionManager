@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ddfed2a1ea1d1a9a08e593a01e4d7177c338f05770255f7afabd679e368d8b30",
+  "pageVersion": "sha256:a6b7813e22df369d66ec0a11d703182a64a83e35ca145f6d8e59b10d53734f0b",
   "claims": [
     {
       "id": "claim_6691a99af5cb400388c90e70331847b4",
@@ -339,10 +339,24 @@
           "version": "repo-lines-v1:sha256:7cf065d62a2c16f84d65f7727626216c8bfcfe4f9e9e25aef92b58e318eb254c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjMzdlMzNhM2MzOWUyZGJmOGQxMTJiYjYxMjFjZGNjZTg5ZjVmMzA0NmQ4MjYwODJlMTI3MDk2YzAxNzFjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNjZTM3NzM3N2NiNWZlNGFkMDE4NDQxMjZkNzA5ZjA5ZGJjYjljNWNlOTIyN2YwOTFiYTM0NjNkYzYwMzIxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhYTlmODcyNWYxMjg0M2MxYThjOGI2OGNiYzhmM2JiNjk5NjJmZWY2YWMzMWYwMDBkNzQ4YjIwZjU0NDM2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWUyZTc5YmNiZTBjNjE2OTAyZjNjZDMwYWQ1ZDBhNGI2NGRjMTU1Y2E0ODBjYmE5YWJlODJhZTk1NTdiNDAzMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_c5c20216ba354d6c85bf28a3d0dc88ad",
+      "statement": "scripts/check-prod-ci-port-collision.mjs splits the tree by filename: prod is every compose file whose basename ends `.prod.yaml`, and CI/dev is every other compose file the gate's two discovery globs return (`infrastructure-as-code/docker/**/compose*.yaml` plus `infrastructure-as-code/docker/stacks/*.compose.yaml`), so disjointness is enforced across that file classification — and a compose file that neither starts with `compose` nor lives under `stacks/` falls outside the scan entirely.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L102-L127",
+          "version": "repo-lines-v1:sha256:6bd7a6688e51eff82c967e028de1f1b303a6b964fa63ccf45ea88989c6a5f13c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhY2M0ZTlhOTBmYWJkOGUxZjllODc0NWE2MGNhNjQzZmYxOTQ3Yjg3NGM1MWNkZGI5OTQ4YTBmOGQxMmY1ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyM2Q4ZjExYWEzZmQ1MWVhNjZjMGFhODY1NjNiOWI3ODI5MmU0NDBiMTkxOGVjMmZiMDI2NjdkZDUyNDQ0NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYjZmM2QwOWJiOGNhYTZiOTUyYWVkZWE5ZTFmZWI3M2IyNjE3MzNjOTBiMGNiZWI1OGM4MjZmMGIxNjAxZDQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L15-L18",
+          "version": "repo-lines-v1:sha256:dfe03652152df016a4654a699f6462bb811734714d94d9ef2eafc7bcb1d01c99:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWVlNTBjYmU0NDY0OTgwNWIyNDBjZjZhMWIwMWE5YTY3MjllMTBmMjdlNGZkNTI1MDhjNTAyMzVlMGU4MDk0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVjYTRkNDNmYWNiYmY5NzFlMmNjYmVjY2NiZDg5ZThkZGEwYWRkMTIxYTViNWEzZjU5ODE0MzMxNjI2NDU5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA2NzZkMTA3ZWE0NjFkNzBhZTNkOGI0MzAwMDVjZWJiNWQ4Zjk5NWNkYjE4MTg5NzY2MDk2OTU2MTQ3YmI2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzExMTMzZTc1YmNhZTZkYzc0NDI4ZDIzZmRkYWQ1MDhmYWZiNDZlNzlkZGFmMWI0NGRjY2E4ZTQwZjJmYWMxMiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-14T00:46:58.372Z"
+    "at": "2026-10-14T01:54:06.604Z"
   }
 }
