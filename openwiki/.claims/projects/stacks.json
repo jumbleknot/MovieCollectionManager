@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:18fc200ec5f1b78a15c2b9cae62360be72940bb1830ae8f680b499c6c641d0f7",
+  "claims": [
+    {
+      "id": "claim_25d0e869d5a34c9bb6f72147c0aeefe5",
+      "statement": "The per-stack dev-credential contract is two files per stack for the four named stacks (auth, mcm, audit, observability): a committed `infrastructure-as-code/docker/stacks/<stack>.env.example` placeholder template and a gitignored `<stack>.env` holding the generated real values that Compose reads. The template uses `NAME=<generate:KIND>` for a freshly minted value and `NAME=literal` for a deterministic fixture.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
+          "version": "repo-file-v1:sha256:ecc1411123c4003e5f27ba22223197b2da0584d593e324cbc938c06eb07a50e7"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L1-L25",
+          "version": "repo-lines-v1:sha256:0fce06e6a96399b2505038b5ef60de91d0116621b8cc368b44f8e5129dd058ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OTk1MThhYTU5MWVlMDNkZDEwNGRlNDAzMTVjYjIxNGMwMjFkOTgzYzY2ZTU0ODM5ZGIwOWU4N2RjMmM2NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YjJmOTc2MmU1YzRhMzljOTE2MTM3N2JmMGE5ZTRmMWY3YmI1Yjc0YWJhOWUwMDg2NTY2MWI3ZGVkYmE3YzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c23666af0222432a9e54600f5083c198",
+      "statement": "The generated `<stack>.env` reaches Compose through two distinct paths: the stack aggregator's long-syntax `include:` with an explicit `env_file:` pin on the specific included component files that need it (auth pins keycloak and vault, mcm pins agent-db and agent-gateway, audit pins opensearch, observability pins observability), and the Nx `up-*`/`down-*` targets' `--env-file` argument for the whole compose invocation.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/audit.compose.yaml#L10-L14",
+          "version": "repo-lines-v1:sha256:677fad2172c62af98bfdc94779ee7210838165a395298bb5d9bfa1262bee4c0e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQ3ODQ4MDRiNzZhMjExZDJmMjEzZjA1MjdkZmNkOGZjYWJhYjI3Zjg3YTIxYzY1ODIxN2JkNzllNWQxMDJkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY1NDhlNTY0YzdhN2U0NGQ0OGE5NTkzZTVmMTM1MTk1YTE5MTViM2JkYjE4NTg2Y2MxZmFhZWZhYzA2MjFlNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjVhYmYxZWE0ZmNlMmM1MTY0MDBiYzY2YjlhMzIzN2Q3ZjEwNGZmNTI4MGY4Nzk1OWZiZWQwOGI1YmQ5M2Q1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml#L14-L21",
+          "version": "repo-lines-v1:sha256:cd55289dbca8678d68c424c1654788fe5ea8d562389f48351b4a3f8b83c1cfbc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMyYzIyYjczYWU3YjA2Y2ExNjFlMTZkNjljOWZlOGVjNmQ0ZmNkM2JjNTI0YjY3NWYyNDNmNjVmNWFmN2U1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTNhOTQxNzYxMDUyOGRjZDViZmM0ZDlmODliYjBjYjBkMTgyZGEyYmM5ODA3ZTY1OGZhNDg2OGU1N2E3ZTI3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjJkN2E1Njk0ZjM2NGMyM2IyYWU3MjVhYmFlMTNiYzE0NDlmOGU0MzY0MTA5ZWU4MGY3MzA3NDU5ZmZkNzJjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L34-L46",
+          "version": "repo-lines-v1:sha256:d2b054ec26a30d212ac5618cc09b64a19e050c4da7f3277e2be6e7cec82edeb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkZWI1ODE1ZDc4MTJiOWEzNGYzZWRlMTIwZWZkZjc5ZjdjM2NiNzI3OWVhNTAzZmJkOTlhOTU4NDMwOTBiMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjM2Y3MDZiMmE1NzZkYzUxMDAzODg2ZGQ2ODVhNzlhMTg1NzJlZGM5YjNjMzBiMjI0MDFkMTY0ZjIwOWFjYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1MjAxOGUxOWZkNzIzZTdlMTg3YmJhYzZhNDExOGMzYWU5MzdmZmI2MWQyNDMwMDZmNDc2MmQ4NWQ0NmQyOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/observability.compose.yaml#L11-L15",
+          "version": "repo-lines-v1:sha256:c8b40c0623540e502d637aad231fde9ab8efc2cb9accf5bfdd350fa32763ccfd:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM2ZDk0NzA3Y2UzMDNkYTRiYTVkNjU1Y2Y2MTYzMWE4N2MwMmM5MWQ5OTlkZDQ5MjYzMjI5M2YxN2YwZGRiNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQyNTdmZmMxZDYwNjQ1ZjMzZWRkZGI2ZjQ3MjI4OGY2YzIzODE1Mjk2MDkxZDA5Nzk2MzAwOTdlZTdiZTZlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDcxM2RiNDUyZGFjNmU4MWQzNWUzNDU1M2Y3MjIzOGZmZDU5ZjgxMzNiNWFlY2Q3ZTEzYzFjODUwM2I4MmI5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L6-L55",
+          "version": "repo-lines-v1:sha256:1fc35f74918b8b187af5fa04b52afb214ea82539808eaa0d63b52839cc1dca8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2IyYTE4YzU1MDM2MmE0NjNhZWMyMzcxZGI0ZGViY2M5YWQ1Zjk0MGQzMWEwNDhmZWE2YzNlOTQ1NTBkMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyZmRiOWM3OWY1MmQ2ZDgxNzJjZjdlODdmZmE2ODU5MjJiMzZjZTJlNDNiZjVlMTVkZjI0ZDQxZTUxZTFlYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5ZjI3ZWUyNzZmNDFkNmFlNjM5ZjRhY2QwYTgwYTJkMTVkYzlhYTAxNzYwZThmNjI4MTA4NmFiYzVjNTgwYjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cce8ab0fb8544f9ca52d7c140d31da3b",
+      "statement": "Every credential in a tracked compose file is a fail-fast `${VAR:?…}` interpolation reference, so a missing or blank value makes `docker compose up`/`config` abort naming the variable and the per-stack env file that should hold it, rather than starting a half-configured stack.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/agent-gateway/compose.yaml#L22-L22",
+          "version": "repo-lines-v1:sha256:e54d09a956aa886221db5652c7c7c2814958f1a3c892838efc20948a0027572a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTU0ZDA5YTk1NmFhODg2MjIxZGI1NjUyYzdjN2MyODE0OTU4ZjFhM2M4OTI4MzhlZmMyMDk0OGEwMDI3NTcyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTU0ZDA5YTk1NmFhODg2MjIxZGI1NjUyYzdjN2MyODE0OTU4ZjFhM2M4OTI4MzhlZmMyMDk0OGEwMDI3NTcyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDIwZDc3MmRlMmJjMTQzMTZhMjI3YjA0NTBiNjFiNmEzNTljZDIwMDNkZDBmMjcwMjgxZTE2NzQ5YTI2ZTdlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJjZDk0NzE1Nzg5NGFlZjNiMWM0MzAxYzg4YTE4MDg5NDQ1YTc3Njk4YjY0MjZkNDhkZWU5NTRlMDIwNTI3ZCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L15-L16",
+          "version": "repo-lines-v1:sha256:5e7f351dbc05ce71f7f9779057cc96ede53a1e96374d373a3243a31ff2a23f3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzlkYjI0MzVmOWI5OTEwMTMyNjA1MmYxMzZjMTZiY2E2OTU3Yjk2NDg4MWY5ZWY4YjgxOGUzZmZiYmM5ZjMwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYxZmJiYjkzNGRmMDAzMmY5NTgzNDViOTNhZDI4YmRkNzcxOTQyNDdkYzViODNlMjQyNjEwMGIzODc1OGRiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWM4MGI3MjQxYTZlN2YzOTI1ZTJkZDg3MzhkYzgxODg5NTJkNWE3NTNiOWI1OTMzZjY1Mzk1NzRmNGM1ZjRiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRmZDNjNzQzYjU2MjVkM2Y0NTVlMmUyOTZmM2ZlZTI1NmM3YTczNGVkMzVjMjc5YzQ0NDRlZDI0NTIxYzY5OSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
+          "version": "repo-file-v1:sha256:ecc1411123c4003e5f27ba22223197b2da0584d593e324cbc938c06eb07a50e7"
+        }
+      ]
+    },
+    {
+      "id": "claim_7fd99d176d2f46d9bb426504d8db2553",
+      "statement": "`scripts/gen-dev-secrets.mjs` mints each `<generate:KIND>` placeholder with the kind's alphabet and shape — b62-32/b62-48 (URL/shell-safe base62), hex-64 (32 bytes as hex), complex-16 (upper+lower+digit+special from a URL/shell-safe set), unleash-admin/unleash-client (token prefixes plus a base62 body), and mongo-keyfile (single-line base64 of the MongoDB replica-set keyfile content) — using `node:crypto` with rejection sampling to avoid modulo bias, and treats an unknown kind as a hard error naming the key rather than writing an empty value.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L27-L95",
+          "version": "repo-lines-v1:sha256:9fbcaddd1ab213d408bf9e86b41bed0e7eb58ce5716fad08ef1d247da358caff:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxMGRiYmNlMDBiMjZiMWQ1NjQ1MzEwODdmMzJhYjJkZTRkOWQyY2YwOTAwMDE5YTUyOGFhYmY2NmZjZTIyY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4ODM2ODdmMzJiNWM4NDdkYmNlMjk2ZDJjZGE3OGM1OGZjZmM5NGRhZjRhZjkzMjY0MGE3MTZlY2MyOTE1YTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyMTA5OWMzM2IwNWYwZjhiODk2Mzc0YmQzYjExOTJkMTg1ZTEzYjc0NGMwMWRiYjVmOTE2M2FhZmI3Zjc2NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYTNlYmZhNTE2OWNjODg4ZDMwNjYwNjRmNWJkNDNjNjM2NzdhMmFlYzliZWUzMTc2Y2UwMTllMGM1Yzc0NDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c918248c292a4a5fa932d97f8cbb8f40",
+      "statement": "The generator's idempotent path is a back-fill, not a plain skip: for an existing `<stack>.env` it seeds keys the template has gained and mints in place any `<generate:KIND>` key that is present but empty, while leaving every existing value — including hand-edited ones — byte-for-byte untouched, because the only alternative for delivering one new variable would be `--force`, which rotates every other value and takes the running stacks down.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L176-L184",
+          "version": "repo-lines-v1:sha256:81d0a1374753ee9a1af77de16bf55536e40c402cf589c16a28249dfb656e26fb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjYxNDAyYmVlYjZkMDczYmUxMTJjNDcyYTdkNDI0NTE2ZTEwMTRiMGIwNjczNTAzZTVhZmQ2NzZkYTJmMjFkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjYyMTBhM2Y4ODBiMjQ3NzU0YWVlMTZkMzZkMzE0NjE4ZGRkMTk1MjdiZGQyY2M0NWIwZWJlZjMzNGZmOWE2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUyZmY2Yzc3OWZlY2ZmODQ0OWYyYzE4MDQ3YzU4M2Y1YmFiZThkZDFmNDAxZDBjODMwYWRmOTQ5MjgzOGQ4YiJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L97-L167",
+          "version": "repo-lines-v1:sha256:1a8dd73d6f86170c35e9b998e0b73727a5ea568be796883678a448980ad7febd:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNmMwNWM5NDBhZjliM2Y2ZGU3M2ExNzFlM2VmMDY0NDllNjFmZGFmYWVjNGQ2OWI2ZDNjOTg1ZmRjZTJlYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzhlMDA3Y2Q5NTFjNmU0ODE0N2NiZWQ0NzQzYWQ1OTIwNjhlNGIxODRlYWViYzRiZjAyODRjZTk1ZTFkMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_29a4b6b047eb4c22a35e51d7ad6f6836",
+      "statement": "A key the template deliberately leaves blank is not treated as a gap: `REGISTRY_HOST` is empty in the mcm and observability templates because `scripts/check-topology-scrub.mjs` forbids a real tailnet host in a committed file, so it is set per machine and the compose image references fail loudly naming the variable instead of resolving to an invalid image reference.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.env.example#L31-L38",
+          "version": "repo-lines-v1:sha256:30e3078009b4dd0ac4a4cd18110f1972743e4320ec592d2c9b34a65a4881ee9d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU5ZTlmMDBiMzQyOWQ4NmI0NTQwNjA1YzU2ZGQ4MGQ4NDlhNGVjMDk1YWJiNTE3NjVlYmNlODg5ZGU0M2U3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcyZjU5ODk3MDY0ZjI2ZmYyYjU5Yjk4NjM5NzU0NWE3OTBlYzc2NTM1NDYxZjU1ZWIxYThjMDg2M2Q3MTZiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTAxYzAyNzQ3NmNhMzk3Nzc0N2Y5MGM1ZWFmZWRkNWZmZThmYTU4YmQyODljNzJlYzdiZjQxNGNmNTYxYjU0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/observability.env.example#L24-L31",
+          "version": "repo-lines-v1:sha256:42adaaf348b01d6cc14f536f32542929501a5d0dce21092286b77c827f89a00f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU5ZTlmMDBiMzQyOWQ4NmI0NTQwNjA1YzU2ZGQ4MGQ4NDlhNGVjMDk1YWJiNTE3NjVlYmNlODg5ZGU0M2U3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcyZjU5ODk3MDY0ZjI2ZmYyYjU5Yjk4NjM5NzU0NWE3OTBlYzc2NTM1NDYxZjU1ZWIxYThjMDg2M2Q3MTZiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYzY2E4OWNlYzIzOTU3MGM3OThhYTM2M2JmNzljNGZmMTU0MDdmMTRlZDdhOGZiOGFlYjcxYjVhZDY0MzdlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-topology-scrub.mjs#L1-L40",
+          "version": "repo-lines-v1:sha256:64eb801aae6ea84f4c914a7ff3698cc3f3a51b1bd19fd7a48afa6920e41deaea:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNmM4YTMzZGRlNzA1NzQ4M2JhNjJmMjk4NmJhZWQ0NmFiZmU0ZDVjNzU4NTQxMzJkMDFlZDI4ZjJkYWNjNDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_140bb82dba014873acb094bb43660949",
+      "statement": "Deterministic fixtures are copied verbatim from the template and survive `--force`: the two LangFuse `LANGFUSE_INIT_PROJECT_*` keys are fixed because the agent gateway and a verify test authenticate against those exact values, and the fixed public halves of the backup-destination fixtures (S3 access key, WebDAV username) are fixed so the integration suite can name them without reading the env file.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.env.example#L22-L29",
+          "version": "repo-lines-v1:sha256:2d206816ef792754fe1585da005ab2c0f9712e6baf979be9bba18339048bd49b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTUxNTAwYWVhY2QxN2JhZjg2NjA4ZTZhZWQ5ODlmNDUwNTI4NzI4MDRlZjFhZmEyN2MyZTUxYTZjNTU3ZTMwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE0Nzc0MmI3OWJjNDVkMzViMDUzNjgzMjQwNGU5NTE3NTE2YTA0NjBhNjJlZWRhZjU5MTA0Y2Y4MTgzY2ZhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTA1ZWEwYTFkYjFiNzI5NDI4Y2Q4MzYyNzAwMmY2NzI3OTBiMzg5YzgyY2Q5ZmI3MjIyNmNkNDFjY2IzNTZiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmRmYmFiNzg4MTNjZTc5ZWUwMTZhMzUyMzRjZWJjZThkMDcwMGFlZDIxNzFlOTkxYzlkZmRlYzkxODBiYjAwYiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/observability.env.example#L19-L22",
+          "version": "repo-lines-v1:sha256:16610c41f0d55bc7fc6be881dd79b2d56b1ff5bf321ddeda788a179a747fc426:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZlYzBjNzc0NmVjZTJhYjljYjE4ODI3NzFkMGE1Y2VhZjRmYjRhMWM1NjY1NzY2MjEzZTY0MzM0YTA1NTQ2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOThmZGM4OWM3Y2JkYjBjZDA5NmJjNzc4MzYxNjQwNDA1MWEzZTdlNmNkNmU1ZjBjZWZlMWY3NDc1NjRmYzY4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzcxYTQ0Mjg2NzBhMDIyZWZhMTk2YzVjZjNkOTZjNDgyNjk4MjA2MGU0ZTQzMjA3ODE5NmJmMWY4MzdiYTY3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmRmYmFiNzg4MTNjZTc5ZWUwMTZhMzUyMzRjZWJjZThkMDcwMGFlZDIxNzFlOTkxYzlkZmRlYzkxODBiYjAwYiJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L200-L215",
+          "version": "repo-lines-v1:sha256:7a9427de506d0830c052b8e45bc2b1685fd0fd865bd0ec6eb0a48173b94f51b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ZjhlY2U2NWUyZWE5YTYzN2YwYjczNjk4MGVmNWZhMTcyZGFiMjg1Y2ZkODUzMmM2OGQ3ZTUwNTFlNmRkMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmQ5MTUxODViYTE3YWJjNzhhZjk0Y2U4NDM5NTEwZjkzNjUxOGM4NGU1MDg1NGIyMzBkMWNkZDBkYTFjZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NjRiZDE2YjM1ZGMyMjcxMjVjZDE1MzBmYmFmNWI1NzA2MTNkZjM3MTAyNjYyYWQ2YzU5MWI1YjBjNzI3NTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7afc76788e4a46a3a201805f96380c02",
+      "statement": "Password-on-first-init credentials (Postgres, OpenSearch, MinIO) bake their value into the data volume on first init and ignore later env changes, so rotating the `.env` requires recreating the service with a fresh volume or the container keeps the volume's original password and auth fails; Redis values, Unleash tokens and app secrets have no such persistence and rotate on a plain restart.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md",
+          "version": "repo-file-v1:sha256:2d3f8aaaad311599478088314db9fa3544b4510ad9abf00e62383c4d944953a4"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.env.example#L10-L14",
+          "version": "repo-lines-v1:sha256:c14f165cebd9f77f1249e4a966ae9145d1c5a21e5f57331562c43199344e86da:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTgyZjRlMTMwMmM5ODFjYmQ2NjljZTBjMGE3NjM4MjEyZDRlNDZlZTE1YjA0NTIzM2I2NzVlYzAzZWY4MzQ0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU5YTg5MWUyZTQwZmI5Zjg0ODUzMjg5NzNhY2NjZTNiOTVkNGQyYjM1YWM3ODI5OTliNGU1MWM0ZDMyYzhmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFhM2YxYjY2ZTIwMmFmMWU2ZmZhOGVlZWU4MmUzOGY3YzQxNTdlNGYxNzJjZjA0MGRkNTIwNTJjMzk3ZWYzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjhhZjRjNjk0YmRjYjFmYmVkYmI5NjViOWMzYWRkZDBmNGY2OTY4YzE3MDYwNWZkOGQzMzAzYWMxMWQ2NWE4ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e416c3138cc9414682b0e1e91bb0e0f4",
+      "statement": "A container started before a re-run does not hold a newly minted value, so the services that consume it must be recreated and `node scripts/gen-dev-env.mjs` re-run to project the value into the BFF env files; the generator says so in its output rather than leaving the next 401 to be diagnosed from scratch.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L1-L43",
+          "version": "repo-lines-v1:sha256:36b233b94f52e3c3e69d69cae2f531eb2f51a6ebc2f79bac3ec3f0fa627fdcd7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNjc3NTEwZWNlYzNhMmM3Yjk2NDg5NjVlMTgwNWYwZDNhZmYxYTUzMDVlNDA5NGE4N2Y0YTk1ZGNmNWRkODIifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L159-L166",
+          "version": "repo-lines-v1:sha256:3b2deefe78519cd2f88542fd89d4fe9d06806a7f0ad15f894e72218e9ad25ba0:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGEwNjJiMTdiNjc3MTQ0MjVkMDg3YmVjMDRhMTFiNjFjOTM5NGEzNGIxZjA2YTQzODgyMjUxNzRkMzc3M2YwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmEwNjc1MWIwMzk1NGIzZmIwNGQ0YjNiMzcyN2YzMjJhMzYyZGI2MzNiOTE0MDM1NzAzZWQ0NDQ4MjU0OWQ3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA4ZTM3M2Y5NjZhOGUyNThlMzBkNmMyOTZiZDdkYWMzOTc0ZDA4YjI3MTdjNDEwMzg3MzcyYjk0NzU1MDJhOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjNiMTIxMzk2NjU1ZWY0OWI5YjkxN2I4NjIyMGNiNjYwMDZkZmY5YTRlYjM1NDFjNWQ0YWI2M2NhZDczOTgzOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_189f6bc1a7914d36bfb3b8ea36a7df2c",
+      "statement": "The generator prints key NAMES only and never values, and a guard test enforces this by asserting that no non-trivial value in the written file appears anywhere in the generator's combined stdout/stderr.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs#L71-L110",
+          "version": "repo-lines-v1:sha256:1440a3b08921bd8f1494b14627a3c0b903adf9847d7d6421eaf61fd1652882dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMjI0OWZlMTgwYjhiZjY1YWQ4ZWM1YzM5ZjQ5NDY2NTk0MzkxM2JlMTA2M2NkYjc4OGRmMWVkNjA5MjE4OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyM2Q4ZjExYWEzZmQ1MWVhNjZjMGFhODY1NjNiOWI3ODI5MmU0NDBiMTkxOGVjMmZiMDI2NjdkZDUyNDQ0NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyMTAyOTExNGM5OGMwMWQ4OTQ3OTZhMWNkYTkyMGZlZjQyMDA4ZGYxN2Y2MjMzOGMwOWYwY2JmNDU0ZmEwNWMifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L154-L166",
+          "version": "repo-lines-v1:sha256:130dfdaf664e9f4429d6ddecfa6f717a063c096fe502ccf1529269750417aae4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NjgwNTQ0ZTdhZTA5MmFjNTg3ZGYwYzg5OTgxNDdmZGJiMzdiMGZlZjUwYjU4ZGM5MGY4NDAyODZhNjIzMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMDY3NTFiMDM5NTRiM2ZiMDRkNGIzYjM3MjdmMzIyYTM2MmRiNjMzYjkxNDAzNTcwM2VkNDQ0ODI1NDlkN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNmIzY2Q2NWVkN2Q3MWY1YTFiYmYyOTcxMTI0NjIxMDBjODg3ZDk3NjYyZDdmMDRiOTg5MGZmYzZkNTFmMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzYjEyMTM5NjY1NWVmNDliOWI5MTdiODYyMjBjYjY2MDA2ZGZmOWE0ZWIzNTQxYzVkNGFiNjNjYWQ3Mzk4MzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ccc73a8eb02648d091fbb98a8d742341",
+      "statement": "`.gitignore` ignores `*.env`/`*.env.*` wholesale and un-ignores the templates with an explicit carve-out scoped to the stacks directory (`!infrastructure-as-code/docker/stacks/*.env.example`), so other deliberately-ignored templates such as `frontend/mcm-app/.env.example` stay ignored; a parallel carve-out tracks `*.env.prod.example` under the docker component directories.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L12-L20",
+          "version": "repo-lines-v1:sha256:87478ba60947384c3c82e4820e80bc65a778ac7d12d3fb613bdd37a0e3c3385b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzkxM2JlMjU5YTY4YmUyMjRhOGY2ZmVmYTYyYTIyYTc1MGY4MDgyYjFkZmMzYzMwNWJiMGUyODhhZGYwMmI4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc1NjM3ODE1MDc0ZmI3MGZkNDA5NDYyOTgyMTYxZGY4NmEzZWYzNmQ3ZTE0YzJkODYwNzdlMmRiN2E1NzU5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzMwNzY4YjJmN2YyZGZkZGRmNTA3OTE4YzMzZjY0NThhYmM1NjM1Yzg0MTFkYTFhZjY2MzA0MWU2ZDAwN2VjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWY0OWZkMDhjZTZiMDMyYjUxNzMzMTg0M2MxYmUxMDY4ODViYjg4Yzc2MTVlM2IzNmIyMDhmOWY4MTZiMjczZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff9dab7047c7474cbd23c0de03f315b2",
+      "statement": "`scripts/check-no-inline-secrets.mjs` fails the build when a tracked compose file holds a literal credential: every secret-shaped key, password-bearing connection URL, and command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?message}` reference, an inline `${VAR:-default}` also fails because a default re-leaks plaintext, and non-credential keys matching the name pattern (`*_FILE`, `*_USER`, `*ACCESS_KEY_ID`, `*_CLIENT_ID`, `*_AUDIENCE`) are allowlisted. It runs selftest-then-scan in guardrails.yml's `naming` job.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L91-L108",
+          "version": "repo-lines-v1:sha256:960775fb1508748e0c33e414d27a2c4096fc401038bc71d402db494e06abb544:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjOWYxZTJiYTEwMTFiNTlhOGUyMDZkMzFmYTJhMTgwYWVkNTQyMDZmMjczZDkzZThkNzYwMjQxNGExZjUyMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ODM3MGMyZmNiOGFlZTJmZWRkMWYzMDViZDA3Nzg3NDgxZjZhNzQ5OTZjMmU4MjA5NDY0ZGFhOTY2OTBhODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlMzVlYmMxMWJiZGNmYTUyMjA2MjI5ZDhlZmE2MzdkMGJkOWM5MDAyZWVjYmMzZWY1ZjJkZjc5ZGFhMzU2MzQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-no-inline-secrets.mjs#L119-L181",
+          "version": "repo-lines-v1:sha256:72a2ec3762f76ab526f995a9454d41e6f6c5f6568aed89ec9247dd57218f189c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZmVlODQ0M2I2MmM4YzlmNWViZDYzNzM0MmNhZWZlOGFkYTU5Y2IwYzI2YTEzOGUwNzVkNmVlMDc0MTk4YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlZmI4YTRkODM2OGMxMzRlZjRlMGI2MmVhOTY1MTMzZjU4ZWYxMDAxMmIwMzQzNzY0MDQ3YThiZDAwNTIxM2EifQ"
+        },
+        {
+          "resource": "repo://scripts/check-no-inline-secrets.mjs#L23-L51",
+          "version": "repo-lines-v1:sha256:870a8e360d4a0906fdf6a89277e608cf57ba97a73ef5a3e97d713747f25b683e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjN2Y2NmJjODkyM2IyZjBjNjUwNTI5NTVkZjM3N2E1NGQzY2RiZTEwMmY2NmE0MGQzM2FlMjFkNGUzNjFlN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOGY0YTFhM2EyMzU5NzVjOTk5YzlmNWVhMWE1NGJhYWVlNmJmYzBkOTM5ODkyZGE5NjBiZjM2NWZmZWIxNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YWZlMzM4YjI5MDA0NGFhN2U2ZjQzN2MyNzhiNzZlYzdjNjA2YTk5NzgzMmI1ODFiMTZkMTU0MzJlZDRhYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YjUzNmViZmRlMGUwYTlmNTcyYjUzNTkyNGRlOWQyMGIxMDU0MDhlZDY3ZjZkNTJkNDVkNDRhNzdlNzVlZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7c8fd50103fa4ca28aa0b84fa244cea0",
+      "statement": "`scripts/gen-dev-env.mjs` projects the realm client secrets from `stacks/auth.env` into the BFF's gitignored env files (`frontend/mcm-app/.env.docker`, `.env.local`, `.env.e2e.local`, the web-api-mcp TMDB file, and `backend/mc-service/.env.local`) so the imported dev realm's client secrets and the BFF's client secrets agree by construction; it verifies the projected credentials against the running realm before writing anything and exits 2 refusing to write when the realm rejects them.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L1-L43",
+          "version": "repo-lines-v1:sha256:36b233b94f52e3c3e69d69cae2f531eb2f51a6ebc2f79bac3ec3f0fa627fdcd7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNjc3NTEwZWNlYzNhMmM3Yjk2NDg5NjVlMTgwNWYwZDNhZmYxYTUzMDVlNDA5NGE4N2Y0YTk1ZGNmNWRkODIifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L286-L330",
+          "version": "repo-lines-v1:sha256:39cfa60e3f85987889c8f285dfc18af24e28cc9777f359ad1bbfce646256ae23:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMGU2NDAzNGU0NDE0MTAzZDNmY2M3YjhlYzgxMDE3NThjNTljZjkyMWFkMTExMjFiNDBjZTUxN2YzMGY3OTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MzM5YTAyYjM0ZjM4MzQ5OGI3ZjBlMWY1ZDAwMWU3OTgwZDViNzA2ZGRkZTk2YmY3ZGQxNjU5M2JkMTFmZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyOTIwYTI0MTI3ZTdhYjk2ZjYwYTEzMDNlOTk2YzEwYTEwZTUwNDFhMGZhYWU4YTE1MDY1OGI5MTVmY2I4ODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa92632273754c80b16e54bf73fea48f",
+      "statement": "`gen-dev-secrets.mjs` exits 0 on success, 1 on a missing or malformed template or unwritable output, and 2 on bad arguments (an unknown `--stack` value or an unknown flag).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L16-L16",
+          "version": "repo-lines-v1:sha256:67528d5c8a11482cb358cac3aedbea349e03ba2b6bceb017fdfe021b0b9c55f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc1MjhkNWM4YTExNDgyY2IzNThjYWMzYWVkYmVhMzQ5ZTAzYmEyYjZiY2ViMDE3ZmRmZTAyMWIwYjljNTVmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc1MjhkNWM4YTExNDgyY2IzNThjYWMzYWVkYmVhMzQ5ZTAzYmEyYjZiY2ViMDE3ZmRmZTAyMWIwYjljNTVmOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGNmNWM5YTY3MGEyNjc1NzA4YWQ5MjRiODA4MjJkNDc3YWY5M2Y4MjEzYmM1Yzc0YWU3OTI3NTBkYjg2YmRmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjVjOWU5MWY3NjE5ZTBlYWRhNGZlY2NhMmNhODQ0NGM3NDNjY2M0MGRmM2YyN2U2ZjM4ZjFhMDI5OGM4NmYwMSJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L221-L257",
+          "version": "repo-lines-v1:sha256:88338d179b00cd55523d8c570f7515a393d45d3ec3213160f1b0c52f964400e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwMDM2Nzg4MDg1NzNlMGFjYWM1ODBjODQ3NDVlYzc2YjY5ZmJiYTFlYjkyOGZmNDQ4NjEyYzgwYzY0NWI3ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3Y2M1ZDI1ZjU4NzczMTQwZTI4NDgyNjk5N2Y2NWE2N2U1ZmY2Zjc3Njc0M2M3MzM3ZjIzNTIzZTA4NDg2N2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ZmE1NWRjZDg4MGI3MWYwNzgxNTliMWU0M2MyMTI1M2MxOGU3ODc0M2JjNTI4MGQ5ZjhjYjdiM2VhNGEyODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b873e2522241447aa0c74289168a77ff",
+      "statement": "The MongoDB replica-set keyfile is carried as an ordinary env value (`MONGO_MC_KEYFILE`, minted as single-line base64) and materialized at start-up into a `0400` in-container file by `mc-service/mongo-entrypoint.sh`, preserving the no-host-file-secret model.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh#L7-L26",
+          "version": "repo-lines-v1:sha256:5b4b236a22d3c3fc9031277763609a3a61dd22bb724dded1ae989abb178b2ca0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyOTk1ZmE3NDI2OGRhMTIyZjZjMmJjYmQ1YzdiZTBlZjQ0MGFlZDdkNDExMjg4MzY4ZTM0MTZhMDVmZGZhMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MWY1YWI5NDQ2YjdiZDRhMGE4YWI5ZjI0OTQ0YmVmZjA4Zjc0ZGQ3YmFmYWJhZWZhZjQ1ODE1NDY3M2RmNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5Y2U4NTcwNWFlNWNkN2EzYjk3ZGVlNTU2MmI0Yzk2N2FhZWRiOWU2MzE4MmJmYzFjYzBlNzgyNGQxNGFlZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5OGE1NTJkN2ZlYThhMWU1ZDEwMDY0ZDIxZDViZTM3Yzc2MGMzMTg4NzUwNjA5MjYxMDk0OTVmNjhmMWEyOGYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.env.example#L18-L20",
+          "version": "repo-lines-v1:sha256:e08179a253ba8a99d2a0da7eb89c67eea5adc948c48538b37706ee4af5aa3912:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWMwNDVkOTczZjgwMDY2OWUzMjIyZTc5MGVjZGIxMmFmMjBiMDZhNjhjY2MwNmNkYTI2NTFlYjVmMjVlZGExYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk2YTUyYjkwYjQ0ZjNlNDFkZjcyOGI5ZWY3NTlkN2IzYjgxNmVlY2RkZGZkYmEzYzM4YTNjZjA1M2EyMTQ4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1Y2QyNmQzOTA3ZmUyNmU1MDQ1ODE2MDVhZjIzMTJlYjRiNmQ2MTdkMjM3ZDhjZjMwZjFiMWY0NzA1YTYzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDU0ODAyZThhNjhhNzJhODcxYjRkYjgxZTEzODg0MmE0MjA2MGJmYTI5NGIzYmRlODJmNWU2ZWY2OThjMzJmNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bd3d1d252c7434ca1fd1a7145ba7702",
+      "statement": "`scripts/__tests__/gen-dev-secrets.guard.test.mjs` pins the item #552 back-fill contract in an offline, keyless throwaway mini-repo: all four `BACKUP_TEST_*` keys are seeded into an existing mcm.env, no existing value is rotated, the seeded keys are named in the output, an empty placeholder key is minted in place without being duplicated, a blank fixture key is not treated as missing, and no value is printed.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs#L1-L144",
+          "version": "repo-lines-v1:sha256:eb4777bb7f0ef9fb22f4df096fb08449682b3e16d4cf1eb9a11b7cd64ced92a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTQ5MjhlOWI3OTVlZDM1ODcxNWUzMjVhZGQ4MDA0ZmYxNzQ4ODMwZDM0MWZkYmFlNDZmYzRlMWU2ZTJiYTU1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_edf1065fcded4f8da32364138792c5c5",
+      "statement": "`scripts/__tests__/doc-env-example-citations.guard.test.mjs` fails when live documentation cites a `.env*.example` that is not actually tracked in git (checked via `git ls-files`, not `existsSync`), because a dangling template pointer reads to a fresh clone as a broken repository.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/doc-env-example-citations.guard.test.mjs#L1-L51",
+          "version": "repo-lines-v1:sha256:bf525a09c0f24a49e4f2446af6a5a2bf2fc61f70443bbbac8ed5a97a97579a40:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyZjYxZGQyNDdlNzcxZDkzNGY2NDFiMTQ5M2NmNmU4M2IxNDM0NjU0N2Q4NzI3ZDg5MmE1MmNlODFlYmQ4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMDg3ZGUyNTdiODlkNjVhMDE1Njk4YTNiMTRkMGQ4ZDkzZmMwOTY4OWE2YjY0YzljZTdhMDYwNjE0OTBiMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5ZWEwMzA5NjM0ZWVhMTRlY2JkYjNiMDAwMDhmNWM4OTI0ZWVjZjViYmIxNWNkMjEzYzc5YjIzYTBjYjljNWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5877f83dbf6e4620a5818531469539ea",
+      "statement": "`scripts/check-topology-scrub.mjs` is the tree-wide gate that keeps a real tailnet host out of any committed file, matching `*.ts.net` FQDNs and allowing only sanitized placeholders (those containing `tailnet` or `example`) — which is why a registry host cannot appear in a committed template.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-topology-scrub.mjs#L30-L59",
+          "version": "repo-lines-v1:sha256:82fc1d0b934c79110117948e050be971d7ed307b2400b319b4a0e35b171105af:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYTFkOTQ0MTA0NWQ5YzdkOGJlYzBkNzQ2NWI0ODk4YmEwNzE5YTliMzA5NmM4MjFjNmVlOWU3MGM0NzdkYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3YjExZDE3ZTBlNTM0Y2JjMmJkNWNkNjQwMGI5YTc0ZDI3OWZiNTNmNTZmNjljOTM4YTZlYmNmMmY3ZWM4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiZTg1OGZkMDhmYzY2ZjMwNDBiOWQ3YmI3ODQ3NmQ3Zjc3ODhjODJhYTRiM2I3NDgyMzJmMDQyYWRjMjJkNDgifQ"
+        },
+        {
+          "resource": "repo://scripts/check-topology-scrub.mjs#L67-L87",
+          "version": "repo-lines-v1:sha256:78d0ab6ffeafda45f1c5e41e475be9426ec44b61db9d63a381ff155879fd4cd8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNmY4ZGI0NzQzYTI2NTE3ZWFjZDAxZGE4ZDNjMWQ4Yzg4MzU4M2Q4ODBkZDliODVhNWY2YmZmZWU0NjMyNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMGQxMzk5Mjg4YmY2ODVhZTgzOWJkNzhmYjhhNGMyYWVmZWRiM2U5MmVjMjRkNDQ1MjE3MGUyODFjODg1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTRiNzU1MjZmY2NkZjQ3MDBjMGE1ZDJmMDg4Y2Y4NTIwYmYzMGEyZGNlNDAzNjgyMGRkY2E0ZTgyYzRhMWEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-14T00:22:35.941Z"
+  }
+}
