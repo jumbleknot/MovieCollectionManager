@@ -23,8 +23,8 @@
       "completedRunId": "1f88b926-ba1c-4987-a817-ce9df84284b8"
     },
     "/openwiki/decisions/adr-0001-prod-secrets-management.md": {
-      "gitHead": "be9ec6f1c99dbda29409f4471d079589fe03bef1",
-      "sourceFingerprint": "sha256:256a28d33ee7f29bf3aae46f06546614da3ca67b9d1f692b0b47658e42c3d93d",
+      "gitHead": "132c9da49e27f5aa126fcbdf4b29c77c005f9a8f",
+      "sourceFingerprint": "sha256:49fb319942fc704bd2854b8f9cc8c44c3ff95e3db4abc2a7fac58456cd932da1",
       "pageVersion": "sha256:819d458019a93da26618aa1e9135b97c04f38db4f75cbb6aad31a51779c69d94",
       "completedBy": "openwiki/0.7.1",
       "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7"
@@ -37,8 +37,8 @@
       "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c"
     },
     "/openwiki/invariants/published-port-reservation.md": {
-      "gitHead": "be9ec6f1c99dbda29409f4471d079589fe03bef1",
-      "sourceFingerprint": "sha256:256a28d33ee7f29bf3aae46f06546614da3ca67b9d1f692b0b47658e42c3d93d",
+      "gitHead": "132c9da49e27f5aa126fcbdf4b29c77c005f9a8f",
+      "sourceFingerprint": "sha256:49fb319942fc704bd2854b8f9cc8c44c3ff95e3db4abc2a7fac58456cd932da1",
       "pageVersion": "sha256:0c438ffd0c3b1fc4d582269db207712db662951b69f01b1c57cdb936c0295b1a",
       "completedBy": "openwiki/0.7.1",
       "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7"
@@ -79,15 +79,15 @@
       "completedRunId": "abdfe5e8-5e6a-45ec-84d7-032c73d67800"
     },
     "/openwiki/projects/infrastructure-stacks.md": {
-      "gitHead": "be9ec6f1c99dbda29409f4471d079589fe03bef1",
-      "sourceFingerprint": "sha256:256a28d33ee7f29bf3aae46f06546614da3ca67b9d1f692b0b47658e42c3d93d",
+      "gitHead": "132c9da49e27f5aa126fcbdf4b29c77c005f9a8f",
+      "sourceFingerprint": "sha256:49fb319942fc704bd2854b8f9cc8c44c3ff95e3db4abc2a7fac58456cd932da1",
       "pageVersion": "sha256:c638a8b9dbaa821640ad6f025de2d737ae17e452553faa9cec64b7b4984c076a",
       "completedBy": "openwiki/0.7.1",
       "completedRunId": "d566e92c-934b-4c2b-86d6-3bc075b787e6"
     },
     "/openwiki/projects/keycloak.md": {
-      "gitHead": "be9ec6f1c99dbda29409f4471d079589fe03bef1",
-      "sourceFingerprint": "sha256:256a28d33ee7f29bf3aae46f06546614da3ca67b9d1f692b0b47658e42c3d93d",
+      "gitHead": "132c9da49e27f5aa126fcbdf4b29c77c005f9a8f",
+      "sourceFingerprint": "sha256:49fb319942fc704bd2854b8f9cc8c44c3ff95e3db4abc2a7fac58456cd932da1",
       "pageVersion": "sha256:fb443e10d63c40d76bb7f81d3703ee61802913be4046ca60dc4bdcdb614450e9",
       "completedBy": "openwiki/0.7.1",
       "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7"
@@ -121,11 +121,11 @@
       "completedRunId": "0e71e192-86b3-41ee-afa4-0764d3ae623f"
     },
     "/openwiki/projects/stacks.md": {
+      "gitHead": "132c9da49e27f5aa126fcbdf4b29c77c005f9a8f",
+      "sourceFingerprint": "sha256:49fb319942fc704bd2854b8f9cc8c44c3ff95e3db4abc2a7fac58456cd932da1",
       "pageVersion": "sha256:18fc200ec5f1b78a15c2b9cae62360be72940bb1830ae8f680b499c6c641d0f7",
       "completedBy": "openwiki/0.7.1",
-      "completedRunId": "fdc4f3d8-6388-40b2-88a3-bce5d6466a69",
-      "gitHead": "be9ec6f1c99dbda29409f4471d079589fe03bef1",
-      "sourceFingerprint": "sha256:256a28d33ee7f29bf3aae46f06546614da3ca67b9d1f692b0b47658e42c3d93d"
+      "completedRunId": "fdc4f3d8-6388-40b2-88a3-bce5d6466a69"
     },
     "/openwiki/quickstart.md": {
       "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
@@ -211,12 +211,19 @@
       "completedBy": "openwiki/0.7.1",
       "completedRunId": "095a61b4-6cd1-4cff-ad10-f47c45dde9c9"
     },
-    "/openwiki/runbooks/prod-reboot-resilience.md": {
-      "gitHead": "0f551ce84cbdd2b00ab4f2525708b172980d4d3a",
-      "sourceFingerprint": "sha256:12e503b9748615925d8efc62820a73218c5602ec7dbb02db18b71e3d97c64915",
-      "pageVersion": "sha256:1835dfb453cf9eb507cf5ab2be4cf6e0dbaa404abd44bbcdae1be7ad2f7b5756",
+    "/openwiki/runbooks/prod-control-tower.md": {
+      "pageVersion": "sha256:0ef9cd1f4a0496db3b6e43c2091134ff5e7161e12e184cd312d7373633c2a0a2",
       "completedBy": "openwiki/0.7.1",
-      "completedRunId": "095a61b4-6cd1-4cff-ad10-f47c45dde9c9"
+      "completedRunId": "bbaffa7c-b27c-4fd1-bc7f-3b2f76cd9265",
+      "gitHead": "132c9da49e27f5aa126fcbdf4b29c77c005f9a8f",
+      "sourceFingerprint": "sha256:49fb319942fc704bd2854b8f9cc8c44c3ff95e3db4abc2a7fac58456cd932da1"
+    },
+    "/openwiki/runbooks/prod-reboot-resilience.md": {
+      "pageVersion": "sha256:ddfed2a1ea1d1a9a08e593a01e4d7177c338f05770255f7afabd679e368d8b30",
+      "completedBy": "openwiki/0.7.1",
+      "completedRunId": "bbaffa7c-b27c-4fd1-bc7f-3b2f76cd9265",
+      "gitHead": "132c9da49e27f5aa126fcbdf4b29c77c005f9a8f",
+      "sourceFingerprint": "sha256:49fb319942fc704bd2854b8f9cc8c44c3ff95e3db4abc2a7fac58456cd932da1"
     },
     "/openwiki/runbooks/renovate.md": {
       "gitHead": "0f551ce84cbdd2b00ab4f2525708b172980d4d3a",
@@ -233,11 +240,11 @@
       "completedRunId": "0e71e192-86b3-41ee-afa4-0764d3ae623f"
     },
     "/openwiki/runbooks/server-setup.md": {
-      "gitHead": "be9ec6f1c99dbda29409f4471d079589fe03bef1",
-      "sourceFingerprint": "sha256:256a28d33ee7f29bf3aae46f06546614da3ca67b9d1f692b0b47658e42c3d93d",
-      "pageVersion": "sha256:3c97a362903b4521436168707eb6eda013f2c975a44c8606e8e2b6111f6fae90",
+      "pageVersion": "sha256:f81fedd01beed609a3f0cec3bcb2db5bd3f3e24c11bcfd22f61960d0ec934abe",
       "completedBy": "openwiki/0.7.1",
-      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7"
+      "completedRunId": "bbaffa7c-b27c-4fd1-bc7f-3b2f76cd9265",
+      "gitHead": "132c9da49e27f5aa126fcbdf4b29c77c005f9a8f",
+      "sourceFingerprint": "sha256:49fb319942fc704bd2854b8f9cc8c44c3ff95e3db4abc2a7fac58456cd932da1"
     },
     "/openwiki/runbooks/wiki-maintenance.md": {
       "gitHead": "5bec80c435d1ce200cc7daccba7f36fb4a39ea4c",

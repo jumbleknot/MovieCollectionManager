@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0ef9cd1f4a0496db3b6e43c2091134ff5e7161e12e184cd312d7373633c2a0a2",
+  "claims": [
+    {
+      "id": "claim_b2f83e88e769498a89a014e4005d6a46",
+      "statement": "Production's Control-Tower support services are three separate Komodo ResourceSync stacks — prod-audit (the OpenSearch audit sink), prod-observability (LangFuse + otel-lgtm + OPA + Unleash) and prod-vault (deliberately dormant) — each declared as its own [[stack]] block with deploy = true, so each is independently up/down-able; prod-audit is a root with no `after`, prod-observability's edge is ordering only, and prod-vault hangs off prod-auth because it is logically in the auth tier.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L1-L26",
+          "version": "repo-lines-v1:sha256:82e13adaa431ecf7e573a7329955cc74a4078c963b69616751ae37d4110e3c27:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNjcyZWI4ZWE5ODY1MmEyYTU1ZWY0M2YzODcwYTAxZjlmNTc1OTA1YjQwNGQxOTU5NGU1N2UwMDFhMDFlZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OGM5M2M3ZTA3Y2UxNmFhZTI2ZTVhMWY4MWE4YTYxOTM4ZTc5MmE0OTg2NTEwODY4YTlkNzZjMWNkNzgzNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiMTA4YTA0ZDI4ZjY0NWEyZTcwNTQ4ZTM4ZDExYTFhZTMzODE3YmJhNjY5OGM5ODNiYTkzOGFlZDU0Y2NmMDYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L128-L186",
+          "version": "repo-lines-v1:sha256:bffd0687f8b4216b634c23af720c20ae8f84a1903704011bdaa3fc8696455a86:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmYzBjNThjOWNkNTZkYjdhZTE5MDg5YWE4MTYyNzI1ZGY1ZjBhY2QyMjk5MGY5NTE5OTNmZDAyMTdkZmQ1NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d1f4a92f4434f88bc48c3f6a2bb634b",
+      "statement": "A deployed support stack does not by itself change application behavior: the consumer composes reference every Control-Tower variable as plain ${VAR}, never ${VAR:?}, and each capability is gated in the consumer's own source (audit_sink on OPENSEARCH_URL, observability on LANGFUSE_*/OTEL_*, opa on OPA_URL, flags on UNLEASH_URL), so unset means a silent no-op. Rollback is therefore removing the consumer env and/or deleting the support [[stack]] block, with no app redeploy needed to disable a capability.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L482-L490",
+          "version": "repo-lines-v1:sha256:83b799765026fbf9bf09cd4cd00a2a0325f067d0f3d9aabdcf54fe3434926af4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U0NGM1M2JlNmViYjg3ZjU1OWI5ZjdiOGU0Yjg2M2YzNmY5YmRhMjk0NTFjNmY0Njg2YmU4ZWZlZjQ2MTc4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmY4YWVmN2Y1NGRiNGNlMmVlM2Y3NTYwY2RhZDIzZmIyYWJjYzVjNzNlYjI1MWE3NWVhNGEwMWZmNDA2ZjU0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjlhMjcyY2RmNzE2MDgyZTRhZmViMTc2NzdmZTQyMzBkYmIxM2IzMGFkZWZhYjkzMGJjZGU2MDZmMjk1MTFhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ5YjYzMzY0Mzg3N2UwM2RmNDQzNjdiNGE1MDM3OGU4Y2UxOTZiNzdjYTJiOGYzZjA3OWQwOGFiZjhiMGZlMyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/agents/compose.prod.yaml#L61-L84",
+          "version": "repo-lines-v1:sha256:5dfe1d1b46c421e8c000ad556d7e71c6841fce5b8771e8e82e7fa17a8d5d7cc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmM2ZlOWU2YTRjZDQwMTU3ZWZjMmJkNWFiYmM2YWIxYWNmYTFmYmY4NmE0ZmM3MTI0ZjZhMWQ1MzI2NGE4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjE0OGI4MDRhYjg4MzNjNDIxYjFhNTc0Mjg3MjhlOWU5YmY4MWEzMDcyZjE4ZDk3ZWRhZTdkNTU3NDA3MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMzM1YTVkZTRiZDhkMThhMDczZWQ0OTQ2ZGEwZTYxYTU0ZDUzMDk5ZTQ5Mzg3MDcxMWVjMWY5NWQyNjRjNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L75-L94",
+          "version": "repo-lines-v1:sha256:938d8fd369b5bc4ef5ace0e3dc67ec64528ff2a9e0c1ccf0995c7bb4c11431f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNzRkNGE1ZDdmY2ViMDZjMmQ4MGU0YWFlMDdjOTRiZjc1OTFlYjY2OThiMWY4MTE4Njg4N2E0MjhjNGMyZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjE0OGI4MDRhYjg4MzNjNDIxYjFhNTc0Mjg3MjhlOWU5YmY4MWEzMDcyZjE4ZDk3ZWRhZTdkNTU3NDA3MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkOTgyODllNDc2YzZlZTA5OWRiNTU1Yjc1MDkwYTE0MjA2OGYzNmJiMDU3NGZiMGQwYzhjZTYwYTExYzQwZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZWVlM2VhZTU0ZDQyNTExMzA2ODBiNGI2OWY4YjliZDllMjk1ZjhlMGQ4YzY4NmU3NjA4ODdhYTA1YTQyZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c86f59815d4a4d719737a46a37f8d454",
+      "statement": "The support composes are fail-fast (every credential is ${VAR:?}) while the consumer composes are not, so an unseeded Komodo Variable aborts a support deploy by design but can never abort the app; fifteen new masked Variables are needed (13 observability + 2 audit), the dormant Vault needs none, and TAILNET_HOST is reused from prod-auth for LangFuse's tailnet NEXTAUTH_URL.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L46-L56",
+          "version": "repo-lines-v1:sha256:6cf197d60f162fd6aa26d16f93c9452741314d336cde65105819340479993606:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZjZmOWEyNjdiY2ZmNDQ5MDFlMmQwMWNjOWEzMWRmNDRmOTE2MGYwZWEyNDg0N2JkZmU0MzRjYmMxN2M0NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMTUyYmJhNzNjMWQ4ZDliZDllMGUxMGI1MGQ0ZDVhNjBhMjBlYjc0NTY0YjY3ZmExMDI0NGNhM2M1NjY0MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMTk4YTBmOWNiNmNkODQxNzBiN2NjMTgzZDY1ZmI0NmYzYWUxNDM4ZjgzNGZjMmY3NmRkODVkM2Q1NzU2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZDdjNjU1ZDNlOTNmZjliMTEwNTY4NTYzY2M3YWFmNjE3NTI5NDA0ZWI0ZDIzZjcyY2YwMjBmMzcyMzVlODkifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L138-L172",
+          "version": "repo-lines-v1:sha256:aa4365e27987f1be3d3e2ef6fcda9d6e09df922fecddbcaa00c128e896391c36:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5OWY0ZTMzZjE5NTJmYmM1NzJiMWUwNmUxMWIxNDVkMGZkNWFlN2FiOGQwMTZjM2FiMTdkYjE2NWUxNGQwZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ZWRhM2QyYWY3MjZkYjExNmQwODA5MTY5NTllODViZDE5YTdjMGI5ZmVhYTA5ZGE4NjA3ODI0YmYzYjNlZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2YWYxNDgzMWM2NTA5MjRmNmY1ZDE5ZjU4ZDZiM2U4YjlmNGVhNmI2NTViOWIwNzQ0MjkyMGM1OTYyZjVhNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_48b907b7741a44978f84572f4107f5d4",
+      "statement": "Control-Tower consumer wiring is least-privilege rather than symmetric: prod-mcm-bff consumes only the audit sink and OPA (OPENSEARCH_PASSWORD plus the literal OPA_URL), while the gateway on prod-movie-assistant is the primary emitter and additionally receives the LangFuse keys and the Unleash CLIENT token (never the admin token).",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L75-L94",
+          "version": "repo-lines-v1:sha256:938d8fd369b5bc4ef5ace0e3dc67ec64528ff2a9e0c1ccf0995c7bb4c11431f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNzRkNGE1ZDdmY2ViMDZjMmQ4MGU0YWFlMDdjOTRiZjc1OTFlYjY2OThiMWY4MTE4Njg4N2E0MjhjNGMyZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjE0OGI4MDRhYjg4MzNjNDIxYjFhNTc0Mjg3MjhlOWU5YmY4MWEzMDcyZjE4ZDk3ZWRhZTdkNTU3NDA3MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkOTgyODllNDc2YzZlZTA5OWRiNTU1Yjc1MDkwYTE0MjA2OGYzNmJiMDU3NGZiMGQwYzhjZTYwYTExYzQwZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZWVlM2VhZTU0ZDQyNTExMzA2ODBiNGI2OWY4YjliZDllMjk1ZjhlMGQ4YzY4NmU3NjA4ODdhYTA1YTQyZWMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L79-L119",
+          "version": "repo-lines-v1:sha256:64bda3cfe6580bb36ad00cb0cf5ff64f4b22f26733fac3caa115789b969fea9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YzExMjQ3M2E2ZmRkYzY3NTNhNjhhMjUxYjdjNzgyZDdhODExNTQxMzI5NDA4YjIzYjlkZTYyMWM4YjMzOGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODVlMDVmY2VlZGQyNmExMGVjNjEyZjBmMmY4Y2MwMzBhYTA3MTg4MGY4MzY1YmJjNjQ5MTE0ZDIwZmI1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMGZlM2FmNGU0Nzk1ZjRjM2MzM2VlMTRmYzYxMzJiYjk2ZmQ1MTFhNjBhMmMyNjgzYWY1OWNlYWQxZWQ0NzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a97019ca7fe347a2aab14cf70b514246",
+      "statement": "The audit sink is isolated on its own external agent-audit-network, joined only by agent-audit-opensearch, its init container and the gateway/BFF consumers, so keycloak and mc-service cannot reach it; adding that network to APPROVED_NETWORKS and the `vault` volume prefix to VOLUME_RE was the entire guardrail delta for the feature.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L492-L502",
+          "version": "repo-lines-v1:sha256:8500f3ac7518a504b604aa04b4a8b9776644247f6d1bd9e8231075efd5f5c783:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlM2YyNzg1NjhiODBhN2NiZDYwYjM5OWQxOGU0MTRhYTlhYjk5YTEzZjhhNGIwNWI3NDIyMTY4Y2Q5YjU0ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmOGMzN2ExNjU4M2IzYjZjZTZkY2FjNzE2NTJlNDhhZjAzMGQ2NWRlNWVlOWMyYjYwNDQxMjQyMzc3MGM0MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlMWZlMGEyNWM0ZDkwZWE5ODIzZjIwMWI3MTdhM2ZjZDQ3ODNhMWUwOWMwOWI0ZTBkNjE4ZTI3NGU4ODU1NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L1-L22",
+          "version": "repo-lines-v1:sha256:5f9b79ab27e7435506ce3551772f76681a2edb90d4f6a88341e7f3a812b2af9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlMTFlNTJkYjllMDIyYTg3YTgwZDI2ZmZhYzM2YmQ3NzI1ZjNkNDE3OTgyODU2ZTY2OGYwM2UwZjNhZTRmYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NDFlYWQ3ZDU1Yzg5NWEyYWFhMGVmNTQ4MzBkMWRlZDc4N2IxZjkzOTFmZjVlOGQ3ZTU2YjI3NzU3MzM4NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4NWVhMjgwMzUyODU0OTVkODUyNGY3ZDZlZmE0ZDc4NDU4NDlmODgyNDM4OGI2OWI2ZDE2ZGJjMDk1ZjlkNjcifQ"
+        },
+        {
+          "resource": "repo://scripts/check-resource-naming.mjs#L17-L61",
+          "version": "repo-lines-v1:sha256:1013778c12a21223d6ad8e87bab0f83863ad65e53b262c1074e73e7790602fd8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyN2E2NjY5MDU1NDgxZjg2NDkxZjdiNGFlOGY3MDg1NjVkODNlODA1YjZiMTYxNjIwNzU4NDYxMmM4ZjM4YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YWZlMzM4YjI5MDA0NGFhN2U2ZjQzN2MyNzhiNzZlYzdjNjA2YTk5NzgzMmI1ODFiMTZkMTU0MzJlZDRhYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZGQxNjc1ODAxNjgxODNmMDNiMzhmNjgyYTg0MGI5NDIxM2QxNmYxODIwYmZiYTRlYjI5ZDY3ZmM2MTdjY2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a84bb658be8d439d838af8809f9eb65c",
+      "statement": "Komodo counts any exited container as unhealthy, so every one-shot init container in this stack set must provision and then idle (`… && exec sleep infinity`) behind a trivial passing healthcheck; where a downstream service needs the init's result the dependency gates on a completion marker instead — langfuse-minio-init touches /tmp/ready, its healthcheck tests for that marker, and langfuse-worker depends on service_healthy because a never-exiting container can never satisfy service_completed_successfully.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L461-L480",
+          "version": "repo-lines-v1:sha256:80b225a3ef342d11028f999c01f0aac390d72f704a536adf51dbc781a5eaf3eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYTQxNWRlMjYzNzhlNWY3MjM2OGZiNGNkYzQ0ZGMzNzk3ODAxYzVjNDAxYTY5ODQwMDkwMjM0ZTc4OWNhZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNTAzZmY4NWRlNTc3MzkzNjI1MWExNzA3MDRmZWYwYzMwZmJjNGQ5MGIyYzNhMGUyZDgyMjBjYTA0NTMwODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZmE4YWFjM2IxMGI2NTkyODAyZDAwYjlmODJlZmIwZjg3NWJjMWI2NDgzYTFjNjkwZmM5YzA1YmIxZjc3NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhZDNmMjA0NzZkZDI4ZmExMjQ1NTQwZDhhYmVkY2RjMDAyY2EzMTZlNmFjMmY4ODVlZDg5NjU0Njg4NTc4MGQifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L202-L229",
+          "version": "repo-lines-v1:sha256:347c7fbc368783cc292de2331169723dd9da5c6e7de7ab542e53d92ff8fc92ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L69-L116",
+          "version": "repo-lines-v1:sha256:08ab4ab119871bbef9b7e919979dd172ab4af8383fbc3e7457ce646a54c71a1e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk0MTJkNzc1ZTI4Y2I3YzgwYjM5M2IzM2EzZjIxMjc4Y2RkYjdkN2VkZmZkMjA1NTA1ZWJiNzY4MjE3MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNjU2OGUxM2M2MTBhYzRjMjRhYWY5NjcwNWZiNjBjZjMzY2YzYzFjNjZkYzZhMTQxZTJjYzdmZTI3MTI1NjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNGYzNmRhMmMzOWVjYWM5ODliMWVmMWRlYzI5OTU3YzFmZDdmYWM0NDY4YTI1NjljN2UxOWVlNDliZTExNzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8008e6f52e334228a0e375f71b8de4fa",
+      "statement": "Non-root image runtimes and bind-mount ownership are the dominant class of prod-only failures here: every symptom passed local `docker compose config` and only surfaced on the prod host, including the OpenSearch memlock rlimit EPERM, the uid-1000 init container unable to mkdir a root-owned bind mount, Vault's permission-denied raft path and `Failed to lock memory`, and Vault's double-loaded listener config causing `bind: address already in use` — so diagnosis belongs in container logs on the prod host, not in the compose file.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L441-L480",
+          "version": "repo-lines-v1:sha256:3d57a508d87082b40e1ce452909da56c992835c2ac77f94844ebb32f2ca72f0e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNTAzZmY4NWRlNTc3MzkzNjI1MWExNzA3MDRmZWYwYzMwZmJjNGQ5MGIyYzNhMGUyZDgyMjBjYTA0NTMwODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhZDNmMjA0NzZkZDI4ZmExMjQ1NTQwZDhhYmVkY2RjMDAyY2EzMTZlNmFjMmY4ODVlZDg5NjU0Njg4NTc4MGQifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml#L19-L53",
+          "version": "repo-lines-v1:sha256:f81ac39ae5214140e6ab4c8987dd0dc03f25cd506fa115c420d5ed8363ffca4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMGUxMGNkYTU5YjJjNWVmMzcwMTFlZTZhZjEzMDg2MjVlNTNhY2E4YzA1YmQwNDEwNWYyYWY3MTk3ZjI0N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiM2VmNmE0ZWEwZTU2MzdjMjNkZGJmMWU0YzdhMTUyYTYyNGZjOTQwNjIxZGU5YjEwOGJkNDNjODc4ZjU1N2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YzRhZjYwMzBiZGQwMGEwYTczYTI5MWE1N2IzYTdjM2VlZDkwZmEwMmNmYjRjNGMwM2QyYjI3N2Q2MDdkNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3174f5fb03ed4f64927a4bbc9c0738be",
+      "statement": "The working Vault configuration needs all four of /vault/file (a vault-owned image dir, so an empty volume inherits vault:vault), disable_mlock = true, cap_add: IPC_LOCK, and command: [\"server\"] together: without the cap the entrypoint takes a fallback path that double-starts vault, and passing -config explicitly loads the listener twice because the entrypoint already appends -config=/vault/config.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L477-L480",
+          "version": "repo-lines-v1:sha256:e8810f88b42b64805bd4d2a41d54dd2be0878a7cd1ef8bf3b188e869f0546a6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGM1OTI4ZjhlMTVjZGUxYmVkZTQ2OTYxYzM2YWU3YjAwNmE2ZWQ0OTc0MWY0YzY1ZmYyODNhYWNmY2NmNjgxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M1MDNmZjg1ZGU1NzczOTM2MjUxYTE3MDcwNGZlZjBjMzBmYmM0ZDkwYjJjM2EwZTJkODIyMGNhMDQ1MzA4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNiOWYwMGJlYWQwNTJjN2IzNzcyNzJlZTMxM2QyMjEzYjc2NmYzZGQ0MmI2ZWM1M2M5MjUxODVlZTZlOWIwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2FkM2YyMDQ3NmRkMjhmYTEyNDU1NDBkOGFiZWRjZGMwMDJjYTMxNmU2YWMyZjg4NWVkODk2NTQ2ODg1NzgwZCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml#L19-L53",
+          "version": "repo-lines-v1:sha256:f81ac39ae5214140e6ab4c8987dd0dc03f25cd506fa115c420d5ed8363ffca4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMGUxMGNkYTU5YjJjNWVmMzcwMTFlZTZhZjEzMDg2MjVlNTNhY2E4YzA1YmQwNDEwNWYyYWY3MTk3ZjI0N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiM2VmNmE0ZWEwZTU2MzdjMjNkZGJmMWU0YzdhMTUyYTYyNGZjOTQwNjIxZGU5YjEwOGJkNDNjODc4ZjU1N2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YzRhZjYwMzBiZGQwMGEwYTczYTI5MWE1N2IzYTdjM2VlZDkwZmEwMmNmYjRjNGMwM2QyYjI3N2Q2MDdkNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_38d9610d26854dfa81956d3fe77879f0",
+      "statement": "prod-vault is deployed uninitialized and sealed on purpose, and its healthcheck overrides ?uninitcode=200&sealedcode=200&standbycode=200 so that dormant state reads as healthy to Komodo; running `vault operator init`/unseal is explicitly out of scope for this rollout, and the overridden codes resume their real meaning once an operator does init and unseal.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L58-L68",
+          "version": "repo-lines-v1:sha256:23ede71b87c330a87215e898f6a20567a8ca90a80249cc0e3513db9b275fe800:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzODk2Njc1Yzg4YTE0NjQ2NWE2YTBlYjhjY2E1YTgyNmI5ZTc4MWZmMDFhOGEyYjVjMGQ0NDA4Zjk3NDJiNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMmYwMTM0ZGJhMDFhMTlkNTZlNGRhOTYwMTJkN2QzNjNlZTBmMzgxOThiMzA0ZTkyNDFhMDUyYjZiZWIzZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYjAyZDBjN2FhMzYyMDJlYzUzYzFkNzY5YWJhNmQxNTJhYTk5NzRiMzJmYTY5MmM4YThiYjcwMTMwMjE1ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyZDVlODU5ZTVkYzA0NDZmYTE1YjAzZThhZDg2NTkxZmM4YTRlNTU1ZGJmNTc3ZjIxMDBhNGViNmU0YTRiNTcifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml#L1-L9",
+          "version": "repo-lines-v1:sha256:91804be6ff7ed959eca34b10dbc28c5f3852a2e4f69480d08b5ecfcecc069473:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI1ZWQ0MDEzOTQ0MTVkMmI2YWU3NTk3YTY3OTFiMWE5ZDczYTY1ZDIwMWIzNjYwNmU4MDk4NDllNzYxMmNkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyMzJhNDQzNzdjNGU4ZGFlZWI1NWVmYWU0NzNiNjhlYjBjMDliMjE3NTRiMDg0MGI1NTY3MWEzOWQ2OGY5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDE0NzMzNGEzYTNiOGM4NTUwNDQ3Y2MxYmRlYTQyMjdkMDc2YjMxZWZjMGU0NTQ4NzBmYzBkMTc0ZGRiMjIxMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0dc05f92fcf44ca2abae30aaed71d5ef",
+      "statement": "The only tailnet-reachable operator UIs in this stack set are langfuse-web and the Grafana UI inside otel-lgtm, both published as plain 0.0.0.0 HOST:CONTAINER binds in the prod-reserved 19000–19099 range and kept tailnet-only by the host firewall; the OTLP ports stay unpublished because the gateway reaches otel-lgtm by internal DNS, and the broad bind (rather than a tailnet-IP prefix) exists because the rootless daemon starts before tailscaled at boot.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L70-L74",
+          "version": "repo-lines-v1:sha256:e8bec7c0fe56230b1d57e7433650dd7fba6873da1618eeac7d3812bdf9900493:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWJiNTBhZmFmYTJiZGJhMGNiNTViNDNkZWJmMTNmOWIwN2Y1NmI0NjdjNDA4NTkwZTYzZGQ4ZDU0NjY0ZjA0ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEwOWQwZjJhMWI1MjFjODgzZDNhMGVhNmI3MjVjNmMyYTg2ZmIyZGJiNjMwNzI4N2QyMWZlOGFiZTZiMzJlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTYxYTVjYjcyNTMxYTMzNThkM2MxZjBhM2VhNDVlZGVmMDU4ZDRlNzFlYWExYzhlYzlmNzdiOTYwZTZlYTExNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGRkMGFkNWZhMmJhMmU5ODliNjE2ZTAxYzM3OTc1NzM3NDQwNjZiNjgyNTg1OThjYjAwZGY4OWNhM2EzOWU5ZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L231-L243",
+          "version": "repo-lines-v1:sha256:2d16437bee78e3fd7eb2ccb163bdbb90bcfa5bd95bff013468f75553f16c38bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyMTUzNjIyNTM5YjdhYjcxZDljOGVkZGI0ZTY0MDYyOTJlMDdkMTFkMTVkOTAzODE3ZDBjMTY4ODk2YTZhYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZWNmOTdjMDU4OWRiY2NhMDEzMjQ1YmViNjgzODNhZGY0OGYzOWI2ODYzNWI5ZWU0MzkxOGJmZmQyMzI5YjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkOWQzYTg0NWUwNzZlY2FmM2MwZTM5MmRkMTViZTBjNThmNWI2MDVhMmUwOGIxYTAyN2Y5OTBiODBjNWZiNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkYmRiZTM4Njg5ZDAwNjE4YjRhNzIxY2E0YTFjODdiMzZiODE2ZjY4MDc3MzAzNGIwMjdkMTA2NzFkNTM3YmYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L9-L20",
+          "version": "repo-lines-v1:sha256:6a56c511d093ab3d912691efa2b8a7e57302572a9054adfd33663f5436166774:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMzUzZDc5Nzc2ZWZlNTQwMGIyODdkMTI4OTcwNmM4ZWY4YWFlZDBmNmQ4NjMwNThlNjNkZTNjNmRhMTVlZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYzQ4NThlMjJjYzJjOTY3YjQyMTUwZmE1NTA1NjJhMmM4MzljMmNlYmNhYWI5MWNhYmRmNmY0ZGEwMjAwMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4OTQ5ZGIyOWFjYTY3MTBiMmM0ZWJlMWZhNzNhNzI1NjY0YTJlMDExNjBkMjRjMDgzNTI4M2U3NTZhODZiMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMGJhNWFiYmU1M2UwYzY1YjZiOTFhYzBmNGZjMGRjNDQyYWRjYzAxYjkzNTdlYjcwMWJlY2UxOWRjYjM5ZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_39e5837a0e684840ada924faa7a8ae0c",
+      "statement": "The audit writer account is provisioned and self-verified at runtime by the agent-audit-init service rather than by a stored credential: init-audit-user.sh PUT-upserts a write-only `agent-audit` role (create_index plus write/index and write/bulk on mcm-agent-audit and mcm-agent-audit-*), the user and the role mapping, then asserts write 201 and read/search/delete 403 against a document that demonstrably exists — a missing doc would answer 404 either way, so a mere \"not 200\" check would pass vacuously on a wrongly-permissive role.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L69-L116",
+          "version": "repo-lines-v1:sha256:08ab4ab119871bbef9b7e919979dd172ab4af8383fbc3e7457ce646a54c71a1e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk0MTJkNzc1ZTI4Y2I3YzgwYjM5M2IzM2EzZjIxMjc4Y2RkYjdkN2VkZmZkMjA1NTA1ZWJiNzY4MjE3MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNjU2OGUxM2M2MTBhYzRjMjRhYWY5NjcwNWZiNjBjZjMzY2YzYzFjNjZkYzZhMTQxZTJjYzdmZTI3MTI1NjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNGYzNmRhMmMzOWVjYWM5ODliMWVmMWRlYzI5OTU3YzFmZDdmYWM0NDY4YTI1NjljN2UxOWVlNDliZTExNzMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/init-audit-user.sh#L1-L120",
+          "version": "repo-lines-v1:sha256:34a6799027bd3ac95a59b3e0f58c4db0fbe91b07c63607645db75bc75c3c24fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZDk1ZmMwNGE4MGM5NTJmNDljZTQxODg2MjdjNTNiMGZiZThjNDQwNDFiOTUyZDU5MmFjZDFkZTk5ODYxNDY2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYjE3NTgzMmNhZjA2MTg5NTQ2NGMwMmM2NGU5ZGZiMDUwYWE1MWJiMzNkN2YzYmEzNTNiYmI0NTRiM2ZhNWVmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3ZGJmOGM2ZTI0YjM4NDFjZDM5NmFkMGZlZmU2MDk1NjNkNjcyMWY5YWYyMzkzZTRiM2U4NWY4OWZhYWQ2MGM5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_0d00d51fa5cc417291d731fc17e0a150",
+      "statement": "Migrating the langfuse-minio data volume to uid 1000 requires the chown to be the last thing before the non-root image starts, because a running root image keeps creating root-owned objects on a 1000:1000 volume — measured as `find /data ! -user 1000` going from 0 straight back to 2 after a single new object. The migration is only durable when the redeploy starts the non-root image, which means the digest pins must be updated in a separate commit after the PR merge, and the service must be stopped by container name (`docker stop langfuse-minio`) because the Komodo-managed prod host cannot hand-run compose.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L76-L130",
+          "version": "repo-lines-v1:sha256:43faf2cd99f85f471db87e284c7ad665fc77cec735ac859a2272d68b22fcc711:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YjY0M2JkMzhjZWYyOTY3MzFjMzY0MTcwYzdkNmQ5MTVmNDkyYzJjZGE5NGFkNzdkYWQxY2JjMjM2OTgwZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMjI3MzI0MDdhNWQ0MDJhMjk1YmJlYTQ1OGZjMDQzMWY0MmQwNGEzNTIxMzBiZjM2ZjcyODAxM2M3NDc3OWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMzA4YzZmYTk5NWI0OTc0N2U2Mzk2OTVhZTI0M2EyNjUzZWI3MjkxNWE1NTYzZmEwZmNjZmI1ZjRmODAzNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNTE5MTcyMWUwOTZhOGYzYThlY2E1MmY0YzczODFkNWQ1NjEzYzE5MWNiNzU4NzNmNGFiOTQzZGE4ZWJhZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7e7458cddc4450ea6e3c45601e42c89",
+      "statement": "A langfuse-minio volume created empty needs no chown at all, because the image carries /data owned by 1000:1000 and Docker seeds a fresh named volume from the mounted image directory with ownership included. The image published as sha256:629bcee8… lacked /data, so a from-empty bring-up on it produced a 0:0 volume and MinIO failed with the same `unable to rename … file access denied` as an unmigrated volume — an error pointing at a migration that was never owed. Verification is the `find /data ! -user 1000 | wc -l` count, never `stat /data`, which can read 1000:1000 while children remain root-owned.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L144-L180",
+          "version": "repo-lines-v1:sha256:d76803e54ed9e1e1229aeea0890dde2b13f06a7fadfa569986a0392bf3ec9b10:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmZThiYWZkZjdiOGRiZTk4MmNlYTA5YTFjNmY0YmQwMzk4M2Q5NTAyMjcyOTIzMDM5OGEzMDNkZWMzN2Q1YTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NjEyMjY2ZDZjN2NkNzVjN2EwZjU5MzllNjgwZjY0N2Q3YzY5MWU1MjVlN2ViNTU5MjY2YzFlNGUzNGQ0ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0NDMyMzMyMzJhMjUxYzUwM2M1YmI3ZTZlMjU1ZTI3ZDljNTFmODU0ZTE3NDZmYjI3ZWM4ZTA2ZTI1MDMzOTMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/minio/Dockerfile#L143-L201",
+          "version": "repo-lines-v1:sha256:d608cd31a09c81a7f5de9d8011cad6dd61fea341f48d736d946fce092286ce24:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNzllNDUyZjE2NjdhN2NkMGUwYTA1OWZhYzYxY2E1ZTQwZmM5NjQ1NTJlZjM3MzNiMWU0YzVlMDUzY2UyOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyODc1ZmU4ZWMyMmQ5MjkxN2FjY2IwZWUwN2UxYzc3YmNjOGYxYWFlNmU5YzUxMGIyMDYyYjU2MTcxMThhZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZjZhYzA2MDFlYzM5YTkyNDViY2UxZDZkYmUxN2EyZjM1YmI5MjJjOTUxY2U4MjQzYTkwZTNmMDgwNWQ3ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczMTMxODgyMzU0MjFkMzlhYjEyOGJmNmQxMGI5NGNmMWI5MDU4Nzc1YzdjNmQ0YjA5NTAyNDUwMTM4NmYyYTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c07ceeff24c54edfb18b02ce597b3369",
+      "statement": "The Langfuse 4 + ClickHouse 25 cutover recreates the Postgres, ClickHouse-data and ClickHouse-logs volumes and discards production Langfuse trace history (ratified by ADR-0002 §4), and the volume work must precede the merge because Komodo reconciles prod-observability from main. Because the volumes are external: true, compose never removes them, and because a stopped container still holds its mounts, `docker volume rm` fails with `volume is in use` until the holding containers are removed — measured on the 2026-09-13 cutover.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md#L83-L100",
+          "version": "repo-lines-v1:sha256:3a378f1c9d67920b6e82efa3ee9daf0831da50462d617bf51f0b7d5eebc97594:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMmI3MmMzNGQwMzZhMGNjYzA2YzYwZWVjNDBjNjMxYWFjNzE0ZWE0ZmJkZjI2OTZjMzM0MDE1Y2RhYjYwZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNjllYTA4N2JkZWQ2Njk2Yjg0MmY0NmMzMTdiY2JiZTk0NjNjNDhlMDg5YTIwNzE4NjQzYWZjMmEzZjkxNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L188-L226",
+          "version": "repo-lines-v1:sha256:c2f33b5dbf52aa81ebb45f6f7c0b8effcc67981ad0f9a8096ae95d271cc88d99:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZGUwOWQ2MjA4MWFjNjE2NGMzNjdkMDYzZWUxMTk0MThkZDJiYzBjOGZlYTNlYWVmZGRmMGM1NzBlMDFjNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxM2NjZWRhZDcyYWNjNWEyNzdiYWE5OWE2MWYxNTFmNjI4ZjUxNWEwYjhkN2I1MjU1Nzk5NzY2ZGE4MjllMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiY2ZiOTU0MmY1MmM2Zjk1MmNmN2VjYWIzOWQ4NzU4NWYzYzI4NzQxMjBlMmI4NTVhMGQ3Mzk1MmJmOWE3YzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_74d666bf23744578808c80882fb30c74",
+      "statement": "The Langfuse cutover's rollback is a revert-and-redeploy that does not restore the discarded traces — Langfuse 3 re-initialises the now-empty volumes — and the MinIO volume is deliberately not recreated because it holds blobs rather than schema and a freshly created MinIO volume failed to initialise even when correctly chowned. The cutover is a contained planned outage: no non-Langfuse service in the stack depends_on langfuse, and the gateway's tracing is fire-and-forget, so turns are unaffected.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L194-L202",
+          "version": "repo-lines-v1:sha256:f3254f678f7d28792ee2a6d02720a3c19cb52b46871157a7dc3767283bd83179:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVlMTYxZGZiMmQ2ODU1YWZhZjE5OTQ1MGY4M2U2NmY1MDNmMjg4MTg0ZDNjZDc1OTZkZDcxMDVlZWRiY2M4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY5NDgyMmY3OGQzODY4MmVkY2YwZWIyOGE3ZGE2Y2Y1NTY0OWQ1YjliYzFjZTE2NTE5MzBkZmUyMGQ3MWM1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI3NGM1MzFlNmEzZDQwYjIxODI0YWVjOGY5Y2JkYzg5ZmQxMmEyZGE1NTlhZGZjYmIxMTY0M2MyODNlNDMxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDI1MDljMTBkODk1ZjE2YzI4YzliMmU4Yjg1ZGFhYTMzNzY2ODdjNTgwMWRmMGU1MzVmMmFhNjhjZGRjNTBmNSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L217-L293",
+          "version": "repo-lines-v1:sha256:5a744dfcda3334f68deae1548753e5ce9f081cf3a803cdf6b077be674bb5b289:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNjhiOTgzYjc4NjQ1MDQ5NzVmY2IyZDA5NGZhN2M3NzZiMGVkN2QxZjJlYWU1ODgwMDRlMzc0M2ZlODMyZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYTRmN2JlNzYzNjdhNmU1ZTM2M2FhZjlkNzcwNDlhMzY4OTg3MWM3YWJlMjc0MzExYmQ2ZmZiYTc0MTQ0OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxMDI4ZWJlMTAyYjdiMGVjYWMwNWY0ZTAyOWE5NGI4YmE2MGVhYTU4Zjg2ZGU1MTUxMDA5MTM4NDY1MDkxZjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_83eaa43e4f754eb2a9f97021cef6dab0",
+      "statement": "ADR-0002 §4's ratification that a cutover may discard the trace store is scoped to that cutover and does not make later ClickHouse majors data-free: a ClickHouse major for the production Langfuse stack arrived through a routine Renovate image update over live production traces, and the end-to-end CI job never starts the observability stack, so a green CI said nothing about it — which is why stateful datastore majors now require an explicit dependency-dashboard tick.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md#L83-L100",
+          "version": "repo-lines-v1:sha256:3a378f1c9d67920b6e82efa3ee9daf0831da50462d617bf51f0b7d5eebc97594:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMmI3MmMzNGQwMzZhMGNjYzA2YzYwZWVjNDBjNjMxYWFjNzE0ZWE0ZmJkZjI2OTZjMzM0MDE1Y2RhYjYwZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNjllYTA4N2JkZWQ2Njk2Yjg0MmY0NmMzMTdiY2JiZTk0NjNjNDhlMDg5YTIwNzE4NjQzYWZjMmEzZjkxNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L151-L158",
+          "version": "repo-lines-v1:sha256:90d4dc8bb996386f3297fdb2f14378be9fd4637bc51bdd535ab32d02b3ad7844:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU2YmM5OGY5NmI2YWFkOGFiNzMyMzM2Y2Q2YjBhYmEwODI3ODJkYjJhYjUwNzM2YzdhZWM3MTI0YTdkMDU3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJiYjkyODhkYzdhYzljYWRiNmU2M2VjOGUyNDc5ZDYxMTY1OTJkZDE4NjFiN2RjZGExYzFiMzAyNDNmODkxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQwODcyYjhjNTUwNjc5NWI5ZGMxZjEyYzhhMjdmMmI5NTQ2YzliMThhMzNhNTE0Njk3ZjYwMTA4MWZjOTRjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk1NGQ2YzA1NTUxNmU5ZjFiM2JmZDkzZmY0MzkzOTQ3NjBhYzNjZDExOGZlMTMxZjU5ZDMzZGM0MmZlZmZiZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_941558a8f0eb484f952c76658c1be763",
+      "statement": "The OpenSearch 2 → 3 audit-sink upgrade preserves history by snapshot and restore, which forces two deploys in a non-negotiable order because path.repo is a static setting: Deploy A adds the snapshot volume and path.repo while still on 2.x, restarts, registers the repository and snapshots; Deploy B starts 3.x on a NEW empty data volume, re-registers the repository (cluster state does not survive a new cluster) and restores. One deploy cannot work — it would mean snapshotting before the repository exists or replacing the data volume before the snapshot is taken.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L301-L370",
+          "version": "repo-lines-v1:sha256:5a5986696d503f5cbe48bdb6187ccc0c85987b9f768e9bd37451e3de9c79baa2:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMzZkM2Q4ZjgzNjgxZGIxMWQ2ZDViY2U4MWRiZjViZWQ0ZGIyYTRhZjhiMTMxZGYxZWRiMzdkYzNlMDc0MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjNDNmYjg5ZGQ3MTM5MTcwNmJiNjU1MzM3MTM5YWU2NmFjMTBmYWNjNDI2MmJjZDI0OGMyMjljZjBlMjVkMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjMjE1MzIzZGQxMmZiMzIxYTFjNTk5NWJkMjhjYzBmYjQ4OTQ4MGQyMmU2MDZjYzY2ZmM0MDQ2N2NmNGVmMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0M2Q4ZDI2MTNhYzdmNTc0MGZiNWQ4ZDk5OTNkNWEwZDNiMGY4NWI0OTUyZjE0N2UwZWU0Mjk5MmI5Mjc0NzcifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L28-L52",
+          "version": "repo-lines-v1:sha256:e883b6efcbddde3689e71a4bac180f89dae69262c2a77873351b426feef89d54:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1OWYyMjhmYjA0NGFiNzJjNGNmNWQ5YjU3ODU4YjIzMDFkYmVkZTFlNzk3OTlmZDZhMTE3YzkxZGYwNzc5MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZjIyZTgxYjRhY2ZhY2NhZDg1ZDUxY2Q3NDA4YzEzYjc4ZmY3NjYzN2NhODk1YWFmNjRlMWEyMjg3ZmE1NzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlZTc1MzgyZWQ3NWYwNTVhNGM0YTUzZTQyOTBjMTNjMTQzNWM1ZGY1ZDZmNjhhMWI0ODg1NDUxMGMyNGE0MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4YjM0YzllNzI0MmY1MTY4OWE5ZTM0NzRlMjUxOGVkMDY0ZGFmZGFmZmViZTc5MjY3ODIzNDkwMGNhNTZjYmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c9ebfc22a7342eaa7e6351c1651a05f",
+      "statement": "Because 3.x starts on a new volume and the 2.x data volume is never touched, two independent copies of the audit history exist throughout the OpenSearch upgrade and its rollback is non-lossy — reverting Deploy B's compose to the 2.x digest and the ORIGINAL data volume restores the previous state, with the snapshot as a second way back. Deleting the old volume or the snapshot is a separate deliberate act and is not part of the procedure.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L320-L325",
+          "version": "repo-lines-v1:sha256:540c5caf00d5ff13375ff5d85d551b4f745d42ddc39445148a870a6939568ac3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUyMTEyMjU4YzUyOTBmOWRjMDY5NmUzM2QzYzZjMDM2MDljNjliOWI4NjU2NzRiODhhZWViNTMyOWMwNmUwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmNTRhN2Y3Mzc5MDYyNWE4NzZiZjk0Yzc2YzNmM2YwZGZjYWM5ZGE5NmYxNzliYmIwYmM3YWE5ZGYyY2Q4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjcwM2M1ZTZmNzZiYzk5OTlmNWZlMmUyNDEyM2EwZjdlMTRlYWRjMTcyYjE4Y2EwN2Y1MzJjM2Y3ZGYyOTAwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGVkZWY1MWQyZDdlYWNlOTZlM2QzZjQ5MDYzYWMzNzgxODA3NDhiOGQyNzNhNGZmZWMyMGU3YWU1MjM0ZjhmNSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L421-L431",
+          "version": "repo-lines-v1:sha256:1e000b2efbc1d5ec48de64080c028dea4b9d5c6225dc8aa31a09e27306a1fb6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YzI1MDc2NzNlOTA2MzgxYWMzNDUyYzk3NDA2MDczMjI3NzAzNzc1NWQ2Y2Q3NzJlMTI5MzFmYzRiZjVkZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YWQyN2QxMjlmNzk1YjZmMzVhYmIxNmQ2OTJlM2JiYWY3ZWRmNzVhMWQwMDA1ZWVhYTkwNTE2M2RkMzkzZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyODMxYTEyMWQ1NDMzMDg5NTVkZTVlNGFkZjgzMjNjMjE3MWIwZTc4YzI1NmM3YzkzNmE0NjExYTI2ZWE4NjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYTMxM2U4ZDYxZjEwMzBmYjA0MTVlZmI0Y2I3NGVlNmMyZDhjNjY3YzI4ZTEzMTNjY2M2NDhlMmFkMTRhMjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56fe54762bd246d4ac434e4e54b14aa9",
+      "statement": "The OpenSearch upgrade's acceptance check is an exact document count rather than a health check: 5,276 documents in mcm-agent-audit was a reading taken before the decision, not a constant, so the live count must be re-measured during Deploy A and reproduced exactly after the restore, with the check taken before the init container is restarted because that container adds one more init-verify doc.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md#L104-L129",
+          "version": "repo-lines-v1:sha256:785baf9ffad77a378576b666aa05e801a5b29c559addd29c83257ac0d111c918:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZTMyNDVjOGI1OWMwZTlkMmZlMmI1YmZlMTg4OTg4YzZjYmMxOTdkZTI3OGVmODk5Y2NiNzExZTBkOGRjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZmJiNmQyMzg0NGZmMDRkMGYxZTZmZjJkZjFkNDNjYzcxMTAwZDI1YzM0ZjdjY2ExZjc0OWQ5ODEyMmVhYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYjI4Y2ViMTkwNDU5ZGJlZGI1ZWY3NjhjZDY3OGNhNWY2MzY4YmJjMDRhNzg5YTdiODE5MTg5Nzk1MTE4YWEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L349-L414",
+          "version": "repo-lines-v1:sha256:8728c5321089d0454100754b98ff02b3fc0563d79eb4d2ef7a407f4dfeb0c3ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZmEyY2JiMWM5Y2E1NTBlNGM3YTQ0YjEwZDNjMmIxYWU2MjA2ZGY3YzFjYzg4NWEzMDFlZjY0NDgwZjU3MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMjFhMTFmNzgwOWZjNjEwZGJmNTY5OWY0ODYxNTRlYzEwN2FmMzFjNzFiYjYwOWIzMGU0NWE3ZWZkMWRmM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyOTg5M2FmMGI0ZWJkNWNkMTBiNjI4OGVlOGQyOTQ4NjAzYzI1MTljZDcyMzU0MmVlOGI2OGE1YTQ0MTgyYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMTA2MTk4YWY1Nzk5YTRlMjVmMzhiM2I0ZjZlZGZkMzA2ZjA0OGNmN2QzYmU0ZGJjYWU2ZmExNDI3NGM4NWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_810138dcb87c46ceac268c98d186042f",
+      "statement": "An empty result from a filtered query means \"no match\", not \"no data\": the audit history was nearly missed because `_cat/indices/mcm-agent-audit-*` returned empty (the pattern needs no trailing wildcard and the real index name is mcm-agent-audit), and that empty result came one step from justifying the destruction of a security audit trail. The snapshot scope is therefore mcm-agent-audit only, with include_global_state false, because restoring system indices such as .opendistro_security across a major is a conflict risk with no upside.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md#L104-L129",
+          "version": "repo-lines-v1:sha256:785baf9ffad77a378576b666aa05e801a5b29c559addd29c83257ac0d111c918:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZTMyNDVjOGI1OWMwZTlkMmZlMmI1YmZlMTg4OTg4YzZjYmMxOTdkZTI3OGVmODk5Y2NiNzExZTBkOGRjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZmJiNmQyMzg0NGZmMDRkMGYxZTZmZjJkZjFkNDNjYzcxMTAwZDI1YzM0ZjdjY2ExZjc0OWQ5ODEyMmVhYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYjI4Y2ViMTkwNDU5ZGJlZGI1ZWY3NjhjZDY3OGNhNWY2MzY4YmJjMDRhNzg5YTdiODE5MTg5Nzk1MTE4YWEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L358-L362",
+          "version": "repo-lines-v1:sha256:95490abf17d60f48d759a27904511ac26d9533e85614f8db4f4d1f7abd67ae60:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JkNGU2N2Y3Y2FmZjA2NDIyZDM0ODczY2I3MTA1MWUzMWNhMjlkMDlmZWI4ZjFkZDYwM2MzY2JhMjQwYWVjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzg2M2VjOTRhYTgwZGFlMGZkMzJmNDAzZDI1NGRmMzZhZWY5OTk4Yzg0NzI5MDAwZmFkOTMyNTVjNGE1NTk3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2YyNjE2ZTlmNTU4NTFlMmJhMzdkMGMzY2ZkMzMyMDQ2ZDNkMTIyZGUwMzBjYjk4NzAzYzJjZWEzY2M2YTI0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgwYjllYmE5ODdjNDJlOGMyMGNmNDg5YTZkYjRjZWYwMTA2Y2I1NDcxZDc2ZTAxYjhlOGQ2YzBmN2E0YmNlMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_37117e2fd7fa4fb58bc2a8efd7fb1279",
+      "statement": "During the OpenSearch upgrade the agent-audit-init container must be stopped before the restore, because init-audit-user.sh POSTs a verification document on startup and the writer role carries create_index, so on the empty 3.x volume the stack re-creates mcm-agent-audit first and the restore fails with `cannot restore index [mcm-agent-audit] because an open index with same name already exists in the cluster` — measured on the 2026-09-13 cutover. The recovery, if it happens anyway, is safe only while docs.count is ~1 (the init-verify doc); anything else means another writer and a stop.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L378-L414",
+          "version": "repo-lines-v1:sha256:bae3b038e9e30c2648b93a6f64011920fdf98a86f83ea3eae0a4deeba7adb167:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNWExMTM2NGM0NDhhMjg2YzY3MjU3ZDdjZmY1YzdiY2E2Yjc2ZGU4MTI3ODIwZTYzNzFlNzhiZjdmZjE2MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMjFhMTFmNzgwOWZjNjEwZGJmNTY5OWY0ODYxNTRlYzEwN2FmMzFjNzFiYjYwOWIzMGU0NWE3ZWZkMWRmM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwZDk0ZDBlZmJiNjIzMGI2NTY4Zjk2NTdhMWY1OTJkNzNlMGRiMmIyZDg5OTU1ODJjN2M4ZTYwZmI3NWE1ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMTA2MTk4YWY1Nzk5YTRlMjVmMzhiM2I0ZjZlZGZkMzA2ZjA0OGNmN2QzYmU0ZGJjYWU2ZmExNDI3NGM4NWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96423dd441cb4be0aafac8c152c1a779",
+      "statement": "ClickHouse in prod-observability is bounded in two independent ways: a container mem_limit of 4g with a matching memswap_limit and a CPU ceiling, so it cannot starve the shared host (measured at ~725% CPU with swap full on 2026-10-02, slowing every CI job 2-3x), and a mounted mcm-system-logs.xml that removes trace_log and text_log and puts a 3-day TTL on the other existing system-log tables, because with image defaults those diagnostic tables grew to 128 GiB and 28 GiB against 84 KiB of actual Langfuse data. Only tables that already exist may be declared, since declaring a *_log section enables that table.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml#L1-L36",
+          "version": "repo-lines-v1:sha256:765a7b4f4900916e44678e6c531643839388e95ad8cf5b85297576a1439407f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5MWE2ZjU4NzA0ZDU1NmM2NGEyMTBhNjY5Y2Y4ZDhlMGFmNDNjYTFiODgwZjcxMzlhMDU2NmU1ZmUxY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ZTdiZGM5MDdkNjE5N2ZlMTY3Yzc1MmIxMWQzNDFhMTEyNmVmNmNkNDMzODBlOGJlMzQ1YjdhODQ2NDEwZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L132-L166",
+          "version": "repo-lines-v1:sha256:5c35efc7ac207f1308a2c956637aabd7c025070238a0340c0edae1267ce7b5b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmZhMzI1NWZhZjJkOTM0NTRjNDUxOTJjMWUyZDRiOTJjZTg5YjgxZTAzOWFjM2I0NmI4ZGYxMDllMGVjMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3YzJkMTZjZGFlNTM0MzMwYWM3NTNkMTEyMzk2M2U1NjlmMzRhYjhiMmVlM2IwNDk1NTAzNjU5MzIyMWVhYmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_21050659368d42ea85e0a16cb3b80096",
+      "statement": "The prod-only failure table's two smaller traps are still load-bearing: the audit-init container must use an image shipping both bash and curl (init-audit-user.sh is #!/usr/bin/env bash, so curlimages/curl cannot run it) and its entrypoint pre-creates the sibling stacks dir the script cd's into before its guard, or set -euo pipefail aborts everything; and the BFF's audit POST needs OPENSEARCH_INSECURE_TLS=true because OpenSearch serves a self-signed cert and the sink sets rejectUnauthorized:false only when that flag is truthy, while the gateway's httpx sink needs no flag.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L441-L459",
+          "version": "repo-lines-v1:sha256:a3bf893efd1138844161af6e5d1c00c033e2d3d4c697d361fada6477d0f6adac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OTdlZDNmMTNkMjAyMWM3MzBlNmNlMzZiNjYxNzdhMDRkYTQxODQ1YmJhZTEyZWQ1M2NmNmNlMWU0NzI0M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYmY3Y2FjN2ExOTE0Y2E3ZmZmZGZhMWVkNjY3ZDNlZGMzM2QyNWVkMTU5NTY1MWQ0ZmY5NzM3NTBjNjdjYmMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L80-L89",
+          "version": "repo-lines-v1:sha256:06d3a531a8a10fe2f179c93f6d0767c6f2efd20ebc53e95bec44e2bbdcf4fbb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmOGNhY2Y3NDFhY2RmZjhhMzZmNmUwOGYyZDViYjhmZjM5Y2ExMTMyMGY5OTFiYzM3YTAxOGE1NWQyMzkwNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNTk0ZmNmMTkxZTlkYjM5Nzg0ZDEwNjI1NTgzN2Y5ZDA3ZGNhNGU1NGYyNzdmMTY5OTcwNTM5MjljMGE2ZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyODkwNzM3ZjdhNzExZTk1ZjU5ZGI2YzJmZGU2ODAwMjg1Zjc4NzZkNGMzZDNhMzk1MTgxNGZjODI0MGMwYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwODJmZWExMDFlM2Q1MWM5ZjA5NWU4ODFiZGZlM2M4NTk4NmU5YTFlZjhiOGIwOWQ2NDE1MmU4NTk5NWMyNzAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/init-audit-user.sh#L21-L31",
+          "version": "repo-lines-v1:sha256:d3f2de153df2eab0333a08d86ecc7ce4b56eef71c38e0fa604be157e024a7dd4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ZmM2MzM2NjdkMDMwMDczMWJkZDg0NDcyZGM0MjRlMWY5YzY0MTc1ZWEyYmFkYjY2NjQ3MmQ5MWFlYjRlZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmNmFmYmU1MzI2ZGNjNWEzNzdkZjk3MjFhNGU4NzcyN2Y3ZWQ4YjY3YjdlZTNkYmVmZWE3NzNmNzFmNzEyMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwNjkyZGM4ZGE1MjhmMWI5YTZkNmY2ZjQ2MmNhZTRiMGEwNTQ0MTk2ZjkwMDU0MTRjZTk4MjQ5MDU5NGUxZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiOGNmMzgzNDA2MjFjZjg1Mzk0YzRkODdhMmQzOWE0OWMzOTE0ZDZjMWQ3OTM5YzYzOGQ5YzMyYTkxMjdlZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc4305ec50824796b3cff4dea62f5d38",
+      "statement": "The OPA healthcheck is driven through the opa binary rather than a shell utility, because the -debug variant's busybox ships no wget, curl or nc — the previous wget check failed on every run, leaving OPA marked unhealthy for a five-figure failing streak while it served fine; the -debug variant itself is still required because the distroless image has no shell at all.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L453-L455",
+          "version": "repo-lines-v1:sha256:06ac48960510a8088754b78cf046d207ef8378bbeec2cac87c63932049b9986f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM0MWU1NjRkNTFhNDhkZDQzYzUyZTBjYmJmYmY1NTFiZTdjYjM5N2YzMjY2NWQxN2NiMmU2NmU5M2M4MTBkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM4M2Y4ODA3YmNmYzJhMmJhOGEzMmZjYjI1Nzc5ODYzMDIyMWE1OTkyNzE0NDc4NjI4MGM0ZDQxYTc1YWQ1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjg0OGFiNTQ3MzY2ZjdjZTBiNDU0ODA3NDM3MDk0ZGI3YTM5YTMxYzE1ODAyYTkxYTIzYmMxODJkZDM2YjdjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY1ZTQ5NmJhNGU2NzhkZGE3MDNhZjY3NTIyOThlZTJjZDM5MTJmYWVlYmIxMmFhZGVhOGU1ODdmZmZmMzcxNSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L258-L286",
+          "version": "repo-lines-v1:sha256:a6ff8a022228322ceecceb261e27c683449bd89b6abfc05f90a7ecfe052a8356:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYzc4Yzk2MGUwMmY3Y2JkM2M2MzFlNTYyZjliNGViY2E3N2Y2NmJhZTkwZjhmN2NiZjU0MDMwMGEwYmRhZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYjA1MmIwMjQ1ZmQ1ZGYwYzQyYmFlZGU1YTEzM2VlN2E2NTY3ZTlkNGMyMGQ4MWJkM2E0NTdlYjU4NWFmMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMTQ0ZjEyZjVjN2M5NGE3YWViMjk3ODhlZGU3ZjQ1ZTA1ZjJmZTJkOGRlMWQ5ZjBjMTY3ZWQ1YTcyM2U3NzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fdf5c83547f84c2dbeaf2281aa86413c",
+      "statement": "Enabling prod-observability followed a capacity check on the shared prod host rather than an assumption of headroom: ~48 GiB RAM was available against ~2.2 GiB of actual container RSS, and observability (~6-7 GiB) plus the audit sink (~1.5 GiB) left ~40 GiB free, so the decision was always-on with no opt-in fallback and ClickHouse's mem_limit retained; the check is to be re-run before any future footprint increase.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L433-L439",
+          "version": "repo-lines-v1:sha256:eb29b1783692dbe350773fbee2df111638eba7319b09daab71601bcabc953f9a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThhZWUyMGZlNmJkNWJhN2FhNzI3OTBmMDk0YTE1ODhkYTIyNTAzNWIzOWI0OTUyN2YzMzIwNjI0Mzc0OWQwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwN2I1YjZhZDkwODI0OWU3MTliNWFmZGQyZjg5MDkzZjNkYWI2ODM4M2Q5ZDc5MjllYjEwOGJhOTNmMzE4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgwMzg1NzE1NDVjOTYzNTNlY2JjODQ0MzgwMTk2NDk4OTU5ZWM4Y2NlZGZkYjFkNmI5YzRiNjI2OTgyYzQ4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg4MDkwYzU3NjQ2ZDY0ZGFkMzQ5Njk0YmZkZGQzM2MzN2M0ODk2NjgxMjUyMmNlMjFiYjcwNGM2Nzk3NWRiMCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-14T00:46:58.372Z"
+  }
+}

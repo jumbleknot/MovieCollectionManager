@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1835dfb453cf9eb507cf5ab2be4cf6e0dbaa404abd44bbcdae1be7ad2f7b5756",
+  "pageVersion": "sha256:ddfed2a1ea1d1a9a08e593a01e4d7177c338f05770255f7afabd679e368d8b30",
   "claims": [
     {
       "id": "claim_6691a99af5cb400388c90e70331847b4",
@@ -103,7 +103,7 @@
       "statement": "Komodo periphery's root_directory default /etc/komodo sits on a per-daemon tmpfs under rootless Docker (RootlessKit --copy-up=/etc), so the cloned repo checkout that every stack's relative bind-mounts resolve against is wiped on every reboot; Docker then auto-creates each missing bind-mount source file as a directory, failing the Mongo and Vault containers with 'not a directory' and exit 127. The fix is host state: point PERIPHERY_ROOT_DIRECTORY at persistent disk and recreate periphery.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L794-L797",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L795-L798",
           "version": "repo-lines-v1:sha256:fea67ed094815ced1e193400234f7568ce221076be4306bcc15a4baa5ea75c36:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjAyNWRlYWY2MjkwZTk4OWRkMTI1NjI0ZGM4ODk5ZGMzMTdjY2Q1NzNiYmI5NGY3MzQyOWFhYmZmNzU3NmMzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTNhOTNmZDE3MWI5Y2M5Y2Q5NTNkZmIzNTczMzFkMmJjMTZlMzNhNTU2Y2VlMjMzYTY0OGYwMzgxOWRiYmEyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjIzYjQ5NzViMTg0NWY5ZjUyYmZiMzhhZDljN2JkYTA3Zjg2Nzg0YzQwM2IyZjNkMjZmODQ1Mjk4OWFkOWFhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTJjY2Y0ODFlYjU4OTU3YzhjM2Q3ZGQ2NWQwMGI1Y2I0YmVkMDA2ZDFiNjMzZGQ0M2I0NzI2MDc0Y2ZkZGJjMCJ9"
         },
         {
@@ -271,10 +271,78 @@
           "version": "repo-lines-v1:sha256:dfe03652152df016a4654a699f6462bb811734714d94d9ef2eafc7bcb1d01c99:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWVlNTBjYmU0NDY0OTgwNWIyNDBjZjZhMWIwMWE5YTY3MjllMTBmMjdlNGZkNTI1MDhjNTAyMzVlMGU4MDk0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVjYTRkNDNmYWNiYmY5NzFlMmNjYmVjY2NiZDg5ZThkZGEwYWRkMTIxYTViNWEzZjU5ODE0MzMxNjI2NDU5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA2NzZkMTA3ZWE0NjFkNzBhZTNkOGI0MzAwMDVjZWJiNWQ4Zjk5NWNkYjE4MTg5NzY2MDk2OTU2MTQ3YmI2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzExMTMzZTc1YmNhZTZkYzc0NDI4ZDIzZmRkYWQ1MDhmYWZiNDZlNzlkZGFmMWI0NGRjY2E4ZTQwZjJmYWMxMiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_bd46997778e84bf2a144b81d178d2fca",
+      "statement": "Both bind-prefix variables were retired only after their consumers went away: `KC_ADMIN_BIND_IP` was only ever the Keycloak admin bind prefix, feature 028 dropped it from the compose bind, and Komodo kept passing it to the `prod-auth` stack until 2026-10-12 (item #727) — so until then it reached the container through the compose `env_file:` as a `KC_*` variable naming no Keycloak option; `TS_ADMIN_IP` was only the prefix of the two observability operator-UI binds, feature 028 made those binds `0.0.0.0`, and the stack stopped passing it on 2026-10-13 (item #727). No stack or compose file reads either now, so both Komodo Variables can be retired, and retiring the stack `environment` line together with the Variable is the rule.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L96-L98",
+          "version": "repo-lines-v1:sha256:2883c24f9b05328907dcfbd0d13dd6fcf6c95150bd9f640ab1ff3b8cef3f505e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L12",
+          "version": "repo-lines-v1:sha256:a5be782a4c7979daa8e758bc668982475e46f3cdf58a5958a82d272f431c0200:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDVmOWEzM2U1Yjk0ODdiNGRhZTM4OTU4ZDIxNzkwNDA5YzYzZmY3ODMxOTNjZmM4OWFlOTY5MTQ5NmY3ZDIxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2IzNmQxMjJhOTJhODJiYTFjMjU0ZGY1ZGZjY2I4MGI3YWI5NDQ3YjBlYmY3Y2UzMGU2ODA5ZTI5NWMwZjkwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjljZWZlMzZiOTNjZDE3YWIwMWIwMmM2YTBlM2UxNzQ1NWUyYTdmZjIyNDIwYzlhYjhkNDZhZDE0NWUwNDNjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjAwMWRlNmZkMDI0OTAwZmViMjFkYjAwNzQ5ZTYwOTBmMWI0YWJlYjQwZjNjMjgwNmIxZDJhNWU5MzdmZDRkNiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L9-L19",
+          "version": "repo-lines-v1:sha256:dd9ad051d7a73a7bf00dc547a71d21ad32b4cd3b9d105f10a2eadcafee295523:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMzUzZDc5Nzc2ZWZlNTQwMGIyODdkMTI4OTcwNmM4ZWY4YWFlZDBmNmQ4NjMwNThlNjNkZTNjNmRhMTVlZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1M2E5NmYzNDMxNmU0MWZhMjYyZmViOGNhYTM0ZWM5MWJmNDQzODgzZGQ4MDY4ZTUyMGEwOWQ0YzZlN2NjZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4OTQ5ZGIyOWFjYTY3MTBiMmM0ZWJlMWZhNzNhNzI1NjY0YTJlMDExNjBkMjRjMDgzNTI4M2U3NTZhODZiMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNTVmYjdiZWE2OWU0NzY4OGY2YzcxMWEwMzIyMjk3MDZmMWM3NDJkODhiYjM4YTUzZDM5MzdiYWUxMmNiYjgifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L37-L43",
+          "version": "repo-lines-v1:sha256:819ccacd67b547fd6cc5efd13e02aecbf33632caa089cfd6dfc732daa3b02c1a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxMmRiYzlmNWI4NGUxNmQ3YzE4YTZhZTdjNWMwNWVmMjk1NGUxNWI4NDE2YTg0NDgzY2UzZGVjOTJiY2IzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6ac42b243cdc42a88abf432808638dc5",
+      "statement": "A prod published-port move is not complete when the compose bind changes, because the collision gate only reads a compose file's `ports:` key and never the self-referencing URL variables: Keycloak's `KC_HOSTNAME_ADMIN` and LangFuse's `NEXTAUTH_URL` must be moved in the same change, or the service binds cleanly while serving a URL for the old port — a working bind with a broken redirect that no port-scan gate can see.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L96-L96",
+          "version": "repo-lines-v1:sha256:9877b3772b966b7e63146d59ab3262a91c49756ebc7307ae46454fcf020bb158:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWY5YWFkZDViYTA1OGU0ODJhZDA3ZjVlMmVmMTQwZGE4ZTUxZTIwMTAzZTRiNjY2MTU2OWZjNWNlMGIxZDc1NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L72-L74",
+          "version": "repo-lines-v1:sha256:48cdcff65aaf7b005e8e18475bfedff336869473a2be0d4608ed18960f6d4731:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzMjllYzg3ZjgyN2Y1NDI2MmM1YTE1Mzg1NjI0OTM1NTVmYzY4OGYwMzk2YmYyYzE2YjgxNDRjYmUzMjIzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYxZDliMWU5NzllZDFlZGI2ZmUzYTE1MjU1MTIxOTM4MWY1YjQyNTg3Njc0OTQ1ZmYwZGNjYzRkZGIzYjRhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2IxMzNiODU4YmQyMmEwMGI2YmMwMjlhNDY2YWE3YmEzMGY1MGI3ZDgwMmVjYjFmZGJiMjU4NTJmYmI0OTY0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ1NDEzZTBkNTIyNDI2NDM5NDZkNjgyOTZmM2NlZDljODRhZDUwMTI1Y2Q0Mzg0ZmM5NDI1MmU1OGQzYzUyMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L37-L43",
+          "version": "repo-lines-v1:sha256:819ccacd67b547fd6cc5efd13e02aecbf33632caa089cfd6dfc732daa3b02c1a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxMmRiYzlmNWI4NGUxNmQ3YzE4YTZhZTdjNWMwNWVmMjk1NGUxNWI4NDE2YTg0NDgzY2UzZGVjOTJiY2IzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L82-L100",
+          "version": "repo-lines-v1:sha256:9ad1f91297dab45371ff79ccafdb86577d12274ca959ab9ea7229dd4606db0da:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NWViMDVlMzQ3YmIwYzBhMWE4OTRhMzRiNTgyMzA5M2I1NTkyMzM3YzUwZTRiZTJlMTJiM2QxZDY4ZTQ5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiZDkxNWQzMGNkZWJmNGMzYWM1YzgzZjg1NzhiZDk2YjBiNDcwNTU3YzNhMTc4MGUwMWYzM2IwY2JiZmMwNzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_47d871d443b44d4e8563087c31abff2d",
+      "statement": "The tailnet segmentation-offload fix is durable only because it is bound to device creation: the device-bound systemd unit re-applies `ethtool -K tailscale0 tso off gso off gro off` whenever the tun appears, because a `tailscaled` restart recreates the tun and resets the flags exactly as a reboot does; verification is `ethtool -k tailscale0` reading the three offloads `off`, and the residual risk is a race in which Tailscale re-enables TSO/GSO on its own tun.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L33-L63",
+          "version": "repo-lines-v1:sha256:0f62bb2b124c54696c97434b78f2acc5c4d95e5577ab545498a25273561321ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlYWQyYjg2MjcwMjA4ODBmNDg2MmFkMTI1MWYxYTRmNzBkMmVmYWQ5MDNjZTI0YTY0MWJhZjRjMGU4NTg4MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YmRiNzYyZjJiYjcxYWE2NmEwNDM4ZjkzODZiOGMzYTI3YTQ2NTg4NTgwN2FmYzk2N2I5MmI1YWNiNTg5MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzOWY4MmU1ZmFmZjQ2MzcxYjU2YzZjNzQ2OTQ0ZjljZWJmNDI1NzU3ODczMmFlODMyNTYxMzI4ZTAzYmVmY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMTk4NWFmMzczMDBkZDM3NGY1MDBkMTFjZDY5Yzk0MjdiZTQ0MzU5ODJlOTEyOTlmYmQ4MGI5ZjZkMDRmMGQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L78-L78",
+          "version": "repo-lines-v1:sha256:7485cdab8f6369676f77d17b1ceb84febb9ab9e08faf9a06843e0e82c6678863:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ4NWNkYWI4ZjYzNjk2NzZmNzdkMTdiMWNlYjg0ZmViYjlhYjllMDhmYWY5YTA2ODQzZTBlODJjNjY3ODg2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ4NWNkYWI4ZjYzNjk2NzZmNzdkMTdiMWNlYjg0ZmViYjlhYjllMDhmYWY5YTA2ODQzZTBlODJjNjY3ODg2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZiZGUxYzE5YTk3Y2ZjNDk1OGM2ZGQ5NTY3MDg4NmNjN2MxMzNhMzU5OTcwZTIwZDI0NzY3MjRhMzBhNjQ5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjg0YzM4NmRkOGU1YmNhNzMwNzBhNzZlMjQ4ZDcxODc2NjY5MjBlMzI0ZjJkMGI0ODZmZTRkNjgwZDFiMTgzMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a3dd91b4b3ba4d0aad3a8a29a481ebc9",
+      "statement": "The tailnet throughput diagnosis had two measurement traps that manufactured false conclusions: PowerShell `Invoke-WebRequest` measured roughly 40x slower than `curl.exe` on the same fetch (1.57 MB/s vs 68.6 MB/s), and a tailnet shell session is Tailscale SSH, which terminates inside `tailscaled` and never traverses `tailscale0`, so its download path sits near 10 KB/s and did not improve with the offload fix — it must not be used as a throughput probe.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L73-L76",
+          "version": "repo-lines-v1:sha256:7cf065d62a2c16f84d65f7727626216c8bfcfe4f9e9e25aef92b58e318eb254c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjMzdlMzNhM2MzOWUyZGJmOGQxMTJiYjYxMjFjZGNjZTg5ZjVmMzA0NmQ4MjYwODJlMTI3MDk2YzAxNzFjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNjZTM3NzM3N2NiNWZlNGFkMDE4NDQxMjZkNzA5ZjA5ZGJjYjljNWNlOTIyN2YwOTFiYTM0NjNkYzYwMzIxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhYTlmODcyNWYxMjg0M2MxYThjOGI2OGNiYzhmM2JiNjk5NjJmZWY2YWMzMWYwMDBkNzQ4YjIwZjU0NDM2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWUyZTc5YmNiZTBjNjE2OTAyZjNjZDMwYWQ1ZDBhNGI2NGRjMTU1Y2E0ODBjYmE5YWJlODJhZTk1NTdiNDAzMCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T22:25:03.651Z"
+    "at": "2026-10-14T00:46:58.372Z"
   }
 }

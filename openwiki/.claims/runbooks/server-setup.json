@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3c97a362903b4521436168707eb6eda013f2c975a44c8606e8e2b6111f6fae90",
+  "pageVersion": "sha256:f81fedd01beed609a3f0cec3bcb2db5bd3f3e24c11bcfd22f61960d0ec934abe",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -373,10 +373,46 @@
           "version": "repo-lines-v1:sha256:109bea6f85731e462ec08f54af4ae8fca66159cf14e056dafb0d151883565f40:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjYWRkNjAzYjBkYjg0MDk5NjZkZTE2OGE4NjhhNDZkZTAyMDVkODdiNWEyN2ExY2NjYTgwMTJhYjVlMGQ0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGU4NWY1ODExNzExNjM2MmI0MzU3YzY4ZjA4NTFkMzhiNGE1MGQyMGMwM2UwODYwYmQzMTFhNzIyMTNiNzhkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJlZDJhYTNkNzZiYjE0NDYxNzVjZjVlNzVmYmM3YWYxMDljZTcyNzU0OWU0OTExYTBkOTVkODAyZWI4ZjgyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2JiZjgwNDM1MTIyNGYwMTI4ODczOGRlYjZlYTY2NmQ5ZDUzZTE2YjRmZmM0ZjVlZmVhMGQ5YjhiMzM1MWE0NiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_cd8c452babc0447ca546cfb5344ab549",
+      "statement": "The Android-emulator job and the Docker-image-building jobs reach `/dev/kvm` by executing directly on the ci host through a host-type Forgejo runner label defined as `kvm:host` (`runs-on: kvm` uses the label *name*), not by passing the device into a job container — that was the setup only until commit `235f2f4c`. What must therefore hold is host state: KVM enabled on the host, the `ci` user in the `kvm` group, and the runner still advertising the label. On this host `/dev/kvm` is mode 666 (`crw-rw-rw- root kvm`, measured 2026-10-12); 660 via a udev rule is the tighter option, and the group membership is what keeps the job working if it is applied. A host job must also provision its own Docker CLI and prove it reaches the `ci` rootless daemon at the job's `DOCKER_HOST` with no fallback socket, and a missing `/dev/kvm` fails the job loudly rather than skipping the mobile suite.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L496-L507",
+          "version": "repo-lines-v1:sha256:0d8a876cec77767185c38231e422045b49751fcfab70e72f0164bcf29ff94670:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZDAzMDRlZjM1MjRjMDI1MjU2ZGJiZWE0YTFiMWJhZmMzZjdmMzZhZGNkYjU3ZWY5ZTM2YjBlM2NjZTIyMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYjFmYjlkY2U4NWIxY2IyMjI3NzQ3N2NmZmFjNTY2NDk1NDQzMTlhYWU2ZjBiZWJlY2RiMTk0ZGFlMjU0MTgifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L154-L163",
+          "version": "repo-lines-v1:sha256:24868d2b011125ba23ce0a58fcc92ced5fac6c3c85d92abcf1b2b47e37ffcbad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzMzViODhjZjU1NjBkNTAyZjk2MDgxZTdjNzc4ZGUwZGM3MTA2ZjJkMzE2Y2U2ODhhMDhmNmE2MmRkNGU0NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NWFkNTkxMDM0M2EyNjFjNDRlYWJmOTFjZDljOGEzODg5MWMyZTMzNWM2MDY4NTVjZDg0NTg1M2FmNDQ2MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L283-L292",
+          "version": "repo-lines-v1:sha256:bef5a729bfc2f020fc59e574d5a3d1983ee7f44fc02aeeefa2a9c5b08ebba7d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZWYwNWZkOTQ0MmI3NGRkNzhmZTdiNzA0ZGVlMjU2ZGMwNmY4N2FhMDk4OGQ3MjAzYmQ1MGFmMmU4YmY4OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxOTg4NmM5NmE2ZWYxYjNmMWZlM2UzYzdhMDk4MjYzYjk2ZjgwZjMxY2MxYmI3OTNmZGM4ZmE5NGY4MjUzMmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4MmFjMmYwYzFkMTU1MDQ2MGMzNTE3ZmJmZjExZmExYzZkODM5YWZlMzExNDI0ZjNhM2ZmZDYwMTM2ZDVkNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4ZDYxN2FlNWZlNzQwZTRiZTQxZGFlMTdhMDk3NDgyYzU3MmJjMjAwODU1NGZkMzdlMjJiMGI0NmQyNzBhNGQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L617-L634",
+          "version": "repo-lines-v1:sha256:b4d4e75dc45fcd5f03b9fa30eee67fb734c7e911a9ccf9101451d247ca008128:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YmVkMzYzZDk2ZDU2MzZkZjUxMmJkMTVhMWFhM2NjZGQyODU0YTIyMDU3Y2Y2ZmUyZTc0ZGY4ZWU5NjFlZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YmRhZjk1ZWE5OTU5ZmE5OTMxYTMyOTU5MGQ1YTY1N2IyMTA1MGQ2NmQwM2I1OWZjZWFkMzI2OGNlMGY0YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkNGNiNzZkZjc1MzJlNjhiNWViYWVmMTdkYzQxOTg1MTY2NmIzZTE1YjY4MjUyMGY2NzFiN2M2OWNlZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYWM3NDFlMjA5NThhYzRiYjIwNDM2N2RhOTc5ZWIxMjMzNWI4MzM5OGQwOGZiMDU1NTg3NmNiZjQwMDM1M2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_27ae49d574b54e3bbe8fee965f9ff146",
+      "statement": "Phase 9 of the server-setup runbook bootstraps `PERIPHERY_ROOT_DIRECTORY` onto persistent disk (a directory under the `prod` user's home) instead of Komodo's stock `/etc/komodo` default, because under rootless Docker `/etc` is copy-up'd to a per-daemon tmpfs: a default Periphery root is wiped on every reboot along with the cloned repo checkout that every stack's relative bind-mounts resolve against, after which Docker auto-creates each missing bind-mount source *file* as a directory and the Mongo and Vault containers fail with `not a directory` (exit 127). Bootstrapping the persistent value at install time is what keeps a rebuild from reintroducing the tmpfs default.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L783-L800",
+          "version": "repo-lines-v1:sha256:bc2ba736c47c667af19f64d590ad708eef9b655949aa3bb83fe285e165132a71:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZGU3ZDNkZjgwY2RkYmFhYjkyYTlkZWVjY2EyMzM3MmY4OTk1OGYwZGU0NDBiMDAxMTc2MDQ3OGU5NWEzYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNzgyYmI1NDg5ODRjMTA2ODVlZTcyMGRkZTU0MTY1YmFhMmM4MWVjYWYzZWE5MDBiOTc4YTc1MTdjZTM2MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NzNjNmI3MjBlMzU3MWQwMjRjZmE5NjkyNGYwMzU1YzNhZTMxMGViMmZkOTFmMTI4Y2Y2NjQ1NDMzMGY0NDUifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L154-L168",
+          "version": "repo-lines-v1:sha256:10057f2bc65bff64d8d2d36b37309f0f9a5a246885e25d2a925f077504147c26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNjk4YzI1MDE0YjNkMDc3NmQzZDc0MWI2MTU3ZmJjMGQ1ODRhMWVjNGQyNjI2MWMyNTUwZWEwOWM4YWQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMTQ4YjEyYjY4ZTQ0MWNkMmE1NDhkMTFkYTUwYmNjMTM0OTk5ZjUwZDE2NGFkNDMzNjkyODQ1MWVkYzYwN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMWE3OWUxMjRmNzliYzNmYTNhYzIzODI0NTZiMWUwYjIxMjc1Y2EzYzkxYjJmNmViZjdhZmRlYjlhOWU3ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiN2JiNDJlZGE0YzMyOTcxZjU5YjU1MzYxMGI2MjliZGJkYzg3ZjRiZTIyZTA0ODU1YTlkYzJjNzM2MDhiNDYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-13T10:46:04.907Z"
+    "at": "2026-10-14T00:46:58.372Z"
   }
 }
