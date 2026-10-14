@@ -23,11 +23,11 @@
       "completedRunId": "1f88b926-ba1c-4987-a817-ce9df84284b8"
     },
     "/openwiki/decisions/adr-0001-prod-secrets-management.md": {
+      "gitHead": "947bf2226196ccce574388053668c1172facf94b",
+      "sourceFingerprint": "sha256:9edc09d6b672fb45cd929d3e5d059f52c88d9228b5a2df635f85dc5e2ee15aa9",
       "pageVersion": "sha256:819d458019a93da26618aa1e9135b97c04f38db4f75cbb6aad31a51779c69d94",
       "completedBy": "openwiki/0.7.1",
-      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7",
-      "gitHead": "8e12631f8426c6c072a6ac7be13ed7d581d171d0",
-      "sourceFingerprint": "sha256:710a5783056664d139e869780cd61ae2da31e10f9aed2909c3300f4294d3cbe5"
+      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7"
     },
     "/openwiki/gotchas/playwright-testid-mapping.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
@@ -37,11 +37,11 @@
       "completedRunId": "f9fdb3cd-b13b-426f-9709-5ccf128cf45c"
     },
     "/openwiki/invariants/published-port-reservation.md": {
+      "gitHead": "947bf2226196ccce574388053668c1172facf94b",
+      "sourceFingerprint": "sha256:9edc09d6b672fb45cd929d3e5d059f52c88d9228b5a2df635f85dc5e2ee15aa9",
       "pageVersion": "sha256:0c438ffd0c3b1fc4d582269db207712db662951b69f01b1c57cdb936c0295b1a",
       "completedBy": "openwiki/0.7.1",
-      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7",
-      "gitHead": "8e12631f8426c6c072a6ac7be13ed7d581d171d0",
-      "sourceFingerprint": "sha256:710a5783056664d139e869780cd61ae2da31e10f9aed2909c3300f4294d3cbe5"
+      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7"
     },
     "/openwiki/process/constitution.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
@@ -79,18 +79,18 @@
       "completedRunId": "abdfe5e8-5e6a-45ec-84d7-032c73d67800"
     },
     "/openwiki/projects/infrastructure-stacks.md": {
-      "pageVersion": "sha256:6a5774e2df38dacdf521027bd263d6b0de942384362c734b42603b22407804d4",
+      "pageVersion": "sha256:c638a8b9dbaa821640ad6f025de2d737ae17e452553faa9cec64b7b4984c076a",
       "completedBy": "openwiki/0.7.1",
-      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7",
-      "gitHead": "8e12631f8426c6c072a6ac7be13ed7d581d171d0",
-      "sourceFingerprint": "sha256:710a5783056664d139e869780cd61ae2da31e10f9aed2909c3300f4294d3cbe5"
+      "completedRunId": "d566e92c-934b-4c2b-86d6-3bc075b787e6",
+      "gitHead": "947bf2226196ccce574388053668c1172facf94b",
+      "sourceFingerprint": "sha256:9edc09d6b672fb45cd929d3e5d059f52c88d9228b5a2df635f85dc5e2ee15aa9"
     },
     "/openwiki/projects/keycloak.md": {
+      "gitHead": "947bf2226196ccce574388053668c1172facf94b",
+      "sourceFingerprint": "sha256:9edc09d6b672fb45cd929d3e5d059f52c88d9228b5a2df635f85dc5e2ee15aa9",
       "pageVersion": "sha256:fb443e10d63c40d76bb7f81d3703ee61802913be4046ca60dc4bdcdb614450e9",
       "completedBy": "openwiki/0.7.1",
-      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7",
-      "gitHead": "8e12631f8426c6c072a6ac7be13ed7d581d171d0",
-      "sourceFingerprint": "sha256:710a5783056664d139e869780cd61ae2da31e10f9aed2909c3300f4294d3cbe5"
+      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7"
     },
     "/openwiki/projects/mc-service.md": {
       "gitHead": "0bb8afe52a1946c6f5a3685714208276835e18f3",
@@ -226,11 +226,11 @@
       "completedRunId": "0e71e192-86b3-41ee-afa4-0764d3ae623f"
     },
     "/openwiki/runbooks/server-setup.md": {
+      "gitHead": "947bf2226196ccce574388053668c1172facf94b",
+      "sourceFingerprint": "sha256:9edc09d6b672fb45cd929d3e5d059f52c88d9228b5a2df635f85dc5e2ee15aa9",
       "pageVersion": "sha256:3c97a362903b4521436168707eb6eda013f2c975a44c8606e8e2b6111f6fae90",
       "completedBy": "openwiki/0.7.1",
-      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7",
-      "gitHead": "8e12631f8426c6c072a6ac7be13ed7d581d171d0",
-      "sourceFingerprint": "sha256:710a5783056664d139e869780cd61ae2da31e10f9aed2909c3300f4294d3cbe5"
+      "completedRunId": "18ce3c84-dfc5-4d60-bb73-3e02733ce7a7"
     },
     "/openwiki/runbooks/wiki-maintenance.md": {
       "gitHead": "5bec80c435d1ce200cc7daccba7f36fb4a39ea4c",

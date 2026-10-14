@@ -1,12 +1,12 @@
 ---
 type: Architecture
 title: Infrastructure-as-code stacks (local Compose + production Komodo)
-description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, and the deploy ordering, interpolation/env_file contract and topology rules that keep them from colliding or drifting.
+description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T10:46:04.907Z
+    at: 2026-10-13T23:55:46.758Z
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
@@ -20,8 +20,12 @@ sources:
     resource: repo://docs/runbooks/prod-control-tower.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
     resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-5cff57d66fb9a3d88a18a36e
+    resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
+  - id: openwiki-source-ff035ef3df6eca36fc791d1d
+    resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-0ff61f596da1302e58282fa2
@@ -38,6 +42,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/vault/compose.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-075e18482c7b2302ea6593a7
+    resource: repo://infrastructure-as-code/opa/policies/agent_ui_action.rego
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-a6996cae4bd83db81e823602
@@ -46,13 +52,17 @@ sources:
     resource: repo://scripts/agent-stack.mjs
   - id: openwiki-source-7ed01c27b7f22a2815bd5d15
     resource: repo://scripts/check-komodo-sync.mjs
+  - id: openwiki-source-85a6abb4f828129c0cce9653
+    resource: repo://scripts/check-no-inline-secrets.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
   - id: openwiki-source-b182ec4cb28667debd4684ff
     resource: repo://scripts/check-prod-restart-policy.mjs
+  - id: openwiki-source-bf15c8e3067ce028059a1350
+    resource: repo://scripts/check-resource-naming.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-13T23:55:46.758Z" }
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -191,6 +201,50 @@ prod compose carries the bare `<SVC>_DIGEST` value per service and is passed as
 `additional_env_files` — last, so the digest interpolates from git while `REGISTRY_HOST` and the
 secrets interpolate from `.env.prod`. The compose assembles the pull reference as
 `${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}`.
+
+## Side artifacts and the static gates over every compose file
+
+Not every file under `infrastructure-as-code/` is a stack. Four artifacts exist to serve the stacks
+without being one, and every compose file in the tree is subject to a set of static gates.
+
+**ClickHouse system-log TTL config** — `infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml`
+is bind-mounted read-only into `langfuse-clickhouse` in *both* the dev and the prod observability
+compose files, so the two stay in step. It exists because LangFuse's ClickHouse grew its own
+diagnostic tables without bound: with the image defaults, `system.trace_log` reached 128 GiB / 6.2
+billion rows and `system.text_log` 28 GiB over three weeks, against 84 KiB of actual LangFuse data, and
+the background merges of those parts saturated the shared host. The file removes `trace_log` and
+`text_log` outright and gives every *other* system-log table a 3-day TTL — only tables that already
+exist, because in ClickHouse *declaring* a `<*_log>` section enables that table and listing a disabled
+one would add a new writer. `opentelemetry_span_log` is deliberately left at its default: its section
+defines a full `<engine>`, and ClickHouse refuses a separate `<ttl>` there and fails to start.
+
+**OPA policies** — `infrastructure-as-code/opa/policies/` is bind-mounted read-only into `opa-service`
+with `--watch /policies` in both observability compose files, so the policy bundle is part of the stack
+definition rather than baked into an image. It holds the `agent_ui_action` and `agent_token_exchange`
+policies alongside their `_test.rego` suites, all `import rego.v1` for OPA 1.x compatibility.
+
+**Dev-only Ollama helper** — `infrastructure-as-code/docker/dev-ollama.compose.yaml` is not part of any
+stack and not part of the production agent stack: it is a dev-container-only helper brought up by
+`scripts/devcontainer-ollama.sh` from the devcontainer's `postStartCommand`. It publishes
+`0.0.0.0:11434` (not loopback, which a nested container's bridge gateway would refuse) so the nested
+agent gateway reaches it via `host.docker.internal` with zero gateway/compose change.
+
+**Backups** — `infrastructure-as-code/docker/backups/compose.yaml` is the separate file that carries
+the backup-destination test services; see the interpolation gotcha below for why it is not an `mcm`
+profile.
+
+**Static gates.** `scripts/check-resource-naming.mjs` — the `naming` CI job, also exposed as the
+`check-naming` Nx target — enforces the `<context>-<role>-<engine>` grammar on every declared volume
+name, external network name and `container_name`, requires `container_name == service key`, permits
+only the BFF to carry the `mcm-` qualifier, and forbids re-introducing a retired service key as a
+network alias so a missed reference fails loudly instead of silently resolving.
+`scripts/check-no-inline-secrets.mjs` asserts the structural property that no tracked compose file
+holds a literal credential: every secret-shaped key, password-bearing URL, and
+command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?msg}` reference, and an
+inline `${VAR:-default}` *fails* because it re-leaks plaintext. Separately, `infra-scan` (feature 035)
+enumerates the third-party images pulled in `infrastructure-as-code/**` and scans each with Trivy.
+Together these three are why a compose file added here is not just "a YAML file that runs" — it is
+parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 
 ## Gotchas
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6a5774e2df38dacdf521027bd263d6b0de942384362c734b42603b22407804d4",
+  "pageVersion": "sha256:c638a8b9dbaa821640ad6f025de2d737ae17e452553faa9cec64b7b4984c076a",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -253,10 +253,78 @@
           "version": "repo-file-v1:sha256:fe4602fa55cdfe9d580771f061c16f109ba5cf6ef5489796be1e726f26cd519e"
         }
       ]
+    },
+    {
+      "id": "claim_00d3776fe3004bb0a750557379d613a1",
+      "statement": "infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml is a non-stack side artifact bind-mounted read-only into langfuse-clickhouse by both the dev and the prod observability compose files: it removes ClickHouse's own system.trace_log and system.text_log tables and gives every other existing system-log table a 3-day TTL, while leaving opentelemetry_span_log at its default because its section defines a full <engine> and ClickHouse refuses a separate <ttl> there and fails to start.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml",
+          "version": "repo-file-v1:sha256:765a7b4f4900916e44678e6c531643839388e95ad8cf5b85297576a1439407f1"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:99e6409347ce4584149dbff893a4ad1f897141551df04e1d8d0cfcb827ce4a32"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
+          "version": "repo-file-v1:sha256:a5fe862e349bde9a17861ee7702e056ec14693a7e42f32b238a273cf9fe1b5b0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f7b3bb8bc1e432e886241312f0cc4bd",
+      "statement": "infrastructure-as-code/opa/policies/ is part of the observability stack definition rather than baked into an image: both the dev and prod observability compose files bind-mount it read-only into opa-service, which runs with --watch /policies, and the directory holds the agent_ui_action and agent_token_exchange policies with their _test.rego suites.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:99e6409347ce4584149dbff893a4ad1f897141551df04e1d8d0cfcb827ce4a32"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
+          "version": "repo-file-v1:sha256:a5fe862e349bde9a17861ee7702e056ec14693a7e42f32b238a273cf9fe1b5b0"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
+          "version": "repo-file-v1:sha256:afe1ab92e397c27cbf106ab303dd9dea69d57ea628dbcffe51f926faf8c341fb"
+        }
+      ]
+    },
+    {
+      "id": "claim_517d4caf4cd74c5caad1d944ee94afa3",
+      "statement": "infrastructure-as-code/docker/dev-ollama.compose.yaml is a dev-container-only helper that belongs to no stack: it is not part of the production agent stack (which serves via host Ollama) and publishes 0.0.0.0:11434 rather than loopback so a nested agent-gateway container can reach it via host.docker.internal without any gateway/compose change.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml",
+          "version": "repo-file-v1:sha256:dac871e6f7f3d5e0c398fbc36f453c529ce3a84d333f77d1c92323055ce23204"
+        }
+      ]
+    },
+    {
+      "id": "claim_1219c14f8be844c2ae3efc6426a3f9c7",
+      "statement": "Every compose file under infrastructure-as-code/ is constrained by static gates in the guardrails CI 'naming' job: scripts/check-resource-naming.mjs enforces the <context>-<role>-<engine> grammar on declared volume/network/container names, requires container_name == service key, permits only the BFF the mcm- qualifier and forbids re-introducing a retired service key as a network alias, while scripts/check-no-inline-secrets.mjs requires every secret-shaped key, password-bearing URL and command/healthcheck/entrypoint auth literal to be a pure ${VAR} or ${VAR:?} reference and fails an inline ${VAR:-default}; the infra-scan target separately enumerates and Trivy-scans the third-party images pulled in infrastructure-as-code/**.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:0a124147dc3b4088c296242b4033762c9c44bbe492309d24d3acfa88e3dcc708"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json",
+          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+        },
+        {
+          "resource": "repo://scripts/check-no-inline-secrets.mjs",
+          "version": "repo-file-v1:sha256:57b4b9c6f32a873da0caec9be010045c8ed822cdcf00cdd19d38ddc1783a8fc8"
+        },
+        {
+          "resource": "repo://scripts/check-resource-naming.mjs",
+          "version": "repo-file-v1:sha256:9d1725737b73b44853bc7cf30703113db0290aff9f498d46630ecc80c1fd461a"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-13T10:46:04.907Z"
+    "at": "2026-10-13T23:55:46.758Z"
   }
 }
