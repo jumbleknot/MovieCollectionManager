@@ -238,6 +238,14 @@ already in its environment*, and the container recreated.
   describes the owning *account*, not the token. Unset → empty → backlog **reads** continue via
   `MCM_FORGE_TOKEN` and **writes** are refused naming the missing variable (exit 3); the container still
   comes up. Provisioning, conventions and diagnosis: [backlog.md](backlog.md).
+- **`MCM_FIREWORKS_API_KEY`**: the OpenWiki generator's Fireworks AI credential, for a **local** wiki
+  run with `MCM_WIKI_PROVIDER=fireworks` (feature 078). It follows the same rule as
+  `MCM_ANTHROPIC_API_KEY`: `scripts/wiki-provider.mjs` accepts it and maps it to `FIREWORKS_API_KEY` only
+  at the point of use, so the raw name is never set in the shell. It is not a `${localEnv}` forward:
+  `.devcontainer/gen-container-secrets-env.sh` writes it into the container's env file with the other
+  credentials. Unset → empty → a local `--execute` on the Fireworks provider exits 2 naming the missing
+  credential. `--plan` and `--claims-audit` need no credential. CI uses its own secret,
+  `FIREWORKS_API_WIKI_MAINTAIN`.
 
 **Setup (Windows) — the two gotchas that bite here** (identical for `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY` and both `MCM_FORGE_*` tokens)**:**
 
@@ -821,7 +829,7 @@ pnpm nx test:integration mcm-app          # → 115 collected / 114 pass / 1 fai
 
 | Suite | What it needs in the dev container |
 |---|---|
-| `agent-config-probes.integration.test.ts` | Runs the provider probes **in-process from the shell**. The **Ollama** case self-skips (`SKIP: ollama not reachable`) when nothing answers at `OLLAMA_BASE_URL` (default `localhost:11434`); it **PASSES** with the nested `dev-ollama` container, which made `localhost:11434` real (measured 2026-08-09). The **TMDB** case asserts a non-empty `TMDB_API_KEY` and needs shell→TMDB egress, which the feature-059 allowlist entry provides (see `TMDB_API_KEY` above); it was the one env-gated case before that entry. |
+| `agent-config-probes.integration.test.ts` | Runs the provider probes **in-process from the shell**. The **Ollama** case self-skips (`SKIP: ollama not reachable`) when nothing answers at `OLLAMA_BASE_URL` (default `localhost:11434`); it **PASSES** with the nested `dev-ollama` container, which made `localhost:11434` real (measured 2026-08-09). The **TMDB** case asserts a non-empty `TMDB_API_KEY` and needs shell→TMDB egress, which the feature-059 allowlist entry provides (see `TMDB_API_KEY` above); it was the one env-gated case before that entry. Measured 2026-10-15 with `TMDB_API_KEY` set: `pnpm nx test:integration mcm-app -- --testPathPattern agent-config-probes` → **6 passed, 0 skipped**, the real-key TMDB case included. |
 | `mc-service` integration binaries (`cargo test -p mc-service` runs them too) | Need `backend/mc-service/.env.local` (`MC_DB_URL`, `KEYCLOAK_*`); `node scripts/gen-dev-env.mjs` creates it when absent (item #227). Without it they panic with `Missing("MC_DB_URL")`. The **lib/unit** tests are unaffected: `cargo test --manifest-path backend/mc-service/Cargo.toml --lib` → 148/148. |
 
 **Agent (python) integration** additionally needs the MCP servers, which publish **no host port** —
