@@ -33,7 +33,8 @@ single CI runner.
   schedule-exempt work (security PRs) lands here.
 - `0 7 * * 5` — Friday 07:00 UTC = 03:00 EDT / 02:00 EST, **inside** the `* 2-4 * * 5` window.
 
-> **The weekly CVE sweep runs at 04:00 UTC, three hours BEFORE this window, on purpose (item #487).**
+> **The CVE sweep runs at 04:00 UTC on Fridays, three hours BEFORE this window, on purpose (item #487).** It also runs
+> on Tuesdays at 04:00 (`infra-image-scan.yml`, item #642), so it is twice weekly, not weekly.
 > `infra-image-scan.yml`'s sweep decides whether an infra-touching PR can merge; running it at the
 > same minute as the run that *creates* those PRs meant `main`'s CVE posture was unknown until after
 > the PRs it would block already existed. On 2026-09-18 `main` had been failing its weekly gate for

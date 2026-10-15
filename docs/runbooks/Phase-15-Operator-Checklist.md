@@ -37,7 +37,7 @@ fill); the BFF Keycloak/cookie/enc secrets keep their lowercase `mcm_*` names:
 
 - `REGISTRY_HOST` = `<tailnet-host>:3000` — its own Variable (full host:port), used by every stack
 - `TAILNET_HOST` = `<tailnet-host>` — bare host; only prod-auth's `KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:19099`
-- `BASE_DOMAIN` = `${BASE_DOMAIN}` · `TS_ADMIN_IP` = prod Tailscale IPv4 (`tailscale ip -4`)
+- `BASE_DOMAIN` = `${BASE_DOMAIN}`. (`TS_ADMIN_IP` is retired: since 2026-10-13 no stack in `komodo/stacks.toml` passes it, and the operator has removed the Variable; item #727.)
 - `AGENT_GATEWAY_CLIENT_SECRET` — Keycloak admin → realm `grumpyrobot` → Clients → **agent-gateway** → Credentials
 - `AGENT_SUBJECT_TOKEN_CLIENT_SECRET` — Keycloak admin → Clients → **agent-subject-token** → Credentials
 - `AGENT_DB_PASSWORD` — you choose (fresh volume); reuse if the volume was already initialised
@@ -207,7 +207,6 @@ auth/BFF), so treat it as a maintenance window.
       - `BASE_DOMAIN` = `${BASE_DOMAIN}`
       - `REGISTRY_HOST` = `<tailnet-host>:3000`  (its OWN Variable — no longer derived from TAILNET_HOST)
       - `TAILNET_HOST` = `<tailnet-host>`  (bare host — only prod-auth's `KC_HOSTNAME_ADMIN`)
-      - `TS_ADMIN_IP` = prod host Tailscale IPv4 (`tailscale ip -4` on prod)
       - `KC_DB_PASSWORD`, `KC_BOOTSTRAP_ADMIN_PASSWORD` (same values prod-auth already uses)
       - `mcm_keycloak_client_secret`, `mcm_keycloak_service_client_secret`, `mcm_cookie_secret`,
         `mcm_agent_config_enc_key`
@@ -265,7 +264,7 @@ prod-auth (Keycloak healthy — JWKS)
 
 Secrets map (Komodo Variable names as of 2026-07-02):
 
-- prod-auth: `KC_DB_PASSWORD`, `KC_BOOTSTRAP_ADMIN_PASSWORD` · `BASE_DOMAIN`, `TS_ADMIN_IP`, `TAILNET_HOST`
+- prod-auth: `KC_DB_PASSWORD`, `KC_BOOTSTRAP_ADMIN_PASSWORD` · `BASE_DOMAIN`, `TAILNET_HOST` (`TS_ADMIN_IP` retired: prod-auth stopped passing it on 2026-10-12, prod-observability on 2026-10-13; item #727)
 - prod-mcm-bff: `mcm_keycloak_client_secret`, `mcm_keycloak_service_client_secret`, `mcm_cookie_secret`,
   `mcm_agent_config_enc_key`, `AGENT_SUBJECT_TOKEN_CLIENT_SECRET` · `BASE_DOMAIN`
 - prod-movie-assistant: `AGENT_DB_PASSWORD`, `AGENT_GATEWAY_CLIENT_SECRET`
@@ -281,7 +280,7 @@ user's collection + adds movies). The last blocker — the agent being TMDB-only
 **401 invalid_client** because the `agent-subject-token` / `agent-gateway` Komodo Variables didn't match
 the realm-generated client secrets (see Step B1 note). Naming has converged with `stacks.toml`, the
 `prod-app → prod-mcm-bff` rename cutover is done, and prod-auth's UI env now uses `[[BASE_DOMAIN]]` /
-`[[TS_ADMIN_IP]]` / `[[TAILNET_HOST]]`.
+`[[TAILNET_HOST]]` (it also passed `[[TS_ADMIN_IP]]`, as `KC_ADMIN_BIND_IP`, until 2026-10-12; item #727).
 
 **Uncommitted (on branch `022-prod-public-hostname-auth`, saved to disk — commit these first):**
 
