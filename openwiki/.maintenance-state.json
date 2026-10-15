@@ -1,49 +1,47 @@
 {
-  "coveredCommit": "a02066b45db4a8dfb4d13020cb1c6734470719a4",
-  "coveredAt": "2026-10-15T10:51:05.398Z",
+  "coveredCommit": "95cf317c4cb8f0f6e1507af4a21de1e9f21f050b",
+  "coveredAt": "2026-10-15T23:43:39.022Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 757,
-    "headCommit": "b4f1ae6610793eae99c2e813b980b9c556f0342e",
-    "markerBefore": "7ed10d5630537026dd7939cf29b872d313076147",
+    "number": 759,
+    "headCommit": "7624b59ef3f697c54f29cc4e4cd2777fa0974aaa",
+    "markerBefore": "a02066b45db4a8dfb4d13020cb1c6734470719a4",
     "slices": [
       {
-        "area": "runbooks",
+        "area": "projects",
         "pages": [
-          "phase-15-operator-checklist.md",
-          "devcontainer.md",
-          "renovate.md"
+          "stacks.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/Phase-15-Operator-Checklist.md; source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/renovate.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/phase-15-operator-checklist.md; openwiki/runbooks/devcontainer.md; openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: infrastructure-as-code/docker/stacks/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-15T10:51:05.810Z"
+    "updatedAt": "2026-10-15T23:43:39.442Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 4,
-    "elapsedSeconds": 2396,
+    "pagesWritten": 3,
+    "elapsedSeconds": 440,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 261,
+    "calls": 88,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2422223,
-    "cached": 24701872,
+    "uncached": 363198,
+    "cached": 4098640,
     "cacheWrite": 0,
-    "output": 282442,
-    "reasoning": 211989,
-    "ms": 2303066,
-    "estCostUsd": 1.2138,
+    "output": 83368,
+    "reasoning": 53466,
+    "ms": 626423,
+    "estCostUsd": 0.2336,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -53,13 +51,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/phase-15-operator-checklist.md",
-        "runbooks/devcontainer.md",
-        "runbooks/renovate.md"
+        "projects/stacks.md"
       ],
       "effort": "low",
       "deadlineStop": false,
-      "estCostUsd": 1.2138,
+      "estCostUsd": 0.2336,
       "rateLimited": null
     }
   ],
