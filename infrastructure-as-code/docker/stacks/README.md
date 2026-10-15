@@ -1,9 +1,28 @@
 # Stack env files
 
 Feature 021 (externalize-compose-secrets) removed every clear-text credential from the tracked
-Docker Compose files. Most secrets are fail-fast `${VAR:?…}` interpolation references; some services
-load theirs from an `env_file:` instead (the BFF reads `frontend/mcm-app/.env.docker`). The real
-per-machine values live in gitignored per-stack `.env` files generated from committed templates.
+Docker Compose files. **Not every secret is a fail-fast `${VAR:?…}` reference.** Most are, but:
+
+- the BFF (`bff/compose.yaml`) loads `frontend/mcm-app/.env.docker` with `env_file:`;
+- web-api-mcp (`web-api-mcp/compose.yaml`) loads `mcp-servers/web-api-mcp/.env.local` with `env_file:`;
+- the agent gateway keeps `AGENT_GATEWAY_CLIENT_SECRET` as an optional `${…:-}`, so it can come up
+  without token exchange. `scripts/check-no-inline-secrets.mjs` allowlists it by name.
+
+The real per-machine values for the `${VAR:?…}` references live in gitignored per-stack `.env` files
+generated from committed templates.
+
+## Profiles gate services, not stacks
+
+No stack is profile-gated as a whole. `auth` and `mcm` each have services that start with no profile:
+
+| Stack | Starts with no profile | Needs a profile |
+|---|---|---|
+| `auth` | `keycloak-service`, `keycloak-store-postgres`, `keycloak-mailpit` | Vault (`vault`) |
+| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`; the gateway also `agents-metro`) |
+| `audit` | nothing | every service (`audit`) |
+| `observability` | nothing | every service (`observability`) |
+
+The profile assignments live in the component compose files, not in these stack files.
 
 ## Files
 
