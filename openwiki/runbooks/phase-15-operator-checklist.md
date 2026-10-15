@@ -15,8 +15,6 @@ sources:
     resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
   - id: openwiki-source-a679e2e5a49381a72df446c5
     resource: repo://docs/runbooks/prod-data-tier-auth.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-4af9b1718a0206bbe016cb00
@@ -29,8 +27,10 @@ sources:
     resource: repo://scripts/cd/rollback.sh
   - id: openwiki-source-48b430e61b4404a6e7b22c10
     resource: repo://specs/023-forgejo-cicd/HANDOFF.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T03:23:45.685Z" }
-
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-15T10:11:13.472Z
 ---
 
 # Phase 15 operator checklist (bring the full app live)
@@ -81,18 +81,22 @@ The historical arc the checklist records: two sequential paths, not an either/or
   Komodo webhook → post-deploy health probe → rollback drill. The probe expects the *realm-qualified*
   OIDC issuer (a bare auth host never matches a healthy realm) plus a 200 from the app; rollback has no
   endpoint to call, so it git-reverts the digest promotion commit and re-fires the webhook to redeploy
-  the prior digest. Full mechanism: [CI/CD pipeline](../projects/ci-cd-pipeline.md).
+  the prior digest. At the time the dispatch had to go through the API, because the Forgejo UI does not
+  list a workflow that is not yet on the default branch. Full mechanism:
+  [CI/CD pipeline](../projects/ci-cd-pipeline.md).
 - **Config-as-code consolidation replaced per-stack webhooks.** One ResourceSync webhook now reconciles
   and redeploys every affected stack in `after` order — `prod-auth` → `prod-mc-service` →
   `prod-mcm-bff` → `prod-movie-assistant` (agents last, because `spreadsheet-mcp` needs the BFF's
   network and Redis) — and this is the deploy model every production change uses today, including the
-  support stacks added afterwards. See
+  support stacks added afterwards. Because the sync adopts live stacks, its first apply redeployed all
+  four in order and was treated as a maintenance window. See
   [infrastructure-as-code stacks](../projects/infrastructure-stacks.md).
 - **Token hygiene and branch protection were finished here**: the registry push/pull token split, the
   `main` required status checks, the 022 branch merge, and the final smoke against the merged `main`.
   The two required checks named at the time (`guardrails` + `app-ci`) were the starting pair, not the
-  final list — the current set is a wider glob list, and the per-token inventory and rotation procedure
-  live in the [server-setup runbook](./server-setup.md).
+  final list — the current set is a wider glob list, read live from branch protection rather than
+  hand-maintained, and the per-token inventory and rotation procedure live in the
+  [server-setup runbook](./server-setup.md).
 
 ## Superseded detail
 
@@ -101,9 +105,10 @@ that is no longer true: feature 026 has since enabled SCRAM on both stores, and
 `infrastructure-as-code/komodo/stacks.toml` now supplies `MONGO_MC_APP_PASSWORD` plus
 `MONGO_MC_KEYFILE` (the replica-set keyfile) to `prod-mc-service` and `MONGO_BFF_APP_PASSWORD` to
 `prod-mcm-bff`. The checklist's secret map and its "no credential" step A note are historical — the
-current cutover and recovery procedures are in [production data-tier authentication](./prod-data-tier-auth.md).
-The vars the checklist seeds in the Komodo UI are the mechanism later ratified as the standard for every
-core stack: masked Komodo Variables interpolated into each stack's gitignored `.env.prod` — see
+current cutover and recovery procedures are in
+[production data-tier authentication](./prod-data-tier-auth.md). The vars the checklist seeds in the
+Komodo UI are the mechanism later ratified as the standard for every core stack: masked Komodo Variables
+interpolated into each stack's gitignored `.env.prod` — see
 [ADR-0001](../decisions/adr-0001-prod-secrets-management.md).
 
 ## Gotchas
@@ -142,4 +147,5 @@ core stack: masked Komodo Variables interpolated into each stack's gitignored `.
   an implied cleanup step.
 
 Full step-by-step Komodo actions, exact stack configuration values, the two independent login-bug root
-causes, and the final deploy-order/secrets-map reference: `docs/runbooks/Phase-15-Operator-Checklist.md`.
+causes, and the final deploy-order/secrets-map reference:
+[`docs/runbooks/Phase-15-Operator-Checklist.md`](../../docs/runbooks/Phase-15-Operator-Checklist.md).

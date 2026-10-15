@@ -9,6 +9,8 @@ sources:
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-c950e0aee079c6db1d918078
+    resource: repo://.forgejo/workflows/minio-image.yml
   - id: openwiki-source-ea70eb6c045047448e446296
     resource: repo://.gitignore
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
@@ -71,12 +73,14 @@ sources:
     resource: repo://scripts/check-topology-scrub.mjs
   - id: openwiki-source-1dabdb308579a8f9d6d49612
     resource: repo://scripts/gen-dev-secrets.mjs
+  - id: openwiki-source-d1e0316ab362ff8dcec4fc0d
+    resource: repo://scripts/infra-image-scan.mjs
   - id: openwiki-source-ac2000cc53be6b0ffb997de7
     resource: repo://scripts/up-mcm-agents.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T01:57:21.062Z
+    at: 2026-10-15T10:11:13.472Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -192,8 +196,10 @@ Each `[stack.config]` block names the Komodo Periphery `server`, a `linked_repo`
 `run_directory` and `file_paths` pointing at that component's `compose.prod.yaml`, an
 `env_file_path = ".env.prod"` (gitignored) into which Komodo writes the interpolated `environment`, and
 an `environment = """…"""` block whose values are masked Variable tokens `[[NAME]]`, resolved at deploy
-time. Nothing host-shaped or secret-shaped is committed: the git host lives in a separately
-bootstrapped Komodo `Repo` resource referenced by name, and the domain, tailnet admin address and
+time. All seven blocks name the same Periphery `server = "Local"`, the same `linked_repo = "mcm-repo"`
+and the same `branch = "main"`, so one ResourceSync reconciles the whole production topology on one
+host. Nothing host-shaped or secret-shaped is committed: the git host lives in a separately
+bootstrapped Komodo `Repo` resource referenced by name, and the production domain, tailnet host and
 registry host are Variables.
 
 The `environment` block is the stack's **declared input list**, and it is the only place those inputs
@@ -284,8 +290,11 @@ command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?ms
 inline `${VAR:-default}` *fails* because it re-leaks plaintext. `.gitignore` backs the template
 contract: it ignores `*.env` / `*.env.*` and carves out
 `!infrastructure-as-code/docker/stacks/*.env.example`, scoped to that directory so other deliberately
-ignored `*.env.example` files stay ignored. Separately, `infra-scan` (feature 035) enumerates the
-third-party images pulled in `infrastructure-as-code/**` and scans each with Trivy.
+ignored `*.env.example` files stay ignored. Separately, `infra-scan` (feature 035) enumerates the images
+pulled in `infrastructure-as-code/**` that no other workflow builds and scans each with Trivy; the
+exclusion is by *build ownership* (membership of a built-image name list), not by registry prefix, so an
+image this repository builds elsewhere — the from-source `jumbleknot/minio`, scanned by its own
+`minio-image` publish gate — is excluded here rather than left uncovered by both.
 Together these three are why a compose file added here is not just "a YAML file that runs" — it is
 parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 
@@ -345,14 +354,17 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   The tracked `.env.deploy` files are written by [the CI/CD pipeline](./ci-cd-pipeline.md)'s
   digest-by-git promotion step; the compose assembles the pull reference from a Komodo-injected
   registry-host variable plus that digest.
-- **All four core live production stacks were adopted in place, not created fresh.** The ResourceSync
-  reconciles against already-running containers with matching names — a rename or restructuring here is
-  a config *diff* against a live system, not a from-scratch stand-up; preview the diff before applying.
-  A rename is worse than a diff: Komodo sets the Compose project name from the Komodo **Stack** name,
-  overriding the compose `name:` field, so `prod-app → prod-mcm-bff` needed a manual down-then-deploy
-  cutover rather than an edit. See
+- **All four core live production stacks were adopted in place, not created fresh.** They already
+  existed as hand-created Komodo Stacks when the first ResourceSync applied, and they already carried
+  the canonical names `stacks.toml` declares, so the sync reconciles against already-running containers
+  with matching names rather than standing anything up. A rename or restructuring here is a config
+  *diff* against a live system, not a from-scratch change; preview the diff before applying. A rename is
+  worse than a diff: Komodo sets the Compose project name from the Komodo **Stack** name, overriding the
+  compose `name:` field, so `prod-app → prod-mcm-bff` needed a manual down-then-deploy cutover rather
+  than an edit. The three feature-025 support stacks (`prod-audit`, `prod-observability`, `prod-vault`)
+  are the opposite case — the sync created them, so their first apply was a from-scratch deploy. See
   [Phase 15 operator checklist](../runbooks/phase-15-operator-checklist.md) for the manual
-  consolidation that got the stacks to this ResourceSync-managed state.
+  consolidation that got the core stacks to this ResourceSync-managed state.
 - **Every prod admin/UI port lives in the reserved range `19000–19099`, and moving one requires updating
   its own self-referencing URL variable too.** `scripts/check-prod-ci-port-collision.mjs` compares the
   fixed host ports of every `compose.prod.yaml` against every other tracked compose file and fails on an
