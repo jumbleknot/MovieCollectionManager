@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan before the paid wiki-maintain (including the bounded drift planning and parking of feature 082), the provider/credential table with its per-provider knobs (page concurrency, service tier, the Fireworks-only reasoning effort of item #525, and the per-turn output cap that item #719 raises to 65536 for Fireworks and deliberately not for Anthropic) and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown, the run budget with its per-event job deadline and exit-code semantics, the slice-verification causes (a requested page missing, non-conformance including V16, a policy-forbidden write, a requested page left stale after the run, and a requested page a worker left mid-edit), the per-page landing and restore machinery (failedPages, landedParts, forcedPages, the V16-named mid-edit page of run 5145 and the conformance-confined exception), the deadline-stop escalation that tags the pages a GNU timeout stopped and retries them first and alone at low reasoning effort (feature 078 US6), the single long-lived openwiki-maintenance proposal that proposes per page and reconciles before it plans, the Claims-sidecar durability contract that makes a hand edit of a covered page brick every later run, the churn-citation rule that forces a page into a paid run on every routine commit and the `.openwikiignore` list that retires such a path (item #739), and the live-state rule that keeps the record's current backlog, tags, outcomes and costs out of a page (proposal #737).
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown, the run budget and per-event job deadline with its exit codes, the five slice-verification causes, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, and the churn-citation and live-state rules.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -17,6 +17,8 @@ sources:
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-d0e241f24a4e0d3e79f47c5f
     resource: repo://scripts/__tests__/openwiki-claims.test.mjs
+  - id: openwiki-source-1ec4caa0504831af48a18166
+    resource: repo://scripts/__tests__/openwiki-ignore-claims.guard.test.mjs
   - id: openwiki-source-cccdf9eddce7e76440d4cd28
     resource: repo://scripts/__tests__/openwiki-stamp.test.mjs
   - id: openwiki-source-4047a2562f1a8a3b01b32f18
@@ -61,18 +63,19 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-12T18:54:07.831Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-12T18:54:07.831Z
+    at: 2026-10-15T01:57:21.062Z
 ---
 
 
 # OpenWiki knowledge-bundle maintenance
 
 **Feature 044** (with the cost/provider work of feature 078, the deadline work of item #613, the
-deadline-stop escalation of 078 US6, the drift re-planning and parking of feature 082, and the
-per-turn output cap of item #719 — raised to 65536 on the Fireworks row in PR #732).
+deadline-stop escalation of 078 US6, the drift re-planning and parking of feature 082, the per-turn
+output cap of item #719 — raised to 65536 on the Fireworks row in PR #732 — and the overlapping-run
+handling of #748).
 `pnpm nx wiki-plan infrastructure-as-code`
 decomposes the documentation changes since the last recorded run into **slices** — at most 8 pages,
 exactly one bundle area each — offline and free, so there is never a reason to skip it before spending
@@ -81,9 +84,11 @@ free check answers a different question the plan cannot: `node scripts/wiki-main
 --claims-audit` (offline, keyless; `--json` for machines) lists the pages openwiki will *force* into
 the next run because one of their cited Claims is stale or unresolved — a full paid regeneration
 whatever the plan requested (item #707) — and marks a page whose only issues are churn citations (a
-lockfile, a digest pin, a rotating allowlist line) as **avoidable**, since `openwiki/INSTRUCTIONS.md`
-§9 forbids citing those and the repository-root `.openwikiignore` retires such a path outright (item
-#739). It runs openwiki's own evidence resolver from the install the `openwiki`
+lockfile, a CD digest pin, a line-addressed allowlist entry, a cited range holding an image digest) as
+**avoidable**, since `openwiki/INSTRUCTIONS.md` §9 forbids citing those. `.openwikiignore` is a
+**separate** mechanism: it lists the paths openwiki may not cite at all, and the audit never reads it —
+so a whole-file allowlist citation is ignored but is not churn, and a Dockerfile digest pin is churn but
+is not ignored. It runs openwiki's own evidence resolver from the install the `openwiki`
 binary on `PATH` belongs to, and exits 2 when there is none. The paid run is bounded three ways: a page budget, a start deadline, and a
 per-event **job deadline** that a
 merge-triggered run and a dispatched run are each given differently. The run
@@ -127,7 +132,9 @@ slice and invokes nothing, persisting nothing; `--args=--json` is machine-readab
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Plan
+    [*] --> Reconcile
+    Reconcile --> Plan: previous proposal merged, closed or still open — record reconciled first
+    Reconcile --> BadUsage: forge unreachable for the reconcile, exit 2
     Plan --> NothingToDo: nothing changed since the marker
     Plan --> Preflight: slices planned, paid start
     Preflight --> BadUsage: provider error, exit 2
@@ -165,7 +172,10 @@ stateDiagram-v2
     BadUsage --> [*]
 ```
 
-The states a maintenance run moves through: planning is free, the preflight is the first act that costs
+The states a maintenance run moves through: the previous proposal is **reconciled with the forge before
+planning** (a closed-unmerged one returns its work to the backlog and rolls the marker back, and a run
+whose record is behind the remote's stops free rather than repaying the work), planning is free, the
+preflight is the first act that costs
 anything, a failing slice is retried and then returned to the committed backlog, and a budget stop — pages
 or wall clock, or a job deadline that leaves too little time to *start* a generator — ends the run with
 the remainder carried forward (exit 3),
@@ -192,17 +202,21 @@ Which model writes the bundle is not code: `scripts/wiki-provider.mjs` is the si
 | `fireworks` — the **CI** default (the workflow sets it, at page concurrency 4) | `accounts/fireworks/models/deepseek-v4p1-flash` | `FIREWORKS_API_KEY`, `MCM_FIREWORKS_API_KEY` |
 
 The chosen credential is mapped to the name the generator reads **only** in the generator's own
-environment, and every other provider's key is removed from it. Four more knobs are validated before any
-paid call, and each is per-provider: setting one on a provider that does not take it is an error, never
-something quietly ignored.
+environment, and every other provider's key is removed from it. Three operator knobs are validated
+before any paid call. The service tier and the reasoning effort are declared **per provider row**, so
+setting one on a provider that does not take it is an error rather than something quietly ignored; page
+concurrency is validated against one 1–8 bound for every provider alike. The per-turn output cap is the
+same idea in the other direction: a property of the row rather than a variable the operator sets.
 
 - `MCM_WIKI_PAGE_CONCURRENCY` (1–8, default 1) — openwiki ≥ 0.6.0 writes that many pages in parallel.
+  DeepSeek's wall-clock gap to Sonnet is **call count** rather than latency, so concurrency is the lever
+  that closes it.
 - `MCM_WIKI_SERVICE_TIER=priority` (Fireworks only) — +25% price; measured on this workload it bought
   **no** speed, so it is not the default.
 - `MCM_WIKI_REASONING_EFFORT` (Fireworks only: `none`, `low`, `high`, `max`; unset = the model's own
   default, which is `high` for this model) — the item-#525 trial knob described next, and the effort
   078 US6 imposes per invocation on a page a deadline stopped.
-- **The per-turn output cap (item #719)** is not an operator variable but a property of the provider
+- **The per-turn output cap (item #719)** is *not* an operator variable but a property of the provider
   row: the Nx target's `OPENWIKI_MAX_OUTPUT_TOKENS=16384` is a **floor**, and the `fireworks` row
   raises it to **65536** because DeepSeek V4.1 Flash reasons *inside* its output budget. Dispatch 5115
   (2026-10-11) measured why: this very page's worker ended **both** attempts with `finish: length` at
@@ -320,7 +334,7 @@ egress host costs one token, not a slice.
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
 | `1` | A slice **failed verification** — a requested page missing, left stale, or left mid-edit by its worker and restored, the bundle became non-conformant, or a write landed where policy forbids it (a stopped generator usually leaves a requested page stale, which fails it the same way) — or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
-| `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value or `WIKI_JOB_DEADLINE`, a failed preflight, or a policy file that will not load | **Yes** |
+| `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value or `WIKI_JOB_DEADLINE`, a failed preflight, a forge that cannot be reached for the pre-plan reconcile, or a policy file that will not load | **Yes** |
 | `3` | Stopped with work outstanding — the run budget was reached, the job deadline left too little time to start a generator, or slices were carried forward in the backlog | **No** — the remainder is in the backlog |
 
 **Exit 3 is not a failure.** A run that correctly stopped at its budget must not be reported as broken:
@@ -622,7 +636,9 @@ The figures in the example are illustrative.
 - **A slice is retried up to 3 times within one run before returning to the backlog**, and the attempt
   count is always reported. A retry can never forgive what an earlier attempt did: the working tree is
   snapshotted once, before the first attempt, so a forbidden write on attempt 1 still fails the slice
-  even if attempt 2 behaves. **A rate-limited attempt waits instead of retrying at once (item #683):**
+  even if attempt 2 behaves — re-snapshotting per attempt was tried and it laundered a policy violation
+  into a success. One usage log is shared across an invocation's retries, because a retry's tokens are
+  real spend too. **A rate-limited attempt waits instead of retrying at once (item #683):**
   a failed attempt where at least half of its calls answered HTTP **429** is recognised from the usage
   tap's per-call `status` — never from the generator's text — and the retry then waits 60 s (120 s
   before a third attempt), but only while it would still *start* inside the 4-minute time budget and
@@ -765,6 +781,22 @@ The figures in the example are illustrative.
   fails instead (the push or the forge call), the marker is held and this run's slices go back to the
   backlog, so nothing is certified that never reached a proposal; the recorded usage stays, because that
   money was already spent.
+- **Overlapping runs happen, and three mechanisms keep a queued run from repaying work or corrupting the
+  record (#748).** The debounce relies on `cancel-in-progress`, and cancellation is not guaranteed: two
+  merges in the same second (2026-10-13) produced two push runs and the forge *queued* the second behind
+  the first rather than cancelling it. First, the job **moves to the current tip of `main`** after the
+  quiet period and plans from the record the earlier run committed — the self-trigger skip decision still
+  reads the event commit, because it is about what that push changed — and `--execute` stops before any
+  paid generation, exit 0, when the checkout's record is behind the remote's, so a lost race costs
+  nothing. Second, the record commit **merges three ways** instead of replaying: this run's record,
+  `main`'s current one, and the record the run started from (`--merge-record`). A field only one side
+  changed takes that side's value; `escalations`, `parked` and the backlog merge **per page**, so neither
+  run's tags nor its queued pages are lost; the marker never moves backwards; and two *different*
+  proposal pointers are a **conflict**, refused with nothing committed rather than guessed. Replaying the
+  whole record over a newer one erased an open proposal's pointer and two deadline tags (run 5229).
+  Third, a packed invocation already in a committed backlog is **split back into its per-area slices** —
+  a joined entry such as `area: "invariants + projects + runbooks"` would otherwise be planned as a new
+  area to create, which a paid run cannot satisfy.
 - **One invocation can carry several slices, and a failure in one page no longer discards the others.**
   When an invocation's failure is attributable only to particular pages — a requested page missing, still
   stale, or left mid-edit and named by V16 — while conformance (V16 included) and policy are clean,
@@ -861,7 +893,10 @@ The figures in the example are illustrative.
   as happened to `runbooks/renovate.md`, whose entry named item #719 and was removed once the per-turn
   output cap was raised (PR #732). A `parked` entry is not always a failed worker: a page whose `resource`
   names a **directory** cannot be regenerated durably — any commit anywhere under it re-flags the page
-  (V12) — so it is parked rather than paid for (item #739).
+  (V12) — so it is **unplannable**, which the plan reports and never pays to regenerate; item #739 parked
+  `process/spec-driven-development.md`, already unplannable, so that the decision is on record.
+  *Unplannable* is not *parked*: an unplannable page costs nothing whether or not it is also parked, and
+  parking it only records a decision.
   Until feature 082, parking meant advancing `coveredCommit` past the page's source change and dropping
   the page from the backlog: that recorded nothing, and the next change to the source silently undid it.
   `writeRunRecord` refuses an entry without an `item`, a `since` date and a `reason`, so check the result
@@ -942,7 +977,12 @@ The figures in the example are illustrative.
   is found again on the next run, and a backlog of it would only grow. A drift slice that fails is carried
   like any failed slice. A page whose `resource` names a **directory** is unplannable: any commit under
   the directory re-flags it, so regenerating it would buy nothing durable; the brief requires a `resource`
-  to name one file. A **parked** page is planned by nothing, drift included. `--plan` prints the four
+  to name one file. A **parked** page is planned by nothing, drift included. **A drifted page the open
+  proposal already holds fresh is covered, not planned again (#748).** The proposal's pages are not on
+  `main` yet, so `main`'s stamps make them look drifted; the planner reads each drift candidate from the
+  proposal branch, and `--plan` lists those pages as `on the open proposal`. Only *drift* is skipped:
+  freshness compares commit dates, and a merged branch keeps its commit's own earlier date, so work queued
+  by a source change or by a failure is always planned, and drift is re-derived from `main` every run. `--plan` prints the four
   groups before anything else, even when there is nothing to do:
 
   ```text
@@ -978,11 +1018,12 @@ The figures in the example are illustrative.
   `jsdom` installed alongside the generator, OpenWiki falls back to a weaker built-in check; any
   diagram that fails that check is rewritten in place as a plain `text` fence with a comment — the run
   still exits 0, every gate still passes, and the diagram is silently downgraded. Both packages are
-  therefore installed in `.devcontainer/toolchain.Dockerfile` **and** in
-  `.forgejo/workflows/wiki-maintain.yml`. A guard in
+  therefore installed in `.devcontainer/toolchain.Dockerfile` **and** pinned in CI's locked install
+  (`tools/openwiki-generator/package.json`). A guard in
   `scripts/__tests__/wiki-maintain.guard.test.mjs` asserts that the two lists match: if only one
   environment has the parser, they disagree about what a valid diagram is, and the environment that
-  writes the bundle decides.
+  writes the bundle decides. Both sit **outside** the peer range openwiki 0.7.1 declares
+  (`mermaid ^11.16`, `jsdom ^29.1`) — the versions every CI run since mid-September actually resolved.
 - **Claims sidecars (`openwiki/.claims/`) hold the evidence behind a page, one JSON file per page,
   mirroring the page's path** (e.g. `openwiki/.claims/runbooks/backups.json` for
   `openwiki/runbooks/backups.md`). A sidecar carries `schemaVersion`, a `pageVersion` hash, a
@@ -1007,15 +1048,20 @@ The figures in the example are illustrative.
   regeneration — while the fact it supports has not changed; runs 4960 and 4972 (2026-10-09/10) each paid
   for five forced pages this way (item #707). `openwiki/INSTRUCTIONS.md` §9 therefore forbids citing a
   lockfile, an image-digest or version-pin line, or a line range inside a rotating list such as the SAST
-  allowlist, and `.openwikiignore` at the repository root is the enforcement: openwiki must never read or
-  cite a path listed there. The operator's 2026-10-12 change (item #739) added the two churn paths to it —
+  allowlist. Two mechanisms answer it and they are **not** the same one: `.openwikiignore` at the
+  repository root lists the paths openwiki may not cite at all, while `--claims-audit`'s **avoidable**
+  label comes from `churnReason()` in `scripts/wiki-claims-audit.mjs`, which applies its own fixed rules
+  (a lockfile by basename, a `.env.deploy` digest pin, a *line-addressed* `allowlist.yaml` entry, or a
+  cited range holding an `@sha256:` digest) and never reads the ignore file. A whole-file allowlist
+  citation is therefore ignored but is *not* churn, and a Dockerfile digest pin is churn but is *not*
+  ignored. The operator's 2026-10-12 change (item #739) added the two churn paths to the ignore list —
   `**/pnpm-lock.yaml` and `security/sast/allowlist.yaml` — beside the CD promotion files every deploy
   rewrites (`**/.env.deploy`, measured 36 times in September 2026, item #525/#613), which were already
   there. **Adding a path there while a sidecar still cites it crashes openwiki's Claims preflight**
-  (`EvidenceResourceError`, measured), so the
-  citing pages must be uncovered in the same change; and because a citation of an ignored path is itself
-  what makes a page "avoidable" in `--claims-audit`, the fix is always to cite the manifest, policy or
-  runbook section that states the fact instead.
+  (`EvidenceResourceError`, measured), so the citing pages must be uncovered in the same change; a guard
+  (`scripts/__tests__/openwiki-ignore-claims.guard.test.mjs`) reads the real ignore file and every real
+  sidecar so that state cannot be committed. Either way the fix is the same: cite the manifest, policy or
+  runbook section that states the fact, never the file that routine commits rewrite.
 - **A sidecar is a durability contract, not a note: V16 is what enforces it.** `openwiki/.page-manifest.json`
   lists every page openwiki has **covered** (`/openwiki/<page>.md` keys, each with its own `pageVersion`
   and a `completedBy` generator version). openwiki 0.6.0 and later re-prove each covered page before a run can

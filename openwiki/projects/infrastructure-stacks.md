@@ -4,14 +4,13 @@ title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-13T23:55:46.758Z
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-ea70eb6c045047448e446296
+    resource: repo://.gitignore
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
     resource: repo://backend/mc-service/tests/integration/health_test.rs
   - id: openwiki-source-318b395038e1943bc8a10f72
@@ -22,6 +21,8 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-5cff57d66fb9a3d88a18a36e
     resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
+  - id: openwiki-source-7a0ce0b0b1a10dd515633969
+    resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-ff035ef3df6eca36fc791d1d
@@ -34,6 +35,10 @@ sources:
     resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
   - id: openwiki-source-164936b930a31e48cf0a65fc
     resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
+  - id: openwiki-source-90e20f6cb63d8bd67d0fd623
+    resource: repo://infrastructure-as-code/docker/stacks/mcm.env.example
+  - id: openwiki-source-3d0ce5a1df7b9900637ae21d
+    resource: repo://infrastructure-as-code/docker/stacks/observability.env.example
   - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
     resource: repo://infrastructure-as-code/docker/stacks/README.md
   - id: openwiki-source-3b86829117dd0577834407fc
@@ -46,6 +51,8 @@ sources:
     resource: repo://infrastructure-as-code/opa/policies/agent_ui_action.rego
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
+  - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
+    resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
   - id: openwiki-source-a6996cae4bd83db81e823602
     resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-7efe877535a6dbac41dcc29c
@@ -62,7 +69,14 @@ sources:
     resource: repo://scripts/check-resource-naming.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T23:55:46.758Z" }
+  - id: openwiki-source-1dabdb308579a8f9d6d49612
+    resource: repo://scripts/gen-dev-secrets.mjs
+  - id: openwiki-source-ac2000cc53be6b0ffb997de7
+    resource: repo://scripts/up-mcm-agents.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-15T01:57:21.062Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -101,12 +115,38 @@ The agent layer has two distinct bring-up paths: `up-mcm-agents` (the heavy in-s
 variant) and `up-agents-prod` (`scripts/agent-stack.mjs`, the light containerized production-node stack
 used for local agent E2E).
 
-Every dev-stack secret is a fail-fast `${VAR:?…}` interpolation reference (the agent layer keeps a
-couple of deliberately optional `${VAR:-}` keys so it can come up without token exchange). The values
-live in gitignored per-stack `<stack>.env` files minted from the committed `<stack>.env.example`
-templates by `node scripts/gen-dev-secrets.mjs`; the stack's `include` uses the long syntax with an
-`env_file:` pin so that file is the interpolation source for the included component files (feature
-021). Full template table, generation kinds, rotation and fail-fast behaviour:
+Every dev-stack secret is a fail-fast `${VAR:?…}` interpolation reference. The agent layer is the
+exception: it keeps a couple of deliberately optional `${VAR:-}` keys (e.g. `AGENT_GATEWAY_CLIENT_SECRET`)
+so the gateway comes up without token exchange. The values live in gitignored per-stack `<stack>.env`
+files minted from the committed `<stack>.env.example` templates by `node scripts/gen-dev-secrets.mjs`,
+and the stack's `include` uses the long syntax with an `env_file:` pin so that file is the
+interpolation source for the included component files (feature 021).
+
+The pin is per include, not blanket. All of `auth`'s two includes, plus `audit`'s and
+`observability`'s single include, carry it; `mcm` pins only the two component files that interpolate a
+stack-scoped variable (`agent-db` and `agent-gateway`, both for `${AGENT_DB_PASSWORD}`) and includes
+the other five bare.
+
+`mcm.env` and `observability.env` also carry a deliberately **blank** `REGISTRY_HOST=`. It is topology,
+not a secret, and `check-topology-scrub.mjs` forbids a real host in a committed file, so the operator
+sets it per machine; a blank key that is not a `<generate:KIND>` placeholder is never filled by the
+generator, and until it is set the compose ref fails loudly naming the variable rather than resolving
+to an invalid image reference.
+
+The generator is **idempotent and back-filling**, not skip-on-exists: an existing `<stack>.env` keeps
+every value it already holds — including ones edited by hand — and gains only keys the template has
+since acquired, so a newly added key never requires `--force`, which rotates everything. A
+`<generate:KIND>` key present but **empty** is minted in place (an empty secret is a missing secret),
+while a blank fixture key is left alone. Deterministic fixtures such as
+`LANGFUSE_INIT_PROJECT_PUBLIC_KEY` / `LANGFUSE_INIT_PROJECT_SECRET_KEY` are copied verbatim even under
+`--force`, because the gateway and the feature-012 SC-008 verify test authenticate against those exact
+values. A run prints key *names* only, never values.
+
+Generation kinds are minted by the script, not the README: `b62-32` / `b62-48` (URL- and shell-safe
+base62), `hex-64` (32-byte hex), `complex-16` (upper+lower+digit+special from a URL/shell-safe
+charset), `unleash-admin` / `unleash-client`, and `mongo-keyfile` — the base64 replica-set keyfile
+content behind `MONGO_MC_KEYFILE`, which the template list documents but the README's kind list omits.
+Full template table, rotation and fail-fast behaviour:
 [stacks README](../../infrastructure-as-code/docker/stacks/README.md).
 
 Since feature 039 the per-service `profiles:` assignments live **in each included component file**, not
@@ -241,13 +281,25 @@ network alias so a missed reference fails loudly instead of silently resolving.
 `scripts/check-no-inline-secrets.mjs` asserts the structural property that no tracked compose file
 holds a literal credential: every secret-shaped key, password-bearing URL, and
 command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?msg}` reference, and an
-inline `${VAR:-default}` *fails* because it re-leaks plaintext. Separately, `infra-scan` (feature 035)
-enumerates the third-party images pulled in `infrastructure-as-code/**` and scans each with Trivy.
+inline `${VAR:-default}` *fails* because it re-leaks plaintext. `.gitignore` backs the template
+contract: it ignores `*.env` / `*.env.*` and carves out
+`!infrastructure-as-code/docker/stacks/*.env.example`, scoped to that directory so other deliberately
+ignored `*.env.example` files stay ignored. Separately, `infra-scan` (feature 035) enumerates the
+third-party images pulled in `infrastructure-as-code/**` and scans each with Trivy.
 Together these three are why a compose file added here is not just "a YAML file that runs" — it is
 parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 
 ## Gotchas
 
+- **Adding a key to a `<stack>.env.example` delivers it without a rotation — but only because the
+  generator back-fills.** `node scripts/gen-dev-secrets.mjs` on an existing `.env` seeds the keys the
+  file lacks instead of reporting "up to date" and returning; the older skip-on-exists behaviour was
+  the defect item #552: `mcm.env` held none of the four `BACKUP_TEST_*` credentials, `gen-dev-env.mjs`
+  had nothing to project, nine integration suites skipped, and a skip reads as a pass. The failure
+  mode to remember when a suite silently passes is *a missing key*, not a failing one — and `--force`
+  is never the fix, since it rotates every other value the running stacks were started with.
+  `scripts/__tests__/gen-dev-secrets.guard.test.mjs` pins the back-fill, the no-rotation property, the
+  empty-placeholder case and the no-value-echoed property against a synthetic mini-repo.
 - **No cross-project `depends_on` between the local stacks — bring `auth` up before `mcm`'s `app`
   profile manually.** Compose has no cross-project `depends_on`; this was a deliberate removal
   (feature 020), not an oversight. The failure is *not* a crash or a hang: [mc-service](./mc-service.md)

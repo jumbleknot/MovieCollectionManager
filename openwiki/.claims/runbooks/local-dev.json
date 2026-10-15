@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9a7ff8f9b570692db39b233a9218a107c2ce1ac4320d8eff5e61d53a432b296f",
+  "pageVersion": "sha256:d2806b4908ac22ad36bd1c7c7ef7e3d614bb47385f1237203ab0a9d480267144",
   "claims": [
     {
       "id": "claim_2c773503f0bb4882ba39eec23031c7f1",
@@ -26,37 +26,49 @@
     },
     {
       "id": "claim_21d767ac15904df3880e6476ddfbeafa",
-      "statement": "`node scripts/gen-dev-secrets.mjs` mints one gitignored `infrastructure-as-code/docker/stacks/<stack>.env` per stack from the committed `<stack>.env.example` templates; it is idempotent (`--force` rotates, `--stack=<name>` scopes), and a template that has gained a key since the file was written is seeded INTO the existing file rather than skipped — otherwise delivering one new variable would require `--force`, which would rotate every other running value. Item #552 extends the same rule to a `<generate:KIND>` key that is present but EMPTY (`KEY=`): it is minted in place, because it holds no value so filling it rotates nothing, whereas counting it as present made the run say up to date while the suite needing it skipped to green. A blank *fixture* key is left untouched (the template may leave `REGISTRY_HOST` blank on purpose). Each seeded run prints the key names it added or filled — never values — and warns that containers started before the run do not hold the new values, so the consuming containers must be recreated and `gen-dev-env.mjs` re-run.",
+      "statement": "`node scripts/gen-dev-secrets.mjs` mints one gitignored `infrastructure-as-code/docker/stacks/<stack>.env` per stack from the committed `<stack>.env.example` templates; it is idempotent (`--force` rotates, `--stack=<name>` scopes) and it COMPLETES an existing file rather than skipping it: keys the template has gained since are seeded INTO the existing `<stack>.env` (otherwise delivering one new variable would require `--force`, which rotates every other running value), and item #552 extends the same rule to a `<generate:KIND>` key that is present but EMPTY (`KEY=`) — minted in place, because it holds no value so filling it rotates nothing, whereas counting it as present made the run say up to date while the suite needing it skipped to green. A blank *fixture* key is left untouched (the template may leave `REGISTRY_HOST` blank on purpose). Deterministic fixtures (the LangFuse init keys, the `BACKUP_TEST_*` public halves) are copied verbatim even under `--force`. Each seeded run prints the key NAMES it added or filled — never values — and warns that containers started before the run do not hold the new values, so the consuming containers must be recreated and `gen-dev-env.mjs` re-run. Exit codes: `0` success · `1` missing/malformed template, unknown generation kind, or unwritable output · `2` bad args.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L9-L26",
-          "version": "repo-lines-v1:sha256:07adc52c755de99827cdf2db296128281286b9c5f381e4f8cf1b9f8650cff40b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMzU1OWI3M2ViZmI1YjQyNmEyYmNlM2E1M2Y2OGUyY2VhNmFlYzE5NjIzMGQwN2E2ZjQ5ZDFjYTYzNGRhNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkOTZmN2QwN2VkMTk2NzNiZDFlMTQzYmQ3YWMzMjBhOGI4NDM0YTUxZTZmZTNhNTEzOTA0MzE5M2QzYTMyMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1OTZlOGYxZjIzOGU0ODg5YzE4OGEyMDNjZDE0MWFlN2NmYzgyYTU5MDk1NzE0YzY4Zjg1ODkzNzM2ZDBjNzIifQ"
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L20-L30",
+          "version": "repo-lines-v1:sha256:49b6f289314cf29ec2252bf566643d606ebad50e44526bc61a2ae3fb20d88447:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZjA3MTk2YmQxMTU3Yjc1MmNmZjUyNjYxMzUzMTdlMTU3ZTAxYjU3ZDc5ODE2MjljODZjNjAzN2M5NTY1N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkOTZmN2QwN2VkMTk2NzNiZDFlMTQzYmQ3YWMzMjBhOGI4NDM0YTUxZTZmZTNhNTEzOTA0MzE5M2QzYTMyMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MDhiODQ4NWJhNDljZjJlYTcwYmNiNzg1YzgwNjg2NTMxNmU2NmVkZjAyZWVmYWFkZTQyOWI5MGU4Mjg1ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1OTZlOGYxZjIzOGU0ODg5YzE4OGEyMDNjZDE0MWFlN2NmYzgyYTU5MDk1NzE0YzY4Zjg1ODkzNzM2ZDBjNzIifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-secrets.mjs#L176-L184",
-          "version": "repo-lines-v1:sha256:81d0a1374753ee9a1af77de16bf55536e40c402cf589c16a28249dfb656e26fb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjYxNDAyYmVlYjZkMDczYmUxMTJjNDcyYTdkNDI0NTE2ZTEwMTRiMGIwNjczNTAzZTVhZmQ2NzZkYTJmMjFkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjYyMTBhM2Y4ODBiMjQ3NzU0YWVlMTZkMzZkMzE0NjE4ZGRkMTk1MjdiZGQyY2M0NWIwZWJlZjMzNGZmOWE2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUyZmY2Yzc3OWZlY2ZmODQ0OWYyYzE4MDQ3YzU4M2Y1YmFiZThkZDFmNDAxZDBjODMwYWRmOTQ5MjgzOGQ4YiJ9"
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L169-L219",
+          "version": "repo-lines-v1:sha256:ca86b9f41b57d2f4b33d4a88f302cd843adbb9a6aa40b2af238e5b18d1de2cce:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMzgzNDkwNDA3MzJhZGZjMDVkOTc0ZWYzNjQ5MmQ0NjE2ZTA2YWE5YWU1Y2ViNmNlZmYzNmFkYTY4NDU2ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMjkwOGExNDE2OTdkYjhiMzdkNWRjNjlkMTM1NGQ5MTU1MTgyY2VjNGUzNTA4ZjlhMWQyODIzNGZkM2M2NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3Nzg3ODcxYTA1MjM2MDZlMDQ1YjhjYTUzZDBjZDFmY2U0Mzg0ZTgzYWJiNGRmMGRiOWUxYWEyNzQ1MjY2ZDIifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-secrets.mjs#L97-L167",
-          "version": "repo-lines-v1:sha256:1a8dd73d6f86170c35e9b998e0b73727a5ea568be796883678a448980ad7febd:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNmMwNWM5NDBhZjliM2Y2ZGU3M2ExNzFlM2VmMDY0NDllNjFmZGFmYWVjNGQ2OWI2ZDNjOTg1ZmRjZTJlYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzhlMDA3Y2Q5NTFjNmU0ODE0N2NiZWQ0NzQzYWQ1OTIwNjhlNGIxODRlYWViYzRiZjAyODRjZTk1ZTFkMTAifQ"
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L94-L167",
+          "version": "repo-lines-v1:sha256:4f66a5b9b8c4400c0b5ab505213c1c26e939cd5d9d2b089af1c7406604a63ee9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODUwYTk3YWY3OTY2NDgzNWRiODVkMjM5YjJmMzBhODY0MjA1NzExZjc1ZTllYThjOGZhMzU1NTVkNWYyYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzhlMDA3Y2Q5NTFjNmU0ODE0N2NiZWQ0NzQzYWQ1OTIwNjhlNGIxODRlYWViYzRiZjAyODRjZTk1ZTFkMTAifQ"
         }
       ]
     },
     {
       "id": "claim_53fcb35f342144e38d0d6a2f566d7bc5",
-      "statement": "Every credential in the four stacks is externalized to a fail-fast `${VAR:?…}` interpolation reference so no clear-text secret lives in a tracked Compose file, `<stack>.env` is gitignored while `<stack>.env.example` is tracked, and `scripts/check-no-inline-secrets.mjs` (run in the guardrails workflow, with `--selftest`) fails the build if a literal credential is re-inlined into a tracked Compose file.",
+      "statement": "Every credential in the four stacks is externalized out of the tracked Compose files — most as fail-fast `${VAR:?…}` interpolation references, with services that take a whole environment file using `env_file:` instead (the BFF reads `frontend/mcm-app/.env.docker`) — `<stack>.env` is gitignored while `<stack>.env.example` is tracked through a `!infrastructure-as-code/docker/stacks/*.env.example` carve-out scoped to that directory so other deliberately ignored templates stay ignored, and `scripts/check-no-inline-secrets.mjs` runs in the guardrails workflow's `naming` job both as `--selftest` (proving the detector flags a planted literal, including an inline `${VAR:-default}`) and as the real scan over the tracked compose files, failing the build if a literal credential is re-inlined.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml#L107-L108",
-          "version": "repo-lines-v1:sha256:18b2f56dfd0a107251626c6003b535ebf8a02cca1de50d2884e4db46d8a8f641:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNmNjhmMzFlZDlmYzNkYjMyZDAzOTkwMjc2M2QzZmRkOTBjY2M3ZGU0NWU1NTk5MDJkMDIxMTYwZDI0YzRhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODY4MzcwYzJmY2I4YWVlMmZlZGQxZjMwNWJkMDc3ODc0ODFmNmE3NDk5NmMyZTgyMDk0NjRkYWE5NjY5MGE4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQxNjI2YjZlNTkyMzllMTg2NzViMzkwZWQzYWM1ZGFlYmQ3YTRkNWVlZDk3ZDhhMTIxMmJmMzNkZGExOGU0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWUzNWViYzExYmJkY2ZhNTIyMDYyMjlkOGVmYTYzN2QwYmQ5YzkwMDJlZWNiYzNlZjVmMmRmNzlkYWEzNTYzNCJ9"
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L105-L108",
+          "version": "repo-lines-v1:sha256:bd3f6334f80488787db71b622ce1c66b5ffd9ecb96c5d862144165eb8b8e9a67:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI1NTA5YjQzZGJkZjg2YjAxMDlkNjdkYjQ4YWE5ZDYyMmM0ZTQzZDNmMjJmYzRlN2Y0OTE5NTJhZjBlMmY2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODY4MzcwYzJmY2I4YWVlMmZlZGQxZjMwNWJkMDc3ODc0ODFmNmE3NDk5NmMyZTgyMDk0NjRkYWE5NjY5MGE4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzJiZmQ1N2FkMWMxZGZkZDNhM2Y1YTUzMGZmNGZiOTVlYmIxNWE0NDQ3MDY0MjYwMTEzNTkxZTI2NmUzYzliMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWUzNWViYzExYmJkY2ZhNTIyMDYyMjlkOGVmYTYzN2QwYmQ5YzkwMDJlZWNiYzNlZjVmMmRmNzlkYWEzNTYzNCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L28-L39",
-          "version": "repo-lines-v1:sha256:0adaf0be03a81d45e85917c4f0db70e17e924303e79b5f4278408b978b64e72d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YTRlYTU2M2E2MWZkY2FiMGRjNDdkNTI4MjA3MWQ5MTU1ZjRmNDNiYzNiYWUwZTFjMTNlOGYzM2MzYTVmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMTVjMTI5MzAzZTFkNGQ4MWJlZDY1YmEwNTk4MGVkMDkxYzJlZDEzZjNjNzViNWEzN2EzODY0NDI2YmE0OTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwYjExMjc5OTllOGI4YWYyMGMxNzMyNDBiZjg4YzFjMDRjZjRhYTNmZWY2MTIwYzg3Mzc1Y2Y3N2ExNmUzZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NmM4MTRlM2NiYmM4ZTM2NmE4OWNiMDBhZjFhOTRkMDZmNTcwZWE0YzdjNzk4Mzc3MzRhZjI0ZDJhMmUxNGMifQ"
+          "resource": "repo://.gitignore#L12-L17",
+          "version": "repo-lines-v1:sha256:a4518c9432b18802b1166ed61d66cbd3fa71b8afe3caba80ec740851b27416f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzkxM2JlMjU5YTY4YmUyMjRhOGY2ZmVmYTYyYTIyYTc1MGY4MDgyYjFkZmMzYzMwNWJiMGUyODhhZGYwMmI4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWYwYTE3OWViMGU3Y2UwODI2MmRjNDZlZGExMzUxYjIzZGUzNmIxM2U4MjhmODNhZDg5OWVjYzdhMzkxYjQzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzMwNzY4YjJmN2YyZGZkZGRmNTA3OTE4YzMzZjY0NThhYmM1NjM1Yzg0MTFkYTFhZjY2MzA0MWU2ZDAwN2VjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjNkZmRlNzIwMTAwZTdiZDQzMTYwNzgxZjMyZWZiOWYxYjMwMTZjNmIzMzAzYmJmZDdjMjM1ODk4NzEyZTI0NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L3-L6",
+          "version": "repo-lines-v1:sha256:dfc7fa0c67446c67033898c9791d5ebf7d9d1c123e6a4f12c603dec4f16e7b7d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM1NWE0YmJkOTNhNGMwNmNhZmMyMjdkZTI2M2I0YTFlMGM2YzA1MjQwYmRhMDFmZTg1MGI5MTBkZjFjZWFhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDhmNDc3ZWMyMzg2NmZlMDAwNDI5YzQwNjE0ZDc3ODExYzk1Y2I0ZjhmNzI5ZDAzZTg2MGUzZDMyYzllZWM5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzAxYjdkYTEwNzE5NTYyZGMwYmZmMzZjMGFlODUzMmIyODkyODM4NzExYzU3Yzc1ZTVjOWQ4ZWVjZDcyNmM1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDIxZDE5MGRlZTBjOTA0MTUyYzAyY2U1ZWIwNTE5OTRmMmQxNzQzYTE2YTdlNmUxMzNhMTc3MzYwYjliNTNkMCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L32-L44",
+          "version": "repo-lines-v1:sha256:f1569f98fa874af3cff94b41218d7bc8a8d1d5bbb959f2cd5abad1b35e015f67:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YTRlYTU2M2E2MWZkY2FiMGRjNDdkNTI4MjA3MWQ5MTU1ZjRmNDNiYzNiYWUwZTFjMTNlOGYzM2MzYTVmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwYjExMjc5OTllOGI4YWYyMGMxNzMyNDBiZjg4YzFjMDRjZjRhYTNmZWY2MTIwYzg3Mzc1Y2Y3N2ExNmUzZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1Y2YyN2I2NDc4NDc0M2ExMGUxODY3MGZkMTJjZTUzYzA4Y2VlMzgxZDY0OWVmNmI1NWVmN2FmMzIyNThjYmEifQ"
         },
         {
           "resource": "repo://scripts/check-no-inline-secrets.mjs#L1-L51",
           "version": "repo-lines-v1:sha256:50236ebf7b2ae9ecd52e10d147f1f75c2d7e50fbf696a2d74bcd45e486718b6e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOGY0YTFhM2EyMzU5NzVjOTk5YzlmNWVhMWE1NGJhYWVlNmJmYzBkOTM5ODkyZGE5NjBiZjM2NWZmZWIxNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YjUzNmViZmRlMGUwYTlmNTcyYjUzNTkyNGRlOWQyMGIxMDU0MDhlZDY3ZjZkNTJkNDVkNDRhNzdlNzVlZGMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-no-inline-secrets.mjs#L183-L210",
+          "version": "repo-lines-v1:sha256:9cc4bb082d89d462bbf5d2c8e5f9902b9893d01c70b74afab8ea2ee80c8e04a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNmVkZTMyZTY3MzQ0N2EzMWE2MDZlNTgxOTA1N2U5NmQwMzExYjgwODg1YTEwY2U5YTRiNjQ4OTAyNTE2NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ODVlNWJlZjQ2MDJmMzg4MTZiYTQ1YjJhNTA3NWE3YTVjYmEzMzgwNTkxYzZkMDhlMGZlNWUzMGJmY2M4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNTgwZmU4ODY4Yzc0Mjk2MDg5NmYzZmFkYTlmMTc2Y2M3NTUyZmVjNTRmMWJjMmEwOTVhYTgzOTIwN2NkOWYifQ"
         }
       ]
     },
@@ -421,10 +433,38 @@
           "version": "repo-lines-v1:sha256:755ae0052ae0a8c51e6b043bac84144965053c5a337b6e832cd9ebf3cf22e0d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NmY2YTkwMjI5NGY3ZTcxOTI1ZTk3MjNhNGE5ZWY2NjQ0MTE3YjBlODIxNTM1ZDkzYzljNzcwOTg0NWZmZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZDRmNjkzNWU5NzYxMTUwZTVlOTc4ZjYyNTNjNDdlNDI5MGQwZjdhYjgxYjM3ZGJlNDRlOGZlNDMxMDE1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOGJiMDNjMTBjOGIzZjFkZmIyNzU1YjhiNTA4NmJkNjA2ZDMzZjZlYTE2YmQ0Y2UyMTE2NmU1ZWEyYmZjYzgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_573cbbbc190240a492258ea4473a0b33",
+      "statement": "A Compose profile is not isolation from interpolation: Compose interpolates every service in an included file at PARSE time regardless of which profiles are selected, so a `${REGISTRY_HOST:?}` inside a profile-gated service aborted `up` for the whole mcm stack — which is why feature 073's backup destinations live in a separate `infrastructure-as-code/docker/backups/compose.yaml` brought up explicitly, and why `REGISTRY_HOST` is deliberately left blank in the committed templates (a blank value fails loudly naming the variable rather than silently resolving to an invalid image ref, and `check-topology-scrub.mjs` forbids a real host in a committed file).",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L15-L22",
+          "version": "repo-lines-v1:sha256:77df1b1533c641ef4400dc6d285406dc904e53dba10e71d8078ef9edcc01a64c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkMGQ2ZTYyNjY0Y2ZkNTk1M2Y0NjUwMzQzMDVkZDJlYjE4NmFhYmI2MTVjNzllZWRhYmFlOTg1NTdmZDkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAxNGEzYWYxYTVhNTU0M2ExYWE1NWUwMjhkNjJlNmRhYzYwNjMyYjA4YmRkMDgwYWQ1ZjM2OWQwZTVlODY3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzODFjYWQzNzU2NTUzZGE1YjA3OWY2NWEyNjI5YmM3MjU5ZDQ3NzUyYzNjM2JiNjE4YTY5ODJiMmZmNWM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmEwNzFlYTBmNjczNWZjNjUzYWNhZmM2MmJjOGZjMTUxMmNkMzhmZGQ0MzdiYjNmYzhkYWU1NTgyM2VhYmY4MyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.env.example#L31-L38",
+          "version": "repo-lines-v1:sha256:30e3078009b4dd0ac4a4cd18110f1972743e4320ec592d2c9b34a65a4881ee9d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU5ZTlmMDBiMzQyOWQ4NmI0NTQwNjA1YzU2ZGQ4MGQ4NDlhNGVjMDk1YWJiNTE3NjVlYmNlODg5ZGU0M2U3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcyZjU5ODk3MDY0ZjI2ZmYyYjU5Yjk4NjM5NzU0NWE3OTBlYzc2NTM1NDYxZjU1ZWIxYThjMDg2M2Q3MTZiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTAxYzAyNzQ3NmNhMzk3Nzc0N2Y5MGM1ZWFmZWRkNWZmZThmYTU4YmQyODljNzJlYzdiZjQxNGNmNTYxYjU0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/observability.env.example#L24-L31",
+          "version": "repo-lines-v1:sha256:42adaaf348b01d6cc14f536f32542929501a5d0dce21092286b77c827f89a00f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU5ZTlmMDBiMzQyOWQ4NmI0NTQwNjA1YzU2ZGQ4MGQ4NDlhNGVjMDk1YWJiNTE3NjVlYmNlODg5ZGU0M2U3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcyZjU5ODk3MDY0ZjI2ZmYyYjU5Yjk4NjM5NzU0NWE3OTBlYzc2NTM1NDYxZjU1ZWIxYThjMDg2M2Q3MTZiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYzY2E4OWNlYzIzOTU3MGM3OThhYTM2M2JmNzljNGZmMTU0MDdmMTRlZDdhOGZiOGFlYjcxYjVhZDY0MzdlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_741f590104c345d1859ba9ff91c91134",
+      "statement": "`scripts/__tests__/gen-dev-secrets.guard.test.mjs` pins the item #552 completion rule by copying the real generator into a throwaway mini-repo with a synthetic template: an existing `mcm.env` missing the four `BACKUP_TEST_*` keys gets all four seeded while prior lines are kept byte-for-byte, an empty `<generate:KIND>` key is filled in place (exactly one occurrence, never duplicated), a template-blank fixture (`REGISTRY_HOST`) is not treated as missing so a complete file still reports `up to date` and is not rewritten, and no fixture or minted value is ever printed — only key names.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs#L86-L144",
+          "version": "repo-lines-v1:sha256:0505b59b549eec0ce51f95082e8385e43ca061201150fe2b0e92490c6331ef77:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmY2NDBmNDJkZjBmMmU4MjY0ZGQ5MDVhZDkyNTFiZTg3ZDAyNTljNWVkYzA0OTM4MGYxNzdhNjA5NmYzODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjYzViNmE0NmUzMjljNGI0ZTkxNjZlODJlMzk2MTAwNDg4ODVlZjQ4YWRhMDg5MWNjZWRmODY1NmU1MWVmZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T15:19:14.150Z"
+    "at": "2026-10-15T01:57:21.062Z"
   }
 }
