@@ -7,6 +7,8 @@ tags: [docker-compose, local-dev, secrets, keycloak, runbook]
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-ea70eb6c045047448e446296
+    resource: repo://.gitignore
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
     resource: repo://backend/mc-service/tests/integration/health_test.rs
   - id: openwiki-source-e201e686a785f09b6d899f0b
@@ -23,12 +25,18 @@ sources:
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-164936b930a31e48cf0a65fc
     resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
+  - id: openwiki-source-90e20f6cb63d8bd67d0fd623
+    resource: repo://infrastructure-as-code/docker/stacks/mcm.env.example
+  - id: openwiki-source-3d0ce5a1df7b9900637ae21d
+    resource: repo://infrastructure-as-code/docker/stacks/observability.env.example
   - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
     resource: repo://infrastructure-as-code/docker/stacks/README.md
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-44335116b1e1ad90d0eaa667
     resource: repo://scripts/__tests__/gen-dev-env.guard.test.mjs
+  - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
+    resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
   - id: openwiki-source-85a6abb4f828129c0cce9653
     resource: repo://scripts/check-no-inline-secrets.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
@@ -39,10 +47,10 @@ sources:
     resource: repo://scripts/up-mcm-agents.mjs
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-15T01:57:21.062Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -58,9 +66,10 @@ pre-created `external: true` networks for cross-stack traffic. Lifecycle goes th
 [Infrastructure stacks](../projects/infrastructure-stacks.md) and
 [Published-port reservation](../invariants/published-port-reservation.md).
 
-Every credential in every stack is externalized to a `${VAR:?…}` interpolation reference — no
-clear-text secret lives in a tracked Compose file (see
-[Secrets management](../invariants/secrets-management.md)). Two one-time generator scripts mint the
+Every credential in every stack is externalized — no clear-text secret lives in a tracked Compose
+file: most are fail-fast `${VAR:?…}` interpolation references, while a service that takes its whole
+environment from a file loads it via `env_file:` instead (the BFF reads
+`frontend/mcm-app/.env.docker`). Two one-time generator scripts mint the
 per-machine stack credentials and project the dev realm's client secrets into the local env files
 before any stack is first brought up. The full stack/profile tables, the env-var reference and the
 realm-reseed recovery procedure live in `docs/runbooks/local-dev.md`; this page is the distilled
@@ -74,15 +83,18 @@ or use the pre-provisioned [containerized dev environment](./devcontainer.md).
    the agent Postgres store and the audit OpenSearch volumes).
 2. `node scripts/gen-dev-secrets.mjs` — mints one gitignored `infrastructure-as-code/docker/stacks/<stack>.env`
    per stack from the committed `<stack>.env.example` templates. Idempotent; `--force` rotates and
-   `--stack=<name>` scopes. A template that has gained a key since the file was written is seeded
-   **into** the existing file rather than skipped, so one new variable never forces a rotation of
-   every other value. A `<generate:KIND>` key that exists but is **empty** (`KEY=`) is likewise
-   minted in place — it holds no value, so filling it rotates nothing, whereas counting it as
-   "present" was the silent skip of item #552 (the run says up to date, the suite that needs the
-   value skips to green, and nothing names why). A blank *fixture* key is left alone: the template
-   may leave it blank on purpose (`REGISTRY_HOST` is set per machine). Each run names the keys it
-   added or filled — **key names only, never values** — and warns that containers started before the
-   run do not hold the new values, so they must be recreated and `gen-dev-env.mjs` re-run.
+   `--stack=<name>` scopes. An existing `<stack>.env` is **completed, never skipped**: keys the template
+   has gained since are seeded **into** it, so one new variable never forces a rotation of every other
+   value. A `<generate:KIND>` key that exists but is **empty** (`KEY=`) is likewise minted in place — it
+   holds no value, so filling it rotates nothing, whereas counting it as "present" was the silent skip of
+   item #552 (the run says up to date, the suite that needs the value skips to green, and nothing names
+   why). A blank *fixture* key is left alone: the template may leave it blank on purpose (`REGISTRY_HOST`
+   is set per machine, and `check-topology-scrub.mjs` forbids a real host in a committed file). Each run
+   names the keys it added or filled — **key names only, never values** — and warns that containers
+   started before the run do not hold the new values, so they must be recreated and `gen-dev-env.mjs`
+   re-run. Deterministic fixtures (`LANGFUSE_INIT_PROJECT_PUBLIC_KEY` / `..._SECRET_KEY`, the
+   `BACKUP_TEST_*` public halves) are copied verbatim even under `--force`. Exit codes: `0` success · `1`
+   missing/malformed template, unknown generation kind, or unwritable output · `2` bad args.
 3. `node scripts/gen-dev-env.mjs` — projects the realm's client secrets out of `stacks/auth.env`
    into the BFF env files, so **realm-secret == BFF-secret by construction** and a login works on
    first boot with no manual import. It **does not import the realm**; `up-auth` does that (step 4).
@@ -93,9 +105,14 @@ or use the pre-provisioned [containerized dev environment](./devcontainer.md).
    `pnpm nx up-mcm infrastructure-as-code`, then re-run `node scripts/gen-dev-env.mjs` to turn the
    projection's ending into `VERIFIED against the realm`.
 
-`<stack>.env` is gitignored; `<stack>.env.example` is tracked. A CI gate
-(`scripts/check-no-inline-secrets.mjs`, run in the guardrails workflow with `--selftest`) fails the
-build if a literal credential is re-inlined into a tracked Compose file.
+`<stack>.env` is gitignored; `<stack>.env.example` is tracked — `.gitignore` ignores `*.env` and
+`*.env.*` and then carves out `!infrastructure-as-code/docker/stacks/*.env.example`, scoped to that
+directory so other deliberately ignored templates stay ignored. A CI gate
+(`scripts/check-no-inline-secrets.mjs`, run in the `naming` job of the guardrails workflow, once with
+`--selftest` and once as the real scan) fails the build if a literal credential is re-inlined into a
+tracked Compose file; the selftest proves the detector flags a planted literal, and a
+`${VAR:-default}` inline default fails just like a raw literal. Run it locally with
+`node scripts/check-no-inline-secrets.mjs` (`--selftest` optional).
 
 ## What each generator writes, and how it fails
 
@@ -171,6 +188,13 @@ carries no secret values on any path.
   old single-project footgun is gone; treat each stack's lifecycle target as independent.
 - **`--profile` flags must precede `up`/`down`** with Docker Compose v2 — a flag placed after the
   subcommand is silently ignored.
+- **A profile is not isolation from interpolation.** Compose interpolates every service in an
+  included file at *parse* time, regardless of which profiles are selected, so a `${REGISTRY_HOST:?}`
+  inside a profile-gated service aborted `up` for the **whole** mcm stack. That is why the backup
+  destinations live in a separate `infrastructure-as-code/docker/backups/compose.yaml` brought up
+  explicitly, and why `REGISTRY_HOST` is deliberately blank in the templates — left blank the
+  Compose reference fails loudly naming the variable instead of silently resolving to an invalid
+  image ref, and `check-topology-scrub.mjs` forbids a real host in a committed file.
 - **The two BFF processes share one Mongo, so their keys must agree.** `BACKUP_CREDENTIAL_ENC_KEY`
   and `BACKUP_TICK_SECRET` are reused from `.env.docker` first and `.env.local` second, because the
   containerized BFF and the Metro dev loop write to the same BFF Mongo — a destination or credential
@@ -272,7 +296,12 @@ set of documented `.env.local` files from the runbooks and fails if one is neith
 declared exception, so a documented file that nothing writes shows up here rather than three weeks
 later in someone's `nx affected`. The same guard pins the two loudness rules — a deliberately skipped
 file must be named in the generator's output, and an `mcm.env` missing `BACKUP_TEST_*` keys must be
-reported with the back-fill command while printing no value.
+reported with the back-fill command while printing no value. `scripts/__tests__/gen-dev-secrets.guard.test.mjs`
+pins the item #552 completion rule from the other side: an existing `mcm.env` missing the four
+`BACKUP_TEST_*` keys gets all four seeded while prior values stay byte-for-byte, an empty
+`<generate:KIND>` key is filled **in place** (one occurrence, not a duplicate), a template-blank
+fixture (`REGISTRY_HOST`) is not treated as missing, and no fixture or minted value is ever printed.
+Both guards run the real script inside a throwaway mini-repo, so they are offline and keyless.
 
 See [testing tiers](../invariants/testing-tiers.md) for how these local suites relate to the gating
 tiers, [Keycloak](../projects/keycloak.md) for the realm and its clients, and

@@ -29,16 +29,18 @@ sources:
     resource: repo://scripts/wiki-generate.mjs
   - id: openwiki-source-e3418ba4f663de6f0edbcde6
     resource: repo://scripts/wiki-maintain.mjs
+  - id: openwiki-source-238c6bb3246fc134ab159b1e
+    resource: repo://scripts/wiki-provider.mjs
   - id: openwiki-source-8591439162d997daf59a1ac6
     resource: repo://specs/043-openwiki-okf/data-model.md
   - id: openwiki-source-c8029c93bdccd81963968b22
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T22:25:03.651Z
+    at: 2026-10-15T01:57:21.062Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -109,7 +111,12 @@ proposal, and the always-on gates sit after it rather than inside it.
   (`scripts/__tests__/wiki-maintain.guard.test.mjs` fails an unset or too-small cap, a model id the
   generator's own resolver does not match, and any id that would land on the old 4096 fallback).
   `scripts/wiki-generate.mjs` refuses to start without that cap, so a direct script invocation is not a
-  way around it either, and a run message must travel in `WIKI_RUN_MESSAGE` rather than `nx --args`,
+  way around it either. The target's 16384 is a **floor, not the effective cap**: the `fireworks` row in
+  `scripts/wiki-provider.mjs` raises it to 65536 — DeepSeek V4.1 Flash reasons *inside* its output
+  budget, and a worker writing a whole page in one `write_file` turn ran out at 16384 (item #719) —
+  while `scripts/wiki-generate.mjs` never lowers an explicit higher value, and the `anthropic` row has
+  no raise because the Anthropic SDK refuses a non-streaming request whose `max_tokens` implies more
+  than ten minutes. A run message must travel in `WIKI_RUN_MESSAGE` rather than `nx --args`,
   which strips its quoting and leaves the run unscoped. For the same reason the target runs
   `--update`, never `--init`.
 - **The conformance gate is fail-closed with no opt-out.** An absent, empty, or partially-written
@@ -134,7 +141,11 @@ proposal, and the always-on gates sit after it rather than inside it.
   left over, and reports the rest without writing it to the backlog — the bound is what stops one
   edit to a widely cited file from enqueuing every concept citing it at once. A drifted page under a
   **directory** `resource` is unplannable, since any commit under it re-flags the page, and a parked
-  page is excluded and listed instead. Drift is never fanned out from changed paths, so a page whose
+  page is excluded and listed instead. A drift candidate the **open proposal already holds fresh** is
+  covered, read from the proposal branch, because the proposal's pages are not on `main` yet and
+  `main`'s stamps call them drifted — only *drift* is skipped that way, since freshness compares commit
+  dates and a merged branch keeps its earlier date, so work queued by a source change or a failure is
+  always planned. Drift is never fanned out from changed paths, so a page whose
   source moved *before* the marker can be planned again without the hand-seeded sweep that used to be
   the only way to clear the V12 list. Two further consequences worth knowing: a concept that cites a
   source but carries no usable stamp is counted and printed rather than silently dropped, because
@@ -170,7 +181,9 @@ proposal, and the always-on gates sit after it rather than inside it.
   `resource`** means it is authoritative — listed under `authoritative:` in `openwiki/protected.yaml` —
   and the learning belongs **in the concept itself**. `openwiki/INSTRUCTIONS.md` §7 is the full rule,
   and `okf-governance` enforces the classification in both directions: a concept that is neither a
-  resolving derived summary nor a listed authoritative one fails the gate. Nothing here changes
+  resolving derived summary nor a listed authoritative one fails the gate (G11), and an authoritative
+  concept whose effective policy is `regenerate` also fails (G12) — a summary of nothing could only be
+  paraphrased, which is exactly what the protected passages exist to prevent. Nothing here changes
   `CLAUDE.md`, which is an index into the bundle and is gated against re-growth.
 - **The generator's own account of a run is never trusted.** `wiki-maintain` verifies each slice by the
   pages that actually landed in the working tree, by bundle conformance and by whether policy permitted
@@ -180,6 +193,15 @@ proposal, and the always-on gates sit after it rather than inside it.
   stopped at its page or wall-clock budget with work carried forward — it is not a failure.** The
   numbers behind those budgets live as constants in `scripts/wiki-maintain.mjs`, not in prose: change
   one and a guard test fails offline because it derives the CI job's timeout from the same constants.
+- **The run record is committed state, and the marker commit must not re-trigger the job.**
+  `openwiki/.maintenance-state.json` is committed because CI runners are ephemeral and the marker has
+  to advance even on a run that produced no proposal; it is **not** the tool's own
+  `openwiki/.last-update.json`, which advances only when wiki content changed — which is exactly why
+  the free "nothing to document" path used to be unreachable. The step that commits it pushes with a
+  `[skip ci]` message, and the job's own skip check recognises both that message and a bundle-only
+  change, so the workflow cannot trigger itself. A push race with `main` is handled by rebuilding the
+  commit on the current tip and merging the record three ways, never by replaying this run's record
+  over a newer one.
 - **Neither budget is a monetary bound.** OpenWiki reports no token or cost figure of its own; a run's
   usage is captured by a tap and recorded, but nothing enforces a spend ceiling, and the wall-clock
   budget exists to bound occupancy of the shared CI runner. Do not describe these as cost controls.
