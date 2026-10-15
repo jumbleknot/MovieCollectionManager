@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c1cbc64af19617bcc119a151ca65c27815fcdb6adfc35e92bba8abf5826edc60",
+  "pageVersion": "sha256:8b2a9d552028de278a8b966636ce5e6536a3b56b87949cf24ba1a148f8fad857",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -134,7 +134,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md",
-          "version": "repo-file-v1:sha256:92d366c231c357bc27d11b1b2bb8ad2d4bba17f205e4c011f146199ff697023b"
+          "version": "repo-file-v1:sha256:e701b46b14006e94d6f7265f121a3a33af13ec567f9cc8629092d9577a9a42aa"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -401,10 +401,48 @@
           "version": "repo-lines-v1:sha256:9c0f43eca7029550d027f58219494f2e7007a4553ca62e12315bb0cff443cce5:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk4Y2NmZWM2MDA0YjQyNjliZGI1NGUwOTE3MGFlMTc1MzU0ZjUzMzA4MTk3ODI0N2ZhMjE3YzY3MGY1MjhlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQwNmU1MWM0YmUzNjkzMGY4M2QxZTBkOTM5ZDEyMjhhNDFhM2EyMzcyMzY3MzMwMzA0MzY5N2Y5N2M1NDNmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGIyNmQ4MDZmZDgyMzg3NGQ5MTY5ZWY5NDk1ZWI5Yjk4NjZiMTdkMTg1NGE1M2I4YmU0MGQxMjZhZjY2ODhkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY2YzgxNGUzY2JiYzhlMzY2YTg5Y2IwMGFmMWE5NGQwNmY1NzBlYTRjN2M3OTgzNzczNGFmMjRkMmEyZTE0YyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_620b35d48c924692a1a15ccde3faba4f",
+      "statement": "All seven [[stack]] blocks in stacks.toml name the same Komodo Periphery server (server = \"Local\"), the same linked_repo = \"mcm-repo\" and the same branch = \"main\", so a single ResourceSync reconciles the whole production topology against one host and one repository branch.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5921ef164a64939b9f33d758a8ed6dd",
+      "statement": "The three feature-025 Control-Tower support stacks (prod-audit, prod-observability, prod-vault) are the opposite of the four core stacks on the adopt-versus-create axis: the ResourceSync created them, so their first apply was a from-scratch deploy, whereas prod-auth, prod-mc-service, prod-mcm-bff and prod-movie-assistant already existed as hand-created Komodo Stacks carrying the canonical names and were adopted in place.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:7cf49183e2ff4b36e03076ae14a4d3bcdd95d14b664c7333f2f407458d9dea23"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1cd0505d1c74d3ba703d21a9b47e6e7",
+      "statement": "The infra-image CVE scan excludes an image by build ownership (membership of a built-image name list) rather than by registry prefix, so an image this repository builds in a different workflow — the from-source jumbleknot/minio, gated by its own minio-image publish workflow — is excluded from infra-scan rather than being left uncovered by both scanners.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/minio-image.yml",
+          "version": "repo-file-v1:sha256:9415bcaa61d3f358cb427539b986018a63240bf71042ec348c5cbbc993824880"
+        },
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs",
+          "version": "repo-file-v1:sha256:99dc8addc843dfc62c6cd987ac8d727a716852b8757bcc5b579860d4ea2472fd"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T01:57:21.062Z"
+    "at": "2026-10-15T10:11:13.472Z"
   }
 }

@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
-description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the canonical egress allowlist behind the in-container firewall, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock and pnpm-store traps.
+description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the canonical egress allowlist behind the in-container firewall, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-12T18:54:07.831Z
+    at: 2026-10-15T10:11:13.472Z
 sources:
   - id: openwiki-source-f7c89635dfc6efb0ecec007f
     resource: repo://.devcontainer/devcontainer.json
@@ -20,6 +20,8 @@ sources:
     resource: repo://.devcontainer/init-firewall.sh
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
+  - id: openwiki-source-7e1c4d46c53be9bf32311e06
+    resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-84525c5b1053cfa785b83c28
     resource: repo://.devcontainer/verify/run-harness.sh
   - id: openwiki-source-a9fc7285078c8062777b3180
@@ -30,7 +32,7 @@ sources:
     resource: repo://scripts/devcontainer-ollama.sh
   - id: openwiki-source-238c6bb3246fc134ab159b1e
     resource: repo://scripts/wiki-provider.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-12T18:54:07.831Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -57,6 +59,17 @@ heavy image to be prebuilt and pulled per open. The pinned ref arrives from the 
 `MCM_DEVCONTAINER_IMAGE`, so the forge host literal never enters git. The local-fallback tag is
 **colon-free** because `${localEnv:VAR:default}` truncates its default at the first colon — an
 env *value* containing a colon (the digest pin) passes through intact.
+
+**That thin layer must stay thin, and the reason is measured.** Every real setup step belongs in
+`toolchain.Dockerfile`, because a layer added on top of the prebuilt image that changes file
+*metadata* — a UID renumber is the tempting one — copies every touched file **up** into the new
+layer. Measured 2026-08-17: a "thin" renumber layer duplicated the entire ~13 GB image and the build
+died in `exporting layers` with `no space left on device` on the Android system image. The same
+disk exhaustion is the likeliest cause of an unrelated-looking `docker-outside-of-docker` feature
+install failing with exit 100, which reads as an apt fault and is not one. `updateRemoteUserUID:
+true` was also tried and does not engage on this path, and a chown-based repair is a see-saw (chown
+to the container user and the VM user fails, and vice versa — measured in one run as "container git
+write: OK / VM git write: FAILED").
 
 **Egress is default-deny with an allowlist.** `init-firewall.sh` programs the container's own
 `OUTPUT` chain (plus the nested dockerd's image pulls) and deliberately leaves `FORWARD` to
@@ -211,6 +224,25 @@ a claim asserted from inside the thing being claimed about is not proof.
 - **A Docker CDN blob timeout on `docker compose up` is usually firewall/CDN-IP drift, not a real
   outage** — re-run `init-firewall.sh` to re-resolve the allowlisted CDN IPs and retry, rather than
   disabling the firewall.
+- **`pnpm nx e2e mcm-app` cannot run in here — chromium cannot be installed.** The Playwright browser
+  CDN and the Debian apt mirrors are deliberately outside the allowlist, so `playwright install`
+  times out and the baked-in chromium lacks system libs. Run Playwright in the official image with
+  `--network host` instead, pinned to the repo's `@playwright/test` version. **Two traps, both
+  measured:**
+  - **`--user "$(id -u):$(id -g)"` is not optional.** The image runs as root and `/workspaces/mcm` is
+    bind-mounted, so every artifact Playwright writes (`test-results/`,
+    `playwright-report/`, `setup/.auth/user.json`) lands in the working tree owned by root. The
+    *next* run — containerized or not — then dies with `EACCES … test-results/.last-run.json`, and
+    `coder` cannot even delete the directory. Measured 2026-08-03; `sudo chown -R coder:coder
+    /workspaces/mcm` is the repair, and `onCreateCommand` self-heals the known paths on recreate.
+  - **From a worktree the `-v` mount goes QUIET rather than erroring.** Only `/workspaces/mcm` is
+    bind-mounted from the Docker host, so mounting `/home/coder/worktrees/<slug>` **succeeds** and
+    yields a near-empty directory — Docker auto-creates the path. Measured 2026-09-21: 2 entries
+    where the worktree has 31, surfacing as `stat node_modules/.bin/playwright: no such file or
+    directory` or as a run that collects zero tests. Stage the worktree into a named volume; do NOT
+    copy it into `/workspaces/mcm`, which is the checkout another session is working in.
+  The image tag is coupled to the lockfile and enforced in CI — see
+  [e2e-testing.md](./e2e-testing.md).
 - **The Android emulator runs natively in the dev container** (baked-in SDK + `android-34`
   `google_apis` `x86_64` system image, host `/dev/kvm` passthrough through the privileged container),
   which is the sole reason this path is retained. The SDK sits **late** in the toolchain image, so a
@@ -240,7 +272,8 @@ a claim asserted from inside the thing being claimed about is not proof.
   on the host: `docker ps`, `docker rm -f` every container that is NOT this one, then restart the
   daemon. **Do NOT delete `meta.db` and do NOT `docker volume rm` / `docker system prune --volumes`**
   — `meta.db` deletion destroys every image in the DinD engine, and `/workspaces` is itself a named
-  volume, so a prune takes your working tree with it. Full commands: `docs/runbooks/devcontainer.md`.
+  volume, so a prune takes your working tree with it. Full commands:
+  [the source runbook](../../docs/runbooks/devcontainer.md).
 - **Editing a file under `node_modules/` writes into the pnpm STORE — every copy changes, and
   `pnpm install` will not undo it (measured 2026-09-07, item #242).** The store is content-addressed
   and `node_modules` entries are hardlinks into it, so files with identical content share one inode
@@ -303,4 +336,4 @@ a claim asserted from inside the thing being claimed about is not proof.
   Clean up: `git worktree remove /home/coder/worktrees/<slug> && git worktree prune`.
 
 Full prerequisite checklist, the Windows-host boot sequence, and the complete security-posture
-narrative: `docs/runbooks/devcontainer.md`.
+narrative: [the source runbook](../../docs/runbooks/devcontainer.md).

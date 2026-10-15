@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3a62f458ea42503485ba3d3d0aa07716d9b5c9a18fe885763d882f4545df180e",
+  "pageVersion": "sha256:04507dd7f44dc850d99183032d67813c5130064d9ef2693dea667e3856baf11e",
   "claims": [
     {
       "id": "claim_cbafc350ce384b609f6c1b3d75c5c485",
@@ -255,7 +255,7 @@
           "version": "repo-lines-v1:sha256:30e62fa6aecd7a939c0f34efeaf40e0bf2f9cd5ef4e1747908852139b84f5901:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZDk1Yjk0OTZhY2YzMDlkY2Y2ZTA0MWQ5ZTdjOWNmMjJhYjBkZjY0NDYwMDM2MjI4NjEzZTJhYWM1Nzc2ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwOTIxMmZmNjcxNTUwMzAzZDI1YWQxNTFmNDNmNWU4ZTk4MzdmM2EwZTQ1MDA0MWRiMTJlNDk2ZDhjMDRkMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1ZTI1ZGJkNDE1YTg3M2E3NDljNzdhZjJkMDFlN2MyODU2ZTgyMTQ0MGVjZDhiNTc3MzA5ZjI0YTU5YWVmYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4NjVjODMyNDMwM2IyZjNhZGRhNjEwMGY1MjRlYWQ1MWJmNWQ2NjhiMzk0NGFmNWNlMjY4YzE4N2FjODQzMWYifQ"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md#L490-L511",
+          "resource": "repo://docs/runbooks/renovate.md#L491-L512",
           "version": "repo-lines-v1:sha256:8ba9bdf3a83fc936fbb7aee3ac3fec0b8f100c570f4b112c4975c5e517d91eb7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NjUwOWNjODJkYjhjODFkNGM0NmNjNWQzZWYxNGZkZmFmYjEzMDc5MWZlZTZlZTM5OGMxZjFiNmNkN2QyNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4NWRjNmE1MDU5OWEzODI1ZDFjYjQyOWM3OTA5MDVkZWE0Yjk4MTFhNDdhOWZmYTFhMzFjMjYwMjFlZTkxN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MjllYTBkYTQ2ZDI0MDU5MGM3ZjEyOTcyMTc1OTNmM2JjNDM2YjY3MjI4ZTY4ZjZmNGNmNGY3YjcwODhmMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlOWFlNTBhZDAzNWQ0MTJmMzZmY2EwMTU2ZWI2Mjg5MzU1MWZhMGU1OTMzY2I3NzU2MTBjMGJjOTNkNmVmMzkifQ"
         }
       ]
@@ -265,7 +265,7 @@
       "statement": "A surviving `renovate/*` branch is not evidence of pending work: `rebaseWhen: \"conflicted\"` skips the isBranchBehindBase guard, an already-merged branch is not conflicted either, so Renovate reuses it and opens a PR from the stale commit verbatim — and a reused branch bypasses the branch budget, which is gated on !branchExists. The check is `git merge-base --is-ancestor`, and `renovate/lock-file-maintenance` is hard-exempt from Renovate's own pruning by exact name in finalize/prune.js, so only default_delete_branch_after_merge (UI merges only) ever removes it.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L160-L231",
+          "resource": "repo://docs/runbooks/renovate.md#L161-L232",
           "version": "repo-lines-v1:sha256:0075263721569c50eb46a2bcaec631459447d50bd04f8a657a77c4b226d4306e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwYjdjYTk4NzMwOGNiZTM2OWZlMTllMDBkZmQ4NTIyNzI0Y2E4OTViMjdmMGY1YTBkMzA5N2RmYzNlN2QxNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NTdjMDA3YzNhMTc4MGEwMzhmZWIwNTI4MjMxYjRmZWYyZDZkZTcwYjdkNjRlYzJiMGU2M2VkZmRlYjM5NTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkOGI0NGU4MDY4ZTk4MjZlMmIwNDdhMmE2NmMzYWMxOTFlOWEyNDJlZDgzMTgxODAwNDVmODFiOThiZWU1MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNDM3ZjA5NTRkNWI5NWYxYzMwMzA4ODJlNzY4NDBjMGE4NDI5MmNkODgxMzU5NGIxOTE3NDY2MTE4ZWU4YzIifQ"
         },
         {
@@ -279,7 +279,7 @@
       "statement": "Merging past a pending `renovate/stability-days` check defaults to HOLD and is permitted only when all three conditions hold: the wait cannot satisfy it because the pending state is structural rather than temporal, the posture has been measured first with the gate's own criteria and recorded on the PR, and the update has security value now; branch protection treats the check as advisory so the forge permits the merge, which is exactly why the rule exists.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L397-L422",
+          "resource": "repo://docs/runbooks/renovate.md#L398-L423",
           "version": "repo-lines-v1:sha256:ad4930d327e930304ff7e4e6eab25ea33098845329b4428486d09e6b7212ac74:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YjZkMzRjOTg0MDBlOWIyY2ViZTg0NjM3NmQwMWIwYzdkZjI0ZjBmNTU5NzQwNTY0YjM4NThkNThlMjA0ZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NzBiZmQ0NjQ3YmFmZTI0OGU2ZDhiOTAyMGVkMzExOWMwZjE4ZDk0ZDQzMGEzNWRmYmNkOGZiNWE1NjQ2ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzNTRiNzdmY2VmZjBkNmIyOGNlYmMzOWIwYTY5MGEyYTM5ODQ1YjljZGZiNDdjYWYxZDAxOTU5N2IwMmY3YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4YWYwOTNiMWRiOTIxM2Y0MDUzNjUxMGRiNmY0NzliNTZlMGRjMmRkYTQ5ZDEzZmRlYzdmM2QzOWRkZDAxNmMifQ"
         },
         {
@@ -293,7 +293,7 @@
       "statement": "Autoclose requires EVERY dependency in a group to be satisfied on main: finalize/prune.js only offers a branch to the `- autoclosed` path once no upgrade in it remains, so a hand-carry that is one version short does not close the PR — it silently rebases or shrinks it. The verification is `git merge-tree --write-tree main <branch>`, and a commit message's claim about its own content is not evidence.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L443-L471",
+          "resource": "repo://docs/runbooks/renovate.md#L444-L472",
           "version": "repo-lines-v1:sha256:ccdef04d0f63180cb73d38b7029653f3e761c7b643bfef12e011630a71c92813:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZDdkMDM5YjUxMDZiMTM5NjgxOGE3MDg0NzU1NDJkNDliMzdiYTE0NjljYjY1ZGJiMjU1ZGQ5NTdhYjRiYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5M2M2YTgxNDU4OTQwZWJhNjU2OGIzNjcyYzc1OGZiMTRhZjg1NWRmZDhjNjU4YWQyMWYwNWEzYzYzMDczZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMzQwYWQyYTJmMDExY2M3NzRkYzk1MzMxN2Y5NTFjMzY5NWZmZTc3NjExNDE3MjQwNjkzMDBhZWQ5OTlhNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ZGE3NDA5OTJkZGY0ZmEyYTkxODk4OWMzMmNiYjZmZGYwMGI4MWNmODZmYTIyM2JkODVhMjdhOTBhM2U0OTIifQ"
         }
       ]
@@ -303,11 +303,11 @@
       "statement": "Closing a `lockFileMaintenance` PR does NOT mark the channel rejected, unlike every other Renovate PR: `recreateClosed` resolves true for that upgrade class in updates/generate.js, so check-existing.js returns before looking for a closed PR; the exception is documented so it can be acted on deliberately, not so the blanket never-hand-close rule is relaxed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L343-L349",
+          "resource": "repo://docs/runbooks/renovate.md#L344-L350",
           "version": "repo-lines-v1:sha256:4f03228065bb3f6d8b6fb10885b283a8e76b2029e884b872a8b1867b415e892c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3ZDUxODYxZmMwNjNkOWU3NzRkYmNiMWQ2YjY2MzMxNGEzYTQ4YjBlMDAxNDY5NjY4M2VkZjA1NGExNDliZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg4NjAwMTkxODUwNDQ5NjhiODlhNzMxMTQ0ZjZkMTk4MzU3NjBmOWZkODVjZDlkMTRiZmIyYjE0MTA2MTNjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjI0ZmU4OTM4ZGY0YTgyNWRiMjI4MjMzYjgxMDRjYWIzODgzOTc0MWYxODkxYmE4YTE4OWRkNGI0YzVkYzllNiJ9"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md#L354-L378",
+          "resource": "repo://docs/runbooks/renovate.md#L355-L379",
           "version": "repo-lines-v1:sha256:151b5cdbb097e1ab7d83916b4b3bacb743b106ea90be4598430db9e58a5570b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyNGIyZDkxY2YyZTNjY2I4Yjg2YmU3ZTZlZjlmNjkzODBiYzg1YTM4YzVmYjUyOGFhYmVmODYxNzliZjk3OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZWU0NjE3ZTVmM2I5ZTAyMGQzZDlmY2JjNDk3ZDRmYzA4ZWVmNGFkYjI2YTZmOWEzZTBmNjcwOGYyNmI5MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkZmE5OTQxMzZlMDcyODY1ZWQ2MmY2MzQxYjQ5ZDc5ODJkMmUxMGQ5Mjg4NTI3NzFkMTBkMjdiNDhjMzc4MzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhN2FjNmY4NzE0OGVmODQ0Zjg2M2U2MjNlMTJhZWNhZjgyYmIyNDI2MThiNjczMDVhYjZiM2M0NDllMDc1YWMifQ"
         }
       ]
@@ -371,7 +371,7 @@
       "statement": "uv's single source of truth is ONE version string repeated at every site (three install-script URLs, five setup-uv inputs each carrying a `# uv-version` marker, and four image tags), held together by one customManager plus the `uv pin` packageRule and asserted equal across every site by the guard test — deliberately not a shared file, because astral-sh/setup-uv's `version:` input is an Actions expression and cannot read a repository file, which would leave the five action sites unpinned.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L1088-L1117",
+          "resource": "repo://docs/runbooks/renovate.md#L1089-L1118",
           "version": "repo-lines-v1:sha256:61d4f3bb2f55fd2f859d391f489f44beae293ba21fc1d246a5f27c8f423a671a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2OTdlNjAzNmFjNjdhM2ZlNmFlNDhlYWNhYmQxNWUzYmM5NjRhZjYyNTM2ZGVlMGE3MzJlYWU0MTllYTY3NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwOGI5YzkxYjM5M2Q4ZDgxN2VmMGFhMTJkYjcyZDczNjIyOWEzN2JkYzEyODY2ZGQ2NzIwNTA3MmRkMzBiZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0YjFjYTE5ZDkxNWQ0Njk4NDllNDMyMDFiZTIzNWE1MTU2ZGZkNjE4OWZkMWU5OTQ2MTY0M2I2MWI5ODQzMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyMWJkMDk5OTNmZjRjZjIxZThhMDJiMzE0ZDI2ZTMxODI1OWYzY2NjYjBhMDU3YzliZWE1ZmM1OTYyOGNmMjAifQ"
         },
         {
@@ -403,7 +403,7 @@
       "statement": "The release-age cooldown gates only the package Renovate proposes, not transitives a lockfile regeneration drags in: pnpm independently verifies the lockfile against supply-chain policy at install, so a compliant bump can resolve a transitive published hours earlier and redden required contexts at `pnpm install`. Handling is to wait for the cutoff and re-run; item #271 decided this friction is accepted rather than mitigated, and it must not be spent as a `minimumReleaseAgeExclude` convenience entry.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L546-L572",
+          "resource": "repo://docs/runbooks/renovate.md#L547-L573",
           "version": "repo-lines-v1:sha256:cd8feb583945fb92136ca5f8c38af8402013640c8065e311985e7ae75e3d8943:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5MjYzZWRiOWEyNmViZTRjNzI2YTdiZGY0ZDgyNGRmYTNlOGRlNmYyMjVkMTc5ZTY3MTBlNWJhMGQzNTA2YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZDk5YjNhZTAyNWUxMGQ5MTg4MjliZjA0NTcyODBkN2Y0YTA5NGJlODVmMWRiMWEwMjRhNzRiYjk5NDk4NGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5YjhkNjRiNzNmYzA2ZjUwYWYxMmRhZjY4NjEwNzUwMDNhZjMyZDAyMGM1MDcxMThmOGNlZmZlNWZhYWZjZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkODhjMGI5NDQ2ODIxMmZlYWJkOTAxMzc5YjIwOTdkY2RmNzc4MTE2MGFkMTVmNWZlYTI1ZDIyZjdhMzA5OWEifQ"
         },
         {
@@ -417,7 +417,7 @@
       "statement": "A step body of two gate commands joined with `&&` under `bash -e` reports one outcome, so a first command that throws hides the second command's failure-to-run and looks identical to both running and finding nothing — this hid an entire expiry-check tier for two weeks. The reproduction is to run the STEP exactly as CI does (`bash -e -c 'cmd1 && cmd2'`) rather than each command in isolation, and against a clean checkout, since gitignored local state can mask the defect.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L865-L893",
+          "resource": "repo://docs/runbooks/renovate.md#L866-L894",
           "version": "repo-lines-v1:sha256:c91977083e509ad6892afd2bb50942d9fb3481bae5df60ac9ec60816948404c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZDgzYjI4MzAzNDg5ZGVhNjRhNDQ3ZmM2YjEyZmI5NGI5ZGNmZmNkMGJjZTZiOTM5MzAyZDlhY2MxZTM5ODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlYjIzNzVlZDA0ZTA1NzY3N2JjZGEyOGEwNmI3NWY5OTNmODI2YmM2MmMyNzUxYTUyNWU1N2IzOWIwNDU2N2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmYmM1ZmMyZWM1M2IyYmQ2MGI3OTI4MDAyNzcyYzUwYjE1NmZkNTVjYzRkYzYzZWY1ZWU4YmZhY2Q5MTI0ZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NDkzNjA2MjNmNGVjMGUxYmIxNTlkNWY2YjU5ZTJhOTk4NDBkNTA3NGM0MGEwYzdmNjE0Y2M2ODQ0MDAyOWMifQ"
         }
       ]
@@ -427,7 +427,7 @@
       "statement": "The in-window PR budget grew to a FIFTH slot on 2026-10-02: prHourlyLimit went 4 -> 5 (prConcurrentLimit 5 -> 6, kept above it) because at four slots the allocation was 3 lockFileMaintenance + 1 docker base images, which left `docker digest pins` with no slot at all — the 2026-10-02 dashboard listed it Rate-Limited while it carried the caddy rebuild for its curl/c-ares Highs. `docker digest pins` therefore carries prPriority 2, still below `docker base images` (3) and lockFileMaintenance (5), so the item #486 ranking is unchanged and the extra slot goes to a digest refresh ahead of every routine channel at the cost of one more PR's CI per week on the capacity-1 runner; the rule's explicit number is also what stops the last rule in the file (docker datasource, pinDigest/digest, no groupName and no prPriority) from carrying `docker base images`' 3 through.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L50-L97",
+          "resource": "repo://docs/runbooks/renovate.md#L51-L98",
           "version": "repo-lines-v1:sha256:03ec5fdbabff259f2b9042c358f3487611b23764f7db3589fb0e0a99bb5b8a8d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZjU1OWY4ZDMxNjc5MzQwNTZjZDM0ZDFiMDk4MmZlMjUwZDhjMzYzZmEwNjJmZTA5N2Y5NmViZTZmYWY3OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzMjVjNjNlNWZjNmRmZGExN2RlYjE2MGQzNmJjMzZlMzZmZGFhNjAwYzMwNGQ3MGViMDQ2ZThkNWJkNjcwZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkZTMzOTJjNDk3MWE0YzQ4NDA2MDI1NmI1YjVlZDAzZjQ4MDJkNjIyZDk0YjRhYjBiYjU2ZTdmZmFjNjljMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NzY3OTE0OTlhNzJjZGZjYmU1M2Y3ZDgzYmQyNDU3N2I5NjI4NzAyNmRlOTBiY2VmMWIxNWNlZmY1MWJlN2UifQ"
         },
         {
@@ -511,7 +511,7 @@
       "statement": "A database MAJOR waits in Pending Approval, and ticking it IS the migration decision: postgres, mongodb/mongodb-community-server, redis, clickhouse/clickhouse-server, opensearchproject/opensearch and langfuse/* all carry dependencyDashboardApproval, tightened for the four database images on 2026-10-09 after PR #698 merged clickhouse 25.12 -> 26.6 and redis 7 -> 8 for the production Langfuse stack on a green CI that never starts that stack (app-e2e does not exercise the observability stack), while the within-major patch stream stays automatic; the shared observability postgres is hard-held below 17 by an allowedVersions ceiling scoped by matchFileNames because one pin backs both Langfuse and Unleash, so it never reaches this list.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L151-L158",
+          "resource": "repo://docs/runbooks/renovate.md#L152-L159",
           "version": "repo-lines-v1:sha256:90d4dc8bb996386f3297fdb2f14378be9fd4637bc51bdd535ab32d02b3ad7844:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU2YmM5OGY5NmI2YWFkOGFiNzMyMzM2Y2Q2YjBhYmEwODI3ODJkYjJhYjUwNzM2YzdhZWM3MTI0YTdkMDU3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJiYjkyODhkYzdhYzljYWRiNmU2M2VjOGUyNDc5ZDYxMTY1OTJkZDE4NjFiN2RjZGExYzFiMzAyNDNmODkxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQwODcyYjhjNTUwNjc5NWI5ZGMxZjEyYzhhMjdmMmI5NTQ2YzliMThhMzNhNTE0Njk3ZjYwMTA4MWZjOTRjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk1NGQ2YzA1NTUxNmU5ZjFiM2JmZDkzZmY0MzkzOTQ3NjBhYzNjZDExOGZlMTMxZjU5ZDMzZGM0MmZlZmZiZSJ9"
         },
         {
@@ -529,7 +529,7 @@
       "statement": "Ticking the Dependency Dashboard and dispatching or merging use different credentials, which is measured behaviour rather than convention: ticking edits the dashboard issue and needs the issue-scoped token, while the git-credential token answers `token does not have at least one of required scope(s): [read:issue]` — which through `jq .body` reads as a null dashboard rather than a refusal — and that second token is the one that dispatches renovate.yml and merges PRs.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L145-L149",
+          "resource": "repo://docs/runbooks/renovate.md#L146-L150",
           "version": "repo-lines-v1:sha256:76dd3e260fe265bf683653aef4ef692ed4cda5b4538d54a90b3422b8adc91dfb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzNkMDkwNTNjODdjZGQ1NjUxMTMwZmQ5OGQ1MzRlNDlmYWZhOGMwNzQzMTQ2ODc3ODJhNTFlZmQ1ZjA3N2U1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU5YTU0OTE0OGVhMGUyNzNlODI3N2RiNTA3MmMzZDhjNmU3NTFlZjU5YjI1ZTVkZDk4YzY3Zjg3ZGYyYTM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWQ4YjQ0ZTgwNjhlOTgyNmUyYjA0N2EyYTY2YzNhYzE5MWU5YTI0MmVkODMxODE4MDA0NWY4MWI5OGJlZTUzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWE4ZGRmZjk5ZWI2MzQ4NTMyNzljMmMzZDNkMWU1MTEyN2UyZTczNWZhNDc4MmUzZTVhY2E3NmQ0ZWM1MTRkNSJ9"
         }
       ]
@@ -539,7 +539,7 @@
       "statement": "A `main`-side fix for a gate does not reach a Renovate PR by itself, so the triage rule is to tick `rebase-branch=` on every open Renovate PR that failed that gate and dispatch once: `rebaseWhen: \"conflicted\"` means a fix landed on main never reaches a Renovate branch that does not conflict. Measured 2026-10-09 — #696, a Python-only lock refresh, failed `sast` on an advisory main had allowlisted three days earlier because its base was five days old. The setting stays because rebasing every branch on every main merge would cost a ~35-minute app-e2e cycle per branch on the one runner.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L924-L930",
+          "resource": "repo://docs/runbooks/renovate.md#L925-L931",
           "version": "repo-lines-v1:sha256:c61d0c48dcb0817d62027354a255fa1ce8be1ded242caf0f0a630566d43ba34e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTMxMWYwZmE2NTVmOWY2YTU5ODBlNmNlN2MyNjkzMmE3YzdkOWU3MDc2ZTc5NTU3ZTk4M2FlYTIzZmUwMWY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDg0MTY2ZTAxNDBhNGZmYzA4NzQ0MWUwMWE5YzY2YzFhMzlhZDI0ZDM3M2JkMDU5OTMyZDRkN2U1ZWI4NWVmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjNkN2Y1ZDJiYzE5NDk4NTVhMWJhNzUzM2YzYjg0ZGIyYTE1MTEyM2UwOWZiMjEzNWVlZDQ3ODc1NzcyOWRmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDU1NzM5YjI0Yzc1YjA1MTBjNDE4NzBlNTEyMDY4ZWQ2YWU0YTA2NjMyMTRkYWRjZWM2ZmI4YmE3NTJmNzI1YSJ9"
         },
         {
@@ -553,7 +553,7 @@
       "statement": "A group rule governs UPDATES, not lockfile re-resolution: lockFileMaintenance re-resolves every manifest RANGE and no groupName applies to it, so a ranged member of a lockstep pair moves alone on a refresh and the group rule never sees it. Measured 2026-10-09 — PR #695 moved `@playwright/test` (declared `^1.59.1`) to 1.64.0 while the app-ci image stayed on `v1.63.0-noble` and app-e2e ran ZERO tests — so `nx`, every `@nx/*` and `@playwright/test` are now pinned exactly in every manifest with every `@nx/*` equal to `nx`, and check-toolchain-consistency.mjs in `guardrails / naming` fails on a range or a disagreeing plugin so loosening a pin back to `^` is caught at review rather than on the next refresh.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L595-L613",
+          "resource": "repo://docs/runbooks/renovate.md#L596-L614",
           "version": "repo-lines-v1:sha256:d449ab9ba0f9014c43c103b049e9b9c03f3b7bf648129d91d398224257a06b42:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNzhkOWNhNTRmZmFkOTQzZjJhYjllYWYxMzhkODQxYTFmNzRjMWI5Mzk4MGQ0Mzg3YjNhNTAyM2M0NTZiODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MTdiMzBkODhmZTE5MjkwNTRhMWU3NWExMmY0ZmI3ZDgxYWQ5NDViMzU4NGU2ZTMxM2ViZmZkYjI2ODU4OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MDI3YzJiNDY4Mjc5NTY4Njk0YTI5MDRhYWZlOWIyZTIwZGFiMmI2N2U3MWQ0MTQ2OGQ1ZmRhOTVlYmQzZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwY2QyNmU4ZmE0ZmE1NTYxNzc3NDYyYzQ0MWUxOTNiZDMxOGMyNWE0OTdkN2E1Yzg1YTljMTUyYThlOTRiODcifQ"
         }
       ]
@@ -591,7 +591,7 @@
       "statement": "The release-age cooldown also DELAYS a fix silently, in the direction that produces no error at all: a lockfile refresh forced within ~24h of an upstream fix resolves the release BEFORE the fix and leaves the vulnerable version in place. Measured 2026-10-09 — `graphql-yoga` 5.24.4 moved to the patched `@graphql-tools/utils` ^12 at 2026-10-08 13:38Z, a refresh forced at ~12:00Z the next day resolved 5.24.2 leaving 11.2.2, and the same refresh re-forced at 13:41Z resolved 5.24.4. So check the fix's publish time before forcing a refresh, and confirm the resolution in the regenerated lockfile, since a refresh that merely ran is not proof it picked the fix up.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L574-L581",
+          "resource": "repo://docs/runbooks/renovate.md#L575-L582",
           "version": "repo-lines-v1:sha256:1a3885d7f5288f6d50c371b6e435c1afa1f072482be95af307cbfc1c7634bc5d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjRjMTc2NGRlMzU1ZWJkNGE5NmU0NTdhZmZhZTFjYzBiMjUzM2UzMDMxNTdiMTQ2NmFkNTA1ZjJmZjg5Zjk5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNhMDAxNWI5MDRkNWFkOTZkZGY1ZTY4NzFmNGY1NmRmZGIxMzFiNjYzMGE3MTVmOTk1NGRlZTQ4M2Y2MDBkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDU4NWYxYWVkZmIzNjE2NjA3NDExNzNkYWRkOWY3Njc5YTBiYWNmNWI2NzI5MjgzMjg3M2E2M2Y5Yjc4ZTU5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Q4OGMwYjk0NDY4MjEyZmVhYmQ5MDEzNzliMjA5N2RjZGY3NzgxMTYwYWQxNWY1ZmVhMjVkMjJmN2EzMDk5YSJ9"
         }
       ]
@@ -621,6 +621,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-12T00:08:34.364Z"
+    "at": "2026-10-15T10:11:13.472Z"
   }
 }

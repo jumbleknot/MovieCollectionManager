@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:233c40af413d84816411dd510e9d41dda72cd9353962620d5173c9015c5de196",
+  "pageVersion": "sha256:9febd9b29d86b408c791a94967e15139cc506adb92544fbce8eeca4a3c4f3166",
   "claims": [
     {
       "id": "claim_38bde766ef97415d9b05311aeb02e233",
@@ -31,7 +31,7 @@
       "statement": "init-firewall.sh enforces a default-deny outbound egress policy with a narrow allowlist (Anthropic API, GitHub, npm, container-image registries and their CDN blob hosts) using ipset/iptables; the FORWARD chain is left to dockerd so nested-container networking is not broken, meaning nested containers' egress is not independently firewalled.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L579-L584",
+          "resource": "repo://docs/runbooks/devcontainer.md#L587-L592",
           "version": "repo-lines-v1:sha256:af2834095087266b5fce7755a2ba83a628cba74a525d29b1dd6e36cc1b704cb0:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYzYjdlY2UyZGRkMmYyZDJjMTUxOTk3OWFhYmIxYjNhMmY2M2YwMDQzYzc3NThjOWQ4YzZmY2FhYjIyYjExNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTIyMGU5Njc2ZjgzMDc0MWI3NmE1ZmVkOTRkNWY4NGJiYzI2NjlkYmEzMTAxMDU3YzAwMTY0NWY1Y2IyMDU3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODczMDI4MTM3YWJkODBiMDFmNjkxZTcyOGY4ZTFhNjM0MzlmMTE4MjNmMTNkZmJmZDZlMjlmNTFiZmU1NDQyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2E4YWRhZTVmYTNiNTQ2NjBlNTg3MjEzNWY5YzA4ZWQ1NzZiZTdkYzljYzBjODk2ODJmMGZhZjA0MjE0ZGZhZCJ9"
         },
         {
@@ -75,7 +75,7 @@
       "statement": "MCM_DEVCONTAINER_IMAGE is required under VS Code — the ${localEnv:VAR:default} fallback default is NOT applied by the VS Code Dev Containers extension; with the var unset, VS Code passes --build-arg BASE_IMAGE= (empty) and the build fails. The headless @devcontainers/cli does apply the default.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L1131-L1147",
+          "resource": "repo://docs/runbooks/devcontainer.md#L1139-L1155",
           "version": "repo-lines-v1:sha256:7b093a0f6499d932241ec2424b7b282f304f3a8c963b3d8c0d77e3a5ecf6c1de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTY3NmM2ZWUxOTY5NTc2YTQ4NjFhNDkyZWE0YzAxODc3ZDI2YjUwNTZmODBjZGQ3YWFiMGFkZDc3MTFmMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjY2VkOTgzMWZiY2NmNjQzMDM3Mjk1MDA2MmNhZDI2NDk1ZTA5Y2QwNWJhYTgwMzNiMmFhM2E3YjMyZWYwNzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NmI1NzFlNjFmZDdkYTQ0YjRhNTM2MDgyZDBhZjYyMWE0NzFhMTYzMzhkZjA2OGJmNDczYzliOTFhYzMwNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNTc0ODVkM2JiODIwYjgwNmZlNGIzMDIxNWQ2YzNhOGQwNjUyY2U5YTAwNzE1N2EwYTkyMTY1OGMyNzExNjgifQ"
         }
       ]
@@ -109,7 +109,7 @@
           "version": "repo-lines-v1:sha256:121ac1daaa7365f1235381816b214dc9ad7c4695a66d55287f958d4f1035159d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YzUyZGYwZTAyYzY5OGE1NTA2ODE5ZjJjMzg0MGYyMTNhZTI3YTY1MGE2ZjI0ODhjZDFiNTAwZjY4ZDRjOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMjcxM2JlNjUxNTgxNTFiNzVkODk1NWM2ZTQ5ZDdjMzdhNDg0MjhmYjZiMjVhYzNjNDU3ZDM0Y2M4NzIwM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkOTRhZDNjZTNjNTRiMTBhN2QyYjUwMjQ1ZmE1ZDljYzMwODQ2OGU1Nzc4YmMyMTgwN2NlM2IyZmRmZGQ2OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MTFkYWY0ZmMxZTAwMjc0Yjc5OWU4YzQ4MDEwM2NmZTgxYzlkNTE4OTg5MTNkNWZjODA5ZDk0OGJjOTUxNDkifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L544-L578",
+          "resource": "repo://docs/runbooks/devcontainer.md#L552-L586",
           "version": "repo-lines-v1:sha256:499748bb2db06e779335e3fae4bf6ba616379e3482cf59d39c900dff7d26deb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYzJjZjQ5YWNjZTlkMTA2NTRjZmZiNDViODVhODcxNjA1NGZlNDQxYTY4YTcwZTM3OTczNTRmYTc4NjA3ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZjA2OWVhNTNmN2NkMGVjYmUyMjRhMjE2YTAzMWVkNzcxOTk3NDVmM2E4YjM2NzRkN2JmZDFiOGFjMWUwMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhMzA1MTVlMjc4YmU1ZjE5Yzc4ZDc0M2Q5YjQyNWUyZjc2YWVmMjRhYTg5NDJkMDMzMzg1ZDdkYjljNDQxNDEifQ"
         }
       ]
@@ -119,7 +119,7 @@
       "statement": "getaddrinfo ENOTFOUND keycloak-service when running the integration tier in the devcontainer shell is caused by .env.docker (loaded by tests/integration/setup/env.ts for CI) containing Docker-internal hostnames not overridden for a host-shell run. Fix: export KEYCLOAK_URL=http://localhost:8099, MONGO_URL=mongodb://localhost:27018, REDIS_TEST_URL=redis://localhost:6379/1. Measured 2026-08-09: 84 failed/31 passed without these exports; 114/115 with them.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L806-L818",
+          "resource": "repo://docs/runbooks/devcontainer.md#L814-L826",
           "version": "repo-lines-v1:sha256:ab0f1e1be9e2c3706ec92e0a96194db98014cf739529ae52f01ae3759bb251f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNGEwYWRmNjE3NThlZTJjMmMzNzQxODNkOWUzYjJhZTY5ZDg2MTlmZjQ4MDY3YjRhMjAyN2NlMGVjNzExZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2YTlmYzdjOTMxMmZjZGU3NTg3OGFhYTE2MmM1OTExNTU5MGZlYTA2ZmQ4OWEzMzQ4Nzk2OThhZmY1MGU3NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3YzU2NTA0N2Y2OGZjZTA4N2M2YTEwOTgwM2JmYjFmYzVlZGVkODkxNGQ4NjEwYmM0MDdlNDM5YjhhMWMzYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2OWNhMWU5ZjhmZWJmNGZiMDJiZGRmMzRmNWQ0ODExZWZjNWY4MTMwOTA3MzNiNDg1ZDg1MjA3MjRhNTQ0OTgifQ"
         }
       ]
@@ -147,7 +147,7 @@
       "statement": "The Android SDK and an android-34 google_apis x86_64 system image are baked into the toolchain image; the privileged DinD container passes through the host /dev/kvm, enabling a headless hardware-accelerated emulator boot. An older MCM_DEVCONTAINER_IMAGE silently has no Android layer and devcontainer-android.sh no-ops cleanly rather than erroring.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L676-L731",
+          "resource": "repo://docs/runbooks/devcontainer.md#L684-L739",
           "version": "repo-lines-v1:sha256:79df6cdf078c3e0a2611de3d8ebad9823989c8458d4300824e749b48c2218a35:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOWQyMWRhMzJmY2ZlODUwNzljNjAxNzk3MWJlMGVlMDA4Mjk4YWEyMzgwYzc2OTgyYWYxZDdhMDI0NDgwOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5YjYzNTQzM2E4MGE0OTc2ZTY0ZGFmMjYwOTRkZTkzZDUxM2IxYjMyNWIwNGQwNTIxZDc5MTY4NjlkMzMxMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiY2UxZmU3ZWY0NTllZjhmMjNlY2M0YjM1ODQ0MDM4ZDY5MWY4YTFhZGRkYzJiYmUyYzJlMTI5NThjMDMyOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxZDNiMzNjNjU3NzhkNjZjYTdmOGQ0ZDQ5YzQ3NjE5ZWY5MTZiNmNhZGNiMjkwOWIzOTAxNGNjMzgwNDUxNTgifQ"
         }
       ]
@@ -161,7 +161,7 @@
           "version": "repo-lines-v1:sha256:7bbf7081fce184a538754be70bb15a08d892a5e719af7950873a1fee28e196cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZjU0OTAzYjQ2MWFlMWM1ZTU3YTRkMGY0YzZlNTNkMDAyOWNmZTE5NmVhMzIyOWNlMjU0MWMxYjczOGRlZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNDczMWVlNDcxN2E2MDMxZWNmNjFhZTdlMzZjODgzNGE5NTg3OTg4ZGEzNmU0OWMzZmQyNDU1NzFlMTdmYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3ODlhYTFjMWY1ODgzZGRiZDQzMjQ0NWM1ODMwZjY0Mzk1ZmVkNTA4MzFjZTE2ODJkOWE5ZjZiNzU1ZGY5OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzNzI0MjYwODQ4ZDAwMzdjOWUxZTY4ZjZmODhlOWYxYTFiMjE5ODdiNGNlNTI0MzlkNzJjMzQ0NzE4ZDA1ZGUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L1233-L1292",
+          "resource": "repo://docs/runbooks/devcontainer.md#L1241-L1300",
           "version": "repo-lines-v1:sha256:7640d7b4a58eeba8b8b871c2be98bcaa5a3e74621a6ce6454af329f9cd3841e5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOTc3N2UzMzliZWVjZGMzNjZiMGU4ZmY0NzA4ODczOWQ1ZjBkNmVhZDU4NmYxOGNjNjczZmU4MjMxZGFiMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYzYzYWU3OGRjMjI3MTExNGQ2NDExYWRiMTI3Yzg2YTdiODFiYmJkZTc3YWM5MzIyMTMyYmEwZjVmODJlY2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiMzQ5ODZkZjZjZWEzMTA2ZGUyNmQ0OGJjMzgzZjVlMzJjYWI4Nzc4ZTgxNDVlNzhiMzQ1NTMxMmZiYTQ1NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1ZDI3ZWE4YjRmYzczOWZiYzIxYTQ2MDk5NWUzMzFiM2U5NDVkOGM2M2RiMGQ2MzQwZjMzMzg1MTNlNTFjOTgifQ"
         }
       ]
@@ -171,7 +171,7 @@
       "statement": "Docker won't start after a devcontainer rebuild when a previous container instance is still running; its containerd holds an flock on the DinD volume's meta.db, blocking the new daemon indefinitely. Diagnosis: python3 flock probe distinguishes locked (recoverable) from corrupt (destructive). Fix: docker rm -f every other container, then sudo nohup /usr/local/share/docker-init.sh. Do NOT delete meta.db or docker volume rm — meta.db deletion destroys all DinD images, and /workspaces is a named volume so a prune removes the working tree.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L448-L504",
+          "resource": "repo://docs/runbooks/devcontainer.md#L456-L512",
           "version": "repo-lines-v1:sha256:6f231089d9d1d01f1232df0f09ef514642223163ee7b905595ec9365ae14fc09:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyM2M4ZjM5ZDg1NWQwNzU3ZmY2MmJkODRhODVmYmVjZjkwOWI1ZjAwZDhlNzc0ZmY1MGVmMTE4Zjg5OGM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNTM0NzdjOTFlZThmZjRiOGU3MGQ5ODI5NDdjYzM1YTA1NThhNTczYjQ3NDU5N2ZlYzhiNDI0NGYzYTVlY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNGEyZTk4MjJmNmZjMjg2YmRjMzcxNWM2M2RmMzBkZmI1MTRhM2M4YTRiZDRhMWQ3MTI1ZjM0YTIzMDNiYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxM2MxNjM4Y2ExOGQyNmNmZWMwMTM1MjVmM2YwZTQ2MzI1OTE5NmY0NzU5MWY0ZDA4NmU2NTYzNTQwYmQxZjAifQ"
         }
       ]
@@ -181,7 +181,7 @@
       "statement": "Editing a file under node_modules/ writes into the pnpm content-addressed store because node_modules entries are hardlinks into it; files with identical content share one inode across package versions. A per-file backup-then-patch loop corrupts its own backups (the store entry changes with the first write), and pnpm install does not re-verify store content hashes so corruption outlives a reinstall. Safe procedure: stat -c '%h %i' first, record clean md5sum, patch one path, then verify with md5 and pnpm store status.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L1186-L1231",
+          "resource": "repo://docs/runbooks/devcontainer.md#L1194-L1239",
           "version": "repo-lines-v1:sha256:725c30b96178d4343f7ffba1459cf07d9b5afd59252d9bff9376f1b5a4338a76:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYjVhOTg0YmRhYjg2N2QxMTdjNTkwYjkyMTZhMjI3ZjI2MGM2MTEyM2ZiNzYxMmJhN2I5NTRjMDg0MWE5MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YmJlZGRkNmQ0OTliZTc5NTg0MjgzYmI0YWIxOThmZmYxNGIzNWE1YzBiZWNhMTQwZTdmZjI4YWFmODdhN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwMTVlMmMyY2JiMTJkMjdkMjRmNTIxYWYzYzY3OTQwZTE1MGIxN2JiZmI1NzdkZDExZGRkMDQwY2E2YmQ2NDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjZjFmYzBkOWYzMDc4NWU2YjdhMjYxNjU0OTNjZDk5ZGYzNmExOWU0MTQ4ZDcxZDAzOTg3ZDFjMzA5NmFlMmQifQ"
         }
       ]
@@ -191,7 +191,7 @@
       "statement": "Multiple Claude sessions share one devcontainer and one checkout; git operations in /workspaces/mcm are visible to all sessions. Branch work must use a git worktree under /home/coder/worktrees/<slug>. The node_modules symlink from the worktree to the main checkout is sufficient for node --test and scripts/*.mjs gates but causes ERR_PNPM_UNSAFE_MODULES_DIR for any pnpm nx target — a real pnpm install in the worktree is the only fix (~4 min). Worktrees do not survive a container rebuild.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L314-L414",
+          "resource": "repo://docs/runbooks/devcontainer.md#L322-L422",
           "version": "repo-lines-v1:sha256:b72296455a9681d5d48f58eb97c195e6c49836a6f5a1949354d50656a2698e56:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYzI2MDVmMmIzNjQxMTkxNTdiMmJlMTEwZjk2ZmY3NWNlZjM0YzU0ODJjOTkzNzZlOGI2OThjYWFiNTVhNTY0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlMmQ2YTI1NTU1NWI1Y2ZhZjc4ODI3MGQ0YmFmMzFhMzI4ZjdkYmU5N2YzYzY4NTBmMmVmNTZmZGE2NDM3MjI2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzMzEzYmI5YmNkODAxM2JkMWMwMzg3ZjkzYzRlYjU5NzhkNDNjOGJhZDllMWY0ZDIzYjgwNWYzYTBhZmZkZTEzIn0"
         }
       ]
@@ -201,7 +201,7 @@
       "statement": "An nx failure message that does not match the state on disk is likely stale cached output; re-run with --skip-nx-cache to get the real error before diagnosing.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L373-L378",
+          "resource": "repo://docs/runbooks/devcontainer.md#L381-L386",
           "version": "repo-lines-v1:sha256:e215c6366649c61f317626711ad16e4a4fdf81e5379dfc4b2bb2934bf3214c41:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0N2FiZmZhNjVkMjVlMjFiYTEwZmVjN2Q2YzliNGEwN2NmMGQ0ZWU3NjhkYWI1NzA4OTEzMDBhNWMxN2VmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGRkNDNmMTQwNzk0ZjM2MTVjOTIzNjdhMDJlNTQ1MGViNWNlMjU0MTYzNWY5ZTI0MjBkNTVkYTQzMzNmYzc3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZThjYjhiZjJmOGFlMDg0NDc5ZjlkYTJmOGRiMGE0MjI3NmY5NDQyZTg0ZDgxN2IzNWZiODYyYWRiOThiMmEyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDY3MmNiMDg1MThlZTM5ZGU3OGIwNTdiNDg1NWNkYjUwYzI0Y2Y1ZTViMGE2ZTBmNGI2YzE2NGM2ZmI4ZWNlMCJ9"
         }
       ]
@@ -211,7 +211,7 @@
       "statement": "The node_modules symlink in a worktree was previously committable because .gitignore carried node_modules/ with a trailing slash (matching only directories, not symlinks); this caused every install-bearing CI job to fail with ENOTDIR. Fixed by changing the pattern to node_modules (no trailing slash).",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L379-L386",
+          "resource": "repo://docs/runbooks/devcontainer.md#L387-L394",
           "version": "repo-lines-v1:sha256:75aa9a7890ee0560982a909e142e1fb129a020915e3e73a32cb83beb45737ac6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRkYjBhYjgyZDZiOTliNTdkMmE1MGQ0ZGQ0NTNhODg1YjhhNDkxYTVjODI0NTA5YTcwM2IxM2I0MzRkNGYzNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRjOWFmMTQ0YmY3MmZiNmZlY2RmMmRiZjk0Y2RjN2MxMzBiMmU5YWVmYzI1NTcyZmUxYTMwMzkzMjM5Y2YwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg5ZTY5MTJlOGNiMDRlZGI3MTE1ZDRlYTY0MmU0YmVhNWRjYTZjOGYzYWU1YWNjZjE2OTMzYzhhODg1ZDFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzE1MDMwZjkyZjdhMWQ1Yzc2NzBmOTlkNTdmOWExOWYxZjEyZjVmYjU1NGE2MWExYmI0ZjZjYmM0NzBlNTQ2OSJ9"
         }
       ]
@@ -261,7 +261,7 @@
           "version": "repo-lines-v1:sha256:0bc4ddf63ecebeab0933db7ad66865649c6ae772dc7cca9fa531f6378e676fd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNWY1ODc1MGUxZWFiN2VjZTAwZTExNmZjNjdkNjRjOWI1MjExMjZhOTU5YzFkNTdjODAwYmY2ZWQ3YjIwMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YzZiOTM0MDU5YmM3MDFhYjMyNmM5YzU3NTU2NjdlNTQzYjBjNzJmZWU1OTgyMmUyZjgxYzY4ZTRkZTc2ZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxM2JhOWZiMzg0Yjg4NDFjNmU1OTAzZGExYThmMmY3OGYwOWVhZjczNDNjMDU3NmFmMzE1N2Y1MTg2MDlhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwYTdkNTQ3OWIwZWNhNjUxZjQxMWUxMzQwMmY0ZTkxMjc3OTNhYTZhNWE3NDQyMmFlNjZkODI0MzM2ZTU1YjUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L601-L637",
+          "resource": "repo://docs/runbooks/devcontainer.md#L609-L645",
           "version": "repo-lines-v1:sha256:ded57322b1f35dd2baed70f1998c46cb7c2353d269084475cb79cafeae77bbca:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2YzI1NGU4MzEzNWEwYWMxNjcxZjlmNWMxMWY0MDRmMmI2YTlmNjNkZmExZWExNTc0Y2Y4ZTNlYmM1NWY1M2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MDZmYTdlN2RjZDFkYTdkNTQ2ZjY5MGNlZmIyNWQ3ODk4OGIwY2MyOWQ3NjgxOTAxMTA1ODQ1OTdiNjM5NmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZDc3MDA2MTM1OTZkMGNkNmQ3MDJjNWFiYjA3NWY1YjllZDFjMjY2NjZkYzVmN2EzYmQxZDFiY2ZlMDk2OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOWU3NmQwMzk1YWU2YTk5MDgxZjc2YzhjZDhiOGNiOGViZjM5MmIyMDY3ZDM2NWQ5MGQyYjJmMGQ1ODg2MDYifQ"
         }
       ]
@@ -289,7 +289,7 @@
           "version": "repo-lines-v1:sha256:2147793abeebb136f4797bd8f17cd29b0dfaeda9e51e99efc923722240fa57a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzMzhkNzM2MjU4ZjNiNzAzMmQzZTg4YjRkNzk4NjRjMGQ3NWY1ZTAxMzk5MzBkYjNiNTcwNGNjMjg3YzYzYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExNmI3M2E3ZjM1MGZhNzk5YjdhM2EwNzcyOGIzMTVlZGZiMzAxNWVlZGQ1ZGQ4MWFjZTBmOGY3OGYxOWFiNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlZTNhZTUxZWJmY2FiMjI1ODQxNDZjN2Q5ZTNlMjQwNjUyYWM5MGE1NTk3MWJhMjllNzU4ZjYzYTE4Yzk0ZmEifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L1108-L1129",
+          "resource": "repo://docs/runbooks/devcontainer.md#L1116-L1137",
           "version": "repo-lines-v1:sha256:21b29ae229cd1aa40c922d95272447dbee8ee4009e784c4114a809355f3c94a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYTU5ZDVmOTM4MzFhYzMwNjYzYzNlNDFkMjYwYjJlMTExODIzZTI3MmJmYjQ4MmZjMjQxYzZhNjgxZjI1NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NTE3ODlhNGEwZWI5Y2NlZmQxMjM3OGZlYTY2ZTc0MTc3MTQ3NzMzMWUxMTM1MWZlYWM0OTUxOThhOTIwM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxODRiYjhjODcxZjM1M2I1YzM1ZjU5ZTU5ZjdmMGJiZWE1MWUxMjU2MGE4MjQ5MmY0ODNiMWU5NDA4Y2MzZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4MDE0OGFhMTljZjY4ZDVhMjcxOTc5YjVlN2FmZTlmYTFmYTI2ZGEzYjhlY2YyZTJkZDlhMDdkNWJlYWJjNzkifQ"
         }
       ]
@@ -303,7 +303,7 @@
           "version": "repo-lines-v1:sha256:230434423c4ef4afecd88ce4de719501394934008543f072baea1e408adb407c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyZDI0YmI0ZDAzYmI3YjJjNTYyM2E3NjZiOTY3ZDMwNzBjOTRiYjk1ZjJjNzBlZDc0MjgxMzNkNWJjOTE4ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNzRiZmFiMWQzYzQ2MjE3ZDIwMjk2M2M0YzRiN2UwNjFkODg3ZWM5MzY3OWVhMGVlM2VlZTUwOTYzMjgzNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYWYwMGJhNzQ4ZGUzYTIxMjg4ZGE3NWMzMjlkYTdhNGY5ZmMzM2Q4OWFlZjUxZDQ1YzlmMDNmMzhhMTI1ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxZWI0OGZmOGU3YmVlMjBhMTkwNjY0YmJhNTNmNmZhZmRkOTU5ZjIzYzNiNzBhNmQxNTU4NzQzNTRmNzg1ZDAifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L974-L996",
+          "resource": "repo://docs/runbooks/devcontainer.md#L982-L1004",
           "version": "repo-lines-v1:sha256:7edf18c64606d139684bed5625edd74b9a475a81d855d63c730af133a26fcb72:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZGNmYThmNmE4MzIxZmNhNzc4ZTE4OTJhN2UyNmJlZjU0YjQ4NmFiMzRkNjM2YmI1NWVjMzRhODIxZTJlZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYTJkMTgxYTA2ZWE5NWFlOGU3MTg4NmM0OWNmYWYwOWZkOWJlYzlmZjMxYTQ1ZjdlZTRjZTlkOGNjMTc4NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYTNkNDI1ZDQ5NmUwNWY2NzQwOWNiOTQzNzY0N2UxNDA4ZWZiNTZkYTJhNDMyYTYzYjVkMzFlMzY3YzRiZGUifQ"
         }
       ]
@@ -335,10 +335,52 @@
           "version": "repo-lines-v1:sha256:d683aa2a7f0c9886e182a246fe8d67c16642bcc1c12b2c33d47aacfa650f40a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYTI1MWQ2ZmY0NzNkYWZjYmM2ODdmZDM4YWQwZDg1ZTc0NDc1M2Y1ZTY0ZDM4MGEwY2ZhMGQ1MTc4MzI2MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZDAyMjY0ZGVkYWFiNzIwMGZhOTljNTJjMzY0YWNjZGEyZWViNDU1ZWU0NmQ1NDBmOGQ4NGU3YzllZWMxNzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlMmQ3Nzg4ZmQ4NTEyOTA5NDQ5YzEyOWIwZmI3MjYwMzQyMDBhZGI3NjRhMzk0OWJmZGQ0Y2EwNDUwODMwMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4OTFkYmRmYzA0MDJjZDRiYTYwZmFiMWJlMzI0NWRmZWM1NTljNWQ3YWZjN2UyMWI4N2U3OTVhNzNkMDVlNWYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_33eed64e3d174f009b5a5155e644afc1",
+      "statement": "The thin .devcontainer/Dockerfile layer on top of the prebuilt toolchain image must stay minimal: a layer that changes file metadata (a UID renumber is the tempting one) copies every touched file up into the new overlay layer, so a \"thin\" renumber duplicated the whole ~13 GB image and the build died in `exporting layers` with `no space left on device` on the Android system image (measured 2026-08-17). The same disk exhaustion is the likeliest cause of a docker-outside-of-docker feature install failing with exit 100, which reads as an apt fault; `updateRemoteUserUID: true` was tried and does not engage on this path, and a chown repair is a see-saw because the mismatch is symmetric between container user and VM user.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/Dockerfile",
+          "version": "repo-file-v1:sha256:da19832069c8bdb8e6b21ba49f25064a16f330feaa71abb13feb3570116dca00"
+        },
+        {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile",
+          "version": "repo-file-v1:sha256:29fd48c5b4225071cb7f7a38f1906ba9a0e8d0ce087ebb2bac91799d229e6411"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md",
+          "version": "repo-file-v1:sha256:97f20a3a8ae9a621f72c9150dbb95af4ea8a2a4022419db2e01ef27b1db901a6"
+        }
+      ]
+    },
+    {
+      "id": "claim_141c10a11b474c43aa86a1e863c476ed",
+      "statement": "The containerized Playwright recipe requires `--user \"$(id -u):$(id -g)\"` (with `-e HOME=/tmp`): the Playwright image runs as root and /workspaces/mcm is bind-mounted, so every artifact it writes (test-results/, playwright-report/, tests/e2e/web/setup/.auth/user.json) lands root-owned in the working tree and the NEXT invocation dies with EACCES on test-results/.last-run.json, which `coder` cannot even delete. Measured 2026-08-03; `sudo chown -R coder:coder /workspaces/mcm` is the repair, and onCreateCommand self-heals the known artifact paths on container recreate.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/devcontainer.json",
+          "version": "repo-file-v1:sha256:69133df14a122e24a61d2684f568d60b2a8bada422a1f7917a0ac6e2b70d67bb"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md",
+          "version": "repo-file-v1:sha256:97f20a3a8ae9a621f72c9150dbb95af4ea8a2a4022419db2e01ef27b1db901a6"
+        }
+      ]
+    },
+    {
+      "id": "claim_0de8d68ab543413c8b438d4832317ce6",
+      "statement": "Running the containerized Playwright recipe from a worktree fails by going QUIET rather than erroring: only /workspaces/mcm is bind-mounted from the Docker host, so mounting /home/coder/worktrees/<slug> succeeds and yields a near-empty auto-created directory — measured 2026-09-21 as 2 entries where the worktree has 31 — surfacing as `stat node_modules/.bin/playwright: no such file or directory` or as a run that collects zero tests. The workaround is to stage the worktree into a named volume, never to copy it into /workspaces/mcm, which is the shared checkout another session is working in.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer.md",
+          "version": "repo-file-v1:sha256:97f20a3a8ae9a621f72c9150dbb95af4ea8a2a4022419db2e01ef27b1db901a6"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-12T18:54:07.831Z"
+    "at": "2026-10-15T10:11:13.472Z"
   }
 }
