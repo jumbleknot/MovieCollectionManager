@@ -27,6 +27,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
+  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
+    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-ff035ef3df6eca36fc791d1d
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
@@ -47,6 +49,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
   - id: openwiki-source-819b0a18008c0f90a7eaf2b3
     resource: repo://infrastructure-as-code/docker/vault/compose.yaml
+  - id: openwiki-source-d951526f31e9f2cb4d68995b
+    resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-075e18482c7b2302ea6593a7
@@ -77,10 +81,10 @@ sources:
     resource: repo://scripts/infra-image-scan.mjs
   - id: openwiki-source-ac2000cc53be6b0ffb997de7
     resource: repo://scripts/up-mcm-agents.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T23:36:23.499Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T10:11:13.472Z
+    at: 2026-10-15T23:36:23.499Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -119,12 +123,22 @@ The agent layer has two distinct bring-up paths: `up-mcm-agents` (the heavy in-s
 variant) and `up-agents-prod` (`scripts/agent-stack.mjs`, the light containerized production-node stack
 used for local agent E2E).
 
-Every dev-stack secret is a fail-fast `${VAR:?…}` interpolation reference. The agent layer is the
-exception: it keeps a couple of deliberately optional `${VAR:-}` keys (e.g. `AGENT_GATEWAY_CLIENT_SECRET`)
-so the gateway comes up without token exchange. The values live in gitignored per-stack `<stack>.env`
-files minted from the committed `<stack>.env.example` templates by `node scripts/gen-dev-secrets.mjs`,
-and the stack's `include` uses the long syntax with an `env_file:` pin so that file is the
-interpolation source for the included component files (feature 021).
+Almost every dev-stack secret is a fail-fast `${VAR:?…}` interpolation reference, and the
+[stacks README](../../infrastructure-as-code/docker/stacks/README.md) enumerates the exceptions
+explicitly. Two component files take their credentials from a *service-local* `env_file:` instead of
+the per-stack `.env`: the BFF (`bff/compose.yaml` loads `frontend/mcm-app/.env.docker`) and
+`web-api-mcp` (`web-api-mcp/compose.yaml` loads `mcp-servers/web-api-mcp/.env.local`). The agent layer
+is the third exception: it keeps deliberately optional `${VAR:-}` keys — `AGENT_GATEWAY_CLIENT_SECRET`
+(empty ⇒ token exchange skipped, tool calls fail closed) and the `AGENT_GATEWAY_CLIENT_ID` /
+model-tuning defaults — so the gateway comes up without token exchange;
+`scripts/check-no-inline-secrets.mjs` allowlists `AGENT_GATEWAY_CLIENT_SECRET` by name for exactly
+that reason.
+
+The `${VAR:?…}` values live in gitignored per-stack `<stack>.env` files minted from the committed
+`<stack>.env.example` templates by `node scripts/gen-dev-secrets.mjs`, and the stack's `include` uses
+the long syntax with an `env_file:` pin so that file is the interpolation source for the included
+component files (feature 021). The Nx `up-*` targets pass the same file a second way, as
+`--env-file`, which is what lets the aggregator itself resolve the pins.
 
 The pin is per include, not blanket. All of `auth`'s two includes, plus `audit`'s and
 `observability`'s single include, carry it; `mcm` pins only the two component files that interpolate a

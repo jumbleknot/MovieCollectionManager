@@ -1,7 +1,7 @@
 ---
 type: Convention
 title: Dev stack env files and local secret generation
-description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the deliberately blank REGISTRY_HOST).
+description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract and its documented exceptions, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the deliberately blank REGISTRY_HOST).
 resource: infrastructure-as-code/docker/stacks/README.md
 tags: [infrastructure, docker-compose, secrets, env-vars, dev-environment, gates]
 sources:
@@ -19,6 +19,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
+  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
+    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-73ccac5c4c3b2e02cb1b3ec1
     resource: repo://infrastructure-as-code/docker/keycloak/compose.yaml
   - id: openwiki-source-d5b1faab58eeb909bb999298
@@ -43,6 +45,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/stacks/observability.env.example
   - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
     resource: repo://infrastructure-as-code/docker/stacks/README.md
+  - id: openwiki-source-d951526f31e9f2cb4d68995b
+    resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-b04e37691ebfb88e99a080d8
@@ -57,10 +61,10 @@ sources:
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-1dabdb308579a8f9d6d49612
     resource: repo://scripts/gen-dev-secrets.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T23:36:23.499Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T01:57:21.062Z
+    at: 2026-10-15T23:36:23.499Z
 ---
 
 # Dev stack env files and local secret generation
@@ -75,6 +79,39 @@ directory. The authoritative reference for the file contract itself is
 [`infrastructure-as-code/docker/stacks/README.md`](../../infrastructure-as-code/docker/stacks/README.md);
 it deliberately lists **no keys**, because each stack's key set and the generation kind of every
 minted key are carried by that stack's `.env.example` template, which is the single source for both.
+
+## Not every secret is a fail-fast reference
+
+The stacks README opens by stating that **not every secret is a fail-fast `${VAR:?…}` reference** —
+most are, but three paths are deliberately different, and knowing them is what keeps a reader from
+hunting for a `${VAR:?…}` that does not exist:
+
+- the BFF (`bff/compose.yaml`) loads `frontend/mcm-app/.env.docker` with `env_file:`;
+- web-api-mcp (`web-api-mcp/compose.yaml`) loads `mcp-servers/web-api-mcp/.env.local` with `env_file:`;
+- the agent gateway keeps `AGENT_GATEWAY_CLIENT_SECRET` as an optional `${…:-}`, so it can come up
+  without token exchange (tool calls then fail closed). `scripts/check-no-inline-secrets.mjs`
+  allowlists it by name.
+
+None of the three is a per-stack `.env`; they are service-local files read by the service itself, and
+`frontend/mcm-app/.env.docker` is one of the files `gen-dev-env.mjs` projects into (see below). So the
+fail-fast contract described on this page governs the `${VAR:?…}` references, not every credential in
+the tree.
+
+## Profiles gate services, not stacks
+
+No stack is profile-gated as a whole. `auth` and `mcm` each have services that start with no profile:
+
+| Stack | Starts with no profile | Needs a profile |
+|---|---|---|
+| `auth` | `keycloak-service`, `keycloak-store-postgres`, `keycloak-mailpit` | Vault (`vault`) |
+| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`; the gateway also `agents-metro`) |
+| `audit` | nothing | every service (`audit`) |
+| `observability` | nothing | every service (`observability`) |
+
+The profile assignments live in the component compose files, not in these stack files. This matters to
+the env layer because a profile is **not** isolation from interpolation: Compose resolves every service
+in an included file at parse time whatever profiles are selected, which is why `mcm.env`'s
+`REGISTRY_HOST` cannot be a fail-fast reference in a profile-gated service (see the gotchas).
 
 ## The two-file contract
 
@@ -124,6 +161,8 @@ flowchart TD
 ```
 
 How a value travels from the committed template into a running container, and where the chain aborts.
+The abort branch applies to the fail-fast `${VAR:?…}` references; the service-local `env_file:` paths
+listed above are outside it.
 
 ## Commands
 
@@ -169,7 +208,9 @@ or a shell command cannot carry characters that break either:
 Randomness comes from `node:crypto` with rejection sampling rather than a modulo, so the characters are
 unbiased. An unknown kind is a hard error naming the key, not a silently empty value. Which key uses
 which kind is recorded in the template beside the key itself, not in the README — see
-`infrastructure-as-code/docker/stacks/<stack>.env.example`.
+`infrastructure-as-code/docker/stacks/<stack>.env.example`. The README's own kind list is still
+incomplete: it names `b62-32`, `b62-48`, `hex-64`, `complex-16`, `unleash-admin` and `unleash-client`
+but omits `mongo-keyfile`, which `mcm.env.example` uses for `MONGO_MC_KEYFILE`.
 
 ## Fail-fast: a blank credential aborts, it does not degrade
 
@@ -187,6 +228,13 @@ required variable KC_BOOTSTRAP_ADMIN_PASSWORD is missing a value: set in stacks/
 The message is deliberately actionable: it names the variable, the per-stack env file, and the command
 that mints it. This is also why the blank `REGISTRY_HOST` in two templates is a feature rather than an
 omission (see the gotchas).
+
+That rule is **not universal**, and the exception is load-bearing rather than an oversight:
+`AGENT_GATEWAY_CLIENT_SECRET` in the agent gateway's compose file is an optional
+`${AGENT_GATEWAY_CLIENT_SECRET:-}` reference, so the gateway comes up with token exchange skipped and
+tool calls fail closed instead of the container refusing to start, and
+`scripts/check-no-inline-secrets.mjs` allowlists that key by name so the gate does not flag the
+default-carrying form it otherwise rejects.
 
 Two shapes are deliberately outside that rule. The optional Control Tower consumer values — the
 OpenSearch / LangFuse / Unleash settings the BFF and the agent gateway read in the prod compose files —
@@ -260,9 +308,10 @@ Two static gates back the boundary up, both run selftest-then-scan in the `namin
   command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?message}` reference. An
   inline `${VAR:-default}` **fails** too, because a default re-leaks plaintext — that is the whole point
   of the `:?` form. Non-credential keys that merely match the name pattern (`*_FILE`, `*_USER`,
-  `*ACCESS_KEY_ID`, `*_CLIENT_ID`, `*_AUDIENCE`) are explicitly allowlisted. It runs locally via
-  `node scripts/check-no-inline-secrets.mjs` (or `--selftest`, or the `check-no-inline-secrets` Nx
-  target).
+  `*ACCESS_KEY_ID`, `*_CLIENT_ID`, `*_AUDIENCE`) are explicitly allowlisted, and so is
+  `AGENT_GATEWAY_CLIENT_SECRET` by name, because it is the one secret deliberately injected as an
+  optional `${…:-}`. It runs locally via `node scripts/check-no-inline-secrets.mjs` (or `--selftest`,
+  or the `check-no-inline-secrets` Nx target).
 - `scripts/check-topology-scrub.mjs` is the tree-wide gate that keeps a real tailnet host out of any
   committed file — which is what makes the blank `REGISTRY_HOST` necessary rather than sloppy. It is
   pattern-based rather than literal, because hard-coding the real host would itself re-leak it. See

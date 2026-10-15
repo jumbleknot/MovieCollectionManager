@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:81ce95af8de10c3d6473b268a53770269642215fd126f633ceb314d06270da24",
+  "pageVersion": "sha256:8ce633db73aecd235d51366b0fc89b079b2884436c07501b42578fb7fbc6c0e9",
   "claims": [
     {
       "id": "claim_25d0e869d5a34c9bb6f72147c0aeefe5",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
-          "version": "repo-file-v1:sha256:ece5f1c95b8f990ebafd2f1c080a037d315b4f43472c911444fbe1fb6f6788f1"
+          "version": "repo-file-v1:sha256:434d181510191188011bcde0589117ba5e43305fd8a70860ad9298d3f05e013b"
         },
         {
           "resource": "repo://scripts/gen-dev-secrets.mjs#L1-L25",
@@ -44,11 +44,15 @@
     },
     {
       "id": "claim_cce8ab0fb8544f9ca52d7c140d31da3b",
-      "statement": "A credential in a tracked compose file is an interpolation reference and never a literal, and the dev stacks plus the component files they include use the fail-fast `${VAR:?…}` form, so a missing or blank value makes `docker compose up`/`config` abort naming the variable and the per-stack env file that should hold it rather than starting a half-configured stack. The optional Control Tower consumer values (OpenSearch / LangFuse / Unleash in the prod compose files) are deliberately plain `${VAR}` instead, so a missing observability value no-ops that integration rather than aborting the app.",
+      "statement": "A credential in a tracked compose file is an interpolation reference and never a literal, and the dev stacks plus the component files they include use the fail-fast `${VAR:?…}` form, so a missing or blank value makes `docker compose up`/`config` abort naming the variable and the per-stack env file that should hold it rather than starting a half-configured stack — but the rule is deliberately not universal: the agent gateway keeps `AGENT_GATEWAY_CLIENT_SECRET` as an optional `${…:-}` so it can come up with token exchange skipped and tool calls failing closed, and the optional Control Tower consumer values (OpenSearch / LangFuse / Unleash in the prod compose files) are plain `${VAR}` instead, so a missing observability value no-ops that integration rather than aborting the app.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/agent-gateway/compose.yaml#L22-L22",
           "version": "repo-lines-v1:sha256:e54d09a956aa886221db5652c7c7c2814958f1a3c892838efc20948a0027572a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTU0ZDA5YTk1NmFhODg2MjIxZGI1NjUyYzdjN2MyODE0OTU4ZjFhM2M4OTI4MzhlZmMyMDk0OGEwMDI3NTcyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTU0ZDA5YTk1NmFhODg2MjIxZGI1NjUyYzdjN2MyODE0OTU4ZjFhM2M4OTI4MzhlZmMyMDk0OGEwMDI3NTcyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDIwZDc3MmRlMmJjMTQzMTZhMjI3YjA0NTBiNjFiNmEzNTljZDIwMDNkZDBmMjcwMjgxZTE2NzQ5YTI2ZTdlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJjZDk0NzE1Nzg5NGFlZjNiMWM0MzAxYzg4YTE4MDg5NDQ1YTc3Njk4YjY0MjZkNDhkZWU5NTRlMDIwNTI3ZCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/agent-gateway/compose.yaml#L37-L41",
+          "version": "repo-lines-v1:sha256:f93c093282fc58d1385a90fcc0f3279f6201e8093eb52e9cd0a4d688f7088f53:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmZhOGRkY2E1N2RmOGZlNjU4MzA1MzNiZDk0Mzg4ODlmOGU3NjAzNGM0NDQyMjFkNzcyODZmMDc3MTVhMTljMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM1OTYwZGU4NzlmM2EwY2U0Y2Y3ODA4N2YzZWZkYjg1MjU0MmEzYjY5ZWE5MzUyMmI5OThmNmE1YWFlMTQ1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWZlZThiZWY5ZjlmZjJiNjFhZjQ5OWQ1OWNhY2UzNDQwNGY4MzNhZWVhY2FhYjgyZmIyNGRjYTczZjhmNGZmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc1MmVhM2Q0MzQ4ODA2MjFlYjhjZDk0NzZiODgzZTJmZjJkZTQwMTQ1OTgwYThiNTQyNzViNDc3OGMwMWI4ZCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/agents/compose.prod.yaml#L61-L77",
@@ -67,8 +71,8 @@
           "version": "repo-lines-v1:sha256:84a2faf6d256a0123a58f05713932c1d0b76a7cec66ad3ec915eef182e41023d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDg1MGE0OGJiZDYyNDA4ZWNjN2VhNmFmN2IyODI2YmNmOWMzZGIwZjIxYzI3YWIzZDFhMjRkODJmMjAxNjc0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYxZmJiYjkzNGRmMDAzMmY5NTgzNDViOTNhZDI4YmRkNzcxOTQyNDdkYzViODNlMjQyNjEwMGIzODc1OGRiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDFhNWRjYjI4MGI4MzlkYTUzMDMxMTFjOWE5NDAxMzhmZDRjYWI5YmIwYzFlMmExNzA4ZjgxMzZjMmI0MmIwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRmZDNjNzQzYjU2MjVkM2Y0NTVlMmUyOTZmM2ZlZTI1NmM3YTczNGVkMzVjMjc5YzQ0NDRlZDI0NTIxYzY5OSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
-          "version": "repo-file-v1:sha256:ece5f1c95b8f990ebafd2f1c080a037d315b4f43472c911444fbe1fb6f6788f1"
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L3-L12",
+          "version": "repo-lines-v1:sha256:06ce95f9bcb407ab93e738048a3148733e1d048b62a1e5a0950aad9077d158f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNTVhNGJiZDkzYTRjMDZjYWZjMjI3ZGUyNjNiNGExZTBjNmMwNTI0MGJkYTAxZmU4NTBiOTEwZGYxY2VhYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNGI3YTg5OThkYTY0YmJkNTAxMzc2NGRjZGUxODQ5ZGI0NTUxOTNhOTc4ZThkY2Q4YmYwODIxNTc5N2FhOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMWI3ZGExMDcxOTU2MmRjMGJmZjM2YzBhZTg1MzJiMjg5MjgzODcxMWM1N2M3NWU1YzlkOGVlY2Q3MjZjNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNTE2NjUwMjM4MGNhYjE5YjkwMDgyNDg4ODY3MDhiZWY4OTU0YTQ0M2I1MjgyYjI4NWNlZmY3ODI1NDA3MjIifQ"
         }
       ]
     },
@@ -283,7 +287,7 @@
       "statement": "`infrastructure-as-code/docker/stacks/README.md` deliberately lists no env keys: each stack's complete key set and the generation kind of every minted key are carried by that stack's `<stack>.env.example` template, which is the single source for both, so the README can describe the file contract without duplicating a key table that would drift.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L8-L18",
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L27-L37",
           "version": "repo-lines-v1:sha256:58c8690a9f60a3806c0a61f52ac7ac201e596886240f519484cfc1d1af1d6929:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzgwZjUwMjczN2RlODZhNzM4ODFhZGNmMzU4Mzc1MzQxOTBmYmNiYTg1OTA5YzUxN2M5NGNmMzg0ZDU0ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNTM3NzgyZmNkMTMzOTQ2NGY3MzZiYTRjY2E4ODdjZGE2ZThhZTg5ODBmMzU4OTg0YzNjNDRiYTgzYThhNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYzA5OWM0ZDcwY2QzNTU1MmFhOGQ4NGIyYjI3NmU3MWI4ZWYzMjBiMWU2YWZhMDg4YzRhNTgzMGNkN2M2MjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyMzg3OGYyOTFjYWQwNDE2YTRjNjZhNzI2M2Q4ZDU3YzlmMDAwODIzZTk5N2YwY2I3ZTdlMmY0NTUxN2ZjMzEifQ"
         },
         {
@@ -367,10 +371,84 @@
           "version": "repo-lines-v1:sha256:ffa5d17f335455540da506a48914934b756e1fd4124f97298c5c41c473e158ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmNzRhZTk5ZjQxNzBhZjQ0NzZlY2RkZmQzODNhMGFlY2RjZmE4ZDdiYTY3OTdlMjM0MWJkNDYxNDEwMmYzMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmZGJhNmRjNTBiZTRiMjkwMWMwZmI2MzhjZDQ3NTQyNzdjMzNiZGVmZjVkZWUyZmYyODBjNjQ1ZjlhM2JjMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NDUzODU4YWQ2ODlkOGQ3ZjBiZTNkNzFkMWY5MDRmZWVjNDRlZmZjYmVjZWY0ZDc4OTA1NTQ3ZWJlNjZkMDMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_28caa760b69548758133b0df05086ebd",
+      "statement": "Three secret paths are outside the fail-fast `${VAR:?…}` contract and are named as such by the stacks README: the BFF loads `frontend/mcm-app/.env.docker` with `env_file:` and web-api-mcp loads `mcp-servers/web-api-mcp/.env.local` with `env_file:` (service-local files read by the service itself, not per-stack `.env` interpolation), and `AGENT_GATEWAY_CLIENT_SECRET` is an optional `${…:-}` reference that `scripts/check-no-inline-secrets.mjs` allowlists by name so the gate does not flag the default-carrying form it otherwise rejects.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L17-L18",
+          "version": "repo-lines-v1:sha256:d8604194905ac07dd72c7f8cd3aab1f17d3a6ab4929655c90d3e79d781ebb902:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBmNWIyMjJhMzUxODk1NmRjN2I5ZGY1ODY0ZGE1N2M3YjM2NDYyZTBhZDllMDM2YThmMTgxMDZmZWZiNzhkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWIzMDdkYWRlZWI2ZWQ2Y2RjZWI3ODU0NGY4MjI1M2M5MTIwMDYxZDY1OTAxYmY2ZDczYzdlYmUzYTE5Mzk0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQwZWI3OTllMDgyYzVkZGRmOTM5YTQ0MjNiOTcyMDJkZTAyMTk4NDUwMDQ5ZWQ5ZDQxZTlmZTUyYTEzN2ZkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWI3YWM1ZGU3YTkzNWIxMWRkNWU2MGNiNzI4Y2NiMmQ4NGQwNTdhMjNjZDc1YjkyM2ZjMmZlZjU0M2I1NDhiZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L56-L57",
+          "version": "repo-lines-v1:sha256:d8604194905ac07dd72c7f8cd3aab1f17d3a6ab4929655c90d3e79d781ebb902:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBmNWIyMjJhMzUxODk1NmRjN2I5ZGY1ODY0ZGE1N2M3YjM2NDYyZTBhZDllMDM2YThmMTgxMDZmZWZiNzhkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWIzMDdkYWRlZWI2ZWQ2Y2RjZWI3ODU0NGY4MjI1M2M5MTIwMDYxZDY1OTAxYmY2ZDczYzdlYmUzYTE5Mzk0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFhZGU1ODZiOWM2NTY1NzM0YzQ4MWZiNWM1MmJjOGU4MGYzZjg4ZjJiZTgyNTNkZDg0Nzk2NWVlMWI3OGExOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDhjYmFiNTBmYzQ3NDg5OTNhZjI0YWY2NTc0OTM4MTlhYzhkMGM5MzBkYTc2OGQ5MDEyNTEzMzljYzU5MzMwOSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L3-L12",
+          "version": "repo-lines-v1:sha256:06ce95f9bcb407ab93e738048a3148733e1d048b62a1e5a0950aad9077d158f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNTVhNGJiZDkzYTRjMDZjYWZjMjI3ZGUyNjNiNGExZTBjNmMwNTI0MGJkYTAxZmU4NTBiOTEwZGYxY2VhYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNGI3YTg5OThkYTY0YmJkNTAxMzc2NGRjZGUxODQ5ZGI0NTUxOTNhOTc4ZThkY2Q4YmYwODIxNTc5N2FhOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMWI3ZGExMDcxOTU2MmRjMGJmZjM2YzBhZTg1MzJiMjg5MjgzODcxMWM1N2M3NWU1YzlkOGVlY2Q3MjZjNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNTE2NjUwMjM4MGNhYjE5YjkwMDgyNDg4ODY3MDhiZWY4OTU0YTQ0M2I1MjgyYjI4NWNlZmY3ODI1NDA3MjIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml#L16-L17",
+          "version": "repo-lines-v1:sha256:913eb71197d6b2d11a1f0d6e6496315142d5518246654a645197a6e34d813899:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBmNWIyMjJhMzUxODk1NmRjN2I5ZGY1ODY0ZGE1N2M3YjM2NDYyZTBhZDllMDM2YThmMTgxMDZmZWZiNzhkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmFhNzNlNTM1NjNjZTAwYWJhNzFmYTgyOWJkYzI4Yjg3MTZjNzIwZTU1MGExOGRjNTM4ODU2NmJmNWRiODE0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTA4NDExMGQ5Yjg3MmVkYmIyZmMzY2E3MThjN2Q4NDM5OWJlMGE0ODkwZDZiN2FiYTBlY2E1ZjMzN2QzMTRmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjA5YjE0Y2I0NzJhZGRkZjZiODVkZDE3NDkyMzM0ZDZjYzMwNDRkOWQyMDMwYTEwMGUzNjVhZDJkMGNjYzg2ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-no-inline-secrets.mjs#L36-L46",
+          "version": "repo-lines-v1:sha256:5f6e5becab383a5d44c7b0eb1cfad4ad79da7cd8b653981989851fd04edffb52:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDFmOWEzODdiMzQzYjJmYWE0MjY1NjE0ZmY4ZWU1MTlmNzE5YmQ5MDMzOGU1YzZmM2JiNDc5ZGIxNjQwMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwYTZjOGU4MGFkZWE2MGNkZWJhMGM1YjBlZTllYjQ5YWYyYmQ3OTc4NzZiMmQ4ODQ5YzIyZGMxZDE4ZTcwNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExODY2NTFkZjhjYTVmOTg3NGUxMjNjOGY3ODY1YTQ4NTRiMzliYzQ4MjI2ZWE1Y2FiZjY2Zjg0NjJjYmQxM2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_395b7397dcd346df86cdb7139b10527b",
+      "statement": "No stack is profile-gated as a whole: `auth` starts `keycloak-service`, `keycloak-store-postgres` and `keycloak-mailpit` with no profile (Vault needs `vault`), `mcm` starts its test infra with no profile (`mc-service-store-mongo` + rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`) while mc-service, the BFF and the agent layer need profiles, and `audit` and `observability` start nothing without their own profile. The profile assignments live in the component compose files, not in the stack aggregators — which matters to the env layer because a profile is not isolation from interpolation, so a fail-fast reference in a profile-gated service still resolves (and can still abort) at parse time.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L14-L25",
+          "version": "repo-lines-v1:sha256:66156d0490e84e67e6d3c58a3d0355afd6e08936b82ca25496efef90b60f0ba3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjBhY2Y1MjJiNGI1MTAxZmUwYWFkYmIxZWFkODNjZGViN2U2ZDljN2EzMjUzM2I0NGI2YWY3YzZkMmIwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNTYxYTUxMjE1YTQ1MjVkMTY1ZDRiMGMwNjEwMjFjZjc1MDdjNzdlZjRhYmFiZjdjNTRlOTQ3Y2M4OTllNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzhkNzA2NmE1NjA5N2VhZjE1NGYyMThmMjdkM2UzZWY4OThiNDMxMmNiMjk1M2FlMmFkZmU4YWNhNzY4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/audit.compose.yaml#L3-L8",
+          "version": "repo-lines-v1:sha256:5029c1101d1b81490465691cc6cc63196fc59f4ea29db7023f877cb710eeaa87:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U5MWYxNTBjZWE1NjFkZDkxOTY3ODAwY2FhZmExZGExYmVmZTQ3NzNmMDdmZDNhMGM0MDVmNDQ5ZjAwM2E4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q1MWJkZGU5YWU0NTRiYjhjNTA5ODMzNzRlMTJiMGIwNDc2MjQyNGI3MDA3YzNiYWVlYmMzOWNiYTA3ZTY4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzFmZTYwZDM4NTUxNWZkMWQwZWY5M2Q3MzI5NTI4OWUyZDQzYzcyNGVhZTI3OWQzZWI4ZDlhZmI4NzQxZTc5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZkODM4MTA0MDUzOTVkMGU3NDY4NGE5NzhkZGZkNmQwNDMyMzE3ZTQ3OWZiYWZjY2QzYzUwOGI1Yzk3ZWEzZCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml#L7-L9",
+          "version": "repo-lines-v1:sha256:ed13f4f90c253099008d82fefe41e025537006044a0603780d9781d87477f049:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTlhYzRjNzdlYzg0OGU5ODZiODEyOTUxMTY4OTZmMTU2MWE0ZjJkYjgzZjg5MWJkOGViNDc0NGI1ZTI5M2ExZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ4ZTk0MjMwMGI0NWVmOGZmYWFmMGIwNGM0MDk1NzQxNjMwYTk3OTgzNDliMjg4ZWM3YmIyNjM2OGVlNzY3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRjNTk0MjE3ZWVlOTkxY2IzMDA2MmUyYWY4MTZiYThkMWVlNjk0MTNhODllYWRiYzZjYjAwZTZiZGMwMGM2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzIxMGI0NTY4YzkxNWM4MDFiMzkzNzhhOWM1NmU4NWMwYmVlYjI4YWQ0MDQ4MGMzZGFjNDNmYzMyMDM3NGUxZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L27-L33",
+          "version": "repo-lines-v1:sha256:5e4d8963f4c6885f68c17fb236dec09c2392a3436f904153bdb348bf6c96c431:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyMzEwMjdlNTdmOGEyZGE3MjQ0MjExMTBlYTQwNjBhY2VmMGQ0ZjFiZTBiY2I0NzA3M2M0ZTRjZGZhYmQ1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJjNDg1OGUyMmNjMmM5NjdiNDIxNTBmYTU1MDU2MmEyYzgzOWMyY2ViY2FhYjkxY2FiZGY2ZjRkYTAyMDAyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM0M2Y5MWFkMWZiNWZkMDNkMzdiOTM3NDVhNWU3MDk0NGFmOWQyNzk5MjU5ZTMxOWE3ZTRiOGUzMTFiZjY5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2IwNTZmOTdhMWZhMDNjNjhlNzkwZTJiZmViM2Q1NTA1ZWE3NzBiZGVjYTNhYzI2MjMzODJjNTQwY2I1MzVmZSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L7-L13",
+          "version": "repo-lines-v1:sha256:d03ccf4e8ddfe5617ac17465f9fbd0626eee09734aa511310a75151f3aa22b6b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFlNjRjYzFjOTU1YmJlMjc1YzU1ODU2MjQ3Y2QxN2Q5YTg4ZTUxMTllNjAzNzRhMWE2Y2JiYzU4YWJiMTE2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMwMjM4ZmUwNWJjZTg1NmM1NDUwYjM0NzQ3ODBiYzg4YzllOGRmOTc4MjVlYjQ1MGJiZGZlY2ZkODE1NjYxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Q5MTc3ODgyZmQ3ZWU2ODJmOWFmNGU4Y2MzOWRmZjIwYzM1NGUyYTk5NTM1ZWU4MWY2ZTc2YTM4MGY2YjNkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzEzN2M5NmI1NWFjYzMxOTYyM2ZhMmZkYjg1M2E4YTZjODY5MjNkYzU0ZTdlMTE5MDQ1MWM3Y2JmY2RlZjhkYiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/observability.compose.yaml#L3-L9",
+          "version": "repo-lines-v1:sha256:d2c85057d24ec01a9c75001e68b82d1f4bbde6223588c488a8669a14af96fd7b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTJhYzA4NjgxZTkxZjc5YjgwNWY1NjkyMGQxODZjNzg0Nzk4NTUzN2E5NjVhNzhkOWQwNzZmM2M5MDFlZmI5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2RkMWFjZTJkNzg3NGZlN2YwMTJmMTA4MTY2MmI1NmMxYzEwNzg0ODkyMjExNGU4NGY2MjEzMmJiMDUzNGRmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWMwMzNhYjgxOGQzODM4YzJkMjAzZGIwNTE0MWJlNDEwYzc0MTJiYjFkNjY3MmMwNGQzMDU4Y2ZmYmZkYWNjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDljMzgxMzZiNzYyYzFkMWQ1Zjg5ZTk0ZWZiZmM3NDdmYzRjNzYxZTc4MzBlYjkwNjg5NDczMmM1YzE1ZTlmMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5a361ba0380443498a63679d3f7b146c",
+      "statement": "The stacks README's own generation-kind list is incomplete: it names `b62-32`, `b62-48`, `hex-64`, `complex-16`, `unleash-admin` and `unleash-client`, but omits `mongo-keyfile`, which `mcm.env.example` uses for `MONGO_MC_KEYFILE` and which `gen-dev-secrets.mjs` implements as base64 of 756 random bytes on a single line.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L47-L49",
+          "version": "repo-lines-v1:sha256:b5fca771b1a6607230295d9f40fce6388e4eecfc893f1cd271c74822d8c5f675:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNkNjIyNzI0N2ZlYWM1OWRjODBmY2QzZGQxOTVhNDNhMDQxMmI0ZmNkOTA5MzUyMjIwNmEwNDRjMjFkNTg1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQ5NmY3ZDA3ZWQxOTY3M2JkMWUxNDNiZDdhYzMyMGE4Yjg0MzRhNTFlNmZlM2E1MTM5MDQzMTkzZDNhMzIxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ0MjdjMjIzZTJjMzBlZDEwMTczNGY5NDk3N2I5YTQ5NGU5MzM3MjEzNmFlZWMxZDI4ZGU3MDU3OGE5ZGVlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzU5NmU4ZjFmMjM4ZTQ4ODljMTg4YTIwM2NkMTQxYWU3Y2ZjODJhNTkwOTU3MTRjNjhmODU4OTM3MzZkMGM3MiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.env.example#L18-L20",
+          "version": "repo-lines-v1:sha256:e08179a253ba8a99d2a0da7eb89c67eea5adc948c48538b37706ee4af5aa3912:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWMwNDVkOTczZjgwMDY2OWUzMjIyZTc5MGVjZGIxMmFmMjBiMDZhNjhjY2MwNmNkYTI2NTFlYjVmMjVlZGExYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk2YTUyYjkwYjQ0ZjNlNDFkZjcyOGI5ZWY3NTlkN2IzYjgxNmVlY2RkZGZkYmEzYzM4YTNjZjA1M2EyMTQ4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1Y2QyNmQzOTA3ZmUyNmU1MDQ1ODE2MDVhZjIzMTJlYjRiNmQ2MTdkMjM3ZDhjZjMwZjFiMWY0NzA1YTYzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDU0ODAyZThhNjhhNzJhODcxYjRkYjgxZTEzODg0MmE0MjA2MGJmYTI5NGIzYmRlODJmNWU2ZWY2OThjMzJmNSJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L84-L88",
+          "version": "repo-lines-v1:sha256:ba18bf954c87a0e1484916d8e5dcf74fa93758953670ddda313242ccbc27d506:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFlYjJjMTIxZTRmOGZjMzY0NmUyNjAwMmUwMmVkNzI0ZTFlMmI1ZDg2ZWQ0MTBkYjZlOGU5ZjhmZGQ3MTA2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRiNWViZmRjMjQyZWMxOTNhNzU3ZDU3NTcwZTU2NjMyNWFiYjZlODU5NTc5YmQwZDdlYTcyMDBmMWJhNmRhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDk1MGRiNThiNGU2ZmI3MWE4ODFlMWI2Mjc0YzQ2YjRhNGJkZWQ5MzIxMTA5YzkwODE0ZjVkMTI0YjgwODJiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDBhN2JjNmFiOTk2MmU4Yjc0NTc3ZDYwMTU3MjRjY2MzODdlM2EyNDEyMDczMmU2ZTk1ZGJjOGE2NmRlMzc2ZiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T01:57:21.062Z"
+    "at": "2026-10-15T23:36:23.499Z"
   }
 }
