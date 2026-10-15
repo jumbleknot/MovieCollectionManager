@@ -14,6 +14,9 @@ per-machine values live in gitignored per-stack `.env` files generated from comm
 
 `<stack>` ∈ `auth`, `mcm`, `audit`, `observability`.
 
+This README lists no keys. Each stack's keys, and the generation kind of each minted one, are in its
+`<stack>.env.example`, which is the single source for both.
+
 ## Generate / rotate
 
 ```bash
@@ -22,7 +25,7 @@ node scripts/gen-dev-secrets.mjs --force                # rotate ALL (overwrite)
 node scripts/gen-dev-secrets.mjs --force --stack=auth   # rotate one stack
 ```
 
-- **Idempotent**: a stack whose `.env` already exists is skipped (your running stacks keep their values) unless `--force`.
+- **Idempotent, and back-filling**: in a stack whose `.env` already exists, every key it already defines keeps its value (your running stacks keep working). Keys the template has gained since are seeded into it, so a new key never needs `--force`, which rotates everything.
 - **Fixtures stay fixed**: `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` / `LANGFUSE_INIT_PROJECT_SECRET_KEY` are copied verbatim even under `--force` — the agent gateway + feature-012 SC-008 verify test authenticate against those exact values.
 - **Generation kinds** (`research.md` R4): `b62-32` / `b62-48` (URL- & shell-safe base62), `hex-64` (32-byte hex), `complex-16` (upper+lower+digit+special, URL/shell-safe charset), `unleash-admin` (`*:*.`+b62-40), `unleash-client` (`default:development.`+b62-40).
 
@@ -36,7 +39,7 @@ required variable KC_BOOTSTRAP_ADMIN_PASSWORD is missing a value: set in stacks/
 
 ## Guardrails
 
-- `.gitignore` ignores `*.env` but carves out `!*.env.example` so templates stay tracked.
-- `scripts/check-no-inline-secrets.mjs` (CI: `naming-gate.yml`) fails the build if any literal credential is re-inlined into a tracked compose file. Run locally: `node scripts/check-no-inline-secrets.mjs` (and `--selftest`).
+- `.gitignore` ignores `*.env` and `*.env.*`, and carves out `!infrastructure-as-code/docker/stacks/*.env.example` so these templates stay tracked. The carve-out is scoped to this directory, so other deliberately ignored `*.env.example` files stay ignored.
+- `scripts/check-no-inline-secrets.mjs` (CI: the `naming` job in `guardrails.yml`) fails the build if any literal credential is re-inlined into a tracked compose file. Run locally: `node scripts/check-no-inline-secrets.mjs` (and `--selftest`).
 
 See [`docs/runbooks/local-dev.md`](../../../../docs/runbooks/local-dev.md) and `specs/021-externalize-compose-secrets/` for the full design.

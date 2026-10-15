@@ -28,10 +28,19 @@ node scripts/wiki-maintain.mjs --claims-audit          # offline, keyless, free;
 ```
 
 It loads openwiki's own `RepositoryEvidenceResolver` from the install the `openwiki` binary on `PATH`
-belongs to (exit 2 when there is none). A page marked **churn citations only: avoidable** is forced
-only because it cites a lockfile, a digest pin or a rotating allowlist line — `openwiki/INSTRUCTIONS.md`
-§9 forbids those. The comparison is `result.evidence.version` against the stored version; comparing
-`result.version`, which does not exist, flags every page.
+belongs to (exit 2 when there is none). The comparison is `result.evidence.version` against the stored
+version; comparing `result.version`, which does not exist, flags every page.
+
+A page marked **churn citations only: avoidable** is forced only by churn citations. The label comes from
+`churnReason()` in `scripts/wiki-claims-audit.mjs`, which applies fixed rules: a lockfile, a `.env.deploy`
+digest pin, a *line-addressed* `allowlist.yaml` entry, or a cited range that holds an `@sha256:` digest.
+`openwiki/INSTRUCTIONS.md` §9 tells the generator not to cite any of these.
+
+`.openwikiignore` is a **separate** mechanism. It lists the paths openwiki may not cite as Claims evidence at
+all, and the audit never reads it. So a whole-file allowlist citation is ignored but is not churn, and a
+Dockerfile digest pin is churn but is not ignored. Adding a path to `.openwikiignore` while a sidecar still
+cites it crashes openwiki's Claims preflight (`EvidenceResourceError`), so uncover the citing pages in the
+same change.
 
 At execution, consecutive same-kind slices of **different** areas are packed into one generator
 invocation of up to `MAX_PAGES_PER_INVOCATION` pages (feature 078). Every invocation pays a fixed
@@ -498,9 +507,18 @@ two cannot disagree.
   than `PAGE_BUDGET` pages.
 - **Never queued.** Drift beyond the bound is reported, not written to the backlog. It is found again on the next
   run. A drift slice that fails is carried like any failed slice.
+- **A drifted page the open proposal already holds is covered.** The proposal's pages are not on `main` yet,
+  so `main`'s stamps make them look drifted. The planner reads each drift candidate from the proposal branch,
+  and one that is fresh there is not planned, either as new drift or from a carried drift slice. `--plan` lists
+  these pages as `on the open proposal`. Dispatch 5264 regenerated two pages into #751, and the next run had
+  queued both again (#748). **Only drift is skipped.** Freshness compares commit dates, and a merged branch
+  keeps its commit's earlier date, so work queued by a source change or a failure is always planned. Drift
+  is re-derived from `main` on every run, so if the proposal closes, nothing is lost.
 - **A directory `resource` is unplannable.** Any commit under the directory re-flags the page, so the plan reports
   it and does not pay to regenerate it. The brief requires a `resource` to name one file (§5 of
-  `openwiki/INSTRUCTIONS.md`).
+  `openwiki/INSTRUCTIONS.md`). *Unplannable* is not *parked*. An unplannable page costs nothing whether or not
+  it is also parked, and parking it only records a decision. #739 parked `process/spec-driven-development.md`,
+  which was already unplannable, so that the decision is on record.
 - **V12 stays a warning.** Drift is acted on by the planner, a run at a time. It never fails a build, so a
   documentation edit never waits on a paid regeneration.
 
@@ -539,6 +557,26 @@ any timer it was holding dies with it. Git state survives cancellation; run stat
 
 The run **does not trigger itself**: the `[skip ci]` marker commit and a bundle-only change (its own
 proposal landing) are both recognised and skipped.
+
+**Overlapping runs (#748).** `cancel-in-progress` does not always cancel: two merges **in the same second**
+(#745 and #746, 2026-10-13) made two push runs, and the forge queued the second behind the first. Spacing
+merges 10 s apart worked, and the older run was cancelled. Three mechanisms keep a queued run from repaying
+work or corrupting the record when it happens anyway:
+
+- **It runs from the tip, not its event commit.** After the quiet period the job moves to the current
+  `origin/main`, so it plans from the record the earlier run committed. The skip decision still reads the
+  event commit, because it is about what that push changed. If `main`'s record moves again before planning,
+  `--execute` stops before any paid generation and exits 0, saying the checkout's record is behind. Nothing
+  is recorded, and the next run plans from the current record.
+- **The record commit merges; it never replays.** The step merges three ways: this run's record, `main`'s
+  current one, and the record the run started from (`--merge-record`). A field only one side changed takes
+  that side's value. Escalation tags, parked pages and backlog pages merge per page, so neither run's tags or
+  queued pages are lost. The marker never moves backwards. Two **different** proposal pointers are a conflict, and the step fails with nothing
+  committed. Run 5229 had replayed its whole record over a newer one, erasing the open proposal's pointer and
+  two deadline tags.
+- **A packed invocation is carried as its per-area slices.** A joined entry such as
+  `area: "invariants + projects + runbooks"` is planned as a NEW area to create, which a paid run cannot
+  satisfy. The planner splits any such entry already in a committed backlog.
 
 ### How the generator's dependencies are pinned, and how they are bumped
 
@@ -719,9 +757,16 @@ a push race against `main`, and the pointer never landed. The next run then trie
 proposal and died on `forge POST /pulls → 409`. The one-proposal invariant survived only because the
 forge refused.
 
-So a run now asks the forge which proposal is open for the branch, adopts it, and updates it. A run
-that has lost its record is self-healing rather than permanently stuck, and a 409 is handled by
-adopting the existing proposal rather than failing.
+So a run asks the forge which proposal is open for the branch, adopts it, and updates it. A run that has
+lost its record is self-healing rather than permanently stuck, and a 409 is handled by adopting the
+existing proposal rather than failing.
+
+The adoption happens at **reconcile, before planning**, including when the record's own pointer has just
+been reconciled as merged or closed. Run 5229's record pointed at #745, merged in the same second as the
+merge that started it, while another run had opened #747. It reconciled #745 to nothing and generated onto
+a fresh branch. The publish step then refused to push, correctly, because pushing would have discarded
+#747's commit, but only after about $1.35 had been spent on four pages. Adopting first makes the run
+continue #747's branch instead.
 
 ### The run record
 
@@ -752,6 +797,11 @@ changes.
 So an operational learning belongs in the runbook, **not** in the page summarizing the runbook. A
 concept that becomes a copy of its source has failed the generation brief, and hand-writing into
 derived summaries is how that starts.
+
+A page states rules and what fields mean, never the current contents of live state. The run record, the
+manifest, a run's `.run.json` and the Claims sidecars are rewritten by the next run, so a copied backlog,
+tag, outcome or cost is wrong by then (`openwiki/INSTRUCTIONS.md` §10). A measured value that explains a
+rule belongs here, in the runbook, dated and with its run number.
 
 **Do not write prose into `CLAUDE.md`** expecting a later run to relocate it. That file is an index and
 a gate fails on content beyond its index and its three machine-managed regions. The rejected

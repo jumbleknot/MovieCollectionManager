@@ -226,3 +226,68 @@ test('082 SC-001: n drifted pages are all re-planned within ceil(n / DRIFT_PAGES
     assert.match(readFileSync(join(root, 'openwiki', 'runbooks', 'sast-scanning.md'), 'utf8'), /timestamp: 20/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+// ── #748: a page already regenerated on the OPEN PROPOSAL is covered ────────────────────────────────
+//
+// Dispatch 5264 regenerated two runbooks pages into open proposal #751; the next run read their stamps
+// on main, found them drifted, and put them back in the backlog — work paid for twice.
+
+/** Commit `pages` (name → stamp) onto the proposal branch, then return to where the repo was. */
+function regenerateOnProposal(root, g, pages) {
+  const back = g(['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim();
+  g(['checkout', '-qb', mod.PROPOSAL_BRANCH]);
+  for (const [name, stamp] of Object.entries(pages)) writeFileSync(join(root, 'openwiki', 'runbooks', name), page(name, stamp));
+  g(['commit', '-qam', 'regenerated on the proposal']);
+  g(['checkout', '-q', back]);
+}
+
+test('#748: a page stale on main but FRESH on the open proposal is not planned — from drift or the backlog', () => {
+  const { root, head, g } = driftRepo([{ name: 'a.md' }, { name: 'b.md' }, { name: 'c.md' }]);
+  try {
+    // a: fresh on the proposal. b: on the proposal, but its source still changed after that stamp.
+    regenerateOnProposal(root, g, { 'a.md': '2026-12-01T00:00:00Z', 'b.md': '2026-02-01T00:00:00Z' });
+    assert.deepEqual(plannedPages(plan(root, { coveredCommit: head, backlog: [] })).sort(), ['runbooks/a.md', 'runbooks/b.md'],
+      'the premise: without the proposal, main\'s stamps make a and b drift (oldest first, two per run)');
+
+    const withRef = (record) => mod.computePlan({ root, bundleRoot: join(root, 'openwiki'), record, policy: null, proposalRef: mod.PROPOSAL_BRANCH });
+    const p = withRef({ coveredCommit: head, backlog: [] });
+    assert.ok(!plannedPages(p).includes('runbooks/a.md'), 'a is covered by the proposal');
+    assert.ok(plannedPages(p).includes('runbooks/b.md'), 'b is stale even on the proposal, so it is still planned');
+    assert.deepEqual(p.onProposal, ['runbooks/a.md'], 'and what was skipped is reported, never silent');
+    const printed = [];
+    const real = console.log;
+    console.log = (...a) => printed.push(a.join(' '));
+    try { mod.reportPlan(p, { json: false }); } finally { console.log = real; }
+    assert.ok(printed.some((l) => /on the open proposal +runbooks\/a\.md/.test(l)), '--plan prints it');
+
+    // Run 5268's record carried exactly this: a DRIFT slice, put back after the run stopped.
+    const fromBacklog = withRef({ coveredCommit: head, backlog: [{ area: 'runbooks', pages: ['a.md'], drift: true, reason: 'drift: carried forward' }] });
+    assert.ok(!plannedPages(fromBacklog).includes('runbooks/a.md'), 'nor is it planned from a carried drift slice');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('#748: an absent proposal ref changes nothing', () => {
+  const { root, head } = driftRepo([{ name: 'a.md' }]);
+  try {
+    const p = mod.computePlan({ root, bundleRoot: join(root, 'openwiki'), record: { coveredCommit: head, backlog: [] }, policy: null, proposalRef: 'refs/remotes/origin/no-such-branch' });
+    assert.deepEqual(plannedPages(p), ['runbooks/a.md']);
+    assert.deepEqual(p.onProposal, []);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('#748 review: only DRIFT is skipped — a change-triggered or carried non-drift page is planned even when the proposal looks fresh', () => {
+  // Freshness is judged by commit DATES, and a merged branch's commit keeps its own (earlier) date:
+  // a source change merged after the proposal was generated can look older than the proposal's stamp.
+  // Work that a change or a failure queued is therefore never dropped on that evidence.
+  const { root, head, g } = driftRepo([{ name: 'a.md', stamp: '2026-12-01T00:00:00Z', sourceAt: '2026-06-01T00:00:00Z' }]);
+  try {
+    regenerateOnProposal(root, g, { 'a.md': '2026-12-02T00:00:00Z' });
+    writeFileSync(join(root, 'docs', 'runbooks', 'a.md'), '# a, changed on a branch dated before the proposal\n');
+    g(['commit', '-qam', 'source change'], '2026-11-01T00:00:00Z');
+    const p = mod.computePlan({ root, bundleRoot: join(root, 'openwiki'), record: { coveredCommit: head, backlog: [] }, policy: null, proposalRef: mod.PROPOSAL_BRANCH });
+    assert.deepEqual(plannedPages(p), ['runbooks/a.md'], 'the change is planned');
+    const carried = mod.computePlan({ root, bundleRoot: join(root, 'openwiki'), record: { coveredCommit: g(['rev-parse', 'HEAD']).stdout.trim(), backlog: [{ area: 'runbooks', pages: ['a.md'], reason: 'carried forward' }] }, policy: null, proposalRef: mod.PROPOSAL_BRANCH });
+    assert.deepEqual(plannedPages(carried), ['runbooks/a.md'], 'and so is carried non-drift work');
+    assert.deepEqual(carried.onProposal, []);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

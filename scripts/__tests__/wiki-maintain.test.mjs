@@ -3343,3 +3343,310 @@ test('usage (#682): outside CI (no GITHUB_RUN_ID) nothing is written beside the 
     rmSync(logRoot, { recursive: true, force: true });
   }
 });
+
+// ── #748: overlapping or stale wiki runs ──────────────────────────────────────────────────────────
+//
+// Measured 2026-10-13: two merges in the same second made two push runs, and the forge queued the
+// second instead of cancelling it. Run 5229 planned from its EVENT commit, whose record pointed at a
+// proposal merged in that same second; it reconciled that pointer to null, never noticed the proposal
+// the first run had opened since, paid ~$1.35 for four pages, could not publish them, and then replayed
+// its whole record over main's — erasing the open proposal's pointer and two deadline tags. Its packed
+// invocation went back into the backlog as ONE slice named "invariants + projects + runbooks".
+
+const PULL = (number, state, merged = false) => ({ number, state, merged, head: { ref: mod.PROPOSAL_BRANCH } });
+
+/** Commit `record` to `main` of a clone of `bare` and push it — another run's record landing. */
+function pushRecord(bare, record) {
+  const dir = freshCheckout(bare);
+  try {
+    const g = gitIn(dir);
+    mod.writeRunRecord(dir, { ...mod.readRunRecord(dir), ...record });
+    g('add', '-A');
+    g('commit', '-qm', 'chore(openwiki): advance the maintenance marker [skip ci]');
+    g('push', '-q', 'origin', 'main');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** A fresh runner checkout with a committer identity, as the workflow configures before --execute. */
+function runnerCheckout(bare) {
+  const dir = freshCheckout(bare);
+  spawnSync('git', ['config', 'user.name', 'openwiki-maintenance'], { cwd: dir });
+  spawnSync('git', ['config', 'user.email', 'm@e.invalid'], { cwd: dir });
+  return dir;
+}
+
+/** console.error lines produced while `fn` runs, for an async `fn`. */
+async function capturingErrorsAsync(fn) {
+  const lines = [];
+  const real = console.error;
+  console.error = (...args) => { lines.push(args.join(' ')); };
+  try {
+    return { value: await fn(), lines };
+  } finally {
+    console.error = real;
+  }
+}
+
+test('#748 (b): a run whose committed record is BEHIND origin/main\'s stops before any paid generation, and says why', async () => {
+  const bare = bareRemote();
+  try {
+    pushRecord(bare, { backlog: [{ area: 'invariants', pages: ['first.md'], areaExists: true, reason: 'carried forward' }] });
+    // The queued run's checkout: its event commit, taken before the earlier run committed its record.
+    const dir = runnerCheckout(bare);
+    try {
+      pushRecord(bare, { proposal: { branch: mod.PROPOSAL_BRANCH, number: 7, markerBefore: null, slices: [] }, escalations: { 'invariants/x.md': TAG() } });
+      const before = readFileSync(join(dir, mod.STATE_FILE), 'utf8');
+      const forge = stubForge();
+      forge.state.pulls = [PULL(7, 'open')];
+      let invoked = 0;
+      const { value: exit, lines } = await capturingErrorsAsync(() => mod.executeRun({
+        root: dir, opts: EXECUTE_OPTS, policy: realPolicy(), forge, remote: 'origin', preflight: null,
+        invoke: () => { invoked++; return { status: 0 }; },
+      }));
+      assert.equal(invoked, 0, 'no generator may run from a superseded record');
+      assert.equal(exit, 0, 'superseded is not a failure: the newer record holds the work');
+      assert.equal(readFileSync(join(dir, mod.STATE_FILE), 'utf8'), before, 'and this run writes no record over the newer one');
+      assert.ok(lines.some((l) => /behind/.test(l) && /origin\/main/.test(l)), `it says why: ${lines.join(' | ')}`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test('#748 (b): a run whose record IS the remote tip\'s runs as before (the guard is not a blanket stop)', async () => {
+  const bare = bareRemote();
+  try {
+    pushRecord(bare, { backlog: [{ area: 'invariants', pages: ['first.md'], areaExists: true, reason: 'carried forward' }] });
+    const dir = runnerCheckout(bare);
+    try {
+      const asked = [];
+      const exit = await mod.executeRun({
+        root: dir, opts: EXECUTE_OPTS, policy: realPolicy(), forge: stubForge(), remote: 'origin', preflight: null,
+        invoke: recordingWriter(dir, asked),
+      });
+      assert.equal(exit, 0);
+      assert.deepEqual(asked, ['first.md']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test('#748 (run 5229): a record pointing at a MERGED proposal still adopts the open one, BEFORE generating, and continues its branch', async () => {
+  const bare = bareRemote();
+  try {
+    // The other run's proposal #2. Its branch is cut from an OLDER main, whose record differs from the
+    // tip's — as every real proposal branch is, because each run commits a record.
+    const other = freshCheckout(bare);
+    const og = gitIn(other);
+    og('checkout', '-qb', mod.PROPOSAL_BRANCH);
+    dirtyBundle(other, 'second.md');
+    og('add', '-A');
+    og('commit', '-qm', 'the other run\'s pages');
+    og('push', '-q', 'origin', mod.PROPOSAL_BRANCH);
+    rmSync(other, { recursive: true, force: true });
+    // The record this run starts from: it still points at #1, which has since merged.
+    pushRecord(bare, {
+      proposal: { branch: mod.PROPOSAL_BRANCH, number: 1, markerBefore: null, slices: [] },
+      backlog: [{ area: 'invariants', pages: ['first.md'], areaExists: true, reason: 'carried forward' }],
+    });
+
+    const dir = runnerCheckout(bare);
+    try {
+      const forge = stubForge();
+      forge.state.pulls = [PULL(1, 'closed', true), PULL(2, 'open')];
+      const asked = [];
+      const exit = await mod.executeRun({
+        root: dir, opts: EXECUTE_OPTS, policy: realPolicy(), forge, remote: 'origin', preflight: null,
+        invoke: recordingWriter(dir, asked),
+      });
+      assert.equal(exit, 0, 'published, not refused after the paid generation');
+      assert.ok(!forge.calls.some((c) => c.op === 'createPull'), 'no second proposal');
+      const files = remoteFiles(bare);
+      assert.match(files, /invariants\/second\.md/, 'the other run\'s work is still on the proposal');
+      assert.match(files, /invariants\/first\.md/, 'and this run\'s is on it too');
+      assert.equal(mod.readRunRecord(dir).proposal.number, 2);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+// (c) the record commit — a three-way merge against the record the run STARTED from.
+const REC = (extra = {}) => ({
+  coveredCommit: 'c0', coveredAt: 't0', lastOutcome: 'completed', backlog: [], proposal: null, lastRunBudget: null, escalations: {}, ...extra,
+});
+
+test('#748 (c): when main\'s record has not moved since the run started, the run\'s record is committed as is', () => {
+  const base = REC();
+  const ours = REC({ coveredCommit: 'c1', backlog: [sl('runbooks', ['a.md'])], escalations: { 'runbooks/a.md': TAG() } });
+  const { record, conflicts } = mod.mergeRunRecords({ base, ours, theirs: structuredClone(base) });
+  assert.deepEqual(conflicts, []);
+  assert.deepEqual(record, ours);
+});
+
+test('#748 (c): replaying an OLDER run\'s record over a newer one keeps the newer proposal pointer and deadline tags (run 5229)', () => {
+  const base = REC();
+  const theirs = REC({
+    coveredCommit: 'c1',
+    proposal: { branch: mod.PROPOSAL_BRANCH, number: 747, markerBefore: 'c0', slices: [sl('runbooks', ['c.md'])] },
+    escalations: { 'runbooks/prod-reboot-resilience.md': TAG(), 'runbooks/server-setup.md': TAG() },
+    backlog: [sl('runbooks', ['prod-reboot-resilience.md', 'server-setup.md'])],
+  });
+  const ours = REC({ coveredCommit: 'c1', coveredAt: 't2', backlog: [sl('invariants', ['x.md'])] });
+  const { record, conflicts } = mod.mergeRunRecords({ base, ours, theirs });
+  assert.deepEqual(conflicts, []);
+  assert.equal(record.proposal?.number, 747, 'the open proposal\'s pointer survives');
+  assert.deepEqual(Object.keys(record.escalations).sort(), ['runbooks/prod-reboot-resilience.md', 'runbooks/server-setup.md']);
+  const queued = record.backlog.flatMap((s) => s.pages.map((p) => `${s.area}/${p}`)).sort();
+  assert.deepEqual(queued, ['invariants/x.md', 'runbooks/prod-reboot-resilience.md', 'runbooks/server-setup.md'], 'both backlogs are kept');
+  assert.equal(record.coveredAt, 't2', 'this run\'s own account stands where it changed it');
+});
+
+test('#748 (c): a tag this run CLEARED stays cleared when the newer record did not touch it', () => {
+  const base = REC({ escalations: { 'runbooks/a.md': TAG(), 'runbooks/b.md': TAG() } });
+  const theirs = REC({ escalations: { 'runbooks/a.md': TAG(), 'runbooks/b.md': TAG(1) }, coveredCommit: 'c1' });
+  const ours = REC({ escalations: { 'runbooks/b.md': TAG() } });
+  const { record } = mod.mergeRunRecords({ base, ours, theirs });
+  assert.deepEqual(record.escalations, { 'runbooks/b.md': TAG(1) }, 'a landed; b\'s newer count wins');
+});
+
+test('#748 (c): two DIFFERENT proposal pointers are a conflict — refused, never guessed', () => {
+  const base = REC();
+  const theirs = REC({ proposal: { branch: mod.PROPOSAL_BRANCH, number: 747, markerBefore: 'c0', slices: [] } });
+  const ours = REC({ proposal: { branch: mod.PROPOSAL_BRANCH, number: 748, markerBefore: 'c0', slices: [] } });
+  const { conflicts } = mod.mergeRunRecords({ base, ours, theirs });
+  assert.equal(conflicts.length, 1);
+  assert.match(conflicts[0], /proposal/);
+});
+
+test('#748 (c): --merge-record prints the merged record, and exits 1 printing nothing on a conflict', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'wm-merge-'));
+  try {
+    const f = (name, rec) => { const p = join(dir, name); writeFileSync(p, JSON.stringify(rec)); return p; };
+    const base = f('base.json', REC());
+    const theirs = f('theirs.json', REC({ proposal: { branch: mod.PROPOSAL_BRANCH, number: 747, markerBefore: 'c0', slices: [] } }));
+    const ours = f('ours.json', REC({ coveredCommit: 'c1' }));
+    const ok = runCli(['--merge-record', '--base', base, '--ours', ours, '--theirs', theirs]);
+    assert.equal(ok.code, 0, ok.out);
+    const merged = JSON.parse(ok.stdout);
+    assert.equal(merged.proposal.number, 747);
+    assert.equal(merged.coveredCommit, 'c1');
+
+    const clash = f('clash.json', REC({ proposal: { branch: mod.PROPOSAL_BRANCH, number: 748, markerBefore: 'c0', slices: [] } }));
+    const bad = runCli(['--merge-record', '--base', base, '--ours', clash, '--theirs', theirs]);
+    assert.equal(bad.code, 1);
+    assert.equal(bad.stdout, '', 'nothing a shell redirect could commit');
+    assert.match(bad.out, /proposal/);
+
+    assert.notEqual(runCli(['--merge-record', '--base', base, '--ours', ours]).code, 0, '--theirs is required');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// (d) a packed invocation is carried forward as its per-area slices.
+function threeAreaRepo() {
+  const { root } = repoAtHead();
+  for (const area of ['projects', 'runbooks']) {
+    mkdirSync(join(root, 'openwiki', area), { recursive: true });
+    writeFileSync(join(root, 'openwiki', area, 'index.md'), `# ${area}\n`);
+  }
+  return root;
+}
+
+const assertPerArea = (plan) => {
+  for (const s of plan.slices) {
+    assert.doesNotMatch(s.area, /\+/, `no joined area name: ${s.area}`);
+    assert.equal(s.areaExists, true, `${s.area} is a real area`);
+    assert.match(s.runMessage, new RegExp(`^Work on exactly one area of the knowledge bundle this run: openwiki/${s.area}/\\.`));
+  }
+};
+
+test('#748 (d): a packed 3-area invocation returned to the backlog is re-planned per area, never as one joined area', () => {
+  const root = threeAreaRepo();
+  try {
+    const packed = mod.packSlices([sl('invariants', ['a.md']), sl('projects', ['b.md']), sl('runbooks', ['c.md'])]);
+    assert.equal(packed.length, 1);
+    assert.ok(packed[0].parts, 'the premise: one packed invocation');
+    const landed = mod.proposableSlices({ results: [{ ok: true, slice: packed[0] }] });
+    mod.holdMarkerOnPublishFailure({ root, before: mod.readRunRecord(root), slices: landed });
+    for (const entry of mod.readRunRecord(root).backlog) assert.doesNotMatch(entry.area, /\+/);
+    const plan = mod.computePlan({ root, policy: null });
+    assertPerArea(plan);
+    const planned = plan.slices.flatMap((s) => s.pages.map((p) => `${s.area}/${p}`)).sort();
+    assert.deepEqual(planned, ['invariants/a.md', 'projects/b.md', 'runbooks/c.md']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#748 (d): a joined entry ALREADY in a committed backlog is split back into its areas when planned', () => {
+  const root = threeAreaRepo();
+  try {
+    const record = {
+      ...mod.readRunRecord(root),
+      backlog: [{ area: 'invariants + projects + runbooks', pages: ['invariants/a.md', 'projects/b.md', 'runbooks/c.md'], kind: 'refresh', runMessage: '' }],
+    };
+    const plan = mod.computePlan({ root, policy: null, record });
+    assertPerArea(plan);
+    const planned = plan.slices.flatMap((s) => s.pages.map((p) => `${s.area}/${p}`)).sort();
+    assert.deepEqual(planned, ['invariants/a.md', 'projects/b.md', 'runbooks/c.md']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('#748 review: the marker never moves BACKWARDS — a newer record that covered further keeps its marker', () => {
+  const base = REC({ coveredCommit: 'c0' });
+  const theirs = REC({ coveredCommit: 'c2', coveredAt: 't2' });
+  const ours = REC({ coveredCommit: 'c1', coveredAt: 't1' });
+  const descends = (later, earlier) => later === 'c2' && earlier === 'c1';
+  const { record } = mod.mergeRunRecords({ base, ours, theirs, isAncestor: (a, b) => descends(b, a) });
+  assert.equal(record.coveredCommit, 'c2');
+  assert.equal(record.coveredAt, 't2');
+  const { record: mine } = mod.mergeRunRecords({ base, ours: theirs, theirs: ours, isAncestor: (a, b) => descends(b, a) });
+  assert.equal(mine.coveredCommit, 'c2', 'and ours stands when ours is the further one');
+});
+
+test('#748 review: a pointer the newer record cleared (merged or closed) is not resurrected by this run extending it', () => {
+  const X = { branch: mod.PROPOSAL_BRANCH, number: 745, markerBefore: 'c0', slices: [sl('runbooks', ['a.md'])] };
+  const base = REC({ proposal: X });
+  const theirs = REC({ proposal: null, coveredCommit: 'c1' });
+  const ours = REC({ proposal: { ...X, slices: [...X.slices, sl('runbooks', ['b.md'])] } });
+  assert.equal(mod.mergeRunRecords({ base, ours, theirs }).record.proposal, null);
+  const opened = REC({ proposal: { ...X, number: 760 } });
+  assert.equal(mod.mergeRunRecords({ base, ours: opened, theirs }).record.proposal.number, 760, 'a proposal this run OPENED still stands');
+});
+
+test('#748 review: a failed switch to the proposal branch leaves the run record exactly as it was, never conflicted', () => {
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    g('add', '-A');
+    g('commit', '-qm', 'record');
+    // A proposal branch whose rebase onto main conflicts.
+    g('checkout', '-qb', mod.PROPOSAL_BRANCH);
+    writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'), '# Invariants (proposal)\n');
+    g('commit', '-qam', 'proposal edit');
+    g('checkout', '-q', 'main');
+    writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'), '# Invariants (main)\n');
+    g('commit', '-qam', 'main edit');
+    const mine = `${JSON.stringify({ ...mod.readRunRecord(root), lastOutcome: 'completed', coveredAt: 'adopted' }, null, 2)}\n`;
+    writeFileSync(join(root, mod.STATE_FILE), mine);
+    assert.throws(() => mod.prepareProposalBranch({ root, baseBranch: 'main', git: g }), /does not rebase cleanly/, 'the ORIGINAL error surfaces');
+    assert.equal(readFileSync(join(root, mod.STATE_FILE), 'utf8'), mine, 'the record is this run\'s, byte for byte');
+    assert.equal(g('status', '--porcelain', '--', mod.STATE_FILE).stdout.slice(0, 2), ' M', 'modified, not unmerged');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
